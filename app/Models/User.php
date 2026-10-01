@@ -245,5 +245,10 @@ public function canManageLms()
     {
         return $this->total_afk_duration_seconds;
     }
+
+    public function trainingRegistrations()
+    {
+        return $this->hasMany(OfflineTrainingRegister::class, 'user_id');
+    }
 }
 

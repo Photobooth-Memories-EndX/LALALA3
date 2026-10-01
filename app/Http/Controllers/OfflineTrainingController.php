@@ -3,6 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\OfflineTraining;
+use App\Models\OfflineTrainingRegister;
+use App\Models\OfflineTrainingUser;
+use App\Services\Schedule\OfflineTrainingCompletionService;
+use App\Services\Schedule\OfflineTrainingRegistrationService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -11,16 +15,43 @@ use Illuminate\Support\Str;
 class OfflineTrainingController extends Controller
 {
     /**
-     * Display Manage Training Schedule page with live records.
+     * Display Manage Training Schedule page with live records and live participant tracking.
      */
-    public function index()
+    public function index(Request $request)
     {
         $trainings = OfflineTraining::forSchedule()
-            ->withCount('participants')
+            ->with(['registrations.user', 'creator'])
+            ->withCount([
+                'registrations',
+                'registrations as pending_count' => function ($q) {
+                    $q->where('status', 'Pending');
+                },
+                'registrations as approved_count' => function ($q) {
+                    $q->where('status', 'Approved');
+                },
+                'registrations as completed_count' => function ($q) {
+                    $q->where('status', 'Completed');
+                },
+                'registrations as rejected_count' => function ($q) {
+                    $q->where('status', 'Rejected');
+                },
+                'registrations as active_seats_count' => function ($q) {
+                    $q->whereIn('status', ['Pending', 'Approved', 'Completed']);
+                },
+            ])
             ->orderBy('start_date', 'asc')
             ->get();
 
-        return view('main.manage-training-schedule.index', compact('trainings'));
+        $selectedTrainingId = $request->query('training');
+        $selectedTraining = null;
+        if ($selectedTrainingId) {
+            $selectedTraining = $trainings->firstWhere('id', (int) $selectedTrainingId);
+        }
+        if (!$selectedTraining && $trainings->isNotEmpty()) {
+            $selectedTraining = $trainings->first();
+        }
+
+        return view('main.manage-training-schedule.index', compact('trainings', 'selectedTraining'));
     }
 
     /**
@@ -105,25 +136,171 @@ class OfflineTrainingController extends Controller
     }
 
     /**
-     * Display User Training Plan page with Calendar & Available Training tabs.
+     * Route handler for Participant Action button:
+     * Prepares view and redirects to Participant Tracking & Approvals tab for the selected training.
+     */
+    public function participants($trainingId)
+    {
+        $training = OfflineTraining::forSchedule()->findOrFail($trainingId);
+
+        return redirect()->route('manage.training-schedule.index', [
+            'tab'      => 'participants',
+            'training' => $training->id,
+        ]);
+    }
+
+    /**
+     * User registration action from /trainingplan.
+     */
+    public function register(Request $request, $trainingId, OfflineTrainingRegistrationService $service)
+    {
+        try {
+            $registration = $service->register((int) $trainingId, Auth::user());
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Successfully registered for training. Your application is pending approval.',
+                    'data'    => $registration,
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Successfully registered for training. Your application is pending approval.');
+        } catch (\Throwable $e) {
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                ], 422);
+            }
+
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * User cancel pending registration from My History tab.
+     */
+    public function cancelRegistration(Request $request, $registrationId, OfflineTrainingRegistrationService $service)
+    {
+        try {
+            $service->cancel((int) $registrationId, Auth::user());
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Registration cancelled successfully.',
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Registration cancelled successfully.');
+        } catch (\Throwable $e) {
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                ], 422);
+            }
+
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Approve or reject a participant registration (Admin / Subadmin action).
+     */
+    public function updateRegistrationStatus(Request $request, $registrationId, OfflineTrainingRegistrationService $service)
+    {
+        $request->validate([
+            'status' => 'required|in:Approved,Rejected',
+            'reason' => 'nullable|string|max:500',
+        ]);
+
+        $registration = OfflineTrainingRegister::with('training')->findOrFail($registrationId);
+
+        if (!Auth::user()->canManageLms()) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        try {
+            if ($request->input('status') === 'Approved') {
+                $service->approve($registration, Auth::id());
+                $message = 'Participant application has been approved.';
+            } else {
+                $service->reject($registration, $request->input('reason'));
+                $message = 'Participant application has been rejected.';
+            }
+
+            if ($request->wantsJson()) {
+                return response()->json(['success' => true, 'message' => $message]);
+            }
+
+            return redirect()->back()->with('success', $message);
+        } catch (\Throwable $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+            }
+
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Mark a registration as Completed and sync participant to offline_training_users.
+     */
+    public function completeRegistration(Request $request, $registrationId, OfflineTrainingCompletionService $service)
+    {
+        if (!Auth::user()->canManageLms()) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        try {
+            $service->complete((int) $registrationId);
+            $message = 'Participant training completion recorded successfully.';
+
+            if ($request->wantsJson()) {
+                return response()->json(['success' => true, 'message' => $message]);
+            }
+
+            return redirect()->back()->with('success', $message);
+        } catch (\Throwable $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+            }
+
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Display User Training Plan page with Calendar, Available Training, and My History tabs.
      */
     public function userIndex()
     {
+        $userId = Auth::id();
+
         $trainings = OfflineTraining::forSchedule()
-            ->withCount('participants')
+            ->withCount([
+                'registrations as registered_seats_count' => function ($q) {
+                    $q->whereIn('status', ['Pending', 'Approved', 'Completed']);
+                },
+            ])
+            ->with([
+                'registrations' => function ($q) use ($userId) {
+                    if ($userId) {
+                        $q->where('user_id', $userId);
+                    }
+                },
+            ])
             ->orderBy('start_date', 'asc')
             ->get();
 
-        $availableTrainings = OfflineTraining::forSchedule()
-            ->withCount('participants')
-            ->where('status', '!=', 'Closed')
-            ->orderBy('start_date', 'asc')
-            ->get();
+        $availableTrainings = $trainings->where('status', '!=', 'Closed')->values();
 
         $calendarEvents = $trainings->map(function ($t) {
             $startDate = Carbon::parse($t->start_date);
             $endDate = Carbon::parse($t->end_date ?? $t->start_date);
-            $enrolled = $t->participants_count ?? 0;
+            $enrolled = $t->registered_seats_count ?? 0;
             $quota = $t->quota ?: 1;
             $isClosed = $t->status === 'Closed' || $enrolled >= $quota;
 
@@ -149,11 +326,41 @@ class OfflineTrainingController extends Controller
                 'dateTime'    => $startDate->format('d F Y') . ', ' . substr($t->start_time, 0, 5) . ' - ' . substr($t->end_time, 0, 5) . ' WIB',
                 'location'    => $t->location,
                 'instructor'  => $t->instructor,
-                'description' => $t->description,
+                'description' => $t->description ?? '',
                 'quota'       => "{$enrolled} / {$t->quota} Seats" . ($enrolled >= $t->quota ? ' (Full)' : ''),
             ];
         })->values()->toArray();
 
-        return view('user.trainingplan-user.index', compact('trainings', 'availableTrainings', 'calendarEvents'));
+        // Build live My History for authenticated user
+        $myRegistrations = collect();
+        if ($userId) {
+            $myRegistrations = OfflineTrainingRegister::with('training')
+                ->where('user_id', $userId)
+                ->orderBy('registered_at', 'desc')
+                ->get()
+                ->map(function ($reg, $idx) {
+                    $t = $reg->training;
+                    return (object)[
+                        'id'             => $reg->id,
+                        'registration_id'=> $reg->id,
+                        'modal_id'       => $t->id ?? $reg->id,
+                        'title'          => $t->title ?? 'Training Schedule',
+                        'category'       => $t->category ?? 'General',
+                        'start_date'     => $t->start_date ?? $reg->registered_at,
+                        'end_date'       => $t->end_date ?? null,
+                        'start_time'     => $t->start_time ?? '08:00:00',
+                        'end_time'       => $t->end_time ?? '16:00:00',
+                        'location'       => $t->location ?? '-',
+                        'instructor'     => $t->instructor ?? '-',
+                        'description'    => $t->description ?? '',
+                        'status'         => $reg->status, // 'Pending', 'Approved', 'Completed', 'Rejected'
+                        'can_cancel'     => ($reg->status === 'Pending'),
+                    ];
+                });
+        }
+
+        $myHistory = $myRegistrations;
+
+        return view('user.trainingplan-user.index', compact('trainings', 'availableTrainings', 'calendarEvents', 'myHistory'));
     }
 }

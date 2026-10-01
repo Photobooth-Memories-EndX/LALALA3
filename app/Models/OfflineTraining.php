@@ -165,6 +165,11 @@ class OfflineTraining extends Model
         return $this->hasMany(OfflineTrainingUser::class, 'offline_training_id');
     }
 
+    public function registrations(): HasMany
+    {
+        return $this->hasMany(OfflineTrainingRegister::class, 'offline_training_id');
+    }
+
     public function scopeByYear($query, $year)
     {
         if (filled($year) && $year !== 'all') {

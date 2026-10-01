@@ -80,12 +80,15 @@
             <tbody class="divide-y">
                 @forelse ($availableTrainings as $item)
                     @php
-                        $enrolled = $item->participants_count ?? ($item->relationLoaded('participants') ? $item->participants->count() : 0);
+                        $enrolled = $item->registered_seats_count ?? ($item->relationLoaded('registrations') ? $item->registrations->whereIn('status', ['Pending', 'Approved', 'Completed'])->count() : 0);
                         $quota = $item->quota > 0 ? $item->quota : 1;
                         $remaining = max(0, $quota - $enrolled);
                         $percent = min(100, round(($enrolled / $quota) * 100));
                         $isFull = $remaining <= 0;
                         $barColor = $isFull ? '#ef4444' : ($remaining <= 10 ? '#f97316' : '#003b6d');
+
+                        $myReg = $item->relationLoaded('registrations') ? $item->registrations->firstWhere('user_id', Auth::id()) : null;
+                        $myRegStatus = $myReg ? $myReg->status : null;
 
                         $catStyle = match($item->category) {
                             'Technical Skill'     => 'background-color: #e0f2fe; color: #0284c7;',
@@ -171,10 +174,34 @@
                             </span>
                         </td>
                         <td class="text-center align-middle pe-4">
-                            @if ($item->status === 'Open Registration' && !$isFull)
-                                <button type="button" class="btn btn-owl-register rounded-pill px-4 py-1-5 fw-semibold d-inline-flex align-items-center gap-1">
-                                    <span>Register</span>
-                                </button>
+                            @if ($myRegStatus === 'Pending')
+                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-3 py-1-5 fw-semibold d-inline-flex align-items-center gap-1">
+                                    <i class="ti ti-clock"></i>
+                                    <span>Pending Approval</span>
+                                </span>
+                            @elseif ($myRegStatus === 'Approved')
+                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1-5 fw-semibold d-inline-flex align-items-center gap-1">
+                                    <i class="ti ti-check"></i>
+                                    <span>Approved</span>
+                                </span>
+                            @elseif ($myRegStatus === 'Completed')
+                                <span class="badge bg-info-subtle text-info border border-info-subtle rounded-pill px-3 py-1-5 fw-semibold d-inline-flex align-items-center gap-1">
+                                    <i class="ti ti-certificate"></i>
+                                    <span>Completed</span>
+                                </span>
+                            @elseif ($myRegStatus === 'Rejected')
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-1-5 fw-semibold d-inline-flex align-items-center gap-1" title="{{ $myReg->rejection_reason ?? 'Registration was rejected' }}">
+                                    <i class="ti ti-x"></i>
+                                    <span>Rejected</span>
+                                </span>
+                            @elseif ($item->status === 'Open Registration' && !$isFull)
+                                <form action="{{ route('trainingplan.register', $item->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Register for {{ addslashes($item->title) }}?');">
+                                    @csrf
+                                    <button type="submit" class="btn btn-owl-register rounded-pill px-4 py-1-5 fw-semibold d-inline-flex align-items-center gap-1">
+                                        <i class="ti ti-pencil-plus"></i>
+                                        <span>Register</span>
+                                    </button>
+                                </form>
                             @elseif ($item->status === 'Running')
                                 <button type="button" class="btn btn-secondary rounded-pill px-4 py-1-5 fw-semibold" disabled>
                                     <span>Running</span>

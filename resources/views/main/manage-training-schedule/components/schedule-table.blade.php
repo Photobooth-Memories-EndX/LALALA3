@@ -21,7 +21,7 @@
             <tbody class="divide-y" id="scheduleTableBody">
                 @forelse ($trainings as $item)
                     @php
-                        $enrolled = $item->participants_count ?? ($item->relationLoaded('participants') ? $item->participants->count() : 0);
+                        $enrolled = $item->active_seats_count ?? ($item->relationLoaded('registrations') ? $item->registrations->whereIn('status', ['Pending', 'Approved', 'Completed'])->count() : 0);
                         $quota = $item->quota > 0 ? $item->quota : 1;
                         $remaining = max(0, $quota - $enrolled);
                         $percent = min(100, round(($enrolled / $quota) * 100));
@@ -120,11 +120,11 @@
                                         title="Edit Schedule" data-id="{{ $item->id }}" data-title="{{ $item->title }}">
                                     <i class="ti ti-edit fs-2"></i>
                                 </button>
-                                <button type="button" class="btn btn-sm btn-icon btn-outline-info rounded-3 btn-participants-schedule" 
+                                <a href="{{ route('manage.training-schedule.participants', $item->id) }}" class="btn btn-sm btn-icon btn-outline-info rounded-3 btn-participants-schedule" 
                                         title="View Participants" 
                                         data-id="{{ $item->id }}" data-title="{{ $item->title }}">
                                     <i class="ti ti-users fs-2"></i>
-                                </button>
+                                </a>
                                 <button type="button" class="btn btn-sm btn-icon btn-outline-danger rounded-3 btn-delete-schedule" 
                                         title="Delete Schedule" data-id="{{ $item->id }}" data-title="{{ $item->title }}">
                                     <i class="ti ti-trash fs-2"></i>

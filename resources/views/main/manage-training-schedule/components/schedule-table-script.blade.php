@@ -337,7 +337,8 @@ document.addEventListener('DOMContentLoaded', function () {
         // View Participants -> Switch to Inline Participant Tracking Tab
         const partBtn = e.target.closest('.btn-participants-schedule');
         if (partBtn) {
-            const id = partBtn.getAttribute('data-id') || '1';
+            e.preventDefault();
+            const id = partBtn.getAttribute('data-id');
             const title = partBtn.getAttribute('data-title') || 'this training';
 
             // 1. Switch top pill to Participant Tracking & Approvals

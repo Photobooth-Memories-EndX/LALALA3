@@ -1,3 +1,102 @@
+@php
+    $trackingData = $trainings->mapWithKeys(function ($t) {
+        $quota = $t->quota ?? 0;
+        $regs = $t->registrations ?? collect();
+        $approvedCount = $t->approved_count ?? $regs->where('status', 'Approved')->count();
+        $pendingCount = $t->pending_count ?? $regs->where('status', 'Pending')->count();
+        $completedCount = $t->completed_count ?? $regs->where('status', 'Completed')->count();
+        $rejectedCount = $t->rejected_count ?? $regs->where('status', 'Rejected')->count();
+        $registeredCount = $t->registrations_count ?? $regs->count();
+
+        return [
+            (string) $t->id => [
+                'id'          => $t->id,
+                'title'       => $t->title,
+                'code'        => $t->training_code ?? ('PTKP-TR-' . $t->id),
+                'quota'       => $quota . ' Seats',
+                'registered'  => (string) $registeredCount,
+                'approved'    => (string) $approvedCount,
+                'pending'     => (string) $pendingCount,
+                'completed'   => (string) $completedCount,
+                'rejected'    => (string) $rejectedCount,
+                'participants'=> $regs->map(function ($reg, $idx) {
+                    $user = $reg->user;
+                    $name = $user->name ?? 'Unknown User';
+                    $words = explode(' ', trim($name));
+                    $initials = strtoupper(substr($words[0] ?? 'U', 0, 1) . (isset($words[1]) ? substr($words[1], 0, 1) : ''));
+                    return [
+                        'id'             => $reg->id,
+                        'no'             => $idx + 1,
+                        'user_id'        => $reg->user_id,
+                        'name'           => $name,
+                        'nip'            => $user->id_emp ?? '-',
+                        'email'          => $user->email ?? '-',
+                        'dept'           => $user->department ?? '-',
+                        'date'           => $reg->registered_at ? $reg->registered_at->format('d M Y') : '-',
+                        'status'         => $reg->status,
+                        'initials'       => $initials ?: 'U',
+                        'color'          => match($reg->status) {
+                            'Approved'   => 'success',
+                            'Pending'    => 'warning',
+                            'Completed'  => 'info',
+                            'Rejected'   => 'danger',
+                            default      => 'secondary',
+                        },
+                    ];
+                })->values()->toArray(),
+            ]
+        ];
+    })->toArray();
+
+    // Collect unique registered employees across all schedule trainings
+    $registeredEmployees = collect();
+    foreach ($trainings as $t) {
+        foreach ($t->registrations as $reg) {
+            if ($reg->user && !$registeredEmployees->has($reg->user_id)) {
+                $u = $reg->user;
+                $words = explode(' ', trim($u->name));
+                $initials = strtoupper(substr($words[0] ?? 'U', 0, 1) . (isset($words[1]) ? substr($words[1], 0, 1) : ''));
+                $registeredEmployees->put($reg->user_id, [
+                    'user_id'   => $u->id,
+                    'name'      => $u->name,
+                    'nip'       => $u->id_emp ?? '-',
+                    'email'     => $u->email ?? '-',
+                    'dept'      => $u->department ?? '-',
+                    'role'      => ($u->job_position ?? 'Employee') . ' &bull; ' . ($u->department ?? 'General'),
+                    'initials'  => $initials ?: 'U',
+                    'trainings' => [],
+                ]);
+            }
+        }
+    }
+
+    foreach ($trainings as $t) {
+        foreach ($t->registrations as $reg) {
+            if ($reg->user && $registeredEmployees->has($reg->user_id)) {
+                $emp = $registeredEmployees->get($reg->user_id);
+                $emp['trainings'][] = [
+                    'reg_id'   => $reg->id,
+                    'no'       => count($emp['trainings']) + 1,
+                    'title'    => $t->title,
+                    'code'     => $t->training_code ?? ('PTKP-TR-' . $t->id),
+                    'cat'      => $t->category ?? 'General',
+                    'catBg'    => '#e0f2fe',
+                    'catCol'   => '#0369a1',
+                    'date'     => $t->start_date ? \Carbon\Carbon::parse($t->start_date)->format('d M Y') : '-',
+                    'sub'      => $reg->registered_at ? $reg->registered_at->format('d M Y') : '-',
+                    'status'   => $reg->status,
+                ];
+                $registeredEmployees->put($reg->user_id, $emp);
+            }
+        }
+    }
+
+    $firstTraining = $selectedTraining ?? $trainings->first();
+    $firstTrainingId = $firstTraining ? (string) $firstTraining->id : '';
+    $firstEmp = $registeredEmployees->first();
+    $firstEmpId = $firstEmp ? (string) $firstEmp['user_id'] : '';
+@endphp
+
 {{-- Inline Participant Tracking & Approvals Section --}}
 <div class="card border-0 shadow-sm rounded-4 bg-white p-4 mb-4">
     <!-- Section Top Header & View Switcher -->
@@ -49,11 +148,13 @@
                     <div class="col-lg-5 col-12">
                         <label class="form-label fw-bold small text-dark mb-1">Select PTKP Training Schedule</label>
                         <select id="selectInlineTraining" class="form-select rounded-3 bg-white">
-                            <option value="1" selected>Leadership Development Program (Batch 1 / 2026)</option>
-                            <option value="2">Excel Advanced for Data Analysis (Batch 2 / 2026)</option>
-                            <option value="3">K3 & Safety Awareness in Factory (Batch 3 / 2026)</option>
-                            <option value="4">Effective Business Communication (Batch 1 / 2026)</option>
-                            <option value="5">Basic Fire Fighting & Safety Protocol (Batch 4 / 2025)</option>
+                            @forelse ($trainings as $t)
+                                <option value="{{ $t->id }}" {{ ($firstTrainingId == $t->id) ? 'selected' : '' }}>
+                                    {{ $t->title }} ({{ $t->training_code ?? 'PTKP-TR-' . $t->id }})
+                                </option>
+                            @empty
+                                <option value="">No training schedules available</option>
+                            @endforelse
                         </select>
                     </div>
 
@@ -61,19 +162,19 @@
                         <div class="d-flex align-items-center justify-content-lg-end gap-2 flex-wrap">
                             <div class="px-3 py-2 rounded-3 bg-white border border-light-subtle text-center shadow-none flex-grow-1 flex-md-grow-0" style="min-width: 90px;">
                                 <div class="extra-small text-muted text-uppercase fw-semibold">Quota</div>
-                                <div class="fw-bold text-dark fs-3" id="inlineMetricQuota">30 Seats</div>
+                                <div class="fw-bold text-dark fs-3" id="inlineMetricQuota">{{ $firstTraining ? ($firstTraining->quota . ' Seats') : '0 Seats' }}</div>
                             </div>
                             <div class="px-3 py-2 rounded-3 bg-white border border-light-subtle text-center shadow-none flex-grow-1 flex-md-grow-0" style="min-width: 90px;">
                                 <div class="extra-small text-muted text-uppercase fw-semibold">Registered</div>
-                                <div class="fw-bold text-primary fs-3" id="inlineMetricRegistered">25</div>
+                                <div class="fw-bold text-primary fs-3" id="inlineMetricRegistered">{{ $firstTraining->registrations_count ?? 0 }}</div>
                             </div>
                             <div class="px-3 py-2 rounded-3 bg-success-subtle border border-success-subtle text-center flex-grow-1 flex-md-grow-0" style="min-width: 90px;">
                                 <div class="extra-small text-success text-uppercase fw-semibold">Approved</div>
-                                <div class="fw-bold text-success fs-3" id="inlineMetricApproved">22</div>
+                                <div class="fw-bold text-success fs-3" id="inlineMetricApproved">{{ $firstTraining->approved_count ?? 0 }}</div>
                             </div>
                             <div class="px-3 py-2 rounded-3 bg-warning-subtle border border-warning-subtle text-center flex-grow-1 flex-md-grow-0" style="min-width: 90px;">
                                 <div class="extra-small text-warning text-uppercase fw-semibold">Pending</div>
-                                <div class="fw-bold text-warning fs-3" id="inlineMetricPending">3</div>
+                                <div class="fw-bold text-warning fs-3" id="inlineMetricPending">{{ $firstTraining->pending_count ?? 0 }}</div>
                             </div>
                         </div>
                     </div>
@@ -107,9 +208,18 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y" id="tbodyInlineByTraining">
-                            {{-- Dynamically populated via JavaScript --}}
+                            {{-- Dynamically populated via JavaScript from live trackingData --}}
                         </tbody>
                     </table>
+                </div>
+
+                {{-- Clean Empty State Container --}}
+                <div class="text-center py-5 d-none" id="emptyStateInlineByTraining">
+                    <div class="avatar avatar-xl rounded-circle bg-light text-muted mb-3 mx-auto">
+                        <i class="ti ti-users-off fs-1"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-1">No participants have registered for this training yet.</h5>
+                    <p class="text-muted small mb-0">Participant registrations from Training Schedule will appear here.</p>
                 </div>
             </div>
         </div>
@@ -124,23 +234,35 @@
                     <div class="col-lg-5 col-12">
                         <label class="form-label fw-bold small text-dark mb-1">Select Employee</label>
                         <select id="selectInlineEmployee" class="form-select rounded-3 bg-white">
-                            <option value="20210045" selected>Budi Santoso (NIP: 20210045) &bull; Manufacturing</option>
-                            <option value="20220112">Dewi Anggraini (NIP: 20220112) &bull; Supply Chain</option>
-                            <option value="20190089">Fajar Pratama (NIP: 20190089) &bull; Maintenance</option>
-                            <option value="20200156">Siti Rahmawati (NIP: 20200156) &bull; QA</option>
-                            <option value="20230023">Rian Hidayat (NIP: 20230023) &bull; Finance</option>
+                            @forelse ($registeredEmployees as $emp)
+                                <option value="{{ $emp['user_id'] }}">
+                                    {{ $emp['name'] }} (NIP: {{ $emp['nip'] }}) &bull; {{ $emp['dept'] }}
+                                </option>
+                            @empty
+                                <option value="">No employee registrations available</option>
+                            @endforelse
                         </select>
                     </div>
                     <div class="col-lg-7 col-12">
                         <div class="d-flex align-items-center gap-3 bg-white rounded-3 p-3 border border-light-subtle">
-                            <div class="avatar avatar-md rounded-circle bg-primary text-white fw-bold" id="inlineEmpProfileAvatar">BS</div>
+                            <div class="avatar avatar-md rounded-circle bg-primary text-white fw-bold" id="inlineEmpProfileAvatar">
+                                {{ $firstEmp['initials'] ?? '-' }}
+                            </div>
                             <div class="flex-grow-1">
-                                <div class="fw-bold text-dark fs-3" id="inlineEmpProfileName">Budi Santoso</div>
-                                <div class="small text-muted" id="inlineEmpProfileMeta">NIP: 20210045 &bull; Senior Plant Technician &bull; Manufacturing Operations</div>
+                                <div class="fw-bold text-dark fs-3" id="inlineEmpProfileName">
+                                    {{ $firstEmp['name'] ?? 'No Employee Selected' }}
+                                </div>
+                                <div class="small text-muted" id="inlineEmpProfileMeta">
+                                    @if ($firstEmp)
+                                        NIP: {{ $firstEmp['nip'] }} &bull; {{ $firstEmp['role'] }}
+                                    @else
+                                        Select an employee to inspect their training registrations.
+                                    @endif
+                                </div>
                             </div>
                             <div class="text-end pe-1">
                                 <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1-5 fw-semibold" id="inlineEmpProfileTotal">
-                                    4 Applications
+                                    {{ $firstEmp ? count($firstEmp['trainings']) : 0 }} Applications
                                 </span>
                             </div>
                         </div>
@@ -173,6 +295,15 @@
                         </tbody>
                     </table>
                 </div>
+
+                {{-- Empty State for Employee View --}}
+                <div class="text-center py-5 d-none" id="emptyStateInlineByEmployee">
+                    <div class="avatar avatar-xl rounded-circle bg-light text-muted mb-3 mx-auto">
+                        <i class="ti ti-history-off fs-1"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-1">No registration history found for this employee.</h5>
+                    <p class="text-muted small mb-0">Applications submitted from Training Schedule will be tracked here.</p>
+                </div>
             </div>
         </div>
 
@@ -181,109 +312,31 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    // --- Data Store for Training Participants ---
-    const inlineTrainingStore = {
-        '1': {
-            title: 'Leadership Development Program (Batch 1 / 2026)',
-            quota: '30 Seats', registered: '25', approved: '22', pending: '3',
-            participants: [
-                { no: 1, name: 'Budi Santoso', nip: '20210045', email: 'budi.santoso@krakatauposco.co.id', dept: 'Manufacturing & Plant Operations', date: '05 Sep 2026', status: 'Approved', initials: 'BS', color: 'primary' },
-                { no: 2, name: 'Dewi Anggraini', nip: '20220112', email: 'dewi.anggraini@krakatauposco.co.id', dept: 'Supply Chain & Logistics', date: '06 Sep 2026', status: 'Approved', initials: 'DA', color: 'info' },
-                { no: 3, name: 'Fajar Pratama', nip: '20190089', email: 'fajar.pratama@krakatauposco.co.id', dept: 'Maintenance & Engineering', date: '08 Sep 2026', status: 'Pending Approval', initials: 'FP', color: 'warning' },
-                { no: 4, name: 'Siti Rahmawati', nip: '20200156', email: 'siti.rahmawati@krakatauposco.co.id', dept: 'Quality Assurance', date: '10 Sep 2026', status: 'Pending Approval', initials: 'SR', color: 'primary' },
-                { no: 5, name: 'Rian Hidayat', nip: '20230023', email: 'rian.hidayat@krakatauposco.co.id', dept: 'Finance & Accounting', date: '11 Sep 2026', status: 'Rejected', initials: 'RH', color: 'danger' }
-            ]
-        },
-        '2': {
-            title: 'Excel Advanced for Data Analysis (Batch 2 / 2026)',
-            quota: '20 Seats', registered: '18', approved: '16', pending: '2',
-            participants: [
-                { no: 1, name: 'Dewi Anggraini', nip: '20220112', email: 'dewi.anggraini@krakatauposco.co.id', dept: 'Supply Chain & Logistics', date: '07 Sep 2026', status: 'Approved', initials: 'DA', color: 'info' },
-                { no: 2, name: 'Rian Hidayat', nip: '20230023', email: 'rian.hidayat@krakatauposco.co.id', dept: 'Finance & Accounting', date: '08 Sep 2026', status: 'Approved', initials: 'RH', color: 'danger' },
-                { no: 3, name: 'Budi Santoso', nip: '20210045', email: 'budi.santoso@krakatauposco.co.id', dept: 'Manufacturing & Plant Operations', date: '09 Sep 2026', status: 'Pending Approval', initials: 'BS', color: 'primary' },
-                { no: 4, name: 'Siti Rahmawati', nip: '20200156', email: 'siti.rahmawati@krakatauposco.co.id', dept: 'Quality Assurance', date: '10 Sep 2026', status: 'Pending Approval', initials: 'SR', color: 'primary' }
-            ]
-        },
-        '3': {
-            title: 'K3 & Safety Awareness in Factory (Batch 3 / 2026)',
-            quota: '50 Seats', registered: '40', approved: '38', pending: '2',
-            participants: [
-                { no: 1, name: 'Fajar Pratama', nip: '20190089', email: 'fajar.pratama@krakatauposco.co.id', dept: 'Maintenance & Engineering', date: '01 Sep 2026', status: 'Approved', initials: 'FP', color: 'warning' },
-                { no: 2, name: 'Budi Santoso', nip: '20210045', email: 'budi.santoso@krakatauposco.co.id', dept: 'Manufacturing & Plant Operations', date: '02 Sep 2026', status: 'Approved', initials: 'BS', color: 'primary' },
-                { no: 3, name: 'Dewi Anggraini', nip: '20220112', email: 'dewi.anggraini@krakatauposco.co.id', dept: 'Supply Chain & Logistics', date: '03 Sep 2026', status: 'Pending Approval', initials: 'DA', color: 'info' }
-            ]
-        },
-        '4': {
-            title: 'Effective Business Communication (Batch 1 / 2026)',
-            quota: '25 Seats', registered: '25', approved: '25', pending: '0',
-            participants: [
-                { no: 1, name: 'Siti Rahmawati', nip: '20200156', email: 'siti.rahmawati@krakatauposco.co.id', dept: 'Quality Assurance', date: '01 Sep 2026', status: 'Approved', initials: 'SR', color: 'primary' },
-                { no: 2, name: 'Dewi Anggraini', nip: '20220112', email: 'dewi.anggraini@krakatauposco.co.id', dept: 'Supply Chain & Logistics', date: '02 Sep 2026', status: 'Approved', initials: 'DA', color: 'info' }
-            ]
-        },
-        '5': {
-            title: 'Basic Fire Fighting & Safety Protocol (Batch 4 / 2025)',
-            quota: '40 Seats', registered: '40', approved: '40', pending: '0',
-            participants: [
-                { no: 1, name: 'Budi Santoso', nip: '20210045', email: 'budi.santoso@krakatauposco.co.id', dept: 'Manufacturing & Plant Operations', date: '01 Aug 2025', status: 'Approved', initials: 'BS', color: 'primary' },
-                { no: 2, name: 'Fajar Pratama', nip: '20190089', email: 'fajar.pratama@krakatauposco.co.id', dept: 'Maintenance & Engineering', date: '01 Aug 2025', status: 'Approved', initials: 'FP', color: 'warning' }
-            ]
-        }
-    };
+    // --- Live Data Stores from Database ---
+    const liveTrackingStore = @json($trackingData);
+    const liveEmployeeStore = @json($registeredEmployees->toArray());
+    const csrfToken = '{{ csrf_token() }}';
 
-    // --- Data Store for Employee History ---
-    const inlineEmployeeStore = {
-        '20210045': {
-            name: 'Budi Santoso', nip: '20210045', role: 'Senior Plant Technician &bull; Manufacturing Operations', initials: 'BS',
-            trainings: [
-                { no: 1, title: 'Leadership Development Program', code: 'PTKP-LDP-01', cat: 'Soft Skill', catBg: '#e0f2fe', catCol: '#0369a1', date: '18 Sep 2026', sub: '05 Sep 2026', status: 'Approved' },
-                { no: 2, title: 'Excel Advanced for Data Analysis', code: 'PTKP-EXC-02', cat: 'Technical Skill', catBg: '#e0f2fe', catCol: '#0284c7', date: '18 Sep 2026', sub: '09 Sep 2026', status: 'Pending Approval' },
-                { no: 3, title: 'K3 & Safety Awareness in Factory', code: 'PTKP-SAF-03', cat: 'Compliance & Safety', catBg: '#fef3c7', catCol: '#b45309', date: '25 Sep 2026', sub: '02 Sep 2026', status: 'Approved' },
-                { no: 4, title: 'Basic Fire Fighting & Safety Protocol', code: 'PTKP-BFF-05', cat: 'Compliance & Safety', catBg: '#fef3c7', catCol: '#b45309', date: '14 Aug 2025', sub: '01 Aug 2025', status: 'Completed' }
-            ]
-        },
-        '20220112': {
-            name: 'Dewi Anggraini', nip: '20220112', role: 'Logistics Analyst &bull; Supply Chain Management', initials: 'DA',
-            trainings: [
-                { no: 1, title: 'Leadership Development Program', code: 'PTKP-LDP-01', cat: 'Soft Skill', catBg: '#e0f2fe', catCol: '#0369a1', date: '18 Sep 2026', sub: '06 Sep 2026', status: 'Approved' },
-                { no: 2, title: 'Excel Advanced for Data Analysis', code: 'PTKP-EXC-02', cat: 'Technical Skill', catBg: '#e0f2fe', catCol: '#0284c7', date: '18 Sep 2026', sub: '07 Sep 2026', status: 'Approved' },
-                { no: 3, title: 'Effective Business Communication', code: 'PTKP-COMM-04', cat: 'Soft Skill', catBg: '#e0f2fe', catCol: '#0369a1', date: '29 Sep 2026', sub: '02 Sep 2026', status: 'Approved' }
-            ]
-        },
-        '20190089': {
-            name: 'Fajar Pratama', nip: '20190089', role: 'Maintenance Lead Engineer &bull; Mechanical Plant Unit', initials: 'FP',
-            trainings: [
-                { no: 1, title: 'Leadership Development Program', code: 'PTKP-LDP-01', cat: 'Soft Skill', catBg: '#e0f2fe', catCol: '#0369a1', date: '18 Sep 2026', sub: '08 Sep 2026', status: 'Pending Approval' },
-                { no: 2, title: 'K3 & Safety Awareness in Factory', code: 'PTKP-SAF-03', cat: 'Compliance & Safety', catBg: '#fef3c7', catCol: '#b45309', date: '25 Sep 2026', sub: '01 Sep 2026', status: 'Approved' },
-                { no: 3, title: 'Basic Fire Fighting & Safety Protocol', code: 'PTKP-BFF-05', cat: 'Compliance & Safety', catBg: '#fef3c7', catCol: '#b45309', date: '14 Aug 2025', sub: '01 Aug 2025', status: 'Completed' }
-            ]
-        },
-        '20200156': {
-            name: 'Siti Rahmawati', nip: '20200156', role: 'Quality Assurance Officer &bull; Steel Metallurgy Division', initials: 'SR',
-            trainings: [
-                { no: 1, title: 'Leadership Development Program', code: 'PTKP-LDP-01', cat: 'Soft Skill', catBg: '#e0f2fe', catCol: '#0369a1', date: '18 Sep 2026', sub: '10 Sep 2026', status: 'Pending Approval' },
-                { no: 2, title: 'Excel Advanced for Data Analysis', code: 'PTKP-EXC-02', cat: 'Technical Skill', catBg: '#e0f2fe', catCol: '#0284c7', date: '18 Sep 2026', sub: '10 Sep 2026', status: 'Pending Approval' },
-                { no: 3, title: 'Effective Business Communication', code: 'PTKP-COMM-04', cat: 'Soft Skill', catBg: '#e0f2fe', catCol: '#0369a1', date: '29 Sep 2026', sub: '01 Sep 2026', status: 'Approved' }
-            ]
-        },
-        '20230023': {
-            name: 'Rian Hidayat', nip: '20230023', role: 'Junior Budget Accountant &bull; Corporate Finance', initials: 'RH',
-            trainings: [
-                { no: 1, title: 'Leadership Development Program', code: 'PTKP-LDP-01', cat: 'Soft Skill', catBg: '#e0f2fe', catCol: '#0369a1', date: '18 Sep 2026', sub: '11 Sep 2026', status: 'Rejected' },
-                { no: 2, title: 'Excel Advanced for Data Analysis', code: 'PTKP-EXC-02', cat: 'Technical Skill', catBg: '#e0f2fe', catCol: '#0284c7', date: '18 Sep 2026', sub: '08 Sep 2026', status: 'Approved' }
-            ]
-        }
-    };
-
-    // Render Tab 1 (By Training)
+    // Render Tab 1 (By Training Title)
     window.renderInlineTrackingByTraining = function(trainingId) {
-        const data = inlineTrainingStore[trainingId] || inlineTrainingStore['1'];
+        const data = liveTrackingStore[String(trainingId)];
         
         const qEl = document.getElementById('inlineMetricQuota');
         const rEl = document.getElementById('inlineMetricRegistered');
         const aEl = document.getElementById('inlineMetricApproved');
         const pEl = document.getElementById('inlineMetricPending');
         const tbody = document.getElementById('tbodyInlineByTraining');
+        const emptyState = document.getElementById('emptyStateInlineByTraining');
+
+        if (!data) {
+            if (qEl) qEl.textContent = '0 Seats';
+            if (rEl) rEl.textContent = '0';
+            if (aEl) aEl.textContent = '0';
+            if (pEl) pEl.textContent = '0';
+            if (tbody) tbody.innerHTML = '';
+            if (emptyState) emptyState.classList.remove('d-none');
+            return;
+        }
 
         if (qEl) qEl.textContent = data.quota;
         if (rEl) rEl.textContent = data.registered;
@@ -291,118 +344,160 @@ document.addEventListener('DOMContentLoaded', function () {
         if (pEl) pEl.textContent = data.pending;
 
         if (tbody) {
-            let html = '';
-            data.participants.forEach(p => {
-                let statusBadge = '<span class="badge bg-success-subtle text-success rounded-pill px-2-5 py-1 fw-semibold">Approved</span>';
-                let actionContent = '<span class="text-muted extra-small fst-italic">Confirmed</span>';
+            if (!data.participants || data.participants.length === 0) {
+                tbody.innerHTML = '';
+                if (emptyState) emptyState.classList.remove('d-none');
+            } else {
+                if (emptyState) emptyState.classList.add('d-none');
+                let html = '';
+                data.participants.forEach(p => {
+                    let statusBadge = '<span class="badge bg-secondary-subtle text-secondary rounded-pill px-2-5 py-1 fw-semibold">' + p.status + '</span>';
+                    let actionContent = '<span class="text-muted extra-small fst-italic">-</span>';
 
-                if (p.status === 'Pending Approval') {
-                    statusBadge = '<span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-3 py-1 fw-semibold">Pending Approval</span>';
-                    actionContent = `
-                        <div class="d-inline-flex align-items-center gap-1">
-                            <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-2 py-0-5 fw-semibold d-inline-flex align-items-center gap-1 btn-inline-approve" data-name="${p.name}">
-                                <i class="ti ti-check"></i> Approve
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-2 py-0-5 fw-semibold d-inline-flex align-items-center gap-1 btn-inline-reject" data-name="${p.name}">
-                                <i class="ti ti-x"></i> Reject
-                            </button>
-                        </div>
-                    `;
-                } else if (p.status === 'Rejected') {
-                    statusBadge = '<span class="badge bg-danger-subtle text-danger rounded-pill px-2-5 py-1 fw-semibold">Rejected</span>';
-                    actionContent = '<span class="text-muted extra-small">Over-quota</span>';
-                }
-
-                html += `
-                    <tr class="inline-participant-row">
-                        <td class="text-center align-middle text-muted fw-semibold">${p.no}</td>
-                        <td class="text-center align-middle">
-                            <div class="d-inline-flex align-items-center text-start gap-2">
-                                <div class="avatar avatar-sm rounded-circle bg-${p.color}-subtle text-${p.color} fw-bold flex-shrink-0">${p.initials}</div>
-                                <div>
-                                    <div class="fw-bold text-dark small">${p.name}</div>
-                                    <div class="extra-small text-muted">${p.email}</div>
-                                </div>
+                    if (p.status === 'Pending') {
+                        statusBadge = '<span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-3 py-1 fw-semibold">Pending Approval</span>';
+                        actionContent = `
+                            <div class="d-inline-flex align-items-center gap-1">
+                                <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-2 py-0-5 fw-semibold d-inline-flex align-items-center gap-1 btn-action-approve" data-id="${p.id}" data-name="${p.name}">
+                                    <i class="ti ti-check"></i> Approve
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-2 py-0-5 fw-semibold d-inline-flex align-items-center gap-1 btn-action-reject" data-id="${p.id}" data-name="${p.name}">
+                                    <i class="ti ti-x"></i> Reject
+                                </button>
                             </div>
-                        </td>
-                        <td class="text-center align-middle small fw-semibold text-secondary">${p.nip}</td>
-                        <td class="text-center align-middle small text-dark">${p.dept}</td>
-                        <td class="text-center align-middle small text-muted">${p.date}</td>
-                        <td class="text-center align-middle inline-status-cell">${statusBadge}</td>
-                        <td class="text-center align-middle inline-action-cell">${actionContent}</td>
-                    </tr>
-                `;
-            });
-            tbody.innerHTML = html;
+                        `;
+                    } else if (p.status === 'Approved') {
+                        statusBadge = '<span class="badge bg-success-subtle text-success rounded-pill px-2-5 py-1 fw-semibold">Approved</span>';
+                        actionContent = `
+                            <div class="d-inline-flex align-items-center gap-1">
+                                <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-2-5 py-0-5 fw-semibold d-inline-flex align-items-center gap-1 btn-action-complete" data-id="${p.id}" data-name="${p.name}">
+                                    <i class="ti ti-check-double"></i> Complete
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-2 py-0-5 fw-semibold d-inline-flex align-items-center gap-1 btn-action-reject" data-id="${p.id}" data-name="${p.name}">
+                                    <i class="ti ti-x"></i> Reject
+                                </button>
+                            </div>
+                        `;
+                    } else if (p.status === 'Completed') {
+                        statusBadge = '<span class="badge bg-info-subtle text-info rounded-pill px-2-5 py-1 fw-semibold">Completed</span>';
+                        actionContent = '<span class="text-muted extra-small fst-italic">Completed & Synced</span>';
+                    } else if (p.status === 'Rejected') {
+                        statusBadge = '<span class="badge bg-danger-subtle text-danger rounded-pill px-2-5 py-1 fw-semibold">Rejected</span>';
+                        actionContent = '<span class="text-muted extra-small text-danger">Rejected</span>';
+                    }
+
+                    html += `
+                        <tr class="inline-participant-row" data-id="${p.id}">
+                            <td class="text-center align-middle text-muted fw-semibold">${p.no}</td>
+                            <td class="text-center align-middle">
+                                <div class="d-inline-flex align-items-center text-start gap-2">
+                                    <div class="avatar avatar-sm rounded-circle bg-${p.color}-subtle text-${p.color} fw-bold flex-shrink-0">${p.initials}</div>
+                                    <div>
+                                        <div class="fw-bold text-dark small">${p.name}</div>
+                                        <div class="extra-small text-muted">${p.email}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-center align-middle small fw-semibold text-secondary">${p.nip}</td>
+                            <td class="text-center align-middle small text-dark">${p.dept}</td>
+                            <td class="text-center align-middle small text-muted">${p.date}</td>
+                            <td class="text-center align-middle inline-status-cell">${statusBadge}</td>
+                            <td class="text-center align-middle inline-action-cell">${actionContent}</td>
+                        </tr>
+                    `;
+                });
+                tbody.innerHTML = html;
+            }
         }
     };
 
     // Render Tab 2 (By Employee)
-    window.renderInlineTrackingByEmployee = function(nip) {
-        const emp = inlineEmployeeStore[nip] || inlineEmployeeStore['20210045'];
+    window.renderInlineTrackingByEmployee = function(empId) {
+        const emp = liveEmployeeStore[String(empId)];
         
         const avatarEl = document.getElementById('inlineEmpProfileAvatar');
         const nameEl = document.getElementById('inlineEmpProfileName');
         const metaEl = document.getElementById('inlineEmpProfileMeta');
         const totalEl = document.getElementById('inlineEmpProfileTotal');
         const tbody = document.getElementById('tbodyInlineByEmployee');
+        const emptyState = document.getElementById('emptyStateInlineByEmployee');
+
+        if (!emp) {
+            if (avatarEl) avatarEl.textContent = '-';
+            if (nameEl) nameEl.textContent = 'No Employee Selected';
+            if (metaEl) metaEl.textContent = 'No registered employees found.';
+            if (totalEl) totalEl.textContent = '0 Applications';
+            if (tbody) tbody.innerHTML = '';
+            if (emptyState) emptyState.classList.remove('d-none');
+            return;
+        }
 
         if (avatarEl) avatarEl.textContent = emp.initials;
         if (nameEl) nameEl.textContent = emp.name;
         if (metaEl) metaEl.innerHTML = `NIP: ${emp.nip} &bull; ${emp.role}`;
-        if (totalEl) totalEl.textContent = `${emp.trainings.length} Application${emp.trainings.length > 1 ? 's' : ''}`;
+        if (totalEl) totalEl.textContent = `${emp.trainings.length} Application${emp.trainings.length !== 1 ? 's' : ''}`;
 
         if (tbody) {
-            let html = '';
-            emp.trainings.forEach(t => {
-                let badge = '<span class="badge bg-success-subtle text-success rounded-pill px-2-5 py-1 fw-semibold">Approved</span>';
-                let actionHtml = '<span class="text-muted extra-small fst-italic">Confirmed</span>';
+            if (!emp.trainings || emp.trainings.length === 0) {
+                tbody.innerHTML = '';
+                if (emptyState) emptyState.classList.remove('d-none');
+            } else {
+                if (emptyState) emptyState.classList.add('d-none');
+                let html = '';
+                emp.trainings.forEach(t => {
+                    let badge = '<span class="badge bg-secondary-subtle text-secondary rounded-pill px-2-5 py-1 fw-semibold">' + t.status + '</span>';
+                    let actionHtml = '<span class="text-muted extra-small fst-italic">-</span>';
 
-                if (t.status === 'Pending Approval') {
-                    badge = '<span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-3 py-1 fw-semibold">Pending Approval</span>';
-                    actionHtml = `
-                        <div class="d-inline-flex align-items-center gap-1">
-                            <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-2 py-0-5 fw-semibold d-inline-flex align-items-center gap-1 btn-inline-emp-approve" data-title="${t.title}" data-name="${emp.name}">
-                                <i class="ti ti-check"></i> Approve
+                    if (t.status === 'Pending') {
+                        badge = '<span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-3 py-1 fw-semibold">Pending Approval</span>';
+                        actionHtml = `
+                            <div class="d-inline-flex align-items-center gap-1">
+                                <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-2 py-0-5 fw-semibold d-inline-flex align-items-center gap-1 btn-action-approve" data-id="${t.reg_id}" data-name="${emp.name}">
+                                    <i class="ti ti-check"></i> Approve
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-2 py-0-5 fw-semibold d-inline-flex align-items-center gap-1 btn-action-reject" data-id="${t.reg_id}" data-name="${emp.name}">
+                                    <i class="ti ti-x"></i> Reject
+                                </button>
+                            </div>
+                        `;
+                    } else if (t.status === 'Approved') {
+                        badge = '<span class="badge bg-success-subtle text-success rounded-pill px-2-5 py-1 fw-semibold">Approved</span>';
+                        actionHtml = `
+                            <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-2-5 py-0-5 fw-semibold d-inline-flex align-items-center gap-1 btn-action-complete" data-id="${t.reg_id}" data-name="${emp.name}">
+                                <i class="ti ti-check-double"></i> Complete
                             </button>
-                            <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-2 py-0-5 fw-semibold d-inline-flex align-items-center gap-1 btn-inline-emp-reject" data-title="${t.title}" data-name="${emp.name}">
-                                <i class="ti ti-x"></i> Reject
-                            </button>
-                        </div>
+                        `;
+                    } else if (t.status === 'Completed') {
+                        badge = '<span class="badge bg-info-subtle text-info rounded-pill px-2-5 py-1 fw-semibold">Completed</span>';
+                        actionHtml = '<span class="text-muted extra-small fst-italic">Completed</span>';
+                    } else if (t.status === 'Rejected') {
+                        badge = '<span class="badge bg-danger-subtle text-danger rounded-pill px-2-5 py-1 fw-semibold">Rejected</span>';
+                        actionHtml = '<span class="text-muted extra-small">Rejected</span>';
+                    }
+
+                    html += `
+                        <tr class="inline-employee-row" data-id="${t.reg_id}">
+                            <td class="text-center align-middle text-muted fw-semibold">${t.no}</td>
+                            <td class="text-center align-middle">
+                                <div class="fw-bold text-dark small">${t.title}</div>
+                                <div class="extra-small text-muted">Code: ${t.code}</div>
+                            </td>
+                            <td class="text-center align-middle">
+                                <span class="badge rounded-pill px-2-5 py-0-5 fw-semibold" style="background-color: ${t.catBg}; color: ${t.catCol};">${t.cat}</span>
+                            </td>
+                            <td class="text-center align-middle small text-dark">${t.date}</td>
+                            <td class="text-center align-middle small text-muted">${t.sub}</td>
+                            <td class="text-center align-middle emp-status-cell">${badge}</td>
+                            <td class="text-center align-middle emp-action-cell">${actionHtml}</td>
+                        </tr>
                     `;
-                } else if (t.status === 'Completed') {
-                    badge = '<span class="badge bg-info-subtle text-info rounded-pill px-2-5 py-1 fw-semibold">Completed</span>';
-                    actionHtml = '<span class="text-muted extra-small fst-italic">Completed</span>';
-                } else if (t.status === 'Rejected') {
-                    badge = '<span class="badge bg-danger-subtle text-danger rounded-pill px-2-5 py-1 fw-semibold">Rejected</span>';
-                    actionHtml = '<span class="text-muted extra-small">Rejected</span>';
-                } else if (t.status === 'Approved') {
-                    badge = '<span class="badge bg-success-subtle text-success rounded-pill px-2-5 py-1 fw-semibold">Approved</span>';
-                    actionHtml = '<span class="text-muted extra-small fst-italic">Confirmed</span>';
-                }
-
-                html += `
-                    <tr class="inline-employee-row">
-                        <td class="text-center align-middle text-muted fw-semibold">${t.no}</td>
-                        <td class="text-center align-middle">
-                            <div class="fw-bold text-dark small">${t.title}</div>
-                            <div class="extra-small text-muted">Code: ${t.code}</div>
-                        </td>
-                        <td class="text-center align-middle">
-                            <span class="badge rounded-pill px-2-5 py-0-5 fw-semibold" style="background-color: ${t.catBg}; color: ${t.catCol};">${t.cat}</span>
-                        </td>
-                        <td class="text-center align-middle small text-dark">${t.date}</td>
-                        <td class="text-center align-middle small text-muted">${t.sub}</td>
-                        <td class="text-center align-middle emp-status-cell">${badge}</td>
-                        <td class="text-center align-middle emp-action-cell">${actionHtml}</td>
-                    </tr>
-                `;
-            });
-            tbody.innerHTML = html;
+                });
+                tbody.innerHTML = html;
+            }
         }
     };
 
-    // Select Training Change Listener
+    // Change listeners for dropdowns
     const selectTraining = document.getElementById('selectInlineTraining');
     if (selectTraining) {
         selectTraining.addEventListener('change', function () {
@@ -410,7 +505,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Select Employee Change Listener
     const selectEmployee = document.getElementById('selectInlineEmployee');
     if (selectEmployee) {
         selectEmployee.addEventListener('change', function () {
@@ -418,7 +512,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Live Search Filter for Participants
+    // Live search filter for participants roster
     const searchInput = document.getElementById('searchInlineParticipant');
     if (searchInput) {
         searchInput.addEventListener('input', function () {
@@ -431,169 +525,159 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Approve / Reject Actions within Table
-    document.addEventListener('click', function (e) {
-        const approveBtn = e.target.closest('.btn-inline-approve');
+    // Server-backed status update helper
+    async function updateRegistrationStatus(regId, status, reason = '') {
+        const url = `/manage/training-schedule/registrations/${regId}/status`;
+        const res = await fetch(url, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ status: status, reason: reason })
+        });
+        return await res.json();
+    }
+
+    // Server-backed completion helper
+    async function completeRegistration(regId) {
+        const url = `/manage/training-schedule/registrations/${regId}/complete`;
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
+            }
+        });
+        return await res.json();
+    }
+
+    // Action button delegated clicks
+    document.addEventListener('click', async function (e) {
+        // 1. Approve
+        const approveBtn = e.target.closest('.btn-action-approve');
         if (approveBtn) {
-            const row = approveBtn.closest('tr');
+            const regId = approveBtn.getAttribute('data-id');
             const name = approveBtn.getAttribute('data-name') || 'Participant';
-            if (row) {
-                const statusCell = row.querySelector('.inline-status-cell');
-                const actionCell = row.querySelector('.inline-action-cell');
-                if (statusCell) {
-                    statusCell.innerHTML = '<span class="badge bg-success-subtle text-success rounded-pill px-2-5 py-1 fw-semibold">Approved</span>';
-                }
-                if (actionCell) {
-                    actionCell.innerHTML = '<span class="text-muted extra-small fst-italic">Confirmed</span>';
-                }
-            }
+            approveBtn.disabled = true;
 
-            // Update pending / approved metric counts
-            const pEl = document.getElementById('inlineMetricPending');
-            const aEl = document.getElementById('inlineMetricApproved');
-            if (pEl && parseInt(pEl.textContent) > 0) {
-                pEl.textContent = parseInt(pEl.textContent) - 1;
-            }
-            if (aEl) {
-                aEl.textContent = parseInt(aEl.textContent) + 1;
-            }
-
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    toast: true,
-                    position: 'top-end',
-                    icon: 'success',
-                    title: `Approved application for ${name}`,
-                    showConfirmButton: false,
-                    timer: 2500
-                });
-            } else {
-                alert(`Approved application for ${name}`);
+            try {
+                const result = await updateRegistrationStatus(regId, 'Approved');
+                if (result.success) {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            toast: true, position: 'top-end', icon: 'success',
+                            title: `Approved application for ${name}`,
+                            showConfirmButton: false, timer: 2000
+                        });
+                    }
+                    setTimeout(() => window.location.reload(), 600);
+                } else {
+                    alert(result.message || 'Failed to approve registration.');
+                    approveBtn.disabled = false;
+                }
+            } catch (err) {
+                alert('Network error while approving registration.');
+                approveBtn.disabled = false;
             }
             return;
         }
 
-        const rejectBtn = e.target.closest('.btn-inline-reject');
+        // 2. Reject
+        const rejectBtn = e.target.closest('.btn-action-reject');
         if (rejectBtn) {
-            const row = rejectBtn.closest('tr');
+            const regId = rejectBtn.getAttribute('data-id');
             const name = rejectBtn.getAttribute('data-name') || 'Participant';
-            if (row) {
-                const statusCell = row.querySelector('.inline-status-cell');
-                const actionCell = row.querySelector('.inline-action-cell');
-                if (statusCell) {
-                    statusCell.innerHTML = '<span class="badge bg-danger-subtle text-danger rounded-pill px-2-5 py-1 fw-semibold">Rejected</span>';
-                }
-                if (actionCell) {
-                    actionCell.innerHTML = '<span class="text-muted extra-small">Rejected</span>';
-                }
+
+            if (!confirm(`Are you sure you want to reject the application for ${name}?`)) {
+                return;
             }
 
-            // Update pending metric count
-            const pEl = document.getElementById('inlineMetricPending');
-            if (pEl && parseInt(pEl.textContent) > 0) {
-                pEl.textContent = parseInt(pEl.textContent) - 1;
-            }
-
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    toast: true,
-                    position: 'top-end',
-                    icon: 'info',
-                    title: `Application rejected for ${name}`,
-                    showConfirmButton: false,
-                    timer: 2500
-                });
-            } else {
-                alert(`Application rejected for ${name}`);
+            rejectBtn.disabled = true;
+            try {
+                const result = await updateRegistrationStatus(regId, 'Rejected');
+                if (result.success) {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            toast: true, position: 'top-end', icon: 'info',
+                            title: `Rejected application for ${name}`,
+                            showConfirmButton: false, timer: 2000
+                        });
+                    }
+                    setTimeout(() => window.location.reload(), 600);
+                } else {
+                    alert(result.message || 'Failed to reject registration.');
+                    rejectBtn.disabled = false;
+                }
+            } catch (err) {
+                alert('Network error while rejecting registration.');
+                rejectBtn.disabled = false;
             }
             return;
         }
 
-        // By-Employee View: Approve
-        const empApproveBtn = e.target.closest('.btn-inline-emp-approve');
-        if (empApproveBtn) {
-            const row = empApproveBtn.closest('tr');
-            const title = empApproveBtn.getAttribute('data-title') || 'Training';
-            const name = empApproveBtn.getAttribute('data-name') || 'Employee';
-            if (row) {
-                const statusCell = row.querySelector('.emp-status-cell');
-                const actionCell = row.querySelector('.emp-action-cell');
-                if (statusCell) {
-                    statusCell.innerHTML = '<span class="badge bg-success-subtle text-success rounded-pill px-2-5 py-1 fw-semibold">Approved</span>';
-                }
-                if (actionCell) {
-                    actionCell.innerHTML = '<span class="text-muted extra-small fst-italic">Confirmed</span>';
-                }
+        // 3. Complete
+        const completeBtn = e.target.closest('.btn-action-complete');
+        if (completeBtn) {
+            const regId = completeBtn.getAttribute('data-id');
+            const name = completeBtn.getAttribute('data-name') || 'Participant';
+
+            if (!confirm(`Mark training as Completed for ${name}? This will record their attendance and credit learning hours.`)) {
+                return;
             }
 
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    toast: true,
-                    position: 'top-end',
-                    icon: 'success',
-                    title: `Approved: "${title}" for ${name}`,
-                    showConfirmButton: false,
-                    timer: 2500
-                });
-            } else {
-                alert(`Approved: "${title}" for ${name}`);
-            }
-            return;
-        }
-
-        // By-Employee View: Reject
-        const empRejectBtn = e.target.closest('.btn-inline-emp-reject');
-        if (empRejectBtn) {
-            const row = empRejectBtn.closest('tr');
-            const title = empRejectBtn.getAttribute('data-title') || 'Training';
-            const name = empRejectBtn.getAttribute('data-name') || 'Employee';
-            if (row) {
-                const statusCell = row.querySelector('.emp-status-cell');
-                const actionCell = row.querySelector('.emp-action-cell');
-                if (statusCell) {
-                    statusCell.innerHTML = '<span class="badge bg-danger-subtle text-danger rounded-pill px-2-5 py-1 fw-semibold">Rejected</span>';
+            completeBtn.disabled = true;
+            try {
+                const result = await completeRegistration(regId);
+                if (result.success) {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            toast: true, position: 'top-end', icon: 'success',
+                            title: `Training completed for ${name}`,
+                            showConfirmButton: false, timer: 2000
+                        });
+                    }
+                    setTimeout(() => window.location.reload(), 600);
+                } else {
+                    alert(result.message || 'Failed to complete registration.');
+                    completeBtn.disabled = false;
                 }
-                if (actionCell) {
-                    actionCell.innerHTML = '<span class="text-muted extra-small">Rejected</span>';
-                }
-            }
-
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    toast: true,
-                    position: 'top-end',
-                    icon: 'info',
-                    title: `Rejected: "${title}" for ${name}`,
-                    showConfirmButton: false,
-                    timer: 2500
-                });
-            } else {
-                alert(`Rejected: "${title}" for ${name}`);
+            } catch (err) {
+                alert('Network error while completing registration.');
+                completeBtn.disabled = false;
             }
             return;
         }
     });
 
-    // Download Roster Button
-    const btnExport = document.getElementById('btnExportInlineRoster');
-    if (btnExport) {
-        btnExport.addEventListener('click', function () {
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Roster Downloaded',
-                    text: 'Participant list downloaded as CSV / Excel format.',
-                    timer: 2000,
-                    showConfirmButton: false
-                });
-            } else {
-                alert('Participant roster downloaded!');
-            }
-        });
+    // Initial render
+    const initialTrainingId = '{{ $firstTrainingId }}';
+    const initialEmpId = '{{ $firstEmpId }}';
+
+    if (initialTrainingId) {
+        renderInlineTrackingByTraining(initialTrainingId);
+    }
+    if (initialEmpId) {
+        renderInlineTrackingByEmployee(initialEmpId);
     }
 
-    // Initial render
-    renderInlineTrackingByTraining('1');
-    renderInlineTrackingByEmployee('20210045');
+    // Check query params for tab/training preselection
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabParam = urlParams.get('tab');
+    const trainingParam = urlParams.get('training');
+
+    if (tabParam === 'participants') {
+        const trackingTabBtn = document.getElementById('tab-participant-tracking-btn');
+        if (trackingTabBtn) {
+            const tabTrigger = new bootstrap.Tab(trackingTabBtn);
+            tabTrigger.show();
+        }
+        if (trainingParam && selectTraining) {
+            selectTraining.value = trainingParam;
+            renderInlineTrackingByTraining(trainingParam);
+        }
+    }
 });
 </script>

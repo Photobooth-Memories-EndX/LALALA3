@@ -1,87 +1,28 @@
 @php
-    $myHistory = $myHistory ?? null;
-    if ($myHistory === null) {
-        $userTrainings = \Illuminate\Support\Facades\Auth::check() 
-            ? \App\Models\OfflineTrainingUser::with('training')->where('user_id', \Illuminate\Support\Facades\Auth::id())->get()
-            : collect();
-        if ($userTrainings->isNotEmpty()) {
-            $myHistory = $userTrainings->map(function ($reg, $idx) {
+    $myHistory = $myHistory ?? collect();
+    if ($myHistory->isEmpty() && \Illuminate\Support\Facades\Auth::check()) {
+        $userId = \Illuminate\Support\Facades\Auth::id();
+        $myHistory = \App\Models\OfflineTrainingRegister::with('training')
+            ->where('user_id', $userId)
+            ->orderBy('registered_at', 'desc')
+            ->get()
+            ->map(function ($reg, $idx) {
                 $training = $reg->training;
                 return (object)[
-                    'id'          => $idx + 1,
-                    'modal_id'    => $training->id ?? ($idx + 1),
-                    'title'       => $training->title ?? 'Training',
+                    'id'          => $reg->id,
+                    'modal_id'    => $training->id ?? $reg->id,
+                    'title'       => $training->title ?? 'Training Schedule',
                     'category'    => $training->category ?? 'General',
-                    'start_date'  => $training->start_date ?? now(),
+                    'start_date'  => $training->start_date ?? $reg->registered_at,
                     'end_date'    => $training->end_date ?? null,
                     'start_time'  => $training->start_time ?? '08:00:00',
                     'end_time'    => $training->end_time ?? '16:00:00',
                     'location'    => $training->location ?? '-',
                     'instructor'  => $training->instructor ?? '-',
                     'description' => $training->description ?? '',
-                    'status'      => $reg->attendance ? 'Completed' : 'Approved',
+                    'status'      => $reg->status,
                 ];
             });
-        } else {
-            $myHistory = collect([
-                (object)[
-                    'id'          => 1,
-                    'modal_id'    => 1,
-                    'title'       => 'Leadership Development Program',
-                    'category'    => 'Soft Skill',
-                    'start_date'  => '2026-09-18',
-                    'end_date'    => '2026-09-20',
-                    'start_time'  => '08:00:00',
-                    'end_time'    => '16:00:00',
-                    'location'    => 'Training Room Building A, 2nd Fl.',
-                    'instructor'  => 'Dr. Hendra Wijaya, M.M.',
-                    'description' => 'This leadership development course is designed to enhance managerial capabilities, team communication, strategic decision-making, and effective delegation skills for current supervisors and emerging managers.',
-                    'status'      => 'Approved',
-                ],
-                (object)[
-                    'id'          => 2,
-                    'modal_id'    => 2,
-                    'title'       => 'Excel Advanced for Data Analysis',
-                    'category'    => 'Technical Skill',
-                    'start_date'  => '2026-09-18',
-                    'end_date'    => '2026-09-19',
-                    'start_time'  => '09:00:00',
-                    'end_time'    => '15:00:00',
-                    'location'    => 'Computer Lab 2, 3rd Fl.',
-                    'instructor'  => 'Bambang Sujarwo, S.Kom.',
-                    'description' => 'Advanced formulas, XLOOKUP/INDEX-MATCH, dynamic array functions, PivotTables, Power Query integration, and automated dashboard visualization using Microsoft Excel.',
-                    'status'      => 'Pending',
-                ],
-                (object)[
-                    'id'          => 3,
-                    'modal_id'    => 5,
-                    'title'       => 'Basic Fire Fighting & Safety Protocol',
-                    'category'    => 'Compliance & Safety',
-                    'start_date'  => '2026-07-20',
-                    'end_date'    => '2026-07-20',
-                    'start_time'  => '08:00:00',
-                    'end_time'    => '12:00:00',
-                    'location'    => 'HSE Training Ground',
-                    'instructor'  => 'HSE Team Krakatau Posco',
-                    'description' => 'Basic industrial fire emergency response, standard fire extinguisher usage, and factory evacuation procedures.',
-                    'status'      => 'Completed',
-                ],
-                (object)[
-                    'id'          => 4,
-                    'modal_id'    => 6,
-                    'title'       => 'PLC Siemens S7-1500 Advanced',
-                    'category'    => 'Technical Skill',
-                    'start_date'  => '2026-06-12',
-                    'end_date'    => '2026-06-14',
-                    'start_time'  => '09:00:00',
-                    'end_time'    => '16:00:00',
-                    'location'    => 'Automation Workshop',
-                    'instructor'  => 'Ahmad Fauzi, S.T.',
-                    'description' => 'Advanced industrial automation ladder and structured text programming for Siemens S7-1500, PROFINET network diagnostic, and SCADA integration.',
-                    'status'      => 'Rejected',
-                ],
-            ]);
-        }
     }
 @endphp
 
@@ -179,10 +120,13 @@
                                             data-description="{{ $item->description }}">
                                         Detail
                                     </button>
-                                    <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3 py-1 fw-semibold d-inline-flex align-items-center gap-1" onclick="confirmCancelRegistration({{ $item->id }})" title="Cancel Registration">
-                                        <i class="ti ti-trash"></i>
-                                        <span>Cancel</span>
-                                    </button>
+                                    <form action="{{ route('trainingplan.cancel', $item->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to cancel your training registration?');">
+                                        @csrf
+                                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3 py-1 fw-semibold d-inline-flex align-items-center gap-1" title="Cancel Registration">
+                                            <i class="ti ti-trash"></i>
+                                            <span>Cancel</span>
+                                        </button>
+                                    </form>
                                 </div>
                             @else
                                 <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3"
@@ -215,27 +159,3 @@
         </table>
     </div>
 </div>
-
-<script>
-function confirmCancelRegistration(id) {
-    if (confirm('Are you sure you want to cancel your training registration?')) {
-        // Form submission or API fetch call to delete registration record
-        console.log('Cancelling registration for ID:', id);
-
-        const row = document.getElementById('history-row-' + id);
-        if (row) {
-            row.style.transition = 'all 0.3s ease';
-            row.style.opacity = '0';
-            setTimeout(function () {
-                row.remove();
-                const remainingRows = document.querySelectorAll('#myHistoryTable tbody tr').length;
-                const totalBadge = document.getElementById('myHistoryTotalBadge');
-                if (totalBadge) {
-                    totalBadge.textContent = 'Total: ' + remainingRows + ' Trainings';
-                }
-            }, 300);
-        }
-    }
-}
-window.confirmCancelRegistration = confirmCancelRegistration;
-</script>

@@ -199,6 +199,26 @@
             <span>Back</span>
         </a>
 
+        @if (session('success'))
+            <div class="alert alert-success alert-dismissible rounded-4 shadow-sm mb-4" role="alert">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="ti ti-check fs-2 text-success"></i>
+                    <div class="fw-semibold">{{ session('success') }}</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
+
+        @if (session('error'))
+            <div class="alert alert-danger alert-dismissible rounded-4 shadow-sm mb-4" role="alert">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="ti ti-alert-triangle fs-2 text-danger"></i>
+                    <div class="fw-semibold">{{ session('error') }}</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
+
         {{-- Header Hero Card: 72x72px icon box, bg #eef2ff, color #003b6d --}}
         <div class="card border border-light-subtle shadow-sm p-4 mb-4 rounded-4 bg-white">
             <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
