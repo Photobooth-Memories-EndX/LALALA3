@@ -68,7 +68,7 @@
                     <th class="w-1 text-center align-middle py-3">NO</th>
                     <th class="text-center align-middle py-3" style="min-width: 200px;">TRAINING NAME</th>
                     <th class="text-center align-middle py-3">CATEGORY</th>
-                    <th class="text-center align-middle py-3" style="min-width: 110px;">DATE</th>
+                    <th class="text-center align-middle py-3" style="min-width: 140px;">DATE</th>
                     <th class="text-center align-middle py-3" style="min-width: 120px;">TIME</th>
                     <th class="text-center align-middle py-3">LOCATION</th>
                     <th class="text-center align-middle py-3">SYLLABUS</th>
@@ -127,8 +127,16 @@
                                 {{ $item->category }}
                             </span>
                         </td>
-                        <td class="text-center align-middle" style="min-width: 110px;">
-                            <div class="fw-semibold text-dark">{{ $startDate->format('d M Y') }}</div>
+                        <td class="fw-semibold text-dark text-center align-middle" style="min-width: 140px;">
+                            @if($item->end_date && $item->start_date != $item->end_date)
+                                @if(\Carbon\Carbon::parse($item->start_date)->format('M Y') == \Carbon\Carbon::parse($item->end_date)->format('M Y'))
+                                    {{ \Carbon\Carbon::parse($item->start_date)->format('d') }} - {{ \Carbon\Carbon::parse($item->end_date)->format('d M Y') }}
+                                @else
+                                    {{ \Carbon\Carbon::parse($item->start_date)->format('d M') }} - {{ \Carbon\Carbon::parse($item->end_date)->format('d M Y') }}
+                                @endif
+                            @else
+                                {{ \Carbon\Carbon::parse($item->start_date)->format('d M Y') }}
+                            @endif
                         </td>
                         <td class="text-center align-middle" style="min-width: 120px;">
                             <div class="text-muted small">{{ $startTime }} - {{ $endTime }} WIB</div>
@@ -181,8 +189,11 @@
                 @empty
                     <tr>
                         <td colspan="10" class="text-center py-5 text-muted">
-                            <i class="ti ti-calendar-off fs-1 d-block mb-2 text-secondary"></i>
-                            No available trainings open for registration right now.
+                            <div class="avatar avatar-xl rounded-circle bg-light text-muted mb-3 mx-auto">
+                                <i class="ti ti-calendar-off fs-1"></i>
+                            </div>
+                            <h4 class="fw-bold text-dark mb-1">No Training Schedules Available</h4>
+                            <p class="text-muted small mb-0">No active training sessions open for registration right now. Click '+ Add Training Schedule' in Manage page to publish new trainings.</p>
                         </td>
                     </tr>
                 @endforelse

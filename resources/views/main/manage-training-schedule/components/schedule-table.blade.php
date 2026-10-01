@@ -9,7 +9,7 @@
                     <th class="w-1 py-3">NO</th>
                     <th class="py-3" style="min-width: 200px;">TRAINING TITLE</th>
                     <th class="py-3">CATEGORY</th>
-                    <th class="py-3" style="min-width: 110px;">DATE</th>
+                    <th class="py-3" style="min-width: 140px;">DATE</th>
                     <th class="py-3" style="min-width: 120px;">TIME</th>
                     <th class="py-3">LOCATION</th>
                     <th class="py-3">INSTRUCTOR</th>
@@ -71,8 +71,16 @@
                                 {{ $item->category }}
                             </span>
                         </td>
-                        <td>
-                            <div class="fw-semibold text-dark" style="min-width: 110px;">{{ $startDate->format('d M Y') }}</div>
+                        <td class="fw-semibold text-dark text-center align-middle" style="min-width: 140px;">
+                            @if($item->end_date && $item->start_date != $item->end_date)
+                                @if(\Carbon\Carbon::parse($item->start_date)->format('M Y') == \Carbon\Carbon::parse($item->end_date)->format('M Y'))
+                                    {{ \Carbon\Carbon::parse($item->start_date)->format('d') }} - {{ \Carbon\Carbon::parse($item->end_date)->format('d M Y') }}
+                                @else
+                                    {{ \Carbon\Carbon::parse($item->start_date)->format('d M') }} - {{ \Carbon\Carbon::parse($item->end_date)->format('d M Y') }}
+                                @endif
+                            @else
+                                {{ \Carbon\Carbon::parse($item->start_date)->format('d M Y') }}
+                            @endif
                         </td>
                         <td>
                             <div class="text-muted small" style="min-width: 120px;">{{ $startTime }} - {{ $endTime }} WIB</div>
@@ -127,8 +135,15 @@
                 @empty
                     <tr>
                         <td colspan="10" class="text-center py-5 text-muted">
-                            <i class="ti ti-calendar-off fs-1 d-block mb-2 text-secondary"></i>
-                            No training schedules found.
+                            <div class="avatar avatar-xl rounded-circle bg-light text-muted mb-3 mx-auto">
+                                <i class="ti ti-calendar-off fs-1"></i>
+                            </div>
+                            <h4 class="fw-bold text-dark mb-1">No Training Schedules Found</h4>
+                            <p class="text-muted small mb-3">No training schedules available in the system yet. Click below to add and publish a new training schedule.</p>
+                            <a href="{{ url('/manage/training-schedule/create') }}" class="btn btn-primary px-4 py-2 rounded-3 fw-semibold d-inline-flex align-items-center gap-2" style="background-color: #003b6d; border-color: #003b6d;">
+                                <i class="ti ti-plus fs-2"></i>
+                                <span>Add Training Schedule</span>
+                            </a>
                         </td>
                     </tr>
                 @endforelse

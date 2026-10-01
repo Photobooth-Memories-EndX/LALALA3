@@ -76,9 +76,9 @@ document.addEventListener('DOMContentLoaded', function () {
             totalBadge.textContent = `Total Schedules: ${visibleCount} Training${visibleCount === 1 ? '' : 's'}`;
         }
 
-        // Toggle Empty State
+        // Toggle Empty State for filter results
         if (emptyState) {
-            if (visibleCount === 0) {
+            if (visibleCount === 0 && rows.length > 0) {
                 emptyState.classList.remove('d-none');
             } else {
                 emptyState.classList.add('d-none');

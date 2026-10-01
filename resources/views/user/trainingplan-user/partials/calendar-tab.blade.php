@@ -116,9 +116,12 @@
                             </div>
                         </div>
                     @empty
-                        <div class="text-center py-4 text-muted small">
-                            <i class="ti ti-calendar-off fs-2 d-block mb-1 text-secondary"></i>
-                            No scheduled training agenda.
+                        <div class="text-center py-5 text-muted">
+                            <div class="avatar avatar-lg rounded-circle bg-light text-muted mb-2 mx-auto">
+                                <i class="ti ti-calendar-off fs-1"></i>
+                            </div>
+                            <h5 class="fw-bold text-dark mb-1">No Scheduled Agenda</h5>
+                            <p class="small text-muted mb-0">No training schedules found. Click '+ Add Training Schedule' in Manage page to publish new trainings.</p>
                         </div>
                     @endforelse
                 </div>
