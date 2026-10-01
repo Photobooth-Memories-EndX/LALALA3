@@ -128,11 +128,96 @@
                 </li>
             </ul>
 
-            <button type="button" class="btn btn-outline-secondary rounded-3 px-3 py-1-5 fw-semibold d-inline-flex align-items-center gap-1" id="btnExportInlineRoster">
+            <a href="{{ route('manage.roster.export') }}" class="btn btn-outline-success rounded-3 px-3 py-1-5 fw-semibold d-inline-flex align-items-center gap-1" id="btnExportInlineRoster" title="Export Participant Roster (CSV / Excel)">
                 <i class="ti ti-download me-1 fs-2"></i>
-                <span>Download</span>
-            </button>
+                <span>Download Roster</span>
+            </a>
         </div>
+    </div>
+
+    {{-- Standardized Participant Tracking Quick Filter Bar --}}
+    <div class="card border border-light-subtle rounded-3 bg-light-subtle p-3 mb-4 shadow-none">
+        <div class="text-secondary small fw-semibold mb-2" style="color: #6c757d !important; font-size: 0.85rem;">
+            Participant Filters &amp; Search
+        </div>
+        <form id="trackingFilterForm" onsubmit="return false;">
+            <div class="d-flex align-items-center gap-2 flex-wrap flex-lg-nowrap">
+                <!-- 1. Category Filter -->
+                <div style="min-width: 130px; flex-shrink: 0;">
+                    <select id="trackingCategorySelect" class="form-select rounded-3 bg-white">
+                        <option value="">All Category</option>
+                        <option value="Soft Skill">Soft Skill</option>
+                        <option value="Technical Skill">Technical Skill</option>
+                        <option value="Compliance & Safety">Compliance & Safety</option>
+                        <option value="Leadership">Leadership</option>
+                    </select>
+                </div>
+
+                <!-- 2. Status Filter -->
+                <div style="min-width: 120px; flex-shrink: 0;">
+                    <select id="trackingStatusSelect" class="form-select rounded-3 bg-white">
+                        <option value="">All Status</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Approved">Approved</option>
+                        <option value="Completed">Completed</option>
+                        <option value="Rejected">Rejected</option>
+                    </select>
+                </div>
+
+                <!-- 3. Month Filter -->
+                <div style="min-width: 110px; flex-shrink: 0;">
+                    <select id="trackingMonthSelect" class="form-select rounded-3 bg-white">
+                        <option value="" selected>All Month</option>
+                        <option value="1">January</option>
+                        <option value="2">February</option>
+                        <option value="3">March</option>
+                        <option value="4">April</option>
+                        <option value="5">May</option>
+                        <option value="6">June</option>
+                        <option value="7">July</option>
+                        <option value="8">August</option>
+                        <option value="9">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                    </select>
+                </div>
+
+                <!-- 4. Year Filter -->
+                <div style="min-width: 100px; flex-shrink: 0;">
+                    <select id="trackingYearSelect" class="form-select rounded-3 bg-white">
+                        <option value="" selected>All Year</option>
+                        <option value="2026">2026</option>
+                        <option value="2025">2025</option>
+                        <option value="2027">2027</option>
+                    </select>
+                </div>
+
+                <!-- 5. Search Input -->
+                <div class="position-relative flex-grow-1" style="min-width: 200px;">
+                    <div class="input-icon">
+                        <span class="input-icon-addon">
+                            <i class="ti ti-search text-muted fs-2"></i>
+                        </span>
+                        <input type="text" id="trackingSearchInput" class="form-control rounded-3 bg-white" 
+                               placeholder="Search participant name, NIP, or department..." autocomplete="off">
+                    </div>
+                </div>
+
+                <!-- 6. Action Buttons -->
+                <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                    <button type="submit" id="btnSubmitTrackingFilter" class="btn btn-primary px-3 rounded-3" 
+                            style="background-color: #003b6d; border-color: #003b6d;" title="Apply Filter">
+                        <i class="ti ti-search fs-2"></i>
+                    </button>
+
+                    <button type="button" id="btnResetTrackingFilter" class="btn btn-outline-primary px-3 rounded-3 d-inline-flex align-items-center justify-content-center" 
+                            style="color: #003b6d; border-color: #003b6d;" title="Reset Filters">
+                        <i class="ti ti-refresh fs-2"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
     </div>
 
     <!-- Tab Content -->
@@ -509,6 +594,75 @@ document.addEventListener('DOMContentLoaded', function () {
     if (selectEmployee) {
         selectEmployee.addEventListener('change', function () {
             renderInlineTrackingByEmployee(this.value);
+        });
+    }
+
+    // Tracking Filter Elements
+    const trackingSearch = document.getElementById('trackingSearchInput');
+    const trackingCategory = document.getElementById('trackingCategorySelect');
+    const trackingStatus = document.getElementById('trackingStatusSelect');
+    const trackingMonth = document.getElementById('trackingMonthSelect');
+    const trackingYear = document.getElementById('trackingYearSelect');
+    const btnResetTracking = document.getElementById('btnResetTrackingFilter');
+    const btnExportRoster = document.getElementById('btnExportInlineRoster');
+
+    function updateRosterExportUrl() {
+        if (!btnExportRoster) return;
+        const params = new URLSearchParams();
+        const activeTrainingId = selectTraining?.value;
+        const activeEmpId = selectEmployee?.value;
+
+        if (activeTrainingId) params.set('training_id', activeTrainingId);
+        if (activeEmpId && document.getElementById('tab-inline-employee')?.classList.contains('active')) {
+            params.set('user_id', activeEmpId);
+        }
+        if (trackingStatus?.value) params.set('status', trackingStatus.value);
+        if (trackingMonth?.value) params.set('month', trackingMonth.value);
+        if (trackingYear?.value) params.set('year', trackingYear.value);
+
+        const baseUrl = '{{ route("manage.roster.export") }}';
+        btnExportRoster.href = params.toString() ? `${baseUrl}?${params.toString()}` : baseUrl;
+    }
+
+    function filterTrackingView() {
+        const q = (trackingSearch?.value || '').toLowerCase().trim();
+        const stat = (trackingStatus?.value || '').trim();
+
+        // 1. Filter rows in Training view
+        const participantRows = document.querySelectorAll('#tbodyInlineByTraining tr.inline-participant-row');
+        participantRows.forEach(r => {
+            const text = r.textContent.toLowerCase();
+            const matchesSearch = !q || text.includes(q);
+            const matchesStatus = !stat || text.includes(stat.toLowerCase());
+            r.style.display = (matchesSearch && matchesStatus) ? '' : 'none';
+        });
+
+        // 2. Filter rows in Employee view
+        const empRows = document.querySelectorAll('#tbodyInlineByEmployee tr.inline-employee-row');
+        empRows.forEach(r => {
+            const text = r.textContent.toLowerCase();
+            const matchesSearch = !q || text.includes(q);
+            const matchesStatus = !stat || text.includes(stat.toLowerCase());
+            r.style.display = (matchesSearch && matchesStatus) ? '' : 'none';
+        });
+
+        updateRosterExportUrl();
+    }
+
+    if (trackingSearch) trackingSearch.addEventListener('input', filterTrackingView);
+    if (trackingCategory) trackingCategory.addEventListener('change', filterTrackingView);
+    if (trackingStatus) trackingStatus.addEventListener('change', filterTrackingView);
+    if (trackingMonth) trackingMonth.addEventListener('change', filterTrackingView);
+    if (trackingYear) trackingYear.addEventListener('change', filterTrackingView);
+
+    if (btnResetTracking) {
+        btnResetTracking.addEventListener('click', function () {
+            if (trackingSearch) trackingSearch.value = '';
+            if (trackingCategory) trackingCategory.value = '';
+            if (trackingStatus) trackingStatus.value = '';
+            if (trackingMonth) trackingMonth.value = '';
+            if (trackingYear) trackingYear.value = '';
+            filterTrackingView();
         });
     }
 

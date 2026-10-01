@@ -88,6 +88,7 @@ Route::middleware(['auth'])->group(function () {
 
 
     Route::get('/trainingplan', [OfflineTrainingController::class, 'userIndex'])->name('trainingplan.user.index');
+    Route::get('/training-schedule/{id}/download-syllabus', [OfflineTrainingController::class, 'downloadSyllabusPdf'])->name('training.download-syllabus');
     Route::post('/trainingplan/{training}/register', [OfflineTrainingController::class, 'register'])->name('trainingplan.register');
     Route::post('/trainingplan/{registration}/cancel', [OfflineTrainingController::class, 'cancelRegistration'])->name('trainingplan.cancel');
 
@@ -281,6 +282,8 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
     Route::get('/', [ManageDashboardController::class, 'index'])->name('manage.index');
     Route::get('/dashboard', [ManageDashboardController::class, 'index'])->name('manage.dashboard');
     Route::get('/training-schedule', [OfflineTrainingController::class, 'index'])->name('manage.training-schedule.index');
+    Route::get('/training-schedule/export', [OfflineTrainingController::class, 'exportSchedule'])->name('manage.training.export');
+    Route::get('/training-schedule/export-roster', [OfflineTrainingController::class, 'exportRoster'])->name('manage.roster.export');
     Route::get('/training-schedule/create', [OfflineTrainingController::class, 'create'])->name('manage.training-schedule.create');
     Route::post('/training-schedule', [OfflineTrainingController::class, 'store'])->name('manage.training-schedule.store');
     Route::get('/training-schedule/{training}/edit', [OfflineTrainingController::class, 'edit'])->name('manage.training-schedule.edit');

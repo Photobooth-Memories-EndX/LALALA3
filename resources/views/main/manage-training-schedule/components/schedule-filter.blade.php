@@ -20,7 +20,7 @@
 
                 <!-- 2. Status Select (Width: ~120px) -->
                 <div style="min-width: 120px; flex-shrink: 0;">
-                    <select id="scheduleStatusSelect" class="form-select rounded-3">
+                    <select id="scheduleStatusSelect" name="status" class="form-select rounded-3">
                         <option value="">All Status</option>
                         <option value="open">Open Registration</option>
                         <option value="running">Running</option>
@@ -28,9 +28,28 @@
                     </select>
                 </div>
 
-                <!-- 3. Year Select (Width: ~100px) -->
+                <!-- 3. Month Select (Width: ~110px) -->
+                <div style="min-width: 110px; flex-shrink: 0;">
+                    <select id="scheduleMonthSelect" name="month" class="form-select rounded-3">
+                        <option value="" selected>All Month</option>
+                        <option value="1">January</option>
+                        <option value="2">February</option>
+                        <option value="3">March</option>
+                        <option value="4">April</option>
+                        <option value="5">May</option>
+                        <option value="6">June</option>
+                        <option value="7">July</option>
+                        <option value="8">August</option>
+                        <option value="9">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                    </select>
+                </div>
+
+                <!-- 4. Year Select (Width: ~100px) -->
                 <div style="min-width: 100px; flex-shrink: 0;">
-                    <select id="scheduleYearSelect" class="form-select rounded-3">
+                    <select id="scheduleYearSelect" name="year" class="form-select rounded-3">
                         <option value="" selected>All Year</option>
                         <option value="2026">2026</option>
                         <option value="2025">2025</option>
@@ -38,24 +57,30 @@
                     </select>
                 </div>
 
-                <!-- 4. Search Input (Flex grow 1 with Search Icon on left) -->
-                <div class="position-relative flex-grow-1" style="min-width: 220px;">
+                <!-- 5. Search Input (Flex grow 1 with Search Icon on left) -->
+                <div class="position-relative flex-grow-1" style="min-width: 200px;">
                     <div class="input-icon">
                         <span class="input-icon-addon">
                             <i class="ti ti-search text-muted fs-2"></i>
                         </span>
-                        <input type="text" id="scheduleSearchInput" class="form-control rounded-3" 
+                        <input type="text" id="scheduleSearchInput" name="search" class="form-control rounded-3" 
                                placeholder="Search training title, instructor, or room..." autocomplete="off">
                     </div>
                 </div>
 
-                <!-- 5. Action Buttons Group (Right side) -->
+                <!-- 6. Action Buttons Group (Right side) -->
                 <div class="d-flex align-items-center gap-1 flex-shrink-0">
                     <!-- Search Submit Button -->
                     <button type="submit" id="btnSubmitScheduleFilter" class="btn btn-primary px-3 rounded-3" 
                             style="background-color: #003b6d; border-color: #003b6d;" title="Apply Filter">
                         <i class="ti ti-search fs-2"></i>
                     </button>
+
+                    <!-- Export Download Button -->
+                    <a href="{{ route('manage.training.export') }}" id="btnExportSchedule" class="btn btn-outline-success px-3 rounded-3 d-inline-flex align-items-center justify-content-center" 
+                       title="Export Schedule Data (CSV / Excel)">
+                        <i class="ti ti-download fs-2"></i>
+                    </a>
 
                     <!-- More Filters Modal Trigger Button -->
                     <button type="button" class="btn btn-outline-primary px-3 rounded-3" 

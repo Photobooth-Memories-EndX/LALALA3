@@ -7,10 +7,13 @@ use App\Models\OfflineTrainingRegister;
 use App\Models\OfflineTrainingUser;
 use App\Services\Schedule\OfflineTrainingCompletionService;
 use App\Services\Schedule\OfflineTrainingRegistrationService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class OfflineTrainingController extends Controller
 {
@@ -53,6 +56,15 @@ class OfflineTrainingController extends Controller
                 'closed'  => 'Closed',
             ];
             $query->where('status', $statusMap[strtolower($statusVal)] ?? $statusVal);
+        }
+
+        // Filter Month
+        if ($request->filled('month') && $request->input('month') !== 'all') {
+            $month = (int) $request->input('month');
+            $query->where(function ($q) use ($month) {
+                $q->whereMonth('start_date', $month)
+                  ->orWhereMonth('end_date', $month);
+            });
         }
 
         // Filter Year
@@ -577,5 +589,231 @@ class OfflineTrainingController extends Controller
         })->values();
 
         return view('user.trainingplan-user.index', compact('trainings', 'availableTrainings', 'calendarEvents', 'myHistory', 'selectedDate', 'todaysAgenda'));
+    }
+
+    /**
+     * Download Training Syllabus as PDF.
+     */
+    public function downloadSyllabusPdf($id)
+    {
+        $training = OfflineTraining::findOrFail($id);
+
+        $titleSlug = Str::slug($training->title ?? $training->course_name ?? 'training_syllabus', '_');
+        $fileName = 'Syllabus_' . $titleSlug . '_' . Carbon::now()->format('Ymd') . '.pdf';
+
+        $pdf = Pdf::loadView('pdf.training-syllabus', compact('training'))
+            ->setPaper('a4', 'portrait')
+            ->setOption([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled'      => true,
+                'defaultFont'          => 'sans-serif',
+            ]);
+
+        return $pdf->download($fileName);
+    }
+
+    /**
+     * Export Training Schedule list to CSV format with Category, Status, Month, Year filters.
+     */
+    public function exportSchedule(Request $request): StreamedResponse
+    {
+        $query = OfflineTraining::withCount('registrations');
+
+        if ($request->filled('category') && $request->input('category') !== 'all') {
+            $query->where('category', $request->input('category'));
+        }
+
+        if ($request->filled('status') && $request->input('status') !== 'all') {
+            $statusVal = $request->input('status');
+            $statusMap = [
+                'open'    => 'Open Registration',
+                'running' => 'Running',
+                'closed'  => 'Closed',
+            ];
+            $query->where('status', $statusMap[strtolower($statusVal)] ?? $statusVal);
+        }
+
+        if ($request->filled('month') && $request->input('month') !== 'all') {
+            $month = (int) $request->input('month');
+            $query->where(function ($q) use ($month) {
+                $q->whereMonth('start_date', $month)
+                  ->orWhereMonth('end_date', $month);
+            });
+        }
+
+        if ($request->filled('year') && $request->input('year') !== 'all') {
+            $year = (int) $request->input('year');
+            $query->where(function ($q) use ($year) {
+                $q->whereYear('start_date', $year)
+                  ->orWhereYear('end_date', $year);
+            });
+        }
+
+        $search = $request->input('q') ?? $request->input('search');
+        if (filled($search)) {
+            $search = trim($search);
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('course_name', 'like', "%{$search}%")
+                  ->orWhere('instructor', 'like', "%{$search}%")
+                  ->orWhere('location', 'like', "%{$search}%");
+            });
+        }
+
+        $records = $query->orderBy('start_date', 'asc')->get();
+
+        $fileName = 'Training_Schedule_Export_' . Carbon::now()->format('Ymd_His') . '.csv';
+
+        $headers = [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$fileName}\"",
+            'Pragma'              => 'no-cache',
+            'Cache-Control'       => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires'             => '0',
+        ];
+
+        return Response::stream(function () use ($records) {
+            $handle = fopen('php://output', 'w');
+            // Write UTF-8 BOM for Excel compatibility
+            fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
+
+            // CSV Header
+            fputcsv($handle, [
+                'No',
+                'Training Code',
+                'Training Title',
+                'Category',
+                'Instructor',
+                'Location / Venue',
+                'Start Date',
+                'End Date',
+                'Start Time',
+                'End Time',
+                'Quota',
+                'Registered Count',
+                'Status',
+                'Created At',
+            ]);
+
+            foreach ($records as $index => $item) {
+                $startDate = $item->start_date ? Carbon::parse($item->start_date)->format('Y-m-d') : '-';
+                $endDate = $item->end_date ? Carbon::parse($item->end_date)->format('Y-m-d') : '-';
+                $startTime = $item->start_time ? substr($item->start_time, 0, 5) : '-';
+                $endTime = $item->end_time ? substr($item->end_time, 0, 5) : '-';
+
+                fputcsv($handle, [
+                    $index + 1,
+                    $item->training_code ?? ('PTKP-TR-' . $item->id),
+                    $item->title ?? ($item->course_name ?? '-'),
+                    $item->category ?? 'General',
+                    $item->instructor ?? '-',
+                    $item->location ?? ($item->venue ?? '-'),
+                    $startDate,
+                    $endDate,
+                    $startTime,
+                    $endTime,
+                    $item->quota ?? 0,
+                    $item->registrations_count ?? 0,
+                    $item->status ?? 'Open Registration',
+                    $item->created_at ? $item->created_at->format('Y-m-d H:i:s') : '-',
+                ]);
+            }
+
+            fclose($handle);
+        }, 200, $headers);
+    }
+
+    /**
+     * Export Participant Roster to CSV format with training_id, user_id, month, year filters.
+     */
+    public function exportRoster(Request $request): StreamedResponse
+    {
+        $query = OfflineTrainingRegister::with(['training', 'user']);
+
+        if ($request->filled('training_id') && $request->input('training_id') !== 'all') {
+            $query->where('offline_training_id', (int) $request->input('training_id'));
+        }
+
+        if ($request->filled('user_id') && $request->input('user_id') !== 'all') {
+            $query->where('user_id', (int) $request->input('user_id'));
+        }
+
+        if ($request->filled('status') && $request->input('status') !== 'all') {
+            $query->where('status', $request->input('status'));
+        }
+
+        if ($request->filled('month') && $request->input('month') !== 'all') {
+            $month = (int) $request->input('month');
+            $query->whereMonth('registered_at', $month);
+        }
+
+        if ($request->filled('year') && $request->input('year') !== 'all') {
+            $year = (int) $request->input('year');
+            $query->whereYear('registered_at', $year);
+        }
+
+        $records = $query->latest('registered_at')->get();
+
+        $fileName = 'Participant_Roster_Export_' . Carbon::now()->format('Ymd_His') . '.csv';
+
+        $headers = [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$fileName}\"",
+            'Pragma'              => 'no-cache',
+            'Cache-Control'       => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires'             => '0',
+        ];
+
+        return Response::stream(function () use ($records) {
+            $handle = fopen('php://output', 'w');
+            // Write UTF-8 BOM for Excel compatibility
+            fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
+
+            // CSV Header
+            fputcsv($handle, [
+                'No',
+                'Participant Name',
+                'NIP / Employee ID',
+                'Email',
+                'Department',
+                'Position / Role',
+                'Training Title',
+                'Training Code',
+                'Category',
+                'Schedule Date',
+                'Registration Status',
+                'Registered At',
+            ]);
+
+            foreach ($records as $index => $reg) {
+                $user = $reg->user;
+                $training = $reg->training;
+
+                $scheduleDate = '-';
+                if ($training && $training->start_date) {
+                    $scheduleDate = Carbon::parse($training->start_date)->format('Y-m-d');
+                    if ($training->end_date && $training->start_date != $training->end_date) {
+                        $scheduleDate .= ' to ' . Carbon::parse($training->end_date)->format('Y-m-d');
+                    }
+                }
+
+                fputcsv($handle, [
+                    $index + 1,
+                    $user->name ?? 'Unknown',
+                    $user->id_emp ?? '-',
+                    $user->email ?? '-',
+                    $user->department ?? '-',
+                    $user->job_position ?? 'Employee',
+                    $training->title ?? ($training->course_name ?? '-'),
+                    $training->training_code ?? ($training ? ('PTKP-TR-' . $training->id) : '-'),
+                    $training->category ?? 'General',
+                    $scheduleDate,
+                    $reg->status ?? 'Pending',
+                    $reg->registered_at ? $reg->registered_at->format('Y-m-d H:i:s') : '-',
+                ]);
+            }
+
+            fclose($handle);
+        }, 200, $headers);
     }
 }

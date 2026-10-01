@@ -4,8 +4,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const searchInput = document.getElementById('scheduleSearchInput');
     const categorySelect = document.getElementById('scheduleCategorySelect');
     const statusSelect = document.getElementById('scheduleStatusSelect');
+    const monthSelect = document.getElementById('scheduleMonthSelect');
     const yearSelect = document.getElementById('scheduleYearSelect');
     const btnReset = document.getElementById('btnResetScheduleFilter');
+    const btnExport = document.getElementById('btnExportSchedule');
     const totalBadge = document.getElementById('scheduleTotalBadge');
     const tableBody = document.getElementById('scheduleTableBody');
     const emptyState = document.getElementById('scheduleTableEmpty');
@@ -22,11 +24,26 @@ document.addEventListener('DOMContentLoaded', function () {
     const btnApplyMoreFilters = document.getElementById('btnApplyMoreScheduleFilters');
     const btnResetMoreFilters = document.getElementById('btnResetMoreScheduleFilters');
 
+    // --- Update Export URL with active filters ---
+    function updateExportUrl() {
+        if (!btnExport) return;
+        const params = new URLSearchParams();
+        if (categorySelect?.value) params.set('category', categorySelect.value);
+        if (statusSelect?.value) params.set('status', statusSelect.value);
+        if (monthSelect?.value) params.set('month', monthSelect.value);
+        if (yearSelect?.value) params.set('year', yearSelect.value);
+        if (searchInput?.value) params.set('search', searchInput.value.trim());
+
+        const baseUrl = '{{ route("manage.training.export") }}';
+        btnExport.href = params.toString() ? `${baseUrl}?${params.toString()}` : baseUrl;
+    }
+
     // --- Filter Logic ---
     function filterScheduleTable() {
         const query = (searchInput?.value || '').toLowerCase().trim();
         const category = (categorySelect?.value || modalFilterCategory?.value || '').trim();
         const status = (statusSelect?.value || modalFilterStatus?.value || '').trim();
+        const month = (monthSelect?.value || '').trim();
         const year = (yearSelect?.value || '').trim();
         const instructor = (modalFilterInstructor?.value || '').trim().toLowerCase();
         const location = (modalFilterLocation?.value || '').trim().toLowerCase();
@@ -40,6 +57,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const rowText = row.textContent.toLowerCase();
             const rowCat = row.getAttribute('data-category') || '';
             const rowStatus = row.getAttribute('data-status') || '';
+            const rowMonth = row.getAttribute('data-month') || '';
             const rowYear = row.getAttribute('data-year') || '';
             const rowInstructor = (row.getAttribute('data-instructor') || '').toLowerCase();
             const rowLocation = (row.getAttribute('data-location') || '').toLowerCase();
@@ -48,6 +66,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const matchesSearch = !query || rowText.includes(query);
             const matchesCategory = !category || rowCat === category;
             const matchesStatus = !status || rowStatus === status;
+            const matchesMonth = !month || rowMonth === month;
             const matchesYear = !year || rowYear === year;
             const matchesInstructor = !instructor || rowInstructor.includes(instructor);
             const matchesLocation = !location || rowLocation.includes(location);
@@ -60,13 +79,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 matchesDate = matchesDate && (rowDate <= toDate);
             }
 
-            if (matchesSearch && matchesCategory && matchesStatus && matchesYear && matchesInstructor && matchesLocation && matchesDate) {
+            if (matchesSearch && matchesCategory && matchesStatus && matchesMonth && matchesYear && matchesInstructor && matchesLocation && matchesDate) {
                 row.style.display = '';
                 visibleCount++;
             } else {
                 row.style.display = 'none';
             }
         });
+
+        // Update Export URL
+        updateExportUrl();
 
         // Update Total Badge in Header Hero Card
         const totalCount = document.getElementById('scheduleTotalCount');
@@ -118,6 +140,7 @@ document.addEventListener('DOMContentLoaded', function () {
             filterScheduleTable();
         });
     }
+    if (monthSelect) monthSelect.addEventListener('change', filterScheduleTable);
     if (yearSelect) yearSelect.addEventListener('change', filterScheduleTable);
 
     // Apply button inside More Filters modal
@@ -144,6 +167,8 @@ document.addEventListener('DOMContentLoaded', function () {
             if (modalFilterToDate) modalFilterToDate.value = '';
             if (categorySelect) categorySelect.value = '';
             if (statusSelect) statusSelect.value = '';
+            if (monthSelect) monthSelect.value = '';
+            if (yearSelect) yearSelect.value = '';
             filterScheduleTable();
         });
     }
@@ -155,6 +180,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (searchInput) searchInput.value = '';
             if (categorySelect) categorySelect.value = '';
             if (statusSelect) statusSelect.value = '';
+            if (monthSelect) monthSelect.value = '';
             if (yearSelect) yearSelect.value = '';
             if (modalFilterCategory) modalFilterCategory.value = '';
             if (modalFilterStatus) modalFilterStatus.value = '';

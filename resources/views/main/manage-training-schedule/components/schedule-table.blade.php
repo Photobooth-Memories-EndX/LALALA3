@@ -57,6 +57,7 @@
                         data-id="{{ $item->id }}" 
                         data-category="{{ $item->category }}" 
                         data-status="{{ $dataStatus }}" 
+                        data-month="{{ (int)$startDate->format('n') }}"
                         data-year="{{ $startDate->format('Y') }}" 
                         data-date="{{ $startDate->format('Y-m-d') }}" 
                         data-instructor="{{ $item->instructor }}" 

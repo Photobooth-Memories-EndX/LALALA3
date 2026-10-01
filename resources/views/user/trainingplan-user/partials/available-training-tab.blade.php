@@ -35,7 +35,7 @@
             </span>
         </div>
 
-        <form id="availableFilterForm" method="GET" action="{{ route('trainingplan.index') }}" onsubmit="return true;">
+        <form id="availableFilterForm" method="GET" action="{{ route('trainingplan.user.index') }}" onsubmit="return true;">
             <div class="d-flex align-items-center gap-2 flex-wrap flex-lg-nowrap">
                 <!-- 1. Category Select (Width: ~130px) -->
                 <div style="min-width: 130px; flex-shrink: 0;">
@@ -89,7 +89,7 @@
                     </button>
 
                     <!-- Reset Link Button -->
-                    <a href="{{ route('trainingplan.index') }}" id="btnResetFilter" class="btn btn-outline-primary px-3 rounded-3 d-inline-flex align-items-center justify-content-center" 
+                    <a href="{{ route('trainingplan.user.index') }}" id="btnResetFilter" class="btn btn-outline-primary px-3 rounded-3 d-inline-flex align-items-center justify-content-center" 
                        style="color: #003b6d; border-color: #003b6d;" title="Reset Filters">
                         <i class="ti ti-refresh fs-2"></i>
                     </a>
