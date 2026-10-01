@@ -132,12 +132,14 @@ class OfflineTraining extends Model
 
     public function getFinishDateAttribute($value)
     {
-        return $value ?? ($this->attributes['end_date'] ?? $this->attributes['start_date'] ?? null);
+        $val = $value ?? ($this->attributes['end_date'] ?? $this->attributes['start_date'] ?? null);
+        return $val ? $this->asDate($val) : null;
     }
 
     public function getEndDateAttribute($value)
     {
-        return $value ?? ($this->attributes['finish_date'] ?? $this->attributes['start_date'] ?? null);
+        $val = $value ?? ($this->attributes['finish_date'] ?? $this->attributes['start_date'] ?? null);
+        return $val ? $this->asDate($val) : null;
     }
 
     public function getBatchAttribute($value): ?string

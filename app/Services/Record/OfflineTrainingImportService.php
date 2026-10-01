@@ -184,8 +184,8 @@ class OfflineTrainingImportService
                 $fp = $this->buildTrainingFingerprint([
                     'course_name' => $t->course_name,
                     'batch'       => $t->batch,
-                    'start_date'  => $t->start_date ? $t->start_date->format('Y-m-d') : null,
-                    'finish_date' => $t->finish_date ? $t->finish_date->format('Y-m-d') : null,
+                    'start_date'  => $this->normalizeDate($t->start_date),
+                    'finish_date' => $this->normalizeDate($t->finish_date),
                     'type'        => $t->type,
                     'venue'       => $t->venue,
                 ]);
@@ -456,8 +456,8 @@ class OfflineTrainingImportService
                 $fp = $this->buildTrainingFingerprint([
                     'course_name' => $t->course_name,
                     'batch'       => $t->batch,
-                    'start_date'  => $t->start_date ? $t->start_date->format('Y-m-d') : null,
-                    'finish_date' => $t->finish_date ? $t->finish_date->format('Y-m-d') : null,
+                    'start_date'  => $this->normalizeDate($t->start_date),
+                    'finish_date' => $this->normalizeDate($t->finish_date),
                     'type'        => $t->type,
                     'venue'       => $t->venue,
                 ]);
@@ -1183,8 +1183,11 @@ class OfflineTrainingImportService
 
     public function normalizeDate($value): ?string
     {
-        if ($value === null) return null;
-        if ($value instanceof DateTimeInterface) {
+        if ($value === null) {
+            return null;
+        }
+
+        if ($value instanceof \DateTimeInterface) {
             return $value->format('Y-m-d');
         }
 
@@ -1193,14 +1196,36 @@ class OfflineTrainingImportService
             return null;
         }
 
+        // Excel numeric serial date (e.g. 45566 or float 45566.0)
         if (is_numeric($clean) && (float) $clean > 1000) {
             try {
                 return ExcelDate::excelToDateTimeObject((float) $clean)->format('Y-m-d');
             } catch (\Throwable $e) {
-                // fallback
+                // fallback to string formats below
             }
         }
 
+        // ISO format: YYYY-MM-DD or YYYY/MM/DD or YYYY.MM.DD
+        if (preg_match('/^(\d{4})[-\/\.](\d{1,2})[-\/\.](\d{1,2})$/', $clean, $m)) {
+            $year = (int) $m[1];
+            $month = (int) $m[2];
+            $day = (int) $m[3];
+            if (checkdate($month, $day, $year)) {
+                return sprintf('%04d-%02d-%02d', $year, $month, $day);
+            }
+        }
+
+        // Localized/European/Indonesian format: DD/MM/YYYY or DD-MM-YYYY or DD.MM.YYYY
+        if (preg_match('/^(\d{1,2})[-\/\.](\d{1,2})[-\/\.](\d{4})$/', $clean, $m)) {
+            $day = (int) $m[1];
+            $month = (int) $m[2];
+            $year = (int) $m[3];
+            if (checkdate($month, $day, $year)) {
+                return sprintf('%04d-%02d-%02d', $year, $month, $day);
+            }
+        }
+
+        // General Carbon parser fallback for text dates (e.g. "1 Oct 2026", "2026-10-01 14:00:00")
         try {
             return Carbon::parse($clean)->format('Y-m-d');
         } catch (\Throwable $e) {
