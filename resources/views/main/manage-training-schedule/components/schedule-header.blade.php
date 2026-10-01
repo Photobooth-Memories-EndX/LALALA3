@@ -21,7 +21,7 @@
                     <h2 class="h3 fw-bold mb-1 text-dark">Manage Training Schedule</h2>
                     <p class="text-muted small mb-0">Create new PTKP training schedules, manage quotas, instructors, locations, and registration statuses.</p>
                     <div class="mt-3">
-                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill fw-medium d-inline-flex align-items-center" id="scheduleTotalBadge">Total Schedules: <strong id="scheduleTotalCount" class="ms-1">{{ count($trainings ?? \App\Models\OfflineTraining::all()) }} Trainings</strong></span>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill fw-medium d-inline-flex align-items-center" id="scheduleTotalBadge">Total Schedules: <strong id="scheduleTotalCount" class="ms-1">{{ method_exists($trainings, 'total') ? $trainings->total() : count($trainings ?? \App\Models\OfflineTraining::all()) }} Trainings</strong></span>
                     </div>
                 </div>
             </div>

@@ -625,19 +625,103 @@
             }
         }
 
-        // Delegate click on calendar status badges
+        // Function to update Today's Agenda on the right panel
+        function updateTodayAgendaPanel(year, month, day) {
+            const formattedDate = formatCalendarDate(year, month, day);
+            const targetDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const labelEl = document.getElementById('todayAgendaDateLabel');
+            if (labelEl) {
+                labelEl.innerHTML = `<i class="ti ti-clock me-1"></i> ${formattedDate}`;
+            }
+
+            const matchingEvents = calendarEvents.filter(e => {
+                const s = e.startDate || `${e.year}-${String(e.month + 1).padStart(2, '0')}-${String(e.day).padStart(2, '0')}`;
+                const end = e.endDate || s;
+                return targetDateStr >= s && targetDateStr <= end;
+            });
+
+            const timelineList = document.getElementById('agendaTimelineList');
+            if (timelineList) {
+                if (matchingEvents.length === 0) {
+                    timelineList.innerHTML = `
+                        <div class="text-center py-5 px-3">
+                            <div class="mb-2 text-muted opacity-50">
+                                <i class="ti ti-calendar-off fs-1"></i>
+                            </div>
+                            <h6 class="fw-semibold text-dark mb-1">No Training Scheduled</h6>
+                            <p class="text-muted extra-small mb-0">There are no offline training sessions scheduled for this date.</p>
+                        </div>
+                    `;
+                } else {
+                    let html = '';
+                    matchingEvents.forEach(item => {
+                        html += `
+                            <div class="timeline-schedule-item mb-3 p-3 rounded-3 border border-light-subtle bg-light-subtle position-relative"
+                                 role="button"
+                                 data-id="${item.id}"
+                                 data-title="${item.title}"
+                                 data-category="${item.category}"
+                                 data-date="${item.dateTime}"
+                                 data-location="${item.location}"
+                                 data-instructor="${item.instructor}"
+                                 data-description="${item.description}">
+                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                    <span class="badge bg-primary text-white rounded-pill px-2 py-0-5 small fw-semibold">${item.time}</span>
+                                    <span class="badge bg-primary-lt text-primary small">${item.category}</span>
+                                </div>
+                                <h5 class="fw-bold text-dark mb-1">${item.title}</h5>
+                                <div class="text-muted small d-flex align-items-center gap-1 mb-1">
+                                    <i class="ti ti-map-pin text-primary"></i>
+                                    <span>${item.location}</span>
+                                </div>
+                                <div class="text-muted small d-flex align-items-center gap-1">
+                                    <i class="ti ti-user-check text-primary"></i>
+                                    <span>${item.instructor}</span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    timelineList.innerHTML = html;
+
+                    // Re-attach modal trigger on new timeline items
+                    timelineList.querySelectorAll('.timeline-schedule-item').forEach(item => {
+                        item.addEventListener('click', function () {
+                            const id = this.getAttribute('data-id');
+                            const ev = calendarEvents.find(e => e.id === id);
+                            if (ev) {
+                                openTrainingListModal(ev.year, ev.month, ev.day, ev.status, ev.id);
+                            }
+                        });
+                    });
+                }
+            }
+        }
+
+        // Delegate click on calendar status badges and date cells
         const calGridBody = document.getElementById('calGridBody');
         if (calGridBody) {
             calGridBody.addEventListener('click', function (e) {
+                const cell = e.target.closest('.cal-day-cell');
                 const badge = e.target.closest('.cal-status-badge');
-                if (!badge) return;
 
-                const y = parseInt(badge.getAttribute('data-year'), 10);
-                const m = parseInt(badge.getAttribute('data-month'), 10);
-                const d = parseInt(badge.getAttribute('data-day'), 10);
-                const status = badge.getAttribute('data-status');
+                if (cell && !cell.classList.contains('opacity-50')) {
+                    const y = parseInt(cell.getAttribute('data-year'), 10);
+                    const m = parseInt(cell.getAttribute('data-month'), 10);
+                    const d = parseInt(cell.getAttribute('data-day'), 10);
 
-                openTrainingListModal(y, m, d, status);
+                    if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+                        updateTodayAgendaPanel(y, m, d);
+                    }
+                }
+
+                if (badge) {
+                    const y = parseInt(badge.getAttribute('data-year'), 10);
+                    const m = parseInt(badge.getAttribute('data-month'), 10);
+                    const d = parseInt(badge.getAttribute('data-day'), 10);
+                    const status = badge.getAttribute('data-status');
+
+                    openTrainingListModal(y, m, d, status);
+                }
             });
         }
 

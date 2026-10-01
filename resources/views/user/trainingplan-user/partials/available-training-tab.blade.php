@@ -1,5 +1,5 @@
 @php
-    $availableTrainings = $availableTrainings ?? \App\Models\OfflineTraining::withCount('participants')->where('status', '!=', 'Closed')->orderBy('start_date', 'asc')->get();
+    $availableTrainings = $availableTrainings ?? \App\Models\OfflineTraining::withCount('participants')->latest()->paginate(10);
 @endphp
 {{-- Tab Training Tersedia / Available Training (Table View Layout) --}}
 <style>
@@ -55,7 +55,7 @@
         </div>
         <div class="col-lg-2 col-md-2 d-flex justify-content-end">
             <span class="badge bg-light text-secondary border px-3 py-2 rounded-pill fw-medium align-self-center" id="availableTrainingTotalBadge">
-                Total: {{ $availableTrainings->count() }} Training{{ $availableTrainings->count() === 1 ? '' : 's' }}
+                Total: {{ method_exists($availableTrainings, 'total') ? $availableTrainings->total() : $availableTrainings->count() }} Training{{ (method_exists($availableTrainings, 'total') ? $availableTrainings->total() : $availableTrainings->count()) === 1 ? '' : 's' }}
             </span>
         </div>
     </div>
@@ -80,6 +80,7 @@
             <tbody class="divide-y">
                 @forelse ($availableTrainings as $item)
                     @php
+                        $title = $item->title ?? ($item->course_name ?? 'Training Schedule');
                         $enrolled = $item->registered_seats_count ?? ($item->relationLoaded('registrations') ? $item->registrations->whereIn('status', ['Pending', 'Approved', 'Completed'])->count() : 0);
                         $quota = $item->quota > 0 ? $item->quota : 1;
                         $remaining = max(0, $quota - $enrolled);
@@ -100,13 +101,15 @@
                         $statusBadgeClass = match($item->status) {
                             'Open Registration' => 'bg-success-subtle text-success',
                             'Running'           => 'bg-warning-subtle text-warning border border-warning-subtle',
+                            'Closed'            => 'bg-secondary-subtle text-secondary',
                             default             => 'bg-info-subtle text-info',
                         };
 
                         $dataStatus = match($item->status) {
                             'Open Registration' => 'open',
                             'Running'           => 'running',
-                            default             => strtolower($item->status),
+                            'Closed'            => 'closed',
+                            default             => strtolower($item->status ?? 'open'),
                         };
 
                         $startDate = \Carbon\Carbon::parse($item->start_date);
@@ -118,9 +121,9 @@
                         data-category="{{ $item->category }}" 
                         data-status="{{ $dataStatus }}" 
                         data-instructor="{{ $item->instructor }}">
-                        <td class="text-center align-middle text-muted fw-semibold">{{ $loop->iteration }}</td>
+                        <td class="text-center align-middle text-muted fw-semibold">{{ method_exists($availableTrainings, 'firstItem') && $availableTrainings->firstItem() ? ($availableTrainings->firstItem() + $loop->index) : $loop->iteration }}</td>
                         <td class="text-center align-middle" style="min-width: 200px;">
-                            <div class="fw-bold text-dark fs-3">{{ $item->title }}</div>
+                            <div class="fw-bold text-dark fs-3">{{ $title }}</div>
                             @if (!empty($item->training_code))
                                 <div class="text-muted extra-small font-monospace">{{ $item->training_code }}</div>
                             @endif
@@ -151,7 +154,7 @@
                             <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 d-inline-flex align-items-center gap-1 btn-view-syllabus" 
                                     data-bs-toggle="modal" data-bs-target="#syllabusModal" 
                                     data-id="{{ $item->id }}" 
-                                    data-title="{{ $item->title }}" 
+                                    data-title="{{ $title }}" 
                                     data-category="{{ $item->category }}" 
                                     data-instructor="{{ $item->instructor }}"
                                     data-duration="{{ $startTime }} - {{ $endTime }} WIB"
@@ -195,7 +198,7 @@
                                     <span>Rejected</span>
                                 </span>
                             @elseif ($item->status === 'Open Registration' && !$isFull)
-                                <form action="{{ route('trainingplan.register', $item->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Register for {{ addslashes($item->title) }}?');">
+                                <form action="{{ route('trainingplan.register', $item->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Register for {{ addslashes($title) }}?');">
                                     @csrf
                                     <button type="submit" class="btn btn-owl-register rounded-pill px-4 py-1-5 fw-semibold d-inline-flex align-items-center gap-1">
                                         <i class="ti ti-pencil-plus"></i>
@@ -227,4 +230,21 @@
             </tbody>
         </table>
     </div>
+
+    @if (method_exists($availableTrainings, 'hasPages') && $availableTrainings->hasPages())
+        <div class="card-footer bg-white border-0 py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div class="text-muted small">
+                Showing {{ $availableTrainings->firstItem() ?? 0 }} to {{ $availableTrainings->lastItem() ?? 0 }} of {{ $availableTrainings->total() }} available training(s)
+            </div>
+            <div>
+                {{ $availableTrainings->links('pagination::bootstrap-5') }}
+            </div>
+        </div>
+    @elseif (method_exists($availableTrainings, 'total') && $availableTrainings->total() > 0)
+        <div class="card-footer bg-white border-0 py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div class="text-muted small">
+                Showing {{ $availableTrainings->firstItem() ?? 0 }} to {{ $availableTrainings->lastItem() ?? 0 }} of {{ $availableTrainings->total() }} available training(s)
+            </div>
+        </div>
+    @endif
 </div>

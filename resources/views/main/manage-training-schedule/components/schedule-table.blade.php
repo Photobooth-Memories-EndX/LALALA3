@@ -1,5 +1,5 @@
 @php
-    $trainings = $trainings ?? \App\Models\OfflineTraining::forSchedule()->withCount('participants')->orderBy('start_date', 'asc')->get();
+    $trainings = $trainings ?? \App\Models\OfflineTraining::forSchedule()->withCount('participants')->orderBy('start_date', 'asc')->paginate(10);
 @endphp
 <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden">
     <div class="table-responsive">
@@ -61,7 +61,7 @@
                         data-date="{{ $startDate->format('Y-m-d') }}" 
                         data-instructor="{{ $item->instructor }}" 
                         data-location="{{ $item->location }}">
-                        <td class="text-muted fw-semibold schedule-row-index">{{ $loop->iteration }}</td>
+                        <td class="text-muted fw-semibold schedule-row-index">{{ method_exists($trainings, 'firstItem') && $trainings->firstItem() ? ($trainings->firstItem() + $loop->index) : $loop->iteration }}</td>
                         <td class="fw-bold text-dark text-start" style="min-width: 200px;">
                             <div class="fs-3 training-title-text">{{ $item->title }}</div>
                             <div class="text-muted extra-small font-monospace">Code: {{ $item->training_code ?? 'PTKP-TR-' . $item->id }}</div>
@@ -171,4 +171,21 @@
         <h4 class="fw-bold text-dark mb-1">No Training Schedules Found</h4>
         <p class="text-muted small mb-0">No PTKP training schedules match the selected filters. Try changing or clearing your filter criteria.</p>
     </div>
+
+    @if (method_exists($trainings, 'hasPages') && $trainings->hasPages())
+        <div class="card-footer bg-white border-0 py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div class="text-muted small">
+                Showing {{ $trainings->firstItem() ?? 0 }} to {{ $trainings->lastItem() ?? 0 }} of {{ $trainings->total() }} results
+            </div>
+            <div>
+                {{ $trainings->links('pagination::bootstrap-5') }}
+            </div>
+        </div>
+    @elseif (method_exists($trainings, 'total') && $trainings->total() > 0)
+        <div class="card-footer bg-white border-0 py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div class="text-muted small">
+                Showing {{ $trainings->firstItem() ?? 0 }} to {{ $trainings->lastItem() ?? 0 }} of {{ $trainings->total() }} results
+            </div>
+        </div>
+    @endif
 </div>

@@ -19,7 +19,7 @@ class OfflineTrainingController extends Controller
      */
     public function index(Request $request)
     {
-        $trainings = OfflineTraining::forSchedule()
+        $query = OfflineTraining::forSchedule()
             ->with(['registrations.user', 'creator'])
             ->withCount([
                 'registrations',
@@ -38,9 +38,48 @@ class OfflineTrainingController extends Controller
                 'registrations as active_seats_count' => function ($q) {
                     $q->whereIn('status', ['Pending', 'Approved', 'Completed']);
                 },
-            ])
-            ->orderBy('start_date', 'asc')
-            ->get();
+            ]);
+
+        // Filter Category
+        if ($request->filled('category')) {
+            $query->where('category', $request->input('category'));
+        }
+
+        // Filter Status
+        if ($request->filled('status')) {
+            $statusVal = $request->input('status');
+            $statusMap = [
+                'open'    => 'Open Registration',
+                'running' => 'Running',
+                'closed'  => 'Closed',
+            ];
+            $query->where('status', $statusMap[strtolower($statusVal)] ?? $statusVal);
+        }
+
+        // Filter Year
+        if ($request->filled('year') && $request->input('year') !== 'all') {
+            $year = (int) $request->input('year');
+            $query->where(function ($q) use ($year) {
+                $q->whereYear('start_date', $year)
+                  ->orWhereYear('end_date', $year);
+            });
+        }
+
+        // Keyword Search (q or search)
+        $search = $request->input('q') ?? $request->input('search');
+        if (filled($search)) {
+            $search = trim($search);
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('instructor', 'like', "%{$search}%")
+                  ->orWhere('location', 'like', "%{$search}%")
+                  ->orWhere('training_code', 'like', "%{$search}%");
+            });
+        }
+
+        $trainings = $query->orderBy('start_date', 'asc')
+            ->paginate(10)
+            ->withQueryString();
 
         $selectedTrainingId = $request->query('training');
         $selectedTraining = null;
@@ -385,12 +424,11 @@ class OfflineTrainingController extends Controller
     /**
      * Display User Training Plan page with Calendar, Available Training, and My History tabs.
      */
-    public function userIndex()
+    public function userIndex(Request $request)
     {
         $userId = Auth::id();
 
-        $trainings = OfflineTraining::forSchedule()
-            ->withCount([
+        $trainings = OfflineTraining::withCount([
                 'registrations as registered_seats_count' => function ($q) {
                     $q->whereIn('status', ['Pending', 'Approved', 'Completed']);
                 },
@@ -405,7 +443,21 @@ class OfflineTrainingController extends Controller
             ->orderBy('start_date', 'asc')
             ->get();
 
-        $availableTrainings = $trainings->where('status', '!=', 'Closed')->values();
+        $availableTrainings = OfflineTraining::withCount([
+                'registrations as registered_seats_count' => function ($q) {
+                    $q->whereIn('status', ['Pending', 'Approved', 'Completed']);
+                },
+            ])
+            ->with([
+                'registrations' => function ($q) use ($userId) {
+                    if ($userId) {
+                        $q->where('user_id', $userId);
+                    }
+                },
+            ])
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
 
         $calendarEvents = $trainings->map(function ($t) {
             $startDate = Carbon::parse($t->start_date);
@@ -442,35 +494,41 @@ class OfflineTrainingController extends Controller
         })->values()->toArray();
 
         // Build live My History for authenticated user
-        $myRegistrations = collect();
+        $myHistory = collect();
         if ($userId) {
-            $myRegistrations = OfflineTrainingRegister::with('training')
+            $myHistory = OfflineTrainingRegister::with('training')
                 ->where('user_id', $userId)
-                ->orderBy('registered_at', 'desc')
+                ->latest('registered_at')
                 ->get()
                 ->map(function ($reg, $idx) {
                     $t = $reg->training;
                     return (object)[
-                        'id'             => $reg->id,
-                        'registration_id'=> $reg->id,
-                        'modal_id'       => $t->id ?? $reg->id,
-                        'title'          => $t->title ?? 'Training Schedule',
-                        'category'       => $t->category ?? 'General',
-                        'start_date'     => $t->start_date ?? $reg->registered_at,
-                        'end_date'       => $t->end_date ?? null,
-                        'start_time'     => $t->start_time ?? '08:00:00',
-                        'end_time'       => $t->end_time ?? '16:00:00',
-                        'location'       => $t->location ?? '-',
-                        'instructor'     => $t->instructor ?? '-',
-                        'description'    => $t->description ?? '',
-                        'status'         => $reg->status, // 'Pending', 'Approved', 'Completed', 'Rejected'
-                        'can_cancel'     => ($reg->status === 'Pending'),
+                        'id'              => $reg->id,
+                        'registration_id' => $reg->id,
+                        'modal_id'        => $t->id ?? $reg->id,
+                        'title'           => $t->title ?? ($t->course_name ?? 'Training Schedule'),
+                        'category'        => $t->category ?? 'General',
+                        'start_date'      => $t->start_date ?? $reg->registered_at,
+                        'end_date'        => $t->end_date ?? null,
+                        'start_time'      => $t->start_time ?? '08:00:00',
+                        'end_time'        => $t->end_time ?? '16:00:00',
+                        'location'        => $t->location ?? '-',
+                        'instructor'      => $t->instructor ?? '-',
+                        'description'     => $t->description ?? '',
+                        'status'          => $reg->status, // 'Pending', 'Approved', 'Completed', 'Rejected'
+                        'can_cancel'      => ($reg->status === 'Pending'),
                     ];
                 });
         }
 
-        $myHistory = $myRegistrations;
+        // Active / Selected Date for Today's Agenda (strictly matching start_date <= activeDate <= end_date)
+        $selectedDate = $request->query('selected_date', Carbon::today()->format('Y-m-d'));
+        $todaysAgenda = $trainings->filter(function ($t) use ($selectedDate) {
+            $sDate = Carbon::parse($t->start_date)->format('Y-m-d');
+            $eDate = Carbon::parse($t->end_date ?? $t->start_date)->format('Y-m-d');
+            return $selectedDate >= $sDate && $selectedDate <= $eDate;
+        })->values();
 
-        return view('user.trainingplan-user.index', compact('trainings', 'availableTrainings', 'calendarEvents', 'myHistory'));
+        return view('user.trainingplan-user.index', compact('trainings', 'availableTrainings', 'calendarEvents', 'myHistory', 'selectedDate', 'todaysAgenda'));
     }
 }
