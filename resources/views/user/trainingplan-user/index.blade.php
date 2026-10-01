@@ -780,42 +780,55 @@
         const searchInput = document.getElementById('filterTrainingSearch');
         const categorySelect = document.getElementById('filterTrainingCategory');
         const statusSelect = document.getElementById('filterTrainingStatus');
+        const yearSelect = document.getElementById('filterTrainingYear');
         const btnResetFilter = document.getElementById('btnResetFilter');
+        const availableTotalBadge = document.getElementById('availableTrainingTotalBadge');
 
         function filterAvailableTraining() {
             const query = (searchInput?.value || '').toLowerCase().trim();
             const category = categorySelect?.value || '';
             const status = statusSelect?.value || '';
+            const year = yearSelect?.value || '';
 
             const rows = document.querySelectorAll('#availableTrainingTable tbody tr.training-table-row, .training-card-item');
+            let visibleCount = 0;
 
             rows.forEach(row => {
                 const text = row.textContent.toLowerCase();
                 const rowCat = row.getAttribute('data-category') || '';
                 const rowStatus = row.getAttribute('data-status') || '';
+                const rowYear = row.getAttribute('data-year') || '';
 
                 const rowInstructor = (row.getAttribute('data-instructor') || '').toLowerCase();
                 const matchesSearch = !query || text.includes(query) || rowInstructor.includes(query);
                 const matchesCategory = !category || rowCat === category;
                 const matchesStatus = !status || rowStatus === status;
+                const matchesYear = !year || rowYear === year;
 
-                if (matchesSearch && matchesCategory && matchesStatus) {
+                if (matchesSearch && matchesCategory && matchesStatus && matchesYear) {
                     row.style.display = '';
+                    visibleCount++;
                 } else {
                     row.style.display = 'none';
                 }
             });
+
+            if (availableTotalBadge && (query || category || status || year)) {
+                availableTotalBadge.textContent = `Total: ${visibleCount} Training${visibleCount === 1 ? '' : 's'}`;
+            }
         }
 
         if (searchInput) searchInput.addEventListener('input', filterAvailableTraining);
         if (categorySelect) categorySelect.addEventListener('change', filterAvailableTraining);
         if (statusSelect) statusSelect.addEventListener('change', filterAvailableTraining);
+        if (yearSelect) yearSelect.addEventListener('change', filterAvailableTraining);
 
         if (btnResetFilter) {
             btnResetFilter.addEventListener('click', function () {
                 if (searchInput) searchInput.value = '';
                 if (categorySelect) categorySelect.value = '';
                 if (statusSelect) statusSelect.value = '';
+                if (yearSelect) yearSelect.value = '';
                 filterAvailableTraining();
             });
         }

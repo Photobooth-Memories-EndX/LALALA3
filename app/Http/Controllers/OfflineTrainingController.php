@@ -19,8 +19,7 @@ class OfflineTrainingController extends Controller
      */
     public function index(Request $request)
     {
-        $query = OfflineTraining::forSchedule()
-            ->with(['registrations.user', 'creator'])
+        $query = OfflineTraining::with(['registrations.user', 'creator'])
             ->withCount([
                 'registrations',
                 'registrations as pending_count' => function ($q) {
@@ -71,13 +70,16 @@ class OfflineTrainingController extends Controller
             $search = trim($search);
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('course_name', 'like', "%{$search}%")
                   ->orWhere('instructor', 'like', "%{$search}%")
                   ->orWhere('location', 'like', "%{$search}%")
-                  ->orWhere('training_code', 'like', "%{$search}%");
+                  ->orWhere('venue', 'like', "%{$search}%")
+                  ->orWhere('training_code', 'like', "%{$search}%")
+                  ->orWhere('batch', 'like', "%{$search}%");
             });
         }
 
-        $trainings = $query->orderBy('start_date', 'asc')
+        $trainings = $query->latest()
             ->paginate(10)
             ->withQueryString();
 
@@ -152,16 +154,20 @@ class OfflineTrainingController extends Controller
 
         $training = OfflineTraining::create([
             'title'               => $request->input('title'),
+            'course_name'         => $request->input('title'),
             'category'            => $request->input('category'),
             'training_code'       => $trainingCode,
+            'batch'               => $trainingCode,
             'instructor'          => $request->input('instructor'),
             'location'            => $request->input('location'),
+            'venue'               => $request->input('location'),
             'target_employee'     => $request->input('target_employee'),
             'prerequisites'       => $request->input('prerequisites'),
             'quota'               => (int) $request->input('quota'),
             'status'              => $request->input('status', 'Open Registration'),
             'start_date'          => $request->input('start_date'),
             'end_date'            => $endDate,
+            'finish_date'         => $endDate,
             'start_time'          => $request->input('start_time'),
             'end_time'            => $request->input('end_time'),
             'description'         => $request->input('description'),
@@ -443,7 +449,7 @@ class OfflineTrainingController extends Controller
             ->orderBy('start_date', 'asc')
             ->get();
 
-        $availableTrainings = OfflineTraining::withCount([
+        $availableQuery = OfflineTraining::withCount([
                 'registrations as registered_seats_count' => function ($q) {
                     $q->whereIn('status', ['Pending', 'Approved', 'Completed']);
                 },
@@ -454,8 +460,49 @@ class OfflineTrainingController extends Controller
                         $q->where('user_id', $userId);
                     }
                 },
-            ])
-            ->latest()
+            ]);
+
+        // Filter Category
+        if ($request->filled('category')) {
+            $availableQuery->where('category', $request->input('category'));
+        }
+
+        // Filter Status
+        if ($request->filled('status')) {
+            $statusVal = $request->input('status');
+            $statusMap = [
+                'open'    => 'Open Registration',
+                'running' => 'Running',
+                'closed'  => 'Closed',
+            ];
+            $availableQuery->where('status', $statusMap[strtolower($statusVal)] ?? $statusVal);
+        }
+
+        // Filter Year
+        if ($request->filled('year') && $request->input('year') !== 'all') {
+            $year = (int) $request->input('year');
+            $availableQuery->where(function ($q) use ($year) {
+                $q->whereYear('start_date', $year)
+                  ->orWhereYear('end_date', $year);
+            });
+        }
+
+        // Keyword Search (q or search)
+        $search = $request->input('q') ?? $request->input('search');
+        if (filled($search)) {
+            $search = trim($search);
+            $availableQuery->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('course_name', 'like', "%{$search}%")
+                  ->orWhere('instructor', 'like', "%{$search}%")
+                  ->orWhere('location', 'like', "%{$search}%")
+                  ->orWhere('venue', 'like', "%{$search}%")
+                  ->orWhere('training_code', 'like', "%{$search}%")
+                  ->orWhere('batch', 'like', "%{$search}%");
+            });
+        }
+
+        $availableTrainings = $availableQuery->latest()
             ->paginate(10)
             ->withQueryString();
 
