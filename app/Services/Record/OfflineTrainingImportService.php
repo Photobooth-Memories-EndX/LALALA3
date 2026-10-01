@@ -834,6 +834,43 @@ class OfflineTrainingImportService
      */
     public function normalizeRowData(array $raw): array
     {
+        $rawKpi = $raw['counted_corporate_kpi'] ?? null;
+        $countedKpi = $this->normalizeBoolean($rawKpi);
+        $kpiYear = !empty($raw['corporate_kpi_year']) ? (int) $raw['corporate_kpi_year'] : null;
+        $subKpi = $this->normalizeString($raw['sub_corporate_kpi'] ?? null);
+
+        // Support for "Yes (2026)" or "Yes (26)" format in counted_corporate_kpi cell
+        if ($rawKpi !== null && is_string($rawKpi)) {
+            $trimmedKpi = trim($rawKpi);
+            if (preg_match('/^(?:yes|ya)\s*\(\s*(\d{2,4})\s*\)$/i', $trimmedKpi, $m)) {
+                $countedKpi = true;
+                $extractedYear = (int) $m[1];
+                if ($extractedYear < 100) {
+                    $extractedYear += 2000;
+                }
+                $kpiYear = $extractedYear;
+                if (empty($subKpi)) {
+                    $subKpi = (string) $extractedYear;
+                }
+            }
+        }
+
+        if ($countedKpi === true) {
+            if (!$kpiYear && $subKpi && preg_match('/^\d{4}$/', $subKpi)) {
+                $kpiYear = (int) $subKpi;
+            } elseif (!$kpiYear && !empty($raw['start_date'])) {
+                $kpiYear = (int) substr((string) $raw['start_date'], 0, 4);
+            } elseif (!$kpiYear) {
+                $kpiYear = (int) date('Y');
+            }
+            if (!$subKpi && $kpiYear) {
+                $subKpi = (string) $kpiYear;
+            }
+        } elseif ($countedKpi === false) {
+            $kpiYear = null;
+            $subKpi = null;
+        }
+
         return [
             // Training Information
             'course_name'           => $this->normalizeString($raw['course_name'] ?? null),
@@ -844,11 +881,9 @@ class OfflineTrainingImportService
             'batch'                 => $this->normalizeString($raw['batch'] ?? null),
             'main_classification'   => $this->normalizeString($raw['main_classification'] ?? null),
             'sub_classification'    => $this->normalizeString($raw['sub_classification'] ?? null),
-            'counted_corporate_kpi' => $this->normalizeBoolean($raw['counted_corporate_kpi'] ?? null),
-            'sub_corporate_kpi'     => $this->normalizeString($raw['sub_corporate_kpi'] ?? null),
-            'corporate_kpi_year'    => !empty($raw['corporate_kpi_year'])
-                ? (int) $raw['corporate_kpi_year']
-                : (!empty($raw['start_date']) ? (int) substr((string) $raw['start_date'], 0, 4) : null),
+            'counted_corporate_kpi' => $countedKpi,
+            'sub_corporate_kpi'     => $subKpi,
+            'corporate_kpi_year'    => $kpiYear,
             'delivery_method'       => $this->normalizeString($raw['delivery_method'] ?? null),
             'sub_delivery_method'   => $this->normalizeString($raw['sub_delivery_method'] ?? null),
             'provider'              => $this->normalizeString($raw['provider'] ?? null),
@@ -1012,7 +1047,7 @@ class OfflineTrainingImportService
         $rawKpi = $raw['counted_corporate_kpi'] ?? null;
         if ($rawKpi !== null && trim((string) $rawKpi) !== '' && !in_array(trim((string) $rawKpi), ['-', 'N/A', 'n/a', 'NA'], true)) {
             if ($row['counted_corporate_kpi'] === null) {
-                $errors[] = "{$rowPrefix}Column: Counted as '26 Corporate KPI | Value: '{$rawKpi}' | Expected: Yes or No boolean | Status: INVALID VALUE";
+                $errors[] = "{$rowPrefix}Column: Counted as Corporate KPI | Value: '{$rawKpi}' | Expected: Yes, No, or Yes (YYYY) | Status: INVALID VALUE";
             }
         }
 
@@ -1075,7 +1110,7 @@ class OfflineTrainingImportService
 
         $str = strtolower($clean);
 
-        if (in_array($str, ['yes', 'y', '1', 'true', 'ya'], true)) {
+        if (in_array($str, ['yes', 'y', '1', 'true', 'ya'], true) || preg_match('/^(?:yes|ya)\s*\(\s*\d{2,4}\s*\)$/', $str)) {
             return true;
         }
         if (in_array($str, ['no', 'n', '0', 'false', 'tidak'], true)) {

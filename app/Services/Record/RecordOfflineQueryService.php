@@ -71,6 +71,7 @@ class RecordOfflineQueryService
                 'ot.main_classification',
                 'ot.sub_classification',
                 'ot.counted_corporate_kpi',
+                'ot.corporate_kpi_year',
                 'ot.sub_corporate_kpi',
                 'ot.delivery_method',
                 'ot.sub_delivery_method',

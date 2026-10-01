@@ -22,17 +22,18 @@
             <div class="row g-3 mb-4">
                 <div class="col-12 col-md-8">
                     <label for="add-course-name" class="form-label small fw-semibold">Course Name <span class="text-danger">*</span></label>
-                    <div class="input-group">
-                        <input type="text" class="form-control rounded-start-2" id="add-course-name" name="course_name" placeholder="e.g. High Voltage Safety &amp; Operation" required list="course-name-datalist" autocomplete="off">
-                        <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="course_name" data-target="#add-course-name" data-datalist="#course-name-datalist" data-title="Course Name" title="Add new Course Name" tabindex="-1">
-                            <i class="ti ti-plus"></i>
-                        </button>
+                    <div class="position-relative master-combobox" data-type="course_name">
+                        <div class="input-group">
+                            <input type="text" class="form-control rounded-start-2 master-combobox-input" id="add-course-name" name="course_name" placeholder="e.g. High Voltage Safety &amp; Operation" required autocomplete="off">
+                            <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split master-combobox-toggle" title="View options" tabindex="-1">
+                                <span class="visually-hidden">Toggle Dropdown</span>
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="course_name" data-target="#add-course-name" data-title="Course Name" title="Add new Course Name" tabindex="-1">
+                                <i class="ti ti-plus"></i>
+                            </button>
+                        </div>
+                        <div class="dropdown-menu master-combobox-menu shadow-sm w-100 py-1" style="display: none; max-height: 260px; overflow-y: auto; z-index: 1050; position: absolute; top: 100%; left: 0;"></div>
                     </div>
-                    <datalist id="course-name-datalist">
-                        @foreach ($options['course_name'] ?? [] as $opt)
-                            <option value="{{ $opt->value }}"></option>
-                        @endforeach
-                    </datalist>
                 </div>
                 <div class="col-12 col-md-4">
                     <label for="add-batch" class="form-label small fw-semibold">Batch</label>
@@ -126,31 +127,31 @@
                     </datalist>
                 </div>
                 <div class="col-12 col-md-6">
-                    <label class="form-label small fw-semibold d-block" id="label-counted-corporate-kpi">Counted as {{ $shortYear }} Corporate KPI</label>
+                    <label class="form-label small fw-semibold d-block" id="label-counted-corporate-kpi">Counted as Corporate KPI</label>
                     <div class="d-flex align-items-center gap-3 pt-1">
                         <div class="form-check form-check-inline mb-0">
-                            <input class="form-check-input" type="radio" name="counted_corporate_kpi" id="add-counted-kpi-yes" value="1" checked>
-                            <label class="form-check-label small" for="add-counted-kpi-yes">Yes</label>
+                            <input class="form-check-input" type="radio" name="counted_corporate_kpi" id="add-counted-kpi-no" value="0" checked>
+                            <label class="form-check-label small" for="add-counted-kpi-no">No</label>
                         </div>
                         <div class="form-check form-check-inline mb-0">
-                            <input class="form-check-input" type="radio" name="counted_corporate_kpi" id="add-counted-kpi-no" value="0">
-                            <label class="form-check-label small" for="add-counted-kpi-no">No</label>
+                            <input class="form-check-input" type="radio" name="counted_corporate_kpi" id="add-counted-kpi-yes" value="1">
+                            <label class="form-check-label small" for="add-counted-kpi-yes">Yes</label>
                         </div>
                     </div>
                 </div>
-                <div class="col-12 col-md-6">
-                    <label for="add-sub-corporate-kpi" class="form-label small fw-semibold" id="label-sub-corporate-kpi">Sub {{ $shortYear }} Corporate KPI</label>
+                <div class="col-12 col-md-6" id="container-kpi-year" style="display: none;">
+                    <label for="add-corporate-kpi-year" class="form-label small fw-semibold">Corporate KPI Year <span class="text-danger">*</span></label>
                     <div class="input-group">
-                        <input type="text" class="form-control rounded-start-2" id="add-sub-corporate-kpi" name="sub_corporate_kpi" placeholder="e.g. Safety Incident Reduction" list="sub-corporate-kpi-datalist" autocomplete="off">
-                        <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="sub_corporate_kpi" data-target="#add-sub-corporate-kpi" data-datalist="#sub-corporate-kpi-datalist" data-title="Sub Corporate KPI" data-year="{{ $currentYear ?? date('Y') }}" title="Add new Sub Corporate KPI" tabindex="-1">
+                        <select class="form-select rounded-start-2" id="add-corporate-kpi-year" name="corporate_kpi_year" disabled>
+                            @foreach ($kpiYears ?? [2026, 2025, 2024, 2023, 2022] as $yr)
+                                <option value="{{ $yr }}" {{ $yr == ($currentYear ?? date('Y')) ? 'selected' : '' }}>{{ $yr }}</option>
+                            @endforeach
+                        </select>
+                        <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="sub_corporate_kpi" data-target="#add-corporate-kpi-year" data-title="KPI Year" title="Add new KPI Year" tabindex="-1">
                             <i class="ti ti-plus"></i>
                         </button>
                     </div>
-                    <datalist id="sub-corporate-kpi-datalist">
-                        @foreach ($options['sub_corporate_kpi'] ?? [] as $opt)
-                            <option value="{{ $opt->value }}"></option>
-                        @endforeach
-                    </datalist>
+                    <input type="hidden" name="sub_corporate_kpi" id="add-sub-corporate-kpi" value="">
                 </div>
             </div>
 

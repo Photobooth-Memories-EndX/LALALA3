@@ -150,6 +150,18 @@ class OfflineTraining extends Model
         return $value ?? $this->attributes['batch'] ?? null;
     }
 
+    public function getFormattedCorporateKpiAttribute(): string
+    {
+        if ($this->counted_corporate_kpi === true || $this->counted_corporate_kpi === 1 || $this->counted_corporate_kpi === '1') {
+            $year = $this->corporate_kpi_year ?: ($this->sub_corporate_kpi && preg_match('/^\d{4}$/', (string) $this->sub_corporate_kpi) ? $this->sub_corporate_kpi : null);
+            return $year ? "Yes ({$year})" : "Yes";
+        }
+        if ($this->counted_corporate_kpi === false || $this->counted_corporate_kpi === 0 || $this->counted_corporate_kpi === '0') {
+            return "No";
+        }
+        return "-";
+    }
+
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');

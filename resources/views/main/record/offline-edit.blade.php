@@ -79,17 +79,18 @@
                     <div class="row g-3 mb-4">
                         <div class="col-12 col-md-8">
                             <label for="edit-course-name" class="form-label small fw-semibold">Course Name <span class="text-danger">*</span></label>
-                            <div class="input-group">
-                                <input type="text" class="form-control rounded-start-2 @error('course_name') is-invalid @enderror" id="edit-course-name" name="course_name" value="{{ old('course_name', $training->course_name) }}" placeholder="e.g. High Voltage Safety &amp; Operation" required list="edit-course-name-datalist" autocomplete="off">
-                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="course_name" data-target="#edit-course-name" data-datalist="#edit-course-name-datalist" data-title="Course Name" title="Add new Course Name" tabindex="-1">
-                                    <i class="ti ti-plus"></i>
-                                </button>
+                            <div class="position-relative master-combobox" data-type="course_name">
+                                <div class="input-group">
+                                    <input type="text" class="form-control rounded-start-2 master-combobox-input @error('course_name') is-invalid @enderror" id="edit-course-name" name="course_name" value="{{ old('course_name', $training->course_name) }}" placeholder="e.g. High Voltage Safety &amp; Operation" required autocomplete="off">
+                                    <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split master-combobox-toggle" title="View options" tabindex="-1">
+                                        <span class="visually-hidden">Toggle Dropdown</span>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="course_name" data-target="#edit-course-name" data-title="Course Name" title="Add new Course Name" tabindex="-1">
+                                        <i class="ti ti-plus"></i>
+                                    </button>
+                                </div>
+                                <div class="dropdown-menu master-combobox-menu shadow-sm w-100 py-1" style="display: none; max-height: 260px; overflow-y: auto; z-index: 1050; position: absolute; top: 100%; left: 0;"></div>
                             </div>
-                            <datalist id="edit-course-name-datalist">
-                                @foreach ($options['course_name'] ?? [] as $opt)
-                                    <option value="{{ $opt->value }}"></option>
-                                @endforeach
-                            </datalist>
                             @error('course_name')
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
@@ -208,32 +209,36 @@
                                 @endforeach
                             </datalist>
                         </div>
+                        @php
+                            $isKpiChecked = (bool) old('counted_corporate_kpi', $training->counted_corporate_kpi);
+                            $selectedKpiYear = old('corporate_kpi_year', $training->corporate_kpi_year ?: ($training->sub_corporate_kpi && preg_match('/^\d{4}$/', (string)$training->sub_corporate_kpi) ? $training->sub_corporate_kpi : ($training->start_date ? $training->start_date->format('Y') : date('Y'))));
+                        @endphp
                         <div class="col-12 col-md-6">
-                            <label class="form-label small fw-semibold d-block" id="label-edit-counted-kpi">Counted as {{ $shortYear }} Corporate KPI</label>
+                            <label class="form-label small fw-semibold d-block" id="label-edit-counted-kpi">Counted as Corporate KPI</label>
                             <div class="d-flex align-items-center gap-3 pt-1">
                                 <div class="form-check form-check-inline mb-0">
-                                    <input class="form-check-input" type="radio" name="counted_corporate_kpi" id="edit-counted-kpi-yes" value="1" {{ old('counted_corporate_kpi', $training->counted_corporate_kpi) ? 'checked' : '' }}>
-                                    <label class="form-check-label small" for="edit-counted-kpi-yes">Yes</label>
+                                    <input class="form-check-input" type="radio" name="counted_corporate_kpi" id="edit-counted-kpi-no" value="0" {{ !$isKpiChecked ? 'checked' : '' }}>
+                                    <label class="form-check-label small" for="edit-counted-kpi-no">No</label>
                                 </div>
                                 <div class="form-check form-check-inline mb-0">
-                                    <input class="form-check-input" type="radio" name="counted_corporate_kpi" id="edit-counted-kpi-no" value="0" {{ !old('counted_corporate_kpi', $training->counted_corporate_kpi) ? 'checked' : '' }}>
-                                    <label class="form-check-label small" for="edit-counted-kpi-no">No</label>
+                                    <input class="form-check-input" type="radio" name="counted_corporate_kpi" id="edit-counted-kpi-yes" value="1" {{ $isKpiChecked ? 'checked' : '' }}>
+                                    <label class="form-check-label small" for="edit-counted-kpi-yes">Yes</label>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-12 col-md-6">
-                            <label for="edit-sub-corporate-kpi" class="form-label small fw-semibold" id="label-edit-sub-kpi">Sub {{ $shortYear }} Corporate KPI</label>
+                        <div class="col-12 col-md-6" id="edit-container-kpi-year" style="{{ $isKpiChecked ? '' : 'display: none;' }}">
+                            <label for="edit-corporate-kpi-year" class="form-label small fw-semibold">Corporate KPI Year <span class="text-danger">*</span></label>
                             <div class="input-group">
-                                <input type="text" class="form-control rounded-start-2" id="edit-sub-corporate-kpi" name="sub_corporate_kpi" value="{{ old('sub_corporate_kpi', $training->sub_corporate_kpi) }}" placeholder="e.g. Safety Incident Reduction" list="edit-sub-corporate-kpi-datalist" autocomplete="off">
-                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="sub_corporate_kpi" data-target="#edit-sub-corporate-kpi" data-datalist="#edit-sub-corporate-kpi-datalist" data-title="Sub Corporate KPI" data-year="{{ $kpiYear }}" title="Add new Sub Corporate KPI" tabindex="-1">
+                                <select class="form-select rounded-start-2" id="edit-corporate-kpi-year" name="corporate_kpi_year" {{ $isKpiChecked ? '' : 'disabled' }}>
+                                    @foreach ($kpiYears ?? [2026, 2025, 2024, 2023, 2022] as $yr)
+                                        <option value="{{ $yr }}" {{ $yr == $selectedKpiYear ? 'selected' : '' }}>{{ $yr }}</option>
+                                    @endforeach
+                                </select>
+                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="sub_corporate_kpi" data-target="#edit-corporate-kpi-year" data-title="KPI Year" title="Add new KPI Year" tabindex="-1">
                                     <i class="ti ti-plus"></i>
                                 </button>
                             </div>
-                            <datalist id="edit-sub-corporate-kpi-datalist">
-                                @foreach ($options['sub_corporate_kpi'] ?? [] as $opt)
-                                    <option value="{{ $opt->value }}"></option>
-                                @endforeach
-                            </datalist>
+                            <input type="hidden" name="sub_corporate_kpi" id="edit-sub-corporate-kpi" value="{{ $isKpiChecked ? $selectedKpiYear : '' }}">
                         </div>
                     </div>
 
@@ -672,6 +677,43 @@
         color: #ffffff;
     }
 
+    /* MASTER SEARCHABLE COMBOBOX */
+    .master-combobox {
+        position: relative;
+    }
+    .master-combobox .dropdown-menu {
+        max-height: 250px;
+        overflow-y: auto;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e5e7eb;
+        border-radius: 0.375rem;
+        z-index: 1060;
+    }
+    .master-combobox .dropdown-item {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .master-combobox .dropdown-item:hover,
+    .master-combobox .dropdown-item:focus {
+        background-color: #f0f7ff;
+        color: #0c5b9e;
+    }
+    [data-bs-theme="dark"] .master-combobox .dropdown-menu,
+    body.dark-mode .master-combobox .dropdown-menu {
+        background-color: #1e293b;
+        border-color: #334155;
+        color: #f8fafc;
+    }
+    [data-bs-theme="dark"] .master-combobox .dropdown-item:hover,
+    body.dark-mode .master-combobox .dropdown-item:hover {
+        background-color: #334155;
+        color: #60a5fa;
+    }
+
     /* DARK MODE OVERRIDES */
     [data-bs-theme="dark"] .record-section-header,
     body.dark-mode .record-section-header,
@@ -730,6 +772,117 @@
             });
         }
 
+        // --- Course Name Master Options & Searchable Combobox ---
+        let masterCourseOptions = {!! json_encode(collect($options['course_name'] ?? [])->pluck('value')->values()->all()) !!};
+
+        function initCourseNameCombobox() {
+            const $combobox = $('.master-combobox[data-type="course_name"]');
+            if (!$combobox.length) return;
+
+            const $input = $combobox.find('.master-combobox-input');
+            const $toggle = $combobox.find('.master-combobox-toggle');
+            const $menu = $combobox.find('.master-combobox-menu');
+
+            function renderOptions(query) {
+                const q = (query || '').toLowerCase().trim();
+                const filtered = masterCourseOptions.filter(item => {
+                    return !q || item.toLowerCase().includes(q);
+                });
+
+                $menu.empty();
+
+                if (filtered.length > 0) {
+                    filtered.forEach(item => {
+                        const $a = $(`
+                            <a href="#" class="dropdown-item d-flex align-items-center justify-content-between py-2 combobox-item" data-value="${escapeHtml(item)}">
+                                <span class="text-truncate" style="max-width: 85%;">${escapeHtml(item)}</span>
+                                <span class="badge bg-light text-muted border extra-small">master</span>
+                            </a>
+                        `);
+                        $menu.append($a);
+                    });
+                } else if (!q) {
+                    $menu.append('<div class="p-2 text-muted small text-center">No master courses found. Type to create new.</div>');
+                }
+
+                if (q) {
+                    const exactMatch = masterCourseOptions.some(item => item.toLowerCase() === q);
+                    if (!exactMatch) {
+                        $menu.append(`
+                            <div class="p-2 border-top bg-light-subtle extra-small text-muted">
+                                <i class="ti ti-sparkles text-primary me-1"></i>New course will be registered: <strong>"${escapeHtml(query.trim())}"</strong>
+                            </div>
+                        `);
+                    }
+                }
+            }
+
+            $input.on('focus input', function () {
+                renderOptions($(this).val());
+                $menu.show();
+            });
+
+            $toggle.on('click', function (e) {
+                e.stopPropagation();
+                if ($menu.is(':visible')) {
+                    $menu.hide();
+                } else {
+                    renderOptions($input.val());
+                    $menu.show();
+                    $input.focus();
+                }
+            });
+
+            $menu.on('click', '.combobox-item', function (e) {
+                e.preventDefault();
+                const val = $(this).data('value');
+                $input.val(val).trigger('input').trigger('change');
+                $menu.hide();
+            });
+
+            $(document).on('click', function (e) {
+                if (!$(e.target).closest($combobox).length) {
+                    $menu.hide();
+                }
+            });
+
+            $input.on('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    $menu.hide();
+                }
+            });
+        }
+
+        initCourseNameCombobox();
+
+        // --- Corporate KPI Toggle & Logic ---
+        function syncEditKpiUi() {
+            const isKpi = $('input[name="counted_corporate_kpi"]:checked').val() === '1';
+            const $container = $('#edit-container-kpi-year');
+            const $yearSelect = $('#edit-corporate-kpi-year');
+            const $subKpiHidden = $('#edit-sub-corporate-kpi');
+
+            if (isKpi) {
+                $container.show();
+                $yearSelect.prop('disabled', false);
+                $subKpiHidden.val($yearSelect.val());
+            } else {
+                $container.hide();
+                $yearSelect.prop('disabled', true);
+                $subKpiHidden.val('');
+            }
+        }
+
+        $('input[name="counted_corporate_kpi"]').on('change', function () {
+            syncEditKpiUi();
+        });
+
+        $('#edit-corporate-kpi-year').on('change', function () {
+            $('#edit-sub-corporate-kpi').val($(this).val());
+        });
+
+        syncEditKpiUi();
+
         // --- Helper: Get Current KPI Year from Start Date or fallback ---
         function getCurrentKpiYear() {
             const startVal = $('#edit-start-date').val();
@@ -739,34 +892,26 @@
                     return y;
                 }
             }
-            return {{ $kpiYear ?? date('Y') }};
+            const selectedYr = $('#edit-corporate-kpi-year').val();
+            return selectedYr ? parseInt(selectedYr, 10) : {{ $kpiYear ?? date('Y') }};
         }
 
-        // --- Helper: Update Dynamic Yearly Corporate KPI Labels & Options ---
+        // --- Helper: Update Dynamic Yearly Corporate KPI Options ---
         function updateKpiYearDisplay() {
             const kpiYear = getCurrentKpiYear();
-            const shortYear = "'" + String(kpiYear).slice(-2);
-            $('#label-edit-counted-kpi').text(`Counted as ${shortYear} Corporate KPI`);
-            $('#label-edit-sub-kpi').text(`Sub ${shortYear} Corporate KPI`);
-            $('#edit-corporate-kpi-year').val(kpiYear);
-
-            // Update button data-year attribute
-            $('.btn-add-option-modal[data-type="sub_corporate_kpi"]').data('year', kpiYear);
-
-            // Fetch and refresh sub_corporate_kpi datalist for this year
-            $.ajax({
-                url: "{{ route('manage.record.offline.options.index') }}",
-                type: 'GET',
-                data: { type: 'sub_corporate_kpi', year: kpiYear },
-                success: function (res) {
-                    const results = (res && res.results) ? res.results : [];
-                    const $dl = $('#edit-sub-corporate-kpi-datalist');
-                    $dl.empty();
-                    results.forEach(function (item) {
-                        $dl.append(`<option value="${escapeHtml(item.value)}"></option>`);
-                    });
+            const $yearSelect = $('#edit-corporate-kpi-year');
+            if ($yearSelect.length) {
+                let hasYear = false;
+                $yearSelect.find('option').each(function () {
+                    if (parseInt($(this).val(), 10) === kpiYear) {
+                        hasYear = true;
+                    }
+                });
+                if (!hasYear && kpiYear >= 1970 && kpiYear <= 2100) {
+                    $yearSelect.prepend(new Option(kpiYear, kpiYear, false, false));
                 }
-            });
+            }
+            $('.btn-add-option-modal[data-type="sub_corporate_kpi"]').data('year', kpiYear);
         }
 
         // Month auto-derive and dynamic KPI year from start date
@@ -887,6 +1032,33 @@
                         // If target is an <input>
                         const $inp = $(targetSelect);
                         $inp.val(optVal).trigger('input').trigger('change');
+                    }
+
+                    if (type === 'course_name') {
+                        if (!masterCourseOptions.includes(optVal)) {
+                            masterCourseOptions.push(optVal);
+                            masterCourseOptions.sort();
+                        }
+                        $('#edit-course-name').val(optVal).trigger('input').trigger('change');
+                    }
+
+                    if (type === 'sub_corporate_kpi') {
+                        const $kpiSelect = $('#edit-corporate-kpi-year');
+                        if ($kpiSelect.length) {
+                            let kpiOptExists = false;
+                            $kpiSelect.find('option').each(function () {
+                                if ($(this).val() === optVal) {
+                                    kpiOptExists = true;
+                                }
+                            });
+                            if (!kpiOptExists) {
+                                $kpiSelect.prepend(new Option(optVal, optVal, true, true));
+                            } else {
+                                $kpiSelect.val(optVal);
+                            }
+                            $('#edit-counted-kpi-yes').prop('checked', true).trigger('change');
+                            $kpiSelect.trigger('change');
+                        }
                     }
 
                     // If target has an associated <datalist>

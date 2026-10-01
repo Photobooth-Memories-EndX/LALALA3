@@ -157,7 +157,16 @@ class OfflineOptionService
         $cleanValue = trim(preg_replace('/\s+/', ' ', $value));
         $normalized = self::normalize($cleanValue);
 
-        $effectiveYear = self::isYearScoped($type) ? ($year ?: (int) date('Y')) : null;
+        $effectiveYear = null;
+        if (self::isYearScoped($type)) {
+            if ($year) {
+                $effectiveYear = (int) $year;
+            } elseif (preg_match('/^\d{4}$/', $cleanValue)) {
+                $effectiveYear = (int) $cleanValue;
+            } else {
+                $effectiveYear = (int) date('Y');
+            }
+        }
         $scopeKey = OfflineTrainingOption::buildScopeKey($effectiveYear);
         $cacheKey = "{$type}:{$scopeKey}:{$normalized}";
 
@@ -318,5 +327,57 @@ class OfflineOptionService
             ->orderBy('value', 'asc')
             ->limit($limit)
             ->get();
+    }
+
+    /**
+     * Get available Corporate KPI years for dropdown selection.
+     * Merges option records, training records, and standard year window.
+     *
+     * @return int[]
+     */
+    public function getKpiYears(): array
+    {
+        $years = [];
+
+        // 1. Years from OfflineTrainingOption
+        try {
+            $optYears = OfflineTrainingOption::where('option_type', self::TYPE_SUB_CORPORATE_KPI)
+                ->whereNotNull('year')
+                ->pluck('year')
+                ->all();
+            foreach ($optYears as $y) {
+                if ($y) {
+                    $years[] = (int) $y;
+                }
+            }
+        } catch (\Throwable $e) {
+            // ignore
+        }
+
+        // 2. Years from OfflineTraining
+        try {
+            $trainYears = \App\Models\OfflineTraining::distinct()
+                ->whereNotNull('corporate_kpi_year')
+                ->pluck('corporate_kpi_year')
+                ->all();
+            foreach ($trainYears as $y) {
+                if ($y) {
+                    $years[] = (int) $y;
+                }
+            }
+        } catch (\Throwable $e) {
+            // ignore
+        }
+
+        // 3. Standard year window: current year + 1 down to current year - 4
+        $curYear = (int) date('Y');
+        for ($y = $curYear + 1; $y >= $curYear - 4; $y--) {
+            $years[] = $y;
+        }
+
+        $years = array_values(array_unique($years));
+        rsort($years);
+
+        return $years;
     }
 }

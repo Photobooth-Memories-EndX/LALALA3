@@ -63,6 +63,7 @@ class RecordOfflineController extends Controller
     {
         $currentYear = (int) date('Y');
         $options = $optionService->getGroupedOptions($currentYear, true);
+        $kpiYears = $optionService->getKpiYears();
         $classifications = Classification::orderBy('classification_name', 'asc')->get();
 
         return view('main.record.offline-create', [
@@ -70,6 +71,7 @@ class RecordOfflineController extends Controller
             'subtitle'            => 'Create an offline employee training record.',
             'classifications'     => $classifications,
             'options'             => $options,
+            'kpiYears'            => $kpiYears,
             'currentYear'         => $currentYear,
             'trainingTypes'       => self::TRAINING_TYPES,
             'mainClassifications' => $classifications->pluck('classification_name')->all(),
@@ -430,9 +432,13 @@ class RecordOfflineController extends Controller
                 if ($row->counted_corporate_kpi === null || $row->counted_corporate_kpi === '') {
                     return '<span class="text-muted small">-</span>';
                 }
-                return $row->counted_corporate_kpi
-                    ? '<span class="badge bg-blue-lt text-primary px-2 py-1">Yes</span>'
-                    : '<span class="badge bg-light text-muted border px-2 py-1">No</span>';
+                $isYes = (bool) $row->counted_corporate_kpi;
+                if ($isYes) {
+                    $year = !empty($row->corporate_kpi_year) ? $row->corporate_kpi_year : (!empty($row->sub_corporate_kpi) && preg_match('/^\d{4}$/', (string)$row->sub_corporate_kpi) ? $row->sub_corporate_kpi : null);
+                    $label = $year ? "Yes ({$year})" : "Yes";
+                    return '<span class="badge bg-blue-lt text-primary px-2 py-1">' . htmlspecialchars($label) . '</span>';
+                }
+                return '<span class="badge bg-light text-muted border px-2 py-1">No</span>';
             })
             ->addColumn('sub_corporate_kpi', function ($row) {
                 return htmlspecialchars($row->sub_corporate_kpi ?: '-');
@@ -700,6 +706,7 @@ class RecordOfflineController extends Controller
                 'ot.main_classification',
                 'ot.sub_classification',
                 'ot.counted_corporate_kpi',
+                'ot.corporate_kpi_year',
                 'ot.sub_corporate_kpi',
                 // Delivery & Provider
                 'ot.delivery_method',
@@ -819,6 +826,11 @@ class RecordOfflineController extends Controller
         $resolved = self::resolveClassification($training->main_classification ?? 'unclassified');
         $kpiYear = $training->corporate_kpi_year ?: ($training->start_date ? (int) $training->start_date->format('Y') : (int) date('Y'));
         $options = $optionService->getGroupedOptions($kpiYear, true);
+        $kpiYears = $optionService->getKpiYears();
+        if (!in_array($kpiYear, $kpiYears, true)) {
+            $kpiYears[] = $kpiYear;
+            rsort($kpiYears);
+        }
         $classifications = Classification::orderBy('classification_name', 'asc')->get();
 
         return view('main.record.offline-edit', [
@@ -830,6 +842,7 @@ class RecordOfflineController extends Controller
             'classifications'     => $classifications,
             'options'             => $options,
             'kpiYear'             => $kpiYear,
+            'kpiYears'            => $kpiYears,
             'trainingTypes'       => self::TRAINING_TYPES,
             'mainClassifications' => $classifications->pluck('classification_name')->all(),
         ]);

@@ -88,6 +88,43 @@
         color: #ffffff;
     }
 
+    /* MASTER SEARCHABLE COMBOBOX */
+    .master-combobox {
+        position: relative;
+    }
+    .master-combobox .dropdown-menu {
+        max-height: 250px;
+        overflow-y: auto;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e5e7eb;
+        border-radius: 0.375rem;
+        z-index: 1060;
+    }
+    .master-combobox .dropdown-item {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .master-combobox .dropdown-item:hover,
+    .master-combobox .dropdown-item:focus {
+        background-color: #f0f7ff;
+        color: #0c5b9e;
+    }
+    [data-bs-theme="dark"] .master-combobox .dropdown-menu,
+    body.dark-mode .master-combobox .dropdown-menu {
+        background-color: #1e293b;
+        border-color: #334155;
+        color: #f8fafc;
+    }
+    [data-bs-theme="dark"] .master-combobox .dropdown-item:hover,
+    body.dark-mode .master-combobox .dropdown-item:hover {
+        background-color: #334155;
+        color: #60a5fa;
+    }
+
     /* DARK MODE OVERRIDES */
     [data-bs-theme="dark"] .record-section-header,
     body.dark-mode .record-section-header,

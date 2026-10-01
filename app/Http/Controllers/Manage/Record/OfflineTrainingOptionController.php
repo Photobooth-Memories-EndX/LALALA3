@@ -76,7 +76,12 @@ class OfflineTrainingOptionController extends Controller
         $year = $request->filled('year') ? (int) $request->input('year') : null;
 
         if ($type === OfflineOptionService::TYPE_SUB_CORPORATE_KPI && !$year) {
-            $year = (int) date('Y');
+            $trimmed = trim($rawValue);
+            if (preg_match('/^\d{4}$/', $trimmed)) {
+                $year = (int) $trimmed;
+            } else {
+                $year = (int) date('Y');
+            }
         }
 
         if (!OfflineOptionService::isValidValue($rawValue)) {

@@ -56,6 +56,119 @@
             });
         }
 
+        // --- Course Name Master Options & Searchable Combobox ---
+        let masterCourseOptions = {!! json_encode(collect($options['course_name'] ?? [])->pluck('value')->values()->all()) !!};
+
+        function initCourseNameCombobox() {
+            const $combobox = $('.master-combobox[data-type="course_name"]');
+            if (!$combobox.length) return;
+
+            const $input = $combobox.find('.master-combobox-input');
+            const $toggle = $combobox.find('.master-combobox-toggle');
+            const $menu = $combobox.find('.master-combobox-menu');
+
+            function renderOptions(query) {
+                const q = (query || '').toLowerCase().trim();
+                const filtered = masterCourseOptions.filter(item => {
+                    return !q || item.toLowerCase().includes(q);
+                });
+
+                $menu.empty();
+
+                if (filtered.length > 0) {
+                    filtered.forEach(item => {
+                        const $a = $(`
+                            <a href="#" class="dropdown-item d-flex align-items-center justify-content-between py-2 combobox-item" data-value="${escapeHtml(item)}">
+                                <span class="text-truncate" style="max-width: 85%;">${escapeHtml(item)}</span>
+                                <span class="badge bg-light text-muted border extra-small">master</span>
+                            </a>
+                        `);
+                        $menu.append($a);
+                    });
+                } else if (!q) {
+                    $menu.append('<div class="p-2 text-muted small text-center">No master courses found. Type to create new.</div>');
+                }
+
+                if (q) {
+                    const exactMatch = masterCourseOptions.some(item => item.toLowerCase() === q);
+                    if (!exactMatch) {
+                        $menu.append(`
+                            <div class="p-2 border-top bg-light-subtle extra-small text-muted">
+                                <i class="ti ti-sparkles text-primary me-1"></i>New course will be registered: <strong>"${escapeHtml(query.trim())}"</strong>
+                            </div>
+                        `);
+                    }
+                }
+            }
+
+            $input.on('focus input', function () {
+                renderOptions($(this).val());
+                $menu.show();
+            });
+
+            $toggle.on('click', function (e) {
+                e.stopPropagation();
+                if ($menu.is(':visible')) {
+                    $menu.hide();
+                } else {
+                    renderOptions($input.val());
+                    $menu.show();
+                    $input.focus();
+                }
+            });
+
+            $menu.on('click', '.combobox-item', function (e) {
+                e.preventDefault();
+                const val = $(this).data('value');
+                $input.val(val).trigger('input').trigger('change');
+                $menu.hide();
+            });
+
+            $(document).on('click', function (e) {
+                if (!$(e.target).closest($combobox).length) {
+                    $menu.hide();
+                }
+            });
+
+            $input.on('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    $menu.hide();
+                }
+            });
+        }
+
+        initCourseNameCombobox();
+
+        // --- Corporate KPI Toggle & Logic ---
+        function syncKpiUi() {
+            const isKpi = $('input[name="counted_corporate_kpi"]:checked').val() === '1';
+            const $container = $('#container-kpi-year');
+            const $yearSelect = $('#add-corporate-kpi-year');
+            const $subKpiHidden = $('#add-sub-corporate-kpi');
+
+            if (isKpi) {
+                $container.show();
+                $yearSelect.prop('disabled', false);
+                $subKpiHidden.val($yearSelect.val());
+            } else {
+                $container.hide();
+                $yearSelect.prop('disabled', true);
+                $subKpiHidden.val('');
+            }
+            updateSection4Review();
+        }
+
+        $('input[name="counted_corporate_kpi"]').on('change', function () {
+            syncKpiUi();
+        });
+
+        $('#add-corporate-kpi-year').on('change', function () {
+            $('#add-sub-corporate-kpi').val($(this).val());
+            updateSection4Review();
+        });
+
+        syncKpiUi();
+
         // --- Helper: Get Current KPI Year from Start Date or fallback ---
         function getCurrentKpiYear() {
             const startVal = $('#add-start-date').val();
@@ -65,33 +178,26 @@
                     return y;
                 }
             }
-            return {{ $currentYear ?? date('Y') }};
+            const selectedYr = $('#add-corporate-kpi-year').val();
+            return selectedYr ? parseInt(selectedYr, 10) : {{ $currentYear ?? date('Y') }};
         }
 
-        // --- Helper: Update Dynamic Yearly Corporate KPI Labels & Options ---
+        // --- Helper: Update Dynamic Yearly Corporate KPI Options ---
         function updateKpiYearDisplay() {
             const kpiYear = getCurrentKpiYear();
-            const shortYear = "'" + String(kpiYear).slice(-2);
-            $('#label-counted-corporate-kpi').text(`Counted as ${shortYear} Corporate KPI`);
-            $('#label-sub-corporate-kpi').text(`Sub ${shortYear} Corporate KPI`);
-
-            // Update button data-year attribute
-            $('.btn-add-option-modal[data-type="sub_corporate_kpi"]').data('year', kpiYear);
-
-            // Fetch and refresh sub_corporate_kpi datalist for this year
-            $.ajax({
-                url: "{{ route('manage.record.offline.options.index') }}",
-                type: 'GET',
-                data: { type: 'sub_corporate_kpi', year: kpiYear },
-                success: function (res) {
-                    const results = (res && res.results) ? res.results : [];
-                    const $dl = $('#sub-corporate-kpi-datalist');
-                    $dl.empty();
-                    results.forEach(function (item) {
-                        $dl.append(`<option value="${escapeHtml(item.value)}"></option>`);
-                    });
+            const $yearSelect = $('#add-corporate-kpi-year');
+            if ($yearSelect.length) {
+                let hasYear = false;
+                $yearSelect.find('option').each(function () {
+                    if (parseInt($(this).val(), 10) === kpiYear) {
+                        hasYear = true;
+                    }
+                });
+                if (!hasYear && kpiYear >= 1970 && kpiYear <= 2100) {
+                    $yearSelect.prepend(new Option(kpiYear, kpiYear, false, false));
                 }
-            });
+            }
+            $('.btn-add-option-modal[data-type="sub_corporate_kpi"]').data('year', kpiYear);
         }
 
         // --- Schedule & Duration Watchers ---
@@ -596,7 +702,8 @@
             const mainClass = $('#add-main-classification').val() || '-';
             const subClass = $('#add-sub-classification').val().trim() || '-';
             const isKpi = $('input[name="counted_corporate_kpi"]:checked').val() === '1';
-            const subKpi = $('#add-sub-corporate-kpi').val().trim() || '-';
+            const kpiYear = isKpi ? $('#add-corporate-kpi-year').val() : null;
+            const subKpi = kpiYear ? String(kpiYear) : '-';
             const delivery = $('#add-delivery-method').val() || '-';
             const subDelivery = $('#add-sub-delivery-method').val().trim() || '-';
             const provider = $('#add-provider').val() || '-';
@@ -644,7 +751,7 @@
 
                 // Counted KPI
                 const kpiHtml = isKpi
-                    ? '<span class="badge bg-blue-lt text-primary px-2 py-0.5">Yes</span>'
+                    ? `<span class="badge bg-blue-lt text-primary px-2 py-0.5">Yes (${escapeHtml(String(kpiYear || ''))})</span>`
                     : '<span class="badge bg-light text-muted border px-2 py-0.5">No</span>';
 
                 // Type badge
@@ -780,6 +887,15 @@
                 return;
             }
 
+            // Client Validation: KPI Year
+            const isKpiSelected = $('input[name="counted_corporate_kpi"]:checked').val() === '1';
+            const kpiYearVal = $('#add-corporate-kpi-year').val();
+            if (isKpiSelected && !kpiYearVal) {
+                $addAlert.text('Corporate KPI Year is required when Counted as Corporate KPI is Yes.').show();
+                scrollToSection('#section-1-training-info', '#add-corporate-kpi-year');
+                return;
+            }
+
             // Client Validation: Participants
             if (addParticipants.length === 0) {
                 $addAlert.text('At least one participant is required in Section 2.').show();
@@ -797,9 +913,9 @@
                 batch: $('#add-batch').val().trim(),
                 main_classification: $('#add-main-classification').val(),
                 sub_classification: $('#add-sub-classification').val().trim(),
-                counted_corporate_kpi: $('input[name="counted_corporate_kpi"]:checked').val(),
-                sub_corporate_kpi: $('#add-sub-corporate-kpi').val().trim(),
-                corporate_kpi_year: getCurrentKpiYear(),
+                counted_corporate_kpi: isKpiSelected ? 1 : 0,
+                corporate_kpi_year: isKpiSelected ? parseInt(kpiYearVal, 10) : null,
+                sub_corporate_kpi: isKpiSelected ? String(kpiYearVal) : null,
                 delivery_method: $('#add-delivery-method').val(),
                 sub_delivery_method: $('#add-sub-delivery-method').val().trim(),
                 provider: $('#add-provider').val(),
@@ -955,6 +1071,33 @@
                         // If target is an <input>
                         const $inp = $(targetSelect);
                         $inp.val(optVal).trigger('input').trigger('change');
+                    }
+
+                    if (type === 'course_name') {
+                        if (!masterCourseOptions.includes(optVal)) {
+                            masterCourseOptions.push(optVal);
+                            masterCourseOptions.sort();
+                        }
+                        $('#add-course-name').val(optVal).trigger('input').trigger('change');
+                    }
+
+                    if (type === 'sub_corporate_kpi') {
+                        const $kpiSelect = $('#add-corporate-kpi-year');
+                        if ($kpiSelect.length) {
+                            let kpiOptExists = false;
+                            $kpiSelect.find('option').each(function () {
+                                if ($(this).val() === optVal) {
+                                    kpiOptExists = true;
+                                }
+                            });
+                            if (!kpiOptExists) {
+                                $kpiSelect.prepend(new Option(optVal, optVal, true, true));
+                            } else {
+                                $kpiSelect.val(optVal);
+                            }
+                            $('#add-counted-kpi-yes').prop('checked', true).trigger('change');
+                            $kpiSelect.trigger('change');
+                        }
                     }
 
                     // If target has an associated <datalist>

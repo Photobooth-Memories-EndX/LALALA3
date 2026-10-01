@@ -196,8 +196,18 @@
                     @if(!empty($row->sub_classification))
                         <span class="field-label">Sub Class:</span> <span class="field-val">{{ $row->sub_classification }}</span><br>
                     @endif
-                    <span class="field-label">Corporate KPI:</span> <span class="field-val">{{ $row->counted_corporate_kpi ? 'Yes' : ($row->counted_corporate_kpi === false ? 'No' : '-') }}</span>
-                    @if(!empty($row->sub_corporate_kpi)) ({{ $row->sub_corporate_kpi }}) @endif
+                    @php
+                        $kpiPdfStr = '-';
+                        if ($row->counted_corporate_kpi !== null) {
+                            if ((bool) $row->counted_corporate_kpi) {
+                                $y = !empty($row->corporate_kpi_year) ? $row->corporate_kpi_year : (!empty($row->sub_corporate_kpi) && preg_match('/^\d{4}$/', (string)$row->sub_corporate_kpi) ? $row->sub_corporate_kpi : null);
+                                $kpiPdfStr = $y ? "Yes ({$y})" : "Yes";
+                            } else {
+                                $kpiPdfStr = 'No';
+                            }
+                        }
+                    @endphp
+                    <span class="field-label">Corporate KPI:</span> <span class="field-val">{{ $kpiPdfStr }}</span>
                 </td>
                 <td>
                     <span class="field-label">Start Date:</span> <span class="field-val">{{ $row->start_date ? date('d M Y', strtotime($row->start_date)) : '-' }}</span><br>
