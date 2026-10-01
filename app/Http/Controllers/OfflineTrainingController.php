@@ -119,6 +119,7 @@ class OfflineTrainingController extends Controller
 
         $calendarEvents = $trainings->map(function ($t) {
             $startDate = Carbon::parse($t->start_date);
+            $endDate = Carbon::parse($t->end_date ?? $t->start_date);
             $enrolled = $t->participants_count ?? 0;
             $quota = $t->quota ?: 1;
             $isClosed = $t->status === 'Closed' || $enrolled >= $quota;
@@ -128,6 +129,9 @@ class OfflineTrainingController extends Controller
                 'year'        => (int) $startDate->format('Y'),
                 'month'       => (int) $startDate->format('n') - 1, // 0-indexed for JavaScript Date
                 'day'         => (int) $startDate->format('j'),
+                'startDate'   => $startDate->format('Y-m-d'),
+                'endDate'     => $endDate->format('Y-m-d'),
+                'rawStatus'   => $t->status,
                 'title'       => $t->title,
                 'shortTitle'  => Str::limit($t->title, 16),
                 'category'    => $t->category,

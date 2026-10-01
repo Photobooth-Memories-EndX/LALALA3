@@ -106,6 +106,12 @@
             border-color: #fecaca;
         }
 
+        .cal-status-badge-running {
+            background-color: #fffbeb;
+            color: #b45309;
+            border-color: #fde68a;
+        }
+
         /* Timeline Items */
         .timeline-schedule-item {
             cursor: pointer;
@@ -265,6 +271,7 @@
     $dbTrainings = $trainings ?? \App\Models\OfflineTraining::withCount('participants')->orderBy('start_date', 'asc')->get();
     $computedCalendarEvents = $calendarEvents ?? $dbTrainings->map(function ($t) {
         $startDate = \Carbon\Carbon::parse($t->start_date);
+        $endDate = \Carbon\Carbon::parse($t->end_date ?? $t->start_date);
         $enrolled = $t->participants_count ?? 0;
         $quota = $t->quota ?: 1;
         $isClosed = $t->status === 'Closed' || $enrolled >= $quota;
@@ -274,6 +281,9 @@
             'year'        => (int) $startDate->format('Y'),
             'month'       => (int) $startDate->format('n') - 1, // 0-indexed for JS Date
             'day'         => (int) $startDate->format('j'),
+            'startDate'   => $startDate->format('Y-m-d'),
+            'endDate'     => $endDate->format('Y-m-d'),
+            'rawStatus'   => $t->status,
             'title'       => $t->title,
             'shortTitle'  => \Illuminate\Support\Str::limit($t->title, 16),
             'category'    => $t->category,
@@ -354,39 +364,62 @@
                     } else if (dayCounter <= daysInMonth) {
                         // Current Month Day
                         const thisDay = dayCounter;
-                        const isToday = (year === activeDate.getFullYear() && month === activeDate.getMonth() && thisDay === activeDate.getDate());
+                        const cellDateFormatted = `${year}-${String(month + 1).padStart(2, '0')}-${String(thisDay).padStart(2, '0')}`;
+                        const todayDateFormatted = '{{ \Carbon\Carbon::today()->format('Y-m-d') }}';
+                        const isToday = (cellDateFormatted === todayDateFormatted);
                         
-                        // Find events on this day & calculate open/closed counts
-                        const dayEvents = calendarEvents.filter(e => e.year === year && e.month === month && e.day === thisDay);
-                        const openEvents = dayEvents.filter(e => e.status === 'open');
-                        const closedEvents = dayEvents.filter(e => e.status === 'closed');
+                        // Find events on this day (spanning startDate to endDate inclusive)
+                        const activeTrainingsForDay = calendarEvents.filter(e => {
+                            const s = e.startDate || `${e.year}-${String(e.month + 1).padStart(2, '0')}-${String(e.day).padStart(2, '0')}`;
+                            const end = e.endDate || s;
+                            return cellDateFormatted >= s && cellDateFormatted <= end;
+                        });
 
                         let badgesHtml = '';
-                        if (openEvents.length > 0) {
-                            badgesHtml += `
-                                <div class="cal-status-badge cal-status-badge-open bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-0-5 mb-1 fw-bold text-center"
-                                     role="button"
-                                     data-year="${year}"
-                                     data-month="${month}"
-                                     data-day="${thisDay}"
-                                     data-status="open"
-                                     title="${openEvents.length} Open Training(s)">
-                                    <span>Open: ${openEvents.length}</span>
-                                </div>
-                            `;
-                        }
-                        if (closedEvents.length > 0) {
-                            badgesHtml += `
-                                <div class="cal-status-badge cal-status-badge-closed bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-2 py-0-5 mb-1 fw-bold text-center"
-                                     role="button"
-                                     data-year="${year}"
-                                     data-month="${month}"
-                                     data-day="${thisDay}"
-                                     data-status="closed"
-                                     title="${closedEvents.length} Closed Training(s)">
-                                    <span>Close: ${closedEvents.length}</span>
-                                </div>
-                            `;
+                        if (activeTrainingsForDay.length > 0) {
+                            if (cellDateFormatted < todayDateFormatted) {
+                                badgesHtml = `
+                                    <div class="mt-1 d-flex flex-column gap-1">
+                                        <span class="badge bg-secondary-subtle text-secondary rounded-pill extra-small py-1 px-2 opacity-75 cal-status-badge cal-status-badge-closed"
+                                              role="button"
+                                              data-year="${year}"
+                                              data-month="${month}"
+                                              data-day="${thisDay}"
+                                              data-status="closed"
+                                              title="${activeTrainingsForDay.length} Closed Training(s)">
+                                            Done: ${activeTrainingsForDay.length}
+                                        </span>
+                                    </div>
+                                `;
+                            } else if (cellDateFormatted === todayDateFormatted || activeTrainingsForDay.some(e => e.rawStatus === 'Running')) {
+                                badgesHtml = `
+                                    <div class="mt-1 d-flex flex-column gap-1">
+                                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill extra-small py-1 px-2 fw-semibold cal-status-badge cal-status-badge-running"
+                                              role="button"
+                                              data-year="${year}"
+                                              data-month="${month}"
+                                              data-day="${thisDay}"
+                                              data-status="running"
+                                              title="${activeTrainingsForDay.length} Running Training(s)">
+                                            Running: ${activeTrainingsForDay.length}
+                                        </span>
+                                    </div>
+                                `;
+                            } else {
+                                badgesHtml = `
+                                    <div class="mt-1 d-flex flex-column gap-1">
+                                        <span class="badge bg-success-subtle text-success rounded-pill extra-small py-1 px-2 fw-semibold cal-status-badge cal-status-badge-open"
+                                              role="button"
+                                              data-year="${year}"
+                                              data-month="${month}"
+                                              data-day="${thisDay}"
+                                              data-status="open"
+                                              title="${activeTrainingsForDay.length} Open Training(s)">
+                                            Open: ${activeTrainingsForDay.length}
+                                        </span>
+                                    </div>
+                                `;
+                            }
                         }
 
                         const dayNumDisplay = isToday 
@@ -461,13 +494,13 @@
         function openTrainingListModal(year, month, day, status, highlightId = null) {
             currentModalStatus = status;
             const formattedDate = formatCalendarDate(year, month, day);
+            const targetDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
-            let matchingEvents = calendarEvents.filter(e =>
-                e.year === year &&
-                e.month === month &&
-                e.day === day &&
-                e.status === status
-            );
+            let matchingEvents = calendarEvents.filter(e => {
+                const s = e.startDate || `${e.year}-${String(e.month + 1).padStart(2, '0')}-${String(e.day).padStart(2, '0')}`;
+                const end = e.endDate || s;
+                return targetDateStr >= s && targetDateStr <= end;
+            });
 
             // Fallback for agenda clicks if status differed
             if (matchingEvents.length === 0 && highlightId) {
@@ -480,6 +513,7 @@
             }
 
             const isOpen = (status === 'open');
+            const isRunning = (status === 'running');
 
             const modalStatusTitle = document.getElementById('modalStatusTitle');
             const modalStatusCountBadge = document.getElementById('modalStatusCountBadge');
@@ -491,25 +525,37 @@
 
             // Header Elements
             if (modalStatusTitle) {
-                modalStatusTitle.textContent = isOpen ? 'Open Trainings' : 'Closed Trainings';
+                modalStatusTitle.textContent = isRunning ? 'Running Trainings' : (isOpen ? 'Open Trainings' : 'Completed / Past Trainings');
             }
             if (modalSelectedDateText) {
                 modalSelectedDateText.textContent = formattedDate;
             }
             if (modalStatusCountBadge) {
-                modalStatusCountBadge.className = isOpen
-                    ? 'badge bg-success-subtle text-success border border-success-subtle rounded-pill fw-semibold px-2-5 py-1 fs-6'
-                    : 'badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill fw-semibold px-2-5 py-1 fs-6';
-                modalStatusCountBadge.textContent = isOpen
-                    ? `${matchingEvents.length} Open`
-                    : `${matchingEvents.length} Closed`;
+                if (isRunning) {
+                    modalStatusCountBadge.className = 'badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill fw-semibold px-2-5 py-1 fs-6';
+                    modalStatusCountBadge.textContent = `${matchingEvents.length} Running`;
+                } else if (isOpen) {
+                    modalStatusCountBadge.className = 'badge bg-success-subtle text-success border border-success-subtle rounded-pill fw-semibold px-2-5 py-1 fs-6';
+                    modalStatusCountBadge.textContent = `${matchingEvents.length} Open`;
+                } else {
+                    modalStatusCountBadge.className = 'badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill fw-semibold px-2-5 py-1 fs-6';
+                    modalStatusCountBadge.textContent = `${matchingEvents.length} Done`;
+                }
             }
             if (modalStatusIconWrap) {
-                modalStatusIconWrap.style.backgroundColor = isOpen ? '#ecfdf5' : '#fef2f2';
-                modalStatusIconWrap.style.color = isOpen ? '#059669' : '#dc2626';
+                if (isRunning) {
+                    modalStatusIconWrap.style.backgroundColor = '#fffbeb';
+                    modalStatusIconWrap.style.color = '#d97706';
+                } else if (isOpen) {
+                    modalStatusIconWrap.style.backgroundColor = '#ecfdf5';
+                    modalStatusIconWrap.style.color = '#059669';
+                } else {
+                    modalStatusIconWrap.style.backgroundColor = '#f1f5f9';
+                    modalStatusIconWrap.style.color = '#64748b';
+                }
             }
             if (modalStatusIcon) {
-                modalStatusIcon.className = isOpen ? 'ti ti-circle-check fs-2' : 'ti ti-lock fs-2';
+                modalStatusIcon.className = isRunning ? 'ti ti-player-play fs-2' : (isOpen ? 'ti ti-circle-check fs-2' : 'ti ti-check fs-2');
             }
 
             // Populate Items List (Compact Rows for High Scalability)

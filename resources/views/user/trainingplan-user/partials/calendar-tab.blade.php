@@ -43,7 +43,101 @@
                             </tr>
                         </thead>
                         <tbody id="calGridBody">
-                            {{-- Dynamically populated by JavaScript --}}
+                            @php
+                                $year = (int)$firstDate->format('Y');
+                                $month = (int)$firstDate->format('n');
+                                $today = \Carbon\Carbon::today()->format('Y-m-d');
+
+                                $firstDayOfMonth = \Carbon\Carbon::createFromDate($year, $month, 1);
+                                $startCol = ($firstDayOfMonth->dayOfWeekIso - 1); // 0 = Mon, 6 = Sun
+                                $daysInMonth = $firstDayOfMonth->daysInMonth;
+                                $daysInPrevMonth = $firstDayOfMonth->copy()->subMonth()->daysInMonth;
+                                $dayCounter = 1;
+                                $nextMonthDayCounter = 1;
+                            @endphp
+                            @for ($row = 0; $row < 6; $row++)
+                                <tr>
+                                    @for ($col = 0; $col < 7; $col++)
+                                        @php
+                                            $cellIndex = $row * 7 + $col;
+                                            $isWeekend = ($col === 5 || $col === 6);
+                                        @endphp
+                                        @if ($cellIndex < $startCol)
+                                            @php
+                                                $prevDate = $daysInPrevMonth - ($startCol - $cellIndex - 1);
+                                            @endphp
+                                            <td class="p-1 cal-day-cell text-muted bg-light-subtle opacity-50">
+                                                <div class="cal-day-num text-end pe-1">{{ $prevDate }}</div>
+                                            </td>
+                                        @elseif ($dayCounter <= $daysInMonth)
+                                            @php
+                                                $day = $dayCounter;
+                                                $cellDateFormatted = $year . '-' . sprintf('%02d', $month) . '-' . sprintf('%02d', $day);
+                                                $isToday = ($cellDateFormatted === $today);
+
+                                                $activeTrainingsForDay = $trainings->filter(function($t) use ($cellDateFormatted) {
+                                                    $sDate = \Carbon\Carbon::parse($t->start_date)->format('Y-m-d');
+                                                    $eDate = \Carbon\Carbon::parse($t->end_date ?? $t->start_date)->format('Y-m-d');
+                                                    return $cellDateFormatted >= $sDate && $cellDateFormatted <= $eDate;
+                                                });
+                                            @endphp
+                                            <td class="p-1 cal-day-cell">
+                                                <div class="cal-day-num text-end pe-1">
+                                                    @if ($isToday)
+                                                        <span class="cal-today-badge">{{ $day }}</span>
+                                                    @else
+                                                        <span class="{{ $isWeekend ? 'text-danger' : '' }}">{{ $day }}</span>
+                                                    @endif
+                                                </div>
+                                                @if ($activeTrainingsForDay->count() > 0)
+                                                    <div class="mt-1 d-flex flex-column gap-1">
+                                                        @if ($cellDateFormatted < $today)
+                                                            <span class="badge bg-secondary-subtle text-secondary rounded-pill extra-small py-1 px-2 opacity-75 cal-status-badge cal-status-badge-closed"
+                                                                  role="button"
+                                                                  data-year="{{ $year }}"
+                                                                  data-month="{{ $month - 1 }}"
+                                                                  data-day="{{ $day }}"
+                                                                  data-status="closed"
+                                                                  title="{{ $activeTrainingsForDay->count() }} Closed Training(s)">
+                                                                Done: {{ $activeTrainingsForDay->count() }}
+                                                            </span>
+                                                        @elseif ($cellDateFormatted == $today)
+                                                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill extra-small py-1 px-2 fw-semibold cal-status-badge cal-status-badge-running"
+                                                                  role="button"
+                                                                  data-year="{{ $year }}"
+                                                                  data-month="{{ $month - 1 }}"
+                                                                  data-day="{{ $day }}"
+                                                                  data-status="running"
+                                                                  title="{{ $activeTrainingsForDay->count() }} Running Training(s)">
+                                                                Running: {{ $activeTrainingsForDay->count() }}
+                                                            </span>
+                                                        @else
+                                                            <span class="badge bg-success-subtle text-success rounded-pill extra-small py-1 px-2 fw-semibold cal-status-badge cal-status-badge-open"
+                                                                  role="button"
+                                                                  data-year="{{ $year }}"
+                                                                  data-month="{{ $month - 1 }}"
+                                                                  data-day="{{ $day }}"
+                                                                  data-status="open"
+                                                                  title="{{ $activeTrainingsForDay->count() }} Open Training(s)">
+                                                                Open: {{ $activeTrainingsForDay->count() }}
+                                                            </span>
+                                                        @endif
+                                                    </div>
+                                                @endif
+                                            </td>
+                                            @php $dayCounter++; @endphp
+                                        @else
+                                            <td class="p-1 cal-day-cell text-muted bg-light-subtle opacity-50">
+                                                <div class="cal-day-num text-end pe-1">{{ $nextMonthDayCounter }}</div>
+                                            </td>
+                                            @php $nextMonthDayCounter++; @endphp
+                                        @endif
+                                    @endfor
+                                </tr>
+                                @if ($dayCounter > $daysInMonth && $row >= 4)
+                                    @break
+                                @endif
+                            @endfor
                         </tbody>
                     </table>
                 </div>
@@ -55,8 +149,12 @@
                         <span>Open Registration</span>
                     </span>
                     <span class="d-inline-flex align-items-center gap-2">
-                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-0-5 rounded-pill fw-semibold">Close: Y</span>
-                        <span>Registration Closed</span>
+                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-0-5 rounded-pill fw-semibold">Running: Y</span>
+                        <span>Running / Today</span>
+                    </span>
+                    <span class="d-inline-flex align-items-center gap-2">
+                        <span class="badge bg-secondary-subtle text-secondary px-2 py-0-5 rounded-pill opacity-75">Done: Z</span>
+                        <span>Past Training Session</span>
                     </span>
                 </div>
             </div>
