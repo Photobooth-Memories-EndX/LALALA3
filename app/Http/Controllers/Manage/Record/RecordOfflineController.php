@@ -3,9 +3,14 @@
 namespace App\Http\Controllers\Manage\Record;
 
 use App\Exports\OfflineClassificationExport;
+use App\Exports\OfflineCourseCsvExport;
+use App\Exports\OfflineCourseExport;
+use App\Exports\OfflineParticipantCsvExport;
+use App\Exports\OfflineParticipantExport;
 use App\Exports\OfflineTrainingCsvExport;
 use App\Exports\OfflineTrainingExport;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\LearningManageController;
 use App\Models\Classification;
@@ -284,6 +289,843 @@ class RecordOfflineController extends Controller
         return $this->datatable($request);
     }
 
+    public function participantDetail(string $identifier, Request $request)
+    {
+        $participant = RecordOfflineQueryService::resolveParticipant($identifier);
+        if (!$participant) {
+            abort(404, 'Participant not found.');
+        }
+
+        $summary = RecordOfflineQueryService::getParticipantSummary($participant);
+
+        // Resolve safe back URL
+        $backUrl = route('manage.record.offline');
+        $backTitle = 'Back to Non KP OWL';
+
+        $classificationParam = $request->query('classification');
+        if (filled($classificationParam)) {
+            $resolvedClass = self::resolveClassification($classificationParam);
+            $backUrl = route('manage.record.offline.classification', $resolvedClass['slug']);
+            $backTitle = 'Back to ' . $resolvedClass['name'];
+        }
+
+        $classifications = array_unique(array_merge(
+            self::MAIN_CLASSIFICATIONS,
+            DB::table('offline_trainings')->whereNull('deleted_at')->whereNotNull('main_classification')->where('main_classification', '!=', '')->distinct()->pluck('main_classification')->all()
+        ));
+        sort($classifications);
+
+        $categories = DB::table('offline_trainings')->whereNull('deleted_at')->whereNotNull('category')->where('category', '!=', '')->distinct()->pluck('category')->all();
+        sort($categories);
+
+        $providers = DB::table('offline_trainings')->whereNull('deleted_at')->whereNotNull('provider')->where('provider', '!=', '')->distinct()->pluck('provider')->all();
+        sort($providers);
+
+        $deliveryMethods = DB::table('offline_trainings')->whereNull('deleted_at')->whereNotNull('delivery_method')->where('delivery_method', '!=', '')->distinct()->pluck('delivery_method')->all();
+        sort($deliveryMethods);
+
+        $levels = DB::table('offline_trainings')->whereNull('deleted_at')->whereNotNull('level')->where('level', '!=', '')->distinct()->pluck('level')->all();
+        sort($levels);
+
+        return view('main.record.offline.participant', [
+            'title'               => "Participant: {$participant['name']}",
+            'subtitle'            => 'Historical offline training records for this employee.',
+            'participant'         => $participant,
+            'summary'             => $summary,
+            'backUrl'             => $backUrl,
+            'backTitle'           => $backTitle,
+            'classificationParam' => $classificationParam,
+            'years'               => LearningManageController::learningYears(),
+            'trainingTypes'       => self::TRAINING_TYPES,
+            'classifications'     => $classifications,
+            'categories'          => $categories,
+            'providers'           => $providers,
+            'deliveryMethods'     => $deliveryMethods,
+            'levels'              => $levels,
+            'exportExcelUrl'      => route('manage.record.offline.participant.export.excel', $participant['raw_identifier']),
+            'exportCsvUrl'        => route('manage.record.offline.participant.export.csv', $participant['raw_identifier']),
+            'exportPdfUrl'        => route('manage.record.offline.participant.export.pdf', $participant['raw_identifier']),
+        ]);
+    }
+
+    public function participantDatatable(string $identifier, Request $request)
+    {
+        $participant = RecordOfflineQueryService::resolveParticipant($identifier);
+        if (!$participant) {
+            return response()->json([
+                'draw'            => (int) $request->input('draw', 1),
+                'recordsTotal'    => 0,
+                'recordsFiltered' => 0,
+                'data'            => [],
+            ]);
+        }
+
+        $query = RecordOfflineQueryService::buildParticipantQuery($participant, $request->all());
+        $classificationParam = $request->input('classification');
+
+        return DataTables::of($query)
+            ->addIndexColumn()
+            ->addColumn('status_badge', function ($row) {
+                $progress = (float) ($row->progress ?? 0);
+                if ($progress >= 100) {
+                    return '<span class="badge bg-success-lt text-success fw-bold px-2 py-1">Finished</span>';
+                } elseif ($progress > 0) {
+                    return '<span class="badge bg-warning-lt text-warning fw-bold px-2 py-1">Ongoing (' . round($progress) . '%)</span>';
+                }
+
+                return '<span class="badge bg-secondary-lt fw-bold px-2 py-1">Not Started</span>';
+            })
+            ->addColumn('employee_id', function ($row) {
+                return htmlspecialchars($row->employee_id ?: '-');
+            })
+            ->addColumn('participant_name', function ($row) {
+                $name = $row->participant_name ?: ($row->user_name ?: '-');
+                return '<div class="fw-semibold text-dark text-nowrap">' . htmlspecialchars($name) . '</div>';
+            })
+            ->addColumn('grade', function ($row) {
+                return htmlspecialchars($row->grade ?: '-');
+            })
+            ->addColumn('job_position', function ($row) {
+                return !empty($row->job_position)
+                    ? '<div class="text-truncate" style="max-width: 200px;" title="' . htmlspecialchars($row->job_position) . '">' . htmlspecialchars($row->job_position) . '</div>'
+                    : '-';
+            })
+            ->addColumn('team', function ($row) {
+                return htmlspecialchars($row->team ?: '-');
+            })
+            ->addColumn('department', function ($row) {
+                return !empty($row->department)
+                    ? '<div class="text-truncate" style="max-width: 200px;" title="' . htmlspecialchars($row->department) . '">' . htmlspecialchars($row->department) . '</div>'
+                    : '-';
+            })
+            ->addColumn('company', function ($row) {
+                return htmlspecialchars($row->company ?: '-');
+            })
+            ->addColumn('course_name', function ($row) use ($classificationParam) {
+                $courseTitle = $row->course_name ?: '-';
+                $tId = $row->training_id ?? ($row->offline_training_id ?? null);
+                if (!empty($tId)) {
+                    $params = ['training' => $tId];
+                    if ($classificationParam) {
+                        $params['classification'] = $classificationParam;
+                    }
+                    $url = route('manage.record.offline.course', $params);
+                    return '<div class="fw-semibold text-truncate" style="max-width: 260px;" title="' . htmlspecialchars($courseTitle) . '">'
+                        . '<a href="' . htmlspecialchars($url) . '" class="text-primary text-decoration-none hover-underline course-link" title="View training details">'
+                        . htmlspecialchars($courseTitle) . '</a></div>';
+                }
+
+                return '<div class="fw-semibold text-dark text-truncate" style="max-width: 260px;" title="' . htmlspecialchars($courseTitle) . '">'
+                    . htmlspecialchars($courseTitle) . '</div>';
+            })
+            ->addColumn('sub_course_name', function ($row) {
+                return !empty($row->sub_course_name)
+                    ? '<div class="text-truncate" style="max-width: 220px;" title="' . htmlspecialchars($row->sub_course_name) . '">' . htmlspecialchars($row->sub_course_name) . '</div>'
+                    : '-';
+            })
+            ->addColumn('type_badge', function ($row) {
+                return '<span class="badge bg-light text-secondary border px-2 py-1">' . htmlspecialchars($row->type ?: 'In-House') . '</span>';
+            })
+            ->addColumn('category', function ($row) {
+                return htmlspecialchars($row->category ?: '-');
+            })
+            ->addColumn('level', function ($row) {
+                return htmlspecialchars($row->level ?: '-');
+            })
+            ->addColumn('batch', function ($row) {
+                return htmlspecialchars($row->batch ?: '-');
+            })
+            ->addColumn('main_classification', function ($row) {
+                return htmlspecialchars($row->main_classification ?: '-');
+            })
+            ->addColumn('sub_classification', function ($row) {
+                return htmlspecialchars($row->sub_classification ?: '-');
+            })
+            ->addColumn('counted_corporate_kpi', function ($row) {
+                if ($row->counted_corporate_kpi === null || $row->counted_corporate_kpi === '') {
+                    return '<span class="text-muted small">-</span>';
+                }
+                return $row->counted_corporate_kpi
+                    ? '<span class="badge bg-blue-lt text-primary px-2 py-1">Yes</span>'
+                    : '<span class="badge bg-light text-muted border px-2 py-1">No</span>';
+            })
+            ->addColumn('sub_corporate_kpi', function ($row) {
+                return htmlspecialchars($row->sub_corporate_kpi ?: '-');
+            })
+            ->addColumn('delivery_method', function ($row) {
+                return htmlspecialchars($row->delivery_method ?: '-');
+            })
+            ->addColumn('sub_delivery_method', function ($row) {
+                return htmlspecialchars($row->sub_delivery_method ?: '-');
+            })
+            ->addColumn('provider', function ($row) {
+                return htmlspecialchars($row->provider ?: '-');
+            })
+            ->addColumn('sub_provider', function ($row) {
+                return htmlspecialchars($row->sub_provider ?: '-');
+            })
+            ->addColumn('provider_name', function ($row) {
+                return htmlspecialchars($row->provider_name ?: '-');
+            })
+            ->addColumn('venue', function ($row) {
+                return htmlspecialchars($row->venue ?: '-');
+            })
+            ->addColumn('instructor', function ($row) {
+                return htmlspecialchars($row->instructor ?: '-');
+            })
+            ->addColumn('duration', function ($row) {
+                if (!empty($row->duration_seconds)) {
+                    $secs = (int) $row->duration_seconds;
+                    $hours = floor($secs / 3600);
+                    $mins = floor(($secs % 3600) / 60);
+                    $seconds = $secs % 60;
+                    return sprintf('%02d:%02d:%02d', $hours, $mins, $seconds);
+                }
+                return '-';
+            })
+            ->addColumn('course_learning_hours', function ($row) {
+                if ($row->course_learning_hours !== null && $row->course_learning_hours !== '') {
+                    return '<span class="fw-semibold">' . number_format((float) $row->course_learning_hours, 1) . 'h</span>';
+                }
+                return '-';
+            })
+            ->addColumn('start_date', function ($row) {
+                return $row->start_date ? date('d M Y', strtotime($row->start_date)) : '-';
+            })
+            ->addColumn('finish_date', function ($row) {
+                if ($row->finish_date) {
+                    return date('d M Y', strtotime($row->finish_date));
+                } elseif ($row->start_date) {
+                    return date('d M Y', strtotime($row->start_date));
+                }
+                return '-';
+            })
+            ->addColumn('month', function ($row) {
+                $dateForMonth = $row->start_date ?: $row->finish_date;
+                if (!empty($dateForMonth)) {
+                    try {
+                        return date('F', strtotime($dateForMonth));
+                    } catch (\Throwable $e) {
+                        return '-';
+                    }
+                }
+                return '-';
+            })
+            ->addColumn('learning_hours', function ($row) {
+                $hours = (float) ($row->learning_hours ?? 0);
+                return '<span class="fw-semibold">' . number_format($hours, 1) . 'h</span>';
+            })
+            ->addColumn('progress_badge', function ($row) {
+                $progress = (float) ($row->progress ?? 0);
+                $color = $progress >= 100 ? 'bg-success' : ($progress > 0 ? 'bg-warning' : 'bg-secondary');
+                return '<div class="d-flex align-items-center gap-2" style="min-width: 85px;">
+                    <div class="progress progress-xs flex-grow-1" style="width: 50px; height: 6px;">
+                        <div class="progress-bar ' . $color . '" style="width: ' . min(100, $progress) . '%"></div>
+                    </div>
+                    <span class="small fw-semibold text-muted">' . round($progress) . '%</span>
+                </div>';
+            })
+            ->addColumn('assessment_score', function ($row) {
+                if ($row->assessment_score === null || $row->assessment_score === '') {
+                    return '<span class="text-muted small">-</span>';
+                }
+                return '<span class="fw-semibold">' . number_format((float) $row->assessment_score, 1) . '</span>';
+            })
+            ->addColumn('certificate_badge', function ($row) {
+                if (!empty($row->certificate)) {
+                    return '<span class="badge bg-blue-lt text-primary px-2 py-1" title="' . htmlspecialchars($row->certificate) . '"><i class="ti ti-file-certificate me-1"></i> Available</span>';
+                }
+                return '<span class="text-muted small">-</span>';
+            })
+            ->addColumn('attendance_badge', function ($row) {
+                if ($row->attendance === null || $row->attendance === '') {
+                    return '<span class="text-muted small">-</span>';
+                }
+                return $row->attendance
+                    ? '<span class="badge bg-success-lt text-success px-2 py-1">Present</span>'
+                    : '<span class="badge bg-danger-lt text-danger px-2 py-1" title="' . htmlspecialchars($row->attendance_reason ?: 'Absent') . '">Absent</span>';
+            })
+            ->addColumn('attendance_reason', function ($row) {
+                if (!empty($row->attendance_reason)) {
+                    return '<div class="text-truncate" style="max-width: 220px;" title="' . htmlspecialchars($row->attendance_reason) . '">' . htmlspecialchars($row->attendance_reason) . '</div>';
+                }
+                return '-';
+            })
+            ->addColumn('bond_status', function ($row) {
+                if (empty($row->bond_status) || strtolower(trim($row->bond_status)) === 'no') {
+                    return '<span class="badge bg-light text-muted border px-2 py-1">No</span>';
+                }
+                return '<span class="badge bg-warning-lt text-warning fw-bold px-2 py-1">' . htmlspecialchars($row->bond_status) . '</span>';
+            })
+            ->addColumn('bond_end_date', function ($row) {
+                return $row->bond_end_date ? date('d M Y', strtotime($row->bond_end_date)) : '-';
+            })
+            ->addColumn('bond_amount', function ($row) {
+                if ($row->bond_amount !== null && $row->bond_amount !== '') {
+                    return '<span class="fw-semibold font-monospace">Rp ' . number_format((float) $row->bond_amount, 0, ',', '.') . '</span>';
+                }
+                return '-';
+            })
+            ->addColumn('l1_program', function ($row) {
+                return htmlspecialchars($row->l1_program ?: '-');
+            })
+            ->addColumn('l2_numerical', function ($row) {
+                if ($row->l2_numerical !== null && $row->l2_numerical !== '') {
+                    return '<span class="fw-semibold">' . number_format((float) $row->l2_numerical, 1) . '</span>';
+                }
+                return '-';
+            })
+            ->addColumn('l2_verbal', function ($row) {
+                if (!empty($row->l2_verbal)) {
+                    return '<div class="text-truncate" style="max-width: 180px;" title="' . htmlspecialchars($row->l2_verbal) . '">' . htmlspecialchars($row->l2_verbal) . '</div>';
+                }
+                return '-';
+            })
+            ->addColumn('l3_numerical', function ($row) {
+                if ($row->l3_numerical !== null && $row->l3_numerical !== '') {
+                    return '<span class="fw-semibold">' . number_format((float) $row->l3_numerical, 1) . '</span>';
+                }
+                return '-';
+            })
+            ->addColumn('l3_verbal', function ($row) {
+                if (!empty($row->l3_verbal)) {
+                    return '<div class="text-truncate" style="max-width: 220px;" title="' . htmlspecialchars($row->l3_verbal) . '">' . htmlspecialchars($row->l3_verbal) . '</div>';
+                }
+                return '-';
+            })
+            ->addColumn('pic', function ($row) {
+                return htmlspecialchars($row->pic ?: '-');
+            })
+            ->addColumn('action', function ($row) {
+                return '<div class="d-inline-flex align-items-center justify-content-center gap-1">
+                    <button type="button" class="btn btn-sm btn-icon btn-outline-primary btn-view-offline-detail rounded-2" 
+                            data-id="' . $row->id . '" 
+                            title="View Detail" 
+                            aria-label="View Detail" 
+                            data-bs-toggle="tooltip">
+                        <i class="ti ti-eye"></i>
+                    </button>
+                </div>';
+            })
+            ->rawColumns([
+                'status_badge',
+                'participant_name',
+                'job_position',
+                'department',
+                'course_name',
+                'sub_course_name',
+                'type_badge',
+                'counted_corporate_kpi',
+                'course_learning_hours',
+                'learning_hours',
+                'progress_badge',
+                'assessment_score',
+                'certificate_badge',
+                'attendance_badge',
+                'attendance_reason',
+                'bond_status',
+                'bond_amount',
+                'l2_numerical',
+                'l2_verbal',
+                'l3_numerical',
+                'l3_verbal',
+                'action',
+            ])
+            ->make(true);
+    }
+
+    /**
+     * Download Excel export containing active offline training records for a specific participant.
+     */
+    public function participantExportExcel(string $identifier, Request $request)
+    {
+        $participant = RecordOfflineQueryService::resolveParticipant($identifier);
+        if (!$participant) {
+            abort(404, 'Participant not found.');
+        }
+
+        $export = new OfflineParticipantExport($participant, $request);
+
+        return $export->download($export->getFileName());
+    }
+
+    /**
+     * Download CSV export containing active offline training records for a specific participant.
+     */
+    public function participantExportCsv(string $identifier, Request $request)
+    {
+        $participant = RecordOfflineQueryService::resolveParticipant($identifier);
+        if (!$participant) {
+            abort(404, 'Participant not found.');
+        }
+
+        $export = new OfflineParticipantCsvExport($participant, $request);
+
+        return $export->download($export->getFileName(), \Maatwebsite\Excel\Excel::CSV, [
+            'Content-Type' => 'text/csv',
+        ]);
+    }
+
+    /**
+     * Download PDF landscape export containing active offline training records for a specific participant.
+     */
+    public function participantExportPdf(string $identifier, Request $request)
+    {
+        $participant = RecordOfflineQueryService::resolveParticipant($identifier);
+        if (!$participant) {
+            abort(404, 'Participant not found.');
+        }
+
+        $records = RecordOfflineQueryService::buildParticipantQuery($participant, $request->all())
+            ->orderBy('ot.start_date', 'desc')
+            ->orderBy('ot.id', 'desc')
+            ->orderBy('otu.id', 'asc')
+            ->get();
+
+        $pdf = Pdf::loadView('main.record.offline.participant-export-pdf', [
+            'participant'   => $participant,
+            'records'       => $records,
+            'generatedAt'   => now()->format('d M Y H:i:s'),
+            'totalRecords'  => $records->count(),
+        ]);
+
+        $identifierSlug = Str::slug($participant['employee_id'] ?: ($participant['name'] ?: 'participant'));
+        $fileName = sprintf('non-kp-owl-participant-%s-%s.pdf', $identifierSlug, now()->format('Y-m-d'));
+
+        return $pdf->setPaper('a4', 'landscape')->download($fileName);
+    }
+
+    public function courseDetail($training, Request $request)
+    {
+        $trainingModel = OfflineTraining::whereNull('deleted_at')->find($training);
+        if (!$trainingModel) {
+            abort(404, 'Training not found.');
+        }
+
+        $summary = RecordOfflineQueryService::getCourseSummary((int) $trainingModel->id, $trainingModel);
+
+        // Safe back navigation
+        $backUrl = route('manage.record.offline');
+        $backTitle = 'Back to Non KP OWL';
+
+        $classificationParam = $request->query('classification');
+        if (filled($classificationParam)) {
+            $resolvedClass = self::resolveClassification($classificationParam);
+            $backUrl = route('manage.record.offline.classification', $resolvedClass['slug']);
+            $backTitle = 'Back to ' . $resolvedClass['name'];
+        } elseif (filled($trainingModel->main_classification)) {
+            $resolvedClass = self::resolveClassification($trainingModel->main_classification);
+            $backUrl = route('manage.record.offline.classification', $resolvedClass['slug']);
+            $backTitle = 'Back to ' . $resolvedClass['name'];
+        }
+
+        $grades = DB::table('offline_training_users')
+            ->where('offline_training_id', $trainingModel->id)
+            ->whereNull('deleted_at')
+            ->whereNotNull('grade')
+            ->where('grade', '!=', '')
+            ->distinct()
+            ->orderBy('grade')
+            ->pluck('grade')
+            ->all();
+
+        $teams = DB::table('offline_training_users')
+            ->where('offline_training_id', $trainingModel->id)
+            ->whereNull('deleted_at')
+            ->whereNotNull('team')
+            ->where('team', '!=', '')
+            ->distinct()
+            ->orderBy('team')
+            ->pluck('team')
+            ->all();
+
+        $departments = DB::table('offline_training_users')
+            ->where('offline_training_id', $trainingModel->id)
+            ->whereNull('deleted_at')
+            ->whereNotNull('department')
+            ->where('department', '!=', '')
+            ->distinct()
+            ->orderBy('department')
+            ->pluck('department')
+            ->all();
+
+        $companies = DB::table('offline_training_users')
+            ->where('offline_training_id', $trainingModel->id)
+            ->whereNull('deleted_at')
+            ->whereNotNull('company')
+            ->where('company', '!=', '')
+            ->distinct()
+            ->orderBy('company')
+            ->pluck('company')
+            ->all();
+
+        return view('main.record.offline.course', [
+            'title'               => "Course: {$trainingModel->course_name}",
+            'subtitle'            => 'Training session details and enrolled participants.',
+            'training'            => $trainingModel,
+            'summary'             => $summary,
+            'backUrl'             => $backUrl,
+            'backTitle'           => $backTitle,
+            'classificationParam' => $classificationParam,
+            'years'               => LearningManageController::learningYears(),
+            'trainingTypes'       => self::TRAINING_TYPES,
+            'grades'              => $grades,
+            'teams'               => $teams,
+            'departments'         => $departments,
+            'companies'           => $companies,
+            'exportExcelUrl'      => route('manage.record.offline.course.export.excel', $trainingModel->id),
+            'exportCsvUrl'        => route('manage.record.offline.course.export.csv', $trainingModel->id),
+            'exportPdfUrl'        => route('manage.record.offline.course.export.pdf', $trainingModel->id),
+        ]);
+    }
+
+    public function courseDatatable($training, Request $request)
+    {
+        $trainingModel = OfflineTraining::whereNull('deleted_at')->find($training);
+        if (!$trainingModel) {
+            return response()->json([
+                'draw'            => (int) $request->input('draw', 1),
+                'recordsTotal'    => 0,
+                'recordsFiltered' => 0,
+                'data'            => [],
+            ]);
+        }
+
+        $query = RecordOfflineQueryService::buildCourseQuery((int) $trainingModel->id, $request->all());
+        $classificationParam = $request->input('classification');
+
+        return DataTables::of($query)
+            ->addIndexColumn()
+            ->addColumn('status_badge', function ($row) {
+                $progress = (float) ($row->progress ?? 0);
+                if ($progress >= 100) {
+                    return '<span class="badge bg-success-lt text-success fw-bold px-2 py-1">Finished</span>';
+                } elseif ($progress > 0) {
+                    return '<span class="badge bg-warning-lt text-warning fw-bold px-2 py-1">Ongoing (' . round($progress) . '%)</span>';
+                }
+
+                return '<span class="badge bg-secondary-lt fw-bold px-2 py-1">Not Started</span>';
+            })
+            ->addColumn('employee_id', function ($row) {
+                return htmlspecialchars($row->employee_id ?: '-');
+            })
+            ->addColumn('participant_name', function ($row) use ($classificationParam) {
+                $name = $row->participant_name ?: ($row->user_name ?: '-');
+                $identifier = $row->user_id ?: ($row->employee_id ?: null);
+                if ($identifier) {
+                    $params = ['identifier' => $identifier];
+                    if ($classificationParam) {
+                        $params['classification'] = $classificationParam;
+                    }
+                    $url = route('manage.record.offline.participant', $params);
+                    return '<div class="fw-semibold text-nowrap"><a href="' . htmlspecialchars($url) . '" class="text-primary text-decoration-none hover-underline participant-link" title="View participant training history">'
+                        . htmlspecialchars($name) . '</a></div>';
+                }
+
+                return '<div class="fw-semibold text-dark text-nowrap">' . htmlspecialchars($name) . '</div>';
+            })
+            ->addColumn('grade', function ($row) {
+                return htmlspecialchars($row->grade ?: '-');
+            })
+            ->addColumn('job_position', function ($row) {
+                return !empty($row->job_position)
+                    ? '<div class="text-truncate" style="max-width: 200px;" title="' . htmlspecialchars($row->job_position) . '">' . htmlspecialchars($row->job_position) . '</div>'
+                    : '-';
+            })
+            ->addColumn('team', function ($row) {
+                return htmlspecialchars($row->team ?: '-');
+            })
+            ->addColumn('department', function ($row) {
+                return !empty($row->department)
+                    ? '<div class="text-truncate" style="max-width: 200px;" title="' . htmlspecialchars($row->department) . '">' . htmlspecialchars($row->department) . '</div>'
+                    : '-';
+            })
+            ->addColumn('company', function ($row) {
+                return htmlspecialchars($row->company ?: '-');
+            })
+            ->addColumn('course_name', function ($row) {
+                return '<div class="fw-semibold text-dark text-nowrap">' . htmlspecialchars($row->course_name ?: '-') . '</div>';
+            })
+            ->addColumn('sub_course_name', function ($row) {
+                return !empty($row->sub_course_name)
+                    ? '<div class="text-truncate" style="max-width: 220px;" title="' . htmlspecialchars($row->sub_course_name) . '">' . htmlspecialchars($row->sub_course_name) . '</div>'
+                    : '-';
+            })
+            ->addColumn('type_badge', function ($row) {
+                return !empty($row->type)
+                    ? '<span class="badge bg-light text-secondary border px-2 py-1">' . htmlspecialchars($row->type) . '</span>'
+                    : '-';
+            })
+            ->addColumn('category', function ($row) {
+                return htmlspecialchars($row->category ?: '-');
+            })
+            ->addColumn('level', function ($row) {
+                return htmlspecialchars($row->level ?: '-');
+            })
+            ->addColumn('batch', function ($row) {
+                return htmlspecialchars($row->batch ?: '-');
+            })
+            ->addColumn('main_classification', function ($row) {
+                return htmlspecialchars($row->main_classification ?: '-');
+            })
+            ->addColumn('sub_classification', function ($row) {
+                return htmlspecialchars($row->sub_classification ?: '-');
+            })
+            ->addColumn('counted_corporate_kpi', function ($row) {
+                if ($row->counted_corporate_kpi === null || $row->counted_corporate_kpi === '') {
+                    return '<span class="text-muted small">-</span>';
+                }
+                return $row->counted_corporate_kpi
+                    ? '<span class="badge bg-blue-lt text-primary px-2 py-1">Yes</span>'
+                    : '<span class="badge bg-light text-muted border px-2 py-1">No</span>';
+            })
+            ->addColumn('sub_corporate_kpi', function ($row) {
+                return htmlspecialchars($row->sub_corporate_kpi ?: '-');
+            })
+            ->addColumn('delivery_method', function ($row) {
+                return htmlspecialchars($row->delivery_method ?: '-');
+            })
+            ->addColumn('sub_delivery_method', function ($row) {
+                return htmlspecialchars($row->sub_delivery_method ?: '-');
+            })
+            ->addColumn('provider', function ($row) {
+                return htmlspecialchars($row->provider ?: '-');
+            })
+            ->addColumn('sub_provider', function ($row) {
+                return htmlspecialchars($row->sub_provider ?: '-');
+            })
+            ->addColumn('provider_name', function ($row) {
+                return htmlspecialchars($row->provider_name ?: '-');
+            })
+            ->addColumn('venue', function ($row) {
+                return htmlspecialchars($row->venue ?: '-');
+            })
+            ->addColumn('instructor', function ($row) {
+                return htmlspecialchars($row->instructor ?: '-');
+            })
+            ->addColumn('duration', function ($row) {
+                if (!empty($row->duration_seconds)) {
+                    $secs = (int) $row->duration_seconds;
+                    $hours = floor($secs / 3600);
+                    $mins = floor(($secs % 3600) / 60);
+                    $seconds = $secs % 60;
+                    return sprintf('%02d:%02d:%02d', $hours, $mins, $seconds);
+                }
+                return '-';
+            })
+            ->addColumn('course_learning_hours', function ($row) {
+                if ($row->course_learning_hours !== null && $row->course_learning_hours !== '') {
+                    return '<span class="fw-semibold">' . number_format((float) $row->course_learning_hours, 1) . 'h</span>';
+                }
+                return '-';
+            })
+            ->addColumn('start_date', function ($row) {
+                return $row->start_date ? date('d M Y', strtotime($row->start_date)) : '-';
+            })
+            ->addColumn('finish_date', function ($row) {
+                if ($row->finish_date) {
+                    return date('d M Y', strtotime($row->finish_date));
+                } elseif ($row->start_date) {
+                    return date('d M Y', strtotime($row->start_date));
+                }
+                return '-';
+            })
+            ->addColumn('month', function ($row) {
+                $dateForMonth = $row->start_date ?: $row->finish_date;
+                if (!empty($dateForMonth)) {
+                    try {
+                        return date('F', strtotime($dateForMonth));
+                    } catch (\Throwable $e) {
+                        return '-';
+                    }
+                }
+                return '-';
+            })
+            ->addColumn('learning_hours', function ($row) {
+                $hours = (float) ($row->learning_hours ?? 0);
+                return '<span class="fw-semibold">' . number_format($hours, 1) . 'h</span>';
+            })
+            ->addColumn('progress_badge', function ($row) {
+                $progress = (float) ($row->progress ?? 0);
+                $color = $progress >= 100 ? 'bg-success' : ($progress > 0 ? 'bg-warning' : 'bg-secondary');
+                return '<div class="d-flex align-items-center gap-2" style="min-width: 85px;">
+                    <div class="progress progress-xs flex-grow-1" style="width: 50px; height: 6px;">
+                        <div class="progress-bar ' . $color . '" style="width: ' . min(100, $progress) . '%"></div>
+                    </div>
+                    <span class="small fw-semibold text-muted">' . round($progress) . '%</span>
+                </div>';
+            })
+            ->addColumn('assessment_score', function ($row) {
+                if ($row->assessment_score === null || $row->assessment_score === '') {
+                    return '<span class="text-muted small">-</span>';
+                }
+                return '<span class="fw-semibold">' . number_format((float) $row->assessment_score, 1) . '</span>';
+            })
+            ->addColumn('certificate_badge', function ($row) {
+                if (!empty($row->certificate)) {
+                    return '<span class="badge bg-blue-lt text-primary px-2 py-1" title="' . htmlspecialchars($row->certificate) . '"><i class="ti ti-file-certificate me-1"></i> Available</span>';
+                }
+                return '<span class="text-muted small">-</span>';
+            })
+            ->addColumn('attendance_badge', function ($row) {
+                if ($row->attendance === 1 || $row->attendance === true || $row->attendance === '1') {
+                    return '<span class="badge bg-success-lt text-success fw-bold px-2 py-1">Present</span>';
+                } elseif ($row->attendance === 0 || $row->attendance === false || $row->attendance === '0') {
+                    return '<span class="badge bg-danger-lt text-danger fw-bold px-2 py-1">Absent</span>';
+                }
+
+                return '<span class="badge bg-secondary-lt fw-bold px-2 py-1">-</span>';
+            })
+            ->addColumn('attendance_reason', function ($row) {
+                if (!empty($row->attendance_reason)) {
+                    return '<div class="text-truncate" style="max-width: 220px;" title="' . htmlspecialchars($row->attendance_reason) . '">' . htmlspecialchars($row->attendance_reason) . '</div>';
+                }
+                return '-';
+            })
+            ->addColumn('bond_status', function ($row) {
+                if (empty($row->bond_status) || strtolower(trim($row->bond_status)) === 'no') {
+                    return '<span class="badge bg-light text-muted border px-2 py-1">No</span>';
+                }
+                return '<span class="badge bg-warning-lt text-warning fw-bold px-2 py-1">' . htmlspecialchars($row->bond_status) . '</span>';
+            })
+            ->addColumn('bond_end_date', function ($row) {
+                return $row->bond_end_date ? date('d M Y', strtotime($row->bond_end_date)) : '-';
+            })
+            ->addColumn('bond_amount', function ($row) {
+                if ($row->bond_amount !== null && $row->bond_amount !== '') {
+                    return '<span class="fw-semibold font-monospace">Rp ' . number_format((float) $row->bond_amount, 0, ',', '.') . '</span>';
+                }
+                return '-';
+            })
+            ->addColumn('l1_program', function ($row) {
+                return htmlspecialchars($row->l1_program ?: '-');
+            })
+            ->addColumn('l2_numerical', function ($row) {
+                if ($row->l2_numerical !== null && $row->l2_numerical !== '') {
+                    return '<span class="fw-semibold">' . number_format((float) $row->l2_numerical, 1) . '</span>';
+                }
+                return '-';
+            })
+            ->addColumn('l2_verbal', function ($row) {
+                if (!empty($row->l2_verbal)) {
+                    return '<div class="text-truncate" style="max-width: 180px;" title="' . htmlspecialchars($row->l2_verbal) . '">' . htmlspecialchars($row->l2_verbal) . '</div>';
+                }
+                return '-';
+            })
+            ->addColumn('l3_numerical', function ($row) {
+                if ($row->l3_numerical !== null && $row->l3_numerical !== '') {
+                    return '<span class="fw-semibold">' . number_format((float) $row->l3_numerical, 1) . '</span>';
+                }
+                return '-';
+            })
+            ->addColumn('l3_verbal', function ($row) {
+                if (!empty($row->l3_verbal)) {
+                    return '<div class="text-truncate" style="max-width: 220px;" title="' . htmlspecialchars($row->l3_verbal) . '">' . htmlspecialchars($row->l3_verbal) . '</div>';
+                }
+                return '-';
+            })
+            ->addColumn('pic', function ($row) {
+                return htmlspecialchars($row->pic ?: '-');
+            })
+            ->addColumn('action', function ($row) {
+                return '<div class="d-inline-flex align-items-center justify-content-center gap-1">
+                    <button type="button" class="btn btn-sm btn-icon btn-outline-primary btn-view-offline-detail rounded-2" 
+                            data-id="' . $row->id . '" 
+                            title="View Detail" 
+                            aria-label="View Detail" 
+                            data-bs-toggle="tooltip">
+                        <i class="ti ti-eye"></i>
+                    </button>
+                </div>';
+            })
+            ->rawColumns([
+                'status_badge',
+                'participant_name',
+                'job_position',
+                'department',
+                'course_name',
+                'sub_course_name',
+                'type_badge',
+                'counted_corporate_kpi',
+                'course_learning_hours',
+                'learning_hours',
+                'progress_badge',
+                'assessment_score',
+                'certificate_badge',
+                'attendance_badge',
+                'attendance_reason',
+                'bond_status',
+                'bond_amount',
+                'l2_numerical',
+                'l2_verbal',
+                'l3_numerical',
+                'l3_verbal',
+                'action',
+            ])
+            ->make(true);
+    }
+
+    /**
+     * Download Excel export containing active participant records for a specific course/training event.
+     */
+    public function courseExportExcel($training, Request $request)
+    {
+        $trainingModel = OfflineTraining::whereNull('deleted_at')->find($training);
+        if (!$trainingModel) {
+            abort(404, 'Training not found.');
+        }
+
+        $export = new OfflineCourseExport($trainingModel, $request);
+
+        return $export->download($export->getFileName());
+    }
+
+    /**
+     * Download CSV export containing active participant records for a specific course/training event.
+     */
+    public function courseExportCsv($training, Request $request)
+    {
+        $trainingModel = OfflineTraining::whereNull('deleted_at')->find($training);
+        if (!$trainingModel) {
+            abort(404, 'Training not found.');
+        }
+
+        $export = new OfflineCourseCsvExport($trainingModel, $request);
+
+        return $export->download($export->getFileName(), \Maatwebsite\Excel\Excel::CSV, [
+            'Content-Type' => 'text/csv',
+        ]);
+    }
+
+    /**
+     * Download PDF landscape export containing active participant records for a specific course/training event.
+     */
+    public function courseExportPdf($training, Request $request)
+    {
+        $trainingModel = OfflineTraining::whereNull('deleted_at')->find($training);
+        if (!$trainingModel) {
+            abort(404, 'Training not found.');
+        }
+
+        $records = RecordOfflineQueryService::buildCourseQuery((int) $trainingModel->id, $request->all())
+            ->orderBy('otu.name', 'asc')
+            ->orderBy('otu.id', 'asc')
+            ->get();
+
+        $pdf = Pdf::loadView('main.record.offline.course-export-pdf', [
+            'training'     => $trainingModel,
+            'records'      => $records,
+            'filters'      => $request->all(),
+            'generatedAt'  => now()->format('d M Y H:i:s'),
+            'totalRecords' => $records->count(),
+        ]);
+
+        $slug = Str::slug($trainingModel->course_name) ?: 'course';
+        $fileName = sprintf('non-kp-owl-course-%d-%s-%s.pdf', $trainingModel->id, $slug, now()->format('Y-m-d'));
+
+        return $pdf->setPaper('a3', 'landscape')->download($fileName);
+    }
+
     public static function resolveClassification(string $input): array
     {
         $trimmed = trim($input);
@@ -346,7 +1188,14 @@ class RecordOfflineController extends Controller
             ]);
         }
 
-        $query = RecordOfflineQueryService::buildQuery($request->all(), $request->input('classification'));
+        $classificationParam = $request->input('classification');
+        $classificationSlug = null;
+        if (filled($classificationParam) && $classificationParam !== 'all') {
+            $resolvedClass = self::resolveClassification($classificationParam);
+            $classificationSlug = $resolvedClass['slug'];
+        }
+
+        $query = RecordOfflineQueryService::buildQuery($request->all(), $classificationParam);
 
         return DataTables::of($query)
             ->addIndexColumn()
@@ -363,8 +1212,19 @@ class RecordOfflineController extends Controller
             ->addColumn('employee_id', function ($row) {
                 return htmlspecialchars($row->employee_id ?: '-');
             })
-            ->addColumn('participant_name', function ($row) {
+            ->addColumn('participant_name', function ($row) use ($classificationSlug) {
                 $name = $row->participant_name ?: ($row->user_name ?: '-');
+                $identifier = $row->user_id ?: ($row->employee_id ?: null);
+                if ($identifier) {
+                    $params = ['identifier' => $identifier];
+                    if ($classificationSlug) {
+                        $params['classification'] = $classificationSlug;
+                    }
+                    $url = route('manage.record.offline.participant', $params);
+                    return '<div class="fw-semibold text-nowrap"><a href="' . htmlspecialchars($url) . '" class="text-primary text-decoration-none hover-underline participant-link" title="View participant training history">'
+                        . htmlspecialchars($name) . '</a></div>';
+                }
+
                 return '<div class="fw-semibold text-dark text-nowrap">' . htmlspecialchars($name) . '</div>';
             })
             ->addColumn('employee', function ($row) {
@@ -401,9 +1261,21 @@ class RecordOfflineController extends Controller
             ->addColumn('company', function ($row) {
                 return htmlspecialchars($row->company ?: '-');
             })
-            ->addColumn('course_name', function ($row) {
-                return '<div class="fw-semibold text-dark text-truncate" style="max-width: 260px;" title="' . htmlspecialchars($row->course_name ?: '') . '">'
-                    . htmlspecialchars($row->course_name ?: '-') . '</div>';
+            ->addColumn('course_name', function ($row) use ($classificationSlug) {
+                $courseTitle = $row->course_name ?: '-';
+                if (!empty($row->offline_training_id)) {
+                    $params = ['training' => $row->offline_training_id];
+                    if ($classificationSlug) {
+                        $params['classification'] = $classificationSlug;
+                    }
+                    $url = route('manage.record.offline.course', $params);
+                    return '<div class="fw-semibold text-truncate" style="max-width: 260px;" title="' . htmlspecialchars($courseTitle) . '">'
+                        . '<a href="' . htmlspecialchars($url) . '" class="text-primary text-decoration-none hover-underline course-link">'
+                        . htmlspecialchars($courseTitle) . '</a></div>';
+                }
+
+                return '<div class="fw-semibold text-dark text-truncate" style="max-width: 260px;" title="' . htmlspecialchars($courseTitle) . '">'
+                    . htmlspecialchars($courseTitle) . '</div>';
             })
             ->addColumn('sub_course_name', function ($row) {
                 return !empty($row->sub_course_name)

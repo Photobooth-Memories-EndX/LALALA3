@@ -564,6 +564,12 @@
         justify-content: center;
         font-size: 15px;
     }
+
+    .hover-underline:hover,
+    .participant-link:hover,
+    .course-link:hover {
+        text-decoration: underline !important;
+    }
 </style>
 @endsection
 
