@@ -34,6 +34,23 @@
             <p class="text-muted small mb-0">List of your enrolled training sessions, approval statuses, and completion history.</p>
         </div>
         <div class="d-flex align-items-center gap-2">
+            @if(count($myHistory) > 0)
+                <a href="{{ route('trainingplan.my-history.download', request()->query()) }}" 
+                   class="btn btn-outline-primary rounded-pill px-3 py-2 d-inline-flex align-items-center gap-2 fw-semibold" 
+                   id="btnDownloadHistory"
+                   title="Download Training History as PDF">
+                    <i class="ti ti-download"></i>
+                    <span>Download History</span>
+                </a>
+            @else
+                <button type="button" 
+                        class="btn btn-outline-secondary rounded-pill px-3 py-2 d-inline-flex align-items-center gap-2 fw-semibold" 
+                        disabled 
+                        title="No training history available to download">
+                    <i class="ti ti-download"></i>
+                    <span>Download History</span>
+                </button>
+            @endif
             <span class="badge bg-primary-lt text-primary px-3 py-2 rounded-pill fw-semibold" id="myHistoryTotalBadge">
                 Total: {{ count($myHistory) }} Trainings
             </span>

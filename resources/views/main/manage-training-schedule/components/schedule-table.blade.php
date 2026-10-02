@@ -120,7 +120,10 @@
                                         data-syllabus="{{ json_encode($item->syllabus ?? []) }}">
                                     <i class="ti ti-list-check fs-2"></i>
                                 </button>
-                                <a href="{{ route('manage.training-schedule.edit', $item->id) }}"
+                                @php
+                                    $schedule = $item;
+                                @endphp
+                                <a href="{{ route('training-schedule.edit', $schedule->id) }}"
                                    class="btn btn-sm btn-icon btn-outline-primary rounded-3 btn-view-edit-schedule"
                                    title="View/Edit Schedule">
                                     <i class="ti ti-edit fs-2"></i>

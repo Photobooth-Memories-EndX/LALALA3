@@ -195,9 +195,9 @@ class OfflineTrainingController extends Controller
     /**
      * Show the form for editing an existing training schedule.
      */
-    public function edit($trainingId)
+    public function edit($id)
     {
-        $training = OfflineTraining::forSchedule()->findOrFail($trainingId);
+        $training = $id instanceof OfflineTraining ? $id : OfflineTraining::findOrFail($id);
 
         return view('main.manage-training-schedule.edit', compact('training'));
     }
@@ -205,9 +205,9 @@ class OfflineTrainingController extends Controller
     /**
      * Update the specified training schedule in offline_trainings table.
      */
-    public function update(Request $request, $trainingId)
+    public function update(Request $request, $id)
     {
-        $training = OfflineTraining::forSchedule()->findOrFail($trainingId);
+        $training = $id instanceof OfflineTraining ? $id : OfflineTraining::findOrFail($id);
 
         $validated = $request->validate([
             'title'               => ['required', 'string', 'max:255'],
@@ -279,9 +279,9 @@ class OfflineTrainingController extends Controller
     /**
      * Remove the specified training schedule from storage with safety checks.
      */
-    public function destroy($trainingId)
+    public function destroy($id)
     {
-        $training = OfflineTraining::forSchedule()->findOrFail($trainingId);
+        $training = $id instanceof OfflineTraining ? $id : OfflineTraining::findOrFail($id);
 
         // 1. Check if participant registrations exist
         if ($training->registrations()->exists()) {
@@ -306,9 +306,9 @@ class OfflineTrainingController extends Controller
      * Route handler for Participant Action button:
      * Prepares view and redirects to Participant Tracking & Approvals tab for the selected training.
      */
-    public function participants($trainingId)
+    public function participants($id)
     {
-        $training = OfflineTraining::forSchedule()->findOrFail($trainingId);
+        $training = $id instanceof OfflineTraining ? $id : OfflineTraining::findOrFail($id);
 
         return redirect()->route('manage.training-schedule.index', [
             'tab'      => 'participants',
@@ -589,6 +589,110 @@ class OfflineTrainingController extends Controller
         })->values();
 
         return view('user.trainingplan-user.index', compact('trainings', 'availableTrainings', 'calendarEvents', 'myHistory', 'selectedDate', 'todaysAgenda'));
+    }
+
+    /**
+     * Download User Training History as PDF.
+     */
+    public function downloadMyHistory(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            abort(401, 'Unauthorized');
+        }
+
+        $userId = $user->id;
+
+        $query = OfflineTrainingRegister::with('training')
+            ->where('user_id', $userId);
+
+        // Filter by Category
+        if ($request->filled('category') && $request->input('category') !== 'all') {
+            $category = trim($request->input('category'));
+            $query->whereHas('training', function ($q) use ($category) {
+                $q->where('category', $category);
+            });
+        }
+
+        // Filter by Status (Pending, Approved, Completed, Rejected, or Training Status)
+        if ($request->filled('status') && $request->input('status') !== 'all') {
+            $status = trim($request->input('status'));
+            $query->where(function ($q) use ($status) {
+                $q->where('status', 'like', $status)
+                  ->orWhereHas('training', function ($tq) use ($status) {
+                      $statusMap = [
+                          'open'    => 'Open Registration',
+                          'running' => 'Running',
+                          'closed'  => 'Closed',
+                      ];
+                      $mapped = $statusMap[strtolower($status)] ?? $status;
+                      $tq->where('status', $mapped);
+                  });
+            });
+        }
+
+        // Filter by Date (exact date or date range)
+        if ($request->filled('date')) {
+            $filterDate = Carbon::parse($request->input('date'))->format('Y-m-d');
+            $query->whereHas('training', function ($q) use ($filterDate) {
+                $q->where(function ($sub) use ($filterDate) {
+                    $sub->whereDate('start_date', '<=', $filterDate)
+                        ->whereDate('end_date', '>=', $filterDate);
+                })->orWhereDate('start_date', $filterDate);
+            });
+        } elseif ($request->filled('start_date') || $request->filled('end_date')) {
+            $startDate = $request->input('start_date');
+            $endDate = $request->input('end_date', $startDate);
+            $query->whereHas('training', function ($q) use ($startDate, $endDate) {
+                if ($startDate && $endDate) {
+                    $q->whereDate('start_date', '>=', $startDate)
+                      ->whereDate('start_date', '<=', $endDate);
+                } elseif ($startDate) {
+                    $q->whereDate('start_date', '>=', $startDate);
+                } else {
+                    $q->whereDate('start_date', '<=', $endDate);
+                }
+            });
+        }
+
+        // Filter by Month
+        if ($request->filled('month') && $request->input('month') !== 'all') {
+            $month = (int) $request->input('month');
+            $query->whereHas('training', function ($q) use ($month) {
+                $q->whereMonth('start_date', $month);
+            });
+        }
+
+        // Filter by Year
+        if ($request->filled('year') && $request->input('year') !== 'all') {
+            $year = (int) $request->input('year');
+            $query->whereHas('training', function ($q) use ($year) {
+                $q->whereYear('start_date', $year);
+            });
+        }
+
+        $myHistory = $query->orderBy('registered_at', 'desc')->get();
+        $generatedAt = Carbon::now()->format('d F Y, H:i') . ' WIB';
+        $filters = [
+            'category' => $request->input('category'),
+            'status'   => $request->input('status'),
+            'date'     => $request->input('date') ?? ($request->input('start_date') ? $request->input('start_date') . ($request->input('end_date') ? ' to ' . $request->input('end_date') : '') : null),
+        ];
+
+        $fileName = "Training_History_{$userId}.pdf";
+
+        $pdf = Pdf::loadView('pdf.training-history', compact('user', 'myHistory', 'generatedAt', 'filters'))
+            ->setPaper('a4', 'landscape')
+            ->setOption([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled'      => true,
+                'defaultFont'          => 'sans-serif',
+            ]);
+
+        return response($pdf->output(), 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+        ]);
     }
 
     /**
