@@ -21,7 +21,7 @@
         <i class="ti ti-device-laptop" aria-hidden="true"></i>
         <span>Online</span>
     </button>
-    <button type="button"
+    {{-- <button type="button"
             class="btn learning-mode-btn record-mode-btn {{ $currentMode === 'offline' ? 'btn-primary active' : 'btn-outline-primary' }}"
             data-mode="offline"
             title="Offline Training Record"
@@ -47,5 +47,5 @@
             aria-pressed="{{ $currentMode === 'export' ? 'true' : 'false' }}">
         <i class="ti ti-download" aria-hidden="true"></i>
         <span>Export</span>
-    </button>
+    </button> --}}
 </div>
