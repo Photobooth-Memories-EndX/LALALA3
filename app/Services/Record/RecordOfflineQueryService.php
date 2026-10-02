@@ -919,12 +919,43 @@ class RecordOfflineQueryService
             'otu.certificate',
             'otu.attendance',
             'otu.attendance_reason',
-            'u.name as user_name',
+            'otu.bond_status',
+            'otu.bond_end_date',
+            'otu.bond_amount',
+            'otu.l1_program',
+            'otu.l2_numerical',
+            'otu.l2_verbal',
+            'otu.l3_numerical',
+            'otu.l3_verbal',
+            'otu.pic',
+            'otu.created_at',
             'ot.id as training_id',
             'ot.course_name',
+            'ot.sub_course_name',
+            'ot.type',
+            'ot.category',
+            'ot.level',
+            'ot.batch',
+            'ot.main_classification',
+            'ot.sub_classification',
+            'ot.counted_corporate_kpi',
+            'ot.corporate_kpi_year',
+            'ot.sub_corporate_kpi',
+            'ot.delivery_method',
+            'ot.sub_delivery_method',
+            'ot.provider',
+            'ot.sub_provider',
+            'ot.provider_name',
+            'ot.venue',
+            'ot.instructor',
+            'ot.duration_seconds',
+            'ot.learning_hours as course_learning_hours',
+            'ot.start_date',
+            'ot.finish_date',
+            'u.name as user_name',
         ]);
 
-        // Filter: Participant Search / NIP (Safe string extraction, avoids array to string conversion)
+        // 1. Filter: Participant Search / NIP (Safe string extraction, avoids array to string conversion)
         $searchParam = '';
         if (isset($filters['participant']) && is_string($filters['participant'])) {
             $searchParam = trim($filters['participant']);
@@ -944,7 +975,13 @@ class RecordOfflineQueryService
             });
         }
 
-        // Filter: Status
+        // 2. Filter: Type
+        $typeParam = trim((string) ($filters['type'] ?? ($filters['training_type'] ?? 'all')));
+        if ($typeParam !== '' && $typeParam !== 'all') {
+            $query->where('ot.type', $typeParam);
+        }
+
+        // 3. Filter: Status
         $statusParam = strtolower(trim((string) ($filters['status'] ?? 'all')));
         if ($statusParam !== '' && $statusParam !== 'all') {
             if ($statusParam === 'finished' || $statusParam === '1' || $statusParam === 'finish') {
@@ -958,6 +995,259 @@ class RecordOfflineQueryService
                       ->orWhereNull('otu.progress');
                 });
             }
+        }
+
+        // 4. Filter: Year
+        $yearParam = trim((string) ($filters['year'] ?? 'all'));
+        if ($yearParam !== '' && $yearParam !== 'all') {
+            $yearInt = (int) $yearParam;
+            $query->where(function ($q) use ($yearInt) {
+                $q->whereYear('ot.finish_date', $yearInt)
+                  ->orWhere(function ($q2) use ($yearInt) {
+                      $q2->whereNull('ot.finish_date')->whereYear('ot.start_date', $yearInt);
+                  });
+            });
+        }
+
+        // 5. More Filter: Grade
+        $gradeParam = trim((string) ($filters['grade'] ?? 'all'));
+        if ($gradeParam !== '' && $gradeParam !== 'all') {
+            $query->where('otu.grade', $gradeParam);
+        }
+
+        // 6. More Filter: Job Position
+        $jobPosParam = trim((string) ($filters['job_position'] ?? ''));
+        if ($jobPosParam !== '' && $jobPosParam !== 'all') {
+            $query->where('otu.job_position', 'like', "%{$jobPosParam}%");
+        }
+
+        // 7. More Filter: Team
+        $teamParam = trim((string) ($filters['team'] ?? 'all'));
+        if ($teamParam !== '' && $teamParam !== 'all') {
+            $query->where('otu.team', $teamParam);
+        }
+
+        // 8. More Filter: Department
+        $deptParam = trim((string) ($filters['department'] ?? 'all'));
+        if ($deptParam !== '' && $deptParam !== 'all') {
+            $query->where('otu.department', $deptParam);
+        }
+
+        // 9. More Filter: Company
+        $companyParam = trim((string) ($filters['company'] ?? 'all'));
+        if ($companyParam !== '' && $companyParam !== 'all') {
+            $query->where('otu.company', $companyParam);
+        }
+
+        // 10. More Filter: Progress Range
+        $progressRange = $filters['progress_range'] ?? null;
+        if (filled($progressRange) && $progressRange !== 'all') {
+            $val = str_replace([' ', '%'], '', (string) $progressRange);
+            switch ($val) {
+                case '0':
+                    $query->where(function ($q) {
+                        $q->where('otu.progress', '<=', 0)
+                          ->orWhereNull('otu.progress');
+                    });
+                    break;
+                case '1-25':
+                    $query->where('otu.progress', '>', 0)
+                          ->where('otu.progress', '<=', 25);
+                    break;
+                case '26-50':
+                    $query->where('otu.progress', '>', 25)
+                          ->where('otu.progress', '<=', 50);
+                    break;
+                case '51-75':
+                    $query->where('otu.progress', '>', 50)
+                          ->where('otu.progress', '<=', 75);
+                    break;
+                case '76-99':
+                    $query->where('otu.progress', '>', 75)
+                          ->where('otu.progress', '<', 100);
+                    break;
+                case '100':
+                    $query->where('otu.progress', '>=', 100);
+                    break;
+            }
+        }
+
+        // 11. More Filter: Learning Hours Range
+        $hoursMin = $filters['learning_hours_min'] ?? ($filters['hours_min'] ?? null);
+        $hoursMax = $filters['learning_hours_max'] ?? ($filters['hours_max'] ?? null);
+        if (filled($hoursMin) && is_numeric($hoursMin)) {
+            $query->where('otu.learning_hours', '>=', (float) $hoursMin);
+        }
+        if (filled($hoursMax) && is_numeric($hoursMax)) {
+            $query->where('otu.learning_hours', '<=', (float) $hoursMax);
+        }
+
+        // 12. More Filter: Assessment Score Range
+        $scoreMin = $filters['assessment_score_min'] ?? ($filters['score_min'] ?? null);
+        $scoreMax = $filters['assessment_score_max'] ?? ($filters['score_max'] ?? null);
+        if (filled($scoreMin) && is_numeric($scoreMin)) {
+            $query->where('otu.assessment_score', '>=', (float) $scoreMin);
+        }
+        if (filled($scoreMax) && is_numeric($scoreMax)) {
+            $query->where('otu.assessment_score', '<=', (float) $scoreMax);
+        }
+
+        // 13. More Filter: Certificate
+        $certParam = strtolower(trim((string) ($filters['certificate'] ?? 'all')));
+        if (filled($certParam) && $certParam !== 'all') {
+            if ($certParam === 'yes' || $certParam === 'available' || $certParam === '1') {
+                $query->whereNotNull('otu.certificate')->where('otu.certificate', '!=', '')->where('otu.certificate', '!=', 'No');
+            } elseif ($certParam === 'no' || $certParam === '0') {
+                $query->where(function ($q) {
+                    $q->whereNull('otu.certificate')
+                      ->orWhere('otu.certificate', '')
+                      ->orWhere('otu.certificate', 'No');
+                });
+            }
+        }
+
+        // 14. More Filter: Attendance
+        $attendanceParam = strtolower(trim((string) ($filters['attendance'] ?? 'all')));
+        if (filled($attendanceParam) && $attendanceParam !== 'all') {
+            if ($attendanceParam === 'present' || $attendanceParam === '1' || $attendanceParam === 'yes') {
+                $query->where(function ($q) {
+                    $q->where('otu.attendance', true)
+                      ->orWhere('otu.attendance', 1);
+                });
+            } elseif ($attendanceParam === 'absent' || $attendanceParam === '0' || $attendanceParam === 'no') {
+                $query->where(function ($q) {
+                    $q->where('otu.attendance', false)
+                      ->orWhere('otu.attendance', 0);
+                });
+            }
+        }
+
+        // 15. More Filter: Attendance Reason
+        $attReasonParam = trim((string) ($filters['attendance_reason'] ?? ''));
+        if ($attReasonParam !== '') {
+            $query->where('otu.attendance_reason', 'like', "%{$attReasonParam}%");
+        }
+
+        // 16. More Filter: Bond Status
+        $bondParam = strtolower(trim((string) ($filters['bond_status'] ?? 'all')));
+        if (filled($bondParam) && $bondParam !== 'all') {
+            if ($bondParam === 'yes' || $bondParam === '1') {
+                $query->whereNotNull('otu.bond_status')->where('otu.bond_status', '!=', 'No')->where('otu.bond_status', '!=', '');
+            } elseif ($bondParam === 'no' || $bondParam === '0') {
+                $query->where(function ($q) {
+                    $q->whereNull('otu.bond_status')
+                      ->orWhere('otu.bond_status', 'No')
+                      ->orWhere('otu.bond_status', '');
+                });
+            }
+        }
+
+        // 17. More Filter: Bond End Date Range
+        $bondFromRaw = $filters['bond_end_from'] ?? ($filters['bond_end_date_from'] ?? null);
+        $bondToRaw = $filters['bond_end_to'] ?? ($filters['bond_end_date_to'] ?? null);
+        $bondFrom = self::parseDate(is_string($bondFromRaw) ? $bondFromRaw : null);
+        $bondTo = self::parseDate(is_string($bondToRaw) ? $bondToRaw : null);
+        if ($bondFrom && $bondTo) {
+            $query->whereBetween('otu.bond_end_date', [$bondFrom, $bondTo]);
+        } elseif ($bondFrom) {
+            $query->where('otu.bond_end_date', '>=', $bondFrom);
+        } elseif ($bondTo) {
+            $query->where('otu.bond_end_date', '<=', $bondTo);
+        }
+
+        // 18. More Filter: Bond Amount Range
+        $bondAmtMin = $filters['bond_amount_min'] ?? null;
+        $bondAmtMax = $filters['bond_amount_max'] ?? null;
+        if (filled($bondAmtMin) && is_numeric($bondAmtMin)) {
+            $query->where('otu.bond_amount', '>=', (float) $bondAmtMin);
+        }
+        if (filled($bondAmtMax) && is_numeric($bondAmtMax)) {
+            $query->where('otu.bond_amount', '<=', (float) $bondAmtMax);
+        }
+
+        // 19. More Filter: L1 Program
+        $l1Param = trim((string) ($filters['l1_program'] ?? ($filters['l1'] ?? '')));
+        if ($l1Param !== '') {
+            $query->where('otu.l1_program', 'like', "%{$l1Param}%");
+        }
+
+        // 20. More Filter: L2 Numerical Range
+        $l2NumMin = $filters['l2_numerical_min'] ?? ($filters['l2_min'] ?? null);
+        $l2NumMax = $filters['l2_numerical_max'] ?? ($filters['l2_max'] ?? null);
+        if (filled($l2NumMin) && is_numeric($l2NumMin)) {
+            $query->where('otu.l2_numerical', '>=', (float) $l2NumMin);
+        }
+        if (filled($l2NumMax) && is_numeric($l2NumMax)) {
+            $query->where('otu.l2_numerical', '<=', (float) $l2NumMax);
+        }
+
+        // 21. More Filter: L2 Verbal
+        $l2vParam = trim((string) ($filters['l2_verbal'] ?? ''));
+        if ($l2vParam !== '') {
+            $query->where('otu.l2_verbal', 'like', "%{$l2vParam}%");
+        }
+
+        // 22. More Filter: L3 Numerical Range
+        $l3NumMin = $filters['l3_numerical_min'] ?? ($filters['l3_min'] ?? null);
+        $l3NumMax = $filters['l3_numerical_max'] ?? ($filters['l3_max'] ?? null);
+        if (filled($l3NumMin) && is_numeric($l3NumMin)) {
+            $query->where('otu.l3_numerical', '>=', (float) $l3NumMin);
+        }
+        if (filled($l3NumMax) && is_numeric($l3NumMax)) {
+            $query->where('otu.l3_numerical', '<=', (float) $l3NumMax);
+        }
+
+        // 23. More Filter: L3 Verbal
+        $l3vParam = trim((string) ($filters['l3_verbal'] ?? ''));
+        if ($l3vParam !== '') {
+            $query->where('otu.l3_verbal', 'like', "%{$l3vParam}%");
+        }
+
+        // 24. More Filter: PIC
+        $picParam = trim((string) ($filters['pic'] ?? ''));
+        if ($picParam !== '') {
+            $query->where('otu.pic', 'like', "%{$picParam}%");
+        }
+
+        // 25. Date Range (from_date & to_date)
+        $fromDateRaw = $filters['from_date'] ?? ($filters['date_from'] ?? null);
+        $toDateRaw = $filters['to_date'] ?? ($filters['date_to'] ?? null);
+        $fromDate = self::parseDate(is_string($fromDateRaw) ? $fromDateRaw : null);
+        $toDate = self::parseDate(is_string($toDateRaw) ? $toDateRaw : null);
+
+        if ($fromDate && $toDate) {
+            $query->where(function ($q) use ($fromDate, $toDate) {
+                $q->where(function ($sub) use ($fromDate, $toDate) {
+                    $sub->whereNotNull('ot.start_date')
+                        ->whereBetween('ot.start_date', [$fromDate, $toDate]);
+                })->orWhere(function ($sub) use ($fromDate, $toDate) {
+                    $sub->whereNull('ot.start_date')
+                        ->whereNotNull('ot.finish_date')
+                        ->whereBetween('ot.finish_date', [$fromDate, $toDate]);
+                });
+            });
+        } elseif ($fromDate) {
+            $query->where(function ($q) use ($fromDate) {
+                $q->where(function ($sub) use ($fromDate) {
+                    $sub->whereNotNull('ot.start_date')
+                        ->where('ot.start_date', '>=', $fromDate);
+                })->orWhere(function ($sub) use ($fromDate) {
+                    $sub->whereNull('ot.start_date')
+                        ->whereNotNull('ot.finish_date')
+                        ->where('ot.finish_date', '>=', $fromDate);
+                });
+            });
+        } elseif ($toDate) {
+            $query->where(function ($q) use ($toDate) {
+                $q->where(function ($sub) use ($toDate) {
+                    $sub->whereNotNull('ot.start_date')
+                        ->where('ot.start_date', '<=', $toDate);
+                })->orWhere(function ($sub) use ($toDate) {
+                    $sub->whereNull('ot.start_date')
+                        ->whereNotNull('ot.finish_date')
+                        ->where('ot.finish_date', '<=', $toDate);
+                });
+            });
         }
 
         return $query;

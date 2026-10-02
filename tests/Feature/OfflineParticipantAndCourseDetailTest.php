@@ -388,8 +388,10 @@ class OfflineParticipantAndCourseDetailTest extends TestCase
         $response->assertSee('Certification');
         $response->assertSee('Batch: Batch 7');
         $response->assertSee('Quality & Safety');
-        $response->assertSee('Auditorium 1');
-        $response->assertSee('Dr. Aris W.');
+        // Detailed metadata grid is removed from header
+        $response->assertDontSee('TRAINING METADATA GRID');
+        $response->assertDontSee('Auditorium 1');
+        $response->assertDontSee('Dr. Aris W.');
     }
 
     /**
@@ -974,6 +976,781 @@ class OfflineParticipantAndCourseDetailTest extends TestCase
             $this->actingAs($this->regularUser)->get(route('manage.record.offline.participant.export.csv', $user->id))->assertStatus(403);
             $this->actingAs($this->regularUser)->get(route('manage.record.offline.participant.export.pdf', $user->id))->assertStatus(403);
         }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | NEW COURSE DETAIL CANONICAL VIEW & EXPORT TESTS (34 - 44)
+    |--------------------------------------------------------------------------
+    */
+
+    /**
+     * 34. Course Detail requires authentication and record_management permission.
+     */
+    public function test_course_detail_requires_authentication_and_permission(): void
+    {
+        $training = $this->createTraining();
+
+        // Unauthenticated -> redirect
+        $this->get(route('manage.record.offline.course', $training->id))->assertRedirect();
+
+        // Regular user without permission -> 403
+        if ($this->regularUser) {
+            $this->actingAs($this->regularUser)->get(route('manage.record.offline.course', $training->id))->assertStatus(403);
+        }
+    }
+
+    /**
+     * 35. Course Detail Blade renders simplified header without metadata grid and displays KPI cards.
+     */
+    public function test_course_detail_renders_simplified_header_kpi_cards_and_export_dropdown(): void
+    {
+        $training = $this->createTraining([
+            'course_name'         => 'Advanced Python Architecture',
+            'sub_course_name'     => 'AsyncIO and Microservices',
+            'type'                => 'In-House',
+            'batch'               => 'Batch 3',
+            'main_classification' => 'Technical',
+        ]);
+        $this->enrollParticipant($training, ['employee_id' => 'EMP_KPI_1', 'progress' => 100.0]);
+        $this->enrollParticipant($training, ['employee_id' => 'EMP_KPI_2', 'progress' => 50.0]);
+
+        $response = $this->actingAs($this->admin)->get(route('manage.record.offline.course', $training->id));
+        $response->assertStatus(200);
+
+        // Header shows Course & Sub Course Name prominently
+        $response->assertSee('Advanced Python Architecture');
+        $response->assertSee('AsyncIO and Microservices');
+        $response->assertSee('In-House');
+        $response->assertSee('Batch: Batch 3');
+        $response->assertSee('Technical');
+
+        // Detailed metadata grid is removed from header
+        $response->assertDontSee('TRAINING METADATA GRID');
+        $response->assertDontSee('Venue & Instructor');
+        $response->assertDontSee('Dates & Duration');
+
+        // KPI Summary cards are visible
+        $response->assertSee('Total Participants');
+        $response->assertSee('Finished');
+        $response->assertSee('Ongoing');
+        $response->assertSee('Avg. Progress');
+
+        // Quick filter & Export dropdown are visible
+        $response->assertSee('Quick Filter');
+        $response->assertSee('Excel (.xlsx)');
+        $response->assertSee('CSV (.csv)');
+        $response->assertSee('PDF Landscape (.pdf)');
+    }
+
+    /**
+     * 36. Course DataTable returns all canonical 44 columns and exposes course_name and sub_course_name on every row.
+     */
+    public function test_course_datatable_returns_all_canonical_44_columns(): void
+    {
+        $training = $this->createTraining([
+            'course_name'     => 'Cyber Security Foundations',
+            'sub_course_name' => 'Threat Modeling and Defense',
+            'instructor'      => 'Dr. Satoshi Nakamoto',
+            'venue'           => 'Server Lab 404',
+        ]);
+        $this->enrollParticipant($training, [
+            'employee_id'      => 'CYBER_001',
+            'name'             => 'Cyber Defender',
+            'progress'         => 80.0,
+            'assessment_score' => 92.5,
+            'attendance'       => true,
+            'l1_program'       => 'Excellent',
+            'l2_numerical'     => 90.0,
+            'l3_verbal'        => 'High Impact',
+        ]);
+
+        $response = $this->actingAs($this->admin)->getJson(
+            route('manage.record.offline.course.datatable', $training->id) . '?draw=1'
+        );
+
+        $response->assertStatus(200);
+        $data = $response->json('data');
+        $this->assertCount(1, $data);
+        $row = $data[0];
+
+        // 1. Participant info
+        $this->assertEquals('CYBER_001', $row['employee_id']);
+        $this->assertStringContainsString('Cyber Defender', $row['participant_name']);
+
+        // 2. Training info repeated on each row
+        $this->assertStringContainsString('Cyber Security Foundations', $row['course_name']);
+        $this->assertStringContainsString('Threat Modeling and Defense', $row['sub_course_name']);
+        $this->assertEquals('Dr. Satoshi Nakamoto', $row['instructor']);
+        $this->assertEquals('Server Lab 404', $row['venue']);
+
+        // 3. Evaluations, scores & obligations
+        $this->assertStringContainsString('92.5', $row['assessment_score']);
+        $this->assertStringContainsString('Present', $row['attendance_badge']);
+        $this->assertEquals('Excellent', $row['l1_program']);
+        $this->assertStringContainsString('90.0', $row['l2_numerical']);
+        $this->assertStringContainsString('High Impact', $row['l3_verbal']);
+
+        // 4. Action button (view detail modal)
+        $this->assertStringContainsString('btn-view-offline-detail', $row['action']);
+    }
+
+    /**
+     * 37. Course DataTable filters by participant search (name or NIP).
+     */
+    public function test_course_datatable_filters_by_participant_search(): void
+    {
+        $training = $this->createTraining();
+        $this->enrollParticipant($training, ['employee_id' => 'EMP_SEARCH_1', 'name' => 'Alice Wonder']);
+        $this->enrollParticipant($training, ['employee_id' => 'EMP_SEARCH_2', 'name' => 'Bob Builder']);
+
+        // Search by name
+        $resName = $this->actingAs($this->admin)->getJson(
+            route('manage.record.offline.course.datatable', $training->id) . '?participant=Alice'
+        );
+        $resName->assertStatus(200);
+        $this->assertEquals(1, $resName->json('recordsFiltered'));
+        $this->assertStringContainsString('Alice Wonder', $resName->json('data')[0]['participant_name']);
+
+        // Search by NIP
+        $resNip = $this->actingAs($this->admin)->getJson(
+            route('manage.record.offline.course.datatable', $training->id) . '?participant=EMP_SEARCH_2'
+        );
+        $resNip->assertStatus(200);
+        $this->assertEquals(1, $resNip->json('recordsFiltered'));
+        $this->assertStringContainsString('Bob Builder', $resNip->json('data')[0]['participant_name']);
+    }
+
+    /**
+     * 38. Course DataTable filters by status (finished, ongoing, not_started).
+     */
+    public function test_course_datatable_filters_by_status(): void
+    {
+        $training = $this->createTraining();
+        $this->enrollParticipant($training, ['employee_id' => 'ST_FIN', 'progress' => 100.0]);
+        $this->enrollParticipant($training, ['employee_id' => 'ST_ONG', 'progress' => 45.0]);
+        $this->enrollParticipant($training, ['employee_id' => 'ST_NOT', 'progress' => 0.0]);
+
+        // Filter finished
+        $resFin = $this->actingAs($this->admin)->getJson(
+            route('manage.record.offline.course.datatable', $training->id) . '?status=finished'
+        );
+        $resFin->assertStatus(200);
+        $this->assertEquals(1, $resFin->json('recordsFiltered'));
+        $this->assertEquals('ST_FIN', $resFin->json('data')[0]['employee_id']);
+
+        // Filter ongoing
+        $resOng = $this->actingAs($this->admin)->getJson(
+            route('manage.record.offline.course.datatable', $training->id) . '?status=ongoing'
+        );
+        $resOng->assertStatus(200);
+        $this->assertEquals(1, $resOng->json('recordsFiltered'));
+        $this->assertEquals('ST_ONG', $resOng->json('data')[0]['employee_id']);
+
+        // Filter not started
+        $resNot = $this->actingAs($this->admin)->getJson(
+            route('manage.record.offline.course.datatable', $training->id) . '?status=not_started'
+        );
+        $resNot->assertStatus(200);
+        $this->assertEquals(1, $resNot->json('recordsFiltered'));
+        $this->assertEquals('ST_NOT', $resNot->json('data')[0]['employee_id']);
+    }
+
+    /**
+     * 39. Course DataTable combines search and status filters.
+     */
+    public function test_course_datatable_combines_search_and_status_filters(): void
+    {
+        $training = $this->createTraining();
+        $this->enrollParticipant($training, ['employee_id' => 'COMB_1', 'name' => 'Charlie One', 'progress' => 100.0]);
+        $this->enrollParticipant($training, ['employee_id' => 'COMB_2', 'name' => 'Charlie Two', 'progress' => 50.0]);
+
+        // Match Charlie + finished -> 1
+        $res1 = $this->actingAs($this->admin)->getJson(
+            route('manage.record.offline.course.datatable', $training->id) . '?participant=Charlie&status=finished'
+        );
+        $res1->assertStatus(200);
+        $this->assertEquals(1, $res1->json('recordsFiltered'));
+        $this->assertEquals('COMB_1', $res1->json('data')[0]['employee_id']);
+
+        // Match Charlie + not_started -> 0
+        $res0 = $this->actingAs($this->admin)->getJson(
+            route('manage.record.offline.course.datatable', $training->id) . '?participant=Charlie&status=not_started'
+        );
+        $res0->assertStatus(200);
+        $this->assertEquals(0, $res0->json('recordsFiltered'));
+    }
+
+    /**
+     * 40. Course Excel export returns .xlsx, requires permission, and respects active filters.
+     */
+    public function test_course_export_excel_returns_xlsx_and_respects_filters(): void
+    {
+        $training = $this->createTraining(['course_name' => 'Export Excel Test Course']);
+        $this->enrollParticipant($training, ['employee_id' => 'EXCEL_1', 'progress' => 100.0]);
+        $this->enrollParticipant($training, ['employee_id' => 'EXCEL_2', 'progress' => 20.0]);
+
+        // Unfiltered download
+        $response = $this->actingAs($this->admin)->get(
+            route('manage.record.offline.course.export.excel', $training->id)
+        );
+        $response->assertStatus(200);
+        $disposition = $response->headers->get('content-disposition') ?? '';
+        $this->assertStringContainsString('.xlsx', $disposition);
+
+        // Filtered download (status=finished)
+        $responseFiltered = $this->actingAs($this->admin)->get(
+            route('manage.record.offline.course.export.excel', $training->id) . '?status=finished'
+        );
+        $responseFiltered->assertStatus(200);
+    }
+
+    /**
+     * 41. Course CSV export returns .csv and respects active filters.
+     */
+    public function test_course_export_csv_returns_csv_and_respects_filters(): void
+    {
+        $training = $this->createTraining(['course_name' => 'Export CSV Test Course']);
+        $this->enrollParticipant($training, ['employee_id' => 'CSV_1', 'progress' => 100.0]);
+        $this->enrollParticipant($training, ['employee_id' => 'CSV_2', 'progress' => 30.0]);
+
+        $response = $this->actingAs($this->admin)->get(
+            route('manage.record.offline.course.export.csv', $training->id) . '?status=finished'
+        );
+        $response->assertStatus(200);
+        $this->assertStringContainsString('text/csv', $response->headers->get('content-type'));
+    }
+
+    /**
+     * 42. Course PDF export returns .pdf and renders A3 landscape.
+     */
+    public function test_course_export_pdf_returns_pdf_and_respects_filters(): void
+    {
+        $training = $this->createTraining(['course_name' => 'Export PDF Test Course']);
+        $this->enrollParticipant($training, ['employee_id' => 'PDF_1', 'progress' => 100.0]);
+        $this->enrollParticipant($training, ['employee_id' => 'PDF_2', 'progress' => 40.0]);
+
+        $response = $this->actingAs($this->admin)->get(
+            route('manage.record.offline.course.export.pdf', $training->id) . '?status=finished'
+        );
+        $response->assertStatus(200);
+        $this->assertStringContainsString('application/pdf', $response->headers->get('content-type'));
+    }
+
+    /**
+     * 43. Course export endpoints require authentication and record_management permission.
+     */
+    public function test_course_export_endpoints_require_authentication_and_permission(): void
+    {
+        $training = $this->createTraining();
+
+        // Unauthenticated -> redirect
+        $this->get(route('manage.record.offline.course.export.excel', $training->id))->assertRedirect();
+        $this->get(route('manage.record.offline.course.export.csv', $training->id))->assertRedirect();
+        $this->get(route('manage.record.offline.course.export.pdf', $training->id))->assertRedirect();
+
+        // Regular user without permission -> 403
+        if ($this->regularUser) {
+            $this->actingAs($this->regularUser)->get(route('manage.record.offline.course.export.excel', $training->id))->assertStatus(403);
+            $this->actingAs($this->regularUser)->get(route('manage.record.offline.course.export.csv', $training->id))->assertStatus(403);
+            $this->actingAs($this->regularUser)->get(route('manage.record.offline.course.export.pdf', $training->id))->assertStatus(403);
+        }
+    }
+
+    /**
+     * 44. Query service guarantees filter parity between DataTable, Excel, and CSV for Course Detail.
+     */
+    public function test_course_query_service_filter_parity_across_datatable_and_exports(): void
+    {
+        $training = $this->createTraining();
+        $this->enrollParticipant($training, ['employee_id' => 'PAR_1', 'name' => 'Parity One', 'progress' => 100.0]);
+        $this->enrollParticipant($training, ['employee_id' => 'PAR_2', 'name' => 'Parity Two', 'progress' => 100.0]);
+        $this->enrollParticipant($training, ['employee_id' => 'PAR_3', 'name' => 'Parity Three', 'progress' => 50.0]);
+
+        // Filter: status=finished -> exactly 2
+        $filters = ['status' => 'finished'];
+        $queryCount = RecordOfflineQueryService::buildCourseQuery((int) $training->id, $filters)->count();
+        $this->assertEquals(2, $queryCount);
+
+        // Datatable returns recordsFiltered = 2
+        $dtRes = $this->actingAs($this->admin)->getJson(
+            route('manage.record.offline.course.datatable', $training->id) . '?status=finished'
+        );
+        $dtRes->assertStatus(200);
+        $this->assertEquals(2, $dtRes->json('recordsFiltered'));
+
+        // Another training with same course name is NOT mixed into this course query
+        $otherTraining = $this->createTraining(['course_name' => $training->course_name]);
+        $this->enrollParticipant($otherTraining, ['employee_id' => 'PAR_OTHER', 'progress' => 100.0]);
+
+        $queryCountAgain = RecordOfflineQueryService::buildCourseQuery((int) $training->id, $filters)->count();
+        $this->assertEquals(2, $queryCountAgain, 'Participant from another training must not be counted.');
+    }
+
+    /**
+     * 45. Course page renders full Quick Filter bar and More Filters modal.
+     */
+    public function test_course_detail_page_renders_quick_filters_and_more_filters_modal(): void
+    {
+        $training = $this->createTraining();
+        $this->enrollParticipant($training, [
+            'grade'       => 'G5',
+            'team'        => 'Infra Team',
+            'department'  => 'DevOps Dept',
+            'company'     => 'PT Krakatau Steel',
+        ]);
+
+        $response = $this->actingAs($this->admin)->get(route('manage.record.offline.course', $training->id));
+        $response->assertStatus(200);
+
+        // Quick filter elements
+        $response->assertSee('id="course-participant-input"', false);
+        $response->assertSee('id="course-type-select"', false);
+        $response->assertSee('id="course-status-select"', false);
+        $response->assertSee('id="course-year-select"', false);
+        $response->assertSee('id="btn-apply-course-filter"', false);
+        $response->assertSee('id="btn-more-course-filters"', false);
+        $response->assertSee('id="activeCourseFilterBadge"', false);
+        $response->assertSee('id="btn-reset-course-filter"', false);
+        $response->assertSee('id="courseExportDropdown"', false);
+
+        // More filters modal elements
+        $response->assertSee('id="moreCourseFiltersModal"', false);
+        $response->assertSee('id="modal-course-grade"', false);
+        $response->assertSee('id="modal-course-job-position"', false);
+        $response->assertSee('id="modal-course-team"', false);
+        $response->assertSee('id="modal-course-department"', false);
+        $response->assertSee('id="modal-course-company"', false);
+        $response->assertSee('name="modal_course_progress_range"', false);
+        $response->assertSee('id="modal-course-hours-min"', false);
+        $response->assertSee('id="modal-course-score-min"', false);
+        $response->assertSee('name="modal_course_certificate"', false);
+        $response->assertSee('name="modal_course_attendance"', false);
+        $response->assertSee('id="modal-course-attendance-reason"', false);
+        $response->assertSee('name="modal_course_bond_status"', false);
+        $response->assertSee('id="modal-course-bond-from"', false);
+        $response->assertSee('id="modal-course-bond-amount-min"', false);
+        $response->assertSee('id="modal-course-l1"', false);
+        $response->assertSee('id="modal-course-l2-num-min"', false);
+        $response->assertSee('id="modal-course-l2-verbal"', false);
+        $response->assertSee('id="modal-course-l3-num-min"', false);
+        $response->assertSee('id="modal-course-l3-verbal"', false);
+        $response->assertSee('id="modal-course-pic"', false);
+        $response->assertSee('id="btn-reset-modal-course-filters"', false);
+        $response->assertSee('id="btn-apply-modal-course-filters"', false);
+
+        // Options populated from participants
+        $response->assertSee('G5');
+        $response->assertSee('Infra Team');
+        $response->assertSee('DevOps Dept');
+        $response->assertSee('PT Krakatau Steel');
+    }
+
+    /**
+     * 46. Course DataTable filters by Type and Year.
+     */
+    public function test_course_datatable_filters_by_type_and_year(): void
+    {
+        $training = $this->createTraining([
+            'type'        => 'In-House',
+            'start_date'  => '2026-03-01',
+            'finish_date' => '2026-03-02',
+        ]);
+        $this->enrollParticipant($training, ['employee_id' => 'TY_1', 'name' => 'Type Test User']);
+
+        // Type matches
+        $resTypeOk = $this->actingAs($this->admin)->getJson(
+            route('manage.record.offline.course.datatable', $training->id) . '?type=In-House'
+        );
+        $resTypeOk->assertStatus(200);
+        $this->assertEquals(1, $resTypeOk->json('recordsFiltered'));
+
+        // Type mismatch
+        $resTypeMismatch = $this->actingAs($this->admin)->getJson(
+            route('manage.record.offline.course.datatable', $training->id) . '?type=Public'
+        );
+        $resTypeMismatch->assertStatus(200);
+        $this->assertEquals(0, $resTypeMismatch->json('recordsFiltered'));
+
+        // Year matches
+        $resYearOk = $this->actingAs($this->admin)->getJson(
+            route('manage.record.offline.course.datatable', $training->id) . '?year=2026'
+        );
+        $resYearOk->assertStatus(200);
+        $this->assertEquals(1, $resYearOk->json('recordsFiltered'));
+
+        // Year mismatch
+        $resYearMismatch = $this->actingAs($this->admin)->getJson(
+            route('manage.record.offline.course.datatable', $training->id) . '?year=2020'
+        );
+        $resYearMismatch->assertStatus(200);
+        $this->assertEquals(0, $resYearMismatch->json('recordsFiltered'));
+    }
+
+    /**
+     * 47. Course DataTable filters by Employee Information: Grade, Job Position, Team, Department, Company.
+     */
+    public function test_course_datatable_filters_by_employee_information(): void
+    {
+        $training = $this->createTraining();
+        $this->enrollParticipant($training, [
+            'employee_id'  => 'EMP_INFO_1',
+            'name'         => 'Alpha Developer',
+            'grade'        => 'G4',
+            'job_position' => 'Senior Backend Engineer',
+            'team'         => 'Core Backend',
+            'department'   => 'Software Engineering',
+            'company'      => 'PT Krakatau Posco',
+        ]);
+        $this->enrollParticipant($training, [
+            'employee_id'  => 'EMP_INFO_2',
+            'name'         => 'Beta Analyst',
+            'grade'        => 'G3',
+            'job_position' => 'Quality Assurance',
+            'team'         => 'Testing Team',
+            'department'   => 'Quality Dept',
+            'company'      => 'PT Krakatau Steel',
+        ]);
+
+        // Filter Grade
+        $resGrade = $this->actingAs($this->admin)->getJson(
+            route('manage.record.offline.course.datatable', $training->id) . '?grade=G4'
+        );
+        $this->assertEquals(1, $resGrade->json('recordsFiltered'));
+        $this->assertStringContainsString('Alpha Developer', $resGrade->json('data')[0]['participant_name']);
+
+        // Filter Job Position (partial search)
+        $resPos = $this->actingAs($this->admin)->getJson(
+            route('manage.record.offline.course.datatable', $training->id) . '?job_position=Backend'
+        );
+        $this->assertEquals(1, $resPos->json('recordsFiltered'));
+        $this->assertStringContainsString('Alpha Developer', $resPos->json('data')[0]['participant_name']);
+
+        // Filter Team
+        $resTeam = $this->actingAs($this->admin)->getJson(
+            route('manage.record.offline.course.datatable', $training->id) . '?team=Testing Team'
+        );
+        $this->assertEquals(1, $resTeam->json('recordsFiltered'));
+        $this->assertStringContainsString('Beta Analyst', $resTeam->json('data')[0]['participant_name']);
+
+        // Filter Department
+        $resDept = $this->actingAs($this->admin)->getJson(
+            route('manage.record.offline.course.datatable', $training->id) . '?department=Quality Dept'
+        );
+        $this->assertEquals(1, $resDept->json('recordsFiltered'));
+        $this->assertStringContainsString('Beta Analyst', $resDept->json('data')[0]['participant_name']);
+
+        // Filter Company
+        $resComp = $this->actingAs($this->admin)->getJson(
+            route('manage.record.offline.course.datatable', $training->id) . '?company=PT Krakatau Posco'
+        );
+        $this->assertEquals(1, $resComp->json('recordsFiltered'));
+        $this->assertStringContainsString('Alpha Developer', $resComp->json('data')[0]['participant_name']);
+    }
+
+    /**
+     * 48. Course DataTable filters by Training Result: Progress Range, Hours, Score, Certificate.
+     */
+    public function test_course_datatable_filters_by_training_result(): void
+    {
+        $training = $this->createTraining();
+        $this->enrollParticipant($training, [
+            'employee_id'      => 'RES_1',
+            'name'             => 'Winner One',
+            'progress'         => 100.0,
+            'learning_hours'   => 8.0,
+            'assessment_score' => 95.0,
+            'certificate'      => 'CERT-WIN',
+        ]);
+        $this->enrollParticipant($training, [
+            'employee_id'      => 'RES_2',
+            'name'             => 'Ongoing Two',
+            'progress'         => 45.0,
+            'learning_hours'   => 4.0,
+            'assessment_score' => 65.0,
+            'certificate'      => null,
+        ]);
+
+        // Progress Range: 26-50
+        $resPr = $this->actingAs($this->admin)->getJson(
+            route('manage.record.offline.course.datatable', $training->id) . '?progress_range=26-50'
+        );
+        $this->assertEquals(1, $resPr->json('recordsFiltered'));
+        $this->assertStringContainsString('Ongoing Two', $resPr->json('data')[0]['participant_name']);
+
+        // Learning Hours Min: 6
+        $resHours = $this->actingAs($this->admin)->getJson(
+            route('manage.record.offline.course.datatable', $training->id) . '?hours_min=6'
+        );
+        $this->assertEquals(1, $resHours->json('recordsFiltered'));
+        $this->assertStringContainsString('Winner One', $resHours->json('data')[0]['participant_name']);
+
+        // Assessment Score Min: 80
+        $resScore = $this->actingAs($this->admin)->getJson(
+            route('manage.record.offline.course.datatable', $training->id) . '?score_min=80'
+        );
+        $this->assertEquals(1, $resScore->json('recordsFiltered'));
+        $this->assertStringContainsString('Winner One', $resScore->json('data')[0]['participant_name']);
+
+        // Certificate: yes
+        $resCert = $this->actingAs($this->admin)->getJson(
+            route('manage.record.offline.course.datatable', $training->id) . '?certificate=yes'
+        );
+        $this->assertEquals(1, $resCert->json('recordsFiltered'));
+        $this->assertStringContainsString('Winner One', $resCert->json('data')[0]['participant_name']);
+    }
+
+    /**
+     * 49. Course DataTable filters by Attendance and Attendance Reason.
+     */
+    public function test_course_datatable_filters_by_attendance_and_reason(): void
+    {
+        $training = $this->createTraining();
+        $this->enrollParticipant($training, [
+            'employee_id'       => 'ATT_1',
+            'name'              => 'Present Person',
+            'attendance'        => true,
+            'attendance_reason' => null,
+        ]);
+        $this->enrollParticipant($training, [
+            'employee_id'       => 'ATT_2',
+            'name'              => 'Sick Person',
+            'attendance'        => false,
+            'attendance_reason' => 'Medical Sick Leave',
+        ]);
+
+        // Attendance: present
+        $resPres = $this->actingAs($this->admin)->getJson(
+            route('manage.record.offline.course.datatable', $training->id) . '?attendance=present'
+        );
+        $this->assertEquals(1, $resPres->json('recordsFiltered'));
+        $this->assertStringContainsString('Present Person', $resPres->json('data')[0]['participant_name']);
+
+        // Attendance: absent
+        $resAbs = $this->actingAs($this->admin)->getJson(
+            route('manage.record.offline.course.datatable', $training->id) . '?attendance=absent'
+        );
+        $this->assertEquals(1, $resAbs->json('recordsFiltered'));
+        $this->assertStringContainsString('Sick Person', $resAbs->json('data')[0]['participant_name']);
+
+        // Attendance Reason
+        $resReason = $this->actingAs($this->admin)->getJson(
+            route('manage.record.offline.course.datatable', $training->id) . '?attendance_reason=Medical'
+        );
+        $this->assertEquals(1, $resReason->json('recordsFiltered'));
+        $this->assertStringContainsString('Sick Person', $resReason->json('data')[0]['participant_name']);
+    }
+
+    /**
+     * 50. Course DataTable filters by Obligation: Bond Status, End Date, Amount.
+     */
+    public function test_course_datatable_filters_by_obligation(): void
+    {
+        $training = $this->createTraining();
+        $this->enrollParticipant($training, [
+            'employee_id'   => 'BOND_1',
+            'name'          => 'Bonded Employee',
+            'bond_status'   => 'Yes',
+            'bond_end_date' => '2027-12-31',
+            'bond_amount'   => 15000000,
+        ]);
+        $this->enrollParticipant($training, [
+            'employee_id'   => 'BOND_2',
+            'name'          => 'Free Employee',
+            'bond_status'   => 'No',
+            'bond_end_date' => null,
+            'bond_amount'   => null,
+        ]);
+
+        // Bond Status: yes
+        $resBond = $this->actingAs($this->admin)->getJson(
+            route('manage.record.offline.course.datatable', $training->id) . '?bond_status=yes'
+        );
+        $this->assertEquals(1, $resBond->json('recordsFiltered'));
+        $this->assertStringContainsString('Bonded Employee', $resBond->json('data')[0]['participant_name']);
+
+        // Bond Date Range
+        $resDate = $this->actingAs($this->admin)->getJson(
+            route('manage.record.offline.course.datatable', $training->id) . '?bond_end_from=2027-01-01&bond_end_to=2027-12-31'
+        );
+        $this->assertEquals(1, $resDate->json('recordsFiltered'));
+        $this->assertStringContainsString('Bonded Employee', $resDate->json('data')[0]['participant_name']);
+
+        // Bond Amount Min
+        $resAmt = $this->actingAs($this->admin)->getJson(
+            route('manage.record.offline.course.datatable', $training->id) . '?bond_amount_min=10000000'
+        );
+        $this->assertEquals(1, $resAmt->json('recordsFiltered'));
+        $this->assertStringContainsString('Bonded Employee', $resAmt->json('data')[0]['participant_name']);
+    }
+
+    /**
+     * 51. Course DataTable filters by Evaluation: L1, L2, L3, PIC.
+     */
+    public function test_course_datatable_filters_by_evaluation(): void
+    {
+        $training = $this->createTraining();
+        $this->enrollParticipant($training, [
+            'employee_id'  => 'EVAL_1',
+            'name'         => 'Evaluated Star',
+            'l1_program'   => 'Outstanding',
+            'l2_numerical' => 92.0,
+            'l2_verbal'    => 'Exceeded Expectations',
+            'l3_numerical' => 88.0,
+            'l3_verbal'    => 'Great Project',
+            'pic'          => 'John HRD PIC',
+        ]);
+        $this->enrollParticipant($training, [
+            'employee_id'  => 'EVAL_2',
+            'name'         => 'Ordinary Participant',
+            'l1_program'   => 'Good',
+            'l2_numerical' => 60.0,
+            'l2_verbal'    => 'Satisfactory',
+            'l3_numerical' => 55.0,
+            'l3_verbal'    => 'Average',
+            'pic'          => 'Jane Other PIC',
+        ]);
+
+        // L1 Program
+        $resL1 = $this->actingAs($this->admin)->getJson(
+            route('manage.record.offline.course.datatable', $training->id) . '?l1_program=Outstanding'
+        );
+        $this->assertEquals(1, $resL1->json('recordsFiltered'));
+        $this->assertStringContainsString('Evaluated Star', $resL1->json('data')[0]['participant_name']);
+
+        // L2 Numerical Min
+        $resL2 = $this->actingAs($this->admin)->getJson(
+            route('manage.record.offline.course.datatable', $training->id) . '?l2_numerical_min=80'
+        );
+        $this->assertEquals(1, $resL2->json('recordsFiltered'));
+        $this->assertStringContainsString('Evaluated Star', $resL2->json('data')[0]['participant_name']);
+
+        // L3 Verbal
+        $resL3v = $this->actingAs($this->admin)->getJson(
+            route('manage.record.offline.course.datatable', $training->id) . '?l3_verbal=Great'
+        );
+        $this->assertEquals(1, $resL3v->json('recordsFiltered'));
+        $this->assertStringContainsString('Evaluated Star', $resL3v->json('data')[0]['participant_name']);
+
+        // PIC
+        $resPic = $this->actingAs($this->admin)->getJson(
+            route('manage.record.offline.course.datatable', $training->id) . '?pic=John'
+        );
+        $this->assertEquals(1, $resPic->json('recordsFiltered'));
+        $this->assertStringContainsString('Evaluated Star', $resPic->json('data')[0]['participant_name']);
+    }
+
+    /**
+     * 52. Course DataTable handles combined advanced filters correctly.
+     */
+    public function test_course_datatable_handles_combined_advanced_filters(): void
+    {
+        $training = $this->createTraining();
+        $this->enrollParticipant($training, [
+            'employee_id'      => 'COMB_1',
+            'name'             => 'Perfect Match',
+            'department'       => 'Technology',
+            'progress'         => 100.0,
+            'attendance'       => true,
+            'assessment_score' => 88.0,
+        ]);
+        $this->enrollParticipant($training, [
+            'employee_id'      => 'COMB_2',
+            'name'             => 'Diff Dept',
+            'department'       => 'Finance',
+            'progress'         => 100.0,
+            'attendance'       => true,
+            'assessment_score' => 90.0,
+        ]);
+        $this->enrollParticipant($training, [
+            'employee_id'      => 'COMB_3',
+            'name'             => 'Low Score',
+            'department'       => 'Technology',
+            'progress'         => 100.0,
+            'attendance'       => true,
+            'assessment_score' => 70.0,
+        ]);
+
+        $query = http_build_query([
+            'department' => 'Technology',
+            'status'     => 'finished',
+            'attendance' => 'present',
+            'score_min'  => 80,
+        ]);
+
+        $res = $this->actingAs($this->admin)->getJson(
+            route('manage.record.offline.course.datatable', $training->id) . '?' . $query
+        );
+        $this->assertEquals(1, $res->json('recordsFiltered'));
+        $this->assertStringContainsString('Perfect Match', $res->json('data')[0]['participant_name']);
+    }
+
+    /**
+     * 53. Course exports (Excel, CSV, PDF) respect More Filters identically.
+     */
+    public function test_course_exports_respect_more_filters(): void
+    {
+        $training = $this->createTraining();
+        $this->enrollParticipant($training, [
+            'employee_id'      => 'EXP_MORE_1',
+            'department'       => 'Engineering',
+            'assessment_score' => 90.0,
+        ]);
+        $this->enrollParticipant($training, [
+            'employee_id'      => 'EXP_MORE_2',
+            'department'       => 'HR',
+            'assessment_score' => 70.0,
+        ]);
+
+        $query = http_build_query([
+            'department' => 'Engineering',
+            'score_min'  => 85,
+        ]);
+
+        // Excel
+        $resExcel = $this->actingAs($this->admin)->get(
+            route('manage.record.offline.course.export.excel', $training->id) . '?' . $query
+        );
+        $resExcel->assertStatus(200);
+
+        // CSV
+        $resCsv = $this->actingAs($this->admin)->get(
+            route('manage.record.offline.course.export.csv', $training->id) . '?' . $query
+        );
+        $resCsv->assertStatus(200);
+
+        // PDF
+        $resPdf = $this->actingAs($this->admin)->get(
+            route('manage.record.offline.course.export.pdf', $training->id) . '?' . $query
+        );
+        $resPdf->assertStatus(200);
+
+        // Underlying query count is exactly 1
+        $count = RecordOfflineQueryService::buildCourseQuery((int) $training->id, [
+            'department' => 'Engineering',
+            'score_min'  => 85,
+        ])->count();
+        $this->assertEquals(1, $count);
+    }
+
+    /**
+     * 54. Course filters exclude soft-deleted participants and soft-deleted training events.
+     */
+    public function test_course_filters_exclude_soft_deleted_records(): void
+    {
+        $training = $this->createTraining();
+        $pActive = $this->enrollParticipant($training, ['employee_id' => 'ACTIVE_P', 'name' => 'Active Participant']);
+        $pDeleted = $this->enrollParticipant($training, ['employee_id' => 'DELETED_P', 'name' => 'Deleted Participant']);
+
+        // Soft-delete participant
+        DB::table('offline_training_users')->where('id', $pDeleted->id)->update(['deleted_at' => now()]);
+
+        $res = $this->actingAs($this->admin)->getJson(
+            route('manage.record.offline.course.datatable', $training->id)
+        );
+        $res->assertStatus(200);
+        $this->assertEquals(1, $res->json('recordsFiltered'));
+        $this->assertStringContainsString('Active Participant', $res->json('data')[0]['participant_name']);
     }
 }
 

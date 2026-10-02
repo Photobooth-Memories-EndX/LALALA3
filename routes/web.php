@@ -494,6 +494,9 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
             Route::get('offline/participant/{identifier}/export/pdf', [RecordOfflineController::class, 'participantExportPdf'])->name('offline.participant.export.pdf');
             Route::get('offline/course/{training}', [RecordOfflineController::class, 'courseDetail'])->name('offline.course');
             Route::get('offline/course/{training}/datatable', [RecordOfflineController::class, 'courseDatatable'])->name('offline.course.datatable');
+            Route::get('offline/course/{training}/export/excel', [RecordOfflineController::class, 'courseExportExcel'])->name('offline.course.export.excel');
+            Route::get('offline/course/{training}/export/csv', [RecordOfflineController::class, 'courseExportCsv'])->name('offline.course.export.csv');
+            Route::get('offline/course/{training}/export/pdf', [RecordOfflineController::class, 'courseExportPdf'])->name('offline.course.export.pdf');
             Route::get('offline/datatable', [RecordOfflineController::class, 'datatable'])->name('offline.datatable');
             Route::get('offline/options', [OfflineTrainingOptionController::class, 'index'])->name('offline.options.index');
             Route::post('offline/options', [OfflineTrainingOptionController::class, 'store'])->name('offline.options.store');

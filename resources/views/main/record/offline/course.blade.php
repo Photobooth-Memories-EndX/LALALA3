@@ -11,9 +11,9 @@
             </a>
         </div>
 
-        <!-- COURSE HEADER & METADATA CARD -->
+        <!-- SIMPLIFIED COURSE HEADER CARD (No detailed metadata grid) -->
         <div class="card border-0 shadow-sm p-3 p-md-4 mb-4 rounded-3 bg-white record-section-header">
-            <div class="d-flex align-items-start justify-content-between flex-wrap gap-3 mb-3">
+            <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
                 <div class="d-flex align-items-start gap-3">
                     <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 record-section-icon"
                          style="width: 56px; height: 56px; background-color: #fef3c7; color: #d97706;">
@@ -33,77 +33,7 @@
                             @endif
                         </div>
                         @if (!empty($training->sub_course_name))
-                            <div class="text-muted fw-medium fs-4 mb-2" id="sub-course-name">{{ $training->sub_course_name }}</div>
-                        @endif
-                    </div>
-                </div>
-            </div>
-
-            <!-- TRAINING METADATA GRID -->
-            <div class="p-3 rounded-3 bg-light border border-light-subtle">
-                <div class="row g-3 small">
-                    <!-- Column 1: Classification & Categorization -->
-                    <div class="col-sm-6 col-md-3">
-                        <div class="text-muted text-uppercase fw-semibold extra-small mb-1" style="font-size: 0.72rem;">Classification</div>
-                        <div class="text-dark fw-medium">{{ $training->main_classification ?: '-' }}</div>
-                        @if (!empty($training->sub_classification))
-                            <div class="text-muted extra-small">Sub: {{ $training->sub_classification }}</div>
-                        @endif
-                        <div class="mt-2 text-muted text-uppercase fw-semibold extra-small mb-1" style="font-size: 0.72rem;">Category / Level</div>
-                        <div class="text-dark fw-medium">{{ $training->category ?: '-' }} @if(!empty($training->level))<span class="text-muted">({{ $training->level }})</span>@endif</div>
-                    </div>
-
-                    <!-- Column 2: Delivery & Provider -->
-                    <div class="col-sm-6 col-md-3">
-                        <div class="text-muted text-uppercase fw-semibold extra-small mb-1" style="font-size: 0.72rem;">Delivery Method</div>
-                        <div class="text-dark fw-medium">{{ $training->delivery_method ?: '-' }}</div>
-                        @if (!empty($training->sub_delivery_method))
-                            <div class="text-muted extra-small">Sub: {{ $training->sub_delivery_method }}</div>
-                        @endif
-                        <div class="mt-2 text-muted text-uppercase fw-semibold extra-small mb-1" style="font-size: 0.72rem;">Provider</div>
-                        <div class="text-dark fw-medium">{{ $training->provider_name ?: ($training->provider ?: '-') }}</div>
-                        @if (!empty($training->sub_provider))
-                            <div class="text-muted extra-small">Sub: {{ $training->sub_provider }}</div>
-                        @endif
-                    </div>
-
-                    <!-- Column 3: Schedule, Hours & Venue -->
-                    <div class="col-sm-6 col-md-3">
-                        <div class="text-muted text-uppercase fw-semibold extra-small mb-1" style="font-size: 0.72rem;">Dates & Duration</div>
-                        <div class="text-dark fw-medium">
-                            {{ $training->start_date ? \Carbon\Carbon::parse($training->start_date)->format('d M Y') : '-' }}
-                            @if ($training->finish_date && $training->finish_date != $training->start_date)
-                                — {{ \Carbon\Carbon::parse($training->finish_date)->format('d M Y') }}
-                            @endif
-                        </div>
-                        <div class="text-muted extra-small">
-                            Hours: {{ $training->learning_hours ? number_format($training->learning_hours, 2) . 'h' : '-' }}
-                            @if (!empty($training->duration_seconds))
-                                • {{ sprintf('%02d:%02d:%02d', floor($training->duration_seconds/3600), floor(($training->duration_seconds%3600)/60), $training->duration_seconds%60) }}
-                            @endif
-                        </div>
-                        <div class="mt-2 text-muted text-uppercase fw-semibold extra-small mb-1" style="font-size: 0.72rem;">Venue & Instructor</div>
-                        <div class="text-dark fw-medium">{{ $training->venue ?: ($training->location ?: '-') }}</div>
-                        @if (!empty($training->instructor))
-                            <div class="text-muted extra-small">Instructor: {{ $training->instructor }}</div>
-                        @endif
-                    </div>
-
-                    <!-- Column 4: Corporate KPI -->
-                    <div class="col-sm-6 col-md-3">
-                        <div class="text-muted text-uppercase fw-semibold extra-small mb-1" style="font-size: 0.72rem;">Corporate KPI</div>
-                        <div>
-                            @if ($training->counted_corporate_kpi)
-                                <span class="badge bg-success-lt text-success fw-bold px-2 py-1">Counted</span>
-                            @else
-                                <span class="badge bg-secondary-lt fw-normal px-2 py-1">Not Counted</span>
-                            @endif
-                        </div>
-                        @if (!empty($training->corporate_kpi_year))
-                            <div class="text-muted extra-small mt-1">Year: {{ $training->corporate_kpi_year }}</div>
-                        @endif
-                        @if (!empty($training->sub_corporate_kpi))
-                            <div class="text-muted extra-small">Sub: {{ $training->sub_corporate_kpi }}</div>
+                            <div class="text-muted fw-medium fs-4 mb-0" id="sub-course-name">{{ $training->sub_course_name }}</div>
                         @endif
                     </div>
                 </div>
@@ -186,13 +116,23 @@
                 <form id="course-filter-form" onsubmit="return false;">
                     <div class="d-flex align-items-center gap-2 flex-wrap">
                         <!-- Search Participant / NIP -->
-                        <div class="position-relative flex-grow-1" style="min-width: 240px; max-width: 360px;">
+                        <div class="position-relative flex-grow-1" style="min-width: 220px; max-width: 320px;">
                             <input type="text" id="course-participant-input" class="form-control rounded-3" 
-                                   placeholder="Search participant name or NIP..." autocomplete="off">
+                                   placeholder="Search participant or NIP..." autocomplete="off">
+                        </div>
+
+                        <!-- Type Dropdown -->
+                        <div style="min-width: 130px; flex-shrink: 0;">
+                            <select class="form-select rounded-3" id="course-type-select">
+                                <option value="all">Type: All</option>
+                                @foreach ($trainingTypes as $type)
+                                    <option value="{{ $type }}">{{ $type }}</option>
+                                @endforeach
+                            </select>
                         </div>
 
                         <!-- Status Dropdown -->
-                        <div style="min-width: 140px; flex-shrink: 0;">
+                        <div style="min-width: 130px; flex-shrink: 0;">
                             <select class="form-select rounded-3" id="course-status-select">
                                 <option value="all">All Status</option>
                                 <option value="finished">Finished</option>
@@ -201,28 +141,83 @@
                             </select>
                         </div>
 
-                        <!-- Filter Button -->
+                        <!-- Year Dropdown -->
+                        <div style="min-width: 120px; flex-shrink: 0;">
+                            <select class="form-select rounded-3" id="course-year-select">
+                                <option value="all">All Year</option>
+                                @foreach ($years as $year)
+                                    <option value="{{ $year }}">{{ $year }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- Search Button -->
                         <button type="button" id="btn-apply-course-filter" class="btn btn-primary btn-icon px-3 flex-shrink-0" 
-                                style="background-color: #003b6d; border-color: #003b6d;" title="Apply Filter">
+                                style="background-color: #003b6d; border-color: #003b6d;" data-bs-toggle="tooltip" title="Apply Filter">
                             <i class="ti ti-search fs-2"></i>
+                        </button>
+
+                        <!-- More Filters Button with Counter Badge -->
+                        <button type="button" id="btn-more-course-filters" class="btn btn-outline-primary btn-icon px-3 position-relative btn-more-filters flex-shrink-0" 
+                                data-bs-toggle="modal" data-bs-target="#moreCourseFiltersModal" title="More Filters">
+                            <i class="ti ti-adjustments-horizontal fs-2"></i>
+                            <span id="activeCourseFilterBadge" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle d-none">0</span>
                         </button>
 
                         <!-- Reset Button -->
                         <button type="button" id="btn-reset-course-filter" class="btn btn-outline-secondary btn-icon px-3 flex-shrink-0" 
-                                title="Reset Filter">
+                                data-bs-toggle="tooltip" title="Reset Filters">
                             <i class="ti ti-refresh fs-2"></i>
                         </button>
+
+                        <!-- Export Dropdown (Excel, CSV, PDF Landscape) -->
+                        <div class="dropdown flex-shrink-0 ms-auto">
+                            <button class="btn btn-outline-success dropdown-toggle rounded-3 px-3 d-flex align-items-center gap-1" 
+                                    type="button" id="courseExportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="ti ti-download me-1"></i> Export
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3" aria-labelledby="courseExportDropdown">
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="javascript:void(0);" id="btn-export-course-excel">
+                                        <i class="ti ti-file-spreadsheet text-success fs-2"></i>
+                                        <div>
+                                             <div class="fw-semibold">Excel (.xlsx)</div>
+                                            <div class="small text-muted" style="font-size: 0.72rem;">Canonical 44-column spreadsheet</div>
+                                        </div>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="javascript:void(0);" id="btn-export-course-csv">
+                                        <i class="ti ti-file-text text-primary fs-2"></i>
+                                        <div>
+                                            <div class="fw-semibold">CSV (.csv)</div>
+                                            <div class="small text-muted" style="font-size: 0.72rem;">Standard comma-separated format</div>
+                                        </div>
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider my-1"></li>
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="javascript:void(0);" id="btn-export-course-pdf">
+                                        <i class="ti ti-file-type-pdf text-danger fs-2"></i>
+                                        <div>
+                                            <div class="fw-semibold">PDF Landscape (.pdf)</div>
+                                            <div class="small text-muted" style="font-size: 0.72rem;">Structured A3 landscape report</div>
+                                        </div>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                     </div>
                 </form>
             </div>
         </div>
 
-        <!-- PARTICIPANT TABLE CARD -->
+        <!-- FULL RAW CANONICAL RECORD TABLE CARD -->
         <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between">
+            <div class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
                 <div>
-                    <h3 class="card-title fw-bold mb-0 text-dark">Participants</h3>
-                    <div class="text-muted small">Participants enrolled specifically in this training session.</div>
+                    <h3 class="card-title fw-bold mb-0 text-dark">Course Records / Participants</h3>
+                    <div class="text-muted small">Canonical Non KP OWL record view for this training session (~44 HRDC canonical fields).</div>
                 </div>
             </div>
             <div class="card-body p-0">
@@ -233,16 +228,50 @@
                                 <th class="text-center" style="min-width: 45px; width: 45px;">NO</th>
                                 <th class="text-center" style="min-width: 105px;">STATUS</th>
                                 <th class="text-center" style="min-width: 90px;">NIP</th>
-                                <th style="min-width: 200px;">PARTICIPANT</th>
+                                <th style="min-width: 180px;">PARTICIPANT</th>
                                 <th class="text-center" style="min-width: 75px;">GRADE</th>
                                 <th style="min-width: 160px;">JOB POSITION</th>
                                 <th style="min-width: 140px;">TEAM</th>
                                 <th style="min-width: 160px;">DEPARTMENT</th>
                                 <th style="min-width: 160px;">COMPANY</th>
-                                <th class="text-center" style="min-width: 120px;">PROGRESS</th>
-                                <th class="text-center" style="min-width: 115px;">LEARNING HOURS</th>
+                                <th style="min-width: 220px;">COURSE NAME</th>
+                                <th style="min-width: 180px;">SUB COURSE NAME</th>
+                                <th class="text-center" style="min-width: 100px;">TYPE</th>
+                                <th style="min-width: 130px;">CATEGORY</th>
+                                <th class="text-center" style="min-width: 90px;">LEVEL</th>
+                                <th class="text-center" style="min-width: 85px;">BATCH</th>
+                                <th style="min-width: 150px;">MAIN CLASSIFICATION</th>
+                                <th style="min-width: 150px;">SUB CLASSIFICATION</th>
+                                <th class="text-center" style="min-width: 110px;">COUNTED CORPORATE KPI</th>
+                                <th style="min-width: 160px;">SUB CORPORATE KPI</th>
+                                <th class="text-center" style="min-width: 120px;">DELIVERY METHOD</th>
+                                <th style="min-width: 140px;">SUB DELIVERY METHOD</th>
+                                <th class="text-center" style="min-width: 100px;">PROVIDER</th>
+                                <th style="min-width: 120px;">SUB PROVIDER</th>
+                                <th style="min-width: 160px;">PROVIDER NAME</th>
+                                <th style="min-width: 140px;">VENUE</th>
+                                <th style="min-width: 140px;">INSTRUCTOR</th>
+                                <th class="text-center" style="min-width: 95px;">DURATION</th>
+                                <th class="text-center" style="min-width: 110px;">TRAINING HOURS</th>
+                                <th class="text-center" style="min-width: 105px;">START DATE</th>
+                                <th class="text-center" style="min-width: 105px;">FINISH DATE</th>
+                                <th class="text-center" style="min-width: 95px;">MONTH</th>
+                                <th class="text-center" style="min-width: 115px;">PARTICIPANT HOURS</th>
+                                <th class="text-center" style="min-width: 110px;">PROGRESS</th>
+                                <th class="text-center" style="min-width: 80px;">SCORE</th>
+                                <th class="text-center" style="min-width: 110px;">CERTIFICATE</th>
                                 <th class="text-center" style="min-width: 105px;">ATTENDANCE</th>
-                                <th class="text-center" style="min-width: 95px;">SCORE</th>
+                                <th style="min-width: 180px;">ATTENDANCE REASON</th>
+                                <th class="text-center" style="min-width: 95px;">BOND STATUS</th>
+                                <th class="text-center" style="min-width: 110px;">BOND END DATE</th>
+                                <th class="text-end" style="min-width: 125px;">BOND AMOUNT</th>
+                                <th class="text-center" style="min-width: 120px;">L1 PROGRAM</th>
+                                <th class="text-center" style="min-width: 105px;">L2 NUMERICAL</th>
+                                <th style="min-width: 140px;">L2 VERBAL</th>
+                                <th class="text-center" style="min-width: 105px;">L3 NUMERICAL</th>
+                                <th style="min-width: 160px;">L3 VERBAL</th>
+                                <th style="min-width: 130px;">PIC</th>
+                                <th class="text-center" style="min-width: 75px; width: 75px;">ACTION</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -250,22 +279,327 @@
                 </div>
                 <div class="card-footer d-flex flex-wrap align-items-center justify-content-between p-3 border-top">
                     <div class="d-flex align-items-center gap-2 mb-2 mb-md-0">
-                        <span class="text-muted small">Show</span>
-                        <select id="course-table-entries-select" class="form-select form-select-sm w-auto rounded-2">
-                            <option value="10">10</option>
-                            <option value="25" selected>25</option>
-                            <option value="50">50</option>
-                            <option value="100">100</option>
+                        <select class="form-select form-select-sm w-auto rounded-3" id="course-table-entries-select">
+                            <option value="10">10 Entries</option>
+                            <option value="25" selected>25 Entries</option>
+                            <option value="50">50 Entries</option>
+                            <option value="100">100 Entries</option>
                         </select>
-                        <span class="text-muted small">entries</span>
+                        <div id="course-table-info-container"></div>
                     </div>
-                    <div id="course-table-info-container" class="mb-2 mb-md-0"></div>
                     <div id="course-table-pagination-container"></div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- MORE FILTERS MODAL -->
+<div class="modal fade" id="moreCourseFiltersModal" tabindex="-1" aria-labelledby="moreCourseFiltersModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <form id="more-course-filters-modal-form" onsubmit="return false;">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2" id="moreCourseFiltersModalLabel">
+                        <i class="ti ti-adjustments-horizontal text-primary"></i> More Filters
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body py-3">
+                    <!-- SECTION A: EMPLOYEE / JOB INFORMATION -->
+                    <div class="text-uppercase fw-bold text-muted small mb-2 border-bottom pb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                        A. Employee / Job Information
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small" for="modal-course-grade">
+                                <i class="ti ti-id me-1"></i> Grade
+                            </label>
+                            <select class="form-select rounded-3" id="modal-course-grade" name="grade">
+                                <option value="all">All Grades</option>
+                                @foreach ($grades as $g)
+                                    <option value="{{ $g }}">{{ $g }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small" for="modal-course-team">
+                                <i class="ti ti-users me-1"></i> Team
+                            </label>
+                            <select class="form-select rounded-3" id="modal-course-team" name="team">
+                                <option value="all">All Teams</option>
+                                @foreach ($teams as $t)
+                                    <option value="{{ $t }}">{{ $t }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small" for="modal-course-job-position">
+                                <i class="ti ti-briefcase me-1"></i> Job Position
+                            </label>
+                            <input type="text" class="form-control rounded-3" id="modal-course-job-position" name="job_position" placeholder="Search job position...">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small" for="modal-course-department">
+                                <i class="ti ti-building me-1"></i> Department
+                            </label>
+                            <select class="form-select rounded-3" id="modal-course-department" name="department">
+                                <option value="all">All Departments</option>
+                                @foreach ($departments as $d)
+                                    <option value="{{ $d }}">{{ $d }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold text-dark small" for="modal-course-company">
+                                <i class="ti ti-building-community me-1"></i> Company
+                            </label>
+                            <select class="form-select rounded-3" id="modal-course-company" name="company">
+                                <option value="all">All Companies</option>
+                                @foreach ($companies as $c)
+                                    <option value="{{ $c }}">{{ $c }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- SECTION B: TRAINING RESULT -->
+                    <div class="text-uppercase fw-bold text-muted small mb-2 border-bottom pb-1 pt-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                        B. Training Result
+                    </div>
+                    <!-- Progress Range -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark small d-block"><i class="ti ti-chart-bar me-1"></i> Progress Range</label>
+                        <div class="d-flex flex-wrap gap-3 align-items-center">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_course_progress_range" id="cprAll" value="all" checked>
+                                <label class="form-check-label text-dark" for="cprAll">All</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_course_progress_range" id="cpr0" value="0">
+                                <label class="form-check-label text-dark" for="cpr0">0%</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_course_progress_range" id="cpr25" value="1-25">
+                                <label class="form-check-label text-dark" for="cpr25">1 - 25%</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_course_progress_range" id="cpr50" value="26-50">
+                                <label class="form-check-label text-dark" for="cpr50">26 - 50%</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_course_progress_range" id="cpr75" value="51-75">
+                                <label class="form-check-label text-dark" for="cpr75">51 - 75%</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_course_progress_range" id="cpr99" value="76-99">
+                                <label class="form-check-label text-dark" for="cpr99">76 - 99%</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_course_progress_range" id="cpr100" value="100">
+                                <label class="form-check-label text-dark" for="cpr100">100%</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Learning Hours & Assessment Score -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small"><i class="ti ti-hourglass-empty me-1"></i> Learning Hours Range</label>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <input type="number" step="0.1" min="0" id="modal-course-hours-min" name="hours_min" class="form-control rounded-3" placeholder="Min Hours">
+                                </div>
+                                <div class="col-6">
+                                    <input type="number" step="0.1" min="0" id="modal-course-hours-max" name="hours_max" class="form-control rounded-3" placeholder="Max Hours">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small"><i class="ti ti-award me-1"></i> Assessment Score Range</label>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <input type="number" step="0.1" min="0" max="100" id="modal-course-score-min" name="score_min" class="form-control rounded-3" placeholder="Min Score">
+                                </div>
+                                <div class="col-6">
+                                    <input type="number" step="0.1" min="0" max="100" id="modal-course-score-max" name="score_max" class="form-control rounded-3" placeholder="Max Score">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Certificate -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark small d-block"><i class="ti ti-file-certificate me-1"></i> Certificate</label>
+                        <div class="d-flex flex-wrap gap-3 align-items-center">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_course_certificate" id="certAll" value="all" checked>
+                                <label class="form-check-label text-dark" for="certAll">All</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_course_certificate" id="certYes" value="yes">
+                                <label class="form-check-label text-dark" for="certYes">Yes</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_course_certificate" id="certNo" value="no">
+                                <label class="form-check-label text-dark" for="certNo">No</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION C: ATTENDANCE -->
+                    <div class="text-uppercase fw-bold text-muted small mb-2 border-bottom pb-1 pt-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                        C. Attendance
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small d-block"><i class="ti ti-user-check me-1"></i> Attendance</label>
+                            <div class="d-flex flex-wrap gap-3 align-items-center mt-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="modal_course_attendance" id="attAll" value="all" checked>
+                                    <label class="form-check-label text-dark" for="attAll">All</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="modal_course_attendance" id="attPresent" value="present">
+                                    <label class="form-check-label text-dark" for="attPresent">Present</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="modal_course_attendance" id="attAbsent" value="absent">
+                                    <label class="form-check-label text-dark" for="attAbsent">Absent</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small" for="modal-course-attendance-reason">
+                                <i class="ti ti-notes me-1"></i> Attendance Reason
+                            </label>
+                            <input type="text" class="form-control rounded-3" id="modal-course-attendance-reason" name="attendance_reason" placeholder="Search reason...">
+                        </div>
+                    </div>
+
+                    <!-- SECTION D: OBLIGATION / SERVICE BOND -->
+                    <div class="text-uppercase fw-bold text-muted small mb-2 border-bottom pb-1 pt-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                        D. Obligation / Service Bond
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold text-dark small d-block"><i class="ti ti-shield me-1"></i> Bond Status</label>
+                            <div class="d-flex flex-wrap gap-3 align-items-center mt-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="modal_course_bond_status" id="bondAll" value="all" checked>
+                                    <label class="form-check-label text-dark" for="bondAll">All</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="modal_course_bond_status" id="bondYes" value="yes">
+                                    <label class="form-check-label text-dark" for="bondYes">Yes</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="modal_course_bond_status" id="bondNo" value="no">
+                                    <label class="form-check-label text-dark" for="bondNo">No</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold text-dark small"><i class="ti ti-calendar-event me-1"></i> Bond End Date</label>
+                            <div class="row g-1">
+                                <div class="col-6">
+                                    <input type="text" id="modal-course-bond-from" name="bond_end_from" onfocus="(this.type='date')" onblur="if(!this.value)this.type='text'" class="form-control rounded-3" placeholder="From">
+                                </div>
+                                <div class="col-6">
+                                    <input type="text" id="modal-course-bond-to" name="bond_end_to" onfocus="(this.type='date')" onblur="if(!this.value)this.type='text'" class="form-control rounded-3" placeholder="To">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold text-dark small"><i class="ti ti-currency-dollar me-1"></i> Bond Amount (IDR)</label>
+                            <div class="row g-1">
+                                <div class="col-6">
+                                    <input type="number" min="0" id="modal-course-bond-amount-min" name="bond_amount_min" class="form-control rounded-3" placeholder="Min">
+                                </div>
+                                <div class="col-6">
+                                    <input type="number" min="0" id="modal-course-bond-amount-max" name="bond_amount_max" class="form-control rounded-3" placeholder="Max">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION E: EVALUATION -->
+                    <div class="text-uppercase fw-bold text-muted small mb-2 border-bottom pb-1 pt-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                        E. Evaluation
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small" for="modal-course-l1">
+                                <i class="ti ti-message-2 me-1"></i> L1 Program
+                            </label>
+                            <input type="text" class="form-control rounded-3" id="modal-course-l1" name="l1_program" placeholder="e.g. Very Good">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small" for="modal-course-pic">
+                                <i class="ti ti-user-circle me-1"></i> PIC
+                            </label>
+                            <input type="text" class="form-control rounded-3" id="modal-course-pic" name="pic" placeholder="Search PIC...">
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small"><i class="ti ti-math me-1"></i> L2 Post Test (Numerical)</label>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <input type="number" step="0.1" min="0" max="100" id="modal-course-l2-num-min" name="l2_numerical_min" class="form-control rounded-3" placeholder="Min">
+                                </div>
+                                <div class="col-6">
+                                    <input type="number" step="0.1" min="0" max="100" id="modal-course-l2-num-max" name="l2_numerical_max" class="form-control rounded-3" placeholder="Max">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small" for="modal-course-l2-verbal">
+                                <i class="ti ti-file-description me-1"></i> L2 Verbal
+                            </label>
+                            <input type="text" class="form-control rounded-3" id="modal-course-l2-verbal" name="l2_verbal" placeholder="e.g. Passed">
+                        </div>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small"><i class="ti ti-math me-1"></i> L3 Project (Numerical)</label>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <input type="number" step="0.1" min="0" max="100" id="modal-course-l3-num-min" name="l3_numerical_min" class="form-control rounded-3" placeholder="Min">
+                                </div>
+                                <div class="col-6">
+                                    <input type="number" step="0.1" min="0" max="100" id="modal-course-l3-num-max" name="l3_numerical_max" class="form-control rounded-3" placeholder="Max">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small" for="modal-course-l3-verbal">
+                                <i class="ti ti-file-description me-1"></i> L3 Verbal
+                            </label>
+                            <input type="text" class="form-control rounded-3" id="modal-course-l3-verbal" name="l3_verbal" placeholder="e.g. Implemented successfully">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0 d-flex justify-content-between">
+                    <button type="button" class="btn btn-outline-secondary rounded-3 px-3" id="btn-reset-modal-course-filters">
+                        <i class="ti ti-refresh me-1"></i> Reset
+                    </button>
+                    <button type="button" class="btn btn-primary rounded-3 px-4" id="btn-apply-modal-course-filters" style="background-color: #003b6d; border-color: #003b6d;">
+                        <i class="ti ti-check me-1"></i> Apply Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- DETAIL MODAL FOR RECORD VIEW -->
+@include('main.record.components.offline-detail-modal')
+
 @endsection
 
 @section('style')
@@ -314,13 +648,6 @@
         color: #f8fafc !important;
     }
 
-    [data-bs-theme="dark"] .record-section-header .bg-light,
-    body.dark-mode .record-section-header .bg-light,
-    body.theme-dark .record-section-header .bg-light {
-        background-color: #111827 !important;
-        border-color: #374151 !important;
-    }
-
     .stat-kpi-card {
         border: 1px solid #e2e8f0 !important;
         border-radius: 12px;
@@ -339,6 +666,7 @@
         color: #f8fafc !important;
     }
 
+    /* Table Responsive Horizontal Scroll */
     .offline-table-responsive {
         overflow-x: auto !important;
         -webkit-overflow-scrolling: touch;
@@ -372,18 +700,18 @@
     #course-participants-table thead th {
         background: #f8fafc;
         color: #475569;
-        font-size: 12px;
+        font-size: 11px;
         text-transform: uppercase;
         letter-spacing: .04em;
         white-space: nowrap !important;
         vertical-align: middle;
-        padding: 11px 14px;
+        padding: 11px 12px;
         border-bottom: 1px solid #e2e8f0;
     }
 
     #course-participants-table tbody td {
         vertical-align: middle;
-        padding: 10px 14px;
+        padding: 9px 12px;
         white-space: nowrap !important;
     }
 
@@ -403,13 +731,36 @@
     }
 
     .btn-icon {
-        width: 30px;
-        height: 30px;
+        width: 32px;
+        height: 32px;
         padding: 0;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         font-size: 15px;
+    }
+
+    #moreCourseFiltersModal {
+        z-index: 1060 !important;
+    }
+
+    [data-bs-theme="dark"] #moreCourseFiltersModal .modal-content,
+    body.dark-mode #moreCourseFiltersModal .modal-content,
+    body.theme-dark #moreCourseFiltersModal .modal-content {
+        background-color: var(--tblr-bg-surface, #1f2937) !important;
+        color: #f8fafc !important;
+    }
+
+    [data-bs-theme="dark"] #moreCourseFiltersModal .bg-light,
+    body.dark-mode #moreCourseFiltersModal .bg-light,
+    body.theme-dark #moreCourseFiltersModal .bg-light {
+        background-color: #111827 !important;
+    }
+
+    [data-bs-theme="dark"] #moreCourseFiltersModal .text-dark,
+    body.dark-mode #moreCourseFiltersModal .text-dark,
+    body.theme-dark #moreCourseFiltersModal .text-dark {
+        color: #f8fafc !important;
     }
 
     .hover-underline:hover,
@@ -425,28 +776,183 @@
 <script>
     $(function () {
         const datatableUrl = @json(route('manage.record.offline.course.datatable', $training->id));
+        const exportExcelBaseUrl = @json($exportExcelUrl);
+        const exportCsvBaseUrl = @json($exportCsvUrl);
+        const exportPdfBaseUrl = @json($exportPdfUrl);
         const classificationParam = @json($classificationParam);
         const defaultEntries = 25;
         let courseTable = null;
 
+        // Initialize Bootstrap tooltips
+        $('[data-bs-toggle="tooltip"]').tooltip();
+
+        // 1. Build comprehensive parameters for AJAX & Export
+        function buildCourseFilterParams() {
+            const params = {};
+            const participant = ($('#course-participant-input').val() || '').trim();
+            if (participant) params.participant = participant;
+
+            const type = $('#course-type-select').val();
+            if (type && type !== 'all') params.type = type;
+
+            const status = $('#course-status-select').val();
+            if (status && status !== 'all') params.status = status;
+
+            const year = $('#course-year-select').val();
+            if (year && year !== 'all') params.year = year;
+
+            const grade = $('#modal-course-grade').val();
+            if (grade && grade !== 'all') params.grade = grade;
+
+            const jobPosition = ($('#modal-course-job-position').val() || '').trim();
+            if (jobPosition) params.job_position = jobPosition;
+
+            const team = $('#modal-course-team').val();
+            if (team && team !== 'all') params.team = team;
+
+            const department = $('#modal-course-department').val();
+            if (department && department !== 'all') params.department = department;
+
+            const company = $('#modal-course-company').val();
+            if (company && company !== 'all') params.company = company;
+
+            const pr = $('input[name="modal_course_progress_range"]:checked').val();
+            if (pr && pr !== 'all') params.progress_range = pr;
+
+            const hoursMin = ($('#modal-course-hours-min').val() || '').trim();
+            if (hoursMin) params.hours_min = hoursMin;
+            const hoursMax = ($('#modal-course-hours-max').val() || '').trim();
+            if (hoursMax) params.hours_max = hoursMax;
+
+            const scoreMin = ($('#modal-course-score-min').val() || '').trim();
+            if (scoreMin) params.score_min = scoreMin;
+            const scoreMax = ($('#modal-course-score-max').val() || '').trim();
+            if (scoreMax) params.score_max = scoreMax;
+
+            const cert = $('input[name="modal_course_certificate"]:checked').val();
+            if (cert && cert !== 'all') params.certificate = cert;
+
+            const att = $('input[name="modal_course_attendance"]:checked').val();
+            if (att && att !== 'all') params.attendance = att;
+            const attReason = ($('#modal-course-attendance-reason').val() || '').trim();
+            if (attReason) params.attendance_reason = attReason;
+
+            const bond = $('input[name="modal_course_bond_status"]:checked').val();
+            if (bond && bond !== 'all') params.bond_status = bond;
+            const bondFrom = ($('#modal-course-bond-from').val() || '').trim();
+            if (bondFrom) params.bond_end_from = bondFrom;
+            const bondTo = ($('#modal-course-bond-to').val() || '').trim();
+            if (bondTo) params.bond_end_to = bondTo;
+            const bondAmtMin = ($('#modal-course-bond-amount-min').val() || '').trim();
+            if (bondAmtMin) params.bond_amount_min = bondAmtMin;
+            const bondAmtMax = ($('#modal-course-bond-amount-max').val() || '').trim();
+            if (bondAmtMax) params.bond_amount_max = bondAmtMax;
+
+            const l1 = ($('#modal-course-l1').val() || '').trim();
+            if (l1) params.l1_program = l1;
+
+            const l2NumMin = ($('#modal-course-l2-num-min').val() || '').trim();
+            if (l2NumMin) params.l2_numerical_min = l2NumMin;
+            const l2NumMax = ($('#modal-course-l2-num-max').val() || '').trim();
+            if (l2NumMax) params.l2_numerical_max = l2NumMax;
+            const l2v = ($('#modal-course-l2-verbal').val() || '').trim();
+            if (l2v) params.l2_verbal = l2v;
+
+            const l3NumMin = ($('#modal-course-l3-num-min').val() || '').trim();
+            if (l3NumMin) params.l3_numerical_min = l3NumMin;
+            const l3NumMax = ($('#modal-course-l3-num-max').val() || '').trim();
+            if (l3NumMax) params.l3_numerical_max = l3NumMax;
+            const l3v = ($('#modal-course-l3-verbal').val() || '').trim();
+            if (l3v) params.l3_verbal = l3v;
+
+            const pic = ($('#modal-course-pic').val() || '').trim();
+            if (pic) params.pic = pic;
+
+            return params;
+        }
+
+        // 2. Active filter counter badge for More Filters
+        function updateActiveFilterBadge() {
+            let count = 0;
+            if ($('#modal-course-grade').val() && $('#modal-course-grade').val() !== 'all') count++;
+            if (($('#modal-course-job-position').val() || '').trim() !== '') count++;
+            if ($('#modal-course-team').val() && $('#modal-course-team').val() !== 'all') count++;
+            if ($('#modal-course-department').val() && $('#modal-course-department').val() !== 'all') count++;
+            if ($('#modal-course-company').val() && $('#modal-course-company').val() !== 'all') count++;
+
+            const pr = $('input[name="modal_course_progress_range"]:checked').val();
+            if (pr && pr !== 'all') count++;
+
+            if (($('#modal-course-hours-min').val() || '').trim() !== '') count++;
+            if (($('#modal-course-hours-max').val() || '').trim() !== '') count++;
+            if (($('#modal-course-score-min').val() || '').trim() !== '') count++;
+            if (($('#modal-course-score-max').val() || '').trim() !== '') count++;
+
+            const cert = $('input[name="modal_course_certificate"]:checked').val();
+            if (cert && cert !== 'all') count++;
+
+            const att = $('input[name="modal_course_attendance"]:checked').val();
+            if (att && att !== 'all') count++;
+            if (($('#modal-course-attendance-reason').val() || '').trim() !== '') count++;
+
+            const bond = $('input[name="modal_course_bond_status"]:checked').val();
+            if (bond && bond !== 'all') count++;
+            if (($('#modal-course-bond-from').val() || '').trim() !== '') count++;
+            if (($('#modal-course-bond-to').val() || '').trim() !== '') count++;
+            if (($('#modal-course-bond-amount-min').val() || '').trim() !== '') count++;
+            if (($('#modal-course-bond-amount-max').val() || '').trim() !== '') count++;
+
+            if (($('#modal-course-l1').val() || '').trim() !== '') count++;
+            if (($('#modal-course-l2-num-min').val() || '').trim() !== '') count++;
+            if (($('#modal-course-l2-num-max').val() || '').trim() !== '') count++;
+            if (($('#modal-course-l2-verbal').val() || '').trim() !== '') count++;
+            if (($('#modal-course-l3-num-min').val() || '').trim() !== '') count++;
+            if (($('#modal-course-l3-num-max').val() || '').trim() !== '') count++;
+            if (($('#modal-course-l3-verbal').val() || '').trim() !== '') count++;
+            if (($('#modal-course-pic').val() || '').trim() !== '') count++;
+
+            const $badge = $('#activeCourseFilterBadge');
+            if (count > 0) {
+                $badge.text(count).removeClass('d-none');
+            } else {
+                $badge.text('0').addClass('d-none');
+            }
+        }
+
+        // 3. Helper to construct query string with active filters for exports
+        function getCourseFilterQueryString() {
+            const params = new URLSearchParams();
+            const filters = buildCourseFilterParams();
+            for (const [key, val] of Object.entries(filters)) {
+                if (val !== undefined && val !== null && val !== '') {
+                    params.append(key, val);
+                }
+            }
+            const qs = params.toString();
+            return qs ? '?' + qs : '';
+        }
+
+        // Initialize DataTable with full canonical columns
         courseTable = $('#course-participants-table').DataTable({
             processing: true,
             serverSide: true,
             responsive: false,
             autoWidth: false,
+            scrollX: true,
             pageLength: defaultEntries,
             lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
-            order: [[3, 'asc']],
+            order: [[3, 'asc']], // Order by Participant Name
             dom: 't',
             ajax: {
                 url: datatableUrl,
                 type: 'GET',
                 data: function (d) {
-                    d.participant = ($('#course-participant-input').val() || '').trim();
-                    d.status = $('#course-status-select').val();
-                    d.classification = classificationParam;
+                    if (classificationParam) {
+                        d.classification = classificationParam;
+                    }
                     d.entries = $('#course-table-entries-select').val() || defaultEntries;
                     d.length = parseInt($('#course-table-entries-select').val(), 10) || defaultEntries;
+                    Object.assign(d, buildCourseFilterParams());
                 }
             },
             columns: [
@@ -459,10 +965,44 @@
                 { data: 'team', name: 'otu.team', className: 'text-start' },
                 { data: 'department', name: 'otu.department', className: 'text-start' },
                 { data: 'company', name: 'otu.company', className: 'text-start' },
-                { data: 'progress_badge', name: 'otu.progress', className: 'text-center' },
+                { data: 'course_name', name: 'ot.course_name', className: 'text-start' },
+                { data: 'sub_course_name', name: 'ot.sub_course_name', className: 'text-start' },
+                { data: 'type_badge', name: 'ot.type', className: 'text-center' },
+                { data: 'category', name: 'ot.category', className: 'text-start' },
+                { data: 'level', name: 'ot.level', className: 'text-center' },
+                { data: 'batch', name: 'ot.batch', className: 'text-center' },
+                { data: 'main_classification', name: 'ot.main_classification', className: 'text-start' },
+                { data: 'sub_classification', name: 'ot.sub_classification', className: 'text-start' },
+                { data: 'counted_corporate_kpi', name: 'ot.counted_corporate_kpi', className: 'text-center' },
+                { data: 'sub_corporate_kpi', name: 'ot.sub_corporate_kpi', className: 'text-start' },
+                { data: 'delivery_method', name: 'ot.delivery_method', className: 'text-center' },
+                { data: 'sub_delivery_method', name: 'ot.sub_delivery_method', className: 'text-start' },
+                { data: 'provider', name: 'ot.provider', className: 'text-center' },
+                { data: 'sub_provider', name: 'ot.sub_provider', className: 'text-start' },
+                { data: 'provider_name', name: 'ot.provider_name', className: 'text-start' },
+                { data: 'venue', name: 'ot.venue', className: 'text-start' },
+                { data: 'instructor', name: 'ot.instructor', className: 'text-start' },
+                { data: 'duration', name: 'ot.duration_seconds', className: 'text-center' },
+                { data: 'course_learning_hours', name: 'ot.learning_hours', className: 'text-center' },
+                { data: 'start_date', name: 'ot.start_date', className: 'text-center' },
+                { data: 'finish_date', name: 'ot.finish_date', className: 'text-center' },
+                { data: 'month', name: 'ot.start_date', className: 'text-center', orderable: false },
                 { data: 'learning_hours', name: 'otu.learning_hours', className: 'text-center' },
+                { data: 'progress_badge', name: 'otu.progress', className: 'text-center' },
+                { data: 'assessment_score', name: 'otu.assessment_score', className: 'text-center' },
+                { data: 'certificate_badge', name: 'otu.certificate', className: 'text-center' },
                 { data: 'attendance_badge', name: 'otu.attendance', className: 'text-center' },
-                { data: 'assessment_score', name: 'otu.assessment_score', className: 'text-center' }
+                { data: 'attendance_reason', name: 'otu.attendance_reason', className: 'text-start' },
+                { data: 'bond_status', name: 'otu.bond_status', className: 'text-center' },
+                { data: 'bond_end_date', name: 'otu.bond_end_date', className: 'text-center' },
+                { data: 'bond_amount', name: 'otu.bond_amount', className: 'text-end' },
+                { data: 'l1_program', name: 'otu.l1_program', className: 'text-center' },
+                { data: 'l2_numerical', name: 'otu.l2_numerical', className: 'text-center' },
+                { data: 'l2_verbal', name: 'otu.l2_verbal', className: 'text-start' },
+                { data: 'l3_numerical', name: 'otu.l3_numerical', className: 'text-center' },
+                { data: 'l3_verbal', name: 'otu.l3_verbal', className: 'text-start' },
+                { data: 'pic', name: 'otu.pic', className: 'text-start' },
+                { data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-center' }
             ],
             language: {
                 processing: '<div class="py-4 text-center"><div class="spinner-border text-primary" role="status"></div><div class="mt-2 text-muted">Loading participant data...</div></div>',
@@ -537,7 +1077,7 @@
             courseTable.page.len(length).draw();
         });
 
-        // Apply filters
+        // Quick filter triggers
         $('#btn-apply-course-filter').on('click', function () {
             courseTable.ajax.reload();
         });
@@ -548,15 +1088,71 @@
             }
         });
 
-        $('#course-status-select').on('change', function () {
+        $('#course-type-select, #course-status-select, #course-year-select').on('change', function () {
             courseTable.ajax.reload();
         });
 
-        // Reset filter
+        // More Filters Modal: Apply
+        $('#btn-apply-modal-course-filters').on('click', function () {
+            updateActiveFilterBadge();
+            const modalEl = document.getElementById('moreCourseFiltersModal');
+            if (modalEl) {
+                const modalInstance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                modalInstance.hide();
+            }
+            courseTable.ajax.reload();
+        });
+
+        // More Filters Modal: Reset (resets advanced modal filters only)
+        $('#btn-reset-modal-course-filters').on('click', function () {
+            $('#modal-course-grade').val('all');
+            $('#modal-course-job-position').val('');
+            $('#modal-course-team').val('all');
+            $('#modal-course-department').val('all');
+            $('#modal-course-company').val('all');
+            $('#cprAll').prop('checked', true);
+            $('#modal-course-hours-min, #modal-course-hours-max').val('');
+            $('#modal-course-score-min, #modal-course-score-max').val('');
+            $('#certAll').prop('checked', true);
+            $('#attAll').prop('checked', true);
+            $('#modal-course-attendance-reason').val('');
+            $('#bondAll').prop('checked', true);
+            $('#modal-course-bond-from, #modal-course-bond-to').val('');
+            $('#modal-course-bond-amount-min, #modal-course-bond-amount-max').val('');
+            $('#modal-course-l1').val('');
+            $('#modal-course-l2-num-min, #modal-course-l2-num-max').val('');
+            $('#modal-course-l2-verbal').val('');
+            $('#modal-course-l3-num-min, #modal-course-l3-num-max').val('');
+            $('#modal-course-l3-verbal').val('');
+            $('#modal-course-pic').val('');
+
+            updateActiveFilterBadge();
+        });
+
+        // Main Reset: Clears quick filters AND advanced filters, resets badge, reloads table
         $('#btn-reset-course-filter').on('click', function () {
             $('#course-participant-input').val('');
+            $('#course-type-select').val('all');
             $('#course-status-select').val('all');
+            $('#course-year-select').val('all');
+
+            // Reset modal advanced filters
+            $('#btn-reset-modal-course-filters').trigger('click');
+
             courseTable.ajax.reload();
+        });
+
+        // Export Click Handlers (forwarding identical active filters)
+        $('#btn-export-course-excel').on('click', function () {
+            window.location.href = exportExcelBaseUrl + getCourseFilterQueryString();
+        });
+
+        $('#btn-export-course-csv').on('click', function () {
+            window.location.href = exportCsvBaseUrl + getCourseFilterQueryString();
+        });
+
+        $('#btn-export-course-pdf').on('click', function () {
+            window.location.href = exportPdfBaseUrl + getCourseFilterQueryString();
         });
     });
 </script>
