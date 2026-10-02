@@ -7,10 +7,13 @@ use App\Models\OfflineTrainingRegister;
 use App\Models\OfflineTrainingUser;
 use App\Services\Schedule\OfflineTrainingCompletionService;
 use App\Services\Schedule\OfflineTrainingRegistrationService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class OfflineTrainingController extends Controller
 {
@@ -19,8 +22,7 @@ class OfflineTrainingController extends Controller
      */
     public function index(Request $request)
     {
-        $trainings = OfflineTraining::forSchedule()
-            ->with(['registrations.user', 'creator'])
+        $query = OfflineTraining::with(['registrations.user', 'creator'])
             ->withCount([
                 'registrations',
                 'registrations as pending_count' => function ($q) {
@@ -38,9 +40,60 @@ class OfflineTrainingController extends Controller
                 'registrations as active_seats_count' => function ($q) {
                     $q->whereIn('status', ['Pending', 'Approved', 'Completed']);
                 },
-            ])
-            ->orderBy('start_date', 'asc')
-            ->get();
+            ]);
+
+        // Filter Category
+        if ($request->filled('category')) {
+            $query->where('category', $request->input('category'));
+        }
+
+        // Filter Status
+        if ($request->filled('status')) {
+            $statusVal = $request->input('status');
+            $statusMap = [
+                'open'    => 'Open Registration',
+                'running' => 'Running',
+                'closed'  => 'Closed',
+            ];
+            $query->where('status', $statusMap[strtolower($statusVal)] ?? $statusVal);
+        }
+
+        // Filter Month
+        if ($request->filled('month') && $request->input('month') !== 'all') {
+            $month = (int) $request->input('month');
+            $query->where(function ($q) use ($month) {
+                $q->whereMonth('start_date', $month)
+                  ->orWhereMonth('end_date', $month);
+            });
+        }
+
+        // Filter Year
+        if ($request->filled('year') && $request->input('year') !== 'all') {
+            $year = (int) $request->input('year');
+            $query->where(function ($q) use ($year) {
+                $q->whereYear('start_date', $year)
+                  ->orWhereYear('end_date', $year);
+            });
+        }
+
+        // Keyword Search (q or search)
+        $search = $request->input('q') ?? $request->input('search');
+        if (filled($search)) {
+            $search = trim($search);
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('course_name', 'like', "%{$search}%")
+                  ->orWhere('instructor', 'like', "%{$search}%")
+                  ->orWhere('location', 'like', "%{$search}%")
+                  ->orWhere('venue', 'like', "%{$search}%")
+                  ->orWhere('training_code', 'like', "%{$search}%")
+                  ->orWhere('batch', 'like', "%{$search}%");
+            });
+        }
+
+        $trainings = $query->latest()
+            ->paginate(10)
+            ->withQueryString();
 
         $selectedTrainingId = $request->query('training');
         $selectedTraining = null;
@@ -113,16 +166,20 @@ class OfflineTrainingController extends Controller
 
         $training = OfflineTraining::create([
             'title'               => $request->input('title'),
+            'course_name'         => $request->input('title'),
             'category'            => $request->input('category'),
             'training_code'       => $trainingCode,
+            'batch'               => $trainingCode,
             'instructor'          => $request->input('instructor'),
             'location'            => $request->input('location'),
+            'venue'               => $request->input('location'),
             'target_employee'     => $request->input('target_employee'),
             'prerequisites'       => $request->input('prerequisites'),
             'quota'               => (int) $request->input('quota'),
             'status'              => $request->input('status', 'Open Registration'),
             'start_date'          => $request->input('start_date'),
             'end_date'            => $endDate,
+            'finish_date'         => $endDate,
             'start_time'          => $request->input('start_time'),
             'end_time'            => $request->input('end_time'),
             'description'         => $request->input('description'),
@@ -138,9 +195,9 @@ class OfflineTrainingController extends Controller
     /**
      * Show the form for editing an existing training schedule.
      */
-    public function edit($trainingId)
+    public function edit($id)
     {
-        $training = OfflineTraining::forSchedule()->findOrFail($trainingId);
+        $training = $id instanceof OfflineTraining ? $id : OfflineTraining::findOrFail($id);
 
         return view('main.manage-training-schedule.edit', compact('training'));
     }
@@ -148,9 +205,9 @@ class OfflineTrainingController extends Controller
     /**
      * Update the specified training schedule in offline_trainings table.
      */
-    public function update(Request $request, $trainingId)
+    public function update(Request $request, $id)
     {
-        $training = OfflineTraining::forSchedule()->findOrFail($trainingId);
+        $training = $id instanceof OfflineTraining ? $id : OfflineTraining::findOrFail($id);
 
         $validated = $request->validate([
             'title'               => ['required', 'string', 'max:255'],
@@ -222,9 +279,9 @@ class OfflineTrainingController extends Controller
     /**
      * Remove the specified training schedule from storage with safety checks.
      */
-    public function destroy($trainingId)
+    public function destroy($id)
     {
-        $training = OfflineTraining::forSchedule()->findOrFail($trainingId);
+        $training = $id instanceof OfflineTraining ? $id : OfflineTraining::findOrFail($id);
 
         // 1. Check if participant registrations exist
         if ($training->registrations()->exists()) {
@@ -249,9 +306,9 @@ class OfflineTrainingController extends Controller
      * Route handler for Participant Action button:
      * Prepares view and redirects to Participant Tracking & Approvals tab for the selected training.
      */
-    public function participants($trainingId)
+    public function participants($id)
     {
-        $training = OfflineTraining::forSchedule()->findOrFail($trainingId);
+        $training = $id instanceof OfflineTraining ? $id : OfflineTraining::findOrFail($id);
 
         return redirect()->route('manage.training-schedule.index', [
             'tab'      => 'participants',
@@ -385,12 +442,11 @@ class OfflineTrainingController extends Controller
     /**
      * Display User Training Plan page with Calendar, Available Training, and My History tabs.
      */
-    public function userIndex()
+    public function userIndex(Request $request)
     {
         $userId = Auth::id();
 
-        $trainings = OfflineTraining::forSchedule()
-            ->withCount([
+        $trainings = OfflineTraining::withCount([
                 'registrations as registered_seats_count' => function ($q) {
                     $q->whereIn('status', ['Pending', 'Approved', 'Completed']);
                 },
@@ -405,7 +461,62 @@ class OfflineTrainingController extends Controller
             ->orderBy('start_date', 'asc')
             ->get();
 
-        $availableTrainings = $trainings->where('status', '!=', 'Closed')->values();
+        $availableQuery = OfflineTraining::withCount([
+                'registrations as registered_seats_count' => function ($q) {
+                    $q->whereIn('status', ['Pending', 'Approved', 'Completed']);
+                },
+            ])
+            ->with([
+                'registrations' => function ($q) use ($userId) {
+                    if ($userId) {
+                        $q->where('user_id', $userId);
+                    }
+                },
+            ]);
+
+        // Filter Category
+        if ($request->filled('category')) {
+            $availableQuery->where('category', $request->input('category'));
+        }
+
+        // Filter Status
+        if ($request->filled('status')) {
+            $statusVal = $request->input('status');
+            $statusMap = [
+                'open'    => 'Open Registration',
+                'running' => 'Running',
+                'closed'  => 'Closed',
+            ];
+            $availableQuery->where('status', $statusMap[strtolower($statusVal)] ?? $statusVal);
+        }
+
+        // Filter Year
+        if ($request->filled('year') && $request->input('year') !== 'all') {
+            $year = (int) $request->input('year');
+            $availableQuery->where(function ($q) use ($year) {
+                $q->whereYear('start_date', $year)
+                  ->orWhereYear('end_date', $year);
+            });
+        }
+
+        // Keyword Search (q or search)
+        $search = $request->input('q') ?? $request->input('search');
+        if (filled($search)) {
+            $search = trim($search);
+            $availableQuery->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('course_name', 'like', "%{$search}%")
+                  ->orWhere('instructor', 'like', "%{$search}%")
+                  ->orWhere('location', 'like', "%{$search}%")
+                  ->orWhere('venue', 'like', "%{$search}%")
+                  ->orWhere('training_code', 'like', "%{$search}%")
+                  ->orWhere('batch', 'like', "%{$search}%");
+            });
+        }
+
+        $availableTrainings = $availableQuery->latest()
+            ->paginate(10)
+            ->withQueryString();
 
         $calendarEvents = $trainings->map(function ($t) {
             $startDate = Carbon::parse($t->start_date);
@@ -442,35 +553,371 @@ class OfflineTrainingController extends Controller
         })->values()->toArray();
 
         // Build live My History for authenticated user
-        $myRegistrations = collect();
+        $myHistory = collect();
         if ($userId) {
-            $myRegistrations = OfflineTrainingRegister::with('training')
+            $myHistory = OfflineTrainingRegister::with('training')
                 ->where('user_id', $userId)
-                ->orderBy('registered_at', 'desc')
+                ->latest('registered_at')
                 ->get()
                 ->map(function ($reg, $idx) {
                     $t = $reg->training;
                     return (object)[
-                        'id'             => $reg->id,
-                        'registration_id'=> $reg->id,
-                        'modal_id'       => $t->id ?? $reg->id,
-                        'title'          => $t->title ?? 'Training Schedule',
-                        'category'       => $t->category ?? 'General',
-                        'start_date'     => $t->start_date ?? $reg->registered_at,
-                        'end_date'       => $t->end_date ?? null,
-                        'start_time'     => $t->start_time ?? '08:00:00',
-                        'end_time'       => $t->end_time ?? '16:00:00',
-                        'location'       => $t->location ?? '-',
-                        'instructor'     => $t->instructor ?? '-',
-                        'description'    => $t->description ?? '',
-                        'status'         => $reg->status, // 'Pending', 'Approved', 'Completed', 'Rejected'
-                        'can_cancel'     => ($reg->status === 'Pending'),
+                        'id'              => $reg->id,
+                        'registration_id' => $reg->id,
+                        'modal_id'        => $t->id ?? $reg->id,
+                        'title'           => $t->title ?? ($t->course_name ?? 'Training Schedule'),
+                        'category'        => $t->category ?? 'General',
+                        'start_date'      => $t->start_date ?? $reg->registered_at,
+                        'end_date'        => $t->end_date ?? null,
+                        'start_time'      => $t->start_time ?? '08:00:00',
+                        'end_time'        => $t->end_time ?? '16:00:00',
+                        'location'        => $t->location ?? '-',
+                        'instructor'      => $t->instructor ?? '-',
+                        'description'     => $t->description ?? '',
+                        'status'          => $reg->status, // 'Pending', 'Approved', 'Completed', 'Rejected'
+                        'can_cancel'      => ($reg->status === 'Pending'),
                     ];
                 });
         }
 
-        $myHistory = $myRegistrations;
+        // Active / Selected Date for Today's Agenda (strictly matching start_date <= activeDate <= end_date)
+        $selectedDate = $request->query('selected_date', Carbon::today()->format('Y-m-d'));
+        $todaysAgenda = $trainings->filter(function ($t) use ($selectedDate) {
+            $sDate = Carbon::parse($t->start_date)->format('Y-m-d');
+            $eDate = Carbon::parse($t->end_date ?? $t->start_date)->format('Y-m-d');
+            return $selectedDate >= $sDate && $selectedDate <= $eDate;
+        })->values();
 
-        return view('user.trainingplan-user.index', compact('trainings', 'availableTrainings', 'calendarEvents', 'myHistory'));
+        return view('user.trainingplan-user.index', compact('trainings', 'availableTrainings', 'calendarEvents', 'myHistory', 'selectedDate', 'todaysAgenda'));
+    }
+
+    /**
+     * Download User Training History as PDF.
+     */
+    public function downloadMyHistory(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            abort(401, 'Unauthorized');
+        }
+
+        $userId = $user->id;
+
+        $query = OfflineTrainingRegister::with('training')
+            ->where('user_id', $userId);
+
+        // Filter by Category
+        if ($request->filled('category') && $request->input('category') !== 'all') {
+            $category = trim($request->input('category'));
+            $query->whereHas('training', function ($q) use ($category) {
+                $q->where('category', $category);
+            });
+        }
+
+        // Filter by Status (Pending, Approved, Completed, Rejected, or Training Status)
+        if ($request->filled('status') && $request->input('status') !== 'all') {
+            $status = trim($request->input('status'));
+            $query->where(function ($q) use ($status) {
+                $q->where('status', 'like', $status)
+                  ->orWhereHas('training', function ($tq) use ($status) {
+                      $statusMap = [
+                          'open'    => 'Open Registration',
+                          'running' => 'Running',
+                          'closed'  => 'Closed',
+                      ];
+                      $mapped = $statusMap[strtolower($status)] ?? $status;
+                      $tq->where('status', $mapped);
+                  });
+            });
+        }
+
+        // Filter by Date (exact date or date range)
+        if ($request->filled('date')) {
+            $filterDate = Carbon::parse($request->input('date'))->format('Y-m-d');
+            $query->whereHas('training', function ($q) use ($filterDate) {
+                $q->where(function ($sub) use ($filterDate) {
+                    $sub->whereDate('start_date', '<=', $filterDate)
+                        ->whereDate('end_date', '>=', $filterDate);
+                })->orWhereDate('start_date', $filterDate);
+            });
+        } elseif ($request->filled('start_date') || $request->filled('end_date')) {
+            $startDate = $request->input('start_date');
+            $endDate = $request->input('end_date', $startDate);
+            $query->whereHas('training', function ($q) use ($startDate, $endDate) {
+                if ($startDate && $endDate) {
+                    $q->whereDate('start_date', '>=', $startDate)
+                      ->whereDate('start_date', '<=', $endDate);
+                } elseif ($startDate) {
+                    $q->whereDate('start_date', '>=', $startDate);
+                } else {
+                    $q->whereDate('start_date', '<=', $endDate);
+                }
+            });
+        }
+
+        // Filter by Month
+        if ($request->filled('month') && $request->input('month') !== 'all') {
+            $month = (int) $request->input('month');
+            $query->whereHas('training', function ($q) use ($month) {
+                $q->whereMonth('start_date', $month);
+            });
+        }
+
+        // Filter by Year
+        if ($request->filled('year') && $request->input('year') !== 'all') {
+            $year = (int) $request->input('year');
+            $query->whereHas('training', function ($q) use ($year) {
+                $q->whereYear('start_date', $year);
+            });
+        }
+
+        $myHistory = $query->orderBy('registered_at', 'desc')->get();
+        $generatedAt = Carbon::now()->format('d F Y, H:i') . ' WIB';
+        $filters = [
+            'category' => $request->input('category'),
+            'status'   => $request->input('status'),
+            'date'     => $request->input('date') ?? ($request->input('start_date') ? $request->input('start_date') . ($request->input('end_date') ? ' to ' . $request->input('end_date') : '') : null),
+        ];
+
+        $fileName = "Training_History_{$userId}.pdf";
+
+        $pdf = Pdf::loadView('pdf.training-history', compact('user', 'myHistory', 'generatedAt', 'filters'))
+            ->setPaper('a4', 'landscape')
+            ->setOption([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled'      => true,
+                'defaultFont'          => 'sans-serif',
+            ]);
+
+        return response($pdf->output(), 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+        ]);
+    }
+
+    /**
+     * Download Training Syllabus as PDF.
+     */
+    public function downloadSyllabusPdf($id)
+    {
+        $training = OfflineTraining::findOrFail($id);
+
+        $titleSlug = Str::slug($training->title ?? $training->course_name ?? 'training_syllabus', '_');
+        $fileName = 'Syllabus_' . $titleSlug . '_' . Carbon::now()->format('Ymd') . '.pdf';
+
+        $pdf = Pdf::loadView('pdf.training-syllabus', compact('training'))
+            ->setPaper('a4', 'portrait')
+            ->setOption([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled'      => true,
+                'defaultFont'          => 'sans-serif',
+            ]);
+
+        return $pdf->download($fileName);
+    }
+
+    /**
+     * Export Training Schedule list to CSV format with Category, Status, Month, Year filters.
+     */
+    public function exportSchedule(Request $request): StreamedResponse
+    {
+        $query = OfflineTraining::withCount('registrations');
+
+        if ($request->filled('category') && $request->input('category') !== 'all') {
+            $query->where('category', $request->input('category'));
+        }
+
+        if ($request->filled('status') && $request->input('status') !== 'all') {
+            $statusVal = $request->input('status');
+            $statusMap = [
+                'open'    => 'Open Registration',
+                'running' => 'Running',
+                'closed'  => 'Closed',
+            ];
+            $query->where('status', $statusMap[strtolower($statusVal)] ?? $statusVal);
+        }
+
+        if ($request->filled('month') && $request->input('month') !== 'all') {
+            $month = (int) $request->input('month');
+            $query->where(function ($q) use ($month) {
+                $q->whereMonth('start_date', $month)
+                  ->orWhereMonth('end_date', $month);
+            });
+        }
+
+        if ($request->filled('year') && $request->input('year') !== 'all') {
+            $year = (int) $request->input('year');
+            $query->where(function ($q) use ($year) {
+                $q->whereYear('start_date', $year)
+                  ->orWhereYear('end_date', $year);
+            });
+        }
+
+        $search = $request->input('q') ?? $request->input('search');
+        if (filled($search)) {
+            $search = trim($search);
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('course_name', 'like', "%{$search}%")
+                  ->orWhere('instructor', 'like', "%{$search}%")
+                  ->orWhere('location', 'like', "%{$search}%");
+            });
+        }
+
+        $records = $query->orderBy('start_date', 'asc')->get();
+
+        $fileName = 'Training_Schedule_Export_' . Carbon::now()->format('Ymd_His') . '.csv';
+
+        $headers = [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$fileName}\"",
+            'Pragma'              => 'no-cache',
+            'Cache-Control'       => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires'             => '0',
+        ];
+
+        return Response::stream(function () use ($records) {
+            $handle = fopen('php://output', 'w');
+            // Write UTF-8 BOM for Excel compatibility
+            fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
+
+            // CSV Header
+            fputcsv($handle, [
+                'No',
+                'Training Code',
+                'Training Title',
+                'Category',
+                'Instructor',
+                'Location / Venue',
+                'Start Date',
+                'End Date',
+                'Start Time',
+                'End Time',
+                'Quota',
+                'Registered Count',
+                'Status',
+                'Created At',
+            ]);
+
+            foreach ($records as $index => $item) {
+                $startDate = $item->start_date ? Carbon::parse($item->start_date)->format('Y-m-d') : '-';
+                $endDate = $item->end_date ? Carbon::parse($item->end_date)->format('Y-m-d') : '-';
+                $startTime = $item->start_time ? substr($item->start_time, 0, 5) : '-';
+                $endTime = $item->end_time ? substr($item->end_time, 0, 5) : '-';
+
+                fputcsv($handle, [
+                    $index + 1,
+                    $item->training_code ?? ('PTKP-TR-' . $item->id),
+                    $item->title ?? ($item->course_name ?? '-'),
+                    $item->category ?? 'General',
+                    $item->instructor ?? '-',
+                    $item->location ?? ($item->venue ?? '-'),
+                    $startDate,
+                    $endDate,
+                    $startTime,
+                    $endTime,
+                    $item->quota ?? 0,
+                    $item->registrations_count ?? 0,
+                    $item->status ?? 'Open Registration',
+                    $item->created_at ? $item->created_at->format('Y-m-d H:i:s') : '-',
+                ]);
+            }
+
+            fclose($handle);
+        }, 200, $headers);
+    }
+
+    /**
+     * Export Participant Roster to CSV format with training_id, user_id, month, year filters.
+     */
+    public function exportRoster(Request $request): StreamedResponse
+    {
+        $query = OfflineTrainingRegister::with(['training', 'user']);
+
+        if ($request->filled('training_id') && $request->input('training_id') !== 'all') {
+            $query->where('offline_training_id', (int) $request->input('training_id'));
+        }
+
+        if ($request->filled('user_id') && $request->input('user_id') !== 'all') {
+            $query->where('user_id', (int) $request->input('user_id'));
+        }
+
+        if ($request->filled('status') && $request->input('status') !== 'all') {
+            $query->where('status', $request->input('status'));
+        }
+
+        if ($request->filled('month') && $request->input('month') !== 'all') {
+            $month = (int) $request->input('month');
+            $query->whereMonth('registered_at', $month);
+        }
+
+        if ($request->filled('year') && $request->input('year') !== 'all') {
+            $year = (int) $request->input('year');
+            $query->whereYear('registered_at', $year);
+        }
+
+        $records = $query->latest('registered_at')->get();
+
+        $fileName = 'Participant_Roster_Export_' . Carbon::now()->format('Ymd_His') . '.csv';
+
+        $headers = [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$fileName}\"",
+            'Pragma'              => 'no-cache',
+            'Cache-Control'       => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires'             => '0',
+        ];
+
+        return Response::stream(function () use ($records) {
+            $handle = fopen('php://output', 'w');
+            // Write UTF-8 BOM for Excel compatibility
+            fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
+
+            // CSV Header
+            fputcsv($handle, [
+                'No',
+                'Participant Name',
+                'NIP / Employee ID',
+                'Email',
+                'Department',
+                'Position / Role',
+                'Training Title',
+                'Training Code',
+                'Category',
+                'Schedule Date',
+                'Registration Status',
+                'Registered At',
+            ]);
+
+            foreach ($records as $index => $reg) {
+                $user = $reg->user;
+                $training = $reg->training;
+
+                $scheduleDate = '-';
+                if ($training && $training->start_date) {
+                    $scheduleDate = Carbon::parse($training->start_date)->format('Y-m-d');
+                    if ($training->end_date && $training->start_date != $training->end_date) {
+                        $scheduleDate .= ' to ' . Carbon::parse($training->end_date)->format('Y-m-d');
+                    }
+                }
+
+                fputcsv($handle, [
+                    $index + 1,
+                    $user->name ?? 'Unknown',
+                    $user->id_emp ?? '-',
+                    $user->email ?? '-',
+                    $user->department ?? '-',
+                    $user->job_position ?? 'Employee',
+                    $training->title ?? ($training->course_name ?? '-'),
+                    $training->training_code ?? ($training ? ('PTKP-TR-' . $training->id) : '-'),
+                    $training->category ?? 'General',
+                    $scheduleDate,
+                    $reg->status ?? 'Pending',
+                    $reg->registered_at ? $reg->registered_at->format('Y-m-d H:i:s') : '-',
+                ]);
+            }
+
+            fclose($handle);
+        }, 200, $headers);
     }
 }

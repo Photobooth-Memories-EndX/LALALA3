@@ -67,10 +67,10 @@
 
             <!-- Modal Footer -->
             <div class="modal-footer border-top border-light-subtle px-4 py-3 bg-light-subtle d-flex justify-content-between align-items-center">
-                <button type="button" class="btn btn-outline-primary px-3 py-2 rounded-3 fw-semibold d-inline-flex align-items-center gap-1" id="btnDownloadSyllabusPdf">
+                <a href="#" class="btn btn-outline-primary px-3 py-2 rounded-3 fw-semibold d-inline-flex align-items-center gap-1" id="btnDownloadSyllabusPdf" target="_blank">
                     <i class="ti ti-download fs-2"></i>
                     <span>Download Syllabus PDF</span>
-                </button>
+                </a>
                 <button type="button" class="btn btn-primary px-4 py-2 rounded-3 fw-semibold" style="background-color: #003b6d; border-color: #003b6d;" data-bs-dismiss="modal">
                     Close
                 </button>
@@ -95,13 +95,26 @@ document.addEventListener('DOMContentLoaded', function () {
         const modalObj = document.getElementById('syllabusModalObjectives');
         const objCard = document.getElementById('syllabusModalObjectivesCard');
         const topicsContainer = document.getElementById('syllabusModalTopicsContainer');
+        const btnDownloadPdf = document.getElementById('btnDownloadSyllabusPdf');
 
+        const trainingId = btn.getAttribute('data-id') || '';
         const title = btn.getAttribute('data-title') || 'Training Syllabus';
         const category = btn.getAttribute('data-category') || 'General';
         const instructor = btn.getAttribute('data-instructor') || '-';
         const duration = btn.getAttribute('data-duration') || 'Session Schedule';
         const overview = btn.getAttribute('data-description') || '';
         const objectives = btn.getAttribute('data-objectives') || '';
+
+        // Bind download PDF URL dynamically
+        if (btnDownloadPdf) {
+            if (trainingId) {
+                btnDownloadPdf.href = `/training-schedule/${trainingId}/download-syllabus`;
+                btnDownloadPdf.classList.remove('disabled');
+            } else {
+                btnDownloadPdf.href = '#';
+                btnDownloadPdf.classList.add('disabled');
+            }
+        }
 
         if (modalTitle) modalTitle.textContent = title;
         if (modalCat) modalCat.textContent = category;
@@ -222,23 +235,5 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
     });
-
-    // PDF Download Feedback
-    const btnDownloadPdf = document.getElementById('btnDownloadSyllabusPdf');
-    if (btnDownloadPdf) {
-        btnDownloadPdf.addEventListener('click', function () {
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Generating PDF',
-                    text: 'Training syllabus PDF has been generated and downloaded successfully.',
-                    timer: 2000,
-                    showConfirmButton: false
-                });
-            } else {
-                alert('Training syllabus PDF has been generated successfully.');
-            }
-        });
-    }
 });
 </script>

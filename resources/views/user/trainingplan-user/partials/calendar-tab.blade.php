@@ -1,6 +1,12 @@
 @php
     $trainings = $trainings ?? \App\Models\OfflineTraining::withCount('participants')->orderBy('start_date', 'asc')->get();
-    $firstDate = $trainings->first() ? \Carbon\Carbon::parse($trainings->first()->start_date) : \Carbon\Carbon::now();
+    $activeDateStr = $selectedDate ?? request('selected_date', \Carbon\Carbon::today()->format('Y-m-d'));
+    $activeCarbonDate = \Carbon\Carbon::parse($activeDateStr);
+    $todaysAgenda = $todaysAgenda ?? $trainings->filter(function($t) use ($activeDateStr) {
+        $sDate = \Carbon\Carbon::parse($t->start_date)->format('Y-m-d');
+        $eDate = \Carbon\Carbon::parse($t->end_date ?? $t->start_date)->format('Y-m-d');
+        return $activeDateStr >= $sDate && $activeDateStr <= $eDate;
+    })->values();
 @endphp
 {{-- Tab Calendar & Agenda (Dynamic Interactive JS Calendar) --}}
 <div class="row g-4">
@@ -11,7 +17,7 @@
                 {{-- Calendar Header Bar --}}
                 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
                     <div class="d-flex align-items-center gap-2">
-                        <h3 class="fw-bold mb-0 text-dark" id="calendarMonthYear">{{ $firstDate->format('F Y') }}</h3>
+                        <h3 class="fw-bold mb-0 text-dark" id="calendarMonthYear">{{ $activeCarbonDate->format('F Y') }}</h3>
                         <div class="btn-group btn-group-sm ms-2" role="group">
                             <button type="button" class="btn btn-outline-secondary px-2 py-1" id="calPrevBtn" title="Previous Month">
                                 <i class="ti ti-chevron-left"></i>
@@ -44,8 +50,8 @@
                         </thead>
                         <tbody id="calGridBody">
                             @php
-                                $year = (int)$firstDate->format('Y');
-                                $month = (int)$firstDate->format('n');
+                                $year = (int)$activeCarbonDate->format('Y');
+                                $month = (int)$activeCarbonDate->format('n');
                                 $today = \Carbon\Carbon::today()->format('Y-m-d');
 
                                 $firstDayOfMonth = \Carbon\Carbon::createFromDate($year, $month, 1);
@@ -81,7 +87,7 @@
                                                     return $cellDateFormatted >= $sDate && $cellDateFormatted <= $eDate;
                                                 });
                                             @endphp
-                                            <td class="p-1 cal-day-cell">
+                                            <td class="p-1 cal-day-cell" role="button" data-cal-date="{{ $cellDateFormatted }}" data-year="{{ $year }}" data-month="{{ $month - 1 }}" data-day="{{ $day }}">
                                                 <div class="cal-day-num text-end pe-1">
                                                     @if ($isToday)
                                                         <span class="cal-today-badge">{{ $day }}</span>
@@ -179,13 +185,14 @@
                 </div>
                 
                 <div class="text-primary fw-semibold small mb-3" id="todayAgendaDateLabel">
-                    <i class="ti ti-clock me-1"></i> {{ $firstDate->format('l, d F Y') }}
+                    <i class="ti ti-clock me-1"></i> {{ $activeCarbonDate->format('l, d F Y') }}
                 </div>
 
                 {{-- Timeline / Agenda List --}}
                 <div class="timeline-schedule flex-grow-1" id="agendaTimelineList">
-                    @forelse ($trainings as $item)
+                    @forelse ($todaysAgenda as $item)
                         @php
+                            $title = $item->title ?? ($item->course_name ?? 'Training Schedule');
                             $startDate = \Carbon\Carbon::parse($item->start_date);
                             $startTime = substr($item->start_time, 0, 5);
                             $endTime = substr($item->end_time, 0, 5);
@@ -193,7 +200,7 @@
                         <div class="timeline-schedule-item mb-3 p-3 rounded-3 border border-light-subtle bg-light-subtle position-relative"
                              role="button"
                              data-id="{{ $item->id }}"
-                             data-title="{{ $item->title }}"
+                             data-title="{{ $title }}"
                              data-category="{{ $item->category }}"
                              data-date="{{ $startDate->format('d F Y') }}, {{ $startTime }} - {{ $endTime }} WIB"
                              data-location="{{ $item->location }}"
@@ -203,7 +210,7 @@
                                 <span class="badge bg-primary text-white rounded-pill px-2 py-0-5 small fw-semibold">{{ $startTime }} - {{ $endTime }} WIB</span>
                                 <span class="badge bg-primary-lt text-primary small">{{ $item->category }}</span>
                             </div>
-                            <h5 class="fw-bold text-dark mb-1">{{ $item->title }}</h5>
+                            <h5 class="fw-bold text-dark mb-1">{{ $title }}</h5>
                             <div class="text-muted small d-flex align-items-center gap-1 mb-1">
                                 <i class="ti ti-map-pin text-primary"></i>
                                 <span>{{ $item->location }}</span>
@@ -214,12 +221,12 @@
                             </div>
                         </div>
                     @empty
-                        <div class="text-center py-5 text-muted">
-                            <div class="avatar avatar-lg rounded-circle bg-light text-muted mb-2 mx-auto">
+                        <div class="text-center py-5 px-3">
+                            <div class="mb-2 text-muted opacity-50">
                                 <i class="ti ti-calendar-off fs-1"></i>
                             </div>
-                            <h5 class="fw-bold text-dark mb-1">No Scheduled Agenda</h5>
-                            <p class="small text-muted mb-0">No training schedules found. Click '+ Add Training Schedule' in Manage page to publish new trainings.</p>
+                            <h6 class="fw-semibold text-dark mb-1">No Training Scheduled</h6>
+                            <p class="text-muted extra-small mb-0">There are no offline training sessions scheduled for this date.</p>
                         </div>
                     @endforelse
                 </div>
