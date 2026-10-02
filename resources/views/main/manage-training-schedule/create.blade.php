@@ -104,68 +104,92 @@
                 <div class="row g-3">
                     <!-- Main Classification -->
                     <div class="col-md-4">
-                        <label class="form-label fw-semibold text-dark">Main Classification</label>
-                        <select name="main_classification" class="form-select rounded-3">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <label class="form-label fw-semibold text-dark mb-0">Main Classification</label>
+                            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 btn-add-option-modal" style="font-size: 0.75rem; height: 22px; border-radius: 4px;" data-type="classification" data-target="#select-main-classification" data-title="Main Classification" title="Add Main Classification">
+                                <i class="ti ti-plus"></i>
+                            </button>
+                        </div>
+                        <select name="main_classification" id="select-main-classification" class="form-select rounded-3">
                             <option value="">Select Main Classification...</option>
-                            <option value="Basic & Common Duties" {{ old('main_classification') == 'Basic & Common Duties' ? 'selected' : '' }}>Basic & Common Duties</option>
-                            <option value="Compliance" {{ old('main_classification') == 'Compliance' ? 'selected' : '' }}>Compliance</option>
-                            <option value="Innovation" {{ old('main_classification') == 'Innovation' ? 'selected' : '' }}>Innovation</option>
-                            <option value="Job Functional" {{ old('main_classification') == 'Job Functional' ? 'selected' : '' }}>Job Functional</option>
-                            <option value="Language" {{ old('main_classification') == 'Language' ? 'selected' : '' }}>Language</option>
-                            <option value="Leadership" {{ old('main_classification') == 'Leadership' ? 'selected' : '' }}>Leadership</option>
-                            <option value="Maintenance" {{ old('main_classification') == 'Maintenance' ? 'selected' : '' }}>Maintenance</option>
-                            <option value="ISO Standard" {{ old('main_classification') == 'ISO Standard' ? 'selected' : '' }}>ISO Standard</option>
-                            <option value="SHE" {{ old('main_classification') == 'SHE' ? 'selected' : '' }}>SHE</option>
+                            @foreach ($classifications ?? [] as $cls)
+                                <option value="{{ $cls->classification_name }}" {{ old('main_classification') == $cls->classification_name ? 'selected' : '' }}>
+                                    {{ $cls->classification_name }}
+                                </option>
+                            @endforeach
                         </select>
                     </div>
 
                     <!-- Sub Classification -->
                     <div class="col-md-4">
-                        <label class="form-label fw-semibold text-dark">Sub Classification</label>
-                        <input type="text" name="sub_classification" class="form-control rounded-3" placeholder="e.g. 5S & Workplace Safety, Quality Assurance" value="{{ old('sub_classification') }}">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <label class="form-label fw-semibold text-dark mb-0">Sub Classification</label>
+                            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 btn-add-option-modal" style="font-size: 0.75rem; height: 22px; border-radius: 4px;" data-type="sub_classification" data-target="#select-sub-classification" data-title="Sub Classification" title="Add Sub Classification">
+                                <i class="ti ti-plus"></i>
+                            </button>
+                        </div>
+                        <select name="sub_classification" id="select-sub-classification" class="form-select rounded-3">
+                            <option value="">Select Sub Classification...</option>
+                            @foreach ($options['sub_classification'] ?? [] as $subOpt)
+                                <option value="{{ $subOpt->value }}" {{ old('sub_classification') == $subOpt->value ? 'selected' : '' }}>
+                                    {{ $subOpt->value }}
+                                </option>
+                            @endforeach
+                        </select>
                     </div>
 
                     <!-- Training Category -->
                     <div class="col-md-4">
-                        <label class="form-label fw-semibold text-dark">Training Category <span class="text-danger">*</span></label>
-                        <select name="category" class="form-select rounded-3" required>
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <label class="form-label fw-semibold text-dark mb-0">Training Category <span class="text-danger">*</span></label>
+                            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 btn-add-option-modal" style="font-size: 0.75rem; height: 22px; border-radius: 4px;" data-type="category" data-target="#select-category" data-title="Training Category" title="Add Training Category">
+                                <i class="ti ti-plus"></i>
+                            </button>
+                        </div>
+                        <select name="category" id="select-category" class="form-select rounded-3" required>
                             <option value="">Select Category...</option>
-                            <option value="Compliance & Safety" {{ old('category') == 'Compliance & Safety' ? 'selected' : '' }}>Compliance & Safety</option>
-                            <option value="Core Competency" {{ old('category') == 'Core Competency' ? 'selected' : '' }}>Core Competency</option>
-                            <option value="Environmental" {{ old('category') == 'Environmental' ? 'selected' : '' }}>Environmental</option>
-                            <option value="General Competency" {{ old('category') == 'General Competency' ? 'selected' : '' }}>General Competency</option>
-                            <option value="Innovation" {{ old('category') == 'Innovation' ? 'selected' : '' }}>Innovation</option>
-                            <option value="Job Functional" {{ old('category') == 'Job Functional' ? 'selected' : '' }}>Job Functional</option>
-                            <option value="Leadership" {{ old('category') == 'Leadership' ? 'selected' : '' }}>Leadership</option>
-                            <option value="Maintenance" {{ old('category') == 'Maintenance' ? 'selected' : '' }}>Maintenance</option>
-                            <option value="Quality" {{ old('category') == 'Quality' ? 'selected' : '' }}>Quality</option>
-                            <option value="Safety" {{ old('category') == 'Safety' ? 'selected' : '' }}>Safety</option>
-                            <option value="Soft Skill" {{ old('category') == 'Soft Skill' ? 'selected' : '' }}>Soft Skill</option>
-                            <option value="Technical" {{ old('category') == 'Technical' ? 'selected' : '' }}>Technical</option>
+                            @foreach ($options['category'] ?? [] as $catOpt)
+                                <option value="{{ $catOpt->value }}" {{ old('category') == $catOpt->value ? 'selected' : '' }}>
+                                    {{ $catOpt->value }}
+                                </option>
+                            @endforeach
                         </select>
                         <div class="invalid-feedback">Please select a category.</div>
                     </div>
 
                     <!-- Training Type -->
                     <div class="col-md-4">
-                        <label class="form-label fw-semibold text-dark">Training Type</label>
-                        <select name="type" class="form-select rounded-3">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <label class="form-label fw-semibold text-dark mb-0">Training Type</label>
+                            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 btn-add-option-modal" style="font-size: 0.75rem; height: 22px; border-radius: 4px;" data-type="type" data-target="#select-type" data-title="Training Type" title="Add Training Type">
+                                <i class="ti ti-plus"></i>
+                            </button>
+                        </div>
+                        <select name="type" id="select-type" class="form-select rounded-3">
                             <option value="">Select Training Type...</option>
-                            <option value="In-House" {{ old('type') == 'In-House' ? 'selected' : '' }}>In-House</option>
-                            <option value="Workshop" {{ old('type') == 'Workshop' ? 'selected' : '' }}>Workshop</option>
-                            <option value="Certification" {{ old('type') == 'Certification' ? 'selected' : '' }}>Certification</option>
-                            <option value="Public" {{ old('type') == 'Public' ? 'selected' : '' }}>Public</option>
+                            @foreach ($options['type'] ?? [] as $typeOpt)
+                                <option value="{{ $typeOpt->value }}" {{ old('type') == $typeOpt->value ? 'selected' : '' }}>
+                                    {{ $typeOpt->value }}
+                                </option>
+                            @endforeach
                         </select>
                     </div>
 
                     <!-- Competency Level -->
                     <div class="col-md-4">
-                        <label class="form-label fw-semibold text-dark">Competency Level</label>
-                        <select name="level" class="form-select rounded-3">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <label class="form-label fw-semibold text-dark mb-0">Competency Level</label>
+                            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 btn-add-option-modal" style="font-size: 0.75rem; height: 22px; border-radius: 4px;" data-type="level" data-target="#select-level" data-title="Competency Level" title="Add Competency Level">
+                                <i class="ti ti-plus"></i>
+                            </button>
+                        </div>
+                        <select name="level" id="select-level" class="form-select rounded-3">
                             <option value="">Select Level...</option>
-                            <option value="Basic" {{ old('level') == 'Basic' ? 'selected' : '' }}>Basic</option>
-                            <option value="Intermediate" {{ old('level') == 'Intermediate' ? 'selected' : '' }}>Intermediate</option>
-                            <option value="Advanced" {{ old('level') == 'Advanced' ? 'selected' : '' }}>Advanced</option>
+                            @foreach ($options['level'] ?? [] as $lvlOpt)
+                                <option value="{{ $lvlOpt->value }}" {{ old('level') == $lvlOpt->value ? 'selected' : '' }}>
+                                    {{ $lvlOpt->value }}
+                                </option>
+                            @endforeach
                         </select>
                     </div>
 
@@ -261,6 +285,7 @@
                 </button>
             </div>
         </form>
+        @include('main.manage-training-schedule.components.schedule-modal-add-option')
     </div>
 </div>
 @endsection
@@ -339,6 +364,59 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
         });
+    }
+
+    // --- CLASSIFICATION DEPENDENCY LOGIC ---
+    window.subClassificationMap = @json($subClassificationMap ?? []);
+    window.allSubOptions = [];
+    $('#select-sub-classification option').each(function () {
+        const val = $(this).val();
+        if (val) {
+            window.allSubOptions.push({
+                value: val,
+                text: $(this).text().trim()
+            });
+        }
+    });
+
+    function updateSubClassificationDropdown(selectedMain, keepCurrentVal = false) {
+        const $subSelect = $('#select-sub-classification');
+        const currentVal = $subSelect.val();
+        const mapped = (selectedMain && window.subClassificationMap[selectedMain]) ? window.subClassificationMap[selectedMain] : null;
+
+        $subSelect.empty().append('<option value="">Select Sub Classification...</option>');
+
+        const itemsToRender = (mapped && mapped.length > 0)
+            ? window.allSubOptions.filter(item => mapped.includes(item.value))
+            : window.allSubOptions;
+
+        let foundCurrent = false;
+        itemsToRender.forEach(item => {
+            const isSel = (keepCurrentVal && item.value === currentVal);
+            if (isSel) foundCurrent = true;
+            $subSelect.append(new Option(item.text, item.value, false, isSel));
+        });
+
+        if (keepCurrentVal && currentVal && !foundCurrent) {
+            $subSelect.append(new Option(currentVal, currentVal, true, true));
+        } else if (!keepCurrentVal) {
+            $subSelect.val('');
+        }
+    }
+
+    $('#select-main-classification').on('change', function () {
+        const mainVal = $(this).val();
+        updateSubClassificationDropdown(mainVal, false);
+    });
+
+    // Check old values on reload / validation error
+    const initialMain = $('#select-main-classification').val();
+    const oldSubVal = "{{ old('sub_classification') }}";
+    if (initialMain && window.subClassificationMap[initialMain]) {
+        updateSubClassificationDropdown(initialMain, true);
+        if (oldSubVal) {
+            $('#select-sub-classification').val(oldSubVal);
+        }
     }
 
     // Handle form submission: validate then let it submit to backend

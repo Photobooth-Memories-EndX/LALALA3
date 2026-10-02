@@ -2,13 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Classification;
 use App\Models\OfflineTraining;
+use App\Models\OfflineTrainingOption;
 use App\Models\OfflineTrainingRegister;
 use App\Models\OfflineTrainingUser;
+use App\Services\Record\OfflineOptionService;
+use App\Services\Record\TrainingOptionManagementService;
 use App\Services\Schedule\OfflineTrainingCompletionService;
 use App\Services\Schedule\OfflineTrainingRegistrationService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Response;
@@ -17,6 +22,16 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class OfflineTrainingController extends Controller
 {
+    protected OfflineOptionService $offlineOptionService;
+    protected TrainingOptionManagementService $optionManager;
+
+    public function __construct(
+        OfflineOptionService $offlineOptionService,
+        TrainingOptionManagementService $optionManager
+    ) {
+        $this->offlineOptionService = $offlineOptionService;
+        $this->optionManager = $optionManager;
+    }
     /**
      * Display Manage Training Schedule page with live records and live participant tracking.
      */
@@ -109,11 +124,126 @@ class OfflineTrainingController extends Controller
     }
 
     /**
+     * Gather master classifications, dynamic options, and parent-child mappings for schedule forms.
+     */
+    protected function getScheduleFormData(?OfflineTraining $training = null): array
+    {
+        $classifications = Classification::orderBy('classification_name', 'asc')->get();
+
+        // Active master options from offline_training_options
+        $types = $this->offlineOptionService->getOptions(OfflineOptionService::TYPE_TYPE);
+        $categories = $this->offlineOptionService->getOptions(OfflineOptionService::TYPE_CATEGORY);
+        $levels = $this->offlineOptionService->getOptions(OfflineOptionService::TYPE_LEVEL);
+        $subClassifications = $this->offlineOptionService->getOptions(OfflineOptionService::TYPE_SUB_CLASSIFICATION);
+
+        // Sub Classification mappings per Main Classification from offline_trainings records
+        $subClassificationMap = OfflineTraining::whereNotNull('main_classification')
+            ->whereNotNull('sub_classification')
+            ->where('main_classification', '!=', '')
+            ->where('sub_classification', '!=', '')
+            ->select('main_classification', 'sub_classification')
+            ->distinct()
+            ->get()
+            ->groupBy('main_classification')
+            ->map(function ($items) {
+                return $items->pluck('sub_classification')->unique()->values()->all();
+            })
+            ->all();
+
+        // Merge any distinct sub-classifications from offline_trainings
+        $existingSubClassNames = OfflineTraining::whereNotNull('sub_classification')
+            ->where('sub_classification', '!=', '')
+            ->distinct()
+            ->pluck('sub_classification')
+            ->all();
+
+        $subClassValues = $subClassifications->pluck('value')->all();
+        foreach ($existingSubClassNames as $sName) {
+            $sTrimmed = trim((string) $sName);
+            if ($sTrimmed !== '' && !in_array($sTrimmed, $subClassValues, true)) {
+                $subClassifications->push((object)[
+                    'id'    => null,
+                    'value' => $sTrimmed,
+                    'text'  => $sTrimmed,
+                ]);
+                $subClassValues[] = $sTrimmed;
+            }
+        }
+        $subClassifications = $subClassifications->sortBy('value')->values();
+
+        // Merge any categories from offline_trainings and standard baseline presets
+        $existingCatNames = OfflineTraining::whereNotNull('category')
+            ->where('category', '!=', '')
+            ->distinct()
+            ->pluck('category')
+            ->all();
+        $standardDefaults = [
+            'Compliance & Safety', 'Core Competency', 'Environmental', 'General Competency',
+            'Innovation', 'Job Functional', 'Leadership', 'Maintenance', 'Quality', 'Safety',
+            'Soft Skill', 'Technical'
+        ];
+        $allCatCandidates = array_unique(array_merge($existingCatNames, $standardDefaults));
+        $catValues = $categories->pluck('value')->all();
+        foreach ($allCatCandidates as $cName) {
+            $cTrimmed = trim((string) $cName);
+            if ($cTrimmed !== '' && !in_array($cTrimmed, $catValues, true)) {
+                $categories->push((object)[
+                    'id'    => null,
+                    'value' => $cTrimmed,
+                    'text'  => $cTrimmed,
+                ]);
+                $catValues[] = $cTrimmed;
+            }
+        }
+        $categories = $categories->sortBy('value')->values();
+
+        // Ensure standard levels
+        $lvlValues = $levels->pluck('value')->all();
+        foreach (['Basic', 'Intermediate', 'Advanced', 'All'] as $lName) {
+            if (!in_array($lName, $lvlValues, true)) {
+                $levels->push((object)[
+                    'id'    => null,
+                    'value' => $lName,
+                    'text'  => $lName,
+                ]);
+                $lvlValues[] = $lName;
+            }
+        }
+
+        // Ensure standard types
+        $typeValues = $types->pluck('value')->all();
+        foreach (['In-House', 'Public', 'Workshop', 'Certification'] as $tName) {
+            if (!in_array($tName, $typeValues, true)) {
+                $types->push((object)[
+                    'id'    => null,
+                    'value' => $tName,
+                    'text'  => $tName,
+                ]);
+                $typeValues[] = $tName;
+            }
+        }
+
+        $options = [
+            'type'               => $types,
+            'category'           => $categories,
+            'level'              => $levels,
+            'sub_classification' => $subClassifications,
+        ];
+
+        return [
+            'classifications'      => $classifications,
+            'options'              => $options,
+            'subClassificationMap' => $subClassificationMap,
+        ];
+    }
+
+    /**
      * Show the form for creating a new training schedule.
      */
     public function create()
     {
-        return view('main.manage-training-schedule.create');
+        $formData = $this->getScheduleFormData();
+        return view('main.manage-training-schedule.create', $formData);
     }
 
     /**
@@ -199,6 +329,16 @@ class OfflineTrainingController extends Controller
             'created_by'          => Auth::id(),
         ]);
 
+        // Auto sync options to offline_training_options for consistent master options
+        $this->offlineOptionService->ensureOptionsFromTraining([
+            'type'               => $request->input('type'),
+            'category'           => $request->input('category'),
+            'level'              => $request->input('level'),
+            'sub_classification' => $request->input('sub_classification'),
+            'instructor'         => $request->input('instructor'),
+            'venue'              => $request->input('location'),
+        ], 'manual', Auth::id());
+
         return redirect()->route('manage.training-schedule.index')
             ->with('success', 'Training schedule "' . $training->title . '" has been successfully created.');
     }
@@ -209,8 +349,9 @@ class OfflineTrainingController extends Controller
     public function edit($id)
     {
         $training = $id instanceof OfflineTraining ? $id : OfflineTraining::findOrFail($id);
+        $formData = $this->getScheduleFormData($training);
 
-        return view('main.manage-training-schedule.edit', compact('training'));
+        return view('main.manage-training-schedule.edit', array_merge(['training' => $training], $formData));
     }
 
     /**
@@ -297,8 +438,119 @@ class OfflineTrainingController extends Controller
             'syllabus'            => $syllabus,
         ]);
 
+        // Auto sync options to offline_training_options for consistent master options
+        $this->offlineOptionService->ensureOptionsFromTraining([
+            'type'               => $request->input('type'),
+            'category'           => $request->input('category'),
+            'level'              => $request->input('level'),
+            'sub_classification' => $request->input('sub_classification'),
+            'instructor'         => $request->input('instructor'),
+            'venue'              => $request->input('location'),
+        ], 'manual', Auth::id());
+
         return redirect()->route('manage.training-schedule.index')
             ->with('success', 'Training schedule updated successfully.');
+    }
+
+    /**
+     * Store new option dynamically via AJAX from [+] button in create/edit schedule forms.
+     */
+    public function storeOption(Request $request): JsonResponse
+    {
+        $request->validate([
+            'option_type'          => ['required', 'string'],
+            'value'                => ['required', 'string', 'max:255'],
+            'main_classification' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $type = (string) $request->input('option_type');
+        $rawValue = (string) $request->input('value');
+        $cleanValue = trim(preg_replace('/\s+/', ' ', $rawValue));
+
+        if (!OfflineOptionService::isValidValue($cleanValue)) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'The provided option value is invalid or reserved.',
+            ], 422);
+        }
+
+        // 1. Classification (Main Classification)
+        if ($type === 'classification' || $type === 'main_classification') {
+            $existing = Classification::whereRaw('LOWER(classification_name) = ?', [mb_strtolower($cleanValue)])->first();
+            if ($existing) {
+                return response()->json([
+                    'status'      => 'exists',
+                    'success'     => true,
+                    'is_existing' => true,
+                    'message'     => "Classification '{$existing->classification_name}' already exists.",
+                    'data'        => [
+                        'value' => $existing->classification_name,
+                        'text'  => $existing->classification_name,
+                    ],
+                ]);
+            }
+
+            $created = Classification::create([
+                'classification_name' => $cleanValue,
+            ]);
+
+            return response()->json([
+                'status'      => 'success',
+                'success'     => true,
+                'is_existing' => false,
+                'message'     => "Classification '{$created->classification_name}' created successfully.",
+                'data'        => [
+                    'value' => $created->classification_name,
+                    'text'  => $created->classification_name,
+                ],
+            ], 201);
+        }
+
+        // 2. Offline Training Options (type, category, level, sub_classification, etc.)
+        if (!in_array($type, OfflineOptionService::ALLOWED_TYPES, true)) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => "Invalid option type: '{$type}'.",
+            ], 422);
+        }
+
+        $normalized = OfflineOptionService::normalize($cleanValue);
+        $existing = OfflineTrainingOption::where('option_type', $type)
+            ->where('scope_key', 'global')
+            ->where('normalized_value', $normalized)
+            ->first();
+
+        if ($existing) {
+            return response()->json([
+                'status'      => 'exists',
+                'success'     => true,
+                'is_existing' => true,
+                'message'     => "Option '{$existing->value}' already exists.",
+                'data'        => [
+                    'value' => $existing->value,
+                    'text'  => $existing->value,
+                ],
+            ]);
+        }
+
+        $option = $this->offlineOptionService->registerOption(
+            type: $type,
+            value: $cleanValue,
+            year: null,
+            createdFrom: 'manual',
+            createdBy: Auth::id()
+        );
+
+        return response()->json([
+            'status'      => 'success',
+            'success'     => true,
+            'is_existing' => false,
+            'message'     => "Option '{$option->value}' created successfully.",
+            'data'        => [
+                'value' => $option->value,
+                'text'  => $option->value,
+            ],
+        ], 201);
     }
 
     /**

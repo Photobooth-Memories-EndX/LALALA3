@@ -287,6 +287,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
     Route::get('/training-schedule/export-roster', [OfflineTrainingController::class, 'exportRoster'])->name('manage.roster.export');
     Route::get('/training-schedule/create', [OfflineTrainingController::class, 'create'])->name('manage.training-schedule.create');
     Route::post('/training-schedule', [OfflineTrainingController::class, 'store'])->name('manage.training-schedule.store');
+    Route::post('/training-schedule/options', [OfflineTrainingController::class, 'storeOption'])->name('manage.training-schedule.options.store');
     Route::get('/training-schedule/{id}/edit', [OfflineTrainingController::class, 'edit'])->name('training-schedule.edit');
     Route::put('/training-schedule/{id}', [OfflineTrainingController::class, 'update'])->name('manage.training-schedule.update');
     Route::delete('/training-schedule/{id}', [OfflineTrainingController::class, 'destroy'])->name('manage.training-schedule.destroy');
