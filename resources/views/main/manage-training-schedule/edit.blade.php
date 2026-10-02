@@ -47,10 +47,16 @@
                 </h5>
                 <div class="row g-3">
                     <!-- Training Title Placed Here at the Top -->
-                    <div class="col-12 mb-2">
+                    <div class="col-md-6 mb-2">
                         <label class="form-label fw-semibold text-dark">Training Title <span class="text-danger">*</span></label>
                         <input type="text" name="title" id="inputTrainingTitle" class="form-control rounded-3" placeholder="e.g. Leadership Development Program for Supervisors" value="{{ old('title', $training->title) }}" required>
                         <div class="invalid-feedback">Please provide a valid training title.</div>
+                    </div>
+
+                    <!-- Sub Course Name -->
+                    <div class="col-md-6 mb-2">
+                        <label class="form-label fw-semibold text-dark">Sub Course Name</label>
+                        <input type="text" name="sub_course_name" id="inputSubCourseName" class="form-control rounded-3" placeholder="e.g. Supervisory Leadership Module / Advanced Analytics" value="{{ old('sub_course_name', $training->sub_course_name) }}">
                     </div>
                     
                     <!-- Course Overview / Description -->
@@ -129,50 +135,125 @@
             <div class="card border-0 shadow-sm rounded-4 p-4 w-100">
                 <h5 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2">
                     <i class="ti ti-info-circle text-primary fs-3"></i>
-                    <span>Basic Information & Capacity</span>
+                    <span>Classification, Basic Information & Capacity</span>
                 </h5>
                 <div class="row g-3">
-                    <div class="col-md-6">
+                    <!-- Main Classification -->
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold text-dark">Main Classification</label>
+                        @php $curMainClass = old('main_classification', $training->main_classification); @endphp
+                        <select name="main_classification" class="form-select rounded-3">
+                            <option value="">Select Main Classification...</option>
+                            <option value="Basic & Common Duties" {{ $curMainClass == 'Basic & Common Duties' ? 'selected' : '' }}>Basic & Common Duties</option>
+                            <option value="Compliance" {{ $curMainClass == 'Compliance' ? 'selected' : '' }}>Compliance</option>
+                            <option value="Innovation" {{ $curMainClass == 'Innovation' ? 'selected' : '' }}>Innovation</option>
+                            <option value="Job Functional" {{ $curMainClass == 'Job Functional' ? 'selected' : '' }}>Job Functional</option>
+                            <option value="Language" {{ $curMainClass == 'Language' ? 'selected' : '' }}>Language</option>
+                            <option value="Leadership" {{ $curMainClass == 'Leadership' ? 'selected' : '' }}>Leadership</option>
+                            <option value="Maintenance" {{ $curMainClass == 'Maintenance' ? 'selected' : '' }}>Maintenance</option>
+                            <option value="ISO Standard" {{ $curMainClass == 'ISO Standard' ? 'selected' : '' }}>ISO Standard</option>
+                            <option value="SHE" {{ $curMainClass == 'SHE' ? 'selected' : '' }}>SHE</option>
+                        </select>
+                    </div>
+
+                    <!-- Sub Classification -->
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold text-dark">Sub Classification</label>
+                        <input type="text" name="sub_classification" class="form-control rounded-3" placeholder="e.g. 5S & Workplace Safety, Quality Assurance" value="{{ old('sub_classification', $training->sub_classification) }}">
+                    </div>
+
+                    <!-- Training Category -->
+                    <div class="col-md-4">
                         <label class="form-label fw-semibold text-dark">Training Category <span class="text-danger">*</span></label>
                         @php $currentCategory = old('category', $training->category); @endphp
                         <select name="category" class="form-select rounded-3" required>
                             <option value="">Select Category...</option>
-                            <option value="Soft Skill" {{ $currentCategory == 'Soft Skill' ? 'selected' : '' }}>Soft Skill</option>
-                            <option value="Technical Skill" {{ $currentCategory == 'Technical Skill' ? 'selected' : '' }}>Technical Skill</option>
                             <option value="Compliance & Safety" {{ $currentCategory == 'Compliance & Safety' ? 'selected' : '' }}>Compliance & Safety</option>
+                            <option value="Core Competency" {{ $currentCategory == 'Core Competency' ? 'selected' : '' }}>Core Competency</option>
+                            <option value="Environmental" {{ $currentCategory == 'Environmental' ? 'selected' : '' }}>Environmental</option>
+                            <option value="General Competency" {{ $currentCategory == 'General Competency' ? 'selected' : '' }}>General Competency</option>
+                            <option value="Innovation" {{ $currentCategory == 'Innovation' ? 'selected' : '' }}>Innovation</option>
+                            <option value="Job Functional" {{ $currentCategory == 'Job Functional' ? 'selected' : '' }}>Job Functional</option>
                             <option value="Leadership" {{ $currentCategory == 'Leadership' ? 'selected' : '' }}>Leadership</option>
+                            <option value="Maintenance" {{ $currentCategory == 'Maintenance' ? 'selected' : '' }}>Maintenance</option>
+                            <option value="Quality" {{ $currentCategory == 'Quality' ? 'selected' : '' }}>Quality</option>
+                            <option value="Safety" {{ $currentCategory == 'Safety' ? 'selected' : '' }}>Safety</option>
+                            <option value="Soft Skill" {{ $currentCategory == 'Soft Skill' ? 'selected' : '' }}>Soft Skill</option>
+                            <option value="Technical" {{ $currentCategory == 'Technical' ? 'selected' : '' }}>Technical</option>
+                            @if ($currentCategory && !in_array($currentCategory, ['Compliance & Safety', 'Core Competency', 'Environmental', 'General Competency', 'Innovation', 'Job Functional', 'Leadership', 'Maintenance', 'Quality', 'Safety', 'Soft Skill', 'Technical']))
+                                <option value="{{ $currentCategory }}" selected>{{ $currentCategory }} (Current)</option>
+                            @endif
                         </select>
                         <div class="invalid-feedback">Please select a category.</div>
                     </div>
-                    <div class="col-md-6">
+
+                    <!-- Training Type -->
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold text-dark">Training Type</label>
+                        @php $curType = old('type', $training->type); @endphp
+                        <select name="type" class="form-select rounded-3">
+                            <option value="">Select Training Type...</option>
+                            <option value="In-House" {{ $curType == 'In-House' ? 'selected' : '' }}>In-House</option>
+                            <option value="Workshop" {{ $curType == 'Workshop' ? 'selected' : '' }}>Workshop</option>
+                            <option value="Certification" {{ $curType == 'Certification' ? 'selected' : '' }}>Certification</option>
+                            <option value="Public" {{ $curType == 'Public' ? 'selected' : '' }}>Public</option>
+                        </select>
+                    </div>
+
+                    <!-- Competency Level -->
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold text-dark">Competency Level</label>
+                        @php $curLevel = old('level', $training->level); @endphp
+                        <select name="level" class="form-select rounded-3">
+                            <option value="">Select Level...</option>
+                            <option value="Basic" {{ $curLevel == 'Basic' ? 'selected' : '' }}>Basic</option>
+                            <option value="Intermediate" {{ $curLevel == 'Intermediate' ? 'selected' : '' }}>Intermediate</option>
+                            <option value="Advanced" {{ $curLevel == 'Advanced' ? 'selected' : '' }}>Advanced</option>
+                        </select>
+                    </div>
+
+                    <!-- Training Code / Batch -->
+                    <div class="col-md-4">
                         <label class="form-label fw-semibold text-dark">Training Code / Batch <span class="text-danger">*</span></label>
                         <input type="text" name="code" class="form-control rounded-3" placeholder="e.g. PTKP-LDP-01 (Batch 1 / 2026)" value="{{ old('code', $training->training_code ?? $training->batch) }}" required>
                         <div class="invalid-feedback">Please enter the training code or batch.</div>
                     </div>
+
+                    <!-- Instructor / Trainer -->
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-dark">Instructor / Trainer <span class="text-danger">*</span></label>
                         <input type="text" name="instructor" class="form-control rounded-3" placeholder="e.g. Dr. Hendra Wijaya, M.M." value="{{ old('instructor', $training->instructor) }}" required>
                         <div class="invalid-feedback">Please enter the instructor or trainer name.</div>
                     </div>
+
+                    <!-- Location / Venue -->
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-dark">Location / Venue <span class="text-danger">*</span></label>
                         <input type="text" name="location" class="form-control rounded-3" placeholder="e.g. Learning Center Room 302 / Zoom Online" value="{{ old('location', $training->location) }}" required>
                         <div class="invalid-feedback">Please enter the training location or venue.</div>
                     </div>
+
+                    <!-- Target Employee -->
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-dark">Target Employee <span class="text-danger">*</span></label>
                         <input type="text" name="target_employee" class="form-control rounded-3" placeholder="e.g. Staff to Supervisor, Maintenance Division" value="{{ old('target_employee', $training->target_employee) }}" required>
                         <div class="invalid-feedback">Please specify the target employee or audience.</div>
                     </div>
+
+                    <!-- Prerequisites -->
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-dark">Prerequisites / Persyaratan</label>
                         <input type="text" name="prerequisites" class="form-control rounded-3" placeholder="e.g. Minimum 1 year tenure, Basic Excel knowledge" value="{{ old('prerequisites', $training->prerequisites) }}">
                     </div>
+
+                    <!-- Participant Quota -->
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-dark">Participant Quota (Seats) <span class="text-danger">*</span></label>
                         <input type="number" name="quota" class="form-control rounded-3" placeholder="30" min="1" max="1000" value="{{ old('quota', $training->quota) }}" required>
                         <div class="invalid-feedback">Please provide a valid participant quota.</div>
                     </div>
+
+                    <!-- Registration Status -->
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-dark">Registration Status <span class="text-danger">*</span></label>
                         @php $currentStatus = old('status', $training->status); @endphp

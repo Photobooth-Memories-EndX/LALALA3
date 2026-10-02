@@ -204,7 +204,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             const title = document.getElementById('inputTrainingTitle')?.value || '';
-            const category = document.getElementById('inputTrainingCategory')?.value || 'Soft Skill';
+            const category = document.getElementById('inputTrainingCategory')?.value || 'Leadership';
             const instructor = document.getElementById('inputTrainingInstructor')?.value || '';
             const location = document.getElementById('inputTrainingLocation')?.value || '';
             const quota = document.getElementById('inputTrainingQuota')?.value || 30;
@@ -227,14 +227,30 @@ document.addEventListener('DOMContentLoaded', function () {
             let catColor = '#003b6d';
             let catBg = '#eef2ff';
             let catIcon = 'ti-school';
-            if (category === 'Technical Skill') {
+            if (category === 'Job Functional' || category === 'Technical Skill') {
                 catColor = '#0284c7';
                 catBg = '#e0f2fe';
                 catIcon = 'ti-file-spreadsheet';
-            } else if (category === 'Compliance & Safety') {
+            } else if (category === 'Compliance' || category === 'Compliance & Safety') {
                 catColor = '#d97706';
                 catBg = '#fef3c7';
                 catIcon = 'ti-shield-check';
+            } else if (category === 'Leadership') {
+                catColor = '#7c3aed';
+                catBg = '#f3e8ff';
+                catIcon = 'ti-crown';
+            } else if (category === 'Innovation') {
+                catColor = '#047857';
+                catBg = '#ecfdf5';
+                catIcon = 'ti-bulb';
+            } else if (category === 'Language') {
+                catColor = '#b91c1c';
+                catBg = '#fef2f2';
+                catIcon = 'ti-language';
+            } else if (category === 'Basic & Common Duties') {
+                catColor = '#475569';
+                catBg = '#f1f5f9';
+                catIcon = 'ti-clipboard-list';
             }
 
             // Status Badge

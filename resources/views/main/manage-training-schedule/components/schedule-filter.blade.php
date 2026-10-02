@@ -11,10 +11,21 @@
                 <div style="min-width: 130px; flex-shrink: 0;">
                     <select id="scheduleCategorySelect" class="form-select rounded-3">
                         <option value="">All Category</option>
-                        <option value="Soft Skill">Soft Skill</option>
-                        <option value="Technical Skill">Technical Skill</option>
                         <option value="Compliance & Safety">Compliance & Safety</option>
+                        <option value="Core Competency">Core Competency</option>
+                        <option value="Environmental">Environmental</option>
+                        <option value="General Competency">General Competency</option>
+                        <option value="Innovation">Innovation</option>
+                        <option value="Job Functional">Job Functional</option>
                         <option value="Leadership">Leadership</option>
+                        <option value="Maintenance">Maintenance</option>
+                        <option value="Quality">Quality</option>
+                        <option value="Safety">Safety</option>
+                        <option value="Soft Skill">Soft Skill</option>
+                        <option value="Technical">Technical</option>
+                        <option value="Basic & Common Duties">Basic & Common Duties</option>
+                        <option value="Compliance">Compliance</option>
+                        <option value="Language">Language</option>
                     </select>
                 </div>
 

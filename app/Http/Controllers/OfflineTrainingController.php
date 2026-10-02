@@ -83,6 +83,7 @@ class OfflineTrainingController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
                   ->orWhere('course_name', 'like', "%{$search}%")
+                  ->orWhere('sub_course_name', 'like', "%{$search}%")
                   ->orWhere('instructor', 'like', "%{$search}%")
                   ->orWhere('location', 'like', "%{$search}%")
                   ->orWhere('venue', 'like', "%{$search}%")
@@ -122,7 +123,12 @@ class OfflineTrainingController extends Controller
     {
         $validated = $request->validate([
             'title'               => ['required', 'string', 'max:255'],
+            'sub_course_name'     => ['nullable', 'string', 'max:255'],
+            'main_classification' => ['nullable', 'string', 'max:100'],
+            'sub_classification'  => ['nullable', 'string', 'max:255'],
             'category'            => ['required', 'string', 'max:100'],
+            'type'                => ['nullable', 'string', 'max:50'],
+            'level'               => ['nullable', 'string', 'max:50'],
             'code'                => ['nullable', 'string', 'max:100'],
             'training_code'       => ['nullable', 'string', 'max:100'],
             'instructor'          => ['required', 'string', 'max:255'],
@@ -167,7 +173,12 @@ class OfflineTrainingController extends Controller
         $training = OfflineTraining::create([
             'title'               => $request->input('title'),
             'course_name'         => $request->input('title'),
+            'sub_course_name'     => $request->input('sub_course_name'),
             'category'            => $request->input('category'),
+            'type'                => $request->input('type'),
+            'level'               => $request->input('level'),
+            'main_classification' => $request->input('main_classification'),
+            'sub_classification'  => $request->input('sub_classification'),
             'training_code'       => $trainingCode,
             'batch'               => $trainingCode,
             'instructor'          => $request->input('instructor'),
@@ -211,7 +222,12 @@ class OfflineTrainingController extends Controller
 
         $validated = $request->validate([
             'title'               => ['required', 'string', 'max:255'],
+            'sub_course_name'     => ['nullable', 'string', 'max:255'],
+            'main_classification' => ['nullable', 'string', 'max:100'],
+            'sub_classification'  => ['nullable', 'string', 'max:255'],
             'category'            => ['required', 'string', 'max:100'],
+            'type'                => ['nullable', 'string', 'max:50'],
+            'level'               => ['nullable', 'string', 'max:50'],
             'code'                => ['nullable', 'string', 'max:100'],
             'training_code'       => ['nullable', 'string', 'max:100'],
             'instructor'          => ['required', 'string', 'max:255'],
@@ -255,16 +271,25 @@ class OfflineTrainingController extends Controller
 
         $training->update([
             'title'               => $request->input('title'),
+            'course_name'         => $request->input('title'),
+            'sub_course_name'     => $request->input('sub_course_name'),
             'category'            => $request->input('category'),
+            'type'                => $request->input('type'),
+            'level'               => $request->input('level'),
+            'main_classification' => $request->input('main_classification'),
+            'sub_classification'  => $request->input('sub_classification'),
             'training_code'       => $trainingCode,
+            'batch'               => $trainingCode,
             'instructor'          => $request->input('instructor'),
             'location'            => $request->input('location'),
+            'venue'               => $request->input('location'),
             'target_employee'     => $request->input('target_employee'),
             'prerequisites'       => $request->input('prerequisites'),
             'quota'               => (int) $request->input('quota'),
             'status'              => $request->input('status', 'Open Registration'),
             'start_date'          => $request->input('start_date'),
             'end_date'            => $endDate,
+            'finish_date'         => $endDate,
             'start_time'          => $request->input('start_time'),
             'end_time'            => $request->input('end_time'),
             'description'         => $request->input('description'),
@@ -537,10 +562,13 @@ class OfflineTrainingController extends Controller
                 'shortTitle'  => Str::limit($t->title, 16),
                 'category'    => $t->category,
                 'badgeClass'  => match($t->category) {
-                    'Technical Skill'     => 'bg-info-lt text-info',
-                    'Compliance & Safety' => 'bg-warning-lt text-warning',
-                    'Leadership'          => 'bg-purple-subtle text-purple',
-                    default               => 'bg-primary-lt text-primary',
+                    'Basic & Common Duties'             => 'bg-secondary-subtle text-secondary',
+                    'Compliance', 'Compliance & Safety' => 'bg-warning-lt text-warning',
+                    'Innovation'                        => 'bg-success-lt text-success',
+                    'Job Functional', 'Technical Skill' => 'bg-info-lt text-info',
+                    'Language'                          => 'bg-danger-lt text-danger',
+                    'Leadership'                        => 'bg-purple-subtle text-purple',
+                    default                             => 'bg-primary-lt text-primary',
                 },
                 'status'      => $isClosed ? 'closed' : 'open',
                 'time'        => substr($t->start_time, 0, 5) . ' - ' . substr($t->end_time, 0, 5) . ' WIB',
