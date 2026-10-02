@@ -125,105 +125,110 @@
             </div>
         </div>
 
-        <!-- QUICK FILTER & ACTION BAR CARD -->
+        <!-- QUICK FILTER CARD -->
         <div class="card border-0 shadow-sm rounded-4 mb-4">
             <div class="card-body p-3">
                 <div class="text-secondary small fw-semibold mb-2" style="color: #6c757d !important; font-size: 0.85rem;">
                     Quick Filter
                 </div>
                 <form id="participant-filter-form" onsubmit="return false;">
-                    <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <!-- Course Name Search -->
-                        <div class="position-relative flex-grow-1" style="min-width: 220px; max-width: 320px;">
-                            <input type="text" id="participant-course-input" class="form-control rounded-3" 
-                                   placeholder="Search course title..." autocomplete="off">
-                        </div>
+                    <div class="participant-filter-toolbar d-flex flex-wrap align-items-center justify-content-between gap-2">
+                        <!-- Left Filter Controls -->
+                        <div class="participant-filter-left-group d-flex flex-wrap align-items-center gap-2">
+                            <!-- Course Name Search -->
+                            <div class="participant-filter-search position-relative">
+                                <input type="text" id="participant-course-input" class="form-control rounded-3"
+                                       placeholder="Search course title..." autocomplete="off">
+                            </div>
 
-                        <!-- Type Dropdown -->
-                        <div style="min-width: 130px; flex-shrink: 0;">
-                            <select class="form-select rounded-3" id="participant-type-select">
-                                <option value="all">Type: All</option>
-                                @foreach ($trainingTypes as $type)
-                                    <option value="{{ $type }}">{{ $type }}</option>
-                                @endforeach
-                            </select>
-                        </div>
+                            <!-- Type Dropdown -->
+                            <div class="participant-filter-select">
+                                <select class="form-select rounded-3" id="participant-type-select">
+                                    <option value="all">Type: All</option>
+                                    @foreach ($trainingTypes as $type)
+                                        <option value="{{ $type }}">{{ $type }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
 
-                        <!-- Status Dropdown -->
-                        <div style="min-width: 130px; flex-shrink: 0;">
-                            <select class="form-select rounded-3" id="participant-status-select">
-                                <option value="all">All Status</option>
-                                <option value="finished">Finished</option>
-                                <option value="ongoing">Ongoing</option>
-                                <option value="not_started">Not Started</option>
-                            </select>
-                        </div>
+                            <!-- Status Dropdown -->
+                            <div class="participant-filter-select">
+                                <select class="form-select rounded-3" id="participant-status-select">
+                                    <option value="all">All Status</option>
+                                    <option value="finished">Finished</option>
+                                    <option value="ongoing">Ongoing</option>
+                                    <option value="not_started">Not Started</option>
+                                </select>
+                            </div>
 
-                        <!-- Year Dropdown -->
-                        <div style="min-width: 120px; flex-shrink: 0;">
-                            <select class="form-select rounded-3" id="participant-year-select">
-                                <option value="all">All Year</option>
-                                @foreach ($years as $year)
-                                    <option value="{{ $year }}">{{ $year }}</option>
-                                @endforeach
-                            </select>
-                        </div>
+                            <!-- Year Dropdown -->
+                            <div class="participant-filter-select-year">
+                                <select class="form-select rounded-3" id="participant-year-select">
+                                    <option value="all">All Year</option>
+                                    @foreach ($years as $year)
+                                        <option value="{{ $year }}">{{ $year }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
 
-                        <!-- 1. Apply Filter Button -->
-                        <button type="button" id="btn-apply-participant-filter" class="btn btn-primary btn-icon px-3 flex-shrink-0" 
-                                style="background-color: #003b6d; border-color: #003b6d;" data-bs-toggle="tooltip" title="Apply Filter">
-                            <i class="ti ti-search fs-2"></i>
-                        </button>
-
-                        <!-- 2. More Filters Button with Counter Badge -->
-                        <button type="button" id="btn-more-participant-filters" class="btn btn-outline-primary btn-icon px-3 position-relative btn-more-filters flex-shrink-0" 
-                                data-bs-toggle="modal" data-bs-target="#moreParticipantFiltersModal" title="More Filters">
-                            <i class="ti ti-adjustments-horizontal fs-2"></i>
-                            <span id="activeParticipantFilterBadge" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle d-none">0</span>
-                        </button>
-
-                        <!-- 3. Reset Button -->
-                        <button type="button" id="btn-reset-participant-filter" class="btn btn-outline-secondary btn-icon px-3 flex-shrink-0" 
-                                data-bs-toggle="tooltip" title="Reset Filters">
-                            <i class="ti ti-refresh fs-2"></i>
-                        </button>
-
-                        <!-- 4. Export Dropdown (Excel, CSV, PDF Landscape) -->
-                        <div class="dropdown flex-shrink-0 ms-auto">
-                            <button class="btn btn-outline-success dropdown-toggle rounded-3 px-3 d-flex align-items-center gap-1" 
-                                    type="button" id="participantExportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="ti ti-download me-1"></i> Export
+                            <!-- 1. Apply Filter Button -->
+                            <button type="button" id="btn-apply-participant-filter" class="btn btn-primary btn-icon px-3 flex-shrink-0"
+                                    style="background-color: #003b6d; border-color: #003b6d;" data-bs-toggle="tooltip" title="Apply Filter">
+                                <i class="ti ti-search fs-2"></i>
                             </button>
-                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3" aria-labelledby="participantExportDropdown">
-                                <li>
-                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="javascript:void(0);" id="btn-export-participant-excel">
-                                        <i class="ti ti-file-spreadsheet text-success fs-2"></i>
-                                        <div>
-                                            <div class="fw-semibold">Excel (.xlsx)</div>
-                                            <div class="small text-muted" style="font-size: 0.72rem;">Canonical 44-column spreadsheet</div>
-                                        </div>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="javascript:void(0);" id="btn-export-participant-csv">
-                                        <i class="ti ti-file-text text-primary fs-2"></i>
-                                        <div>
-                                            <div class="fw-semibold">CSV (.csv)</div>
-                                            <div class="small text-muted" style="font-size: 0.72rem;">Standard comma-separated format</div>
-                                        </div>
-                                    </a>
-                                </li>
-                                <li><hr class="dropdown-divider my-1"></li>
-                                <li>
-                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="javascript:void(0);" id="btn-export-participant-pdf">
-                                        <i class="ti ti-file-type-pdf text-danger fs-2"></i>
-                                        <div>
-                                            <div class="fw-semibold">PDF Landscape (.pdf)</div>
-                                            <div class="small text-muted" style="font-size: 0.72rem;">Structured A4 landscape report</div>
-                                        </div>
-                                    </a>
-                                </li>
-                            </ul>
+
+                            <!-- 2. More Filters Button with Counter Badge -->
+                            <button type="button" id="btn-more-participant-filters" class="btn btn-outline-primary btn-icon px-3 position-relative btn-more-filters flex-shrink-0"
+                                    data-bs-toggle="modal" data-bs-target="#moreParticipantFiltersModal" title="More Filters">
+                                <i class="ti ti-adjustments-horizontal fs-2"></i>
+                                <span id="activeParticipantFilterBadge" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle d-none">0</span>
+                            </button>
+
+                            <!-- 3. Reset Button -->
+                            <button type="button" id="btn-reset-participant-filter" class="btn btn-outline-secondary btn-icon px-3 flex-shrink-0"
+                                    data-bs-toggle="tooltip" title="Reset Filters">
+                                <i class="ti ti-refresh fs-2"></i>
+                            </button>
+                        </div>
+
+                        <!-- Right Action Controls: Export Dropdown (Excel, CSV, PDF Landscape) -->
+                        <div class="participant-filter-right-group d-flex align-items-center flex-shrink-0">
+                            <div class="dropdown">
+                                <button class="btn btn-outline-success dropdown-toggle rounded-3 px-3 d-inline-flex align-items-center gap-1"
+                                        type="button" id="participantExportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="ti ti-download me-1"></i> Export
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3" aria-labelledby="participantExportDropdown">
+                                    <li>
+                                        <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="javascript:void(0);" id="btn-export-participant-excel">
+                                            <i class="ti ti-file-spreadsheet text-success fs-2"></i>
+                                            <div>
+                                                <div class="fw-semibold">Excel (.xlsx)</div>
+                                                <div class="small text-muted" style="font-size: 0.72rem;">Canonical 44-column spreadsheet</div>
+                                            </div>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="javascript:void(0);" id="btn-export-participant-csv">
+                                            <i class="ti ti-file-text text-primary fs-2"></i>
+                                            <div>
+                                                <div class="fw-semibold">CSV (.csv)</div>
+                                                <div class="small text-muted" style="font-size: 0.72rem;">Standard comma-separated format</div>
+                                            </div>
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider my-1"></li>
+                                    <li>
+                                        <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="javascript:void(0);" id="btn-export-participant-pdf">
+                                            <i class="ti ti-file-type-pdf text-danger fs-2"></i>
+                                            <div>
+                                                <div class="fw-semibold">PDF Landscape (.pdf)</div>
+                                                <div class="small text-muted" style="font-size: 0.72rem;">Structured A4 landscape report</div>
+                                            </div>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
                 </form>
@@ -324,22 +329,194 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body py-3">
-                    <!-- Date Range (from_date & to_date) -->
-                    <div class="mb-3">
-                        <label class="form-label fw-bold text-dark small"><i class="ti ti-calendar me-1"></i> Date Range (Training Date)</label>
-                        <div class="row g-2">
-                            <div class="col-6">
-                                <label class="form-label small text-muted mb-1">From Date</label>
-                                <input type="text" id="modal-from-date" name="from_date" onfocus="(this.type='date')" onblur="if(!this.value)this.type='text'" class="form-control rounded-3" placeholder="dd/mm/yyyy">
+                    <!-- SECTION A: TRAINING INFORMATION -->
+                    <div class="text-uppercase fw-bold text-muted small mb-2 border-bottom pb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                        A. Training Information
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small" for="modal-classification">
+                                <i class="ti ti-folder me-1"></i> Main Classification
+                            </label>
+                            <select class="form-select rounded-3" id="modal-classification" name="filter_classification">
+                                <option value="all">All Classifications</option>
+                                @foreach ($classifications as $c)
+                                    <option value="{{ $c }}">{{ $c }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small" for="modal-sub-classification">
+                                <i class="ti ti-folders me-1"></i> Sub Classification
+                            </label>
+                            <input type="text" class="form-control rounded-3" id="modal-sub-classification" name="sub_classification" placeholder="Search sub classification...">
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold text-dark small" for="modal-category">
+                                <i class="ti ti-category me-1"></i> Category
+                            </label>
+                            <select class="form-select rounded-3" id="modal-category" name="category">
+                                <option value="all">All Categories</option>
+                                @foreach ($categories as $cat)
+                                    <option value="{{ $cat }}">{{ $cat }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold text-dark small" for="modal-level">
+                                <i class="ti ti-stairs me-1"></i> Level
+                            </label>
+                            <select class="form-select rounded-3" id="modal-level" name="level">
+                                <option value="all">All Levels</option>
+                                @foreach ($levels as $lvl)
+                                    <option value="{{ $lvl }}">{{ $lvl }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold text-dark small" for="modal-batch">
+                                <i class="ti ti-stack-2 me-1"></i> Batch
+                            </label>
+                            <input type="text" class="form-control rounded-3" id="modal-batch" name="batch" placeholder="e.g. 1">
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small" for="modal-delivery-method">
+                                <i class="ti ti-presentation me-1"></i> Delivery Method
+                            </label>
+                            <select class="form-select rounded-3" id="modal-delivery-method" name="delivery_method">
+                                <option value="all">All Delivery Methods</option>
+                                @foreach ($deliveryMethods as $deliv)
+                                    <option value="{{ $deliv }}">{{ $deliv }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small" for="modal-sub-delivery-method">
+                                <i class="ti ti-presentation-analytics me-1"></i> Sub Delivery Method
+                            </label>
+                            <input type="text" class="form-control rounded-3" id="modal-sub-delivery-method" name="sub_delivery_method" placeholder="Search sub delivery method...">
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold text-dark small" for="modal-provider">
+                                <i class="ti ti-building me-1"></i> Provider
+                            </label>
+                            <select class="form-select rounded-3" id="modal-provider" name="provider">
+                                <option value="all">All Providers</option>
+                                @foreach ($providers as $prov)
+                                    <option value="{{ $prov }}">{{ $prov }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold text-dark small" for="modal-sub-provider">
+                                <i class="ti ti-building-arch me-1"></i> Sub Provider
+                            </label>
+                            <input type="text" class="form-control rounded-3" id="modal-sub-provider" name="sub_provider" placeholder="Search sub provider...">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold text-dark small" for="modal-provider-name">
+                                <i class="ti ti-id-badge-2 me-1"></i> Provider Name
+                            </label>
+                            <input type="text" class="form-control rounded-3" id="modal-provider-name" name="provider_name" placeholder="Search provider name...">
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small" for="modal-corporate-kpi">
+                                <i class="ti ti-target me-1"></i> Counted Corporate KPI
+                            </label>
+                            <select class="form-select rounded-3" id="modal-corporate-kpi" name="corporate_kpi">
+                                <option value="all">All</option>
+                                <option value="yes">Yes</option>
+                                <option value="no">No</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small" for="modal-sub-corporate-kpi">
+                                <i class="ti ti-target-arrow me-1"></i> Sub Corporate KPI
+                            </label>
+                            <input type="text" class="form-control rounded-3" id="modal-sub-corporate-kpi" name="sub_corporate_kpi" placeholder="Search sub corporate KPI...">
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small" for="modal-venue">
+                                <i class="ti ti-map-pin me-1"></i> Venue
+                            </label>
+                            <input type="text" class="form-control rounded-3" id="modal-venue" name="venue" placeholder="Search venue...">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small" for="modal-instructor">
+                                <i class="ti ti-user-star me-1"></i> Instructor
+                            </label>
+                            <input type="text" class="form-control rounded-3" id="modal-instructor" name="instructor" placeholder="Search instructor...">
+                        </div>
+                    </div>
+
+                    <!-- SECTION B: DATE & DURATION -->
+                    <div class="text-uppercase fw-bold text-muted small mb-2 border-bottom pb-1 pt-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                        B. Date & Duration
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small"><i class="ti ti-calendar me-1"></i> Training Date Range</label>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <input type="text" id="modal-from-date" name="from_date" onfocus="(this.type='date')" onblur="if(!this.value)this.type='text'" class="form-control rounded-3" placeholder="From Date">
+                                </div>
+                                <div class="col-6">
+                                    <input type="text" id="modal-to-date" name="to_date" onfocus="(this.type='date')" onblur="if(!this.value)this.type='text'" class="form-control rounded-3" placeholder="To Date">
+                                </div>
                             </div>
-                            <div class="col-6">
-                                <label class="form-label small text-muted mb-1">To Date</label>
-                                <input type="text" id="modal-to-date" name="to_date" onfocus="(this.type='date')" onblur="if(!this.value)this.type='text'" class="form-control rounded-3" placeholder="dd/mm/yyyy">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small"><i class="ti ti-hourglass-empty me-1"></i> Learning Hours Range</label>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <input type="number" step="0.1" id="modal-hours-min" name="hours_min" class="form-control rounded-3" placeholder="Min Hours">
+                                </div>
+                                <div class="col-6">
+                                    <input type="number" step="0.1" id="modal-hours-max" name="hours_max" class="form-control rounded-3" placeholder="Max Hours">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark small d-block"><i class="ti ti-clock me-1"></i> Duration</label>
+                        <div class="d-flex flex-wrap gap-3 align-items-center">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_duration" id="durAll" value="all" checked>
+                                <label class="form-check-label text-dark" for="durAll">All</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_duration" id="dur10" value="lt10">
+                                <label class="form-check-label text-dark" for="dur10">&lt; 10 Minutes</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_duration" id="dur30" value="10-30">
+                                <label class="form-check-label text-dark" for="dur30">10 - 30 Minutes</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_duration" id="dur60" value="30-60">
+                                <label class="form-check-label text-dark" for="dur60">30 - 60 Minutes</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_duration" id="durAbove60" value="gt60">
+                                <label class="form-check-label text-dark" for="durAbove60">&gt; 1 Hour</label>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Progress Range -->
+                    <!-- SECTION C: TRAINING RESULT -->
+                    <div class="text-uppercase fw-bold text-muted small mb-2 border-bottom pb-1 pt-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                        C. Training Result
+                    </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold text-dark small d-block"><i class="ti ti-chart-bar me-1"></i> Progress Range</label>
                         <div class="d-flex flex-wrap gap-3 align-items-center">
@@ -373,54 +550,6 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- Duration -->
-                    <div class="mb-3">
-                        <label class="form-label fw-bold text-dark small d-block"><i class="ti ti-clock me-1"></i> Duration</label>
-                        <div class="d-flex flex-wrap gap-3 align-items-center">
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="modal_duration" id="durAll" value="all" checked>
-                                <label class="form-check-label text-dark" for="durAll">All</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="modal_duration" id="dur10" value="lt10">
-                                <label class="form-check-label text-dark" for="dur10">&lt; 10 Minutes</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="modal_duration" id="dur30" value="10-30">
-                                <label class="form-check-label text-dark" for="dur30">10 - 30 Minutes</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="modal_duration" id="dur60" value="30-60">
-                                <label class="form-check-label text-dark" for="dur60">30 - 60 Minutes</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="modal_duration" id="durAbove60" value="gt60">
-                                <label class="form-check-label text-dark" for="durAbove60">&gt; 1 Hour</label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Attendance -->
-                    <div class="mb-3">
-                        <label class="form-label fw-bold text-dark small d-block"><i class="ti ti-user-check me-1"></i> Attendance</label>
-                        <div class="d-flex flex-wrap gap-3 align-items-center">
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="modal_attendance" id="attAll" value="all" checked>
-                                <label class="form-check-label text-dark" for="attAll">All</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="modal_attendance" id="attPresent" value="present">
-                                <label class="form-check-label text-dark" for="attPresent">Present</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="modal_attendance" id="attAbsent" value="absent">
-                                <label class="form-check-label text-dark" for="attAbsent">Absent</label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Assessment Score & Learning Hours Range -->
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
                             <label class="form-label fw-bold text-dark small"><i class="ti ti-award me-1"></i> Assessment Score Range</label>
@@ -434,98 +563,149 @@
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-bold text-dark small"><i class="ti ti-hourglass-empty me-1"></i> Learning Hours Range</label>
-                            <div class="row g-2">
-                                <div class="col-6">
-                                    <input type="number" step="0.1" id="modal-hours-min" name="hours_min" class="form-control rounded-3" placeholder="Min Hours">
-                                </div>
-                                <div class="col-6">
-                                    <input type="number" step="0.1" id="modal-hours-max" name="hours_max" class="form-control rounded-3" placeholder="Max Hours">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Classification & Category -->
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold text-dark small"><i class="ti ti-folder me-1"></i> Main Classification</label>
-                            <select class="form-select rounded-3" id="modal-classification" name="filter_classification">
-                                <option value="all">All Classifications</option>
-                                @foreach ($classifications as $c)
-                                    <option value="{{ $c }}">{{ $c }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold text-dark small"><i class="ti ti-category me-1"></i> Category</label>
-                            <select class="form-select rounded-3" id="modal-category" name="category">
-                                <option value="all">All Categories</option>
-                                @foreach ($categories as $cat)
-                                    <option value="{{ $cat }}">{{ $cat }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Certificate, Corporate KPI, Bond Status -->
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-4">
-                            <label class="form-label fw-bold text-dark small"><i class="ti ti-file-certificate me-1"></i> Certificate</label>
+                            <label class="form-label fw-bold text-dark small" for="modal-certificate">
+                                <i class="ti ti-file-certificate me-1"></i> Certificate
+                            </label>
                             <select class="form-select rounded-3" id="modal-certificate" name="certificate">
                                 <option value="all">All</option>
                                 <option value="yes">Available / Yes</option>
                                 <option value="no">None / No</option>
                             </select>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label fw-bold text-dark small"><i class="ti ti-target me-1"></i> Corporate KPI</label>
-                            <select class="form-select rounded-3" id="modal-corporate-kpi" name="corporate_kpi">
-                                <option value="all">All</option>
-                                <option value="yes">Yes</option>
-                                <option value="no">No</option>
-                            </select>
+                    </div>
+
+                    <!-- SECTION D: ATTENDANCE -->
+                    <div class="text-uppercase fw-bold text-muted small mb-2 border-bottom pb-1 pt-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                        D. Attendance
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small d-block"><i class="ti ti-user-check me-1"></i> Attendance</label>
+                            <div class="d-flex flex-wrap gap-3 align-items-center mt-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="modal_attendance" id="attAll" value="all" checked>
+                                    <label class="form-check-label text-dark" for="attAll">All</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="modal_attendance" id="attPresent" value="present">
+                                    <label class="form-check-label text-dark" for="attPresent">Present</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="modal_attendance" id="attAbsent" value="absent">
+                                    <label class="form-check-label text-dark" for="attAbsent">Absent</label>
+                                </div>
+                            </div>
                         </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small" for="modal-attendance-reason">
+                                <i class="ti ti-notes me-1"></i> Attendance Reason
+                            </label>
+                            <input type="text" class="form-control rounded-3" id="modal-attendance-reason" name="attendance_reason" placeholder="Search attendance reason...">
+                        </div>
+                    </div>
+
+                    <!-- SECTION E: OBLIGATION / SERVICE BOND -->
+                    <div class="text-uppercase fw-bold text-muted small mb-2 border-bottom pb-1 pt-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                        E. Obligation / Service Bond
+                    </div>
+                    <div class="row g-3 mb-3">
                         <div class="col-md-4">
-                            <label class="form-label fw-bold text-dark small"><i class="ti ti-shield me-1"></i> Bond Status</label>
+                            <label class="form-label fw-bold text-dark small" for="modal-bond-status">
+                                <i class="ti ti-shield me-1"></i> Bond Status
+                            </label>
                             <select class="form-select rounded-3" id="modal-bond-status" name="bond_status">
                                 <option value="all">All</option>
                                 <option value="yes">Active / Yes</option>
                                 <option value="no">No</option>
                             </select>
                         </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold text-dark small"><i class="ti ti-calendar-event me-1"></i> Bond End Date</label>
+                            <div class="row g-1">
+                                <div class="col-6">
+                                    <input type="text" id="modal-bond-end-from" name="bond_end_from" onfocus="(this.type='date')" onblur="if(!this.value)this.type='text'" class="form-control rounded-3" placeholder="From">
+                                </div>
+                                <div class="col-6">
+                                    <input type="text" id="modal-bond-end-to" name="bond_end_to" onfocus="(this.type='date')" onblur="if(!this.value)this.type='text'" class="form-control rounded-3" placeholder="To">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold text-dark small"><i class="ti ti-cash me-1"></i> Bond Amount (IDR)</label>
+                            <div class="row g-1">
+                                <div class="col-6">
+                                    <input type="number" id="modal-bond-amount-min" name="bond_amount_min" class="form-control rounded-3" placeholder="Min Rp">
+                                </div>
+                                <div class="col-6">
+                                    <input type="number" id="modal-bond-amount-max" name="bond_amount_max" class="form-control rounded-3" placeholder="Max Rp">
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Provider & Delivery Method -->
-                    <div class="row g-3">
+                    <!-- SECTION F: EVALUATION & GOVERNANCE -->
+                    <div class="text-uppercase fw-bold text-muted small mb-2 border-bottom pb-1 pt-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                        F. Evaluation & Governance
+                    </div>
+                    <div class="row g-3 mb-3">
                         <div class="col-md-6">
-                            <label class="form-label fw-bold text-dark small"><i class="ti ti-building me-1"></i> Provider</label>
-                            <select class="form-select rounded-3" id="modal-provider" name="provider">
-                                <option value="all">All Providers</option>
-                                @foreach ($providers as $prov)
-                                    <option value="{{ $prov }}">{{ $prov }}</option>
-                                @endforeach
-                            </select>
+                            <label class="form-label fw-bold text-dark small" for="modal-l1-program">
+                                <i class="ti ti-stars me-1"></i> L1 Program (Reaction)
+                            </label>
+                            <input type="text" class="form-control rounded-3" id="modal-l1-program" name="l1_program" placeholder="e.g. Excellent / Satisfactory">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-bold text-dark small"><i class="ti ti-presentation me-1"></i> Delivery Method</label>
-                            <select class="form-select rounded-3" id="modal-delivery-method" name="delivery_method">
-                                <option value="all">All Delivery Methods</option>
-                                @foreach ($deliveryMethods as $deliv)
-                                    <option value="{{ $deliv }}">{{ $deliv }}</option>
-                                @endforeach
-                            </select>
+                            <label class="form-label fw-bold text-dark small" for="modal-pic">
+                                <i class="ti ti-user-check me-1"></i> PIC (Person in Charge)
+                            </label>
+                            <input type="text" class="form-control rounded-3" id="modal-pic" name="pic" placeholder="Search PIC...">
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small"><i class="ti ti-math me-1"></i> L2 Post Test (Numerical)</label>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <input type="number" step="0.1" min="0" max="100" id="modal-l2-num-min" name="l2_numerical_min" class="form-control rounded-3" placeholder="Min">
+                                </div>
+                                <div class="col-6">
+                                    <input type="number" step="0.1" min="0" max="100" id="modal-l2-num-max" name="l2_numerical_max" class="form-control rounded-3" placeholder="Max">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small" for="modal-l2-verbal">
+                                <i class="ti ti-file-description me-1"></i> L2 Verbal
+                            </label>
+                            <input type="text" class="form-control rounded-3" id="modal-l2-verbal" name="l2_verbal" placeholder="e.g. Passed">
+                        </div>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small"><i class="ti ti-math me-1"></i> L3 Project (Numerical)</label>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <input type="number" step="0.1" min="0" max="100" id="modal-l3-num-min" name="l3_numerical_min" class="form-control rounded-3" placeholder="Min">
+                                </div>
+                                <div class="col-6">
+                                    <input type="number" step="0.1" min="0" max="100" id="modal-l3-num-max" name="l3_numerical_max" class="form-control rounded-3" placeholder="Max">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small" for="modal-l3-verbal">
+                                <i class="ti ti-file-description me-1"></i> L3 Verbal
+                            </label>
+                            <input type="text" class="form-control rounded-3" id="modal-l3-verbal" name="l3_verbal" placeholder="e.g. Implemented successfully">
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer bg-light d-flex justify-content-end align-items-center gap-2">
-                    <button type="button" id="btn-modal-reset" class="btn btn-outline-secondary px-3 d-inline-flex align-items-center gap-1">
-                        <i class="ti ti-rotate me-1"></i>
-                        <span>Reset</span>
+                <div class="modal-footer border-0 pt-0 d-flex justify-content-between">
+                    <button type="button" class="btn btn-outline-secondary rounded-3 px-3" id="btn-reset-modal-participant-filters">
+                        <i class="ti ti-refresh me-1"></i> Reset
                     </button>
-                    <button type="button" id="btn-modal-apply" class="btn btn-primary px-3 d-inline-flex align-items-center gap-1" style="background-color: #0c5b9e; border-color: #0c5b9e;">
-                        <i class="ti ti-check me-1"></i>
-                        <span>Apply Filter</span>
+                    <button type="button" class="btn btn-primary rounded-3 px-4" id="btn-apply-modal-participant-filters" style="background-color: #003b6d; border-color: #003b6d;">
+                        <i class="ti ti-check me-1"></i> Apply Filter
                     </button>
                 </div>
             </form>
@@ -534,22 +714,44 @@
 </div>
 
 <!-- HIDDEN FILTER INPUTS (Sync between modal and table state) -->
+<input type="hidden" id="filter-classification" value="all">
+<input type="hidden" id="filter-sub-classification" value="">
+<input type="hidden" id="filter-category" value="all">
+<input type="hidden" id="filter-level" value="all">
+<input type="hidden" id="filter-batch" value="">
+<input type="hidden" id="filter-delivery-method" value="all">
+<input type="hidden" id="filter-sub-delivery-method" value="">
+<input type="hidden" id="filter-provider" value="all">
+<input type="hidden" id="filter-sub-provider" value="">
+<input type="hidden" id="filter-provider-name" value="">
+<input type="hidden" id="filter-corporate-kpi" value="all">
+<input type="hidden" id="filter-sub-corporate-kpi" value="">
+<input type="hidden" id="filter-venue" value="">
+<input type="hidden" id="filter-instructor" value="">
 <input type="hidden" id="filter-from-date" value="">
 <input type="hidden" id="filter-to-date" value="">
-<input type="hidden" id="filter-progress-range" value="all">
-<input type="hidden" id="filter-duration" value="all">
-<input type="hidden" id="filter-attendance" value="all">
-<input type="hidden" id="filter-score-min" value="">
-<input type="hidden" id="filter-score-max" value="">
 <input type="hidden" id="filter-hours-min" value="">
 <input type="hidden" id="filter-hours-max" value="">
-<input type="hidden" id="filter-classification" value="all">
-<input type="hidden" id="filter-category" value="all">
+<input type="hidden" id="filter-duration" value="all">
+<input type="hidden" id="filter-progress-range" value="all">
+<input type="hidden" id="filter-score-min" value="">
+<input type="hidden" id="filter-score-max" value="">
 <input type="hidden" id="filter-certificate" value="all">
-<input type="hidden" id="filter-corporate-kpi" value="all">
+<input type="hidden" id="filter-attendance" value="all">
+<input type="hidden" id="filter-attendance-reason" value="">
 <input type="hidden" id="filter-bond-status" value="all">
-<input type="hidden" id="filter-provider" value="all">
-<input type="hidden" id="filter-delivery-method" value="all">
+<input type="hidden" id="filter-bond-end-from" value="">
+<input type="hidden" id="filter-bond-end-to" value="">
+<input type="hidden" id="filter-bond-amount-min" value="">
+<input type="hidden" id="filter-bond-amount-max" value="">
+<input type="hidden" id="filter-l1-program" value="">
+<input type="hidden" id="filter-l2-numerical-min" value="">
+<input type="hidden" id="filter-l2-numerical-max" value="">
+<input type="hidden" id="filter-l2-verbal" value="">
+<input type="hidden" id="filter-l3-numerical-min" value="">
+<input type="hidden" id="filter-l3-numerical-max" value="">
+<input type="hidden" id="filter-l3-verbal" value="">
+<input type="hidden" id="filter-pic" value="">
 
 <!-- DETAIL MODAL COMPONENT -->
 @include('main.record.components.offline-detail-modal')
@@ -734,6 +936,99 @@
         color: #f8fafc !important;
     }
 
+    /* Standardized Quick Filter Toolbar Controls */
+    .participant-filter-toolbar {
+        min-height: 38px;
+    }
+
+    .participant-filter-toolbar .form-control,
+    .participant-filter-toolbar .form-select,
+    .participant-filter-toolbar .btn {
+        height: 38px !important;
+        min-height: 38px !important;
+        max-height: 38px !important;
+        box-sizing: border-box !important;
+        border-radius: 8px !important;
+        font-size: 0.875rem !important;
+        vertical-align: middle !important;
+        margin: 0 !important;
+    }
+
+    .participant-filter-toolbar .form-control {
+        padding: 0.4375rem 0.75rem !important;
+        line-height: 1.4285714 !important;
+    }
+
+    .participant-filter-toolbar .form-select {
+        padding: 0.4375rem 2.25rem 0.4375rem 0.75rem !important;
+        line-height: 1.4285714 !important;
+    }
+
+    .participant-filter-toolbar .btn-icon {
+        width: 38px !important;
+        min-width: 38px !important;
+        height: 38px !important;
+        min-height: 38px !important;
+        padding: 0 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border-radius: 8px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .participant-filter-toolbar .btn-icon i {
+        font-size: 1.15rem !important;
+        line-height: 1 !important;
+    }
+
+    .participant-filter-toolbar #participantExportDropdown {
+        height: 38px !important;
+        min-height: 38px !important;
+        padding: 0.4375rem 1rem !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border-radius: 8px !important;
+        line-height: 1.4285714 !important;
+        font-weight: 500 !important;
+        white-space: nowrap !important;
+    }
+
+    .participant-filter-search {
+        width: 220px;
+        min-width: 180px;
+        max-width: 280px;
+        flex: 1 1 auto;
+    }
+
+    .participant-filter-select {
+        width: 125px;
+        min-width: 115px;
+        flex-shrink: 0;
+    }
+
+    .participant-filter-select-year {
+        width: 105px;
+        min-width: 95px;
+        flex-shrink: 0;
+    }
+
+    @media (max-width: 767.98px) {
+        .participant-filter-left-group {
+            width: 100%;
+        }
+        .participant-filter-search {
+            width: 100%;
+            max-width: 100%;
+        }
+        .participant-filter-right-group {
+            width: 100%;
+            justify-content: flex-end;
+            margin-top: 0.25rem;
+        }
+    }
+
     .btn-icon {
         width: 30px;
         height: 30px;
@@ -767,22 +1062,55 @@
         // Function to calculate and update active filter badge counter
         function updateActiveFilterBadge() {
             let activeCount = 0;
+            // Section A: Training Information
+            if ($('#filter-classification').val() && $('#filter-classification').val() !== 'all') activeCount++;
+            if ($('#filter-sub-classification').val()) activeCount++;
+            if ($('#filter-category').val() && $('#filter-category').val() !== 'all') activeCount++;
+            if ($('#filter-level').val() && $('#filter-level').val() !== 'all') activeCount++;
+            if ($('#filter-batch').val()) activeCount++;
+            if ($('#filter-delivery-method').val() && $('#filter-delivery-method').val() !== 'all') activeCount++;
+            if ($('#filter-sub-delivery-method').val()) activeCount++;
+            if ($('#filter-provider').val() && $('#filter-provider').val() !== 'all') activeCount++;
+            if ($('#filter-sub-provider').val()) activeCount++;
+            if ($('#filter-provider-name').val()) activeCount++;
+            if ($('#filter-corporate-kpi').val() && $('#filter-corporate-kpi').val() !== 'all') activeCount++;
+            if ($('#filter-sub-corporate-kpi').val()) activeCount++;
+            if ($('#filter-venue').val()) activeCount++;
+            if ($('#filter-instructor').val()) activeCount++;
+
+            // Section B: Date & Duration
             if ($('#filter-from-date').val()) activeCount++;
             if ($('#filter-to-date').val()) activeCount++;
-            if ($('#filter-progress-range').val() && $('#filter-progress-range').val() !== 'all') activeCount++;
-            if ($('#filter-duration').val() && $('#filter-duration').val() !== 'all') activeCount++;
-            if ($('#filter-attendance').val() && $('#filter-attendance').val() !== 'all') activeCount++;
-            if ($('#filter-score-min').val()) activeCount++;
-            if ($('#filter-score-max').val()) activeCount++;
             if ($('#filter-hours-min').val()) activeCount++;
             if ($('#filter-hours-max').val()) activeCount++;
-            if ($('#filter-classification').val() && $('#filter-classification').val() !== 'all') activeCount++;
-            if ($('#filter-category').val() && $('#filter-category').val() !== 'all') activeCount++;
+            if ($('#filter-duration').val() && $('#filter-duration').val() !== 'all') activeCount++;
+
+            // Section C: Training Result
+            if ($('#filter-progress-range').val() && $('#filter-progress-range').val() !== 'all') activeCount++;
+            if ($('#filter-score-min').val()) activeCount++;
+            if ($('#filter-score-max').val()) activeCount++;
             if ($('#filter-certificate').val() && $('#filter-certificate').val() !== 'all') activeCount++;
-            if ($('#filter-corporate-kpi').val() && $('#filter-corporate-kpi').val() !== 'all') activeCount++;
+
+            // Section D: Attendance
+            if ($('#filter-attendance').val() && $('#filter-attendance').val() !== 'all') activeCount++;
+            if ($('#filter-attendance-reason').val()) activeCount++;
+
+            // Section E: Obligation / Service Bond
             if ($('#filter-bond-status').val() && $('#filter-bond-status').val() !== 'all') activeCount++;
-            if ($('#filter-provider').val() && $('#filter-provider').val() !== 'all') activeCount++;
-            if ($('#filter-delivery-method').val() && $('#filter-delivery-method').val() !== 'all') activeCount++;
+            if ($('#filter-bond-end-from').val()) activeCount++;
+            if ($('#filter-bond-end-to').val()) activeCount++;
+            if ($('#filter-bond-amount-min').val()) activeCount++;
+            if ($('#filter-bond-amount-max').val()) activeCount++;
+
+            // Section F: Evaluation & Governance
+            if ($('#filter-l1-program').val()) activeCount++;
+            if ($('#filter-l2-numerical-min').val()) activeCount++;
+            if ($('#filter-l2-numerical-max').val()) activeCount++;
+            if ($('#filter-l2-verbal').val()) activeCount++;
+            if ($('#filter-l3-numerical-min').val()) activeCount++;
+            if ($('#filter-l3-numerical-max').val()) activeCount++;
+            if ($('#filter-l3-verbal').val()) activeCount++;
+            if ($('#filter-pic').val()) activeCount++;
 
             const $badge = $('#activeParticipantFilterBadge');
             if (activeCount > 0) {
@@ -813,23 +1141,55 @@
                     d.status = $('#participant-status-select').val();
                     d.year = $('#participant-year-select').val();
 
-                    // More Filters
+                    // Section A: Training Information
+                    d.filter_classification = $('#filter-classification').val();
+                    d.sub_classification = $('#filter-sub-classification').val();
+                    d.category = $('#filter-category').val();
+                    d.level = $('#filter-level').val();
+                    d.batch = $('#filter-batch').val();
+                    d.delivery_method = $('#filter-delivery-method').val();
+                    d.sub_delivery_method = $('#filter-sub-delivery-method').val();
+                    d.provider = $('#filter-provider').val();
+                    d.sub_provider = $('#filter-sub-provider').val();
+                    d.provider_name = $('#filter-provider-name').val();
+                    d.corporate_kpi = $('#filter-corporate-kpi').val();
+                    d.sub_corporate_kpi = $('#filter-sub-corporate-kpi').val();
+                    d.venue = $('#filter-venue').val();
+                    d.instructor = $('#filter-instructor').val();
+
+                    // Section B: Date & Duration
                     d.from_date = $('#filter-from-date').val();
                     d.to_date = $('#filter-to-date').val();
-                    d.progress_range = $('#filter-progress-range').val();
-                    d.duration = $('#filter-duration').val();
-                    d.attendance = $('#filter-attendance').val();
-                    d.score_min = $('#filter-score-min').val();
-                    d.score_max = $('#filter-score-max').val();
                     d.hours_min = $('#filter-hours-min').val();
                     d.hours_max = $('#filter-hours-max').val();
-                    d.filter_classification = $('#filter-classification').val(); // Crucial: explicitly from More Filters
-                    d.category = $('#filter-category').val();
+                    d.duration = $('#filter-duration').val();
+
+                    // Section C: Training Result
+                    d.progress_range = $('#filter-progress-range').val();
+                    d.score_min = $('#filter-score-min').val();
+                    d.score_max = $('#filter-score-max').val();
                     d.certificate = $('#filter-certificate').val();
-                    d.corporate_kpi = $('#filter-corporate-kpi').val();
+
+                    // Section D: Attendance
+                    d.attendance = $('#filter-attendance').val();
+                    d.attendance_reason = $('#filter-attendance-reason').val();
+
+                    // Section E: Obligation / Service Bond
                     d.bond_status = $('#filter-bond-status').val();
-                    d.provider = $('#filter-provider').val();
-                    d.delivery_method = $('#filter-delivery-method').val();
+                    d.bond_end_from = $('#filter-bond-end-from').val();
+                    d.bond_end_to = $('#filter-bond-end-to').val();
+                    d.bond_amount_min = $('#filter-bond-amount-min').val();
+                    d.bond_amount_max = $('#filter-bond-amount-max').val();
+
+                    // Section F: Evaluation & Governance
+                    d.l1_program = $('#filter-l1-program').val();
+                    d.l2_numerical_min = $('#filter-l2-numerical-min').val();
+                    d.l2_numerical_max = $('#filter-l2-numerical-max').val();
+                    d.l2_verbal = $('#filter-l2-verbal').val();
+                    d.l3_numerical_min = $('#filter-l3-numerical-min').val();
+                    d.l3_numerical_max = $('#filter-l3-numerical-max').val();
+                    d.l3_verbal = $('#filter-l3-verbal').val();
+                    d.pic = $('#filter-pic').val();
 
                     // Context param for Course Name link preservation
                     d.classification = classificationParam;
@@ -975,6 +1335,170 @@
             participantTable.ajax.reload();
         });
 
+        // More Filters Modal: Reset Function
+        function resetMoreParticipantFilters() {
+            // Section A: Training Information
+            $('#modal-classification').val('all');
+            $('#modal-sub-classification').val('');
+            $('#modal-category').val('all');
+            $('#modal-level').val('all');
+            $('#modal-batch').val('');
+            $('#modal-delivery-method').val('all');
+            $('#modal-sub-delivery-method').val('');
+            $('#modal-provider').val('all');
+            $('#modal-sub-provider').val('');
+            $('#modal-provider-name').val('');
+            $('#modal-corporate-kpi').val('all');
+            $('#modal-sub-corporate-kpi').val('');
+            $('#modal-venue').val('');
+            $('#modal-instructor').val('');
+
+            // Section B: Date & Duration
+            $('#modal-from-date').val('');
+            $('#modal-to-date').val('');
+            $('#modal-hours-min').val('');
+            $('#modal-hours-max').val('');
+            $('input[name="modal_duration"][value="all"]').prop('checked', true);
+
+            // Section C: Training Result
+            $('input[name="modal_progress_range"][value="all"]').prop('checked', true);
+            $('#modal-score-min').val('');
+            $('#modal-score-max').val('');
+            $('#modal-certificate').val('all');
+
+            // Section D: Attendance
+            $('input[name="modal_attendance"][value="all"]').prop('checked', true);
+            $('#modal-attendance-reason').val('');
+
+            // Section E: Obligation / Service Bond
+            $('#modal-bond-status').val('all');
+            $('#modal-bond-end-from').val('');
+            $('#modal-bond-end-to').val('');
+            $('#modal-bond-amount-min').val('');
+            $('#modal-bond-amount-max').val('');
+
+            // Section F: Evaluation & Governance
+            $('#modal-l1-program').val('');
+            $('#modal-pic').val('');
+            $('#modal-l2-num-min').val('');
+            $('#modal-l2-num-max').val('');
+            $('#modal-l2-verbal').val('');
+            $('#modal-l3-num-min').val('');
+            $('#modal-l3-num-max').val('');
+            $('#modal-l3-verbal').val('');
+
+            // Reset all hidden inputs
+            $('#filter-classification').val('all');
+            $('#filter-sub-classification').val('');
+            $('#filter-category').val('all');
+            $('#filter-level').val('all');
+            $('#filter-batch').val('');
+            $('#filter-delivery-method').val('all');
+            $('#filter-sub-delivery-method').val('');
+            $('#filter-provider').val('all');
+            $('#filter-sub-provider').val('');
+            $('#filter-provider-name').val('');
+            $('#filter-corporate-kpi').val('all');
+            $('#filter-sub-corporate-kpi').val('');
+            $('#filter-venue').val('');
+            $('#filter-instructor').val('');
+            $('#filter-from-date').val('');
+            $('#filter-to-date').val('');
+            $('#filter-hours-min').val('');
+            $('#filter-hours-max').val('');
+            $('#filter-duration').val('all');
+            $('#filter-progress-range').val('all');
+            $('#filter-score-min').val('');
+            $('#filter-score-max').val('');
+            $('#filter-certificate').val('all');
+            $('#filter-attendance').val('all');
+            $('#filter-attendance-reason').val('');
+            $('#filter-bond-status').val('all');
+            $('#filter-bond-end-from').val('');
+            $('#filter-bond-end-to').val('');
+            $('#filter-bond-amount-min').val('');
+            $('#filter-bond-amount-max').val('');
+            $('#filter-l1-program').val('');
+            $('#filter-l2-numerical-min').val('');
+            $('#filter-l2-numerical-max').val('');
+            $('#filter-l2-verbal').val('');
+            $('#filter-l3-numerical-min').val('');
+            $('#filter-l3-numerical-max').val('');
+            $('#filter-l3-verbal').val('');
+            $('#filter-pic').val('');
+
+            updateActiveFilterBadge();
+        }
+
+        // More Filters Modal: Reset Button
+        $('#btn-reset-modal-participant-filters').on('click', function () {
+            resetMoreParticipantFilters();
+        });
+
+        // More Filters Modal: Apply Button
+        $('#btn-apply-modal-participant-filters').on('click', function () {
+            // Section A: Training Information
+            $('#filter-classification').val($('#modal-classification').val());
+            $('#filter-sub-classification').val($('#modal-sub-classification').val());
+            $('#filter-category').val($('#modal-category').val());
+            $('#filter-level').val($('#modal-level').val());
+            $('#filter-batch').val($('#modal-batch').val());
+            $('#filter-delivery-method').val($('#modal-delivery-method').val());
+            $('#filter-sub-delivery-method').val($('#modal-sub-delivery-method').val());
+            $('#filter-provider').val($('#modal-provider').val());
+            $('#filter-sub-provider').val($('#modal-sub-provider').val());
+            $('#filter-provider-name').val($('#modal-provider-name').val());
+            $('#filter-corporate-kpi').val($('#modal-corporate-kpi').val());
+            $('#filter-sub-corporate-kpi').val($('#modal-sub-corporate-kpi').val());
+            $('#filter-venue').val($('#modal-venue').val());
+            $('#filter-instructor').val($('#modal-instructor').val());
+
+            // Section B: Date & Duration
+            $('#filter-from-date').val($('#modal-from-date').val());
+            $('#filter-to-date').val($('#modal-to-date').val());
+            $('#filter-hours-min').val($('#modal-hours-min').val());
+            $('#filter-hours-max').val($('#modal-hours-max').val());
+            $('#filter-duration').val($('input[name="modal_duration"]:checked').val() || 'all');
+
+            // Section C: Training Result
+            $('#filter-progress-range').val($('input[name="modal_progress_range"]:checked').val() || 'all');
+            $('#filter-score-min').val($('#modal-score-min').val());
+            $('#filter-score-max').val($('#modal-score-max').val());
+            $('#filter-certificate').val($('#modal-certificate').val());
+
+            // Section D: Attendance
+            $('#filter-attendance').val($('input[name="modal_attendance"]:checked').val() || 'all');
+            $('#filter-attendance-reason').val($('#modal-attendance-reason').val());
+
+            // Section E: Obligation / Service Bond
+            $('#filter-bond-status').val($('#modal-bond-status').val());
+            $('#filter-bond-end-from').val($('#modal-bond-end-from').val());
+            $('#filter-bond-end-to').val($('#modal-bond-end-to').val());
+            $('#filter-bond-amount-min').val($('#modal-bond-amount-min').val());
+            $('#filter-bond-amount-max').val($('#modal-bond-amount-max').val());
+
+            // Section F: Evaluation & Governance
+            $('#filter-l1-program').val($('#modal-l1-program').val());
+            $('#filter-pic').val($('#modal-pic').val());
+            $('#filter-l2-numerical-min').val($('#modal-l2-num-min').val());
+            $('#filter-l2-numerical-max').val($('#modal-l2-num-max').val());
+            $('#filter-l2-verbal').val($('#modal-l2-verbal').val());
+            $('#filter-l3-numerical-min').val($('#modal-l3-num-min').val());
+            $('#filter-l3-numerical-max').val($('#modal-l3-num-max').val());
+            $('#filter-l3-verbal').val($('#modal-l3-verbal').val());
+
+            updateActiveFilterBadge();
+            const modalEl = document.getElementById('moreParticipantFiltersModal');
+            if (modalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                const modalInstance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                if (modalInstance) modalInstance.hide();
+            } else {
+                $('#moreParticipantFiltersModal').modal('hide');
+            }
+
+            participantTable.ajax.reload();
+        });
+
         // Reset all filters (Quick Filters + More Filters)
         $('#btn-reset-participant-filter').on('click', function () {
             // Reset Quick Filter controls
@@ -983,122 +1507,7 @@
             $('#participant-status-select').val('all');
             $('#participant-year-select').val('all');
 
-            // Reset More Filters modal controls
-            $('#modal-from-date').val('');
-            $('#modal-to-date').val('');
-            $('input[name="modal_progress_range"][value="all"]').prop('checked', true);
-            $('input[name="modal_duration"][value="all"]').prop('checked', true);
-            $('input[name="modal_attendance"][value="all"]').prop('checked', true);
-            $('#modal-score-min').val('');
-            $('#modal-score-max').val('');
-            $('#modal-hours-min').val('');
-            $('#modal-hours-max').val('');
-            $('#modal-classification').val('all');
-            $('#modal-category').val('all');
-            $('#modal-certificate').val('all');
-            $('#modal-corporate-kpi').val('all');
-            $('#modal-bond-status').val('all');
-            $('#modal-provider').val('all');
-            $('#modal-delivery-method').val('all');
-
-            // Reset hidden inputs
-            $('#filter-from-date').val('');
-            $('#filter-to-date').val('');
-            $('#filter-progress-range').val('all');
-            $('#filter-duration').val('all');
-            $('#filter-attendance').val('all');
-            $('#filter-score-min').val('');
-            $('#filter-score-max').val('');
-            $('#filter-hours-min').val('');
-            $('#filter-hours-max').val('');
-            $('#filter-classification').val('all');
-            $('#filter-category').val('all');
-            $('#filter-certificate').val('all');
-            $('#filter-corporate-kpi').val('all');
-            $('#filter-bond-status').val('all');
-            $('#filter-provider').val('all');
-            $('#filter-delivery-method').val('all');
-
-            updateActiveFilterBadge();
-            participantTable.ajax.reload();
-        });
-
-        // More Filters Modal: Apply Button
-        $('#btn-modal-apply').on('click', function () {
-            $('#filter-from-date').val($('#modal-from-date').val());
-            $('#filter-to-date').val($('#modal-to-date').val());
-            $('#filter-progress-range').val($('input[name="modal_progress_range"]:checked').val() || 'all');
-            $('#filter-duration').val($('input[name="modal_duration"]:checked').val() || 'all');
-            $('#filter-attendance').val($('input[name="modal_attendance"]:checked').val() || 'all');
-            $('#filter-score-min').val($('#modal-score-min').val());
-            $('#filter-score-max').val($('#modal-score-max').val());
-            $('#filter-hours-min').val($('#modal-hours-min').val());
-            $('#filter-hours-max').val($('#modal-hours-max').val());
-            $('#filter-classification').val($('#modal-classification').val());
-            $('#filter-category').val($('#modal-category').val());
-            $('#filter-certificate').val($('#modal-certificate').val());
-            $('#filter-corporate-kpi').val($('#modal-corporate-kpi').val());
-            $('#filter-bond-status').val($('#modal-bond-status').val());
-            $('#filter-provider').val($('#modal-provider').val());
-            $('#filter-delivery-method').val($('#modal-delivery-method').val());
-
-            updateActiveFilterBadge();
-            const modalEl = document.getElementById('moreParticipantFiltersModal');
-            if (modalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-                const modalInstance = bootstrap.Modal.getInstance(modalEl);
-                if (modalInstance) modalInstance.hide();
-            } else {
-                $('#moreParticipantFiltersModal').modal('hide');
-            }
-
-            participantTable.ajax.reload();
-        });
-
-        // More Filters Modal: Reset Button
-        $('#btn-modal-reset').on('click', function () {
-            $('#modal-from-date').val('');
-            $('#modal-to-date').val('');
-            $('input[name="modal_progress_range"][value="all"]').prop('checked', true);
-            $('input[name="modal_duration"][value="all"]').prop('checked', true);
-            $('input[name="modal_attendance"][value="all"]').prop('checked', true);
-            $('#modal-score-min').val('');
-            $('#modal-score-max').val('');
-            $('#modal-hours-min').val('');
-            $('#modal-hours-max').val('');
-            $('#modal-classification').val('all');
-            $('#modal-category').val('all');
-            $('#modal-certificate').val('all');
-            $('#modal-corporate-kpi').val('all');
-            $('#modal-bond-status').val('all');
-            $('#modal-provider').val('all');
-            $('#modal-delivery-method').val('all');
-
-            $('#filter-from-date').val('');
-            $('#filter-to-date').val('');
-            $('#filter-progress-range').val('all');
-            $('#filter-duration').val('all');
-            $('#filter-attendance').val('all');
-            $('#filter-score-min').val('');
-            $('#filter-score-max').val('');
-            $('#filter-hours-min').val('');
-            $('#filter-hours-max').val('');
-            $('#filter-classification').val('all');
-            $('#filter-category').val('all');
-            $('#filter-certificate').val('all');
-            $('#filter-corporate-kpi').val('all');
-            $('#filter-bond-status').val('all');
-            $('#filter-provider').val('all');
-            $('#filter-delivery-method').val('all');
-
-            updateActiveFilterBadge();
-            const modalEl = document.getElementById('moreParticipantFiltersModal');
-            if (modalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-                const modalInstance = bootstrap.Modal.getInstance(modalEl);
-                if (modalInstance) modalInstance.hide();
-            } else {
-                $('#moreParticipantFiltersModal').modal('hide');
-            }
-
+            resetMoreParticipantFilters();
             participantTable.ajax.reload();
         });
 
@@ -1106,6 +1515,7 @@
         function buildExportUrl(baseUrl) {
             const params = new URLSearchParams();
 
+            // Quick Filters
             const courseVal = ($('#participant-course-input').val() || '').trim();
             if (courseVal) params.append('course_name', courseVal);
 
@@ -1118,26 +1528,55 @@
             const yearVal = $('#participant-year-select').val();
             if (yearVal && yearVal !== 'all') params.append('year', yearVal);
 
+            // Section A: Training Information
+            const classification = $('#filter-classification').val();
+            if (classification && classification !== 'all') params.append('filter_classification', classification);
+
+            const subClassification = $('#filter-sub-classification').val();
+            if (subClassification) params.append('sub_classification', subClassification);
+
+            const category = $('#filter-category').val();
+            if (category && category !== 'all') params.append('category', category);
+
+            const level = $('#filter-level').val();
+            if (level && level !== 'all') params.append('level', level);
+
+            const batch = $('#filter-batch').val();
+            if (batch) params.append('batch', batch);
+
+            const deliveryMethod = $('#filter-delivery-method').val();
+            if (deliveryMethod && deliveryMethod !== 'all') params.append('delivery_method', deliveryMethod);
+
+            const subDeliveryMethod = $('#filter-sub-delivery-method').val();
+            if (subDeliveryMethod) params.append('sub_delivery_method', subDeliveryMethod);
+
+            const provider = $('#filter-provider').val();
+            if (provider && provider !== 'all') params.append('provider', provider);
+
+            const subProvider = $('#filter-sub-provider').val();
+            if (subProvider) params.append('sub_provider', subProvider);
+
+            const providerName = $('#filter-provider-name').val();
+            if (providerName) params.append('provider_name', providerName);
+
+            const corporateKpi = $('#filter-corporate-kpi').val();
+            if (corporateKpi && corporateKpi !== 'all') params.append('corporate_kpi', corporateKpi);
+
+            const subCorporateKpi = $('#filter-sub-corporate-kpi').val();
+            if (subCorporateKpi) params.append('sub_corporate_kpi', subCorporateKpi);
+
+            const venue = $('#filter-venue').val();
+            if (venue) params.append('venue', venue);
+
+            const instructor = $('#filter-instructor').val();
+            if (instructor) params.append('instructor', instructor);
+
+            // Section B: Date & Duration
             const fromDate = $('#filter-from-date').val();
             if (fromDate) params.append('from_date', fromDate);
 
             const toDate = $('#filter-to-date').val();
             if (toDate) params.append('to_date', toDate);
-
-            const progressRange = $('#filter-progress-range').val();
-            if (progressRange && progressRange !== 'all') params.append('progress_range', progressRange);
-
-            const duration = $('#filter-duration').val();
-            if (duration && duration !== 'all') params.append('duration', duration);
-
-            const attendance = $('#filter-attendance').val();
-            if (attendance && attendance !== 'all') params.append('attendance', attendance);
-
-            const scoreMin = $('#filter-score-min').val();
-            if (scoreMin) params.append('score_min', scoreMin);
-
-            const scoreMax = $('#filter-score-max').val();
-            if (scoreMax) params.append('score_max', scoreMax);
 
             const hoursMin = $('#filter-hours-min').val();
             if (hoursMin) params.append('hours_min', hoursMin);
@@ -1145,26 +1584,69 @@
             const hoursMax = $('#filter-hours-max').val();
             if (hoursMax) params.append('hours_max', hoursMax);
 
-            const classification = $('#filter-classification').val();
-            if (classification && classification !== 'all') params.append('filter_classification', classification);
+            const duration = $('#filter-duration').val();
+            if (duration && duration !== 'all') params.append('duration', duration);
 
-            const category = $('#filter-category').val();
-            if (category && category !== 'all') params.append('category', category);
+            // Section C: Training Result
+            const progressRange = $('#filter-progress-range').val();
+            if (progressRange && progressRange !== 'all') params.append('progress_range', progressRange);
+
+            const scoreMin = $('#filter-score-min').val();
+            if (scoreMin) params.append('score_min', scoreMin);
+
+            const scoreMax = $('#filter-score-max').val();
+            if (scoreMax) params.append('score_max', scoreMax);
 
             const certificate = $('#filter-certificate').val();
             if (certificate && certificate !== 'all') params.append('certificate', certificate);
 
-            const corporateKpi = $('#filter-corporate-kpi').val();
-            if (corporateKpi && corporateKpi !== 'all') params.append('corporate_kpi', corporateKpi);
+            // Section D: Attendance
+            const attendance = $('#filter-attendance').val();
+            if (attendance && attendance !== 'all') params.append('attendance', attendance);
 
+            const attendanceReason = $('#filter-attendance-reason').val();
+            if (attendanceReason) params.append('attendance_reason', attendanceReason);
+
+            // Section E: Obligation / Service Bond
             const bondStatus = $('#filter-bond-status').val();
             if (bondStatus && bondStatus !== 'all') params.append('bond_status', bondStatus);
 
-            const provider = $('#filter-provider').val();
-            if (provider && provider !== 'all') params.append('provider', provider);
+            const bondEndFrom = $('#filter-bond-end-from').val();
+            if (bondEndFrom) params.append('bond_end_from', bondEndFrom);
 
-            const deliveryMethod = $('#filter-delivery-method').val();
-            if (deliveryMethod && deliveryMethod !== 'all') params.append('delivery_method', deliveryMethod);
+            const bondEndTo = $('#filter-bond-end-to').val();
+            if (bondEndTo) params.append('bond_end_to', bondEndTo);
+
+            const bondAmtMin = $('#filter-bond-amount-min').val();
+            if (bondAmtMin) params.append('bond_amount_min', bondAmtMin);
+
+            const bondAmtMax = $('#filter-bond-amount-max').val();
+            if (bondAmtMax) params.append('bond_amount_max', bondAmtMax);
+
+            // Section F: Evaluation & Governance
+            const l1 = $('#filter-l1-program').val();
+            if (l1) params.append('l1_program', l1);
+
+            const pic = $('#filter-pic').val();
+            if (pic) params.append('pic', pic);
+
+            const l2NumMin = $('#filter-l2-numerical-min').val();
+            if (l2NumMin) params.append('l2_numerical_min', l2NumMin);
+
+            const l2NumMax = $('#filter-l2-numerical-max').val();
+            if (l2NumMax) params.append('l2_numerical_max', l2NumMax);
+
+            const l2Verbal = $('#filter-l2-verbal').val();
+            if (l2Verbal) params.append('l2_verbal', l2Verbal);
+
+            const l3NumMin = $('#filter-l3-numerical-min').val();
+            if (l3NumMin) params.append('l3_numerical_min', l3NumMin);
+
+            const l3NumMax = $('#filter-l3-numerical-max').val();
+            if (l3NumMax) params.append('l3_numerical_max', l3NumMax);
+
+            const l3Verbal = $('#filter-l3-verbal').val();
+            if (l3Verbal) params.append('l3_verbal', l3Verbal);
 
             const qs = params.toString();
             return qs ? `${baseUrl}?${qs}` : baseUrl;
@@ -1173,19 +1655,19 @@
         // Export Excel Click Handler
         $('#btn-export-participant-excel').on('click', function (e) {
             e.preventDefault();
-            window.open(buildExportUrl(exportExcelBaseUrl), '_blank');
+            window.location.href = buildExportUrl(exportExcelBaseUrl);
         });
 
         // Export CSV Click Handler
         $('#btn-export-participant-csv').on('click', function (e) {
             e.preventDefault();
-            window.open(buildExportUrl(exportCsvBaseUrl), '_blank');
+            window.location.href = buildExportUrl(exportCsvBaseUrl);
         });
 
         // Export PDF Click Handler
         $('#btn-export-participant-pdf').on('click', function (e) {
             e.preventDefault();
-            window.open(buildExportUrl(exportPdfBaseUrl), '_blank');
+            window.location.href = buildExportUrl(exportPdfBaseUrl);
         });
 
         // Offline Training Detail Modal Logic

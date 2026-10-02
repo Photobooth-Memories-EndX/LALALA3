@@ -322,6 +322,9 @@ class RecordOfflineController extends Controller
         $deliveryMethods = DB::table('offline_trainings')->whereNull('deleted_at')->whereNotNull('delivery_method')->where('delivery_method', '!=', '')->distinct()->pluck('delivery_method')->all();
         sort($deliveryMethods);
 
+        $levels = DB::table('offline_trainings')->whereNull('deleted_at')->whereNotNull('level')->where('level', '!=', '')->distinct()->pluck('level')->all();
+        sort($levels);
+
         return view('main.record.offline.participant', [
             'title'               => "Participant: {$participant['name']}",
             'subtitle'            => 'Historical offline training records for this employee.',
@@ -336,6 +339,7 @@ class RecordOfflineController extends Controller
             'categories'          => $categories,
             'providers'           => $providers,
             'deliveryMethods'     => $deliveryMethods,
+            'levels'              => $levels,
             'exportExcelUrl'      => route('manage.record.offline.participant.export.excel', $participant['raw_identifier']),
             'exportCsvUrl'        => route('manage.record.offline.participant.export.csv', $participant['raw_identifier']),
             'exportPdfUrl'        => route('manage.record.offline.participant.export.pdf', $participant['raw_identifier']),

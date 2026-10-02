@@ -114,98 +114,103 @@
                     Quick Filter
                 </div>
                 <form id="course-filter-form" onsubmit="return false;">
-                    <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <!-- Search Participant / NIP -->
-                        <div class="position-relative flex-grow-1" style="min-width: 220px; max-width: 320px;">
-                            <input type="text" id="course-participant-input" class="form-control rounded-3" 
-                                   placeholder="Search participant or NIP..." autocomplete="off">
-                        </div>
+                    <div class="course-filter-toolbar d-flex flex-wrap align-items-center justify-content-between gap-2">
+                        <!-- Left Filter Controls -->
+                        <div class="course-filter-left-group d-flex flex-wrap align-items-center gap-2">
+                            <!-- Search Participant / NIP -->
+                            <div class="course-filter-search position-relative">
+                                <input type="text" id="course-participant-input" class="form-control rounded-3"
+                                       placeholder="Search participant or NIP..." autocomplete="off">
+                            </div>
 
-                        <!-- Type Dropdown -->
-                        <div style="min-width: 130px; flex-shrink: 0;">
-                            <select class="form-select rounded-3" id="course-type-select">
-                                <option value="all">Type: All</option>
-                                @foreach ($trainingTypes as $type)
-                                    <option value="{{ $type }}">{{ $type }}</option>
-                                @endforeach
-                            </select>
-                        </div>
+                            <!-- Type Dropdown -->
+                            <div class="course-filter-select">
+                                <select class="form-select rounded-3" id="course-type-select">
+                                    <option value="all">Type: All</option>
+                                    @foreach ($trainingTypes as $type)
+                                        <option value="{{ $type }}">{{ $type }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
 
-                        <!-- Status Dropdown -->
-                        <div style="min-width: 130px; flex-shrink: 0;">
-                            <select class="form-select rounded-3" id="course-status-select">
-                                <option value="all">All Status</option>
-                                <option value="finished">Finished</option>
-                                <option value="ongoing">Ongoing</option>
-                                <option value="not_started">Not Started</option>
-                            </select>
-                        </div>
+                            <!-- Status Dropdown -->
+                            <div class="course-filter-select">
+                                <select class="form-select rounded-3" id="course-status-select">
+                                    <option value="all">All Status</option>
+                                    <option value="finished">Finished</option>
+                                    <option value="ongoing">Ongoing</option>
+                                    <option value="not_started">Not Started</option>
+                                </select>
+                            </div>
 
-                        <!-- Year Dropdown -->
-                        <div style="min-width: 120px; flex-shrink: 0;">
-                            <select class="form-select rounded-3" id="course-year-select">
-                                <option value="all">All Year</option>
-                                @foreach ($years as $year)
-                                    <option value="{{ $year }}">{{ $year }}</option>
-                                @endforeach
-                            </select>
-                        </div>
+                            <!-- Year Dropdown -->
+                            <div class="course-filter-select-year">
+                                <select class="form-select rounded-3" id="course-year-select">
+                                    <option value="all">All Year</option>
+                                    @foreach ($years as $year)
+                                        <option value="{{ $year }}">{{ $year }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
 
-                        <!-- Search Button -->
-                        <button type="button" id="btn-apply-course-filter" class="btn btn-primary btn-icon px-3 flex-shrink-0" 
-                                style="background-color: #003b6d; border-color: #003b6d;" data-bs-toggle="tooltip" title="Apply Filter">
-                            <i class="ti ti-search fs-2"></i>
-                        </button>
-
-                        <!-- More Filters Button with Counter Badge -->
-                        <button type="button" id="btn-more-course-filters" class="btn btn-outline-primary btn-icon px-3 position-relative btn-more-filters flex-shrink-0" 
-                                data-bs-toggle="modal" data-bs-target="#moreCourseFiltersModal" title="More Filters">
-                            <i class="ti ti-adjustments-horizontal fs-2"></i>
-                            <span id="activeCourseFilterBadge" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle d-none">0</span>
-                        </button>
-
-                        <!-- Reset Button -->
-                        <button type="button" id="btn-reset-course-filter" class="btn btn-outline-secondary btn-icon px-3 flex-shrink-0" 
-                                data-bs-toggle="tooltip" title="Reset Filters">
-                            <i class="ti ti-refresh fs-2"></i>
-                        </button>
-
-                        <!-- Export Dropdown (Excel, CSV, PDF Landscape) -->
-                        <div class="dropdown flex-shrink-0 ms-auto">
-                            <button class="btn btn-outline-success dropdown-toggle rounded-3 px-3 d-flex align-items-center gap-1" 
-                                    type="button" id="courseExportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="ti ti-download me-1"></i> Export
+                            <!-- Search Button -->
+                            <button type="button" id="btn-apply-course-filter" class="btn btn-primary btn-icon px-3 flex-shrink-0"
+                                    style="background-color: #003b6d; border-color: #003b6d;" data-bs-toggle="tooltip" title="Apply Filter">
+                                <i class="ti ti-search fs-2"></i>
                             </button>
-                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3" aria-labelledby="courseExportDropdown">
-                                <li>
-                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="javascript:void(0);" id="btn-export-course-excel">
-                                        <i class="ti ti-file-spreadsheet text-success fs-2"></i>
-                                        <div>
-                                             <div class="fw-semibold">Excel (.xlsx)</div>
-                                            <div class="small text-muted" style="font-size: 0.72rem;">Canonical 44-column spreadsheet</div>
-                                        </div>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="javascript:void(0);" id="btn-export-course-csv">
-                                        <i class="ti ti-file-text text-primary fs-2"></i>
-                                        <div>
-                                            <div class="fw-semibold">CSV (.csv)</div>
-                                            <div class="small text-muted" style="font-size: 0.72rem;">Standard comma-separated format</div>
-                                        </div>
-                                    </a>
-                                </li>
-                                <li><hr class="dropdown-divider my-1"></li>
-                                <li>
-                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="javascript:void(0);" id="btn-export-course-pdf">
-                                        <i class="ti ti-file-type-pdf text-danger fs-2"></i>
-                                        <div>
-                                            <div class="fw-semibold">PDF Landscape (.pdf)</div>
-                                            <div class="small text-muted" style="font-size: 0.72rem;">Structured A3 landscape report</div>
-                                        </div>
-                                    </a>
-                                </li>
-                            </ul>
+
+                            <!-- More Filters Button with Counter Badge -->
+                            <button type="button" id="btn-more-course-filters" class="btn btn-outline-primary btn-icon px-3 position-relative btn-more-filters flex-shrink-0"
+                                    data-bs-toggle="modal" data-bs-target="#moreCourseFiltersModal" title="More Filters">
+                                <i class="ti ti-adjustments-horizontal fs-2"></i>
+                                <span id="activeCourseFilterBadge" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle d-none">0</span>
+                            </button>
+
+                            <!-- Reset Button -->
+                            <button type="button" id="btn-reset-course-filter" class="btn btn-outline-secondary btn-icon px-3 flex-shrink-0"
+                                    data-bs-toggle="tooltip" title="Reset Filters">
+                                <i class="ti ti-refresh fs-2"></i>
+                            </button>
+                        </div>
+
+                        <!-- Right Action Controls: Export Dropdown (Excel, CSV, PDF Landscape) -->
+                        <div class="course-filter-right-group d-flex align-items-center flex-shrink-0">
+                            <div class="dropdown">
+                                <button class="btn btn-outline-success dropdown-toggle rounded-3 px-3 d-inline-flex align-items-center gap-1"
+                                        type="button" id="courseExportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="ti ti-download me-1"></i> Export
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3" aria-labelledby="courseExportDropdown">
+                                    <li>
+                                        <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="javascript:void(0);" id="btn-export-course-excel">
+                                            <i class="ti ti-file-spreadsheet text-success fs-2"></i>
+                                            <div>
+                                                <div class="fw-semibold">Excel (.xlsx)</div>
+                                                <div class="small text-muted" style="font-size: 0.72rem;">Canonical 44-column spreadsheet</div>
+                                            </div>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="javascript:void(0);" id="btn-export-course-csv">
+                                            <i class="ti ti-file-text text-primary fs-2"></i>
+                                            <div>
+                                                <div class="fw-semibold">CSV (.csv)</div>
+                                                <div class="small text-muted" style="font-size: 0.72rem;">Standard comma-separated format</div>
+                                            </div>
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider my-1"></li>
+                                    <li>
+                                        <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="javascript:void(0);" id="btn-export-course-pdf">
+                                            <i class="ti ti-file-type-pdf text-danger fs-2"></i>
+                                            <div>
+                                                <div class="fw-semibold">PDF Landscape (.pdf)</div>
+                                                <div class="small text-muted" style="font-size: 0.72rem;">Structured A3 landscape report</div>
+                                            </div>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
                 </form>
@@ -730,9 +735,102 @@
         color: #e2e8f0 !important;
     }
 
+    /* Standardized Quick Filter Toolbar Controls */
+    .course-filter-toolbar {
+        min-height: 38px;
+    }
+
+    .course-filter-toolbar .form-control,
+    .course-filter-toolbar .form-select,
+    .course-filter-toolbar .btn {
+        height: 38px !important;
+        min-height: 38px !important;
+        max-height: 38px !important;
+        box-sizing: border-box !important;
+        border-radius: 8px !important;
+        font-size: 0.875rem !important;
+        vertical-align: middle !important;
+        margin: 0 !important;
+    }
+
+    .course-filter-toolbar .form-control {
+        padding: 0.4375rem 0.75rem !important;
+        line-height: 1.4285714 !important;
+    }
+
+    .course-filter-toolbar .form-select {
+        padding: 0.4375rem 2.25rem 0.4375rem 0.75rem !important;
+        line-height: 1.4285714 !important;
+    }
+
+    .course-filter-toolbar .btn-icon {
+        width: 38px !important;
+        min-width: 38px !important;
+        height: 38px !important;
+        min-height: 38px !important;
+        padding: 0 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border-radius: 8px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .course-filter-toolbar .btn-icon i {
+        font-size: 1.15rem !important;
+        line-height: 1 !important;
+    }
+
+    .course-filter-toolbar #courseExportDropdown {
+        height: 38px !important;
+        min-height: 38px !important;
+        padding: 0.4375rem 1rem !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border-radius: 8px !important;
+        line-height: 1.4285714 !important;
+        font-weight: 500 !important;
+        white-space: nowrap !important;
+    }
+
+    .course-filter-search {
+        width: 210px;
+        min-width: 170px;
+        max-width: 260px;
+        flex: 1 1 auto;
+    }
+
+    .course-filter-select {
+        width: 115px;
+        min-width: 110px;
+        flex-shrink: 0;
+    }
+
+    .course-filter-select-year {
+        width: 100px;
+        min-width: 95px;
+        flex-shrink: 0;
+    }
+
+    @media (max-width: 767.98px) {
+        .course-filter-left-group {
+            width: 100%;
+        }
+        .course-filter-search {
+            width: 100%;
+            max-width: 100%;
+        }
+        .course-filter-right-group {
+            width: 100%;
+            justify-content: flex-end;
+            margin-top: 0.25rem;
+        }
+    }
+
     .btn-icon {
-        width: 32px;
-        height: 32px;
+        width: 38px;
+        height: 38px;
         padding: 0;
         display: inline-flex;
         align-items: center;

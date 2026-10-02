@@ -751,9 +751,15 @@ class RecordOfflineQueryService
         $attendanceParam = strtolower(trim((string) ($filters['attendance'] ?? 'all')));
         if (filled($attendanceParam) && $attendanceParam !== 'all') {
             if ($attendanceParam === 'present' || $attendanceParam === '1' || $attendanceParam === 'yes') {
-                $query->where('otu.attendance', true);
+                $query->where(function ($q) {
+                    $q->where('otu.attendance', true)
+                      ->orWhere('otu.attendance', 1);
+                });
             } elseif ($attendanceParam === 'absent' || $attendanceParam === '0' || $attendanceParam === 'no') {
-                $query->where('otu.attendance', false);
+                $query->where(function ($q) {
+                    $q->where('otu.attendance', false)
+                      ->orWhere('otu.attendance', 0);
+                });
             }
         }
 
@@ -791,10 +797,28 @@ class RecordOfflineQueryService
             }
         }
 
+        // More Filter: Sub Classification
+        $subClassParam = trim((string) ($filters['sub_classification'] ?? ''));
+        if ($subClassParam !== '' && $subClassParam !== 'all') {
+            $query->where('ot.sub_classification', 'like', "%{$subClassParam}%");
+        }
+
         // More Filter: Category
         $categoryParam = trim((string) ($filters['category'] ?? 'all'));
         if (filled($categoryParam) && $categoryParam !== 'all') {
             $query->where('ot.category', $categoryParam);
+        }
+
+        // More Filter: Level
+        $levelParam = trim((string) ($filters['level'] ?? 'all'));
+        if (filled($levelParam) && $levelParam !== 'all') {
+            $query->where('ot.level', $levelParam);
+        }
+
+        // More Filter: Batch
+        $batchParam = trim((string) ($filters['batch'] ?? ''));
+        if ($batchParam !== '' && $batchParam !== 'all') {
+            $query->where('ot.batch', 'like', "%{$batchParam}%");
         }
 
         // More Filter: Certificate
@@ -824,6 +848,12 @@ class RecordOfflineQueryService
             }
         }
 
+        // More Filter: Sub Corporate KPI
+        $subKpiParam = trim((string) ($filters['sub_corporate_kpi'] ?? ''));
+        if ($subKpiParam !== '' && $subKpiParam !== 'all') {
+            $query->where('ot.sub_corporate_kpi', 'like', "%{$subKpiParam}%");
+        }
+
         // More Filter: Bond Status
         $bondParam = strtolower(trim((string) ($filters['bond_status'] ?? 'all')));
         if (filled($bondParam) && $bondParam !== 'all') {
@@ -838,16 +868,119 @@ class RecordOfflineQueryService
             }
         }
 
+        // More Filter: Bond End Date Range
+        $bondFromRaw = $filters['bond_end_from'] ?? ($filters['bond_end_date_from'] ?? null);
+        $bondToRaw = $filters['bond_end_to'] ?? ($filters['bond_end_date_to'] ?? null);
+        $bondFrom = self::parseDate(is_string($bondFromRaw) ? $bondFromRaw : null);
+        $bondTo = self::parseDate(is_string($bondToRaw) ? $bondToRaw : null);
+        if ($bondFrom && $bondTo) {
+            $query->whereBetween('otu.bond_end_date', [$bondFrom, $bondTo]);
+        } elseif ($bondFrom) {
+            $query->where('otu.bond_end_date', '>=', $bondFrom);
+        } elseif ($bondTo) {
+            $query->where('otu.bond_end_date', '<=', $bondTo);
+        }
+
+        // More Filter: Bond Amount Range
+        $bondAmtMin = $filters['bond_amount_min'] ?? null;
+        $bondAmtMax = $filters['bond_amount_max'] ?? null;
+        if (filled($bondAmtMin) && is_numeric($bondAmtMin)) {
+            $query->where('otu.bond_amount', '>=', (float) $bondAmtMin);
+        }
+        if (filled($bondAmtMax) && is_numeric($bondAmtMax)) {
+            $query->where('otu.bond_amount', '<=', (float) $bondAmtMax);
+        }
+
         // More Filter: Provider
         $providerParam = trim((string) ($filters['provider'] ?? 'all'));
         if (filled($providerParam) && $providerParam !== 'all') {
             $query->where('ot.provider', $providerParam);
         }
 
+        // More Filter: Sub Provider
+        $subProvParam = trim((string) ($filters['sub_provider'] ?? ''));
+        if ($subProvParam !== '' && $subProvParam !== 'all') {
+            $query->where('ot.sub_provider', 'like', "%{$subProvParam}%");
+        }
+
+        // More Filter: Provider Name
+        $provNameParam = trim((string) ($filters['provider_name'] ?? ''));
+        if ($provNameParam !== '' && $provNameParam !== 'all') {
+            $query->where('ot.provider_name', 'like', "%{$provNameParam}%");
+        }
+
         // More Filter: Delivery Method
         $deliveryParam = trim((string) ($filters['delivery_method'] ?? 'all'));
         if (filled($deliveryParam) && $deliveryParam !== 'all') {
             $query->where('ot.delivery_method', $deliveryParam);
+        }
+
+        // More Filter: Sub Delivery Method
+        $subDelivParam = trim((string) ($filters['sub_delivery_method'] ?? ''));
+        if ($subDelivParam !== '' && $subDelivParam !== 'all') {
+            $query->where('ot.sub_delivery_method', 'like', "%{$subDelivParam}%");
+        }
+
+        // More Filter: Venue
+        $venueParam = trim((string) ($filters['venue'] ?? ''));
+        if ($venueParam !== '' && $venueParam !== 'all') {
+            $query->where('ot.venue', 'like', "%{$venueParam}%");
+        }
+
+        // More Filter: Instructor
+        $instructorParam = trim((string) ($filters['instructor'] ?? ''));
+        if ($instructorParam !== '' && $instructorParam !== 'all') {
+            $query->where('ot.instructor', 'like', "%{$instructorParam}%");
+        }
+
+        // More Filter: Attendance Reason
+        $attReasonParam = trim((string) ($filters['attendance_reason'] ?? ''));
+        if ($attReasonParam !== '') {
+            $query->where('otu.attendance_reason', 'like', "%{$attReasonParam}%");
+        }
+
+        // More Filter: L1 Program
+        $l1Param = trim((string) ($filters['l1_program'] ?? ($filters['l1'] ?? '')));
+        if ($l1Param !== '') {
+            $query->where('otu.l1_program', 'like', "%{$l1Param}%");
+        }
+
+        // More Filter: L2 Numerical Range
+        $l2NumMin = $filters['l2_numerical_min'] ?? ($filters['l2_min'] ?? null);
+        $l2NumMax = $filters['l2_numerical_max'] ?? ($filters['l2_max'] ?? null);
+        if (filled($l2NumMin) && is_numeric($l2NumMin)) {
+            $query->where('otu.l2_numerical', '>=', (float) $l2NumMin);
+        }
+        if (filled($l2NumMax) && is_numeric($l2NumMax)) {
+            $query->where('otu.l2_numerical', '<=', (float) $l2NumMax);
+        }
+
+        // More Filter: L2 Verbal
+        $l2vParam = trim((string) ($filters['l2_verbal'] ?? ''));
+        if ($l2vParam !== '') {
+            $query->where('otu.l2_verbal', 'like', "%{$l2vParam}%");
+        }
+
+        // More Filter: L3 Numerical Range
+        $l3NumMin = $filters['l3_numerical_min'] ?? ($filters['l3_min'] ?? null);
+        $l3NumMax = $filters['l3_numerical_max'] ?? ($filters['l3_max'] ?? null);
+        if (filled($l3NumMin) && is_numeric($l3NumMin)) {
+            $query->where('otu.l3_numerical', '>=', (float) $l3NumMin);
+        }
+        if (filled($l3NumMax) && is_numeric($l3NumMax)) {
+            $query->where('otu.l3_numerical', '<=', (float) $l3NumMax);
+        }
+
+        // More Filter: L3 Verbal
+        $l3vParam = trim((string) ($filters['l3_verbal'] ?? ''));
+        if ($l3vParam !== '') {
+            $query->where('otu.l3_verbal', 'like', "%{$l3vParam}%");
+        }
+
+        // More Filter: PIC
+        $picParam = trim((string) ($filters['pic'] ?? ''));
+        if ($picParam !== '') {
+            $query->where('otu.pic', 'like', "%{$picParam}%");
         }
 
         return $query;

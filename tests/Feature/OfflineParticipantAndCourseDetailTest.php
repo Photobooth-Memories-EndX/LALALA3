@@ -1752,5 +1752,278 @@ class OfflineParticipantAndCourseDetailTest extends TestCase
         $this->assertEquals(1, $res->json('recordsFiltered'));
         $this->assertStringContainsString('Active Participant', $res->json('data')[0]['participant_name']);
     }
+
+    /**
+     * 55. Participant Detail Blade renders unified toolbar and More Filters with sections A-F without employee identity filters.
+     */
+    public function test_participant_detail_blade_toolbar_and_modal_structure(): void
+    {
+        $training = $this->createTraining();
+        $user = $this->createParticipantUser('Toolbar Structure Test User', 'NIP_TOOL_01');
+        $this->enrollParticipant($training, [
+            'user_id'     => $user->id,
+            'employee_id' => $user->id_emp,
+            'name'        => $user->name,
+        ]);
+
+        $response = $this->actingAs($this->admin)->get(
+            route('manage.record.offline.participant', $user->id)
+        );
+
+        $response->assertStatus(200);
+        $response->assertSee('participant-filter-toolbar');
+        $response->assertSee('participant-filter-left-group');
+        $response->assertSee('participant-filter-right-group');
+        $response->assertSee('participant-course-input');
+        $response->assertSee('participant-type-select');
+        $response->assertSee('participant-status-select');
+        $response->assertSee('participant-year-select');
+        $response->assertSee('participantExportDropdown');
+        $response->assertSee('A. Training Information', false);
+        $response->assertSee('B. Date & Duration', false);
+        $response->assertSee('C. Training Result', false);
+        $response->assertSee('D. Attendance', false);
+        $response->assertSee('E. Obligation / Service Bond', false);
+        $response->assertSee('F. Evaluation & Governance', false);
+
+        // Confirm employee identity filters are NOT present in the modal
+        $response->assertDontSee('name="job_position" id="modal-participant-job-position"');
+        $response->assertDontSee('name="team" id="modal-participant-team"');
+        $response->assertDontSee('name="department" id="modal-participant-department"');
+        $response->assertDontSee('name="company" id="modal-participant-company"');
+    }
+
+    /**
+     * 56. Participant granular filters in buildParticipantQuery and datatable work accurately.
+     */
+    public function test_participant_granular_filters_work_on_query_and_datatable(): void
+    {
+        $user = $this->createParticipantUser('Granular Filter User', 'NIP_GRAN_01');
+
+        $t1 = $this->createTraining([
+            'course_name'           => 'Strategic Leadership in Operations',
+            'main_classification'   => 'Leadership',
+            'sub_classification'    => 'Operational Leadership',
+            'level'                 => 'Advanced',
+            'batch'                 => 'Batch 5',
+            'delivery_method'       => 'Classroom',
+            'sub_delivery_method'   => 'Executive Workshop',
+            'provider'              => 'External',
+            'sub_provider'          => 'Global Consulting',
+            'provider_name'         => 'McKinsey Academy',
+            'counted_corporate_kpi' => true,
+            'sub_corporate_kpi'     => 'Strategic Operations',
+            'venue'                 => 'Main Ballroom',
+            'instructor'            => 'Dr. James Robinson',
+            'duration_seconds'      => 7200,
+            'start_date'            => '2026-07-01',
+            'finish_date'           => '2026-07-02',
+        ]);
+
+        $t2 = $this->createTraining([
+            'course_name'           => 'Basic Machine Maintenance',
+            'main_classification'   => 'Technical',
+            'sub_classification'    => 'Maintenance Basics',
+            'level'                 => 'Beginner',
+            'batch'                 => 'Batch 1',
+            'delivery_method'       => 'Hands-on',
+            'sub_delivery_method'   => 'Shop Floor',
+            'provider'              => 'Internal',
+            'sub_provider'          => 'Technical Center',
+            'provider_name'         => 'Plant Maintenance Division',
+            'counted_corporate_kpi' => false,
+            'sub_corporate_kpi'     => 'Safety Maintenance',
+            'venue'                 => 'Workshop Plant 2',
+            'instructor'            => 'Budi Santoso',
+            'duration_seconds'      => 1800,
+            'start_date'            => '2026-08-01',
+            'finish_date'           => '2026-08-02',
+        ]);
+
+        $this->enrollParticipant($t1, [
+            'user_id'           => $user->id,
+            'employee_id'       => $user->id_emp,
+            'progress'          => 100.0,
+            'learning_hours'    => 8.0,
+            'assessment_score'  => 92.5,
+            'certificate'       => 'Cert-12345',
+            'attendance'        => true,
+            'attendance_reason' => 'Attended fully',
+            'bond_status'       => 'Yes',
+            'bond_end_date'     => '2028-07-01',
+            'bond_amount'       => 15000000,
+            'l1_program'        => 'Highly Satisfied',
+            'l2_numerical'      => 92.5,
+            'l2_verbal'         => 'Distinction',
+            'l3_numerical'      => 88.0,
+            'l3_verbal'         => 'Implemented in Plant Operations',
+            'pic'               => 'Siti Rahma',
+        ]);
+
+        $this->enrollParticipant($t2, [
+            'user_id'           => $user->id,
+            'employee_id'       => $user->id_emp,
+            'progress'          => 40.0,
+            'learning_hours'    => 2.0,
+            'assessment_score'  => 65.0,
+            'certificate'       => 'No',
+            'attendance'        => false,
+            'attendance_reason' => 'Emergency Shift',
+            'bond_status'       => 'No',
+            'bond_end_date'     => null,
+            'bond_amount'       => null,
+            'l1_program'        => 'Fair',
+            'l2_numerical'      => 65.0,
+            'l2_verbal'         => 'Need Improvement',
+            'l3_numerical'      => 60.0,
+            'l3_verbal'         => 'Pending Follow-up',
+            'pic'               => 'Ahmad Dahlan',
+        ]);
+
+        $participantInfo = RecordOfflineQueryService::resolveParticipant($user->id);
+        $this->assertNotNull($participantInfo);
+
+        // Test sub_classification
+        $q1 = RecordOfflineQueryService::buildParticipantQuery($participantInfo, ['sub_classification' => 'Operational Leadership'])->get();
+        $this->assertCount(1, $q1);
+        $this->assertEquals('Strategic Leadership in Operations', $q1->first()->course_name);
+
+        // Test level & batch
+        $q2 = RecordOfflineQueryService::buildParticipantQuery($participantInfo, ['level' => 'Beginner', 'batch' => 'Batch 1'])->get();
+        $this->assertCount(1, $q2);
+        $this->assertEquals('Basic Machine Maintenance', $q2->first()->course_name);
+
+        // Test provider_name & venue
+        $q3 = RecordOfflineQueryService::buildParticipantQuery($participantInfo, ['provider_name' => 'McKinsey', 'venue' => 'Main Ballroom'])->get();
+        $this->assertCount(1, $q3);
+
+        // Test bond_status & bond_amount range
+        $q4 = RecordOfflineQueryService::buildParticipantQuery($participantInfo, ['bond_status' => 'yes', 'bond_amount_min' => 10000000])->get();
+        $this->assertCount(1, $q4);
+        $this->assertEquals('Strategic Leadership in Operations', $q4->first()->course_name);
+
+        // Test attendance_reason
+        $q5 = RecordOfflineQueryService::buildParticipantQuery($participantInfo, ['attendance_reason' => 'Emergency Shift'])->get();
+        $this->assertCount(1, $q5);
+        $this->assertEquals('Basic Machine Maintenance', $q5->first()->course_name);
+
+        // Test L1, L2, L3, PIC
+        $q6 = RecordOfflineQueryService::buildParticipantQuery($participantInfo, [
+            'l1_program'       => 'Highly Satisfied',
+            'l2_numerical_min' => 90,
+            'l2_verbal'        => 'Distinction',
+            'l3_numerical_min' => 85,
+            'l3_verbal'        => 'Implemented',
+            'pic'              => 'Siti Rahma',
+        ])->get();
+        $this->assertCount(1, $q6);
+
+        // Test via datatable endpoint
+        $resDt = $this->actingAs($this->admin)->getJson(
+            route('manage.record.offline.participant.datatable', $user->id) . '?' . http_build_query([
+                'provider_name' => 'McKinsey',
+                'bond_status'   => 'yes',
+                'draw'          => 1,
+            ])
+        );
+        $resDt->assertStatus(200);
+        $this->assertEquals(1, $resDt->json('recordsFiltered'));
+        $this->assertStringContainsString('Strategic Leadership in Operations', $resDt->json('data')[0]['course_name']);
+    }
+
+    /**
+     * 57. Participant exports respect active filters with exact query parity.
+     */
+    public function test_participant_exports_respect_filters_identically_across_all_formats(): void
+    {
+        $user = $this->createParticipantUser('Export Parity User', 'NIP_PARITY_01');
+
+        $t1 = $this->createTraining([
+            'course_name' => 'Matching Course Alpha',
+            'level'       => 'Advanced',
+            'instructor'  => 'Master Yoda',
+        ]);
+        $t2 = $this->createTraining([
+            'course_name' => 'Non-Matching Course Beta',
+            'level'       => 'Beginner',
+            'instructor'  => 'Luke Skywalker',
+        ]);
+
+        $this->enrollParticipant($t1, [
+            'user_id'          => $user->id,
+            'employee_id'      => $user->id_emp,
+            'assessment_score' => 95.0,
+            'progress'         => 100.0,
+        ]);
+        $this->enrollParticipant($t2, [
+            'user_id'          => $user->id,
+            'employee_id'      => $user->id_emp,
+            'assessment_score' => 60.0,
+            'progress'         => 50.0,
+        ]);
+
+        $filterParams = [
+            'level'      => 'Advanced',
+            'instructor' => 'Yoda',
+            'score_min'  => 90,
+        ];
+        $queryString = http_build_query($filterParams);
+
+        $participantInfo = RecordOfflineQueryService::resolveParticipant($user->id);
+        $this->assertNotNull($participantInfo);
+
+        // Base query returns exactly 1
+        $count = RecordOfflineQueryService::buildParticipantQuery($participantInfo, $filterParams)->count();
+        $this->assertEquals(1, $count);
+
+        // Excel export
+        $resExcel = $this->actingAs($this->admin)->get(
+            route('manage.record.offline.participant.export.excel', $user->id) . '?' . $queryString
+        );
+        $resExcel->assertStatus(200);
+
+        // CSV export
+        $resCsv = $this->actingAs($this->admin)->get(
+            route('manage.record.offline.participant.export.csv', $user->id) . '?' . $queryString
+        );
+        $resCsv->assertStatus(200);
+
+        // PDF export
+        $resPdf = $this->actingAs($this->admin)->get(
+            route('manage.record.offline.participant.export.pdf', $user->id) . '?' . $queryString
+        );
+        $resPdf->assertStatus(200);
+    }
+
+    /**
+     * 58. Participant query strictly preserves participant identity scoping under all filter conditions.
+     */
+    public function test_participant_filter_strictly_locks_to_participant_identity(): void
+    {
+        $user1 = $this->createParticipantUser('User Locked One', 'LCK00001');
+        $user2 = $this->createParticipantUser('User Locked Two', 'LCK00002');
+
+        $training = $this->createTraining([
+            'course_name' => 'Common Corporate Event',
+            'venue'       => 'Auditorium',
+        ]);
+
+        $this->enrollParticipant($training, [
+            'user_id'     => $user1->id,
+            'employee_id' => $user1->id_emp,
+        ]);
+        $this->enrollParticipant($training, [
+            'user_id'     => $user2->id,
+            'employee_id' => $user2->id_emp,
+        ]);
+
+        $participant1 = RecordOfflineQueryService::resolveParticipant($user1->id);
+        $this->assertNotNull($participant1);
+
+        $records1 = RecordOfflineQueryService::buildParticipantQuery($participant1, ['venue' => 'Auditorium'])->get();
+        $this->assertCount(1, $records1);
+        $this->assertEquals($user1->id, $records1->first()->user_id);
+        $this->assertEquals($user1->id_emp, $records1->first()->employee_id);
+    }
 }
 
