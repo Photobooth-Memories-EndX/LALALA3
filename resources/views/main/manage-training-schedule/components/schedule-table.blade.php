@@ -29,10 +29,19 @@
                         $barColor = $isFull ? '#ef4444' : ($remaining <= 10 ? '#f97316' : '#003b6d');
 
                         $catStyle = match($item->category) {
-                            'Technical Skill'     => 'background-color: #e0f2fe; color: #0284c7;',
-                            'Compliance & Safety' => 'background-color: #fef3c7; color: #b45309;',
-                            'Leadership'          => 'background-color: #f3e8ff; color: #7c3aed;',
-                            default               => 'background-color: #e0f2fe; color: #0369a1;',
+                            'Basic & Common Duties'             => 'background-color: #f1f5f9; color: #475569;',
+                            'Compliance', 'Compliance & Safety' => 'background-color: #fef3c7; color: #b45309;',
+                            'Innovation'                        => 'background-color: #ecfdf5; color: #047857;',
+                            'Job Functional', 'Technical', 'Technical Skill' => 'background-color: #e0f2fe; color: #0284c7;',
+                            'Language'                          => 'background-color: #fef2f2; color: #b91c1c;',
+                            'Leadership'                        => 'background-color: #f3e8ff; color: #7c3aed;',
+                            'Core Competency', 'General Competency' => 'background-color: #f0fdf4; color: #15803d;',
+                            'Maintenance'                       => 'background-color: #fff7ed; color: #c2410c;',
+                            'Quality'                           => 'background-color: #eff6ff; color: #1d4ed8;',
+                            'Safety'                            => 'background-color: #fef2f2; color: #dc2626;',
+                            'Environmental'                     => 'background-color: #f0fdf4; color: #166534;',
+                            'Soft Skill'                        => 'background-color: #faf5ff; color: #6b21a8;',
+                            default                             => 'background-color: #e0f2fe; color: #0369a1;',
                         };
 
                         $statusBadgeClass = match($item->status) {
@@ -57,7 +66,7 @@
                         data-id="{{ $item->id }}" 
                         data-category="{{ $item->category }}" 
                         data-status="{{ $dataStatus }}" 
-                        data-month="{{ (int)$startDate->format('n') }}"
+                        data-month="{{ (int)$startDate->format('n') }}" 
                         data-year="{{ $startDate->format('Y') }}" 
                         data-date="{{ $startDate->format('Y-m-d') }}" 
                         data-instructor="{{ $item->instructor }}" 
@@ -65,6 +74,9 @@
                         <td class="text-muted fw-semibold schedule-row-index">{{ method_exists($trainings, 'firstItem') && $trainings->firstItem() ? ($trainings->firstItem() + $loop->index) : $loop->iteration }}</td>
                         <td class="fw-bold text-dark text-start" style="min-width: 200px;">
                             <div class="fs-3 training-title-text">{{ $item->title }}</div>
+                            @if(!empty($item->sub_course_name))
+                                <div class="text-secondary small fw-normal">{{ $item->sub_course_name }}</div>
+                            @endif
                             <div class="text-muted extra-small font-monospace">Code: {{ $item->training_code ?? 'PTKP-TR-' . $item->id }}</div>
                         </td>
                         <td>

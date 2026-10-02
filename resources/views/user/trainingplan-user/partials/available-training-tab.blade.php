@@ -41,10 +41,21 @@
                 <div style="min-width: 130px; flex-shrink: 0;">
                     <select id="filterTrainingCategory" name="category" class="form-select rounded-3">
                         <option value="">All Category</option>
-                        <option value="Soft Skill" {{ request('category') === 'Soft Skill' ? 'selected' : '' }}>Soft Skill</option>
-                        <option value="Technical Skill" {{ request('category') === 'Technical Skill' ? 'selected' : '' }}>Technical Skill</option>
                         <option value="Compliance & Safety" {{ request('category') === 'Compliance & Safety' ? 'selected' : '' }}>Compliance & Safety</option>
+                        <option value="Core Competency" {{ request('category') === 'Core Competency' ? 'selected' : '' }}>Core Competency</option>
+                        <option value="Environmental" {{ request('category') === 'Environmental' ? 'selected' : '' }}>Environmental</option>
+                        <option value="General Competency" {{ request('category') === 'General Competency' ? 'selected' : '' }}>General Competency</option>
+                        <option value="Innovation" {{ request('category') === 'Innovation' ? 'selected' : '' }}>Innovation</option>
+                        <option value="Job Functional" {{ request('category') === 'Job Functional' ? 'selected' : '' }}>Job Functional</option>
                         <option value="Leadership" {{ request('category') === 'Leadership' ? 'selected' : '' }}>Leadership</option>
+                        <option value="Maintenance" {{ request('category') === 'Maintenance' ? 'selected' : '' }}>Maintenance</option>
+                        <option value="Quality" {{ request('category') === 'Quality' ? 'selected' : '' }}>Quality</option>
+                        <option value="Safety" {{ request('category') === 'Safety' ? 'selected' : '' }}>Safety</option>
+                        <option value="Soft Skill" {{ request('category') === 'Soft Skill' ? 'selected' : '' }}>Soft Skill</option>
+                        <option value="Technical" {{ request('category') === 'Technical' ? 'selected' : '' }}>Technical</option>
+                        <option value="Basic & Common Duties" {{ request('category') === 'Basic & Common Duties' ? 'selected' : '' }}>Basic & Common Duties</option>
+                        <option value="Compliance" {{ request('category') === 'Compliance' ? 'selected' : '' }}>Compliance</option>
+                        <option value="Language" {{ request('category') === 'Language' ? 'selected' : '' }}>Language</option>
                     </select>
                 </div>
 
@@ -130,10 +141,19 @@
                         $myRegStatus = $myReg ? $myReg->status : null;
 
                         $catStyle = match($item->category) {
-                            'Technical Skill'     => 'background-color: #e0f2fe; color: #0284c7;',
-                            'Compliance & Safety' => 'background-color: #fef3c7; color: #b45309;',
-                            'Leadership'          => 'background-color: #f3e8ff; color: #7c3aed;',
-                            default               => 'background-color: #e0f2fe; color: #0369a1;',
+                            'Basic & Common Duties'             => 'background-color: #f1f5f9; color: #475569;',
+                            'Compliance', 'Compliance & Safety' => 'background-color: #fef3c7; color: #b45309;',
+                            'Innovation'                        => 'background-color: #ecfdf5; color: #047857;',
+                            'Job Functional', 'Technical', 'Technical Skill' => 'background-color: #e0f2fe; color: #0284c7;',
+                            'Language'                          => 'background-color: #fef2f2; color: #b91c1c;',
+                            'Leadership'                        => 'background-color: #f3e8ff; color: #7c3aed;',
+                            'Core Competency', 'General Competency' => 'background-color: #f0fdf4; color: #15803d;',
+                            'Maintenance'                       => 'background-color: #fff7ed; color: #c2410c;',
+                            'Quality'                           => 'background-color: #eff6ff; color: #1d4ed8;',
+                            'Safety'                            => 'background-color: #fef2f2; color: #dc2626;',
+                            'Environmental'                     => 'background-color: #f0fdf4; color: #166534;',
+                            'Soft Skill'                        => 'background-color: #faf5ff; color: #6b21a8;',
+                            default                             => 'background-color: #e0f2fe; color: #0369a1;',
                         };
 
                         $statusBadgeClass = match($item->status) {
@@ -216,7 +236,7 @@
                                 {{ $item->status }}
                             </span>
                         </td>
-                        <td class="text-center align-middle pe-4">
+                        <!-- <td class="text-center align-middle pe-4">
                             @if ($myRegStatus === 'Pending')
                                 <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-3 py-1-5 fw-semibold d-inline-flex align-items-center gap-1">
                                     <i class="ti ti-clock"></i>
@@ -254,7 +274,7 @@
                                     <span>Full</span>
                                 </button>
                             @endif
-                        </td>
+                        </td> -->
                     </tr>
                 @empty
                     <tr>

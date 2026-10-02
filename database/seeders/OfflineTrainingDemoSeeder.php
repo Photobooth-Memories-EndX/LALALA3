@@ -238,7 +238,7 @@ class OfflineTrainingDemoSeeder extends Seeder
             // 1. Leadership Development Program
             [
                 'title'               => 'Leadership Development Program',
-                'category'            => 'Soft Skill',
+                'category'            => 'Leadership',
                 'training_code'       => 'PTKP-LDP-01',
                 'instructor'          => 'Dr. Hendra Wijaya, M.M.',
                 'location'            => 'Training Room Building A, 2nd Fl.',
@@ -276,7 +276,7 @@ class OfflineTrainingDemoSeeder extends Seeder
             // 2. Excel Advanced for Data Analysis
             [
                 'title'               => 'Excel Advanced for Data Analysis',
-                'category'            => 'Technical Skill',
+                'category'            => 'Job Functional',
                 'training_code'       => 'PTKP-EXC-02',
                 'instructor'          => 'Bambang Sujarwo, S.Kom.',
                 'location'            => 'Computer Lab 2, 3rd Fl.',
@@ -314,7 +314,7 @@ class OfflineTrainingDemoSeeder extends Seeder
             // 3. K3 & Safety Awareness in Factory
             [
                 'title'               => 'K3 & Safety Awareness in Factory',
-                'category'            => 'Compliance & Safety',
+                'category'            => 'Compliance',
                 'training_code'       => 'PTKP-SAF-03',
                 'instructor'          => 'Ir. Agus Priyono, CSP',
                 'location'            => 'Auditorium Krakatau Posco',
@@ -352,7 +352,7 @@ class OfflineTrainingDemoSeeder extends Seeder
             // 4. Effective Business Communication
             [
                 'title'               => 'Effective Business Communication',
-                'category'            => 'Soft Skill',
+                'category'            => 'Basic & Common Duties',
                 'training_code'       => 'PTKP-COMM-04',
                 'instructor'          => 'Citra Lestari, M.Psi.',
                 'location'            => 'Meeting Room Bintang 1',

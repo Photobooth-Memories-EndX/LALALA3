@@ -146,9 +146,11 @@
                 <div style="min-width: 130px; flex-shrink: 0;">
                     <select id="trackingCategorySelect" class="form-select rounded-3 bg-white">
                         <option value="">All Category</option>
-                        <option value="Soft Skill">Soft Skill</option>
-                        <option value="Technical Skill">Technical Skill</option>
-                        <option value="Compliance & Safety">Compliance & Safety</option>
+                        <option value="Basic & Common Duties">Basic & Common Duties</option>
+                        <option value="Compliance">Compliance</option>
+                        <option value="Innovation">Innovation</option>
+                        <option value="Job Functional">Job Functional</option>
+                        <option value="Language">Language</option>
                         <option value="Leadership">Leadership</option>
                     </select>
                 </div>
