@@ -95,7 +95,7 @@ class OfflineTrainingCreateService
             } elseif (!$kpiYear) {
                 $kpiYear = (int) date('Y');
             }
-            $subKpi = $kpiYear ? (string) $kpiYear : $this->normalizeString($raw['sub_corporate_kpi'] ?? null);
+            $subKpi = !empty($raw['sub_corporate_kpi']) ? $this->normalizeString($raw['sub_corporate_kpi']) : ($kpiYear ? (string) $kpiYear : null);
         } else {
             $countedKpi = false;
             $kpiYear = null;

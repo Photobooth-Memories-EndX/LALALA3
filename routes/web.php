@@ -336,6 +336,18 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
     Route::group(['middleware' => 'mpermission:category_classification'], function () {
         Route::get('classification/search-autocomplete', [ClassificationController::class, 'autocompleteSearch'])->name('manage.classification.autocomplete');
         Route::get('classification/autocomplete', [ClassificationController::class, 'autocompleteSearch']);
+
+        // Option Management routes
+        Route::prefix('classification/options')->name('manage.classification.options.')->group(function () {
+            Route::post('/', [ClassificationController::class, 'storeOption'])->name('store');
+            Route::get('{id}', [ClassificationController::class, 'getOption'])->name('show');
+            Route::put('{id}', [ClassificationController::class, 'updateOption'])->name('update');
+            Route::patch('{id}/toggle-status', [ClassificationController::class, 'toggleOptionStatus'])->name('toggle-status');
+            Route::get('{id}/usage', [ClassificationController::class, 'checkOptionUsage'])->name('usage');
+            Route::delete('{id}', [ClassificationController::class, 'destroyOption'])->name('destroy');
+            Route::get('parents/{type}', [ClassificationController::class, 'getParentOptions'])->name('parents');
+        });
+
         Route::resource('classification', ClassificationController::class)->names([
             'index' => 'manage.classification.index',
             'create' => 'manage.classification.create',
