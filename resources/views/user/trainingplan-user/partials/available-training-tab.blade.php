@@ -216,7 +216,7 @@
                                 {{ $item->status }}
                             </span>
                         </td>
-                        <td class="text-center align-middle pe-4">
+                        <!-- <td class="text-center align-middle pe-4">
                             @if ($myRegStatus === 'Pending')
                                 <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-3 py-1-5 fw-semibold d-inline-flex align-items-center gap-1">
                                     <i class="ti ti-clock"></i>
@@ -254,7 +254,7 @@
                                     <span>Full</span>
                                 </button>
                             @endif
-                        </td>
+                        </td> -->
                     </tr>
                 @empty
                     <tr>
