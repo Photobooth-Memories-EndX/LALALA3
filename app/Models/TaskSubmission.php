@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Model TaskSubmission — disesuaikan dengan tabel `task_submissions`
@@ -30,6 +31,18 @@ class TaskSubmission extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /** Jawaban user per field (1 submission = banyak answer). */
+    public function answers(): HasMany
+    {
+        return $this->hasMany(TaskSubmissionAnswer::class, 'submission_id');
+    }
+
+    /** Jawaban untuk field tertentu (keyed by task_field_id biar gampang di view). */
+    public function answersByField()
+    {
+        return $this->answers->keyBy('task_field_id');
     }
 
     // ── Scope ────────────────────────────────────────────────────────────

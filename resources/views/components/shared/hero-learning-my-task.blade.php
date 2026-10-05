@@ -37,30 +37,30 @@
                 <div class="learning-hero-ds-panel learning-hero-ds-panel--grid" role="group"
                     aria-label="My task statistics">
                     <div class="learning-hero-ds-card learning-hero-ds-card--primary">
-                        <span class="learning-hero-ds-label">Total Task</span>
+                        <span class="learning-hero-ds-label">Total Tasks</span>
                         <strong class="learning-hero-ds-value">
-                            {{ $taskStats->get('total task', '—') }}
+                            {{ $taskStats->get('total tasks', '—') }}
                         </strong>
                     </div>
 
                     <div class="learning-hero-ds-card learning-hero-ds-card--warning">
-                        <span class="learning-hero-ds-label">Belum Dikerjakan</span>
+                        <span class="learning-hero-ds-label">Not Started</span>
                         <strong class="learning-hero-ds-value">
-                            {{ $taskStats->get('belum dikerjakan', '—') }}
+                            {{ $taskStats->get('not started', '—') }}
                         </strong>
                     </div>
 
                     <div class="learning-hero-ds-card learning-hero-ds-card--success">
-                        <span class="learning-hero-ds-label">Selesai</span>
+                        <span class="learning-hero-ds-label">Completed</span>
                         <strong class="learning-hero-ds-value">
-                            {{ $taskStats->get('selesai', '—') }}
+                            {{ $taskStats->get('completed', '—') }}
                         </strong>
                     </div>
 
                     <div class="learning-hero-ds-card learning-hero-ds-card--danger">
-                        <span class="learning-hero-ds-label">Terlambat</span>
+                        <span class="learning-hero-ds-label">Overdue</span>
                         <strong class="learning-hero-ds-value">
-                            {{ $taskStats->get('terlambat', '—') }}
+                            {{ $taskStats->get('overdue', '—') }}
                         </strong>
                     </div>
                 </div>

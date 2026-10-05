@@ -68,8 +68,6 @@
 
 @include('user.playlist.components.view-hero')
 
-            @include('user.playlist.components.view-hero')
-
             <div class="playlist-learning-shell">
                 <button type="button"
                         class="restore-toggle-btn restore-left"
@@ -104,6 +102,8 @@
                             'content_all' => $content_all,
                             'playlist' => $playlist,
                         ])
+                        @include('user.playlist.components.view-course-tasks')
+
                         @include('user.playlist.components.view-content-info')
 
                         @if ($canUsePlaylistDebug)

@@ -1,4 +1,3 @@
-php
 <?php
 
 use Illuminate\Support\Facades\Route;
@@ -425,7 +424,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
     });
 
     Route::group(['middleware' => 'mpermission:playlist_learning_path'], function () {
-        Route::get('playlist/search-autocomplete', [TrainingPlanController::class, 'autocompleteSearch'])->name('manage.trainingplan.autocomplete');
+        Route::get('playlist/search-autocomplete', [TrainingPlanController::class, 'autocompleteSearch'])->name('manage.playlist.autocomplete');
         Route::get('playlist/{playlist}/order', [TrainingPlanController::class, 'order'])->name('manage.playlist.order');
         Route::get('playlist-thumbnail-test', [TrainingPlanController::class, 'thumbnailTest'])->name('playlist.thumbnailTest');
         Route::post('playlist/synchronize-durations', [TrainingPlanController::class, 'synchronizeDurations'])->name('manage.playlist.synchronize-durations');
@@ -456,6 +455,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
         Route::get('learning', [LearningManageController::class, 'index'])->name('learning.manage.index');
         Route::get('learning/all', [LearningManageController::class, 'all'])->name('learning.manage.all');
         Route::get('learning/category/{slug}', [LearningManageController::class, 'category'])->name('learning.manage.category');
+        Route::get('learning/manage.category');
         Route::get('learning/content/{slug}', [LearningManageController::class, 'content'])->name('learning.manage.content');
         Route::get('learning/record-detail/{type}/{id}', [LearningManageController::class, 'recordDetail'])->name('learning.manage.record-detail');
         Route::match(['put', 'patch'], 'learning/record/{type}/{id}', [LearningManageController::class, 'updateRecord'])->name('learning.manage.record.update');
@@ -467,11 +467,14 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
     // Permission sendiri: task_management (terpisah dari learning_management)
     Route::group(['middleware' => 'mpermission:task_management'], function () {
         Route::prefix('task')->name('manage.task.')->group(function () {
-            // Langkah 1: pilih training plan (course)
+            // Dashboard: induk (playlist / content / offline training) yang punya task
             Route::get('/', [TaskManageController::class, 'index'])->name('index');
 
-            // Langkah 2: daftar task milik satu training plan
-            Route::get('/plan/{trainingPlan}', [TaskManageController::class, 'planTasks'])->name('plan');
+            // AJAX: dropdown + search induk untuk form create/edit
+            Route::get('parents/{type}', [TaskManageController::class, 'parentOptions'])->name('parents');
+
+            // Daftar task milik satu induk
+            Route::get('parent/{parentType}/{parentId}', [TaskManageController::class, 'parentTasks'])->name('parent');
 
             Route::get('/create', [TaskManageController::class, 'create'])->name('create');
             Route::post('/', [TaskManageController::class, 'store'])->name('store');
@@ -501,13 +504,13 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
             Route::post('/calculate-selected', [ContentUserLearningHourController::class, 'calculateSelected'])->name('calculate-selected');
             Route::post('/recalculate-selected', [ContentUserLearningHourController::class, 'recalculateSelected'])->name('recalculate-selected');
             Route::post('/batch/start', [ContentUserLearningHourController::class, 'startBatch'])->name('batch.start');
-            Route::post('/batch/process', [ContentUserLearningHourController::class, 'processBatch'])->name('batch.process');
+            Route::post('/batch/process', [ContentUserLearningHourController::class, 'processBatch'])->name('process-batch');
         });
 
         Route::prefix('learning-hours/playlist-content-user')->name('manage.learning-hours.playlist-content-user.')->group(function () {
             Route::get('/', [PlaylistContentUserLearningHourController::class, 'index'])->name('index');
             Route::get('/datatable', [PlaylistContentUserLearningHourController::class, 'datatable'])->name('datatable');
-            Route::get('/statistics', [PlaylistContentUserLearningHourController::class, 'statistics'])->name('statistics');
+            Route::get('/statistics', [ContentUserLearningHourController::class, 'statistics'])->name('statistics');
             Route::post('/calculate', [PlaylistContentUserLearningHourController::class, 'calculate'])->name('calculate');
         });
 
@@ -518,7 +521,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
             Route::get('/status/{executionId}', [PlaylistProgressDryRunController::class, 'status'])->name('status');
         });
     });
-}); // <- INI YANG TADI KURANG! Penutup group prefix 'manage'
+});
 
 /*
 |--------------------------------------------------------------------------

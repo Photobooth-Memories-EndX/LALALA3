@@ -1,5 +1,5 @@
 {{-- resources/views/manage/task/submissions.blade.php --}}
-{{-- Review submission: admin melihat pengumpulan user, unduh file, tandai selesai. --}}
+{{-- Review submissions: admin views user answers per question, downloads files, marks complete. --}}
 @extends('layouts.sidebar-master')
 
 @section('content')
@@ -10,14 +10,26 @@
                     <div class="page-pretitle">
                         <a href="{{ route('manage.task.index') }}">Task Management</a>
                         &nbsp;/&nbsp;
-                        <a href="{{ route('manage.task.plan', $task->trainingPlan) }}">{{ $task->trainingPlan->title }}</a>
+                        <a href="{{ route('manage.task.parent', $task->parentRouteParams()) }}">{{ $task->parentName() }}</a>
                     </div>
-                    <h2 class="page-title">Submission: {{ $task->title }}</h2>
+                    <h2 class="page-title">Submissions: {{ $task->title }}</h2>
                     <div class="text-muted">
+                        <span class="badge bg-primary-lt text-primary">{{ $task->typeLabel() }}</span>
                         @if ($task->deadline)
-                            Deadline: {{ $task->deadline->format('d M Y H:i') }}
+                            <span class="ms-2">Deadline: {{ $task->deadline->format('d M Y H:i') }}</span>
                         @else
-                            Tanpa deadline
+                            <span class="ms-2">No deadline</span>
+                        @endif
+                        @if ($task->isCourseAssignment())
+                            <span class="ms-2">·
+                                @if ($task->link_type === 'lms' && $task->linkedPlan)
+                                    Target: {{ $task->linkedPlan->title }}
+                                @elseif ($task->external_url)
+                                    Target: <a href="{{ $task->external_url }}" target="_blank">{{ Str::limit($task->external_url, 50) }}</a>
+                                @endif
+                            </span>
+                        @else
+                            <span class="ms-2">· {{ $task->fields->count() }} questions</span>
                         @endif
                     </div>
                 </div>
@@ -33,9 +45,9 @@
 
             <form method="GET" class="mb-3">
                 <select name="status" class="form-select w-auto d-inline-block" onchange="this.form.submit()">
-                    <option value="">Semua status</option>
-                    <option value="pending" @selected(request('status') === 'pending')>Menunggu koreksi</option>
-                    <option value="completed" @selected(request('status') === 'completed')>Selesai</option>
+                    <option value="">All statuses</option>
+                    <option value="pending" @selected(request('status') === 'pending')>Pending review</option>
+                    <option value="completed" @selected(request('status') === 'completed')>Completed</option>
                 </select>
             </form>
 
@@ -45,15 +57,18 @@
                         <thead>
                             <tr>
                                 <th>User</th>
-                                <th>Dikumpulkan</th>
-                                <th>Jawaban / File</th>
+                                <th>Submitted</th>
+                                <th>Answers per Question</th>
                                 <th>Status</th>
-                                <th>Nilai</th>
-                                <th class="w-1">Aksi</th>
+                                <th>Score</th>
+                                <th class="w-1">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse ($submissions as $submission)
+                                @php
+                                    $answersByField = $submission->answers->keyBy('task_field_id');
+                                @endphp
                                 <tr>
                                     <td>
                                         <div class="fw-bold">{{ $submission->user?->name ?? 'User #' . $submission->user_id }}</div>
@@ -62,27 +77,66 @@
                                     <td>
                                         {{ $submission->submitted_at?->format('d M Y H:i') ?? '-' }}
                                         @if ($task->deadline && $submission->submitted_at && $submission->submitted_at->gt($task->deadline))
-                                            <span class="badge bg-danger ms-1">Terlambat</span>
+                                            <span class="badge bg-danger ms-1">Late</span>
                                         @endif
                                     </td>
-                                    <td>
-                                        @if ($submission->answer)
-                                            <div class="text-muted small mb-1">{{ Str::limit($submission->answer, 120) }}</div>
-                                        @endif
-                                        @if ($submission->file_path)
-                                            <a href="{{ Storage::url($submission->file_path) }}" target="_blank"
-                                                class="btn btn-sm btn-outline-secondary">
-                                                <i class="ti ti-download"></i> Unduh file
-                                            </a>
+                                    <td style="min-width: 260px;">
+                                        @if ($task->isCourseAssignment())
+                                            <span class="text-muted small">
+                                                <i class="ti ti-check me-1"></i>User confirmed completing the linked course.
+                                            </span>
+                                        @elseif ($task->fields->isNotEmpty())
+                                            @foreach ($task->fields as $field)
+                                                @php $answer = $answersByField->get($field->id); @endphp
+                                                <div class="mb-2">
+                                                    <div class="fw-semibold small">
+                                                        {{ $field->label }}
+                                                        @if ($field->required)
+                                                            <span class="text-danger">*</span>
+                                                        @endif
+                                                        @if ($task->isAssessment() && $field->isChoice())
+                                                            @php $ok = $answer && $answer->answer_text === $field->correct_answer; @endphp
+                                                            <span class="badge {{ $ok ? 'bg-success' : 'bg-danger' }} ms-1">
+                                                                {{ $ok ? 'Correct' : 'Wrong' }}
+                                                            </span>
+                                                        @endif
+                                                    </div>
+                                                    @if ($answer && $answer->file_path)
+                                                        <a href="{{ Storage::url($answer->file_path) }}" target="_blank"
+                                                            class="btn btn-sm btn-outline-secondary">
+                                                            <i class="ti ti-download"></i> Download file
+                                                        </a>
+                                                        <div class="text-muted small">{{ basename($answer->file_path) }}</div>
+                                                    @elseif ($answer && $answer->answer_text)
+                                                        <div class="text-muted small">{{ Str::limit($answer->answer_text, 150) }}</div>
+                                                        @if ($task->isAssessment() && $field->isChoice() && !$ok)
+                                                            <div class="text-success small">Correct answer: {{ $field->correct_answer }}</div>
+                                                        @endif
+                                                    @else
+                                                        <span class="text-muted small">— not answered —</span>
+                                                    @endif
+                                                </div>
+                                            @endforeach
                                         @else
-                                            <span class="text-muted">-</span>
+                                            {{-- Fallback for legacy data (before the Google Form revision) --}}
+                                            @if ($submission->answer)
+                                                <div class="text-muted small mb-1">{{ Str::limit($submission->answer, 120) }}</div>
+                                            @endif
+                                            @if ($submission->file_path)
+                                                <a href="{{ Storage::url($submission->file_path) }}" target="_blank"
+                                                    class="btn btn-sm btn-outline-secondary">
+                                                    <i class="ti ti-download"></i> Download file
+                                                </a>
+                                            @else
+                                                <span class="text-muted">-</span>
+                                            @endif
                                         @endif
                                     </td>
                                     <td>
                                         @if ($submission->status === 'completed')
-                                            <span class="badge bg-success">Selesai</span>
+                                            <span class="badge bg-success">Completed</span>
                                         @else
-                                            <span class="badge bg-info">Menunggu koreksi</span>
+                                            <span class="badge bg-info">Pending review</span>
                                         @endif
                                     </td>
                                     <td>
@@ -99,31 +153,31 @@
                                         @endif
                                     </td>
                                     <td>
-                                        @if ($submission->status !== 'completed')
-                                            <form action="{{ route('manage.task.submissions.complete', [$task, $submission]) }}"
-                                                method="POST" style="min-width: 220px;"
-                                                onsubmit="return confirm('Tandai submission ini selesai?')">
-                                                @csrf
-                                                <div class="input-group input-group-sm mb-2">
-                                                    <span class="input-group-text">Nilai</span>
-                                                    <input type="number" name="score" class="form-control"
-                                                        min="0" max="100" placeholder="0–100">
-                                                </div>
-                                                <textarea name="feedback" rows="2" class="form-control form-control-sm mb-2"
-                                                    placeholder="Feedback untuk user (opsional)"></textarea>
-                                                <button class="btn btn-sm btn-success w-100">
-                                                    <i class="ti ti-check"></i> Tandai selesai
-                                                </button>
-                                            </form>
-                                        @else
-                                            <span class="text-muted">-</span>
-                                        @endif
+                                        {{-- Score/feedback form: marks pending submissions complete,
+                                            and lets admin adjust scores (e.g. quiz auto-scores). --}}
+                                        <form action="{{ route('manage.task.submissions.complete', [$task, $submission]) }}"
+                                            method="POST" style="min-width: 220px;"
+                                            onsubmit="return confirm('{{ $submission->status !== 'completed' ? 'Mark this submission as complete?' : 'Update the score/feedback?' }}')">
+                                            @csrf
+                                            <div class="input-group input-group-sm mb-2">
+                                                <span class="input-group-text">Score</span>
+                                                <input type="number" name="score" class="form-control"
+                                                    min="0" max="100" placeholder="0–100"
+                                                    value="{{ old('score', $submission->score) }}">
+                                            </div>
+                                            <textarea name="feedback" rows="2" class="form-control form-control-sm mb-2"
+                                                placeholder="Feedback for user (optional)">{{ old('feedback', $submission->feedback) }}</textarea>
+                                            <button class="btn btn-sm {{ $submission->status !== 'completed' ? 'btn-success' : 'btn-outline-primary' }} w-100">
+                                                <i class="ti ti-check"></i>
+                                                {{ $submission->status !== 'completed' ? 'Mark as complete' : 'Update score' }}
+                                            </button>
+                                        </form>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
                                     <td colspan="6" class="text-center text-muted py-4">
-                                        Belum ada user yang mengumpulkan jawaban.
+                                        No submissions yet.
                                     </td>
                                 </tr>
                             @endforelse
@@ -132,8 +186,8 @@
                 </div>
             </div>
 
-            <a href="{{ route('manage.task.plan', $task->trainingPlan) }}" class="btn btn-outline-secondary mt-3">
-                <i class="ti ti-arrow-left"></i> Kembali ke daftar task
+            <a href="{{ route('manage.task.parent', $task->parentRouteParams()) }}" class="btn btn-outline-secondary mt-3">
+                <i class="ti ti-arrow-left"></i> Back to task list
             </a>
         </div>
     </div>

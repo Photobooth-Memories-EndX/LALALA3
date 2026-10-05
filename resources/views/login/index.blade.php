@@ -71,10 +71,10 @@
                 </a>
             </div>
             <div class="card card-md login-card">
-                <button type="button"
-                        class="btn login-theme-toggle"
-                        id="loginThemeToggle"
-                        aria-label="Switch to dark mode"
+                <button type="button" 
+                        class="btn login-theme-toggle" 
+                        id="loginThemeToggle" 
+                        aria-label="Switch to dark mode" 
                         title="Toggle theme (Dark / Light)">
                     <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-moon theme-icon-moon" width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
@@ -94,7 +94,7 @@
                     <div class="login-header-row mb-2">
                         <h2 class="h2 text-center mb-0 fw-bold login-title text-dark" style="letter-spacing: -0.5px;">Corporate Learning Hub</h2>
                     </div>
-
+                    
                     <!-- Tagline tambahan -->
                     <div class="tagline-subtext fs-5 fw-semibold text-center mb-3" style="font-size: 0.95rem !important;">
                         <span class="tagline-open-mind">Open Mind</span>
@@ -107,7 +107,7 @@
                     <form action="{{ route('authuser') }}" id="form-authentication" method="post" autocomplete="off" novalidate>
                         @csrf
                         <input type="hidden" name="submit_type" id="submit-type" value="login">
-
+                        
                         <div class="mb-3">
                             <label for="id-emp" class="form-label fw-medium text-secondary">Employee ID</label>
                             <input type="text" name="id_emp" class="form-control form-control-lg" id="id-emp" placeholder="Enter your employee ID" @if (session()->has('id-emp'))
@@ -212,7 +212,7 @@
             $resModal.find('#assessmentResultModalPassingGrade').text(passingGradeVal);
 
             // Single Status Badge
-            var badgeHtml = isPassed
+            var badgeHtml = isPassed 
                 ? '<span class="badge bg-success-subtle text-success px-3 py-2 fs-6 rounded-pill fw-bold"><i class="ti ti-check me-1"></i>Passed</span>'
                 : '<span class="badge bg-danger-subtle text-danger px-3 py-2 fs-6 rounded-pill fw-bold"><i class="ti ti-x me-1"></i>Failed</span>';
             $resModal.find('#assessmentResultModalBadgeContainer').html(badgeHtml);
@@ -239,8 +239,8 @@
             if (isGlobal) {
                 $resModal.find('#assessmentResultModalBatchRow').removeClass('d-none');
                 $resModal.find('#assessmentResultModalAttemptRow').addClass('d-none');
-                var batchDisplay = response.assessment_batch && response.assessment_batch !== '-'
-                    ? (String(response.assessment_batch).toLowerCase().indexOf('batch') !== -1 ? response.assessment_batch : 'Batch ' + response.assessment_batch)
+                var batchDisplay = response.assessment_batch && response.assessment_batch !== '-' 
+                    ? (String(response.assessment_batch).toLowerCase().indexOf('batch') !== -1 ? response.assessment_batch : 'Batch ' + response.assessment_batch) 
                     : '-';
                 $resModal.find('#assessmentResultModalBatch').text(batchDisplay);
             } else {
