@@ -2,7 +2,7 @@
     $user = auth()->user();
     $ongoingCourseVal = (int) ($ongoingCourse ?? 84);
     $completedCourseVal = (int) ($completedCourse ?? 58);
-    $totalCourseVal = $ongoingCourseVal + $completedCourseVal;
+    $totalCourseVal = (int) ($totalCourse ?? ($ongoingCourseVal + $completedCourseVal));
     $learningHours = $learningHours ?? 20.8;
 
     $teamName = $user?->team ?? $user?->department ?? '';

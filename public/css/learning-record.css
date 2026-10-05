@@ -1344,4 +1344,135 @@ body.dark-mode #recordFilterBar .fast-filter-toolbar #recordMoreFiltersCount {
     border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 
+/* 13. Secondary Navigation: Learning Mode Switch (Shared: Ongoing & Record) */
+.learning-filter-heading,
+.record-filter-heading {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 0;
+}
+
+.learning-mode-switch,
+.record-mode-switch {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex: 0 0 auto;
+    flex-wrap: wrap;
+    gap: 8px;
+    white-space: nowrap;
+    width: 100%;
+    margin: 16px 0 0;
+}
+
+.learning-mode-switch .learning-mode-btn,
+.record-mode-switch .record-mode-btn {
+    width: 104px;
+    min-width: 104px;
+    flex: 0 1 104px;
+    gap: 7px;
+    padding: 0 14px;
+    position: relative;
+    display: inline-flex;
+    height: 40px;
+    min-height: 40px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px !important;
+    line-height: 1;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.15s ease-in-out;
+}
+
+.learning-mode-switch .learning-mode-btn > i,
+.record-mode-switch .record-mode-btn > i {
+    margin: 0 !important;
+    font-size: 18px;
+    line-height: 1;
+}
+
+.learning-mode-switch .learning-mode-btn.btn-primary,
+.learning-mode-switch .learning-mode-btn.active,
+.record-mode-switch .record-mode-btn.btn-primary,
+.record-mode-switch .record-mode-btn.active {
+    border-color: var(--learning-btn-primary, #0f5e9c) !important;
+    background: var(--learning-btn-primary, #0f5e9c) !important;
+    color: #fff !important;
+    box-shadow: 0 3px 8px rgba(15, 94, 156, .2);
+}
+
+.learning-mode-switch .learning-mode-btn.btn-outline-primary,
+.record-mode-switch .record-mode-btn.btn-outline-primary {
+    border-color: rgba(15, 94, 156, .48) !important;
+    background: var(--tblr-bg-surface, #fff) !important;
+    color: var(--learning-btn-primary, #0f5e9c) !important;
+    box-shadow: none;
+}
+
+.learning-mode-switch .learning-mode-btn.btn-outline-primary:hover,
+.learning-mode-switch .learning-mode-btn.btn-outline-primary:focus-visible,
+.record-mode-switch .record-mode-btn.btn-outline-primary:hover,
+.record-mode-switch .record-mode-btn.btn-outline-primary:focus-visible {
+    border-color: var(--learning-btn-primary, #0f5e9c) !important;
+    background: rgba(15, 94, 156, .08) !important;
+    color: var(--learning-btn-primary-hover, #0b4f84) !important;
+}
+
+/* Mobile horizontal scrolling for secondary navigation */
+@media (max-width: 575.98px) {
+    .learning-mode-switch,
+    .record-mode-switch {
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 4px;
+        width: 100%;
+        margin-top: 12px;
+    }
+    .learning-mode-switch::-webkit-scrollbar,
+    .record-mode-switch::-webkit-scrollbar {
+        height: 3px;
+    }
+    .learning-mode-switch::-webkit-scrollbar-thumb,
+    .record-mode-switch::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.15);
+        border-radius: 4px;
+    }
+    .learning-mode-switch .learning-mode-btn,
+    .record-mode-switch .record-mode-btn {
+        flex: 0 0 auto !important;
+        width: auto !important;
+        min-width: 95px !important;
+        padding: 0 10px !important;
+    }
+}
+
+/* Dark mode overrides for secondary navigation — matching Ongoing identically */
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .learning-mode-switch .learning-mode-btn.btn-outline-primary,
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .record-mode-switch .record-mode-btn.btn-outline-primary {
+    border-color: rgba(106, 174, 214, .55) !important;
+    background: #192d45 !important;
+    color: #93c5fd !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .learning-mode-switch .learning-mode-btn.btn-outline-primary:hover,
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .learning-mode-switch .learning-mode-btn.btn-outline-primary:focus-visible,
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .record-mode-switch .record-mode-btn.btn-outline-primary:hover,
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .record-mode-switch .record-mode-btn.btn-outline-primary:focus-visible {
+    background: rgba(106, 174, 214, .14) !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .learning-mode-switch .learning-mode-btn.btn-primary,
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .learning-mode-switch .learning-mode-btn.active,
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .record-mode-switch .record-mode-btn.btn-primary,
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .record-mode-switch .record-mode-btn.active {
+    border-color: var(--learning-btn-primary, #0f5e9c) !important;
+    background: var(--learning-btn-primary, #0f5e9c) !important;
+    color: #fff !important;
+}
+
+
 

@@ -111,7 +111,7 @@
                                 </div>
                             </div>
 
-                            <div class="col-sm-6">
+                            {{-- <div class="col-sm-6">
                                 <div class="p-3 rounded-4 bg-yellow-lt">
                                     <div class="text-muted small">AFK Duration</div>
                                     <div class="fw-bold">
@@ -122,7 +122,7 @@
                                         {{ $afkFormatted }}
                                     </div>
                                 </div>
-                            </div>
+                            </div> --}}
 
                             <div class="col-12">
                                 <div class="p-3 rounded-4 {{ $isPassed ? 'bg-green-lt' : 'bg-red-lt' }}">

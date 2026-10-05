@@ -574,25 +574,19 @@ class LearningDatatableService
             return '-';
         }
 
-        $icon = in_array($row->content_type, ['Video', 'YouTube'], true)
-            ? '<span class="avatar avatar-sm bg-red-lt text-red me-2"><i class="ti ti-video"></i></span>'
-            : '<span class="avatar avatar-sm bg-yellow-lt text-yellow me-2"><i class="ti ti-file-type-pdf"></i></span>';
-
         $titleLink = !empty($row->content_slug)
             ? '<a href="' . route('learning.manage.content', $row->content_slug) . '" class="text-reset fw-semibold">' . e($row->content_title) . '</a>'
             : '<span class="fw-semibold">' . e($row->content_title) . '</span>';
 
         $playlistSubtext = '';
         if ($row->category_source === 'Playlist' && !empty($row->playlist_title)) {
-            $playlistSubtext = '<div class="text-muted small" style="font-size: 0.78rem;"><i class="ti ti-list-details me-1"></i>Playlist: ' . e($row->playlist_title) . '</div>';
+            $playlistSubtext = '<div class="text-muted small mt-1" style="font-size: 0.78rem;"><i class="ti ti-list-details me-1"></i>Playlist: ' . e($row->playlist_title) . '</div>';
         }
 
-        return '<div class="d-flex align-items-center">'
-            . $icon
-            . '<div>'
+        return '<div class="text-start">'
             . $titleLink
             . $playlistSubtext
-            . '</div></div>';
+            . '</div>';
     }
 
     private function classificationColumn($row): string
@@ -627,28 +621,28 @@ class LearningDatatableService
         $sourceType = e($row->source_type ?? 'content');
         $sourceId = e($row->source_id ?? '');
 
-        $viewBtn = '<button type="button" class="btn btn-sm btn-icon btn-ghost-secondary text-primary owl-action-btn btn-view-learning-detail" '
+        $viewBtn = '<button type="button" class="btn btn-sm btn-icon text-primary owl-action-btn owl-action-btn-view btn-view-learning-detail" '
             . 'data-source-type="' . $sourceType . '" '
             . 'data-source-id="' . $sourceId . '" '
             . 'data-bs-toggle="tooltip" data-bs-placement="top" title="View Details" aria-label="View Details">'
             . '<i class="ti ti-eye"></i>'
             . '</button>';
 
-        $editBtn = '<button type="button" class="btn btn-sm btn-icon btn-ghost-secondary text-warning owl-action-btn btn-edit-learning-record" '
+        $editBtn = '<button type="button" class="btn btn-sm btn-icon text-warning owl-action-btn owl-action-btn-edit btn-edit-learning-record" '
             . 'data-source-type="' . $sourceType . '" '
             . 'data-source-id="' . $sourceId . '" '
             . 'data-bs-toggle="tooltip" data-bs-placement="top" title="Edit Record" aria-label="Edit Record">'
             . '<i class="ti ti-pencil"></i>'
             . '</button>';
 
-        $deleteBtn = '<button type="button" class="btn btn-sm btn-icon btn-ghost-secondary text-danger owl-action-btn btn-delete-learning-record btn-reset-learning-record" '
+        $deleteBtn = '<button type="button" class="btn btn-sm btn-icon text-danger owl-action-btn owl-action-btn-reset btn-delete-learning-record btn-reset-learning-record" '
             . 'data-source-type="' . $sourceType . '" '
             . 'data-source-id="' . $sourceId . '" '
             . 'data-bs-toggle="tooltip" data-bs-placement="top" title="Reset Learning Progress" aria-label="Reset Learning Progress">'
             . '<i class="ti ti-trash"></i>'
             . '</button>';
 
-        return '<div class="d-flex align-items-center justify-content-center gap-1">'
+        return '<div class="d-flex align-items-center justify-content-center gap-1 flex-nowrap">'
             . $viewBtn
             . $editBtn
             . $deleteBtn

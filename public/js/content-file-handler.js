@@ -38,9 +38,9 @@ class ContentFileHandler {
             },
             Video: {
                 extensions: ['mp4', 'avi', 'mov', 'mkv', 'webm'],
-                maxSizeMB: 300,
+                maxSizeMB: 500,
                 invalidTypeError: 'Only video files (MP4, AVI, MOV, MKV, WEBM) are allowed.',
-                invalidSizeError: 'Maximum file size is 300 MB.'
+                invalidSizeError: 'Maximum file size is 500 MB.'
             },
             Thumbnail: {
                 extensions: ['jpg', 'jpeg', 'png', 'webp'],
@@ -50,9 +50,9 @@ class ContentFileHandler {
             },
             Default: {
                 extensions: ['pdf', 'mp4', 'avi', 'mov', 'mkv', 'webm'],
-                maxSizeMB: 300,
+                maxSizeMB: 500,
                 invalidTypeError: 'Only PDF, MP4, AVI, MOV, MKV, and WEBM files are allowed.',
-                invalidSizeError: 'Maximum file size is 300 MB.'
+                invalidSizeError: 'Maximum file size is 500 MB.'
             }
         };
     }
@@ -100,6 +100,9 @@ class ContentFileHandler {
                 },
                 init: function () {
                     this.on("error", function (file, message) {
+                        if (typeof message === 'object' && message !== null) {
+                            message = message.error || message.message || Object.values(message.errors || {})[0]?.[0] || 'Upload error';
+                        }
                         if (typeof message === 'string' && message.length > 0) {
                             if (!message.includes('code 0') && !message.includes('responded with 0')) {
                                 self.showError(message);

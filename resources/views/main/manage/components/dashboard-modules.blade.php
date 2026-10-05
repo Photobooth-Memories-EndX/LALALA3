@@ -22,14 +22,24 @@
             @endif
 
         @if(auth()->user()->canAccessManageModule('task_management'))
-        @include('main.manage.components.admin-menu-card', [
-            'title' => 'Task Management',
-            'description' => 'Manage course tasks and assignments, set deadlines, publish tasks, and review user submissions.',
-            'url' => url('manage/task'),
-            'button' => 'Manage Tasks',
-            'icon' => 'ti ti-clipboard-list'
+            @include('main.manage.components.admin-menu-card', [
+                'title' => 'Task Management',
+                'description' => 'Manage course tasks and assignments, set deadlines, publish tasks, and review user submissions.',
+                'url' => url('manage/task'),
+                'button' => 'Manage Tasks',
+                'icon' => 'ti ti-clipboard-list'
             ])
-            @endif
+        @endif
+
+        @if(auth()->user()->canAccessManageModule('record_management'))
+            @include('main.manage.components.admin-menu-card', [
+                'title' => 'Record Management',
+                'description' => 'Manage KP OWL and Non KP OWL learning records, including online and offline training data, participant progress, classifications, and record exports.',
+                'url' => route('manage.record.online'),
+                'button' => 'Manage Records',
+                'icon' => 'ti ti-folders'
+            ])
+        @endif
             
             @if(auth()->user()->canAccessManageModule('assessment_management'))
                 @include('main.manage.components.admin-menu-card', [
@@ -141,6 +151,15 @@
                     'icon' => 'ti ti-award'
                 ])
             @endif
+
+            {{-- Training Schedule Management --}}
+            @include('main.manage.components.admin-menu-card', [
+                'title' => 'Training Schedule Management',
+                'description' => 'Create new PTKP training schedules, manage quotas, instructors, locations, and registration statuses.',
+                'url' => url('/manage/training-schedule'),
+                'button' => 'Manage Schedule',
+                'icon' => 'ti ti-calendar-event'
+            ])
 
     </div>
 </div>

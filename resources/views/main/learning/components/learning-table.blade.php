@@ -15,7 +15,7 @@
                         <th class="text-center">DURATION</th>
                         <th class="text-center">DATE</th>
                         <th class="text-center">PROGRESS</th>
-                        <th class="text-center" style="width: 100px;">ACTION</th>
+                        <th class="text-center" style="width: 115px; min-width: 115px;">ACTION</th>
                     </tr>
                 </thead>
                 <tbody></tbody>

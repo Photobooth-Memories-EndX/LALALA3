@@ -21,6 +21,7 @@ use App\Http\Controllers\LearningMonitoringController;
 use App\Http\Controllers\LearningOngoingController;
 use App\Http\Controllers\NewsUserController;
 use App\Http\Controllers\AssesmentController;
+use App\Http\Controllers\AssesmentPreviewController;
 use App\Http\Controllers\AssesmentEditScoreController;
 use App\Http\Controllers\NewsImageController;
 use App\Http\Controllers\PagesUserController;
@@ -39,6 +40,7 @@ use App\Http\Controllers\AssesmentQuestionBankController;
 use App\Http\Controllers\LearningHourSyncController;
 use App\Http\Controllers\ClassificationController;
 use App\Http\Controllers\LearningManageController;
+use App\Http\Controllers\OfflineTrainingController;
 use App\Http\Controllers\AssesmentResultController;
 use App\Http\Controllers\AssesmentQuestionController;
 use App\Http\Controllers\QuestionBankController;
@@ -55,6 +57,12 @@ use App\Http\Controllers\Manage\LearningHours\ContentUserLearningHourController;
 use App\Http\Controllers\Manage\LearningHours\PlaylistContentUserLearningHourController;
 use App\Http\Controllers\Manage\LearningHours\LearningHoursLandingController;
 use App\Http\Controllers\Manage\LearningHours\PlaylistProgressDryRunController;
+use App\Http\Controllers\Manage\Record\RecordOnlineController;
+use App\Http\Controllers\Manage\Record\RecordOfflineController;
+use App\Http\Controllers\Manage\Record\RecordAllController;
+use App\Http\Controllers\Manage\Record\RecordExportController;
+use App\Http\Controllers\Manage\Record\OfflineTrainingOptionController;
+use App\Http\Controllers\Manage\Record\OfflineTrainingImportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -81,7 +89,7 @@ Route::middleware(['auth'])->group(function () {
         ->name('home.user.hero-background.remove');
 
 
-    Route::view('/trainingplan', 'user.trainingplan-user.index')->name('trainingplan.user.index');
+    Route::get('/trainingplan', [OfflineTrainingController::class, 'userIndex'])->name('trainingplan.user.index');
 
     Route::post('/assessment-access-by-unique-code', [HomeUserController::class, 'accessAssessmentByUniqueCode'])
         ->name('home.user.access.assessment.by.unique.code');
@@ -282,6 +290,9 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
 
     Route::get('/', [ManageDashboardController::class, 'index'])->name('manage.index');
     Route::get('/dashboard', [ManageDashboardController::class, 'index'])->name('manage.dashboard');
+    Route::get('/training-schedule', [OfflineTrainingController::class, 'index'])->name('manage.training-schedule.index');
+    Route::get('/training-schedule/create', [OfflineTrainingController::class, 'create'])->name('manage.training-schedule.create');
+    Route::post('/training-schedule', [OfflineTrainingController::class, 'store'])->name('manage.training-schedule.store');
 
     Route::group(['middleware' => 'mpermission:admin_management'], function () {
         Route::resource('admin', AdminController::class)->only(['index', 'store', 'update']);
@@ -353,6 +364,8 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
         Route::match(['put', 'patch', 'post'], 'assesment/{assesment}/result/{id}/score', [AssesmentQuestionController::class, 'updateScore'])->name('assesment.result.update-score');
         Route::match(['get', 'post'], 'assesment/{assesment}/clone', [AssesmentQuestionController::class, 'clone'])->name('assesment.clone');
         Route::match(['get', 'post'], 'assesment/{assesment}/duplicate', [AssesmentQuestionController::class, 'clone'])->name('assesment.duplicate');
+        Route::get('assesment/{assesment}/preview', [AssesmentPreviewController::class, 'preview'])->name('assesment.preview');
+        Route::post('assesment/{assesment}/preview/result', [AssesmentPreviewController::class, 'result'])->name('assesment.preview.result');
         Route::get('assesmentresult', [AssesmentResultController::class, 'index'])->name('assesment.result.all');
         Route::get('assesment/result/{slug}', [AssesmentResultController::class, 'result'])->name('assesment.result.result');
         Route::get('assesment/bulk-duplicate/sources', [AssesmentController::class, 'getActiveContentSources'])->name('assesment.bulk-duplicate.sources');
@@ -491,6 +504,52 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
             // Koreksi submission user -> tandai selesai
             Route::post('/{task}/submissions/{submission}/complete', [TaskManageController::class, 'completeSubmission'])
                 ->name('submissions.complete');
+        });
+    });
+
+    Route::group(['middleware' => 'mpermission:record_management'], function () {
+        Route::prefix('record')->name('manage.record.')->group(function () {
+            Route::get('online', [RecordOnlineController::class, 'index'])->name('online');
+            Route::get('online/ajax/summary', [RecordOnlineController::class, 'ajaxSummary'])->name('online.ajax.summary');
+            Route::get('online/ajax/classification', [RecordOnlineController::class, 'ajaxClassification'])->name('online.ajax.classification');
+            Route::get('online/datatable', [RecordOnlineController::class, 'datatable'])->name('online.datatable');
+            Route::get('online/search-employees', [RecordOnlineController::class, 'searchEmployees'])->name('online.search-employees');
+            Route::get('online/search-titles', [RecordOnlineController::class, 'searchTitles'])->name('online.search-titles');
+            Route::get('online/download', [RecordOnlineController::class, 'download'])->name('online.download');
+
+            Route::get('offline', [RecordOfflineController::class, 'index'])->name('offline');
+            Route::get('offline/ajax/summary', [RecordOfflineController::class, 'ajaxSummary'])->name('offline.ajax.summary');
+            Route::get('offline/ajax/classification', [RecordOfflineController::class, 'ajaxClassification'])->name('offline.ajax.classification');
+            Route::get('offline/classification/{classification}', [RecordOfflineController::class, 'classification'])->name('offline.classification');
+            Route::get('offline/classification/{classification}/datatable', [RecordOfflineController::class, 'classificationDatatable'])->name('offline.classification.datatable');
+            Route::get('offline/classification/{classification}/download', [RecordOfflineController::class, 'classificationDownload'])->name('offline.classification.download');
+            Route::get('offline/datatable', [RecordOfflineController::class, 'datatable'])->name('offline.datatable');
+            Route::get('offline/options', [OfflineTrainingOptionController::class, 'index'])->name('offline.options.index');
+            Route::post('offline/options', [OfflineTrainingOptionController::class, 'store'])->name('offline.options.store');
+            Route::get('offline/create', [RecordOfflineController::class, 'create'])->name('offline.create');
+            Route::get('offline/search-employees', [RecordOfflineController::class, 'searchEmployees'])->name('offline.search-employees');
+            Route::post('offline/store', [RecordOfflineController::class, 'store'])->name('offline.store');
+            Route::get('offline/import', [OfflineTrainingImportController::class, 'index'])->name('offline.import');
+            Route::get('offline/import/template', [OfflineTrainingImportController::class, 'downloadTemplate'])->name('offline.import.template');
+            Route::get('offline/template', [OfflineTrainingImportController::class, 'downloadTemplate'])->name('offline.template');
+            Route::post('offline/import/preview', [OfflineTrainingImportController::class, 'preview'])->name('offline.import.preview');
+            Route::post('offline/import/confirm', [OfflineTrainingImportController::class, 'confirm'])->name('offline.import.confirm');
+            Route::post('offline/import/cancel', [OfflineTrainingImportController::class, 'cancel'])->name('offline.import.cancel');
+            Route::get('offline/export', [RecordOfflineController::class, 'export'])->name('offline.export');
+            Route::get('offline/export/pdf', [RecordOfflineController::class, 'exportPdf'])->name('offline.export.pdf');
+            Route::get('offline/export/csv', [RecordOfflineController::class, 'exportCsv'])->name('offline.export.csv');
+            Route::get('offline/{id}/detail', [RecordOfflineController::class, 'detail'])->name('offline.detail');
+            Route::get('offline/{id}/edit', [RecordOfflineController::class, 'edit'])->name('offline.edit');
+            Route::put('offline/{id}', [RecordOfflineController::class, 'update'])->name('offline.update');
+            Route::delete('offline/{id}', [RecordOfflineController::class, 'destroy'])->name('offline.destroy');
+            Route::get('all', [RecordAllController::class, 'index'])->name('all');
+            Route::get('all/ajax/summary', [RecordAllController::class, 'ajaxSummary'])->name('all.ajax.summary');
+            Route::get('all/ajax/classification', [RecordAllController::class, 'ajaxClassification'])->name('all.ajax.classification');
+            Route::get('all/classification/{classification}', [RecordAllController::class, 'classification'])->name('all.classification');
+            Route::get('all/classification/{classification}/datatable', [RecordAllController::class, 'classificationDatatable'])->name('all.classification.datatable');
+            Route::get('all/classification/{classification}/download/{format?}', [RecordAllController::class, 'classificationDownload'])->name('all.classification.download');
+            Route::get('all/datatable', [RecordAllController::class, 'datatable'])->name('all.datatable');
+            Route::get('export-all', [RecordExportController::class, 'index'])->name('export-all');
         });
     });
 

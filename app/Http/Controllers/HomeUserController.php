@@ -113,7 +113,7 @@ class HomeUserController extends Controller
 
         $ongoingCourse = $heroSummary['ongoingCourse'];
 
-        $totalCourse = $completedCourse + $ongoingCourse;
+        $totalCourse = $heroSummary['totalCourse'];
 
         $progressPercent = $totalCourse > 0
             ? round(($completedCourse / $totalCourse) * 100)
@@ -192,6 +192,23 @@ class HomeUserController extends Controller
         // Learning Hours — reused from My Learning page (same calculation)
         $learningHours = $heroSummary['learningHours'];
 
+        // User MOOC Progress
+        $userMoocProgress = ContentUser::with('content')
+            ->where('user_id', auth()->id())
+            ->whereHas('content', function ($q) {
+                $q->whereIn('type', ['YouTube', 'MOOC'])
+                  ->where('playlistonly', 'N')
+                  ->where('active', 'Active');
+            })
+            ->where(function ($q) {
+                $q->where('progress', '>', 0)
+                  ->orWhere('finish', '1')
+                  ->orWhere('learning_status', 'in_progress');
+            })
+            ->orderByDesc('updated_at')
+            ->take(6)
+            ->get();
+
         return view(
             'homepage',
             compact(
@@ -203,6 +220,7 @@ class HomeUserController extends Controller
                 'content_user',
 
                 // Dashboard Modern
+                'totalCourse',
                 'completedCourse',
                 'ongoingCourse',
                 'progressPercent',
@@ -214,6 +232,7 @@ class HomeUserController extends Controller
                 'continuePeriod',
                 'continueProgressDetail',
                 'learningHours',
+                'userMoocProgress',
             )
         );
     }
