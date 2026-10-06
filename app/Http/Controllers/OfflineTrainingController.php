@@ -599,6 +599,61 @@ class OfflineTrainingController extends Controller
     public function register(Request $request, $trainingId, OfflineTrainingRegistrationService $service)
     {
         try {
+            $training = OfflineTraining::find((int) $trainingId);
+            if (!$training) {
+                throw new \InvalidArgumentException('Training session not found.');
+            }
+
+            $statusLower = strtolower(trim($training->status ?? ''));
+            $now = Carbon::now();
+            $today = $now->format('Y-m-d');
+            $currentTime = $now->format('H:i:s');
+
+            $startDate = $training->start_date ? Carbon::parse($training->start_date)->format('Y-m-d') : null;
+            $endDate = ($training->end_date ?? $training->start_date) ? Carbon::parse($training->end_date ?? $training->start_date)->format('Y-m-d') : null;
+            $startTime = $training->start_time ? (strlen($training->start_time) === 5 ? $training->start_time . ':00' : $training->start_time) : '00:00:00';
+            $endTime = $training->end_time ? (strlen($training->end_time) === 5 ? $training->end_time . ':00' : $training->end_time) : '23:59:59';
+
+            // Explicit running status
+            $isRunningStatus = in_array($statusLower, ['running', 'in progress']);
+            if ($isRunningStatus) {
+                $msg = "Registration is closed for \"{$training->title}\" as the training session is currently in progress.";
+                if ($request->wantsJson()) {
+                    return response()->json(['success' => false, 'message' => $msg], 422);
+                }
+                return redirect()->back()->with('error', $msg);
+            }
+
+            // Must permit registration
+            if ($training->status !== 'Open Registration') {
+                $msg = "Registration is closed for \"{$training->title}\" (Status: {$training->status}).";
+                if ($request->wantsJson()) {
+                    return response()->json(['success' => false, 'message' => $msg], 422);
+                }
+                return redirect()->back()->with('error', $msg);
+            }
+
+            // Past registration deadline (now() <= registration_close_date)
+            $isPast = $endDate && ($endDate < $today || ($endDate === $today && $currentTime > $endTime));
+            // Only if a single-day training scheduled for today has already commenced
+            $isSingleDayRunningToday = ($startDate && $endDate && $startDate === $today && $endDate === $today && $currentTime >= $startTime);
+
+            if ($isSingleDayRunningToday) {
+                $msg = "Registration is closed for \"{$training->title}\" as today's session has already started.";
+                if ($request->wantsJson()) {
+                    return response()->json(['success' => false, 'message' => $msg], 422);
+                }
+                return redirect()->back()->with('error', $msg);
+            }
+
+            if ($isPast) {
+                $msg = "Registration is closed for \"{$training->title}\" as the registration deadline has passed.";
+                if ($request->wantsJson()) {
+                    return response()->json(['success' => false, 'message' => $msg], 422);
+                }
+                return redirect()->back()->with('error', $msg);
+            }
+
             $registration = $service->register((int) $trainingId, Auth::user());
 
             if ($request->wantsJson()) {
@@ -800,7 +855,8 @@ class OfflineTrainingController extends Controller
             $endDate = Carbon::parse($t->end_date ?? $t->start_date);
             $enrolled = $t->registered_seats_count ?? 0;
             $quota = $t->quota ?: 1;
-            $isClosed = $t->status === 'Closed' || $enrolled >= $quota;
+            $isPast = $endDate->format('Y-m-d') < Carbon::today()->format('Y-m-d');
+            $isClosed = $t->status === 'Closed' || $enrolled >= $quota || $isPast;
 
             return [
                 'id'          => (string) $t->id,
@@ -809,6 +865,8 @@ class OfflineTrainingController extends Controller
                 'day'         => (int) $startDate->format('j'),
                 'startDate'   => $startDate->format('Y-m-d'),
                 'endDate'     => $endDate->format('Y-m-d'),
+                'registration_close_date' => $endDate->format('Y-m-d'),
+                'registrationCloseDate'   => $endDate->format('Y-m-d'),
                 'rawStatus'   => $t->status,
                 'title'       => $t->title,
                 'shortTitle'  => Str::limit($t->title, 16),
@@ -822,13 +880,18 @@ class OfflineTrainingController extends Controller
                     'Leadership'                        => 'bg-purple-subtle text-purple',
                     default                             => 'bg-primary-lt text-primary',
                 },
-                'status'      => $isClosed ? 'closed' : 'open',
+                'status'      => $isClosed ? 'closed' : ($t->status === 'Running' ? 'running' : 'open'),
+                'isPast'      => $isPast,
+                'startTime'   => substr($t->start_time, 0, 5),
+                'endTime'     => substr($t->end_time, 0, 5),
                 'time'        => substr($t->start_time, 0, 5) . ' - ' . substr($t->end_time, 0, 5) . ' WIB',
                 'dateTime'    => $startDate->format('d F Y') . ', ' . substr($t->start_time, 0, 5) . ' - ' . substr($t->end_time, 0, 5) . ' WIB',
                 'location'    => $t->location,
                 'instructor'  => $t->instructor,
-                'description' => $t->description ?? '',
-                'quota'       => "{$enrolled} / {$t->quota} Seats" . ($enrolled >= $t->quota ? ' (Full)' : ''),
+                'quota'       => (int) $t->quota,
+                'enrolled'    => (int) $enrolled,
+                'isFull'      => $enrolled >= $quota,
+                'quotaText'   => "{$enrolled} / {$t->quota} Seats" . ($enrolled >= $quota ? ' (Full)' : ''),
             ];
         })->values()->toArray();
 

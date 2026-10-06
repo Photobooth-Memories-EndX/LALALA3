@@ -59,18 +59,29 @@
             margin-bottom: 4px;
         }
 
+        .cal-day-cell.is-today {
+            background-color: #e0f2fe !important;
+            border: 2px solid #0284c7 !important;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cal-day-cell.is-today:hover {
+            background-color: #bae6fd !important;
+        }
+
         .cal-today-badge {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 22px;
-            height: 22px;
+            width: 24px;
+            height: 24px;
             border-radius: 50%;
             background-color: #003b6d;
             color: #ffffff;
             font-size: 0.78rem;
             font-weight: 700;
-            box-shadow: 0 2px 5px rgba(0, 59, 109, 0.35);
+            box-shadow: 0 2px 6px rgba(0, 59, 109, 0.35);
         }
 
         /* Calendar Status Count Badges */
@@ -101,15 +112,132 @@
         }
 
         .cal-status-badge-closed {
-            background-color: #fef2f2;
-            color: #b91c1c;
-            border-color: #fecaca;
+            background-color: #e5e7eb !important;
+            color: #4b5563 !important;
+            border-color: #d1d5db !important;
         }
 
         .cal-status-badge-running {
             background-color: #fffbeb;
             color: #b45309;
             border-color: #fde68a;
+        }
+
+        /* Live YouTube-style Broadcast Animation & Utilities Fallback */
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: .35;
+            }
+        }
+        .animate-pulse {
+            animation: pulse 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        .w-3\.5, .w-3-5 {
+            width: 0.875rem;
+        }
+        .h-3\.5, .h-3-5 {
+            height: 0.875rem;
+        }
+        .text-\[11px\] {
+            font-size: 11px;
+        }
+        .tracking-wider {
+            letter-spacing: 0.05em;
+        }
+        .bg-\[\#cc0000\] {
+            background-color: #cc0000;
+        }
+        .bg-gray-200 {
+            background-color: #e5e7eb;
+        }
+        .text-gray-700 {
+            color: #4b5563;
+        }
+        .w-4 {
+            width: 1rem;
+        }
+        .h-4 {
+            height: 1rem;
+        }
+        .shrink-0 {
+            flex-shrink: 0;
+        }
+        .leading-none {
+            line-height: 1;
+        }
+        .cursor-not-allowed {
+            cursor: not-allowed !important;
+        }
+        .w-fit {
+            width: fit-content !important;
+            max-width: max-content !important;
+        }
+        .self-start {
+            align-self: flex-start !important;
+        }
+        .w-auto {
+            width: auto;
+        }
+        .min-w-max {
+            min-width: max-content;
+        }
+        .whitespace-nowrap {
+            white-space: nowrap;
+        }
+        .bg-sky-100 {
+            background-color: #e0f2fe;
+        }
+        .text-sky-800 {
+            color: #075985;
+        }
+        .text-xs {
+            font-size: 0.75rem;
+            line-height: 1rem;
+        }
+        .rounded-md {
+            border-radius: 0.375rem;
+        }
+        .font-extrabold {
+            font-weight: 800;
+        }
+        .tracking-widest {
+            letter-spacing: 0.1em;
+        }
+        .bg-\[\#d92626\] {
+            background-color: #d92626;
+        }
+        .bg-\[\#e60023\] {
+            background-color: #e60023;
+        }
+        .tracking-tight {
+            letter-spacing: -0.025em;
+        }
+        .rounded-full {
+            border-radius: 9999px;
+        }
+        .bg-emerald-100 {
+            background-color: #d1fae5 !important;
+        }
+        .text-emerald-700 {
+            color: #047857 !important;
+        }
+        .bg-gray-100 {
+            background-color: #f3f4f6 !important;
+        }
+        .text-gray-600 {
+            color: #4b5563 !important;
+        }
+        .bg-gray-200 {
+            background-color: #e5e7eb !important;
+        }
+        .text-gray-500 {
+            color: #6b7280 !important;
+        }
+        .cursor-not-allowed {
+            cursor: not-allowed !important;
         }
 
         /* Timeline Items */
@@ -294,7 +422,8 @@
         $endDate = \Carbon\Carbon::parse($t->end_date ?? $t->start_date);
         $enrolled = $t->participants_count ?? 0;
         $quota = $t->quota ?: 1;
-        $isClosed = $t->status === 'Closed' || $enrolled >= $quota;
+        $isPast = $endDate->format('Y-m-d') < \Carbon\Carbon::today()->format('Y-m-d');
+        $isClosed = $t->status === 'Closed' || $enrolled >= $quota || $isPast;
 
         return [
             'id'          => (string) $t->id,
@@ -303,6 +432,8 @@
             'day'         => (int) $startDate->format('j'),
             'startDate'   => $startDate->format('Y-m-d'),
             'endDate'     => $endDate->format('Y-m-d'),
+            'registration_close_date' => $endDate->format('Y-m-d'),
+            'registrationCloseDate'   => $endDate->format('Y-m-d'),
             'rawStatus'   => $t->status,
             'title'       => $t->title,
             'shortTitle'  => \Illuminate\Support\Str::limit($t->title, 16),
@@ -316,22 +447,27 @@
                 'Leadership'                        => 'bg-purple-subtle text-purple',
                 default                             => 'bg-primary-lt text-primary',
             },
-            'status'      => $isClosed ? 'closed' : 'open',
+            'status'      => $isClosed ? 'closed' : ($t->status === 'Running' ? 'running' : 'open'),
+            'isPast'      => $isPast,
+            'startTime'   => substr($t->start_time, 0, 5),
+            'endTime'     => substr($t->end_time, 0, 5),
             'time'        => substr($t->start_time, 0, 5) . ' - ' . substr($t->end_time, 0, 5) . ' WIB',
             'dateTime'    => $startDate->format('d F Y') . ', ' . substr($t->start_time, 0, 5) . ' - ' . substr($t->end_time, 0, 5) . ' WIB',
             'location'    => $t->location,
             'instructor'  => $t->instructor,
             'description' => $t->description ?? '',
-            'quota'       => "{$enrolled} / {$t->quota} Seats" . ($enrolled >= $t->quota ? ' (Full)' : ''),
+            'quota'       => (int) $t->quota,
+            'enrolled'    => (int) $enrolled,
+            'isFull'      => $enrolled >= $quota,
+            'quotaText'   => "{$enrolled} / {$t->quota} Seats" . ($enrolled >= $quota ? ' (Full)' : ''),
         ];
     })->values()->toArray();
-
-    $anchorDateObj = $dbTrainings->first() ? \Carbon\Carbon::parse($dbTrainings->first()->start_date) : \Carbon\Carbon::now();
 @endphp
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         // --- Live Calendar Events Store ---
         const calendarEvents = @json($computedCalendarEvents);
+        const csrfToken = '{{ csrf_token() }}';
 
         const monthNames = [
             'January', 'February', 'March', 'April', 'May', 'June',
@@ -345,10 +481,10 @@
             return `${dayOfWeekNames[dateObj.getDay()]}, ${d} ${monthNames[m]} ${y}`;
         }
 
-        // Anchor Date dynamically calculated from trainings
-        const activeDate = new Date({{ $anchorDateObj->format('Y') }}, {{ (int)$anchorDateObj->format('n') - 1 }}, {{ (int)$anchorDateObj->format('j') }});
-        let currentCalYear = activeDate.getFullYear();
-        let currentCalMonth = activeDate.getMonth();
+        // Calendar initial date defaults to current real-time date (new Date())
+        const initialDate = new Date();
+        let currentCalYear = initialDate.getFullYear();
+        let currentCalMonth = initialDate.getMonth();
         let currentModalStatus = 'open';
 
         // --- Calendar Rendering Logic ---
@@ -388,7 +524,8 @@
                         // Current Month Day
                         const thisDay = dayCounter;
                         const cellDateFormatted = `${year}-${String(month + 1).padStart(2, '0')}-${String(thisDay).padStart(2, '0')}`;
-                        const todayDateFormatted = '{{ \Carbon\Carbon::today()->format('Y-m-d') }}';
+                        const realToday = new Date();
+                        const todayDateFormatted = `${realToday.getFullYear()}-${String(realToday.getMonth() + 1).padStart(2, '0')}-${String(realToday.getDate()).padStart(2, '0')}`;
                         const isToday = (cellDateFormatted === todayDateFormatted);
                         
                         // Find events on this day (spanning startDate to endDate inclusive)
@@ -403,14 +540,15 @@
                             if (cellDateFormatted < todayDateFormatted) {
                                 badgesHtml = `
                                     <div class="mt-1 d-flex flex-column gap-1">
-                                        <span class="badge bg-secondary-subtle text-secondary rounded-pill extra-small py-1 px-2 opacity-75 cal-status-badge cal-status-badge-closed"
+                                        <span class="badge rounded-pill extra-small py-1 px-2 cal-status-badge cal-status-badge-closed"
+                                              style="background-color: #e5e7eb; color: #4b5563; border: 1px solid #d1d5db;"
                                               role="button"
                                               data-year="${year}"
                                               data-month="${month}"
                                               data-day="${thisDay}"
                                               data-status="closed"
-                                              title="${activeTrainingsForDay.length} Closed Training(s)">
-                                            Done: ${activeTrainingsForDay.length}
+                                              title="${activeTrainingsForDay.length} Ended Training(s)">
+                                            Ended: ${activeTrainingsForDay.length}
                                         </span>
                                     </div>
                                 `;
@@ -449,7 +587,7 @@
                             ? `<span class="cal-today-badge">${thisDay}</span>`
                             : `<span class="${isWeekend ? 'text-danger' : ''}">${thisDay}</span>`;
 
-                        rowHtml += `<td class="p-1 cal-day-cell">
+                        rowHtml += `<td class="p-1 cal-day-cell ${isToday ? 'is-today' : ''}" role="button" data-cal-date="${cellDateFormatted}" data-year="${year}" data-month="${month}" data-day="${thisDay}">
                             <div class="cal-day-num text-end pe-1">${dayNumDisplay}</div>
                             ${badgesHtml}
                         </td>`;
@@ -503,21 +641,18 @@
             });
         }
 
-        // Today Button
-        const calTodayBtn = document.getElementById('calTodayBtn');
-        if (calTodayBtn) {
-            calTodayBtn.addEventListener('click', function () {
-                currentCalYear = activeDate.getFullYear();
-                currentCalMonth = activeDate.getMonth();
-                renderCalendar(currentCalYear, currentCalMonth);
-            });
-        }
 
         // --- Open Training List Modal Function ---
         function openTrainingListModal(year, month, day, status, highlightId = null) {
             currentModalStatus = status;
             const formattedDate = formatCalendarDate(year, month, day);
             const targetDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const todayMidnight = new Date();
+            todayMidnight.setHours(0, 0, 0, 0);
+            const todayY = todayMidnight.getFullYear();
+            const todayM = String(todayMidnight.getMonth() + 1).padStart(2, '0');
+            const todayD = String(todayMidnight.getDate()).padStart(2, '0');
+            const todayDateFormatted = `${todayY}-${todayM}-${todayD}`;
 
             let matchingEvents = calendarEvents.filter(e => {
                 const s = e.startDate || `${e.year}-${String(e.month + 1).padStart(2, '0')}-${String(e.day).padStart(2, '0')}`;
@@ -537,6 +672,7 @@
 
             const isOpen = (status === 'open');
             const isRunning = (status === 'running');
+            const isPastModal = (status === 'closed') || (targetDateStr < todayDateFormatted);
 
             const modalStatusTitle = document.getElementById('modalStatusTitle');
             const modalStatusCountBadge = document.getElementById('modalStatusCountBadge');
@@ -548,7 +684,7 @@
 
             // Header Elements
             if (modalStatusTitle) {
-                modalStatusTitle.textContent = isRunning ? 'Running Trainings' : (isOpen ? 'Open Trainings' : 'Completed / Past Trainings');
+                modalStatusTitle.textContent = isRunning ? 'Running Trainings' : (isOpen && !isPastModal ? 'Open Trainings' : 'Completed / Past Trainings');
             }
             if (modalSelectedDateText) {
                 modalSelectedDateText.textContent = formattedDate;
@@ -556,29 +692,38 @@
             if (modalStatusCountBadge) {
                 if (isRunning) {
                     modalStatusCountBadge.className = 'badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill fw-semibold px-2-5 py-1 fs-6';
+                    modalStatusCountBadge.style.backgroundColor = '';
+                    modalStatusCountBadge.style.color = '';
+                    modalStatusCountBadge.style.border = '';
                     modalStatusCountBadge.textContent = `${matchingEvents.length} Running`;
-                } else if (isOpen) {
-                    modalStatusCountBadge.className = 'badge bg-success-subtle text-success border border-success-subtle rounded-pill fw-semibold px-2-5 py-1 fs-6';
+                } else if (isOpen && !isPastModal) {
+                    modalStatusCountBadge.className = 'badge bg-emerald-100 text-emerald-700 rounded-pill fw-semibold px-2-5 py-1 fs-6';
+                    modalStatusCountBadge.style.backgroundColor = '#d1fae5';
+                    modalStatusCountBadge.style.color = '#047857';
+                    modalStatusCountBadge.style.border = '1px solid #a7f3d0';
                     modalStatusCountBadge.textContent = `${matchingEvents.length} Open`;
                 } else {
-                    modalStatusCountBadge.className = 'badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill fw-semibold px-2-5 py-1 fs-6';
-                    modalStatusCountBadge.textContent = `${matchingEvents.length} Done`;
+                    modalStatusCountBadge.className = 'badge bg-gray-100 text-gray-600 rounded-pill fw-semibold px-2-5 py-1 fs-6';
+                    modalStatusCountBadge.style.backgroundColor = '#f3f4f6';
+                    modalStatusCountBadge.style.color = '#4b5563';
+                    modalStatusCountBadge.style.border = '1px solid #e5e7eb';
+                    modalStatusCountBadge.textContent = `${matchingEvents.length} Ended`;
                 }
             }
             if (modalStatusIconWrap) {
                 if (isRunning) {
                     modalStatusIconWrap.style.backgroundColor = '#fffbeb';
                     modalStatusIconWrap.style.color = '#d97706';
-                } else if (isOpen) {
-                    modalStatusIconWrap.style.backgroundColor = '#ecfdf5';
-                    modalStatusIconWrap.style.color = '#059669';
+                } else if (isOpen && !isPastModal) {
+                    modalStatusIconWrap.style.backgroundColor = '#d1fae5';
+                    modalStatusIconWrap.style.color = '#047857';
                 } else {
-                    modalStatusIconWrap.style.backgroundColor = '#f1f5f9';
-                    modalStatusIconWrap.style.color = '#64748b';
+                    modalStatusIconWrap.style.backgroundColor = '#f3f4f6';
+                    modalStatusIconWrap.style.color = '#4b5563';
                 }
             }
             if (modalStatusIcon) {
-                modalStatusIcon.className = isRunning ? 'ti ti-player-play fs-2' : (isOpen ? 'ti ti-circle-check fs-2' : 'ti ti-check fs-2');
+                modalStatusIcon.className = isRunning ? 'ti ti-player-play fs-2' : ((isOpen && !isPastModal) ? 'ti ti-circle-check fs-2' : 'ti ti-check fs-2');
             }
 
             // Populate Items List (Compact Rows for High Scalability)
@@ -592,14 +737,79 @@
                     let listHtml = '';
                     matchingEvents.forEach(item => {
                         const isCurrentItem = highlightId && item.id === highlightId;
-                        const itemIsOpen = item.status === 'open';
+                        const itemStartDateStr = item.startDate || `${item.year}-${String(item.month + 1).padStart(2, '0')}-${String(item.day).padStart(2, '0')}`;
+                        const itemEndDateStr = item.endDate || item.startDate || itemStartDateStr;
+                        const closeDateStr = item.registration_close_date || item.registrationCloseDate || itemEndDateStr;
+
+                        // Midnight boundary normalized date comparison
+                        let isDeadlinePassed = false;
+                        if (closeDateStr) {
+                            const parts = closeDateStr.split('-');
+                            if (parts.length === 3) {
+                                const regCloseDate = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10), 23, 59, 59, 999);
+                                isDeadlinePassed = regCloseDate.getTime() < todayMidnight.getTime();
+                            } else {
+                                isDeadlinePassed = (closeDateStr < todayDateFormatted);
+                            }
+                        }
+
+                        const isPastSession = isPastModal || (targetDateStr < todayDateFormatted) || isDeadlinePassed || (item.rawStatus === 'Completed') || (item.isPast === true);
+
+                        // Active daytime session hours check
+                        const now = new Date();
+                        const currentHoursMinutes = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                        const itemStart = (item.startTime || '').substring(0, 5);
+                        const itemEnd = (item.endTime || '').substring(0, 5);
+                        const isTimeActive = itemStart && itemEnd && (currentHoursMinutes >= itemStart && currentHoursMinutes <= itemEnd);
+
+                        const rawStatusLower = (item.rawStatus || '').toLowerCase().trim();
+                        const isRawRunning = (rawStatusLower === 'running') || (rawStatusLower === 'in progress');
+                        const isRawClosed = (rawStatusLower === 'closed') || (rawStatusLower === 'completed');
+
+                        // Running session check:
+                        // Only running on this date if explicitly marked Running, OR clicked date is today and currently active within start/end dates & time
+                        const isRunningToday = (targetDateStr === todayDateFormatted) && isTimeActive && (itemStartDateStr <= todayDateFormatted && itemEndDateStr >= todayDateFormatted);
+                        const isRunningSession = isRawRunning || isRunningToday;
+
+                        // Quota availability check
+                        const enrolledCount = typeof item.enrolled === 'number' ? item.enrolled : (parseInt(item.enrolled, 10) || 0);
+                        const quotaLimit = typeof item.quota === 'number' ? item.quota : (parseInt(item.quota, 10) || 1);
+                        const isQuotaFull = item.isFull === true || (quotaLimit > 0 && enrolledCount >= quotaLimit);
+
+                        // Open Training evaluation:
+                        // now() <= registration_close_date AND registration_status === 'Open' AND quota available
+                        const isStatusOpen = (rawStatusLower === 'open' || rawStatusLower === 'open registration' || item.status === 'open');
+                        const isItemOpen = (!isDeadlinePassed) && (!isPastSession) && isStatusOpen && (!isRunningSession) && (!isQuotaFull) && (!isRawClosed);
+
+                        let badgeHtml = '';
+                        let actionBtnHtml = '';
+
+                        if (isItemOpen) {
+                            badgeHtml = `
+                                <span class="badge px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-700" style="background-color: #d1fae5; color: #047857; border: 1px solid #a7f3d0;">
+                                    Open Registration
+                                </span>
+                            `;
+                            // Commented out register button
+                            /*
+                            actionBtnHtml = `
+                                <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 py-1-5 fw-semibold btn-register-action" data-id="${item.id}" data-title="${(item.title || '').replace(/"/g, '&quot;')}" style="background-color: #003b6d; border-color: #003b6d;">
+                                    Register
+                                </button>
+                            `;
+                            */
+                        } else {
+                            // For Ended / Running status: Keep this container empty so only essential training info is listed
+                            badgeHtml = '';
+                            actionBtnHtml = '';
+                        }
 
                         listHtml += `
                             <div class="p-3 rounded-3 border ${isCurrentItem ? 'border-primary shadow-sm' : 'border-light-subtle'} bg-white hover-shadow-sm d-flex align-items-center justify-content-between gap-3">
                                 <div class="d-flex align-items-center gap-3">
-                                    <div class="badge bg-primary-subtle text-primary rounded-2 px-2-5 py-2 fw-semibold text-nowrap" style="font-size: 0.8rem;">
+                                    <span class="inline-flex items-center justify-center px-3 py-1.5 bg-sky-100 text-sky-800 text-xs font-semibold rounded-md whitespace-nowrap shrink-0 w-auto min-w-max" style="background-color: #e0f2fe; color: #075985; font-size: 0.75rem; line-height: 1rem; border-radius: 0.375rem; white-space: nowrap; flex-shrink: 0; width: auto; min-width: max-content;">
                                         ${item.time}
-                                    </div>
+                                    </span>
                                     <div>
                                         <div class="fw-bold text-dark fs-3 mb-1">${item.title}</div>
                                         <div class="d-flex align-items-center gap-2 text-muted small">
@@ -609,15 +819,34 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="text-end flex-shrink-0">
-                                    <span class="badge ${itemIsOpen ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'} rounded-pill px-3 py-1-5 fw-semibold">
-                                        ${itemIsOpen ? 'Open Registration' : 'Registration Closed'}
-                                    </span>
+                                <div class="text-end flex-shrink-0 d-flex align-items-center gap-2">
+                                    ${badgeHtml}
+                                    ${actionBtnHtml}
                                 </div>
                             </div>
                         `;
                     });
                     modalTrainingItemsList.innerHTML = listHtml;
+
+                    // Bind Register button click: prompt confirmation and submit POST request to registration route
+                    modalTrainingItemsList.querySelectorAll('.btn-register-action').forEach(btn => {
+                        btn.addEventListener('click', function () {
+                            const id = this.getAttribute('data-id');
+                            const title = this.getAttribute('data-title') || 'this training';
+                            if (confirm(`Register for ${title}?`)) {
+                                const form = document.createElement('form');
+                                form.method = 'POST';
+                                form.action = `/trainingplan/${id}/register`;
+                                const csrfInput = document.createElement('input');
+                                csrfInput.type = 'hidden';
+                                csrfInput.name = '_token';
+                                csrfInput.value = csrfToken;
+                                form.appendChild(csrfInput);
+                                document.body.appendChild(form);
+                                form.submit();
+                            }
+                        });
+                    });
                 }
             }
 
@@ -656,8 +885,35 @@
                         </div>
                     `;
                 } else {
+                    const now = new Date();
+                    const realTodayFormatted = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                    const currentHoursMinutes = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
                     let html = '';
                     matchingEvents.forEach(item => {
+                        const isDateToday = (targetDateStr === realTodayFormatted);
+                        const itemStart = (item.startTime || '').substring(0, 5);
+                        const itemEnd = (item.endTime || '').substring(0, 5);
+                        const isTimeActive = itemStart && itemEnd && (currentHoursMinutes >= itemStart && currentHoursMinutes <= itemEnd);
+                        const isLiveNow = (isDateToday && isTimeActive) || (isDateToday && item.rawStatus === 'Running');
+
+                        const liveBadgeHtml = isLiveNow ? `
+                            <div class="mb-2">
+                                <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-[#e60023] text-white rounded-full shadow-sm w-fit shrink-0" style="background-color: #e60023; border-radius: 9999px; width: fit-content; max-width: max-content;">
+                                    <!-- YouTube Broadcast Signal Icon ((•)) -->
+                                    <svg class="w-3.5 h-3.5 shrink-0 animate-pulse" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" style="width: 14px; height: 14px; overflow: visible;">
+                                        <!-- Center Dot -->
+                                        <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
+                                        <!-- Inner Waves -->
+                                        <path stroke-linecap="round" d="M8.5 9a4.5 4.5 0 0 0 0 6M15.5 9a4.5 4.5 0 0 1 0 6" />
+                                        <!-- Outer Waves -->
+                                        <path stroke-linecap="round" d="M6 6.5a8 8 0 0 0 0 11M18 6.5a8 8 0 0 1 0 11" />
+                                    </svg>
+                                    <span class="text-[11px] font-bold tracking-wider uppercase leading-none" style="font-size: 11px; line-height: 1;">LIVE</span>
+                                </div>
+                            </div>
+                        ` : '';
+
                         html += `
                             <div class="timeline-schedule-item mb-3 p-3 rounded-3 border border-light-subtle bg-light-subtle position-relative"
                                  role="button"
@@ -668,6 +924,7 @@
                                  data-location="${item.location}"
                                  data-instructor="${item.instructor}"
                                  data-description="${item.description}">
+                                ${liveBadgeHtml}
                                 <div class="d-flex align-items-center justify-content-between mb-1">
                                     <span class="badge bg-primary text-white rounded-pill px-2 py-0-5 small fw-semibold">${item.time}</span>
                                     <span class="badge bg-primary-lt text-primary small">${item.category}</span>
@@ -736,7 +993,8 @@
                 if (ev) {
                     openTrainingListModal(ev.year, ev.month, ev.day, ev.status, ev.id);
                 } else {
-                    openTrainingListModal(2026, 8, 18, 'open', id);
+                    const now = new Date();
+                    openTrainingListModal(now.getFullYear(), now.getMonth(), now.getDate(), 'open', id);
                 }
             });
         });

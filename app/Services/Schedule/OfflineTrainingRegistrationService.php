@@ -5,6 +5,7 @@ namespace App\Services\Schedule;
 use App\Models\OfflineTraining;
 use App\Models\OfflineTrainingRegister;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use RuntimeException;
@@ -31,8 +32,27 @@ class OfflineTrainingRegistrationService
             }
 
             // 2. Training status must permit registration
-            if ($training->status !== 'Open Registration') {
+            $statusLower = strtolower(trim($training->status ?? ''));
+            if ($training->status !== 'Open Registration' || in_array($statusLower, ['running', 'in progress'])) {
                 throw new RuntimeException("Registration is closed for \"{$training->title}\" (Status: {$training->status}).");
+            }
+
+            $now = Carbon::now();
+            $today = $now->format('Y-m-d');
+            $currentTime = $now->format('H:i:s');
+            $startDate = $training->start_date ? Carbon::parse($training->start_date)->format('Y-m-d') : null;
+            $endDate = ($training->end_date ?? $training->start_date) ? Carbon::parse($training->end_date ?? $training->start_date)->format('Y-m-d') : null;
+            $startTime = $training->start_time ? (strlen($training->start_time) === 5 ? $training->start_time . ':00' : $training->start_time) : '00:00:00';
+            $endTime = $training->end_time ? (strlen($training->end_time) === 5 ? $training->end_time . ':00' : $training->end_time) : '23:59:59';
+
+            $isPast = $endDate && ($endDate < $today || ($endDate === $today && $currentTime > $endTime));
+            $isSingleDayRunningToday = ($startDate && $endDate && $startDate === $today && $endDate === $today && $currentTime >= $startTime);
+
+            if ($isSingleDayRunningToday) {
+                throw new RuntimeException("Registration is closed for \"{$training->title}\" as today's session has already started.");
+            }
+            if ($isPast) {
+                throw new RuntimeException("Registration is closed for \"{$training->title}\" as the registration deadline has passed.");
             }
 
             // 3. Prevent duplicate registration
