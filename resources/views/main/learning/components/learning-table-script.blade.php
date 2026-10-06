@@ -583,9 +583,8 @@
             learningTable.page.len(defaultEntries).page(0).draw(false);
         });
 
-        // ── 6. Filtered Data Download Handler (Export Excel) ─────────────
-        $('#btn-download-export').on('click', function (e) {
-            e.preventDefault();
+        // ── 6. Filtered Data Download Handlers (Excel, PDF, CSV) ────────
+        function collectLearningFilterParams() {
             const params = new URLSearchParams();
 
             const empVal = $('#learn-employee').val();
@@ -627,11 +626,36 @@
             const duration = $('#filter-duration').val();
             if (duration && duration !== 'all') params.append('duration', duration);
 
+            return params;
+        }
+
+        // 6a. Excel Export Handler (Existing, Untouched Logic)
+        $('#btn-download-export').on('click', function (e) {
+            e.preventDefault();
+            const params = collectLearningFilterParams();
             params.append('action', 'download');
 
             const downloadBaseUrl = "{{ $downloadUrl ?? route('manage.learning.download') }}";
             const downloadUrl = downloadBaseUrl + (downloadBaseUrl.indexOf('?') !== -1 ? '&' : '?') + params.toString();
             window.open(downloadUrl, '_blank');
+        });
+
+        // 6b. PDF Export Handler
+        $('#btn-download-pdf').on('click', function (e) {
+            e.preventDefault();
+            const params = collectLearningFilterParams();
+            const pdfBaseUrl = "{{ route('manage.learning.download.pdf') }}";
+            const pdfUrl = pdfBaseUrl + (pdfBaseUrl.indexOf('?') !== -1 ? '&' : '?') + params.toString();
+            window.open(pdfUrl, '_blank');
+        });
+
+        // 6c. CSV Export Handler
+        $('#btn-download-csv').on('click', function (e) {
+            e.preventDefault();
+            const params = collectLearningFilterParams();
+            const csvBaseUrl = "{{ route('manage.learning.download.csv') }}";
+            const csvUrl = csvBaseUrl + (csvBaseUrl.indexOf('?') !== -1 ? '&' : '?') + params.toString();
+            window.open(csvUrl, '_blank');
         });
 
         // ── 7. Action Column Handlers ─────────────────────────────────────

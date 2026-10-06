@@ -71,6 +71,96 @@
 #moreLearningFiltersModal {
     z-index: 1060 !important;
 }
+
+/* Quick Filter Flex Toolbar Layout */
+.quick-filter-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+@media (min-width: 1200px) {
+    .quick-filter-toolbar {
+        flex-wrap: nowrap !important;
+    }
+}
+
+@media (max-width: 1199.98px) {
+    .quick-filter-toolbar {
+        flex-wrap: wrap;
+    }
+}
+
+.quick-filter-employee {
+    flex: 1 1 160px;
+    min-width: 130px;
+    max-width: 260px;
+}
+
+.quick-filter-title {
+    flex: 1.25 1 180px;
+    min-width: 150px;
+    max-width: 280px;
+}
+
+.quick-filter-category {
+    flex: 0 0 115px;
+    width: 115px;
+    min-width: 105px;
+}
+
+.quick-filter-status {
+    flex: 0 0 105px;
+    width: 105px;
+    min-width: 95px;
+}
+
+.quick-filter-type {
+    flex: 0 0 100px;
+    width: 100px;
+    min-width: 90px;
+}
+
+.quick-filter-year {
+    flex: 0 0 90px;
+    width: 90px;
+    min-width: 80px;
+}
+
+.quick-filter-select {
+    padding-left: 0.5rem !important;
+    padding-right: 1.5rem !important;
+    font-size: 0.85rem !important;
+    height: 36px !important;
+}
+
+.quick-filter-action-btn {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+}
+
+.quick-filter-download {
+    flex-shrink: 0 !important;
+}
+
+.quick-filter-download .btn-download {
+    height: 36px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.quick-filter-toolbar .form-control {
+    height: 36px !important;
+    font-size: 0.875rem !important;
+}
 </style>
 
 <div class="card border-0 shadow-sm rounded-4 mb-4">
@@ -93,9 +183,9 @@
             <input type="hidden" id="filter-progress-range" name="progress_range" value="{{ request('progress_range', 'all') }}">
             <input type="hidden" id="filter-duration" name="duration" value="{{ request('duration', 'all') }}">
 
-            <div class="d-flex align-items-center gap-2 flex-wrap">
+            <div class="d-flex align-items-center gap-2 flex-wrap flex-xl-nowrap quick-filter-toolbar w-100">
                 <!-- Employee / NIP Search Input Container -->
-                <div class="position-relative flex-grow-1" style="min-width: 220px; max-width: 280px;">
+                <div class="position-relative flex-grow-1 quick-filter-employee">
                     <input type="text" id="manage-employee-input" name="employee_q" value="{{ request('employee_q') ?? ($currentEmployeeText ?: $currentEmployeeId) }}" 
                            class="form-control rounded-3" placeholder="Search employee or NIP..." autocomplete="off">
                     <input type="hidden" id="learn-employee" name="employee_id" value="{{ $currentEmployeeId }}">
@@ -110,7 +200,7 @@
                 </div>
 
                 <!-- Learning Title Search Input Container -->
-                <div class="position-relative flex-grow-1" style="min-width: 240px; max-width: 320px;">
+                <div class="position-relative flex-grow-1 quick-filter-title">
                     <input type="text" id="manage-title-input" name="title_q" value="{{ request('title_q') ?? (request('learning_title') ?? request('title')) }}" 
                            class="form-control rounded-3" placeholder="Search learning title..." autocomplete="off">
                     <input type="hidden" id="learn-title" name="learning_title" value="{{ $currentLearningTitle }}">
@@ -125,8 +215,8 @@
                 </div>
 
                 <!-- Category / Learning Source Dropdown -->
-                <div style="min-width: 135px; flex-shrink: 0;">
-                    <select class="form-select rounded-3" id="learn-category" name="category">
+                <div class="quick-filter-category">
+                    <select class="form-select rounded-3 quick-filter-select" id="learn-category" name="category">
                         <option value="all" {{ ($currentCategory === 'all' || blank($currentCategory)) ? 'selected' : '' }}>All Category</option>
                         <option value="all_content" {{ $currentCategory === 'all_content' ? 'selected' : '' }}>All Content</option>
                         <option value="playlist" {{ $currentCategory === 'playlist' ? 'selected' : '' }}>Playlist</option>
@@ -134,8 +224,8 @@
                 </div>
 
                 <!-- 3. Status Dropdown -->
-                <div style="min-width: 120px; flex-shrink: 0;">
-                    <select class="form-select rounded-3" id="learn-status" name="status">
+                <div class="quick-filter-status">
+                    <select class="form-select rounded-3 quick-filter-select" id="learn-status" name="status">
                         <option value="all" {{ $currentStatus === 'all' ? 'selected' : '' }}>All Status</option>
                         <option value="finished" {{ ($currentStatus === 'finished' || $currentStatus === 'finish' || $currentStatus === '1') ? 'selected' : '' }}>Finished</option>
                         <option value="ongoing" {{ ($currentStatus === 'ongoing' || $currentStatus === '0') ? 'selected' : '' }}>Ongoing</option>
@@ -144,8 +234,8 @@
                 </div>
 
                 <!-- 4. Type Dropdown -->
-                <div style="min-width: 125px; flex-shrink: 0;">
-                    <select class="form-select rounded-3" id="filter-type" name="type">
+                <div class="quick-filter-type">
+                    <select class="form-select rounded-3 quick-filter-select" id="filter-type" name="type">
                         <option value="all" {{ ($currentType === 'all' || blank($currentType)) ? 'selected' : '' }}>Type: All</option>
                         <option value="Document" {{ strtolower((string) $currentType) === 'document' ? 'selected' : '' }}>Document</option>
                         <option value="Video" {{ strtolower((string) $currentType) === 'video' ? 'selected' : '' }}>Video</option>
@@ -153,8 +243,8 @@
                 </div>
 
                 <!-- 5. Year Dropdown -->
-                <div style="min-width: 105px; flex-shrink: 0;">
-                    <select class="form-select rounded-3" id="learn-year" name="year">
+                <div class="quick-filter-year">
+                    <select class="form-select rounded-3 quick-filter-select" id="learn-year" name="year">
                         <option value="all" {{ $currentYear === 'all' ? 'selected' : '' }}>All Year</option>
                         @foreach ($years as $year)
                             <option value="{{ $year }}" {{ (string) $currentYear === (string) $year ? 'selected' : '' }}>{{ $year }}</option>
@@ -163,25 +253,48 @@
                 </div>
 
                 <!-- 6. Icon Button: Apply Filter -->
-                <button type="button" id="btn-apply-filter" class="btn btn-primary btn-icon px-3 flex-shrink-0" style="background-color: #003b6d; border-color: #003b6d;" data-bs-toggle="tooltip" data-bs-title="Apply Filter" title="Apply Filter">
+                <button type="button" id="btn-apply-filter" class="btn btn-primary btn-icon rounded-3 quick-filter-action-btn flex-shrink-0" style="background-color: #003b6d; border-color: #003b6d;" data-bs-toggle="tooltip" data-bs-title="Apply Filter" title="Apply Filter">
                     <i class="ti ti-search fs-2"></i>
                 </button>
 
                 <!-- 7. Icon Button: More Filters -->
-                <button type="button" id="btn-more-filters" class="btn btn-outline-primary btn-icon px-3 position-relative btn-more-filters flex-shrink-0" data-bs-toggle="modal" data-bs-target="#moreLearningFiltersModal" title="More Filters">
+                <button type="button" id="btn-more-filters" class="btn btn-outline-primary btn-icon rounded-3 position-relative btn-more-filters quick-filter-action-btn flex-shrink-0" data-bs-toggle="modal" data-bs-target="#moreLearningFiltersModal" title="More Filters">
                     <i class="ti ti-adjustments-horizontal fs-2"></i>
                     <span id="activeFilterBadge" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle d-none">0</span>
                 </button>
 
                 <!-- 8. Icon Button: Reset -->
-                <button type="button" id="btn-reset-filter" class="btn btn-outline-secondary btn-icon px-3 btn-quick-reset flex-shrink-0" data-bs-toggle="tooltip" data-bs-title="Reset Filters" title="Reset Filters">
+                <button type="button" id="btn-reset-filter" class="btn btn-outline-secondary btn-icon rounded-3 btn-quick-reset quick-filter-action-btn flex-shrink-0" data-bs-toggle="tooltip" data-bs-title="Reset Filters" title="Reset Filters">
                     <i class="ti ti-refresh fs-2"></i>
                 </button>
 
-                <!-- 9. Button: Download -->
-                <button type="button" id="btn-download-export" class="btn btn-success rounded-3 px-3 btn-download flex-shrink-0" title="Download Excel">
-                    <i class="ti ti-download me-1"></i> Download
-                </button>
+                <!-- 9. Button: Download Dropdown -->
+                <div class="dropdown flex-shrink-0 quick-filter-download">
+                    <button type="button" class="btn btn-success dropdown-toggle rounded-3 px-3 btn-download"
+                            data-bs-toggle="dropdown" data-toggle="dropdown" aria-expanded="false" id="btn-download-dropdown" title="Download Record">
+                        <i class="ti ti-download me-1"></i> Download
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border rounded-3 mt-1 py-1" aria-labelledby="btn-download-dropdown" style="min-width: 220px;">
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="#" id="btn-download-export">
+                                <i class="ti ti-file-spreadsheet text-success fs-3"></i>
+                                <span>Download Excel (.xlsx)</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="#" id="btn-download-pdf">
+                                <i class="ti ti-file-type-pdf text-danger fs-3"></i>
+                                <span>Download PDF (.pdf)</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="#" id="btn-download-csv">
+                                <i class="ti ti-file-type-csv text-primary fs-3"></i>
+                                <span>Download CSV (.csv)</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </form>
     </div>

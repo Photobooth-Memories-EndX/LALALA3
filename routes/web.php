@@ -486,6 +486,8 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
         Route::match(['put', 'patch'], 'learning/record/{type}/{id}', [LearningManageController::class, 'updateRecord'])->name('learning.manage.record.update');
         Route::post('learning/record/{type}/{id}/reset', [LearningManageController::class, 'resetRecord'])->name('learning.manage.record.reset');
         Route::get('learning/download', [LearningManageController::class, 'download'])->name('manage.learning.download');
+        Route::get('learning/download/pdf', [LearningManageController::class, 'downloadPdf'])->name('manage.learning.download.pdf');
+        Route::get('learning/download/csv', [LearningManageController::class, 'downloadCsv'])->name('manage.learning.download.csv');
     });
 
     Route::group(['middleware' => 'mpermission:record_management'], function () {

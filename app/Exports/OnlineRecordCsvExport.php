@@ -7,7 +7,8 @@ use App\Support\DurationFormatter;
 use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class OnlineRecordCsvExport implements Responsable
 {
@@ -31,7 +32,8 @@ class OnlineRecordCsvExport implements Responsable
             $this->slug = $slug;
         }
 
-        $this->fileName = sprintf('kp-owl-online-records-%s.csv', now()->format('Y-m-d'));
+        $slugPart = !empty($this->slug) ? Str::slug($this->slug) . '-' : '';
+        $this->fileName = sprintf('kp-owl-online-records-%s%s.csv', $slugPart, now()->format('Y-m-d'));
     }
 
     public function getFileName(): string
@@ -72,73 +74,71 @@ class OnlineRecordCsvExport implements Responsable
     }
 
     /**
-     * Stream CSV download using unbuffered query to ensure low memory usage.
+     * Stream CSV to temp file and return BinaryFileResponse to ensure low memory usage.
      */
-    public function download(?string $fileName = null, $writerType = null): StreamedResponse
+    public function download(?string $fileName = null, $writerType = null): BinaryFileResponse
     {
         $targetFileName = $fileName ?? $this->fileName;
-        $query = $this->query();
-        $headings = $this->headings();
+        $tempCsv = tempnam(sys_get_temp_dir(), 'csv_export_') . '.csv';
+        $out = fopen($tempCsv, 'w+b');
 
-        return response()->streamDownload(function () use ($query, $headings) {
-            $out = fopen('php://output', 'w');
+        // UTF-8 Byte Order Mark (BOM) for Excel compatibility
+        fprintf($out, chr(0xEF) . chr(0xBB) . chr(0xBF));
 
-            // UTF-8 Byte Order Mark (BOM) for Excel compatibility
-            fprintf($out, chr(0xEF) . chr(0xBB) . chr(0xBF));
+        // Write CSV headers
+        fputcsv($out, $this->headings());
 
-            // Write CSV headers
-            fputcsv($out, $headings);
+        $pdo = DB::connection()->getPdo();
+        $wasBuffered = $pdo->getAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY);
+        $pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
 
-            $pdo = DB::connection()->getPdo();
-            $wasBuffered = $pdo->getAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY);
-            $pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
+        try {
+            $query = $this->query();
+            $stmt = $pdo->prepare($query->toSql());
+            $stmt->execute($query->getBindings());
 
-            try {
-                $stmt = $pdo->prepare($query->toSql());
-                $stmt->execute($query->getBindings());
+            $rowCount = 0;
+            while ($row = $stmt->fetch(\PDO::FETCH_OBJ)) {
+                $rowCount++;
 
-                $rowCount = 0;
-                while ($row = $stmt->fetch(\PDO::FETCH_OBJ)) {
-                    $rowCount++;
-
-                    $title = $row->content_title ?? '-';
-                    if (!empty($row->playlist_title)) {
-                        $title .= ' (Playlist: ' . $row->playlist_title . ')';
-                    }
-
-                    $rawType = (string) ($row->content_type ?? '');
-                    $type = in_array(strtolower($rawType), ['video', 'youtube', 'mooc'], true) ? 'Video' : 'Document';
-
-                    $duration = DurationFormatter::format($row->content_duration ?? null);
-                    $progress = ($row->progress ?? 0) . '%';
-
-                    fputcsv($out, [
-                        $rowCount,
-                        $row->status ?? '-',
-                        $row->user_id_emp ?? '-',
-                        $row->user_name ?? '-',
-                        $row->user_department ?? '-',
-                        $row->user_team ?? '-',
-                        $title,
-                        $type,
-                        $row->classification_name ?? '-',
-                        $row->category_source ?? 'All Content',
-                        $duration,
-                        $row->created_at ?? '-',
-                        $progress,
-                    ]);
+                $title = $row->content_title ?? '-';
+                if (!empty($row->playlist_title)) {
+                    $title .= ' (Playlist: ' . $row->playlist_title . ')';
                 }
 
-                $stmt->closeCursor();
-            } finally {
-                $pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, $wasBuffered);
-                fclose($out);
+                $rawType = (string) ($row->content_type ?? '');
+                $type = in_array(strtolower($rawType), ['video', 'youtube', 'mooc'], true) ? 'Video' : 'Document';
+
+                $duration = DurationFormatter::format($row->content_duration ?? null);
+                $progress = ($row->progress ?? 0) . '%';
+
+                fputcsv($out, [
+                    $rowCount,
+                    $row->status ?? '-',
+                    $row->user_id_emp ?? '-',
+                    $row->user_name ?? '-',
+                    $row->user_department ?? '-',
+                    $row->user_team ?? '-',
+                    $title,
+                    $type,
+                    $row->classification_name ?? '-',
+                    $row->category_source ?? 'All Content',
+                    $duration,
+                    $row->created_at ?? '-',
+                    $progress,
+                ]);
             }
-        }, $targetFileName, [
-            'Content-Type'        => 'text/csv; charset=UTF-8',
-            'Cache-Control'       => 'no-cache, no-store, must-revalidate',
-            'Content-Disposition' => 'attachment; filename="' . $targetFileName . '"',
-        ]);
+
+            $stmt->closeCursor();
+        } finally {
+            $pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, $wasBuffered);
+            fclose($out);
+        }
+
+        return response()->download($tempCsv, $targetFileName, [
+            'Content-Type'  => 'text/csv; charset=UTF-8',
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+        ])->deleteFileAfterSend(true);
     }
 
     public function toResponse($request)
