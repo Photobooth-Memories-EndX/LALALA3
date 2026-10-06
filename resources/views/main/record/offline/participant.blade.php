@@ -751,6 +751,9 @@
 <!-- DETAIL MODAL COMPONENT -->
 @include('main.record.components.offline-detail-modal')
 
+<!-- DELETE CONFIRMATION MODAL -->
+@include('main.record.components.offline-delete-modal')
+
 @endsection
 
 @section('style')
@@ -1791,6 +1794,78 @@
                 error: function () {
                     $('#offline-detail-loading').hide();
                     $('#offlineTrainingDetailModalBody').html('<div class="py-5 text-center text-danger">An error occurred while loading record details.</div>');
+                }
+            });
+        });
+
+        // Delete Record Modal Logic
+        const deleteModalEl = document.getElementById('deleteOfflineRecordModal');
+        let deleteModal = null;
+        if (deleteModalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            deleteModal = new bootstrap.Modal(deleteModalEl);
+        }
+
+        $(document).on('click', '.btn-delete-offline-record', function () {
+            const id = $(this).data('id');
+            const employee = $(this).data('employee') || 'Participant';
+            const course = $(this).data('course') || 'Training';
+            const nip = $(this).data('nip') || '';
+
+            $('#delete-modal-employee-name').text(employee);
+            $('#delete-modal-course-name').text(course);
+            if (nip) {
+                $('#delete-modal-nip-wrapper').show();
+                $('#delete-modal-nip').text(nip);
+            } else {
+                $('#delete-modal-nip-wrapper').hide();
+            }
+            $('#btn-confirm-delete-offline-record').data('id', id);
+
+            if (deleteModal) {
+                deleteModal.show();
+            } else {
+                $('#deleteOfflineRecordModal').modal('show');
+            }
+        });
+
+        $('#btn-confirm-delete-offline-record').on('click', function () {
+            const id = $(this).data('id');
+            if (!id) return;
+
+            const $btn = $(this);
+            const originalHtml = $btn.html();
+            $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Deleting...');
+
+            $.ajax({
+                url: `/manage/record/offline/${id}`,
+                type: 'DELETE',
+                dataType: 'json',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                    'Accept': 'application/json'
+                },
+                success: function (res) {
+                    $btn.prop('disabled', false).html(originalHtml);
+                    if (deleteModal) {
+                        deleteModal.hide();
+                    } else {
+                        $('#deleteOfflineRecordModal').modal('hide');
+                    }
+
+                    // Update summary KPI cards if returned
+                    if (res && res.participant_summary) {
+                        $('#kpi-total-training').text(Number(res.participant_summary.total_training).toLocaleString());
+                        $('#kpi-finished').text(Number(res.participant_summary.finished).toLocaleString());
+                        $('#kpi-ongoing').text(Number(res.participant_summary.ongoing).toLocaleString());
+                        $('#kpi-hours').text(parseFloat(res.participant_summary.learning_hours).toFixed(1) + 'h');
+                    }
+
+                    participantTable.ajax.reload(null, false);
+                },
+                error: function (xhr) {
+                    $btn.prop('disabled', false).html(originalHtml);
+                    const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Failed to delete record.';
+                    alert(msg);
                 }
             });
         });

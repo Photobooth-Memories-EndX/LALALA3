@@ -5,9 +5,9 @@
     <div class="container-xl">
         <!-- BACK BUTTON -->
         <div class="mb-3">
-            <a href="{{ route('manage.record.offline.classification', $classification['slug']) }}" class="btn-back d-inline-flex align-items-center gap-1 text-decoration-none fw-medium">
+            <a href="{{ $backUrl ?? route('manage.record.offline.classification', $classification['slug']) }}" class="btn-back d-inline-flex align-items-center gap-1 text-decoration-none fw-medium">
                 <i class="ti ti-arrow-left"></i>
-                <span>Back to {{ $classification['name'] }}</span>
+                <span>{{ $backTitle ?? ('Back to ' . $classification['name']) }}</span>
             </a>
         </div>
 
@@ -55,6 +55,11 @@
         <form id="offline-record-edit-form" method="POST" action="{{ route('manage.record.offline.update', $record->id) }}" novalidate>
             @csrf
             @method('PUT')
+
+            <input type="hidden" name="return_type" value="{{ $returnType ?? '' }}">
+            <input type="hidden" name="return_training_id" value="{{ $returnTrainingId ?? '' }}">
+            <input type="hidden" name="return_participant_id" value="{{ $returnParticipantId ?? '' }}">
+            <input type="hidden" name="return_classification" value="{{ $returnClassification ?? '' }}">
 
             <!-- ============================================================= -->
             <!-- SECTION 1: TRAINING INFORMATION -->
@@ -606,7 +611,7 @@
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                     <div class="text-danger small fw-semibold" id="edit-form-alert" style="display: none;"></div>
                     <div class="d-flex align-items-center gap-2 ms-auto">
-                        <a href="{{ route('manage.record.offline.classification', $classification['slug']) }}" class="btn btn-outline-secondary px-3" id="btn-cancel-edit">Cancel</a>
+                        <a href="{{ $backUrl ?? route('manage.record.offline.classification', $classification['slug']) }}" class="btn btn-outline-secondary px-3" id="btn-cancel-edit">Cancel</a>
                         <button type="submit" class="btn btn-primary px-4 d-inline-flex align-items-center gap-1.5" id="btn-submit-edit" style="background-color: #d97706; border-color: #d97706;">
                             <i class="ti ti-check fs-2"></i>
                             <span>Save Changes</span>

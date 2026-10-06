@@ -596,14 +596,41 @@ class RecordOfflineController extends Controller
             ->addColumn('pic', function ($row) {
                 return htmlspecialchars($row->pic ?: '-');
             })
-            ->addColumn('action', function ($row) {
+            ->addColumn('action', function ($row) use ($participant, $classificationParam) {
+                $name = $participant['name'] ?: ($row->participant_name ?: 'Participant');
+                $course = $row->course_name ?: 'Training';
+                $nip = $participant['employee_id'] ?? ($row->employee_id ?: '');
+                $rawIdentifier = $participant['raw_identifier'] ?? ($participant['user_id'] ?? $participant['employee_id']);
+                $editUrl = route('manage.record.offline.edit', [
+                    'id'             => $row->id,
+                    'return'         => 'participant',
+                    'identifier'     => $rawIdentifier,
+                    'classification' => $classificationParam,
+                ]);
+
                 return '<div class="d-inline-flex align-items-center justify-content-center gap-1">
                     <button type="button" class="btn btn-sm btn-icon btn-outline-primary btn-view-offline-detail rounded-2" 
                             data-id="' . $row->id . '" 
-                            title="View Detail" 
-                            aria-label="View Detail" 
+                            title="View" 
+                            aria-label="View" 
                             data-bs-toggle="tooltip">
                         <i class="ti ti-eye"></i>
+                    </button>
+                    <a href="' . $editUrl . '" class="btn btn-sm btn-icon btn-outline-warning rounded-2 btn-edit-offline-record" 
+                        title="Edit" 
+                        aria-label="Edit" 
+                        data-bs-toggle="tooltip">
+                        <i class="ti ti-edit"></i>
+                    </a>
+                    <button type="button" class="btn btn-sm btn-icon btn-outline-danger btn-delete-offline-record rounded-2" 
+                            data-id="' . $row->id . '" 
+                            data-employee="' . htmlspecialchars($name, ENT_QUOTES) . '" 
+                            data-course="' . htmlspecialchars($course, ENT_QUOTES) . '" 
+                            data-nip="' . htmlspecialchars($nip, ENT_QUOTES) . '" 
+                            title="Delete" 
+                            aria-label="Delete" 
+                            data-bs-toggle="tooltip">
+                        <i class="ti ti-trash"></i>
                     </button>
                 </div>';
             })
@@ -1027,14 +1054,40 @@ class RecordOfflineController extends Controller
             ->addColumn('pic', function ($row) {
                 return htmlspecialchars($row->pic ?: '-');
             })
-            ->addColumn('action', function ($row) {
+            ->addColumn('action', function ($row) use ($trainingModel, $classificationParam) {
+                $name = $row->participant_name ?: ($row->employee_id ?: 'Participant');
+                $course = $trainingModel->course_name ?: 'Training';
+                $nip = $row->employee_id ?: '';
+                $editUrl = route('manage.record.offline.edit', [
+                    'id'             => $row->id,
+                    'return'         => 'course',
+                    'training'       => $trainingModel->id,
+                    'classification' => $classificationParam,
+                ]);
+
                 return '<div class="d-inline-flex align-items-center justify-content-center gap-1">
                     <button type="button" class="btn btn-sm btn-icon btn-outline-primary btn-view-offline-detail rounded-2" 
                             data-id="' . $row->id . '" 
-                            title="View Detail" 
-                            aria-label="View Detail" 
+                            title="View" 
+                            aria-label="View" 
                             data-bs-toggle="tooltip">
                         <i class="ti ti-eye"></i>
+                    </button>
+                    <a href="' . $editUrl . '" class="btn btn-sm btn-icon btn-outline-warning rounded-2 btn-edit-offline-record" 
+                        title="Edit" 
+                        aria-label="Edit" 
+                        data-bs-toggle="tooltip">
+                        <i class="ti ti-edit"></i>
+                    </a>
+                    <button type="button" class="btn btn-sm btn-icon btn-outline-danger btn-delete-offline-record rounded-2" 
+                            data-id="' . $row->id . '" 
+                            data-employee="' . htmlspecialchars($name, ENT_QUOTES) . '" 
+                            data-course="' . htmlspecialchars($course, ENT_QUOTES) . '" 
+                            data-nip="' . htmlspecialchars($nip, ENT_QUOTES) . '" 
+                            title="Delete" 
+                            aria-label="Delete" 
+                            data-bs-toggle="tooltip">
+                        <i class="ti ti-trash"></i>
                     </button>
                 </div>';
             })
@@ -1681,7 +1734,7 @@ class RecordOfflineController extends Controller
     /**
      * Show dedicated edit page for an offline training record.
      */
-    public function edit($id, OfflineOptionService $optionService)
+    public function edit($id, Request $request, OfflineOptionService $optionService)
     {
         $hasTables = Schema::hasTable('offline_trainings') && Schema::hasTable('offline_training_users');
         if (!$hasTables) {
@@ -1705,18 +1758,53 @@ class RecordOfflineController extends Controller
         }
         $classifications = Classification::orderBy('classification_name', 'asc')->get();
 
+        // Resolve return context safely
+        $returnType = $request->query('return');
+        $classificationParam = $request->query('classification', $resolved['slug']);
+        $backUrl = route('manage.record.offline.classification', $classificationParam ?: $resolved['slug']);
+        $backTitle = 'Back to ' . ($resolved['name'] ?? 'Classification');
+
+        $returnTrainingId = null;
+        $returnParticipantId = null;
+
+        if ($returnType === 'course') {
+            $returnTrainingId = (int) ($request->query('training') ?: $training->id);
+            $backParams = ['training' => $returnTrainingId];
+            if (filled($classificationParam)) {
+                $backParams['classification'] = $classificationParam;
+            }
+            $backUrl = route('manage.record.offline.course', $backParams);
+            $backTitle = 'Back to Course: ' . ($training->course_name ?: 'Course');
+        } elseif ($returnType === 'participant') {
+            $returnParticipantId = $request->query('identifier') ?: ($record->user_id ?: $record->employee_id);
+            if ($returnParticipantId) {
+                $backParams = ['identifier' => $returnParticipantId];
+                if (filled($classificationParam)) {
+                    $backParams['classification'] = $classificationParam;
+                }
+                $backUrl = route('manage.record.offline.participant', $backParams);
+                $backTitle = 'Back to Participant: ' . ($record->name ?: 'Participant');
+            }
+        }
+
         return view('main.record.offline-edit', [
-            'title'               => 'Edit Non KP OWL Record',
-            'subtitle'            => 'Update offline employee training record and results.',
-            'record'              => $record,
-            'training'            => $training,
-            'classification'      => $resolved,
-            'classifications'     => $classifications,
-            'options'             => $options,
-            'kpiYear'             => $kpiYear,
-            'kpiYears'            => $kpiYears,
-            'trainingTypes'       => self::TRAINING_TYPES,
-            'mainClassifications' => $classifications->pluck('classification_name')->all(),
+            'title'                => 'Edit Non KP OWL Record',
+            'subtitle'             => 'Update offline employee training record and results.',
+            'record'               => $record,
+            'training'             => $training,
+            'classification'       => $resolved,
+            'classifications'      => $classifications,
+            'options'              => $options,
+            'kpiYear'              => $kpiYear,
+            'kpiYears'             => $kpiYears,
+            'trainingTypes'        => self::TRAINING_TYPES,
+            'mainClassifications'  => $classifications->pluck('classification_name')->all(),
+            'backUrl'              => $backUrl,
+            'backTitle'            => $backTitle,
+            'returnType'           => $returnType,
+            'returnTrainingId'     => $returnTrainingId,
+            'returnParticipantId'  => $returnParticipantId,
+            'returnClassification' => $classificationParam,
         ]);
     }
 
@@ -1740,7 +1828,29 @@ class RecordOfflineController extends Controller
         try {
             $updatedRecord = $updateService->update($record, $request->all());
             $resolved = self::resolveClassification($updatedRecord->training->main_classification ?? 'unclassified');
-            $redirectUrl = route('manage.record.offline.classification', $resolved['slug']);
+            
+            // Resolve safe return URL
+            $returnType = $request->input('return_type');
+            $returnClass = $request->input('return_classification', $resolved['slug']);
+            $redirectUrl = route('manage.record.offline.classification', $returnClass ?: $resolved['slug']);
+
+            if ($returnType === 'course') {
+                $courseTrainingId = (int) ($request->input('return_training_id') ?: $updatedRecord->training->id);
+                $params = ['training' => $courseTrainingId];
+                if (filled($returnClass)) {
+                    $params['classification'] = $returnClass;
+                }
+                $redirectUrl = route('manage.record.offline.course', $params);
+            } elseif ($returnType === 'participant') {
+                $participantId = $request->input('return_participant_id') ?: ($updatedRecord->user_id ?: $updatedRecord->employee_id);
+                if ($participantId) {
+                    $params = ['identifier' => $participantId];
+                    if (filled($returnClass)) {
+                        $params['classification'] = $returnClass;
+                    }
+                    $redirectUrl = route('manage.record.offline.participant', $params);
+                }
+            }
 
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
@@ -1803,6 +1913,11 @@ class RecordOfflineController extends Controller
         }
 
         $training = $record->training;
+        $trainingId = $record->offline_training_id;
+        $participantInfo = [
+            'user_id'     => $record->user_id,
+            'employee_id' => $record->employee_id,
+        ];
 
         DB::transaction(function () use ($record, $training) {
             $record->delete();
@@ -1812,9 +1927,30 @@ class RecordOfflineController extends Controller
             }
         });
 
+        // Calculate fresh summaries after deletion
+        $courseSummary = null;
+        if ($trainingId) {
+            $freshTraining = OfflineTraining::find($trainingId);
+            if ($freshTraining) {
+                $courseSummary = RecordOfflineQueryService::getCourseSummary((int) $freshTraining->id, $freshTraining);
+            } else {
+                $courseSummary = [
+                    'total_participants' => 0,
+                    'finished'           => 0,
+                    'ongoing'            => 0,
+                    'avg_progress'       => 0,
+                    'learning_hours'     => 0,
+                ];
+            }
+        }
+
+        $participantSummary = RecordOfflineQueryService::getParticipantSummary($participantInfo);
+
         return response()->json([
-            'success' => true,
-            'message' => 'Record successfully deleted.',
+            'success'             => true,
+            'message'             => 'Record successfully deleted.',
+            'course_summary'      => $courseSummary,
+            'participant_summary' => $participantSummary,
         ]);
     }
 }

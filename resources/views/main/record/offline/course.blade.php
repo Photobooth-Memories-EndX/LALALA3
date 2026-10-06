@@ -600,6 +600,9 @@
 <!-- DETAIL MODAL FOR RECORD VIEW -->
 @include('main.record.components.offline-detail-modal')
 
+<!-- DELETE CONFIRMATION MODAL -->
+@include('main.record.components.offline-delete-modal')
+
 @endsection
 
 @section('style')
@@ -1255,6 +1258,198 @@
 
         $('#btn-export-course-pdf').on('click', function () {
             window.location.href = exportPdfBaseUrl + getCourseFilterQueryString();
+        });
+
+        // Offline Training Detail Modal Logic
+        const detailModalEl = document.getElementById('offlineTrainingDetailModal');
+        let detailModal = null;
+        if (detailModalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            detailModal = new bootstrap.Modal(detailModalEl);
+        }
+
+        $(document).on('click', '.btn-view-offline-detail', function () {
+            const id = $(this).data('id');
+            if (!id) return;
+
+            $('#offline-detail-loading').show();
+            $('#offline-detail-content').hide();
+
+            if (detailModal) {
+                detailModal.show();
+            } else {
+                $('#offlineTrainingDetailModal').modal('show');
+            }
+
+            $.ajax({
+                url: `/manage/record/offline/${id}/detail`,
+                type: 'GET',
+                dataType: 'json',
+                success: function (res) {
+                    $('#offline-detail-loading').hide();
+                    if (res && res.success && res.data) {
+                        const d = res.data;
+
+                        // Header
+                        $('#modal-detail-course-name').text(d.course_name || '-');
+                        $('#modal-detail-sub-course-name').text(d.sub_course_name || '');
+                        $('#modal-detail-type').text(d.type || 'In-House');
+
+                        const progress = parseFloat(d.progress) || 0;
+                        const statusBadge = $('#modal-detail-status');
+                        if (progress >= 100) {
+                            statusBadge.removeClass('bg-warning-lt bg-secondary-lt').addClass('bg-success-lt').text('FINISHED');
+                        } else if (progress > 0) {
+                            statusBadge.removeClass('bg-success-lt bg-secondary-lt').addClass('bg-warning-lt').text(`ONGOING (${Math.round(progress)}%)`);
+                        } else {
+                            statusBadge.removeClass('bg-success-lt bg-warning-lt').addClass('bg-secondary-lt').text('NOT STARTED');
+                        }
+
+                        // Section 1: Course Info
+                        $('#modal-detail-batch').text(d.batch || '-');
+                        $('#modal-detail-category').text(d.category || '-');
+                        $('#modal-detail-level').text(d.level || '-');
+                        $('#modal-detail-sec-type').text(d.type || '-');
+
+                        // Section 2: Classification & KPI
+                        $('#modal-detail-main-class').text(d.main_classification || '-');
+                        $('#modal-detail-sub-class').text(d.sub_classification || '-');
+                        $('#modal-detail-corporate-kpi').text(d.counted_corporate_kpi ? 'Yes' : (d.counted_corporate_kpi === false ? 'No' : '-'));
+                        $('#modal-detail-sub-corporate-kpi').text(d.sub_corporate_kpi || '-');
+
+                        // Section 3: Delivery & Provider
+                        $('#modal-detail-delivery-method').text(d.delivery_method || '-');
+                        $('#modal-detail-sub-delivery-method').text(d.sub_delivery_method || '-');
+                        $('#modal-detail-provider').text(d.provider || '-');
+                        $('#modal-detail-sub-provider').text(d.sub_provider || '-');
+                        $('#modal-detail-provider-name').text(d.provider_name || '-');
+                        $('#modal-detail-venue').text(d.venue || '-');
+                        $('#modal-detail-instructor').text(d.instructor || '-');
+
+                        // Section 4: Schedule & Duration
+                        $('#modal-detail-start-date').text(d.start_date || '-');
+                        $('#modal-detail-finish-date').text(d.finish_date || '-');
+                        $('#modal-detail-duration-seconds').text(d.duration_seconds ? `${d.duration_seconds.toLocaleString()}s` : '-');
+                        $('#modal-detail-course-hours').text(d.course_learning_hours ? `${parseFloat(d.course_learning_hours).toFixed(1)} Hours` : '-');
+
+                        // Section 5: Participant & Job Info
+                        $('#modal-detail-employee-id').text(d.employee_id || '-');
+                        $('#modal-detail-participant-name').text(d.participant_name || d.user_name || '-');
+                        $('#modal-detail-grade').text(d.grade || '-');
+                        $('#modal-detail-job-position').text(d.job_position || '-');
+                        $('#modal-detail-team').text(d.team || '-');
+                        $('#modal-detail-department').text(d.department || '-');
+                        $('#modal-detail-company').text(d.company || '-');
+
+                        // Section 6: Progress & Evaluation
+                        $('#modal-detail-progress').text(`${progress.toFixed(1)}%`);
+                        $('#modal-detail-learning-hours').text(d.participant_learning_hours ? `${parseFloat(d.participant_learning_hours).toFixed(1)} Hours` : '-');
+                        $('#modal-detail-assessment-score').text(d.assessment_score !== null && d.assessment_score !== undefined ? parseFloat(d.assessment_score).toFixed(1) : '-');
+
+                        if (d.attendance === null || d.attendance === undefined) {
+                            $('#modal-detail-attendance').text('-');
+                        } else {
+                            $('#modal-detail-attendance').html(d.attendance
+                                ? '<span class="badge bg-success-lt text-success">Present</span>'
+                                : '<span class="badge bg-danger-lt text-danger">Absent</span>'
+                            );
+                        }
+
+                        $('#modal-detail-attendance-reason').text(d.attendance_reason || '-');
+                        $('#modal-detail-certificate').text(d.certificate || '-');
+
+                        // Section 7: Service Bond & L1-L3
+                        $('#modal-detail-bond-status').text(d.bond_status || 'No');
+                        $('#modal-detail-bond-end-date').text(d.bond_end_date || '-');
+                        $('#modal-detail-bond-amount').text(d.bond_amount ? `Rp ${parseFloat(d.bond_amount).toLocaleString('id-ID')}` : '-');
+                        $('#modal-detail-l1-program').text(d.l1_program || '-');
+                        $('#modal-detail-l2-numerical').text(d.l2_numerical !== null && d.l2_numerical !== undefined ? parseFloat(d.l2_numerical).toFixed(1) : '-');
+                        $('#modal-detail-l2-verbal').text(d.l2_verbal || '-');
+                        $('#modal-detail-l3-numerical').text(d.l3_numerical !== null && d.l3_numerical !== undefined ? parseFloat(d.l3_numerical).toFixed(1) : '-');
+                        $('#modal-detail-l3-verbal').text(d.l3_verbal || '-');
+                        $('#modal-detail-pic').text(d.pic || '-');
+
+                        $('#offline-detail-content').fadeIn(150);
+                    } else {
+                        $('#offlineTrainingDetailModalBody').html('<div class="py-5 text-center text-danger">Failed to load record details.</div>');
+                    }
+                },
+                error: function () {
+                    $('#offline-detail-loading').hide();
+                    $('#offlineTrainingDetailModalBody').html('<div class="py-5 text-center text-danger">An error occurred while loading record details.</div>');
+                }
+            });
+        });
+
+        // Delete Record Modal Logic
+        const deleteModalEl = document.getElementById('deleteOfflineRecordModal');
+        let deleteModal = null;
+        if (deleteModalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            deleteModal = new bootstrap.Modal(deleteModalEl);
+        }
+
+        $(document).on('click', '.btn-delete-offline-record', function () {
+            const id = $(this).data('id');
+            const employee = $(this).data('employee') || 'Participant';
+            const course = $(this).data('course') || 'Training';
+            const nip = $(this).data('nip') || '';
+
+            $('#delete-modal-employee-name').text(employee);
+            $('#delete-modal-course-name').text(course);
+            if (nip) {
+                $('#delete-modal-nip-wrapper').show();
+                $('#delete-modal-nip').text(nip);
+            } else {
+                $('#delete-modal-nip-wrapper').hide();
+            }
+            $('#btn-confirm-delete-offline-record').data('id', id);
+
+            if (deleteModal) {
+                deleteModal.show();
+            } else {
+                $('#deleteOfflineRecordModal').modal('show');
+            }
+        });
+
+        $('#btn-confirm-delete-offline-record').on('click', function () {
+            const id = $(this).data('id');
+            if (!id) return;
+
+            const $btn = $(this);
+            const originalHtml = $btn.html();
+            $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Deleting...');
+
+            $.ajax({
+                url: `/manage/record/offline/${id}`,
+                type: 'DELETE',
+                dataType: 'json',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                    'Accept': 'application/json'
+                },
+                success: function (res) {
+                    $btn.prop('disabled', false).html(originalHtml);
+                    if (deleteModal) {
+                        deleteModal.hide();
+                    } else {
+                        $('#deleteOfflineRecordModal').modal('hide');
+                    }
+
+                    // Update summary KPI cards if returned
+                    if (res && res.course_summary) {
+                        $('#kpi-total-participants').text(Number(res.course_summary.total_participants).toLocaleString());
+                        $('#kpi-finished').text(Number(res.course_summary.finished).toLocaleString());
+                        $('#kpi-ongoing').text(Number(res.course_summary.ongoing).toLocaleString());
+                        $('#kpi-progress').text(res.course_summary.avg_progress + '%');
+                    }
+
+                    courseTable.ajax.reload(null, false);
+                },
+                error: function (xhr) {
+                    $btn.prop('disabled', false).html(originalHtml);
+                    const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Failed to delete record.';
+                    alert(msg);
+                }
+            });
         });
     });
 </script>

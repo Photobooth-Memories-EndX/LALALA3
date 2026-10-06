@@ -352,30 +352,7 @@
 @include('main.record.components.offline-detail-modal')
 
 <!-- DELETE CONFIRMATION MODAL -->
-<div class="modal fade" id="deleteOfflineRecordModal" tabindex="-1" aria-labelledby="deleteOfflineRecordModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content rounded-3 border-0 shadow">
-            <div class="modal-body text-center p-4">
-                <div class="text-danger mb-3">
-                    <span class="avatar avatar-lg bg-danger-lt rounded-circle">
-                        <i class="ti ti-trash fs-1"></i>
-                    </span>
-                </div>
-                <h4 class="modal-title fw-bold text-dark mb-2" id="deleteOfflineRecordModalLabel">Delete Training Record?</h4>
-                <p class="text-muted small mb-3">
-                    Are you sure you want to delete the record for <strong id="delete-modal-employee-name" class="text-dark"></strong> in <em id="delete-modal-course-name"></em>? This action will remove the participant from this training.
-                </p>
-                <div class="d-flex justify-content-center gap-2">
-                    <button type="button" class="btn btn-outline-secondary px-3 rounded-2" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-danger px-3 rounded-2 d-inline-flex align-items-center gap-1" id="btn-confirm-delete-offline-record">
-                        <i class="ti ti-trash"></i>
-                        <span>Delete</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+@include('main.record.components.offline-delete-modal')
 
 @endsection
 
