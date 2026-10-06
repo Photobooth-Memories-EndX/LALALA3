@@ -310,6 +310,10 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
         Route::get('user-search', [UserController::class, 'searchUser'])->name('user.search');
         Route::get('user/get-employee/{id_emp}', [UserController::class, 'getEmployeeData'])->name('user.getEmployeeData');
         Route::get('user/profile/{hash}', [ProfileUserController::class, 'index'])->name('user.manage.profile');
+        Route::get('user/profile/{hash}/learning-datatable', [ProfileUserController::class, 'learningDatatable'])->name('user.manage.profile.learning.datatable');
+        Route::get('user/profile/{hash}/export', [ProfileUserController::class, 'exportExcel'])->name('user.manage.profile.export.excel');
+        Route::get('user/profile/{hash}/export/csv', [ProfileUserController::class, 'exportCsv'])->name('user.manage.profile.export.csv');
+        Route::get('user/profile/{hash}/export/pdf', [ProfileUserController::class, 'exportPdf'])->name('user.manage.profile.export.pdf');
     });
 
     Route::group(['middleware' => 'mpermission:certificate_setting'], function () {
