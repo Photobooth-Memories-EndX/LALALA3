@@ -113,104 +113,99 @@
                 <div class="text-secondary small fw-semibold mb-2" style="color: #6c757d !important; font-size: 0.85rem;">
                     Quick Filter
                 </div>
-                <form id="course-filter-form" onsubmit="return false;">
-                    <div class="course-filter-toolbar d-flex flex-wrap align-items-center justify-content-between gap-2">
-                        <!-- Left Filter Controls -->
-                        <div class="course-filter-left-group d-flex flex-wrap align-items-center gap-2">
-                            <!-- Search Participant / NIP -->
-                            <div class="course-filter-search position-relative">
-                                <input type="text" id="course-participant-input" class="form-control rounded-3"
-                                       placeholder="Search participant or NIP..." autocomplete="off">
-                            </div>
-
-                            <!-- Type Dropdown -->
-                            <div class="course-filter-select">
-                                <select class="form-select rounded-3" id="course-type-select">
-                                    <option value="all">Type: All</option>
-                                    @foreach ($trainingTypes as $type)
-                                        <option value="{{ $type }}">{{ $type }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <!-- Status Dropdown -->
-                            <div class="course-filter-select">
-                                <select class="form-select rounded-3" id="course-status-select">
-                                    <option value="all">All Status</option>
-                                    <option value="finished">Finished</option>
-                                    <option value="ongoing">Ongoing</option>
-                                    <option value="not_started">Not Started</option>
-                                </select>
-                            </div>
-
-                            <!-- Year Dropdown -->
-                            <div class="course-filter-select-year">
-                                <select class="form-select rounded-3" id="course-year-select">
-                                    <option value="all">All Year</option>
-                                    @foreach ($years as $year)
-                                        <option value="{{ $year }}">{{ $year }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <!-- Search Button -->
-                            <button type="button" id="btn-apply-course-filter" class="btn btn-primary btn-icon px-3 flex-shrink-0"
-                                    style="background-color: #003b6d; border-color: #003b6d;" data-bs-toggle="tooltip" title="Apply Filter">
-                                <i class="ti ti-search fs-2"></i>
-                            </button>
-
-                            <!-- More Filters Button with Counter Badge -->
-                            <button type="button" id="btn-more-course-filters" class="btn btn-outline-primary btn-icon px-3 position-relative btn-more-filters flex-shrink-0"
-                                    data-bs-toggle="modal" data-bs-target="#moreCourseFiltersModal" title="More Filters">
-                                <i class="ti ti-adjustments-horizontal fs-2"></i>
-                                <span id="activeCourseFilterBadge" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle d-none">0</span>
-                            </button>
-
-                            <!-- Reset Button -->
-                            <button type="button" id="btn-reset-course-filter" class="btn btn-outline-secondary btn-icon px-3 flex-shrink-0"
-                                    data-bs-toggle="tooltip" title="Reset Filters">
-                                <i class="ti ti-refresh fs-2"></i>
-                            </button>
+                <form id="course-filter-form" class="w-100" onsubmit="return false;">
+                    <div class="d-flex align-items-center gap-2 flex-wrap w-100">
+                        <!-- Search Participant / NIP -->
+                        <div class="position-relative flex-grow-1" style="min-width: 200px;">
+                            <input type="text" id="course-participant-input" class="form-control rounded-3 w-100"
+                                   placeholder="Search participant or NIP..." autocomplete="off">
                         </div>
 
-                        <!-- Right Action Controls: Export Dropdown (Excel, CSV, PDF Landscape) -->
-                        <div class="course-filter-right-group d-flex align-items-center flex-shrink-0">
-                            <div class="dropdown">
-                                <button class="btn btn-outline-success dropdown-toggle rounded-3 px-3 d-inline-flex align-items-center gap-1"
-                                        type="button" id="courseExportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="ti ti-download me-1"></i> Export
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3" aria-labelledby="courseExportDropdown">
-                                    <li>
-                                        <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="javascript:void(0);" id="btn-export-course-excel">
-                                            <i class="ti ti-file-spreadsheet text-success fs-2"></i>
-                                            <div>
-                                                <div class="fw-semibold">Excel (.xlsx)</div>
-                                                <div class="small text-muted" style="font-size: 0.72rem;">Canonical 44-column spreadsheet</div>
-                                            </div>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="javascript:void(0);" id="btn-export-course-csv">
-                                            <i class="ti ti-file-text text-primary fs-2"></i>
-                                            <div>
-                                                <div class="fw-semibold">CSV (.csv)</div>
-                                                <div class="small text-muted" style="font-size: 0.72rem;">Standard comma-separated format</div>
-                                            </div>
-                                        </a>
-                                    </li>
-                                    <li><hr class="dropdown-divider my-1"></li>
-                                    <li>
-                                        <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="javascript:void(0);" id="btn-export-course-pdf">
-                                            <i class="ti ti-file-type-pdf text-danger fs-2"></i>
-                                            <div>
-                                                <div class="fw-semibold">PDF Landscape (.pdf)</div>
-                                                <div class="small text-muted" style="font-size: 0.72rem;">Structured A3 landscape report</div>
-                                            </div>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
+                        <!-- Type Dropdown -->
+                        <div class="flex-shrink-0" style="min-width: 125px;">
+                            <select class="form-select rounded-3" id="course-type-select">
+                                <option value="all">Type: All</option>
+                                @foreach ($trainingTypes as $type)
+                                    <option value="{{ $type }}">{{ $type }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- Status Dropdown -->
+                        <div class="flex-shrink-0" style="min-width: 120px;">
+                            <select class="form-select rounded-3" id="course-status-select">
+                                <option value="all">All Status</option>
+                                <option value="finished">Finished</option>
+                                <option value="ongoing">Ongoing</option>
+                                <option value="not_started">Not Started</option>
+                            </select>
+                        </div>
+
+                        <!-- Year Dropdown -->
+                        <div class="flex-shrink-0" style="min-width: 105px;">
+                            <select class="form-select rounded-3" id="course-year-select">
+                                <option value="all">All Year</option>
+                                @foreach ($years as $year)
+                                    <option value="{{ $year }}">{{ $year }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- Search Button -->
+                        <button type="button" id="btn-apply-course-filter" class="btn btn-primary btn-icon px-3 flex-shrink-0"
+                                style="background-color: #003b6d; border-color: #003b6d;" data-bs-toggle="tooltip" data-bs-title="Apply Filter" title="Apply Filter">
+                            <i class="ti ti-search fs-2"></i>
+                        </button>
+
+                        <!-- More Filters Button with Counter Badge -->
+                        <button type="button" id="btn-more-course-filters" class="btn btn-outline-primary btn-icon px-3 position-relative btn-more-filters flex-shrink-0"
+                                data-bs-toggle="modal" data-bs-target="#moreCourseFiltersModal" title="More Filters">
+                            <i class="ti ti-adjustments-horizontal fs-2"></i>
+                            <span id="activeCourseFilterBadge" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle d-none">0</span>
+                        </button>
+
+                        <!-- Reset Button -->
+                        <button type="button" id="btn-reset-course-filter" class="btn btn-outline-secondary btn-icon px-3 btn-quick-reset flex-shrink-0"
+                                data-bs-toggle="tooltip" data-bs-title="Reset Filters" title="Reset Filters">
+                            <i class="ti ti-refresh fs-2"></i>
+                        </button>
+
+                        <!-- Export Dropdown (Excel, CSV, PDF Landscape) -->
+                        <div class="dropdown flex-shrink-0">
+                            <button class="btn btn-success dropdown-toggle rounded-3 px-3 btn-download"
+                                    type="button" id="courseExportDropdown" data-bs-toggle="dropdown" aria-expanded="false" title="Export Records">
+                                <i class="ti ti-download me-1"></i> Download
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3" aria-labelledby="courseExportDropdown">
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="javascript:void(0);" id="btn-export-course-excel">
+                                        <i class="ti ti-file-spreadsheet text-success fs-2"></i>
+                                        <div>
+                                            <div class="fw-semibold">Excel (.xlsx)</div>
+                                            <div class="small text-muted" style="font-size: 0.72rem;">Canonical 44-column spreadsheet</div>
+                                        </div>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="javascript:void(0);" id="btn-export-course-csv">
+                                        <i class="ti ti-file-text text-primary fs-2"></i>
+                                        <div>
+                                            <div class="fw-semibold">CSV (.csv)</div>
+                                            <div class="small text-muted" style="font-size: 0.72rem;">Standard comma-separated format</div>
+                                        </div>
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider my-1"></li>
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="javascript:void(0);" id="btn-export-course-pdf">
+                                        <i class="ti ti-file-type-pdf text-danger fs-2"></i>
+                                        <div>
+                                            <div class="fw-semibold">PDF Landscape (.pdf)</div>
+                                            <div class="small text-muted" style="font-size: 0.72rem;">Structured A3 landscape report</div>
+                                        </div>
+                                    </a>
+                                </li>
+                            </ul>
                         </div>
                     </div>
                 </form>
@@ -735,107 +730,116 @@
         color: #e2e8f0 !important;
     }
 
-    /* Standardized Quick Filter Toolbar Controls */
-    .course-filter-toolbar {
-        min-height: 38px;
-    }
-
-    .course-filter-toolbar .form-control,
-    .course-filter-toolbar .form-select,
-    .course-filter-toolbar .btn {
-        height: 38px !important;
-        min-height: 38px !important;
-        max-height: 38px !important;
-        box-sizing: border-box !important;
-        border-radius: 8px !important;
-        font-size: 0.875rem !important;
-        vertical-align: middle !important;
-        margin: 0 !important;
-    }
-
-    .course-filter-toolbar .form-control {
-        padding: 0.4375rem 0.75rem !important;
-        line-height: 1.4285714 !important;
-    }
-
-    .course-filter-toolbar .form-select {
-        padding: 0.4375rem 2.25rem 0.4375rem 0.75rem !important;
-        line-height: 1.4285714 !important;
-    }
-
-    .course-filter-toolbar .btn-icon {
-        width: 38px !important;
-        min-width: 38px !important;
-        height: 38px !important;
-        min-height: 38px !important;
-        padding: 0 !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        border-radius: 8px !important;
-        flex-shrink: 0 !important;
-    }
-
-    .course-filter-toolbar .btn-icon i {
-        font-size: 1.15rem !important;
-        line-height: 1 !important;
-    }
-
-    .course-filter-toolbar #courseExportDropdown {
-        height: 38px !important;
-        min-height: 38px !important;
-        padding: 0.4375rem 1rem !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        border-radius: 8px !important;
-        line-height: 1.4285714 !important;
-        font-weight: 500 !important;
-        white-space: nowrap !important;
-    }
-
-    .course-filter-search {
-        width: 210px;
-        min-width: 170px;
-        max-width: 260px;
-        flex: 1 1 auto;
-    }
-
-    .course-filter-select {
-        width: 115px;
-        min-width: 110px;
-        flex-shrink: 0;
-    }
-
-    .course-filter-select-year {
-        width: 100px;
-        min-width: 95px;
-        flex-shrink: 0;
-    }
-
-    @media (max-width: 767.98px) {
-        .course-filter-left-group {
-            width: 100%;
-        }
-        .course-filter-search {
-            width: 100%;
-            max-width: 100%;
-        }
-        .course-filter-right-group {
-            width: 100%;
-            justify-content: flex-end;
-            margin-top: 0.25rem;
-        }
-    }
-
-    .btn-icon {
-        width: 38px;
-        height: 38px;
+    /* Action buttons in table */
+    .table .btn-view-offline-detail,
+    .table .btn-icon {
+        width: 30px;
+        height: 30px;
         padding: 0;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         font-size: 15px;
+    }
+
+    /* Quick Filter Toolbar Buttons Styling (Matching Manage Learning) */
+    .btn-more-filters,
+    #btn-more-filters,
+    #btn-more-course-filters {
+        border-color: #0c5b9e !important;
+        color: #0c5b9e !important;
+        background-color: transparent !important;
+        transition: all 0.2s ease;
+    }
+    .btn-more-filters:hover,
+    .btn-more-filters:focus,
+    .btn-more-filters:active,
+    #btn-more-filters:hover,
+    #btn-more-filters:focus,
+    #btn-more-filters:active,
+    #btn-more-course-filters:hover,
+    #btn-more-course-filters:focus,
+    #btn-more-course-filters:active {
+        background-color: #0c5b9e !important;
+        color: #ffffff !important;
+        border-color: #0c5b9e !important;
+    }
+    .btn-more-filters:hover i,
+    .btn-more-filters:focus i,
+    .btn-more-filters:active i,
+    #btn-more-filters:hover i,
+    #btn-more-filters:focus i,
+    #btn-more-filters:active i,
+    #btn-more-course-filters:hover i,
+    #btn-more-course-filters:focus i,
+    #btn-more-course-filters:active i {
+        color: #ffffff !important;
+    }
+
+    [data-bs-theme="dark"] .btn-more-filters,
+    [data-bs-theme="dark"] #btn-more-filters,
+    [data-bs-theme="dark"] #btn-more-course-filters,
+    body.dark-mode .btn-more-filters,
+    body.dark-mode #btn-more-filters,
+    body.dark-mode #btn-more-course-filters,
+    body.theme-dark .btn-more-filters,
+    body.theme-dark #btn-more-filters,
+    body.theme-dark #btn-more-course-filters {
+        background-color: transparent !important;
+        border-color: #3b82f6 !important;
+        color: #60a5fa !important;
+    }
+    [data-bs-theme="dark"] .btn-more-filters:hover,
+    [data-bs-theme="dark"] #btn-more-filters:hover,
+    [data-bs-theme="dark"] #btn-more-course-filters:hover,
+    body.dark-mode .btn-more-filters:hover,
+    body.dark-mode #btn-more-filters:hover,
+    body.dark-mode #btn-more-course-filters:hover,
+    body.theme-dark .btn-more-filters:hover,
+    body.theme-dark #btn-more-filters:hover,
+    body.theme-dark #btn-more-course-filters:hover {
+        background-color: #2563eb !important;
+        color: #ffffff !important;
+        border-color: #2563eb !important;
+    }
+
+    .btn-download {
+        background-color: #2fb344 !important;
+        border-color: #2fb344 !important;
+        color: #ffffff !important;
+        transition: all 0.2s ease;
+    }
+    .btn-download:hover,
+    .btn-download:focus,
+    .btn-download:active {
+        background-color: #269639 !important;
+        border-color: #269639 !important;
+        color: #ffffff !important;
+    }
+    .btn-download:hover i,
+    .btn-download:focus i,
+    .btn-download:active i {
+        color: #ffffff !important;
+    }
+
+    .btn-quick-reset {
+        transition: all 0.2s ease;
+    }
+    .btn-quick-reset:hover {
+        background-color: #0c5b9e !important;
+        color: #ffffff !important;
+    }
+    [data-bs-theme="dark"] .btn-quick-reset,
+    body.dark-mode .btn-quick-reset,
+    body.theme-dark .btn-quick-reset {
+        background-color: transparent !important;
+        color: #94a3b8 !important;
+    }
+    [data-bs-theme="dark"] .btn-quick-reset:hover,
+    body.dark-mode .btn-quick-reset:hover,
+    body.theme-dark .btn-quick-reset:hover {
+        background-color: #0c5b9e !important;
+        color: #ffffff !important;
     }
 
     #moreCourseFiltersModal {

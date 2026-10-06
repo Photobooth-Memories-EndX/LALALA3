@@ -33,7 +33,7 @@
                 <div class="text-secondary small fw-semibold mb-2" style="color: #6c757d !important; font-size: 0.85rem;">
                     Quick Filter
                 </div>
-                <form id="offline-filter-form" onsubmit="return false;">
+                <form id="offline-filter-form" class="w-100" onsubmit="return false;">
                     <!-- Hidden inputs from More Filters Modal to preserve in datatable & export queries -->
                     <input type="hidden" id="filter-from-date" name="from_date" value="{{ request('from_date') ?? request('date_from') }}">
                     <input type="hidden" id="filter-to-date" name="to_date" value="{{ request('to_date') ?? request('date_to') }}">
@@ -45,23 +45,23 @@
                     <input type="hidden" id="filter-hours-min" name="hours_min" value="{{ request('hours_min') ?? request('learning_hours_min') }}">
                     <input type="hidden" id="filter-hours-max" name="hours_max" value="{{ request('hours_max') ?? request('learning_hours_max') }}">
 
-                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <div class="d-flex align-items-center gap-2 flex-wrap w-100">
                         <!-- Employee Search -->
-                        <div class="position-relative flex-grow-1" style="min-width: 200px; max-width: 260px;">
-                            <input type="text" id="offline-employee-input" class="form-control rounded-3" 
+                        <div class="position-relative flex-grow-1" style="min-width: 180px;">
+                            <input type="text" id="offline-employee-input" class="form-control rounded-3 w-100" 
                                    placeholder="Search employee or NIP..." autocomplete="off" 
                                    value="{{ request('employee_id') ?? request('employee') }}">
                         </div>
 
                         <!-- Learning Title / Course Name Search -->
-                        <div class="position-relative flex-grow-1" style="min-width: 220px; max-width: 280px;">
-                            <input type="text" id="offline-course-input" class="form-control rounded-3" 
+                        <div class="position-relative flex-grow-1" style="min-width: 200px;">
+                            <input type="text" id="offline-course-input" class="form-control rounded-3 w-100" 
                                    placeholder="Search learning title..." autocomplete="off" 
                                    value="{{ request('course_name') ?? (request('learning_title') ?? request('title')) }}">
                         </div>
 
                         <!-- Type Dropdown -->
-                        <div style="min-width: 125px; flex-shrink: 0;">
+                        <div class="flex-shrink-0" style="min-width: 125px;">
                             <select class="form-select rounded-3" id="offline-type-select">
                                 <option value="all" {{ request('type', 'all') === 'all' ? 'selected' : '' }}>Type: All</option>
                                 @foreach ($trainingTypes as $type)
@@ -71,7 +71,7 @@
                         </div>
 
                         <!-- Status Dropdown -->
-                        <div style="min-width: 120px; flex-shrink: 0;">
+                        <div class="flex-shrink-0" style="min-width: 120px;">
                             <select class="form-select rounded-3" id="offline-status-select">
                                 <option value="all" {{ request('status', 'all') === 'all' ? 'selected' : '' }}>All Status</option>
                                 <option value="finished" {{ in_array(request('status'), ['finished', 'finish', '1']) ? 'selected' : '' }}>Finished</option>
@@ -81,7 +81,7 @@
                         </div>
 
                         <!-- Year Dropdown -->
-                        <div style="min-width: 110px; flex-shrink: 0;">
+                        <div class="flex-shrink-0" style="min-width: 105px;">
                             <select class="form-select rounded-3" id="offline-year-select">
                                 <option value="all" {{ request('year', 'all') === 'all' ? 'selected' : '' }}>All Year</option>
                                 @foreach ($years as $year)
@@ -104,7 +104,7 @@
                         </button>
 
                         <!-- 3. Icon Button: Reset -->
-                        <button type="button" id="btn-reset-offline-filter" class="btn btn-outline-secondary btn-icon px-3 flex-shrink-0" 
+                        <button type="button" id="btn-reset-offline-filter" class="btn btn-outline-secondary btn-icon px-3 btn-quick-reset flex-shrink-0" 
                                 data-bs-toggle="tooltip" data-bs-title="Reset Filters" title="Reset Filters">
                             <i class="ti ti-refresh fs-2"></i>
                         </button>
@@ -554,8 +554,9 @@
         border-color: #374151 !important;
     }
 
-    /* Action buttons */
-    .btn-icon {
+    /* Action buttons in table */
+    .table .btn-view-offline-detail,
+    .table .btn-icon {
         width: 30px;
         height: 30px;
         padding: 0;
@@ -563,6 +564,106 @@
         align-items: center;
         justify-content: center;
         font-size: 15px;
+    }
+
+    /* Quick Filter Toolbar Buttons Styling (Matching Manage Learning) */
+    .btn-more-filters,
+    #btn-more-filters,
+    #btn-more-offline-filters {
+        border-color: #0c5b9e !important;
+        color: #0c5b9e !important;
+        background-color: transparent !important;
+        transition: all 0.2s ease;
+    }
+    .btn-more-filters:hover,
+    .btn-more-filters:focus,
+    .btn-more-filters:active,
+    #btn-more-filters:hover,
+    #btn-more-filters:focus,
+    #btn-more-filters:active,
+    #btn-more-offline-filters:hover,
+    #btn-more-offline-filters:focus,
+    #btn-more-offline-filters:active {
+        background-color: #0c5b9e !important;
+        color: #ffffff !important;
+        border-color: #0c5b9e !important;
+    }
+    .btn-more-filters:hover i,
+    .btn-more-filters:focus i,
+    .btn-more-filters:active i,
+    #btn-more-filters:hover i,
+    #btn-more-filters:focus i,
+    #btn-more-filters:active i,
+    #btn-more-offline-filters:hover i,
+    #btn-more-offline-filters:focus i,
+    #btn-more-offline-filters:active i {
+        color: #ffffff !important;
+    }
+
+    [data-bs-theme="dark"] .btn-more-filters,
+    [data-bs-theme="dark"] #btn-more-filters,
+    [data-bs-theme="dark"] #btn-more-offline-filters,
+    body.dark-mode .btn-more-filters,
+    body.dark-mode #btn-more-filters,
+    body.dark-mode #btn-more-offline-filters,
+    body.theme-dark .btn-more-filters,
+    body.theme-dark #btn-more-filters,
+    body.theme-dark #btn-more-offline-filters {
+        background-color: transparent !important;
+        border-color: #3b82f6 !important;
+        color: #60a5fa !important;
+    }
+    [data-bs-theme="dark"] .btn-more-filters:hover,
+    [data-bs-theme="dark"] #btn-more-filters:hover,
+    [data-bs-theme="dark"] #btn-more-offline-filters:hover,
+    body.dark-mode .btn-more-filters:hover,
+    body.dark-mode #btn-more-filters:hover,
+    body.dark-mode #btn-more-offline-filters:hover,
+    body.theme-dark .btn-more-filters:hover,
+    body.theme-dark #btn-more-filters:hover,
+    body.theme-dark #btn-more-offline-filters:hover {
+        background-color: #2563eb !important;
+        color: #ffffff !important;
+        border-color: #2563eb !important;
+    }
+
+    .btn-download {
+        background-color: #2fb344 !important;
+        border-color: #2fb344 !important;
+        color: #ffffff !important;
+        transition: all 0.2s ease;
+    }
+    .btn-download:hover,
+    .btn-download:focus,
+    .btn-download:active {
+        background-color: #269639 !important;
+        border-color: #269639 !important;
+        color: #ffffff !important;
+    }
+    .btn-download:hover i,
+    .btn-download:focus i,
+    .btn-download:active i {
+        color: #ffffff !important;
+    }
+
+    .btn-quick-reset {
+        transition: all 0.2s ease;
+    }
+    .btn-quick-reset:hover {
+        background-color: #0c5b9e !important;
+        color: #ffffff !important;
+    }
+    [data-bs-theme="dark"] .btn-quick-reset,
+    body.dark-mode .btn-quick-reset,
+    body.theme-dark .btn-quick-reset {
+        background-color: transparent !important;
+        color: #94a3b8 !important;
+    }
+    [data-bs-theme="dark"] .btn-quick-reset:hover,
+    body.dark-mode .btn-quick-reset:hover,
+    body.theme-dark .btn-quick-reset:hover {
+        background-color: #0c5b9e !important;
+        color: #ffffff !important;
     }
 
     .hover-underline:hover,
