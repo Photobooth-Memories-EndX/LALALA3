@@ -11,7 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('offline_trainings', function (Blueprint $table) {
+        if (!Schema::hasTable('offline_trainings')) {
+            Schema::create('offline_trainings', function (Blueprint $table) {
             $table->id();
 
             // Identity & Dual Compatibility Titles (Manage Record & Training Schedule)
@@ -74,8 +75,10 @@ return new class extends Migration
             $table->index(['start_date', 'finish_date']);
             $table->index(['start_date', 'end_date']);
         });
+        }
 
-        Schema::create('offline_training_users', function (Blueprint $table) {
+        if (!Schema::hasTable('offline_training_users')) {
+            Schema::create('offline_training_users', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('offline_training_id')->index();
             $table->unsignedBigInteger('user_id')->nullable()->index();
@@ -117,6 +120,7 @@ return new class extends Migration
             $table->index(['offline_training_id', 'employee_id']);
             $table->index(['offline_training_id', 'progress']);
         });
+        }
     }
 
     /**

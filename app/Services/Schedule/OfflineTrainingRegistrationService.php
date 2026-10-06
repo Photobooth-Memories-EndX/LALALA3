@@ -45,13 +45,17 @@ class OfflineTrainingRegistrationService
             $startTime = $training->start_time ? (strlen($training->start_time) === 5 ? $training->start_time . ':00' : $training->start_time) : '00:00:00';
             $endTime = $training->end_time ? (strlen($training->end_time) === 5 ? $training->end_time . ':00' : $training->end_time) : '23:59:59';
 
-            $isPast = $endDate && ($endDate < $today || ($endDate === $today && $currentTime > $endTime));
+            $regCloseDate = $training->registration_close_date ?? $training->start_date;
+            $regCloseDateStr = $regCloseDate ? Carbon::parse($regCloseDate)->format('Y-m-d') : null;
+            $regCloseTimeStr = $training->registration_close_time ? (strlen($training->registration_close_time) === 5 ? $training->registration_close_time . ':00' : $training->registration_close_time) : '23:59:59';
+            $closeDatetime = $regCloseDateStr ? Carbon::parse($regCloseDateStr . ' ' . $regCloseTimeStr) : null;
+            $isPastDeadline = $closeDatetime && Carbon::now()->gt($closeDatetime);
             $isSingleDayRunningToday = ($startDate && $endDate && $startDate === $today && $endDate === $today && $currentTime >= $startTime);
 
             if ($isSingleDayRunningToday) {
                 throw new RuntimeException("Registration is closed for \"{$training->title}\" as today's session has already started.");
             }
-            if ($isPast) {
+            if ($isPastDeadline) {
                 throw new RuntimeException("Registration is closed for \"{$training->title}\" as the registration deadline has passed.");
             }
 

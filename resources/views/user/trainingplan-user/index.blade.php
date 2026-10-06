@@ -420,20 +420,26 @@
     $computedCalendarEvents = $calendarEvents ?? $dbTrainings->map(function ($t) {
         $startDate = \Carbon\Carbon::parse($t->start_date);
         $endDate = \Carbon\Carbon::parse($t->end_date ?? $t->start_date);
+        $regCloseDate = \Carbon\Carbon::parse($t->registration_close_date ?? $t->start_date);
+        $regCloseTime = $t->registration_close_time ? substr($t->registration_close_time, 0, 5) : '23:59';
+        $closeDatetime = \Carbon\Carbon::parse($regCloseDate->format('Y-m-d') . ' ' . $regCloseTime . ':59');
         $enrolled = $t->participants_count ?? 0;
         $quota = $t->quota ?: 1;
+        $isRegistrationPast = \Carbon\Carbon::now()->gt($closeDatetime);
         $isPast = $endDate->format('Y-m-d') < \Carbon\Carbon::today()->format('Y-m-d');
-        $isClosed = $t->status === 'Closed' || $enrolled >= $quota || $isPast;
+        $isClosed = $t->status === 'Closed' || $enrolled >= $quota || $isPast || $isRegistrationPast;
 
         return [
-            'id'          => (string) $t->id,
-            'year'        => (int) $startDate->format('Y'),
-            'month'       => (int) $startDate->format('n') - 1, // 0-indexed for JS Date
-            'day'         => (int) $startDate->format('j'),
-            'startDate'   => $startDate->format('Y-m-d'),
-            'endDate'     => $endDate->format('Y-m-d'),
-            'registration_close_date' => $endDate->format('Y-m-d'),
-            'registrationCloseDate'   => $endDate->format('Y-m-d'),
+            'id'                      => (string) $t->id,
+            'year'                    => (int) $startDate->format('Y'),
+            'month'                   => (int) $startDate->format('n') - 1, // 0-indexed for JS Date
+            'day'                     => (int) $startDate->format('j'),
+            'startDate'               => $startDate->format('Y-m-d'),
+            'endDate'                 => $endDate->format('Y-m-d'),
+            'registration_close_date' => $regCloseDate->format('Y-m-d'),
+            'registrationCloseDate'   => $regCloseDate->format('Y-m-d'),
+            'registration_close_time' => $regCloseTime,
+            'registrationCloseTime'   => $regCloseTime,
             'rawStatus'   => $t->status,
             'title'       => $t->title,
             'shortTitle'  => \Illuminate\Support\Str::limit($t->title, 16),
@@ -567,19 +573,55 @@
                                     </div>
                                 `;
                             } else {
-                                badgesHtml = `
-                                    <div class="mt-1 d-flex flex-column gap-1">
-                                        <span class="badge bg-success-subtle text-success rounded-pill extra-small py-1 px-2 fw-semibold cal-status-badge cal-status-badge-open"
-                                              role="button"
-                                              data-year="${year}"
-                                              data-month="${month}"
-                                              data-day="${thisDay}"
-                                              data-status="open"
-                                              title="${activeTrainingsForDay.length} Open Training(s)">
-                                            Open: ${activeTrainingsForDay.length}
-                                        </span>
-                                    </div>
-                                `;
+                                const nowTimeMs = new Date().getTime();
+                                const hasOpenReg = activeTrainingsForDay.some(e => {
+                                    const regClose = e.registration_close_date || e.registrationCloseDate || e.startDate;
+                                    let isClosePassed = false;
+                                    if (regClose) {
+                                        const cTime = e.registration_close_time || e.registrationCloseTime || '23:59';
+                                        const [cH, cM] = cTime.split(':').map(Number);
+                                        const p = regClose.split('-');
+                                        if (p.length === 3) {
+                                            const closeDt = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10), cH || 23, cM !== undefined ? cM : 59, 59, 999);
+                                            isClosePassed = closeDt.getTime() < nowTimeMs;
+                                        } else {
+                                            isClosePassed = (todayDateFormatted > regClose);
+                                        }
+                                    }
+                                    const isOpenStatus = (e.status === 'open') || ((e.rawStatus || '').toLowerCase() === 'open registration');
+                                    return (!isClosePassed) && isOpenStatus;
+                                });
+
+                                if (!hasOpenReg) {
+                                    badgesHtml = `
+                                        <div class="mt-1 d-flex flex-column gap-1">
+                                            <span class="badge rounded-pill extra-small py-1 px-2 cal-status-badge cal-status-badge-closed"
+                                                  style="background-color: #e5e7eb; color: #4b5563; border: 1px solid #d1d5db;"
+                                                  role="button"
+                                                  data-year="${year}"
+                                                  data-month="${month}"
+                                                  data-day="${thisDay}"
+                                                  data-status="closed"
+                                                  title="${activeTrainingsForDay.length} Closed Training(s)">
+                                                Closed: ${activeTrainingsForDay.length}
+                                            </span>
+                                        </div>
+                                    `;
+                                } else {
+                                    badgesHtml = `
+                                        <div class="mt-1 d-flex flex-column gap-1">
+                                            <span class="badge bg-success-subtle text-success rounded-pill extra-small py-1 px-2 fw-semibold cal-status-badge cal-status-badge-open"
+                                                  role="button"
+                                                  data-year="${year}"
+                                                  data-month="${month}"
+                                                  data-day="${thisDay}"
+                                                  data-status="open"
+                                                  title="${activeTrainingsForDay.length} Open Training(s)">
+                                                Open: ${activeTrainingsForDay.length}
+                                            </span>
+                                        </div>
+                                    `;
+                                }
                             }
                         }
 
@@ -672,7 +714,7 @@
 
             const isOpen = (status === 'open');
             const isRunning = (status === 'running');
-            const isPastModal = (status === 'closed') || (targetDateStr < todayDateFormatted);
+            const isPastDate = (targetDateStr < todayDateFormatted);
 
             const modalStatusTitle = document.getElementById('modalStatusTitle');
             const modalStatusCountBadge = document.getElementById('modalStatusCountBadge');
@@ -684,7 +726,15 @@
 
             // Header Elements
             if (modalStatusTitle) {
-                modalStatusTitle.textContent = isRunning ? 'Running Trainings' : (isOpen && !isPastModal ? 'Open Trainings' : 'Completed / Past Trainings');
+                if (isRunning) {
+                    modalStatusTitle.textContent = 'Running Trainings';
+                } else if (isPastDate) {
+                    modalStatusTitle.textContent = 'Completed / Past Trainings';
+                } else if (isOpen) {
+                    modalStatusTitle.textContent = 'Open Trainings';
+                } else {
+                    modalStatusTitle.textContent = 'Closed Registration Trainings';
+                }
             }
             if (modalSelectedDateText) {
                 modalSelectedDateText.textContent = formattedDate;
@@ -696,7 +746,13 @@
                     modalStatusCountBadge.style.color = '';
                     modalStatusCountBadge.style.border = '';
                     modalStatusCountBadge.textContent = `${matchingEvents.length} Running`;
-                } else if (isOpen && !isPastModal) {
+                } else if (isPastDate) {
+                    modalStatusCountBadge.className = 'badge bg-gray-100 text-gray-600 rounded-pill fw-semibold px-2-5 py-1 fs-6';
+                    modalStatusCountBadge.style.backgroundColor = '#f3f4f6';
+                    modalStatusCountBadge.style.color = '#4b5563';
+                    modalStatusCountBadge.style.border = '1px solid #e5e7eb';
+                    modalStatusCountBadge.textContent = `${matchingEvents.length} Ended`;
+                } else if (isOpen) {
                     modalStatusCountBadge.className = 'badge bg-emerald-100 text-emerald-700 rounded-pill fw-semibold px-2-5 py-1 fs-6';
                     modalStatusCountBadge.style.backgroundColor = '#d1fae5';
                     modalStatusCountBadge.style.color = '#047857';
@@ -707,14 +763,17 @@
                     modalStatusCountBadge.style.backgroundColor = '#f3f4f6';
                     modalStatusCountBadge.style.color = '#4b5563';
                     modalStatusCountBadge.style.border = '1px solid #e5e7eb';
-                    modalStatusCountBadge.textContent = `${matchingEvents.length} Ended`;
+                    modalStatusCountBadge.textContent = `${matchingEvents.length} Closed`;
                 }
             }
             if (modalStatusIconWrap) {
                 if (isRunning) {
                     modalStatusIconWrap.style.backgroundColor = '#fffbeb';
                     modalStatusIconWrap.style.color = '#d97706';
-                } else if (isOpen && !isPastModal) {
+                } else if (isPastDate) {
+                    modalStatusIconWrap.style.backgroundColor = '#f3f4f6';
+                    modalStatusIconWrap.style.color = '#4b5563';
+                } else if (isOpen) {
                     modalStatusIconWrap.style.backgroundColor = '#d1fae5';
                     modalStatusIconWrap.style.color = '#047857';
                 } else {
@@ -723,7 +782,7 @@
                 }
             }
             if (modalStatusIcon) {
-                modalStatusIcon.className = isRunning ? 'ti ti-player-play fs-2' : ((isOpen && !isPastModal) ? 'ti ti-circle-check fs-2' : 'ti ti-check fs-2');
+                modalStatusIcon.className = isRunning ? 'ti ti-player-play fs-2' : (isPastDate ? 'ti ti-check fs-2' : (isOpen ? 'ti ti-circle-check fs-2' : 'ti ti-lock fs-2'));
             }
 
             // Populate Items List (Compact Rows for High Scalability)
@@ -739,21 +798,23 @@
                         const isCurrentItem = highlightId && item.id === highlightId;
                         const itemStartDateStr = item.startDate || `${item.year}-${String(item.month + 1).padStart(2, '0')}-${String(item.day).padStart(2, '0')}`;
                         const itemEndDateStr = item.endDate || item.startDate || itemStartDateStr;
-                        const closeDateStr = item.registration_close_date || item.registrationCloseDate || itemEndDateStr;
+                        const closeDateStr = item.registration_close_date || item.registrationCloseDate || itemStartDateStr;
 
-                        // Midnight boundary normalized date comparison
+                        // Exact boundary normalized date-time comparison
                         let isDeadlinePassed = false;
                         if (closeDateStr) {
+                            const closeTimeStr = item.registration_close_time || item.registrationCloseTime || '23:59';
+                            const [cHours, cMinutes] = closeTimeStr.split(':').map(Number);
                             const parts = closeDateStr.split('-');
                             if (parts.length === 3) {
-                                const regCloseDate = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10), 23, 59, 59, 999);
-                                isDeadlinePassed = regCloseDate.getTime() < todayMidnight.getTime();
+                                const regCloseDate = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10), cHours || 23, cMinutes !== undefined ? cMinutes : 59, 59, 999);
+                                isDeadlinePassed = regCloseDate.getTime() < new Date().getTime();
                             } else {
                                 isDeadlinePassed = (closeDateStr < todayDateFormatted);
                             }
                         }
 
-                        const isPastSession = isPastModal || (targetDateStr < todayDateFormatted) || isDeadlinePassed || (item.rawStatus === 'Completed') || (item.isPast === true);
+                        const isEndedSession = isPastDate || (itemEndDateStr < todayDateFormatted) || (item.rawStatus === 'Completed') || (item.isPast === true);
 
                         // Active daytime session hours check
                         const now = new Date();
@@ -779,7 +840,7 @@
                         // Open Training evaluation:
                         // now() <= registration_close_date AND registration_status === 'Open' AND quota available
                         const isStatusOpen = (rawStatusLower === 'open' || rawStatusLower === 'open registration' || item.status === 'open');
-                        const isItemOpen = (!isDeadlinePassed) && (!isPastSession) && isStatusOpen && (!isRunningSession) && (!isQuotaFull) && (!isRawClosed);
+                        const isItemOpen = (!isDeadlinePassed) && (!isEndedSession) && isStatusOpen && (!isRunningSession) && (!isQuotaFull) && (!isRawClosed);
 
                         let badgeHtml = '';
                         let actionBtnHtml = '';
@@ -790,7 +851,7 @@
                                     Open Registration
                                 </span>
                             `;
-                            // Commented out register button
+                            // Commented out register button per instruction
                             /*
                             actionBtnHtml = `
                                 <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 py-1-5 fw-semibold btn-register-action" data-id="${item.id}" data-title="${(item.title || '').replace(/"/g, '&quot;')}" style="background-color: #003b6d; border-color: #003b6d;">
@@ -798,6 +859,13 @@
                                 </button>
                             `;
                             */
+                        } else if ((isDeadlinePassed || isRawClosed || isQuotaFull) && !isEndedSession && !isRunningSession) {
+                            badgeHtml = `
+                                <span class="badge bg-gray-100 text-gray-600 rounded-pill px-3 py-1-5 fw-semibold" style="background-color: #f3f4f6; color: #4b5563; border: 1px solid #e5e7eb;">
+                                    Registration Closed
+                                </span>
+                            `;
+                            actionBtnHtml = '';
                         } else {
                             // For Ended / Running status: Keep this container empty so only essential training info is listed
                             badgeHtml = '';

@@ -267,15 +267,17 @@ class OfflineTrainingController extends Controller
             'prerequisites'       => ['nullable', 'string', 'max:255'],
             'quota'               => ['required', 'integer', 'min:1'],
             'status'              => ['required', 'string', 'in:Open Registration,Running,Closed'],
-            'start_date'          => ['required', 'date'],
-            'end_date'            => ['nullable', 'date'],
-            'start_time'          => ['required'],
-            'end_time'            => ['required'],
-            'description'         => ['nullable', 'string'],
-            'objectives'          => ['nullable', 'string'],
-            'learning_objectives' => ['nullable', 'string'],
-            'syllabus_title'      => ['nullable', 'array'],
-            'syllabus_desc'       => ['nullable', 'array'],
+            'start_date'              => ['required', 'date'],
+            'end_date'                => ['nullable', 'date'],
+            'registration_close_date' => ['nullable', 'date', 'before_or_equal:start_date'],
+            'registration_close_time' => ['nullable', 'date_format:H:i'],
+            'start_time'              => ['required'],
+            'end_time'                => ['required'],
+            'description'             => ['nullable', 'string'],
+            'objectives'              => ['nullable', 'string'],
+            'learning_objectives'     => ['nullable', 'string'],
+            'syllabus_title'          => ['nullable', 'array'],
+            'syllabus_desc'           => ['nullable', 'array'],
         ]);
 
         // Process dynamic syllabus array
@@ -299,34 +301,48 @@ class OfflineTrainingController extends Controller
         $trainingCode = $request->filled('code') ? $request->input('code') : $request->input('training_code');
         $objectives = $request->filled('objectives') ? $request->input('objectives') : $request->input('learning_objectives');
         $endDate = $request->filled('end_date') ? $request->input('end_date') : $request->input('start_date');
+        $registrationCloseDate = $request->filled('registration_close_date') ? $request->input('registration_close_date') : $request->input('start_date');
+        $registrationCloseTime = $request->filled('registration_close_time') ? $request->input('registration_close_time') : '23:59';
+        if (strlen($registrationCloseTime) === 5) {
+            $registrationCloseTime .= ':00';
+        }
+
+        // Combine date and time to check if registration deadline is active
+        $closeDatetime = Carbon::parse($registrationCloseDate . ' ' . substr($registrationCloseTime, 0, 5));
+        $status = $request->input('status', 'Open Registration');
+        if ($status === 'Open Registration' && Carbon::now()->gt($closeDatetime)) {
+            $status = 'Closed';
+        }
 
         $training = OfflineTraining::create([
-            'title'               => $request->input('title'),
-            'course_name'         => $request->input('title'),
-            'sub_course_name'     => $request->input('sub_course_name'),
-            'category'            => $request->input('category'),
-            'type'                => $request->input('type'),
-            'level'               => $request->input('level'),
-            'main_classification' => $request->input('main_classification'),
-            'sub_classification'  => $request->input('sub_classification'),
-            'training_code'       => $trainingCode,
-            'batch'               => $trainingCode,
-            'instructor'          => $request->input('instructor'),
-            'location'            => $request->input('location'),
-            'venue'               => $request->input('location'),
-            'target_employee'     => $request->input('target_employee'),
-            'prerequisites'       => $request->input('prerequisites'),
-            'quota'               => (int) $request->input('quota'),
-            'status'              => $request->input('status', 'Open Registration'),
-            'start_date'          => $request->input('start_date'),
-            'end_date'            => $endDate,
-            'finish_date'         => $endDate,
-            'start_time'          => $request->input('start_time'),
-            'end_time'            => $request->input('end_time'),
-            'description'         => $request->input('description'),
-            'learning_objectives' => $objectives,
-            'syllabus'            => $syllabus,
-            'created_by'          => Auth::id(),
+            'title'                   => $request->input('title'),
+            'course_name'             => $request->input('title'),
+            'sub_course_name'         => $request->input('sub_course_name'),
+            'category'                => $request->input('category'),
+            'type'                    => $request->input('type'),
+            'level'                   => $request->input('level'),
+            'main_classification'     => $request->input('main_classification'),
+            'sub_classification'      => $request->input('sub_classification'),
+            'training_code'           => $trainingCode,
+            'batch'                   => $trainingCode,
+            'instructor'              => $request->input('instructor'),
+            'location'                => $request->input('location'),
+            'venue'                   => $request->input('location'),
+            'target_employee'         => $request->input('target_employee'),
+            'prerequisites'           => $request->input('prerequisites'),
+            'quota'                   => (int) $request->input('quota'),
+            'status'                  => $status,
+            'start_date'              => $request->input('start_date'),
+            'end_date'                => $endDate,
+            'finish_date'             => $endDate,
+            'registration_close_date' => $registrationCloseDate,
+            'registration_close_time' => $registrationCloseTime,
+            'start_time'              => $request->input('start_time'),
+            'end_time'                => $request->input('end_time'),
+            'description'             => $request->input('description'),
+            'learning_objectives'     => $objectives,
+            'syllabus'                => $syllabus,
+            'created_by'              => Auth::id(),
         ]);
 
         // Auto sync options to offline_training_options for consistent master options
@@ -377,15 +393,17 @@ class OfflineTrainingController extends Controller
             'prerequisites'       => ['nullable', 'string', 'max:255'],
             'quota'               => ['required', 'integer', 'min:1'],
             'status'              => ['required', 'string', 'in:Open Registration,Running,Closed'],
-            'start_date'          => ['required', 'date'],
-            'end_date'            => ['nullable', 'date'],
-            'start_time'          => ['required'],
-            'end_time'            => ['required'],
-            'description'         => ['nullable', 'string'],
-            'objectives'          => ['nullable', 'string'],
-            'learning_objectives' => ['nullable', 'string'],
-            'syllabus_title'      => ['nullable', 'array'],
-            'syllabus_desc'       => ['nullable', 'array'],
+            'start_date'              => ['required', 'date'],
+            'end_date'                => ['nullable', 'date'],
+            'registration_close_date' => ['nullable', 'date', 'before_or_equal:start_date'],
+            'registration_close_time' => ['nullable', 'date_format:H:i'],
+            'start_time'              => ['required'],
+            'end_time'                => ['required'],
+            'description'             => ['nullable', 'string'],
+            'objectives'              => ['nullable', 'string'],
+            'learning_objectives'     => ['nullable', 'string'],
+            'syllabus_title'          => ['nullable', 'array'],
+            'syllabus_desc'           => ['nullable', 'array'],
         ]);
 
         // Process dynamic syllabus array
@@ -409,33 +427,47 @@ class OfflineTrainingController extends Controller
         $trainingCode = $request->filled('code') ? $request->input('code') : $request->input('training_code');
         $objectives = $request->filled('objectives') ? $request->input('objectives') : $request->input('learning_objectives');
         $endDate = $request->filled('end_date') ? $request->input('end_date') : $request->input('start_date');
+        $registrationCloseDate = $request->filled('registration_close_date') ? $request->input('registration_close_date') : $request->input('start_date');
+        $registrationCloseTime = $request->filled('registration_close_time') ? $request->input('registration_close_time') : '23:59';
+        if (strlen($registrationCloseTime) === 5) {
+            $registrationCloseTime .= ':00';
+        }
+
+        // Combine date and time to check if registration deadline is active
+        $closeDatetime = Carbon::parse($registrationCloseDate . ' ' . substr($registrationCloseTime, 0, 5));
+        $status = $request->input('status', 'Open Registration');
+        if ($status === 'Open Registration' && Carbon::now()->gt($closeDatetime)) {
+            $status = 'Closed';
+        }
 
         $training->update([
-            'title'               => $request->input('title'),
-            'course_name'         => $request->input('title'),
-            'sub_course_name'     => $request->input('sub_course_name'),
-            'category'            => $request->input('category'),
-            'type'                => $request->input('type'),
-            'level'               => $request->input('level'),
-            'main_classification' => $request->input('main_classification'),
-            'sub_classification'  => $request->input('sub_classification'),
-            'training_code'       => $trainingCode,
-            'batch'               => $trainingCode,
-            'instructor'          => $request->input('instructor'),
-            'location'            => $request->input('location'),
-            'venue'               => $request->input('location'),
-            'target_employee'     => $request->input('target_employee'),
-            'prerequisites'       => $request->input('prerequisites'),
-            'quota'               => (int) $request->input('quota'),
-            'status'              => $request->input('status', 'Open Registration'),
-            'start_date'          => $request->input('start_date'),
-            'end_date'            => $endDate,
-            'finish_date'         => $endDate,
-            'start_time'          => $request->input('start_time'),
-            'end_time'            => $request->input('end_time'),
-            'description'         => $request->input('description'),
-            'learning_objectives' => $objectives,
-            'syllabus'            => $syllabus,
+            'title'                   => $request->input('title'),
+            'course_name'             => $request->input('title'),
+            'sub_course_name'         => $request->input('sub_course_name'),
+            'category'                => $request->input('category'),
+            'type'                    => $request->input('type'),
+            'level'                   => $request->input('level'),
+            'main_classification'     => $request->input('main_classification'),
+            'sub_classification'      => $request->input('sub_classification'),
+            'training_code'           => $trainingCode,
+            'batch'                   => $trainingCode,
+            'instructor'              => $request->input('instructor'),
+            'location'                => $request->input('location'),
+            'venue'                   => $request->input('location'),
+            'target_employee'         => $request->input('target_employee'),
+            'prerequisites'           => $request->input('prerequisites'),
+            'quota'                   => (int) $request->input('quota'),
+            'status'                  => $status,
+            'start_date'              => $request->input('start_date'),
+            'end_date'                => $endDate,
+            'finish_date'             => $endDate,
+            'registration_close_date' => $registrationCloseDate,
+            'registration_close_time' => $registrationCloseTime,
+            'start_time'              => $request->input('start_time'),
+            'end_time'                => $request->input('end_time'),
+            'description'             => $request->input('description'),
+            'learning_objectives'     => $objectives,
+            'syllabus'                => $syllabus,
         ]);
 
         // Auto sync options to offline_training_options for consistent master options
@@ -633,8 +665,13 @@ class OfflineTrainingController extends Controller
                 return redirect()->back()->with('error', $msg);
             }
 
-            // Past registration deadline (now() <= registration_close_date)
-            $isPast = $endDate && ($endDate < $today || ($endDate === $today && $currentTime > $endTime));
+            // Past registration deadline (now() <= registration_close_date + registration_close_time)
+            $regCloseDate = $training->registration_close_date ?? $training->start_date;
+            $regCloseDateStr = $regCloseDate ? Carbon::parse($regCloseDate)->format('Y-m-d') : null;
+            $regCloseTimeStr = $training->registration_close_time ? (strlen($training->registration_close_time) === 5 ? $training->registration_close_time . ':00' : $training->registration_close_time) : '23:59:59';
+            $closeDatetime = $regCloseDateStr ? Carbon::parse($regCloseDateStr . ' ' . $regCloseTimeStr) : null;
+            $isPastDeadline = $closeDatetime && Carbon::now()->gt($closeDatetime);
+
             // Only if a single-day training scheduled for today has already commenced
             $isSingleDayRunningToday = ($startDate && $endDate && $startDate === $today && $endDate === $today && $currentTime >= $startTime);
 
@@ -646,7 +683,7 @@ class OfflineTrainingController extends Controller
                 return redirect()->back()->with('error', $msg);
             }
 
-            if ($isPast) {
+            if ($isPastDeadline) {
                 $msg = "Registration is closed for \"{$training->title}\" as the registration deadline has passed.";
                 if ($request->wantsJson()) {
                     return response()->json(['success' => false, 'message' => $msg], 422);
@@ -853,20 +890,26 @@ class OfflineTrainingController extends Controller
         $calendarEvents = $trainings->map(function ($t) {
             $startDate = Carbon::parse($t->start_date);
             $endDate = Carbon::parse($t->end_date ?? $t->start_date);
+            $regCloseDate = Carbon::parse($t->registration_close_date ?? $t->start_date);
+            $regCloseTime = $t->registration_close_time ? substr($t->registration_close_time, 0, 5) : '23:59';
+            $closeDatetime = Carbon::parse($regCloseDate->format('Y-m-d') . ' ' . $regCloseTime . ':59');
             $enrolled = $t->registered_seats_count ?? 0;
             $quota = $t->quota ?: 1;
+            $isRegistrationPast = Carbon::now()->gt($closeDatetime);
             $isPast = $endDate->format('Y-m-d') < Carbon::today()->format('Y-m-d');
-            $isClosed = $t->status === 'Closed' || $enrolled >= $quota || $isPast;
+            $isClosed = $t->status === 'Closed' || $enrolled >= $quota || $isPast || $isRegistrationPast;
 
             return [
-                'id'          => (string) $t->id,
-                'year'        => (int) $startDate->format('Y'),
-                'month'       => (int) $startDate->format('n') - 1, // 0-indexed for JavaScript Date
-                'day'         => (int) $startDate->format('j'),
-                'startDate'   => $startDate->format('Y-m-d'),
-                'endDate'     => $endDate->format('Y-m-d'),
-                'registration_close_date' => $endDate->format('Y-m-d'),
-                'registrationCloseDate'   => $endDate->format('Y-m-d'),
+                'id'                      => (string) $t->id,
+                'year'                    => (int) $startDate->format('Y'),
+                'month'                   => (int) $startDate->format('n') - 1, // 0-indexed for JavaScript Date
+                'day'                     => (int) $startDate->format('j'),
+                'startDate'               => $startDate->format('Y-m-d'),
+                'endDate'                 => $endDate->format('Y-m-d'),
+                'registration_close_date' => $regCloseDate->format('Y-m-d'),
+                'registrationCloseDate'   => $regCloseDate->format('Y-m-d'),
+                'registration_close_time' => $regCloseTime,
+                'registrationCloseTime'   => $regCloseTime,
                 'rawStatus'   => $t->status,
                 'title'       => $t->title,
                 'shortTitle'  => Str::limit($t->title, 16),

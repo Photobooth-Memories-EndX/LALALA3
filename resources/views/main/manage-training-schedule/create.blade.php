@@ -254,25 +254,42 @@
                     <span>Schedule Timing & Dates</span>
                 </h5>
                 <div class="row g-3">
+                    <!-- Row 1: Dates -->
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold text-dark">Start Date <span class="text-danger">*</span></label>
-                        <input type="date" name="start_date" class="form-control rounded-3" value="{{ old('start_date') }}" required>
+                        <label for="start_date" class="form-label fw-semibold text-dark">Start Date <span class="text-danger">*</span></label>
+                        <input type="date" name="start_date" id="start_date" class="form-control rounded-3" value="{{ old('start_date') }}" required>
                         <div class="invalid-feedback">Please select the start date.</div>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold text-dark">End Date</label>
-                        <input type="date" name="end_date" class="form-control rounded-3" value="{{ old('end_date') }}">
+                        <label for="end_date" class="form-label fw-semibold text-dark">End Date</label>
+                        <input type="date" name="end_date" id="end_date" class="form-control rounded-3" value="{{ old('end_date') }}">
                         <div class="form-text text-muted small">Leave blank if this is a single-day session.</div>
                     </div>
+
+                    <!-- Row 2: Times -->
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold text-dark">Start Time <span class="text-danger">*</span></label>
-                        <input type="time" name="start_time" class="form-control rounded-3" value="{{ old('start_time', '08:00') }}" required>
+                        <label for="start_time" class="form-label fw-semibold text-dark">Start Time <span class="text-danger">*</span></label>
+                        <input type="time" name="start_time" id="start_time" class="form-control rounded-3" value="{{ old('start_time', '08:00') }}" required>
                         <div class="invalid-feedback">Please specify the start time.</div>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold text-dark">End Time <span class="text-danger">*</span></label>
-                        <input type="time" name="end_time" class="form-control rounded-3" value="{{ old('end_time', '16:00') }}" required>
+                        <label for="end_time" class="form-label fw-semibold text-dark">End Time <span class="text-danger">*</span></label>
+                        <input type="time" name="end_time" id="end_time" class="form-control rounded-3" value="{{ old('end_time', '16:00') }}" required>
                         <div class="invalid-feedback">Please specify the end time.</div>
+                    </div>
+
+                    <!-- Row 3: Registration Deadline Date & Time -->
+                    <div class="col-md-6">
+                        <label for="registration_close_date" class="form-label fw-semibold text-dark">Registration Close Date</label>
+                        <input type="date" name="registration_close_date" id="registration_close_date" class="form-control rounded-3" 
+                               value="{{ old('registration_close_date') }}">
+                        <small class="text-muted d-block mt-1">Leave blank to default to Start Date.</small>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="registration_close_time" class="form-label fw-semibold text-dark">Registration Close Time</label>
+                        <input type="time" name="registration_close_time" id="registration_close_time" class="form-control rounded-3" 
+                               value="{{ old('registration_close_time', '23:59') }}">
+                        <small class="text-muted d-block mt-1">Defaults to 23:59 if left blank. Registration will automatically close at this exact time.</small>
                     </div>
                 </div>
             </div>
