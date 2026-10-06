@@ -496,6 +496,9 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
             Route::get('online/datatable', [RecordOnlineController::class, 'datatable'])->name('online.datatable');
             Route::get('online/search-employees', [RecordOnlineController::class, 'searchEmployees'])->name('online.search-employees');
             Route::get('online/search-titles', [RecordOnlineController::class, 'searchTitles'])->name('online.search-titles');
+            Route::get('online/export', [RecordOnlineController::class, 'export'])->name('online.export');
+            Route::get('online/export/pdf', [RecordOnlineController::class, 'exportPdf'])->name('online.export.pdf');
+            Route::get('online/export/csv', [RecordOnlineController::class, 'exportCsv'])->name('online.export.csv');
             Route::get('online/download', [RecordOnlineController::class, 'download'])->name('online.download');
 
             Route::get('offline', [RecordOfflineController::class, 'index'])->name('offline');

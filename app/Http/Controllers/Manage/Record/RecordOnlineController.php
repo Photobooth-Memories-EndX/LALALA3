@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Manage\Record;
 
 use App\Exports\LearningExport;
+use App\Exports\OnlineRecordCsvExport;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\LearningManageController;
 use App\Services\Learning\LearningDatatableService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
 class RecordOnlineController extends Controller
@@ -102,9 +104,61 @@ class RecordOnlineController extends Controller
         return $this->learningManageController->searchTitles($request);
     }
 
+    public function export(Request $request)
+    {
+        $fileName = sprintf('kp-owl-online-records-%s.xlsx', now()->format('Y-m-d'));
+
+        return (new LearningExport($request->all(), $request->input('type', ''), $request->input('slug', '')))
+            ->download($fileName);
+    }
+
     public function download(Request $request)
     {
-        return (new LearningExport($request->all(), $request->input('type', ''), $request->input('slug', '')))
-            ->download(now()->format('Ymd_His') . '_kp_owl_learning_data.xlsx');
+        return $this->export($request);
+    }
+
+    public function exportCsv(Request $request)
+    {
+        $export = new OnlineRecordCsvExport(
+            $request->all(),
+            (string) $request->input('type', ''),
+            (string) $request->input('slug', '')
+        );
+
+        return $export->download();
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $filters = $request->all();
+        $query = LearningDatatableService::buildBaseQuery(
+            $filters,
+            (string) $request->input('type', ''),
+            (string) $request->input('slug', '')
+        );
+
+        if (empty($filters['sort'])) {
+            $query->orderBy('unified.created_at', 'desc')
+                  ->orderBy('unified.source_type', 'desc')
+                  ->orderBy('unified.source_id', 'desc');
+        }
+
+        $totalRecords = (clone $query)->count();
+
+        // Safe limit for DomPDF rendering to prevent memory exhaustion
+        $limit = 500;
+        $records = $query->limit($limit)->get();
+
+        $pdf = Pdf::loadView('main.record.online.export-pdf', [
+            'records'       => $records,
+            'totalRecords'  => $totalRecords,
+            'limit'         => $limit,
+            'filters'       => $filters,
+            'generatedAt'   => now()->format('d M Y H:i:s'),
+        ]);
+
+        $fileName = sprintf('kp-owl-online-records-%s.pdf', now()->format('Y-m-d'));
+
+        return $pdf->setPaper('a4', 'landscape')->download($fileName);
     }
 }
