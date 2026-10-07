@@ -66,6 +66,9 @@
     }
 
     /* SELECT2 IN INPUT GROUP & [+] BUTTON FIX */
+    .select2-container {
+        width: 100% !important;
+    }
     .input-group > .select2-container--bootstrap-5,
     .input-group > .select2-container {
         flex: 1 1 auto;
@@ -75,6 +78,9 @@
     .input-group > .select2-container .select2-selection {
         border-top-right-radius: 0 !important;
         border-bottom-right-radius: 0 !important;
+    }
+    .select2-dropdown {
+        z-index: 1060 !important;
     }
     .btn-add-option-modal {
         border-color: #d1d5db;
@@ -152,6 +158,13 @@
     body.dark-mode .bg-light-subtle,
     body.theme-dark .bg-light-subtle {
         background-color: #111827 !important;
+    }
+
+    [data-bs-theme="dark"] .select2-container--bootstrap-5 .select2-search__field,
+    body.dark-mode .select2-container--bootstrap-5 .select2-search__field {
+        background-color: #0f172a !important;
+        border-color: #334155 !important;
+        color: #f8fafc !important;
     }
 
     /* ============================================================= */

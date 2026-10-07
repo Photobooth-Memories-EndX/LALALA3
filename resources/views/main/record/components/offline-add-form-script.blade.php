@@ -43,14 +43,26 @@
                 .replace(/'/g, '&#039;');
         }
 
-        // --- Select2 Initialization for Master Option Dropdowns ---
+        // --- Select2 Helper: Set value safely with tags support ---
+        function setSelect2Val($elem, val) {
+            if (!$elem.length) return;
+            val = (val !== null && val !== undefined) ? String(val) : '';
+            if (val && !$elem.find(`option[value="${CSS.escape(val)}"]`).length) {
+                $elem.append(new Option(val, val, true, true));
+            }
+            $elem.val(val).trigger('change');
+        }
+
+        // --- Select2 Initialization for Master Option & Searchable Dropdowns ---
         if ($.fn.select2) {
-            $('.select2-master-option').each(function () {
+            $('.select2-master-option, .select2-searchable-field').each(function () {
                 const placeholder = $(this).data('placeholder') || 'Select option';
+                const isTags = $(this).data('tags') === true || $(this).data('tags') === 'true';
                 $(this).select2({
                     theme: 'bootstrap-5',
                     placeholder: placeholder,
                     allowClear: true,
+                    tags: isTags,
                     width: 'resolve'
                 });
             });
@@ -570,10 +582,10 @@
 
             $('#res-l1-program').val(p.l1_program || '');
             $('#res-l2-numerical').val(p.l2_numerical || '');
-            $('#res-l2-verbal').val(p.l2_verbal || '');
+            setSelect2Val($('#res-l2-verbal'), p.l2_verbal || '');
             $('#res-l3-numerical').val(p.l3_numerical || '');
-            $('#res-l3-verbal').val(p.l3_verbal || '');
-            $('#res-pic').val(p.pic || '');
+            setSelect2Val($('#res-l3-verbal'), p.l3_verbal || '');
+            setSelect2Val($('#res-pic'), p.pic || '');
 
             $('#save-result-status-msg').text(`Configuring results for: ${p.name}`);
         }
@@ -588,16 +600,16 @@
             p.assessment_score = $('#res-assessment-score').val() !== '' ? parseFloat($('#res-assessment-score').val()) : null;
             p.certificate = $('#res-certificate').val();
             p.attendance = $('#res-attendance-yes').is(':checked') ? 1 : 0;
-            p.attendance_reason = $('#res-attendance-reason').val().trim();
+            p.attendance_reason = ($('#res-attendance-reason').val() || '').trim();
             p.bond_status = $('#res-bond-status').val();
             p.bond_end_date = p.bond_status === 'Yes' ? $('#res-bond-end-date').val() : null;
             p.bond_amount = p.bond_status === 'Yes' && $('#res-bond-amount').val() !== '' ? parseFloat($('#res-bond-amount').val()) : null;
-            p.l1_program = $('#res-l1-program').val().trim();
+            p.l1_program = ($('#res-l1-program').val() || '').trim();
             p.l2_numerical = $('#res-l2-numerical').val() !== '' ? parseFloat($('#res-l2-numerical').val()) : null;
-            p.l2_verbal = $('#res-l2-verbal').val().trim();
+            p.l2_verbal = ($('#res-l2-verbal').val() || '').trim();
             p.l3_numerical = $('#res-l3-numerical').val() !== '' ? parseFloat($('#res-l3-numerical').val()) : null;
-            p.l3_verbal = $('#res-l3-verbal').val().trim();
-            p.pic = $('#res-pic').val().trim();
+            p.l3_verbal = ($('#res-l3-verbal').val() || '').trim();
+            p.pic = ($('#res-pic').val() || '').trim();
         }
 
         // Live status badge updater
@@ -693,29 +705,29 @@
             $('#rev-table-container').show();
 
             // Extract training-level fields once (repeated across all participant rows)
-            const courseName = $('#add-course-name').val().trim() || '-';
-            const subCourseName = $('#add-sub-course-name').val().trim() || '-';
+            const courseName = ($('#add-course-name').val() || '').trim() || '-';
+            const subCourseName = ($('#add-sub-course-name').val() || '').trim() || '-';
             const type = $('#add-type').val() || '-';
-            const category = $('#add-category').val().trim() || '-';
+            const category = ($('#add-category').val() || '').trim() || '-';
             const level = $('#add-level').val() || '-';
-            const batch = $('#add-batch').val().trim() || '-';
+            const batch = ($('#add-batch').val() || '').trim() || '-';
             const mainClass = $('#add-main-classification').val() || '-';
-            const subClass = $('#add-sub-classification').val().trim() || '-';
+            const subClass = ($('#add-sub-classification').val() || '').trim() || '-';
             const isKpi = $('input[name="counted_corporate_kpi"]:checked').val() === '1';
             const kpiYear = isKpi ? $('#add-corporate-kpi-year').val() : null;
             const subKpi = kpiYear ? String(kpiYear) : '-';
             const delivery = $('#add-delivery-method').val() || '-';
-            const subDelivery = $('#add-sub-delivery-method').val().trim() || '-';
+            const subDelivery = ($('#add-sub-delivery-method').val() || '').trim() || '-';
             const provider = $('#add-provider').val() || '-';
             const subProvider = $('#add-sub-provider').val() || '-';
-            const duration = $('#add-duration').val().trim() || '-';
+            const duration = ($('#add-duration').val() || '').trim() || '-';
             const defaultHours = parseFloat($('#add-learning-hours').val()) || 0;
             const startDate = $('#add-start-date').val() || '-';
             const finishDate = $('#add-finish-date').val() || (startDate !== '-' ? startDate : '-');
             const month = $('#add-month').val() || deriveMonthString($('#add-start-date').val()) || '-';
-            const providerName = $('#add-provider-name').val().trim() || '-';
-            const venue = $('#add-venue').val().trim() || '-';
-            const instructor = $('#add-instructor').val().trim() || '-';
+            const providerName = ($('#add-provider-name').val() || '').trim() || '-';
+            const venue = ($('#add-venue').val() || '').trim() || '-';
+            const instructor = ($('#add-instructor').val() || '').trim() || '-';
 
             let rowsHtml = '';
             addParticipants.forEach(function (p, idx) {
@@ -906,27 +918,27 @@
             // Prepare Payload
             const payload = {
                 course_name: courseName,
-                sub_course_name: $('#add-sub-course-name').val().trim(),
+                sub_course_name: ($('#add-sub-course-name').val() || '').trim(),
                 type: $('#add-type').val(),
-                category: $('#add-category').val().trim(),
+                category: ($('#add-category').val() || '').trim(),
                 level: $('#add-level').val(),
-                batch: $('#add-batch').val().trim(),
+                batch: ($('#add-batch').val() || '').trim(),
                 main_classification: $('#add-main-classification').val(),
-                sub_classification: $('#add-sub-classification').val().trim(),
+                sub_classification: ($('#add-sub-classification').val() || '').trim(),
                 counted_corporate_kpi: isKpiSelected ? 1 : 0,
                 corporate_kpi_year: isKpiSelected ? parseInt(kpiYearVal, 10) : null,
                 sub_corporate_kpi: isKpiSelected ? String(kpiYearVal) : null,
                 delivery_method: $('#add-delivery-method').val(),
-                sub_delivery_method: $('#add-sub-delivery-method').val().trim(),
+                sub_delivery_method: ($('#add-sub-delivery-method').val() || '').trim(),
                 provider: $('#add-provider').val(),
                 sub_provider: $('#add-sub-provider').val(),
-                provider_name: $('#add-provider-name').val().trim(),
-                duration: $('#add-duration').val().trim(),
+                provider_name: ($('#add-provider-name').val() || '').trim(),
+                duration: ($('#add-duration').val() || '').trim(),
                 learning_hours: $('#add-learning-hours').val(),
                 start_date: startDate || null,
                 finish_date: finishDate || null,
-                venue: $('#add-venue').val().trim(),
-                instructor: $('#add-instructor').val().trim(),
+                venue: ($('#add-venue').val() || '').trim(),
+                instructor: ($('#add-instructor').val() || '').trim(),
                 participants: addParticipants,
                 _token: $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}'
             };
