@@ -407,22 +407,35 @@
                         }
                         $startDateFormatted = $training->start_date ? (is_string($training->start_date) ? substr($training->start_date, 0, 10) : $training->start_date->format('Y-m-d')) : '';
                         $finishDateFormatted = $training->finish_date ? (is_string($training->finish_date) ? substr($training->finish_date, 0, 10) : $training->finish_date->format('Y-m-d')) : '';
+                        $startTimeFormatted = $training->start_time ? substr((string) $training->start_time, 0, 5) : '08:00';
+                        $endTimeFormatted = $training->end_time ? substr((string) $training->end_time, 0, 5) : '16:00';
                         $monthFormatted = $startDateFormatted ? date('M Y', strtotime($startDateFormatted)) : '';
                     @endphp
 
                     <div class="row g-3">
-                        <div class="col-12 col-sm-6 col-md-3">
+                        <div class="col-12 col-sm-6 col-md-4">
                             <label for="edit-duration" class="form-label small fw-semibold">Duration (HH:MM:SS)</label>
                             <input type="text" class="form-control rounded-2" id="edit-duration" name="duration" value="{{ old('duration', $durationFormatted) }}" placeholder="08:00:00">
                         </div>
-                        <div class="col-12 col-sm-6 col-md-3">
+                        <div class="col-12 col-sm-6 col-md-4">
                             <label for="edit-course-learning-hours" class="form-label small fw-semibold">Course Hours</label>
                             <input type="number" step="0.1" min="0" class="form-control rounded-2" id="edit-course-learning-hours" name="learning_hours" value="{{ old('learning_hours', $training->learning_hours) }}" placeholder="8.0">
+                        </div>
+                        <div class="col-12 col-sm-6 col-md-4">
+                            <label for="edit-month" class="form-label small fw-semibold">Month</label>
+                            <input type="text" class="form-control rounded-2 bg-light text-muted" id="edit-month" readonly placeholder="Auto from Start Date" value="{{ $monthFormatted }}">
                         </div>
                         <div class="col-12 col-sm-6 col-md-3">
                             <label for="edit-start-date" class="form-label small fw-semibold">Start Date</label>
                             <input type="date" class="form-control rounded-2 @error('start_date') is-invalid @enderror" id="edit-start-date" name="start_date" value="{{ old('start_date', $startDateFormatted) }}">
                             @error('start_date')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-12 col-sm-6 col-md-3">
+                            <label for="edit-start-time" class="form-label small fw-semibold">Start Time</label>
+                            <input type="time" class="form-control rounded-2 @error('start_time') is-invalid @enderror" id="edit-start-time" name="start_time" value="{{ old('start_time', $startTimeFormatted) }}">
+                            @error('start_time')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
@@ -433,11 +446,14 @@
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
-                        <div class="col-12 col-sm-6 col-md-4">
-                            <label for="edit-month" class="form-label small fw-semibold">Month</label>
-                            <input type="text" class="form-control rounded-2 bg-light text-muted" id="edit-month" readonly placeholder="Auto from Start Date" value="{{ $monthFormatted }}">
+                        <div class="col-12 col-sm-6 col-md-3">
+                            <label for="edit-end-time" class="form-label small fw-semibold">Finish Time</label>
+                            <input type="time" class="form-control rounded-2 @error('end_time') is-invalid @enderror" id="edit-end-time" name="end_time" value="{{ old('end_time', $endTimeFormatted) }}">
+                            @error('end_time')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
-                        <div class="col-12 col-sm-6 col-md-4">
+                        <div class="col-12 col-md-6">
                             <label for="edit-venue" class="form-label small fw-semibold">Venue</label>
                             <div class="input-group">
                                 <select class="form-select rounded-start-2 select2-master-option" id="edit-venue" name="venue" data-type="venue" data-placeholder="Select Venue" data-tags="true">
@@ -458,7 +474,7 @@
                                 </button>
                             </div>
                         </div>
-                        <div class="col-12 col-sm-6 col-md-4">
+                        <div class="col-12 col-md-6">
                             <label for="edit-instructor" class="form-label small fw-semibold">Instructor</label>
                             <div class="input-group">
                                 <select class="form-select rounded-start-2 select2-master-option" id="edit-instructor" name="instructor" data-type="instructor" data-placeholder="Select Instructor" data-tags="true">

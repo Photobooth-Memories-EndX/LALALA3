@@ -227,7 +227,7 @@
             updateSection4Review();
         });
 
-        $('#add-finish-date').on('change', function () {
+        $('#add-finish-date, #add-start-time, #add-end-time').on('change input', function () {
             updateSection4Review();
         });
 
@@ -978,6 +978,8 @@
                 learning_hours: $('#add-learning-hours').val(),
                 start_date: startDate || null,
                 finish_date: finishDate || null,
+                start_time: ($('#add-start-time').val() || '').trim() || '08:00',
+                end_time: ($('#add-end-time').val() || '').trim() || '16:00',
                 venue: ($('#add-venue').val() || '').trim(),
                 instructor: ($('#add-instructor').val() || '').trim(),
                 participants: addParticipants,

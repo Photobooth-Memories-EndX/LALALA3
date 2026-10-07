@@ -250,27 +250,35 @@
             </div>
 
             <div class="row g-3">
-                <div class="col-12 col-sm-6 col-md-3">
+                <div class="col-12 col-sm-6 col-md-4">
                     <label for="add-duration" class="form-label small fw-semibold">Duration</label>
                     <input type="text" class="form-control rounded-2" id="add-duration" name="duration" placeholder="12:00:00" value="08:00:00">
                 </div>
-                <div class="col-12 col-sm-6 col-md-3">
+                <div class="col-12 col-sm-6 col-md-4">
                     <label for="add-learning-hours" class="form-label small fw-semibold">Learning Hours</label>
                     <input type="number" step="0.1" min="0" class="form-control rounded-2" id="add-learning-hours" name="learning_hours" placeholder="12.00" value="8.0">
+                </div>
+                <div class="col-12 col-sm-6 col-md-4">
+                    <label for="add-month" class="form-label small fw-semibold">Month</label>
+                    <input type="text" class="form-control rounded-2 bg-light text-muted" id="add-month" readonly placeholder="Auto from Start Date">
                 </div>
                 <div class="col-12 col-sm-6 col-md-3">
                     <label for="add-start-date" class="form-label small fw-semibold">Start Date</label>
                     <input type="date" class="form-control rounded-2" id="add-start-date" name="start_date">
                 </div>
                 <div class="col-12 col-sm-6 col-md-3">
+                    <label for="add-start-time" class="form-label small fw-semibold">Start Time</label>
+                    <input type="time" class="form-control rounded-2" id="add-start-time" name="start_time" value="08:00">
+                </div>
+                <div class="col-12 col-sm-6 col-md-3">
                     <label for="add-finish-date" class="form-label small fw-semibold">Finish Date</label>
                     <input type="date" class="form-control rounded-2" id="add-finish-date" name="finish_date">
                 </div>
-                <div class="col-12 col-sm-6 col-md-4">
-                    <label for="add-month" class="form-label small fw-semibold">Month</label>
-                    <input type="text" class="form-control rounded-2 bg-light text-muted" id="add-month" readonly placeholder="Auto from Start Date">
+                <div class="col-12 col-sm-6 col-md-3">
+                    <label for="add-end-time" class="form-label small fw-semibold">Finish Time</label>
+                    <input type="time" class="form-control rounded-2" id="add-end-time" name="end_time" value="16:00">
                 </div>
-                <div class="col-12 col-sm-6 col-md-4">
+                <div class="col-12 col-md-6">
                     <label for="add-venue" class="form-label small fw-semibold">Venue</label>
                     <div class="input-group">
                         <select class="form-select rounded-start-2 select2-master-option" id="add-venue" name="venue" data-type="venue" data-placeholder="Select Venue" data-tags="true">
@@ -284,7 +292,7 @@
                         </button>
                     </div>
                 </div>
-                <div class="col-12 col-md-4">
+                <div class="col-12 col-md-6">
                     <label for="add-instructor" class="form-label small fw-semibold">Instructor</label>
                     <div class="input-group">
                         <select class="form-select rounded-start-2 select2-master-option" id="add-instructor" name="instructor" data-type="instructor" data-placeholder="Select Instructor" data-tags="true">
