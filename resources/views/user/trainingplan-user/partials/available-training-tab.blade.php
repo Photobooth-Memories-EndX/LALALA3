@@ -116,7 +116,6 @@
                 <tr class="text-muted extra-small text-uppercase fw-bold" style="letter-spacing: 0.05em; background-color: #f8fafc;">
                     <th class="w-1 text-center align-middle py-3">NO</th>
                     <th class="text-center align-middle py-3" style="min-width: 200px;">TRAINING NAME</th>
-                    <th class="text-center align-middle py-3">CATEGORY</th>
                     <th class="text-center align-middle py-3" style="min-width: 140px;">DATE</th>
                     <th class="text-center align-middle py-3" style="min-width: 120px;">TIME</th>
                     <th class="text-center align-middle py-3">LOCATION</th>
@@ -139,22 +138,6 @@
 
                         $myReg = $item->relationLoaded('registrations') ? $item->registrations->firstWhere('user_id', Auth::id()) : null;
                         $myRegStatus = $myReg ? $myReg->status : null;
-
-                        $catStyle = match($item->category) {
-                            'Basic & Common Duties'             => 'background-color: #f1f5f9; color: #475569;',
-                            'Compliance', 'Compliance & Safety' => 'background-color: #fef3c7; color: #b45309;',
-                            'Innovation'                        => 'background-color: #ecfdf5; color: #047857;',
-                            'Job Functional', 'Technical', 'Technical Skill' => 'background-color: #e0f2fe; color: #0284c7;',
-                            'Language'                          => 'background-color: #fef2f2; color: #b91c1c;',
-                            'Leadership'                        => 'background-color: #f3e8ff; color: #7c3aed;',
-                            'Core Competency', 'General Competency' => 'background-color: #f0fdf4; color: #15803d;',
-                            'Maintenance'                       => 'background-color: #fff7ed; color: #c2410c;',
-                            'Quality'                           => 'background-color: #eff6ff; color: #1d4ed8;',
-                            'Safety'                            => 'background-color: #fef2f2; color: #dc2626;',
-                            'Environmental'                     => 'background-color: #f0fdf4; color: #166534;',
-                            'Soft Skill'                        => 'background-color: #faf5ff; color: #6b21a8;',
-                            default                             => 'background-color: #e0f2fe; color: #0369a1;',
-                        };
 
                         $regCloseDate = \Carbon\Carbon::parse($item->registration_close_date ?? $item->start_date);
                         $regCloseTime = $item->registration_close_time ? substr($item->registration_close_time, 0, 5) : '23:59';
@@ -193,11 +176,6 @@
                             @if (!empty($item->training_code))
                                 <div class="text-muted extra-small font-monospace">{{ $item->training_code }}</div>
                             @endif
-                        </td>
-                        <td class="text-center align-middle">
-                            <span class="badge rounded-pill px-2 py-1 fw-semibold" style="{{ $catStyle }}">
-                                {{ $item->category }}
-                            </span>
                         </td>
                         <td class="fw-semibold text-dark text-center align-middle" style="min-width: 140px;">
                             @if($item->end_date && $item->start_date != $item->end_date)
@@ -284,7 +262,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="10" class="text-center py-5 text-muted">
+                        <td colspan="9" class="text-center py-5 text-muted">
                             <div class="avatar avatar-xl rounded-circle bg-light text-muted mb-3 mx-auto">
                                 <i class="ti ti-calendar-off fs-1"></i>
                             </div>
