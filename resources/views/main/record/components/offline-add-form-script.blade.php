@@ -7,6 +7,7 @@
         let addParticipants = [];
         let currentActiveParticipantIndex = -1;
         let empSearchTimer = null;
+        let empSearchXhr = null;
 
         // --- Helper: Format Month from Date ---
         function deriveMonthString(dateStr) {
@@ -251,20 +252,32 @@
         const $empSearchInput = $('#participant-search-input');
         const $empSearchResults = $('#participant-search-results');
 
-        $empSearchInput.on('input', function () {
+        function executeParticipantSearch(query, immediate) {
             clearTimeout(empSearchTimer);
-            const query = $(this).val().trim();
+            query = (query || '').trim();
             if (query.length < 2) {
                 $empSearchResults.hide().empty();
                 return;
             }
 
-            empSearchTimer = setTimeout(function () {
-                $.ajax({
-                    url: "{{ route('manage.record.offline.search-employees') }}",
+            if (empSearchXhr) {
+                empSearchXhr.abort();
+                empSearchXhr = null;
+            }
+
+            function doSearch() {
+                $empSearchResults.html('<div class="p-2 text-muted small text-center"><span class="spinner-border spinner-border-sm me-1" role="status"></span> Searching...</div>').show();
+
+                empSearchXhr = $.ajax({
+                    url: "{{ route('manage.record.offline.search-employees', [], false) }}",
                     type: 'GET',
-                    data: { q: query },
+                    data: { q: query, search: query },
+                    dataType: 'json',
+                    headers: {
+                        'Accept': 'application/json'
+                    },
                     success: function (res) {
+                        empSearchXhr = null;
                         const list = (res && res.results) ? res.results : [];
                         if (list.length === 0) {
                             $empSearchResults.html('<div class="p-2 text-muted small text-center">No employee found.</div>').show();
@@ -287,19 +300,47 @@
                         });
                         $empSearchResults.html(html).show();
                     },
-                    error: function () {
+                    error: function (xhr, status, error) {
+                        if (status === 'abort') {
+                            return;
+                        }
+                        empSearchXhr = null;
+                        console.error('Participant search failed:', {
+                            status: xhr ? xhr.status : null,
+                            statusText: status,
+                            error: error,
+                            responseText: xhr ? xhr.responseText : null
+                        });
                         $empSearchResults.html('<div class="p-2 text-danger small text-center">Search error.</div>').show();
                     }
                 });
-            }, 300);
+            }
+
+            if (immediate) {
+                doSearch();
+            } else {
+                empSearchTimer = setTimeout(doSearch, 300);
+            }
+        }
+
+        $empSearchInput.on('input', function () {
+            executeParticipantSearch($(this).val(), false);
         });
 
-        $('#btn-search-participant').on('click', function () {
-            $empSearchInput.trigger('input');
+        $empSearchInput.on('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                executeParticipantSearch($(this).val(), true);
+            }
+        });
+
+        $('#btn-search-participant').on('click', function (e) {
+            e.preventDefault();
+            executeParticipantSearch($empSearchInput.val(), true);
         });
 
         $(document).on('click', function (e) {
-            if (!$(e.target).closest('#participant-search-input, #participant-search-results').length) {
+            if (!$(e.target).closest('#participant-search-input, #participant-search-results, #btn-search-participant').length) {
                 $empSearchResults.hide();
             }
         });
