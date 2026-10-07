@@ -44,12 +44,26 @@ class TrainingScheduleDropdownIntegrationTest extends TestCase
         $response->assertSee('id="select-type"', false);
         $response->assertSee('id="select-level"', false);
 
-        // Check [+] buttons exist for all 5 target fields
+        // Check 6 converted dropdown fields exist
+        $response->assertSee('id="select-training-title"', false);
+        $response->assertSee('id="select-sub-course-name"', false);
+        $response->assertSee('id="select-instructor"', false);
+        $response->assertSee('id="select-location"', false);
+        $response->assertSee('id="select-target-employee"', false);
+        $response->assertSee('id="select-prerequisites"', false);
+
+        // Check [+] buttons exist for target fields
         $response->assertSee('data-type="classification"', false);
         $response->assertSee('data-type="sub_classification"', false);
         $response->assertSee('data-type="category"', false);
         $response->assertSee('data-type="type"', false);
         $response->assertSee('data-type="level"', false);
+        $response->assertSee('data-type="course_name"', false);
+        $response->assertSee('data-type="sub_course_name"', false);
+        $response->assertSee('data-type="instructor"', false);
+        $response->assertSee('data-type="venue"', false);
+        $response->assertSee('data-type="target_employee"', false);
+        $response->assertSee('data-type="prerequisites"', false);
 
         // Check modal component is included
         $response->assertSee('id="modal-schedule-add-option"', false);
@@ -78,6 +92,15 @@ class TrainingScheduleDropdownIntegrationTest extends TestCase
         $response->assertSee('id="select-category"', false);
         $response->assertSee('id="select-type"', false);
         $response->assertSee('id="select-level"', false);
+
+        // Check 6 converted dropdown fields exist on edit page
+        $response->assertSee('id="select-training-title"', false);
+        $response->assertSee('id="select-sub-course-name"', false);
+        $response->assertSee('id="select-instructor"', false);
+        $response->assertSee('id="select-location"', false);
+        $response->assertSee('id="select-target-employee"', false);
+        $response->assertSee('id="select-prerequisites"', false);
+
         $response->assertSee('id="modal-schedule-add-option"', false);
     }
 
@@ -245,10 +268,72 @@ class TrainingScheduleDropdownIntegrationTest extends TestCase
             'sub_classification' => 'Agile Team Management',
         ]);
 
-        // Verify sub_classification was synced into offline_training_options
+        // Verify sub_classification and new fields were synced into offline_training_options
         $this->assertDatabaseHas('offline_training_options', [
             'option_type' => 'sub_classification',
             'value'       => 'Agile Team Management',
+        ]);
+        $this->assertDatabaseHas('offline_training_options', [
+            'option_type' => 'instructor',
+            'value'       => 'Trainer John Doe',
+        ]);
+        $this->assertDatabaseHas('offline_training_options', [
+            'option_type' => 'target_employee',
+            'value'       => 'All Supervisors',
+        ]);
+    }
+
+    /**
+     * 9. API endpoint supports alias option types (title -> course_name, location -> venue, etc.).
+     */
+    public function test_store_option_api_supports_aliases_and_new_types(): void
+    {
+        // 1. Alias 'title' -> should map to 'course_name'
+        $uniqueCourse = 'Advanced Data Analytics ' . uniqid();
+        $response1 = $this->actingAs($this->admin)->postJson('/manage/training-schedule/options', [
+            'option_type' => 'title',
+            'value'       => $uniqueCourse,
+        ]);
+        $response1->assertStatus(201);
+        $this->assertDatabaseHas('offline_training_options', [
+            'option_type' => 'course_name',
+            'value'       => $uniqueCourse,
+        ]);
+
+        // 2. Alias 'location' -> should map to 'venue'
+        $uniqueVenue = 'Auditorium Hall B ' . uniqid();
+        $response2 = $this->actingAs($this->admin)->postJson('/manage/training-schedule/options', [
+            'option_type' => 'location',
+            'value'       => $uniqueVenue,
+        ]);
+        $response2->assertStatus(201);
+        $this->assertDatabaseHas('offline_training_options', [
+            'option_type' => 'venue',
+            'value'       => $uniqueVenue,
+        ]);
+
+        // 3. 'target_employee'
+        $uniqueTarget = 'Quality Control Specialists ' . uniqid();
+        $response3 = $this->actingAs($this->admin)->postJson('/manage/training-schedule/options', [
+            'option_type' => 'target_employee',
+            'value'       => $uniqueTarget,
+        ]);
+        $response3->assertStatus(201);
+        $this->assertDatabaseHas('offline_training_options', [
+            'option_type' => 'target_employee',
+            'value'       => $uniqueTarget,
+        ]);
+
+        // 4. 'prerequisites'
+        $uniquePrereq = 'Certified Green Belt Six Sigma ' . uniqid();
+        $response4 = $this->actingAs($this->admin)->postJson('/manage/training-schedule/options', [
+            'option_type' => 'prerequisites',
+            'value'       => $uniquePrereq,
+        ]);
+        $response4->assertStatus(201);
+        $this->assertDatabaseHas('offline_training_options', [
+            'option_type' => 'prerequisites',
+            'value'       => $uniquePrereq,
         ]);
     }
 }

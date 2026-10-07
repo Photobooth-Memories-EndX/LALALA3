@@ -181,15 +181,37 @@ class OfflineTrainingController extends Controller
     /**
      * Gather master classifications, dynamic options, and parent-child mappings for schedule forms.
      */
+    /**
+     * Gather master classifications, dynamic options, and parent-child mappings for schedule forms.
+     */
     protected function getScheduleFormData(?OfflineTraining $training = null): array
     {
         $classifications = Classification::orderBy('classification_name', 'asc')->get();
 
-        // Active master options from offline_training_options
-        $types = $this->offlineOptionService->getOptions(OfflineOptionService::TYPE_TYPE);
-        $categories = $this->offlineOptionService->getOptions(OfflineOptionService::TYPE_CATEGORY);
-        $levels = $this->offlineOptionService->getOptions(OfflineOptionService::TYPE_LEVEL);
-        $subClassifications = $this->offlineOptionService->getOptions(OfflineOptionService::TYPE_SUB_CLASSIFICATION);
+        // 1. Single grouped query to fetch all required master options efficiently
+        $targetTypes = [
+            OfflineOptionService::TYPE_COURSE_NAME,
+            OfflineOptionService::TYPE_SUB_COURSE_NAME,
+            OfflineOptionService::TYPE_INSTRUCTOR,
+            OfflineOptionService::TYPE_VENUE,
+            OfflineOptionService::TYPE_TARGET_EMPLOYEE,
+            OfflineOptionService::TYPE_PREREQUISITES,
+            OfflineOptionService::TYPE_TYPE,
+            OfflineOptionService::TYPE_CATEGORY,
+            OfflineOptionService::TYPE_LEVEL,
+            OfflineOptionService::TYPE_SUB_CLASSIFICATION,
+            'title',
+            'location',
+            'target_audience',
+            'requirements',
+        ];
+
+        $optionsGrouped = OfflineTrainingOption::active()
+            ->whereIn('option_type', $targetTypes)
+            ->orderBy('sort_order', 'asc')
+            ->orderBy('value', 'asc')
+            ->get()
+            ->groupBy('option_type');
 
         // Sub Classification mappings per Main Classification from offline_trainings records
         $subClassificationMap = OfflineTraining::whereNotNull('main_classification')
@@ -205,13 +227,15 @@ class OfflineTrainingController extends Controller
             })
             ->all();
 
-        // Merge any distinct sub-classifications from offline_trainings
+        // Sub-classifications
+        $subClassifications = $optionsGrouped->get(OfflineOptionService::TYPE_SUB_CLASSIFICATION, collect())
+            ->unique('value')
+            ->values();
         $existingSubClassNames = OfflineTraining::whereNotNull('sub_classification')
             ->where('sub_classification', '!=', '')
             ->distinct()
             ->pluck('sub_classification')
             ->all();
-
         $subClassValues = $subClassifications->pluck('value')->all();
         foreach ($existingSubClassNames as $sName) {
             $sTrimmed = trim((string) $sName);
@@ -226,7 +250,10 @@ class OfflineTrainingController extends Controller
         }
         $subClassifications = $subClassifications->sortBy('value')->values();
 
-        // Merge any categories from offline_trainings and standard baseline presets
+        // Categories
+        $categories = $optionsGrouped->get(OfflineOptionService::TYPE_CATEGORY, collect())
+            ->unique('value')
+            ->values();
         $existingCatNames = OfflineTraining::whereNotNull('category')
             ->where('category', '!=', '')
             ->distinct()
@@ -252,7 +279,10 @@ class OfflineTrainingController extends Controller
         }
         $categories = $categories->sortBy('value')->values();
 
-        // Ensure standard levels
+        // Levels
+        $levels = $optionsGrouped->get(OfflineOptionService::TYPE_LEVEL, collect())
+            ->unique('value')
+            ->values();
         $lvlValues = $levels->pluck('value')->all();
         foreach (['Basic', 'Intermediate', 'Advanced', 'All'] as $lName) {
             if (!in_array($lName, $lvlValues, true)) {
@@ -265,7 +295,10 @@ class OfflineTrainingController extends Controller
             }
         }
 
-        // Ensure standard types
+        // Types
+        $types = $optionsGrouped->get(OfflineOptionService::TYPE_TYPE, collect())
+            ->unique('value')
+            ->values();
         $typeValues = $types->pluck('value')->all();
         foreach (['In-House', 'Public', 'Workshop', 'Certification'] as $tName) {
             if (!in_array($tName, $typeValues, true)) {
@@ -278,7 +311,197 @@ class OfflineTrainingController extends Controller
             }
         }
 
+        // Field 1: Training Title (course_name)
+        $titleOptions = $optionsGrouped->get(OfflineOptionService::TYPE_COURSE_NAME, collect())
+            ->merge($optionsGrouped->get('title', collect()))
+            ->unique('value')
+            ->values();
+        $existingTitles = OfflineTraining::whereNotNull('title')
+            ->where('title', '!=', '')
+            ->distinct()
+            ->pluck('title')
+            ->all();
+        $existingCourses = OfflineTraining::whereNotNull('course_name')
+            ->where('course_name', '!=', '')
+            ->distinct()
+            ->pluck('course_name')
+            ->all();
+        $titleValues = $titleOptions->pluck('value')->all();
+        foreach (array_unique(array_merge($existingTitles, $existingCourses)) as $tName) {
+            $tTrimmed = trim((string) $tName);
+            if ($tTrimmed !== '' && !in_array($tTrimmed, $titleValues, true)) {
+                $titleOptions->push((object)[
+                    'id'    => null,
+                    'value' => $tTrimmed,
+                    'text'  => $tTrimmed,
+                ]);
+                $titleValues[] = $tTrimmed;
+            }
+        }
+        $titleOptions = $titleOptions->sortBy('value')->values();
+
+        // Field 2: Sub Course Name
+        $subCourseOptions = $optionsGrouped->get(OfflineOptionService::TYPE_SUB_COURSE_NAME, collect())
+            ->unique('value')
+            ->values();
+        $existingSubCourses = OfflineTraining::whereNotNull('sub_course_name')
+            ->where('sub_course_name', '!=', '')
+            ->distinct()
+            ->pluck('sub_course_name')
+            ->all();
+        $subCourseValues = $subCourseOptions->pluck('value')->all();
+        foreach ($existingSubCourses as $scName) {
+            $scTrimmed = trim((string) $scName);
+            if ($scTrimmed !== '' && !in_array($scTrimmed, $subCourseValues, true)) {
+                $subCourseOptions->push((object)[
+                    'id'    => null,
+                    'value' => $scTrimmed,
+                    'text'  => $scTrimmed,
+                ]);
+                $subCourseValues[] = $scTrimmed;
+            }
+        }
+        $subCourseOptions = $subCourseOptions->sortBy('value')->values();
+
+        // Field 3: Instructor / Trainer
+        $instructorOptions = $optionsGrouped->get(OfflineOptionService::TYPE_INSTRUCTOR, collect())
+            ->unique('value')
+            ->values();
+        $existingInstructors = OfflineTraining::whereNotNull('instructor')
+            ->where('instructor', '!=', '')
+            ->distinct()
+            ->pluck('instructor')
+            ->all();
+        $instructorValues = $instructorOptions->pluck('value')->all();
+        foreach ($existingInstructors as $iName) {
+            $iTrimmed = trim((string) $iName);
+            if ($iTrimmed !== '' && !in_array($iTrimmed, $instructorValues, true)) {
+                $instructorOptions->push((object)[
+                    'id'    => null,
+                    'value' => $iTrimmed,
+                    'text'  => $iTrimmed,
+                ]);
+                $instructorValues[] = $iTrimmed;
+            }
+        }
+        $instructorOptions = $instructorOptions->sortBy('value')->values();
+
+        // Field 4: Location / Venue
+        $locationOptions = $optionsGrouped->get(OfflineOptionService::TYPE_VENUE, collect())
+            ->merge($optionsGrouped->get('location', collect()))
+            ->unique('value')
+            ->values();
+        $existingLocations = OfflineTraining::whereNotNull('location')
+            ->where('location', '!=', '')
+            ->distinct()
+            ->pluck('location')
+            ->all();
+        $existingVenues = OfflineTraining::whereNotNull('venue')
+            ->where('venue', '!=', '')
+            ->distinct()
+            ->pluck('venue')
+            ->all();
+        $locationValues = $locationOptions->pluck('value')->all();
+        foreach (array_unique(array_merge($existingLocations, $existingVenues)) as $lName) {
+            $lTrimmed = trim((string) $lName);
+            if ($lTrimmed !== '' && !in_array($lTrimmed, $locationValues, true)) {
+                $locationOptions->push((object)[
+                    'id'    => null,
+                    'value' => $lTrimmed,
+                    'text'  => $lTrimmed,
+                ]);
+                $locationValues[] = $lTrimmed;
+            }
+        }
+        $locationOptions = $locationOptions->sortBy('value')->values();
+
+        // Field 5: Target Employee
+        $targetEmployeeOptions = $optionsGrouped->get(OfflineOptionService::TYPE_TARGET_EMPLOYEE, collect())
+            ->merge($optionsGrouped->get('target_audience', collect()))
+            ->unique('value')
+            ->values();
+        $existingTargets = OfflineTraining::whereNotNull('target_employee')
+            ->where('target_employee', '!=', '')
+            ->distinct()
+            ->pluck('target_employee')
+            ->all();
+        $defaultTargets = [
+            'All Employees',
+            'Staff to Supervisor, All Departments',
+            'Specialist, Engineer & Data Analyst',
+            'All Plant Operations & Maintenance Personnel',
+            'Staff, Officers, and Section Heads',
+            'Supervisor / Section Head',
+            'Manager & Above',
+        ];
+        $targetValues = $targetEmployeeOptions->pluck('value')->all();
+        foreach (array_unique(array_merge($existingTargets, $defaultTargets)) as $tgtName) {
+            $tgtTrimmed = trim((string) $tgtName);
+            if ($tgtTrimmed !== '' && !in_array($tgtTrimmed, $targetValues, true)) {
+                $targetEmployeeOptions->push((object)[
+                    'id'    => null,
+                    'value' => $tgtTrimmed,
+                    'text'  => $tgtTrimmed,
+                ]);
+                $targetValues[] = $tgtTrimmed;
+            }
+        }
+        $targetEmployeeOptions = $targetEmployeeOptions->sortBy('value')->values();
+
+        // Field 6: Prerequisites
+        $prerequisiteOptions = $optionsGrouped->get(OfflineOptionService::TYPE_PREREQUISITES, collect())
+            ->merge($optionsGrouped->get('requirements', collect()))
+            ->unique('value')
+            ->values();
+        $existingPrereqs = OfflineTraining::whereNotNull('prerequisites')
+            ->where('prerequisites', '!=', '')
+            ->distinct()
+            ->pluck('prerequisites')
+            ->all();
+        $defaultPrereqs = [
+            'None',
+            'Minimum 1 year tenure at PT Krakatau Posco',
+            'Basic Microsoft Excel proficiency',
+            'Valid PTKP ID badge and completed basic safety induction',
+        ];
+        $prereqValues = $prerequisiteOptions->pluck('value')->all();
+        foreach (array_unique(array_merge($existingPrereqs, $defaultPrereqs)) as $prqName) {
+            $prqTrimmed = trim((string) $prqName);
+            if ($prqTrimmed !== '' && !in_array($prqTrimmed, $prereqValues, true)) {
+                $prerequisiteOptions->push((object)[
+                    'id'    => null,
+                    'value' => $prqTrimmed,
+                    'text'  => $prqTrimmed,
+                ]);
+                $prereqValues[] = $prqTrimmed;
+            }
+        }
+        $prerequisiteOptions = $prerequisiteOptions->sortBy('value')->values();
+
+        // Auto-seed target_employee and prerequisites baseline into offline_training_options if empty
+        if (!OfflineTrainingOption::where('option_type', OfflineOptionService::TYPE_TARGET_EMPLOYEE)->exists()) {
+            foreach ($defaultTargets as $dTgt) {
+                $this->offlineOptionService->registerOption(OfflineOptionService::TYPE_TARGET_EMPLOYEE, $dTgt, null, 'system');
+            }
+        }
+        if (!OfflineTrainingOption::where('option_type', OfflineOptionService::TYPE_PREREQUISITES)->exists()) {
+            foreach ($defaultPrereqs as $dPrq) {
+                $this->offlineOptionService->registerOption(OfflineOptionService::TYPE_PREREQUISITES, $dPrq, null, 'system');
+            }
+        }
+
         $options = [
+            'title'              => $titleOptions,
+            'course_name'        => $titleOptions,
+            'sub_course_name'    => $subCourseOptions,
+            'instructor'         => $instructorOptions,
+            'instructor_name'    => $instructorOptions,
+            'location'           => $locationOptions,
+            'venue'              => $locationOptions,
+            'target_employee'    => $targetEmployeeOptions,
+            'target_audience'    => $targetEmployeeOptions,
+            'prerequisites'      => $prerequisiteOptions,
+            'requirements'       => $prerequisiteOptions,
             'type'               => $types,
             'category'           => $categories,
             'level'              => $levels,
@@ -298,7 +521,10 @@ class OfflineTrainingController extends Controller
     public function create()
     {
         $formData = $this->getScheduleFormData();
-        return view('main.manage-training-schedule.create', $formData);
+        $viewName = view()->exists('manage.training-schedule.create')
+            ? 'manage.training-schedule.create'
+            : 'main.manage-training-schedule.create';
+        return view($viewName, $formData);
     }
 
     /**
@@ -402,12 +628,16 @@ class OfflineTrainingController extends Controller
 
         // Auto sync options to offline_training_options for consistent master options
         $this->offlineOptionService->ensureOptionsFromTraining([
+            'course_name'        => $request->input('title'),
+            'sub_course_name'    => $request->input('sub_course_name'),
             'type'               => $request->input('type'),
             'category'           => $request->input('category'),
             'level'              => $request->input('level'),
             'sub_classification' => $request->input('sub_classification'),
             'instructor'         => $request->input('instructor'),
             'venue'              => $request->input('location'),
+            'target_employee'    => $request->input('target_employee'),
+            'prerequisites'      => $request->input('prerequisites'),
         ], 'manual', Auth::id());
 
         return redirect()->route('manage.training-schedule.index')
@@ -422,7 +652,11 @@ class OfflineTrainingController extends Controller
         $training = $id instanceof OfflineTraining ? $id : OfflineTraining::findOrFail($id);
         $formData = $this->getScheduleFormData($training);
 
-        return view('main.manage-training-schedule.edit', array_merge(['training' => $training], $formData));
+        $viewName = view()->exists('manage.training-schedule.edit')
+            ? 'manage.training-schedule.edit'
+            : 'main.manage-training-schedule.edit';
+
+        return view($viewName, array_merge(['training' => $training], $formData));
     }
 
     /**
@@ -527,12 +761,16 @@ class OfflineTrainingController extends Controller
 
         // Auto sync options to offline_training_options for consistent master options
         $this->offlineOptionService->ensureOptionsFromTraining([
+            'course_name'        => $request->input('title'),
+            'sub_course_name'    => $request->input('sub_course_name'),
             'type'               => $request->input('type'),
             'category'           => $request->input('category'),
             'level'              => $request->input('level'),
             'sub_classification' => $request->input('sub_classification'),
             'instructor'         => $request->input('instructor'),
             'venue'              => $request->input('location'),
+            'target_employee'    => $request->input('target_employee'),
+            'prerequisites'      => $request->input('prerequisites'),
         ], 'manual', Auth::id());
 
         return redirect()->route('manage.training-schedule.index')
@@ -551,6 +789,14 @@ class OfflineTrainingController extends Controller
         ]);
 
         $type = (string) $request->input('option_type');
+        $typeMap = [
+            'title'           => OfflineOptionService::TYPE_COURSE_NAME,
+            'location'        => OfflineOptionService::TYPE_VENUE,
+            'target_audience' => OfflineOptionService::TYPE_TARGET_EMPLOYEE,
+            'requirements'    => OfflineOptionService::TYPE_PREREQUISITES,
+        ];
+        $type = $typeMap[$type] ?? $type;
+
         $rawValue = (string) $request->input('value');
         $cleanValue = trim(preg_replace('/\s+/', ' ', $rawValue));
 

@@ -38,15 +38,45 @@
                 <div class="row g-3">
                     <!-- Training Title Placed Here at the Top -->
                     <div class="col-md-6 mb-2">
-                        <label class="form-label fw-semibold text-dark">Training Title <span class="text-danger">*</span></label>
-                        <input type="text" name="title" id="inputTrainingTitle" class="form-control rounded-3" placeholder="e.g. Leadership Development Program for Supervisors" value="{{ old('title') }}" required>
-                        <div class="invalid-feedback">Please provide a valid training title.</div>
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <label class="form-label fw-semibold text-dark mb-0">Training Title <span class="text-danger">*</span></label>
+                            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 btn-add-option-modal" style="font-size: 0.75rem; height: 22px; border-radius: 4px;" data-type="course_name" data-target="#select-training-title" data-title="Training Title" title="Add Training Title">
+                                <i class="ti ti-plus"></i>
+                            </button>
+                        </div>
+                        <select name="title" id="select-training-title" class="form-select rounded-3" required>
+                            <option value="">Select Training Title...</option>
+                            @foreach ($options['title'] ?? [] as $titleOpt)
+                                <option value="{{ $titleOpt->value }}" {{ old('title') == $titleOpt->value ? 'selected' : '' }}>
+                                    {{ $titleOpt->value }}
+                                </option>
+                            @endforeach
+                            @if (old('title') && !collect($options['title'] ?? [])->pluck('value')->contains(old('title')))
+                                <option value="{{ old('title') }}" selected>{{ old('title') }}</option>
+                            @endif
+                        </select>
+                        <div class="invalid-feedback">Please provide or select a valid training title.</div>
                     </div>
 
                     <!-- Sub Course Name -->
                     <div class="col-md-6 mb-2">
-                        <label class="form-label fw-semibold text-dark">Sub Course Name</label>
-                        <input type="text" name="sub_course_name" id="inputSubCourseName" class="form-control rounded-3" placeholder="e.g. Supervisory Leadership Module / Advanced Analytics" value="{{ old('sub_course_name') }}">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <label class="form-label fw-semibold text-dark mb-0">Sub Course Name</label>
+                            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 btn-add-option-modal" style="font-size: 0.75rem; height: 22px; border-radius: 4px;" data-type="sub_course_name" data-target="#select-sub-course-name" data-title="Sub Course Name" title="Add Sub Course Name">
+                                <i class="ti ti-plus"></i>
+                            </button>
+                        </div>
+                        <select name="sub_course_name" id="select-sub-course-name" class="form-select rounded-3">
+                            <option value="">Select Sub Course Name (Optional)...</option>
+                            @foreach ($options['sub_course_name'] ?? [] as $subCourseOpt)
+                                <option value="{{ $subCourseOpt->value }}" {{ old('sub_course_name') == $subCourseOpt->value ? 'selected' : '' }}>
+                                    {{ $subCourseOpt->value }}
+                                </option>
+                            @endforeach
+                            @if (old('sub_course_name') && !collect($options['sub_course_name'] ?? [])->pluck('value')->contains(old('sub_course_name')))
+                                <option value="{{ old('sub_course_name') }}" selected>{{ old('sub_course_name') }}</option>
+                            @endif
+                        </select>
                     </div>
                     
                     <!-- Course Overview / Description -->
@@ -202,29 +232,89 @@
 
                     <!-- Instructor / Trainer -->
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold text-dark">Instructor / Trainer <span class="text-danger">*</span></label>
-                        <input type="text" name="instructor" class="form-control rounded-3" placeholder="e.g. Dr. Hendra Wijaya, M.M." value="{{ old('instructor') }}" required>
-                        <div class="invalid-feedback">Please enter the instructor or trainer name.</div>
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <label class="form-label fw-semibold text-dark mb-0">Instructor / Trainer <span class="text-danger">*</span></label>
+                            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 btn-add-option-modal" style="font-size: 0.75rem; height: 22px; border-radius: 4px;" data-type="instructor" data-target="#select-instructor" data-title="Instructor / Trainer" title="Add Instructor">
+                                <i class="ti ti-plus"></i>
+                            </button>
+                        </div>
+                        <select name="instructor" id="select-instructor" class="form-select rounded-3" required>
+                            <option value="">Select Instructor / Trainer...</option>
+                            @foreach ($options['instructor'] ?? [] as $instOpt)
+                                <option value="{{ $instOpt->value }}" {{ old('instructor') == $instOpt->value ? 'selected' : '' }}>
+                                    {{ $instOpt->value }}
+                                </option>
+                            @endforeach
+                            @if (old('instructor') && !collect($options['instructor'] ?? [])->pluck('value')->contains(old('instructor')))
+                                <option value="{{ old('instructor') }}" selected>{{ old('instructor') }}</option>
+                            @endif
+                        </select>
+                        <div class="invalid-feedback">Please select or provide an instructor or trainer.</div>
                     </div>
 
                     <!-- Location / Venue -->
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold text-dark">Location / Venue <span class="text-danger">*</span></label>
-                        <input type="text" name="location" class="form-control rounded-3" placeholder="e.g. Learning Center Room 302 / Zoom Online" value="{{ old('location') }}" required>
-                        <div class="invalid-feedback">Please enter the training location or venue.</div>
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <label class="form-label fw-semibold text-dark mb-0">Location / Venue <span class="text-danger">*</span></label>
+                            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 btn-add-option-modal" style="font-size: 0.75rem; height: 22px; border-radius: 4px;" data-type="venue" data-target="#select-location" data-title="Location / Venue" title="Add Location / Venue">
+                                <i class="ti ti-plus"></i>
+                            </button>
+                        </div>
+                        <select name="location" id="select-location" class="form-select rounded-3" required>
+                            <option value="">Select Location / Venue...</option>
+                            @foreach ($options['location'] ?? [] as $locOpt)
+                                <option value="{{ $locOpt->value }}" {{ old('location') == $locOpt->value ? 'selected' : '' }}>
+                                    {{ $locOpt->value }}
+                                </option>
+                            @endforeach
+                            @if (old('location') && !collect($options['location'] ?? [])->pluck('value')->contains(old('location')))
+                                <option value="{{ old('location') }}" selected>{{ old('location') }}</option>
+                            @endif
+                        </select>
+                        <div class="invalid-feedback">Please select or provide a training location or venue.</div>
                     </div>
 
                     <!-- Target Employee -->
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold text-dark">Target Employee <span class="text-danger">*</span></label>
-                        <input type="text" name="target_employee" class="form-control rounded-3" placeholder="e.g. Staff to Supervisor, Maintenance Division" value="{{ old('target_employee') }}" required>
-                        <div class="invalid-feedback">Please specify the target employee or audience.</div>
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <label class="form-label fw-semibold text-dark mb-0">Target Employee <span class="text-danger">*</span></label>
+                            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 btn-add-option-modal" style="font-size: 0.75rem; height: 22px; border-radius: 4px;" data-type="target_employee" data-target="#select-target-employee" data-title="Target Employee" title="Add Target Employee">
+                                <i class="ti ti-plus"></i>
+                            </button>
+                        </div>
+                        <select name="target_employee" id="select-target-employee" class="form-select rounded-3" required>
+                            <option value="">Select Target Employee...</option>
+                            @foreach ($options['target_employee'] ?? [] as $tgtOpt)
+                                <option value="{{ $tgtOpt->value }}" {{ old('target_employee') == $tgtOpt->value ? 'selected' : '' }}>
+                                    {{ $tgtOpt->value }}
+                                </option>
+                            @endforeach
+                            @if (old('target_employee') && !collect($options['target_employee'] ?? [])->pluck('value')->contains(old('target_employee')))
+                                <option value="{{ old('target_employee') }}" selected>{{ old('target_employee') }}</option>
+                            @endif
+                        </select>
+                        <div class="invalid-feedback">Please select or specify the target employee or audience.</div>
                     </div>
 
                     <!-- Prerequisites -->
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold text-dark">Prerequisites / Persyaratan</label>
-                        <input type="text" name="prerequisites" class="form-control rounded-3" placeholder="e.g. Minimum 1 year tenure, Basic Excel knowledge" value="{{ old('prerequisites') }}">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <label class="form-label fw-semibold text-dark mb-0">Prerequisites / Persyaratan</label>
+                            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 btn-add-option-modal" style="font-size: 0.75rem; height: 22px; border-radius: 4px;" data-type="prerequisites" data-target="#select-prerequisites" data-title="Prerequisites / Persyaratan" title="Add Prerequisites">
+                                <i class="ti ti-plus"></i>
+                            </button>
+                        </div>
+                        <select name="prerequisites" id="select-prerequisites" class="form-select rounded-3">
+                            <option value="">Select Prerequisites (Optional)...</option>
+                            @foreach ($options['prerequisites'] ?? [] as $preOpt)
+                                <option value="{{ $preOpt->value }}" {{ old('prerequisites') == $preOpt->value ? 'selected' : '' }}>
+                                    {{ $preOpt->value }}
+                                </option>
+                            @endforeach
+                            @if (old('prerequisites') && !collect($options['prerequisites'] ?? [])->pluck('value')->contains(old('prerequisites')))
+                                <option value="{{ old('prerequisites') }}" selected>{{ old('prerequisites') }}</option>
+                            @endif
+                        </select>
                     </div>
 
                     <!-- Participant Quota -->
