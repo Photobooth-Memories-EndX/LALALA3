@@ -156,18 +156,24 @@
                             default                             => 'background-color: #e0f2fe; color: #0369a1;',
                         };
 
-                        $statusBadgeClass = match($item->status) {
+                        $regCloseDate = \Carbon\Carbon::parse($item->registration_close_date ?? $item->start_date);
+                        $regCloseTime = $item->registration_close_time ? substr($item->registration_close_time, 0, 5) : '23:59';
+                        $closeDatetime = \Carbon\Carbon::parse($regCloseDate->format('Y-m-d') . ' ' . $regCloseTime . ':59');
+                        $isRegDeadlinePassed = \Carbon\Carbon::now()->gt($closeDatetime);
+                        $displayStatus = ($item->status === 'Open Registration' && $isRegDeadlinePassed) ? 'Closed' : $item->status;
+
+                        $statusBadgeClass = match($displayStatus) {
                             'Open Registration' => 'bg-success-subtle text-success',
                             'Running'           => 'bg-warning-subtle text-warning border border-warning-subtle',
                             'Closed'            => 'bg-secondary-subtle text-secondary',
                             default             => 'bg-info-subtle text-info',
                         };
 
-                        $dataStatus = match($item->status) {
+                        $dataStatus = match($displayStatus) {
                             'Open Registration' => 'open',
                             'Running'           => 'running',
                             'Closed'            => 'closed',
-                            default             => strtolower($item->status ?? 'open'),
+                            default             => strtolower($displayStatus ?? 'open'),
                         };
 
                         $startDate = \Carbon\Carbon::parse($item->start_date);
@@ -233,7 +239,7 @@
                         </td>
                         <td class="text-center align-middle">
                             <span class="badge {{ $statusBadgeClass }} rounded-pill px-3 py-1 fw-semibold">
-                                {{ $item->status }}
+                                {{ $displayStatus }}
                             </span>
                         </td>
                         <!-- <td class="text-center align-middle pe-4">

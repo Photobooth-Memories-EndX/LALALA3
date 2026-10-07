@@ -94,6 +94,9 @@
                             @else
                                 {{ \Carbon\Carbon::parse($item->start_date)->format('d M Y') }}
                             @endif
+                            @if($item->registration_close_date)
+                                <div class="text-muted extra-small fw-normal" title="Registration Deadline">Reg Closes: {{ \Carbon\Carbon::parse($item->registration_close_date)->format('d M Y') }}{{ $item->registration_close_time ? ' ' . substr($item->registration_close_time, 0, 5) : '' }}</div>
+                            @endif
                         </td>
                         <td>
                             <div class="text-muted small" style="min-width: 120px;">{{ $startTime }} - {{ $endTime }} WIB</div>

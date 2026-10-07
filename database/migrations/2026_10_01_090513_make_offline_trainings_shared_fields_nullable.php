@@ -20,10 +20,15 @@ return new class extends Migration
             $table->string('instructor', 255)->nullable()->change();
             $table->string('location', 255)->nullable()->change();
             $table->date('start_date')->nullable()->change();
-
-            // Add composite index for Manage Record queries (preserving existing start_date + end_date index)
-            $table->index(['start_date', 'finish_date'], 'offline_trainings_start_finish_index');
         });
+
+        // Add composite index for Manage Record queries if it doesn't already exist
+        $existingIndexes = collect(\Illuminate\Support\Facades\DB::select("SHOW INDEX FROM offline_trainings"))->pluck('Key_name')->all();
+        if (!in_array('offline_trainings_start_finish_index', $existingIndexes)) {
+            Schema::table('offline_trainings', function (Blueprint $table) {
+                $table->index(['start_date', 'finish_date'], 'offline_trainings_start_finish_index');
+            });
+        }
     }
 
     /**

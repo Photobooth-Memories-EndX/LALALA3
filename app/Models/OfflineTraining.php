@@ -27,6 +27,8 @@ class OfflineTraining extends Model
         'status',
         'start_date',
         'end_date',
+        'registration_close_date',
+        'registration_close_time',
         'start_time',
         'end_time',
         'description',
@@ -57,15 +59,16 @@ class OfflineTraining extends Model
     ];
 
     protected $casts = [
-        'syllabus'              => 'array',
-        'start_date'            => 'date',
-        'end_date'              => 'date',
-        'finish_date'           => 'date',
-        'quota'                 => 'integer',
-        'counted_corporate_kpi' => 'boolean',
-        'corporate_kpi_year'    => 'integer',
-        'duration_seconds'      => 'integer',
-        'learning_hours'        => 'decimal:4',
+        'syllabus'                => 'array',
+        'start_date'              => 'date',
+        'end_date'                => 'date',
+        'finish_date'             => 'date',
+        'registration_close_date' => 'date',
+        'quota'                   => 'integer',
+        'counted_corporate_kpi'   => 'boolean',
+        'corporate_kpi_year'      => 'integer',
+        'duration_seconds'        => 'integer',
+        'learning_hours'          => 'decimal:4',
     ];
 
     protected static function booted(): void
@@ -98,6 +101,16 @@ class OfflineTraining extends Model
                 $model->end_date = $model->finish_date;
             } elseif (blank($model->end_date) && filled($model->start_date)) {
                 $model->end_date = $model->start_date;
+            }
+
+            // Registration Close Date fallback to Start Date
+            if (blank($model->registration_close_date) && filled($model->start_date)) {
+                $model->registration_close_date = $model->start_date;
+            }
+
+            // Registration Close Time fallback to 23:59:00
+            if (blank($model->registration_close_time)) {
+                $model->registration_close_time = '23:59:00';
             }
 
             // Batch <-> Training Code
