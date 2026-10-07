@@ -14,7 +14,9 @@ return new class extends Migration
     public function up()
     {
         Schema::table('offline_trainings', function (Blueprint $table) {
-            $table->date('registration_close_date')->nullable()->after('end_date')->index();
+            if (!Schema::hasColumn('offline_trainings', 'registration_close_date')) {
+                $table->date('registration_close_date')->nullable()->after('end_date')->index();
+            }
         });
     }
 
@@ -26,7 +28,9 @@ return new class extends Migration
     public function down()
     {
         Schema::table('offline_trainings', function (Blueprint $table) {
-            $table->dropColumn('registration_close_date');
+            if (Schema::hasColumn('offline_trainings', 'registration_close_date')) {
+                $table->dropColumn('registration_close_date');
+            }
         });
     }
 };
