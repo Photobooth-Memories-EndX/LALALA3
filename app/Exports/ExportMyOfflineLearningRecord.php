@@ -52,6 +52,34 @@ class ExportMyOfflineLearningRecord implements FromArray, ShouldAutoSize, WithEv
                 $row['finish_date'] ?: '-',
                 $row['score'] !== null ? $row['score'] : '-',
                 $row['certificate'] ?: '-',
+
+                // Extended fields
+                $row['batch'] ?? '-',
+                $row['sub_classification'] ?? '-',
+                $row['delivery_method'] ?? '-',
+                $row['sub_delivery_method'] ?? '-',
+                $row['provider'] ?? '-',
+                $row['venue'] ?? '-',
+                $row['instructor'] ?? '-',
+                $row['start_time'] ?? '-',
+                $row['end_time'] ?? '-',
+                $row['attendance_status'] ?? '-',
+                $row['attendance_reason'] ?? '-',
+                $row['l1_program'] ?? '-',
+                $row['l2_numerical'] !== null ? $row['l2_numerical'] : '-',
+                $row['l2_verbal'] ?? '-',
+                $row['l3_numerical'] !== null ? $row['l3_numerical'] : '-',
+                $row['l3_verbal'] ?? '-',
+                $row['pic'] ?? '-',
+                $row['bond_status'] ?? '-',
+                $row['bond_end_date'] ?: '-',
+                $row['bond_amount_formatted'] ?? '-',
+                $row['employee_id'] ?? '-',
+                $row['grade'] ?? '-',
+                $row['job_position'] ?? '-',
+                $row['team'] ?? '-',
+                $row['department'] ?? '-',
+                $row['company'] ?? '-',
             ];
         }
 
@@ -59,7 +87,7 @@ class ExportMyOfflineLearningRecord implements FromArray, ShouldAutoSize, WithEv
         $learningHours = (float) $this->rows->sum(fn (array $r) => (float) ($r['learning_hour_value'] ?? 0));
 
         $output[] = array_fill(0, count($this->headings()), '');
-        $output[] = [
+        $summaryRowData = array_merge([
             'TOTAL',
             '',
             '',
@@ -72,7 +100,8 @@ class ExportMyOfflineLearningRecord implements FromArray, ShouldAutoSize, WithEv
             '',
             '',
             '',
-        ];
+        ], array_fill(0, max(0, count($this->headings()) - 12), ''));
+        $output[] = $summaryRowData;
 
         return $output;
     }
@@ -92,6 +121,34 @@ class ExportMyOfflineLearningRecord implements FromArray, ShouldAutoSize, WithEv
             'Finish Date',
             'Assessment Score',
             'Certificate',
+
+            // Extended Personal Export Columns
+            'Batch',
+            'Sub Classification',
+            'Delivery Method',
+            'Sub Delivery Method',
+            'Provider',
+            'Venue',
+            'Instructor',
+            'Start Time',
+            'End Time',
+            'Attendance',
+            'Attendance Reason',
+            'L1 Program',
+            'L2 Numerical',
+            'L2 Verbal',
+            'L3 Numerical',
+            'L3 Verbal',
+            'PIC',
+            'Bond Status',
+            'Bond End Date',
+            'Bond Amount',
+            'Employee ID',
+            'Grade',
+            'Job Position',
+            'Team',
+            'Department',
+            'Company',
         ];
     }
 
@@ -105,11 +162,14 @@ class ExportMyOfflineLearningRecord implements FromArray, ShouldAutoSize, WithEv
         return [AfterSheet::class => function (AfterSheet $event) {
             $sheet = $event->sheet->getDelegate();
             $sheet->freezePane('A2');
-            $sheet->getStyle('A1:L1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('A1:L' . max(1, $sheet->getHighestRow()))->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+            $highestColumn = $sheet->getHighestColumn();
+            $highestRow = max(1, $sheet->getHighestRow());
 
-            $summaryRow = $sheet->getHighestRow();
-            $sheet->getStyle('A' . $summaryRow . ':L' . $summaryRow)->applyFromArray([
+            $sheet->getStyle('A1:' . $highestColumn . '1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('A1:' . $highestColumn . $highestRow)->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+
+            $summaryRow = $highestRow;
+            $sheet->getStyle('A' . $summaryRow . ':' . $highestColumn . $summaryRow)->applyFromArray([
                 'font' => ['bold' => true],
                 'fill' => [
                     'fillType' => Fill::FILL_SOLID,

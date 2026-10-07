@@ -553,6 +553,229 @@
             loadLearningTab('record');
         });
 
+        // ── More Filter Offline handlers ──────────────────────────────────────
+        $(document).on('click', '#btnApplyMoreFilterModal', function () {
+            var params = new URLSearchParams(window.location.search);
+            params.delete('page');
+            params.delete('record_page');
+
+            var filterKeys = [
+                'record_filter_category',
+                'record_filter_sub_classification',
+                'record_filter_batch',
+                'record_filter_delivery_method',
+                'record_filter_provider',
+                'record_filter_attendance',
+                'record_filter_certificate'
+            ];
+
+            filterKeys.forEach(function (k) {
+                var val = $('[name="' + k + '"]').val();
+                if (val && val !== 'all') {
+                    params.set(k, val);
+                } else {
+                    params.delete(k);
+                }
+            });
+
+            params.set('learning_tab', 'record');
+            params.set('record_mode', 'offline');
+
+            var modalEl = document.getElementById('recordOfflineMoreFilterModal');
+            if (modalEl) {
+                var modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
+            }
+
+            var qs = params.toString();
+            history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+            _activeTab = null;
+            loadLearningTab('record');
+        });
+
+        $(document).on('click', '#btnResetMoreFilterModal', function () {
+            var params = new URLSearchParams(window.location.search);
+            params.delete('page');
+            params.delete('record_page');
+
+            var filterKeys = [
+                'record_filter_category',
+                'record_filter_sub_classification',
+                'record_filter_batch',
+                'record_filter_delivery_method',
+                'record_filter_provider',
+                'record_filter_attendance',
+                'record_filter_certificate'
+            ];
+
+            filterKeys.forEach(function (k) {
+                params.delete(k);
+                $('[name="' + k + '"]').val('all');
+            });
+
+            params.set('learning_tab', 'record');
+            params.set('record_mode', 'offline');
+
+            var modalEl = document.getElementById('recordOfflineMoreFilterModal');
+            if (modalEl) {
+                var modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
+            }
+
+            var qs = params.toString();
+            history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+            _activeTab = null;
+            loadLearningTab('record');
+        });
+
+        // Clear single more filter badge
+        $(document).on('click', '.record-offline-clear-single-filter', function (e) {
+            e.preventDefault();
+            var param = $(this).data('param');
+            var params = new URLSearchParams(window.location.search);
+            params.delete('page');
+            params.delete('record_page');
+            params.delete(param);
+            params.set('learning_tab', 'record');
+            params.set('record_mode', 'offline');
+            var qs = params.toString();
+            history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+            _activeTab = null;
+            loadLearningTab('record');
+        });
+
+        $(document).on('click', '#recordOfflineClearAllMoreFilters', function (e) {
+            e.preventDefault();
+            $('#btnResetMoreFilterModal').trigger('click');
+        });
+
+        // ── View Detail Offline Modal Population ──────────────────────────────
+        $(document).on('click', '.btn-record-offline-detail', function (e) {
+            e.preventDefault();
+            var recordId = $(this).data('record-id');
+            var dataEl = document.getElementById('record-offline-data-' + recordId);
+            if (!dataEl) return;
+
+            var d = {};
+            try {
+                d = JSON.parse(dataEl.textContent);
+            } catch (err) {
+                console.error('Failed to parse record offline data:', err);
+                return;
+            }
+
+            function fallback(val, def) {
+                if (val === undefined || val === null || val === '') return def !== undefined ? def : '-';
+                return val;
+            }
+
+            // Training Information
+            $('#dtCourseName').text(fallback(d.course_name, d.title));
+            $('#detailCourseSubHeader').text(fallback(d.subtitle, d.classification));
+            $('#dtSubCourseName').text(fallback(d.sub_course_name));
+            $('#dtType').text(fallback(d.type));
+            $('#dtCategory').text(fallback(d.category));
+            $('#dtLevel').text(fallback(d.level));
+            $('#dtBatch').text(fallback(d.batch));
+            $('#dtClassification').text(fallback(d.classification));
+            $('#dtSubClassification').text(fallback(d.sub_classification));
+            $('#dtDeliveryMethod').text(fallback(d.delivery_method));
+            $('#dtSubDeliveryMethod').text(fallback(d.sub_delivery_method));
+            $('#dtProvider').text(fallback(d.provider));
+            $('#dtProviderName').text(fallback(d.provider_name));
+
+            // Schedule & Venue
+            $('#dtDateDisplay').text(fallback(d.date_display));
+            $('#dtTimeDisplay').text(fallback(d.time_display));
+            $('#dtDuration').text(fallback(d.duration));
+            $('#dtLearningHours').text(fallback(d.learning_hour));
+            $('#dtVenue').text(fallback(d.venue));
+            $('#dtInstructor').text(fallback(d.instructor));
+
+            // My Learning Result
+            var progress = parseInt(d.progress, 10) || 0;
+            if (progress >= 100) {
+                $('#dtProgressBadge').html('<span class="badge bg-success-lt text-success fw-bold px-2 py-1">100% Completed</span>');
+            } else if (progress > 0) {
+                $('#dtProgressBadge').html('<span class="badge bg-warning-lt text-warning fw-bold px-2 py-1">' + progress + '% In Progress</span>');
+            } else {
+                $('#dtProgressBadge').html('<span class="badge bg-secondary-lt fw-bold px-2 py-1">0% Not Started</span>');
+            }
+
+            var attStatus = fallback(d.attendance_status);
+            if (attStatus === 'Present') {
+                $('#dtAttendanceBadge').html('<span class="badge bg-success-lt text-success fw-bold px-2 py-1">Present</span>');
+            } else if (attStatus === 'Absent') {
+                $('#dtAttendanceBadge').html('<span class="badge bg-danger-lt text-danger fw-bold px-2 py-1">Absent</span>');
+            } else {
+                $('#dtAttendanceBadge').html('<span class="badge bg-secondary-lt fw-bold px-2 py-1">-</span>');
+            }
+
+            // Attendance Reason: show container if reason exists or status is Absent
+            var reason = fallback(d.attendance_reason, '-');
+            if (reason !== '-' && reason !== '') {
+                $('#dtAttendanceReason').text(reason);
+                $('#dtAttendanceReasonContainer').show();
+            } else if (attStatus === 'Absent') {
+                $('#dtAttendanceReason').text('No reason provided');
+                $('#dtAttendanceReasonContainer').show();
+            } else {
+                $('#dtAttendanceReasonContainer').hide();
+            }
+
+            if (d.score !== null && d.score !== undefined) {
+                var scoreNum = parseFloat(d.score);
+                var scoreClass = scoreNum >= 70 ? 'bg-success-lt text-success' : 'bg-danger-lt text-danger';
+                $('#dtAssessmentScore').html('<span class="badge ' + scoreClass + ' fw-bold px-2 py-1 fs-5">' + scoreNum + '</span>');
+            } else {
+                $('#dtAssessmentScore').html('<span class="text-muted fw-normal">-</span>');
+            }
+
+            var cert = String(d.certificate || '').toLowerCase();
+            if (cert === 'yes') {
+                $('#dtCertificateStatus').html('<span class="badge bg-success-lt text-success fw-bold px-2 py-1"><i class="ti ti-certificate me-1"></i>Yes (Issued)</span>');
+            } else if (cert === 'no') {
+                $('#dtCertificateStatus').html('<span class="badge bg-danger-lt text-danger fw-bold px-2 py-1">No</span>');
+            } else {
+                $('#dtCertificateStatus').html('<span class="text-muted fw-normal">-</span>');
+            }
+
+            // Evaluation (Kirkpatrick)
+            $('#dtL1Program').text(fallback(d.l1_program));
+            $('#dtL2Numerical').text(fallback(d.l2_numerical_display));
+            $('#dtL2Verbal').text(fallback(d.l2_verbal));
+            $('#dtL3Numerical').text(fallback(d.l3_numerical_display));
+            $('#dtL3Verbal').text(fallback(d.l3_verbal));
+            $('#dtPic').text(fallback(d.pic));
+
+            // Employee Snapshot
+            $('#dtEmployeeId').text(fallback(d.employee_id));
+            $('#dtParticipantName').text(fallback(d.participant_name));
+            $('#dtGrade').text(fallback(d.grade));
+            $('#dtJobPosition').text(fallback(d.job_position));
+            $('#dtTeam').text(fallback(d.team));
+            $('#dtDepartment').text(fallback(d.department));
+            $('#dtCompany').text(fallback(d.company));
+
+            // Service Bond
+            var bondStatus = fallback(d.bond_status);
+            $('#dtBondStatus').text(bondStatus);
+            $('#dtBondEndDate').text(fallback(d.bond_end_date_display));
+            $('#dtBondAmount').text(fallback(d.bond_amount_formatted));
+
+            if (String(bondStatus).toLowerCase() === 'yes') {
+                $('#dtBondNotice').show();
+            } else {
+                $('#dtBondNotice').hide();
+            }
+
+            var modalEl = document.getElementById('recordOfflineDetailModal');
+            if (modalEl) {
+                var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                modal.show();
+            }
+        });
+
         $(document).on('click', '#recordAllApplyBtn', function () {
             var q = $('#recordAllSearch').val() || '';
             var params = new URLSearchParams(window.location.search);
