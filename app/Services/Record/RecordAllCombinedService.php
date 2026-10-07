@@ -810,6 +810,25 @@ class RecordAllCombinedService
             $compUserIds = DB::table('users')->where('company_name', $company)->pluck('id')->toArray();
             $q->whereIn("{$recordAlias}.user_id", !empty($compUserIds) ? $compUserIds : [-1]);
         }
+
+        // 12. Content Type Filter (Document / Video)
+        $type = trim((string) ($filters['type'] ?? ($filters['content_type'] ?? 'all')));
+        if ($type !== '' && $type !== 'all') {
+            $typeStr = strtolower($type);
+            $typeContentIds = DB::table('content')
+                ->where(function ($sub) use ($typeStr) {
+                    if ($typeStr === 'document') {
+                        $sub->where('type', 'Document');
+                    } elseif ($typeStr === 'video') {
+                        $sub->whereIn('type', ['Video', 'YouTube']);
+                    } else {
+                        $sub->where('type', $typeStr);
+                    }
+                })
+                ->pluck('id')
+                ->toArray();
+            $q->whereIn("{$recordAlias}.content_id", !empty($typeContentIds) ? $typeContentIds : [-1]);
+        }
     }
 
     /**
@@ -857,18 +876,9 @@ class RecordAllCombinedService
         // Employee filter
         $employee = trim((string) ($filters['employee_id'] ?? ($filters['employee'] ?? '')));
         if ($employee !== '') {
-            $userMatchedIds = DB::table('users')
-                ->where('name', 'like', "%{$employee}%")
-                ->orWhere('id_emp', 'like', "%{$employee}%")
-                ->pluck('id')
-                ->toArray();
-
-            $q->where(function ($sub) use ($employee, $userMatchedIds) {
+            $q->where(function ($sub) use ($employee) {
                 $sub->where('otu.employee_id', 'like', "%{$employee}%")
                     ->orWhere('otu.name', 'like', "%{$employee}%");
-                if (!empty($userMatchedIds)) {
-                    $sub->orWhereIn('otu.user_id', $userMatchedIds);
-                }
             });
         }
 
@@ -981,6 +991,36 @@ class RecordAllCombinedService
                     $sub->orWhereIn('otu.user_id', $compUserIds);
                 }
             });
+        }
+
+        // 10. Sub Classification
+        $subClass = trim((string) ($filters['sub_classification'] ?? 'all'));
+        if ($subClass !== '' && $subClass !== 'all') {
+            $q->where('ot.sub_classification', $subClass);
+        }
+
+        // 11. Type
+        $typeParam = trim((string) ($filters['type'] ?? ($filters['training_type'] ?? 'all')));
+        if ($typeParam !== '' && $typeParam !== 'all') {
+            $q->where('ot.type', $typeParam);
+        }
+
+        // 12. Batch
+        $batch = trim((string) ($filters['batch'] ?? 'all'));
+        if ($batch !== '' && $batch !== 'all') {
+            $q->where('ot.batch', $batch);
+        }
+
+        // 13. Provider
+        $provider = trim((string) ($filters['provider'] ?? 'all'));
+        if ($provider !== '' && $provider !== 'all') {
+            $q->where('ot.provider', $provider);
+        }
+
+        // 14. Delivery Method
+        $delivery = trim((string) ($filters['delivery_method'] ?? 'all'));
+        if ($delivery !== '' && $delivery !== 'all') {
+            $q->where('ot.delivery_method', $delivery);
         }
 
         return $q;

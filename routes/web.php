@@ -550,6 +550,9 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
             Route::get('all/classification/{classification}/download/{format?}', [RecordAllController::class, 'classificationDownload'])->name('all.classification.download');
             Route::get('all/datatable', [RecordAllController::class, 'datatable'])->name('all.datatable');
             Route::get('export-all', [RecordExportController::class, 'index'])->name('export-all');
+            Route::match(['get', 'post'], 'export-all/preview', [RecordExportController::class, 'preview'])->name('export-all.preview');
+            Route::get('export-all/download', [RecordExportController::class, 'download'])->name('export-all.download');
+            Route::get('export-all/sub-classifications', [RecordExportController::class, 'subClassifications'])->name('export-all.sub-classifications');
         });
     });
 

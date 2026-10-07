@@ -357,6 +357,42 @@ class RecordOfflineQueryService
             $query->where('ot.delivery_method', $deliveryParam);
         }
 
+        // 19. More Filter: Sub Classification
+        $subClassParam = trim((string) ($filters['sub_classification'] ?? 'all'));
+        if (filled($subClassParam) && $subClassParam !== 'all') {
+            $query->where('ot.sub_classification', $subClassParam);
+        }
+
+        // 20. More Filter: Batch
+        $batchParam = trim((string) ($filters['batch'] ?? 'all'));
+        if (filled($batchParam) && $batchParam !== 'all') {
+            $query->where('ot.batch', $batchParam);
+        }
+
+        // 21. More Filter: Department
+        $deptParam = trim((string) ($filters['department'] ?? 'all'));
+        if (filled($deptParam) && $deptParam !== 'all') {
+            $query->where('otu.department', $deptParam);
+        }
+
+        // 22. More Filter: Company
+        $companyParam = trim((string) ($filters['company'] ?? 'all'));
+        if (filled($companyParam) && $companyParam !== 'all') {
+            $query->where('otu.company', $companyParam);
+        }
+
+        // 23. More Filter: Grade
+        $gradeParam = trim((string) ($filters['grade'] ?? 'all'));
+        if (filled($gradeParam) && $gradeParam !== 'all') {
+            $query->where('otu.grade', $gradeParam);
+        }
+
+        // 24. More Filter: Job Position
+        $jobPosParam = trim((string) ($filters['job_position'] ?? ''));
+        if (filled($jobPosParam) && $jobPosParam !== 'all') {
+            $query->where('otu.job_position', 'like', "%{$jobPosParam}%");
+        }
+
         return $query;
     }
 

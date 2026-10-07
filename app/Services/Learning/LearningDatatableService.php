@@ -400,6 +400,17 @@ class LearningDatatableService
             }
         }
 
+        // 11b. Department & Company Filters
+        $department = trim((string) ($filters['department'] ?? 'all'));
+        if (filled($department) && $department !== 'all') {
+            $query->where('u.department', $department);
+        }
+
+        $company = trim((string) ($filters['company'] ?? 'all'));
+        if (filled($company) && $company !== 'all') {
+            $query->where('u.company_name', $company);
+        }
+
         // 12. Sorting
         $sort = $filters['sort'] ?? null;
         if (filled($sort)) {
