@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\TrainingScheduleExport;
 use App\Models\Classification;
 use App\Models\OfflineTraining;
 use App\Models\OfflineTrainingOption;
@@ -11,6 +12,7 @@ use App\Services\Record\OfflineOptionService;
 use App\Services\Record\TrainingOptionManagementService;
 use App\Services\Schedule\OfflineTrainingCompletionService;
 use App\Services\Schedule\OfflineTrainingRegistrationService;
+use App\Services\Schedule\TrainingScheduleImageService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -18,6 +20,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Str;
+use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class OfflineTrainingController extends Controller
@@ -33,9 +36,9 @@ class OfflineTrainingController extends Controller
         $this->optionManager = $optionManager;
     }
     /**
-     * Display Manage Training Schedule page with live records and live participant tracking.
+     * Build base query for OfflineTraining with Category, Status, Month, Year, and Search filters.
      */
-    public function index(Request $request)
+    public function buildFilteredScheduleQuery(Request $request)
     {
         $query = OfflineTraining::with(['registrations.user', 'creator'])
             ->withCount([
@@ -58,12 +61,12 @@ class OfflineTrainingController extends Controller
             ]);
 
         // Filter Category
-        if ($request->filled('category')) {
+        if ($request->filled('category') && $request->input('category') !== 'all') {
             $query->where('category', $request->input('category'));
         }
 
         // Filter Status
-        if ($request->filled('status')) {
+        if ($request->filled('status') && $request->input('status') !== 'all') {
             $statusVal = $request->input('status');
             $statusMap = [
                 'open'    => 'Open Registration',
@@ -107,9 +110,57 @@ class OfflineTrainingController extends Controller
             });
         }
 
-        $trainings = $query->latest()
-            ->paginate(10)
-            ->withQueryString();
+        return $query->latest();
+    }
+
+    /**
+     * Collect human-readable active filter labels for report headers.
+     */
+    protected function collectActiveFilterLabels(Request $request): array
+    {
+        $labels = [];
+
+        if ($request->filled('category') && $request->input('category') !== 'all') {
+            $labels['Category'] = $request->input('category');
+        }
+
+        if ($request->filled('status') && $request->input('status') !== 'all') {
+            $statusMap = [
+                'open'    => 'Open Registration',
+                'running' => 'Running',
+                'closed'  => 'Closed',
+            ];
+            $labels['Status'] = $statusMap[strtolower($request->input('status'))] ?? $request->input('status');
+        }
+
+        if ($request->filled('month') && $request->input('month') !== 'all') {
+            $monthNum = (int) $request->input('month');
+            $labels['Month'] = Carbon::create(2026, $monthNum, 1)->format('F');
+        }
+
+        if ($request->filled('year') && $request->input('year') !== 'all') {
+            $labels['Year'] = $request->input('year');
+        }
+
+        $search = $request->input('q') ?? $request->input('search');
+        if (filled($search)) {
+            $labels['Search'] = trim($search);
+        }
+
+        return $labels;
+    }
+
+    /**
+     * Display Manage Training Schedule page with live records and live participant tracking.
+     */
+    public function index(Request $request)
+    {
+        $query = $this->buildFilteredScheduleQuery($request);
+
+        $schedules = $query->paginate(10)->withQueryString();
+
+        $trainings = $schedules;
+        $totalSchedules = $schedules->total();
 
         $selectedTrainingId = $request->query('training');
         $selectedTraining = null;
@@ -120,7 +171,11 @@ class OfflineTrainingController extends Controller
             $selectedTraining = $trainings->first();
         }
 
-        return view('main.manage-training-schedule.index', compact('trainings', 'selectedTraining'));
+        $viewName = view()->exists('manage.training-schedule.index')
+            ? 'manage.training-schedule.index'
+            : 'main.manage-training-schedule.index';
+
+        return view($viewName, compact('trainings', 'selectedTraining', 'schedules', 'totalSchedules'));
     }
 
     /**
@@ -1103,54 +1158,77 @@ class OfflineTrainingController extends Controller
     }
 
     /**
-     * Export Training Schedule list to CSV format with Category, Status, Month, Year filters.
+     * Export Training Schedule list to Excel (.xlsx format) with Category, Status, Month, Year, and Search filters.
      */
-    public function exportSchedule(Request $request): StreamedResponse
+    public function exportExcel(Request $request)
     {
-        $query = OfflineTraining::withCount('registrations');
+        $records = $this->buildFilteredScheduleQuery($request)
+            ->orderBy('start_date', 'asc')
+            ->get();
 
-        if ($request->filled('category') && $request->input('category') !== 'all') {
-            $query->where('category', $request->input('category'));
+        $fileName = 'Training_Schedule_Export_' . Carbon::now()->format('Ymd_His') . '.xlsx';
+
+        return Excel::download(new TrainingScheduleExport($records), $fileName);
+    }
+
+    /**
+     * Export Training Schedule list to Krakatau Posco 3-column Card PDF Announcement layout.
+     */
+    public function exportPdf(Request $request)
+    {
+        $trainings = $this->buildFilteredScheduleQuery($request)
+            ->orderBy('start_date', 'asc')
+            ->get();
+
+        $activeFilters = $this->collectActiveFilterLabels($request);
+        $fileName = 'Training_Schedule_Cards_' . Carbon::now()->format('Ymd_His') . '.pdf';
+
+        $pdf = Pdf::loadView('exports.training-schedule-pdf', compact('trainings', 'activeFilters'))
+            ->setPaper('a4', 'landscape')
+            ->setOption([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled'      => true,
+                'defaultFont'          => 'sans-serif',
+            ]);
+
+        return $pdf->download($fileName);
+    }
+
+    /**
+     * Export Training Schedule announcement card layout to high-resolution JPG image.
+     */
+    public function exportJpg(Request $request, ?TrainingScheduleImageService $imageService = null)
+    {
+        $imageService = $imageService ?? app(TrainingScheduleImageService::class);
+
+        $trainings = $this->buildFilteredScheduleQuery($request)
+            ->orderBy('start_date', 'asc')
+            ->get();
+
+        $filterSummary = $this->collectActiveFilterLabels($request);
+        $fileName = 'Training_Schedule_Announcement_' . Carbon::now()->format('Ymd_His') . '.jpg';
+
+        $imageContent = $imageService->generateJpg($trainings, $filterSummary);
+
+        return response($imageContent, 200, [
+            'Content-Type'        => 'image/jpeg',
+            'Content-Disposition' => "attachment; filename=\"{$fileName}\"",
+            'Cache-Control'       => 'no-cache, private',
+        ]);
+    }
+
+    /**
+     * Export Training Schedule list (backward-compatible: defaults to Excel or CSV when requested).
+     */
+    public function exportSchedule(Request $request)
+    {
+        if ($request->query('format') !== 'csv') {
+            return $this->exportExcel($request);
         }
 
-        if ($request->filled('status') && $request->input('status') !== 'all') {
-            $statusVal = $request->input('status');
-            $statusMap = [
-                'open'    => 'Open Registration',
-                'running' => 'Running',
-                'closed'  => 'Closed',
-            ];
-            $query->where('status', $statusMap[strtolower($statusVal)] ?? $statusVal);
-        }
-
-        if ($request->filled('month') && $request->input('month') !== 'all') {
-            $month = (int) $request->input('month');
-            $query->where(function ($q) use ($month) {
-                $q->whereMonth('start_date', $month)
-                  ->orWhereMonth('end_date', $month);
-            });
-        }
-
-        if ($request->filled('year') && $request->input('year') !== 'all') {
-            $year = (int) $request->input('year');
-            $query->where(function ($q) use ($year) {
-                $q->whereYear('start_date', $year)
-                  ->orWhereYear('end_date', $year);
-            });
-        }
-
-        $search = $request->input('q') ?? $request->input('search');
-        if (filled($search)) {
-            $search = trim($search);
-            $query->where(function ($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('course_name', 'like', "%{$search}%")
-                  ->orWhere('instructor', 'like', "%{$search}%")
-                  ->orWhere('location', 'like', "%{$search}%");
-            });
-        }
-
-        $records = $query->orderBy('start_date', 'asc')->get();
+        $records = $this->buildFilteredScheduleQuery($request)
+            ->orderBy('start_date', 'asc')
+            ->get();
 
         $fileName = 'Training_Schedule_Export_' . Carbon::now()->format('Ymd_His') . '.csv';
 
