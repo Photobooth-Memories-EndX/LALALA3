@@ -185,7 +185,7 @@
             border: 1px solid #cbd5e1;
         }
 
-        /* Card Title & Code */
+        /* Card Title & Batch */
         .card-title {
             font-size: 11px;
             font-weight: bold;
@@ -195,12 +195,15 @@
             margin-bottom: 3px;
             min-height: 28px;
         }
-        .card-code-batch {
+        .card-code-batch,
+        .card-batch {
             font-size: 7.5px;
-            font-family: monospace;
             color: #64748b;
             margin-bottom: 6px;
         }
+        .text-xs { font-size: 7.5px !important; }
+        .text-gray-500 { color: #64748b !important; }
+        .mt-1 { margin-top: 4px !important; }
         .card-divider {
             border-top: 1px dashed #e2e8f0;
             margin: 6px 0 7px 0;
@@ -309,6 +312,7 @@
                 <tr>
                     @foreach($row as $item)
                         @php
+                            $training = $item;
                             $startDate = $item->start_date ? \Carbon\Carbon::parse($item->start_date)->format('d M Y') : '-';
                             $endDate = $item->end_date ? \Carbon\Carbon::parse($item->end_date)->format('d M Y') : $startDate;
                             $schedulePeriod = ($startDate === $endDate) ? $startDate : "{$startDate} - {$endDate}";
@@ -347,10 +351,10 @@
                                     <div style="font-size: 7.5px; color: #64748b; margin-top: -2px; margin-bottom: 2px;">{{ $item->sub_course_name }}</div>
                                 @endif
 
-                                <!-- Training Code / Batch -->
-                                <div class="card-code-batch">
-                                    Code: {{ $item->training_code ?? ('PTKP-TR-' . $item->id) }} &bull; Batch: {{ $item->batch ?? '1' }}
-                                </div>
+                                <!-- Batch Only -->
+                                @if($training->batch)
+                                    <div class="card-code-batch text-xs text-gray-500 mt-1">Batch: {{ $training->batch }}</div>
+                                @endif
 
                                 <div class="card-divider"></div>
 

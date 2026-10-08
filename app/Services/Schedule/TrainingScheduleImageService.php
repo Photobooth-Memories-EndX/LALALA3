@@ -207,13 +207,15 @@ class TrainingScheduleImageService
                     }
                 }
 
-                // 3. Training Code & Batch
-                $codeText = "Code: " . ($item->training_code ?? ('PTKP-TR-' . $item->id)) . "  •  Batch: " . ($item->batch ?? '1');
-                $codeY = $cardY + 130;
-                if ($fontRegular) {
-                    imagettftext($img, 10, 0, $cardX + 18, $codeY, $textMuted, $fontRegular, $codeText);
-                } else {
-                    imagestring($img, 2, $cardX + 18, $codeY - 10, $codeText, $textMuted);
+                // 3. Batch Only
+                $batchText = $item->batch ? ("Batch: " . $item->batch) : null;
+                $batchY = $cardY + 130;
+                if ($batchText) {
+                    if ($fontRegular) {
+                        imagettftext($img, 10, 0, $cardX + 18, $batchY, $textMuted, $fontRegular, $batchText);
+                    } else {
+                        imagestring($img, 2, $cardX + 18, $batchY - 10, $batchText, $textMuted);
+                    }
                 }
 
                 // Divider Line
