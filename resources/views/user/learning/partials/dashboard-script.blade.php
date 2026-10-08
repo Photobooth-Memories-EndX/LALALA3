@@ -537,7 +537,7 @@
             loadLearningTab('record');
         });
 
-        $(document).on('click', '#recordOfflineResetBtn', function () {
+        $(document).on('click', '#recordOfflineResetBtn, #recordOfflineEmptyResetBtn', function () {
             var params = new URLSearchParams(window.location.search);
             params.delete('page');
             Array.from(params.keys()).forEach(function (key) {

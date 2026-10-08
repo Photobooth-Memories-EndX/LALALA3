@@ -30,6 +30,9 @@
     if ($filterProvider !== 'all') $activeMoreFilterCount++;
     if ($filterAttendance !== 'all') $activeMoreFilterCount++;
     if ($filterCertificate !== 'all') $activeMoreFilterCount++;
+
+    $isFiltered = ($search !== '' || $filterType !== 'all' || $filterClassification !== 'all' || $filterYear !== 'all' || $activeMoreFilterCount > 0);
+    $hasOfflineRecords = (bool) ($hasOfflineRecords ?? false);
 @endphp
 
 <template data-learning-record-hero>
@@ -407,30 +410,53 @@
             </div>
         </div>
 
-        {{-- Table Offline --}}
-        <div class="card-body p-0">
-            <div class="table-responsive learning-record-scroll">
-                <table class="table table-vcenter table-hover card-table mb-0 learning-record-table"
-                       id="learningRecordOfflineTable" style="width:100%">
-                    <thead>
-                        <tr>
-                            <th class="text-muted text-center" style="width: 3%">No</th>
-                            <th class="text-muted" style="width: 22%">Training Title</th>
-                            <th class="text-muted" style="width: 8%">Type</th>
-                            <th class="text-muted" style="width: 8%">Category</th>
-                            <th class="text-muted" style="width: 10%">Classification</th>
-                            <th class="text-muted" style="width: 7%">Duration</th>
-                            <th class="text-muted" style="width: 8%">Learning Hour</th>
-                            <th class="text-muted text-center" style="width: 7%">Progress</th>
-                            <th class="text-muted text-center" style="width: 7%">Attendance</th>
-                            <th class="text-muted" style="width: 9%">Date</th>
-                            <th class="text-muted text-center" style="width: 6%">Score</th>
-                            <th class="text-muted text-center" style="width: 5%">Certificate</th>
-                            <th class="text-muted text-center" style="width: 4%">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($rows as $index => $row)
+        {{-- Table or Empty State Offline --}}
+        @if ($rows->isEmpty())
+            <div class="card-body text-center py-5">
+                <div class="py-4">
+                    <div class="text-muted mb-3">
+                        @if ($hasOfflineRecords && $isFiltered)
+                            <i class="ti ti-search-off text-muted" style="font-size: 3rem; opacity: 0.5;"></i>
+                        @else
+                            <i class="ti ti-folder-off text-muted" style="font-size: 3rem; opacity: 0.5;"></i>
+                        @endif
+                    </div>
+                    @if ($hasOfflineRecords && $isFiltered)
+                        <h4 class="fw-bold text-dark mb-1">No matching records found.</h4>
+                        <p class="text-muted mb-3">Try adjusting your filters or search criteria.</p>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="recordOfflineEmptyResetBtn">
+                            <i class="ti ti-refresh me-1"></i> Reset Filters
+                        </button>
+                    @else
+                        <h4 class="fw-bold text-dark mb-1">No offline learning records found.</h4>
+                        <p class="text-muted mb-0">Your offline training records will appear here when they become available.</p>
+                    @endif
+                </div>
+            </div>
+        @else
+            <div class="card-body p-0">
+                <div class="table-responsive learning-record-scroll">
+                    <table class="table table-vcenter table-hover card-table mb-0 learning-record-table"
+                           id="learningRecordOfflineTable" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th class="text-muted text-center" style="width: 3%">No</th>
+                                <th class="text-muted" style="width: 22%">Training Title</th>
+                                <th class="text-muted" style="width: 8%">Type</th>
+                                <th class="text-muted" style="width: 8%">Category</th>
+                                <th class="text-muted" style="width: 10%">Classification</th>
+                                <th class="text-muted" style="width: 7%">Duration</th>
+                                <th class="text-muted" style="width: 8%">Learning Hour</th>
+                                <th class="text-muted text-center" style="width: 7%">Progress</th>
+                                <th class="text-muted text-center" style="width: 7%">Attendance</th>
+                                <th class="text-muted" style="width: 9%">Date</th>
+                                <th class="text-muted text-center" style="width: 6%">Score</th>
+                                <th class="text-muted text-center" style="width: 5%">Certificate</th>
+                                <th class="text-muted text-center" style="width: 4%">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($rows as $index => $row)
                             <tr class="record-row record-row-offline">
                                 <td class="text-center text-muted">{{ $loop->iteration }}</td>
                                 <td class="learning-record-course-cell">
@@ -539,30 +565,15 @@
                                     </button>
                                 </td>
                             </tr>
-                        @empty
-                            <tr>
-                                <td colspan="13" class="text-center text-muted py-5">
-                                    <div class="empty py-3">
-                                        <div class="empty-icon text-muted mb-3">
-                                            <i class="ti ti-certificate fs-1 opacity-50"></i>
-                                        </div>
-                                        <p class="empty-title fw-bold text-dark mb-1">No Offline Training Records Found</p>
-                                        <p class="empty-subtitle text-muted mb-0 small">
-                                            You currently do not have any recorded offline training matching the selected filters.
-                                        </p>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforelse
+                        @endforeach
                     </tbody>
                 </table>
             </div>
         </div>
 
-        @if ($rows->isNotEmpty())
-            <div class="card-footer d-flex align-items-center justify-content-between py-2 px-4">
-                <span class="text-muted small">Showing {{ $rows->count() }} records</span>
-            </div>
+        <div class="card-footer d-flex align-items-center justify-content-between py-2 px-4">
+            <span class="text-muted small">Showing {{ $rows->count() }} records</span>
+        </div>
         @endif
     </div>
 </div>

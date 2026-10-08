@@ -46,10 +46,13 @@ class LearningRecordOfflineController extends Controller
             'totalLearningHours' => $learningHours,
         ];
 
+        $hasOfflineRecords = $this->offlineService->queryForUser($userId, $userEmpId)->exists();
+
         return view('user.learning.record.learning-record-offline', [
-            'rows'          => $rows,
-            'filterOptions' => $filterOptions,
-            'recordStats'   => $recordStats,
+            'rows'              => $rows,
+            'filterOptions'     => $filterOptions,
+            'recordStats'       => $recordStats,
+            'hasOfflineRecords' => $hasOfflineRecords,
         ]);
     }
 }

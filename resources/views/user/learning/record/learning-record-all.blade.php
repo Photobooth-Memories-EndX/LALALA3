@@ -9,6 +9,9 @@
     $filterClassification = request('record_filter_classification', request('classification', 'all'));
     $filterYear = request('record_filter_year', request('year', 'all'));
     $search = request('record_search', request('search', request('q', '')));
+
+    // Feature availability flag: set to true to re-enable combined view when ready
+    $isAllViewAvailable = false;
 @endphp
 
 <template data-learning-record-hero>
@@ -24,15 +27,16 @@
 <div class="learning-record-shell">
     {{-- Filter Card All --}}
     <div class="card border-0 shadow-sm rounded-4 mb-4 learning-record-card">
-        <div class="card-body p-4 border-bottom">
+        <div class="card-body p-4 {{ $isAllViewAvailable ? 'border-bottom' : '' }}">
             <div class="record-filter-shell" id="recordAllFilterBar">
-                <div class="learning-filter-heading fast-filter-header">
+                <div class="learning-filter-heading fast-filter-header {{ $isAllViewAvailable ? '' : 'mb-0' }}">
                     <div class="fast-filter-header-copy">
                         <h3 class="card-title fast-filter-title">Quick Filter</h3>
                     </div>
                     <x-learning.record-mode-switch mode="all" />
                 </div>
 
+                @if ($isAllViewAvailable)
                 <div class="record-fast-filter-section">
                     <div class="fast-filter-toolbar d-flex align-items-center flex-wrap gap-2">
                         <div class="learning-quick-dropdowns learning-fast-filter d-flex align-items-center flex-wrap gap-2">
@@ -170,9 +174,11 @@
                         </div>
                     </div>
                 </div>
+                @endif
             </div>
         </div>
 
+        @if ($isAllViewAvailable)
         {{-- Table Combined --}}
         <div class="card-body p-0">
             <div class="table-responsive learning-record-scroll">
@@ -285,6 +291,20 @@
             <div class="card-footer d-flex align-items-center justify-content-between py-2 px-4">
                 <span class="text-muted small">Showing {{ $rows->count() }} combined records</span>
             </div>
+        @endif
+        @else
+        {{-- Temporarily Unavailable State --}}
+        <div class="card-body text-center py-5">
+            <div class="py-5">
+                <div class="text-muted mb-3">
+                    <i class="ti ti-layout-list text-muted" style="font-size: 3.5rem; opacity: 0.5;"></i>
+                </div>
+                <h3 class="fw-bold text-dark mb-2">This page is not available yet.</h3>
+                <p class="text-muted mb-0" style="max-width: 480px; margin: 0 auto;">
+                    We're still preparing the combined learning record view.
+                </p>
+            </div>
+        </div>
         @endif
     </div>
 </div>
