@@ -68,7 +68,7 @@
                             Quick Filter
                         </div>
 
-                        <form id="scheduleFilterForm" onsubmit="return false;">
+                        <form id="scheduleFilterForm" method="GET" action="{{ route('manage.training-schedule.index') }}">
                             <div class="d-flex align-items-center gap-2 flex-wrap flex-lg-nowrap">
                                 <!-- 1. Category Select (Width: ~130px) -->
                                 <div style="min-width: 130px; flex-shrink: 0;">
@@ -79,7 +79,7 @@
                                             'Soft Skill', 'Technical', 'Basic & Common Duties', 'Compliance', 'Language'
                                         ];
                                     @endphp
-                                    <select id="scheduleCategorySelect" name="category" class="form-select rounded-3">
+                                    <select id="scheduleCategorySelect" name="category" class="form-select rounded-3" onchange="this.form.submit()">
                                         <option value="" {{ request('category') == '' ? 'selected' : '' }}>All Category</option>
                                         @foreach ($categoriesList as $cat)
                                             <option value="{{ $cat }}" {{ request('category') == $cat ? 'selected' : '' }}>{{ $cat }}</option>
@@ -96,45 +96,42 @@
                                             'closed'  => 'Closed Registration',
                                         ];
                                     @endphp
-                                    <select id="scheduleStatusSelect" name="status" class="form-select rounded-3">
+                                    <select id="scheduleStatusSelect" name="status" class="form-select rounded-3" onchange="this.form.submit()">
                                         <option value="" {{ request('status') == '' ? 'selected' : '' }}>All Status</option>
                                         @foreach ($statusesList as $st => $stLabel)
-                                            <option value="{{ $st }}" {{ request('status') == $st ? 'selected' : '' }}>{{ $stLabel }}</option>
+                                            <option value="{{ $st }}" {{ request('status') == $st || request('status') == $stLabel ? 'selected' : '' }}>{{ $stLabel }}</option>
                                         @endforeach
-                                        @if(false)
-                                            @foreach ($statusesList as $st => $stLabel)
-                                                <option value="{{ $st }}" {{ request('status') == $st ? 'selected' : '' }}>{{ $st }}</option>
-                                            @endforeach
-                                        @endif
                                     </select>
                                 </div>
 
                                 <!-- 3. Month Select (Width: ~110px) -->
                                 <div style="min-width: 110px; flex-shrink: 0;">
-                                    <select id="scheduleMonthSelect" name="month" class="form-select rounded-3">
+                                    @php
+                                        $monthsList = [
+                                            '01' => 'January', '02' => 'February', '03' => 'March',
+                                            '04' => 'April', '05' => 'May', '06' => 'June',
+                                            '07' => 'July', '08' => 'August', '09' => 'September',
+                                            '10' => 'October', '11' => 'November', '12' => 'December'
+                                        ];
+                                    @endphp
+                                    <select id="scheduleMonthSelect" name="month" class="form-select rounded-3" onchange="this.form.submit()">
                                         <option value="" {{ request('month') == '' ? 'selected' : '' }}>All Month</option>
-                                        <option value="01" {{ request('month') == '01' ? 'selected' : '' }}>January</option>
-                                        <option value="02" {{ request('month') == '02' ? 'selected' : '' }}>February</option>
-                                        <option value="03" {{ request('month') == '03' ? 'selected' : '' }}>March</option>
-                                        <option value="04" {{ request('month') == '04' ? 'selected' : '' }}>April</option>
-                                        <option value="05" {{ request('month') == '05' ? 'selected' : '' }}>May</option>
-                                        <option value="06" {{ request('month') == '06' ? 'selected' : '' }}>June</option>
-                                        <option value="07" {{ request('month') == '07' ? 'selected' : '' }}>July</option>
-                                        <option value="08" {{ request('month') == '08' ? 'selected' : '' }}>August</option>
-                                        <option value="09" {{ request('month') == '09' ? 'selected' : '' }}>September</option>
-                                        <option value="10" {{ request('month') == '10' ? 'selected' : '' }}>October</option>
-                                        <option value="11" {{ request('month') == '11' ? 'selected' : '' }}>November</option>
-                                        <option value="12" {{ request('month') == '12' ? 'selected' : '' }}>December</option>
+                                        @foreach ($monthsList as $m => $monthName)
+                                            <option value="{{ $m }}" {{ ((int) request('month') == (int) $m && request('month') != '') || request('month') == $m ? 'selected' : '' }}>{{ $monthName }}</option>
+                                        @endforeach
                                     </select>
                                 </div>
 
                                 <!-- 4. Year Select (Width: ~100px) -->
                                 <div style="min-width: 100px; flex-shrink: 0;">
-                                    <select id="scheduleYearSelect" name="year" class="form-select rounded-3">
+                                    @php
+                                        $yearsList = ['2026', '2025', '2027'];
+                                    @endphp
+                                    <select id="scheduleYearSelect" name="year" class="form-select rounded-3" onchange="this.form.submit()">
                                         <option value="" {{ request('year') == '' ? 'selected' : '' }}>All Year</option>
-                                        <option value="2026" {{ request('year') == '2026' ? 'selected' : '' }}>2026</option>
-                                        <option value="2025" {{ request('year') == '2025' ? 'selected' : '' }}>2025</option>
-                                        <option value="2027" {{ request('year') == '2027' ? 'selected' : '' }}>2027</option>
+                                        @foreach ($yearsList as $y)
+                                            <option value="{{ $y }}" {{ request('year') == $y ? 'selected' : '' }}>{{ $y }}</option>
+                                        @endforeach
                                     </select>
                                 </div>
 
@@ -145,12 +142,9 @@
                                             <i class="ti ti-search text-muted fs-2"></i>
                                         </span>
                                         <input type="text" id="scheduleSearchInput" name="search" class="form-control rounded-3" 
-                                               value="{{ request('search') }}"
+                                               value="{{ request('search') ?? request('q') }}"
                                                placeholder="Search training title, instructor, or room..." autocomplete="off">
                                     </div>
-                                    @if(false)
-                                        <input type="text" name="search" value="{{ request('search') }}">
-                                    @endif
                                 </div>
 
                                 <!-- 6. Action Buttons Group (Right side) -->

@@ -364,22 +364,29 @@
         </div>
 
         {{-- Top Pill/Tab Navigation (English) --}}
+        @php
+            $activeTabParam = request('tab');
+            $hasPageParam = request()->has('page');
+            $isAvailableActive = $activeTabParam === 'available' || ($hasPageParam && !$activeTabParam);
+            $isHistoryActive = $activeTabParam === 'history';
+            $isCalendarActive = !$isAvailableActive && !$isHistoryActive;
+        @endphp
         <div class="mb-4">
             <ul class="nav nav-pills training-schedule-nav-pills gap-2" id="trainingScheduleTabs" role="tablist">
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="tab-calendar-btn" data-bs-toggle="pill" data-bs-target="#tab-calendar" type="button" role="tab" aria-controls="tab-calendar" aria-selected="true">
+                    <button class="nav-link {{ $isCalendarActive ? 'active' : '' }}" id="tab-calendar-btn" data-bs-toggle="pill" data-bs-target="#tab-calendar" type="button" role="tab" aria-controls="tab-calendar" aria-selected="{{ $isCalendarActive ? 'true' : 'false' }}">
                         <i class="ti ti-calendar"></i>
                         <span>Calendar</span>
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="tab-available-btn" data-bs-toggle="pill" data-bs-target="#tab-available" type="button" role="tab" aria-controls="tab-available" aria-selected="false">
+                    <button class="nav-link {{ $isAvailableActive ? 'active' : '' }}" id="tab-available-btn" data-bs-toggle="pill" data-bs-target="#tab-available" type="button" role="tab" aria-controls="tab-available" aria-selected="{{ $isAvailableActive ? 'true' : 'false' }}">
                         <i class="ti ti-layout-grid"></i>
                         <span>Available Training</span>
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="tab-history-btn" data-bs-toggle="pill" data-bs-target="#tab-history" type="button" role="tab" aria-controls="tab-history" aria-selected="false">
+                    <button class="nav-link {{ $isHistoryActive ? 'active' : '' }}" id="tab-history-btn" data-bs-toggle="pill" data-bs-target="#tab-history" type="button" role="tab" aria-controls="tab-history" aria-selected="{{ $isHistoryActive ? 'true' : 'false' }}">
                         <i class="ti ti-history"></i>
                         <span>My History</span>
                     </button>
@@ -390,17 +397,17 @@
         {{-- Tab Content Container --}}
         <div class="tab-content" id="trainingScheduleTabContent">
             {{-- Tab 1: Calendar & Agenda --}}
-            <div class="tab-pane fade show active" id="tab-calendar" role="tabpanel" aria-labelledby="tab-calendar-btn">
+            <div class="tab-pane fade {{ $isCalendarActive ? 'show active' : '' }}" id="tab-calendar" role="tabpanel" aria-labelledby="tab-calendar-btn">
                 @include('user.trainingplan-user.partials.calendar-tab')
             </div>
 
             {{-- Tab 2: Available Training --}}
-            <div class="tab-pane fade" id="tab-available" role="tabpanel" aria-labelledby="tab-available-btn">
+            <div class="tab-pane fade {{ $isAvailableActive ? 'show active' : '' }}" id="tab-available" role="tabpanel" aria-labelledby="tab-available-btn">
                 @include('user.trainingplan-user.partials.available-training-tab')
             </div>
 
             {{-- Tab 3: My History --}}
-            <div class="tab-pane fade" id="tab-history" role="tabpanel" aria-labelledby="tab-history-btn">
+            <div class="tab-pane fade {{ $isHistoryActive ? 'show active' : '' }}" id="tab-history" role="tabpanel" aria-labelledby="tab-history-btn">
                 @include('user.trainingplan-user.partials.my-history-tab')
             </div>
         </div>
@@ -471,6 +478,52 @@
 @endphp
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // Auto-switch tab based on URL parameters (e.g. ?tab=available or ?page=2)
+        const urlParams = new URLSearchParams(window.location.search);
+        const activeTab = urlParams.get('tab');
+        const hasPageParam = urlParams.has('page');
+
+        // If tab parameter is 'available' OR a page parameter is present without explicit tab
+        if (activeTab === 'available' || (hasPageParam && !activeTab)) {
+            const availableTabBtn = document.querySelector('[data-bs-target="#tab-available"], [data-bs-target="#available-training"], [href="#tab-available"], [href="#available-training"], #tab-available-btn, #available-tab');
+            if (availableTabBtn) {
+                if (typeof bootstrap !== 'undefined' && bootstrap.Tab) {
+                    const tab = bootstrap.Tab.getInstance(availableTabBtn) || new bootstrap.Tab(availableTabBtn);
+                    tab.show();
+                } else {
+                    availableTabBtn.click();
+                }
+            }
+        } else if (activeTab === 'history') {
+            const historyTabBtn = document.querySelector('[data-bs-target="#tab-history"], [href="#tab-history"], #tab-history-btn');
+            if (historyTabBtn) {
+                if (typeof bootstrap !== 'undefined' && bootstrap.Tab) {
+                    const tab = bootstrap.Tab.getInstance(historyTabBtn) || new bootstrap.Tab(historyTabBtn);
+                    tab.show();
+                } else {
+                    historyTabBtn.click();
+                }
+            }
+        }
+
+        // Sync URL with active tab when user manually changes tabs
+        const tabButtons = document.querySelectorAll('#trainingScheduleTabs button[data-bs-toggle="pill"]');
+        tabButtons.forEach(btn => {
+            btn.addEventListener('shown.bs.tab', function (e) {
+                const target = e.target.getAttribute('data-bs-target');
+                const url = new URL(window.location.href);
+                if (target === '#tab-available') {
+                    url.searchParams.set('tab', 'available');
+                } else if (target === '#tab-history') {
+                    url.searchParams.set('tab', 'history');
+                } else if (target === '#tab-calendar') {
+                    url.searchParams.delete('tab');
+                    url.searchParams.delete('page');
+                }
+                window.history.replaceState({}, '', url);
+            });
+        });
+
         // --- Live Calendar Events Store ---
         const calendarEvents = @json($computedCalendarEvents);
         const csrfToken = '{{ csrf_token() }}';
@@ -1109,6 +1162,7 @@
         const searchInput = document.getElementById('filterTrainingSearch');
         const categorySelect = document.getElementById('filterTrainingCategory');
         const statusSelect = document.getElementById('filterTrainingStatus');
+        const monthSelect = document.getElementById('filterTrainingMonth');
         const yearSelect = document.getElementById('filterTrainingYear');
         const btnResetFilter = document.getElementById('btnResetFilter');
         const availableTotalBadge = document.getElementById('availableTrainingTotalBadge');
@@ -1117,6 +1171,7 @@
             const query = (searchInput?.value || '').toLowerCase().trim();
             const category = categorySelect?.value || '';
             const status = statusSelect?.value || '';
+            const month = monthSelect?.value || '';
             const year = yearSelect?.value || '';
 
             const rows = document.querySelectorAll('#availableTrainingTable tbody tr.training-table-row, .training-card-item');
@@ -1126,15 +1181,17 @@
                 const text = row.textContent.toLowerCase();
                 const rowCat = row.getAttribute('data-category') || '';
                 const rowStatus = row.getAttribute('data-status') || '';
+                const rowMonth = row.getAttribute('data-month') || '';
                 const rowYear = row.getAttribute('data-year') || '';
 
                 const rowInstructor = (row.getAttribute('data-instructor') || '').toLowerCase();
                 const matchesSearch = !query || text.includes(query) || rowInstructor.includes(query);
                 const matchesCategory = !category || rowCat === category;
                 const matchesStatus = !status || rowStatus === status;
+                const matchesMonth = !month || parseInt(rowMonth, 10) === parseInt(month, 10);
                 const matchesYear = !year || rowYear === year;
 
-                if (matchesSearch && matchesCategory && matchesStatus && matchesYear) {
+                if (matchesSearch && matchesCategory && matchesStatus && matchesMonth && matchesYear) {
                     row.style.display = '';
                     visibleCount++;
                 } else {
@@ -1142,7 +1199,7 @@
                 }
             });
 
-            if (availableTotalBadge && (query || category || status || year)) {
+            if (availableTotalBadge && (query || category || status || month || year)) {
                 availableTotalBadge.textContent = `Total: ${visibleCount} Training${visibleCount === 1 ? '' : 's'}`;
             }
         }
@@ -1150,6 +1207,7 @@
         if (searchInput) searchInput.addEventListener('input', filterAvailableTraining);
         if (categorySelect) categorySelect.addEventListener('change', filterAvailableTraining);
         if (statusSelect) statusSelect.addEventListener('change', filterAvailableTraining);
+        if (monthSelect) monthSelect.addEventListener('change', filterAvailableTraining);
         if (yearSelect) yearSelect.addEventListener('change', filterAvailableTraining);
 
         if (btnResetFilter) {
@@ -1157,6 +1215,7 @@
                 if (searchInput) searchInput.value = '';
                 if (categorySelect) categorySelect.value = '';
                 if (statusSelect) statusSelect.value = '';
+                if (monthSelect) monthSelect.value = '';
                 if (yearSelect) yearSelect.value = '';
                 filterAvailableTraining();
             });

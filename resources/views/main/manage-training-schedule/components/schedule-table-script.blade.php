@@ -142,13 +142,10 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Form submit listener
+    // Form submit listener: allow GET request submission so active query parameters apply across all paginated pages
     const filterForm = document.getElementById('scheduleFilterForm');
     if (filterForm) {
-        filterForm.addEventListener('submit', function (e) {
-            e.preventDefault();
-            filterScheduleTable();
-        });
+        // Native GET submission preserves all active parameters in URL
     }
 
     // Attach quick filter event listeners & sync with modal
@@ -177,7 +174,11 @@ document.addEventListener('DOMContentLoaded', function () {
             if (modalFilterStatus && statusSelect) {
                 statusSelect.value = modalFilterStatus.value;
             }
-            filterScheduleTable();
+            if (filterForm) {
+                filterForm.submit();
+            } else {
+                filterScheduleTable();
+            }
         });
     }
 

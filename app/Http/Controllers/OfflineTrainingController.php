@@ -1145,12 +1145,12 @@ class OfflineTrainingController extends Controller
             ]);
 
         // Filter Category
-        if ($request->filled('category')) {
+        if ($request->filled('category') && $request->input('category') !== 'all') {
             $availableQuery->where('category', $request->input('category'));
         }
 
         // Filter Status
-        if ($request->filled('status')) {
+        if ($request->filled('status') && $request->input('status') !== 'all') {
             $statusVal = $request->input('status');
             $statusMap = [
                 'open'    => 'Open Registration',
@@ -1158,6 +1158,15 @@ class OfflineTrainingController extends Controller
                 'closed'  => 'Closed',
             ];
             $availableQuery->where('status', $statusMap[strtolower($statusVal)] ?? $statusVal);
+        }
+
+        // Filter Month
+        if ($request->filled('month') && $request->input('month') !== 'all') {
+            $month = (int) $request->input('month');
+            $availableQuery->where(function ($q) use ($month) {
+                $q->whereMonth('start_date', $month)
+                  ->orWhereMonth('end_date', $month);
+            });
         }
 
         // Filter Year
@@ -1169,13 +1178,14 @@ class OfflineTrainingController extends Controller
             });
         }
 
-        // Keyword Search (q or search)
-        $search = $request->input('q') ?? $request->input('search');
+        // Keyword Search (search or q)
+        $search = $request->input('search') ?? $request->input('q');
         if (filled($search)) {
             $search = trim($search);
             $availableQuery->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
                   ->orWhere('course_name', 'like', "%{$search}%")
+                  ->orWhere('sub_course_name', 'like', "%{$search}%")
                   ->orWhere('instructor', 'like', "%{$search}%")
                   ->orWhere('location', 'like', "%{$search}%")
                   ->orWhere('venue', 'like', "%{$search}%")
@@ -1186,7 +1196,7 @@ class OfflineTrainingController extends Controller
 
         $availableTrainings = $availableQuery->latest()
             ->paginate(10)
-            ->withQueryString();
+            ->appends(array_merge($request->query(), ['tab' => 'available']));
 
         $calendarEvents = $trainings->map(function ($t) {
             $startDate = Carbon::parse($t->start_date);
