@@ -743,10 +743,11 @@
                 $('#dtAssessmentScore').html('<span class="text-muted fw-normal">-</span>');
             }
 
-            var cert = String(d.certificate || '').toLowerCase();
-            if (cert === 'yes') {
+            var cert = String(d.certificate || '').toLowerCase().trim();
+            var hasCert = d.has_certificate === true || ['yes', '1', 'true'].indexOf(cert) !== -1;
+            if (hasCert) {
                 $('#dtCertificateStatus').html('<span class="badge bg-success-lt text-success fw-bold px-2 py-1"><i class="ti ti-certificate me-1"></i>Yes (Issued)</span>');
-            } else if (cert === 'no') {
+            } else if (['no', '0', 'false'].indexOf(cert) !== -1 || d.has_certificate === false || (d.certificate !== null && d.certificate !== '')) {
                 $('#dtCertificateStatus').html('<span class="badge bg-danger-lt text-danger fw-bold px-2 py-1">No</span>');
             } else {
                 $('#dtCertificateStatus').html('<span class="text-muted fw-normal">-</span>');

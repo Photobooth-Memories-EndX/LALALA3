@@ -156,6 +156,9 @@ class UserRecordOfflineService
         $l2Num = $otu->l2_numerical !== null ? (float) $otu->l2_numerical : null;
         $l3Num = $otu->l3_numerical !== null ? (float) $otu->l3_numerical : null;
 
+        $rawCert = strtolower(trim((string) ($otu->certificate ?? '')));
+        $hasCertificate = in_array($rawCert, ['1', 'yes', 'true'], true);
+
         return [
             'id'                        => $otu->id,
             'source'                    => 'offline',
@@ -187,6 +190,8 @@ class UserRecordOfflineService
             'date_display'              => $dateTimeDisplay,
             'score'                     => $score,
             'certificate'               => $otu->certificate,
+            'has_certificate'           => $hasCertificate,
+            'cert_state'                => $hasCertificate ? 'ready' : 'none',
             'attendance'                => $attendanceRaw !== null ? (bool) $attendanceRaw : null,
             'attendance_status'         => $attendanceStatus,
             'attendance_reason'         => $rawAttendanceReason ?: '-',
@@ -342,13 +347,13 @@ class UserRecordOfflineService
             // 12. Certificate filter (all, certified, uncertified / yes, no)
             if ($certificate !== 'all') {
                 $normCert = strtolower(trim($certificate));
-                $certVal = strtolower(trim((string) ($row['certificate'] ?? '')));
+                $hasCert = (bool) ($row['has_certificate'] ?? false);
                 if (in_array($normCert, ['certified', 'yes', '1'], true)) {
-                    if ($certVal !== 'yes') {
+                    if (!$hasCert) {
                         return false;
                     }
                 } elseif (in_array($normCert, ['uncertified', 'not certified', 'no', '0'], true)) {
-                    if ($certVal !== 'no') {
+                    if ($hasCert) {
                         return false;
                     }
                 }

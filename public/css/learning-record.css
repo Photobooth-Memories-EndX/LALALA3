@@ -1230,6 +1230,67 @@ body.dark-mode #recordFilterBar .fast-filter-toolbar #recordMoreFiltersCount {
     color: #f87171 !important;
 }
 
+/* Certificate Action Buttons */
+.btn-learning-certificate,
+.btn-learning-certificate-disabled {
+    width: 36px !important;
+    height: 36px !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 8px !important;
+    font-size: 1.1rem !important;
+    box-sizing: border-box !important;
+}
+.btn-learning-certificate {
+    background-color: #16a34a !important;
+    border: 1px solid #16a34a !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 6px rgba(22, 163, 74, 0.18) !important;
+    cursor: pointer !important;
+    line-height: 1 !important;
+    text-decoration: none !important;
+    transition: transform 200ms ease, box-shadow 200ms ease, background-color 200ms ease, border-color 200ms ease !important;
+}
+.btn-learning-certificate > i {
+    margin: 0 !important;
+    font-size: 1.15rem !important;
+    line-height: 1 !important;
+    color: #ffffff !important;
+}
+.btn-learning-certificate:hover,
+.btn-learning-certificate:focus-visible {
+    border-color: #15803d !important;
+    background-color: #15803d !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 10px rgba(22, 163, 74, 0.22) !important;
+    transform: translateY(-1px);
+}
+.btn-learning-certificate:active {
+    border-color: #166534 !important;
+    background-color: #166534 !important;
+    box-shadow: 0 1px 3px rgba(22, 101, 52, 0.2) !important;
+    transform: scale(0.96);
+}
+.btn-learning-certificate-disabled {
+    background-color: #d1d5db !important;
+    border: 1px solid #bfc6cf !important;
+    color: #4b5563 !important;
+    opacity: 1 !important;
+    cursor: not-allowed !important;
+    pointer-events: auto !important;
+    box-shadow: none !important;
+}
+.btn-learning-certificate-disabled:hover,
+.btn-learning-certificate-disabled:focus,
+.btn-learning-certificate-disabled:active {
+    background-color: #d1d5db !important;
+    border-color: #bfc6cf !important;
+    color: #4b5563 !important;
+    box-shadow: none !important;
+}
+
 :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .btn-learning-certificate-disabled {
     background-color: rgba(255, 255, 255, 0.05) !important;
     border: 1px solid rgba(255, 255, 255, 0.08) !important;

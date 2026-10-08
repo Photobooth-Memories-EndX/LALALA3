@@ -94,6 +94,67 @@
         border-radius: 4px;
     }
 
+    /* Certificate Action Buttons (Standardized with Online Reference) */
+    .btn-learning-certificate,
+    .btn-learning-certificate-disabled {
+        width: 36px !important;
+        height: 36px !important;
+        padding: 0 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border-radius: 8px !important;
+        font-size: 1.1rem !important;
+        box-sizing: border-box !important;
+    }
+    .btn-learning-certificate {
+        background-color: #16a34a !important;
+        border: 1px solid #16a34a !important;
+        color: #ffffff !important;
+        box-shadow: 0 2px 6px rgba(22, 163, 74, 0.18) !important;
+        cursor: pointer !important;
+        line-height: 1 !important;
+        text-decoration: none !important;
+        transition: transform 200ms ease, box-shadow 200ms ease, background-color 200ms ease, border-color 200ms ease !important;
+    }
+    .btn-learning-certificate > i {
+        margin: 0 !important;
+        font-size: 1.15rem !important;
+        line-height: 1 !important;
+        color: #ffffff !important;
+    }
+    .btn-learning-certificate:hover,
+    .btn-learning-certificate:focus-visible {
+        border-color: #15803d !important;
+        background-color: #15803d !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 10px rgba(22, 163, 74, 0.22) !important;
+        transform: translateY(-1px);
+    }
+    .btn-learning-certificate:active {
+        border-color: #166534 !important;
+        background-color: #166534 !important;
+        box-shadow: 0 1px 3px rgba(22, 101, 52, 0.2) !important;
+        transform: scale(0.96);
+    }
+    .btn-learning-certificate-disabled {
+        background-color: #d1d5db !important;
+        border: 1px solid #bfc6cf !important;
+        color: #4b5563 !important;
+        opacity: 1 !important;
+        cursor: not-allowed !important;
+        pointer-events: auto !important;
+        box-shadow: none !important;
+    }
+    .btn-learning-certificate-disabled:hover,
+    .btn-learning-certificate-disabled:focus,
+    .btn-learning-certificate-disabled:active {
+        background-color: #d1d5db !important;
+        border-color: #bfc6cf !important;
+        color: #4b5563 !important;
+        box-shadow: none !important;
+    }
+
     /* Polished More Filter Modal Dialog (Standardized with Online Reference) */
     #recordOfflineMoreFilterModal .modal-dialog {
         max-width: 760px;
@@ -451,8 +512,7 @@
                                 <th class="text-muted text-center" style="width: 7%">Attendance</th>
                                 <th class="text-muted" style="width: 9%">Date</th>
                                 <th class="text-muted text-center" style="width: 6%">Score</th>
-                                <th class="text-muted text-center" style="width: 5%">Certificate</th>
-                                <th class="text-muted text-center" style="width: 4%">Action</th>
+                                <th class="text-muted text-center" style="width: 8%">Certificate</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -545,24 +605,24 @@
                                     @endif
                                 </td>
                                 <td class="text-center">
-                                    @if (!empty($row['certificate']) && strtolower($row['certificate']) === 'yes')
-                                        <span class="badge bg-success-lt text-success p-1" title="Certificate issued">
-                                            <i class="ti ti-certificate fs-3"></i>
-                                        </span>
-                                    @elseif (!empty($row['certificate']) && strtolower($row['certificate']) === 'no')
-                                        <span class="badge bg-danger-lt text-danger px-1 py-0.5" style="font-size: 10px;" title="No certificate">No</span>
-                                    @else
-                                        <span class="text-muted small">-</span>
-                                    @endif
-                                </td>
-                                <td class="text-center text-nowrap">
-                                    <button type="button"
-                                            class="btn btn-sm btn-icon btn-ghost-primary btn-record-offline-detail"
-                                            data-record-id="{{ $row['id'] }}"
-                                            title="View Training Record Detail"
-                                            aria-label="View Training Record Detail">
-                                        <i class="ti ti-eye fs-3"></i>
-                                    </button>
+                                    <div class="d-flex justify-content-center">
+                                        @if ($row['has_certificate'] ?? false)
+                                            <button type="button"
+                                                    class="btn btn-learning-certificate"
+                                                    title="Certificate Available"
+                                                    aria-label="Certificate Available">
+                                                <i class="ti ti-certificate" aria-hidden="true"></i>
+                                            </button>
+                                        @else
+                                            <button type="button"
+                                                    class="btn btn-learning-certificate-disabled"
+                                                    disabled
+                                                    title="Certificate Not Available"
+                                                    aria-label="Certificate Not Available">
+                                                <i class="ti ti-certificate" aria-hidden="true"></i>
+                                            </button>
+                                        @endif
+                                    </div>
                                 </td>
                             </tr>
                         @endforeach
