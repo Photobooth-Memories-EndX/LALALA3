@@ -34,6 +34,9 @@ class TrainingScheduleImageService
     public function generateJpg($trainings, array $filterSummary = []): string
     {
         $items = $trainings instanceof Collection ? $trainings : collect($trainings);
+        $items = $items->filter(function ($item) {
+            return strtolower($item->status ?? '') !== 'running';
+        });
         $count = $items->count();
 
         $fontBold = $this->getFontPath(true);

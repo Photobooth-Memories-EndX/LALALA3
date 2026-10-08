@@ -1423,6 +1423,8 @@ class OfflineTrainingController extends Controller
     public function exportPdf(Request $request)
     {
         $trainings = $this->buildFilteredScheduleQuery($request)
+            ->where('status', '!=', 'Running')
+            ->whereIn('status', ['Open', 'Open Registration', 'Closed'])
             ->orderBy('start_date', 'asc')
             ->get();
 
@@ -1448,6 +1450,8 @@ class OfflineTrainingController extends Controller
         $imageService = $imageService ?? app(TrainingScheduleImageService::class);
 
         $trainings = $this->buildFilteredScheduleQuery($request)
+            ->where('status', '!=', 'Running')
+            ->whereIn('status', ['Open', 'Open Registration', 'Closed'])
             ->orderBy('start_date', 'asc')
             ->get();
 

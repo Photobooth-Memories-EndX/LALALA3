@@ -21,6 +21,29 @@
     .text-purple {
         color: #6f42c1 !important;
     }
+    .font-semibold {
+        font-weight: 600 !important;
+    }
+    .text-gray-900 {
+        color: #111827 !important;
+    }
+    .text-gray-500 {
+        color: #6b7280 !important;
+    }
+    .text-gray-400 {
+        color: #9ca3af !important;
+    }
+    .text-sm {
+        font-size: 0.875rem !important;
+        line-height: 1.25rem !important;
+    }
+    .text-xs {
+        font-size: 0.75rem !important;
+        line-height: 1rem !important;
+    }
+    .mt-0\.5 {
+        margin-top: 0.125rem !important;
+    }
 </style>
 <div class="card border border-light-subtle shadow-sm rounded-4 bg-white p-4 mb-4">
     
@@ -115,7 +138,7 @@
             <thead>
                 <tr class="text-muted extra-small text-uppercase fw-bold" style="letter-spacing: 0.05em; background-color: #f8fafc;">
                     <th class="w-1 text-center align-middle py-3">NO</th>
-                    <th class="text-center align-middle py-3" style="min-width: 200px;">TRAINING NAME</th>
+                    <th class="text-start align-middle py-3" style="min-width: 200px;">TRAINING NAME</th>
                     <th class="text-center align-middle py-3" style="min-width: 140px;">DATE</th>
                     <th class="text-center align-middle py-3" style="min-width: 120px;">TIME</th>
                     <th class="text-center align-middle py-3">LOCATION</th>
@@ -128,7 +151,8 @@
             <tbody class="divide-y">
                 @forelse ($availableTrainings as $item)
                     @php
-                        $title = $item->title ?? ($item->course_name ?? 'Training Schedule');
+                        $training = $item;
+                        $title = $training->title ?? ($training->course_name ?? 'Training Schedule');
                         $enrolled = $item->registered_seats_count ?? ($item->relationLoaded('registrations') ? $item->registrations->whereIn('status', ['Pending', 'Approved', 'Completed'])->count() : 0);
                         $quota = $item->quota > 0 ? $item->quota : 1;
                         $remaining = max(0, $quota - $enrolled);
@@ -171,11 +195,12 @@
                         data-location="{{ $item->location }}"
                         data-instructor="{{ $item->instructor }}">
                         <td class="text-center align-middle text-muted fw-semibold">{{ method_exists($availableTrainings, 'firstItem') && $availableTrainings->firstItem() ? ($availableTrainings->firstItem() + $loop->index) : $loop->iteration }}</td>
-                        <td class="text-center align-middle" style="min-width: 200px;">
-                            <div class="fw-bold text-dark fs-3">{{ $title }}</div>
-                            @if (!empty($item->training_code))
-                                <div class="text-muted extra-small font-monospace">{{ $item->training_code }}</div>
+                        <td class="align-middle" style="min-width: 200px;">
+                            <div class="font-semibold text-gray-900 text-sm">{{ $training->title }}</div>
+                            @if($training->sub_course_name)
+                                <div class="text-xs text-gray-500">{{ $training->sub_course_name }}</div>
                             @endif
+                            <div class="text-xs text-gray-400 mt-0.5">Code: {{ $training->batch ?? '-' }}</div>
                         </td>
                         <td class="fw-semibold text-dark text-center align-middle" style="min-width: 140px;">
                             @if($item->end_date && $item->start_date != $item->end_date)

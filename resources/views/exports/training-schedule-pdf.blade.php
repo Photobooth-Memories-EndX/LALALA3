@@ -1,3 +1,9 @@
+@php
+    $trainings = collect($trainings ?? [])->filter(function ($item) {
+        $st = strtolower($item->status ?? '');
+        return $st !== 'running';
+    });
+@endphp
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -337,6 +343,9 @@
 
                                 <!-- Training Title (Bold, PTKP Navy) -->
                                 <div class="card-title">{{ $item->title ?? ($item->course_name ?? 'Training Schedule') }}</div>
+                                @if(!empty($item->sub_course_name))
+                                    <div style="font-size: 7.5px; color: #64748b; margin-top: -2px; margin-bottom: 2px;">{{ $item->sub_course_name }}</div>
+                                @endif
 
                                 <!-- Training Code / Batch -->
                                 <div class="card-code-batch">
