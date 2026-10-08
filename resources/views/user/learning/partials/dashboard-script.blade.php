@@ -776,6 +776,103 @@
             }
         });
 
+        // ── Attendance Detail Modal Population ──────────────────────────────
+        $(document).on('click', '.attendance-detail-trigger', function (e) {
+            e.preventDefault();
+
+            var $btn = $(this);
+            var recordId = $btn.data('record-id');
+
+            // Attempt to read from data attributes first
+            var trainingTitle = ($btn.data('training-title') || '').toString().trim();
+            var attendanceStatus = ($btn.data('attendance') || '').toString().trim();
+            var rawReason = ($btn.data('attendance-reason') || '').toString().trim();
+            var precomputedReason = ($btn.data('attendance-reason-display') || '').toString().trim();
+            var trainingDate = ($btn.data('training-date') || '').toString().trim();
+            var venue = ($btn.data('venue') || '').toString().trim();
+
+            // If any data is missing and JSON element exists, read from JSON element
+            if (recordId) {
+                var dataEl = document.getElementById('record-offline-data-' + recordId);
+                if (dataEl) {
+                    try {
+                        var d = JSON.parse(dataEl.textContent);
+                        if (!trainingTitle || trainingTitle === '-') trainingTitle = (d.course_name || d.title || '-').toString().trim();
+                        if (!attendanceStatus || attendanceStatus === '-') attendanceStatus = (d.attendance_status || '-').toString().trim();
+                        if (!rawReason) {
+                            rawReason = (d.raw_attendance_reason || (d.attendance_reason !== '-' ? d.attendance_reason : '') || '').toString().trim();
+                        }
+                        if (!precomputedReason) {
+                            precomputedReason = (d.attendance_reason_display || '').toString().trim();
+                        }
+                        if (!trainingDate || trainingDate === '-') trainingDate = (d.date_display || '-').toString().trim();
+                        if (!venue || venue === '-') venue = (d.venue || '-').toString().trim();
+                    } catch (err) {
+                        console.error('Failed to parse record offline data for attendance:', err);
+                    }
+                }
+            }
+
+            // Fallbacks for display
+            if (!trainingTitle || trainingTitle === '-') trainingTitle = '-';
+            if (!trainingDate || trainingDate === '-') trainingDate = '-';
+            if (!venue || venue === '-') venue = '-';
+            if (!attendanceStatus) attendanceStatus = '-';
+
+            // Status badge styling mapping
+            var statusLower = attendanceStatus.toLowerCase();
+            var badgeClass = 'bg-secondary-lt text-secondary';
+            if (statusLower === 'present') {
+                badgeClass = 'bg-success-lt text-success';
+            } else if (statusLower === 'absent') {
+                badgeClass = 'bg-danger-lt text-danger';
+            } else if (statusLower === 'excused' || statusLower === 'sick') {
+                badgeClass = 'bg-warning-lt text-warning';
+            } else if (statusLower === 'leave') {
+                badgeClass = 'bg-info-lt text-info';
+            }
+
+            // Attendance Reason Logic:
+            // IF attendance_reason tidak null dan tidak kosong -> tampilkan nilai attendance_reason
+            // IF attendance_reason NULL / kosong:
+            //   - untuk Present: "Employee attended the training."
+            //   - untuk non-Present: "No attendance reason recorded."
+            // Jangan pernah menampilkan null, undefined, -, atau N/A.
+            var finalReason = '';
+            var isRawEmpty = !rawReason ||
+                             rawReason === '-' ||
+                             rawReason.toLowerCase() === 'null' ||
+                             rawReason.toLowerCase() === 'undefined' ||
+                             rawReason.toLowerCase() === 'n/a';
+
+            if (!isRawEmpty) {
+                finalReason = rawReason;
+            } else if (precomputedReason &&
+                       precomputedReason !== '-' &&
+                       precomputedReason.toLowerCase() !== 'null' &&
+                       precomputedReason.toLowerCase() !== 'undefined' &&
+                       precomputedReason.toLowerCase() !== 'n/a') {
+                finalReason = precomputedReason;
+            } else if (statusLower === 'present') {
+                finalReason = 'Employee attended the training.';
+            } else {
+                finalReason = 'No attendance reason recorded.';
+            }
+
+            // Safe DOM population using jQuery .text() to prevent XSS
+            $('#attendanceTrainingTitle').text(trainingTitle);
+            $('#attendanceStatus').removeClass().addClass('badge fw-bold px-2.5 py-1 ' + badgeClass).text(attendanceStatus);
+            $('#attendanceReason').text(finalReason);
+            $('#attendanceDate').text(trainingDate);
+            $('#attendanceVenue').text(venue);
+
+            var modalEl = document.getElementById('attendanceDetailModal');
+            if (modalEl) {
+                var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                modal.show();
+            }
+        });
+
         $(document).on('click', '#recordAllApplyBtn', function () {
             var q = $('#recordAllSearch').val() || '';
             var params = new URLSearchParams(window.location.search);

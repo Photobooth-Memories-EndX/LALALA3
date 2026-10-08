@@ -41,6 +41,56 @@
         ]"
     />
 </template>
+<style>
+    .record-offline-title-link {
+        display: inline-block;
+        background: transparent;
+        border: 0;
+        padding: 0;
+        margin: 0;
+        font-family: inherit;
+        font-size: inherit;
+        font-weight: 600;
+        line-height: 1.35;
+        color: inherit;
+        text-align: left;
+        text-decoration: none;
+        cursor: pointer;
+        transition: color 0.15s ease-in-out, text-decoration-color 0.15s ease-in-out;
+    }
+    .record-offline-title-link:hover {
+        color: var(--tblr-primary, #206bc4) !important;
+        text-decoration: underline !important;
+    }
+    .record-offline-title-link:focus-visible {
+        outline: 2px solid var(--tblr-primary, #206bc4);
+        outline-offset: 2px;
+        border-radius: 2px;
+    }
+    button.attendance-detail-trigger {
+        border: 0;
+        cursor: pointer;
+        font-family: inherit;
+        text-decoration: none;
+        user-select: none;
+        transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+    }
+    button.attendance-detail-trigger:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
+        filter: brightness(0.95);
+    }
+    button.attendance-detail-trigger:active {
+        transform: translateY(0);
+        box-shadow: none;
+        filter: brightness(0.9);
+    }
+    button.attendance-detail-trigger:focus-visible {
+        outline: 2px solid var(--tblr-primary, #206bc4);
+        outline-offset: 2px;
+        border-radius: 4px;
+    }
+</style>
 
 <div class="learning-record-shell">
     {{-- Filter Card Offline --}}
@@ -55,8 +105,8 @@
                 </div>
 
                 <div class="record-fast-filter-section">
-                    <div class="fast-filter-toolbar d-flex align-items-center flex-wrap gap-2">
-                        <div class="learning-quick-dropdowns learning-fast-filter d-flex align-items-center flex-wrap gap-2">
+                    <div class="fast-filter-toolbar">
+                        <div class="learning-quick-dropdowns learning-fast-filter">
                             {{-- Dropdown Type --}}
                             <div class="dropdown">
                                 <button type="button"
@@ -140,24 +190,10 @@
                                     @endforeach
                                 </div>
                             </div>
-
-                            {{-- More Filter Trigger Button --}}
-                            <button type="button"
-                                    class="btn btn-filter-chip learning-fast-filter-control d-inline-flex align-items-center gap-1 {{ $activeMoreFilterCount > 0 ? 'active' : '' }}"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#recordOfflineMoreFilterModal"
-                                    id="recordOfflineMoreFilterBtn"
-                                    title="More Filters">
-                                <i class="ti ti-adjustments-horizontal"></i>
-                                <span>More Filter</span>
-                                @if ($activeMoreFilterCount > 0)
-                                    <span class="badge bg-primary text-white rounded-pill ms-1" style="font-size: 10px;">{{ $activeMoreFilterCount }}</span>
-                                @endif
-                            </button>
                         </div>
 
                         {{-- Search Input --}}
-                        <div class="record-toolbar-search flex-grow-1" style="min-width: 200px;">
+                        <div class="record-toolbar-search">
                             <label class="visually-hidden" for="recordOfflineSearch">Search offline records</label>
                             <div class="input-icon">
                                 <span class="input-icon-addon"><i class="ti ti-search"></i></span>
@@ -169,6 +205,7 @@
 
                         {{-- Action Buttons --}}
                         <div class="record-filter-actions d-flex align-items-center gap-2">
+                            {{-- 1. Search Button --}}
                             <button type="button" class="btn btn-primary btn-learning-primary record-offline-apply-btn record-filter-action-btn"
                                     id="recordOfflineApplyBtn"
                                     title="Search & Apply Filter"
@@ -176,6 +213,21 @@
                                 <i class="ti ti-search" aria-hidden="true"></i>
                             </button>
 
+                            {{-- 2. More Filter Button --}}
+                            <button type="button"
+                                    class="btn btn-outline-primary btn-learning-secondary record-filter-action-btn position-relative {{ $activeMoreFilterCount > 0 ? 'active' : '' }}"
+                                    id="recordOfflineMoreFilterBtn"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#recordOfflineMoreFilterModal"
+                                    title="More Filters"
+                                    aria-label="More Filters">
+                                <i class="ti ti-adjustments-horizontal" aria-hidden="true"></i>
+                                @if ($activeMoreFilterCount > 0)
+                                    <span class="badge bg-primary text-white position-absolute top-0 start-100 translate-middle rounded-pill" style="font-size: 10px; min-width: 18px; height: 18px; padding: 0 4px; display: inline-flex; align-items: center; justify-content: center;">{{ $activeMoreFilterCount }}</span>
+                                @endif
+                            </button>
+
+                            {{-- 3. Reset Button --}}
                             <button type="button" class="btn btn-outline-secondary btn-learning-outline record-offline-reset-btn record-filter-action-btn"
                                     id="recordOfflineResetBtn"
                                     title="Reset Filter"
@@ -183,8 +235,9 @@
                                 <i class="ti ti-refresh" aria-hidden="true"></i>
                             </button>
 
+                            {{-- 4. Download / Export Button --}}
                             <a href="{{ route('user.learning.record.export', array_merge(request()->all(), ['source' => 'offline'])) }}"
-                               class="btn btn-outline-success btn-learning-outline record-filter-action-btn"
+                               class="btn btn-outline-success btn-learning-success record-filter-action-btn"
                                id="recordOfflineExportBtn"
                                title="Export Offline Training Record"
                                aria-label="Export Offline Training Record">
@@ -273,12 +326,11 @@
                             <tr class="record-row record-row-offline">
                                 <td class="text-center text-muted">{{ $loop->iteration }}</td>
                                 <td class="learning-record-course-cell">
-                                    <a href="javascript:void(0)"
-                                       class="learning-record-title fw-semibold text-dark text-decoration-none btn-record-offline-detail d-block"
-                                       data-record-id="{{ $row['id'] }}"
-                                       title="Click to view details">
+                                    <button type="button"
+                                            class="learning-record-title record-offline-title-link btn-record-offline-detail text-start"
+                                            data-record-id="{{ $row['id'] }}">
                                         {{ $row['title'] }}
-                                    </a>
+                                    </button>
                                     @if (!empty($row['subtitle']))
                                         <div class="text-muted small mt-0.5">
                                             {{ $row['subtitle'] }}
@@ -320,13 +372,33 @@
                                     @endif
                                 </td>
                                 <td class="text-center">
-                                    @if ($row['attendance_status'] === 'Present')
-                                        <span class="badge bg-success-lt text-success fw-bold px-2 py-1">Present</span>
-                                    @elseif ($row['attendance_status'] === 'Absent')
-                                        <span class="badge bg-danger-lt text-danger fw-bold px-2 py-1">Absent</span>
-                                    @else
-                                        <span class="badge bg-secondary-lt fw-bold px-2 py-1">-</span>
-                                    @endif
+                                    @php
+                                        $attStatus = $row['attendance_status'] ?? '-';
+                                        $statusKey = strtolower(trim((string) $attStatus));
+                                        $badgeClass = match ($statusKey) {
+                                            'present' => 'bg-success-lt text-success',
+                                            'absent' => 'bg-danger-lt text-danger',
+                                            'excused' => 'bg-warning-lt text-warning',
+                                            'leave' => 'bg-info-lt text-info',
+                                            'sick' => 'bg-warning-lt text-warning',
+                                            default => 'bg-secondary-lt text-secondary',
+                                        };
+                                        $rawReason = $row['raw_attendance_reason'] ?? ($row['attendance_reason'] !== '-' ? $row['attendance_reason'] : '');
+                                        $displayReason = $row['attendance_reason_display'] ?? '';
+                                    @endphp
+                                    <button type="button"
+                                            class="badge {{ $badgeClass }} fw-bold px-2 py-1 attendance-detail-trigger text-decoration-none"
+                                            data-record-id="{{ $row['id'] }}"
+                                            data-training-title="{{ $row['course_name'] ?: $row['title'] }}"
+                                            data-attendance="{{ $attStatus }}"
+                                            data-attendance-reason="{{ $rawReason }}"
+                                            data-attendance-reason-display="{{ $displayReason }}"
+                                            data-training-date="{{ $row['date_display'] ?: '-' }}"
+                                            data-venue="{{ $row['venue'] ?: '-' }}"
+                                            title="Click to view attendance detail"
+                                            aria-label="View attendance detail for {{ $row['title'] }}">
+                                        {{ $attStatus }}
+                                    </button>
                                 </td>
                                 <td class="text-nowrap small text-muted">{{ $row['date_display'] }}</td>
                                 <td class="text-center">
@@ -490,6 +562,71 @@
                         <i class="ti ti-check me-1"></i> Apply Filters
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- ========================================================================= --}}
+{{-- MODAL: ATTENDANCE DETAIL                                                  --}}
+{{-- ========================================================================= --}}
+<div class="modal fade" id="attendanceDetailModal" tabindex="-1" aria-labelledby="attendanceDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content rounded-3 border-0 shadow">
+            <div class="modal-header border-bottom py-3 bg-light">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="ti ti-calendar-check text-primary fs-2"></i>
+                    <h5 class="modal-title fw-bold mb-0 text-dark" id="attendanceDetailModalLabel">Attendance Detail</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-3 p-md-4">
+                <div class="d-flex flex-column gap-3">
+                    {{-- Training Title --}}
+                    <div>
+                        <span class="text-muted small fw-semibold text-uppercase d-block mb-1" style="font-size: 0.72rem; letter-spacing: 0.5px;">Training Title</span>
+                        <div class="fw-bold text-dark fs-3 text-break" id="attendanceTrainingTitle" style="word-break: break-word; overflow-wrap: anywhere; line-height: 1.35;">-</div>
+                    </div>
+
+                    {{-- Attendance Status --}}
+                    <div>
+                        <span class="text-muted small fw-semibold text-uppercase d-block mb-1" style="font-size: 0.72rem; letter-spacing: 0.5px;">Attendance Status</span>
+                        <div id="attendanceStatusContainer">
+                            <span class="badge bg-secondary-lt fw-bold px-2 py-1" id="attendanceStatus">-</span>
+                        </div>
+                    </div>
+
+                    {{-- Attendance Reason --}}
+                    <div>
+                        <span class="text-muted small fw-semibold text-uppercase d-block mb-1" style="font-size: 0.72rem; letter-spacing: 0.5px;">Attendance Reason</span>
+                        <div class="p-2.5 rounded-2 bg-light border text-break" style="word-break: break-word; overflow-wrap: anywhere; line-height: 1.45;">
+                            <span class="text-dark fw-normal" id="attendanceReason">-</span>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 pt-1">
+                        {{-- Training Date --}}
+                        <div class="col-sm-6 col-12">
+                            <span class="text-muted small fw-semibold text-uppercase d-block mb-1" style="font-size: 0.72rem; letter-spacing: 0.5px;">Training Date</span>
+                            <div class="d-flex align-items-center gap-1.5 text-dark fw-medium text-break" style="word-break: break-word;">
+                                <i class="ti ti-calendar text-muted"></i>
+                                <span id="attendanceDate">-</span>
+                            </div>
+                        </div>
+
+                        {{-- Location / Venue --}}
+                        <div class="col-sm-6 col-12">
+                            <span class="text-muted small fw-semibold text-uppercase d-block mb-1" style="font-size: 0.72rem; letter-spacing: 0.5px;">Location / Venue</span>
+                            <div class="d-flex align-items-center gap-1.5 text-dark fw-medium text-break" style="word-break: break-word; overflow-wrap: anywhere;">
+                                <i class="ti ti-map-pin text-muted"></i>
+                                <span id="attendanceVenue">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-top py-2 px-3">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>

@@ -840,5 +840,29 @@
     body.dark-mode #certificate-search-results .dropdown-item .text-dark {
         color: #f1f5f9 !important;
     }
+
+    button.attendance-detail-trigger {
+        border: 0;
+        cursor: pointer;
+        font-family: inherit;
+        text-decoration: none;
+        user-select: none;
+        transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+    }
+    button.attendance-detail-trigger:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
+        filter: brightness(0.95);
+    }
+    button.attendance-detail-trigger:active {
+        transform: translateY(0);
+        box-shadow: none;
+        filter: brightness(0.9);
+    }
+    button.attendance-detail-trigger:focus-visible {
+        outline: 2px solid var(--tblr-primary, #206bc4);
+        outline-offset: 2px;
+        border-radius: 4px;
+    }
 </style>
 @endsection

@@ -21,7 +21,7 @@
         <i class="ti ti-device-laptop" aria-hidden="true"></i>
         <span>Online</span>
     </button>
-    {{-- <button type="button"
+    <button type="button"
             class="btn learning-mode-btn record-mode-btn {{ $currentMode === 'offline' ? 'btn-primary active' : 'btn-outline-primary' }}"
             data-mode="offline"
             title="Offline Training Record"
@@ -30,7 +30,7 @@
         <i class="ti ti-certificate" aria-hidden="true"></i>
         <span>Offline</span>
     </button>
-    <button type="button"
+    {{-- <button type="button"
             class="btn learning-mode-btn record-mode-btn {{ $currentMode === 'all' ? 'btn-primary active' : 'btn-outline-primary' }}"
             data-mode="all"
             title="All Learning Record (Online & Offline)"
@@ -38,7 +38,7 @@
             aria-pressed="{{ $currentMode === 'all' ? 'true' : 'false' }}">
         <i class="ti ti-stack-2" aria-hidden="true"></i>
         <span>All</span>
-    </button>
+    </button> --}}
     <button type="button"
             class="btn learning-mode-btn record-mode-btn {{ $currentMode === 'export' ? 'btn-primary active' : 'btn-outline-primary' }}"
             data-mode="export"
@@ -47,5 +47,5 @@
             aria-pressed="{{ $currentMode === 'export' ? 'true' : 'false' }}">
         <i class="ti ti-download" aria-hidden="true"></i>
         <span>Export</span>
-    </button> --}}
+    </button>
 </div>

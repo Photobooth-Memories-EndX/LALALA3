@@ -58,10 +58,18 @@ class UserRecordOfflineService
     {
         $training = $otu->training;
 
-        $durationSeconds = (int) ($training->duration_seconds ?? 0);
-        $durationFormatted = $durationSeconds > 0
-            ? DurationFormatter::formatForLearningRecord(DurationFormatter::fromSeconds($durationSeconds))
-            : '-';
+        $rawDuration = $training->duration_seconds;
+        if ($rawDuration !== null && $rawDuration !== '' && is_numeric($rawDuration)) {
+            $sec = max(0, (int) $rawDuration);
+            $hours = (int) floor($sec / 3600);
+            $minutes = (int) floor(($sec % 3600) / 60);
+            $seconds = (int) ($sec % 60);
+            $durationFormatted = sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
+            $durationSeconds = $sec;
+        } else {
+            $durationFormatted = '-';
+            $durationSeconds = 0;
+        }
 
         $learningHours = (float) ($otu->learning_hours ?? $training->learning_hours ?? 0);
 
@@ -91,11 +99,29 @@ class UserRecordOfflineService
         $score = $otu->assessment_score !== null ? (float) $otu->assessment_score : null;
 
         $attendanceRaw = $otu->attendance;
-        $attendanceStatus = match ($attendanceRaw) {
-            true, 1, '1' => 'Present',
-            false, 0, '0' => 'Absent',
-            default => '-',
-        };
+        if (is_string($attendanceRaw) && !in_array($attendanceRaw, ['0', '1', ''], true)) {
+            $attendanceStatus = ucfirst(trim($attendanceRaw));
+        } else {
+            $attendanceStatus = match ($attendanceRaw) {
+                true, 1, '1' => 'Present',
+                false, 0, '0' => 'Absent',
+                default => '-',
+            };
+        }
+
+        $rawAttendanceReason = (!empty($otu->attendance_reason) && trim((string) $otu->attendance_reason) !== '-')
+            ? trim((string) $otu->attendance_reason)
+            : null;
+
+        if ($rawAttendanceReason !== null && $rawAttendanceReason !== '') {
+            $attendanceReasonDisplay = $rawAttendanceReason;
+        } elseif ($attendanceStatus === 'Present') {
+            $attendanceReasonDisplay = 'Employee attended the training.';
+        } elseif ($attendanceStatus === 'Absent') {
+            $attendanceReasonDisplay = 'No attendance reason recorded.';
+        } else {
+            $attendanceReasonDisplay = 'No attendance reason recorded.';
+        }
 
         $bondAmount = $otu->bond_amount !== null ? (float) $otu->bond_amount : null;
         $bondAmountFormatted = $bondAmount !== null && $bondAmount > 0
@@ -107,43 +133,45 @@ class UserRecordOfflineService
         $l3Num = $otu->l3_numerical !== null ? (float) $otu->l3_numerical : null;
 
         return [
-            'id'                   => $otu->id,
-            'source'               => 'offline',
-            'row_kind'             => 'offline',
-            'title'                => $training->course_name ?: 'Offline Training',
-            'subtitle'             => $training->sub_course_name ?: ($training->provider_name ?: ''),
-            'course_name'          => $training->course_name ?: ($training->title ?: 'Offline Training'),
-            'sub_course_name'      => $training->sub_course_name ?: '',
-            'type'                 => $training->type ?: 'Offline',
-            'category'             => $training->category ?: 'Offline',
-            'level'                => $training->level ?: '-',
-            'batch'                => $training->batch ?: '-',
-            'classification'       => $training->main_classification ?: 'Unclassified',
-            'main_classification'  => $training->main_classification ?: 'Unclassified',
-            'sub_classification'   => $training->sub_classification ?: '-',
-            'delivery_method'      => $training->delivery_method ?: '-',
-            'sub_delivery_method'  => $training->sub_delivery_method ?: '-',
-            'duration'             => $durationFormatted,
-            'duration_seconds'     => $durationSeconds,
-            'duration_sort'        => $durationSeconds,
-            'learning_hour'        => number_format($learningHours, 2) . ' hrs',
-            'learning_hour_value'  => $learningHours,
-            'progress'             => (int) round($progress),
-            'start_date'           => $startDateStr,
-            'finish_date'          => $finishDateStr,
-            'start_time'           => $startTime ?: '-',
-            'end_time'             => $endTime ?: '-',
-            'time_display'         => $timeDisplay,
-            'date_display'         => $dateTimeDisplay,
-            'score'                => $score,
-            'certificate'          => $otu->certificate,
-            'attendance'           => $attendanceRaw !== null ? (bool) $attendanceRaw : null,
-            'attendance_status'    => $attendanceStatus,
-            'attendance_reason'    => !empty($otu->attendance_reason) ? trim((string) $otu->attendance_reason) : '-',
-            'venue'                => $training->venue ?: '-',
-            'instructor'           => $training->instructor ?: '-',
-            'provider'             => $training->provider_name ?: ($training->provider ?: '-'),
-            'provider_name'        => $training->provider_name ?: ($training->provider ?: '-'),
+            'id'                        => $otu->id,
+            'source'                    => 'offline',
+            'row_kind'                  => 'offline',
+            'title'                     => $training->course_name ?: 'Offline Training',
+            'subtitle'                  => $training->sub_course_name ?: ($training->provider_name ?: ''),
+            'course_name'               => $training->course_name ?: ($training->title ?: 'Offline Training'),
+            'sub_course_name'           => $training->sub_course_name ?: '',
+            'type'                      => $training->type ?: 'Offline',
+            'category'                  => $training->category ?: 'Offline',
+            'level'                     => $training->level ?: '-',
+            'batch'                     => $training->batch ?: '-',
+            'classification'            => $training->main_classification ?: 'Unclassified',
+            'main_classification'       => $training->main_classification ?: 'Unclassified',
+            'sub_classification'        => $training->sub_classification ?: '-',
+            'delivery_method'           => $training->delivery_method ?: '-',
+            'sub_delivery_method'       => $training->sub_delivery_method ?: '-',
+            'duration'                  => $durationFormatted,
+            'duration_seconds'          => $durationSeconds,
+            'duration_sort'             => $durationSeconds,
+            'learning_hour'             => number_format($learningHours, 2) . ' hrs',
+            'learning_hour_value'       => $learningHours,
+            'progress'                  => (int) round($progress),
+            'start_date'                => $startDateStr,
+            'finish_date'               => $finishDateStr,
+            'start_time'                => $startTime ?: '-',
+            'end_time'                  => $endTime ?: '-',
+            'time_display'              => $timeDisplay,
+            'date_display'              => $dateTimeDisplay,
+            'score'                     => $score,
+            'certificate'               => $otu->certificate,
+            'attendance'                => $attendanceRaw !== null ? (bool) $attendanceRaw : null,
+            'attendance_status'         => $attendanceStatus,
+            'attendance_reason'         => $rawAttendanceReason ?: '-',
+            'raw_attendance_reason'     => $rawAttendanceReason,
+            'attendance_reason_display' => $attendanceReasonDisplay,
+            'venue'                     => $training->venue ?: ($training->location ?: '-'),
+            'instructor'                => $training->instructor ?: '-',
+            'provider'                  => $training->provider_name ?: ($training->provider ?: '-'),
+            'provider_name'             => $training->provider_name ?: ($training->provider ?: '-'),
 
             // Evaluation (Kirkpatrick L1 - L3)
             'l1_program'           => $otu->l1_program ?: '-',
