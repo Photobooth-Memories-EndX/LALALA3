@@ -38,6 +38,30 @@ class UserRecordOfflineService
     }
 
     /**
+     * Calculate canonical total learning hours for Offline Learning Record of a user.
+     *
+     * @param int $userId
+     * @param string|null $userEmpId
+     * @return float Rounded to 2 decimal places
+     */
+    public function getTotalLearningHours(int $userId, ?string $userEmpId = null): float
+    {
+        if ($userEmpId === null) {
+            $userEmpId = \App\Models\User::where('id', $userId)->value('id_emp');
+        }
+
+        $rawRecords = $this->queryForUser($userId, $userEmpId)
+            ->get()
+            ->filter(fn (OfflineTrainingUser $otu) => $otu->training !== null);
+
+        $totalHours = (float) $rawRecords->sum(function (OfflineTrainingUser $otu) {
+            return (float) ($otu->learning_hours ?? $otu->training->learning_hours ?? 0);
+        });
+
+        return round($totalHours, 2);
+    }
+
+    /**
      * Get and normalize all offline records for user with filters applied.
      */
     public function getRecords(int $userId, ?string $userEmpId, array $filters = []): Collection

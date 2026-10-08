@@ -22,6 +22,7 @@ class LearningRecordExportHubController extends Controller
     public function partial()
     {
         $userId = (int) Auth::id();
+        $userEmpId = Auth::user()?->id_emp;
 
         // Canonical hero stats agar hero card tetap konsisten (Step 18)
         $completedPlaylists = $this->completedPlaylistService->forLearningRecord($userId);
@@ -32,7 +33,7 @@ class LearningRecordExportHubController extends Controller
             ->whereNull('content.deleted_at')
             ->whereIn('content.type', ['Video', 'Document'])
             ->count();
-        $learningHours = $this->recordLhService->getTotalLearningHours($userId);
+        $learningHours = $this->recordLhService->getTotalLearningHoursByMode('export', $userId, $userEmpId);
 
         $recordStats = [
             'courseCompleted'    => $completedContentLearning,

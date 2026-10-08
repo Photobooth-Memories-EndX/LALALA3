@@ -38,7 +38,7 @@ class LearningRecordOfflineController extends Controller
             ->whereNull('content.deleted_at')
             ->whereIn('content.type', ['Video', 'Document'])
             ->count();
-        $learningHours = $this->recordLhService->getTotalLearningHours($userId);
+        $learningHours = $this->recordLhService->getOfflineLearningHours($userId, $userEmpId);
 
         $recordStats = [
             'courseCompleted'    => $completedContentLearning,

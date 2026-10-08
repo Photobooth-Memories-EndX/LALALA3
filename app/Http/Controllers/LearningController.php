@@ -58,7 +58,10 @@ class LearningController extends Controller
             ->whereNull('content.deleted_at')
             ->whereIn('content.type', ['Video', 'Document'])
             ->count();
-        $learningHours = $recordHourService->getTotalLearningHours((int) $userId);
+        $recordMode = request('learning_tab') === 'record' || request()->filled('record_mode')
+            ? request('record_mode')
+            : 'online';
+        $learningHours = $recordHourService->getTotalLearningHoursByMode($recordMode, (int) $userId, $user?->id_emp);
 
         $certificates = Certificate::where('user_id', $userId)
             ->get(['certificate_type']);
