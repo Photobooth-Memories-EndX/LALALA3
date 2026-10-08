@@ -584,7 +584,13 @@
             var modalEl = document.getElementById('recordOfflineMoreFilterModal');
             if (modalEl) {
                 var modal = bootstrap.Modal.getInstance(modalEl);
-                if (modal) modal.hide();
+                if (modal) {
+                    modal.hide();
+                } else if (typeof bootstrap.Modal.getOrCreateInstance === 'function') {
+                    bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+                } else {
+                    $(modalEl).modal('hide');
+                }
             }
 
             var qs = params.toString();
@@ -619,7 +625,13 @@
             var modalEl = document.getElementById('recordOfflineMoreFilterModal');
             if (modalEl) {
                 var modal = bootstrap.Modal.getInstance(modalEl);
-                if (modal) modal.hide();
+                if (modal) {
+                    modal.hide();
+                } else if (typeof bootstrap.Modal.getOrCreateInstance === 'function') {
+                    bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+                } else {
+                    $(modalEl).modal('hide');
+                }
             }
 
             var qs = params.toString();

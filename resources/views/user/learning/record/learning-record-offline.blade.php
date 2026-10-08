@@ -90,6 +90,114 @@
         outline-offset: 2px;
         border-radius: 4px;
     }
+
+    /* Polished More Filter Modal Dialog (Standardized with Online Reference) */
+    #recordOfflineMoreFilterModal .modal-dialog {
+        max-width: 760px;
+    }
+    #recordOfflineMoreFilterModal .record-filter-modal {
+        border-radius: 16px !important;
+        border: none !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
+        overflow: hidden;
+    }
+    #recordOfflineMoreFilterModal .modal-header {
+        background-color: #ffffff !important;
+        border-bottom: 1px solid #f0f2f5 !important;
+        padding: 1.25rem 2rem !important;
+    }
+    #recordOfflineMoreFilterModal .modal-title {
+        font-size: 1.25rem !important;
+        font-weight: 700 !important;
+        color: #1e293b !important;
+    }
+    #recordOfflineMoreFilterModal .modal-body {
+        max-height: 72vh;
+        overflow-y: auto;
+        padding: 1.5rem 2rem !important;
+        background-color: #ffffff !important;
+    }
+    #recordOfflineMoreFilterModal .modal-body::-webkit-scrollbar {
+        width: 6px;
+    }
+    #recordOfflineMoreFilterModal .modal-body::-webkit-scrollbar-track {
+        background: #f8fafc;
+        border-radius: 999px;
+    }
+    #recordOfflineMoreFilterModal .modal-body::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 999px;
+    }
+    #recordOfflineMoreFilterModal .modal-body::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+    #recordOfflineMoreFilterModal .record-filter-select {
+        width: 100% !important;
+        border-radius: 8px !important;
+        border: 1px solid #d1d5db !important;
+        padding: 0.5rem 0.85rem !important;
+        font-size: 0.875rem !important;
+        color: #334155 !important;
+        background-color: #ffffff !important;
+        height: 42px !important;
+    }
+    #recordOfflineMoreFilterModal .record-filter-select:focus {
+        border-color: #206bc4 !important;
+        box-shadow: 0 0 0 3px rgba(32, 107, 196, 0.15) !important;
+    }
+    #recordOfflineMoreFilterModal .modal-footer {
+        background-color: #ffffff !important;
+        border-top: 1px solid #f0f2f5 !important;
+        padding: 1rem 2rem !important;
+    }
+    #recordOfflineMoreFilterModal .modal-footer .btn {
+        min-height: 40px !important;
+        border-radius: 8px !important;
+        padding: 0.5rem 1.25rem !important;
+        font-weight: 600 !important;
+        font-size: 0.875rem !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 0.5rem !important;
+    }
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) #recordOfflineMoreFilterModal .record-filter-modal {
+        background-color: var(--tblr-bg-surface-dark, #1e293b) !important;
+        border-color: #334155 !important;
+    }
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) #recordOfflineMoreFilterModal .modal-header {
+        background-color: var(--tblr-bg-surface-dark, #1e293b) !important;
+        border-bottom-color: #334155 !important;
+    }
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) #recordOfflineMoreFilterModal .modal-title {
+        color: #f1f5f9 !important;
+    }
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) #recordOfflineMoreFilterModal .modal-header .btn-close {
+        filter: invert(1) grayscale(100%) brightness(200%);
+    }
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) #recordOfflineMoreFilterModal .modal-body,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) #recordOfflineMoreFilterModal .record-more-filters {
+        background-color: var(--tblr-bg-surface-dark, #1e293b) !important;
+        color: #f1f5f9 !important;
+    }
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) #recordOfflineMoreFilterModal .modal-body::-webkit-scrollbar-track {
+        background: #0f172a;
+    }
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) #recordOfflineMoreFilterModal .modal-body::-webkit-scrollbar-thumb {
+        background: #475569;
+    }
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) #recordOfflineMoreFilterModal .learning-filter-group .form-label {
+        color: #f1f5f9 !important;
+    }
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) #recordOfflineMoreFilterModal .record-filter-select {
+        background-color: #192d45 !important;
+        border-color: rgba(255, 255, 255, 0.12) !important;
+        color: #f1f5f9 !important;
+    }
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) #recordOfflineMoreFilterModal .modal-footer {
+        background-color: #152235 !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+    }
 </style>
 
 <div class="learning-record-shell">
@@ -462,106 +570,138 @@
 {{-- ========================================================================= --}}
 {{-- MODAL: MORE FILTER OFFLINE RECORD                                         --}}
 {{-- ========================================================================= --}}
-<div class="modal fade" id="recordOfflineMoreFilterModal" tabindex="-1" aria-labelledby="recordOfflineMoreFilterModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-md">
-        <div class="modal-content rounded-3 border-0 shadow">
-            <div class="modal-header border-bottom py-3">
-                <h5 class="modal-title fw-bold d-flex align-items-center gap-2" id="recordOfflineMoreFilterModalLabel">
-                    <i class="ti ti-adjustments-horizontal text-primary fs-2"></i>
+<div class="modal fade" id="recordOfflineMoreFilterModal" tabindex="-1" role="dialog" aria-labelledby="recordOfflineMoreFilterModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered learning-filter-modal" role="document">
+        <div class="modal-content rounded-4 border-0 shadow record-filter-modal">
+            <div class="modal-header border-0 pb-0">
+                <h3 class="modal-title fw-semibold d-flex align-items-center gap-1" id="recordOfflineMoreFilterModalLabel" style="font-size: 1.1rem;">
+                    <i class="ti ti-adjustments-horizontal text-primary me-1"></i>
                     <span>More Filters — Offline Record</span>
-                </h5>
+                </h3>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body py-3">
+            <div class="modal-body pt-2 record-more-filters" id="recordOfflineMoreFilters">
+                <p class="text-muted extra-small mb-3">
+                    All filters can be combined with the search and quick filters above.
+                </p>
+
                 <form id="recordOfflineMoreFilterForm">
-                    <div class="row g-3">
-                        {{-- Category --}}
-                        <div class="col-12">
-                            <label class="form-label small fw-semibold text-muted mb-1" for="mf_category">Category</label>
-                            <select class="form-select form-select-sm" id="mf_category" name="record_filter_category">
-                                <option value="all" {{ $filterCategory === 'all' ? 'selected' : '' }}>All Categories</option>
-                                @foreach ($categories as $cat)
-                                    <option value="{{ $cat }}" {{ (string) $filterCategory === (string) $cat ? 'selected' : '' }}>{{ $cat }}</option>
-                                @endforeach
-                            </select>
+                    <div class="record-filter-sections d-flex flex-column">
+
+                        {{-- 1. Category --}}
+                        <div class="learning-filter-group">
+                            <label class="form-label fw-semibold text-dark small mb-2" for="mf_category">Category</label>
+                            <div class="w-100">
+                                <select class="form-select rounded-3 record-filter-select w-100" id="mf_category" name="record_filter_category">
+                                    <option value="all" {{ $filterCategory === 'all' ? 'selected' : '' }}>All Categories</option>
+                                    @foreach ($categories as $cat)
+                                        <option value="{{ $cat }}" {{ (string) $filterCategory === (string) $cat ? 'selected' : '' }}>{{ $cat }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
                         </div>
 
-                        {{-- Sub Classification --}}
-                        <div class="col-12">
-                            <label class="form-label small fw-semibold text-muted mb-1" for="mf_sub_classification">Sub Classification</label>
-                            <select class="form-select form-select-sm" id="mf_sub_classification" name="record_filter_sub_classification">
-                                <option value="all" {{ $filterSubClassification === 'all' ? 'selected' : '' }}>All Sub Classifications</option>
-                                @foreach ($subClassifications as $subClass)
-                                    <option value="{{ $subClass }}" {{ (string) $filterSubClassification === (string) $subClass ? 'selected' : '' }}>{{ $subClass }}</option>
-                                @endforeach
-                            </select>
+                        <hr class="my-3 text-light-subtle">
+
+                        {{-- 2. Sub Classification --}}
+                        <div class="learning-filter-group">
+                            <label class="form-label fw-semibold text-dark small mb-2" for="mf_sub_classification">Sub Classification</label>
+                            <div class="w-100">
+                                <select class="form-select rounded-3 record-filter-select w-100" id="mf_sub_classification" name="record_filter_sub_classification">
+                                    <option value="all" {{ $filterSubClassification === 'all' ? 'selected' : '' }}>All Sub Classifications</option>
+                                    @foreach ($subClassifications as $subClass)
+                                        <option value="{{ $subClass }}" {{ (string) $filterSubClassification === (string) $subClass ? 'selected' : '' }}>{{ $subClass }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
                         </div>
 
-                        {{-- Batch --}}
-                        <div class="col-md-6">
-                            <label class="form-label small fw-semibold text-muted mb-1" for="mf_batch">Batch</label>
-                            <select class="form-select form-select-sm" id="mf_batch" name="record_filter_batch">
-                                <option value="all" {{ $filterBatch === 'all' ? 'selected' : '' }}>All Batches</option>
-                                @foreach ($batches as $bat)
-                                    <option value="{{ $bat }}" {{ (string) $filterBatch === (string) $bat ? 'selected' : '' }}>{{ $bat }}</option>
-                                @endforeach
-                            </select>
+                        <hr class="my-3 text-light-subtle">
+
+                        {{-- 3. Batch --}}
+                        <div class="learning-filter-group">
+                            <label class="form-label fw-semibold text-dark small mb-2" for="mf_batch">Batch</label>
+                            <div class="w-100">
+                                <select class="form-select rounded-3 record-filter-select w-100" id="mf_batch" name="record_filter_batch">
+                                    <option value="all" {{ $filterBatch === 'all' ? 'selected' : '' }}>All Batches</option>
+                                    @foreach ($batches as $bat)
+                                        <option value="{{ $bat }}" {{ (string) $filterBatch === (string) $bat ? 'selected' : '' }}>{{ $bat }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
                         </div>
 
-                        {{-- Delivery Method --}}
-                        <div class="col-md-6">
-                            <label class="form-label small fw-semibold text-muted mb-1" for="mf_delivery_method">Delivery Method</label>
-                            <select class="form-select form-select-sm" id="mf_delivery_method" name="record_filter_delivery_method">
-                                <option value="all" {{ $filterDeliveryMethod === 'all' ? 'selected' : '' }}>All Methods</option>
-                                @foreach ($deliveryMethods as $method)
-                                    <option value="{{ $method }}" {{ (string) $filterDeliveryMethod === (string) $method ? 'selected' : '' }}>{{ $method }}</option>
-                                @endforeach
-                            </select>
+                        <hr class="my-3 text-light-subtle">
+
+                        {{-- 4. Delivery Method --}}
+                        <div class="learning-filter-group">
+                            <label class="form-label fw-semibold text-dark small mb-2" for="mf_delivery_method">Delivery Method</label>
+                            <div class="w-100">
+                                <select class="form-select rounded-3 record-filter-select w-100" id="mf_delivery_method" name="record_filter_delivery_method">
+                                    <option value="all" {{ $filterDeliveryMethod === 'all' ? 'selected' : '' }}>All Methods</option>
+                                    @foreach ($deliveryMethods as $method)
+                                        <option value="{{ $method }}" {{ (string) $filterDeliveryMethod === (string) $method ? 'selected' : '' }}>{{ $method }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
                         </div>
 
-                        {{-- Provider --}}
-                        <div class="col-12">
-                            <label class="form-label small fw-semibold text-muted mb-1" for="mf_provider">Provider</label>
-                            <select class="form-select form-select-sm" id="mf_provider" name="record_filter_provider">
-                                <option value="all" {{ $filterProvider === 'all' ? 'selected' : '' }}>All Providers</option>
-                                @foreach ($providers as $prov)
-                                    <option value="{{ $prov }}" {{ (string) $filterProvider === (string) $prov ? 'selected' : '' }}>{{ $prov }}</option>
-                                @endforeach
-                            </select>
+                        <hr class="my-3 text-light-subtle">
+
+                        {{-- 5. Provider --}}
+                        <div class="learning-filter-group">
+                            <label class="form-label fw-semibold text-dark small mb-2" for="mf_provider">Provider</label>
+                            <div class="w-100">
+                                <select class="form-select rounded-3 record-filter-select w-100" id="mf_provider" name="record_filter_provider">
+                                    <option value="all" {{ $filterProvider === 'all' ? 'selected' : '' }}>All Providers</option>
+                                    @foreach ($providers as $prov)
+                                        <option value="{{ $prov }}" {{ (string) $filterProvider === (string) $prov ? 'selected' : '' }}>{{ $prov }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
                         </div>
 
-                        {{-- Attendance --}}
-                        <div class="col-md-6">
-                            <label class="form-label small fw-semibold text-muted mb-1" for="mf_attendance">Attendance</label>
-                            <select class="form-select form-select-sm" id="mf_attendance" name="record_filter_attendance">
-                                <option value="all" {{ $filterAttendance === 'all' ? 'selected' : '' }}>All</option>
-                                <option value="present" {{ strtolower($filterAttendance) === 'present' ? 'selected' : '' }}>Present</option>
-                                <option value="absent" {{ strtolower($filterAttendance) === 'absent' ? 'selected' : '' }}>Absent</option>
-                            </select>
+                        <hr class="my-3 text-light-subtle">
+
+                        {{-- 6. Attendance --}}
+                        <div class="learning-filter-group">
+                            <label class="form-label fw-semibold text-dark small mb-2" for="mf_attendance">Attendance</label>
+                            <div class="w-100">
+                                <select class="form-select rounded-3 record-filter-select w-100" id="mf_attendance" name="record_filter_attendance">
+                                    <option value="all" {{ $filterAttendance === 'all' ? 'selected' : '' }}>All</option>
+                                    <option value="present" {{ strtolower($filterAttendance) === 'present' ? 'selected' : '' }}>Present</option>
+                                    <option value="absent" {{ strtolower($filterAttendance) === 'absent' ? 'selected' : '' }}>Absent</option>
+                                </select>
+                            </div>
                         </div>
 
-                        {{-- Certificate Status --}}
-                        <div class="col-md-6">
-                            <label class="form-label small fw-semibold text-muted mb-1" for="mf_certificate">Certificate</label>
-                            <select class="form-select form-select-sm" id="mf_certificate" name="record_filter_certificate">
-                                <option value="all" {{ $filterCertificate === 'all' ? 'selected' : '' }}>All</option>
-                                <option value="certified" {{ in_array(strtolower($filterCertificate), ['certified', 'yes'], true) ? 'selected' : '' }}>Certified (Yes)</option>
-                                <option value="uncertified" {{ in_array(strtolower($filterCertificate), ['uncertified', 'no'], true) ? 'selected' : '' }}>Not Certified (No)</option>
-                            </select>
+                        <hr class="my-3 text-light-subtle">
+
+                        {{-- 7. Certificate --}}
+                        <div class="learning-filter-group">
+                            <label class="form-label fw-semibold text-dark small mb-2" for="mf_certificate">Certificate</label>
+                            <div class="w-100">
+                                <select class="form-select rounded-3 record-filter-select w-100" id="mf_certificate" name="record_filter_certificate">
+                                    <option value="all" {{ $filterCertificate === 'all' ? 'selected' : '' }}>All</option>
+                                    <option value="certified" {{ in_array(strtolower($filterCertificate), ['certified', 'yes'], true) ? 'selected' : '' }}>Certified (Yes)</option>
+                                    <option value="uncertified" {{ in_array(strtolower($filterCertificate), ['uncertified', 'no'], true) ? 'selected' : '' }}>Not Certified (No)</option>
+                                </select>
+                            </div>
                         </div>
+
                     </div>
                 </form>
             </div>
-            <div class="modal-footer border-top py-2 px-3 d-flex justify-content-between">
-                <button type="button" class="btn btn-outline-secondary btn-sm" id="btnResetMoreFilterModal">
-                    <i class="ti ti-rotate me-1"></i> Reset More Filters
+            <div class="modal-footer border-top pt-3 d-flex justify-content-end align-items-center gap-2">
+                <!-- Reset Button (Placed right next to Apply Filter) -->
+                <button type="button" class="btn btn-outline-secondary px-3 rounded-3 d-inline-flex align-items-center gap-1" id="btnResetMoreFilterModal">
+                    <i class="ti ti-refresh fs-2"></i> Reset
                 </button>
-                <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary btn-sm" id="btnApplyMoreFilterModal">
-                        <i class="ti ti-check me-1"></i> Apply Filters
-                    </button>
-                </div>
+
+                <!-- Apply Filter Button -->
+                <button type="button" class="btn btn-primary px-4 rounded-3 d-inline-flex align-items-center gap-1" id="btnApplyMoreFilterModal" style="background-color: #003b6d; border-color: #003b6d;">
+                    <i class="ti ti-search fs-2"></i> Apply Filter
+                </button>
             </div>
         </div>
     </div>

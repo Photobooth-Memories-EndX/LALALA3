@@ -1,7 +1,7 @@
 @section('style')
 <link rel="stylesheet" href="{{ asset('css/dataTables.bootstrap5.min.css') }}">
 {{-- Learning Record: style tabel client-side (dipisah — clean code). --}}
-<link rel="stylesheet" href="{{ asset('css/learning-record.css') }}">
+<link rel="stylesheet" href="{{ asset('css/learning-record.css') }}?v={{ filemtime(public_path('css/learning-record.css')) }}">
 <link rel="stylesheet" href="{{ asset('css/learning-assessment.css') }}?v={{ filemtime(public_path('css/learning-assessment.css')) }}">
 <link rel="stylesheet" href="{{ asset('css/learning-certificate.css') }}">
 <link rel="stylesheet" href="{{ asset('css/learning-ongoing.css') }}">

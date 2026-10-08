@@ -688,8 +688,25 @@ tbody.record-sort-animate tr.record-row {
     border-color: var(--tblr-border-color, #e6e7e9);
 }
 
-#recordMoreFiltersModal .modal-dialog {
+#recordMoreFiltersModal .modal-dialog,
+#recordOfflineMoreFilterModal .modal-dialog {
     max-width: 760px;
+}
+
+.record-filter-select {
+    width: 100% !important;
+    border-radius: 8px !important;
+    border: 1px solid #d1d5db !important;
+    padding: 0.5rem 0.85rem !important;
+    font-size: 0.875rem !important;
+    color: #334155 !important;
+    background-color: #ffffff !important;
+    height: 42px !important;
+}
+
+.record-filter-select:focus {
+    border-color: #206bc4 !important;
+    box-shadow: 0 0 0 3px rgba(32, 107, 196, 0.15) !important;
 }
 
 .record-filter-modal .modal-body {
