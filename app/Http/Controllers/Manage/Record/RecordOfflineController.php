@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Manage\Record;
 
 use App\Exports\OfflineClassificationExport;
+use App\Exports\OfflineClassificationCsvExport;
 use App\Exports\OfflineCourseCsvExport;
 use App\Exports\OfflineCourseExport;
 use App\Exports\OfflineParticipantCsvExport;
@@ -229,6 +230,9 @@ class RecordOfflineController extends Controller
             'entries'             => (int) $request->input('entries', 25),
             'trainingTypes'       => self::TRAINING_TYPES,
             'downloadUrl'         => route('manage.record.offline.classification.download', $resolved['slug']),
+            'exportExcelUrl'      => route('manage.record.offline.classification.export.excel', $resolved['slug']),
+            'exportCsvUrl'        => route('manage.record.offline.classification.export.csv', $resolved['slug']),
+            'exportPdfUrl'        => route('manage.record.offline.classification.export.pdf', $resolved['slug']),
         ]);
     }
 
@@ -275,11 +279,65 @@ class RecordOfflineController extends Controller
         return $export->download($export->getFileName(), \Maatwebsite\Excel\Excel::CSV);
     }
 
-    public function classificationDownload(string $classification, Request $request)
+    public function classificationDownload(string $classification, Request $request, ?string $format = null)
+    {
+        $targetFormat = strtolower(trim((string) ($format ?? $request->input('format', 'xlsx'))));
+
+        if ($targetFormat === 'csv') {
+            return $this->classificationExportCsv($classification, $request);
+        }
+
+        if ($targetFormat === 'pdf') {
+            return $this->classificationExportPdf($classification, $request);
+        }
+
+        return $this->classificationExportExcel($classification, $request);
+    }
+
+    public function classificationExportExcel(string $classification, Request $request)
     {
         $export = new OfflineClassificationExport($classification, $request);
 
         return $export->download($export->getFileName());
+    }
+
+    public function classificationExportCsv(string $classification, Request $request)
+    {
+        $export = new OfflineClassificationCsvExport($classification, $request);
+
+        return $export->download($export->getFileName(), \Maatwebsite\Excel\Excel::CSV, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
+    public function classificationExportPdf(string $classification, Request $request)
+    {
+        @ini_set('memory_limit', '512M');
+        @set_time_limit(300);
+
+        $resolved = self::resolveClassification($classification);
+        $records = RecordOfflineQueryService::buildClassificationQuery($classification, $request->all())
+            ->orderBy('ot.start_date', 'desc')
+            ->orderBy('ot.id', 'desc')
+            ->orderBy('otu.id', 'asc')
+            ->get();
+
+        $pdf = Pdf::loadView('main.record.offline.classification-export-pdf', [
+            'classification'     => $classification,
+            'classificationName' => $resolved['name'],
+            'resolved'           => $resolved,
+            'records'            => $records,
+            'filters'            => $request->all(),
+            'generatedAt'        => now()->format('d M Y H:i:s'),
+            'totalRecords'       => $records->count(),
+        ]);
+
+        $pdf->getDomPDF()->getOptions()->set('isPhpEnabled', true);
+
+        $slug = $resolved['slug'] ?: 'unclassified';
+        $fileName = sprintf('offline-record-%s-%s.pdf', $slug, now()->format('Y-m-d'));
+
+        return $pdf->setPaper('a3', 'landscape')->download($fileName);
     }
 
     public function classificationDatatable(string $classification, Request $request)
