@@ -41,10 +41,10 @@
 
             <!-- 1. COURSE OVERVIEW & OBJECTIVES (WITH TITLE FIELD AT TOP) -->
             <div class="card border-0 shadow-sm rounded-4 p-4 w-100">
-                <h5 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2">
-                    <i class="ti ti-file-text text-primary fs-3"></i>
+                <h4 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2" style="font-size: 1.25rem;">
+                    <i class="ti ti-file-text text-primary fs-2"></i>
                     <span>Course Overview & Objectives</span>
-                </h5>
+                </h4>
                 <div class="row g-3">
                     <!-- Training Title Placed Here at the Top -->
                     <div class="col-md-6 mb-2">
@@ -99,7 +99,7 @@
 
                     <!-- Learning Objectives -->
                     <div class="col-12">
-                        <label class="form-label fw-semibold text-dark">Learning Objectives (Tujuan Pelatihan - Itemized Points)</label>
+                        <label class="form-label fw-semibold text-dark">Learning Objectives (Itemized Points)</label>
                         <textarea name="objectives" class="form-control rounded-3" rows="3" placeholder="• Enhance leadership capabilities&#10;• Improve team decision making...">{{ old('objectives', $training->learning_objectives) }}</textarea>
                     </div>
                 </div>
@@ -128,10 +128,10 @@
             @endphp
             <div class="card border-0 shadow-sm rounded-4 p-4 w-100">
                 <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
-                    <h5 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
-                        <i class="ti ti-list-check text-primary fs-3"></i>
+                    <h4 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2" style="font-size: 1.25rem;">
+                        <i class="ti ti-list-check text-primary fs-2"></i>
                         <span>Training Syllabus & Learning Modules</span>
-                    </h5>
+                    </h4>
                     <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3" id="btn-add-syllabus">
                         <i class="ti ti-plus me-1"></i> Add Syllabus Point
                     </button>
@@ -165,10 +165,10 @@
 
             <!-- 3. BASIC INFORMATION & CAPACITY -->
             <div class="card border-0 shadow-sm rounded-4 p-4 w-100">
-                <h5 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2">
-                    <i class="ti ti-info-circle text-primary fs-3"></i>
+                <h4 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2" style="font-size: 1.25rem;">
+                    <i class="ti ti-info-circle text-primary fs-2"></i>
                     <span>Classification, Basic Information & Capacity</span>
-                </h5>
+                </h4>
                 <div class="row g-3">
                     <!-- Main Classification -->
                     <div class="col-md-4">
@@ -281,11 +281,11 @@
                         </select>
                     </div>
 
-                    <!-- Training Code / Batch -->
+                    <!-- Batch -->
                     <div class="col-md-4">
-                        <label class="form-label fw-semibold text-dark">Training Code / Batch <span class="text-danger">*</span></label>
-                        <input type="text" name="code" class="form-control rounded-3" placeholder="e.g. PTKP-LDP-01 (Batch 1 / 2026)" value="{{ old('code', $training->training_code ?? $training->batch) }}" required>
-                        <div class="invalid-feedback">Please enter the training code or batch.</div>
+                        <label class="form-label fw-semibold text-dark">Batch <span class="text-danger">*</span></label>
+                        <input type="text" name="code" class="form-control rounded-3" placeholder="e.g. Batch 1 / 2026" value="{{ old('code', $training->batch ?? $training->training_code) }}" required>
+                        <div class="invalid-feedback">Please enter the batch.</div>
                     </div>
 
                     <!-- Instructor / Trainer -->
@@ -357,17 +357,17 @@
                         <div class="invalid-feedback">Please select or specify the target employee or audience.</div>
                     </div>
 
-                    <!-- Prerequisites -->
+                    <!-- Requirements -->
                     <div class="col-md-6">
                         <div class="d-flex align-items-center justify-content-between mb-1">
-                            <label class="form-label fw-semibold text-dark mb-0">Prerequisites / Persyaratan</label>
-                            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 btn-add-option-modal" style="font-size: 0.75rem; height: 22px; border-radius: 4px;" data-type="prerequisites" data-target="#select-prerequisites" data-title="Prerequisites / Persyaratan" title="Add Prerequisites">
+                            <label class="form-label fw-semibold text-dark mb-0">Requirements</label>
+                            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 btn-add-option-modal" style="font-size: 0.75rem; height: 22px; border-radius: 4px;" data-type="prerequisites" data-target="#select-prerequisites" data-title="Requirements" title="Add Requirements">
                                 <i class="ti ti-plus"></i>
                             </button>
                         </div>
                         @php $curPrereq = old('prerequisites', $training->prerequisites); @endphp
                         <select name="prerequisites" id="select-prerequisites" class="form-select rounded-3">
-                            <option value="">Select Prerequisites (Optional)...</option>
+                            <option value="">Select Requirements (Optional)...</option>
                             @foreach ($options['prerequisites'] ?? [] as $preOpt)
                                 <option value="{{ $preOpt->value }}" {{ $curPrereq == $preOpt->value ? 'selected' : '' }}>
                                     {{ $preOpt->value }}
@@ -391,9 +391,10 @@
                         <label class="form-label fw-semibold text-dark">Registration Status <span class="text-danger">*</span></label>
                         @php $currentStatus = old('status', $training->status); @endphp
                         <select name="status" class="form-select rounded-3" required>
-                            <option value="Open Registration" {{ $currentStatus == 'Open Registration' ? 'selected' : '' }}>Open Registration [Active]</option>
+                            <option value="Open Registration" {{ $currentStatus == 'Open Registration' || $currentStatus == 'Open' ? 'selected' : '' }}>Open Registration [Active]</option>
                             <option value="Running" {{ $currentStatus == 'Running' ? 'selected' : '' }}>Running [In Progress]</option>
                             <option value="Closed" {{ $currentStatus == 'Closed' ? 'selected' : '' }}>Closed / Full</option>
+                            <option value="Draft" {{ $currentStatus == 'Draft' ? 'selected' : '' }}>Draft</option>
                         </select>
                         <div class="invalid-feedback">Please select a registration status.</div>
                     </div>
@@ -402,10 +403,10 @@
 
             <!-- 4. SCHEDULE TIMING & DATES -->
             <div class="card border-0 shadow-sm rounded-4 p-4 w-100">
-                <h5 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2">
-                    <i class="ti ti-calendar-event text-primary fs-3"></i>
+                <h4 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2" style="font-size: 1.25rem;">
+                    <i class="ti ti-calendar-event text-primary fs-2"></i>
                     <span>Schedule Timing & Dates</span>
-                </h5>
+                </h4>
                 <div class="row g-3">
                     <!-- Row 1: Dates -->
                     <div class="col-md-6">
@@ -450,8 +451,11 @@
             <!-- 5. SAVE & CANCEL ACTION BUTTONS -->
             <div class="d-flex align-items-center justify-content-end gap-3 pt-2 mb-5">
                 <a href="{{ url('/manage/training-schedule') }}" class="btn btn-outline-secondary rounded-3 px-4 py-2 fw-semibold">Cancel</a>
-                <button type="submit" class="btn text-white rounded-3 px-5 py-2 fw-semibold" style="background-color: #003b6d; border-color: #003b6d;">
-                    <i class="ti ti-check me-1"></i> Update Training Schedule
+                <button type="submit" name="action" value="draft" class="btn btn-outline-secondary rounded-3 px-4 py-2 fw-semibold">
+                    <i class="ti ti-file me-1"></i> Save Draft
+                </button>
+                <button type="submit" name="action" value="publish" class="btn text-white rounded-3 px-5 py-2 fw-semibold" style="background-color: #003b6d; border-color: #003b6d;">
+                    <i class="ti ti-check me-1"></i> Save &amp; Publish
                 </button>
             </div>
         </form>
@@ -591,7 +595,25 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Handle form submission: validate then let it submit to backend
     if (form) {
+        let clickedAction = 'publish';
+        form.querySelectorAll('button[type="submit"]').forEach(btn => {
+            btn.addEventListener('click', function () {
+                clickedAction = this.value || 'publish';
+            });
+        });
+
         form.addEventListener('submit', function (e) {
+            if (clickedAction === 'draft') {
+                const titleVal = document.getElementById('select-training-title')?.value;
+                if (!titleVal || !titleVal.trim()) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    alert('Please select or enter a Training Title before saving as draft.');
+                    return;
+                }
+                return; // Allow draft submission
+            }
+
             if (!form.checkValidity()) {
                 e.preventDefault();
                 e.stopPropagation();

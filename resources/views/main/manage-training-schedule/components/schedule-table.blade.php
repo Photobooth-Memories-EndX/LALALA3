@@ -131,6 +131,11 @@
                                         data-category="{{ $item->category }}"
                                         data-instructor="{{ $item->instructor }}"
                                         data-duration="{{ $startTime }} - {{ $endTime }} WIB"
+                                        data-start-time="{{ $startTime }}"
+                                        data-end-time="{{ $endTime }}"
+                                        data-duration-hours="{{ \Carbon\Carbon::parse($item->start_time)->diffInHours(\Carbon\Carbon::parse($item->end_time)) . ' Hours' }}"
+                                        data-requirements="{{ $item->requirements ?? ($item->prerequisites ?? '') }}"
+                                        data-target="{{ $item->target_employee ?? '' }}"
                                         data-description="{{ $item->description ?? '' }}"
                                         data-objectives="{{ $item->learning_objectives ?? '' }}"
                                         data-syllabus="{{ json_encode($item->syllabus ?? []) }}">

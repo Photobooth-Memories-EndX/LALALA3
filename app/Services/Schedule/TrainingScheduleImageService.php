@@ -47,7 +47,7 @@ class TrainingScheduleImageService
         $headerHeight = 220;
         $footerHeight = 70;
         $cardWidth = 530;
-        $cardHeight = 310;
+        $cardHeight = 330;
         $cardGapX = 35;
         $cardGapY = 30;
         $startX = 55;
@@ -168,17 +168,17 @@ class TrainingScheduleImageService
                 // Top Accent Bar (PTKP Blue)
                 imagefilledrectangle($img, $cardX, $cardY, $cardX + $cardWidth, $cardY + 5, $ptkpBlue);
 
-                // 1. Top Badges: Category & Status
+                // 1. Top Badges: Category & Status (with Close Reg date beneath badge)
                 $cat = $item->category ?? 'General';
                 $status = $item->status ?? 'Open Registration';
 
                 // Category pill
-                imagefilledrectangle($img, $cardX + 18, $cardY + 18, $cardX + 18 + 150, $cardY + 44, $blueBg);
-                imagerectangle($img, $cardX + 18, $cardY + 18, $cardX + 18 + 150, $cardY + 44, $cardBorder);
+                imagefilledrectangle($img, $cardX + 18, $cardY + 16, $cardX + 18 + 150, $cardY + 40, $blueBg);
+                imagerectangle($img, $cardX + 18, $cardY + 16, $cardX + 18 + 150, $cardY + 40, $cardBorder);
                 if ($fontBold) {
-                    imagettftext($img, 9, 0, $cardX + 26, $cardY + 36, $ptkpBlue, $fontBold, mb_strimwidth($cat, 0, 18, '...'));
+                    imagettftext($img, 9, 0, $cardX + 26, $cardY + 33, $ptkpBlue, $fontBold, mb_strimwidth($cat, 0, 18, '...'));
                 } else {
-                    imagestring($img, 2, $cardX + 24, $cardY + 24, mb_strimwidth($cat, 0, 16, '...'), $ptkpBlue);
+                    imagestring($img, 2, $cardX + 24, $cardY + 22, mb_strimwidth($cat, 0, 16, '...'), $ptkpBlue);
                 }
 
                 // Status pill
@@ -187,12 +187,24 @@ class TrainingScheduleImageService
                 $statusColor = $isClosed ? $textMuted : $greenText;
                 $statPillW = 145;
                 $statX = $cardX + $cardWidth - $statPillW - 18;
-                imagefilledrectangle($img, $statX, $cardY + 18, $statX + $statPillW, $cardY + 44, $statusBg);
-                imagerectangle($img, $statX, $cardY + 18, $statX + $statPillW, $cardY + 44, $cardBorder);
+                imagefilledrectangle($img, $statX, $cardY + 16, $statX + $statPillW, $cardY + 40, $statusBg);
+                imagerectangle($img, $statX, $cardY + 16, $statX + $statPillW, $cardY + 40, $cardBorder);
                 if ($fontBold) {
-                    imagettftext($img, 9, 0, $statX + 12, $cardY + 36, $statusColor, $fontBold, $status);
+                    imagettftext($img, 9, 0, $statX + 12, $cardY + 33, $statusColor, $fontBold, $status);
                 } else {
-                    imagestring($img, 2, $statX + 10, $cardY + 24, $status, $statusColor);
+                    imagestring($img, 2, $statX + 10, $cardY + 22, $status, $statusColor);
+                }
+
+                // Close reg date beneath badge
+                $regCloses = $item->registration_close_date ? Carbon::parse($item->registration_close_date)->format('d M Y') : 'Until Started';
+                if ($item->registration_close_time) {
+                    $regCloses .= ' ' . substr($item->registration_close_time, 0, 5);
+                }
+                $closeBadgeText = "Close: {$regCloses}";
+                if ($fontRegular) {
+                    imagettftext($img, 8, 0, $statX + 8, $cardY + 54, $redAccent, $fontRegular, $closeBadgeText);
+                } else {
+                    imagestring($img, 1, $statX + 8, $cardY + 44, $closeBadgeText, $redAccent);
                 }
 
                 // 2. Training Title (Bold, PTKP Navy)
@@ -201,69 +213,62 @@ class TrainingScheduleImageService
                 $titleY = $cardY + 76;
                 foreach ($lines as $lIndex => $line) {
                     if ($fontBold) {
-                        imagettftext($img, 13, 0, $cardX + 18, $titleY + ($lIndex * 22), $deepNavy, $fontBold, $line);
+                        imagettftext($img, 13, 0, $cardX + 18, $titleY + ($lIndex * 20), $deepNavy, $fontBold, $line);
                     } else {
                         imagestring($img, 4, $cardX + 18, $titleY - 8 + ($lIndex * 18), $line, $deepNavy);
                     }
                 }
 
-                // 3. Batch Only
-                $batchText = $item->batch ? ("Batch: " . $item->batch) : null;
-                $batchY = $cardY + 130;
-                if ($batchText) {
-                    if ($fontRegular) {
-                        imagettftext($img, 10, 0, $cardX + 18, $batchY, $textMuted, $fontRegular, $batchText);
-                    } else {
-                        imagestring($img, 2, $cardX + 18, $batchY - 10, $batchText, $textMuted);
-                    }
-                }
-
                 // Divider Line
-                imageline($img, $cardX + 18, $cardY + 144, $cardX + $cardWidth - 18, $cardY + 144, $cardBorder);
+                imageline($img, $cardX + 18, $cardY + 124, $cardX + $cardWidth - 18, $cardY + 124, $cardBorder);
 
-                // 4. Schedule Period
+                // 3. Date - Venue
                 $startDate = $item->start_date ? Carbon::parse($item->start_date)->format('d M Y') : '-';
                 $endDate = $item->end_date ? Carbon::parse($item->end_date)->format('d M Y') : $startDate;
                 $schedulePeriod = ($startDate === $endDate) ? $startDate : "{$startDate} - {$endDate}";
-                $startTime = $item->start_time ? substr($item->start_time, 0, 5) : '08:00';
-                $endTime = $item->end_time ? substr($item->end_time, 0, 5) : '17:00';
-                $scheduleLine = "Schedule: {$schedulePeriod} ({$startTime} - {$endTime} WIB)";
-
-                // 5. Registration Period
-                $regCloses = $item->registration_close_date ? Carbon::parse($item->registration_close_date)->format('d M Y') : 'Until Started';
-                if ($item->registration_close_time) {
-                    $regCloses .= ' ' . substr($item->registration_close_time, 0, 5);
-                }
-                $regLine = "Reg Closes: {$regCloses}";
-
-                // 6. Location / Venue
                 $venue = $item->location ?? ($item->venue ?? 'PTKP Training Room');
-                $venueLine = "Venue: " . mb_strimwidth($venue, 0, 48, '...');
+                $dateVenueLine = "Date - Venue: {$schedulePeriod} • " . mb_strimwidth($venue, 0, 24, '...');
 
-                // 7. Target Employee
+                // 4. Target
                 $target = $item->target_employee ?? 'All Employees';
-                $targetLine = "Target: " . mb_strimwidth($target, 0, 48, '...');
+                $targetLine = "Target: " . mb_strimwidth($target, 0, 44, '...');
 
-                // 8. Quota & Instructor
+                // 5. Batch
+                $batchLine = "Batch: " . ($item->batch ?? '-');
+
+                // 6. Instructor & Quota
                 $instructor = $item->instructor ?? '-';
                 $quota = $item->quota ?? 0;
-                $quotaLine = "Instructor: " . mb_strimwidth($instructor, 0, 24, '...') . "  |  Quota: {$quota} Seats";
+                $quotaLine = "Instructor: " . mb_strimwidth($instructor, 0, 20, '...') . "  |  Quota: {$quota} Seats";
+
+                // 7. Syllabus Summary
+                $syllabusTopics = [];
+                if (!empty($item->syllabus) && is_array($item->syllabus)) {
+                    foreach ($item->syllabus as $s) {
+                        $t = is_array($s) ? ($s['topic'] ?? $s['title'] ?? '') : (string) $s;
+                        if (trim($t) !== '') {
+                            $syllabusTopics[] = trim($t);
+                        }
+                    }
+                }
+                $syllabusSummary = !empty($syllabusTopics) ? implode(', ', array_slice($syllabusTopics, 0, 3)) : ($item->learning_objectives ?? '-');
+                $syllabusLine = "Syllabus: " . mb_strimwidth($syllabusSummary, 0, 44, '...');
 
                 $details = [
-                    ['label' => '[PERIOD] ', 'text' => $scheduleLine],
-                    ['label' => '[REG]    ', 'text' => $regLine],
-                    ['label' => '[VENUE]  ', 'text' => $venueLine],
-                    ['label' => '[TARGET] ', 'text' => $targetLine],
-                    ['label' => '[QUOTA]  ', 'text' => $quotaLine],
+                    $dateVenueLine,
+                    $targetLine,
+                    $batchLine,
+                    $quotaLine,
+                    $syllabusLine,
                 ];
 
-                $detY = $cardY + 172;
-                foreach ($details as $dIdx => $det) {
-                    $yPos = $detY + ($dIdx * 25);
+                $detY = $cardY + 148;
+                foreach ($details as $dIdx => $textLine) {
+                    $yPos = $detY + ($dIdx * 28);
                     if ($fontRegular) {
-                        imagettftext($img, 10, 0, $cardX + 18, $yPos, $textDark, $fontRegular, $det['text']);
+                        imagettftext($img, 10, 0, $cardX + 18, $yPos, $textDark, $fontRegular, $textLine);
                     } else {
-                        imagestring($img, 3, $cardX + 18, $yPos - 12, $det['text'], $textDark);
+                        imagestring($img, 3, $cardX + 18, $yPos - 12, $textLine, $textDark);
                     }
                 }
             }

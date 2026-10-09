@@ -187,39 +187,39 @@
 
         /* Card Title & Batch */
         .card-title {
-            font-size: 11px;
+            font-size: 10.5px;
             font-weight: bold;
             color: #002B49;
-            line-height: 1.3;
-            margin-top: 4px;
-            margin-bottom: 3px;
-            min-height: 28px;
+            line-height: 1.25;
+            margin-top: 3px;
+            margin-bottom: 2px;
+            min-height: 22px;
         }
         .card-code-batch,
         .card-batch {
             font-size: 7.5px;
             color: #64748b;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
         }
         .text-xs { font-size: 7.5px !important; }
         .text-gray-500 { color: #64748b !important; }
         .mt-1 { margin-top: 4px !important; }
         .card-divider {
             border-top: 1px dashed #e2e8f0;
-            margin: 6px 0 7px 0;
+            margin: 4px 0 5px 0;
         }
 
         /* Card Information List */
         .info-row {
-            margin-bottom: 4px;
+            margin-bottom: 3.5px;
             font-size: 7.5px;
-            line-height: 1.3;
+            line-height: 1.25;
         }
         .info-label {
             font-weight: bold;
             color: #475569;
             display: inline-block;
-            width: 72px;
+            width: 76px;
         }
         .info-val {
             color: #0f172a;
@@ -333,59 +333,67 @@
                         @endphp
                         <td class="card-cell">
                             <div class="schedule-card">
-                                <!-- Top Pill Badges -->
+                                <!-- 1. Category & Status with Close Reg date beneath badge -->
                                 <table class="card-header-table">
                                     <tr>
-                                        <td style="text-align: left;">
+                                        <td style="text-align: left; vertical-align: top;">
                                             <span class="category-badge">{{ $item->category ?? 'General' }}</span>
                                         </td>
-                                        <td style="text-align: right;">
+                                        <td style="text-align: right; vertical-align: top;">
                                             <span class="status-badge {{ $statusClass }}">{{ $status }}</span>
+                                            <div style="font-size: 6.5px; color: #dc2626; margin-top: 2px; font-weight: 600;">Close: {{ $regDeadline }}</div>
                                         </td>
                                     </tr>
                                 </table>
 
-                                <!-- Training Title (Bold, PTKP Navy) -->
+                                <!-- 2. Training Title (and optional sub course name) -->
                                 <div class="card-title">{{ $item->title ?? ($item->course_name ?? 'Training Schedule') }}</div>
                                 @if(!empty($item->sub_course_name))
                                     <div style="font-size: 7.5px; color: #64748b; margin-top: -2px; margin-bottom: 2px;">{{ $item->sub_course_name }}</div>
                                 @endif
 
-                                <!-- Batch Only -->
-                                @if($training->batch)
-                                    <div class="card-code-batch text-xs text-gray-500 mt-1">Batch: {{ $training->batch }}</div>
-                                @endif
-
                                 <div class="card-divider"></div>
 
-                                <!-- Schedule Period (Start Date - End Date & Time) -->
+                                <!-- 3. Date - Venue -->
                                 <div class="info-row">
-                                    <span class="info-label">Schedule:</span>
-                                    <span class="info-val highlight-date">{{ $schedulePeriod }} ({{ $startTime }} - {{ $endTime }} WIB)</span>
+                                    <span class="info-label">Date - Venue:</span>
+                                    <span class="info-val highlight-date">{{ $schedulePeriod }} ({{ $startTime }} - {{ $endTime }} WIB) &bull; {{ $item->location ?? ($item->venue ?? 'PTKP Training Room') }}</span>
                                 </div>
 
-                                <!-- Registration Period (Reg Closes Date & Time) -->
-                                <div class="info-row">
-                                    <span class="info-label">Reg Closes:</span>
-                                    <span class="info-val highlight-deadline">{{ $regDeadline }}</span>
-                                </div>
-
-                                <!-- Location / Venue -->
-                                <div class="info-row">
-                                    <span class="info-label">Venue:</span>
-                                    <span class="info-val">{{ $item->location ?? ($item->venue ?? 'PTKP Training Room') }}</span>
-                                </div>
-
-                                <!-- Target Employee -->
+                                <!-- 4. Target -->
                                 <div class="info-row">
                                     <span class="info-label">Target:</span>
                                     <span class="info-val">{{ $item->target_employee ?? 'All Employees' }}</span>
                                 </div>
 
-                                <!-- Instructor & Quota -->
-                                <div class="info-row" style="margin-top: 6px; padding-top: 4px; border-top: 1px dotted #e2e8f0;">
-                                    <span class="info-label">Instructor:</span>
+                                <!-- 5. Batch -->
+                                <div class="info-row">
+                                    <span class="info-label">Batch:</span>
+                                    <span class="info-val">{{ $item->batch ?? '-' }}</span>
+                                </div>
+
+                                <!-- 6. Instructor & Quota -->
+                                <div class="info-row">
+                                    <span class="info-label">Instructor &amp; Quota:</span>
                                     <span class="info-val">{{ $item->instructor ?? '-' }} &bull; Quota: {{ $item->quota ?? 0 }} Seats</span>
+                                </div>
+
+                                <!-- 7. Syllabus Summary -->
+                                @php
+                                    $syllabusTopics = [];
+                                    if (!empty($item->syllabus) && is_array($item->syllabus)) {
+                                        foreach ($item->syllabus as $s) {
+                                            $t = is_array($s) ? ($s['topic'] ?? $s['title'] ?? '') : (string) $s;
+                                            if (trim($t) !== '') {
+                                                $syllabusTopics[] = trim($t);
+                                            }
+                                        }
+                                    }
+                                    $syllabusSummary = !empty($syllabusTopics) ? implode(', ', array_slice($syllabusTopics, 0, 3)) : ($item->learning_objectives ?? '-');
+                                @endphp
+                                <div class="info-row" style="margin-top: 4px; padding-top: 4px; border-top: 1px dotted #e2e8f0;">
+                                    <span class="info-label">Syllabus:</span>
+                                    <span class="info-val" style="color: #475569;">{{ \Illuminate\Support\Str::limit($syllabusSummary, 65) }}</span>
                                 </div>
                             </div>
                         </td>

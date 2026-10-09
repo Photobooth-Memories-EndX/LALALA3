@@ -94,6 +94,7 @@
                                             'open'    => 'Open Registration',
                                             'running' => 'Running',
                                             'closed'  => 'Closed Registration',
+                                            'draft'   => 'Draft',
                                         ];
                                     @endphp
                                     <select id="scheduleStatusSelect" name="status" class="form-select rounded-3" onchange="this.form.submit()">
@@ -116,8 +117,9 @@
                                     @endphp
                                     <select id="scheduleMonthSelect" name="month" class="form-select rounded-3" onchange="this.form.submit()">
                                         <option value="" {{ request('month') == '' ? 'selected' : '' }}>All Month</option>
+                                        <option value="this_week" {{ request('month') == 'this_week' || request('month') == 'weekly' ? 'selected' : '' }}>This Week</option>
                                         @foreach ($monthsList as $m => $monthName)
-                                            <option value="{{ $m }}" {{ ((int) request('month') == (int) $m && request('month') != '') || request('month') == $m ? 'selected' : '' }}>{{ $monthName }}</option>
+                                            <option value="{{ $m }}" {{ (is_numeric(request('month')) && (int) request('month') == (int) $m) || request('month') == $m ? 'selected' : '' }}>{{ $monthName }}</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -346,6 +348,11 @@
                                                         data-category="{{ $item->category }}"
                                                         data-instructor="{{ $item->instructor }}"
                                                         data-duration="{{ $startTime }} - {{ $endTime }} WIB"
+                                                        data-start-time="{{ $startTime }}"
+                                                        data-end-time="{{ $endTime }}"
+                                                        data-duration-hours="{{ \Carbon\Carbon::parse($item->start_time)->diffInHours(\Carbon\Carbon::parse($item->end_time)) . ' Hours' }}"
+                                                        data-requirements="{{ $item->requirements ?? ($item->prerequisites ?? '') }}"
+                                                        data-target="{{ $item->target_employee ?? '' }}"
                                                         data-description="{{ $item->description ?? '' }}"
                                                         data-objectives="{{ $item->learning_objectives ?? '' }}"
                                                         data-syllabus="{{ json_encode($item->syllabus ?? []) }}">
