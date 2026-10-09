@@ -22,7 +22,7 @@
         function recordModeFromUrl() {
             var params = new URLSearchParams(window.location.search);
             var mode = String(params.get('record_mode') || 'online').toLowerCase();
-            return ['online', 'offline', 'all', 'export'].indexOf(mode) !== -1 ? mode : 'online';
+            return ['online', 'offline', 'all'].indexOf(mode) !== -1 ? mode : 'online';
         }
 
         function skeletonHtml() {
@@ -42,9 +42,8 @@
 
         function recordSkeletonHtml(mode) {
             mode = mode || 'online';
-            var isExport = (mode === 'export');
 
-            var switchInsideHeaderHtml = '<div class="learning-filter-heading fast-filter-header' + (isExport ? ' mb-0' : '') + '">' +
+            var switchInsideHeaderHtml = '<div class="learning-filter-heading fast-filter-header">' +
                 '<div class="fast-filter-header-copy">' +
                     '<h3 class="card-title fast-filter-title">Quick Filter</h3>' +
                 '</div>' +
@@ -52,33 +51,8 @@
                     '<button type="button" class="btn learning-mode-btn record-mode-btn ' + (mode === 'online' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="online"><i class="ti ti-device-laptop"></i><span>Online</span></button>' +
                     '<button type="button" class="btn learning-mode-btn record-mode-btn ' + (mode === 'offline' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="offline"><i class="ti ti-certificate"></i><span>Offline</span></button>' +
                     '<button type="button" class="btn learning-mode-btn record-mode-btn ' + (mode === 'all' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="all"><i class="ti ti-stack-2"></i><span>All</span></button>' +
-                    '<button type="button" class="btn learning-mode-btn record-mode-btn ' + (mode === 'export' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="export"><i class="ti ti-download"></i><span>Export</span></button>' +
                 '</div>' +
             '</div>';
-
-            if (isExport) {
-                return '<div class="learning-record-shell">' +
-                    '<div class="card border-0 shadow-sm rounded-4 mb-4 learning-record-card">' +
-                        '<div class="card-body p-4">' +
-                            switchInsideHeaderHtml +
-                        '</div>' +
-                    '</div>' +
-                    '<div class="card border-0 shadow-sm rounded-4 p-4 mb-4 placeholder-glow">' +
-                        '<div class="d-flex align-items-center gap-3">' +
-                            '<span class="placeholder rounded-3" style="width:52px;height:52px;"></span>' +
-                            '<div class="flex-grow-1">' +
-                                '<span class="placeholder col-4 mb-2 d-block rounded-2" style="height:20px;"></span>' +
-                                '<span class="placeholder col-8 d-block rounded-2" style="height:14px;"></span>' +
-                            '</div>' +
-                        '</div>' +
-                    '</div>' +
-                    '<div class="row g-3 placeholder-glow">' +
-                        '<div class="col-12 col-md-4"><div class="card border-0 shadow-sm rounded-4 p-4"><span class="placeholder col-3 mb-3 rounded-pill" style="height:20px;"></span><span class="placeholder col-8 mb-2 rounded-2" style="height:20px;"></span><span class="placeholder col-12 mb-4 rounded-2" style="height:36px;"></span><span class="placeholder col-12 rounded-3" style="height:40px;"></span></div></div>' +
-                        '<div class="col-12 col-md-4"><div class="card border-0 shadow-sm rounded-4 p-4"><span class="placeholder col-3 mb-3 rounded-pill" style="height:20px;"></span><span class="placeholder col-8 mb-2 rounded-2" style="height:20px;"></span><span class="placeholder col-12 mb-4 rounded-2" style="height:36px;"></span><span class="placeholder col-12 rounded-3" style="height:40px;"></span></div></div>' +
-                        '<div class="col-12 col-md-4"><div class="card border-0 shadow-sm rounded-4 p-4"><span class="placeholder col-3 mb-3 rounded-pill" style="height:20px;"></span><span class="placeholder col-8 mb-2 rounded-2" style="height:20px;"></span><span class="placeholder col-12 mb-4 rounded-2" style="height:36px;"></span><span class="placeholder col-12 rounded-3" style="height:40px;"></span></div></div>' +
-                    '</div>' +
-                '</div>';
-            }
 
             var tableRows = '';
             for (var i = 0; i < 5; i++) {
@@ -462,11 +436,11 @@
             loadLearningTab('ongoing');
         });
 
-        // ── Mode switch Learning Record: Online | Offline | All | Export ─────────────
+        // ── Mode switch Learning Record: Online | Offline | All ───────────────────────
         $(document).on('click', '.record-mode-btn', function (e) {
             e.preventDefault();
             var mode = String($(this).data('mode') || 'online').toLowerCase();
-            if (['online', 'offline', 'all', 'export'].indexOf(mode) === -1) {
+            if (['online', 'offline', 'all'].indexOf(mode) === -1) {
                 mode = 'online';
             }
 
@@ -940,7 +914,7 @@
             var om = params.get('ongoing_mode');
             _ongoingMode = (om === 'playlist' || om === 'mooc') ? om : null;
             var rm = params.get('record_mode');
-            _recordMode = ['online', 'offline', 'all', 'export'].indexOf(String(rm).toLowerCase()) !== -1
+            _recordMode = ['online', 'offline', 'all'].indexOf(String(rm).toLowerCase()) !== -1
                 ? String(rm).toLowerCase()
                 : (params.get('learning_tab') === 'record' ? 'online' : null);
             _activeTab = null;
@@ -955,7 +929,14 @@
                 _ongoingMode = initialOngoingMode;
             }
             var initialRecordMode = initialParams.get('record_mode');
-            if (initialRecordMode && ['online', 'offline', 'all', 'export'].indexOf(initialRecordMode.toLowerCase()) !== -1) {
+            if (initialRecordMode && initialRecordMode.toLowerCase() === 'export') {
+                initialParams.set('record_mode', 'online');
+                if (!initialParams.get('learning_tab')) {
+                    initialParams.set('learning_tab', 'record');
+                }
+                history.replaceState({}, '', window.location.pathname + '?' + initialParams.toString());
+                _recordMode = 'online';
+            } else if (initialRecordMode && ['online', 'offline', 'all'].indexOf(initialRecordMode.toLowerCase()) !== -1) {
                 _recordMode = initialRecordMode.toLowerCase();
             } else if (initialParams.get('learning_tab') === 'record') {
                 _recordMode = 'online';

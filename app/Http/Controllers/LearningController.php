@@ -31,6 +31,15 @@ class LearningController extends Controller
         CompletedPlaylistService $completedPlaylistService
     )
     {
+        if (strtolower(trim((string) request('record_mode'))) === 'export') {
+            $queryParams = request()->query();
+            $queryParams['record_mode'] = 'online';
+            if (!isset($queryParams['learning_tab'])) {
+                $queryParams['learning_tab'] = 'record';
+            }
+            return redirect()->to(route('user.learning.dashboard', $queryParams));
+        }
+
         if (request()->boolean('certificate_export') && request('learning_tab') === 'certificate') {
             return app(LearningRecordController::class)->certificate();
         }
@@ -58,8 +67,10 @@ class LearningController extends Controller
             ->whereNull('content.deleted_at')
             ->whereIn('content.type', ['Video', 'Document'])
             ->count();
-        $recordMode = request('learning_tab') === 'record' || request()->filled('record_mode')
-            ? request('record_mode')
+        $requestedRecordMode = strtolower(trim((string) request('record_mode', 'online')));
+        $recordMode = (request('learning_tab') === 'record' || request()->filled('record_mode'))
+            && in_array($requestedRecordMode, ['online', 'offline', 'all'], true)
+            ? $requestedRecordMode
             : 'online';
         $learningHours = $recordHourService->getTotalLearningHoursByMode($recordMode, (int) $userId, $user?->id_emp);
 
@@ -106,7 +117,6 @@ class LearningController extends Controller
             'record'      => match (strtolower(trim((string) request('record_mode', 'online')))) {
                 'offline' => app(\App\Http\Controllers\User\Record\LearningRecordOfflineController::class)->partial(),
                 'all'     => app(\App\Http\Controllers\User\Record\LearningRecordAllController::class)->partial($eligibilityService),
-                'export'  => app(\App\Http\Controllers\User\Record\LearningRecordExportHubController::class)->partial(),
                 default   => app(\App\Http\Controllers\User\Record\LearningRecordOnlineController::class)->partial($eligibilityService),
             },
             'assessment'  => app(LearningAssessmentController::class)->partial(request()),

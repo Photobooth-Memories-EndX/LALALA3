@@ -1,10 +1,10 @@
 @props([
-    // Mode aktif Learning Record: 'online' | 'offline' | 'all' | 'export'.
+    // Mode aktif Learning Record: 'online' | 'offline' | 'all'.
     'mode' => 'online',
 ])
 
 @php
-    $validModes = ['online', 'offline', 'all', 'export'];
+    $validModes = ['online', 'offline', 'all'];
     $currentMode = in_array(strtolower((string) $mode), $validModes, true)
         ? strtolower((string) $mode)
         : 'online';
@@ -38,14 +38,5 @@
             aria-pressed="{{ $currentMode === 'all' ? 'true' : 'false' }}">
         <i class="ti ti-stack-2" aria-hidden="true"></i>
         <span>All</span>
-    </button>
-    <button type="button"
-            class="btn learning-mode-btn record-mode-btn {{ $currentMode === 'export' ? 'btn-primary active' : 'btn-outline-primary' }}"
-            data-mode="export"
-            title="Export Learning Record"
-            aria-label="Export Learning Record"
-            aria-pressed="{{ $currentMode === 'export' ? 'true' : 'false' }}">
-        <i class="ti ti-download" aria-hidden="true"></i>
-        <span>Export</span>
     </button>
 </div>
