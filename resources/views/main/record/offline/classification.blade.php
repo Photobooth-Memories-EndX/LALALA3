@@ -109,10 +109,49 @@
                             <i class="ti ti-refresh fs-2"></i>
                         </button>
 
-                        <!-- 4. Button: Download Excel -->
-                        <button type="button" id="btn-download-export" class="btn btn-success rounded-3 px-3 btn-download flex-shrink-0" title="Download Excel">
-                            <i class="ti ti-download me-1"></i> Download
-                        </button>
+                        <!-- 4. Download Dropdown (Excel, CSV, PDF Landscape) -->
+                        <div class="dropdown flex-shrink-0">
+                            <button class="btn btn-success dropdown-toggle rounded-3 px-3 btn-download d-inline-flex align-items-center gap-1"
+                                    type="button" id="btn-download-export" data-bs-toggle="dropdown" aria-expanded="false" title="Export Records">
+                                <i class="ti ti-download me-1"></i>
+                                <span class="btn-download-text">Download</span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3 py-2" aria-labelledby="btn-download-export" style="min-width: 220px; z-index: 1060;">
+                                <li>
+                                    <h6 class="dropdown-header text-uppercase text-muted fw-bold small mb-1" style="font-size: 0.7rem; letter-spacing: 0.5px;">
+                                        Export Options
+                                    </h6>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2 export-format-btn" href="javascript:void(0);" data-format="xlsx" id="btn-export-classification-excel">
+                                        <i class="ti ti-file-spreadsheet text-success fs-2"></i>
+                                        <div>
+                                            <div class="fw-semibold">Excel (.xlsx)</div>
+                                            <div class="small text-muted" style="font-size: 0.72rem;">Full dataset spreadsheet</div>
+                                        </div>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2 export-format-btn" href="javascript:void(0);" data-format="csv" id="btn-export-classification-csv">
+                                        <i class="ti ti-file-text text-primary fs-2"></i>
+                                        <div>
+                                            <div class="fw-semibold">CSV (.csv)</div>
+                                            <div class="small text-muted" style="font-size: 0.72rem;">Standard UTF-8 tabular data</div>
+                                        </div>
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider my-1"></li>
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2 export-format-btn" href="javascript:void(0);" data-format="pdf" id="btn-export-classification-pdf">
+                                        <i class="ti ti-file-type-pdf text-danger fs-2"></i>
+                                        <div>
+                                            <div class="fw-semibold">PDF Landscape (.pdf)</div>
+                                            <div class="small text-muted" style="font-size: 0.72rem;">Printable A3 landscape report</div>
+                                        </div>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -981,10 +1020,13 @@
             offlineTable.ajax.reload(null, true);
         });
 
-        // Export Download Handler
-        $('#btn-download-export').on('click', function (e) {
-            e.preventDefault();
+        // Build URL parameters representing all active filters
+        function buildClassificationExportParams(format) {
             const params = new URLSearchParams();
+
+            if (format) {
+                params.append('format', format);
+            }
 
             const empVal = $('#offline-employee-input').val().trim();
             if (empVal) params.append('employee_id', empVal);
@@ -1028,8 +1070,38 @@
             const hoursMax = $('#filter-hours-max').val();
             if (hoursMax) params.append('hours_max', hoursMax);
 
+            return params;
+        }
+
+        // Export Download Trigger Handler
+        function triggerExportDownload(format) {
+            const $btn = $('#btn-download-export');
+            const $icon = $btn.find('i');
+            const $text = $btn.find('.btn-download-text');
+            const originalText = $text.text() || 'Download';
+            const originalIconClass = $icon.attr('class') || 'ti ti-download me-1';
+
+            // Visual feedback
+            $btn.prop('disabled', true);
+            $icon.attr('class', 'spinner-border spinner-border-sm me-1');
+            $text.text('Exporting...');
+
+            const params = buildClassificationExportParams(format);
             const downloadUrl = downloadBaseUrl + (downloadBaseUrl.indexOf('?') !== -1 ? '&' : '?') + params.toString();
-            window.open(downloadUrl, '_blank');
+            window.location.href = downloadUrl;
+
+            setTimeout(function () {
+                $btn.prop('disabled', false);
+                $icon.attr('class', originalIconClass);
+                $text.text(originalText);
+            }, 2500);
+        }
+
+        // Dropdown Export Format Click Handler
+        $(document).on('click', '.export-format-btn', function (e) {
+            e.preventDefault();
+            const format = $(this).data('format') || 'xlsx';
+            triggerExportDownload(format);
         });
 
         // Detail Modal Logic
