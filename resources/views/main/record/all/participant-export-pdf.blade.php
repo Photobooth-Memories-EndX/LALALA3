@@ -1,13 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8">
-    <title>All KP OWL - Participant Report - {{ $participant['name'] }}</title>
+    <title> - Participant Report - {{ $participant['name'] }}</title>
     <style>
         @page {
             size: a2 landscape;
             margin: 15mm 12mm 15mm 12mm;
         }
+
         body {
             font-family: Helvetica, Arial, sans-serif;
             font-size: 6.5pt;
@@ -16,11 +18,13 @@
             margin: 0;
             padding: 0;
         }
+
         .report-header {
             margin-bottom: 12px;
             border-bottom: 2px solid #003b6d;
             padding-bottom: 8px;
         }
+
         .report-title {
             font-size: 15pt;
             font-weight: bold;
@@ -28,21 +32,25 @@
             margin: 0 0 3px 0;
             text-transform: uppercase;
         }
+
         .report-subtitle {
             font-size: 9.5pt;
             font-weight: 600;
             color: #475569;
             margin: 0 0 5px 0;
         }
+
         .meta-table {
             width: 100%;
             margin-bottom: 6px;
             font-size: 7pt;
         }
+
         .meta-table td {
             padding: 2px 4px;
             vertical-align: top;
         }
+
         .note-box {
             background: #f1f5f9;
             border-left: 3px solid #003b6d;
@@ -51,17 +59,21 @@
             color: #475569;
             margin-top: 4px;
         }
+
         table.data-table {
             width: 100%;
             border-collapse: collapse;
             table-layout: fixed;
         }
+
         table.data-table thead {
             display: table-header-group;
         }
+
         table.data-table tr {
             page-break-inside: avoid;
         }
+
         table.data-table th {
             background-color: #003b6d;
             color: #ffffff;
@@ -73,6 +85,7 @@
             word-wrap: break-word;
             vertical-align: middle;
         }
+
         table.data-table td {
             font-size: 6pt;
             padding: 3.5px 3px;
@@ -80,27 +93,38 @@
             word-wrap: break-word;
             vertical-align: top;
         }
+
         table.data-table tbody tr:nth-child(even) td {
             background-color: #f8fafc;
         }
-        .text-center { text-align: center; }
-        .text-right { text-align: right; }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
         .badge-online {
             color: #0c5b9e;
             font-weight: bold;
         }
+
         .badge-offline {
             color: #2b8a3e;
             font-weight: bold;
         }
     </style>
 </head>
+
 <body>
 
     <div class="report-header">
-        <div class="report-title">All KP OWL — Participant Learning Record</div>
-        <div class="report-subtitle">Employee: {{ $participant['name'] }} {{ !empty($participant['employee_id']) ? '(NIP: ' . $participant['employee_id'] . ')' : '' }}</div>
-        
+        <div class="report-title">All Record — Participant Learning Record</div>
+        <div class="report-subtitle">Employee: {{ $participant['name'] }}
+            {{ !empty($participant['employee_id']) ? '(NIP: ' . $participant['employee_id'] . ')' : '' }}</div>
+
         <table class="meta-table">
             <tr>
                 <td style="width: 25%;"><strong>Position:</strong> {{ $participant['job_position'] ?: '-' }}</td>
@@ -112,11 +136,11 @@
                 <td colspan="4"><strong>Total Records:</strong> {{ number_format($totalRecords) }} rows</td>
             </tr>
         </table>
-        
+
         <div class="note-box">
-            <strong>Source Guide:</strong> 
-            <strong>KP OWL</strong> = Online Learning Record | 
-            <strong>Non KP OWL</strong> = Offline Training Record. 
+            <strong>Source Guide:</strong>
+            <strong>KP OWL</strong> = Online Learning Record |
+            <strong>Non KP OWL</strong> = Offline Training Record.
             Non-applicable fields for a particular source are displayed as &quot;-&quot;.
         </div>
     </div>
@@ -124,9 +148,21 @@
     <table class="data-table">
         <thead>
             <tr>
-                @foreach($headers as $h)
+                @foreach ($headers as $h)
                     @php
-                        $isCenter = in_array($h, ['No', 'Source', 'Status', 'Training Hours', 'Participant Hours', 'Progress', 'Assessment Score', 'Certificate', 'Attendance', 'L2 Numerical', 'L3 Numerical']);
+                        $isCenter = in_array($h, [
+                            'No',
+                            'Source',
+                            'Status',
+                            'Training Hours',
+                            'Participant Hours',
+                            'Progress',
+                            'Assessment Score',
+                            'Certificate',
+                            'Attendance',
+                            'L2 Numerical',
+                            'L3 Numerical',
+                        ]);
                     @endphp
                     <th class="{{ $isCenter ? 'text-center' : '' }}">{{ $h }}</th>
                 @endforeach
@@ -156,7 +192,9 @@
                 @endphp
                 <tr>
                     <td class="text-center">{{ $idx + 1 }}</td>
-                    <td class="text-center"><span class="{{ $r->source === 'offline' ? 'badge-offline' : 'badge-online' }}">{{ $r->source === 'offline' ? 'Non KP OWL' : 'KP OWL' }}</span></td>
+                    <td class="text-center"><span
+                            class="{{ $r->source === 'offline' ? 'badge-offline' : 'badge-online' }}">{{ $r->source === 'offline' ? 'Non KP OWL' : 'KP OWL' }}</span>
+                    </td>
                     <td>{{ $r->employee_id ?: '-' }}</td>
                     <td><strong>{{ $r->employee_name ?: '-' }}</strong></td>
                     <td class="text-center">{{ $r->status ? ucfirst($r->status) : '-' }}</td>
@@ -183,32 +221,43 @@
                     <td>{{ $r->venue ?: '-' }}</td>
                     <td>{{ $r->instructor ?: '-' }}</td>
                     <td class="text-center">{{ $durationFormatted }}</td>
-                    <td class="text-center">{{ $r->training_hours !== null ? number_format((float) $r->training_hours, 2) : '-' }}</td>
+                    <td class="text-center">
+                        {{ $r->training_hours !== null ? number_format((float) $r->training_hours, 2) : '-' }}</td>
                     <td class="text-center">{{ $r->start_date ? date('Y-m-d', strtotime($r->start_date)) : '-' }}</td>
-                    <td class="text-center">{{ $r->finish_date ? date('Y-m-d', strtotime($r->finish_date)) : '-' }}</td>
-                    <td class="text-center">{{ $r->learning_hours !== null ? number_format((float) $r->learning_hours, 2) : '0.00' }}</td>
+                    <td class="text-center">{{ $r->finish_date ? date('Y-m-d', strtotime($r->finish_date)) : '-' }}
+                    </td>
+                    <td class="text-center">
+                        {{ $r->learning_hours !== null ? number_format((float) $r->learning_hours, 2) : '0.00' }}</td>
                     <td class="text-center">{{ $r->progress !== null ? $r->progress . '%' : '-' }}</td>
-                    <td class="text-center">{{ $r->assessment_score !== null ? number_format((float) $r->assessment_score, 2) : '-' }}</td>
+                    <td class="text-center">
+                        {{ $r->assessment_score !== null ? number_format((float) $r->assessment_score, 2) : '-' }}</td>
                     <td class="text-center">{{ $r->certificate ?: '-' }}</td>
                     <td class="text-center">{{ $attendanceStr }}</td>
                     <td>{{ $r->attendance_reason ?: '-' }}</td>
                     <td class="text-center">{{ $r->bond_status ?: '-' }}</td>
-                    <td class="text-center">{{ $r->bond_end_date ? date('Y-m-d', strtotime($r->bond_end_date)) : '-' }}</td>
-                    <td class="text-center">{{ $r->bond_amount !== null ? 'IDR ' . number_format((float) $r->bond_amount, 0, ',', '.') : '-' }}</td>
+                    <td class="text-center">{{ $r->bond_end_date ? date('Y-m-d', strtotime($r->bond_end_date)) : '-' }}
+                    </td>
+                    <td class="text-center">
+                        {{ $r->bond_amount !== null ? 'IDR ' . number_format((float) $r->bond_amount, 0, ',', '.') : '-' }}
+                    </td>
                     <td>{{ $r->l1_program ?: '-' }}</td>
-                    <td class="text-center">{{ $r->l2_numerical !== null ? number_format((float) $r->l2_numerical, 2) : '-' }}</td>
+                    <td class="text-center">
+                        {{ $r->l2_numerical !== null ? number_format((float) $r->l2_numerical, 2) : '-' }}</td>
                     <td>{{ $r->l2_verbal ?: '-' }}</td>
-                    <td class="text-center">{{ $r->l3_numerical !== null ? number_format((float) $r->l3_numerical, 2) : '-' }}</td>
+                    <td class="text-center">
+                        {{ $r->l3_numerical !== null ? number_format((float) $r->l3_numerical, 2) : '-' }}</td>
                     <td>{{ $r->l3_verbal ?: '-' }}</td>
                     <td>{{ $r->pic ?: '-' }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="{{ count($headers) }}" class="text-center" style="padding: 20px;">No records found for this participant.</td>
+                    <td colspan="{{ count($headers) }}" class="text-center" style="padding: 20px;">No records found for
+                        this participant.</td>
                 </tr>
             @endforelse
         </tbody>
     </table>
 
 </body>
+
 </html>

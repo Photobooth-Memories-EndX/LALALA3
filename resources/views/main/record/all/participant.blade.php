@@ -14,7 +14,7 @@
             <div>
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb mb-0 small">
-                        <li class="breadcrumb-item"><a href="{{ route('manage.record.all') }}" class="text-decoration-none text-muted">All KP OWL</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('manage.record.all') }}" class="text-decoration-none text-muted">All Record</a></li>
                         @if (!empty($classificationSlug))
                             <li class="breadcrumb-item"><a href="{{ route('manage.record.all.classification', $classificationSlug) }}" class="text-decoration-none text-muted">{{ $classificationName }}</a></li>
                         @endif
@@ -77,7 +77,7 @@
             <div class="col-sm-6 col-lg-3">
                 <div class="card border-0 shadow-sm p-3 rounded-3 bg-white stat-kpi-card h-100">
                     <div class="d-flex align-items-center">
-                        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
+                        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3"
                              style="width: 44px; height: 44px; background-color: #0f4c81; color: #ffffff;">
                             <i class="ti ti-certificate fs-2"></i>
                         </div>
@@ -93,7 +93,7 @@
             <div class="col-sm-6 col-lg-3">
                 <div class="card border-0 shadow-sm p-3 rounded-3 bg-white stat-kpi-card h-100">
                     <div class="d-flex align-items-center">
-                        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
+                        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3"
                              style="width: 44px; height: 44px; background-color: #16a34a; color: #ffffff;">
                             <i class="ti ti-circle-check fs-2"></i>
                         </div>
@@ -109,7 +109,7 @@
             <div class="col-sm-6 col-lg-3">
                 <div class="card border-0 shadow-sm p-3 rounded-3 bg-white stat-kpi-card h-100">
                     <div class="d-flex align-items-center">
-                        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
+                        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3"
                              style="width: 44px; height: 44px; background-color: #f59e0b; color: #ffffff;">
                             <i class="ti ti-clock-hour-4 fs-2"></i>
                         </div>
@@ -125,7 +125,7 @@
             <div class="col-sm-6 col-lg-3">
                 <div class="card border-0 shadow-sm p-3 rounded-3 bg-white stat-kpi-card h-100">
                     <div class="d-flex align-items-center">
-                        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
+                        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3"
                              style="width: 44px; height: 44px; background-color: #0284c7; color: #ffffff;">
                             <i class="ti ti-hourglass-empty fs-2"></i>
                         </div>

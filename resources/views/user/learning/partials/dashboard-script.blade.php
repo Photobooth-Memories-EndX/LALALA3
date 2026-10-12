@@ -50,7 +50,7 @@
                 '<div class="learning-mode-switch record-mode-switch" role="group" aria-label="Learning Record mode">' +
                     '<button type="button" class="btn learning-mode-btn record-mode-btn ' + (mode === 'online' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="online" title="KP OWL" aria-label="KP OWL"><i class="ti ti-device-laptop"></i><span>KP OWL</span></button>' +
                     '<button type="button" class="btn learning-mode-btn record-mode-btn ' + (mode === 'offline' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="offline" title="Non KP OWL" aria-label="Non KP OWL"><i class="ti ti-certificate"></i><span>Non KP OWL</span></button>' +
-                    '<button type="button" class="btn learning-mode-btn record-mode-btn ' + (mode === 'all' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="all" title="All KP OWL" aria-label="All KP OWL"><i class="ti ti-stack-2"></i><span>All KP OWL</span></button>' +
+                    '<button type="button" class="btn learning-mode-btn record-mode-btn ' + (mode === 'all' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="all" title="All Record" aria-label="All Record"><i class="ti ti-stack-2"></i><span>All Record</span></button>' +
                 '</div>' +
             '</div>';
 

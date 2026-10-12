@@ -33,10 +33,10 @@
     <button type="button"
             class="btn learning-mode-btn record-mode-btn {{ $currentMode === 'all' ? 'btn-primary active' : 'btn-outline-primary' }}"
             data-mode="all"
-            title="All KP OWL"
-            aria-label="All KP OWL"
+            title="All Record"
+            aria-label="All Record"
             aria-pressed="{{ $currentMode === 'all' ? 'true' : 'false' }}">
         <i class="ti ti-stack-2" aria-hidden="true"></i>
-        <span>All KP OWL</span>
+        <span>All Record</span>
     </button>
 </div>

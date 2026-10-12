@@ -92,7 +92,7 @@
                             </div>
                         </div>
 
-                        <!-- Card 3: All KP OWL (Combined) -->
+                        <!-- Card 3: All Record (Combined) -->
                         <div class="col-12 col-md-4">
                             <div class="source-card h-100 position-relative" data-source="all" id="source-card-all" role="button">
                                 <div class="d-flex align-items-center justify-content-between mb-2">
@@ -829,7 +829,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const srcNames = {
             'online': 'KP OWL (Online)',
             'offline': 'Non KP OWL (Offline)',
-            'all': 'All KP OWL (Combined)'
+            'all': 'All Record (Combined)'
         };
         const fmtNames = {
             'xlsx': 'Excel (.xlsx)',

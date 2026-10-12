@@ -43,7 +43,7 @@
                     $headerBackText = 'Back to ' . ucwords(str_replace('-', ' ', request('classification')));
                 } else {
                     $headerBackUrl = route('manage.record.all');
-                    $headerBackText = 'Back to All KP OWL';
+                    $headerBackText = 'Back to All Record';
                 }
             }
         @endphp
