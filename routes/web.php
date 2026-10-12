@@ -506,6 +506,8 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
             Route::get('online/export/pdf', [RecordOnlineController::class, 'exportPdf'])->name('online.export.pdf');
             Route::get('online/export/csv', [RecordOnlineController::class, 'exportCsv'])->name('online.export.csv');
             Route::get('online/download', [RecordOnlineController::class, 'download'])->name('online.download');
+            Route::get('online/{type}/{id}/detail', [RecordOnlineController::class, 'detail'])->name('online.detail');
+            Route::delete('online/{type}/{id}', [RecordOnlineController::class, 'destroy'])->name('online.destroy');
 
             Route::get('offline', [RecordOfflineController::class, 'index'])->name('offline');
             Route::get('offline/ajax/summary', [RecordOfflineController::class, 'ajaxSummary'])->name('offline.ajax.summary');
@@ -552,6 +554,13 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
             Route::get('all/classification/{classification}/datatable', [RecordAllController::class, 'classificationDatatable'])->name('all.classification.datatable');
             Route::get('all/classification/{classification}/download/{format?}', [RecordAllController::class, 'classificationDownload'])->name('all.classification.download');
             Route::get('all/datatable', [RecordAllController::class, 'datatable'])->name('all.datatable');
+            Route::get('all/participant/{identifier}', [RecordAllController::class, 'participantDetail'])->name('all.participant');
+            Route::get('all/participant/{identifier}/datatable', [RecordAllController::class, 'participantDatatable'])->name('all.participant.datatable');
+            Route::get('all/participant/{identifier}/summary', [RecordAllController::class, 'participantAjaxSummary'])->name('all.participant.summary');
+            Route::get('all/participant/{identifier}/export/excel', [RecordAllController::class, 'participantExportExcel'])->name('all.participant.export.excel');
+            Route::get('all/participant/{identifier}/export/csv', [RecordAllController::class, 'participantExportCsv'])->name('all.participant.export.csv');
+            Route::get('all/participant/{identifier}/export/pdf', [RecordAllController::class, 'participantExportPdf'])->name('all.participant.export.pdf');
+            Route::get('all/course/{type}/{id}', [RecordAllController::class, 'courseRedirect'])->name('all.course');
             Route::get('export-all', [RecordExportController::class, 'index'])->name('export-all');
             Route::match(['get', 'post'], 'export-all/preview', [RecordExportController::class, 'preview'])->name('export-all.preview');
             Route::get('export-all/download', [RecordExportController::class, 'download'])->name('export-all.download');

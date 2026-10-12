@@ -48,9 +48,9 @@
                     '<h3 class="card-title fast-filter-title">Quick Filter</h3>' +
                 '</div>' +
                 '<div class="learning-mode-switch record-mode-switch" role="group" aria-label="Learning Record mode">' +
-                    '<button type="button" class="btn learning-mode-btn record-mode-btn ' + (mode === 'online' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="online"><i class="ti ti-device-laptop"></i><span>Online</span></button>' +
-                    '<button type="button" class="btn learning-mode-btn record-mode-btn ' + (mode === 'offline' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="offline"><i class="ti ti-certificate"></i><span>Offline</span></button>' +
-                    '<button type="button" class="btn learning-mode-btn record-mode-btn ' + (mode === 'all' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="all"><i class="ti ti-stack-2"></i><span>All</span></button>' +
+                    '<button type="button" class="btn learning-mode-btn record-mode-btn ' + (mode === 'online' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="online" title="KP OWL" aria-label="KP OWL"><i class="ti ti-device-laptop"></i><span>KP OWL</span></button>' +
+                    '<button type="button" class="btn learning-mode-btn record-mode-btn ' + (mode === 'offline' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="offline" title="Non KP OWL" aria-label="Non KP OWL"><i class="ti ti-certificate"></i><span>Non KP OWL</span></button>' +
+                    '<button type="button" class="btn learning-mode-btn record-mode-btn ' + (mode === 'all' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="all" title="All KP OWL" aria-label="All KP OWL"><i class="ti ti-stack-2"></i><span>All KP OWL</span></button>' +
                 '</div>' +
             '</div>';
 
@@ -678,62 +678,6 @@
             $('#dtVenue').text(fallback(d.venue));
             $('#dtInstructor').text(fallback(d.instructor));
 
-            // My Learning Result
-            var progress = parseInt(d.progress, 10) || 0;
-            if (progress >= 100) {
-                $('#dtProgressBadge').html('<span class="badge bg-success-lt text-success fw-bold px-2 py-1">100% Completed</span>');
-            } else if (progress > 0) {
-                $('#dtProgressBadge').html('<span class="badge bg-warning-lt text-warning fw-bold px-2 py-1">' + progress + '% In Progress</span>');
-            } else {
-                $('#dtProgressBadge').html('<span class="badge bg-secondary-lt fw-bold px-2 py-1">0% Not Started</span>');
-            }
-
-            var attStatus = fallback(d.attendance_status);
-            if (attStatus === 'Present') {
-                $('#dtAttendanceBadge').html('<span class="badge bg-success-lt text-success fw-bold px-2 py-1">Present</span>');
-            } else if (attStatus === 'Absent') {
-                $('#dtAttendanceBadge').html('<span class="badge bg-danger-lt text-danger fw-bold px-2 py-1">Absent</span>');
-            } else {
-                $('#dtAttendanceBadge').html('<span class="badge bg-secondary-lt fw-bold px-2 py-1">-</span>');
-            }
-
-            // Attendance Reason: show container if reason exists or status is Absent
-            var reason = fallback(d.attendance_reason, '-');
-            if (reason !== '-' && reason !== '') {
-                $('#dtAttendanceReason').text(reason);
-                $('#dtAttendanceReasonContainer').show();
-            } else if (attStatus === 'Absent') {
-                $('#dtAttendanceReason').text('No reason provided');
-                $('#dtAttendanceReasonContainer').show();
-            } else {
-                $('#dtAttendanceReasonContainer').hide();
-            }
-
-            if (d.score !== null && d.score !== undefined) {
-                var scoreNum = parseFloat(d.score);
-                var scoreClass = scoreNum >= 70 ? 'bg-success-lt text-success' : 'bg-danger-lt text-danger';
-                $('#dtAssessmentScore').html('<span class="badge ' + scoreClass + ' fw-bold px-2 py-1 fs-5">' + scoreNum + '</span>');
-            } else {
-                $('#dtAssessmentScore').html('<span class="text-muted fw-normal">-</span>');
-            }
-
-            var cert = String(d.certificate || '').toLowerCase().trim();
-            var hasCert = d.has_certificate === true || ['yes', '1', 'true'].indexOf(cert) !== -1;
-            if (hasCert) {
-                $('#dtCertificateStatus').html('<span class="badge bg-success-lt text-success fw-bold px-2 py-1"><i class="ti ti-certificate me-1"></i>Yes (Issued)</span>');
-            } else if (['no', '0', 'false'].indexOf(cert) !== -1 || d.has_certificate === false || (d.certificate !== null && d.certificate !== '')) {
-                $('#dtCertificateStatus').html('<span class="badge bg-danger-lt text-danger fw-bold px-2 py-1">No</span>');
-            } else {
-                $('#dtCertificateStatus').html('<span class="text-muted fw-normal">-</span>');
-            }
-
-            // Evaluation (Kirkpatrick)
-            $('#dtL1Program').text(fallback(d.l1_program));
-            $('#dtL2Numerical').text(fallback(d.l2_numerical_display));
-            $('#dtL2Verbal').text(fallback(d.l2_verbal));
-            $('#dtL3Numerical').text(fallback(d.l3_numerical_display));
-            $('#dtL3Verbal').text(fallback(d.l3_verbal));
-            $('#dtPic').text(fallback(d.pic));
 
             // Employee Snapshot
             $('#dtEmployeeId').text(fallback(d.employee_id));
@@ -878,13 +822,159 @@
             loadLearningTab('record');
         });
 
-        $(document).on('click', '#recordAllResetBtn', function () {
+        $(document).on('click', '#recordAllResetBtn, #recordAllEmptyResetBtn', function () {
             var params = new URLSearchParams(window.location.search);
             params.delete('page');
+            params.delete('record_page');
             Array.from(params.keys()).forEach(function (key) {
                 if (key.indexOf('record_') === 0 && key !== 'record_mode') {
                     params.delete(key);
                 }
+            });
+            params.set('learning_tab', 'record');
+            params.set('record_mode', 'all');
+            var qs = params.toString();
+            history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+            _activeTab = null;
+            loadLearningTab('record');
+        });
+
+        // ── More Filter All handlers ──────────────────────────────────────────
+        $(document).on('click', '#btnApplyAllMoreFilterModal', function () {
+            var params = new URLSearchParams(window.location.search);
+            params.delete('page');
+            params.delete('record_page');
+
+            var filterKeys = [
+                'record_filter_category',
+                'record_filter_status',
+                'record_filter_duration_min',
+                'record_filter_duration_max',
+                'record_filter_lh_min',
+                'record_filter_lh_max',
+                'record_filter_certificate',
+                'record_filter_attendance',
+                'record_filter_sub_classification',
+                'record_filter_delivery_method',
+                'record_filter_provider'
+            ];
+
+            filterKeys.forEach(function (k) {
+                var $el = $('#recordAllMoreFilterModal [name="' + k + '"]');
+                var val = $el.val();
+                if (val !== undefined && val !== null && val.toString().trim() !== '' && val.toString().trim() !== 'all') {
+                    params.set(k, val.toString().trim());
+                } else {
+                    params.delete(k);
+                }
+            });
+
+            params.set('learning_tab', 'record');
+            params.set('record_mode', 'all');
+
+            var modalEl = document.getElementById('recordAllMoreFilterModal');
+            if (modalEl) {
+                var modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) {
+                    modal.hide();
+                } else if (typeof bootstrap.Modal.getOrCreateInstance === 'function') {
+                    bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+                } else {
+                    $(modalEl).modal('hide');
+                }
+            }
+
+            var qs = params.toString();
+            history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+            _activeTab = null;
+            loadLearningTab('record');
+        });
+
+        $(document).on('click', '#btnResetAllMoreFilterModal', function () {
+            var params = new URLSearchParams(window.location.search);
+            params.delete('page');
+            params.delete('record_page');
+
+            var filterKeys = [
+                'record_filter_category',
+                'record_filter_status',
+                'record_filter_duration_min',
+                'record_filter_duration_max',
+                'record_filter_lh_min',
+                'record_filter_lh_max',
+                'record_filter_certificate',
+                'record_filter_attendance',
+                'record_filter_sub_classification',
+                'record_filter_delivery_method',
+                'record_filter_provider'
+            ];
+
+            filterKeys.forEach(function (k) {
+                params.delete(k);
+                var $el = $('#recordAllMoreFilterModal [name="' + k + '"]');
+                if ($el.is('select')) {
+                    $el.val('all');
+                } else {
+                    $el.val('');
+                }
+            });
+
+            params.set('learning_tab', 'record');
+            params.set('record_mode', 'all');
+
+            var modalEl = document.getElementById('recordAllMoreFilterModal');
+            if (modalEl) {
+                var modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) {
+                    modal.hide();
+                } else if (typeof bootstrap.Modal.getOrCreateInstance === 'function') {
+                    bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+                } else {
+                    $(modalEl).modal('hide');
+                }
+            }
+
+            var qs = params.toString();
+            history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+            _activeTab = null;
+            loadLearningTab('record');
+        });
+
+        $(document).on('click', '.record-all-clear-single-filter', function (e) {
+            e.preventDefault();
+            var param = $(this).data('param');
+            var params = new URLSearchParams(window.location.search);
+            params.delete('page');
+            params.delete('record_page');
+            params.delete(param);
+            params.set('learning_tab', 'record');
+            params.set('record_mode', 'all');
+            var qs = params.toString();
+            history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+            _activeTab = null;
+            loadLearningTab('record');
+        });
+
+        $(document).on('click', '#recordAllClearAllMoreFilters', function (e) {
+            e.preventDefault();
+            var params = new URLSearchParams(window.location.search);
+            params.delete('page');
+            params.delete('record_page');
+            var filterKeys = [
+                'record_filter_category',
+                'record_filter_status',
+                'record_filter_duration_min',
+                'record_filter_duration_max',
+                'record_filter_lh_min',
+                'record_filter_lh_max',
+                'record_filter_certificate',
+                'record_filter_attendance',
+                'record_filter_sub_classification',
+                'record_filter_delivery_method',
+                'record_filter_provider'
+            ];
+            filterKeys.forEach(function (k) {
+                params.delete(k);
             });
             params.set('learning_tab', 'record');
             params.set('record_mode', 'all');

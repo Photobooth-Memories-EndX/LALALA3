@@ -31,11 +31,22 @@ class LearningRecordAllController extends Controller
 
         // Filter options based on unfiltered combined collection
         $unfilteredRows = $this->allService->getRecords($userId, $userEmpId, $eligibilityService, [
-            'search'         => '',
-            'source'         => 'all',
-            'type'           => 'all',
-            'classification' => 'all',
-            'year'           => 'all',
+            'search'             => '',
+            'source'             => 'all',
+            'type'               => 'all',
+            'category'           => 'all',
+            'classification'     => 'all',
+            'year'               => 'all',
+            'status'             => 'all',
+            'duration_min'       => '',
+            'duration_max'       => '',
+            'lh_min'             => '',
+            'lh_max'             => '',
+            'attendance'         => 'all',
+            'certificate'        => 'all',
+            'sub_classification' => 'all',
+            'delivery_method'    => 'all',
+            'provider'           => 'all',
         ]);
         $filterOptions = $this->allService->getFilterOptions($unfilteredRows);
 
@@ -56,10 +67,13 @@ class LearningRecordAllController extends Controller
             'totalLearningHours' => $learningHours,
         ];
 
+        $hasAnyRecords = $this->allService->hasAnyRecords($userId, $userEmpId, $eligibilityService);
+
         return view('user.learning.record.learning-record-all', [
             'rows'          => $rows,
             'filterOptions' => $filterOptions,
             'recordStats'   => $recordStats,
+            'hasAnyRecords' => $hasAnyRecords,
         ]);
     }
 }

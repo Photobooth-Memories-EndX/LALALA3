@@ -278,9 +278,7 @@
     padding: 0;
 }
 
-.learning-mode-switch .learning-mode-btn,
-.ongoing-mode-switch .ongoing-mode-btn,
-.record-mode-switch .record-mode-btn {
+.ongoing-mode-switch .ongoing-mode-btn {
     width: 104px;
     min-width: 104px;
     flex: 0 1 104px;

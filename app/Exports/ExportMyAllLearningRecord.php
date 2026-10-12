@@ -51,14 +51,15 @@ class ExportMyAllLearningRecord implements FromArray, ShouldAutoSize, WithEvents
                 $row['duration'] ?? '-',
                 round((float) ($row['learning_hour_value'] ?? 0), 2),
                 ($row['progress'] ?? 0) . '%',
-                $row['start_date'] ?: '-',
-                $row['finish_date'] ?: '-',
+                $row['attendance_status'] ?? '—',
+                $row['date_display'] ?: ($row['finish_date'] ?: ($row['start_date'] ?: '-')),
                 $row['score'] !== null ? $row['score'] : '-',
+                ($row['has_certificate'] ?? false) ? 'Yes' : 'No',
             ];
         }
 
         $durationSeconds = (int) $this->rows->sum(fn (array $r) => max(0, (int) ($r['duration_seconds'] ?? 0)));
-        $learningHours = (float) $this->rows->sum(fn (array $r) => (float) ($r['learning_hour_value'] ?? 0));
+        $learningHours = (float) $this->rows->sum(fn (array $r) => (float) ($row_lh = $r['learning_hour_value'] ?? 0));
 
         $output[] = array_fill(0, count($this->headings()), '');
         $output[] = [
@@ -74,6 +75,7 @@ class ExportMyAllLearningRecord implements FromArray, ShouldAutoSize, WithEvents
             '',
             '',
             '',
+            '',
         ];
 
         return $output;
@@ -84,16 +86,17 @@ class ExportMyAllLearningRecord implements FromArray, ShouldAutoSize, WithEvents
         return [
             'No',
             'Source',
-            'Learning / Training Title',
+            'Training Title',
             'Type',
             'Category',
             'Classification',
             'Duration',
             'Learning Hour',
-            'Learning Progress',
-            'Start Date',
-            'Finish Date',
-            'Assessment Score',
+            'Progress',
+            'Attendance',
+            'Date',
+            'Score',
+            'Certificate',
         ];
     }
 
@@ -107,11 +110,11 @@ class ExportMyAllLearningRecord implements FromArray, ShouldAutoSize, WithEvents
         return [AfterSheet::class => function (AfterSheet $event) {
             $sheet = $event->sheet->getDelegate();
             $sheet->freezePane('A2');
-            $sheet->getStyle('A1:L1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('A1:L' . max(1, $sheet->getHighestRow()))->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+            $sheet->getStyle('A1:M1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('A1:M' . max(1, $sheet->getHighestRow()))->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
 
             $summaryRow = $sheet->getHighestRow();
-            $sheet->getStyle('A' . $summaryRow . ':L' . $summaryRow)->applyFromArray([
+            $sheet->getStyle('A' . $summaryRow . ':M' . $summaryRow)->applyFromArray([
                 'font' => ['bold' => true],
                 'fill' => [
                     'fillType' => Fill::FILL_SOLID,

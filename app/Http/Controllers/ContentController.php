@@ -641,6 +641,15 @@ class ContentController extends Controller
     public function destroy(Content $content)
     {
         $content->delete();
+
+        if (request()->ajax() || request()->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'status'  => 200,
+                'message' => 'Content successfully deleted',
+            ]);
+        }
+
         return to_route('content.index')->with('success', 'Content successfully deleted');
     }
     public function edit(Content $content)

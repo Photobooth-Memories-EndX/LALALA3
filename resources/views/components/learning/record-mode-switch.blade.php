@@ -15,28 +15,28 @@
     <button type="button"
             class="btn learning-mode-btn record-mode-btn {{ $currentMode === 'online' ? 'btn-primary active' : 'btn-outline-primary' }}"
             data-mode="online"
-            title="Online Learning Record"
-            aria-label="Online Learning Record"
+            title="KP OWL"
+            aria-label="KP OWL"
             aria-pressed="{{ $currentMode === 'online' ? 'true' : 'false' }}">
         <i class="ti ti-device-laptop" aria-hidden="true"></i>
-        <span>Online</span>
+        <span>KP OWL</span>
     </button>
     <button type="button"
             class="btn learning-mode-btn record-mode-btn {{ $currentMode === 'offline' ? 'btn-primary active' : 'btn-outline-primary' }}"
             data-mode="offline"
-            title="Offline Training Record"
-            aria-label="Offline Training Record"
+            title="Non KP OWL"
+            aria-label="Non KP OWL"
             aria-pressed="{{ $currentMode === 'offline' ? 'true' : 'false' }}">
         <i class="ti ti-certificate" aria-hidden="true"></i>
-        <span>Offline</span>
+        <span>Non KP OWL</span>
     </button>
     <button type="button"
             class="btn learning-mode-btn record-mode-btn {{ $currentMode === 'all' ? 'btn-primary active' : 'btn-outline-primary' }}"
             data-mode="all"
-            title="All Learning Record (Online & Offline)"
-            aria-label="All Learning Record (Online & Offline)"
+            title="All KP OWL"
+            aria-label="All KP OWL"
             aria-pressed="{{ $currentMode === 'all' ? 'true' : 'false' }}">
         <i class="ti ti-stack-2" aria-hidden="true"></i>
-        <span>All</span>
+        <span>All KP OWL</span>
     </button>
 </div>

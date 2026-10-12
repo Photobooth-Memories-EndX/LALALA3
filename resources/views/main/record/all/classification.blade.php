@@ -434,6 +434,21 @@
 <!-- INCLUDE OFFLINE DETAIL MODAL -->
 @include('main.record.components.offline-detail-modal')
 
+<!-- INCLUDE ONLINE DETAIL MODAL -->
+@include('main.record.components.online-detail-modal')
+
+<!-- INCLUDE OFFLINE DELETE MODAL -->
+@include('main.record.components.offline-delete-modal')
+
+<!-- INCLUDE ONLINE RECORD DELETE MODAL -->
+@include('main.record.components.online-delete-modal')
+
+<!-- INCLUDE MASTER ENTITY DELETE MODAL -->
+@include('main.record.components.master-delete-modal')
+
+<!-- INCLUDE LEARNING EDIT & RESET MODALS -->
+@include('main.learning.components.learning-detail-modal')
+
 @endsection
 
 @section('style')
@@ -743,6 +758,39 @@
         color: #f1f5f9 !important;
     }
 
+    .participant-link,
+    .course-link {
+        color: #0c5b9e;
+        text-decoration: none;
+        font-weight: 600;
+        cursor: pointer;
+        transition: color 0.15s ease, text-decoration 0.15s ease;
+    }
+    .participant-link:hover,
+    .course-link:hover,
+    .participant-link:focus,
+    .course-link:focus {
+        color: #003b6d;
+        text-decoration: underline !important;
+    }
+    [data-bs-theme="dark"] .participant-link,
+    [data-bs-theme="dark"] .course-link,
+    body.dark-mode .participant-link,
+    body.dark-mode .course-link,
+    body.theme-dark .participant-link,
+    body.theme-dark .course-link {
+        color: #60a5fa !important;
+    }
+    [data-bs-theme="dark"] .participant-link:hover,
+    [data-bs-theme="dark"] .course-link:hover,
+    body.dark-mode .participant-link:hover,
+    body.dark-mode .course-link:hover,
+    body.theme-dark .participant-link:hover,
+    body.theme-dark .course-link:hover {
+        color: #93c5fd !important;
+        text-decoration: underline !important;
+    }
+
     .extra-small {
         font-size: 0.75rem;
     }
@@ -853,6 +901,317 @@
         background-color: #0f172a !important;
         border-color: rgba(255, 255, 255, 0.1) !important;
     }
+
+    /* Action Dropdown & Trigger Button */
+    .btn-action-trigger {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #64748b;
+        background: transparent;
+        border: 1px solid transparent;
+        transition: all 0.15s ease;
+    }
+    .btn-action-trigger:hover,
+    .btn-action-trigger:focus,
+    .btn-action-trigger[aria-expanded="true"] {
+        color: #003b6d;
+        background-color: #f1f5f9;
+        border-color: #cbd5e1;
+    }
+    [data-bs-theme="dark"] .btn-action-trigger,
+    body.dark-mode .btn-action-trigger,
+    body.theme-dark .btn-action-trigger {
+        color: #94a3b8;
+    }
+    [data-bs-theme="dark"] .btn-action-trigger:hover,
+    [data-bs-theme="dark"] .btn-action-trigger:focus,
+    [data-bs-theme="dark"] .btn-action-trigger[aria-expanded="true"],
+    body.dark-mode .btn-action-trigger:hover,
+    body.theme-dark .btn-action-trigger:hover {
+        color: #f8fafc;
+        background-color: #334155;
+        border-color: #475569;
+    }
+
+    .dropdown-action-menu .dropdown-menu {
+        min-width: 175px;
+        font-size: 0.815rem;
+        z-index: 1060 !important;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    .dropdown-action-menu .dropdown-item {
+        padding: 7px 14px;
+        font-weight: 500;
+        transition: background-color 0.12s ease, color 0.12s ease;
+    }
+    .dropdown-action-menu .dropdown-item:hover {
+        background-color: #f8fafc;
+    }
+    .dropdown-action-menu .dropdown-item.text-danger:hover {
+        background-color: #fef2f2;
+        color: #dc2626 !important;
+    }
+
+    [data-bs-theme="dark"] .dropdown-action-menu .dropdown-menu,
+    body.dark-mode .dropdown-action-menu .dropdown-menu,
+    body.theme-dark .dropdown-action-menu .dropdown-menu {
+        background-color: #1e293b;
+        border-color: #334155;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+    }
+    [data-bs-theme="dark"] .dropdown-action-menu .dropdown-item,
+    body.dark-mode .dropdown-action-menu .dropdown-item,
+    body.theme-dark .dropdown-action-menu .dropdown-item {
+        color: #cbd5e1;
+    }
+    [data-bs-theme="dark"] .dropdown-action-menu .dropdown-item:hover,
+    body.dark-mode .dropdown-action-menu .dropdown-item:hover,
+    body.theme-dark .dropdown-action-menu .dropdown-item:hover {
+        background-color: #334155;
+        color: #f8fafc;
+    }
+    [data-bs-theme="dark"] .dropdown-action-menu .dropdown-item.text-danger:hover,
+    body.dark-mode .dropdown-action-menu .dropdown-item.text-danger:hover,
+    body.theme-dark .dropdown-action-menu .dropdown-item.text-danger:hover {
+        background-color: rgba(239, 68, 68, 0.15);
+        color: #f87171 !important;
+    }
+
+    /* Modal Dark Mode styles for Offline, Online detail, delete & learning edit modals */
+    [data-bs-theme="dark"] #offlineTrainingDetailModal .modal-content,
+    [data-bs-theme="dark"] #onlineTrainingDetailModal .modal-content,
+    [data-bs-theme="dark"] #deleteOfflineRecordModal .modal-content,
+    [data-bs-theme="dark"] #deleteOnlineRecordModal .modal-content,
+    [data-bs-theme="dark"] #deleteMasterModal .modal-content,
+    [data-bs-theme="dark"] #learningEditModal .modal-content,
+    [data-bs-theme="dark"] #learningResetModal .modal-content,
+    body.dark-mode #offlineTrainingDetailModal .modal-content,
+    body.dark-mode #onlineTrainingDetailModal .modal-content,
+    body.dark-mode #deleteOfflineRecordModal .modal-content,
+    body.dark-mode #deleteOnlineRecordModal .modal-content,
+    body.dark-mode #deleteMasterModal .modal-content,
+    body.dark-mode #learningEditModal .modal-content,
+    body.dark-mode #learningResetModal .modal-content,
+    body.theme-dark #offlineTrainingDetailModal .modal-content,
+    body.theme-dark #onlineTrainingDetailModal .modal-content,
+    body.theme-dark #deleteOfflineRecordModal .modal-content,
+    body.theme-dark #deleteOnlineRecordModal .modal-content,
+    body.theme-dark #deleteMasterModal .modal-content,
+    body.theme-dark #learningEditModal .modal-content,
+    body.theme-dark #learningResetModal .modal-content {
+        background-color: #1e293b !important;
+        color: #f8fafc !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    [data-bs-theme="dark"] #offlineTrainingDetailModal .bg-light,
+    [data-bs-theme="dark"] #onlineTrainingDetailModal .bg-light,
+    [data-bs-theme="dark"] #deleteOfflineRecordModal .bg-light,
+    [data-bs-theme="dark"] #deleteOnlineRecordModal .bg-light,
+    [data-bs-theme="dark"] #deleteMasterModal .bg-light,
+    [data-bs-theme="dark"] #learningEditModal .bg-light,
+    [data-bs-theme="dark"] #learningResetModal .bg-light,
+    body.dark-mode #offlineTrainingDetailModal .bg-light,
+    body.dark-mode #onlineTrainingDetailModal .bg-light,
+    body.dark-mode #deleteOfflineRecordModal .bg-light,
+    body.dark-mode #deleteOnlineRecordModal .bg-light,
+    body.dark-mode #deleteMasterModal .bg-light,
+    body.dark-mode #learningEditModal .bg-light,
+    body.dark-mode #learningResetModal .bg-light,
+    body.theme-dark #offlineTrainingDetailModal .bg-light,
+    body.theme-dark #onlineTrainingDetailModal .bg-light,
+    body.theme-dark #deleteOfflineRecordModal .bg-light,
+    body.theme-dark #deleteOnlineRecordModal .bg-light,
+    body.theme-dark #deleteMasterModal .bg-light,
+    body.theme-dark #learningEditModal .bg-light,
+    body.theme-dark #learningResetModal .bg-light {
+        background-color: #0f172a !important;
+        border-color: rgba(255, 255, 255, 0.08) !important;
+    }
+
+    [data-bs-theme="dark"] #offlineTrainingDetailModal .text-dark,
+    [data-bs-theme="dark"] #onlineTrainingDetailModal .text-dark,
+    [data-bs-theme="dark"] #deleteOfflineRecordModal .text-dark,
+    [data-bs-theme="dark"] #deleteOnlineRecordModal .text-dark,
+    [data-bs-theme="dark"] #deleteMasterModal .text-dark,
+    [data-bs-theme="dark"] #learningEditModal .text-dark,
+    [data-bs-theme="dark"] #learningResetModal .text-dark,
+    body.dark-mode #offlineTrainingDetailModal .text-dark,
+    body.dark-mode #onlineTrainingDetailModal .text-dark,
+    body.dark-mode #deleteOfflineRecordModal .text-dark,
+    body.dark-mode #deleteOnlineRecordModal .text-dark,
+    body.dark-mode #deleteMasterModal .text-dark,
+    body.dark-mode #learningEditModal .text-dark,
+    body.dark-mode #learningResetModal .text-dark,
+    body.theme-dark #offlineTrainingDetailModal .text-dark,
+    body.theme-dark #onlineTrainingDetailModal .text-dark,
+    body.theme-dark #deleteOfflineRecordModal .text-dark,
+    body.theme-dark #deleteOnlineRecordModal .text-dark,
+    body.theme-dark #deleteMasterModal .text-dark,
+    body.theme-dark #learningEditModal .text-dark,
+    body.theme-dark #learningResetModal .text-dark {
+        color: #f8fafc !important;
+    }
+
+    /* Quick Filter Custom Button Colors (More Filters & Download) */
+    #all-filter-form #btn-all-more-filters,
+    #btn-all-more-filters {
+        background-color: #045789 !important;
+        border-color: #045789 !important;
+        color: #ffffff !important;
+        transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    #all-filter-form #btn-all-more-filters i,
+    #btn-all-more-filters i {
+        color: #ffffff !important;
+    }
+    #all-filter-form #btn-all-more-filters:hover,
+    #all-filter-form #btn-all-more-filters:focus,
+    #btn-all-more-filters:hover,
+    #btn-all-more-filters:focus {
+        background-color: #03466D !important;
+        border-color: #03466D !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 10px rgba(4, 87, 137, 0.25);
+    }
+    #all-filter-form #btn-all-more-filters:active,
+    #all-filter-form #btn-all-more-filters.active,
+    #btn-all-more-filters:active,
+    #btn-all-more-filters.active {
+        background-color: #023956 !important;
+        border-color: #023956 !important;
+        color: #ffffff !important;
+    }
+    #all-filter-form #btn-all-more-filters:disabled,
+    #btn-all-more-filters:disabled {
+        background-color: #045789 !important;
+        border-color: #045789 !important;
+        color: #ffffff !important;
+        opacity: 0.65;
+    }
+
+    #all-filter-form #btn-all-download,
+    #btn-all-download {
+        background-color: #22C55E !important;
+        border-color: #22C55E !important;
+        color: #ffffff !important;
+        font-weight: 500;
+        transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    #all-filter-form #btn-all-download i,
+    #all-filter-form #btn-all-download .btn-download-text,
+    #btn-all-download i,
+    #btn-all-download .btn-download-text {
+        color: #ffffff !important;
+    }
+    #all-filter-form #btn-all-download:hover,
+    #all-filter-form #btn-all-download:focus,
+    #btn-all-download:hover,
+    #btn-all-download:focus {
+        background-color: #16A34A !important;
+        border-color: #16A34A !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 10px rgba(34, 197, 94, 0.25);
+    }
+    #all-filter-form #btn-all-download:active,
+    #all-filter-form #btn-all-download.active,
+    #all-filter-form #btn-all-download.show,
+    #all-filter-form #btn-all-download[aria-expanded="true"],
+    #btn-all-download:active,
+    #btn-all-download.active,
+    #btn-all-download.show,
+    #btn-all-download[aria-expanded="true"] {
+        background-color: #15803D !important;
+        border-color: #15803D !important;
+        color: #ffffff !important;
+    }
+    #all-filter-form #btn-all-download:disabled,
+    #btn-all-download:disabled {
+        background-color: #22C55E !important;
+        border-color: #22C55E !important;
+        color: #ffffff !important;
+        opacity: 0.65;
+    }
+
+    /* Dark Mode Support for Quick Filter Buttons */
+    [data-bs-theme="dark"] #all-filter-form #btn-all-more-filters,
+    [data-bs-theme="dark"] #btn-all-more-filters,
+    body.dark-mode #btn-all-more-filters,
+    body.theme-dark #btn-all-more-filters {
+        background-color: #045789 !important;
+        border-color: #045789 !important;
+        color: #ffffff !important;
+    }
+    [data-bs-theme="dark"] #all-filter-form #btn-all-more-filters i,
+    [data-bs-theme="dark"] #btn-all-more-filters i,
+    body.dark-mode #btn-all-more-filters i,
+    body.theme-dark #btn-all-more-filters i {
+        color: #ffffff !important;
+    }
+    [data-bs-theme="dark"] #all-filter-form #btn-all-more-filters:hover,
+    [data-bs-theme="dark"] #all-filter-form #btn-all-more-filters:focus,
+    [data-bs-theme="dark"] #btn-all-more-filters:hover,
+    [data-bs-theme="dark"] #btn-all-more-filters:focus,
+    body.dark-mode #btn-all-more-filters:hover,
+    body.theme-dark #btn-all-more-filters:hover {
+        background-color: #03466D !important;
+        border-color: #03466D !important;
+    }
+    [data-bs-theme="dark"] #all-filter-form #btn-all-more-filters:active,
+    [data-bs-theme="dark"] #btn-all-more-filters:active,
+    body.dark-mode #btn-all-more-filters:active,
+    body.theme-dark #btn-all-more-filters:active {
+        background-color: #023956 !important;
+        border-color: #023956 !important;
+    }
+
+    [data-bs-theme="dark"] #all-filter-form #btn-all-download,
+    [data-bs-theme="dark"] #btn-all-download,
+    body.dark-mode #btn-all-download,
+    body.theme-dark #btn-all-download {
+        background-color: #22C55E !important;
+        border-color: #22C55E !important;
+        color: #ffffff !important;
+    }
+    [data-bs-theme="dark"] #all-filter-form #btn-all-download i,
+    [data-bs-theme="dark"] #all-filter-form #btn-all-download .btn-download-text,
+    [data-bs-theme="dark"] #btn-all-download i,
+    [data-bs-theme="dark"] #btn-all-download .btn-download-text,
+    body.dark-mode #btn-all-download i,
+    body.dark-mode #btn-all-download .btn-download-text,
+    body.theme-dark #btn-all-download i,
+    body.theme-dark #btn-all-download .btn-download-text {
+        color: #ffffff !important;
+    }
+    [data-bs-theme="dark"] #all-filter-form #btn-all-download:hover,
+    [data-bs-theme="dark"] #all-filter-form #btn-all-download:focus,
+    [data-bs-theme="dark"] #btn-all-download:hover,
+    [data-bs-theme="dark"] #btn-all-download:focus,
+    body.dark-mode #btn-all-download:hover,
+    body.theme-dark #btn-all-download:hover {
+        background-color: #16A34A !important;
+        border-color: #16A34A !important;
+    }
+    [data-bs-theme="dark"] #all-filter-form #btn-all-download:active,
+    [data-bs-theme="dark"] #all-filter-form #btn-all-download.show,
+    [data-bs-theme="dark"] #all-filter-form #btn-all-download[aria-expanded="true"],
+    [data-bs-theme="dark"] #btn-all-download:active,
+    [data-bs-theme="dark"] #btn-all-download.show,
+    [data-bs-theme="dark"] #btn-all-download[aria-expanded="true"],
+    body.dark-mode #btn-all-download:active,
+    body.dark-mode #btn-all-download.show,
+    body.dark-mode #btn-all-download[aria-expanded="true"],
+    body.theme-dark #btn-all-download:active,
+    body.theme-dark #btn-all-download.show,
+    body.theme-dark #btn-all-download[aria-expanded="true"] {
+        background-color: #15803D !important;
+        border-color: #15803D !important;
+    }
 </style>
 @endsection
 
@@ -920,9 +1279,7 @@ $(function () {
                 render: function (data, type) {
                     if (type !== 'display') return data;
                     if (!data || data === '-') return '<span class="text-muted">-</span>';
-                    const rawText = String(data).trim();
-                    const escaped = $('<div>').text(rawText).html();
-                    return '<div class="fw-semibold text-dark employee-name-cell" title="' + escaped + '">' + escaped + '</div>';
+                    return data;
                 }
             },
             { data: 'status_badge', name: 'status', orderable: true },
@@ -971,8 +1328,8 @@ $(function () {
                 defaultContent: '-',
                 render: function (data, type) {
                     if (type !== 'display') return data;
-                    const text = data ? $('<div>').text(data).html() : '<span class="text-muted">-</span>';
-                    return '<div class="fw-semibold text-dark text-truncate" style="max-width: 250px;" title="' + (data ? $('<div>').text(data).html() : '') + '">' + text + '</div>';
+                    if (!data || data === '-') return '<span class="text-muted">-</span>';
+                    return data;
                 }
             },
             {
@@ -1391,7 +1748,7 @@ $(function () {
         const modalEl = document.getElementById('offlineTrainingDetailModal');
         if (!modalEl) return;
 
-        const modal = new bootstrap.Modal(modalEl);
+        const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
         modal.show();
 
         $('#offline-detail-loading').show();
@@ -1503,6 +1860,558 @@ $(function () {
                 $('#offline-detail-error').text('An error occurred while loading record details.').show();
             }
         });
+    });
+
+    // 3. Detail Modal for Online records
+    $(document).on('click', '.btn-view-online-detail', function () {
+        const id = $(this).data('id');
+        const type = $(this).data('type') || 'content';
+        if (!id) return;
+
+        const modalEl = document.getElementById('onlineTrainingDetailModal');
+        if (!modalEl) return;
+
+        const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+        modal.show();
+
+        $('#online-detail-loading').show();
+        $('#online-detail-content').hide();
+        $('#online-detail-error').hide();
+
+        $.ajax({
+            url: `/manage/record/online/${encodeURIComponent(type)}/${encodeURIComponent(id)}/detail`,
+            type: 'GET',
+            dataType: 'json',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            success: function (res) {
+                $('#online-detail-loading').hide();
+                if (res && res.success && res.data) {
+                    const d = res.data;
+                    const emp = d.employee || {};
+                    const lr = d.learning || {};
+                    const pr = d.progress || {};
+                    const ts = d.timestamps || {};
+
+                    // Header
+                    $('#online-modal-title').text(lr.title || '-');
+                    if (lr.playlist && lr.playlist.title && lr.playlist.title !== '-') {
+                        $('#online-modal-playlist-sub').text('Playlist: ' + lr.playlist.title).show();
+                    } else {
+                        $('#online-modal-playlist-sub').hide();
+                    }
+
+                    $('#online-modal-type-badge').text(lr.type || 'Document');
+                    const progressVal = parseFloat(pr.progress) || 0;
+                    const statusBadge = $('#online-modal-status-badge');
+                    if (pr.is_finished || progressVal >= 100) {
+                        statusBadge.removeClass('bg-warning-lt bg-secondary-lt').addClass('bg-success-lt').text('FINISHED');
+                    } else if (progressVal > 0) {
+                        statusBadge.removeClass('bg-success-lt bg-secondary-lt').addClass('bg-warning-lt').text(`ONGOING (${Math.round(progressVal)}%)`);
+                    } else {
+                        statusBadge.removeClass('bg-success-lt bg-warning-lt').addClass('bg-secondary-lt').text('NOT STARTED');
+                    }
+
+                    // Section 1: Employee
+                    $('#online-modal-employee-id').text(emp.id_emp || '-');
+                    $('#online-modal-employee-name').text(emp.name || '-');
+                    $('#online-modal-employee-email').text(emp.email || '-');
+                    $('#online-modal-employee-department').text(emp.department || '-');
+                    $('#online-modal-employee-division').text(emp.division || '-');
+                    $('#online-modal-employee-team').text(emp.team || '-');
+                    $('#online-modal-employee-company').text(emp.company || '-');
+
+                    // Section 2: Content
+                    $('#online-modal-content-title').text(lr.title || '-');
+                    $('#online-modal-content-type').text(lr.type || '-');
+                    $('#online-modal-classification').text(lr.classification || '-');
+                    $('#online-modal-enrollment-type').text(lr.enrollment || 'All Content');
+                    $('#online-modal-catalog-duration').text(lr.duration || '-');
+                    $('#online-modal-catalog-hours').text(lr.learning_hours || '-');
+                    $('#online-modal-author').text(lr.author || '-');
+
+                    if (lr.playlist && lr.playlist.title && lr.playlist.title !== '-') {
+                        $('#online-modal-playlist-title').text(lr.playlist.title);
+                        $('#online-modal-playlist-duration').text(lr.playlist.duration || '-');
+                        $('#online-modal-playlist-container').show();
+                    } else {
+                        $('#online-modal-playlist-container').hide();
+                    }
+
+                    // Section 3: Learning Activity & Tracking
+                    const clampedProgress = Math.min(100, Math.max(0, Math.round(progressVal)));
+                    $('#online-modal-progress-bar').css('width', clampedProgress + '%');
+                    $('#online-modal-progress-text').text(clampedProgress + '%');
+                    $('#online-modal-finish-status').text(pr.finish_status || '-');
+                    $('#online-modal-current-time').text(pr.current_time || '-');
+                    $('#online-modal-tracked-duration').text(pr.tracked_duration || '-');
+                    $('#online-modal-actual-watch').text(pr.actual_watch || '-');
+                    $('#online-modal-afk-duration').text(pr.afk_duration || '-');
+
+                    if (pr.pages !== null && pr.pages !== undefined) {
+                        $('#online-modal-pages').text(pr.pages);
+                        $('#online-modal-pages-container').show();
+                    } else {
+                        $('#online-modal-pages-container').hide();
+                    }
+
+                    // Section 4: Learning Hours & Completion
+                    $('#online-modal-credited-hours').text(pr.credited_hours || '0.00 Hours');
+                    $('#online-modal-learning-status').text(pr.learning_status || 'Valid');
+                    $('#online-modal-enrolled-at').text(ts.enrolled_at || '-');
+                    $('#online-modal-completed-at').text(ts.completed_at || '-');
+                    $('#online-modal-last-activity').text(ts.last_activity || '-');
+
+                    $('#online-detail-content').show();
+                } else {
+                    $('#online-detail-error-title').text('Failed to Load Record');
+                    $('#online-detail-error-message').text(res.message || 'Record not found or access denied.');
+                    $('#online-detail-error').show();
+                }
+            },
+            error: function (xhr) {
+                $('#online-detail-loading').hide();
+                const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'An error occurred while loading record details.';
+                $('#online-detail-error-title').text('Error');
+                $('#online-detail-error-message').text(msg);
+                $('#online-detail-error').show();
+            }
+        });
+    });
+
+    // 4. Delete Record Modal Logic for Offline records
+    $(document).on('click', '.btn-delete-offline-record', function () {
+        const id = $(this).data('id');
+        const employee = $(this).data('employee') || 'Participant';
+        const course = $(this).data('course') || 'Training';
+        const nip = $(this).data('nip') || '';
+
+        $('#delete-modal-employee-name').text(employee);
+        $('#delete-modal-course-name').text(course);
+        if (nip) {
+            $('#delete-modal-nip').text(nip);
+            $('#delete-modal-nip-wrapper').show();
+        } else {
+            $('#delete-modal-nip-wrapper').hide();
+        }
+        $('#btn-confirm-delete-offline-record').data('id', id);
+
+        const deleteModalEl = document.getElementById('deleteOfflineRecordModal');
+        if (deleteModalEl) {
+            const deleteModal = bootstrap.Modal.getInstance(deleteModalEl) || new bootstrap.Modal(deleteModalEl);
+            deleteModal.show();
+        }
+    });
+
+    $('#btn-confirm-delete-offline-record').on('click', function () {
+        const id = $(this).data('id');
+        if (!id) return;
+
+        const $btn = $(this);
+        const originalHtml = $btn.html();
+        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Deleting...');
+
+        $.ajax({
+            url: `/manage/record/offline/${id}`,
+            type: 'DELETE',
+            dataType: 'json',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            },
+            success: function (res) {
+                $btn.prop('disabled', false).html(originalHtml);
+                const deleteModalEl = document.getElementById('deleteOfflineRecordModal');
+                if (deleteModalEl) {
+                    const deleteModal = bootstrap.Modal.getInstance(deleteModalEl);
+                    if (deleteModal) deleteModal.hide();
+                }
+                if (typeof allTable !== 'undefined') {
+                    allTable.ajax.reload(null, false);
+                }
+            },
+            error: function (xhr) {
+                $btn.prop('disabled', false).html(originalHtml);
+                const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Failed to delete record.';
+                alert(msg);
+            }
+        });
+    });
+
+    // 5. Edit Online Learning Record Logic (reusing #learningEditModal)
+    $(document).on('click', '.btn-edit-online-record', function () {
+        const id = $(this).data('id');
+        const type = $(this).data('type') || 'content';
+
+        const editModalEl = document.getElementById('learningEditModal');
+        if (!editModalEl) return;
+        const editModal = bootstrap.Modal.getInstance(editModalEl) || new bootstrap.Modal(editModalEl);
+        editModal.show();
+
+        $('#learningEditLoading').show();
+        $('#learningEditContent').hide();
+        $('#learningEditFetchError').hide();
+        $('#learningEditSubmitError').hide();
+
+        $.ajax({
+            url: `/manage/learning/record-detail/${type}/${id}`,
+            type: 'GET',
+            dataType: 'json',
+            success: function (res) {
+                $('#learningEditLoading').hide();
+                if (res && res.status === 'success' && res.data) {
+                    const d = res.data;
+                    $('#edit-source-type').val(d.source_type);
+                    $('#edit-source-id').val(d.source_id);
+                    $('#edit-original-finish').val(d.progress.is_finished ? '1' : '0');
+                    $('#edit-duration-seconds').val(d.progress.duration_seconds || 0);
+
+                    // Read-only context
+                    $('#le-content-title').text(d.learning.title || '-');
+                    $('#le-content-type').text(d.learning.type || '-');
+                    $('#le-content-source').text(d.learning.source || '-');
+                    $('#le-content-classification').text(d.learning.classification || '-');
+                    $('#le-content-category').text(d.learning.category || '-');
+                    $('#le-content-duration').text(d.progress.duration || '-');
+
+                    if (d.learning.playlist_name && d.learning.playlist_name !== '-') {
+                        $('#le-playlist-name').text(d.learning.playlist_name);
+                        $('#le-playlist-container').show();
+                    } else {
+                        $('#le-playlist-container').hide();
+                    }
+
+                    $('#le-emp-name').text(d.employee.name || '-');
+                    $('#le-emp-id').text(d.employee.id_emp || '-');
+                    $('#le-emp-dept').text(d.employee.department || '-');
+
+                    // Inputs
+                    $('#edit-progress').val(d.progress.progress);
+                    $('#edit-current-time').val(d.progress.raw_current_time || 0);
+                    $('#edit-actual-watch').val(d.progress.raw_actual_watch_seconds || 0);
+                    $('#edit-afk-duration').val(d.progress.raw_afk_duration_seconds || 0);
+
+                    $('#learningEditContent').show();
+                } else {
+                    $('#learningEditFetchErrorMessage').text(res.message || 'Failed to load record.');
+                    $('#learningEditFetchError').show();
+                }
+            },
+            error: function (xhr) {
+                $('#learningEditLoading').hide();
+                const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Error fetching record.';
+                $('#learningEditFetchErrorMessage').text(msg);
+                $('#learningEditFetchError').show();
+            }
+        });
+    });
+
+    $('#learningEditForm').on('submit', function (e) {
+        e.preventDefault();
+        const type = $('#edit-source-type').val();
+        const id = $('#edit-source-id').val();
+        const progress = parseInt($('#edit-progress').val(), 10);
+        const currentTime = parseInt($('#edit-current-time').val(), 10);
+        const actualWatch = parseInt($('#edit-actual-watch').val(), 10);
+        const afkDuration = parseInt($('#edit-afk-duration').val(), 10);
+        const durationSeconds = parseInt($('#edit-duration-seconds').val(), 10);
+
+        if (durationSeconds > 0 && currentTime > durationSeconds) {
+            $('#learningEditSubmitErrorMessage').text(`Current time (${currentTime}s) cannot exceed duration (${durationSeconds}s).`);
+            $('#learningEditSubmitError').show();
+            return;
+        }
+
+        $('#learningEditSubmitError').hide();
+        $('#edit-save-spinner').show();
+        $('#edit-save-text').text('Saving...');
+        $('#btn-save-learning-edit').prop('disabled', true);
+
+        $.ajax({
+            url: `/manage/learning/record/${type}/${id}`,
+            type: 'PUT',
+            dataType: 'json',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}',
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            data: JSON.stringify({
+                progress: progress,
+                current_time: currentTime,
+                actual_watch_seconds: actualWatch,
+                afk_duration_seconds: afkDuration
+            }),
+            success: function (res) {
+                $('#edit-save-spinner').hide();
+                $('#edit-save-text').text('Save Changes');
+                $('#btn-save-learning-edit').prop('disabled', false);
+
+                const editModalEl = document.getElementById('learningEditModal');
+                if (editModalEl) {
+                    const editModal = bootstrap.Modal.getInstance(editModalEl);
+                    if (editModal) editModal.hide();
+                }
+
+                if (typeof allTable !== 'undefined') {
+                    allTable.ajax.reload(null, false);
+                }
+            },
+            error: function (xhr) {
+                $('#edit-save-spinner').hide();
+                $('#edit-save-text').text('Save Changes');
+                $('#btn-save-learning-edit').prop('disabled', false);
+                const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Failed to update record.';
+                $('#learningEditSubmitErrorMessage').text(msg);
+                $('#learningEditSubmitError').show();
+            }
+        });
+    });
+
+    // 6. Reset Online Learning Record Logic (reusing #learningResetModal)
+    $(document).on('click', '.btn-reset-online-record', function () {
+        const id = $(this).data('id');
+        const type = $(this).data('type') || 'content';
+
+        const resetModalEl = document.getElementById('learningResetModal');
+        if (!resetModalEl) return;
+        const resetModal = bootstrap.Modal.getInstance(resetModalEl) || new bootstrap.Modal(resetModalEl);
+        resetModal.show();
+
+        $('#learningResetLoading').show();
+        $('#learningResetContent').hide();
+        $('#learningResetFetchError').hide();
+        $('#learningResetSubmitError').hide();
+
+        $('#reset-source-type').val(type);
+        $('#reset-source-id').val(id);
+
+        $.ajax({
+            url: `/manage/learning/record-detail/${type}/${id}`,
+            type: 'GET',
+            dataType: 'json',
+            success: function (res) {
+                $('#learningResetLoading').hide();
+                if (res && res.status === 'success' && res.data) {
+                    const d = res.data;
+                    $('#lr-emp-name').text(d.employee.name || '-');
+                    $('#lr-emp-id').text(d.employee.id_emp || '-');
+                    $('#lr-content-source').text(d.learning.source || '-');
+                    $('#lr-content-title').text(d.learning.title || '-');
+                    $('#lr-current-progress').text((d.progress.progress || 0) + '%');
+                    $('#lr-learning-hours').text(d.progress.learning_hours || '0 h');
+
+                    const isFin = d.progress.is_finished;
+                    $('#lr-status-badge')
+                        .removeClass('bg-success-lt bg-warning-lt bg-secondary-lt')
+                        .addClass(isFin ? 'bg-success-lt text-success' : 'bg-warning-lt text-warning')
+                        .text(d.progress.finish || (isFin ? 'Finished' : 'Ongoing'));
+
+                    if (isFin) {
+                        $('#lr-completed-warning').show();
+                    } else {
+                        $('#lr-completed-warning').hide();
+                    }
+
+                    if (d.learning.playlist_name && d.learning.playlist_name !== '-') {
+                        $('#lr-playlist-name').text(d.learning.playlist_name);
+                        $('#lr-playlist-container').show();
+                        $('#lr-playlist-warning').show();
+                    } else {
+                        $('#lr-playlist-container').hide();
+                        $('#lr-playlist-warning').hide();
+                    }
+
+                    $('#learningResetContent').show();
+                } else {
+                    $('#learningResetFetchErrorMessage').text(res.message || 'Failed to load details.');
+                    $('#learningResetFetchError').show();
+                }
+            },
+            error: function (xhr) {
+                $('#learningResetLoading').hide();
+                const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Error fetching record.';
+                $('#learningResetFetchErrorMessage').text(msg);
+                $('#learningResetFetchError').show();
+            }
+        });
+    });
+
+    $('#btn-confirm-learning-reset').on('click', function () {
+        const type = $('#reset-source-type').val();
+        const id = $('#reset-source-id').val();
+        if (!type || !id) return;
+
+        $('#reset-confirm-spinner').show();
+        $('#reset-confirm-text').text('Resetting...');
+        $('#btn-confirm-learning-reset').prop('disabled', true);
+        $('#learningResetSubmitError').hide();
+
+        $.ajax({
+            url: `/manage/learning/record/${type}/${id}/reset`,
+            type: 'POST',
+            dataType: 'json',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            },
+            success: function (res) {
+                $('#reset-confirm-spinner').hide();
+                $('#reset-confirm-text').text('Reset Progress');
+                $('#btn-confirm-learning-reset').prop('disabled', false);
+
+                const resetModalEl = document.getElementById('learningResetModal');
+                if (resetModalEl) {
+                    const resetModal = bootstrap.Modal.getInstance(resetModalEl);
+                    if (resetModal) resetModal.hide();
+                }
+
+                if (typeof allTable !== 'undefined') {
+                    allTable.ajax.reload(null, false);
+                }
+            },
+            error: function (xhr) {
+                $('#reset-confirm-spinner').hide();
+                $('#reset-confirm-text').text('Reset Progress');
+                $('#btn-confirm-learning-reset').prop('disabled', false);
+                const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Failed to reset record.';
+                $('#learningResetSubmitErrorMessage').text(msg);
+                $('#learningResetSubmitError').show();
+            }
+        });
+    });
+
+    // 7. Delete Online Learning Record Modal Logic
+    $(document).on('click', '.btn-delete-online-record', function () {
+        const id = $(this).data('id');
+        const type = $(this).data('type') || 'content';
+        const employee = $(this).data('employee') || 'Participant';
+        const nip = $(this).data('nip') || '';
+        const title = $(this).data('title') || 'Content';
+
+        $('#delete-online-content-title').text(title);
+        $('#delete-online-employee-name').text(employee);
+        $('#delete-online-type-badge').text(type.toUpperCase());
+        if (nip) {
+            $('#delete-online-nip').text(nip);
+            $('#delete-online-nip-wrapper').show();
+        } else {
+            $('#delete-online-nip-wrapper').hide();
+        }
+
+        $('#btn-confirm-delete-online-record').data('id', id).data('type', type);
+
+        const deleteModalEl = document.getElementById('deleteOnlineRecordModal');
+        if (deleteModalEl) {
+            const deleteModal = bootstrap.Modal.getInstance(deleteModalEl) || new bootstrap.Modal(deleteModalEl);
+            deleteModal.show();
+        }
+    });
+
+    $('#btn-confirm-delete-online-record').on('click', function () {
+        const id = $(this).data('id');
+        const type = $(this).data('type');
+        if (!id || !type) return;
+
+        const $btn = $(this);
+        const originalHtml = $btn.html();
+        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Deleting...');
+
+        $.ajax({
+            url: `/manage/record/online/${type}/${id}`,
+            type: 'DELETE',
+            dataType: 'json',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            },
+            success: function (res) {
+                $btn.prop('disabled', false).html(originalHtml);
+                const deleteModalEl = document.getElementById('deleteOnlineRecordModal');
+                if (deleteModalEl) {
+                    const deleteModal = bootstrap.Modal.getInstance(deleteModalEl);
+                    if (deleteModal) deleteModal.hide();
+                }
+                if (typeof allTable !== 'undefined') {
+                    allTable.ajax.reload(null, false);
+                }
+            },
+            error: function (xhr) {
+                $btn.prop('disabled', false).html(originalHtml);
+                const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Failed to delete record.';
+                alert(msg);
+            }
+        });
+    });
+
+    // 8. Delete Master Content / Playlist Modal Logic
+    $(document).on('click', '.btn-delete-content-master, .btn-delete-playlist-master', function () {
+        const slug = $(this).data('slug');
+        const title = $(this).data('title') || 'Master Entity';
+        const type = $(this).data('type') || 'content';
+
+        $('#delete-master-title').text(title);
+        $('#delete-master-type-badge').text(type.toUpperCase());
+        $('#btn-confirm-delete-master').data('slug', slug).data('type', type);
+
+        const deleteModalEl = document.getElementById('deleteMasterModal');
+        if (deleteModalEl) {
+            const deleteModal = bootstrap.Modal.getInstance(deleteModalEl) || new bootstrap.Modal(deleteModalEl);
+            deleteModal.show();
+        }
+    });
+
+    $('#btn-confirm-delete-master').on('click', function () {
+        const slug = $(this).data('slug');
+        const type = $(this).data('type');
+        if (!slug || !type) return;
+
+        const $btn = $(this);
+        const originalHtml = $btn.html();
+        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Deleting...');
+
+        const url = type === 'content'
+            ? `/manage/content/${slug}`
+            : `/manage/playlist/${slug}`;
+
+        $.ajax({
+            url: url,
+            type: 'DELETE',
+            dataType: 'json',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            },
+            success: function (res) {
+                $btn.prop('disabled', false).html(originalHtml);
+                const deleteModalEl = document.getElementById('deleteMasterModal');
+                if (deleteModalEl) {
+                    const deleteModal = bootstrap.Modal.getInstance(deleteModalEl);
+                    if (deleteModal) deleteModal.hide();
+                }
+                if (typeof allTable !== 'undefined') {
+                    allTable.ajax.reload(null, false);
+                }
+            },
+            error: function (xhr) {
+                $btn.prop('disabled', false).html(originalHtml);
+                const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Failed to delete master entity.';
+                alert(msg);
+            }
+        });
+    });
+
+    // 5. Close open dropdowns when table scrolls horizontally to prevent floating orphan menus
+    $('#table-scroll-container').on('scroll', function () {
+        const openDropdown = $('#all-classification-learning-table .dropdown-menu.show');
+        if (openDropdown.length) {
+            const dropdownBtn = openDropdown.closest('.dropdown').find('[data-bs-toggle="dropdown"]');
+            if (dropdownBtn.length && typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
+                const instance = bootstrap.Dropdown.getInstance(dropdownBtn[0]);
+                if (instance) instance.hide();
+            }
+        }
     });
 });
 </script>

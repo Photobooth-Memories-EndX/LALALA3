@@ -59,7 +59,9 @@ class MyLearningRecordModesTest extends TestCase
             ->get('/my-learning/partial/record');
 
         $response->assertStatus(200);
-        $response->assertSee('Online');
+        $response->assertSee('KP OWL');
+        $response->assertSee('Non KP OWL');
+        $response->assertSee('All KP OWL');
         $response->assertSee('record-mode-switch');
         $response->assertSee('record-mode-btn');
         $response->assertSee('data-mode="online"', false);
@@ -351,6 +353,9 @@ class MyLearningRecordModesTest extends TestCase
         // Online mode partial
         $onlineResp = $this->actingAs($this->userA)->get('/my-learning/partial/record?record_mode=online');
         $onlineResp->assertStatus(200);
+        $onlineResp->assertSee('KP OWL');
+        $onlineResp->assertSee('Non KP OWL');
+        $onlineResp->assertSee('All KP OWL');
         $onlineResp->assertSee('data-mode="online"', false);
         $onlineResp->assertSee('data-mode="offline"', false);
         $onlineResp->assertSee('data-mode="all"', false);
@@ -367,6 +372,9 @@ class MyLearningRecordModesTest extends TestCase
         // Offline mode partial
         $offlineResp = $this->actingAs($this->userA)->get('/my-learning/partial/record?record_mode=offline');
         $offlineResp->assertStatus(200);
+        $offlineResp->assertSee('KP OWL');
+        $offlineResp->assertSee('Non KP OWL');
+        $offlineResp->assertSee('All KP OWL');
         $offlineResp->assertSee('data-mode="online"', false);
         $offlineResp->assertSee('data-mode="offline"', false);
         $offlineResp->assertSee('data-mode="all"', false);
@@ -379,6 +387,9 @@ class MyLearningRecordModesTest extends TestCase
         // All mode partial
         $allResp = $this->actingAs($this->userA)->get('/my-learning/partial/record?record_mode=all');
         $allResp->assertStatus(200);
+        $allResp->assertSee('KP OWL');
+        $allResp->assertSee('Non KP OWL');
+        $allResp->assertSee('All KP OWL');
         $allResp->assertSee('data-mode="online"', false);
         $allResp->assertSee('data-mode="offline"', false);
         $allResp->assertSee('data-mode="all"', false);

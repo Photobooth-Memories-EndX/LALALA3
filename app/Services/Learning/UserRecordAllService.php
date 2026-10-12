@@ -5,6 +5,7 @@ namespace App\Services\Learning;
 use App\Http\Controllers\LearningRecordController;
 use App\Models\OfflineTrainingUser;
 use App\Services\CertificateEligibilityService;
+use App\Support\DurationFormatter;
 use App\Support\LearningFilterHelper;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -21,6 +22,17 @@ class UserRecordAllService
     }
 
     /**
+     * Check if user has ANY online or offline records regardless of filter.
+     */
+    public function hasAnyRecords(int $userId, ?string $userEmpId, CertificateEligibilityService $eligibilityService): bool
+    {
+        $hasOnline = $this->learningRecordController->getRawOnlineRows($userId, $eligibilityService)->isNotEmpty();
+        $hasOffline = $this->offlineService->queryForUser($userId, $userEmpId)->exists();
+
+        return $hasOnline || $hasOffline;
+    }
+
+    /**
      * Get combined and normalized learning records (Online + Offline) for a user.
      */
     public function getRecords(int $userId, ?string $userEmpId, CertificateEligibilityService $eligibilityService, array $filters = []): Collection
@@ -31,15 +43,36 @@ class UserRecordAllService
             $finishDateStr = !empty($row['finish_date']) ? Carbon::parse($row['finish_date'])->format('Y-m-d') : '';
             $startDateStr = !empty($row['start_date']) ? Carbon::parse($row['start_date'])->format('Y-m-d') : '';
 
-            $dateTimeDisplay = $finishDateStr ? Carbon::parse($finishDateStr)->format('d M Y') : '-';
+            $dateTimeDisplay = $finishDateStr
+                ? Carbon::parse($finishDateStr)->format('d M Y')
+                : ($startDateStr ? Carbon::parse($startDateStr)->format('d M Y') : '—');
+
+            $durationSeconds = max(0, (int) ($row['duration_sort'] ?? 0));
+            $durationFormatted = $durationSeconds > 0 ? DurationFormatter::fromSeconds($durationSeconds) : '—';
+
+            $learningHourVal = (float) ($row['learning_hour_value'] ?? 0);
+            $hasCertificate = ($row['cert_state'] ?? 'none') === 'ready';
 
             return array_merge($row, [
-                'source'       => 'online',
-                'source_label' => 'Online',
-                'date_display' => $dateTimeDisplay,
-                'venue'        => '',
-                'instructor'   => '',
-                'provider'     => 'OWL Learning Hub',
+                'unique_id'         => 'online_' . ($row['item_id'] ?? $row['slug'] ?? uniqid()),
+                'source'            => 'online',
+                'source_label'      => 'Online',
+                'training_title'    => $row['title'] ?? '-',
+                'duration'          => $durationFormatted,
+                'duration_seconds'  => $durationSeconds,
+                'learning_hour'     => number_format($learningHourVal, 2) . ' hrs',
+                'learning_hour_value' => $learningHourVal,
+                'progress'          => (int) ($row['progress'] ?? 0),
+                'attendance'        => null,
+                'attendance_status' => '—',
+                'date_display'      => $dateTimeDisplay,
+                'venue'             => '',
+                'instructor'        => '',
+                'provider'          => 'OWL Learning Hub',
+                'has_certificate'   => $hasCertificate,
+                'cert_state'        => $hasCertificate ? 'ready' : 'none',
+                'cert_action_url'   => $row['cert_action_url'] ?? null,
+                'cert_is_form'      => (bool) ($row['cert_is_form'] ?? false),
             ]);
         });
 
@@ -48,7 +81,28 @@ class UserRecordAllService
             ->get()
             ->filter(fn (OfflineTrainingUser $otu) => $otu->training !== null);
 
-        $normalizedOffline = $offlineRaw->map(fn (OfflineTrainingUser $otu) => $this->offlineService->normalizeRow($otu));
+        $normalizedOffline = $offlineRaw->map(function (OfflineTrainingUser $otu) {
+            $row = $this->offlineService->normalizeRow($otu);
+
+            $dur = ($row['duration'] ?? '') !== '-' && !empty($row['duration'])
+                ? $row['duration']
+                : '—';
+
+            $attStatus = ($row['attendance_status'] ?? '') !== '-' && !empty($row['attendance_status'])
+                ? $row['attendance_status']
+                : '—';
+
+            return array_merge($row, [
+                'unique_id'         => 'offline_' . $otu->id,
+                'source'            => 'offline',
+                'source_label'      => 'Offline',
+                'training_title'    => $row['title'] ?? '-',
+                'duration'          => $dur,
+                'attendance_status' => $attStatus,
+                'cert_action_url'   => null,
+                'cert_is_form'      => false,
+            ]);
+        });
 
         // 3. Merge both collections
         $combined = $normalizedOnline->concat($normalizedOffline);
@@ -70,7 +124,35 @@ class UserRecordAllService
         $rawMonth = (string) ($filters['month'] ?? request('record_filter_month') ?? request('month') ?? 'all');
         $month = LearningFilterHelper::resolveMonth($rawMonth);
 
-        $filtered = $rows->filter(function (array $row) use ($search, $source, $type, $classification, $year, $month) {
+        // More Filters - General
+        $category = (string) ($filters['category'] ?? request('record_filter_category') ?? request('category') ?? 'all');
+        $status = (string) ($filters['status'] ?? request('record_filter_status') ?? request('status') ?? request('progress_status') ?? 'all');
+
+        $rawDurMin = $filters['duration_min'] ?? request('record_filter_duration_min') ?? request('duration_min') ?? null;
+        $durMin = ($rawDurMin !== null && $rawDurMin !== '' && is_numeric($rawDurMin)) ? (float) $rawDurMin : null;
+
+        $rawDurMax = $filters['duration_max'] ?? request('record_filter_duration_max') ?? request('duration_max') ?? null;
+        $durMax = ($rawDurMax !== null && $rawDurMax !== '' && is_numeric($rawDurMax)) ? (float) $rawDurMax : null;
+
+        $rawLhMin = $filters['lh_min'] ?? request('record_filter_lh_min') ?? request('lh_min') ?? null;
+        $lhMin = ($rawLhMin !== null && $rawLhMin !== '' && is_numeric($rawLhMin)) ? (float) $rawLhMin : null;
+
+        $rawLhMax = $filters['lh_max'] ?? request('record_filter_lh_max') ?? request('lh_max') ?? null;
+        $lhMax = ($rawLhMax !== null && $rawLhMax !== '' && is_numeric($rawLhMax)) ? (float) $rawLhMax : null;
+
+        $certificate = (string) ($filters['certificate'] ?? request('record_filter_certificate') ?? request('certificate') ?? 'all');
+
+        // More Filters - Offline Specific
+        $attendance = (string) ($filters['attendance'] ?? request('record_filter_attendance') ?? request('attendance') ?? 'all');
+        $subClassification = (string) ($filters['sub_classification'] ?? request('record_filter_sub_classification') ?? request('sub_classification') ?? 'all');
+        $deliveryMethod = (string) ($filters['delivery_method'] ?? request('record_filter_delivery_method') ?? request('delivery_method') ?? 'all');
+        $provider = (string) ($filters['provider'] ?? request('record_filter_provider') ?? request('provider') ?? 'all');
+
+        $filtered = $rows->filter(function (array $row) use (
+            $search, $source, $type, $classification, $year, $month,
+            $category, $status, $durMin, $durMax, $lhMin, $lhMax, $certificate,
+            $attendance, $subClassification, $deliveryMethod, $provider
+        ) {
             // 1. Source filter (Online | Offline)
             if ($source !== 'all' && $source !== '') {
                 if (strtolower((string) ($row['source'] ?? '')) !== $source) {
@@ -86,8 +168,12 @@ class UserRecordAllService
                     $row['type'] ?? '',
                     $row['category'] ?? '',
                     $row['classification'] ?? '',
+                    $row['sub_classification'] ?? '',
+                    $row['delivery_method'] ?? '',
                     $row['provider'] ?? '',
                     $row['source'] ?? '',
+                    $row['venue'] ?? '',
+                    $row['instructor'] ?? '',
                 ]));
                 if (!str_contains($searchContent, $search)) {
                     return false;
@@ -101,14 +187,21 @@ class UserRecordAllService
                 }
             }
 
-            // 4. Classification filter
+            // 4. Category filter
+            if ($category !== 'all' && $category !== '') {
+                if (strtolower(trim((string) ($row['category'] ?? ''))) !== strtolower(trim($category))) {
+                    return false;
+                }
+            }
+
+            // 5. Classification filter
             if ($classification !== 'all' && $classification !== '') {
                 if ((string) ($row['classification'] ?? '') !== $classification) {
                     return false;
                 }
             }
 
-            // 5. Year filter
+            // 6. Year filter
             if ($year !== 'all' && $year !== '') {
                 $finishDate = !empty($row['finish_date']) ? Carbon::parse($row['finish_date']) : null;
                 $startDate = !empty($row['start_date']) ? Carbon::parse($row['start_date']) : null;
@@ -118,12 +211,103 @@ class UserRecordAllService
                 }
             }
 
-            // 6. Month filter
+            // 7. Month filter
             if ($month !== null) {
                 $finishDate = !empty($row['finish_date']) ? Carbon::parse($row['finish_date']) : null;
                 $startDate = !empty($row['start_date']) ? Carbon::parse($row['start_date']) : null;
                 $rowMonth = $finishDate ? (int) $finishDate->month : ($startDate ? (int) $startDate->month : null);
                 if ($rowMonth !== $month) {
+                    return false;
+                }
+            }
+
+            // 8. Learning Status / Progress filter (General)
+            if ($status !== 'all' && $status !== '') {
+                $prog = (int) round((float) ($row['progress'] ?? 0));
+                $normStatus = strtolower(trim($status));
+                if ($normStatus === 'completed' && $prog < 100) {
+                    return false;
+                } elseif ($normStatus === 'in_progress' && ($prog <= 0 || $prog >= 100)) {
+                    return false;
+                } elseif ($normStatus === 'not_started' && $prog > 0) {
+                    return false;
+                }
+            }
+
+            // 9. Duration Range filter (General - minutes converted to seconds)
+            $durationSeconds = max(0, (int) ($row['duration_seconds'] ?? 0));
+            if ($durMin !== null) {
+                $minSeconds = $durMin * 60;
+                if ($durationSeconds < $minSeconds) {
+                    return false;
+                }
+            }
+            if ($durMax !== null) {
+                $maxSeconds = $durMax * 60;
+                if ($durationSeconds > $maxSeconds) {
+                    return false;
+                }
+            }
+
+            // 10. Learning Hours Range filter (General)
+            $lhValue = (float) ($row['learning_hour_value'] ?? 0);
+            if ($lhMin !== null && $lhValue < $lhMin) {
+                return false;
+            }
+            if ($lhMax !== null && $lhValue > $lhMax) {
+                return false;
+            }
+
+            // 11. Certificate filter (General)
+            if ($certificate !== 'all' && $certificate !== '') {
+                $normCert = strtolower(trim($certificate));
+                $hasCert = (bool) ($row['has_certificate'] ?? false);
+                if (in_array($normCert, ['certified', 'yes', '1', 'ready'], true)) {
+                    if (!$hasCert) {
+                        return false;
+                    }
+                } elseif (in_array($normCert, ['uncertified', 'not certified', 'no', '0', 'none'], true)) {
+                    if ($hasCert) {
+                        return false;
+                    }
+                }
+            }
+
+            // 12. Attendance filter (Offline Specific)
+            if ($attendance !== 'all' && $attendance !== '') {
+                $normAttendance = strtolower(trim($attendance));
+                $rowAttendanceStatus = strtolower(trim((string) ($row['attendance_status'] ?? '')));
+                if (in_array($normAttendance, ['present', '1', 'attended'], true)) {
+                    if ($rowAttendanceStatus !== 'present') {
+                        return false;
+                    }
+                } elseif (in_array($normAttendance, ['absent', '0'], true)) {
+                    if ($rowAttendanceStatus !== 'absent') {
+                        return false;
+                    }
+                }
+            }
+
+            // 13. Sub Classification filter (Offline Specific)
+            if ($subClassification !== 'all' && $subClassification !== '') {
+                $rowSubClass = strtolower(trim((string) ($row['sub_classification'] ?? '')));
+                if ($rowSubClass !== strtolower(trim($subClassification))) {
+                    return false;
+                }
+            }
+
+            // 14. Delivery Method filter (Offline Specific)
+            if ($deliveryMethod !== 'all' && $deliveryMethod !== '') {
+                $rowMethod = strtolower(trim((string) ($row['delivery_method'] ?? '')));
+                if ($rowMethod !== strtolower(trim($deliveryMethod))) {
+                    return false;
+                }
+            }
+
+            // 15. Provider filter (Offline Specific)
+            if ($provider !== 'all' && $provider !== '') {
+                $rowProv = strtolower(trim((string) ($row['provider'] ?? '')));
+                if ($rowProv !== strtolower(trim($provider))) {
                     return false;
                 }
             }
@@ -142,6 +326,14 @@ class UserRecordAllService
     {
         $types = $combinedUnfilteredRows
             ->map(fn ($r) => trim((string) ($r['type'] ?? '')))
+            ->filter()
+            ->unique()
+            ->sort()
+            ->values()
+            ->all();
+
+        $categories = $combinedUnfilteredRows
+            ->map(fn ($r) => trim((string) ($r['category'] ?? '')))
             ->filter()
             ->unique()
             ->sort()
@@ -172,11 +364,39 @@ class UserRecordAllService
             ->values()
             ->all();
 
+        $subClassifications = $combinedUnfilteredRows
+            ->map(fn ($r) => trim((string) ($r['sub_classification'] ?? '')))
+            ->filter(fn ($v) => $v !== '' && $v !== '-')
+            ->unique()
+            ->sort()
+            ->values()
+            ->all();
+
+        $deliveryMethods = $combinedUnfilteredRows
+            ->map(fn ($r) => trim((string) ($r['delivery_method'] ?? '')))
+            ->filter(fn ($v) => $v !== '' && $v !== '-')
+            ->unique()
+            ->sort()
+            ->values()
+            ->all();
+
+        $providers = $combinedUnfilteredRows
+            ->map(fn ($r) => trim((string) ($r['provider'] ?? '')))
+            ->filter(fn ($v) => $v !== '' && $v !== '-')
+            ->unique()
+            ->sort()
+            ->values()
+            ->all();
+
         return [
-            'sources'         => ['all' => 'All Sources', 'online' => 'Online', 'offline' => 'Offline'],
-            'types'           => $types,
-            'classifications' => $classifications,
-            'years'           => $years,
+            'sources'            => ['all' => 'All Sources', 'online' => 'Online', 'offline' => 'Offline'],
+            'types'              => $types,
+            'categories'         => $categories,
+            'classifications'    => $classifications,
+            'years'              => $years,
+            'subClassifications' => $subClassifications,
+            'deliveryMethods'    => $deliveryMethods,
+            'providers'          => $providers,
         ];
     }
 }

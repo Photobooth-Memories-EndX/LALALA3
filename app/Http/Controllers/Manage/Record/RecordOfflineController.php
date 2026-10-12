@@ -790,15 +790,18 @@ class RecordOfflineController extends Controller
         $summary = RecordOfflineQueryService::getCourseSummary((int) $trainingModel->id, $trainingModel);
 
         // Safe back navigation
-        $backUrl = route('manage.record.offline');
-        $backTitle = 'Back to Non KP OWL';
+        $isFromAll = $request->query('from') === 'all';
+        $backUrl = $isFromAll ? route('manage.record.all') : route('manage.record.offline');
+        $backTitle = $isFromAll ? 'Back to All KP OWL' : 'Back to Non KP OWL';
 
         $classificationParam = $request->query('classification');
         if (filled($classificationParam)) {
             $resolvedClass = self::resolveClassification($classificationParam);
-            $backUrl = route('manage.record.offline.classification', $resolvedClass['slug']);
+            $backUrl = $isFromAll
+                ? route('manage.record.all.classification', $resolvedClass['slug'])
+                : route('manage.record.offline.classification', $resolvedClass['slug']);
             $backTitle = 'Back to ' . $resolvedClass['name'];
-        } elseif (filled($trainingModel->main_classification)) {
+        } elseif (!$isFromAll && filled($trainingModel->main_classification)) {
             $resolvedClass = self::resolveClassification($trainingModel->main_classification);
             $backUrl = route('manage.record.offline.classification', $resolvedClass['slug']);
             $backTitle = 'Back to ' . $resolvedClass['name'];
@@ -1843,6 +1846,19 @@ class RecordOfflineController extends Controller
                 $backUrl = route('manage.record.offline.participant', $backParams);
                 $backTitle = 'Back to Participant: ' . ($record->name ?: 'Participant');
             }
+        } elseif ($returnType === 'all_participant') {
+            $returnParticipantId = $request->query('identifier') ?: ($record->user_id ?: $record->employee_id);
+            if ($returnParticipantId) {
+                $backParams = ['identifier' => $returnParticipantId];
+                if (filled($classificationParam)) {
+                    $backParams['classification'] = $classificationParam;
+                }
+                $backUrl = route('manage.record.all.participant', $backParams);
+                $backTitle = 'Back to All KP OWL Participant: ' . ($record->name ?: 'Participant');
+            }
+        } elseif ($returnType === 'all_classification') {
+            $backUrl = route('manage.record.all.classification', $classificationParam ?: $resolved['slug']);
+            $backTitle = 'Back to All KP OWL Classification: ' . ($resolved['name'] ?? 'Classification');
         }
 
         return view('main.record.offline-edit', [
@@ -1908,6 +1924,17 @@ class RecordOfflineController extends Controller
                     }
                     $redirectUrl = route('manage.record.offline.participant', $params);
                 }
+            } elseif ($returnType === 'all_participant') {
+                $participantId = $request->input('return_participant_id') ?: ($updatedRecord->user_id ?: $updatedRecord->employee_id);
+                if ($participantId) {
+                    $params = ['identifier' => $participantId];
+                    if (filled($returnClass)) {
+                        $params['classification'] = $returnClass;
+                    }
+                    $redirectUrl = route('manage.record.all.participant', $params);
+                }
+            } elseif ($returnType === 'all_classification') {
+                $redirectUrl = route('manage.record.all.classification', $returnClass ?: $resolved['slug']);
             }
 
             if ($request->wantsJson() || $request->ajax()) {
