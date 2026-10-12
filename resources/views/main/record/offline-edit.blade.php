@@ -139,7 +139,7 @@
                         <div class="col-12 col-md-6">
                             <label for="edit-type" class="form-label small fw-semibold">Type</label>
                             <div class="input-group">
-                                <select class="form-select rounded-start-2 select2-master-option" id="edit-type" name="type" data-type="type" data-placeholder="Select Type">
+                                <select class="form-select rounded-start-2 select2-master-option" id="edit-type" name="type" data-type="type" data-placeholder="Select Type" data-allow-clear="false">
                                     <option value="">Select Type</option>
                                     @php
                                         $currentType = old('type', $training->type);
@@ -288,7 +288,7 @@
                         <div class="col-12 col-md-6">
                             <label for="edit-delivery-method" class="form-label small fw-semibold">Delivery Method</label>
                             <div class="input-group">
-                                <select class="form-select rounded-start-2 select2-master-option" id="edit-delivery-method" name="delivery_method" data-type="delivery_method" data-placeholder="Select Delivery Method">
+                                <select class="form-select rounded-start-2 select2-master-option" id="edit-delivery-method" name="delivery_method" data-type="delivery_method" data-placeholder="Select Delivery Method" data-allow-clear="false">
                                     <option value="">Select Delivery Method</option>
                                     @php
                                         $currentDm = old('delivery_method', $training->delivery_method);
@@ -330,7 +330,7 @@
                         <div class="col-12 col-md-6">
                             <label for="edit-provider" class="form-label small fw-semibold">Provider</label>
                             <div class="input-group">
-                                <select class="form-select rounded-start-2 select2-master-option" id="edit-provider" name="provider" data-type="provider" data-placeholder="Select Provider">
+                                <select class="form-select rounded-start-2 select2-master-option" id="edit-provider" name="provider" data-type="provider" data-placeholder="Select Provider" data-allow-clear="false">
                                     <option value="">Select Provider</option>
                                     @php
                                         $currentProv = old('provider', $training->provider);
@@ -351,7 +351,7 @@
                         <div class="col-12 col-md-6">
                             <label for="edit-sub-provider" class="form-label small fw-semibold">Sub Provider</label>
                             <div class="input-group">
-                                <select class="form-select rounded-start-2 select2-master-option" id="edit-sub-provider" name="sub_provider" data-type="sub_provider" data-placeholder="Select Sub Provider">
+                                <select class="form-select rounded-start-2 select2-master-option" id="edit-sub-provider" name="sub_provider" data-type="sub_provider" data-placeholder="Select Sub Provider" data-allow-clear="false">
                                     <option value="">Select Sub Provider</option>
                                     @php
                                         $currentSubProv = old('sub_provider', $training->sub_provider);
@@ -894,10 +894,17 @@
             $('.select2-master-option, .select2-searchable-field').each(function () {
                 const placeholder = $(this).data('placeholder') || 'Select option';
                 const isTags = $(this).data('tags') === true || $(this).data('tags') === 'true';
+                const dataType = $(this).data('type');
+                const allowClearData = $(this).data('allow-clear');
+                const noClearTypes = ['type', 'delivery_method', 'provider', 'sub_provider'];
+                let isAllowClear = true;
+                if (allowClearData === false || allowClearData === 'false' || noClearTypes.includes(dataType)) {
+                    isAllowClear = false;
+                }
                 $(this).select2({
                     theme: 'bootstrap-5',
                     placeholder: placeholder,
-                    allowClear: true,
+                    allowClear: isAllowClear,
                     tags: isTags,
                     width: 'resolve'
                 });

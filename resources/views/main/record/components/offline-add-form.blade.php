@@ -67,7 +67,7 @@
                 <div class="col-12 col-md-6">
                     <label for="add-type" class="form-label small fw-semibold">Type</label>
                     <div class="input-group">
-                        <select class="form-select rounded-start-2 select2-master-option" id="add-type" name="type" data-type="type" data-placeholder="Select Type">
+                        <select class="form-select rounded-start-2 select2-master-option" id="add-type" name="type" data-type="type" data-placeholder="Select Type" data-allow-clear="false">
                             <option value="">Select Type</option>
                             @foreach ($options['type'] ?? [] as $opt)
                                 <option value="{{ $opt->value }}" {{ $opt->value === 'In-House' ? 'selected' : '' }}>{{ $opt->value }}</option>
@@ -175,7 +175,7 @@
                 <div class="col-12 col-md-6">
                     <label for="add-delivery-method" class="form-label small fw-semibold">Delivery Method</label>
                     <div class="input-group">
-                        <select class="form-select rounded-start-2 select2-master-option" id="add-delivery-method" name="delivery_method" data-type="delivery_method" data-placeholder="Select Delivery Method">
+                        <select class="form-select rounded-start-2 select2-master-option" id="add-delivery-method" name="delivery_method" data-type="delivery_method" data-placeholder="Select Delivery Method" data-allow-clear="false">
                             <option value="">Select Delivery Method</option>
                             @foreach ($options['delivery_method'] ?? [] as $opt)
                                 <option value="{{ $opt->value }}" {{ $opt->value === 'Classroom' ? 'selected' : '' }}>{{ $opt->value }}</option>
@@ -203,7 +203,7 @@
                 <div class="col-12 col-md-6">
                     <label for="add-provider" class="form-label small fw-semibold">Provider</label>
                     <div class="input-group">
-                        <select class="form-select rounded-start-2 select2-master-option" id="add-provider" name="provider" data-type="provider" data-placeholder="Select Provider">
+                        <select class="form-select rounded-start-2 select2-master-option" id="add-provider" name="provider" data-type="provider" data-placeholder="Select Provider" data-allow-clear="false">
                             <option value="">Select Provider</option>
                             @foreach ($options['provider'] ?? [] as $opt)
                                 <option value="{{ $opt->value }}" {{ $opt->value === 'External' ? 'selected' : '' }}>{{ $opt->value }}</option>
@@ -217,7 +217,7 @@
                 <div class="col-12 col-md-6">
                     <label for="add-sub-provider" class="form-label small fw-semibold">Sub Provider</label>
                     <div class="input-group">
-                        <select class="form-select rounded-start-2 select2-master-option" id="add-sub-provider" name="sub_provider" data-type="sub_provider" data-placeholder="Select Sub Provider">
+                        <select class="form-select rounded-start-2 select2-master-option" id="add-sub-provider" name="sub_provider" data-type="sub_provider" data-placeholder="Select Sub Provider" data-allow-clear="false">
                             <option value="">Select Sub Provider</option>
                             @foreach ($options['sub_provider'] ?? [] as $opt)
                                 <option value="{{ $opt->value }}" {{ $opt->value === 'Vendor' ? 'selected' : '' }}>{{ $opt->value }}</option>
