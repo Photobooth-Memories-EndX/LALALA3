@@ -7,7 +7,7 @@
     $currentEmployeeId = request('employee_id') ?? request('user_id');
     $currentEmployeeText = request('employee_text') ?? ($currentEmployeeId ? ($employeeName ?? $currentEmployeeId) : '');
     $currentLearningTitle = request('learning_title') ?? request('title');
-    $routeSlug = request()->segment(4);
+    $routeSlug = request()->route('slug') ?? ($downloadslug ?? request()->segment(4));
 @endphp
 
 <style>

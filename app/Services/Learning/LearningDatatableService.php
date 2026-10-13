@@ -16,6 +16,24 @@ class LearningDatatableService
 {
     public const PLAYLIST_CUTOFF = LearningManageController::PLAYLIST_CUTOFF;
 
+    protected static ?bool $hasPcuStatus = null;
+
+    /**
+     * Check if playlist_content_users table has status column (cached per process).
+     */
+    public static function hasPcuStatusColumn(): bool
+    {
+        if (self::$hasPcuStatus === null) {
+            try {
+                self::$hasPcuStatus = \Illuminate\Support\Facades\Schema::hasColumn('playlist_content_users', 'status');
+            } catch (\Throwable $e) {
+                self::$hasPcuStatus = false;
+            }
+        }
+
+        return self::$hasPcuStatus;
+    }
+
     /**
      * Build unified query builder for learning data (ContentUser + PlaylistContentUser).
      */
@@ -37,6 +55,9 @@ class LearningDatatableService
                 'cu.created_at',
             ]);
 
+        $hasPcuStatus = self::hasPcuStatusColumn();
+        $pcuStatusSelect = $hasPcuStatus ? 'pcu.status' : DB::raw("'optional' as status");
+
         $pcuSelect = DB::table('playlist_content_users as pcu')
             ->select([
                 'pcu.id as source_id',
@@ -45,7 +66,7 @@ class LearningDatatableService
                 'pcu.user_id',
                 'pcu.content_id',
                 'pcu.trainingplan_id',
-                'pcu.status',
+                $pcuStatusSelect,
                 'pcu.finish',
                 'pcu.progress',
                 'pcu.created_at',
@@ -70,7 +91,11 @@ class LearningDatatableService
                 });
             } elseif (in_array($statusStr, ['mandatory', 'optional'], true)) {
                 $cuSelect->where('cu.status', $statusStr);
-                $pcuSelect->where('pcu.status', $statusStr);
+                if ($hasPcuStatus) {
+                    $pcuSelect->where('pcu.status', $statusStr);
+                } else {
+                    $pcuSelect->whereRaw('1 = 0');
+                }
             } elseif ($statusStr === 'playlist') {
                 $cuSelect->whereRaw('1 = 0');
             }
@@ -82,7 +107,11 @@ class LearningDatatableService
             $programTypeStr = strtolower(trim((string) $programType));
             if (in_array($programTypeStr, ['mandatory', 'optional'], true)) {
                 $cuSelect->where('cu.status', $programTypeStr);
-                $pcuSelect->where('pcu.status', $programTypeStr);
+                if ($hasPcuStatus) {
+                    $pcuSelect->where('pcu.status', $programTypeStr);
+                } else {
+                    $pcuSelect->whereRaw('1 = 0');
+                }
             } elseif ($programTypeStr === 'playlist') {
                 $cuSelect->whereRaw('1 = 0');
             }
@@ -313,7 +342,9 @@ class LearningDatatableService
                     $matched = true;
                 }
                 if (!empty($statusMatches)) {
-                    $q->orWhereIn('pcu.status', $statusMatches);
+                    if ($hasPcuStatus) {
+                        $q->orWhereIn('pcu.status', $statusMatches);
+                    }
                     $matched = true;
                 }
                 if (in_array('playlist', $statusMatches) || $matchCatPlaylist) {
