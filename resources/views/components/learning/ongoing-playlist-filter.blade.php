@@ -190,6 +190,8 @@
                            aria-label="Reset Filter">
                             <i class="ti ti-refresh" aria-hidden="true"></i>
                         </a>
+
+                        <x-learning.ongoing-export mode="playlist" />
                     </div>
 
                 </div>

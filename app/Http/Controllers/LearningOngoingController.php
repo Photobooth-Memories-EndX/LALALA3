@@ -6,11 +6,15 @@ use App\Models\ContentUser;
 use App\Services\Learning\OngoingContentService;
 use App\Services\Learning\OngoingPlaylistService;
 use App\Support\LearningFilterHelper;
+use App\Support\DurationFormatter;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
+use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 
 /**
  * Learning On Going — pembelajaran yang sedang berjalan.
@@ -26,6 +30,91 @@ use Illuminate\Support\Facades\DB;
  */
 class LearningOngoingController extends Controller
 {
+    public function download(Request $request)
+    {
+        $request->validate([
+            'ongoing_mode' => 'sometimes|in:content,playlist,mooc',
+            'format' => 'sometimes|in:excel,xlsx,pdf,csv',
+        ]);
+        $mode = $request->input('ongoing_mode', 'content');
+        $format = $request->input('format', 'excel');
+        if (!$request->has('ongoing_search') && $request->has('q')) {
+            $request->query->set('ongoing_search', $request->query('q'));
+        }
+        // Only Ongoing parameters may determine this dataset. Record filters are unrelated.
+        $request->query->replace(collect($request->query())->filter(
+            fn ($value, $key) => str_starts_with($key, 'ongoing_')
+        )->all());
+        $filters = $mode === 'playlist' ? $this->playlistFilterState() : $this->contentFilterState();
+        $user = $request->user();
+        $cards = $mode === 'playlist'
+            ? $this->playlistService->ongoingCards($this->playlistService->userPlaylists((int) $user->id), $filters)
+            : ($mode === 'mooc'
+                ? $this->contentService->moocCards((int) $user->id, $filters)
+                : $this->contentService->ongoingCards((int) $user->id, $filters));
+
+        $cards = $this->sortOngoingCards($cards, $filters['progress_sort'], $filters['activity_sort']);
+        $export = new \App\Exports\ExportMyLearningOngoing($cards, $user);
+        $filename = 'MyLearningOngoing_' . ucfirst($mode) . '_' . now()->format('Ymd_His');
+
+        if ($format === 'pdf') {
+            return Pdf::loadView('user.learning.exports.ongoing-pdf', [
+                'rows' => $this->displayOngoingRows($export->array()),
+                'generatedAt' => now(),
+                'mode' => ucfirst($mode),
+            ])->setPaper('a4', 'landscape')->download($filename . '.pdf');
+        }
+
+        if ($format === 'csv') {
+            $rows = $this->displayOngoingRows($export->array());
+
+            return response()->streamDownload(function () use ($rows) {
+                $output = fopen('php://output', 'wb');
+                fwrite($output, "\xEF\xBB\xBF");
+                foreach ($rows as $row) {
+                    fputcsv($output, array_map($this->safeCsvCell(...), $row));
+                }
+                fclose($output);
+            }, $filename . '.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+        }
+
+        return Excel::download($export, $filename . '.xlsx');
+    }
+
+    /** Convert Excel serials into readable values for CSV/PDF while keeping the same 13-column export. */
+    private function displayOngoingRows(array $rows): array
+    {
+        foreach ($rows as $rowIndex => $row) {
+            if ($rowIndex === 0) {
+                continue;
+            }
+
+            foreach ([5 => 'duration', 7 => 'percent', 8 => 'date', 9 => 'date'] as $column => $kind) {
+                if (!isset($row[$column]) || !is_numeric($row[$column])) {
+                    continue;
+                }
+
+                $row[$column] = match ($kind) {
+                    'duration' => DurationFormatter::fromSeconds((int) round((float) $row[$column] * 86400)),
+                    'percent' => rtrim(rtrim(number_format((float) $row[$column] * 100, 2, '.', ''), '0'), '.') . '%',
+                    'date' => ExcelDate::excelToDateTimeObject((float) $row[$column])->format('Y-m-d H:i'),
+                };
+            }
+            $rows[$rowIndex] = $row;
+        }
+
+        return $rows;
+    }
+
+    private function safeCsvCell(mixed $value): mixed
+    {
+        if (is_string($value) && preg_match('/^\s*[=+@\\-]/u', $value)) {
+            return "'" . $value;
+        }
+
+        return $value;
+    }
+
     public function __construct(
         private OngoingPlaylistService $playlistService,
         private OngoingContentService $contentService,

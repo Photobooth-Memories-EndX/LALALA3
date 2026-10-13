@@ -139,6 +139,22 @@ class OngoingContentService
     }
 
     /**
+     * Return only canonically ongoing standalone content while preserving the page's filters.
+     * Completed quick filters may be used to inspect cards on the page, but must not
+     * turn completed records into rows in the Ongoing export.
+     */
+    public function ongoingCards(int $userId, array $filters = []): Collection
+    {
+        return $this->cards($userId, $filters)
+            ->filter(function (array $card): bool {
+                $contentUser = $card['list'];
+
+                return (int) $contentUser->progress >= 5 && !$contentUser->isFinished();
+            })
+            ->values();
+    }
+
+    /**
      * Scope status dasar card Content.
      *
      * Quick filter Status (dropdown cepat) menang bila dipilih; jika tidak,

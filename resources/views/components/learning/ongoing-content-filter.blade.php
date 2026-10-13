@@ -154,7 +154,6 @@
 <div class="card border-0 shadow-sm rounded-4 mb-4 learning-filter-card ongoing-filter-card">
     <div class="card-body p-4">
         <form action="{{ route('user.learning.dashboard') }}" method="GET" id="ongoingFilterForm" class="ongoing-filter-shell">
-
             {{-- Quick Status ikut terkirim saat submit form/Apply Filter (state konsisten). --}}
             @if ($curQuickStatus !== 'all')
                 <input type="hidden" name="ongoing_quick_status" value="{{ $curQuickStatus }}">
@@ -321,6 +320,8 @@
                    aria-label="Reset Filter">
                     <i class="ti ti-refresh" aria-hidden="true"></i>
                 </a>
+
+                <x-learning.ongoing-export mode="{{ request('ongoing_mode') === 'mooc' ? 'mooc' : 'content' }}" />
             </div>
 
             </div>
