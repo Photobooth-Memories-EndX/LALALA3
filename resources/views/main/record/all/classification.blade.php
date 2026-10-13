@@ -2138,7 +2138,7 @@
                             $('#modal-detail-venue').text(d.venue || '-');
                             $('#modal-detail-instructor').text(d.instructor || '-');
 
-                            // Section 4: Schedule & Duration
+                            // Section 4: Schedule Duration & Program Evaluation
                             $('#modal-detail-start-date').text(d.start_date || '-');
                             $('#modal-detail-finish-date').text(d.finish_date || '-');
                             $('#modal-detail-duration-seconds').text(d.duration_seconds ?

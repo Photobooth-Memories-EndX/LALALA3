@@ -48,15 +48,15 @@
                     <div class="d-flex align-items-center gap-2 flex-wrap w-100">
                         <!-- Employee Search -->
                         <div class="position-relative flex-grow-1" style="min-width: 180px;">
-                            <input type="text" id="offline-employee-input" class="form-control rounded-3 w-100" 
-                                   placeholder="Search employee or NIP..." autocomplete="off" 
+                            <input type="text" id="offline-employee-input" class="form-control rounded-3 w-100"
+                                   placeholder="Search employee or NIP..." autocomplete="off"
                                    value="{{ request('employee_id') ?? request('employee') }}">
                         </div>
 
                         <!-- Learning Title / Course Name Search -->
                         <div class="position-relative flex-grow-1" style="min-width: 200px;">
-                            <input type="text" id="offline-course-input" class="form-control rounded-3 w-100" 
-                                   placeholder="Search learning title..." autocomplete="off" 
+                            <input type="text" id="offline-course-input" class="form-control rounded-3 w-100"
+                                   placeholder="Search learning title..." autocomplete="off"
                                    value="{{ request('course_name') ?? (request('learning_title') ?? request('title')) }}">
                         </div>
 
@@ -91,20 +91,20 @@
                         </div>
 
                         <!-- 1. Icon Button: Apply Filter -->
-                        <button type="button" id="btn-apply-offline-filter" class="btn btn-primary btn-icon px-3 flex-shrink-0" 
+                        <button type="button" id="btn-apply-offline-filter" class="btn btn-primary btn-icon px-3 flex-shrink-0"
                                 style="background-color: #003b6d; border-color: #003b6d;" data-bs-toggle="tooltip" data-bs-title="Apply Filter" title="Apply Filter">
                             <i class="ti ti-search fs-2"></i>
                         </button>
 
                         <!-- 2. Icon Button: More Filters -->
-                        <button type="button" id="btn-more-offline-filters" class="btn btn-outline-primary btn-icon px-3 position-relative btn-more-filters flex-shrink-0" 
+                        <button type="button" id="btn-more-offline-filters" class="btn btn-outline-primary btn-icon px-3 position-relative btn-more-filters flex-shrink-0"
                                 data-bs-toggle="modal" data-bs-target="#moreOfflineFiltersModal" title="More Filters">
                             <i class="ti ti-adjustments-horizontal fs-2"></i>
                             <span id="activeFilterBadge" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle d-none">0</span>
                         </button>
 
                         <!-- 3. Icon Button: Reset -->
-                        <button type="button" id="btn-reset-offline-filter" class="btn btn-outline-secondary btn-icon px-3 btn-quick-reset flex-shrink-0" 
+                        <button type="button" id="btn-reset-offline-filter" class="btn btn-outline-secondary btn-icon px-3 btn-quick-reset flex-shrink-0"
                                 data-bs-toggle="tooltip" data-bs-title="Reset Filters" title="Reset Filters">
                             <i class="ti ti-refresh fs-2"></i>
                         </button>
@@ -1169,7 +1169,7 @@
                         $('#modal-detail-venue').text(d.venue || '-');
                         $('#modal-detail-instructor').text(d.instructor || '-');
 
-                        // Section 4: Schedule & Duration
+                        // Section 4: Schedule Duration & Program Evaluation
                         $('#modal-detail-start-date').text(d.start_date || '-');
                         $('#modal-detail-finish-date').text(d.finish_date || '-');
                         $('#modal-detail-duration-seconds').text(d.duration_seconds ? `${d.duration_seconds.toLocaleString()}s` : '-');

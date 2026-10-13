@@ -220,7 +220,7 @@
             $('.btn-add-option-modal[data-type="sub_corporate_kpi"]').data('year', kpiYear);
         }
 
-        // --- Schedule & Duration Watchers ---
+        // --- Schedule Duration & Program Evaluation Watchers ---
         $('#add-start-date').on('change', function () {
             const startVal = $(this).val();
             const monthText = deriveMonthString(startVal);
@@ -430,6 +430,7 @@
             }
 
             const defaultLearningHours = parseFloat($('#add-learning-hours').val()) || null;
+            const defaultL1Program = ($('#res-l1-program').val() || '').trim();
 
             // Push participant with default learning results
             addParticipants.push({
@@ -450,7 +451,7 @@
                 bond_status: 'No',
                 bond_end_date: '',
                 bond_amount: '',
-                l1_program: '',
+                l1_program: defaultL1Program,
                 l2_numerical: '',
                 l2_verbal: '',
                 l3_numerical: '',
@@ -701,15 +702,27 @@
             updateSection4Review();
         });
 
+        $('#res-l1-program').on('input change', function () {
+            if (currentActiveParticipantIndex >= 0 && addParticipants[currentActiveParticipantIndex]) {
+                addParticipants[currentActiveParticipantIndex].l1_program = ($(this).val() || '').trim();
+                updateSection4Review();
+            }
+        });
+
         $('#btn-save-participant-result').on('click', function () {
+            const $btn = $(this);
+            if ($btn.prop('disabled')) return;
+            $btn.prop('disabled', true);
+
             saveCurrentActiveParticipantForm();
             updateSection4Review();
-            $('#save-result-status-msg').html('<span class="text-success fw-bold"><i class="ti ti-check"></i> Result saved for this participant!</span>');
+            $('#save-result-status-msg').html('<span class="text-success fw-bold"><i class="ti ti-check"></i> Result saved and submitted for this participant!</span>');
             setTimeout(function () {
+                $btn.prop('disabled', false);
                 if (currentActiveParticipantIndex >= 0 && addParticipants[currentActiveParticipantIndex]) {
                     $('#save-result-status-msg').text(`Configuring results for: ${addParticipants[currentActiveParticipantIndex].name}`);
                 }
-            }, 2000);
+            }, 1000);
         });
 
         // Helper: Format Date for Review Display (e.g., "10 Aug 2026")

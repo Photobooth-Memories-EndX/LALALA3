@@ -46,7 +46,7 @@
             <div class="col-sm-6 col-lg-3">
                 <div class="card border-0 shadow-sm p-3 rounded-3 bg-white stat-kpi-card h-100">
                     <div class="d-flex align-items-center">
-                        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
+                        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3"
                              style="width: 44px; height: 44px; background-color: #0f4c81; color: #ffffff;">
                             <i class="ti ti-users fs-2"></i>
                         </div>
@@ -62,7 +62,7 @@
             <div class="col-sm-6 col-lg-3">
                 <div class="card border-0 shadow-sm p-3 rounded-3 bg-white stat-kpi-card h-100">
                     <div class="d-flex align-items-center">
-                        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
+                        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3"
                              style="width: 44px; height: 44px; background-color: #16a34a; color: #ffffff;">
                             <i class="ti ti-circle-check fs-2"></i>
                         </div>
@@ -78,7 +78,7 @@
             <div class="col-sm-6 col-lg-3">
                 <div class="card border-0 shadow-sm p-3 rounded-3 bg-white stat-kpi-card h-100">
                     <div class="d-flex align-items-center">
-                        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
+                        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3"
                              style="width: 44px; height: 44px; background-color: #f59e0b; color: #ffffff;">
                             <i class="ti ti-clock-hour-4 fs-2"></i>
                         </div>
@@ -94,7 +94,7 @@
             <div class="col-sm-6 col-lg-3">
                 <div class="card border-0 shadow-sm p-3 rounded-3 bg-white stat-kpi-card h-100">
                     <div class="d-flex align-items-center">
-                        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
+                        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3"
                              style="width: 44px; height: 44px; background-color: #0284c7; color: #ffffff;">
                             <i class="ti ti-chart-pie fs-2"></i>
                         </div>
@@ -1325,7 +1325,7 @@
                         $('#modal-detail-venue').text(d.venue || '-');
                         $('#modal-detail-instructor').text(d.instructor || '-');
 
-                        // Section 4: Schedule & Duration
+                        // Section 4: Schedule Duration & Program Evaluation
                         $('#modal-detail-start-date').text(d.start_date || '-');
                         $('#modal-detail-finish-date').text(d.finish_date || '-');
                         $('#modal-detail-duration-seconds').text(d.duration_seconds ? `${d.duration_seconds.toLocaleString()}s` : '-');

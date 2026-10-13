@@ -115,7 +115,7 @@
                             <label for="edit-batch" class="form-label small fw-semibold">Batch</label>
                             <input type="text" class="form-control rounded-2" id="edit-batch" name="batch" value="{{ old('batch', $training->batch) }}" placeholder="e.g. Batch 1">
                         </div>
-                        <div class="col-12 col-md-6">
+                        <div class="col-12">
                             <label for="edit-sub-course-name" class="form-label small fw-semibold">Sub Course Name</label>
                             <div class="input-group">
                                 <select class="form-select rounded-start-2 select2-master-option" id="edit-sub-course-name" name="sub_course_name" data-type="sub_course_name" data-placeholder="Select Sub Course Name" data-tags="true">
@@ -135,6 +135,13 @@
                                     <i class="ti ti-plus"></i>
                                 </button>
                             </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label for="edit-l1-program" class="form-label small fw-semibold">L1 Program</label>
+                            <input type="text" class="form-control rounded-2 @error('l1_program') is-invalid @enderror" id="edit-l1-program" name="l1_program" value="{{ old('l1_program', $record->l1_program) }}" placeholder="e.g. 4.8 / Very Good">
+                            @error('l1_program')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
                         </div>
                         <div class="col-12 col-md-6">
                             <label for="edit-type" class="form-label small fw-semibold">Type</label>
@@ -392,9 +399,9 @@
                         </div>
                     </div>
 
-                    <!-- SUBSECTION: SCHEDULE & DURATION -->
+                    <!-- SUBSECTION: Schedule & Duration Program Evaluation -->
                     <div class="subsection-header p-2 px-3 rounded-2 mb-3 bg-light-subtle border-start border-primary border-3">
-                        <span class="fw-bold text-primary small text-uppercase">Schedule &amp; Duration</span>
+                        <span class="fw-bold text-primary small text-uppercase">Schedule &amp; Duration Program Evaluation</span>
                     </div>
 
                     @php
@@ -648,21 +655,17 @@
                         </div>
                     </div>
 
-                    <!-- SUBSECTION: EVALUATION (L1, L2, L3) -->
+                    <!-- SUBSECTION: EVALUATION (L2, L3) -->
                     <div class="subsection-header p-2 px-3 rounded-2 mb-3 bg-light-subtle border-start border-primary border-3">
-                        <span class="fw-bold text-primary small text-uppercase">Kirkpatrick Evaluation (L1 - L3)</span>
+                        <span class="fw-bold text-primary small text-uppercase">Kirkpatrick Evaluation (L2 - L3)</span>
                     </div>
 
                     <div class="row g-3">
-                        <div class="col-12 col-md-4">
-                            <label for="edit-l1-program" class="form-label extra-small fw-bold text-muted text-uppercase mb-1">L1 &bull; Program</label>
-                            <input type="text" class="form-control form-control-sm rounded-2" id="edit-l1-program" name="l1_program" value="{{ old('l1_program', $record->l1_program) }}" placeholder="e.g. 4.8 / Very Good">
-                        </div>
-                        <div class="col-12 col-sm-6 col-md-4">
+                        <div class="col-12 col-sm-6 col-md-6">
                             <label for="edit-l2-numerical" class="form-label extra-small fw-bold text-muted text-uppercase mb-1">L2 (Post Test) &bull; Numerical</label>
                             <input type="number" step="0.1" min="0" max="100" class="form-control form-control-sm rounded-2" id="edit-l2-numerical" name="l2_numerical" value="{{ old('l2_numerical', $record->l2_numerical) }}" placeholder="Score (0-100)">
                         </div>
-                        <div class="col-12 col-sm-6 col-md-4">
+                        <div class="col-12 col-sm-6 col-md-6">
                             <label for="edit-l2-verbal" class="form-label extra-small fw-bold text-muted text-uppercase mb-1">L2 (Post Test) &bull; Verbal</label>
                             @php
                                 $currentL2Verbal = old('l2_verbal', $record->l2_verbal);
