@@ -30,7 +30,7 @@
     white-space: nowrap;
 }
 
-/* KP OWL Table (Online - 11 columns) */
+/* KP OWL Table (Online - 12 columns) */
 #learningRecordTable th:nth-child(1),
 #learningRecordTable td:nth-child(1) {
     width: 44px !important;
@@ -94,11 +94,17 @@
 
 #learningRecordTable th:nth-child(11),
 #learningRecordTable td:nth-child(11) {
+    width: 95px !important;
+    min-width: 90px;
+}
+
+#learningRecordTable th:nth-child(12),
+#learningRecordTable td:nth-child(12) {
     width: 90px !important;
     min-width: 85px;
 }
 
-/* Kolom metrik, Type, Classification, Date Time, dan aksi rata tengah; Class tetap rata kiri. */
+/* Kolom metrik, Type, Classification, Date Time, Attendance, dan aksi rata tengah; Class tetap rata kiri. */
 #learningRecordTable th:nth-child(3),
 #learningRecordTable td:nth-child(3),
 #learningRecordTable th:nth-child(4),
@@ -116,7 +122,9 @@
 #learningRecordTable th:nth-child(10),
 #learningRecordTable td:nth-child(10),
 #learningRecordTable th:nth-child(11),
-#learningRecordTable td:nth-child(11) {
+#learningRecordTable td:nth-child(11),
+#learningRecordTable th:nth-child(12),
+#learningRecordTable td:nth-child(12) {
     text-align: center;
 }
 

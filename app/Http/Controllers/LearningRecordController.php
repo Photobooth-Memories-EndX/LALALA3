@@ -251,6 +251,7 @@ class LearningRecordController extends Controller
             'learning-hour'  => fn (array $row) => (float) ($row['learning_hour_bucket'] ?? -1),
             'progress'       => fn (array $row) => (float) ($row['progress'] ?? -1),
             'finish'         => fn (array $row) => (string) ($row['finish_date'] ?? ''),
+            'attendance'     => fn (array $row) => mb_strtolower((string) ($row['attendance'] ?? '')),
             'score'          => fn (array $row) => (float) ($row['score'] ?? -1),
         ];
 
@@ -591,6 +592,11 @@ class LearningRecordController extends Controller
                 $modalMessage = '';
             }
 
+            $rawProgress = $cu->progress;
+            $hasValidProgress = !is_null($rawProgress) && is_numeric($rawProgress);
+            $contentProgress = $hasValidProgress ? (int) $rawProgress : 0;
+            $attendanceStatus = ($hasValidProgress && (int) $rawProgress >= 100) ? 'Present' : '-';
+
             return [
                 'row_kind'        => 'content',
                 'category'        => 'Content',
@@ -608,7 +614,9 @@ class LearningRecordController extends Controller
                 'learning_hour'   => $formattedHours,
                 'learning_hour_bucket' => $actualHours,
                 'learning_hour_value'  => $actualHours,
-                'progress'        => (int) ($cu->progress ?? 0),
+                'progress'        => $contentProgress,
+                'attendance'      => $attendanceStatus,
+                'attendance_status' => $attendanceStatus,
                 'min_progress'    => $setting ? (int) $setting->minimum_progress : 0,
                 'start_date'      => optional($cu->created_at)->format('Y-m-d H:i:s') ?? '',
                 'finish_date'     => (int) $cu->finish === 1
@@ -793,6 +801,8 @@ class LearningRecordController extends Controller
                 'learning_hour_bucket' => $actualHours,
                 'learning_hour_value'  => $actualHours,
                 'progress'        => 100,
+                'attendance'      => 'Present',
+                'attendance_status' => 'Present',
                 'min_progress'    => $setting ? (int) ($setting->minimum_progress ?? 0) : 0,
                 'start_date'      => $startDate ? Carbon::parse($startDate)->format('Y-m-d H:i:s') : '',
                 'finish_date'     => $finishDate,
