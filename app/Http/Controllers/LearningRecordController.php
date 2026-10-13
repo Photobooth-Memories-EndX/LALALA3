@@ -109,29 +109,30 @@ class LearningRecordController extends Controller
 
     /**
      * Apply the GET-backed Learning Record filters before Blade renders rows.
+     * Can also be called programmatically (e.g., from ExportMyLearningRecord) with custom $filters.
      */
-    private function applyRecordFilters(Collection $rows): Collection
+    public function applyRecordFilters(Collection $rows, array $filters = []): Collection
     {
-        $search = mb_strtolower(trim((string) (request('record_search') ?? request('search') ?? request('q') ?? '')));
-        $type = (string) (request('record_filter_type') ?? request('type') ?? 'all');
-        $rawClassification = (string) (request('record_filter_classification') ?? request('classification') ?? 'all');
+        $search = mb_strtolower(trim((string) ($filters['record_search'] ?? $filters['search'] ?? $filters['q'] ?? request('record_search') ?? request('search') ?? request('q') ?? '')));
+        $type = (string) ($filters['record_filter_type'] ?? $filters['type'] ?? request('record_filter_type') ?? request('type') ?? 'all');
+        $rawClassification = (string) ($filters['record_filter_classification'] ?? $filters['classification'] ?? request('record_filter_classification') ?? request('classification') ?? 'all');
         $classification = $rawClassification !== 'all' ? trim(html_entity_decode($rawClassification, ENT_QUOTES | ENT_HTML5, 'UTF-8')) : 'all';
-        $playlist = (string) (request('record_filter_playlist') ?? request('playlist') ?? 'all');
-        $year = (string) (request('record_filter_year') ?? request('year') ?? 'all');
-        $rawMonth = (string) (request('record_filter_month') ?? request('month') ?? 'all');
+        $playlist = (string) ($filters['record_filter_playlist'] ?? $filters['playlist'] ?? request('record_filter_playlist') ?? request('playlist') ?? 'all');
+        $year = (string) ($filters['record_filter_year'] ?? $filters['year'] ?? request('record_filter_year') ?? request('year') ?? 'all');
+        $rawMonth = (string) ($filters['record_filter_month'] ?? $filters['month'] ?? request('record_filter_month') ?? request('month') ?? 'all');
         $month = \App\Support\LearningFilterHelper::resolveMonth($rawMonth);
-        $program = (string) (request('record_filter_program') ?? request('program') ?? 'all');
-        $learningHour = (string) (request('record_filter_learning_hour') ?? request('learningHour') ?? 'all');
-        $duration = (string) (request('record_filter_duration') ?? request('duration') ?? 'all');
-        $modalYear = (string) (request('record_filter_modal_year') ?? request('modalYear') ?? 'all');
-        $score = (string) (request('record_filter_score') ?? request('scoreTest') ?? 'all');
-        $certificate = (string) (request('record_filter_certificate') ?? request('certificate') ?? 'all');
-        $completion = (string) (request('record_filter_completion') ?? request('completion') ?? 'all');
-        $modalTypes = array_values(array_filter((array) (request('record_filter_modal_type') ?? request('modalTypes') ?? []), fn ($value) => $value !== 'all'));
-        $learningStatuses = array_values(array_filter((array) (request('record_filter_learning_status') ?? request('learningStatus') ?? [])));
-        $progressRanges = array_values(array_filter((array) (request('record_filter_progress') ?? request('progressRanges') ?? [])));
-        $modalMonths = array_map('strval', array_values(array_filter((array) (request('record_filter_modal_month') ?? request('modalMonths') ?? []))));
-        $quickFilter = (string) (request('record_quick') ?? request('quickFilter') ?? request('ongoing_mode') ?? 'all');
+        $program = (string) ($filters['record_filter_program'] ?? $filters['program'] ?? request('record_filter_program') ?? request('program') ?? 'all');
+        $learningHour = (string) ($filters['record_filter_learning_hour'] ?? $filters['learningHour'] ?? request('record_filter_learning_hour') ?? request('learningHour') ?? 'all');
+        $duration = (string) ($filters['record_filter_duration'] ?? $filters['duration'] ?? request('record_filter_duration') ?? request('duration') ?? 'all');
+        $modalYear = (string) ($filters['record_filter_modal_year'] ?? $filters['modalYear'] ?? request('record_filter_modal_year') ?? request('modalYear') ?? 'all');
+        $score = (string) ($filters['record_filter_score'] ?? $filters['scoreTest'] ?? request('record_filter_score') ?? request('scoreTest') ?? 'all');
+        $certificate = (string) ($filters['record_filter_certificate'] ?? $filters['certificate'] ?? request('record_filter_certificate') ?? request('certificate') ?? 'all');
+        $completion = (string) ($filters['record_filter_completion'] ?? $filters['completion'] ?? request('record_filter_completion') ?? request('completion') ?? 'all');
+        $modalTypes = array_values(array_filter((array) ($filters['record_filter_modal_type'] ?? $filters['modalTypes'] ?? request('record_filter_modal_type') ?? request('modalTypes') ?? []), fn ($value) => $value !== 'all'));
+        $learningStatuses = array_values(array_filter((array) ($filters['record_filter_learning_status'] ?? $filters['learningStatus'] ?? request('record_filter_learning_status') ?? request('learningStatus') ?? [])));
+        $progressRanges = array_values(array_filter((array) ($filters['record_filter_progress'] ?? $filters['progressRanges'] ?? request('record_filter_progress') ?? request('progressRanges') ?? [])));
+        $modalMonths = array_map('strval', array_values(array_filter((array) ($filters['record_filter_modal_month'] ?? $filters['modalMonths'] ?? request('record_filter_modal_month') ?? request('modalMonths') ?? []))));
+        $quickFilter = (string) ($filters['record_quick'] ?? $filters['quickFilter'] ?? $filters['ongoing_mode'] ?? request('record_quick') ?? request('quickFilter') ?? request('ongoing_mode') ?? 'all');
 
         $filtered = $rows->filter(function (array $row) use (
             $search,
@@ -238,9 +239,9 @@ class LearningRecordController extends Controller
             return $certificate === 'all' || (string) ($row['cert_state'] ?? 'none') === $certificate;
         });
 
-        $sort = (string) request('record_sort', '');
-        $direction = (string) request('record_sort_direction', 'asc');
-        $activitySort = (string) (request('record_filter_activity_sort') ?? request('activitySort') ?? 'all');
+        $sort = (string) ($filters['record_sort'] ?? $filters['sort'] ?? request('record_sort', ''));
+        $direction = (string) ($filters['record_sort_direction'] ?? $filters['direction'] ?? request('record_sort_direction', 'asc'));
+        $activitySort = (string) ($filters['record_filter_activity_sort'] ?? $filters['activitySort'] ?? request('record_filter_activity_sort') ?? request('activitySort') ?? 'all');
         $sortKeys = [
             'title'          => fn (array $row) => mb_strtolower((string) ($row['title'] ?? '')),
             'category'       => fn (array $row) => mb_strtolower((string) ($row['category'] ?? '')),

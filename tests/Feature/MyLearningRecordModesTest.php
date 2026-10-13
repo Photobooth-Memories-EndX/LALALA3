@@ -61,7 +61,7 @@ class MyLearningRecordModesTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('KP OWL');
         $response->assertSee('Non KP OWL');
-        $response->assertSee('All KP OWL');
+        $response->assertSee('All Record');
         $response->assertSee('record-mode-switch');
         $response->assertSee('record-mode-btn');
         $response->assertSee('data-mode="online"', false);
@@ -355,7 +355,7 @@ class MyLearningRecordModesTest extends TestCase
         $onlineResp->assertStatus(200);
         $onlineResp->assertSee('KP OWL');
         $onlineResp->assertSee('Non KP OWL');
-        $onlineResp->assertSee('All KP OWL');
+        $onlineResp->assertSee('All Record');
         $onlineResp->assertSee('data-mode="online"', false);
         $onlineResp->assertSee('data-mode="offline"', false);
         $onlineResp->assertSee('data-mode="all"', false);
@@ -374,7 +374,7 @@ class MyLearningRecordModesTest extends TestCase
         $offlineResp->assertStatus(200);
         $offlineResp->assertSee('KP OWL');
         $offlineResp->assertSee('Non KP OWL');
-        $offlineResp->assertSee('All KP OWL');
+        $offlineResp->assertSee('All Record');
         $offlineResp->assertSee('data-mode="online"', false);
         $offlineResp->assertSee('data-mode="offline"', false);
         $offlineResp->assertSee('data-mode="all"', false);
@@ -389,7 +389,7 @@ class MyLearningRecordModesTest extends TestCase
         $allResp->assertStatus(200);
         $allResp->assertSee('KP OWL');
         $allResp->assertSee('Non KP OWL');
-        $allResp->assertSee('All KP OWL');
+        $allResp->assertSee('All Record');
         $allResp->assertSee('data-mode="online"', false);
         $allResp->assertSee('data-mode="offline"', false);
         $allResp->assertSee('data-mode="all"', false);

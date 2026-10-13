@@ -362,8 +362,40 @@ class UserRecordOfflineService
             return true;
         });
 
-        // Default sort: finish_date DESC, start_date DESC
-        return $filtered->sortByDesc(fn (array $r) => $r['finish_date'] ?: ($r['start_date'] ?: '0000-00-00'))->values();
+        $sort = (string) ($filters['record_sort'] ?? $filters['sort'] ?? request('record_sort', ''));
+        $direction = (string) ($filters['record_sort_direction'] ?? $filters['direction'] ?? request('record_sort_direction', 'asc'));
+        $activitySort = (string) ($filters['record_filter_activity_sort'] ?? $filters['activitySort'] ?? request('record_filter_activity_sort') ?? request('activitySort') ?? 'all');
+
+        $sortKeys = [
+            'title'          => fn (array $row) => mb_strtolower((string) ($row['title'] ?? '')),
+            'category'       => fn (array $row) => mb_strtolower((string) ($row['category'] ?? '')),
+            'type'           => fn (array $row) => mb_strtolower((string) ($row['type'] ?? '')),
+            'classification' => fn (array $row) => mb_strtolower((string) ($row['classification'] ?? '')),
+            'duration'       => fn (array $row) => (float) ($row['duration_seconds'] ?? -1),
+            'learning-hour'  => fn (array $row) => (float) ($row['learning_hour_value'] ?? -1),
+            'progress'       => fn (array $row) => (float) ($row['progress'] ?? -1),
+            'date'           => fn (array $row) => (string) ($row['finish_date'] ?: ($row['start_date'] ?: '')),
+            'score'          => fn (array $row) => (float) ($row['score'] ?? -1),
+        ];
+
+        if (isset($sortKeys[$sort]) && in_array($direction, ['asc', 'desc'], true)) {
+            $filtered = $direction === 'desc'
+                ? $filtered->sortByDesc($sortKeys[$sort])
+                : $filtered->sortBy($sortKeys[$sort]);
+        } elseif ($activitySort === 'oldest') {
+            $filtered = $filtered->sortBy(fn (array $r) => $r['finish_date'] ?: ($r['start_date'] ?: '0000-00-00'));
+        } elseif ($activitySort === 'newest') {
+            $filtered = $filtered->sortByDesc(fn (array $r) => $r['finish_date'] ?: ($r['start_date'] ?: '0000-00-00'));
+        } elseif ($activitySort === 'ascending') {
+            $filtered = $filtered->sortBy(fn (array $r) => mb_strtolower((string) ($row['title'] ?? '')));
+        } elseif ($activitySort === 'descending') {
+            $filtered = $filtered->sortByDesc(fn (array $r) => mb_strtolower((string) ($row['title'] ?? '')));
+        } else {
+            // Default sort: finish_date DESC, start_date DESC
+            $filtered = $filtered->sortByDesc(fn (array $r) => $r['finish_date'] ?: ($r['start_date'] ?: '0000-00-00'));
+        }
+
+        return $filtered->values();
     }
 
     /**

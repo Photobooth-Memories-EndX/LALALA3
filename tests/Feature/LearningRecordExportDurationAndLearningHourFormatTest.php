@@ -114,10 +114,8 @@ class LearningRecordExportDurationAndLearningHourFormatTest extends TestCase
         // Kolom F (index 5) = Duration must be hh:mm:ss format
         $this->assertEquals('00:04:00', $videoRow[5]);
         $this->assertMatchesRegularExpression('/^\d{2}:\d{2}:\d{2}$/', $videoRow[5]);
-        // Kolom G (index 6) = Learning Hour must be numeric and not contain 'h'
-        $this->assertTrue(is_numeric($videoRow[6]), 'Learning hour must be numeric');
-        $this->assertEquals(0.07, $videoRow[6]);
-        $this->assertStringNotContainsString('h', (string) $videoRow[6]);
+        // Kolom G (index 6) = Learning Hour formatted as '0.07 hrs'
+        $this->assertEquals('0.07 hrs', $videoRow[6]);
 
         // B. Playlist Row Verification
         $playlistRow = $rows->firstWhere(1, 'Test Playlist Track');
@@ -125,20 +123,11 @@ class LearningRecordExportDurationAndLearningHourFormatTest extends TestCase
         // Kolom F (index 5) = Duration must be hh:mm:ss format
         $this->assertEquals('00:15:00', $playlistRow[5]);
         $this->assertMatchesRegularExpression('/^\d{2}:\d{2}:\d{2}$/', $playlistRow[5]);
-        // Kolom G (index 6) = Learning Hour must be numeric and not contain 'h'
-        $this->assertTrue(is_numeric($playlistRow[6]), 'Learning hour must be numeric');
-        $this->assertEquals(0.25, $playlistRow[6]);
-        $this->assertStringNotContainsString('h', (string) $playlistRow[6]);
+        // Kolom G (index 6) = Learning Hour formatted as '0.25 hrs'
+        $this->assertEquals('0.25 hrs', $playlistRow[6]);
 
-        // C. TOTAL Row Verification
+        // C. Standardized Export: NO TOTAL Row (Exact Table Data)
         $totalRow = $rows->firstWhere(0, 'TOTAL');
-        $this->assertNotNull($totalRow, 'TOTAL row must exist in export');
-        // Total Duration = 240s + 900s = 1140s = 00:19:00
-        $this->assertEquals('00:19:00', $totalRow[5]);
-        $this->assertMatchesRegularExpression('/^\d{2}:\d{2}:\d{2}$/', $totalRow[5]);
-        // Total Learning Hour = 0.07 + 0.25 = 0.32
-        $this->assertTrue(is_numeric($totalRow[6]), 'TOTAL learning hour must be numeric');
-        $this->assertEquals(0.32, $totalRow[6]);
-        $this->assertStringNotContainsString('h', (string) $totalRow[6]);
+        $this->assertNull($totalRow, 'Standardized export must NOT contain TOTAL summary row');
     }
 }
