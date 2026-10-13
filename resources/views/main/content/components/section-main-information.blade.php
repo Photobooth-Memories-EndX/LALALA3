@@ -84,16 +84,21 @@
                 <textarea name="description" id="description" rows="4" class="form-control" {{ $isLocked ? 'disabled' : 'required' }}>{{ old('description', $content->description ?? '') }}</textarea>
             </div>
 
-            {{-- 5. Only Show on Playlist --}}
+            {{-- 5. Status (Mandatory / Optional) --}}
             <div class="col-12">
-                <label class="form-check {{ $isLocked ? 'cursor-not-allowed' : 'cursor-pointer' }}" for="playlistonly">
-                    <input type="hidden" name="playlistonly" value="N" {{ $isLocked ? 'disabled' : '' }}>
-                    <input class="form-check-input" type="checkbox" name="playlistonly" id="playlistonly" value="Y"
-                        @checked(in_array(old('playlistonly', $content->playlistonly ?? 'N'), ['Y', '1', 1, true, 'yes', 'Yes'], true))
-                        {{ $isLocked ? 'disabled' : '' }}>
-                    <span class="form-check-label">Only show on Playlist</span>
-                </label>
-                <small class="form-hint d-block mt-1">This content is only available within playlists and will not appear in the general content list.</small>
+                <label class="form-label required" for="status">Status</label>
+                @if ($isLocked)
+                    <input type="hidden" name="status" value="{{ old('status', $content->status ?? 'optional') }}">
+                @endif
+                <select name="status" id="status" class="form-select @error('status') is-invalid @enderror" {{ $isLocked ? 'disabled' : 'required' }}>
+                    <option value="">-- Select Status --</option>
+                    <option value="mandatory" @selected(old('status', $content->status ?? '') === 'mandatory')>Mandatory</option>
+                    <option value="optional" @selected(old('status', $content->status ?? '') === 'optional')>Optional</option>
+                </select>
+                @error('status')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+                <small class="form-hint">Tentukan apakah konten ini wajib (Mandatory) atau opsional (Optional) untuk dipelajari.</small>
             </div>
         </div>
     </div>

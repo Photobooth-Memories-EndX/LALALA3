@@ -156,6 +156,16 @@ class Content extends Model
         return $this->active !== 'Active';
     }
 
+    public function isMandatory(): bool
+    {
+        return $this->status === 'mandatory';
+    }
+
+    public function isOptional(): bool
+    {
+        return $this->status === 'optional';
+    }
+
     public function isAccessibleByDeadline(): bool
     {
         if (!$this->has_deadline) {

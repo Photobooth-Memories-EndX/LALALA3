@@ -528,6 +528,10 @@ class ContentController extends Controller
                 'numeric',
                 'min:0',
             ],
+            'status' => [
+                'required',
+                'in:mandatory,optional',
+            ],
         ]);
 
         if (in_array($request->type, ['YouTube', 'MOOC'], true)) {
@@ -565,7 +569,8 @@ class ContentController extends Controller
             'page_duration'    => $pageDuration,
             'total_page'       => $documentTotalPages,
             'description'      => $request->description ?? '',
-            'playlistonly'     => ($request->playlistonly === 'Y' || $request->playlistonly === 1 || $request->playlistonly === '1') ? 'Y' : 'N',
+            'status'           => $request->status ?? 'optional',
+            'playlistonly'     => 'N',
             'link'             => $linkToStore,
             'has_deadline'     => $hasDeadline,
             'from_date'        => $hasDeadline ? $request->from_date : null,
@@ -712,6 +717,7 @@ class ContentController extends Controller
                 }
             }],
             'learning_hours' => ['nullable'],
+            'status' => ['required', 'in:mandatory,optional'],
         ]);
 
         $path = public_path('storage/files/content/' . $request->id . '');
@@ -854,7 +860,8 @@ class ContentController extends Controller
                 'page_duration'    => $pageDuration,
                 'total_page'       => $totalPage,
                 'description'      => $request->description ?? ($targetContent->description ?? ''),
-                'playlistonly'     => $request->has('playlistonly') ? (($request->playlistonly === 'Y' || $request->playlistonly === 1 || $request->playlistonly === '1') ? 'Y' : 'N') : ($targetContent->playlistonly ?? 'N'),
+                'status'           => $request->status ?? ($targetContent->status ?? 'optional'),
+                'playlistonly'     => $targetContent->playlistonly ?? 'N',
                 'active'           => $active,
                 'link'             => $linkToStore,
                 'has_deadline'     => $hasDeadlineUpdate,
@@ -1060,6 +1067,8 @@ class ContentController extends Controller
                 'is_expired'               => $content->isExpired(),
                 'exam'                     => $content->exam,
                 'exam_label'               => $content->exam === 'OK' ? 'With Exam (OK)' : 'Without Exam (NOT)',
+                'status'                   => $content->status ?? 'optional',
+                'status_label'             => ucfirst($content->status ?? 'optional'),
                 'playlistonly'             => $content->playlistonly,
                 'playlist_label'           => $content->playlistonly === 'Y' ? 'Playlist Only' : 'General Content',
                 'playlists'                => $playlists,

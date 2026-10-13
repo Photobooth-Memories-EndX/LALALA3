@@ -45,7 +45,7 @@ class LearningDatatableService
                 'pcu.user_id',
                 'pcu.content_id',
                 'pcu.trainingplan_id',
-                DB::raw("'Playlist' as status"),
+                'pcu.status',
                 'pcu.finish',
                 'pcu.progress',
                 'pcu.created_at',
@@ -70,7 +70,7 @@ class LearningDatatableService
                 });
             } elseif (in_array($statusStr, ['mandatory', 'optional'], true)) {
                 $cuSelect->where('cu.status', $statusStr);
-                $pcuSelect->whereRaw('1 = 0');
+                $pcuSelect->where('pcu.status', $statusStr);
             } elseif ($statusStr === 'playlist') {
                 $cuSelect->whereRaw('1 = 0');
             }
@@ -82,7 +82,7 @@ class LearningDatatableService
             $programTypeStr = strtolower(trim((string) $programType));
             if (in_array($programTypeStr, ['mandatory', 'optional'], true)) {
                 $cuSelect->where('cu.status', $programTypeStr);
-                $pcuSelect->whereRaw('1 = 0');
+                $pcuSelect->where('pcu.status', $programTypeStr);
             } elseif ($programTypeStr === 'playlist') {
                 $cuSelect->whereRaw('1 = 0');
             }
@@ -310,6 +310,10 @@ class LearningDatatableService
                 }
                 if (!empty($searchTpIds)) {
                     $q->orWhereIn('pcu.trainingplan_id', $searchTpIds);
+                    $matched = true;
+                }
+                if (!empty($statusMatches)) {
+                    $q->orWhereIn('pcu.status', $statusMatches);
                     $matched = true;
                 }
                 if (in_array('playlist', $statusMatches) || $matchCatPlaylist) {

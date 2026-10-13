@@ -263,7 +263,7 @@ class ManageLearningTest extends TestCase
         $json = $response->json();
         $this->assertGreaterThan(0, $json['recordsFiltered']);
         foreach ($json['data'] as $item) {
-            $this->assertStringContainsString('Playlist', $item['status_badge']);
+            $this->assertStringContainsString('Playlist', $item['category_badge']);
         }
     }
 

@@ -797,10 +797,16 @@
 
             // 1. Sync to content_users if assessment is associated with content
             if (!empty($assesment->content_id)) {
-                $contentUser = \App\Models\ContentUser::firstOrCreate([
-                    'user_id'    => $userId,
-                    'content_id' => $assesment->content_id,
-                ]);
+                $contentStatus = $assesment->content?->status ?? 'optional';
+                $contentUser = \App\Models\ContentUser::firstOrCreate(
+                    [
+                        'user_id'    => $userId,
+                        'content_id' => $assesment->content_id,
+                    ],
+                    [
+                        'status'     => $contentStatus,
+                    ]
+                );
 
                 if ($contentUser) {
                     $totalAssessmentAfk = (int) AssesmentResult::where('user_id', $userId)
@@ -814,11 +820,17 @@
 
             // 2. Sync to playlist_content_users if assessment is associated with playlist and content
             if (!empty($assesment->trainingplan_id) && !empty($assesment->content_id)) {
-                $playlistContentUser = \App\Models\PlaylistContentUser::firstOrCreate([
-                    'user_id'         => $userId,
-                    'trainingplan_id' => $assesment->trainingplan_id,
-                    'content_id'      => $assesment->content_id,
-                ]);
+                $contentStatus = $assesment->content?->status ?? 'optional';
+                $playlistContentUser = \App\Models\PlaylistContentUser::firstOrCreate(
+                    [
+                        'user_id'         => $userId,
+                        'trainingplan_id' => $assesment->trainingplan_id,
+                        'content_id'      => $assesment->content_id,
+                    ],
+                    [
+                        'status'          => $contentStatus,
+                    ]
+                );
 
                 if ($playlistContentUser) {
                     $totalAssessmentAfk = (int) AssesmentResult::where('user_id', $userId)

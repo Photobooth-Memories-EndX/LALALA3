@@ -124,6 +124,7 @@
         .badge-warning { background: #fef3c7; color: #b45309; }
         .badge-secondary { background: #f1f5f9; color: #475569; }
         .badge-primary { background: #dbeafe; color: #1d4ed8; }
+        .badge-danger { background: #fee2e2; color: #b91c1c; }
         .badge-info { background: #e0f2fe; color: #0284c7; }
         .footer-table {
             position: fixed;
@@ -207,10 +208,14 @@
         <tbody>
             @forelse($records as $index => $row)
             @php
+                $classificationStatus = strtolower((string) ($row->status ?? 'optional'));
+                $isMandatory = $classificationStatus === 'mandatory';
+                $statusLabel = $isMandatory ? 'Mandatory' : 'Optional';
+                $statusBadgeClass = $isMandatory ? 'badge-danger' : 'badge-primary';
+
                 $progress = (float) ($row->progress ?? 0);
                 $isFinished = (bool) ($row->finish ?? false) || $progress >= 100;
-                $statusText = $isFinished ? 'Finished' : ($progress > 0 ? 'Ongoing' : 'Not Started');
-                $statusClass = $isFinished ? 'badge-success' : ($progress > 0 ? 'badge-warning' : 'badge-secondary');
+                $progressText = $isFinished ? 'Finished' : ($progress > 0 ? 'Ongoing' : 'Not Started');
 
                 $title = $row->content_title ?? '-';
                 if (!empty($row->playlist_title)) {
@@ -229,7 +234,7 @@
             <tr>
                 <td class="text-center">{{ $index + 1 }}</td>
                 <td class="text-center">
-                    <span class="badge {{ $statusClass }}">{{ $statusText }}</span>
+                    <span class="badge {{ $statusBadgeClass }}">{{ $statusLabel }}</span>
                 </td>
                 <td>{{ $row->user_id_emp ?? ($row->id_emp ?? '-') }}</td>
                 <td><strong>{{ $row->user_name ?? ($row->employee_name ?? '-') }}</strong></td>
@@ -243,6 +248,7 @@
                 <td class="text-center">{{ \App\Support\DurationFormatter::format($row->content_duration ?? null) }}</td>
                 <td class="text-center">
                     <strong style="color: {{ $isFinished ? '#15803d' : '#b45309' }}">{{ round($progress) }}%</strong>
+                    <div style="font-size: 6px; color: #64748b;">{{ $progressText }}</div>
                 </td>
             </tr>
             @empty

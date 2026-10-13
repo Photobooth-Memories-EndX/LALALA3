@@ -285,6 +285,7 @@ class HistoricalPlaylistProgressExecutionService
                         'current_time'     => (int) ($cu->current_time ?? 0),
                         'duration_seconds' => $cu->duration_seconds !== null ? (int) $cu->duration_seconds : null,
                         'learning_status'  => (string) ($cu->learning_status ?? 'not_started'),
+                        'status'           => (string) ($cu->status ?? 'optional'),
                         'finish'           => (string) ($cu->finish ?? '0'),
                         'created_at'       => $cu->created_at ?? Carbon::now(),
                         'updated_at'       => $cu->updated_at ?? Carbon::now(),
