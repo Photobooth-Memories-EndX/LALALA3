@@ -53,6 +53,11 @@ class UserRecordAllService
             $learningHourVal = (float) ($row['learning_hour_value'] ?? 0);
             $hasCertificate = ($row['cert_state'] ?? 'none') === 'ready';
 
+            $isOnlinePresent = ((int) ($row['progress'] ?? 0) >= 100);
+            $onlineAttendance = $isOnlinePresent ? 'Present' : '-';
+            $attendance = $row['attendance'] ?? $onlineAttendance;
+            $attendanceStatus = $row['attendance_status'] ?? $attendance;
+
             return array_merge($row, [
                 'unique_id'         => 'online_' . ($row['item_id'] ?? $row['slug'] ?? uniqid()),
                 'source'            => 'online',
@@ -63,8 +68,8 @@ class UserRecordAllService
                 'learning_hour'     => number_format($learningHourVal, 2) . ' hrs',
                 'learning_hour_value' => $learningHourVal,
                 'progress'          => (int) ($row['progress'] ?? 0),
-                'attendance'        => null,
-                'attendance_status' => '—',
+                'attendance'        => $attendance,
+                'attendance_status' => $attendanceStatus,
                 'date_display'      => $dateTimeDisplay,
                 'venue'             => '',
                 'instructor'        => '',
@@ -73,6 +78,7 @@ class UserRecordAllService
                 'cert_state'        => $hasCertificate ? 'ready' : 'none',
                 'cert_action_url'   => $row['cert_action_url'] ?? null,
                 'cert_is_form'      => (bool) ($row['cert_is_form'] ?? false),
+                'playlist_id'       => $row['plan_id'] ?? $row['playlist_id'] ?? ($row['playlist_ids'][0] ?? null),
             ]);
         });
 
@@ -327,6 +333,7 @@ class UserRecordAllService
             'duration'       => fn (array $row) => (float) ($row['duration_seconds'] ?? -1),
             'learning-hour'  => fn (array $row) => (float) ($row['learning_hour_value'] ?? -1),
             'progress'       => fn (array $row) => (float) ($row['progress'] ?? -1),
+            'attendance'     => fn (array $row) => mb_strtolower((string) ($row['attendance_status'] ?: ($row['attendance'] ?? ''))),
             'date'           => fn (array $row) => (string) ($row['finish_date'] ?: ($row['start_date'] ?: '')),
             'score'          => fn (array $row) => (float) ($row['score'] ?? -1),
         ];

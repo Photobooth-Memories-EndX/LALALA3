@@ -792,6 +792,8 @@ class LearningRecordController extends Controller
                 'subtitle'        => (int) ($plan->finished_items ?? 0) . ' / ' . (int) ($plan->total_items ?? count($playlistItems)) . ' content selesai',
                 'playlist_names'  => [],
                 'playlist_ids'    => [$plan->id],
+                'plan_id'         => $plan->id,
+                'playlist_id'     => $plan->id,
                 'item_id'         => 'playlist_' . $plan->id,
                 'type'            => 'Playlist',
                 'classification'  => '-',

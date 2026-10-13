@@ -924,6 +924,8 @@
                                                 aria-label="View attendance detail for {{ $row['title'] }}">
                                             {{ $attStatus }}
                                         </button>
+                                    @elseif ($row['source'] === 'online')
+                                        <x-learning.record-attendance-cell :row="$row" />
                                     @else
                                         <span class="text-muted">—</span>
                                     @endif

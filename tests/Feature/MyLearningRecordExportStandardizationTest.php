@@ -73,7 +73,7 @@ class MyLearningRecordExportStandardizationTest extends TestCase
     {
         $this->actingAs($this->userA);
 
-        // 1. KP OWL (Online): Exactly 11 columns matching record-section.blade.php
+        // 1. KP OWL (Online): Exactly 12 columns matching record-section.blade.php
         $exportOnline = new ExportMyLearningRecord();
         $this->assertEquals([
             'No',
@@ -85,6 +85,7 @@ class MyLearningRecordExportStandardizationTest extends TestCase
             'Learning Hour',
             'Progress',
             'Date Time',
+            'Attendance',
             'Assessment Score',
             'Certificate',
         ], $exportOnline->headings());
@@ -180,6 +181,7 @@ class MyLearningRecordExportStandardizationTest extends TestCase
         $this->assertEquals('00:30:00', $onlineData[1][5]);
         $this->assertEquals('0.50 hrs', $onlineData[1][6]);
         $this->assertEquals('100%', $onlineData[1][7]);
+        $this->assertEquals('Present', $onlineData[1][9]);
 
         // B. Offline Check
         $offlineData = (new ExportMyOfflineLearningRecord())->array();
@@ -195,6 +197,10 @@ class MyLearningRecordExportStandardizationTest extends TestCase
         $allData = (new ExportMyAllLearningRecord())->array();
         $this->assertCount(3, $allData); // 1 header + 2 data rows
         $this->assertNull(collect($allData)->firstWhere(0, 'TOTAL'), 'All Record export must NOT have TOTAL row');
+        // Find the online course row in All Record
+        $onlineRowInAll = collect($allData)->firstWhere(1, 'Standard Online Course');
+        $this->assertNotNull($onlineRowInAll);
+        $this->assertEquals('Present', $onlineRowInAll[8]); // Attendance at index 8 for online in All Record
     }
 
     /**

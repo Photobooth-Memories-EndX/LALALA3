@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Exports\ExportMyAllLearningRecord;
+use App\Exports\ExportMyLearningRecord;
 use App\Http\Controllers\LearningRecordController;
 use App\Models\Classification;
 use App\Models\Content;
@@ -277,5 +279,183 @@ class LearningRecordOnlineAttendanceTest extends TestCase
         $allResponse->assertOk();
         $allResponse->assertSee('learningRecordAllTable', false);
         $allResponse->assertSee('Regression Test Offline Course');
+    }
+
+    /**
+     * Test All Record mode displays Present badge for 100% online progress and '-' for < 100%.
+     */
+    public function test_all_record_mode_online_attendance_renders_present_and_dash_badge(): void
+    {
+        // 1. Online content 100%
+        $contentFull = Content::create([
+            'title'             => 'All Mode Online 100 Course',
+            'slug'              => 'all-online-100-' . rand(1000, 9999),
+            'type'              => 'Video',
+            'classification_id' => $this->classification->id,
+            'active'            => 'Active',
+            'duration'          => '00:20:00',
+        ]);
+        ContentUser::create([
+            'content_id' => $contentFull->id,
+            'user_id'    => $this->user->id,
+            'progress'   => 100,
+            'finish'     => '1',
+            'status'     => 'mandatory',
+        ]);
+
+        // 2. Online content 60%
+        $contentPart = Content::create([
+            'title'             => 'All Mode Online 60 Course',
+            'slug'              => 'all-online-60-' . rand(1000, 9999),
+            'type'              => 'Document',
+            'classification_id' => $this->classification->id,
+            'active'            => 'Active',
+            'duration'          => '00:15:00',
+        ]);
+        ContentUser::create([
+            'content_id' => $contentPart->id,
+            'user_id'    => $this->user->id,
+            'progress'   => 60,
+            'finish'     => '1',
+            'status'     => 'mandatory',
+        ]);
+
+        $response = $this->actingAs($this->user)
+            ->get(route('user.learning.dashboard.partial', ['tab' => 'record', 'record_mode' => 'all']));
+
+        $response->assertOk();
+        $html = $response->getContent();
+
+        // 100% course should show Present badge
+        $this->assertStringContainsString('All Mode Online 100 Course', $html);
+        $this->assertStringContainsString('All Mode Online 60 Course', $html);
+        $this->assertStringContainsString('bg-success-lt text-success', $html);
+        $this->assertStringContainsString('Present', $html);
+    }
+
+    /**
+     * Test Excel exports expand playlist into parent-child rows with consistent Attendance.
+     */
+    public function test_excel_export_expands_playlist_content_parent_child_rows(): void
+    {
+        $plan = TrainingPlan::create([
+            'title'  => 'Parent Playlist Expansion Test',
+            'slug'   => 'parent-pl-exp-' . rand(1000, 9999),
+            'active' => 'Active',
+            'total_duration_seconds' => 3600,
+            'learning_hours' => 1.0,
+        ]);
+
+        $child1 = Content::create([
+            'title'             => '[Module 1] Video Introduction',
+            'slug'              => 'm1-video-intro-' . rand(1000, 9999),
+            'type'              => 'Video',
+            'classification_id' => $this->classification->id,
+            'active'            => 'Active',
+            'duration'          => '00:20:00',
+            'playlistonly'      => 'Y',
+        ]);
+
+        $child2 = Content::create([
+            'title'             => '[Module 2] Document Deep Dive',
+            'slug'              => 'm2-doc-deep-' . rand(1000, 9999),
+            'type'              => 'Document',
+            'classification_id' => $this->classification->id,
+            'active'            => 'Active',
+            'duration'          => '00:40:00',
+            'playlistonly'      => 'Y',
+        ]);
+
+        TrainingPlanDetail::create([
+            'trainingplan_id' => $plan->id,
+            'content_id'      => $child1->id,
+            'content_order'   => 1,
+        ]);
+
+        TrainingPlanDetail::create([
+            'trainingplan_id' => $plan->id,
+            'content_id'      => $child2->id,
+            'content_order'   => 2,
+        ]);
+
+        PlaylistContentUser::create([
+            'trainingplan_id' => $plan->id,
+            'content_id'      => $child1->id,
+            'user_id'         => $this->user->id,
+            'progress'        => 100,
+            'finish'          => '1',
+            'actual_watch_seconds' => 1200,
+        ]);
+
+        PlaylistContentUser::create([
+            'trainingplan_id' => $plan->id,
+            'content_id'      => $child2->id,
+            'user_id'         => $this->user->id,
+            'progress'        => 100,
+            'finish'          => '1',
+            'actual_watch_seconds' => 2400,
+        ]);
+
+        $this->actingAs($this->user);
+
+        // 1. KP OWL Export Check
+        $exportKp = new ExportMyLearningRecord();
+        $kpData = $exportKp->array();
+
+        // Must have: Heading (row 0), Parent Playlist (row 1), Child 1 (row 2), Child 2 (row 3)
+        $this->assertGreaterThanOrEqual(4, count($kpData));
+
+        // Find parent row
+        $parentRow = collect($kpData)->firstWhere(1, 'Parent Playlist Expansion Test');
+        $this->assertNotNull($parentRow, 'Parent Playlist row must exist in KP OWL export');
+        $this->assertEquals(1, $parentRow[0]); // Numbered No
+        $this->assertEquals('Playlist', $parentRow[2]); // Type
+        $this->assertEquals('Playlist', $parentRow[3]); // Category
+        $this->assertEquals('100%', $parentRow[7]); // Progress
+        $this->assertEquals('Present', $parentRow[9]); // Attendance
+
+        // Find Child 1 row
+        $child1Row = collect($kpData)->first(fn ($r) => str_contains((string) ($r[1] ?? ''), '[Module 1] Video Introduction'));
+        $this->assertNotNull($child1Row, 'Child 1 row must exist');
+        $this->assertEquals('', $child1Row[0]); // No is empty
+        $this->assertStringStartsWith('    ', $child1Row[1]); // Indented title
+        $this->assertEquals('Video', $child1Row[2]); // Type
+        $this->assertEquals('Playlist', $child1Row[3]); // Category
+        $this->assertEquals($this->classification->classification_name, $child1Row[4]); // Classification
+        $this->assertEquals('100%', $child1Row[7]); // Progress
+        $this->assertEquals('Present', $child1Row[9]); // Attendance
+
+        // Find Child 2 row
+        $child2Row = collect($kpData)->first(fn ($r) => str_contains((string) ($r[1] ?? ''), '[Module 2] Document Deep Dive'));
+        $this->assertNotNull($child2Row, 'Child 2 row must exist');
+        $this->assertEquals('', $child2Row[0]); // No is empty
+        $this->assertStringStartsWith('    ', $child2Row[1]); // Indented title
+        $this->assertEquals('Document', $child2Row[2]); // Type
+        $this->assertEquals('Playlist', $child2Row[3]); // Category
+        $this->assertEquals('Present', $child2Row[9]); // Attendance
+
+        // 2. All Record Export Check
+        $exportAll = new ExportMyAllLearningRecord();
+        $allData = $exportAll->array();
+
+        $this->assertGreaterThanOrEqual(4, count($allData));
+
+        // Parent in All Record
+        $parentRowAll = collect($allData)->firstWhere(1, 'Parent Playlist Expansion Test');
+        $this->assertNotNull($parentRowAll);
+        $this->assertEquals(1, $parentRowAll[0]);
+        $this->assertEquals('Playlist', $parentRowAll[2]);
+        $this->assertEquals('100%', $parentRowAll[7]);
+        $this->assertEquals('Present', $parentRowAll[8]); // Attendance at index 8
+
+        // Child 1 in All Record
+        $child1RowAll = collect($allData)->first(fn ($r) => str_contains((string) ($r[1] ?? ''), '[Module 1] Video Introduction'));
+        $this->assertNotNull($child1RowAll);
+        $this->assertEquals('', $child1RowAll[0]);
+        $this->assertStringStartsWith('    ', $child1RowAll[1]);
+        $this->assertEquals('Video', $child1RowAll[2]);
+        $this->assertEquals('Playlist', $child1RowAll[3]);
+        $this->assertEquals('100%', $child1RowAll[7]);
+        $this->assertEquals('Present', $child1RowAll[8]); // Attendance at index 8
     }
 }
