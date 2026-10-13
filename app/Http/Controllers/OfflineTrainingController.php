@@ -1575,10 +1575,26 @@ class OfflineTrainingController extends Controller
         $activeFilters = $this->collectActiveFilterLabels($request);
         $fileName = 'Training_Schedule_Announcement_' . Carbon::now()->format('Ymd_His') . '.jpg';
 
-        // Share single Blade template (resources/views/exports/training-schedule-pdf.blade.php) for both PDF and JPG exports
-        $viewContent = view('exports.training-schedule-pdf', compact('trainings', 'activeFilters'))->render();
+        // Dedicated 2-column Blade template (resources/views/exports/training-schedule-jpg.blade.php) for high-resolution JPG exports
+        $viewContent = view('exports.training-schedule-jpg', compact('trainings', 'activeFilters'))->render();
 
-        $imageContent = $imageService->generateJpg($trainings, $activeFilters, $viewContent);
+        // Browser renderer viewport configuration (1920 width, device scale factor 2, wait delay for custom CSS fonts)
+        if (class_exists(\Spatie\Browsershot\Browsershot::class)) {
+            $imageContent = \Spatie\Browsershot\Browsershot::html($viewContent)
+                ->windowSize(1920, 1080)
+                ->deviceScaleFactor(2)
+                ->setDelay(1000)
+                ->waitForSelector('.card-box')
+                ->waitUntilNetworkIdle()
+                ->showBackground()
+                ->jpeg();
+        } else {
+            $imageContent = $imageService->generateJpg($trainings, $activeFilters, $viewContent, [
+                'width'             => 1920,
+                'deviceScaleFactor' => 2,
+                'delay'             => 1000,
+            ]);
+        }
 
         return response($imageContent, 200, [
             'Content-Type'        => 'image/jpeg',

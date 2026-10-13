@@ -32,7 +32,7 @@ class TrainingScheduleImageService
      * @param string|null $viewContent
      * @return string
      */
-    public function generateJpg($trainings, array $filterSummary = [], ?string $viewContent = null): string
+    public function generateJpg($trainings, array $filterSummary = [], ?string $viewContent = null, array $options = []): string
     {
         $items = $trainings instanceof Collection ? $trainings : collect($trainings);
         $items = $items->filter(function ($item) {
@@ -43,17 +43,18 @@ class TrainingScheduleImageService
         $fontBold = $this->getFontPath(true);
         $fontRegular = $this->getFontPath(false);
 
-        // Dimensions (1920px standard viewport width matching reference)
-        $canvasWidth = 1920;
+        // Dimensions (1920px standard viewport width matching reference, deviceScaleFactor: 2)
+        $canvasWidth = $options['width'] ?? 1920;
+        $deviceScaleFactor = $options['deviceScaleFactor'] ?? 2;
         $headerHeight = 220;
         $footerHeight = 70;
-        $cardWidth = 570;
-        $cardHeight = 380;
-        $cardGapX = 35;
+        $cardGapX = 40;
         $cardGapY = 30;
         $startX = 70;
+        $cardWidth = (int) floor(($canvasWidth - (2 * $startX) - $cardGapX) / 2);
+        $cardHeight = 380;
 
-        $rowsCount = $count > 0 ? (int) ceil($count / 3) : 1;
+        $rowsCount = $count > 0 ? (int) ceil($count / 2) : 1;
         $contentHeight = max(400, ($rowsCount * $cardHeight) + (($rowsCount - 1) * $cardGapY) + 40);
         $canvasHeight = $headerHeight + $contentHeight + $footerHeight;
 
@@ -156,8 +157,8 @@ class TrainingScheduleImageService
             }
         } else {
             foreach ($items as $idx => $item) {
-                $colIdx = $idx % 3;
-                $rowIdx = (int) floor($idx / 3);
+                $colIdx = $idx % 2;
+                $rowIdx = (int) floor($idx / 2);
 
                 $cardX = $startX + ($colIdx * ($cardWidth + $cardGapX));
                 $cardY = $curY + ($rowIdx * ($cardHeight + $cardGapY));
@@ -214,7 +215,7 @@ class TrainingScheduleImageService
 
                 // 2. Training Title (Bold, PTKP Navy)
                 $title = $item->title ?? ($item->course_name ?? 'Training Title');
-                $lines = $this->wrapText($title, 36, 2);
+                $lines = $this->wrapText($title, 55, 2);
                 $titleY = $cardY + 76;
                 foreach ($lines as $lIndex => $line) {
                     if ($fontBold) {
@@ -232,35 +233,27 @@ class TrainingScheduleImageService
                     }
                 }
 
-                // 3. Date & Venue Pills (Side-by-Side, Date only & Venue truncated)
+                // 3. Single Full-Width Box Container for Date & Venue
                 $startDate = $item->start_date ? Carbon::parse($item->start_date)->format('d M Y') : '-';
                 $endDate = $item->end_date ? Carbon::parse($item->end_date)->format('d M Y') : $startDate;
                 $schedulePeriod = ($startDate === $endDate || empty($item->end_date)) ? $startDate : "{$startDate} - {$endDate}";
                 $venue = $item->location ?? ($item->venue ?? ($item->room_name ?? ($item->room ?? '-')));
 
-                // Date pill badge
-                $datePillW = 160;
-                imagefilledrectangle($img, $cardX + 18, $cardY + 112, $cardX + 18 + $datePillW, $cardY + 132, $bgLight);
-                imagerectangle($img, $cardX + 18, $cardY + 112, $cardX + 18 + $datePillW, $cardY + 132, $cardBorder);
-                if ($fontBold) {
-                    imagettftext($img, 8, 0, $cardX + 24, $cardY + 126, $deepNavy, $fontBold, mb_strimwidth($schedulePeriod, 0, 20, '...'));
-                } else {
-                    imagestring($img, 2, $cardX + 24, $cardY + 116, mb_strimwidth($schedulePeriod, 0, 18, '...'), $deepNavy);
-                }
+                $boxX = $cardX + 18;
+                $boxY = $cardY + 112;
+                $boxW = $cardWidth - 36;
+                $boxH = 26;
+                $slateBorder = imagecolorallocate($img, 100, 116, 139);
 
-                // Venue pill badge (compact & truncated)
-                $venuePillW = 160;
-                $venueX = $cardX + $cardWidth - $venuePillW - 18;
-                imagefilledrectangle($img, $venueX, $cardY + 112, $venueX + $venuePillW, $cardY + 132, $bgLight);
-                imagerectangle($img, $venueX, $cardY + 112, $venueX + $venuePillW, $cardY + 132, $cardBorder);
-                if ($fontBold) {
-                    imagettftext($img, 8, 0, $venueX + 10, $cardY + 126, $deepNavy, $fontBold, mb_strimwidth($venue, 0, 20, '...'));
-                } else {
-                    imagestring($img, 2, $venueX + 10, $cardY + 116, mb_strimwidth($venue, 0, 18, '...'), $deepNavy);
-                }
+                imagefilledrectangle($img, $boxX, $boxY, $boxX + $boxW, $boxY + $boxH, $white);
+                imagerectangle($img, $boxX, $boxY, $boxX + $boxW, $boxY + $boxH, $slateBorder);
 
-                // Divider Line
-                imageline($img, $cardX + 18, $cardY + 140, $cardX + $cardWidth - 18, $cardY + 140, $cardBorder);
+                $dateVenueText = "Date: {$schedulePeriod}   |   Venue: " . mb_strimwidth($venue, 0, 52, '...');
+                if ($fontBold) {
+                    imagettftext($img, 9, 0, $boxX + 12, $boxY + 17, $textDark, $fontBold, $dateVenueText);
+                } else {
+                    imagestring($img, 3, $boxX + 12, $boxY + 6, $dateVenueText, $textDark);
+                }
 
                 // 4. Target
                 $target = $item->target_employee ?? '-';

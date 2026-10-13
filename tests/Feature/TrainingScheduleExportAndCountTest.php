@@ -407,14 +407,15 @@ class TrainingScheduleExportAndCountTest extends TestCase
     }
 
     /**
-     * 11. Verify export announcement card 380px container height and flex column layout.
+     * 11. Verify export announcement card 380px min-height container and flex column layout.
      */
     public function test_export_card_380px_and_flex_structure(): void
     {
         $bladePath = resource_path('views/exports/training-schedule-pdf.blade.php');
         $bladeContent = file_get_contents($bladePath);
 
-        $this->assertStringContainsString('height: 380px; max-height: 380px;', $bladeContent);
+        $this->assertStringContainsString('min-height: 380px;', $bladeContent);
+        $this->assertStringContainsString('margin-bottom: 20px;', $bladeContent);
         $this->assertStringContainsString('display: flex; flex-direction: column; justify-content: space-between;', $bladeContent);
     }
 
@@ -642,5 +643,22 @@ class TrainingScheduleExportAndCountTest extends TestCase
 
         // On today's date cell, Running: 2 must be present
         $this->assertStringContainsString('Running: 2', $calHtml);
+    }
+
+    /**
+     * 15. Verify dedicated JPG export template exists with 2-column grid and controller binds to it.
+     */
+    public function test_jpg_export_dedicated_view_and_two_column_grid(): void
+    {
+        $bladePath = resource_path('views/exports/training-schedule-jpg.blade.php');
+        $this->assertFileExists($bladePath);
+
+        $bladeContent = file_get_contents($bladePath);
+        $this->assertStringContainsString('grid-template-columns: repeat(2, 1fr)', $bladeContent);
+        $this->assertStringContainsString('gap: 20px', $bladeContent);
+
+        // Verify controller exportJpg renders exports.training-schedule-jpg
+        $controllerContent = file_get_contents(app_path('Http/Controllers/OfflineTrainingController.php'));
+        $this->assertStringContainsString("view('exports.training-schedule-jpg'", $controllerContent);
     }
 }

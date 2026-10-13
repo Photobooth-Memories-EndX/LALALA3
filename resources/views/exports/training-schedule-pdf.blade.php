@@ -130,17 +130,16 @@
         /* Standardized Announcement Card Box */
         .card-box,
         .schedule-card {
-            height: 380px;
-            max-height: 380px;
+            min-height: 380px;
             padding: 16px;
             border: 1px solid #cbd5e1;
-            border-radius: 16px;
+            border-radius: 12px;
             background: #ffffff;
             box-sizing: border-box;
+            margin-bottom: 20px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            overflow: hidden;
             position: relative;
         }
 
@@ -308,6 +307,10 @@
             margin: 4px 0 5px 0;
         }
 
+        .details-table td {
+            vertical-align: top;
+        }
+
         /* Card Information List */
         .info-row {
             margin-bottom: 3.5px;
@@ -447,12 +450,12 @@
                             $syllabusTopics = array_values(array_filter($syllabusTopics));
                         @endphp
                         <td class="card-cell">
-                            <div class="card-box" style="height: 380px; max-height: 380px; box-sizing: border-box; border-radius: 16px; border: 1px solid #cbd5e1; padding: 16px; background: #ffffff; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden;">
+                            <div class="card-box" style="min-height: 380px; padding: 16px; border: 1px solid #cbd5e1; border-radius: 12px; background: #ffffff; box-sizing: border-box; margin-bottom: 20px; display: flex; flex-direction: column; justify-content: space-between;">
                                 <!-- Row 1: Header (Category Pill Badge Left, Status Badge & Red Close Date Right) -->
                                 <table style="width: 100%; border-collapse: collapse; margin-bottom: 4px;">
                                     <tr>
                                         <td style="vertical-align: top; text-align: left;">
-                                            <span style="display: inline-block; background: #e0f2fe; color: #0369a1; padding: 4px 12px; border-radius: 9999px; font-weight: 700; font-size: 11px; text-transform: uppercase; white-space: nowrap;">
+                                            <span style="display: inline-block; background: #e0f2fe; color: #0369a1; padding: 4px 12px; border-radius: 9999px; font-weight: 700; font-size: 11px; text-transform: uppercase; white-space: nowrap; max-width: 140px; overflow: hidden; text-overflow: ellipsis; vertical-align: top;">
                                                 {{ $training->category ?? 'GENERAL' }}
                                             </span>
                                         </td>
@@ -481,12 +484,12 @@
                                 </table>
 
                                 <!-- Row 2: Title in bold Navy font -->
-                                <div style="font-size: 14px; font-weight: 800; color: #0f172a; height: 42px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin: 8px 0;">
+                                <div style="font-size: 14px; font-weight: 800; color: #0f172a; height: 38px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; margin: 6px 0;">
                                     {{ $training->title }}
                                 </div>
 
                                 <!-- Row 3: Date & Venue Inline Row -->
-                                <div style="font-size: 9px; color: #475569; font-weight: 600; line-height: 1.35; min-height: 24px; max-height: 28px; overflow: hidden; margin-bottom: 2px;">
+                                <div style="font-size: 9px; color: #475569; font-weight: 600; line-height: 1.35; min-height: 20px; max-height: 24px; overflow: hidden; margin-bottom: 2px;">
                                     <span style="white-space: nowrap;">
                                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -1px; margin-right: 2px;">
                                             <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
@@ -496,7 +499,7 @@
                                         </svg>{{ $schedulePeriod }}
                                     </span>
                                     <span style="color: #94a3b8; margin: 0 4px;">|</span>
-                                    <span>
+                                    <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 150px; display: inline-block; vertical-align: middle;">
                                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -1px; margin-right: 2px;">
                                             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                                             <circle cx="12" cy="10" r="3"></circle>
@@ -505,55 +508,63 @@
                                 </div>
 
                                 <!-- Row 4: Divider Line -->
-                                <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 10px 0;">
+                                <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 0 0 12px 0;">
 
                                 <!-- Row 5: Key-Value Details Alignment Table -->
-                                <table class="details-table" style="width: 100%; border-collapse: collapse; font-size: 8.5px; line-height: 1.35; table-layout: fixed;">
-                                    <colgroup>
-                                        <col style="width: 90px;">
-                                        <col style="width: 15px;">
-                                        <col>
-                                    </colgroup>
+                                <table class="details-table" style="width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 10.5px;">
                                     <tr>
-                                        <td class="label" style="width: 90px; font-weight: 700; color: #334155; padding: 2.5px 0; vertical-align: top;">Target</td>
-                                        <td class="colon" style="width: 15px; font-weight: 700; color: #334155; padding: 2.5px 0; vertical-align: top; text-align: center;">:</td>
-                                        <td class="value" style="color: #0f172a; padding: 2.5px 0; vertical-align: top; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ $training->target_employee ?? '-' }}</td>
+                                        <td style="width: 85px; font-weight: 700; color: #475569; padding: 3px 0; vertical-align: top;">Target</td>
+                                        <td style="width: 15px; text-align: center; font-weight: 700; color: #475569; padding: 3px 0; vertical-align: top;">:</td>
+                                        <td style="color: #0f172a; padding: 3px 0; word-break: break-word;">{{ $training->target_employee ?? '-' }}</td>
                                     </tr>
                                     <tr>
-                                        <td class="label" style="width: 90px; font-weight: 700; color: #334155; padding: 2.5px 0; vertical-align: top;">Batch</td>
-                                        <td class="colon" style="width: 15px; font-weight: 700; color: #334155; padding: 2.5px 0; vertical-align: top; text-align: center;">:</td>
-                                        <td class="value" style="color: #0f172a; padding: 2.5px 0; vertical-align: top;">{{ $training->batch ?? '1' }}</td>
+                                        <td style="font-weight: 700; color: #475569; padding: 3px 0; vertical-align: top;">Batch</td>
+                                        <td style="text-align: center; font-weight: 700; color: #475569; padding: 3px 0; vertical-align: top;">:</td>
+                                        <td style="color: #0f172a; padding: 3px 0;">{{ $training->batch ?? '1' }}</td>
                                     </tr>
                                     <tr>
-                                        <td class="label" style="width: 90px; font-weight: 700; color: #334155; padding: 2.5px 0; vertical-align: top;">Time</td>
-                                        <td class="colon" style="width: 15px; font-weight: 700; color: #334155; padding: 2.5px 0; vertical-align: top; text-align: center;">:</td>
-                                        <td class="value" style="color: #0f172a; padding: 2.5px 0; vertical-align: top;">{{ \Carbon\Carbon::parse($training->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($training->end_time)->format('H:i') }} WIB</td>
+                                        <td style="font-weight: 700; color: #475569; padding: 3px 0; vertical-align: top;">Time</td>
+                                        <td style="text-align: center; font-weight: 700; color: #475569; padding: 3px 0; vertical-align: top;">:</td>
+                                        <td style="color: #0f172a; padding: 3px 0;">
+                                            {{ \Carbon\Carbon::parse($training->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($training->end_time)->format('H:i') }} WIB
+                                        </td>
                                     </tr>
                                     <tr>
-                                        <td class="label" style="width: 90px; font-weight: 700; color: #334155; padding: 2.5px 0; vertical-align: top;">Duration</td>
-                                        <td class="colon" style="width: 15px; font-weight: 700; color: #334155; padding: 2.5px 0; vertical-align: top; text-align: center;">:</td>
-                                        <td class="value" style="color: #0f172a; padding: 2.5px 0; vertical-align: top;">{{ $durationText }}</td>
+                                        <td style="font-weight: 700; color: #475569; padding: 3px 0; vertical-align: top;">Duration</td>
+                                        <td style="text-align: center; font-weight: 700; color: #475569; padding: 3px 0; vertical-align: top;">:</td>
+                                        <td style="color: #0f172a; padding: 3px 0;">
+                                            @php
+                                                $startTime = \Carbon\Carbon::parse($training->start_time);
+                                                $endTime = \Carbon\Carbon::parse($training->end_time);
+                                                $durationHours = $startTime->diffInHours($endTime);
+                                            @endphp
+                                            {{ $durationHours }} Hours
+                                        </td>
                                     </tr>
                                     <tr>
-                                        <td class="label" style="width: 90px; font-weight: 700; color: #334155; padding: 2.5px 0; vertical-align: top;">Instructor</td>
-                                        <td class="colon" style="width: 15px; font-weight: 700; color: #334155; padding: 2.5px 0; vertical-align: top; text-align: center;">:</td>
-                                        <td class="value" style="color: #0f172a; padding: 2.5px 0; vertical-align: top; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ $training->instructor_name ?? ($training->instructor ?? '-') }}</td>
+                                        <td style="font-weight: 700; color: #475569; padding: 3px 0; vertical-align: top;">Instructor</td>
+                                        <td style="text-align: center; font-weight: 700; color: #475569; padding: 3px 0; vertical-align: top;">:</td>
+                                        <td style="color: #0f172a; padding: 3px 0; word-break: break-word;">
+                                            {{ $training->instructor_name ?? $training->instructor ?? '-' }}
+                                        </td>
                                     </tr>
                                     <tr>
-                                        <td class="label" style="width: 90px; font-weight: 700; color: #334155; padding: 2.5px 0; vertical-align: top;">Quota</td>
-                                        <td class="colon" style="width: 15px; font-weight: 700; color: #334155; padding: 2.5px 0; vertical-align: top; text-align: center;">:</td>
-                                        <td class="value" style="color: #0f172a; padding: 2.5px 0; vertical-align: top;">{{ $quotaText }}</td>
+                                        <td style="font-weight: 700; color: #475569; padding: 3px 0; vertical-align: top;">Quota</td>
+                                        <td style="text-align: center; font-weight: 700; color: #475569; padding: 3px 0; vertical-align: top;">:</td>
+                                        <td style="color: #0f172a; padding: 3px 0;">{{ $training->quota ?? $training->participant_quota ?? '30' }} Seats</td>
                                     </tr>
                                     <tr>
-                                        <td class="label" style="width: 90px; font-weight: 700; color: #334155; padding: 2.5px 0; vertical-align: top;">Syllabus</td>
-                                        <td class="colon" style="width: 15px; font-weight: 700; color: #334155; padding: 2.5px 0; vertical-align: top; text-align: center;">:</td>
-                                        <td class="value" style="color: #0f172a; padding: 2.5px 0; vertical-align: top; line-height: 1.35; max-height: 38px; overflow: hidden;">
-                                            @if(count($syllabusTopics) > 0)
-                                                @foreach(array_slice($syllabusTopics, 0, 3) as $topic)
-                                                    <div>&bull; {{ $topic }}</div>
-                                                @endforeach
+                                        <td style="font-weight: 700; color: #475569; padding: 3px 0; vertical-align: top;">Syllabus</td>
+                                        <td style="text-align: center; font-weight: 700; color: #475569; padding: 3px 0; vertical-align: top;">:</td>
+                                        <td style="color: #0f172a; padding: 3px 0; word-break: break-word;">
+                                            @if($training->syllabi && $training->syllabi->count() > 0)
+                                                <ul style="margin: 0; padding-left: 14px;">
+                                                    @foreach($training->syllabi as $syllab)
+                                                        <li>{{ $syllab->title }}</li>
+                                                    @endforeach
+                                                </ul>
                                             @else
-                                                -
+                                                {{ $training->syllabus_summary ?? '-' }}
                                             @endif
                                         </td>
                                     </tr>
