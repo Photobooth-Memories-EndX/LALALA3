@@ -842,6 +842,20 @@ class RecordAllCombinedService
             $q->whereIn("{$recordAlias}.user_id", !empty($compUserIds) ? $compUserIds : [-1]);
         }
 
+        // 11c. Division Filter
+        $division = trim((string) ($filters['division'] ?? 'all'));
+        if ($division !== '' && $division !== 'all') {
+            $divUserIds = DB::table('users')->where('division', $division)->pluck('id')->toArray();
+            $q->whereIn("{$recordAlias}.user_id", !empty($divUserIds) ? $divUserIds : [-1]);
+        }
+
+        // 11d. Team Filter
+        $team = trim((string) ($filters['team'] ?? ''));
+        if ($team !== '' && $team !== 'all') {
+            $teamUserIds = DB::table('users')->where('team', 'like', "%{$team}%")->pluck('id')->toArray();
+            $q->whereIn("{$recordAlias}.user_id", !empty($teamUserIds) ? $teamUserIds : [-1]);
+        }
+
         // 12. Content Type Filter (Document / Video)
         $type = trim((string) ($filters['type'] ?? ($filters['content_type'] ?? 'all')));
         if ($type !== '' && $type !== 'all') {
@@ -1044,6 +1058,25 @@ class RecordAllCombinedService
                 $sub->where('otu.company', $company);
                 if (!empty($compUserIds)) {
                     $sub->orWhereIn('otu.user_id', $compUserIds);
+                }
+            });
+        }
+
+        // 9b. Division Filter
+        $division = trim((string) ($filters['division'] ?? 'all'));
+        if ($division !== '' && $division !== 'all') {
+            $divUserIds = DB::table('users')->where('division', $division)->pluck('id')->toArray();
+            $q->whereIn('otu.user_id', !empty($divUserIds) ? $divUserIds : [-1]);
+        }
+
+        // 9c. Team Filter
+        $team = trim((string) ($filters['team'] ?? ''));
+        if ($team !== '' && $team !== 'all') {
+            $teamUserIds = DB::table('users')->where('team', 'like', "%{$team}%")->pluck('id')->toArray();
+            $q->where(function ($sub) use ($team, $teamUserIds) {
+                $sub->where('otu.team', 'like', "%{$team}%");
+                if (!empty($teamUserIds)) {
+                    $sub->orWhereIn('otu.user_id', $teamUserIds);
                 }
             });
         }

@@ -8,6 +8,7 @@ use App\Models\Classification;
 use App\Models\Content;
 use App\Models\ContentUser;
 use App\Models\PlaylistContentUser;
+use App\Models\TrainingPlan;
 use App\Models\User;
 use App\Services\Learning\LearningDatatableService;
 use App\Services\LearningHours\ActualLearningHourCalculator;
@@ -250,6 +251,73 @@ class LearningManageController extends Controller
         ));
     }
 
+    public function playlistDetail($id, Request $request)
+    {
+        $playlist = is_numeric($id)
+            ? TrainingPlan::with(['contents.classification'])->find($id)
+            : TrainingPlan::with(['contents.classification'])->where('slug', $id)->first();
+
+        if (!$playlist) {
+            abort(404, 'Playlist not found.');
+        }
+
+        $playlistId = (string) $playlist->id;
+
+        if ($request->input('action') === 'download') {
+            return (new LearningExport($request->all(), 'playlist', $playlistId))
+                ->download(now()->format('Ymd_His') . '_' . Str::slug($playlist->title) . '_learning.xlsx');
+        }
+
+        if ($request->input('action') === 'download_pdf' || $request->input('format') === 'pdf') {
+            $request->merge(['type' => 'playlist', 'slug' => $playlistId, 'playlist_id' => $playlistId]);
+            return $this->downloadPdf($request);
+        }
+
+        if ($request->input('action') === 'download_csv' || $request->input('format') === 'csv') {
+            $request->merge(['type' => 'playlist', 'slug' => $playlistId, 'playlist_id' => $playlistId]);
+            return $this->downloadCsv($request);
+        }
+
+        // Determine smart back link
+        $referer = (string) $request->headers->get('referer', '');
+        $backUrl = route('learning.manage.all');
+        $backText = 'Back';
+
+        if ($referer && !str_contains($referer, $request->path())) {
+            $backUrl = $referer;
+            if (str_contains($referer, 'category/')) {
+                $categorySlug = basename(parse_url($referer, PHP_URL_PATH));
+                $catModel = Classification::where('slug', $categorySlug)->first();
+                $backText = 'Back to ' . ($catModel ? $catModel->classification_name : ucwords(str_replace('-', ' ', $categorySlug)));
+            } elseif (str_contains($referer, '/manage/learning')) {
+                $backText = 'Back to Manage Learning';
+            }
+        } else {
+            // Fallback: check classification of first content in playlist
+            $firstClass = $playlist->contents->first()?->classification;
+            if ($firstClass && $firstClass->slug) {
+                $backUrl = route('learning.manage.category', $firstClass->slug);
+                $backText = 'Back to ' . $firstClass->classification_name;
+            }
+        }
+
+        $viewData = $this->learningViewData(
+            $request,
+            'Playlist: ' . $playlist->title,
+            $playlistId
+        );
+
+        $viewData['playlist'] = $playlist;
+        $viewData['playlistId'] = $playlistId;
+        $viewData['backUrl'] = $backUrl;
+        $viewData['backText'] = $backText;
+        $viewData['headerBackUrl'] = $backUrl;
+        $viewData['headerBackText'] = $backText;
+        $viewData['datatableUrl'] = route('learning.manage.datatable', ['playlist_id' => $playlistId]);
+
+        return view('main.learning.all', $viewData);
+    }
+
     public function searchEmployees(Request $request)
     {
         $query = trim((string) ($request->get('q') ?? ($request->get('search') ?? $request->get('employee_q', ''))));
@@ -288,6 +356,12 @@ class LearningManageController extends Controller
             ->whereNotNull('title')
             ->where('title', '!=', '');
 
+        if ($request->filled('playlist_id')) {
+            $tpId = $request->input('playlist_id');
+            $contentIds = DB::table('trainingplandetail')->where('trainingplan_id', $tpId)->pluck('content_id');
+            $query->whereIn('content.id', $contentIds);
+        }
+
         if ($term !== '') {
             $queryNormalized = str_replace("'", "’", $term);
             $queryOriginal = str_replace("’", "'", $term);
@@ -319,6 +393,10 @@ class LearningManageController extends Controller
 
     public function download(Request $request)
     {
+        if (class_exists(\Barryvdh\Debugbar\Facades\Debugbar::class)) {
+            \Barryvdh\Debugbar\Facades\Debugbar::disable();
+        }
+
         return (new LearningExport($request->all(), $request->input('type', ''), $request->input('slug', '')))
             ->download(now()->format('Ymd_His') . '_learning_data.xlsx');
     }
@@ -336,6 +414,9 @@ class LearningManageController extends Controller
             } elseif (!empty($filters['content_slug'])) {
                 $type = 'content';
                 $slug = $filters['content_slug'];
+            } elseif (!empty($filters['playlist_id'])) {
+                $type = 'playlist';
+                $slug = $filters['playlist_id'];
             }
         }
 
@@ -365,6 +446,11 @@ class LearningManageController extends Controller
             $contentModel = Content::where('slug', $slug)->first();
             if ($contentModel) {
                 $contextTitle = 'KP OWL — Content: ' . $contentModel->title;
+            }
+        } elseif (!empty($slug) && $type === 'playlist') {
+            $playlistModel = is_numeric($slug) ? TrainingPlan::find($slug) : TrainingPlan::where('slug', $slug)->first();
+            if ($playlistModel) {
+                $contextTitle = 'KP OWL — Playlist: ' . $playlistModel->title;
             }
         }
 
@@ -397,6 +483,9 @@ class LearningManageController extends Controller
             } elseif (!empty($filters['content_slug'])) {
                 $type = 'content';
                 $slug = $filters['content_slug'];
+            } elseif (!empty($filters['playlist_id'])) {
+                $type = 'playlist';
+                $slug = $filters['playlist_id'];
             }
         }
 

@@ -52,6 +52,47 @@
         color: #60a5fa !important;
     }
 
+    /* Category Column & Playlist Inline Styling */
+    .playlist-category {
+        display: block;
+        text-align: left !important;
+        font-size: 13px;
+        line-height: 1.45;
+        min-width: 180px;
+        word-break: normal;
+        overflow-wrap: break-word;
+    }
+
+    .playlist-category-label {
+        color: inherit;
+        font-weight: 600;
+        margin-right: 2px;
+        white-space: nowrap;
+    }
+
+    .playlist-cell-link {
+        color: #0c5b9e !important;
+        text-decoration: none !important;
+        font-weight: 600;
+        cursor: pointer;
+        transition: color 0.15s ease, text-decoration 0.15s ease;
+    }
+    .playlist-cell-link:hover {
+        color: #09477d !important;
+        text-decoration: underline !important;
+    }
+    [data-bs-theme="dark"] .playlist-cell-link,
+    body.dark-mode .playlist-cell-link,
+    body.theme-dark .playlist-cell-link {
+        color: #60a5fa !important;
+    }
+    [data-bs-theme="dark"] .playlist-cell-link:hover,
+    body.dark-mode .playlist-cell-link:hover,
+    body.theme-dark .playlist-cell-link:hover {
+        color: #93c5fd !important;
+        text-decoration: underline !important;
+    }
+
     /* Action Buttons: Compact Rounded Border */
     .owl-action-btn {
         width: 32px !important;

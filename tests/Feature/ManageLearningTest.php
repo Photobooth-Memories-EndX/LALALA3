@@ -1117,4 +1117,182 @@ class ManageLearningTest extends TestCase
             $cu->forceFill($original)->saveQuietly();
         }
     }
+
+    public function test_basic_common_duties_category_page_loads_successfully(): void
+    {
+        $user = User::where('role', '2')->first() ?? User::first();
+        $classification = Classification::where('slug', 'basic-common-duties')->first();
+
+        if ($classification) {
+            $response = $this->actingAs($user)->get('/manage/learning/category/basic-common-duties');
+            $response->assertStatus(200);
+            $response->assertViewIs('main.learning.all');
+            $response->assertSee('Classification: ' . $classification->classification_name);
+            $response->assertSee('id="classification-slug"', false);
+            $response->assertSee('value="basic-common-duties"', false);
+        }
+    }
+
+    public function test_basic_common_duties_datatable_ajax_returns_valid_json(): void
+    {
+        $user = User::where('role', '2')->first() ?? User::first();
+
+        $response = $this->actingAs($user)->getJson('/manage/learning/datatable?classification_slug=basic-common-duties&draw=1&start=0&length=10');
+        $response->assertStatus(200);
+        $response->assertJsonStructure([
+            'draw',
+            'recordsTotal',
+            'recordsFiltered',
+            'data',
+        ]);
+
+        $json = $response->json();
+        $this->assertEquals(1, $json['draw']);
+        $this->assertIsArray($json['data']);
+
+        foreach ($json['data'] as $item) {
+            $this->assertStringContainsString('Basic &amp; Common Duties', $item['classification_name']);
+        }
+    }
+
+    public function test_basic_common_duties_datatable_search_and_sorting(): void
+    {
+        $user = User::where('role', '2')->first() ?? User::first();
+
+        // Search test
+        $response = $this->actingAs($user)->getJson('/manage/learning/datatable?classification_slug=basic-common-duties&draw=2&start=0&length=10&search[value]=nonexistent_keyword_12345');
+        $response->assertStatus(200);
+        $json = $response->json();
+        $this->assertEquals(0, $json['recordsFiltered']);
+        $this->assertEmpty($json['data']);
+
+        // Sorting test (asc by date)
+        $sortAsc = $this->actingAs($user)->getJson('/manage/learning/datatable?classification_slug=basic-common-duties&draw=3&start=0&length=5&sort=oldest');
+        $sortAsc->assertStatus(200);
+        $jsonAsc = $sortAsc->json();
+        $this->assertIsArray($jsonAsc['data']);
+
+        // Sorting test (desc by date)
+        $sortDesc = $this->actingAs($user)->getJson('/manage/learning/datatable?classification_slug=basic-common-duties&draw=4&start=0&length=5&sort=newest');
+        $sortDesc->assertStatus(200);
+        $jsonDesc = $sortDesc->json();
+        $this->assertIsArray($jsonDesc['data']);
+    }
+
+    public function test_basic_common_duties_datatable_empty_dataset_returns_no_error(): void
+    {
+        $user = User::where('role', '2')->first() ?? User::first();
+
+        // Query with impossible progress filter + search to guarantee empty dataset
+        $response = $this->actingAs($user)->getJson('/manage/learning/datatable?classification_slug=basic-common-duties&draw=5&start=0&length=10&progress_range=100&status=not_started&search[value]=impossible_query_xyz');
+        $response->assertStatus(200);
+        $json = $response->json();
+        $this->assertEquals(5, $json['draw']);
+        $this->assertEquals(0, $json['recordsFiltered']);
+        $this->assertIsArray($json['data']);
+        $this->assertCount(0, $json['data']);
+    }
+
+    public function test_basic_common_duties_export_excel_pdf_csv(): void
+    {
+        $user = User::where('role', '2')->first() ?? User::first();
+
+        // Excel download
+        $excelResponse = $this->actingAs($user)->get('/manage/learning/download?classification_slug=basic-common-duties&type=category&slug=basic-common-duties');
+        $this->assertContains($excelResponse->getStatusCode(), [200, 302]);
+
+        // PDF download
+        $pdfResponse = $this->actingAs($user)->get('/manage/learning/download/pdf?classification_slug=basic-common-duties&type=category&slug=basic-common-duties');
+        $pdfResponse->assertStatus(200);
+
+        // CSV download
+        $csvResponse = $this->actingAs($user)->get('/manage/learning/download/csv?classification_slug=basic-common-duties&type=category&slug=basic-common-duties');
+        $csvResponse->assertStatus(200);
+    }
+
+    public function test_playlist_display_refactor_in_datatable_and_category_column(): void
+    {
+        $user = User::where('role', '2')->first() ?? User::first();
+
+        // 1. Fetch playlist items from datatable
+        $response = $this->actingAs($user)->getJson('/manage/learning/datatable?draw=1&start=0&length=20&category=playlist');
+        $response->assertStatus(200);
+
+        $json = $response->json();
+        $this->assertIsArray($json['data']);
+
+        if (!empty($json['data'])) {
+            $firstRow = $json['data'][0];
+
+            // Category badge should contain inline "Playlist:" label and clickable link without green badge
+            $this->assertStringContainsString('Playlist:', $firstRow['category_badge']);
+            $this->assertStringContainsString('playlist-category', $firstRow['category_badge']);
+            $this->assertStringContainsString('playlist-cell-link', $firstRow['category_badge']);
+            $this->assertStringContainsString('/manage/learning/playlist/', $firstRow['category_badge']);
+            $this->assertStringNotContainsString('bg-green-lt', $firstRow['category_badge']);
+
+            // Learning title MUST NOT contain the playlist subtext
+            $this->assertStringNotContainsString('Playlist:', $firstRow['learning_title']);
+            $this->assertStringNotContainsString('ti-list-details', $firstRow['learning_title']);
+        }
+
+        // 2. Fetch non-playlist item (All Content) and verify it preserves existing badge
+        $allContentResponse = $this->actingAs($user)->getJson('/manage/learning/datatable?draw=1&start=0&length=10&category=all_content');
+        $allContentResponse->assertStatus(200);
+        $allContentJson = $allContentResponse->json();
+        if (!empty($allContentJson['data'])) {
+            $acRow = $allContentJson['data'][0];
+            $this->assertStringContainsString('All Content', $acRow['category_badge']);
+            $this->assertStringContainsString('bg-azure-lt', $acRow['category_badge']);
+            $this->assertStringNotContainsString('playlist-category', $acRow['category_badge']);
+        }
+    }
+
+    public function test_playlist_detail_page_global_learning_records(): void
+    {
+        $user = User::where('role', '2')->first() ?? User::first();
+        $playlist = \App\Models\TrainingPlan::first();
+
+        if ($playlist) {
+            // A. Global Playlist Learning Records View
+            $globalResponse = $this->actingAs($user)->get('/manage/learning/playlist/' . $playlist->id);
+            $globalResponse->assertStatus(200);
+            $globalResponse->assertViewIs('main.learning.all');
+            $globalResponse->assertSee('Playlist: ' . $playlist->title);
+            $globalResponse->assertSee('learning-table');
+            $globalResponse->assertSee('playlist_id');
+
+            // B. DataTables AJAX query scoped by playlist_id
+            $dtResponse = $this->actingAs($user)->getJson('/manage/learning/datatable?draw=1&start=0&length=10&playlist_id=' . $playlist->id);
+            $dtResponse->assertStatus(200);
+            $dtJson = $dtResponse->json();
+            $this->assertArrayHasKey('draw', $dtJson);
+            $this->assertArrayHasKey('recordsTotal', $dtJson);
+            $this->assertArrayHasKey('data', $dtJson);
+
+            if (!empty($dtJson['data'])) {
+                $row = $dtJson['data'][0];
+                $this->assertStringContainsString('Playlist:', $row['category_badge']);
+                $this->assertStringContainsString('/manage/learning/playlist/' . $playlist->id, $row['category_badge']);
+                $this->assertStringNotContainsString('user_id=', $row['category_badge']);
+                $this->assertStringNotContainsString('category_slug=', $row['category_badge']);
+            }
+
+            // C. Title autocomplete scoped by playlist_id
+            $titleResponse = $this->actingAs($user)->getJson('/manage/learning/search-titles?playlist_id=' . $playlist->id);
+            $titleResponse->assertStatus(200);
+
+            // D. Exports for playlist
+            $pdfResponse = $this->actingAs($user)->get('/manage/learning/download/pdf?playlist_id=' . $playlist->id);
+            $pdfResponse->assertStatus(200);
+
+            $csvResponse = $this->actingAs($user)->get('/manage/learning/download/csv?playlist_id=' . $playlist->id);
+            $csvResponse->assertStatus(200);
+
+            // E. 404 for invalid playlist id
+            $notFoundResponse = $this->actingAs($user)->get('/manage/learning/playlist/99999999');
+            $notFoundResponse->assertStatus(404);
+        }
+    }
 }
+

@@ -39,102 +39,52 @@
 
         <!-- EXPORT CENTER MAIN FORM CONTAINER -->
         <form id="export-center-form" action="{{ route('manage.record.export-all.download') }}" method="GET" target="_blank">
-            <!-- Hidden inputs for active source & format -->
-            <input type="hidden" name="source" id="selected-source" value="online">
-            <input type="hidden" name="format" id="selected-format" value="xlsx">
-
-            <!-- STEP 1: CHOOSE DATA SOURCE (COMPACT) -->
-            <div class="card border-0 shadow-sm rounded-4 mb-3 step-card">
-                <div class="card-header bg-transparent border-0 pt-3 pb-1 px-3 px-md-4">
+            <!-- STEP 1: CHOOSE DATA SOURCE -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4 step-card">
+                <div class="card-header bg-transparent border-0 pt-4 pb-2 px-4">
                     <div class="d-flex align-items-center gap-2">
-                        <span class="badge bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 24px; height: 24px; font-size: 0.75rem;">1</span>
-                        <h4 class="card-title fw-bold text-dark mb-0" style="font-size: 1rem;">Choose Data Source</h4>
-                        <span class="text-muted small ms-2 d-none d-sm-inline">&bull; Select the learning repository to export</span>
+                        <span class="badge bg-primary text-white rounded-circle p-2 d-inline-flex align-items-center justify-content-center" style="width: 26px; height: 26px; font-size: 0.75rem;">1</span>
+                        <h4 class="card-title fw-bold text-dark mb-0">Choose Data Source</h4>
                     </div>
+                    <p class="text-muted small mb-0 mt-1 ms-4 ps-1">Select the learning repository to export.</p>
                 </div>
-                <div class="card-body px-3 px-md-4 pb-3 pt-2">
-                    <div class="row g-2.5 g-md-3">
-                        <!-- Card 1: KP OWL (Online) -->
-                        <div class="col-12 col-md-4">
-                            <div class="source-card h-100 position-relative active" data-source="online" id="source-card-online" role="button">
-                                <div class="d-flex align-items-center justify-content-between mb-2">
-                                    <span class="export-source-icon" style="background-color: #e0f2fe; color: #0284c7;">
-                                        <i class="ti ti-device-laptop"></i>
-                                    </span>
-                                    <span class="badge bg-blue-lt text-blue rounded-pill px-2.5 py-1 fw-semibold" style="font-size: 0.725rem;">KP OWL</span>
-                                </div>
-                                <h4 class="fw-bold mb-1 text-dark source-title" style="font-size: 0.95rem;">Online Learning Record</h4>
-                                <p class="text-muted small mb-0" style="font-size: 0.8rem; line-height: 1.35;">
-                                    OWL Content &amp; Playlist records
-                                </p>
-                                <div class="source-check-icon">
-                                    <i class="ti ti-circle-check-filled text-primary fs-3"></i>
-                                </div>
+                <div class="card-body px-4 pb-4 pt-2">
+                    <div class="row">
+                        <div class="col-12">
+                            <label class="form-label fw-bold text-dark small mb-1.5" for="selected-source">
+                                <i class="ti ti-database me-1 text-muted"></i> Select Data Source
+                            </label>
+                            <div class="input-group w-100">
+                                <span class="input-group-text export-source-addon border-end-0 rounded-start-3 px-3 text-muted" id="source-icon-container">
+                                    <i class="ti ti-device-laptop text-primary fs-2" id="source-icon-indicator"></i>
+                                </span>
+                                <select class="form-select export-source-select w-100 rounded-end-3 py-2 ps-2" name="source" id="selected-source" aria-label="Select Data Source">
+                                    <option value="online" selected>Online Learning Record (KP OWL)</option>
+                                    <option value="offline">Offline Training Record (Non KP OWL)</option>
+                                    <option value="all">Combined Learning Record (All Sources)</option>
+                                </select>
                             </div>
-                        </div>
-
-                        <!-- Card 2: Non KP OWL (Offline) -->
-                        <div class="col-12 col-md-4">
-                            <div class="source-card h-100 position-relative" data-source="offline" id="source-card-offline" role="button">
-                                <div class="d-flex align-items-center justify-content-between mb-2">
-                                    <span class="export-source-icon" style="background-color: #fef3c7; color: #d97706;">
-                                        <i class="ti ti-certificate"></i>
-                                    </span>
-                                    <span class="badge bg-amber-lt text-amber rounded-pill px-2.5 py-1 fw-semibold" style="font-size: 0.725rem;">Non KP OWL</span>
-                                </div>
-                                <h4 class="fw-bold mb-1 text-dark source-title" style="font-size: 0.95rem;">Offline Training Record</h4>
-                                <p class="text-muted small mb-0" style="font-size: 0.8rem; line-height: 1.35;">
-                                    Offline &amp; external training records
-                                </p>
-                                <div class="source-check-icon">
-                                    <i class="ti ti-circle-check-filled text-primary fs-3"></i>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Card 3: All Record (Combined) -->
-                        <div class="col-12 col-md-4">
-                            <div class="source-card h-100 position-relative" data-source="all" id="source-card-all" role="button">
-                                <div class="d-flex align-items-center justify-content-between mb-2">
-                                    <span class="export-source-icon" style="background-color: #ede9fe; color: #7c3aed;">
-                                        <i class="ti ti-stack-2"></i>
-                                    </span>
-                                    <span class="badge bg-purple-lt text-purple rounded-pill px-2.5 py-1 fw-semibold" style="font-size: 0.725rem;">All Sources</span>
-                                </div>
-                                <h4 class="fw-bold mb-1 text-dark source-title" style="font-size: 0.95rem;">Combined Learning Record</h4>
-                                <p class="text-muted small mb-0" style="font-size: 0.8rem; line-height: 1.35;">
-                                    Combined Online &amp; Offline records
-                                </p>
-                                <div class="source-check-icon">
-                                    <i class="ti ti-circle-check-filled text-primary fs-3"></i>
-                                </div>
+                            <!-- Dynamic source description -->
+                            <div id="source-description-text" class="text-muted small mt-2 d-flex align-items-center gap-1.5" style="font-size: 0.8rem;">
+                                <i class="ti ti-info-circle text-muted flex-shrink-0"></i>
+                                <span id="source-description-label">Online learning records including Content &amp; Playlist.</span>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- STEP 2: LEARNING & PARTICIPANT FILTERS -->
+            <!-- STEP 2: LEARNING FILTERS -->
             <div class="card border-0 shadow-sm rounded-4 mb-4 step-card">
                 <div class="card-header bg-transparent border-0 pt-4 pb-2 px-4">
                     <div class="d-flex align-items-center gap-2">
                         <span class="badge bg-primary text-white rounded-circle p-2 d-inline-flex align-items-center justify-content-center" style="width: 26px; height: 26px; font-size: 0.75rem;">2</span>
-                        <h4 class="card-title fw-bold text-dark mb-0">Employee &amp; Learning Filters</h4>
+                        <h4 class="card-title fw-bold text-dark mb-0">Learning Filters</h4>
                     </div>
-                    <p class="text-muted small mb-0 mt-1 ms-4 ps-1">Filter by participant details, course title, and classification.</p>
+                    <p class="text-muted small mb-0 mt-1 ms-4 ps-1">Filter by course title, classification, status, progress, and training parameters.</p>
                 </div>
                 <div class="card-body px-4 pb-4 pt-2">
                     <div class="row g-3">
-                        <!-- Employee / NIP Search -->
-                        <div class="col-12 col-md-6 col-lg-4">
-                            <label class="form-label fw-bold text-dark small" for="filter-employee">
-                                <i class="ti ti-user me-1 text-muted"></i> Employee / NIP
-                            </label>
-                            <input type="text" id="filter-employee" name="employee_id" class="form-control rounded-3"
-                                   placeholder="Search NIP or Name..." autocomplete="off">
-                            <small class="text-muted" style="font-size: 0.75rem;">Matches NIP or employee name across systems.</small>
-                        </div>
-
                         <!-- Learning Title / Course Name -->
                         <div class="col-12 col-md-6 col-lg-4">
                             <label class="form-label fw-bold text-dark small" for="filter-title">
@@ -219,6 +169,50 @@
                             </select>
                         </div>
 
+                        <!-- Status -->
+                        <div class="col-12 col-md-6 col-lg-4">
+                            <label class="form-label fw-bold text-dark small" for="filter-status">
+                                <i class="ti ti-chart-dots me-1 text-muted"></i> Completion Status
+                            </label>
+                            <select id="filter-status" name="status" class="form-select rounded-3">
+                                <option value="all">All Status</option>
+                                <option value="finished">Finished</option>
+                                <option value="ongoing">Ongoing</option>
+                                <option value="not_started">Not Started</option>
+                            </select>
+                        </div>
+
+                        <!-- Progress Range -->
+                        <div class="col-12 col-md-6 col-lg-4">
+                            <label class="form-label fw-bold text-dark small" for="filter-progress">
+                                <i class="ti ti-percentage me-1 text-muted"></i> Progress Range
+                            </label>
+                            <select id="filter-progress" name="progress_range" class="form-select rounded-3">
+                                <option value="all">All Progress</option>
+                                <option value="0">0% (Not Started)</option>
+                                <option value="1-25">1% - 25%</option>
+                                <option value="26-50">26% - 50%</option>
+                                <option value="51-75">51% - 75%</option>
+                                <option value="76-99">76% - 99%</option>
+                                <option value="100">100% (Completed)</option>
+                            </select>
+                        </div>
+
+                        <!-- Participant Learning Hours Range (Combined & Offline) -->
+                        <div class="col-12 col-md-6 col-lg-4 filter-hours-wrapper" id="wrapper-hours">
+                            <label class="form-label fw-bold text-dark small" for="filter-hours">
+                                <i class="ti ti-clock me-1 text-muted"></i> Learning Hours Range
+                            </label>
+                            <select id="filter-hours" name="learning_hours_range" class="form-select rounded-3">
+                                <option value="all">All Hours</option>
+                                <option value="lt05">&lt; 0.5 Hour</option>
+                                <option value="05-1">0.5 – &lt; 1 Hour</option>
+                                <option value="1-2">1 – &lt; 2 Hours</option>
+                                <option value="2-4">2 – &lt; 4 Hours</option>
+                                <option value="gte4">&ge; 4 Hours</option>
+                            </select>
+                        </div>
+
                         <!-- Batch (Offline Only) -->
                         <div class="col-12 col-md-6 col-lg-4 filter-offline-only" id="wrapper-batch" style="display: none;">
                             <label class="form-label fw-bold text-dark small" for="filter-batch">
@@ -226,21 +220,81 @@
                             </label>
                             <input type="text" id="filter-batch" name="batch" class="form-control rounded-3" placeholder="e.g. Batch 1" disabled>
                         </div>
+
+                        <!-- Provider (Offline Only) -->
+                        <div class="col-12 col-md-6 col-lg-4 filter-offline-only" id="wrapper-provider" style="display: none;">
+                            <label class="form-label fw-bold text-dark small" for="filter-provider">
+                                <i class="ti ti-building-store me-1 text-muted"></i> Provider
+                            </label>
+                            <select id="filter-provider" name="provider" class="form-select rounded-3" disabled>
+                                <option value="all">All Providers</option>
+                                @foreach ($providers as $prov)
+                                    <option value="{{ $prov }}">{{ $prov }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- Delivery Method (Offline Only) -->
+                        <div class="col-12 col-md-6 col-lg-4 filter-offline-only" id="wrapper-delivery-method" style="display: none;">
+                            <label class="form-label fw-bold text-dark small" for="filter-delivery-method">
+                                <i class="ti ti-truck-delivery me-1 text-muted"></i> Delivery Method
+                            </label>
+                            <select id="filter-delivery-method" name="delivery_method" class="form-select rounded-3" disabled>
+                                <option value="all">All Delivery Methods</option>
+                                @foreach ($deliveryMethods as $dm)
+                                    <option value="{{ $dm }}">{{ $dm }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- Attendance (Offline Only) -->
+                        <div class="col-12 col-md-6 col-lg-4 filter-offline-only" id="wrapper-attendance" style="display: none;">
+                            <label class="form-label fw-bold text-dark small" for="filter-attendance">
+                                <i class="ti ti-user-check me-1 text-muted"></i> Attendance
+                            </label>
+                            <select id="filter-attendance" name="attendance" class="form-select rounded-3" disabled>
+                                <option value="all">All Attendance</option>
+                                <option value="present">Present (Attended)</option>
+                                <option value="absent">Absent</option>
+                            </select>
+                        </div>
+
+                        <!-- Certificate (Offline Only) -->
+                        <div class="col-12 col-md-6 col-lg-4 filter-offline-only" id="wrapper-certificate" style="display: none;">
+                            <label class="form-label fw-bold text-dark small" for="filter-certificate">
+                                <i class="ti ti-certificate-2 me-1 text-muted"></i> Certificate
+                            </label>
+                            <select id="filter-certificate" name="certificate" class="form-select rounded-3" disabled>
+                                <option value="all">All Status</option>
+                                <option value="yes">Available / Issued</option>
+                                <option value="no">Not Issued</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- STEP 3: ORGANIZATION FILTERS -->
+            <!-- STEP 3: EMPLOYEE & ORGANIZATION FILTERS -->
             <div class="card border-0 shadow-sm rounded-4 mb-4 step-card">
                 <div class="card-header bg-transparent border-0 pt-4 pb-2 px-4">
                     <div class="d-flex align-items-center gap-2">
                         <span class="badge bg-primary text-white rounded-circle p-2 d-inline-flex align-items-center justify-content-center" style="width: 26px; height: 26px; font-size: 0.75rem;">3</span>
-                        <h4 class="card-title fw-bold text-dark mb-0">Organization Filters</h4>
+                        <h4 class="card-title fw-bold text-dark mb-0">Employee &amp; Organization Filters</h4>
                     </div>
-                    <p class="text-muted small mb-0 mt-1 ms-4 ps-1">Scope report by company division, department, team, or employee level.</p>
+                    <p class="text-muted small mb-0 mt-1 ms-4 ps-1">Scope report by participant details, company, division, department, team, and level.</p>
                 </div>
                 <div class="card-body px-4 pb-4 pt-2">
                     <div class="row g-3">
+                        <!-- Employee / NIP Search -->
+                        <div class="col-12 col-md-6 col-lg-4">
+                            <label class="form-label fw-bold text-dark small" for="filter-employee">
+                                <i class="ti ti-user me-1 text-muted"></i> Employee / NIP
+                            </label>
+                            <input type="text" id="filter-employee" name="employee_id" class="form-control rounded-3"
+                                   placeholder="Search NIP or Name..." autocomplete="off">
+                            <small class="text-muted" style="font-size: 0.75rem;">Matches NIP or employee name across systems.</small>
+                        </div>
+
                         <!-- Company -->
                         <div class="col-12 col-md-6 col-lg-4">
                             <label class="form-label fw-bold text-dark small" for="filter-company">
@@ -250,6 +304,19 @@
                                 <option value="all">All Companies</option>
                                 @foreach ($companies as $comp)
                                     <option value="{{ $comp }}">{{ $comp }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- Division -->
+                        <div class="col-12 col-md-6 col-lg-4">
+                            <label class="form-label fw-bold text-dark small" for="filter-division">
+                                <i class="ti ti-layout-grid me-1 text-muted"></i> Division
+                            </label>
+                            <select id="filter-division" name="division" class="form-select rounded-3">
+                                <option value="all">All Divisions</option>
+                                @foreach ($divisions as $div)
+                                    <option value="{{ $div }}">{{ $div }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -275,6 +342,14 @@
                             <input type="text" id="filter-team" name="team" class="form-control rounded-3" placeholder="Search team...">
                         </div>
 
+                        <!-- Job Position (Offline Only) -->
+                        <div class="col-12 col-md-6 col-lg-4 filter-offline-only" id="wrapper-job-position" style="display: none;">
+                            <label class="form-label fw-bold text-dark small" for="filter-job-position">
+                                <i class="ti ti-briefcase me-1 text-muted"></i> Job Position
+                            </label>
+                            <input type="text" id="filter-job-position" name="job_position" class="form-control rounded-3" placeholder="Search position..." disabled>
+                        </div>
+
                         <!-- Grade (Offline Only) -->
                         <div class="col-12 col-md-6 col-lg-4 filter-offline-only" id="wrapper-grade" style="display: none;">
                             <label class="form-label fw-bold text-dark small" for="filter-grade">
@@ -287,31 +362,23 @@
                                 @endforeach
                             </select>
                         </div>
-
-                        <!-- Job Position (Offline Only) -->
-                        <div class="col-12 col-md-6 col-lg-4 filter-offline-only" id="wrapper-job-position" style="display: none;">
-                            <label class="form-label fw-bold text-dark small" for="filter-job-position">
-                                <i class="ti ti-briefcase me-1 text-muted"></i> Job Position
-                            </label>
-                            <input type="text" id="filter-job-position" name="job_position" class="form-control rounded-3" placeholder="Search position..." disabled>
-                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- STEP 4: PERIOD, STATUS & DELIVERY -->
+            <!-- STEP 4: PERIOD FILTERS -->
             <div class="card border-0 shadow-sm rounded-4 mb-4 step-card">
                 <div class="card-header bg-transparent border-0 pt-4 pb-2 px-4">
                     <div class="d-flex align-items-center gap-2">
                         <span class="badge bg-primary text-white rounded-circle p-2 d-inline-flex align-items-center justify-content-center" style="width: 26px; height: 26px; font-size: 0.75rem;">4</span>
-                        <h4 class="card-title fw-bold text-dark mb-0">Period &amp; Performance Filters</h4>
+                        <h4 class="card-title fw-bold text-dark mb-0">Period Filters</h4>
                     </div>
-                    <p class="text-muted small mb-0 mt-1 ms-4 ps-1">Define reporting timeframe, completion progress, and delivery parameters.</p>
+                    <p class="text-muted small mb-0 mt-1 ms-4 ps-1">Define reporting timeframe by year or specific start and finish date range.</p>
                 </div>
                 <div class="card-body px-4 pb-4 pt-2">
                     <div class="row g-3">
                         <!-- Year -->
-                        <div class="col-12 col-md-6 col-lg-3">
+                        <div class="col-12 col-md-6 col-lg-4">
                             <label class="form-label fw-bold text-dark small" for="filter-year">
                                 <i class="ti ti-calendar-event me-1 text-muted"></i> Reporting Year
                             </label>
@@ -324,7 +391,7 @@
                         </div>
 
                         <!-- Start Date -->
-                        <div class="col-12 col-md-6 col-lg-3">
+                        <div class="col-12 col-md-6 col-lg-4">
                             <label class="form-label fw-bold text-dark small" for="filter-from-date">
                                 <i class="ti ti-calendar me-1 text-muted"></i> From Date
                             </label>
@@ -332,106 +399,18 @@
                         </div>
 
                         <!-- End Date -->
-                        <div class="col-12 col-md-6 col-lg-3">
+                        <div class="col-12 col-md-6 col-lg-4">
                             <label class="form-label fw-bold text-dark small" for="filter-to-date">
                                 <i class="ti ti-calendar me-1 text-muted"></i> To Date
                             </label>
                             <input type="date" id="filter-to-date" name="to_date" class="form-control rounded-3">
                         </div>
+                    </div>
 
-                        <!-- Status -->
-                        <div class="col-12 col-md-6 col-lg-3">
-                            <label class="form-label fw-bold text-dark small" for="filter-status">
-                                <i class="ti ti-chart-dots me-1 text-muted"></i> Completion Status
-                            </label>
-                            <select id="filter-status" name="status" class="form-select rounded-3">
-                                <option value="all">All Status</option>
-                                <option value="finished">Finished</option>
-                                <option value="ongoing">Ongoing</option>
-                                <option value="not_started">Not Started</option>
-                            </select>
-                        </div>
-
-                        <!-- Progress Range -->
-                        <div class="col-12 col-md-6 col-lg-3">
-                            <label class="form-label fw-bold text-dark small" for="filter-progress">
-                                <i class="ti ti-percentage me-1 text-muted"></i> Progress Range
-                            </label>
-                            <select id="filter-progress" name="progress_range" class="form-select rounded-3">
-                                <option value="all">All Progress</option>
-                                <option value="0">0% (Not Started)</option>
-                                <option value="1-25">1% - 25%</option>
-                                <option value="26-50">26% - 50%</option>
-                                <option value="51-75">51% - 75%</option>
-                                <option value="76-99">76% - 99%</option>
-                                <option value="100">100% (Completed)</option>
-                            </select>
-                        </div>
-
-                        <!-- Participant Learning Hours Range (Combined & Offline) -->
-                        <div class="col-12 col-md-6 col-lg-3 filter-hours-wrapper" id="wrapper-hours">
-                            <label class="form-label fw-bold text-dark small" for="filter-hours">
-                                <i class="ti ti-clock me-1 text-muted"></i> Learning Hours Range
-                            </label>
-                            <select id="filter-hours" name="learning_hours_range" class="form-select rounded-3">
-                                <option value="all">All Hours</option>
-                                <option value="lt05">&lt; 0.5 Hour</option>
-                                <option value="05-1">0.5 – &lt; 1 Hour</option>
-                                <option value="1-2">1 – &lt; 2 Hours</option>
-                                <option value="2-4">2 – &lt; 4 Hours</option>
-                                <option value="gte4">&ge; 4 Hours</option>
-                            </select>
-                        </div>
-
-                        <!-- Provider (Offline Only) -->
-                        <div class="col-12 col-md-6 col-lg-3 filter-offline-only" id="wrapper-provider" style="display: none;">
-                            <label class="form-label fw-bold text-dark small" for="filter-provider">
-                                <i class="ti ti-building-store me-1 text-muted"></i> Provider
-                            </label>
-                            <select id="filter-provider" name="provider" class="form-select rounded-3" disabled>
-                                <option value="all">All Providers</option>
-                                @foreach ($providers as $prov)
-                                    <option value="{{ $prov }}">{{ $prov }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <!-- Delivery Method (Offline Only) -->
-                        <div class="col-12 col-md-6 col-lg-3 filter-offline-only" id="wrapper-delivery-method" style="display: none;">
-                            <label class="form-label fw-bold text-dark small" for="filter-delivery-method">
-                                <i class="ti ti-truck-delivery me-1 text-muted"></i> Delivery Method
-                            </label>
-                            <select id="filter-delivery-method" name="delivery_method" class="form-select rounded-3" disabled>
-                                <option value="all">All Delivery Methods</option>
-                                @foreach ($deliveryMethods as $dm)
-                                    <option value="{{ $dm }}">{{ $dm }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <!-- Attendance (Offline Only) -->
-                        <div class="col-12 col-md-6 col-lg-3 filter-offline-only" id="wrapper-attendance" style="display: none;">
-                            <label class="form-label fw-bold text-dark small" for="filter-attendance">
-                                <i class="ti ti-user-check me-1 text-muted"></i> Attendance
-                            </label>
-                            <select id="filter-attendance" name="attendance" class="form-select rounded-3" disabled>
-                                <option value="all">All Attendance</option>
-                                <option value="present">Present (Attended)</option>
-                                <option value="absent">Absent</option>
-                            </select>
-                        </div>
-
-                        <!-- Certificate (Offline Only) -->
-                        <div class="col-12 col-md-6 col-lg-3 filter-offline-only" id="wrapper-certificate" style="display: none;">
-                            <label class="form-label fw-bold text-dark small" for="filter-certificate">
-                                <i class="ti ti-certificate-2 me-1 text-muted"></i> Certificate
-                            </label>
-                            <select id="filter-certificate" name="certificate" class="form-select rounded-3" disabled>
-                                <option value="all">All Status</option>
-                                <option value="yes">Available / Issued</option>
-                                <option value="no">Not Issued</option>
-                            </select>
-                        </div>
+                    <!-- Date Range Error Alert -->
+                    <div id="date-range-error" class="alert alert-danger py-2 px-3 mt-3 d-none d-flex align-items-center gap-2 rounded-3" role="alert">
+                        <i class="ti ti-alert-circle fs-3 flex-shrink-0"></i>
+                        <span><strong>Invalid Date Range:</strong> From Date cannot be later than To Date.</span>
                     </div>
                 </div>
             </div>
@@ -446,57 +425,36 @@
                     <p class="text-muted small mb-0 mt-1 ms-4 ps-1">Select the target file format for your generated report.</p>
                 </div>
                 <div class="card-body px-4 pb-4 pt-2">
-                    <div class="row g-3">
-                        <!-- Format 1: Excel (.xlsx) -->
-                        <div class="col-12 col-md-4">
-                            <div class="format-card p-3 rounded-3 h-100 position-relative active" data-format="xlsx" id="format-card-xlsx" role="button">
-                                <div class="d-flex align-items-center gap-3">
-                                    <span class="avatar avatar-md rounded-3 flex-shrink-0" style="background-color: #dcfce7; color: #15803d;">
-                                        <i class="ti ti-file-spreadsheet fs-2"></i>
-                                    </span>
-                                    <div class="min-w-0">
-                                        <div class="fw-bold text-dark">Excel Spreadsheet (.xlsx)</div>
-                                        <div class="text-muted small" style="font-size: 0.785rem;">Formatted table with full columns &amp; styled headers.</div>
-                                    </div>
-                                </div>
-                                <div class="format-check-icon">
-                                    <i class="ti ti-circle-check-filled text-success fs-2"></i>
-                                </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <label class="form-label fw-bold text-dark small mb-1.5" for="selected-format">
+                                <i class="ti ti-file-export me-1 text-muted"></i> Select Export Format
+                            </label>
+                            <div class="input-group w-100">
+                                <span class="input-group-text export-format-addon border-end-0 rounded-start-3 px-3 text-muted" id="format-icon-container">
+                                    <i class="ti ti-file-spreadsheet text-success fs-2" id="format-icon-indicator"></i>
+                                </span>
+                                <select class="form-select export-format-select w-100 rounded-end-3 py-2 ps-2" name="format" id="selected-format" aria-label="Select Export Format">
+                                    <option value="xlsx" selected>Excel Spreadsheet (.xlsx)</option>
+                                    <option value="csv">CSV Delimited (.csv)</option>
+                                    <option value="pdf">PDF Landscape (.pdf)</option>
+                                </select>
                             </div>
-                        </div>
 
-                        <!-- Format 2: CSV (.csv) -->
-                        <div class="col-12 col-md-4">
-                            <div class="format-card p-3 rounded-3 h-100 position-relative" data-format="csv" id="format-card-csv" role="button">
-                                <div class="d-flex align-items-center gap-3">
-                                    <span class="avatar avatar-md rounded-3 flex-shrink-0" style="background-color: #e0f2fe; color: #0284c7;">
-                                        <i class="ti ti-file-text fs-2"></i>
-                                    </span>
-                                    <div class="min-w-0">
-                                        <div class="fw-bold text-dark">CSV Delimited (.csv)</div>
-                                        <div class="text-muted small" style="font-size: 0.785rem;">Fast streaming download with UTF-8 BOM encoding.</div>
-                                    </div>
-                                </div>
-                                <div class="format-check-icon">
-                                    <i class="ti ti-circle-check-filled text-success fs-2"></i>
-                                </div>
+                            <!-- Dynamic format description -->
+                            <div id="format-description-text" class="text-muted small mt-2 d-flex align-items-center gap-1.5" style="font-size: 0.8rem;">
+                                <i class="ti ti-info-circle text-muted flex-shrink-0"></i>
+                                <span id="format-description-label">Formatted table with full columns &amp; styled headers.</span>
                             </div>
-                        </div>
 
-                        <!-- Format 3: PDF Landscape (.pdf) -->
-                        <div class="col-12 col-md-4">
-                            <div class="format-card p-3 rounded-3 h-100 position-relative" data-format="pdf" id="format-card-pdf" role="button">
-                                <div class="d-flex align-items-center gap-3">
-                                    <span class="avatar avatar-md rounded-3 flex-shrink-0" style="background-color: #fee2e2; color: #b91c1c;">
-                                        <i class="ti ti-file-type-pdf fs-2"></i>
-                                    </span>
-                                    <div class="min-w-0">
-                                        <div class="fw-bold text-dark">PDF Landscape (.pdf)</div>
-                                        <div class="text-muted small" style="font-size: 0.785rem;">Printable landscape layout (Safe max 200–500 records).</div>
+                            <!-- PDF Safe Record Limit Notice -->
+                            <div id="pdf-limit-notice" class="mt-2.5 p-2.5 px-3 rounded-3 bg-warning-lt border border-warning-subtle text-dark small d-none" style="font-size: 0.8rem;">
+                                <div class="d-flex align-items-start gap-2">
+                                    <i class="ti ti-alert-triangle text-warning fs-3 flex-shrink-0 mt-0.5"></i>
+                                    <div>
+                                        <span class="fw-semibold text-warning-emphasis">PDF Record Limit:</span>
+                                        <span class="text-muted">Printable landscape layout supports maximum <strong>500 records</strong>. For larger exports, please use <strong>Excel (.xlsx)</strong> or <strong>CSV (.csv)</strong>.</span>
                                     </div>
-                                </div>
-                                <div class="format-check-icon">
-                                    <i class="ti ti-circle-check-filled text-success fs-2"></i>
                                 </div>
                             </div>
                         </div>
@@ -508,7 +466,7 @@
             <div class="card border-0 shadow-sm rounded-4 mb-4 action-bar-card">
                 <div class="card-body p-3 p-md-4 d-flex align-items-center justify-content-between flex-wrap gap-3">
                     <div>
-                        <div class="fw-bold text-dark" id="action-summary-text">KP OWL (Online) &bull; Excel (.xlsx)</div>
+                        <div class="fw-bold text-dark" id="action-summary-text">KP OWL (Online) &middot; Excel (.xlsx)</div>
                         <div class="text-muted small" id="action-summary-sub">Ready to generate export with configured filters.</div>
                     </div>
 
@@ -580,130 +538,60 @@
         color: #f8fafc !important;
     }
 
-    /* DATA SOURCE CARD ICON CONTAINER & GLYPH (COMPACT) */
-    .export-source-icon {
-        width: 44px !important;
-        height: 44px !important;
-        min-width: 44px !important;
-        min-height: 44px !important;
-        border-radius: 10px !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        flex-shrink: 0;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    /* DATA SOURCE & EXPORT FORMAT DROPDOWN FULL-WIDTH STYLING */
+    .export-source-addon,
+    .export-format-addon {
+        background-color: #f8fafc;
+        border-color: #d8e2ef;
+        transition: border-color 0.2s ease;
     }
-
-    .export-source-icon i {
-        font-size: 22px !important;
-        line-height: 1 !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-    }
-
-    .export-source-icon svg {
-        width: 22px !important;
-        height: 22px !important;
-    }
-
-    [data-bs-theme="dark"] .export-source-icon,
-    body.dark-mode .export-source-icon {
-        filter: brightness(0.95);
-    }
-
-    /* SOURCE CARDS INTERACTIVE STYLING */
-    .source-card {
-        border: 2px solid #e2e8f0;
-        background: #ffffff;
+    .export-source-select,
+    .export-format-select {
+        border-color: #d8e2ef;
+        font-weight: 500;
         cursor: pointer;
-        transition: all 0.2s ease-in-out;
-        user-select: none;
-        padding: 14px 16px !important;
-        border-radius: 12px !important;
+        width: 100% !important;
+        min-width: 0;
+        max-width: none;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
-    .source-card:hover {
-        border-color: #93c5fd;
-        transform: translateY(-2px);
-        box-shadow: 0 6px 14px rgba(12, 91, 158, 0.08);
-    }
-    .source-card.active {
+    .export-source-select:focus,
+    .export-format-select:focus {
         border-color: #0c5b9e;
-        background: #f0f7ff;
-        box-shadow: 0 6px 16px rgba(12, 91, 158, 0.12);
+        box-shadow: 0 0 0 0.25rem rgba(12, 91, 158, 0.15);
     }
-    .source-check-icon {
-        position: absolute;
-        top: 14px;
-        right: 14px;
-        opacity: 0;
-        transform: scale(0.5);
-        transition: all 0.2s ease;
-    }
-    .source-card.active .source-check-icon {
-        opacity: 1;
-        transform: scale(1);
+    .input-group:focus-within .export-source-addon,
+    .input-group:focus-within .export-format-addon {
+        border-color: #0c5b9e;
     }
 
-    [data-bs-theme="dark"] .source-card,
-    body.dark-mode .source-card {
+    [data-bs-theme="dark"] .export-source-addon,
+    [data-bs-theme="dark"] .export-format-addon,
+    body.dark-mode .export-source-addon,
+    body.dark-mode .export-format-addon {
+        background-color: #1e293b;
         border-color: rgba(255, 255, 255, 0.12);
-        background: #0f172a;
     }
-    [data-bs-theme="dark"] .source-card:hover,
-    body.dark-mode .source-card:hover {
-        border-color: #3b82f6;
+    [data-bs-theme="dark"] .export-source-select,
+    [data-bs-theme="dark"] .export-format-select,
+    body.dark-mode .export-source-select,
+    body.dark-mode .export-format-select {
+        background-color: #0f172a;
+        border-color: rgba(255, 255, 255, 0.12);
+        color: #f8fafc;
     }
-    [data-bs-theme="dark"] .source-card.active,
-    body.dark-mode .source-card.active {
+    [data-bs-theme="dark"] .export-source-select:focus,
+    [data-bs-theme="dark"] .export-format-select:focus,
+    body.dark-mode .export-source-select:focus,
+    body.dark-mode .export-format-select:focus {
         border-color: #60a5fa;
-        background: #1e293b;
+        box-shadow: 0 0 0 0.25rem rgba(96, 165, 250, 0.2);
     }
-
-    /* FORMAT CARDS INTERACTIVE STYLING */
-    .format-card {
-        border: 2px solid #e2e8f0;
-        background: #ffffff;
-        cursor: pointer;
-        transition: all 0.2s ease-in-out;
-        user-select: none;
-    }
-    .format-card:hover {
-        border-color: #86efac;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(22, 163, 74, 0.08);
-    }
-    .format-card.active {
-        border-color: #16a34a;
-        background: #f0fdf4;
-        box-shadow: 0 6px 16px rgba(22, 163, 74, 0.12);
-    }
-    .format-check-icon {
-        position: absolute;
-        top: 12px;
-        right: 12px;
-        opacity: 0;
-        transform: scale(0.5);
-        transition: all 0.2s ease;
-    }
-    .format-card.active .format-check-icon {
-        opacity: 1;
-        transform: scale(1);
-    }
-
-    [data-bs-theme="dark"] .format-card,
-    body.dark-mode .format-card {
-        border-color: rgba(255, 255, 255, 0.12);
-        background: #0f172a;
-    }
-    [data-bs-theme="dark"] .format-card:hover,
-    body.dark-mode .format-card:hover {
-        border-color: #22c55e;
-    }
-    [data-bs-theme="dark"] .format-card.active,
-    body.dark-mode .format-card.active {
-        border-color: #22c55e;
-        background: #1e293b;
+    [data-bs-theme="dark"] .input-group:focus-within .export-source-addon,
+    [data-bs-theme="dark"] .input-group:focus-within .export-format-addon,
+    body.dark-mode .input-group:focus-within .export-source-addon,
+    body.dark-mode .input-group:focus-within .export-format-addon {
+        border-color: #60a5fa;
     }
 
 </style>
@@ -712,10 +600,14 @@
 @section('script')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const sourceInput = document.getElementById('selected-source');
-    const formatInput = document.getElementById('selected-format');
-    const sourceCards = document.querySelectorAll('.source-card');
-    const formatCards = document.querySelectorAll('.format-card');
+    const sourceSelect = document.getElementById('selected-source');
+    const sourceIconIndicator = document.getElementById('source-icon-indicator');
+    const sourceDescLabel = document.getElementById('source-description-label');
+
+    const formatSelect = document.getElementById('selected-format');
+    const formatIconIndicator = document.getElementById('format-icon-indicator');
+    const formatDescLabel = document.getElementById('format-description-label');
+    const pdfLimitNotice = document.getElementById('pdf-limit-notice');
 
     const subClassSelect = document.getElementById('filter-sub-classification');
     const mainClassSelect = document.getElementById('filter-classification');
@@ -728,16 +620,40 @@ document.addEventListener('DOMContentLoaded', function () {
     const subClassMap = @json($subClassMap ?? []);
 
     // 1. DATA SOURCE SELECTION HANDLER
-    function setSource(source) {
-        sourceInput.value = source;
+    const sourceMeta = {
+        'online': {
+            icon: 'ti ti-device-laptop',
+            iconColor: 'text-primary',
+            desc: 'Online learning records including Content & Playlist.'
+        },
+        'offline': {
+            icon: 'ti ti-certificate',
+            iconColor: 'text-warning',
+            desc: 'Offline & external training records.'
+        },
+        'all': {
+            icon: 'ti ti-stack-2',
+            iconColor: 'text-purple',
+            desc: 'Combined Online & Offline records.'
+        }
+    };
 
-        sourceCards.forEach(card => {
-            if (card.dataset.source === source) {
-                card.classList.add('active');
-            } else {
-                card.classList.remove('active');
-            }
-        });
+    function setSource(source) {
+        if (!sourceMeta[source]) {
+            source = 'online';
+        }
+
+        if (sourceSelect && sourceSelect.value !== source) {
+            sourceSelect.value = source;
+        }
+
+        const meta = sourceMeta[source];
+        if (sourceIconIndicator) {
+            sourceIconIndicator.className = `${meta.icon} ${meta.iconColor} fs-2`;
+        }
+        if (sourceDescLabel) {
+            sourceDescLabel.textContent = meta.desc;
+        }
 
         const onlineElements = document.querySelectorAll('.filter-online-only');
         const offlineElements = document.querySelectorAll('.filter-offline-only');
@@ -745,7 +661,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const titleLabel = document.getElementById('label-learning-title');
 
         if (source === 'online') {
-            titleLabel.textContent = 'Learning Title (Content / Playlist)';
+            if (titleLabel) titleLabel.textContent = 'Learning Title (Content / Playlist)';
             onlineElements.forEach(el => {
                 el.style.display = '';
                 const ctrl = el.querySelector('select, input');
@@ -761,7 +677,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (subClassSelect) subClassSelect.disabled = true;
             }
         } else if (source === 'offline') {
-            titleLabel.textContent = 'Course / Training Name';
+            if (titleLabel) titleLabel.textContent = 'Course / Training Name';
             onlineElements.forEach(el => {
                 el.style.display = 'none';
                 const ctrl = el.querySelector('select, input');
@@ -778,7 +694,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         } else {
             // source === 'all' (Combined)
-            titleLabel.textContent = 'Learning / Course Title';
+            if (titleLabel) titleLabel.textContent = 'Learning / Course Title';
             onlineElements.forEach(el => {
                 el.style.display = '';
                 const ctrl = el.querySelector('select, input');
@@ -798,49 +714,83 @@ document.addEventListener('DOMContentLoaded', function () {
         updateActionSummary();
     }
 
-    sourceCards.forEach(card => {
-        card.addEventListener('click', function () {
-            setSource(this.dataset.source);
+    if (sourceSelect) {
+        sourceSelect.addEventListener('change', function () {
+            setSource(this.value);
         });
-    });
+    }
 
     // 2. EXPORT FORMAT SELECTION HANDLER
-    function setFormat(format) {
-        formatInput.value = format;
+    const formatMeta = {
+        'xlsx': {
+            icon: 'ti ti-file-spreadsheet',
+            iconColor: 'text-success',
+            desc: 'Formatted table with full columns & styled headers.',
+            showPdfLimit: false
+        },
+        'csv': {
+            icon: 'ti ti-file-text',
+            iconColor: 'text-primary',
+            desc: 'Fast streaming download with UTF-8 BOM encoding.',
+            showPdfLimit: false
+        },
+        'pdf': {
+            icon: 'ti ti-file-type-pdf',
+            iconColor: 'text-danger',
+            desc: 'Printable landscape layout.',
+            showPdfLimit: true
+        }
+    };
 
-        formatCards.forEach(card => {
-            if (card.dataset.format === format) {
-                card.classList.add('active');
+    function setFormat(format) {
+        if (!formatMeta[format]) {
+            format = 'xlsx';
+        }
+
+        if (formatSelect && formatSelect.value !== format) {
+            formatSelect.value = format;
+        }
+
+        const meta = formatMeta[format];
+        if (formatIconIndicator) {
+            formatIconIndicator.className = `${meta.icon} ${meta.iconColor} fs-2`;
+        }
+        if (formatDescLabel) {
+            formatDescLabel.textContent = meta.desc;
+        }
+        if (pdfLimitNotice) {
+            if (meta.showPdfLimit) {
+                pdfLimitNotice.classList.remove('d-none');
             } else {
-                card.classList.remove('active');
+                pdfLimitNotice.classList.add('d-none');
             }
-        });
+        }
 
         updateActionSummary();
     }
 
-    formatCards.forEach(card => {
-        card.addEventListener('click', function () {
-            setFormat(this.dataset.format);
+    if (formatSelect) {
+        formatSelect.addEventListener('change', function () {
+            setFormat(this.value);
         });
-    });
+    }
 
     function updateActionSummary() {
         const srcNames = {
             'online': 'KP OWL (Online)',
             'offline': 'Non KP OWL (Offline)',
-            'all': 'All Record (Combined)'
+            'all': 'All Sources'
         };
         const fmtNames = {
             'xlsx': 'Excel (.xlsx)',
             'csv': 'CSV (.csv)',
-            'pdf': 'PDF Landscape (.pdf)'
+            'pdf': 'PDF (.pdf)'
         };
 
-        const currentSrc = srcNames[sourceInput.value] || 'KP OWL';
-        const currentFmt = fmtNames[formatInput.value] || 'Excel (.xlsx)';
+        const currentSrc = srcNames[sourceSelect ? sourceSelect.value : 'online'] || 'KP OWL (Online)';
+        const currentFmt = fmtNames[formatSelect ? formatSelect.value : 'xlsx'] || 'Excel (.xlsx)';
         if (actionSummaryText) {
-            actionSummaryText.innerHTML = `${currentSrc} &bull; ${currentFmt}`;
+            actionSummaryText.innerHTML = `${currentSrc} &middot; ${currentFmt}`;
         }
     }
 
@@ -900,10 +850,74 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // 4. RESET FILTERS HANDLER
+    // 4. DATE RANGE VALIDATION (From Date must not be later than To Date)
+    const fromDateInput = document.getElementById('filter-from-date');
+    const toDateInput = document.getElementById('filter-to-date');
+    const dateRangeError = document.getElementById('date-range-error');
+
+    function validateDateRange() {
+        if (!fromDateInput || !toDateInput) return true;
+        const fromVal = fromDateInput.value;
+        const toVal = toDateInput.value;
+
+        if (fromVal && toVal && fromVal > toVal) {
+            if (dateRangeError) dateRangeError.classList.remove('d-none');
+            fromDateInput.classList.add('is-invalid');
+            toDateInput.classList.add('is-invalid');
+            return false;
+        } else {
+            if (dateRangeError) dateRangeError.classList.add('d-none');
+            fromDateInput.classList.remove('is-invalid');
+            toDateInput.classList.remove('is-invalid');
+            return true;
+        }
+    }
+
+    if (fromDateInput) {
+        fromDateInput.addEventListener('change', function () {
+            if (toDateInput && this.value) {
+                toDateInput.min = this.value;
+            } else if (toDateInput) {
+                toDateInput.removeAttribute('min');
+            }
+            validateDateRange();
+        });
+    }
+
+    if (toDateInput) {
+        toDateInput.addEventListener('change', function () {
+            if (fromDateInput && this.value) {
+                fromDateInput.max = this.value;
+            } else if (fromDateInput) {
+                fromDateInput.removeAttribute('max');
+            }
+            validateDateRange();
+        });
+    }
+
+    if (form) {
+        form.addEventListener('submit', function (e) {
+            if (!validateDateRange()) {
+                e.preventDefault();
+                fromDateInput.focus();
+                return false;
+            }
+        });
+    }
+
+    // 5. RESET FILTERS HANDLER
     if (resetBtn) {
         resetBtn.addEventListener('click', function () {
             form.reset();
+            if (dateRangeError) dateRangeError.classList.add('d-none');
+            if (fromDateInput) {
+                fromDateInput.classList.remove('is-invalid');
+                fromDateInput.removeAttribute('max');
+            }
+            if (toDateInput) {
+                toDateInput.classList.remove('is-invalid');
+                toDateInput.removeAttribute('min');
+            }
             setSource('online');
             setFormat('xlsx');
             updateSubClassifications('all');
@@ -914,6 +928,7 @@ document.addEventListener('DOMContentLoaded', function () {
     setSource('online');
     setFormat('xlsx');
     updateSubClassifications('all');
+    validateDateRange();
 });
 </script>
 @endsection

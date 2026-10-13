@@ -253,8 +253,9 @@
                 $progressText = $isFinished ? 'Finished' : ($progress > 0 ? 'Ongoing' : 'Not Started');
 
                 $title = $row->content_title ?? '-';
-                if (!empty($row->playlist_title)) {
-                    $title .= ' (Playlist: ' . $row->playlist_title . ')';
+                $category = $row->category_source ?? 'All Content';
+                if ($category === 'Playlist' && !empty($row->playlist_title)) {
+                    $category = 'Playlist: ' . $row->playlist_title;
                 }
 
                 $rawType = (string) ($row->content_type ?? '');
@@ -279,7 +280,7 @@
                     <span class="badge {{ $type === 'Video' ? 'badge-info' : 'badge-primary' }}">{{ $type }}</span>
                 </td>
                 <td>{{ $row->classification_name ?? '-' }}</td>
-                <td>{{ $row->category_source ?? 'All Content' }}</td>
+                <td>{{ $category }}</td>
                 <td class="text-center">{{ \App\Support\DurationFormatter::format($row->content_duration ?? null) }}</td>
                 <td class="text-center">
                     <strong style="color: {{ $isFinished ? '#15803d' : '#b45309' }}">{{ round($progress) }}%</strong>

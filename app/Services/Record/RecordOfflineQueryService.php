@@ -393,6 +393,21 @@ class RecordOfflineQueryService
             $query->where('otu.job_position', 'like', "%{$jobPosParam}%");
         }
 
+        // 25. More Filter: Division
+        $divisionParam = trim((string) ($filters['division'] ?? 'all'));
+        if (filled($divisionParam) && $divisionParam !== 'all') {
+            $query->where('u.division', $divisionParam);
+        }
+
+        // 26. More Filter: Team
+        $teamParam = trim((string) ($filters['team'] ?? ''));
+        if (filled($teamParam) && $teamParam !== 'all') {
+            $query->where(function ($q) use ($teamParam) {
+                $q->where('otu.team', 'like', "%{$teamParam}%")
+                  ->orWhere('u.team', 'like', "%{$teamParam}%");
+            });
+        }
+
         return $query;
     }
 

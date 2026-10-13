@@ -358,4 +358,157 @@ class RecordExportCenterTest extends TestCase
         $memDiffMb = ($endMem - $startMem) / (1024 * 1024);
         $this->assertLessThan(40, $memDiffMb, "Memory increased by {$memDiffMb} MB");
     }
+
+    /**
+     * CASE 16: Step 5 Export Format is rendered as full-width dropdown, not cards.
+     */
+    public function test_case_16_step_5_format_dropdown_rendered()
+    {
+        $response = $this->actingAs($this->admin)->get(route('manage.record.export-all'));
+
+        $response->assertStatus(200);
+        // Heading & subtitle preserved
+        $response->assertSee('Choose Export Format');
+        $response->assertSee('Select the target file format for your generated report.');
+
+        // Format dropdown exists
+        $response->assertSee('Select Export Format');
+        $response->assertSee('id="selected-format"', false);
+        $response->assertSee('name="format"', false);
+        $response->assertSee('value="xlsx"', false);
+        $response->assertSee('value="csv"', false);
+        $response->assertSee('value="pdf"', false);
+        $response->assertSee('Excel Spreadsheet (.xlsx)');
+        $response->assertSee('CSV Delimited (.csv)');
+        $response->assertSee('PDF Landscape (.pdf)');
+
+        // Format cards are removed
+        $response->assertDontSee('format-card');
+        $response->assertDontSee('format-check-icon');
+
+        // Full width class present
+        $response->assertSee('export-format-select w-100', false);
+
+        // PDF limit notice container exists
+        $response->assertSee('id="pdf-limit-notice"', false);
+
+        // Action summary element exists
+        $response->assertSee('id="action-summary-text"', false);
+    }
+
+    /**
+     * CASE 17: Step 1 Data Source is rendered as full-width native dropdown, not cards.
+     */
+    public function test_case_17_step_1_source_dropdown_rendered()
+    {
+        $response = $this->actingAs($this->admin)->get(route('manage.record.export-all'));
+
+        $response->assertStatus(200);
+        // Step 1 title preserved
+        $response->assertSee('Choose Data Source');
+        $response->assertSee('Select the learning repository to export.');
+
+        // Step 1 dropdown exists
+        $response->assertSee('Select Data Source');
+        $response->assertSee('id="selected-source"', false);
+        $response->assertSee('name="source"', false);
+        $response->assertSee('value="online"', false);
+        $response->assertSee('value="offline"', false);
+        $response->assertSee('value="all"', false);
+        $response->assertSee('Online Learning Record (KP OWL)');
+        $response->assertSee('Offline Training Record (Non KP OWL)');
+        $response->assertSee('Combined Learning Record (All Sources)');
+
+        // Full width class present
+        $response->assertSee('export-source-select w-100', false);
+
+        // Source cards are removed
+        $response->assertDontSee('source-card');
+        $response->assertDontSee('source-check-icon');
+    }
+
+    /**
+     * CASE 18: Form does not contain duplicate source or format input fields.
+     */
+    public function test_case_18_no_duplicate_source_or_format_inputs()
+    {
+        $response = $this->actingAs($this->admin)->get(route('manage.record.export-all'));
+
+        $response->assertStatus(200);
+        $content = $response->getContent();
+
+        // Exactly 1 occurrence of name="source" and name="format"
+        $this->assertEquals(1, substr_count($content, 'name="source"'), 'Expected exactly one name="source" field');
+        $this->assertEquals(1, substr_count($content, 'name="format"'), 'Expected exactly one name="format" field');
+    }
+
+    /**
+     * CASE 19: 5 Steps appear in the exact required order.
+     * Step 1: Choose Data Source
+     * Step 2: Learning Filters
+     * Step 3: Employee & Organization Filters
+     * Step 4: Period Filters
+     * Step 5: Choose Export Format
+     */
+    public function test_case_19_step_order_and_headings_match_specification()
+    {
+        $response = $this->actingAs($this->admin)->get(route('manage.record.export-all'));
+
+        $response->assertStatus(200);
+        $content = $response->getContent();
+
+        $posStep1 = strpos($content, 'Choose Data Source');
+        $posStep2 = strpos($content, 'Learning Filters');
+        $posStep3 = strpos($content, 'Employee &amp; Organization Filters');
+        $posStep4 = strpos($content, 'Period Filters');
+        $posStep5 = strpos($content, 'Choose Export Format');
+
+        $this->assertNotFalse($posStep1, 'Step 1: Choose Data Source not found');
+        $this->assertNotFalse($posStep2, 'Step 2: Learning Filters not found');
+        $this->assertNotFalse($posStep3, 'Step 3: Employee & Organization Filters not found');
+        $this->assertNotFalse($posStep4, 'Step 4: Period Filters not found');
+        $this->assertNotFalse($posStep5, 'Step 5: Choose Export Format not found');
+
+        $this->assertTrue($posStep1 < $posStep2, 'Step 1 must precede Step 2');
+        $this->assertTrue($posStep2 < $posStep3, 'Step 2 must precede Step 3');
+        $this->assertTrue($posStep3 < $posStep4, 'Step 3 must precede Step 4');
+        $this->assertTrue($posStep4 < $posStep5, 'Step 4 must precede Step 5');
+    }
+
+    /**
+     * CASE 20: Division filter is present in Step 3 and functional.
+     */
+    public function test_case_20_division_filter_is_present_and_functional()
+    {
+        $response = $this->actingAs($this->admin)->get(route('manage.record.export-all'));
+
+        $response->assertStatus(200);
+        $response->assertSee('id="filter-division"', false);
+        $response->assertSee('name="division"', false);
+        $response->assertSee('All Divisions');
+
+        // Test preview endpoint with division filter
+        $previewResp = $this->actingAs($this->admin)->getJson(route('manage.record.export-all.preview', [
+            'source'   => 'online',
+            'division' => 'Human Resources',
+        ]));
+        $previewResp->assertStatus(200);
+        $previewResp->assertJson(['success' => true]);
+    }
+
+    /**
+     * CASE 21: Date range inputs and validation element are present in Step 4.
+     */
+    public function test_case_21_date_range_validation_elements_present()
+    {
+        $response = $this->actingAs($this->admin)->get(route('manage.record.export-all'));
+
+        $response->assertStatus(200);
+        $response->assertSee('id="filter-year"', false);
+        $response->assertSee('id="filter-from-date"', false);
+        $response->assertSee('id="filter-to-date"', false);
+        $response->assertSee('id="date-range-error"', false);
+        $response->assertSee('From Date cannot be later than To Date');
+    }
 }
+

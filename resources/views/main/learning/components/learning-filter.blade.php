@@ -7,7 +7,7 @@
     $currentEmployeeId = request('employee_id') ?? request('user_id');
     $currentEmployeeText = request('employee_text') ?? ($currentEmployeeId ? ($employeeName ?? $currentEmployeeId) : '');
     $currentLearningTitle = request('learning_title') ?? request('title');
-    $routeSlug = request()->segment(4);
+    $routeSlug = request()->route('slug') ?? ($downloadslug ?? request()->segment(4));
 @endphp
 
 <style>
@@ -174,6 +174,7 @@
             @csrf
             <input type="hidden" id="classification-slug" name="classification_slug" value="{{ request()->routeIs('learning.manage.category') ? $routeSlug : (request('classification_slug') ?? '') }}">
             <input type="hidden" id="content-slug" name="content_slug" value="{{ request()->routeIs('learning.manage.content') ? $routeSlug : (request('content_slug') ?? '') }}">
+            <input type="hidden" id="playlist-id" name="playlist_id" value="{{ $playlistId ?? (request()->routeIs('learning.manage.playlist') ? request()->route('id') : (request('playlist_id') ?? '')) }}">
             <input type="hidden" name="downloadslug" value="{{ $downloadslug ?? '' }}">
 
             <!-- Hidden inputs from More Filters Modal to preserve in quick filter submit/export -->
