@@ -158,86 +158,91 @@
     @if(count($trainings) > 0)
         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; width: 100%; box-sizing: border-box; padding: 20px; background: #f8fafc;">
             @foreach($trainings as $training)
-                <div class="card-box" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 14px; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden;">
+                <div class="card-box" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 12px; padding: 20px 24px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden;">
                     <div>
-                        <!-- Header Status Table (Prevents text spill outside border) -->
-                        <table style="width: 100%; border-collapse: collapse; margin-bottom: 8px;">
+                        <!-- Header Table: Plain Category Text (Left 45%) & Status/Close Date (Right 55%) -->
+                        <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px; table-layout: fixed;">
                             <tr>
-                                <td style="vertical-align: top; text-align: left;">
-                                    <span style="display: inline-block; background: #e0f2fe; color: #0369a1; padding: 4px 12px; border-radius: 9999px; font-weight: 700; font-size: 11px; text-transform: uppercase;">
+                                <!-- Left: Category Plain Bold Text -->
+                                <td style="vertical-align: top; text-align: left; width: 45%; padding-top: 2px;">
+                                    <span style="font-size: 13px; font-weight: 700; color: #005BAC; text-transform: capitalize;">
                                         {{ $training->category ?? 'General' }}
                                     </span>
                                 </td>
-                                <td style="vertical-align: top; text-align: right;">
+
+                                <!-- Right: Status Text & Short Close Date (Strictly Right Aligned) -->
+                                <td style="vertical-align: top; text-align: right; width: 55%; padding-right: 8px;">
                                     @php
                                         $statusRaw = $training->status ?? 'Open Registration';
                                         $isOpen = in_array(strtolower($statusRaw), ['open', 'open registration']);
                                     @endphp
-                                    @if($isOpen)
-                                        <span style="display: inline-block; background-color: #dcfce7; color: #15803d; padding: 4px 12px; border-radius: 9999px; font-size: 11px; font-weight: 700;">
-                                            Open Registration
-                                        </span>
-                                    @else
-                                        <span style="display: inline-block; background-color: #f1f5f9; color: #475569; padding: 4px 12px; border-radius: 9999px; font-size: 11px; font-weight: 700;">
-                                            Closed
-                                        </span>
-                                    @endif
+                                    <div style="font-size: 12px; font-weight: 700; color: {{ $isOpen ? '#15803d' : '#475569' }};">
+                                        {{ $isOpen ? 'Open Registration' : 'Closed' }}
+                                    </div>
                                     @if($training->registration_close_date)
                                         @php
-                                            $closeDateStr = \Carbon\Carbon::parse($training->registration_close_date)->format('d M Y');
-                                            $rawCloseTime = $training->registration_close_time ? trim($training->registration_close_time) : '23:59:00';
-                                            $closeTimeStr = strlen($rawCloseTime) === 5 ? $rawCloseTime . ':00' : $rawCloseTime;
+                                            $closeTimeFormatted = '23:59';
+                                            if (!empty($training->registration_close_time)) {
+                                                $closeTimeFormatted = \Carbon\Carbon::parse($training->registration_close_time)->format('H:i');
+                                            }
                                         @endphp
-                                        <div style="color: #dc2626; font-size: 9.5px; font-weight: 700; margin-top: 2px; white-space: nowrap;">
-                                            Close: {{ $closeDateStr }} {{ $closeTimeStr }} WIB
+                                        <div style="color: #b91c1c; font-size: 11px; font-weight: 600; margin-top: 4px; line-height: 1.2;">
+                                            Close: {{ \Carbon\Carbon::parse($training->registration_close_date)->format('d M Y') }} {{ $closeTimeFormatted }} WIB
                                         </div>
                                     @endif
                                 </td>
                             </tr>
                         </table>
 
-                        <!-- Title -->
-                        <h3 style="font-size: 15px; font-weight: 800; color: #0f172a; margin: 8px 0 12px 0; line-height: 1.35;">
+                        <!-- Title & Subtitle -->
+                        <h3 style="font-size: 16px; font-weight: 800; color: #002B49; margin: 4px 0 2px 0; line-height: 1.35;">
                             {{ $training->title }}
                         </h3>
+                        @if(!empty($training->subtitle))
+                            <div style="font-size: 12px; color: #64748b; margin-bottom: 10px;">
+                                {{ $training->subtitle }}
+                            </div>
+                        @else
+                            <div style="margin-bottom: 10px;"></div>
+                        @endif
 
                         <!-- Full-Width Single Box Container for Date & Venue -->
-                        <div style="width: 100%; border: 1px solid #64748b; border-radius: 8px; padding: 6px 12px; margin-bottom: 12px; box-sizing: border-box; background: #ffffff;">
-                            <table style="width: 100%; border-collapse: collapse; font-size: 11px; font-weight: 700; color: #1e293b;">
+                        <div style="width: 100%; border: 1px solid #64748b; border-radius: 4px; padding: 6px 12px; margin-bottom: 14px; box-sizing: border-box; background: #ffffff;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 12px; font-weight: 700; color: #0f172a;">
                                 <tr>
-                                    <td style="white-space: nowrap; width: 1%; padding-right: 10px; vertical-align: middle;">
-                                        📅 {{ \Carbon\Carbon::parse($training->start_date)->format('d M Y') }}@if($training->end_date && $training->end_date != $training->start_date) - {{ \Carbon\Carbon::parse($training->end_date)->format('d M Y') }}@endif
+                                    <td style="white-space: nowrap; width: 1%; padding-right: 12px; vertical-align: middle;">
+                                        Date: {{ \Carbon\Carbon::parse($training->start_date)->format('d M Y') }}@if($training->end_date && $training->end_date != $training->start_date) - {{ \Carbon\Carbon::parse($training->end_date)->format('d M Y') }}@endif
                                     </td>
-                                    <td style="white-space: nowrap; width: 1%; padding: 0 10px; color: #94a3b8; vertical-align: middle;">|</td>
+                                    <td style="white-space: nowrap; width: 1%; padding: 0 12px; color: #94a3b8; vertical-align: middle;">|</td>
                                     <td style="vertical-align: middle; color: #0f172a; word-break: break-word; line-height: 1.3;">
-                                        📍 {{ $training->location ?? $training->venue ?? $training->room_name ?? $training->room ?? '-' }}
+                                        Venue: {{ $training->location ?? $training->venue ?? $training->room_name ?? $training->room ?? '-' }}
                                     </td>
                                 </tr>
                             </table>
                         </div>
 
-                        <!-- Details Table (3-Column Fixed Alignment for Colons) -->
-                        <table style="width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 10.5px;">
+                        <!-- Details List -->
+                        <table style="width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 11.5px;">
                             <tr>
-                                <td style="width: 85px; font-weight: 700; color: #475569; padding: 2.5px 0; vertical-align: top;">Target</td>
-                                <td style="width: 15px; text-align: center; font-weight: 700; color: #475569; padding: 2.5px 0; vertical-align: top;">:</td>
+                                <td style="width: 85px; font-weight: 600; color: #334155; padding: 2.5px 0; vertical-align: top;">Target</td>
+                                <td style="width: 15px; text-align: center; color: #334155; padding: 2.5px 0; vertical-align: top;">:</td>
                                 <td style="color: #0f172a; padding: 2.5px 0; word-break: break-word;">{{ $training->target_employee ?? '-' }}</td>
                             </tr>
                             <tr>
-                                <td style="font-weight: 700; color: #475569; padding: 2.5px 0; vertical-align: top;">Batch</td>
-                                <td style="text-align: center; font-weight: 700; color: #475569; padding: 2.5px 0; vertical-align: top;">:</td>
+                                <td style="font-weight: 600; color: #334155; padding: 2.5px 0; vertical-align: top;">Batch</td>
+                                <td style="text-align: center; color: #334155; padding: 2.5px 0; vertical-align: top;">:</td>
                                 <td style="color: #0f172a; padding: 2.5px 0;">{{ $training->batch ?? '1' }}</td>
                             </tr>
                             <tr>
-                                <td style="font-weight: 700; color: #475569; padding: 2.5px 0; vertical-align: top;">Time</td>
-                                <td style="text-align: center; font-weight: 700; color: #475569; padding: 2.5px 0; vertical-align: top;">:</td>
+                                <td style="font-weight: 600; color: #334155; padding: 2.5px 0; vertical-align: top;">Time</td>
+                                <td style="text-align: center; color: #334155; padding: 2.5px 0; vertical-align: top;">:</td>
                                 <td style="color: #0f172a; padding: 2.5px 0;">
                                     {{ \Carbon\Carbon::parse($training->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($training->end_time)->format('H:i') }} WIB
                                 </td>
                             </tr>
                             <tr>
-                                <td style="font-weight: 700; color: #475569; padding: 2.5px 0; vertical-align: top;">Duration</td>
-                                <td style="text-align: center; font-weight: 700; color: #475569; padding: 2.5px 0; vertical-align: top;">:</td>
+                                <td style="font-weight: 600; color: #334155; padding: 2.5px 0; vertical-align: top;">Duration</td>
+                                <td style="text-align: center; color: #334155; padding: 2.5px 0; vertical-align: top;">:</td>
                                 <td style="color: #0f172a; padding: 2.5px 0;">
                                     @php
                                         $startTime = \Carbon\Carbon::parse($training->start_time);
@@ -248,20 +253,20 @@
                                 </td>
                             </tr>
                             <tr>
-                                <td style="font-weight: 700; color: #475569; padding: 2.5px 0; vertical-align: top;">Instructor</td>
-                                <td style="text-align: center; font-weight: 700; color: #475569; padding: 2.5px 0; vertical-align: top;">:</td>
+                                <td style="font-weight: 600; color: #334155; padding: 2.5px 0; vertical-align: top;">Instructor</td>
+                                <td style="text-align: center; color: #334155; padding: 2.5px 0; vertical-align: top;">:</td>
                                 <td style="color: #0f172a; padding: 2.5px 0; word-break: break-word;">
                                     {{ $training->instructor_name ?? $training->instructor ?? '-' }}
                                 </td>
                             </tr>
                             <tr>
-                                <td style="font-weight: 700; color: #475569; padding: 2.5px 0; vertical-align: top;">Quota</td>
-                                <td style="text-align: center; font-weight: 700; color: #475569; padding: 2.5px 0; vertical-align: top;">:</td>
+                                <td style="font-weight: 600; color: #334155; padding: 2.5px 0; vertical-align: top;">Quota</td>
+                                <td style="text-align: center; color: #334155; padding: 2.5px 0; vertical-align: top;">:</td>
                                 <td style="color: #0f172a; padding: 2.5px 0;">{{ $training->quota ?? $training->participant_quota ?? '30' }} Seats</td>
                             </tr>
                             <tr>
-                                <td style="font-weight: 700; color: #475569; padding: 2.5px 0; vertical-align: top;">Syllabus</td>
-                                <td style="text-align: center; font-weight: 700; color: #475569; padding: 2.5px 0; vertical-align: top;">:</td>
+                                <td style="font-weight: 600; color: #334155; padding: 2.5px 0; vertical-align: top;">Syllabus</td>
+                                <td style="text-align: center; color: #334155; padding: 2.5px 0; vertical-align: top;">:</td>
                                 <td style="color: #0f172a; padding: 2.5px 0; word-break: break-word;">
                                     @if($training->syllabi && $training->syllabi->count() > 0)
                                         <ul style="margin: 0; padding-left: 14px;">
