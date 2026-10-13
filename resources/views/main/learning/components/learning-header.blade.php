@@ -35,8 +35,8 @@
     <!-- TOMBOL BACK RATA KIRI ATAS -->
     <div class="mb-3">
         @php
-            $headerBackUrl = route('manage.index');
-            $headerBackText = 'Back';
+            $headerBackUrl = $headerBackUrl ?? ($backUrl ?? route('manage.index'));
+            $headerBackText = $headerBackText ?? ($backText ?? 'Back');
             if (request('from') === 'all') {
                 if (request()->filled('classification')) {
                     $headerBackUrl = route('manage.record.all.classification', request('classification'));

@@ -119,7 +119,12 @@
                 titleXhr = $.ajax({
                     url: "{{ $titleSearchUrl ?? route('learning.manage.search-titles') }}",
                     type: 'GET',
-                    data: { q: query, search: query, title_q: query },
+                    data: {
+                        q: query,
+                        search: query,
+                        title_q: query,
+                        playlist_id: $('#playlist-id').val() || ''
+                    },
                     dataType: 'json',
                     success: function (data) {
                         titleXhr = null;
@@ -244,6 +249,7 @@
                     d.length = parseInt($('#table-entries-select').val(), 10) || defaultEntries;
                     d.classification_slug = $('#classification-slug').val();
                     d.content_slug = $('#content-slug').val();
+                    d.playlist_id = $('#playlist-id').val();
                     d.from_date = $('#filter-from-date').val();
                     d.to_date = $('#filter-to-date').val();
                     d.program_type = $('#filter-program-type').val();
@@ -610,6 +616,9 @@
 
             const contentSlug = $('#content-slug').val();
             if (contentSlug) params.append('content_slug', contentSlug);
+
+            const playlistId = $('#playlist-id').val();
+            if (playlistId) params.append('playlist_id', playlistId);
 
             const fromDate = $('#filter-from-date').val();
             if (fromDate) params.append('from_date', fromDate);

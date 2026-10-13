@@ -226,6 +226,18 @@ class LearningDatatableService
             $pcuSelect->where('pcu.content_id', $contentId ?: -1);
         }
 
+        // 7b. Playlist Filter Pushdown (via indexed trainingplan_id)
+        $playlistParam = $filters['playlist_id'] ?? ($filters['trainingplan_id'] ?? ($type === 'playlist' ? $slug : null));
+        if (filled($playlistParam)) {
+            $playlistId = is_numeric($playlistParam)
+                ? (int) $playlistParam
+                : (int) DB::table('trainingplan')->where('slug', $playlistParam)->value('id');
+
+            // Standalone content_users records never belong to a playlist
+            $cuSelect->whereRaw('1 = 0');
+            $pcuSelect->where('pcu.trainingplan_id', $playlistId ?: -1);
+        }
+
         // 8. Employee ID / NIP / Name Filter Pushdown (via indexed user_id)
         $employeeParam = $filters['employee_id'] ?? ($filters['user_id'] ?? ($filters['employee'] ?? null));
         if (filled($employeeParam) && $employeeParam !== 'all') {
@@ -360,7 +372,7 @@ class LearningDatatableService
         // Union Assembly
         if ($categoryParam === 'all_content') {
             $union = $cuSelect;
-        } elseif ($categoryParam === 'playlist') {
+        } elseif ($categoryParam === 'playlist' || filled($playlistParam)) {
             $union = $pcuSelect;
         } else {
             $union = $cuSelect->unionAll($pcuSelect);
@@ -591,14 +603,7 @@ class LearningDatatableService
     {
         if ($row->category_source === 'Playlist') {
             if (!empty($row->playlist_title) && !empty($row->trainingplan_id)) {
-                $urlParams = ['id' => $row->trainingplan_id];
-                if (!empty($row->user_id)) {
-                    $urlParams['user_id'] = $row->user_id;
-                }
-                if (!empty($row->classification_slug)) {
-                    $urlParams['category_slug'] = $row->classification_slug;
-                }
-                $url = route('learning.manage.playlist', $urlParams);
+                $url = route('learning.manage.playlist', ['id' => $row->trainingplan_id]);
 
                 return '<div class="playlist-category text-start">'
                     . '<span class="fw-semibold playlist-category-label">Playlist:</span> '

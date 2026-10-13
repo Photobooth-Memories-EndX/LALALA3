@@ -1248,35 +1248,48 @@ class ManageLearningTest extends TestCase
         }
     }
 
-    public function test_playlist_detail_page_global_and_participant_views(): void
+    public function test_playlist_detail_page_global_learning_records(): void
     {
         $user = User::where('role', '2')->first() ?? User::first();
         $playlist = \App\Models\TrainingPlan::first();
 
         if ($playlist) {
-            // A. Global Playlist Detail View (no user_id)
+            // A. Global Playlist Learning Records View
             $globalResponse = $this->actingAs($user)->get('/manage/learning/playlist/' . $playlist->id);
             $globalResponse->assertStatus(200);
-            $globalResponse->assertViewIs('main.learning.playlist-detail');
-            $globalResponse->assertSee($playlist->title);
-            $globalResponse->assertSee('Global Playlist View');
-            $globalResponse->assertSee('Playlist Contents');
+            $globalResponse->assertViewIs('main.learning.all');
+            $globalResponse->assertSee('Playlist: ' . $playlist->title);
+            $globalResponse->assertSee('learning-table');
+            $globalResponse->assertSee('playlist_id');
 
-            // B. Participant Context View (with user_id)
-            $pcu = \App\Models\PlaylistContentUser::where('trainingplan_id', $playlist->id)->first();
-            if ($pcu) {
-                $participantUser = User::find($pcu->user_id);
-                if ($participantUser) {
-                    $partResponse = $this->actingAs($user)->get('/manage/learning/playlist/' . $playlist->id . '?user_id=' . $participantUser->id . '&category_slug=iso-standard');
-                    $partResponse->assertStatus(200);
-                    $partResponse->assertViewIs('main.learning.playlist-detail');
-                    $partResponse->assertSee($participantUser->name);
-                    $partResponse->assertSee('Playlist Progress');
-                    $partResponse->assertSee(route('learning.manage.category', 'iso-standard'));
-                }
+            // B. DataTables AJAX query scoped by playlist_id
+            $dtResponse = $this->actingAs($user)->getJson('/manage/learning/datatable?draw=1&start=0&length=10&playlist_id=' . $playlist->id);
+            $dtResponse->assertStatus(200);
+            $dtJson = $dtResponse->json();
+            $this->assertArrayHasKey('draw', $dtJson);
+            $this->assertArrayHasKey('recordsTotal', $dtJson);
+            $this->assertArrayHasKey('data', $dtJson);
+
+            if (!empty($dtJson['data'])) {
+                $row = $dtJson['data'][0];
+                $this->assertStringContainsString('Playlist:', $row['category_badge']);
+                $this->assertStringContainsString('/manage/learning/playlist/' . $playlist->id, $row['category_badge']);
+                $this->assertStringNotContainsString('user_id=', $row['category_badge']);
+                $this->assertStringNotContainsString('category_slug=', $row['category_badge']);
             }
 
-            // C. 404 for invalid playlist id
+            // C. Title autocomplete scoped by playlist_id
+            $titleResponse = $this->actingAs($user)->getJson('/manage/learning/search-titles?playlist_id=' . $playlist->id);
+            $titleResponse->assertStatus(200);
+
+            // D. Exports for playlist
+            $pdfResponse = $this->actingAs($user)->get('/manage/learning/download/pdf?playlist_id=' . $playlist->id);
+            $pdfResponse->assertStatus(200);
+
+            $csvResponse = $this->actingAs($user)->get('/manage/learning/download/csv?playlist_id=' . $playlist->id);
+            $csvResponse->assertStatus(200);
+
+            // E. 404 for invalid playlist id
             $notFoundResponse = $this->actingAs($user)->get('/manage/learning/playlist/99999999');
             $notFoundResponse->assertStatus(404);
         }

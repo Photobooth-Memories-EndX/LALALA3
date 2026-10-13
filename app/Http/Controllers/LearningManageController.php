@@ -261,93 +261,61 @@ class LearningManageController extends Controller
             abort(404, 'Playlist not found.');
         }
 
-        $userId = $request->query('user_id');
-        $participant = null;
-        $pcuRecords = collect();
+        $playlistId = (string) $playlist->id;
 
-        if ($userId) {
-            $participant = User::find($userId);
-            if ($participant) {
-                $pcuRecords = PlaylistContentUser::where('trainingplan_id', $playlist->id)
-                    ->where('user_id', $participant->id)
-                    ->get()
-                    ->keyBy('content_id');
-            }
+        if ($request->input('action') === 'download') {
+            return (new LearningExport($request->all(), 'playlist', $playlistId))
+                ->download(now()->format('Ymd_His') . '_' . Str::slug($playlist->title) . '_learning.xlsx');
         }
 
-        $totalDurationSec = (int) ($playlist->total_duration_seconds ?? 0);
-        if ($totalDurationSec <= 0) {
-            $totalDurationSec = (int) $playlist->contents->sum(function ($c) {
-                return DurationFormatter::toSeconds($c->duration);
-            });
+        if ($request->input('action') === 'download_pdf' || $request->input('format') === 'pdf') {
+            $request->merge(['type' => 'playlist', 'slug' => $playlistId, 'playlist_id' => $playlistId]);
+            return $this->downloadPdf($request);
         }
-        $totalDurationFormatted = DurationFormatter::fromSeconds($totalDurationSec);
 
-        $totalLearningHours = $playlist->learning_hours !== null && (float) $playlist->learning_hours > 0
-            ? (float) $playlist->learning_hours
-            : round($totalDurationSec / 3600, 2);
-
-        $classifications = $playlist->contents
-            ->pluck('classification.classification_name')
-            ->unique()
-            ->filter()
-            ->values();
-        $classificationName = $classifications->isNotEmpty()
-            ? $classifications->implode(', ')
-            : 'General Training';
-
-        $totalContents = $playlist->contents->count();
-
-        // If participant context is provided, calculate employee-specific statistics
-        $participantStats = null;
-        if ($participant) {
-            $finishedContentsCount = $playlist->contents->filter(function ($c) use ($pcuRecords) {
-                return $pcuRecords->get($c->id)?->isFinished();
-            })->count();
-
-            $totalProgressSum = $playlist->contents->sum(function ($c) use ($pcuRecords) {
-                return (int) ($pcuRecords->get($c->id)?->progress ?? 0);
-            });
-            $overallProgress = $totalContents > 0 ? (int) round($totalProgressSum / $totalContents) : 0;
-            $overallFinished = ($finishedContentsCount === $totalContents && $totalContents > 0);
-
-            $participantStats = [
-                'user' => $participant,
-                'finished_count' => $finishedContentsCount,
-                'overall_progress' => $overallProgress,
-                'is_finished' => $overallFinished,
-                'status_label' => $overallFinished ? 'Completed' : ($overallProgress > 0 ? 'Ongoing' : 'Not Started'),
-                'status_badge' => $overallFinished ? 'success' : ($overallProgress > 0 ? 'warning' : 'secondary'),
-            ];
+        if ($request->input('action') === 'download_csv' || $request->input('format') === 'csv') {
+            $request->merge(['type' => 'playlist', 'slug' => $playlistId, 'playlist_id' => $playlistId]);
+            return $this->downloadCsv($request);
         }
 
         // Determine smart back link
-        $categorySlug = $request->query('category_slug');
+        $referer = (string) $request->headers->get('referer', '');
         $backUrl = route('learning.manage.all');
-        $backLabel = 'Manage Learning';
+        $backText = 'Back';
 
-        if ($categorySlug) {
-            $categoryModel = Classification::where('slug', $categorySlug)->first();
-            $backUrl = route('learning.manage.category', $categorySlug);
-            $backLabel = 'Classification: ' . ($categoryModel ? $categoryModel->classification_name : ucwords(str_replace('-', ' ', $categorySlug)));
-        } elseif ($request->headers->get('referer') && !str_contains((string) $request->headers->get('referer'), $request->path())) {
-            $backUrl = $request->headers->get('referer');
-            $backLabel = 'Previous Page';
+        if ($referer && !str_contains($referer, $request->path())) {
+            $backUrl = $referer;
+            if (str_contains($referer, 'category/')) {
+                $categorySlug = basename(parse_url($referer, PHP_URL_PATH));
+                $catModel = Classification::where('slug', $categorySlug)->first();
+                $backText = 'Back to ' . ($catModel ? $catModel->classification_name : ucwords(str_replace('-', ' ', $categorySlug)));
+            } elseif (str_contains($referer, '/manage/learning')) {
+                $backText = 'Back to Manage Learning';
+            }
+        } else {
+            // Fallback: check classification of first content in playlist
+            $firstClass = $playlist->contents->first()?->classification;
+            if ($firstClass && $firstClass->slug) {
+                $backUrl = route('learning.manage.category', $firstClass->slug);
+                $backText = 'Back to ' . $firstClass->classification_name;
+            }
         }
 
-        return view('main.learning.playlist-detail', [
-            'playlist' => $playlist,
-            'contents' => $playlist->contents,
-            'participant' => $participant,
-            'pcuRecords' => $pcuRecords,
-            'participantStats' => $participantStats,
-            'totalContents' => $totalContents,
-            'totalDurationFormatted' => $totalDurationFormatted,
-            'totalLearningHours' => $totalLearningHours,
-            'classificationName' => $classificationName,
-            'backUrl' => $backUrl,
-            'backLabel' => $backLabel,
-        ]);
+        $viewData = $this->learningViewData(
+            $request,
+            'Playlist: ' . $playlist->title,
+            $playlistId
+        );
+
+        $viewData['playlist'] = $playlist;
+        $viewData['playlistId'] = $playlistId;
+        $viewData['backUrl'] = $backUrl;
+        $viewData['backText'] = $backText;
+        $viewData['headerBackUrl'] = $backUrl;
+        $viewData['headerBackText'] = $backText;
+        $viewData['datatableUrl'] = route('learning.manage.datatable', ['playlist_id' => $playlistId]);
+
+        return view('main.learning.all', $viewData);
     }
 
     public function searchEmployees(Request $request)
@@ -387,6 +355,12 @@ class LearningManageController extends Controller
             ->select('id', 'title', 'classification_id', 'slug')
             ->whereNotNull('title')
             ->where('title', '!=', '');
+
+        if ($request->filled('playlist_id')) {
+            $tpId = $request->input('playlist_id');
+            $contentIds = DB::table('trainingplandetail')->where('trainingplan_id', $tpId)->pluck('content_id');
+            $query->whereIn('content.id', $contentIds);
+        }
 
         if ($term !== '') {
             $queryNormalized = str_replace("'", "’", $term);
@@ -436,6 +410,9 @@ class LearningManageController extends Controller
             } elseif (!empty($filters['content_slug'])) {
                 $type = 'content';
                 $slug = $filters['content_slug'];
+            } elseif (!empty($filters['playlist_id'])) {
+                $type = 'playlist';
+                $slug = $filters['playlist_id'];
             }
         }
 
@@ -465,6 +442,11 @@ class LearningManageController extends Controller
             $contentModel = Content::where('slug', $slug)->first();
             if ($contentModel) {
                 $contextTitle = 'KP OWL — Content: ' . $contentModel->title;
+            }
+        } elseif (!empty($slug) && $type === 'playlist') {
+            $playlistModel = is_numeric($slug) ? TrainingPlan::find($slug) : TrainingPlan::where('slug', $slug)->first();
+            if ($playlistModel) {
+                $contextTitle = 'KP OWL — Playlist: ' . $playlistModel->title;
             }
         }
 
@@ -497,6 +479,9 @@ class LearningManageController extends Controller
             } elseif (!empty($filters['content_slug'])) {
                 $type = 'content';
                 $slug = $filters['content_slug'];
+            } elseif (!empty($filters['playlist_id'])) {
+                $type = 'playlist';
+                $slug = $filters['playlist_id'];
             }
         }
 
