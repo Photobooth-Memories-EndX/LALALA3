@@ -13,7 +13,10 @@
         'pdf' => 'bg-cyan',
         'content' => 'bg-purple-lt text-purple',
         'global' => 'bg-orange-lt text-orange',
+        'training_offline' => 'bg-teal-lt text-teal',
+        'offline' => 'bg-teal-lt text-teal',
     ];
+    $typeLabel = $certificate->type_label ?? \App\Models\Certificate::typeLabel($type);
     $setting = $certificate->certificateSetting;
     $playlistContents = $type === 'playlist'
         ? collect($setting?->trainingPlan?->trainingplandetail ?? [])->sortBy('content_order')->pluck('content.title')->filter()->values()
@@ -41,7 +44,7 @@
     <td class="certificate-col-type text-center">
         <span class="badge {{ $typeStyles[$type] ?? 'bg-secondary-lt text-secondary' }} learning-record-badge certificate-type-badge {{ $type === 'playlist' ? 'certificate-playlist-badge' : '' }}"
               @if($type === 'playlist') tabindex="0" role="button" data-bs-toggle="popover" data-trigger="hover focus" data-placement="auto" data-html="true" data-content="{{ $popover }}" @endif>
-            {{ ucfirst($type) }}
+            {{ $typeLabel }}
         </span>
     </td>
     <td class="certificate-col-number text-start">

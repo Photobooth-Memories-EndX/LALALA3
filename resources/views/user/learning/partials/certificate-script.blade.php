@@ -298,9 +298,11 @@
                         if (data && data.length > 0) {
                             data.forEach(function (item) {
                                 var badgeClass = item.type === 'playlist' || item.type === 'trainingplan'
-                                    ? 'bg-teal-lt text-teal'
-                                    : (item.type === 'global' ? 'bg-indigo-lt text-indigo' : 'bg-primary-lt text-primary');
-                                var typeLabel = item.type_label || (item.type ? escapeCertificateHtml(item.type.toUpperCase()) : 'CONTENT');
+                                    ? 'bg-green'
+                                    : (item.type === 'training_offline' || item.type === 'offline'
+                                        ? 'bg-teal-lt text-teal'
+                                        : (item.type === 'global' ? 'bg-orange-lt text-orange' : 'bg-purple-lt text-purple'));
+                                var typeLabel = item.type_label || (item.type === 'training_offline' || item.type === 'offline' ? 'Training Offline' : (item.type ? escapeCertificateHtml(item.type.charAt(0).toUpperCase() + item.type.slice(1)) : 'Content'));
 
                                 var subDetails = [];
                                 if (item.certificate_number) subDetails.push('No: ' + escapeCertificateHtml(item.certificate_number));

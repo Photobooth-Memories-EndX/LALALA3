@@ -63,4 +63,26 @@ class Certificate extends Model
             . '&certUrl=' . urlencode(route('certificate.verify', $this->credential_id))
             . '&certId=' . urlencode($this->credential_id);
     }
+
+    /**
+     * Map internal/database certificate type to user-facing display label.
+     */
+    public static function typeLabel(?string $type): string
+    {
+        return match (strtolower((string) $type)) {
+            'content'                     => 'Content',
+            'playlist', 'trainingplan'    => 'Playlist',
+            'global'                      => 'Global',
+            'training_offline', 'offline' => 'Training Offline',
+            default                       => ucwords(str_replace('_', ' ', (string) $type)),
+        };
+    }
+
+    /**
+     * Get user-facing certificate type label accessor.
+     */
+    public function getTypeLabelAttribute(): string
+    {
+        return self::typeLabel($this->certificate_type);
+    }
 }
