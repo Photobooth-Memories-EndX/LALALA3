@@ -29,9 +29,10 @@ class TrainingScheduleImageService
      *
      * @param mixed $trainings
      * @param array $filterSummary
+     * @param string|null $viewContent
      * @return string
      */
-    public function generateJpg($trainings, array $filterSummary = []): string
+    public function generateJpg($trainings, array $filterSummary = [], ?string $viewContent = null): string
     {
         $items = $trainings instanceof Collection ? $trainings : collect($trainings);
         $items = $items->filter(function ($item) {
@@ -42,18 +43,18 @@ class TrainingScheduleImageService
         $fontBold = $this->getFontPath(true);
         $fontRegular = $this->getFontPath(false);
 
-        // Dimensions
-        $canvasWidth = 1800;
+        // Dimensions (1920px standard viewport width matching reference)
+        $canvasWidth = 1920;
         $headerHeight = 220;
         $footerHeight = 70;
-        $cardWidth = 530;
-        $cardHeight = 330;
+        $cardWidth = 570;
+        $cardHeight = 380;
         $cardGapX = 35;
         $cardGapY = 30;
-        $startX = 55;
+        $startX = 70;
 
         $rowsCount = $count > 0 ? (int) ceil($count / 3) : 1;
-        $contentHeight = max(380, ($rowsCount * $cardHeight) + (($rowsCount - 1) * $cardGapY) + 40);
+        $contentHeight = max(400, ($rowsCount * $cardHeight) + (($rowsCount - 1) * $cardGapY) + 40);
         $canvasHeight = $headerHeight + $contentHeight + $footerHeight;
 
         $img = imagecreatetruecolor($canvasWidth, $canvasHeight);
@@ -183,6 +184,7 @@ class TrainingScheduleImageService
 
                 // Status pill
                 $isClosed = str_contains(strtolower($status), 'closed');
+                $statusLabel = $isClosed ? 'Closed' : 'Open Registration';
                 $statusBg = $isClosed ? $cardBorder : $greenBg;
                 $statusColor = $isClosed ? $textMuted : $greenText;
                 $statPillW = 145;
@@ -190,17 +192,20 @@ class TrainingScheduleImageService
                 imagefilledrectangle($img, $statX, $cardY + 16, $statX + $statPillW, $cardY + 40, $statusBg);
                 imagerectangle($img, $statX, $cardY + 16, $statX + $statPillW, $cardY + 40, $cardBorder);
                 if ($fontBold) {
-                    imagettftext($img, 9, 0, $statX + 12, $cardY + 33, $statusColor, $fontBold, $status);
+                    imagettftext($img, 9, 0, $statX + 12, $cardY + 33, $statusColor, $fontBold, $statusLabel);
                 } else {
-                    imagestring($img, 2, $statX + 10, $cardY + 22, $status, $statusColor);
+                    imagestring($img, 2, $statX + 10, $cardY + 22, $statusLabel, $statusColor);
                 }
 
                 // Close reg date beneath badge
                 $regCloses = $item->registration_close_date ? Carbon::parse($item->registration_close_date)->format('d M Y') : 'Until Started';
                 if ($item->registration_close_time) {
-                    $regCloses .= ' ' . substr($item->registration_close_time, 0, 5);
+                    $rawTime = trim($item->registration_close_time);
+                    $regCloses .= ' ' . (strlen($rawTime) === 5 ? $rawTime . ':00' : $rawTime);
+                } else {
+                    $regCloses .= ' 23:59:00';
                 }
-                $closeBadgeText = "Close: {$regCloses}";
+                $closeBadgeText = "Close: {$regCloses} WIB";
                 if ($fontRegular) {
                     imagettftext($img, 8, 0, $statX + 8, $cardY + 54, $redAccent, $fontRegular, $closeBadgeText);
                 } else {
@@ -218,57 +223,112 @@ class TrainingScheduleImageService
                         imagestring($img, 4, $cardX + 18, $titleY - 8 + ($lIndex * 18), $line, $deepNavy);
                     }
                 }
+                if (!empty($item->sub_course_name) && count($lines) <= 1) {
+                    $subTitle = mb_strimwidth($item->sub_course_name, 0, 42, '...');
+                    if ($fontRegular) {
+                        imagettftext($img, 9, 0, $cardX + 18, $titleY + 22, $textMuted, $fontRegular, $subTitle);
+                    } else {
+                        imagestring($img, 2, $cardX + 18, $titleY + 12, $subTitle, $textMuted);
+                    }
+                }
 
-                // Divider Line
-                imageline($img, $cardX + 18, $cardY + 124, $cardX + $cardWidth - 18, $cardY + 124, $cardBorder);
-
-                // 3. Date - Venue
+                // 3. Date & Venue Pills (Side-by-Side, Date only & Venue truncated)
                 $startDate = $item->start_date ? Carbon::parse($item->start_date)->format('d M Y') : '-';
                 $endDate = $item->end_date ? Carbon::parse($item->end_date)->format('d M Y') : $startDate;
-                $schedulePeriod = ($startDate === $endDate) ? $startDate : "{$startDate} - {$endDate}";
-                $venue = $item->location ?? ($item->venue ?? 'PTKP Training Room');
-                $dateVenueLine = "Date - Venue: {$schedulePeriod} • " . mb_strimwidth($venue, 0, 24, '...');
+                $schedulePeriod = ($startDate === $endDate || empty($item->end_date)) ? $startDate : "{$startDate} - {$endDate}";
+                $venue = $item->location ?? ($item->venue ?? ($item->room_name ?? ($item->room ?? '-')));
+
+                // Date pill badge
+                $datePillW = 160;
+                imagefilledrectangle($img, $cardX + 18, $cardY + 112, $cardX + 18 + $datePillW, $cardY + 132, $bgLight);
+                imagerectangle($img, $cardX + 18, $cardY + 112, $cardX + 18 + $datePillW, $cardY + 132, $cardBorder);
+                if ($fontBold) {
+                    imagettftext($img, 8, 0, $cardX + 24, $cardY + 126, $deepNavy, $fontBold, mb_strimwidth($schedulePeriod, 0, 20, '...'));
+                } else {
+                    imagestring($img, 2, $cardX + 24, $cardY + 116, mb_strimwidth($schedulePeriod, 0, 18, '...'), $deepNavy);
+                }
+
+                // Venue pill badge (compact & truncated)
+                $venuePillW = 160;
+                $venueX = $cardX + $cardWidth - $venuePillW - 18;
+                imagefilledrectangle($img, $venueX, $cardY + 112, $venueX + $venuePillW, $cardY + 132, $bgLight);
+                imagerectangle($img, $venueX, $cardY + 112, $venueX + $venuePillW, $cardY + 132, $cardBorder);
+                if ($fontBold) {
+                    imagettftext($img, 8, 0, $venueX + 10, $cardY + 126, $deepNavy, $fontBold, mb_strimwidth($venue, 0, 20, '...'));
+                } else {
+                    imagestring($img, 2, $venueX + 10, $cardY + 116, mb_strimwidth($venue, 0, 18, '...'), $deepNavy);
+                }
+
+                // Divider Line
+                imageline($img, $cardX + 18, $cardY + 140, $cardX + $cardWidth - 18, $cardY + 140, $cardBorder);
 
                 // 4. Target
-                $target = $item->target_employee ?? 'All Employees';
+                $target = $item->target_employee ?? '-';
                 $targetLine = "Target: " . mb_strimwidth($target, 0, 44, '...');
 
                 // 5. Batch
-                $batchLine = "Batch: " . ($item->batch ?? '-');
+                $batchLine = "Batch: " . ($item->batch ?? '1');
 
-                // 6. Instructor & Quota
-                $instructor = $item->instructor ?? '-';
-                $quota = $item->quota ?? 0;
-                $quotaLine = "Instructor: " . mb_strimwidth($instructor, 0, 20, '...') . "  |  Quota: {$quota} Seats";
+                // 6. Time
+                $timeLine = "Time: -";
+                if (!empty($item->start_time) && !empty($item->end_time)) {
+                    $timeLine = "Time: " . Carbon::parse($item->start_time)->format('H:i') . " - " . Carbon::parse($item->end_time)->format('H:i') . " WIB";
+                } elseif (!empty($item->start_time)) {
+                    $timeLine = "Time: " . Carbon::parse($item->start_time)->format('H:i') . " WIB";
+                }
 
-                // 7. Syllabus Summary
-                $syllabusTopics = [];
-                if (!empty($item->syllabus) && is_array($item->syllabus)) {
-                    foreach ($item->syllabus as $s) {
-                        $t = is_array($s) ? ($s['topic'] ?? $s['title'] ?? '') : (string) $s;
-                        if (trim($t) !== '') {
-                            $syllabusTopics[] = trim($t);
+                // 7. Duration
+                $durationHours = 0;
+                if (!empty($item->start_time) && !empty($item->end_time)) {
+                    $sT = Carbon::parse($item->start_time);
+                    $eT = Carbon::parse($item->end_time);
+                    $diff = $sT->diffInHours($eT);
+                    $durationHours = $diff > 0 ? $diff : 1;
+                }
+                $durationLine = "Duration: " . ($durationHours > 0 ? "{$durationHours} Hours" : "-");
+
+                // 8. Instructor
+                $instructor = $item->instructor_name ?? ($item->instructor ?? '-');
+                $instructorLine = "Instructor: " . mb_strimwidth($instructor, 0, 36, '...');
+
+                // 9. Quota
+                $quota = $item->quota ?? ($item->participant_quota ?? 30);
+                $quotaLine = "Quota: {$quota} Seats";
+
+                // 10. Syllabus Summary
+                if (isset($item->syllabi) && is_iterable($item->syllabi) && count($item->syllabi) > 0) {
+                    $syllabusSummary = collect($item->syllabi)->pluck('title')->implode(', ');
+                } else {
+                    $syllabusTopics = [];
+                    if (!empty($item->syllabus) && is_array($item->syllabus)) {
+                        foreach ($item->syllabus as $s) {
+                            $t = is_array($s) ? ($s['topic'] ?? $s['title'] ?? '') : (string) $s;
+                            if (trim($t) !== '') {
+                                $syllabusTopics[] = trim($t);
+                            }
                         }
                     }
+                    $syllabusSummary = !empty($syllabusTopics) ? implode(', ', array_slice($syllabusTopics, 0, 3)) : ($item->learning_objectives ?? '-');
                 }
-                $syllabusSummary = !empty($syllabusTopics) ? implode(', ', array_slice($syllabusTopics, 0, 3)) : ($item->learning_objectives ?? '-');
-                $syllabusLine = "Syllabus: " . mb_strimwidth($syllabusSummary, 0, 44, '...');
+                $syllabusLine = "Syllabus: " . mb_strimwidth($item->syllabus_summary ?? ($syllabusSummary ?: '-'), 0, 44, '...');
 
                 $details = [
-                    $dateVenueLine,
                     $targetLine,
                     $batchLine,
+                    $timeLine,
+                    $durationLine,
+                    $instructorLine,
                     $quotaLine,
                     $syllabusLine,
                 ];
 
-                $detY = $cardY + 148;
+                $detY = $cardY + 158;
                 foreach ($details as $dIdx => $textLine) {
-                    $yPos = $detY + ($dIdx * 28);
+                    $yPos = $detY + ($dIdx * 23);
                     if ($fontRegular) {
-                        imagettftext($img, 10, 0, $cardX + 18, $yPos, $textDark, $fontRegular, $textLine);
+                        imagettftext($img, 9, 0, $cardX + 18, $yPos, $textDark, $fontRegular, $textLine);
                     } else {
-                        imagestring($img, 3, $cardX + 18, $yPos - 12, $textLine, $textDark);
+                        imagestring($img, 2, $cardX + 18, $yPos - 10, $textLine, $textDark);
                     }
                 }
             }

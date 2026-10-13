@@ -127,19 +127,118 @@
             background: transparent;
         }
 
-        /* Announcement Card Box */
+        /* Standardized Announcement Card Box */
+        .card-box,
         .schedule-card {
-            background-color: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-top: 4px solid #005BAC;
-            border-radius: 8px;
-            padding: 10px 11px;
-            min-height: 195px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            height: 380px;
+            max-height: 380px;
+            padding: 16px;
+            border: 1px solid #cbd5e1;
+            border-radius: 16px;
+            background: #ffffff;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
             position: relative;
         }
 
+        /* Fixed Key-Value Details Alignment Table */
+        .details-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 8.5px;
+            line-height: 1.35;
+            table-layout: fixed;
+        }
+        .details-table td {
+            padding: 2.5px 0;
+            vertical-align: top;
+            border: none;
+        }
+        td.label,
+        .details-table td.label {
+            width: 90px;
+            font-weight: 700;
+            color: #334155;
+        }
+        td.colon,
+        .details-table td.colon {
+            width: 15px;
+            font-weight: 700;
+            color: #334155;
+            text-align: center;
+        }
+        td.value,
+        .details-table td.value {
+            color: #0f172a;
+        }
+
         /* Card Header & Badges */
+        .card-header-row {
+            width: 100%;
+            margin-bottom: 6px;
+            height: 30px;
+            display: block;
+        }
+        .card-header-row:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+        .badge-cat,
+        .badge-category {
+            float: left;
+            display: inline-block;
+        }
+        .card-header-right {
+            float: right;
+            text-align: right;
+        }
+        .badge-status {
+            display: inline-block;
+        }
+        .card-title-h3 {
+            clear: both;
+            height: 34px;
+            line-height: 1.3;
+            overflow: hidden;
+        }
+        .date-venue-box {
+            display: table !important;
+            width: 100% !important;
+            table-layout: fixed !important;
+            white-space: nowrap !important;
+            clear: both;
+        }
+        .date-pill-cell {
+            display: table-cell !important;
+            vertical-align: middle !important;
+            white-space: nowrap !important;
+            font-size: 8.5px !important;
+        }
+        .venue-pill-cell {
+            display: table-cell !important;
+            vertical-align: middle !important;
+            white-space: nowrap !important;
+            text-align: right !important;
+            padding-left: 4px !important;
+            font-size: 8.5px !important;
+            max-width: 48% !important;
+            overflow: hidden !important;
+        }
+        .date-pill-cell svg,
+        .venue-pill-cell svg {
+            vertical-align: -1px;
+            margin-right: 2px;
+            width: 9px !important;
+            height: 9px !important;
+        }
+        .pill-box {
+            display: inline-block;
+            vertical-align: middle;
+        }
         .card-header-table {
             width: 100%;
             border-collapse: collapse;
@@ -313,88 +412,152 @@
                     @foreach($row as $item)
                         @php
                             $training = $item;
+                            $statusRaw = $training->status ?? 'Open Registration';
+                            $isOpen = in_array(strtolower($statusRaw), ['open', 'open registration']);
+
                             $startDate = $item->start_date ? \Carbon\Carbon::parse($item->start_date)->format('d M Y') : '-';
                             $endDate = $item->end_date ? \Carbon\Carbon::parse($item->end_date)->format('d M Y') : $startDate;
-                            $schedulePeriod = ($startDate === $endDate) ? $startDate : "{$startDate} - {$endDate}";
-                            $startTime = $item->start_time ? substr($item->start_time, 0, 5) : '08:00';
-                            $endTime = $item->end_time ? substr($item->end_time, 0, 5) : '17:00';
+                            $schedulePeriod = ($startDate === $endDate || empty($item->end_date)) ? $startDate : "{$startDate} - {$endDate}";
 
-                            $regDeadline = $item->registration_close_date ? \Carbon\Carbon::parse($item->registration_close_date)->format('d M Y') : 'Until Started';
-                            if ($item->registration_close_time) {
-                                $regDeadline .= ' ' . substr($item->registration_close_time, 0, 5) . ' WIB';
+                            $venue = $training->location ?? ($training->venue ?? ($training->room_name ?? ($training->room ?? '-')));
+
+                            $sTime = \Carbon\Carbon::parse($training->start_time ?? '08:00');
+                            $eTime = \Carbon\Carbon::parse($training->end_time ?? '17:00');
+                            $diffHours = $sTime->diffInHours($eTime);
+                            $durationText = ($diffHours > 0 ? $diffHours : 8) . ' Hours';
+
+                            $quotaText = ($training->quota ?? ($training->participant_quota ?? 30)) . ' Seats';
+
+                            // Syllabus topics list
+                            $syllabusTopics = [];
+                            if (!empty($training->syllabi) && count($training->syllabi) > 0) {
+                                foreach ($training->syllabi as $s) {
+                                    $syllabusTopics[] = is_object($s) ? ($s->title ?? $s->topic ?? '') : (string) $s;
+                                }
+                            } elseif (!empty($training->syllabus) && is_array($training->syllabus)) {
+                                foreach ($training->syllabus as $s) {
+                                    $tTopic = is_array($s) ? ($s['topic'] ?? $s['title'] ?? '') : (string) $s;
+                                    if (trim($tTopic) !== '') {
+                                        $syllabusTopics[] = trim($tTopic);
+                                    }
+                                }
+                            } elseif (!empty($training->syllabus_summary)) {
+                                $syllabusTopics = array_map('trim', explode(',', $training->syllabus_summary));
                             }
-
-                            $status = $item->status ?? 'Open Registration';
-                            $statusClass = match(strtolower($status)) {
-                                'running' => 'status-running',
-                                'closed'  => 'status-closed',
-                                default   => 'status-open',
-                            };
+                            $syllabusTopics = array_values(array_filter($syllabusTopics));
                         @endphp
                         <td class="card-cell">
-                            <div class="schedule-card">
-                                <!-- 1. Category & Status with Close Reg date beneath badge -->
-                                <table class="card-header-table">
+                            <div class="card-box" style="height: 380px; max-height: 380px; box-sizing: border-box; border-radius: 16px; border: 1px solid #cbd5e1; padding: 16px; background: #ffffff; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden;">
+                                <!-- Row 1: Header (Category Pill Badge Left, Status Badge & Red Close Date Right) -->
+                                <table style="width: 100%; border-collapse: collapse; margin-bottom: 4px;">
                                     <tr>
-                                        <td style="text-align: left; vertical-align: top;">
-                                            <span class="category-badge">{{ $item->category ?? 'General' }}</span>
+                                        <td style="vertical-align: top; text-align: left;">
+                                            <span style="display: inline-block; background: #e0f2fe; color: #0369a1; padding: 4px 12px; border-radius: 9999px; font-weight: 700; font-size: 11px; text-transform: uppercase; white-space: nowrap;">
+                                                {{ $training->category ?? 'GENERAL' }}
+                                            </span>
                                         </td>
-                                        <td style="text-align: right; vertical-align: top;">
-                                            <span class="status-badge {{ $statusClass }}">{{ $status }}</span>
-                                            <div style="font-size: 6.5px; color: #dc2626; margin-top: 2px; font-weight: 600;">Close: {{ $regDeadline }}</div>
+                                        <td style="vertical-align: top; text-align: right;">
+                                            @if($isOpen)
+                                                <span style="display: inline-block; background: #dcfce7; color: #15803d; padding: 4px 12px; border-radius: 9999px; font-weight: 700; font-size: 11px; white-space: nowrap;">
+                                                    Open Registration
+                                                </span>
+                                            @else
+                                                <span style="display: inline-block; background: #f1f5f9; color: #475569; padding: 4px 12px; border-radius: 9999px; font-weight: 700; font-size: 11px; white-space: nowrap;">
+                                                    Closed
+                                                </span>
+                                            @endif
+                                            @if($training->registration_close_date)
+                                                @php
+                                                    $closeDateStr = \Carbon\Carbon::parse($training->registration_close_date)->format('d M Y');
+                                                    $rawCloseTime = $training->registration_close_time ? trim($training->registration_close_time) : '23:59:00';
+                                                    $closeTimeStr = strlen($rawCloseTime) === 5 ? $rawCloseTime . ':00' : $rawCloseTime;
+                                                @endphp
+                                                <div style="color: #dc2626; font-size: 8px; font-weight: 700; margin-top: 3px; white-space: nowrap;">
+                                                    Close: {{ $closeDateStr }} {{ $closeTimeStr }} WIB
+                                                </div>
+                                            @endif
                                         </td>
                                     </tr>
                                 </table>
 
-                                <!-- 2. Training Title (and optional sub course name) -->
-                                <div class="card-title">{{ $item->title ?? ($item->course_name ?? 'Training Schedule') }}</div>
-                                @if(!empty($item->sub_course_name))
-                                    <div style="font-size: 7.5px; color: #64748b; margin-top: -2px; margin-bottom: 2px;">{{ $item->sub_course_name }}</div>
-                                @endif
-
-                                <div class="card-divider"></div>
-
-                                <!-- 3. Date - Venue -->
-                                <div class="info-row">
-                                    <span class="info-label">Date - Venue:</span>
-                                    <span class="info-val highlight-date">{{ $schedulePeriod }} ({{ $startTime }} - {{ $endTime }} WIB) &bull; {{ $item->location ?? ($item->venue ?? 'PTKP Training Room') }}</span>
+                                <!-- Row 2: Title in bold Navy font -->
+                                <div style="font-size: 14px; font-weight: 800; color: #0f172a; height: 42px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin: 8px 0;">
+                                    {{ $training->title }}
                                 </div>
 
-                                <!-- 4. Target -->
-                                <div class="info-row">
-                                    <span class="info-label">Target:</span>
-                                    <span class="info-val">{{ $item->target_employee ?? 'All Employees' }}</span>
+                                <!-- Row 3: Date & Venue Inline Row -->
+                                <div style="font-size: 9px; color: #475569; font-weight: 600; line-height: 1.35; min-height: 24px; max-height: 28px; overflow: hidden; margin-bottom: 2px;">
+                                    <span style="white-space: nowrap;">
+                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -1px; margin-right: 2px;">
+                                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                                        </svg>{{ $schedulePeriod }}
+                                    </span>
+                                    <span style="color: #94a3b8; margin: 0 4px;">|</span>
+                                    <span>
+                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -1px; margin-right: 2px;">
+                                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                            <circle cx="12" cy="10" r="3"></circle>
+                                        </svg>{{ $training->location ?? $training->venue ?? $training->room_name ?? $training->room ?? '-' }}
+                                    </span>
                                 </div>
 
-                                <!-- 5. Batch -->
-                                <div class="info-row">
-                                    <span class="info-label">Batch:</span>
-                                    <span class="info-val">{{ $item->batch ?? '-' }}</span>
-                                </div>
+                                <!-- Row 4: Divider Line -->
+                                <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 10px 0;">
 
-                                <!-- 6. Instructor & Quota -->
-                                <div class="info-row">
-                                    <span class="info-label">Instructor &amp; Quota:</span>
-                                    <span class="info-val">{{ $item->instructor ?? '-' }} &bull; Quota: {{ $item->quota ?? 0 }} Seats</span>
-                                </div>
-
-                                <!-- 7. Syllabus Summary -->
-                                @php
-                                    $syllabusTopics = [];
-                                    if (!empty($item->syllabus) && is_array($item->syllabus)) {
-                                        foreach ($item->syllabus as $s) {
-                                            $t = is_array($s) ? ($s['topic'] ?? $s['title'] ?? '') : (string) $s;
-                                            if (trim($t) !== '') {
-                                                $syllabusTopics[] = trim($t);
-                                            }
-                                        }
-                                    }
-                                    $syllabusSummary = !empty($syllabusTopics) ? implode(', ', array_slice($syllabusTopics, 0, 3)) : ($item->learning_objectives ?? '-');
-                                @endphp
-                                <div class="info-row" style="margin-top: 4px; padding-top: 4px; border-top: 1px dotted #e2e8f0;">
-                                    <span class="info-label">Syllabus:</span>
-                                    <span class="info-val" style="color: #475569;">{{ \Illuminate\Support\Str::limit($syllabusSummary, 65) }}</span>
-                                </div>
+                                <!-- Row 5: Key-Value Details Alignment Table -->
+                                <table class="details-table" style="width: 100%; border-collapse: collapse; font-size: 8.5px; line-height: 1.35; table-layout: fixed;">
+                                    <colgroup>
+                                        <col style="width: 90px;">
+                                        <col style="width: 15px;">
+                                        <col>
+                                    </colgroup>
+                                    <tr>
+                                        <td class="label" style="width: 90px; font-weight: 700; color: #334155; padding: 2.5px 0; vertical-align: top;">Target</td>
+                                        <td class="colon" style="width: 15px; font-weight: 700; color: #334155; padding: 2.5px 0; vertical-align: top; text-align: center;">:</td>
+                                        <td class="value" style="color: #0f172a; padding: 2.5px 0; vertical-align: top; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ $training->target_employee ?? '-' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="label" style="width: 90px; font-weight: 700; color: #334155; padding: 2.5px 0; vertical-align: top;">Batch</td>
+                                        <td class="colon" style="width: 15px; font-weight: 700; color: #334155; padding: 2.5px 0; vertical-align: top; text-align: center;">:</td>
+                                        <td class="value" style="color: #0f172a; padding: 2.5px 0; vertical-align: top;">{{ $training->batch ?? '1' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="label" style="width: 90px; font-weight: 700; color: #334155; padding: 2.5px 0; vertical-align: top;">Time</td>
+                                        <td class="colon" style="width: 15px; font-weight: 700; color: #334155; padding: 2.5px 0; vertical-align: top; text-align: center;">:</td>
+                                        <td class="value" style="color: #0f172a; padding: 2.5px 0; vertical-align: top;">{{ \Carbon\Carbon::parse($training->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($training->end_time)->format('H:i') }} WIB</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="label" style="width: 90px; font-weight: 700; color: #334155; padding: 2.5px 0; vertical-align: top;">Duration</td>
+                                        <td class="colon" style="width: 15px; font-weight: 700; color: #334155; padding: 2.5px 0; vertical-align: top; text-align: center;">:</td>
+                                        <td class="value" style="color: #0f172a; padding: 2.5px 0; vertical-align: top;">{{ $durationText }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="label" style="width: 90px; font-weight: 700; color: #334155; padding: 2.5px 0; vertical-align: top;">Instructor</td>
+                                        <td class="colon" style="width: 15px; font-weight: 700; color: #334155; padding: 2.5px 0; vertical-align: top; text-align: center;">:</td>
+                                        <td class="value" style="color: #0f172a; padding: 2.5px 0; vertical-align: top; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ $training->instructor_name ?? ($training->instructor ?? '-') }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="label" style="width: 90px; font-weight: 700; color: #334155; padding: 2.5px 0; vertical-align: top;">Quota</td>
+                                        <td class="colon" style="width: 15px; font-weight: 700; color: #334155; padding: 2.5px 0; vertical-align: top; text-align: center;">:</td>
+                                        <td class="value" style="color: #0f172a; padding: 2.5px 0; vertical-align: top;">{{ $quotaText }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="label" style="width: 90px; font-weight: 700; color: #334155; padding: 2.5px 0; vertical-align: top;">Syllabus</td>
+                                        <td class="colon" style="width: 15px; font-weight: 700; color: #334155; padding: 2.5px 0; vertical-align: top; text-align: center;">:</td>
+                                        <td class="value" style="color: #0f172a; padding: 2.5px 0; vertical-align: top; line-height: 1.35; max-height: 38px; overflow: hidden;">
+                                            @if(count($syllabusTopics) > 0)
+                                                @foreach(array_slice($syllabusTopics, 0, 3) as $topic)
+                                                    <div>&bull; {{ $topic }}</div>
+                                                @endforeach
+                                            @else
+                                                -
+                                            @endif
+                                        </td>
+                                    </tr>
+                                </table>
                             </div>
                         </td>
                     @endforeach

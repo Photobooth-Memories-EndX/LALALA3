@@ -84,7 +84,7 @@
                         $statusesList = [
                             'open'    => 'Open Registration',
                             'running' => 'Running',
-                            'closed'  => 'Closed Registration',
+                            'closed'  => 'Registration Closed',
                         ];
                     @endphp
                     <select id="filterTrainingStatus" name="status" class="form-select rounded-3" onchange="this.form.submit()">

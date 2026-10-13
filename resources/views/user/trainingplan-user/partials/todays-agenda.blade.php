@@ -2,6 +2,7 @@
     $now = \Carbon\Carbon::now();
     $todayDateStr = $now->format('Y-m-d');
     $currentTimeHM = $now->format('H:i');
+    $activeDateStr = $activeDateStr ?? ($selectedDate ?? request('selected_date', $todayDateStr));
 @endphp
 
 {{-- Right Column: Today's Agenda Panel (col-lg-4) --}}
@@ -37,8 +38,10 @@
                         $sDate = \Carbon\Carbon::parse($item->start_date)->format('Y-m-d');
                         $eDate = \Carbon\Carbon::parse($item->end_date ?? $item->start_date)->format('Y-m-d');
                         $isDateToday = ($todayDateStr >= $sDate && $todayDateStr <= $eDate);
+                        $isViewingToday = ($activeDateStr === $todayDateStr);
                         $isTimeActive = ($currentTimeHM >= $startTime && $currentTimeHM <= $endTime);
-                        $isLive = ($isDateToday && $isTimeActive) || ($isDateToday && ($item->status ?? '') === 'Running');
+                        $isLive = ($isViewingToday && $isDateToday && $isTimeActive);
+                        $isRunning = ($isViewingToday && $isDateToday);
                     @endphp
                     <div class="timeline-schedule-item mb-3 p-3 rounded-3 border border-light-subtle bg-light-subtle position-relative"
                          role="button"
@@ -67,7 +70,12 @@
                         @endif
                         <div class="d-flex align-items-center justify-content-between mb-1">
                             <span class="badge bg-primary text-white rounded-pill px-2 py-0-5 small fw-semibold">{{ $startTime }} - {{ $endTime }} WIB</span>
-                            <span class="badge bg-primary-lt text-primary small">{{ $item->category }}</span>
+                            <div class="d-flex align-items-center gap-1">
+                                @if ($isRunning)
+                                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-2 py-0-5 small fw-semibold">Running</span>
+                                @endif
+                                <span class="badge bg-primary-lt text-primary small">{{ $item->category }}</span>
+                            </div>
                         </div>
                         <h5 class="fw-bold text-dark mb-1">{{ $title }}</h5>
                         <div class="text-muted small d-flex align-items-center gap-1 mb-1">

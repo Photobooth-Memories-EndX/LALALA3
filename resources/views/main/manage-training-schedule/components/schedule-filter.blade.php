@@ -30,7 +30,7 @@
                         $statusesList = [
                             'open'    => 'Open Registration',
                             'running' => 'Running',
-                            'closed'  => 'Closed Registration',
+                            'closed'  => 'Registration Closed',
                         ];
                     @endphp
                     <select id="scheduleStatusSelect" name="status" class="form-select rounded-3">

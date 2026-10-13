@@ -100,7 +100,7 @@
                                     <select id="scheduleStatusSelect" name="status" class="form-select rounded-3" onchange="this.form.submit()">
                                         <option value="" {{ request('status') == '' ? 'selected' : '' }}>All Status</option>
                                         @foreach ($statusesList as $st => $stLabel)
-                                            <option value="{{ $st }}" {{ request('status') == $st || request('status') == $stLabel ? 'selected' : '' }}>{{ $stLabel }}</option>
+                                            <option value="{{ $st }}" {{ request('status') == $st ? 'selected' : '' }}>{{ $stLabel }}</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -118,6 +118,7 @@
                                     <select id="scheduleMonthSelect" name="month" class="form-select rounded-3" onchange="this.form.submit()">
                                         <option value="" {{ request('month') == '' ? 'selected' : '' }}>All Month</option>
                                         <option value="this_week" {{ request('month') == 'this_week' || request('month') == 'weekly' ? 'selected' : '' }}>This Week</option>
+                                        {{-- <option value="03" {{ request('month') == '03' ? 'selected' : '' }}>March</option> --}}
                                         @foreach ($monthsList as $m => $monthName)
                                             <option value="{{ $m }}" {{ (is_numeric(request('month')) && (int) request('month') == (int) $m) || request('month') == $m ? 'selected' : '' }}>{{ $monthName }}</option>
                                         @endforeach
@@ -131,6 +132,7 @@
                                     @endphp
                                     <select id="scheduleYearSelect" name="year" class="form-select rounded-3" onchange="this.form.submit()">
                                         <option value="" {{ request('year') == '' ? 'selected' : '' }}>All Year</option>
+                                        {{-- <option value="2026" {{ request('year') == '2026' ? 'selected' : '' }}>2026</option> --}}
                                         @foreach ($yearsList as $y)
                                             <option value="{{ $y }}" {{ request('year') == $y ? 'selected' : '' }}>{{ $y }}</option>
                                         @endforeach
@@ -143,6 +145,7 @@
                                         <span class="input-icon-addon">
                                             <i class="ti ti-search text-muted fs-2"></i>
                                         </span>
+                                        {{-- <input type="text" name="search" value="{{ request('search') }}"> --}}
                                         <input type="text" id="scheduleSearchInput" name="search" class="form-control rounded-3" 
                                                value="{{ request('search') ?? request('q') }}"
                                                placeholder="Search training title, instructor, or room..." autocomplete="off">

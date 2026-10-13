@@ -1240,34 +1240,56 @@ class OfflineTrainingController extends Controller
             ->paginate(10)
             ->appends(array_merge($request->query(), ['tab' => 'available']));
 
-        $calendarEvents = $trainings->map(function ($t) {
+        $today = Carbon::today()->format('Y-m-d');
+        $calendarEvents = $trainings->map(function ($t) use ($today) {
+            // Properly parse dates before conditional checks
             $startDate = Carbon::parse($t->start_date);
-            $endDate = Carbon::parse($t->end_date ?? $t->start_date);
-            $regCloseDate = Carbon::parse($t->registration_close_date ?? $t->start_date);
+            $endDate = $t->end_date ? Carbon::parse($t->end_date) : $startDate;
+
+            $startDateStr = $startDate->format('Y-m-d');
+            $endDateStr = $endDate->format('Y-m-d');
+
+            // Define $regCloseDate and $regCloseDateStr with safe fallbacks
+            $regCloseDate = $t->registration_close_date 
+                ? Carbon::parse($t->registration_close_date) 
+                : $startDate;
+            $regCloseDateStr = $regCloseDate->format('Y-m-d');
             $regCloseTime = $t->registration_close_time ? substr($t->registration_close_time, 0, 5) : '23:59';
-            $closeDatetime = Carbon::parse($regCloseDate->format('Y-m-d') . ' ' . $regCloseTime . ':59');
-            $enrolled = $t->registered_seats_count ?? 0;
-            $quota = $t->quota ?: 1;
-            $isRegistrationPast = Carbon::now()->gt($closeDatetime);
-            $isPast = $endDate->format('Y-m-d') < Carbon::today()->format('Y-m-d');
-            $isClosed = $t->status === 'Closed' || $enrolled >= $quota || $isPast || $isRegistrationPast;
+            $isPublished = $t->status !== 'Draft' && (!isset($t->is_published) || (bool) $t->is_published);
+
+            // Calendar & List Status Classification Logic
+            if ($endDateStr < $today) {
+                $status = 'Ended'; // Dark Gray badge
+            } elseif ($startDateStr <= $today && $endDateStr >= $today && $regCloseDateStr < $today) {
+                $status = 'Running'; // Orange badge (Currently running & registration closed)
+            } elseif ($regCloseDateStr >= $today && $isPublished) {
+                $status = 'Open'; // Green badge (Registration open)
+            } elseif ($startDateStr > $today && $regCloseDateStr < $today) {
+                $status = 'Closed'; // Gray badge (Registration closed, session upcoming)
+            } else {
+                $status = 'Closed';
+            }
+
+            $enrolled = (int) ($t->participants_count ?? ($t->registered_seats_count ?? 0));
+            $quota = (int) ($t->quota ?: 1);
+            $isPast = ($endDateStr < $today);
 
             return [
                 'id'                      => (string) $t->id,
                 'year'                    => (int) $startDate->format('Y'),
                 'month'                   => (int) $startDate->format('n') - 1, // 0-indexed for JavaScript Date
                 'day'                     => (int) $startDate->format('j'),
-                'startDate'               => $startDate->format('Y-m-d'),
-                'endDate'                 => $endDate->format('Y-m-d'),
+                'startDate'               => $startDateStr,
+                'endDate'                 => $endDateStr,
                 'registration_close_date' => $regCloseDate->format('Y-m-d'),
                 'registrationCloseDate'   => $regCloseDate->format('Y-m-d'),
                 'registration_close_time' => $regCloseTime,
                 'registrationCloseTime'   => $regCloseTime,
-                'rawStatus'   => $t->status,
-                'title'       => $t->title,
-                'shortTitle'  => Str::limit($t->title, 16),
-                'category'    => $t->category,
-                'badgeClass'  => match($t->category) {
+                'rawStatus'               => $t->status,
+                'title'                   => $t->title,
+                'shortTitle'              => Str::limit($t->title, 16),
+                'category'                => $t->category,
+                'badgeClass'              => match($t->category) {
                     'Basic & Common Duties'             => 'bg-secondary-subtle text-secondary',
                     'Compliance', 'Compliance & Safety' => 'bg-warning-lt text-warning',
                     'Innovation'                        => 'bg-success-lt text-success',
@@ -1276,18 +1298,20 @@ class OfflineTrainingController extends Controller
                     'Leadership'                        => 'bg-purple-subtle text-purple',
                     default                             => 'bg-primary-lt text-primary',
                 },
-                'status'      => $isClosed ? 'closed' : ($t->status === 'Running' ? 'running' : 'open'),
-                'isPast'      => $isPast,
-                'startTime'   => substr($t->start_time, 0, 5),
-                'endTime'     => substr($t->end_time, 0, 5),
-                'time'        => substr($t->start_time, 0, 5) . ' - ' . substr($t->end_time, 0, 5) . ' WIB',
-                'dateTime'    => $startDate->format('d F Y') . ', ' . substr($t->start_time, 0, 5) . ' - ' . substr($t->end_time, 0, 5) . ' WIB',
-                'location'    => $t->location,
-                'instructor'  => $t->instructor,
-                'quota'       => (int) $t->quota,
-                'enrolled'    => (int) $enrolled,
-                'isFull'      => $enrolled >= $quota,
-                'quotaText'   => "{$enrolled} / {$t->quota} Seats" . ($enrolled >= $quota ? ' (Full)' : ''),
+                'status'                  => $status,
+                'computedStatus'          => $status,
+                'is_published'            => $isPublished,
+                'isPast'                  => $isPast,
+                'startTime'               => substr($t->start_time ?? '', 0, 5),
+                'endTime'                 => substr($t->end_time ?? '', 0, 5),
+                'time'                    => substr($t->start_time ?? '', 0, 5) . ' - ' . substr($t->end_time ?? '', 0, 5) . ' WIB',
+                'dateTime'                => $startDate->format('d F Y') . ', ' . substr($t->start_time ?? '', 0, 5) . ' - ' . substr($t->end_time ?? '', 0, 5) . ' WIB',
+                'location'                => $t->location,
+                'instructor'              => $t->instructor,
+                'quota'                   => (int) $t->quota,
+                'enrolled'                => (int) $enrolled,
+                'isFull'                  => $enrolled >= $quota,
+                'quotaText'               => "{$enrolled} / {$t->quota} Seats" . ($enrolled >= $quota ? ' (Full)' : ''),
             ];
         })->values()->toArray();
 
@@ -1328,6 +1352,47 @@ class OfflineTrainingController extends Controller
         })->values();
 
         return view('user.trainingplan-user.index', compact('trainings', 'availableTrainings', 'calendarEvents', 'myHistory', 'selectedDate', 'todaysAgenda'));
+    }
+
+    /**
+     * Evaluate the status of a training event specifically for a calendar cell date relative to today.
+     *
+     * @param mixed $training
+     * @param string $cellDate
+     * @param string|null $today
+     * @return string ('Ended'|'Running'|'Open'|'Closed')
+     */
+    public static function evaluateCalendarCellStatus($training, string $cellDate, ?string $today = null): string
+    {
+        $today = $today ?? Carbon::today()->format('Y-m-d');
+        $sDate = Carbon::parse($training->start_date)->format('Y-m-d');
+        $eDate = Carbon::parse($training->end_date ?? $training->start_date)->format('Y-m-d');
+        $regCloseDate = $training->registration_close_date 
+            ? Carbon::parse($training->registration_close_date)->format('Y-m-d') 
+            : $sDate;
+        $statusStr = $training->status ?? '';
+        $isPublished = $statusStr !== 'Draft' && (!isset($training->is_published) || (bool) $training->is_published);
+
+        // $cellDate represents the specific day square rendered on the calendar grid
+        // $today represents the current real-world date (e.g., Oct 13, 2026)
+        if ($cellDate < $today) {
+            // Past dates in calendar always show as Ended
+            return 'Ended';
+        } elseif ($cellDate === $today) {
+            // Current date ONLY shows as Running if the training execution overlaps today
+            if ($sDate <= $today && $eDate >= $today) {
+                return 'Running';
+            } else {
+                return ($regCloseDate >= $today && $isPublished) ? 'Open' : 'Closed';
+            }
+        } else {
+            // Future dates in calendar show Open or Closed based on registration date
+            if ($regCloseDate >= $today && $isPublished) {
+                return 'Open';
+            } else {
+                return 'Closed';
+            }
+        }
     }
 
     /**
@@ -1507,10 +1572,13 @@ class OfflineTrainingController extends Controller
             ->orderBy('start_date', 'asc')
             ->get();
 
-        $filterSummary = $this->collectActiveFilterLabels($request);
+        $activeFilters = $this->collectActiveFilterLabels($request);
         $fileName = 'Training_Schedule_Announcement_' . Carbon::now()->format('Ymd_His') . '.jpg';
 
-        $imageContent = $imageService->generateJpg($trainings, $filterSummary);
+        // Share single Blade template (resources/views/exports/training-schedule-pdf.blade.php) for both PDF and JPG exports
+        $viewContent = view('exports.training-schedule-pdf', compact('trainings', 'activeFilters'))->render();
+
+        $imageContent = $imageService->generateJpg($trainings, $activeFilters, $viewContent);
 
         return response($imageContent, 200, [
             'Content-Type'        => 'image/jpeg',
