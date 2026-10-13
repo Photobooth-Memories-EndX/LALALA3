@@ -7,6 +7,7 @@ use App\Exports\LearningExport;
 use App\Exports\OfflineTrainingCsvExport;
 use App\Exports\OfflineTrainingExport;
 use App\Exports\OnlineRecordCsvExport;
+use App\Exports\Record\OnlineFullRecordExport;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\LearningManageController;
 use App\Models\Classification;
@@ -14,6 +15,7 @@ use App\Models\OfflineTraining;
 use App\Models\OfflineTrainingOption;
 use App\Models\User;
 use App\Services\Learning\LearningDatatableService;
+use App\Services\Record\OnlineFullRecordExportService;
 use App\Services\Record\RecordAllCombinedService;
 use App\Services\Record\RecordOfflineQueryService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -129,6 +131,16 @@ class RecordExportController extends Controller
             }
         }
 
+        // 7. Distinct Divisions
+        $divisions = DB::table('users')
+            ->whereNotNull('division')
+            ->where('division', '!=', '')
+            ->distinct()
+            ->pluck('division')
+            ->sort()
+            ->values()
+            ->all();
+
         return view('main.record.export-all', [
             'title'               => 'Export KP OWL',
             'subtitle'            => 'Learning Record Export Center',
@@ -136,6 +148,7 @@ class RecordExportController extends Controller
             'currentYear'         => $currentYear,
             'classifications'     => $filterOptions['classifications'] ?? [],
             'departments'         => $filterOptions['departments'] ?? [],
+            'divisions'           => $divisions,
             'companies'           => $filterOptions['companies'] ?? [],
             'trainingTypes'       => $trainingTypes,
             'offlineCategories'   => $offlineCategories,
@@ -421,25 +434,71 @@ class RecordExportController extends Controller
     protected function downloadOnline(array $filters, string $format, Request $request): Response
     {
         $dateSuffix = now()->format('Y-m-d');
+        $service = app(OnlineFullRecordExportService::class);
 
         if ($format === 'csv') {
             $fileName = sprintf('kp-owl-online-records-%s.csv', $dateSuffix);
-            $export = new OnlineRecordCsvExport($filters, (string) ($filters['type'] ?? ''), (string) ($filters['slug'] ?? ''));
-            return $export->download($fileName);
+            $query = $service->buildQuery($filters);
+            $columnHeadings = OnlineFullRecordExportService::headings();
+
+            $headers = [
+                'Content-Type'        => 'text/csv; charset=UTF-8',
+                'Content-Disposition' => "attachment; filename=\"{$fileName}\"",
+                'Pragma'              => 'no-cache',
+                'Cache-Control'       => 'must-revalidate, post-check=0, pre-check=0',
+                'Expires'             => '0',
+            ];
+
+            return response()->streamDownload(function () use ($query, $columnHeadings, $service) {
+                $output = fopen('php://output', 'w');
+                // UTF-8 BOM
+                fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+                fputcsv($output, $columnHeadings);
+
+                $streamPdo = $service->getStreamPdo();
+                $stmt = $streamPdo->prepare($query->toSql());
+                $stmt->execute($query->getBindings());
+
+                $rowCount = 0;
+                $batch = [];
+                $batchSize = 2500;
+
+                while ($row = $stmt->fetch(\PDO::FETCH_OBJ)) {
+                    $batch[] = $row;
+                    if (count($batch) >= $batchSize) {
+                        $context = $service->buildBatchContext($batch);
+                        foreach ($batch as $bRow) {
+                            $rowCount++;
+                            fputcsv($output, $service->mapRow($bRow, $rowCount, $context));
+                        }
+                        if (ob_get_level() > 0) {
+                            ob_flush();
+                        }
+                        flush();
+                        $batch = [];
+                    }
+                }
+
+                if (!empty($batch)) {
+                    $context = $service->buildBatchContext($batch);
+                    foreach ($batch as $bRow) {
+                        $rowCount++;
+                        fputcsv($output, $service->mapRow($bRow, $rowCount, $context));
+                    }
+                    if (ob_get_level() > 0) {
+                        ob_flush();
+                    }
+                    flush();
+                    $batch = [];
+                }
+
+                $stmt->closeCursor();
+                fclose($output);
+            }, $fileName, $headers);
         }
 
         if ($format === 'pdf') {
-            $query = LearningDatatableService::buildBaseQuery(
-                $filters,
-                (string) ($filters['type'] ?? ''),
-                (string) ($filters['slug'] ?? '')
-            );
-
-            if (empty($filters['sort'])) {
-                $query->orderBy('unified.created_at', 'desc')
-                      ->orderBy('unified.source_type', 'desc')
-                      ->orderBy('unified.source_id', 'desc');
-            }
+            $query = $service->buildQuery($filters);
 
             $totalRecords = (clone $query)->count();
             $maxPdfLimit = 500;
@@ -471,8 +530,7 @@ class RecordExportController extends Controller
 
         // Default: XLSX
         $fileName = sprintf('kp-owl-online-records-%s.xlsx', $dateSuffix);
-        return (new LearningExport($filters, (string) ($filters['type'] ?? ''), (string) ($filters['slug'] ?? '')))
-            ->download($fileName);
+        return (new OnlineFullRecordExport($filters, $fileName))->download();
     }
 
     /**

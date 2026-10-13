@@ -480,7 +480,7 @@ class LearningDatatableService
             }
         }
 
-        // 11b. Department & Company Filters
+        // 11b. Department, Company, Division & Team Filters
         $department = trim((string) ($filters['department'] ?? 'all'));
         if (filled($department) && $department !== 'all') {
             $query->where('u.department', $department);
@@ -489,6 +489,16 @@ class LearningDatatableService
         $company = trim((string) ($filters['company'] ?? 'all'));
         if (filled($company) && $company !== 'all') {
             $query->where('u.company_name', $company);
+        }
+
+        $division = trim((string) ($filters['division'] ?? 'all'));
+        if (filled($division) && $division !== 'all') {
+            $query->where('u.division', $division);
+        }
+
+        $team = trim((string) ($filters['team'] ?? 'all'));
+        if (filled($team) && $team !== 'all') {
+            $query->where('u.team', 'like', '%' . $team . '%');
         }
 
         // 12. Sorting

@@ -407,5 +407,74 @@ class RecordExportCenterTest extends TestCase
         $this->assertEquals(1, substr_count($content, 'name="source"'), 'Expected exactly one name="source" field');
         $this->assertEquals(1, substr_count($content, 'name="format"'), 'Expected exactly one name="format" field');
     }
+
+    /**
+     * CASE 19: 5 Steps appear in the exact required order.
+     * Step 1: Choose Data Source
+     * Step 2: Learning Filters
+     * Step 3: Employee & Organization Filters
+     * Step 4: Period Filters
+     * Step 5: Choose Export Format
+     */
+    public function test_case_19_step_order_and_headings_match_specification()
+    {
+        $response = $this->actingAs($this->admin)->get(route('manage.record.export-all'));
+
+        $response->assertStatus(200);
+        $content = $response->getContent();
+
+        $posStep1 = strpos($content, 'Choose Data Source');
+        $posStep2 = strpos($content, 'Learning Filters');
+        $posStep3 = strpos($content, 'Employee &amp; Organization Filters');
+        $posStep4 = strpos($content, 'Period Filters');
+        $posStep5 = strpos($content, 'Choose Export Format');
+
+        $this->assertNotFalse($posStep1, 'Step 1: Choose Data Source not found');
+        $this->assertNotFalse($posStep2, 'Step 2: Learning Filters not found');
+        $this->assertNotFalse($posStep3, 'Step 3: Employee & Organization Filters not found');
+        $this->assertNotFalse($posStep4, 'Step 4: Period Filters not found');
+        $this->assertNotFalse($posStep5, 'Step 5: Choose Export Format not found');
+
+        $this->assertTrue($posStep1 < $posStep2, 'Step 1 must precede Step 2');
+        $this->assertTrue($posStep2 < $posStep3, 'Step 2 must precede Step 3');
+        $this->assertTrue($posStep3 < $posStep4, 'Step 3 must precede Step 4');
+        $this->assertTrue($posStep4 < $posStep5, 'Step 4 must precede Step 5');
+    }
+
+    /**
+     * CASE 20: Division filter is present in Step 3 and functional.
+     */
+    public function test_case_20_division_filter_is_present_and_functional()
+    {
+        $response = $this->actingAs($this->admin)->get(route('manage.record.export-all'));
+
+        $response->assertStatus(200);
+        $response->assertSee('id="filter-division"', false);
+        $response->assertSee('name="division"', false);
+        $response->assertSee('All Divisions');
+
+        // Test preview endpoint with division filter
+        $previewResp = $this->actingAs($this->admin)->getJson(route('manage.record.export-all.preview', [
+            'source'   => 'online',
+            'division' => 'Human Resources',
+        ]));
+        $previewResp->assertStatus(200);
+        $previewResp->assertJson(['success' => true]);
+    }
+
+    /**
+     * CASE 21: Date range inputs and validation element are present in Step 4.
+     */
+    public function test_case_21_date_range_validation_elements_present()
+    {
+        $response = $this->actingAs($this->admin)->get(route('manage.record.export-all'));
+
+        $response->assertStatus(200);
+        $response->assertSee('id="filter-year"', false);
+        $response->assertSee('id="filter-from-date"', false);
+        $response->assertSee('id="filter-to-date"', false);
+        $response->assertSee('id="date-range-error"', false);
+        $response->assertSee('From Date cannot be later than To Date');
+    }
 }
 

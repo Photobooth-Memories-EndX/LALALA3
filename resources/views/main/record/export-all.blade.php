@@ -74,27 +74,17 @@
                 </div>
             </div>
 
-            <!-- STEP 2: LEARNING & PARTICIPANT FILTERS -->
+            <!-- STEP 2: LEARNING FILTERS -->
             <div class="card border-0 shadow-sm rounded-4 mb-4 step-card">
                 <div class="card-header bg-transparent border-0 pt-4 pb-2 px-4">
                     <div class="d-flex align-items-center gap-2">
                         <span class="badge bg-primary text-white rounded-circle p-2 d-inline-flex align-items-center justify-content-center" style="width: 26px; height: 26px; font-size: 0.75rem;">2</span>
-                        <h4 class="card-title fw-bold text-dark mb-0">Employee &amp; Learning Filters</h4>
+                        <h4 class="card-title fw-bold text-dark mb-0">Learning Filters</h4>
                     </div>
-                    <p class="text-muted small mb-0 mt-1 ms-4 ps-1">Filter by participant details, course title, and classification.</p>
+                    <p class="text-muted small mb-0 mt-1 ms-4 ps-1">Filter by course title, classification, status, progress, and training parameters.</p>
                 </div>
                 <div class="card-body px-4 pb-4 pt-2">
                     <div class="row g-3">
-                        <!-- Employee / NIP Search -->
-                        <div class="col-12 col-md-6 col-lg-4">
-                            <label class="form-label fw-bold text-dark small" for="filter-employee">
-                                <i class="ti ti-user me-1 text-muted"></i> Employee / NIP
-                            </label>
-                            <input type="text" id="filter-employee" name="employee_id" class="form-control rounded-3"
-                                   placeholder="Search NIP or Name..." autocomplete="off">
-                            <small class="text-muted" style="font-size: 0.75rem;">Matches NIP or employee name across systems.</small>
-                        </div>
-
                         <!-- Learning Title / Course Name -->
                         <div class="col-12 col-md-6 col-lg-4">
                             <label class="form-label fw-bold text-dark small" for="filter-title">
@@ -179,6 +169,50 @@
                             </select>
                         </div>
 
+                        <!-- Status -->
+                        <div class="col-12 col-md-6 col-lg-4">
+                            <label class="form-label fw-bold text-dark small" for="filter-status">
+                                <i class="ti ti-chart-dots me-1 text-muted"></i> Completion Status
+                            </label>
+                            <select id="filter-status" name="status" class="form-select rounded-3">
+                                <option value="all">All Status</option>
+                                <option value="finished">Finished</option>
+                                <option value="ongoing">Ongoing</option>
+                                <option value="not_started">Not Started</option>
+                            </select>
+                        </div>
+
+                        <!-- Progress Range -->
+                        <div class="col-12 col-md-6 col-lg-4">
+                            <label class="form-label fw-bold text-dark small" for="filter-progress">
+                                <i class="ti ti-percentage me-1 text-muted"></i> Progress Range
+                            </label>
+                            <select id="filter-progress" name="progress_range" class="form-select rounded-3">
+                                <option value="all">All Progress</option>
+                                <option value="0">0% (Not Started)</option>
+                                <option value="1-25">1% - 25%</option>
+                                <option value="26-50">26% - 50%</option>
+                                <option value="51-75">51% - 75%</option>
+                                <option value="76-99">76% - 99%</option>
+                                <option value="100">100% (Completed)</option>
+                            </select>
+                        </div>
+
+                        <!-- Participant Learning Hours Range (Combined & Offline) -->
+                        <div class="col-12 col-md-6 col-lg-4 filter-hours-wrapper" id="wrapper-hours">
+                            <label class="form-label fw-bold text-dark small" for="filter-hours">
+                                <i class="ti ti-clock me-1 text-muted"></i> Learning Hours Range
+                            </label>
+                            <select id="filter-hours" name="learning_hours_range" class="form-select rounded-3">
+                                <option value="all">All Hours</option>
+                                <option value="lt05">&lt; 0.5 Hour</option>
+                                <option value="05-1">0.5 – &lt; 1 Hour</option>
+                                <option value="1-2">1 – &lt; 2 Hours</option>
+                                <option value="2-4">2 – &lt; 4 Hours</option>
+                                <option value="gte4">&ge; 4 Hours</option>
+                            </select>
+                        </div>
+
                         <!-- Batch (Offline Only) -->
                         <div class="col-12 col-md-6 col-lg-4 filter-offline-only" id="wrapper-batch" style="display: none;">
                             <label class="form-label fw-bold text-dark small" for="filter-batch">
@@ -186,21 +220,81 @@
                             </label>
                             <input type="text" id="filter-batch" name="batch" class="form-control rounded-3" placeholder="e.g. Batch 1" disabled>
                         </div>
+
+                        <!-- Provider (Offline Only) -->
+                        <div class="col-12 col-md-6 col-lg-4 filter-offline-only" id="wrapper-provider" style="display: none;">
+                            <label class="form-label fw-bold text-dark small" for="filter-provider">
+                                <i class="ti ti-building-store me-1 text-muted"></i> Provider
+                            </label>
+                            <select id="filter-provider" name="provider" class="form-select rounded-3" disabled>
+                                <option value="all">All Providers</option>
+                                @foreach ($providers as $prov)
+                                    <option value="{{ $prov }}">{{ $prov }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- Delivery Method (Offline Only) -->
+                        <div class="col-12 col-md-6 col-lg-4 filter-offline-only" id="wrapper-delivery-method" style="display: none;">
+                            <label class="form-label fw-bold text-dark small" for="filter-delivery-method">
+                                <i class="ti ti-truck-delivery me-1 text-muted"></i> Delivery Method
+                            </label>
+                            <select id="filter-delivery-method" name="delivery_method" class="form-select rounded-3" disabled>
+                                <option value="all">All Delivery Methods</option>
+                                @foreach ($deliveryMethods as $dm)
+                                    <option value="{{ $dm }}">{{ $dm }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- Attendance (Offline Only) -->
+                        <div class="col-12 col-md-6 col-lg-4 filter-offline-only" id="wrapper-attendance" style="display: none;">
+                            <label class="form-label fw-bold text-dark small" for="filter-attendance">
+                                <i class="ti ti-user-check me-1 text-muted"></i> Attendance
+                            </label>
+                            <select id="filter-attendance" name="attendance" class="form-select rounded-3" disabled>
+                                <option value="all">All Attendance</option>
+                                <option value="present">Present (Attended)</option>
+                                <option value="absent">Absent</option>
+                            </select>
+                        </div>
+
+                        <!-- Certificate (Offline Only) -->
+                        <div class="col-12 col-md-6 col-lg-4 filter-offline-only" id="wrapper-certificate" style="display: none;">
+                            <label class="form-label fw-bold text-dark small" for="filter-certificate">
+                                <i class="ti ti-certificate-2 me-1 text-muted"></i> Certificate
+                            </label>
+                            <select id="filter-certificate" name="certificate" class="form-select rounded-3" disabled>
+                                <option value="all">All Status</option>
+                                <option value="yes">Available / Issued</option>
+                                <option value="no">Not Issued</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- STEP 3: ORGANIZATION FILTERS -->
+            <!-- STEP 3: EMPLOYEE & ORGANIZATION FILTERS -->
             <div class="card border-0 shadow-sm rounded-4 mb-4 step-card">
                 <div class="card-header bg-transparent border-0 pt-4 pb-2 px-4">
                     <div class="d-flex align-items-center gap-2">
                         <span class="badge bg-primary text-white rounded-circle p-2 d-inline-flex align-items-center justify-content-center" style="width: 26px; height: 26px; font-size: 0.75rem;">3</span>
-                        <h4 class="card-title fw-bold text-dark mb-0">Organization Filters</h4>
+                        <h4 class="card-title fw-bold text-dark mb-0">Employee &amp; Organization Filters</h4>
                     </div>
-                    <p class="text-muted small mb-0 mt-1 ms-4 ps-1">Scope report by company division, department, team, or employee level.</p>
+                    <p class="text-muted small mb-0 mt-1 ms-4 ps-1">Scope report by participant details, company, division, department, team, and level.</p>
                 </div>
                 <div class="card-body px-4 pb-4 pt-2">
                     <div class="row g-3">
+                        <!-- Employee / NIP Search -->
+                        <div class="col-12 col-md-6 col-lg-4">
+                            <label class="form-label fw-bold text-dark small" for="filter-employee">
+                                <i class="ti ti-user me-1 text-muted"></i> Employee / NIP
+                            </label>
+                            <input type="text" id="filter-employee" name="employee_id" class="form-control rounded-3"
+                                   placeholder="Search NIP or Name..." autocomplete="off">
+                            <small class="text-muted" style="font-size: 0.75rem;">Matches NIP or employee name across systems.</small>
+                        </div>
+
                         <!-- Company -->
                         <div class="col-12 col-md-6 col-lg-4">
                             <label class="form-label fw-bold text-dark small" for="filter-company">
@@ -210,6 +304,19 @@
                                 <option value="all">All Companies</option>
                                 @foreach ($companies as $comp)
                                     <option value="{{ $comp }}">{{ $comp }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- Division -->
+                        <div class="col-12 col-md-6 col-lg-4">
+                            <label class="form-label fw-bold text-dark small" for="filter-division">
+                                <i class="ti ti-layout-grid me-1 text-muted"></i> Division
+                            </label>
+                            <select id="filter-division" name="division" class="form-select rounded-3">
+                                <option value="all">All Divisions</option>
+                                @foreach ($divisions as $div)
+                                    <option value="{{ $div }}">{{ $div }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -235,6 +342,14 @@
                             <input type="text" id="filter-team" name="team" class="form-control rounded-3" placeholder="Search team...">
                         </div>
 
+                        <!-- Job Position (Offline Only) -->
+                        <div class="col-12 col-md-6 col-lg-4 filter-offline-only" id="wrapper-job-position" style="display: none;">
+                            <label class="form-label fw-bold text-dark small" for="filter-job-position">
+                                <i class="ti ti-briefcase me-1 text-muted"></i> Job Position
+                            </label>
+                            <input type="text" id="filter-job-position" name="job_position" class="form-control rounded-3" placeholder="Search position..." disabled>
+                        </div>
+
                         <!-- Grade (Offline Only) -->
                         <div class="col-12 col-md-6 col-lg-4 filter-offline-only" id="wrapper-grade" style="display: none;">
                             <label class="form-label fw-bold text-dark small" for="filter-grade">
@@ -247,31 +362,23 @@
                                 @endforeach
                             </select>
                         </div>
-
-                        <!-- Job Position (Offline Only) -->
-                        <div class="col-12 col-md-6 col-lg-4 filter-offline-only" id="wrapper-job-position" style="display: none;">
-                            <label class="form-label fw-bold text-dark small" for="filter-job-position">
-                                <i class="ti ti-briefcase me-1 text-muted"></i> Job Position
-                            </label>
-                            <input type="text" id="filter-job-position" name="job_position" class="form-control rounded-3" placeholder="Search position..." disabled>
-                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- STEP 4: PERIOD, STATUS & DELIVERY -->
+            <!-- STEP 4: PERIOD FILTERS -->
             <div class="card border-0 shadow-sm rounded-4 mb-4 step-card">
                 <div class="card-header bg-transparent border-0 pt-4 pb-2 px-4">
                     <div class="d-flex align-items-center gap-2">
                         <span class="badge bg-primary text-white rounded-circle p-2 d-inline-flex align-items-center justify-content-center" style="width: 26px; height: 26px; font-size: 0.75rem;">4</span>
-                        <h4 class="card-title fw-bold text-dark mb-0">Period &amp; Performance Filters</h4>
+                        <h4 class="card-title fw-bold text-dark mb-0">Period Filters</h4>
                     </div>
-                    <p class="text-muted small mb-0 mt-1 ms-4 ps-1">Define reporting timeframe, completion progress, and delivery parameters.</p>
+                    <p class="text-muted small mb-0 mt-1 ms-4 ps-1">Define reporting timeframe by year or specific start and finish date range.</p>
                 </div>
                 <div class="card-body px-4 pb-4 pt-2">
                     <div class="row g-3">
                         <!-- Year -->
-                        <div class="col-12 col-md-6 col-lg-3">
+                        <div class="col-12 col-md-6 col-lg-4">
                             <label class="form-label fw-bold text-dark small" for="filter-year">
                                 <i class="ti ti-calendar-event me-1 text-muted"></i> Reporting Year
                             </label>
@@ -284,7 +391,7 @@
                         </div>
 
                         <!-- Start Date -->
-                        <div class="col-12 col-md-6 col-lg-3">
+                        <div class="col-12 col-md-6 col-lg-4">
                             <label class="form-label fw-bold text-dark small" for="filter-from-date">
                                 <i class="ti ti-calendar me-1 text-muted"></i> From Date
                             </label>
@@ -292,106 +399,18 @@
                         </div>
 
                         <!-- End Date -->
-                        <div class="col-12 col-md-6 col-lg-3">
+                        <div class="col-12 col-md-6 col-lg-4">
                             <label class="form-label fw-bold text-dark small" for="filter-to-date">
                                 <i class="ti ti-calendar me-1 text-muted"></i> To Date
                             </label>
                             <input type="date" id="filter-to-date" name="to_date" class="form-control rounded-3">
                         </div>
+                    </div>
 
-                        <!-- Status -->
-                        <div class="col-12 col-md-6 col-lg-3">
-                            <label class="form-label fw-bold text-dark small" for="filter-status">
-                                <i class="ti ti-chart-dots me-1 text-muted"></i> Completion Status
-                            </label>
-                            <select id="filter-status" name="status" class="form-select rounded-3">
-                                <option value="all">All Status</option>
-                                <option value="finished">Finished</option>
-                                <option value="ongoing">Ongoing</option>
-                                <option value="not_started">Not Started</option>
-                            </select>
-                        </div>
-
-                        <!-- Progress Range -->
-                        <div class="col-12 col-md-6 col-lg-3">
-                            <label class="form-label fw-bold text-dark small" for="filter-progress">
-                                <i class="ti ti-percentage me-1 text-muted"></i> Progress Range
-                            </label>
-                            <select id="filter-progress" name="progress_range" class="form-select rounded-3">
-                                <option value="all">All Progress</option>
-                                <option value="0">0% (Not Started)</option>
-                                <option value="1-25">1% - 25%</option>
-                                <option value="26-50">26% - 50%</option>
-                                <option value="51-75">51% - 75%</option>
-                                <option value="76-99">76% - 99%</option>
-                                <option value="100">100% (Completed)</option>
-                            </select>
-                        </div>
-
-                        <!-- Participant Learning Hours Range (Combined & Offline) -->
-                        <div class="col-12 col-md-6 col-lg-3 filter-hours-wrapper" id="wrapper-hours">
-                            <label class="form-label fw-bold text-dark small" for="filter-hours">
-                                <i class="ti ti-clock me-1 text-muted"></i> Learning Hours Range
-                            </label>
-                            <select id="filter-hours" name="learning_hours_range" class="form-select rounded-3">
-                                <option value="all">All Hours</option>
-                                <option value="lt05">&lt; 0.5 Hour</option>
-                                <option value="05-1">0.5 – &lt; 1 Hour</option>
-                                <option value="1-2">1 – &lt; 2 Hours</option>
-                                <option value="2-4">2 – &lt; 4 Hours</option>
-                                <option value="gte4">&ge; 4 Hours</option>
-                            </select>
-                        </div>
-
-                        <!-- Provider (Offline Only) -->
-                        <div class="col-12 col-md-6 col-lg-3 filter-offline-only" id="wrapper-provider" style="display: none;">
-                            <label class="form-label fw-bold text-dark small" for="filter-provider">
-                                <i class="ti ti-building-store me-1 text-muted"></i> Provider
-                            </label>
-                            <select id="filter-provider" name="provider" class="form-select rounded-3" disabled>
-                                <option value="all">All Providers</option>
-                                @foreach ($providers as $prov)
-                                    <option value="{{ $prov }}">{{ $prov }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <!-- Delivery Method (Offline Only) -->
-                        <div class="col-12 col-md-6 col-lg-3 filter-offline-only" id="wrapper-delivery-method" style="display: none;">
-                            <label class="form-label fw-bold text-dark small" for="filter-delivery-method">
-                                <i class="ti ti-truck-delivery me-1 text-muted"></i> Delivery Method
-                            </label>
-                            <select id="filter-delivery-method" name="delivery_method" class="form-select rounded-3" disabled>
-                                <option value="all">All Delivery Methods</option>
-                                @foreach ($deliveryMethods as $dm)
-                                    <option value="{{ $dm }}">{{ $dm }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <!-- Attendance (Offline Only) -->
-                        <div class="col-12 col-md-6 col-lg-3 filter-offline-only" id="wrapper-attendance" style="display: none;">
-                            <label class="form-label fw-bold text-dark small" for="filter-attendance">
-                                <i class="ti ti-user-check me-1 text-muted"></i> Attendance
-                            </label>
-                            <select id="filter-attendance" name="attendance" class="form-select rounded-3" disabled>
-                                <option value="all">All Attendance</option>
-                                <option value="present">Present (Attended)</option>
-                                <option value="absent">Absent</option>
-                            </select>
-                        </div>
-
-                        <!-- Certificate (Offline Only) -->
-                        <div class="col-12 col-md-6 col-lg-3 filter-offline-only" id="wrapper-certificate" style="display: none;">
-                            <label class="form-label fw-bold text-dark small" for="filter-certificate">
-                                <i class="ti ti-certificate-2 me-1 text-muted"></i> Certificate
-                            </label>
-                            <select id="filter-certificate" name="certificate" class="form-select rounded-3" disabled>
-                                <option value="all">All Status</option>
-                                <option value="yes">Available / Issued</option>
-                                <option value="no">Not Issued</option>
-                            </select>
-                        </div>
+                    <!-- Date Range Error Alert -->
+                    <div id="date-range-error" class="alert alert-danger py-2 px-3 mt-3 d-none d-flex align-items-center gap-2 rounded-3" role="alert">
+                        <i class="ti ti-alert-circle fs-3 flex-shrink-0"></i>
+                        <span><strong>Invalid Date Range:</strong> From Date cannot be later than To Date.</span>
                     </div>
                 </div>
             </div>
@@ -831,10 +850,74 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // 4. RESET FILTERS HANDLER
+    // 4. DATE RANGE VALIDATION (From Date must not be later than To Date)
+    const fromDateInput = document.getElementById('filter-from-date');
+    const toDateInput = document.getElementById('filter-to-date');
+    const dateRangeError = document.getElementById('date-range-error');
+
+    function validateDateRange() {
+        if (!fromDateInput || !toDateInput) return true;
+        const fromVal = fromDateInput.value;
+        const toVal = toDateInput.value;
+
+        if (fromVal && toVal && fromVal > toVal) {
+            if (dateRangeError) dateRangeError.classList.remove('d-none');
+            fromDateInput.classList.add('is-invalid');
+            toDateInput.classList.add('is-invalid');
+            return false;
+        } else {
+            if (dateRangeError) dateRangeError.classList.add('d-none');
+            fromDateInput.classList.remove('is-invalid');
+            toDateInput.classList.remove('is-invalid');
+            return true;
+        }
+    }
+
+    if (fromDateInput) {
+        fromDateInput.addEventListener('change', function () {
+            if (toDateInput && this.value) {
+                toDateInput.min = this.value;
+            } else if (toDateInput) {
+                toDateInput.removeAttribute('min');
+            }
+            validateDateRange();
+        });
+    }
+
+    if (toDateInput) {
+        toDateInput.addEventListener('change', function () {
+            if (fromDateInput && this.value) {
+                fromDateInput.max = this.value;
+            } else if (fromDateInput) {
+                fromDateInput.removeAttribute('max');
+            }
+            validateDateRange();
+        });
+    }
+
+    if (form) {
+        form.addEventListener('submit', function (e) {
+            if (!validateDateRange()) {
+                e.preventDefault();
+                fromDateInput.focus();
+                return false;
+            }
+        });
+    }
+
+    // 5. RESET FILTERS HANDLER
     if (resetBtn) {
         resetBtn.addEventListener('click', function () {
             form.reset();
+            if (dateRangeError) dateRangeError.classList.add('d-none');
+            if (fromDateInput) {
+                fromDateInput.classList.remove('is-invalid');
+                fromDateInput.removeAttribute('max');
+            }
+            if (toDateInput) {
+                toDateInput.classList.remove('is-invalid');
+                toDateInput.removeAttribute('min');
+            }
             setSource('online');
             setFormat('xlsx');
             updateSubClassifications('all');
@@ -845,6 +928,7 @@ document.addEventListener('DOMContentLoaded', function () {
     setSource('online');
     setFormat('xlsx');
     updateSubClassifications('all');
+    validateDateRange();
 });
 </script>
 @endsection
