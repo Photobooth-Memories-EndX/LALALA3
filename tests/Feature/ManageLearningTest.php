@@ -1209,4 +1209,77 @@ class ManageLearningTest extends TestCase
         $csvResponse = $this->actingAs($user)->get('/manage/learning/download/csv?classification_slug=basic-common-duties&type=category&slug=basic-common-duties');
         $csvResponse->assertStatus(200);
     }
+
+    public function test_playlist_display_refactor_in_datatable_and_category_column(): void
+    {
+        $user = User::where('role', '2')->first() ?? User::first();
+
+        // 1. Fetch playlist items from datatable
+        $response = $this->actingAs($user)->getJson('/manage/learning/datatable?draw=1&start=0&length=20&category=playlist');
+        $response->assertStatus(200);
+
+        $json = $response->json();
+        $this->assertIsArray($json['data']);
+
+        if (!empty($json['data'])) {
+            $firstRow = $json['data'][0];
+
+            // Category badge should contain inline "Playlist:" label and clickable link without green badge
+            $this->assertStringContainsString('Playlist:', $firstRow['category_badge']);
+            $this->assertStringContainsString('playlist-category', $firstRow['category_badge']);
+            $this->assertStringContainsString('playlist-cell-link', $firstRow['category_badge']);
+            $this->assertStringContainsString('/manage/learning/playlist/', $firstRow['category_badge']);
+            $this->assertStringNotContainsString('bg-green-lt', $firstRow['category_badge']);
+
+            // Learning title MUST NOT contain the playlist subtext
+            $this->assertStringNotContainsString('Playlist:', $firstRow['learning_title']);
+            $this->assertStringNotContainsString('ti-list-details', $firstRow['learning_title']);
+        }
+
+        // 2. Fetch non-playlist item (All Content) and verify it preserves existing badge
+        $allContentResponse = $this->actingAs($user)->getJson('/manage/learning/datatable?draw=1&start=0&length=10&category=all_content');
+        $allContentResponse->assertStatus(200);
+        $allContentJson = $allContentResponse->json();
+        if (!empty($allContentJson['data'])) {
+            $acRow = $allContentJson['data'][0];
+            $this->assertStringContainsString('All Content', $acRow['category_badge']);
+            $this->assertStringContainsString('bg-azure-lt', $acRow['category_badge']);
+            $this->assertStringNotContainsString('playlist-category', $acRow['category_badge']);
+        }
+    }
+
+    public function test_playlist_detail_page_global_and_participant_views(): void
+    {
+        $user = User::where('role', '2')->first() ?? User::first();
+        $playlist = \App\Models\TrainingPlan::first();
+
+        if ($playlist) {
+            // A. Global Playlist Detail View (no user_id)
+            $globalResponse = $this->actingAs($user)->get('/manage/learning/playlist/' . $playlist->id);
+            $globalResponse->assertStatus(200);
+            $globalResponse->assertViewIs('main.learning.playlist-detail');
+            $globalResponse->assertSee($playlist->title);
+            $globalResponse->assertSee('Global Playlist View');
+            $globalResponse->assertSee('Playlist Contents');
+
+            // B. Participant Context View (with user_id)
+            $pcu = \App\Models\PlaylistContentUser::where('trainingplan_id', $playlist->id)->first();
+            if ($pcu) {
+                $participantUser = User::find($pcu->user_id);
+                if ($participantUser) {
+                    $partResponse = $this->actingAs($user)->get('/manage/learning/playlist/' . $playlist->id . '?user_id=' . $participantUser->id . '&category_slug=iso-standard');
+                    $partResponse->assertStatus(200);
+                    $partResponse->assertViewIs('main.learning.playlist-detail');
+                    $partResponse->assertSee($participantUser->name);
+                    $partResponse->assertSee('Playlist Progress');
+                    $partResponse->assertSee(route('learning.manage.category', 'iso-standard'));
+                }
+            }
+
+            // C. 404 for invalid playlist id
+            $notFoundResponse = $this->actingAs($user)->get('/manage/learning/playlist/99999999');
+            $notFoundResponse->assertStatus(404);
+        }
+    }
 }
+

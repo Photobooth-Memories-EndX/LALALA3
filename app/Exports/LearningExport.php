@@ -93,8 +93,9 @@ class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
         $this->rowNumber++;
 
         $title = $row->content_title ?? '-';
-        if (!empty($row->playlist_title)) {
-            $title .= ' (Playlist: ' . $row->playlist_title . ')';
+        $category = $row->category_source ?? 'All Content';
+        if ($category === 'Playlist' && !empty($row->playlist_title)) {
+            $category = 'Playlist: ' . $row->playlist_title;
         }
 
         $rawType = (string) ($row->content_type ?? '');
@@ -110,7 +111,7 @@ class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
             $title,
             $type,
             $row->classification_name ?? '-',
-            $row->category_source ?? 'All Content',
+            $category,
             DurationFormatter::format($row->content_duration ?? null),
             $row->created_at,
             ($row->progress ?? 0) . '%',
@@ -284,8 +285,9 @@ class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
                 $r = $rowCount + 1;
 
                 $title = $row->content_title ?? '-';
-                if (!empty($row->playlist_title)) {
-                    $title .= ' (Playlist: ' . $row->playlist_title . ')';
+                $category = $row->category_source ?? 'All Content';
+                if ($category === 'Playlist' && !empty($row->playlist_title)) {
+                    $category = 'Playlist: ' . $row->playlist_title;
                 }
 
                 $rawType = (string) ($row->content_type ?? '');
@@ -303,7 +305,7 @@ class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
                     $title,
                     $type,
                     $row->classification_name ?? '-',
-                    $row->category_source ?? 'All Content',
+                    $category,
                     $duration,
                     $row->created_at,
                     $progress,

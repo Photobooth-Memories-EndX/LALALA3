@@ -486,6 +486,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
         Route::get('learning/all', [LearningManageController::class, 'all'])->name('learning.manage.all');
         Route::get('learning/category/{slug}', [LearningManageController::class, 'category'])->name('learning.manage.category');
         Route::get('learning/content/{slug}', [LearningManageController::class, 'content'])->name('learning.manage.content');
+        Route::get('learning/playlist/{id}', [LearningManageController::class, 'playlistDetail'])->name('learning.manage.playlist');
         Route::get('learning/record-detail/{type}/{id}', [LearningManageController::class, 'recordDetail'])->name('learning.manage.record-detail');
         Route::match(['put', 'patch'], 'learning/record/{type}/{id}', [LearningManageController::class, 'updateRecord'])->name('learning.manage.record.update');
         Route::post('learning/record/{type}/{id}/reset', [LearningManageController::class, 'resetRecord'])->name('learning.manage.record.reset');

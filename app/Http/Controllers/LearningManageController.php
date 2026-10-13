@@ -8,6 +8,7 @@ use App\Models\Classification;
 use App\Models\Content;
 use App\Models\ContentUser;
 use App\Models\PlaylistContentUser;
+use App\Models\TrainingPlan;
 use App\Models\User;
 use App\Services\Learning\LearningDatatableService;
 use App\Services\LearningHours\ActualLearningHourCalculator;
@@ -248,6 +249,105 @@ class LearningManageController extends Controller
             'Content: ' . ($contentModel->title ?? $slug),
             $slug
         ));
+    }
+
+    public function playlistDetail($id, Request $request)
+    {
+        $playlist = is_numeric($id)
+            ? TrainingPlan::with(['contents.classification'])->find($id)
+            : TrainingPlan::with(['contents.classification'])->where('slug', $id)->first();
+
+        if (!$playlist) {
+            abort(404, 'Playlist not found.');
+        }
+
+        $userId = $request->query('user_id');
+        $participant = null;
+        $pcuRecords = collect();
+
+        if ($userId) {
+            $participant = User::find($userId);
+            if ($participant) {
+                $pcuRecords = PlaylistContentUser::where('trainingplan_id', $playlist->id)
+                    ->where('user_id', $participant->id)
+                    ->get()
+                    ->keyBy('content_id');
+            }
+        }
+
+        $totalDurationSec = (int) ($playlist->total_duration_seconds ?? 0);
+        if ($totalDurationSec <= 0) {
+            $totalDurationSec = (int) $playlist->contents->sum(function ($c) {
+                return DurationFormatter::toSeconds($c->duration);
+            });
+        }
+        $totalDurationFormatted = DurationFormatter::fromSeconds($totalDurationSec);
+
+        $totalLearningHours = $playlist->learning_hours !== null && (float) $playlist->learning_hours > 0
+            ? (float) $playlist->learning_hours
+            : round($totalDurationSec / 3600, 2);
+
+        $classifications = $playlist->contents
+            ->pluck('classification.classification_name')
+            ->unique()
+            ->filter()
+            ->values();
+        $classificationName = $classifications->isNotEmpty()
+            ? $classifications->implode(', ')
+            : 'General Training';
+
+        $totalContents = $playlist->contents->count();
+
+        // If participant context is provided, calculate employee-specific statistics
+        $participantStats = null;
+        if ($participant) {
+            $finishedContentsCount = $playlist->contents->filter(function ($c) use ($pcuRecords) {
+                return $pcuRecords->get($c->id)?->isFinished();
+            })->count();
+
+            $totalProgressSum = $playlist->contents->sum(function ($c) use ($pcuRecords) {
+                return (int) ($pcuRecords->get($c->id)?->progress ?? 0);
+            });
+            $overallProgress = $totalContents > 0 ? (int) round($totalProgressSum / $totalContents) : 0;
+            $overallFinished = ($finishedContentsCount === $totalContents && $totalContents > 0);
+
+            $participantStats = [
+                'user' => $participant,
+                'finished_count' => $finishedContentsCount,
+                'overall_progress' => $overallProgress,
+                'is_finished' => $overallFinished,
+                'status_label' => $overallFinished ? 'Completed' : ($overallProgress > 0 ? 'Ongoing' : 'Not Started'),
+                'status_badge' => $overallFinished ? 'success' : ($overallProgress > 0 ? 'warning' : 'secondary'),
+            ];
+        }
+
+        // Determine smart back link
+        $categorySlug = $request->query('category_slug');
+        $backUrl = route('learning.manage.all');
+        $backLabel = 'Manage Learning';
+
+        if ($categorySlug) {
+            $categoryModel = Classification::where('slug', $categorySlug)->first();
+            $backUrl = route('learning.manage.category', $categorySlug);
+            $backLabel = 'Classification: ' . ($categoryModel ? $categoryModel->classification_name : ucwords(str_replace('-', ' ', $categorySlug)));
+        } elseif ($request->headers->get('referer') && !str_contains((string) $request->headers->get('referer'), $request->path())) {
+            $backUrl = $request->headers->get('referer');
+            $backLabel = 'Previous Page';
+        }
+
+        return view('main.learning.playlist-detail', [
+            'playlist' => $playlist,
+            'contents' => $playlist->contents,
+            'participant' => $participant,
+            'pcuRecords' => $pcuRecords,
+            'participantStats' => $participantStats,
+            'totalContents' => $totalContents,
+            'totalDurationFormatted' => $totalDurationFormatted,
+            'totalLearningHours' => $totalLearningHours,
+            'classificationName' => $classificationName,
+            'backUrl' => $backUrl,
+            'backLabel' => $backLabel,
+        ]);
     }
 
     public function searchEmployees(Request $request)

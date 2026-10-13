@@ -590,7 +590,27 @@ class LearningDatatableService
     private function categoryBadge($row): string
     {
         if ($row->category_source === 'Playlist') {
-            return '<span class="badge bg-green-lt text-green">Playlist</span>';
+            if (!empty($row->playlist_title) && !empty($row->trainingplan_id)) {
+                $urlParams = ['id' => $row->trainingplan_id];
+                if (!empty($row->user_id)) {
+                    $urlParams['user_id'] = $row->user_id;
+                }
+                if (!empty($row->classification_slug)) {
+                    $urlParams['category_slug'] = $row->classification_slug;
+                }
+                $url = route('learning.manage.playlist', $urlParams);
+
+                return '<div class="playlist-category text-start">'
+                    . '<span class="fw-semibold playlist-category-label">Playlist:</span> '
+                    . '<a href="' . e($url) . '" class="text-primary fw-semibold playlist-cell-link" title="' . e($row->playlist_title) . '">'
+                    . e($row->playlist_title)
+                    . '</a>'
+                    . '</div>';
+            }
+
+            return '<div class="playlist-category text-start">'
+                . '<span class="fw-semibold playlist-category-label">Playlist</span>'
+                . '</div>';
         }
 
         return '<span class="badge bg-azure-lt text-azure">All Content</span>';
@@ -624,15 +644,7 @@ class LearningDatatableService
             ? '<a href="' . route('learning.manage.content', $row->content_slug) . '" class="text-reset fw-semibold">' . e($row->content_title) . '</a>'
             : '<span class="fw-semibold">' . e($row->content_title) . '</span>';
 
-        $playlistSubtext = '';
-        if ($row->category_source === 'Playlist' && !empty($row->playlist_title)) {
-            $playlistSubtext = '<div class="text-muted small mt-1" style="font-size: 0.78rem;"><i class="ti ti-list-details me-1"></i>Playlist: ' . e($row->playlist_title) . '</div>';
-        }
-
-        return '<div class="text-start">'
-            . $titleLink
-            . $playlistSubtext
-            . '</div>';
+        return '<div class="text-start">' . $titleLink . '</div>';
     }
 
     private function classificationColumn($row): string
