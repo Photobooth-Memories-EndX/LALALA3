@@ -393,6 +393,10 @@ class LearningManageController extends Controller
 
     public function download(Request $request)
     {
+        if (class_exists(\Barryvdh\Debugbar\Facades\Debugbar::class)) {
+            \Barryvdh\Debugbar\Facades\Debugbar::disable();
+        }
+
         return (new LearningExport($request->all(), $request->input('type', ''), $request->input('slug', '')))
             ->download(now()->format('Ymd_His') . '_learning_data.xlsx');
     }

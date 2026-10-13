@@ -53,6 +53,9 @@ class LearningDatatableService
                 'cu.finish',
                 'cu.progress',
                 'cu.created_at',
+                'cu.updated_at',
+                'cu.completed_at',
+                'cu.learning_hours',
             ]);
 
         $hasPcuStatus = self::hasPcuStatusColumn();
@@ -70,6 +73,9 @@ class LearningDatatableService
                 'pcu.finish',
                 'pcu.progress',
                 'pcu.created_at',
+                'pcu.updated_at',
+                'pcu.completed_at',
+                'pcu.learning_hour as learning_hours',
             ]);
 
         // 1. Status Filter Pushdown
@@ -187,13 +193,19 @@ class LearningDatatableService
         }
 
         // 6. Classification Filter Pushdown (via indexed content_id)
-        $classSlug = $filters['classification_slug'] ?? ($type === 'category' ? $slug : null);
-        if (filled($classSlug)) {
-            $classContentIds = DB::table('content')
-                ->join('classification', 'classification.id', '=', 'content.classification_id')
-                ->where('classification.slug', $classSlug)
-                ->pluck('content.id')
-                ->toArray();
+        $classParam = $filters['classification_slug'] ?? ($filters['classification'] ?? ($filters['classification_id'] ?? ($type === 'category' ? $slug : null)));
+        if (filled($classParam) && $classParam !== 'all') {
+            $classContentQuery = DB::table('content')
+                ->join('classification', 'classification.id', '=', 'content.classification_id');
+            if (is_numeric($classParam)) {
+                $classContentQuery->where('classification.id', (int) $classParam);
+            } else {
+                $classContentQuery->where(function ($q) use ($classParam) {
+                    $q->where('classification.slug', $classParam)
+                      ->orWhere('classification.classification_name', $classParam);
+                });
+            }
+            $classContentIds = $classContentQuery->pluck('content.id')->toArray();
             $cuSelect->whereIn('cu.content_id', !empty($classContentIds) ? $classContentIds : [-1]);
             $pcuSelect->whereIn('pcu.content_id', !empty($classContentIds) ? $classContentIds : [-1]);
         }
@@ -239,17 +251,34 @@ class LearningDatatableService
         }
 
         // 8. Employee ID / NIP / Name Filter Pushdown (via indexed user_id)
-        $employeeParam = $filters['employee_id'] ?? ($filters['user_id'] ?? ($filters['employee'] ?? null));
-        if (filled($employeeParam) && $employeeParam !== 'all') {
-            $userQuery = DB::table('users')
-                ->where('id_emp', 'like', '%' . $employeeParam . '%')
-                ->orWhere('name', 'like', '%' . $employeeParam . '%');
-            if (is_numeric($employeeParam)) {
-                $userQuery->orWhere('id', (int) $employeeParam);
+        if (isset($filters['user_id']) && is_numeric($filters['user_id'])) {
+            $exactUserId = (int) $filters['user_id'];
+            $cuSelect->where('cu.user_id', $exactUserId);
+            $pcuSelect->where('pcu.user_id', $exactUserId);
+        } else {
+            $employeeParam = $filters['employee_id'] ?? ($filters['employee'] ?? null);
+            if (filled($employeeParam) && $employeeParam !== 'all') {
+                if (is_numeric($employeeParam)) {
+                    // Check if numeric ID matches user ID directly or exact id_emp
+                    $exactUserIds = DB::table('users')
+                        ->where('id', (int) $employeeParam)
+                        ->orWhere('id_emp', (string) $employeeParam)
+                        ->pluck('id')
+                        ->toArray();
+                    $cuSelect->whereIn('cu.user_id', !empty($exactUserIds) ? $exactUserIds : [-1]);
+                    $pcuSelect->whereIn('pcu.user_id', !empty($exactUserIds) ? $exactUserIds : [-1]);
+                } else {
+                    $userIds = DB::table('users')
+                        ->where(function ($q) use ($employeeParam) {
+                            $q->where('id_emp', 'like', '%' . $employeeParam . '%')
+                              ->orWhere('name', 'like', '%' . $employeeParam . '%');
+                        })
+                        ->pluck('id')
+                        ->toArray();
+                    $cuSelect->whereIn('cu.user_id', !empty($userIds) ? $userIds : [-1]);
+                    $pcuSelect->whereIn('pcu.user_id', !empty($userIds) ? $userIds : [-1]);
+                }
             }
-            $userIds = $userQuery->pluck('id')->toArray();
-            $cuSelect->whereIn('cu.user_id', !empty($userIds) ? $userIds : [-1]);
-            $pcuSelect->whereIn('pcu.user_id', !empty($userIds) ? $userIds : [-1]);
         }
 
         // 9. Learning Title Filter Pushdown (via indexed content_id and trainingplan_id)
@@ -395,12 +424,16 @@ class LearningDatatableService
                 'unified.finish',
                 'unified.progress',
                 'unified.created_at',
+                'unified.updated_at',
+                'unified.completed_at',
+                'unified.learning_hours',
                 'u.id_emp',
                 'u.id_emp as user_id_emp',
                 'u.name as employee_name',
                 'u.name as user_name',
                 'u.department as user_department',
                 'u.team as user_team',
+                'u.company_name as user_company',
                 'u.ssohash as user_ssohash',
                 'c.title as content_title',
                 'c.slug as content_slug',
