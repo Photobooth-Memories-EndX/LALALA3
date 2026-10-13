@@ -24,19 +24,44 @@ document.addEventListener('DOMContentLoaded', function () {
     const btnApplyMoreFilters = document.getElementById('btnApplyMoreScheduleFilters');
     const btnResetMoreFilters = document.getElementById('btnResetMoreScheduleFilters');
 
-    // --- Update Export URL with active filters ---
-    function updateExportUrl() {
-        if (!btnExport) return;
+    // --- Update Export URLs with active filters (Excel, PDF, JPG) ---
+    function updateExportUrls() {
         const params = new URLSearchParams();
-        if (categorySelect?.value) params.set('category', categorySelect.value);
-        if (statusSelect?.value) params.set('status', statusSelect.value);
-        if (monthSelect?.value) params.set('month', monthSelect.value);
-        if (yearSelect?.value) params.set('year', yearSelect.value);
-        if (searchInput?.value) params.set('search', searchInput.value.trim());
+        const category = (categorySelect?.value || modalFilterCategory?.value || '').trim();
+        const status = (statusSelect?.value || modalFilterStatus?.value || '').trim();
+        const month = (monthSelect?.value || '').trim();
+        const year = (yearSelect?.value || '').trim();
+        const search = (searchInput?.value || '').trim();
 
-        const baseUrl = '{{ route("manage.training.export") }}';
-        btnExport.href = params.toString() ? `${baseUrl}?${params.toString()}` : baseUrl;
+        if (category && category !== 'all') params.set('category', category);
+        if (status && status !== 'all') params.set('status', status);
+        if (month && month !== 'all') params.set('month', month);
+        if (year && year !== 'all') params.set('year', year);
+        if (search) {
+            params.set('search', search);
+            params.set('q', search);
+        }
+
+        const queryString = params.toString() ? '?' + params.toString() : '';
+
+        const btnExcel = document.getElementById('btnExportExcel');
+        const btnPdf = document.getElementById('btnExportPdf');
+        const btnJpg = document.getElementById('btnExportJpg');
+        const legacyBtn = document.getElementById('btnExportSchedule');
+
+        const excelBase = '{{ route("manage.training.export.excel") }}';
+        const pdfBase = '{{ route("manage.training.export.pdf") }}';
+        const jpgBase = '{{ route("manage.training.export.jpg") }}';
+        const legacyBase = '{{ route("manage.training.export") }}';
+
+        if (btnExcel) btnExcel.href = excelBase + queryString;
+        if (btnPdf) btnPdf.href = pdfBase + queryString;
+        if (btnJpg) btnJpg.href = jpgBase + queryString;
+        if (legacyBtn && legacyBtn.tagName === 'A') legacyBtn.href = legacyBase + queryString;
     }
+
+    // Call initially on page load
+    updateExportUrls();
 
     // --- Filter Logic ---
     function filterScheduleTable() {
@@ -65,8 +90,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const matchesSearch = !query || rowText.includes(query);
             const matchesCategory = !category || rowCat === category;
-            const matchesStatus = !status || rowStatus === status;
-            const matchesMonth = !month || rowMonth === month;
+            const matchesStatus = !status || rowStatus === status || (row.getAttribute('data-status-label') || '').toLowerCase() === status.toLowerCase();
+            const matchesMonth = !month || rowMonth === month || parseInt(rowMonth, 10) === parseInt(month, 10);
             const matchesYear = !year || rowYear === year;
             const matchesInstructor = !instructor || rowInstructor.includes(instructor);
             const matchesLocation = !location || rowLocation.includes(location);
@@ -87,8 +112,8 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
-        // Update Export URL
-        updateExportUrl();
+        // Update Export URLs
+        updateExportUrls();
 
         // Update Total Badge in Header Hero Card
         const totalCount = document.getElementById('scheduleTotalCount');
@@ -117,13 +142,10 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Form submit listener
+    // Form submit listener: allow GET request submission so active query parameters apply across all paginated pages
     const filterForm = document.getElementById('scheduleFilterForm');
     if (filterForm) {
-        filterForm.addEventListener('submit', function (e) {
-            e.preventDefault();
-            filterScheduleTable();
-        });
+        // Native GET submission preserves all active parameters in URL
     }
 
     // Attach quick filter event listeners & sync with modal
@@ -152,7 +174,11 @@ document.addEventListener('DOMContentLoaded', function () {
             if (modalFilterStatus && statusSelect) {
                 statusSelect.value = modalFilterStatus.value;
             }
-            filterScheduleTable();
+            if (filterForm) {
+                filterForm.submit();
+            } else {
+                filterScheduleTable();
+            }
         });
     }
 
@@ -177,6 +203,10 @@ document.addEventListener('DOMContentLoaded', function () {
     if (btnReset) {
         btnReset.addEventListener('click', function (e) {
             e.preventDefault();
+            if (window.location.search) {
+                window.location.href = "{{ route('manage.training-schedule.index') }}";
+                return;
+            }
             if (searchInput) searchInput.value = '';
             if (categorySelect) categorySelect.value = '';
             if (statusSelect) statusSelect.value = '';
@@ -189,6 +219,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (modalFilterFromDate) modalFilterFromDate.value = '';
             if (modalFilterToDate) modalFilterToDate.value = '';
             filterScheduleTable();
+            updateExportUrls();
         });
     }
 

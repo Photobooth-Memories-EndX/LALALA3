@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\TrainingScheduleExport;
 use App\Models\Classification;
 use App\Models\OfflineTraining;
 use App\Models\OfflineTrainingOption;
@@ -11,6 +12,7 @@ use App\Services\Record\OfflineOptionService;
 use App\Services\Record\TrainingOptionManagementService;
 use App\Services\Schedule\OfflineTrainingCompletionService;
 use App\Services\Schedule\OfflineTrainingRegistrationService;
+use App\Services\Schedule\TrainingScheduleImageService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -18,6 +20,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Str;
+use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class OfflineTrainingController extends Controller
@@ -33,9 +36,9 @@ class OfflineTrainingController extends Controller
         $this->optionManager = $optionManager;
     }
     /**
-     * Display Manage Training Schedule page with live records and live participant tracking.
+     * Build base query for OfflineTraining with Category, Status, Month, Year, and Search filters.
      */
-    public function index(Request $request)
+    public function buildFilteredScheduleQuery(Request $request)
     {
         $query = OfflineTraining::with(['registrations.user', 'creator'])
             ->withCount([
@@ -58,23 +61,33 @@ class OfflineTrainingController extends Controller
             ]);
 
         // Filter Category
-        if ($request->filled('category')) {
+        if ($request->filled('category') && $request->input('category') !== 'all') {
             $query->where('category', $request->input('category'));
         }
 
         // Filter Status
-        if ($request->filled('status')) {
-            $statusVal = $request->input('status');
+        if ($request->filled('status') && $request->input('status') !== 'all') {
+            $statusVal = strtolower($request->input('status'));
             $statusMap = [
                 'open'    => 'Open Registration',
                 'running' => 'Running',
                 'closed'  => 'Closed',
+                'draft'   => 'Draft',
             ];
-            $query->where('status', $statusMap[strtolower($statusVal)] ?? $statusVal);
+            $query->where('status', $statusMap[$statusVal] ?? $request->input('status'));
         }
 
-        // Filter Month
-        if ($request->filled('month') && $request->input('month') !== 'all') {
+        // Filter Month / Period / Week
+        $monthVal = $request->input('month');
+        $periodVal = $request->input('period');
+        if (in_array(strtolower((string)$monthVal), ['this_week', 'weekly'], true) || in_array(strtolower((string)$periodVal), ['this_week', 'weekly'], true)) {
+            $startOfWeek = Carbon::now()->startOfWeek();
+            $endOfWeek = Carbon::now()->endOfWeek();
+            $query->where(function ($q) use ($startOfWeek, $endOfWeek) {
+                $q->whereBetween('start_date', [$startOfWeek, $endOfWeek])
+                  ->orWhereBetween('end_date', [$startOfWeek, $endOfWeek]);
+            });
+        } elseif ($request->filled('month') && $request->input('month') !== 'all') {
             $month = (int) $request->input('month');
             $query->where(function ($q) use ($month) {
                 $q->whereMonth('start_date', $month)
@@ -107,9 +120,64 @@ class OfflineTrainingController extends Controller
             });
         }
 
-        $trainings = $query->latest()
-            ->paginate(10)
-            ->withQueryString();
+        return $query->latest();
+    }
+
+    /**
+     * Collect human-readable active filter labels for report headers.
+     */
+    protected function collectActiveFilterLabels(Request $request): array
+    {
+        $labels = [];
+
+        if ($request->filled('category') && $request->input('category') !== 'all') {
+            $labels['Category'] = $request->input('category');
+        }
+
+        if ($request->filled('status') && $request->input('status') !== 'all') {
+            $statusMap = [
+                'open'    => 'Open Registration',
+                'running' => 'Running',
+                'closed'  => 'Closed',
+                'draft'   => 'Draft',
+            ];
+            $labels['Status'] = $statusMap[strtolower($request->input('status'))] ?? $request->input('status');
+        }
+
+        $monthVal = $request->input('month');
+        $periodVal = $request->input('period');
+        if (in_array(strtolower((string)$monthVal), ['this_week', 'weekly'], true) || in_array(strtolower((string)$periodVal), ['this_week', 'weekly'], true)) {
+            $labels['Period'] = 'This Week';
+        } elseif ($request->filled('month') && $request->input('month') !== 'all') {
+            $monthNum = (int) $request->input('month');
+            if ($monthNum >= 1 && $monthNum <= 12) {
+                $labels['Month'] = Carbon::create(2026, $monthNum, 1)->format('F');
+            }
+        }
+
+        if ($request->filled('year') && $request->input('year') !== 'all') {
+            $labels['Year'] = $request->input('year');
+        }
+
+        $search = $request->input('q') ?? $request->input('search');
+        if (filled($search)) {
+            $labels['Search'] = trim($search);
+        }
+
+        return $labels;
+    }
+
+    /**
+     * Display Manage Training Schedule page with live records and live participant tracking.
+     */
+    public function index(Request $request)
+    {
+        $query = $this->buildFilteredScheduleQuery($request);
+
+        $schedules = $query->paginate(10)->withQueryString();
+
+        $trainings = $schedules;
+        $totalSchedules = $schedules->total();
 
         $selectedTrainingId = $request->query('training');
         $selectedTraining = null;
@@ -120,9 +188,16 @@ class OfflineTrainingController extends Controller
             $selectedTraining = $trainings->first();
         }
 
-        return view('main.manage-training-schedule.index', compact('trainings', 'selectedTraining'));
+        $viewName = view()->exists('manage.training-schedule.index')
+            ? 'manage.training-schedule.index'
+            : 'main.manage-training-schedule.index';
+
+        return view($viewName, compact('trainings', 'selectedTraining', 'schedules', 'totalSchedules'));
     }
 
+    /**
+     * Gather master classifications, dynamic options, and parent-child mappings for schedule forms.
+     */
     /**
      * Gather master classifications, dynamic options, and parent-child mappings for schedule forms.
      */
@@ -130,11 +205,30 @@ class OfflineTrainingController extends Controller
     {
         $classifications = Classification::orderBy('classification_name', 'asc')->get();
 
-        // Active master options from offline_training_options
-        $types = $this->offlineOptionService->getOptions(OfflineOptionService::TYPE_TYPE);
-        $categories = $this->offlineOptionService->getOptions(OfflineOptionService::TYPE_CATEGORY);
-        $levels = $this->offlineOptionService->getOptions(OfflineOptionService::TYPE_LEVEL);
-        $subClassifications = $this->offlineOptionService->getOptions(OfflineOptionService::TYPE_SUB_CLASSIFICATION);
+        // 1. Single grouped query to fetch all required master options efficiently
+        $targetTypes = [
+            OfflineOptionService::TYPE_COURSE_NAME,
+            OfflineOptionService::TYPE_SUB_COURSE_NAME,
+            OfflineOptionService::TYPE_INSTRUCTOR,
+            OfflineOptionService::TYPE_VENUE,
+            OfflineOptionService::TYPE_TARGET_EMPLOYEE,
+            OfflineOptionService::TYPE_PREREQUISITES,
+            OfflineOptionService::TYPE_TYPE,
+            OfflineOptionService::TYPE_CATEGORY,
+            OfflineOptionService::TYPE_LEVEL,
+            OfflineOptionService::TYPE_SUB_CLASSIFICATION,
+            'title',
+            'location',
+            'target_audience',
+            'requirements',
+        ];
+
+        $optionsGrouped = OfflineTrainingOption::active()
+            ->whereIn('option_type', $targetTypes)
+            ->orderBy('sort_order', 'asc')
+            ->orderBy('value', 'asc')
+            ->get()
+            ->groupBy('option_type');
 
         // Sub Classification mappings per Main Classification from offline_trainings records
         $subClassificationMap = OfflineTraining::whereNotNull('main_classification')
@@ -150,13 +244,15 @@ class OfflineTrainingController extends Controller
             })
             ->all();
 
-        // Merge any distinct sub-classifications from offline_trainings
+        // Sub-classifications
+        $subClassifications = $optionsGrouped->get(OfflineOptionService::TYPE_SUB_CLASSIFICATION, collect())
+            ->unique('value')
+            ->values();
         $existingSubClassNames = OfflineTraining::whereNotNull('sub_classification')
             ->where('sub_classification', '!=', '')
             ->distinct()
             ->pluck('sub_classification')
             ->all();
-
         $subClassValues = $subClassifications->pluck('value')->all();
         foreach ($existingSubClassNames as $sName) {
             $sTrimmed = trim((string) $sName);
@@ -171,7 +267,10 @@ class OfflineTrainingController extends Controller
         }
         $subClassifications = $subClassifications->sortBy('value')->values();
 
-        // Merge any categories from offline_trainings and standard baseline presets
+        // Categories
+        $categories = $optionsGrouped->get(OfflineOptionService::TYPE_CATEGORY, collect())
+            ->unique('value')
+            ->values();
         $existingCatNames = OfflineTraining::whereNotNull('category')
             ->where('category', '!=', '')
             ->distinct()
@@ -197,7 +296,10 @@ class OfflineTrainingController extends Controller
         }
         $categories = $categories->sortBy('value')->values();
 
-        // Ensure standard levels
+        // Levels
+        $levels = $optionsGrouped->get(OfflineOptionService::TYPE_LEVEL, collect())
+            ->unique('value')
+            ->values();
         $lvlValues = $levels->pluck('value')->all();
         foreach (['Basic', 'Intermediate', 'Advanced', 'All'] as $lName) {
             if (!in_array($lName, $lvlValues, true)) {
@@ -210,7 +312,10 @@ class OfflineTrainingController extends Controller
             }
         }
 
-        // Ensure standard types
+        // Types
+        $types = $optionsGrouped->get(OfflineOptionService::TYPE_TYPE, collect())
+            ->unique('value')
+            ->values();
         $typeValues = $types->pluck('value')->all();
         foreach (['In-House', 'Public', 'Workshop', 'Certification'] as $tName) {
             if (!in_array($tName, $typeValues, true)) {
@@ -223,7 +328,197 @@ class OfflineTrainingController extends Controller
             }
         }
 
+        // Field 1: Training Title (course_name)
+        $titleOptions = $optionsGrouped->get(OfflineOptionService::TYPE_COURSE_NAME, collect())
+            ->merge($optionsGrouped->get('title', collect()))
+            ->unique('value')
+            ->values();
+        $existingTitles = OfflineTraining::whereNotNull('title')
+            ->where('title', '!=', '')
+            ->distinct()
+            ->pluck('title')
+            ->all();
+        $existingCourses = OfflineTraining::whereNotNull('course_name')
+            ->where('course_name', '!=', '')
+            ->distinct()
+            ->pluck('course_name')
+            ->all();
+        $titleValues = $titleOptions->pluck('value')->all();
+        foreach (array_unique(array_merge($existingTitles, $existingCourses)) as $tName) {
+            $tTrimmed = trim((string) $tName);
+            if ($tTrimmed !== '' && !in_array($tTrimmed, $titleValues, true)) {
+                $titleOptions->push((object)[
+                    'id'    => null,
+                    'value' => $tTrimmed,
+                    'text'  => $tTrimmed,
+                ]);
+                $titleValues[] = $tTrimmed;
+            }
+        }
+        $titleOptions = $titleOptions->sortBy('value')->values();
+
+        // Field 2: Sub Course Name
+        $subCourseOptions = $optionsGrouped->get(OfflineOptionService::TYPE_SUB_COURSE_NAME, collect())
+            ->unique('value')
+            ->values();
+        $existingSubCourses = OfflineTraining::whereNotNull('sub_course_name')
+            ->where('sub_course_name', '!=', '')
+            ->distinct()
+            ->pluck('sub_course_name')
+            ->all();
+        $subCourseValues = $subCourseOptions->pluck('value')->all();
+        foreach ($existingSubCourses as $scName) {
+            $scTrimmed = trim((string) $scName);
+            if ($scTrimmed !== '' && !in_array($scTrimmed, $subCourseValues, true)) {
+                $subCourseOptions->push((object)[
+                    'id'    => null,
+                    'value' => $scTrimmed,
+                    'text'  => $scTrimmed,
+                ]);
+                $subCourseValues[] = $scTrimmed;
+            }
+        }
+        $subCourseOptions = $subCourseOptions->sortBy('value')->values();
+
+        // Field 3: Instructor / Trainer
+        $instructorOptions = $optionsGrouped->get(OfflineOptionService::TYPE_INSTRUCTOR, collect())
+            ->unique('value')
+            ->values();
+        $existingInstructors = OfflineTraining::whereNotNull('instructor')
+            ->where('instructor', '!=', '')
+            ->distinct()
+            ->pluck('instructor')
+            ->all();
+        $instructorValues = $instructorOptions->pluck('value')->all();
+        foreach ($existingInstructors as $iName) {
+            $iTrimmed = trim((string) $iName);
+            if ($iTrimmed !== '' && !in_array($iTrimmed, $instructorValues, true)) {
+                $instructorOptions->push((object)[
+                    'id'    => null,
+                    'value' => $iTrimmed,
+                    'text'  => $iTrimmed,
+                ]);
+                $instructorValues[] = $iTrimmed;
+            }
+        }
+        $instructorOptions = $instructorOptions->sortBy('value')->values();
+
+        // Field 4: Location / Venue
+        $locationOptions = $optionsGrouped->get(OfflineOptionService::TYPE_VENUE, collect())
+            ->merge($optionsGrouped->get('location', collect()))
+            ->unique('value')
+            ->values();
+        $existingLocations = OfflineTraining::whereNotNull('location')
+            ->where('location', '!=', '')
+            ->distinct()
+            ->pluck('location')
+            ->all();
+        $existingVenues = OfflineTraining::whereNotNull('venue')
+            ->where('venue', '!=', '')
+            ->distinct()
+            ->pluck('venue')
+            ->all();
+        $locationValues = $locationOptions->pluck('value')->all();
+        foreach (array_unique(array_merge($existingLocations, $existingVenues)) as $lName) {
+            $lTrimmed = trim((string) $lName);
+            if ($lTrimmed !== '' && !in_array($lTrimmed, $locationValues, true)) {
+                $locationOptions->push((object)[
+                    'id'    => null,
+                    'value' => $lTrimmed,
+                    'text'  => $lTrimmed,
+                ]);
+                $locationValues[] = $lTrimmed;
+            }
+        }
+        $locationOptions = $locationOptions->sortBy('value')->values();
+
+        // Field 5: Target Employee
+        $targetEmployeeOptions = $optionsGrouped->get(OfflineOptionService::TYPE_TARGET_EMPLOYEE, collect())
+            ->merge($optionsGrouped->get('target_audience', collect()))
+            ->unique('value')
+            ->values();
+        $existingTargets = OfflineTraining::whereNotNull('target_employee')
+            ->where('target_employee', '!=', '')
+            ->distinct()
+            ->pluck('target_employee')
+            ->all();
+        $defaultTargets = [
+            'All Employees',
+            'Staff to Supervisor, All Departments',
+            'Specialist, Engineer & Data Analyst',
+            'All Plant Operations & Maintenance Personnel',
+            'Staff, Officers, and Section Heads',
+            'Supervisor / Section Head',
+            'Manager & Above',
+        ];
+        $targetValues = $targetEmployeeOptions->pluck('value')->all();
+        foreach (array_unique(array_merge($existingTargets, $defaultTargets)) as $tgtName) {
+            $tgtTrimmed = trim((string) $tgtName);
+            if ($tgtTrimmed !== '' && !in_array($tgtTrimmed, $targetValues, true)) {
+                $targetEmployeeOptions->push((object)[
+                    'id'    => null,
+                    'value' => $tgtTrimmed,
+                    'text'  => $tgtTrimmed,
+                ]);
+                $targetValues[] = $tgtTrimmed;
+            }
+        }
+        $targetEmployeeOptions = $targetEmployeeOptions->sortBy('value')->values();
+
+        // Field 6: Prerequisites
+        $prerequisiteOptions = $optionsGrouped->get(OfflineOptionService::TYPE_PREREQUISITES, collect())
+            ->merge($optionsGrouped->get('requirements', collect()))
+            ->unique('value')
+            ->values();
+        $existingPrereqs = OfflineTraining::whereNotNull('prerequisites')
+            ->where('prerequisites', '!=', '')
+            ->distinct()
+            ->pluck('prerequisites')
+            ->all();
+        $defaultPrereqs = [
+            'None',
+            'Minimum 1 year tenure at PT Krakatau Posco',
+            'Basic Microsoft Excel proficiency',
+            'Valid PTKP ID badge and completed basic safety induction',
+        ];
+        $prereqValues = $prerequisiteOptions->pluck('value')->all();
+        foreach (array_unique(array_merge($existingPrereqs, $defaultPrereqs)) as $prqName) {
+            $prqTrimmed = trim((string) $prqName);
+            if ($prqTrimmed !== '' && !in_array($prqTrimmed, $prereqValues, true)) {
+                $prerequisiteOptions->push((object)[
+                    'id'    => null,
+                    'value' => $prqTrimmed,
+                    'text'  => $prqTrimmed,
+                ]);
+                $prereqValues[] = $prqTrimmed;
+            }
+        }
+        $prerequisiteOptions = $prerequisiteOptions->sortBy('value')->values();
+
+        // Auto-seed target_employee and prerequisites baseline into offline_training_options if empty
+        if (!OfflineTrainingOption::where('option_type', OfflineOptionService::TYPE_TARGET_EMPLOYEE)->exists()) {
+            foreach ($defaultTargets as $dTgt) {
+                $this->offlineOptionService->registerOption(OfflineOptionService::TYPE_TARGET_EMPLOYEE, $dTgt, null, 'system');
+            }
+        }
+        if (!OfflineTrainingOption::where('option_type', OfflineOptionService::TYPE_PREREQUISITES)->exists()) {
+            foreach ($defaultPrereqs as $dPrq) {
+                $this->offlineOptionService->registerOption(OfflineOptionService::TYPE_PREREQUISITES, $dPrq, null, 'system');
+            }
+        }
+
         $options = [
+            'title'              => $titleOptions,
+            'course_name'        => $titleOptions,
+            'sub_course_name'    => $subCourseOptions,
+            'instructor'         => $instructorOptions,
+            'instructor_name'    => $instructorOptions,
+            'location'           => $locationOptions,
+            'venue'              => $locationOptions,
+            'target_employee'    => $targetEmployeeOptions,
+            'target_audience'    => $targetEmployeeOptions,
+            'prerequisites'      => $prerequisiteOptions,
+            'requirements'       => $prerequisiteOptions,
             'type'               => $types,
             'category'           => $categories,
             'level'              => $levels,
@@ -243,7 +538,10 @@ class OfflineTrainingController extends Controller
     public function create()
     {
         $formData = $this->getScheduleFormData();
-        return view('main.manage-training-schedule.create', $formData);
+        $viewName = view()->exists('manage.training-schedule.create')
+            ? 'manage.training-schedule.create'
+            : 'main.manage-training-schedule.create';
+        return view($viewName, $formData);
     }
 
     /**
@@ -251,28 +549,30 @@ class OfflineTrainingController extends Controller
      */
     public function store(Request $request)
     {
+        $isDraft = $request->input('action') === 'draft';
+
         $validated = $request->validate([
             'title'               => ['required', 'string', 'max:255'],
             'sub_course_name'     => ['nullable', 'string', 'max:255'],
             'main_classification' => ['nullable', 'string', 'max:100'],
             'sub_classification'  => ['nullable', 'string', 'max:255'],
-            'category'            => ['required', 'string', 'max:100'],
+            'category'            => [$isDraft ? 'nullable' : 'required', 'string', 'max:100'],
             'type'                => ['nullable', 'string', 'max:50'],
             'level'               => ['nullable', 'string', 'max:50'],
             'code'                => ['nullable', 'string', 'max:100'],
             'training_code'       => ['nullable', 'string', 'max:100'],
-            'instructor'          => ['required', 'string', 'max:255'],
-            'location'            => ['required', 'string', 'max:255'],
+            'instructor'          => [$isDraft ? 'nullable' : 'required', 'string', 'max:255'],
+            'location'            => [$isDraft ? 'nullable' : 'required', 'string', 'max:255'],
             'target_employee'     => ['nullable', 'string', 'max:255'],
             'prerequisites'       => ['nullable', 'string', 'max:255'],
-            'quota'               => ['required', 'integer', 'min:1'],
-            'status'              => ['required', 'string', 'in:Open Registration,Running,Closed'],
-            'start_date'              => ['required', 'date'],
+            'quota'               => [$isDraft ? 'nullable' : 'required', 'integer', 'min:1'],
+            'status'              => ['nullable', 'string', 'in:Open Registration,Running,Closed,Draft,Open'],
+            'start_date'              => [$isDraft ? 'nullable' : 'required', 'date'],
             'end_date'                => ['nullable', 'date'],
             'registration_close_date' => ['nullable', 'date', 'before_or_equal:start_date'],
             'registration_close_time' => ['nullable', 'date_format:H:i'],
-            'start_time'              => ['required'],
-            'end_time'                => ['required'],
+            'start_time'              => [$isDraft ? 'nullable' : 'required'],
+            'end_time'                => [$isDraft ? 'nullable' : 'required'],
             'description'             => ['nullable', 'string'],
             'objectives'              => ['nullable', 'string'],
             'learning_objectives'     => ['nullable', 'string'],
@@ -300,45 +600,54 @@ class OfflineTrainingController extends Controller
 
         $trainingCode = $request->filled('code') ? $request->input('code') : $request->input('training_code');
         $objectives = $request->filled('objectives') ? $request->input('objectives') : $request->input('learning_objectives');
-        $endDate = $request->filled('end_date') ? $request->input('end_date') : $request->input('start_date');
-        $registrationCloseDate = $request->filled('registration_close_date') ? $request->input('registration_close_date') : $request->input('start_date');
+        $startDate = $request->input('start_date') ?: ($isDraft ? Carbon::today()->format('Y-m-d') : null);
+        $endDate = $request->filled('end_date') ? $request->input('end_date') : $startDate;
+        $registrationCloseDate = $request->filled('registration_close_date') ? $request->input('registration_close_date') : $startDate;
         $registrationCloseTime = $request->filled('registration_close_time') ? $request->input('registration_close_time') : '23:59';
         if (strlen($registrationCloseTime) === 5) {
             $registrationCloseTime .= ':00';
         }
 
-        // Combine date and time to check if registration deadline is active
-        $closeDatetime = Carbon::parse($registrationCloseDate . ' ' . substr($registrationCloseTime, 0, 5));
-        $status = $request->input('status', 'Open Registration');
-        if ($status === 'Open Registration' && Carbon::now()->gt($closeDatetime)) {
-            $status = 'Closed';
+        if ($isDraft) {
+            $status = 'Draft';
+        } else {
+            $status = $request->input('status', 'Open Registration');
+            if ($status === 'Open') {
+                $status = 'Open Registration';
+            }
+            if ($registrationCloseDate) {
+                $closeDatetime = Carbon::parse($registrationCloseDate . ' ' . substr($registrationCloseTime, 0, 5));
+                if ($status === 'Open Registration' && Carbon::now()->gt($closeDatetime)) {
+                    $status = 'Closed';
+                }
+            }
         }
 
         $training = OfflineTraining::create([
             'title'                   => $request->input('title'),
             'course_name'             => $request->input('title'),
             'sub_course_name'         => $request->input('sub_course_name'),
-            'category'                => $request->input('category'),
+            'category'                => $request->input('category', 'General') ?: 'General',
             'type'                    => $request->input('type'),
             'level'                   => $request->input('level'),
             'main_classification'     => $request->input('main_classification'),
             'sub_classification'      => $request->input('sub_classification'),
             'training_code'           => $trainingCode,
             'batch'                   => $trainingCode,
-            'instructor'              => $request->input('instructor'),
-            'location'                => $request->input('location'),
-            'venue'                   => $request->input('location'),
+            'instructor'              => $request->input('instructor', '-') ?: '-',
+            'location'                => $request->input('location', '-') ?: '-',
+            'venue'                   => $request->input('location', '-') ?: '-',
             'target_employee'         => $request->input('target_employee'),
             'prerequisites'           => $request->input('prerequisites'),
-            'quota'                   => (int) $request->input('quota'),
+            'quota'                   => (int) ($request->input('quota') ?: 30),
             'status'                  => $status,
-            'start_date'              => $request->input('start_date'),
+            'start_date'              => $startDate,
             'end_date'                => $endDate,
             'finish_date'             => $endDate,
             'registration_close_date' => $registrationCloseDate,
             'registration_close_time' => $registrationCloseTime,
-            'start_time'              => $request->input('start_time'),
-            'end_time'                => $request->input('end_time'),
+            'start_time'              => $request->input('start_time', '08:00') ?: '08:00',
+            'end_time'                => $request->input('end_time', '16:00') ?: '16:00',
             'description'             => $request->input('description'),
             'learning_objectives'     => $objectives,
             'syllabus'                => $syllabus,
@@ -347,16 +656,21 @@ class OfflineTrainingController extends Controller
 
         // Auto sync options to offline_training_options for consistent master options
         $this->offlineOptionService->ensureOptionsFromTraining([
+            'course_name'        => $request->input('title'),
+            'sub_course_name'    => $request->input('sub_course_name'),
             'type'               => $request->input('type'),
             'category'           => $request->input('category'),
             'level'              => $request->input('level'),
             'sub_classification' => $request->input('sub_classification'),
             'instructor'         => $request->input('instructor'),
             'venue'              => $request->input('location'),
+            'target_employee'    => $request->input('target_employee'),
+            'prerequisites'      => $request->input('prerequisites'),
         ], 'manual', Auth::id());
 
+        $statusMsg = $isDraft ? 'saved as draft' : 'successfully created';
         return redirect()->route('manage.training-schedule.index')
-            ->with('success', 'Training schedule "' . $training->title . '" has been successfully created.');
+            ->with('success', 'Training schedule "' . $training->title . '" has been ' . $statusMsg . '.');
     }
 
     /**
@@ -367,7 +681,11 @@ class OfflineTrainingController extends Controller
         $training = $id instanceof OfflineTraining ? $id : OfflineTraining::findOrFail($id);
         $formData = $this->getScheduleFormData($training);
 
-        return view('main.manage-training-schedule.edit', array_merge(['training' => $training], $formData));
+        $viewName = view()->exists('manage.training-schedule.edit')
+            ? 'manage.training-schedule.edit'
+            : 'main.manage-training-schedule.edit';
+
+        return view($viewName, array_merge(['training' => $training], $formData));
     }
 
     /**
@@ -376,29 +694,30 @@ class OfflineTrainingController extends Controller
     public function update(Request $request, $id)
     {
         $training = $id instanceof OfflineTraining ? $id : OfflineTraining::findOrFail($id);
+        $isDraft = $request->input('action') === 'draft';
 
         $validated = $request->validate([
             'title'               => ['required', 'string', 'max:255'],
             'sub_course_name'     => ['nullable', 'string', 'max:255'],
             'main_classification' => ['nullable', 'string', 'max:100'],
             'sub_classification'  => ['nullable', 'string', 'max:255'],
-            'category'            => ['required', 'string', 'max:100'],
+            'category'            => [$isDraft ? 'nullable' : 'required', 'string', 'max:100'],
             'type'                => ['nullable', 'string', 'max:50'],
             'level'               => ['nullable', 'string', 'max:50'],
             'code'                => ['nullable', 'string', 'max:100'],
             'training_code'       => ['nullable', 'string', 'max:100'],
-            'instructor'          => ['required', 'string', 'max:255'],
-            'location'            => ['required', 'string', 'max:255'],
+            'instructor'          => [$isDraft ? 'nullable' : 'required', 'string', 'max:255'],
+            'location'            => [$isDraft ? 'nullable' : 'required', 'string', 'max:255'],
             'target_employee'     => ['nullable', 'string', 'max:255'],
             'prerequisites'       => ['nullable', 'string', 'max:255'],
-            'quota'               => ['required', 'integer', 'min:1'],
-            'status'              => ['required', 'string', 'in:Open Registration,Running,Closed'],
-            'start_date'              => ['required', 'date'],
+            'quota'               => [$isDraft ? 'nullable' : 'required', 'integer', 'min:1'],
+            'status'              => ['nullable', 'string', 'in:Open Registration,Running,Closed,Draft,Open'],
+            'start_date'              => [$isDraft ? 'nullable' : 'required', 'date'],
             'end_date'                => ['nullable', 'date'],
             'registration_close_date' => ['nullable', 'date', 'before_or_equal:start_date'],
             'registration_close_time' => ['nullable', 'date_format:H:i'],
-            'start_time'              => ['required'],
-            'end_time'                => ['required'],
+            'start_time'              => [$isDraft ? 'nullable' : 'required'],
+            'end_time'                => [$isDraft ? 'nullable' : 'required'],
             'description'             => ['nullable', 'string'],
             'objectives'              => ['nullable', 'string'],
             'learning_objectives'     => ['nullable', 'string'],
@@ -426,45 +745,54 @@ class OfflineTrainingController extends Controller
 
         $trainingCode = $request->filled('code') ? $request->input('code') : $request->input('training_code');
         $objectives = $request->filled('objectives') ? $request->input('objectives') : $request->input('learning_objectives');
-        $endDate = $request->filled('end_date') ? $request->input('end_date') : $request->input('start_date');
-        $registrationCloseDate = $request->filled('registration_close_date') ? $request->input('registration_close_date') : $request->input('start_date');
-        $registrationCloseTime = $request->filled('registration_close_time') ? $request->input('registration_close_time') : '23:59';
+        $startDate = $request->input('start_date') ?: ($training->start_date ?: Carbon::today()->format('Y-m-d'));
+        $endDate = $request->filled('end_date') ? $request->input('end_date') : $startDate;
+        $registrationCloseDate = $request->filled('registration_close_date') ? $request->input('registration_close_date') : $startDate;
+        $registrationCloseTime = $request->filled('registration_close_time') ? $request->input('registration_close_time') : ($training->registration_close_time ?? '23:59');
         if (strlen($registrationCloseTime) === 5) {
             $registrationCloseTime .= ':00';
         }
 
-        // Combine date and time to check if registration deadline is active
-        $closeDatetime = Carbon::parse($registrationCloseDate . ' ' . substr($registrationCloseTime, 0, 5));
-        $status = $request->input('status', 'Open Registration');
-        if ($status === 'Open Registration' && Carbon::now()->gt($closeDatetime)) {
-            $status = 'Closed';
+        if ($isDraft) {
+            $status = 'Draft';
+        } else {
+            $status = $request->input('status', $training->status ?: 'Open Registration');
+            if ($status === 'Open') {
+                $status = 'Open Registration';
+            }
+            if ($registrationCloseDate) {
+                $closeDatetime = Carbon::parse($registrationCloseDate . ' ' . substr($registrationCloseTime, 0, 5));
+                if ($status === 'Open Registration' && Carbon::now()->gt($closeDatetime)) {
+                    $status = 'Closed';
+                }
+            }
         }
 
         $training->update([
             'title'                   => $request->input('title'),
             'course_name'             => $request->input('title'),
             'sub_course_name'         => $request->input('sub_course_name'),
-            'category'                => $request->input('category'),
+            'category'                => $request->input('category', $training->category ?: 'General') ?: 'General',
             'type'                    => $request->input('type'),
             'level'                   => $request->input('level'),
             'main_classification'     => $request->input('main_classification'),
             'sub_classification'      => $request->input('sub_classification'),
             'training_code'           => $trainingCode,
             'batch'                   => $trainingCode,
-            'instructor'              => $request->input('instructor'),
-            'location'                => $request->input('location'),
-            'venue'                   => $request->input('location'),
+            'instructor'              => $request->input('instructor', $training->instructor ?: '-') ?: '-',
+            'location'                => $request->input('location', $training->location ?: '-') ?: '-',
+            'venue'                   => $request->input('location', $training->venue ?: '-') ?: '-',
             'target_employee'         => $request->input('target_employee'),
             'prerequisites'           => $request->input('prerequisites'),
-            'quota'                   => (int) $request->input('quota'),
+            'quota'                   => (int) ($request->input('quota') ?: ($training->quota ?: 30)),
             'status'                  => $status,
-            'start_date'              => $request->input('start_date'),
+            'start_date'              => $startDate,
             'end_date'                => $endDate,
             'finish_date'             => $endDate,
             'registration_close_date' => $registrationCloseDate,
             'registration_close_time' => $registrationCloseTime,
-            'start_time'              => $request->input('start_time'),
-            'end_time'                => $request->input('end_time'),
+            'start_time'              => $request->input('start_time', $training->start_time ?: '08:00') ?: '08:00',
+            'end_time'                => $request->input('end_time', $training->end_time ?: '16:00') ?: '16:00',
             'description'             => $request->input('description'),
             'learning_objectives'     => $objectives,
             'syllabus'                => $syllabus,
@@ -472,16 +800,21 @@ class OfflineTrainingController extends Controller
 
         // Auto sync options to offline_training_options for consistent master options
         $this->offlineOptionService->ensureOptionsFromTraining([
+            'course_name'        => $request->input('title'),
+            'sub_course_name'    => $request->input('sub_course_name'),
             'type'               => $request->input('type'),
             'category'           => $request->input('category'),
             'level'              => $request->input('level'),
             'sub_classification' => $request->input('sub_classification'),
             'instructor'         => $request->input('instructor'),
             'venue'              => $request->input('location'),
+            'target_employee'    => $request->input('target_employee'),
+            'prerequisites'      => $request->input('prerequisites'),
         ], 'manual', Auth::id());
 
+        $statusMsg = $isDraft ? 'saved as draft' : 'successfully updated';
         return redirect()->route('manage.training-schedule.index')
-            ->with('success', 'Training schedule updated successfully.');
+            ->with('success', 'Training schedule "' . $training->title . '" has been ' . $statusMsg . '.');
     }
 
     /**
@@ -496,6 +829,14 @@ class OfflineTrainingController extends Controller
         ]);
 
         $type = (string) $request->input('option_type');
+        $typeMap = [
+            'title'           => OfflineOptionService::TYPE_COURSE_NAME,
+            'location'        => OfflineOptionService::TYPE_VENUE,
+            'target_audience' => OfflineOptionService::TYPE_TARGET_EMPLOYEE,
+            'requirements'    => OfflineOptionService::TYPE_PREREQUISITES,
+        ];
+        $type = $typeMap[$type] ?? $type;
+
         $rawValue = (string) $request->input('value');
         $cleanValue = trim(preg_replace('/\s+/', ' ', $rawValue));
 
@@ -815,7 +1156,8 @@ class OfflineTrainingController extends Controller
     {
         $userId = Auth::id();
 
-        $trainings = OfflineTraining::withCount([
+        $trainings = OfflineTraining::where('status', '!=', 'Draft')
+            ->withCount([
                 'registrations as registered_seats_count' => function ($q) {
                     $q->whereIn('status', ['Pending', 'Approved', 'Completed']);
                 },
@@ -830,7 +1172,8 @@ class OfflineTrainingController extends Controller
             ->orderBy('start_date', 'asc')
             ->get();
 
-        $availableQuery = OfflineTraining::withCount([
+        $availableQuery = OfflineTraining::where('status', '!=', 'Draft')
+            ->withCount([
                 'registrations as registered_seats_count' => function ($q) {
                     $q->whereIn('status', ['Pending', 'Approved', 'Completed']);
                 },
@@ -844,12 +1187,12 @@ class OfflineTrainingController extends Controller
             ]);
 
         // Filter Category
-        if ($request->filled('category')) {
+        if ($request->filled('category') && $request->input('category') !== 'all') {
             $availableQuery->where('category', $request->input('category'));
         }
 
         // Filter Status
-        if ($request->filled('status')) {
+        if ($request->filled('status') && $request->input('status') !== 'all') {
             $statusVal = $request->input('status');
             $statusMap = [
                 'open'    => 'Open Registration',
@@ -857,6 +1200,15 @@ class OfflineTrainingController extends Controller
                 'closed'  => 'Closed',
             ];
             $availableQuery->where('status', $statusMap[strtolower($statusVal)] ?? $statusVal);
+        }
+
+        // Filter Month
+        if ($request->filled('month') && $request->input('month') !== 'all') {
+            $month = (int) $request->input('month');
+            $availableQuery->where(function ($q) use ($month) {
+                $q->whereMonth('start_date', $month)
+                  ->orWhereMonth('end_date', $month);
+            });
         }
 
         // Filter Year
@@ -868,13 +1220,14 @@ class OfflineTrainingController extends Controller
             });
         }
 
-        // Keyword Search (q or search)
-        $search = $request->input('q') ?? $request->input('search');
+        // Keyword Search (search or q)
+        $search = $request->input('search') ?? $request->input('q');
         if (filled($search)) {
             $search = trim($search);
             $availableQuery->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
                   ->orWhere('course_name', 'like', "%{$search}%")
+                  ->orWhere('sub_course_name', 'like', "%{$search}%")
                   ->orWhere('instructor', 'like', "%{$search}%")
                   ->orWhere('location', 'like', "%{$search}%")
                   ->orWhere('venue', 'like', "%{$search}%")
@@ -885,36 +1238,58 @@ class OfflineTrainingController extends Controller
 
         $availableTrainings = $availableQuery->latest()
             ->paginate(10)
-            ->withQueryString();
+            ->appends(array_merge($request->query(), ['tab' => 'available']));
 
-        $calendarEvents = $trainings->map(function ($t) {
+        $today = Carbon::today()->format('Y-m-d');
+        $calendarEvents = $trainings->map(function ($t) use ($today) {
+            // Properly parse dates before conditional checks
             $startDate = Carbon::parse($t->start_date);
-            $endDate = Carbon::parse($t->end_date ?? $t->start_date);
-            $regCloseDate = Carbon::parse($t->registration_close_date ?? $t->start_date);
+            $endDate = $t->end_date ? Carbon::parse($t->end_date) : $startDate;
+
+            $startDateStr = $startDate->format('Y-m-d');
+            $endDateStr = $endDate->format('Y-m-d');
+
+            // Define $regCloseDate and $regCloseDateStr with safe fallbacks
+            $regCloseDate = $t->registration_close_date 
+                ? Carbon::parse($t->registration_close_date) 
+                : $startDate;
+            $regCloseDateStr = $regCloseDate->format('Y-m-d');
             $regCloseTime = $t->registration_close_time ? substr($t->registration_close_time, 0, 5) : '23:59';
-            $closeDatetime = Carbon::parse($regCloseDate->format('Y-m-d') . ' ' . $regCloseTime . ':59');
-            $enrolled = $t->registered_seats_count ?? 0;
-            $quota = $t->quota ?: 1;
-            $isRegistrationPast = Carbon::now()->gt($closeDatetime);
-            $isPast = $endDate->format('Y-m-d') < Carbon::today()->format('Y-m-d');
-            $isClosed = $t->status === 'Closed' || $enrolled >= $quota || $isPast || $isRegistrationPast;
+            $isPublished = $t->status !== 'Draft' && (!isset($t->is_published) || (bool) $t->is_published);
+
+            // Calendar & List Status Classification Logic
+            if ($endDateStr < $today) {
+                $status = 'Ended'; // Dark Gray badge
+            } elseif ($startDateStr <= $today && $endDateStr >= $today && $regCloseDateStr < $today) {
+                $status = 'Running'; // Orange badge (Currently running & registration closed)
+            } elseif ($regCloseDateStr >= $today && $isPublished) {
+                $status = 'Open'; // Green badge (Registration open)
+            } elseif ($startDateStr > $today && $regCloseDateStr < $today) {
+                $status = 'Closed'; // Gray badge (Registration closed, session upcoming)
+            } else {
+                $status = 'Closed';
+            }
+
+            $enrolled = (int) ($t->participants_count ?? ($t->registered_seats_count ?? 0));
+            $quota = (int) ($t->quota ?: 1);
+            $isPast = ($endDateStr < $today);
 
             return [
                 'id'                      => (string) $t->id,
                 'year'                    => (int) $startDate->format('Y'),
                 'month'                   => (int) $startDate->format('n') - 1, // 0-indexed for JavaScript Date
                 'day'                     => (int) $startDate->format('j'),
-                'startDate'               => $startDate->format('Y-m-d'),
-                'endDate'                 => $endDate->format('Y-m-d'),
+                'startDate'               => $startDateStr,
+                'endDate'                 => $endDateStr,
                 'registration_close_date' => $regCloseDate->format('Y-m-d'),
                 'registrationCloseDate'   => $regCloseDate->format('Y-m-d'),
                 'registration_close_time' => $regCloseTime,
                 'registrationCloseTime'   => $regCloseTime,
-                'rawStatus'   => $t->status,
-                'title'       => $t->title,
-                'shortTitle'  => Str::limit($t->title, 16),
-                'category'    => $t->category,
-                'badgeClass'  => match($t->category) {
+                'rawStatus'               => $t->status,
+                'title'                   => $t->title,
+                'shortTitle'              => Str::limit($t->title, 16),
+                'category'                => $t->category,
+                'badgeClass'              => match($t->category) {
                     'Basic & Common Duties'             => 'bg-secondary-subtle text-secondary',
                     'Compliance', 'Compliance & Safety' => 'bg-warning-lt text-warning',
                     'Innovation'                        => 'bg-success-lt text-success',
@@ -923,18 +1298,20 @@ class OfflineTrainingController extends Controller
                     'Leadership'                        => 'bg-purple-subtle text-purple',
                     default                             => 'bg-primary-lt text-primary',
                 },
-                'status'      => $isClosed ? 'closed' : ($t->status === 'Running' ? 'running' : 'open'),
-                'isPast'      => $isPast,
-                'startTime'   => substr($t->start_time, 0, 5),
-                'endTime'     => substr($t->end_time, 0, 5),
-                'time'        => substr($t->start_time, 0, 5) . ' - ' . substr($t->end_time, 0, 5) . ' WIB',
-                'dateTime'    => $startDate->format('d F Y') . ', ' . substr($t->start_time, 0, 5) . ' - ' . substr($t->end_time, 0, 5) . ' WIB',
-                'location'    => $t->location,
-                'instructor'  => $t->instructor,
-                'quota'       => (int) $t->quota,
-                'enrolled'    => (int) $enrolled,
-                'isFull'      => $enrolled >= $quota,
-                'quotaText'   => "{$enrolled} / {$t->quota} Seats" . ($enrolled >= $quota ? ' (Full)' : ''),
+                'status'                  => $status,
+                'computedStatus'          => $status,
+                'is_published'            => $isPublished,
+                'isPast'                  => $isPast,
+                'startTime'               => substr($t->start_time ?? '', 0, 5),
+                'endTime'                 => substr($t->end_time ?? '', 0, 5),
+                'time'                    => substr($t->start_time ?? '', 0, 5) . ' - ' . substr($t->end_time ?? '', 0, 5) . ' WIB',
+                'dateTime'                => $startDate->format('d F Y') . ', ' . substr($t->start_time ?? '', 0, 5) . ' - ' . substr($t->end_time ?? '', 0, 5) . ' WIB',
+                'location'                => $t->location,
+                'instructor'              => $t->instructor,
+                'quota'                   => (int) $t->quota,
+                'enrolled'                => (int) $enrolled,
+                'isFull'                  => $enrolled >= $quota,
+                'quotaText'               => "{$enrolled} / {$t->quota} Seats" . ($enrolled >= $quota ? ' (Full)' : ''),
             ];
         })->values()->toArray();
 
@@ -975,6 +1352,47 @@ class OfflineTrainingController extends Controller
         })->values();
 
         return view('user.trainingplan-user.index', compact('trainings', 'availableTrainings', 'calendarEvents', 'myHistory', 'selectedDate', 'todaysAgenda'));
+    }
+
+    /**
+     * Evaluate the status of a training event specifically for a calendar cell date relative to today.
+     *
+     * @param mixed $training
+     * @param string $cellDate
+     * @param string|null $today
+     * @return string ('Ended'|'Running'|'Open'|'Closed')
+     */
+    public static function evaluateCalendarCellStatus($training, string $cellDate, ?string $today = null): string
+    {
+        $today = $today ?? Carbon::today()->format('Y-m-d');
+        $sDate = Carbon::parse($training->start_date)->format('Y-m-d');
+        $eDate = Carbon::parse($training->end_date ?? $training->start_date)->format('Y-m-d');
+        $regCloseDate = $training->registration_close_date 
+            ? Carbon::parse($training->registration_close_date)->format('Y-m-d') 
+            : $sDate;
+        $statusStr = $training->status ?? '';
+        $isPublished = $statusStr !== 'Draft' && (!isset($training->is_published) || (bool) $training->is_published);
+
+        // $cellDate represents the specific day square rendered on the calendar grid
+        // $today represents the current real-world date (e.g., Oct 13, 2026)
+        if ($cellDate < $today) {
+            // Past dates in calendar always show as Ended
+            return 'Ended';
+        } elseif ($cellDate === $today) {
+            // Current date ONLY shows as Running if the training execution overlaps today
+            if ($sDate <= $today && $eDate >= $today) {
+                return 'Running';
+            } else {
+                return ($regCloseDate >= $today && $isPublished) ? 'Open' : 'Closed';
+            }
+        } else {
+            // Future dates in calendar show Open or Closed based on registration date
+            if ($regCloseDate >= $today && $isPublished) {
+                return 'Open';
+            } else {
+                return 'Closed';
+            }
+        }
     }
 
     /**
@@ -1103,54 +1521,100 @@ class OfflineTrainingController extends Controller
     }
 
     /**
-     * Export Training Schedule list to CSV format with Category, Status, Month, Year filters.
+     * Export Training Schedule list to Excel (.xlsx format) with Category, Status, Month, Year, and Search filters.
      */
-    public function exportSchedule(Request $request): StreamedResponse
+    public function exportExcel(Request $request)
     {
-        $query = OfflineTraining::withCount('registrations');
+        $records = $this->buildFilteredScheduleQuery($request)
+            ->orderBy('start_date', 'asc')
+            ->get();
 
-        if ($request->filled('category') && $request->input('category') !== 'all') {
-            $query->where('category', $request->input('category'));
+        $fileName = 'Training_Schedule_Export_' . Carbon::now()->format('Ymd_His') . '.xlsx';
+
+        return Excel::download(new TrainingScheduleExport($records), $fileName);
+    }
+
+    /**
+     * Export Training Schedule list to Krakatau Posco 3-column Card PDF Announcement layout.
+     */
+    public function exportPdf(Request $request)
+    {
+        $trainings = $this->buildFilteredScheduleQuery($request)
+            ->where('status', '!=', 'Running')
+            ->whereIn('status', ['Open', 'Open Registration', 'Closed'])
+            ->orderBy('start_date', 'asc')
+            ->get();
+
+        $activeFilters = $this->collectActiveFilterLabels($request);
+        $fileName = 'Training_Schedule_Cards_' . Carbon::now()->format('Ymd_His') . '.pdf';
+
+        $pdf = Pdf::loadView('exports.training-schedule-pdf', compact('trainings', 'activeFilters'))
+            ->setPaper('a4', 'landscape')
+            ->setOption([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled'      => true,
+                'defaultFont'          => 'sans-serif',
+            ]);
+
+        return $pdf->download($fileName);
+    }
+
+    /**
+     * Export Training Schedule announcement card layout to high-resolution JPG image.
+     */
+    public function exportJpg(Request $request, ?TrainingScheduleImageService $imageService = null)
+    {
+        $imageService = $imageService ?? app(TrainingScheduleImageService::class);
+
+        $trainings = $this->buildFilteredScheduleQuery($request)
+            ->where('status', '!=', 'Running')
+            ->whereIn('status', ['Open', 'Open Registration', 'Closed'])
+            ->orderBy('start_date', 'asc')
+            ->get();
+
+        $activeFilters = $this->collectActiveFilterLabels($request);
+        $fileName = 'Training_Schedule_Announcement_' . Carbon::now()->format('Ymd_His') . '.jpg';
+
+        // Dedicated 2-column Blade template (resources/views/exports/training-schedule-jpg.blade.php) for high-resolution JPG exports
+        $viewContent = view('exports.training-schedule-jpg', compact('trainings', 'activeFilters'))->render();
+
+        // Browser renderer viewport configuration (1920 width, device scale factor 2, wait delay for custom CSS fonts)
+        if (class_exists(\Spatie\Browsershot\Browsershot::class)) {
+            $imageContent = \Spatie\Browsershot\Browsershot::html($viewContent)
+                ->windowSize(1920, 1080)
+                ->deviceScaleFactor(2)
+                ->setDelay(1000)
+                ->waitForSelector('.card-box')
+                ->waitUntilNetworkIdle()
+                ->showBackground()
+                ->jpeg();
+        } else {
+            $imageContent = $imageService->generateJpg($trainings, $activeFilters, $viewContent, [
+                'width'             => 1920,
+                'deviceScaleFactor' => 2,
+                'delay'             => 1000,
+            ]);
         }
 
-        if ($request->filled('status') && $request->input('status') !== 'all') {
-            $statusVal = $request->input('status');
-            $statusMap = [
-                'open'    => 'Open Registration',
-                'running' => 'Running',
-                'closed'  => 'Closed',
-            ];
-            $query->where('status', $statusMap[strtolower($statusVal)] ?? $statusVal);
+        return response($imageContent, 200, [
+            'Content-Type'        => 'image/jpeg',
+            'Content-Disposition' => "attachment; filename=\"{$fileName}\"",
+            'Cache-Control'       => 'no-cache, private',
+        ]);
+    }
+
+    /**
+     * Export Training Schedule list (backward-compatible: defaults to Excel or CSV when requested).
+     */
+    public function exportSchedule(Request $request)
+    {
+        if ($request->query('format') !== 'csv') {
+            return $this->exportExcel($request);
         }
 
-        if ($request->filled('month') && $request->input('month') !== 'all') {
-            $month = (int) $request->input('month');
-            $query->where(function ($q) use ($month) {
-                $q->whereMonth('start_date', $month)
-                  ->orWhereMonth('end_date', $month);
-            });
-        }
-
-        if ($request->filled('year') && $request->input('year') !== 'all') {
-            $year = (int) $request->input('year');
-            $query->where(function ($q) use ($year) {
-                $q->whereYear('start_date', $year)
-                  ->orWhereYear('end_date', $year);
-            });
-        }
-
-        $search = $request->input('q') ?? $request->input('search');
-        if (filled($search)) {
-            $search = trim($search);
-            $query->where(function ($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('course_name', 'like', "%{$search}%")
-                  ->orWhere('instructor', 'like', "%{$search}%")
-                  ->orWhere('location', 'like', "%{$search}%");
-            });
-        }
-
-        $records = $query->orderBy('start_date', 'asc')->get();
+        $records = $this->buildFilteredScheduleQuery($request)
+            ->orderBy('start_date', 'asc')
+            ->get();
 
         $fileName = 'Training_Schedule_Export_' . Carbon::now()->format('Ymd_His') . '.csv';
 

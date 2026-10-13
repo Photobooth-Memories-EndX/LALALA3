@@ -66,6 +66,7 @@
                         data-id="{{ $item->id }}" 
                         data-category="{{ $item->category }}" 
                         data-status="{{ $dataStatus }}" 
+                        data-status-label="{{ $item->status }}"
                         data-month="{{ (int)$startDate->format('n') }}" 
                         data-year="{{ $startDate->format('Y') }}" 
                         data-date="{{ $startDate->format('Y-m-d') }}" 
@@ -130,6 +131,11 @@
                                         data-category="{{ $item->category }}"
                                         data-instructor="{{ $item->instructor }}"
                                         data-duration="{{ $startTime }} - {{ $endTime }} WIB"
+                                        data-start-time="{{ $startTime }}"
+                                        data-end-time="{{ $endTime }}"
+                                        data-duration-hours="{{ \Carbon\Carbon::parse($item->start_time)->diffInHours(\Carbon\Carbon::parse($item->end_time)) . ' Hours' }}"
+                                        data-requirements="{{ $item->requirements ?? ($item->prerequisites ?? '') }}"
+                                        data-target="{{ $item->target_employee ?? '' }}"
                                         data-description="{{ $item->description ?? '' }}"
                                         data-objectives="{{ $item->learning_objectives ?? '' }}"
                                         data-syllabus="{{ json_encode($item->syllabus ?? []) }}">
@@ -191,13 +197,28 @@
         <p class="text-muted small mb-0">No PTKP training schedules match the selected filters. Try changing or clearing your filter criteria.</p>
     </div>
 
-    @if (method_exists($trainings, 'hasPages') && $trainings->hasPages())
+    @if (isset($schedules) && method_exists($schedules, 'hasPages') && $schedules->hasPages())
+        <div class="card-footer bg-white border-0 py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div class="text-muted small">
+                Showing {{ $schedules->firstItem() ?? 0 }} to {{ $schedules->lastItem() ?? 0 }} of {{ $schedules->total() }} results
+            </div>
+            <div>
+                {{ $schedules->appends(request()->query())->links() }}
+            </div>
+        </div>
+    @elseif (isset($schedules) && method_exists($schedules, 'total') && $schedules->total() > 0)
+        <div class="card-footer bg-white border-0 py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div class="text-muted small">
+                Showing {{ $schedules->firstItem() ?? 0 }} to {{ $schedules->lastItem() ?? 0 }} of {{ $schedules->total() }} results
+            </div>
+        </div>
+    @elseif (method_exists($trainings, 'hasPages') && $trainings->hasPages())
         <div class="card-footer bg-white border-0 py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
             <div class="text-muted small">
                 Showing {{ $trainings->firstItem() ?? 0 }} to {{ $trainings->lastItem() ?? 0 }} of {{ $trainings->total() }} results
             </div>
             <div>
-                {{ $trainings->links('pagination::bootstrap-5') }}
+                {{ $trainings->appends(request()->query())->links() }}
             </div>
         </div>
     @elseif (method_exists($trainings, 'total') && $trainings->total() > 0)

@@ -23,6 +23,8 @@ class OfflineOptionService
     public const TYPE_PROVIDER_NAME = 'provider_name';
     public const TYPE_VENUE = 'venue';
     public const TYPE_INSTRUCTOR = 'instructor';
+    public const TYPE_TARGET_EMPLOYEE = 'target_employee';
+    public const TYPE_PREREQUISITES = 'prerequisites';
 
     /**
      * Allowed option types in offline_training_options.
@@ -44,6 +46,12 @@ class OfflineOptionService
         self::TYPE_PROVIDER_NAME,
         self::TYPE_VENUE,
         self::TYPE_INSTRUCTOR,
+        self::TYPE_TARGET_EMPLOYEE,
+        self::TYPE_PREREQUISITES,
+        'title',
+        'location',
+        'target_audience',
+        'requirements',
     ];
 
     /**
@@ -141,6 +149,14 @@ class OfflineOptionService
         ?int $createdBy = null,
         int $sortOrder = 0
     ): ?OfflineTrainingOption {
+        $typeMap = [
+            'title'           => self::TYPE_COURSE_NAME,
+            'location'        => self::TYPE_VENUE,
+            'target_audience' => self::TYPE_TARGET_EMPLOYEE,
+            'requirements'    => self::TYPE_PREREQUISITES,
+        ];
+        $type = $typeMap[$type] ?? $type;
+
         if (!in_array($type, self::ALLOWED_TYPES, true)) {
             if ($type === 'main_classification') {
                 throw new InvalidArgumentException(

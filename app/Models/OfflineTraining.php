@@ -136,12 +136,59 @@ class OfflineTraining extends Model
 
     public function getVenueAttribute($value): ?string
     {
-        return $value ?? $this->attributes['location'] ?? null;
+        $val = filled($value) ? $value : ($this->attributes['location'] ?? $this->attributes['room_name'] ?? $this->attributes['room'] ?? null);
+        return filled($val) ? $val : null;
     }
 
     public function getLocationAttribute($value): ?string
     {
-        return $value ?? $this->attributes['venue'] ?? null;
+        $val = filled($value) ? $value : ($this->attributes['venue'] ?? $this->attributes['room_name'] ?? $this->attributes['room'] ?? null);
+        return filled($val) ? $val : null;
+    }
+
+    public function getRoomNameAttribute($value): ?string
+    {
+        $val = filled($value) ? $value : ($this->attributes['room'] ?? $this->attributes['location'] ?? $this->attributes['venue'] ?? null);
+        return filled($val) ? $val : null;
+    }
+
+    public function getRoomAttribute($value): ?string
+    {
+        $val = filled($value) ? $value : ($this->attributes['room_name'] ?? $this->attributes['location'] ?? $this->attributes['venue'] ?? null);
+        return filled($val) ? $val : null;
+    }
+
+    public function getInstructorNameAttribute($value): ?string
+    {
+        $val = filled($value) ? $value : ($this->attributes['instructor'] ?? null);
+        return filled($val) ? $val : null;
+    }
+
+    public function getParticipantQuotaAttribute($value)
+    {
+        return filled($value) ? $value : ($this->attributes['quota'] ?? null);
+    }
+
+    public function getSyllabusSummaryAttribute(): ?string
+    {
+        if (isset($this->attributes['syllabus_summary']) && filled($this->attributes['syllabus_summary'])) {
+            return $this->attributes['syllabus_summary'];
+        }
+
+        if (!empty($this->syllabus) && is_array($this->syllabus)) {
+            $topics = [];
+            foreach ($this->syllabus as $s) {
+                $t = is_array($s) ? ($s['topic'] ?? $s['title'] ?? '') : (string) $s;
+                if (trim($t) !== '') {
+                    $topics[] = trim($t);
+                }
+            }
+            if (!empty($topics)) {
+                return implode(', ', array_slice($topics, 0, 3));
+            }
+        }
+
+        return filled($this->learning_objectives) ? $this->learning_objectives : null;
     }
 
     public function getFinishDateAttribute($value)

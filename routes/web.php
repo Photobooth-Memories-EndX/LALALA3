@@ -287,7 +287,10 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
     Route::get('/', [ManageDashboardController::class, 'index'])->name('manage.index');
     Route::get('/dashboard', [ManageDashboardController::class, 'index'])->name('manage.dashboard');
     Route::get('/training-schedule', [OfflineTrainingController::class, 'index'])->name('manage.training-schedule.index');
-    Route::get('/training-schedule/export', [OfflineTrainingController::class, 'exportSchedule'])->name('manage.training.export');
+    Route::get('/training-schedule/export', [OfflineTrainingController::class, 'exportExcel'])->name('manage.training.export');
+    Route::get('/training-schedule/export/excel', [OfflineTrainingController::class, 'exportExcel'])->name('manage.training.export.excel');
+    Route::get('/training-schedule/export/pdf', [OfflineTrainingController::class, 'exportPdf'])->name('manage.training.export.pdf');
+    Route::get('/training-schedule/export/jpg', [OfflineTrainingController::class, 'exportJpg'])->name('manage.training.export.jpg');
     Route::get('/training-schedule/export-roster', [OfflineTrainingController::class, 'exportRoster'])->name('manage.roster.export');
     Route::get('/training-schedule/create', [OfflineTrainingController::class, 'create'])->name('manage.training-schedule.create');
     Route::post('/training-schedule', [OfflineTrainingController::class, 'store'])->name('manage.training-schedule.store');

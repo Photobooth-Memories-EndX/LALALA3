@@ -50,7 +50,7 @@
                                 <option value="">All Status</option>
                                 <option value="open">Open Registration</option>
                                 <option value="running">Running</option>
-                                <option value="closed">Closed Registration</option>
+                                <option value="closed">Registration Closed</option>
                             </select>
                         </div>
 

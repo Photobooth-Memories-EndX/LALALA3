@@ -1,5 +1,5 @@
 @php
-    $availableTrainings = $availableTrainings ?? \App\Models\OfflineTraining::withCount('participants')->latest()->paginate(10);
+    $availableTrainings = $availableTrainings ?? \App\Models\OfflineTraining::withCount('participants')->latest()->paginate(10)->appends(array_merge(request()->query(), ['tab' => 'available']));
 @endphp
 {{-- Tab Training Tersedia / Available Training (Table View Layout) --}}
 <style>
@@ -21,6 +21,29 @@
     .text-purple {
         color: #6f42c1 !important;
     }
+    .font-semibold {
+        font-weight: 600 !important;
+    }
+    .text-gray-900 {
+        color: #111827 !important;
+    }
+    .text-gray-500 {
+        color: #6b7280 !important;
+    }
+    .text-gray-400 {
+        color: #9ca3af !important;
+    }
+    .text-sm {
+        font-size: 0.875rem !important;
+        line-height: 1.25rem !important;
+    }
+    .text-xs {
+        font-size: 0.75rem !important;
+        line-height: 1rem !important;
+    }
+    .mt-0\.5 {
+        margin-top: 0.125rem !important;
+    }
 </style>
 <div class="card border border-light-subtle shadow-sm rounded-4 bg-white p-4 mb-4">
     
@@ -35,52 +58,76 @@
             </span>
         </div>
 
-        <form id="availableFilterForm" method="GET" action="{{ route('trainingplan.user.index') }}" onsubmit="return true;">
+        <form id="availableFilterForm" method="GET" action="{{ route('trainingplan.user.index') }}">
+            <input type="hidden" name="tab" value="available">
             <div class="d-flex align-items-center gap-2 flex-wrap flex-lg-nowrap">
                 <!-- 1. Category Select (Width: ~130px) -->
                 <div style="min-width: 130px; flex-shrink: 0;">
-                    <select id="filterTrainingCategory" name="category" class="form-select rounded-3">
-                        <option value="">All Category</option>
-                        <option value="Compliance & Safety" {{ request('category') === 'Compliance & Safety' ? 'selected' : '' }}>Compliance & Safety</option>
-                        <option value="Core Competency" {{ request('category') === 'Core Competency' ? 'selected' : '' }}>Core Competency</option>
-                        <option value="Environmental" {{ request('category') === 'Environmental' ? 'selected' : '' }}>Environmental</option>
-                        <option value="General Competency" {{ request('category') === 'General Competency' ? 'selected' : '' }}>General Competency</option>
-                        <option value="Innovation" {{ request('category') === 'Innovation' ? 'selected' : '' }}>Innovation</option>
-                        <option value="Job Functional" {{ request('category') === 'Job Functional' ? 'selected' : '' }}>Job Functional</option>
-                        <option value="Leadership" {{ request('category') === 'Leadership' ? 'selected' : '' }}>Leadership</option>
-                        <option value="Maintenance" {{ request('category') === 'Maintenance' ? 'selected' : '' }}>Maintenance</option>
-                        <option value="Quality" {{ request('category') === 'Quality' ? 'selected' : '' }}>Quality</option>
-                        <option value="Safety" {{ request('category') === 'Safety' ? 'selected' : '' }}>Safety</option>
-                        <option value="Soft Skill" {{ request('category') === 'Soft Skill' ? 'selected' : '' }}>Soft Skill</option>
-                        <option value="Technical" {{ request('category') === 'Technical' ? 'selected' : '' }}>Technical</option>
-                        <option value="Basic & Common Duties" {{ request('category') === 'Basic & Common Duties' ? 'selected' : '' }}>Basic & Common Duties</option>
-                        <option value="Compliance" {{ request('category') === 'Compliance' ? 'selected' : '' }}>Compliance</option>
-                        <option value="Language" {{ request('category') === 'Language' ? 'selected' : '' }}>Language</option>
+                    @php
+                        $categoriesList = [
+                            'Compliance & Safety', 'Core Competency', 'Environmental', 'General Competency',
+                            'Innovation', 'Job Functional', 'Leadership', 'Maintenance', 'Quality', 'Safety',
+                            'Soft Skill', 'Technical', 'Basic & Common Duties', 'Compliance', 'Language'
+                        ];
+                    @endphp
+                    <select id="filterTrainingCategory" name="category" class="form-select rounded-3" onchange="this.form.submit()">
+                        <option value="" {{ request('category') == '' ? 'selected' : '' }}>All Category</option>
+                        @foreach ($categoriesList as $cat)
+                            <option value="{{ $cat }}" {{ request('category') == $cat ? 'selected' : '' }}>{{ $cat }}</option>
+                        @endforeach
                     </select>
                 </div>
 
                 <!-- 2. Status Select (Width: ~120px) -->
                 <div style="min-width: 120px; flex-shrink: 0;">
-                    <select id="filterTrainingStatus" name="status" class="form-select rounded-3">
-                        <option value="">All Status</option>
-                        <option value="open" {{ request('status') === 'open' || request('status') === 'Open Registration' ? 'selected' : '' }}>Open Registration</option>
-                        <option value="running" {{ request('status') === 'running' || request('status') === 'Running' ? 'selected' : '' }}>Running</option>
-                        <option value="closed" {{ request('status') === 'closed' || request('status') === 'Closed' ? 'selected' : '' }}>Closed Registration</option>
+                    @php
+                        $statusesList = [
+                            'open'    => 'Open Registration',
+                            'running' => 'Running',
+                            'closed'  => 'Registration Closed',
+                        ];
+                    @endphp
+                    <select id="filterTrainingStatus" name="status" class="form-select rounded-3" onchange="this.form.submit()">
+                        <option value="" {{ request('status') == '' ? 'selected' : '' }}>All Status</option>
+                        @foreach ($statusesList as $st => $stLabel)
+                            <option value="{{ $st }}" {{ request('status') == $st || request('status') == $stLabel ? 'selected' : '' }}>{{ $stLabel }}</option>
+                        @endforeach
                     </select>
                 </div>
 
-                <!-- 3. Year Select (Width: ~100px) -->
+                <!-- 3. Month Select (Width: ~110px) -->
+                <div style="min-width: 110px; flex-shrink: 0;">
+                    @php
+                        $monthsList = [
+                            '01' => 'January', '02' => 'February', '03' => 'March',
+                            '04' => 'April', '05' => 'May', '06' => 'June',
+                            '07' => 'July', '08' => 'August', '09' => 'September',
+                            '10' => 'October', '11' => 'November', '12' => 'December'
+                        ];
+                    @endphp
+                    <select id="filterTrainingMonth" name="month" class="form-select rounded-3" onchange="this.form.submit()">
+                        <option value="" {{ request('month') == '' ? 'selected' : '' }}>All Month</option>
+                        @foreach ($monthsList as $m => $monthName)
+                            <option value="{{ $m }}" {{ ((int) request('month') == (int) $m && request('month') != '') || request('month') == $m ? 'selected' : '' }}>{{ $monthName }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <!-- 4. Year Select (Width: ~100px) -->
                 <div style="min-width: 100px; flex-shrink: 0;">
-                    <select id="filterTrainingYear" name="year" class="form-select rounded-3">
-                        <option value="" {{ !request('year') ? 'selected' : '' }}>All Year</option>
-                        <option value="2026" {{ request('year') === '2026' ? 'selected' : '' }}>2026</option>
-                        <option value="2025" {{ request('year') === '2025' ? 'selected' : '' }}>2025</option>
-                        <option value="2027" {{ request('year') === '2027' ? 'selected' : '' }}>2027</option>
+                    @php
+                        $yearsList = ['2026', '2025', '2027'];
+                    @endphp
+                    <select id="filterTrainingYear" name="year" class="form-select rounded-3" onchange="this.form.submit()">
+                        <option value="" {{ request('year') == '' ? 'selected' : '' }}>All Year</option>
+                        @foreach ($yearsList as $y)
+                            <option value="{{ $y }}" {{ request('year') == $y ? 'selected' : '' }}>{{ $y }}</option>
+                        @endforeach
                     </select>
                 </div>
 
-                <!-- 4. Search Input (Flex grow 1 with Search Icon on left) -->
-                <div class="position-relative flex-grow-1" style="min-width: 220px;">
+                <!-- 5. Search Input (Flex grow 1 with Search Icon on left) -->
+                <div class="position-relative flex-grow-1" style="min-width: 200px;">
                     <div class="input-icon">
                         <span class="input-icon-addon">
                             <i class="ti ti-search text-muted fs-2"></i>
@@ -91,7 +138,7 @@
                     </div>
                 </div>
 
-                <!-- 5. Action Buttons Group (Right side) -->
+                <!-- 6. Action Buttons Group (Right side) -->
                 <div class="d-flex align-items-center gap-1 flex-shrink-0">
                     <!-- Search Submit Button -->
                     <button type="submit" id="btnSubmitAvailableFilter" class="btn btn-primary px-3 rounded-3" 
@@ -100,7 +147,7 @@
                     </button>
 
                     <!-- Reset Link Button -->
-                    <a href="{{ route('trainingplan.user.index') }}" id="btnResetFilter" class="btn btn-outline-primary px-3 rounded-3 d-inline-flex align-items-center justify-content-center" 
+                    <a href="{{ route('trainingplan.user.index', ['tab' => 'available']) }}" id="btnResetFilter" class="btn btn-outline-primary px-3 rounded-3 d-inline-flex align-items-center justify-content-center" 
                        style="color: #003b6d; border-color: #003b6d;" title="Reset Filters">
                         <i class="ti ti-refresh fs-2"></i>
                     </a>
@@ -115,8 +162,7 @@
             <thead>
                 <tr class="text-muted extra-small text-uppercase fw-bold" style="letter-spacing: 0.05em; background-color: #f8fafc;">
                     <th class="w-1 text-center align-middle py-3">NO</th>
-                    <th class="text-center align-middle py-3" style="min-width: 200px;">TRAINING NAME</th>
-                    <th class="text-center align-middle py-3">CATEGORY</th>
+                    <th class="text-start align-middle py-3" style="min-width: 200px;">TRAINING NAME</th>
                     <th class="text-center align-middle py-3" style="min-width: 140px;">DATE</th>
                     <th class="text-center align-middle py-3" style="min-width: 120px;">TIME</th>
                     <th class="text-center align-middle py-3">LOCATION</th>
@@ -129,7 +175,8 @@
             <tbody class="divide-y">
                 @forelse ($availableTrainings as $item)
                     @php
-                        $title = $item->title ?? ($item->course_name ?? 'Training Schedule');
+                        $training = $item;
+                        $title = $training->title ?? ($training->course_name ?? 'Training Schedule');
                         $enrolled = $item->registered_seats_count ?? ($item->relationLoaded('registrations') ? $item->registrations->whereIn('status', ['Pending', 'Approved', 'Completed'])->count() : 0);
                         $quota = $item->quota > 0 ? $item->quota : 1;
                         $remaining = max(0, $quota - $enrolled);
@@ -139,22 +186,6 @@
 
                         $myReg = $item->relationLoaded('registrations') ? $item->registrations->firstWhere('user_id', Auth::id()) : null;
                         $myRegStatus = $myReg ? $myReg->status : null;
-
-                        $catStyle = match($item->category) {
-                            'Basic & Common Duties'             => 'background-color: #f1f5f9; color: #475569;',
-                            'Compliance', 'Compliance & Safety' => 'background-color: #fef3c7; color: #b45309;',
-                            'Innovation'                        => 'background-color: #ecfdf5; color: #047857;',
-                            'Job Functional', 'Technical', 'Technical Skill' => 'background-color: #e0f2fe; color: #0284c7;',
-                            'Language'                          => 'background-color: #fef2f2; color: #b91c1c;',
-                            'Leadership'                        => 'background-color: #f3e8ff; color: #7c3aed;',
-                            'Core Competency', 'General Competency' => 'background-color: #f0fdf4; color: #15803d;',
-                            'Maintenance'                       => 'background-color: #fff7ed; color: #c2410c;',
-                            'Quality'                           => 'background-color: #eff6ff; color: #1d4ed8;',
-                            'Safety'                            => 'background-color: #fef2f2; color: #dc2626;',
-                            'Environmental'                     => 'background-color: #f0fdf4; color: #166534;',
-                            'Soft Skill'                        => 'background-color: #faf5ff; color: #6b21a8;',
-                            default                             => 'background-color: #e0f2fe; color: #0369a1;',
-                        };
 
                         $regCloseDate = \Carbon\Carbon::parse($item->registration_close_date ?? $item->start_date);
                         $regCloseTime = $item->registration_close_time ? substr($item->registration_close_time, 0, 5) : '23:59';
@@ -184,20 +215,17 @@
                         data-id="{{ $item->id }}" 
                         data-category="{{ $item->category }}" 
                         data-status="{{ $dataStatus }}" 
+                        data-month="{{ (int)$startDate->format('n') }}" 
                         data-year="{{ $startDate->format('Y') }}"
                         data-location="{{ $item->location }}"
                         data-instructor="{{ $item->instructor }}">
                         <td class="text-center align-middle text-muted fw-semibold">{{ method_exists($availableTrainings, 'firstItem') && $availableTrainings->firstItem() ? ($availableTrainings->firstItem() + $loop->index) : $loop->iteration }}</td>
-                        <td class="text-center align-middle" style="min-width: 200px;">
-                            <div class="fw-bold text-dark fs-3">{{ $title }}</div>
-                            @if (!empty($item->training_code))
-                                <div class="text-muted extra-small font-monospace">{{ $item->training_code }}</div>
+                        <td class="align-middle" style="min-width: 200px;">
+                            <div class="font-semibold text-gray-900 text-sm">{{ $training->title }}</div>
+                            @if($training->sub_course_name)
+                                <div class="text-xs text-gray-500">{{ $training->sub_course_name }}</div>
                             @endif
-                        </td>
-                        <td class="text-center align-middle">
-                            <span class="badge rounded-pill px-2 py-1 fw-semibold" style="{{ $catStyle }}">
-                                {{ $item->category }}
-                            </span>
+                            <div class="text-xs text-gray-400 mt-0.5">Code: {{ $training->batch ?? '-' }}</div>
                         </td>
                         <td class="fw-semibold text-dark text-center align-middle" style="min-width: 140px;">
                             @if($item->end_date && $item->start_date != $item->end_date)
@@ -224,6 +252,11 @@
                                     data-category="{{ $item->category }}" 
                                     data-instructor="{{ $item->instructor }}"
                                     data-duration="{{ $startTime }} - {{ $endTime }} WIB"
+                                    data-start-time="{{ $startTime }}"
+                                    data-end-time="{{ $endTime }}"
+                                    data-duration-hours="{{ \Carbon\Carbon::parse($item->start_time)->diffInHours(\Carbon\Carbon::parse($item->end_time)) . ' Hours' }}"
+                                    data-requirements="{{ $item->requirements ?? ($item->prerequisites ?? '') }}"
+                                    data-target="{{ $item->target_employee ?? '' }}"
                                     data-description="{{ $item->description ?? '' }}"
                                     data-objectives="{{ $item->learning_objectives ?? '' }}"
                                     data-syllabus="{{ json_encode($item->syllabus ?? []) }}">
@@ -284,7 +317,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="10" class="text-center py-5 text-muted">
+                        <td colspan="9" class="text-center py-5 text-muted">
                             <div class="avatar avatar-xl rounded-circle bg-light text-muted mb-3 mx-auto">
                                 <i class="ti ti-calendar-off fs-1"></i>
                             </div>
@@ -303,7 +336,7 @@
                 Showing {{ $availableTrainings->firstItem() ?? 0 }} to {{ $availableTrainings->lastItem() ?? 0 }} of {{ $availableTrainings->total() }} available training(s)
             </div>
             <div>
-                {{ $availableTrainings->links('pagination::bootstrap-5') }}
+                {{ $availableTrainings->appends(array_merge(request()->query(), ['tab' => 'available']))->links('pagination::bootstrap-5') }}
             </div>
         </div>
     @elseif (method_exists($availableTrainings, 'total') && $availableTrainings->total() > 0)

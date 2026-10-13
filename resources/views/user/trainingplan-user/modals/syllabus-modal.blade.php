@@ -35,8 +35,58 @@
                         <div>
                             <div class="fw-bold text-dark small mb-1">Course Overview</div>
                             <p class="text-muted small mb-0" id="syllabusModalOverview">
-                                Description overview of the training session.
+                                {{ isset($training) && $training->description ? $training->description : 'Description overview of the training session.' }}
                             </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Meta Details Row: Target Participants & Calculated Duration -->
+                <div class="row g-2 mb-3">
+                    <div class="col-md-6">
+                        <div class="card border border-light-subtle rounded-3 bg-light-subtle p-3 h-100" id="syllabusModalTargetCard">
+                            <div class="d-flex align-items-start gap-2">
+                                <i class="ti ti-users text-primary fs-2 flex-shrink-0 mt-0-5"></i>
+                                <div>
+                                    <div class="fw-bold text-dark small mb-1">Target Participants</div>
+                                    <div class="text-muted small mb-0" id="syllabusModalTarget">
+                                        {{ isset($training) && $training->target_employee ? $training->target_employee : 'All relevant employees' }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card border border-light-subtle rounded-3 bg-light-subtle p-3 h-100" id="syllabusModalDurationCard">
+                            <div class="d-flex align-items-start gap-2">
+                                <i class="ti ti-clock-hour-4 text-primary fs-2 flex-shrink-0 mt-0-5"></i>
+                                <div>
+                                    <div class="fw-bold text-dark small mb-1">Calculated Duration</div>
+                                    <div class="text-muted small mb-0">
+                                        <span class="fw-semibold text-dark" id="syllabusModalCalculatedDuration">
+                                            @if(isset($training) && $training->start_time && $training->end_time)
+                                                {{ \Carbon\Carbon::parse($training->start_time)->diffInHours(\Carbon\Carbon::parse($training->end_time)) . ' Hours' }}
+                                            @else
+                                                -
+                                            @endif
+                                        </span>
+                                        <span class="text-muted extra-small d-block" id="syllabusModalTimeRange"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Requirements Card (Prerequisites) -->
+                <div class="card border border-light-subtle rounded-3 bg-light-subtle p-3 mb-3 {{ (isset($training) && ($training->requirements || $training->prerequisites)) ? '' : 'd-none' }}" id="syllabusModalRequirementsCard">
+                    <div class="d-flex align-items-start gap-2">
+                        <i class="ti ti-checklist text-primary fs-2 flex-shrink-0 mt-0-5"></i>
+                        <div class="w-100">
+                            <div class="fw-bold text-dark small mb-1">Requirements</div>
+                            <div class="text-muted small mb-0" id="syllabusModalRequirements">
+                                {{ isset($training) ? ($training->requirements ?? $training->prerequisites ?? '') : '' }}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -94,6 +144,12 @@ document.addEventListener('DOMContentLoaded', function () {
         const overviewCard = document.getElementById('syllabusModalOverviewCard');
         const modalObj = document.getElementById('syllabusModalObjectives');
         const objCard = document.getElementById('syllabusModalObjectivesCard');
+        const modalTarget = document.getElementById('syllabusModalTarget');
+        const targetCard = document.getElementById('syllabusModalTargetCard');
+        const modalReq = document.getElementById('syllabusModalRequirements');
+        const reqCard = document.getElementById('syllabusModalRequirementsCard');
+        const modalCalcDuration = document.getElementById('syllabusModalCalculatedDuration');
+        const modalTimeRange = document.getElementById('syllabusModalTimeRange');
         const topicsContainer = document.getElementById('syllabusModalTopicsContainer');
         const btnDownloadPdf = document.getElementById('btnDownloadSyllabusPdf');
 
@@ -104,6 +160,32 @@ document.addEventListener('DOMContentLoaded', function () {
         const duration = btn.getAttribute('data-duration') || 'Session Schedule';
         const overview = btn.getAttribute('data-description') || '';
         const objectives = btn.getAttribute('data-objectives') || '';
+        const requirements = btn.getAttribute('data-requirements') || btn.getAttribute('data-prerequisites') || '';
+        const targetEmployee = btn.getAttribute('data-target') || btn.getAttribute('data-target-employee') || '';
+        const startTime = btn.getAttribute('data-start-time') || '';
+        const endTime = btn.getAttribute('data-end-time') || '';
+        let durationHours = btn.getAttribute('data-duration-hours') || '';
+
+        // Calculate duration if not provided directly
+        if (!durationHours && startTime && endTime) {
+            const sParts = startTime.split(':');
+            const eParts = endTime.split(':');
+            if (sParts.length >= 2 && eParts.length >= 2) {
+                const startMins = parseInt(sParts[0], 10) * 60 + parseInt(sParts[1], 10);
+                const endMins = parseInt(eParts[0], 10) * 60 + parseInt(eParts[1], 10);
+                let diffMins = endMins - startMins;
+                if (diffMins < 0) diffMins += 24 * 60;
+                const hrs = Math.floor(diffMins / 60);
+                const mins = diffMins % 60;
+                if (hrs > 0 && mins > 0) {
+                    durationHours = `${hrs} Hours ${mins} Mins`;
+                } else if (hrs > 0) {
+                    durationHours = `${hrs} Hour${hrs > 1 ? 's' : ''}`;
+                } else if (mins > 0) {
+                    durationHours = `${mins} Mins`;
+                }
+            }
+        }
 
         // Bind download PDF URL dynamically
         if (btnDownloadPdf) {
@@ -120,6 +202,45 @@ document.addEventListener('DOMContentLoaded', function () {
         if (modalCat) modalCat.textContent = category;
         if (modalInst) modalInst.textContent = instructor;
         if (modalDur) modalDur.textContent = duration;
+
+        // Target Participant
+        if (modalTarget) {
+            modalTarget.textContent = targetEmployee.trim() ? targetEmployee : 'All relevant employees';
+        }
+
+        // Calculated Duration
+        if (modalCalcDuration) {
+            modalCalcDuration.textContent = durationHours || duration || '-';
+        }
+        if (modalTimeRange) {
+            if (startTime && endTime) {
+                modalTimeRange.textContent = `${startTime} - ${endTime} WIB`;
+            } else if (duration && duration !== durationHours) {
+                modalTimeRange.textContent = duration;
+            } else {
+                modalTimeRange.textContent = '';
+            }
+        }
+
+        // Requirements
+        if (modalReq && reqCard) {
+            if (requirements.trim()) {
+                reqCard.classList.remove('d-none');
+                const reqLines = requirements.split(/\r?\n/).map(l => l.replace(/^[•\-\*]\s*/, '').trim()).filter(Boolean);
+                if (reqLines.length > 1) {
+                    modalReq.innerHTML = reqLines.map(line => `
+                        <div class="d-flex align-items-start gap-2 mb-1">
+                            <span class="fw-bold" style="color: #003b6d; line-height: 1.4;">•</span>
+                            <span>${line}</span>
+                        </div>
+                    `).join('');
+                } else {
+                    modalReq.textContent = requirements;
+                }
+            } else {
+                reqCard.classList.add('d-none');
+            }
+        }
 
         if (modalOver) {
             if (overview.trim()) {
