@@ -166,6 +166,8 @@
     /* Table Horizontal Scroll */
     .learning-record-scroll {
         overflow-x: auto !important;
+        overflow-y: visible !important;
+        max-height: none !important;
         -webkit-overflow-scrolling: touch;
         width: 100% !important;
     }
@@ -773,14 +775,14 @@
                             <tr>
                                 <th class="text-muted text-center" style="width: 3%">No</th>
                                 <th class="text-muted" style="width: 24%; min-width: 280px;">Training Title</th>
-                                <th class="text-muted" style="width: 8%">Type</th>
-                                <th class="text-muted" style="width: 8%">Category</th>
-                                <th class="text-muted" style="width: 9%">Classification</th>
-                                <th class="text-muted" style="width: 7%">Duration</th>
-                                <th class="text-muted" style="width: 8%">Learning Hour</th>
+                                <th class="text-muted text-center" style="width: 8%">Type</th>
+                                <th class="text-muted text-center" style="width: 8%">Category</th>
+                                <th class="text-muted text-center" style="width: 9%">Classification</th>
+                                <th class="text-muted text-center" style="width: 7%">Duration</th>
+                                <th class="text-muted text-center" style="width: 8%">Learning Hour</th>
                                 <th class="text-muted text-center" style="width: 7%">Progress</th>
                                 <th class="text-muted text-center" style="width: 7%">Attendance</th>
-                                <th class="text-muted" style="width: 8%">Date</th>
+                                <th class="text-muted text-center" style="width: 8%">Date</th>
                                 <th class="text-muted text-center" style="width: 5%">Score</th>
                                 <th class="text-muted text-center" style="width: 6%">Certificate</th>
                             </tr>
@@ -788,7 +790,7 @@
                         <tbody>
                             @foreach ($rows as $index => $row)
                             <tr class="record-row record-row-{{ $row['source'] }}">
-                                <td class="text-center text-muted">{{ $loop->iteration }}</td>
+                                <td class="text-center text-muted record-row-index">{{ $loop->iteration }}</td>
                                 <td class="learning-record-course-cell">
                                     <div class="record-title-stack d-flex flex-column align-items-start">
                                         {{-- Baris pertama: Training Title --}}
@@ -865,25 +867,25 @@
                                         @endif
                                     </div>
                                 </td>
-                                <td>
+                                <td class="text-center">
                                     <x-learning.record-type-badge :type="$row['type']" :url="(($row['can_open'] ?? true) ? ($row['playlist_url'] ?? null) : null)" />
                                 </td>
-                                <td>
+                                <td class="text-center">
                                     @if (($row['category'] ?? '') === 'Playlist')
                                         <span class="badge bg-green-lt text-green learning-record-badge">Playlist</span>
                                     @elseif (($row['category'] ?? '') === 'Content')
                                         <span class="badge bg-blue-lt text-blue learning-record-badge">Content</span>
                                     @else
-                                        <span class="badge bg-light text-muted border px-2 py-1" style="font-size: 11px;">
+                                        <span class="badge bg-secondary-lt text-secondary learning-record-badge">
                                             {{ $row['category'] ?: '—' }}
                                         </span>
                                     @endif
                                 </td>
-                                <td>
+                                <td class="text-center">
                                     <x-learning.record-classification-badge :row="$row" />
                                 </td>
-                                <td class="text-nowrap">{{ $row['duration'] }}</td>
-                                <td class="text-nowrap fw-semibold text-primary">{{ $row['learning_hour'] }}</td>
+                                <td class="text-center text-nowrap">{{ $row['duration'] }}</td>
+                                <td class="text-center text-nowrap fw-semibold text-primary">{{ $row['learning_hour'] }}</td>
                                 <td class="text-center">
                                     @if ($row['progress'] >= 100)
                                         <span class="badge bg-success-lt text-success fw-bold px-2 py-1">100%</span>
@@ -926,7 +928,7 @@
                                         <span class="text-muted">—</span>
                                     @endif
                                 </td>
-                                <td class="text-nowrap small text-muted">{{ $row['date_display'] }}</td>
+                                <td class="text-center text-nowrap small text-muted">{{ $row['date_display'] }}</td>
                                 <td class="text-center">
                                     @if ($row['score'] !== null)
                                         <span class="learning-score-pill {{ (float) $row['score'] >= (float) ($row['min_score'] ?? 70) ? 'bg-success-lt text-success' : 'bg-danger-lt text-danger' }}">
@@ -958,6 +960,14 @@
                                                         <i class="ti ti-certificate" aria-hidden="true"></i>
                                                     </a>
                                                 @endif
+                                            @elseif (!empty($row['cert_action_url']))
+                                                <a href="{{ $row['cert_action_url'] }}"
+                                                   class="btn btn-learning-certificate"
+                                                   target="_blank"
+                                                   title="{{ ($row['has_certificate'] ?? false) ? 'View Certificate' : 'Generate Certificate' }}"
+                                                   aria-label="{{ ($row['has_certificate'] ?? false) ? 'View Certificate' : 'Generate Certificate' }}">
+                                                    <i class="ti ti-certificate" aria-hidden="true"></i>
+                                                </a>
                                             @else
                                                 <button type="button"
                                                         class="btn btn-learning-certificate"
@@ -970,8 +980,8 @@
                                             <button type="button"
                                                     class="btn btn-learning-certificate-disabled"
                                                     disabled
-                                                    title="Certificate Not Available"
-                                                    aria-label="Certificate Not Available">
+                                                    title="{{ $row['cert_reason'] ?? 'Certificate Not Available' }}"
+                                                    aria-label="{{ $row['cert_reason'] ?? 'Certificate Not Available' }}">
                                                 <i class="ti ti-certificate" aria-hidden="true"></i>
                                             </button>
                                         @endif
@@ -984,9 +994,20 @@
                 </div>
             </div>
 
-            <div class="card-footer d-flex align-items-center justify-content-between py-2 px-4">
-                <span class="text-muted small">Showing {{ $rows->count() }} records</span>
-            </div>
+            @if ($rows->isNotEmpty())
+                <div class="card-footer d-flex flex-wrap align-items-center justify-content-between gap-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <select class="form-select form-select-sm w-auto" id="recordAllPageLength">
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                        </select>
+                        <span class="text-muted small" id="recordAllTableInfo"></span>
+                    </div>
+
+                    <ul class="pagination pagination-sm mb-0" id="recordAllPagination"></ul>
+                </div>
+            @endif
         @endif
     </div>
 </div>

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class OfflineTraining extends Model
@@ -195,6 +196,17 @@ class OfflineTraining extends Model
     public function registrations(): HasMany
     {
         return $this->hasMany(OfflineTrainingRegister::class, 'offline_training_id');
+    }
+
+    public function certificateSetting(): HasOne
+    {
+        return $this->hasOne(CertificateSetting::class, 'offline_training_id');
+    }
+
+    public function certificates(): HasMany
+    {
+        return $this->hasMany(Certificate::class, 'source_id')
+            ->whereIn('certificate_type', ['training_offline', 'offline']);
     }
 
     public function scopeByYear($query, $year)

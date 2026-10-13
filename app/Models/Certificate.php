@@ -12,6 +12,7 @@ class Certificate extends Model
         'certificate_type',
         'source_id',
         'content_user_id',
+        'offline_training_user_id',
         'assessment_result_id',
         'certificate_number',
         'credential_id',
@@ -40,6 +41,16 @@ class Certificate extends Model
     public function assessmentResult()
     {
         return $this->belongsTo(AssesmentResult::class);
+    }
+
+    public function offlineTrainingUser()
+    {
+        return $this->belongsTo(OfflineTrainingUser::class, 'offline_training_user_id');
+    }
+
+    public function offlineTraining()
+    {
+        return $this->belongsTo(OfflineTraining::class, 'source_id');
     }
 
     public function getLinkedInUrlAttribute(): string

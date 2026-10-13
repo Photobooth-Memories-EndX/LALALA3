@@ -10,6 +10,7 @@ class CertificateSetting extends Model
         'certificate_type',
         'content_id',
         'trainingplan_id',
+        'offline_training_id',
         'assessment_id',
         'is_assessment_required',
         'minimum_progress',
@@ -39,6 +40,11 @@ class CertificateSetting extends Model
         return $this->belongsTo(TrainingPlan::class, 'trainingplan_id');
     }
 
+    public function offlineTraining()
+    {
+        return $this->belongsTo(OfflineTraining::class, 'offline_training_id');
+    }
+
     public function assessment()
     {
         return $this->belongsTo(Assesment::class, 'assessment_id');
@@ -46,9 +52,13 @@ class CertificateSetting extends Model
 
     public function sourceId()
     {
-        return $this->certificate_type === 'content'
-            ? $this->content_id
-            : ($this->certificate_type === 'playlist' ? $this->trainingplan_id : $this->assessment_id);
+        return match ($this->certificate_type) {
+            'content' => $this->content_id,
+            'playlist' => $this->trainingplan_id,
+            'global' => $this->assessment_id,
+            'training_offline', 'offline' => $this->offline_training_id,
+            default => null,
+        };
     }
 
     public function sourceTitle(): string
@@ -58,6 +68,9 @@ class CertificateSetting extends Model
         }
         if ($this->certificate_type === 'playlist') {
             return $this->trainingPlan->title ?? 'Playlist Certificate';
+        }
+        if (in_array($this->certificate_type, ['training_offline', 'offline'], true)) {
+            return $this->offlineTraining->course_name ?? ($this->offlineTraining->title ?? 'Offline Training Certificate');
         }
         return $this->assessment->title ?? 'Global Assessment Certificate';
     }

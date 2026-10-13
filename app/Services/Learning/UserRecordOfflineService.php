@@ -4,6 +4,8 @@ namespace App\Services\Learning;
 
 use App\Models\OfflineTraining;
 use App\Models\OfflineTrainingUser;
+use App\Services\OfflineCertificate\OfflineCertificateEligibilityResult;
+use App\Services\OfflineCertificate\OfflineCertificateEligibilityService;
 use App\Support\DurationFormatter;
 use App\Support\LearningFilterHelper;
 use Illuminate\Database\Eloquent\Builder;
@@ -70,7 +72,9 @@ class UserRecordOfflineService
             ->get()
             ->filter(fn (OfflineTrainingUser $otu) => $otu->training !== null);
 
-        $normalized = $rawRecords->map(fn (OfflineTrainingUser $otu) => $this->normalizeRow($otu));
+        $eligibilityMap = app(OfflineCertificateEligibilityService::class)->evaluateMany($rawRecords);
+
+        $normalized = $rawRecords->map(fn (OfflineTrainingUser $otu) => $this->normalizeRow($otu, $eligibilityMap->get($otu->id)));
 
         return $this->applyFilters($normalized, $filters);
     }
@@ -78,7 +82,7 @@ class UserRecordOfflineService
     /**
      * Normalize an OfflineTrainingUser record into standard row format.
      */
-    public function normalizeRow(OfflineTrainingUser $otu): array
+    public function normalizeRow(OfflineTrainingUser $otu, ?OfflineCertificateEligibilityResult $eligibility = null): array
     {
         $training = $otu->training;
 
@@ -156,8 +160,22 @@ class UserRecordOfflineService
         $l2Num = $otu->l2_numerical !== null ? (float) $otu->l2_numerical : null;
         $l3Num = $otu->l3_numerical !== null ? (float) $otu->l3_numerical : null;
 
-        $rawCert = strtolower(trim((string) ($otu->certificate ?? '')));
-        $hasCertificate = in_array($rawCert, ['1', 'yes', 'true'], true);
+        if ($eligibility === null) {
+            $eligibility = app(OfflineCertificateEligibilityService::class)->evaluate($otu);
+        }
+
+        $isEligible = $eligibility->eligible;
+        $certReason = $eligibility->reason;
+        $hasCertificate = $eligibility->hasExistingCertificate();
+        $certState = ($hasCertificate || $isEligible) ? 'ready' : 'none';
+
+        if ($hasCertificate) {
+            $certActionUrl = route('certificate.show', $eligibility->certificate->credential_id);
+        } elseif ($isEligible) {
+            $certActionUrl = route('certificate.generate.offline', $otu->id);
+        } else {
+            $certActionUrl = null;
+        }
 
         return [
             'id'                        => $otu->id,
@@ -191,7 +209,11 @@ class UserRecordOfflineService
             'score'                     => $score,
             'certificate'               => $otu->certificate,
             'has_certificate'           => $hasCertificate,
-            'cert_state'                => $hasCertificate ? 'ready' : 'none',
+            'is_eligible'               => $isEligible,
+            'cert_state'                => $certState,
+            'cert_reason'               => $certReason,
+            'cert_action_url'           => $certActionUrl,
+            'cert_is_form'              => false,
             'attendance'                => $attendanceRaw !== null ? (bool) $attendanceRaw : null,
             'attendance_status'         => $attendanceStatus,
             'attendance_reason'         => $rawAttendanceReason ?: '-',
@@ -347,7 +369,7 @@ class UserRecordOfflineService
             // 12. Certificate filter (all, certified, uncertified / yes, no)
             if ($certificate !== 'all') {
                 $normCert = strtolower(trim($certificate));
-                $hasCert = (bool) ($row['has_certificate'] ?? false);
+                $hasCert = (bool) (($row['has_certificate'] ?? false) || ($row['cert_state'] ?? '') === 'ready');
                 if (in_array($normCert, ['certified', 'yes', '1'], true)) {
                     if (!$hasCert) {
                         return false;

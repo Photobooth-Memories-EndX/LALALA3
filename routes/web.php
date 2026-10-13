@@ -250,6 +250,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/certificate/generate-setting/{certificateSetting}', [UserCertificateController::class, 'generateSetting'])
         ->name('certificate.generate.setting');
 
+    Route::get('/certificate/generate-offline/{offlineTrainingUser}', [UserCertificateController::class, 'generateOffline'])
+        ->name('certificate.generate.offline');
+
     Route::get('/certificate/{credentialId}/preview', [UserCertificateController::class, 'preview'])
         ->name('certificate.preview');
 

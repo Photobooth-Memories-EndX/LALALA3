@@ -12,7 +12,7 @@
  * (progress, assessment, certificate) — keduanya dipisah menjadi dua mode
  * tampilan lewat Quick Filter dan tidak pernah difilter bersamaan.
  */
-function initLearningRecord() {
+function initLearningRecordOnline() {
     var $table = $('#learningRecordTable');
 
     if (!$table.length || $table.data('recordInit')) {
@@ -1142,4 +1142,146 @@ function initLearningRecord() {
     initCourseHoverPreview();
     initBlockedContentModal();
     render();
+}
+
+/**
+ * Standardized Client-side Pagination for Non KP OWL (Offline) & All Record tables.
+ * Shares identical behavior, page size options (10, 25, 50), button styling, and layout with KP OWL.
+ */
+function initStandardRecordPagination(tableSelector, pageLengthSelector, infoSelector, paginationSelector) {
+    var $table = $(tableSelector);
+    if (!$table.length || $table.data('recordInit')) {
+        return;
+    }
+    $table.data('recordInit', true);
+
+    var $tbody = $table.find('tbody');
+    var $rows = $tbody.find('tr.record-row');
+    var $pageLength = $(pageLengthSelector);
+    var $info = $(infoSelector);
+    var $pagination = $(paginationSelector);
+
+    var pageLength = parseInt($pageLength.val() || '10', 10);
+    var currentPage = 1;
+
+    function buildPagination(pages) {
+        $pagination.empty();
+        if (pages <= 1) {
+            return;
+        }
+
+        function item(label, page, disabled, active) {
+            var $li = $('<li class="page-item"></li>')
+                .toggleClass('disabled', !!disabled)
+                .toggleClass('active', !!active);
+
+            $('<a class="page-link" href="#"></a>').html(label).data('page', page).appendTo($li);
+            $pagination.append($li);
+        }
+
+        item('&laquo;', currentPage - 1, currentPage === 1, false);
+
+        if (pages <= 7) {
+            for (var p = 1; p <= pages; p++) {
+                item(String(p), p, false, p === currentPage);
+            }
+        } else {
+            // First page
+            item('1', 1, false, currentPage === 1);
+
+            if (currentPage > 4) {
+                $pagination.append('<li class="page-item disabled"><span class="page-link">&hellip;</span></li>');
+            }
+
+            var startPage = Math.max(2, currentPage - 1);
+            var endPage = Math.min(pages - 1, currentPage + 1);
+
+            if (currentPage <= 4) {
+                endPage = 4;
+            }
+            if (currentPage >= pages - 3) {
+                startPage = pages - 3;
+            }
+
+            for (var i = startPage; i <= endPage; i++) {
+                item(String(i), i, false, i === currentPage);
+            }
+
+            if (currentPage < pages - 3) {
+                $pagination.append('<li class="page-item disabled"><span class="page-link">&hellip;</span></li>');
+            }
+
+            // Last page
+            item(String(pages), pages, false, currentPage === pages);
+        }
+
+        item('&raquo;', currentPage + 1, currentPage === pages, false);
+    }
+
+    function render() {
+        var total = $rows.length;
+        var pages = Math.max(1, Math.ceil(total / pageLength));
+        if (currentPage > pages) currentPage = pages;
+        if (currentPage < 1) currentPage = 1;
+
+        $rows.hide();
+
+        var start = (currentPage - 1) * pageLength;
+        var end = Math.min(start + pageLength, total);
+
+        $rows.slice(start, end).show().each(function (i) {
+            $(this).find('.record-row-index').text(start + i + 1);
+        });
+
+        if (total > 0) {
+            $info.text('Showing ' + (start + 1) + ' to ' + end + ' of ' + total + ' entries');
+        } else {
+            $info.text('Showing 0 to 0 of 0 entries');
+        }
+
+        buildPagination(pages);
+    }
+
+    $pageLength.on('change', function () {
+        pageLength = parseInt($(this).val(), 10) || 10;
+        currentPage = 1;
+        render();
+    });
+
+    $pagination.on('click', 'a.page-link', function (e) {
+        e.preventDefault();
+        var $li = $(this).parent();
+        if ($li.hasClass('disabled') || $li.hasClass('active')) {
+            return;
+        }
+
+        currentPage = $(this).data('page');
+        render();
+    });
+
+    render();
+}
+
+function initLearningRecordOffline() {
+    initStandardRecordPagination(
+        '#learningRecordOfflineTable',
+        '#recordOfflinePageLength',
+        '#recordOfflineTableInfo',
+        '#recordOfflinePagination'
+    );
+}
+
+function initLearningRecordAll() {
+    initStandardRecordPagination(
+        '#learningRecordAllTable',
+        '#recordAllPageLength',
+        '#recordAllTableInfo',
+        '#recordAllPagination'
+    );
+}
+
+function initLearningRecord() {
+    initLearningRecordOnline();
+    initLearningRecordOffline();
+    initLearningRecordAll();
 }

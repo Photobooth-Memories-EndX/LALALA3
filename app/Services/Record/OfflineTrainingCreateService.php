@@ -50,6 +50,9 @@ class OfflineTrainingCreateService
             // Auto-register legitimate options to master options vocabulary
             app(OfflineOptionService::class)->ensureOptionsFromTraining($normalizedTraining, 'manual', $createdByUserId);
 
+            // Auto-provision CertificateSetting for this Offline Training
+            app(\App\Services\OfflineCertificate\OfflineCertificateLifecycleService::class)->onTrainingCreated($training);
+
             return $training->load('participants');
         });
     }

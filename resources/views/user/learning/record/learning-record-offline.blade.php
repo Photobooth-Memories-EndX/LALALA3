@@ -93,6 +93,18 @@
         outline-offset: 2px;
         border-radius: 4px;
     }
+    /* Table Horizontal Scroll & Full Training Title Readability (Standardized with Online Reference) */
+    .learning-record-scroll {
+        overflow-x: auto !important;
+        overflow-y: visible !important;
+        max-height: none !important;
+        width: 100% !important;
+        -webkit-overflow-scrolling: touch;
+    }
+    .learning-record-table {
+        min-width: 1280px !important;
+        width: 100% !important;
+    }
 
     /* Certificate Action Buttons (Standardized with Online Reference) */
     .btn-learning-certificate,
@@ -590,14 +602,14 @@
                             <tr>
                                 <th class="text-muted text-center" style="width: 3%">No</th>
                                 <th class="text-muted" style="width: 22%">Training Title</th>
-                                <th class="text-muted" style="width: 8%">Type</th>
-                                <th class="text-muted" style="width: 8%">Category</th>
-                                <th class="text-muted" style="width: 10%">Classification</th>
-                                <th class="text-muted" style="width: 7%">Duration</th>
-                                <th class="text-muted" style="width: 8%">Learning Hour</th>
+                                <th class="text-muted text-center" style="width: 8%">Type</th>
+                                <th class="text-muted text-center" style="width: 8%">Category</th>
+                                <th class="text-muted text-center" style="width: 10%">Classification</th>
+                                <th class="text-muted text-center" style="width: 7%">Duration</th>
+                                <th class="text-muted text-center" style="width: 8%">Learning Hour</th>
                                 <th class="text-muted text-center" style="width: 7%">Progress</th>
                                 <th class="text-muted text-center" style="width: 7%">Attendance</th>
-                                <th class="text-muted" style="width: 9%">Date</th>
+                                <th class="text-muted text-center" style="width: 9%">Date</th>
                                 <th class="text-muted text-center" style="width: 6%">Score</th>
                                 <th class="text-muted text-center" style="width: 8%">Certificate</th>
                             </tr>
@@ -605,7 +617,7 @@
                         <tbody>
                             @foreach ($rows as $index => $row)
                             <tr class="record-row record-row-offline">
-                                <td class="text-center text-muted">{{ $loop->iteration }}</td>
+                                <td class="text-center text-muted record-row-index">{{ $loop->iteration }}</td>
                                 <td class="learning-record-course-cell">
                                     <button type="button"
                                             class="learning-record-title record-offline-title-link btn-record-offline-detail text-start"
@@ -613,36 +625,36 @@
                                         {{ $row['title'] }}
                                     </button>
                                     @if (!empty($row['subtitle']))
-                                        <div class="text-muted small mt-0.5">
+                                        <div class="text-muted small mt-1">
                                             {{ $row['subtitle'] }}
                                         </div>
                                     @endif
                                     @if (!empty($row['venue']) && $row['venue'] !== '-')
-                                        <div class="text-muted small mt-0.5 d-flex align-items-center gap-1" style="font-size: 0.72rem;">
-                                            <i class="ti ti-map-pin" style="font-size: 0.75rem;"></i>
+                                        <div class="text-muted small mt-1 d-flex align-items-center gap-1" style="font-size: 0.75rem;">
+                                            <i class="ti ti-map-pin" style="font-size: 0.8rem;"></i>
                                             <span>{{ $row['venue'] }}</span>
                                         </div>
                                     @endif
                                     {{-- Hidden JSON storage for instant zero-N+1 modal population --}}
                                     <script type="application/json" id="record-offline-data-{{ $row['id'] }}">@json($row)</script>
                                 </td>
-                                <td>
+                                <td class="text-center">
                                     <span class="badge bg-secondary-lt learning-record-type-badge">
                                         {{ $row['type'] }}
                                     </span>
                                 </td>
-                                <td>
-                                    <span class="badge bg-light text-muted border px-2 py-1" style="font-size: 11px;">
-                                        {{ $row['category'] }}
+                                <td class="text-center">
+                                    <span class="badge bg-secondary-lt text-secondary learning-record-badge">
+                                        {{ $row['category'] ?: '—' }}
                                     </span>
                                 </td>
-                                <td>
+                                <td class="text-center">
                                     <span class="badge bg-blue-lt learning-classification-badge">
                                         {{ $row['classification'] }}
                                     </span>
                                 </td>
-                                <td class="text-nowrap">{{ $row['duration'] }}</td>
-                                <td class="text-nowrap fw-semibold text-primary">{{ $row['learning_hour'] }}</td>
+                                <td class="text-center text-nowrap">{{ $row['duration'] }}</td>
+                                <td class="text-center text-nowrap fw-semibold text-primary">{{ $row['learning_hour'] }}</td>
                                 <td class="text-center">
                                     @if ($row['progress'] >= 100)
                                         <span class="badge bg-success-lt text-success fw-bold px-2 py-1">100%</span>
@@ -681,7 +693,7 @@
                                         {{ $attStatus }}
                                     </button>
                                 </td>
-                                <td class="text-nowrap small text-muted">{{ $row['date_display'] }}</td>
+                                <td class="text-center text-nowrap small text-muted">{{ $row['date_display'] }}</td>
                                 <td class="text-center">
                                     @if ($row['score'] !== null)
                                         <span class="learning-score-pill {{ $row['score'] >= 70 ? 'bg-success-lt text-success' : 'bg-danger-lt text-danger' }}">
@@ -693,18 +705,30 @@
                                 </td>
                                 <td class="text-center">
                                     <div class="d-flex justify-content-center">
-                                        @if ($row['has_certificate'] ?? false)
-                                            <button type="button"
-                                                    class="btn btn-learning-certificate"
-                                                    title="Certificate Available"
-                                                    aria-label="Certificate Available">
-                                                <i class="ti ti-certificate" aria-hidden="true"></i>
-                                            </button>
+                                        @if (($row['has_certificate'] ?? false) || ($row['cert_state'] ?? '') === 'ready')
+                                            @if (!empty($row['cert_action_url']))
+                                                <a href="{{ $row['cert_action_url'] }}"
+                                                   class="btn btn-learning-certificate"
+                                                   target="_blank"
+                                                   title="Certificate Available"
+                                                   aria-label="Certificate Available">
+                                                    <i class="ti ti-certificate" aria-hidden="true"></i>
+                                                </a>
+                                            @else
+                                                <button type="button"
+                                                        class="btn btn-learning-certificate"
+                                                        title="Certificate Available"
+                                                        aria-label="Certificate Available">
+                                                    <i class="ti ti-certificate" aria-hidden="true"></i>
+                                                </button>
+                                            @endif
                                         @else
                                             <button type="button"
                                                     class="btn btn-learning-certificate-disabled"
                                                     disabled
                                                     title="Certificate Not Available"
+                                                    data-bs-toggle="tooltip"
+                                                    data-bs-title="{{ $row['cert_reason'] ?? 'Certificate Not Available' }}"
                                                     aria-label="Certificate Not Available">
                                                 <i class="ti ti-certificate" aria-hidden="true"></i>
                                             </button>
@@ -718,9 +742,20 @@
             </div>
         </div>
 
-        <div class="card-footer d-flex align-items-center justify-content-between py-2 px-4">
-            <span class="text-muted small">Showing {{ $rows->count() }} records</span>
-        </div>
+        @if ($rows->isNotEmpty())
+            <div class="card-footer d-flex flex-wrap align-items-center justify-content-between gap-2">
+                <div class="d-flex align-items-center gap-2">
+                    <select class="form-select form-select-sm w-auto" id="recordOfflinePageLength">
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                    </select>
+                    <span class="text-muted small" id="recordOfflineTableInfo"></span>
+                </div>
+
+                <ul class="pagination pagination-sm mb-0" id="recordOfflinePagination"></ul>
+            </div>
+        @endif
         @endif
     </div>
 </div>

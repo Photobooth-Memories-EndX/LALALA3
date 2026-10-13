@@ -587,6 +587,9 @@ class OfflineTrainingImportService
 
                     // Auto-register legitimate options from import data
                     app(OfflineOptionService::class)->ensureOptionsFromTraining($tData, 'import', $userId);
+
+                    // Auto-provision CertificateSetting for this Offline Training
+                    app(\App\Services\OfflineCertificate\OfflineCertificateLifecycleService::class)->onTrainingCreated($training);
                 }
 
                 // Prepare participant records

@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class OfflineTrainingUser extends Model
@@ -60,6 +62,16 @@ class OfflineTrainingUser extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function certificates(): HasMany
+    {
+        return $this->hasMany(Certificate::class, 'offline_training_user_id');
+    }
+
+    public function certificateRecord(): HasOne
+    {
+        return $this->hasOne(Certificate::class, 'offline_training_user_id')->latestOfMany();
     }
 
     public function scopeFinished($query)

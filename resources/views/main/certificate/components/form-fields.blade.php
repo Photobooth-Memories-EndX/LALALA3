@@ -14,6 +14,7 @@
         <option value="content" {{ $certificateType === 'content' ? 'selected' : '' }}>Content</option>
         <option value="playlist" {{ $certificateType === 'playlist' ? 'selected' : '' }}>Playlist</option>
         <option value="global" {{ $certificateType === 'global' ? 'selected' : '' }}>Global</option>
+        <option value="training_offline" {{ in_array($certificateType, ['training_offline', 'offline']) ? 'selected' : '' }}>Training Offline</option>
     </select>
 </div>
 
@@ -23,6 +24,7 @@
             class="form-control certificate-item-select"
             data-selected-content=""
             data-selected-trainingplan=""
+            data-selected-offline=""
             data-selected-assessment=""
             required>
         <option value="">Pilih data</option>
