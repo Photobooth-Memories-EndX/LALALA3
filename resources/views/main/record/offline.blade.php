@@ -13,7 +13,10 @@
 
         @include('main.record.components.record-hero')
 
-        @include('main.record.components.record-navigation')
+        <!-- 4 KPI SUMMARY CARDS (ASYNC SKELETON SHELL) -->
+        <div id="offline-kpi-summary-container">
+            @include('main.record.components.offline-kpi-skeleton')
+        </div>
 
         @if(request()->get('saved'))
         <div class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm mb-4" role="alert">
@@ -92,10 +95,7 @@
             </div>
         </div>
 
-        <!-- 4 KPI SUMMARY CARDS (ASYNC SKELETON SHELL) -->
-        <div id="offline-kpi-summary-container">
-            @include('main.record.components.offline-kpi-skeleton')
-        </div>
+        @include('main.record.components.record-navigation')
 
         <!-- CLASSIFICATION SUMMARY (ASYNC SKELETON SHELL) -->
         <div class="card border-0 shadow-sm mb-4 classification-summary-card">

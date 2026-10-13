@@ -13,7 +13,10 @@
 
         @include('main.record.components.record-hero')
 
-        @include('main.record.components.record-navigation')
+        <!-- 4 KPI SUMMARY CARDS + SOURCE SUMMARY (ASYNC SKELETON SHELL) -->
+        <div id="all-kpi-summary-container">
+            @include('main.record.components.all-kpi-skeleton')
+        </div>
 
         <!-- SECTION HEADER: All Record -->
         <div class="card border-0 shadow-sm p-3 p-md-4 mb-4 rounded-3 bg-white record-section-header">
@@ -29,10 +32,7 @@
             </div>
         </div>
 
-        <!-- 4 KPI SUMMARY CARDS + SOURCE SUMMARY (ASYNC SKELETON SHELL) -->
-        <div id="all-kpi-summary-container">
-            @include('main.record.components.all-kpi-skeleton')
-        </div>
+        @include('main.record.components.record-navigation')
 
         <!-- CLASSIFICATION SUMMARY CARD (ASYNC SKELETON SHELL) -->
         <div class="card border-0 shadow-sm rounded-4 mb-4">

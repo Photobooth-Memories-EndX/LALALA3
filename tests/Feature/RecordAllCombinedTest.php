@@ -103,7 +103,7 @@ class RecordAllCombinedTest extends TestCase
         $response->assertViewIs('main.record.all');
 
         // Verify Page title and Navigation
-        $response->assertSee('All KP OWL');
+        $response->assertSee('All Record');
         $response->assertSee('Combined Online');
         $response->assertSee('ACTIVE'); // Active badge on navigation Card 3
 
@@ -134,6 +134,44 @@ class RecordAllCombinedTest extends TestCase
         }
         $this->assertFalse($hasHeavyUnion, 'Initial GET /manage/record/all must not execute heavy aggregation queries.');
         $this->assertLessThan(2.0, $duration, 'Initial shell load should complete within 2 seconds.');
+    }
+
+    /**
+     * Test All Record landing page DIV reordering:
+     * 1. Banner (manage-record-hero)
+     * 2. Statistic Cards (all-kpi-summary-container)
+     * 3. Toolbar (record-section-header with All Record title and description)
+     * 4. Navigation Cards (record-navigation-row)
+     * 5. Main Content (all-classification-container)
+     */
+    public function test_all_record_landing_page_reordered_div_layout(): void
+    {
+        $response = $this->actingAs($this->admin)->get('/manage/record/all');
+        $response->assertStatus(200);
+
+        $content = $response->getContent();
+        $body = substr($content, strpos($content, '<body'));
+
+        $posHero = strpos($body, 'manage-record-hero');
+        $posKpi = strpos($body, 'id="all-kpi-summary-container"');
+        $posToolbar = strpos($body, 'class="card border-0 shadow-sm p-3 p-md-4 mb-4 rounded-3 bg-white record-section-header"');
+        $posNav = strpos($body, 'record-navigation-row');
+        $posClassification = strpos($body, 'id="all-classification-container"');
+
+        $this->assertNotFalse($posHero, 'Banner (manage-record-hero) must exist');
+        $this->assertNotFalse($posKpi, 'Statistic cards (all-kpi-summary-container) must exist');
+        $this->assertNotFalse($posToolbar, 'Toolbar (record-section-header) must exist');
+        $this->assertNotFalse($posNav, 'Navigation cards (record-navigation-row) must exist');
+        $this->assertNotFalse($posClassification, 'Classification summary (all-classification-container) must exist');
+
+        $this->assertLessThan($posKpi, $posHero, 'Banner must precede Statistic Cards');
+        $this->assertLessThan($posToolbar, $posKpi, 'Statistic Cards must precede Toolbar');
+        $this->assertLessThan($posNav, $posToolbar, 'Toolbar must precede Navigation Cards');
+        $this->assertLessThan($posClassification, $posNav, 'Navigation Cards must precede Classification Summary');
+
+        // Check active state for All Record
+        $response->assertSee('All Record');
+        $response->assertSee('record-nav-card--active');
     }
 
     /**

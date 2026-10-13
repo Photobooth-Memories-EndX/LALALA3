@@ -34,6 +34,40 @@ class RecordExportCenterTest extends TestCase
     }
 
     /**
+     * Test Export Center landing page DIV reordering:
+     * 1. Banner (manage-record-hero)
+     * 2. Toolbar (record-section-header with Export KP OWL title and description)
+     * 3. Navigation Cards (record-navigation-row)
+     * 4. Main Content (export-center-form)
+     */
+    public function test_export_center_page_reordered_div_layout(): void
+    {
+        $response = $this->actingAs($this->admin)->get(route('manage.record.export-all'));
+        $response->assertStatus(200);
+
+        $content = $response->getContent();
+        $body = substr($content, strpos($content, '<body'));
+
+        $posHero = strpos($body, 'manage-record-hero');
+        $posToolbar = strpos($body, 'class="card border-0 shadow-sm p-3 p-md-4 mb-4 rounded-3 bg-white record-section-header"');
+        $posNav = strpos($body, 'record-navigation-row');
+        $posMain = strpos($body, 'id="export-center-form"');
+
+        $this->assertNotFalse($posHero, 'Banner (manage-record-hero) must exist');
+        $this->assertNotFalse($posToolbar, 'Toolbar (record-section-header) must exist');
+        $this->assertNotFalse($posNav, 'Navigation cards (record-navigation-row) must exist');
+        $this->assertNotFalse($posMain, 'Main Content form (export-center-form) must exist');
+
+        $this->assertLessThan($posToolbar, $posHero, 'Banner must precede Toolbar');
+        $this->assertLessThan($posNav, $posToolbar, 'Toolbar must precede Navigation Cards');
+        $this->assertLessThan($posMain, $posNav, 'Navigation Cards must precede Main Content form');
+
+        // Check active state for Export KP OWL
+        $response->assertSee('Export KP OWL');
+        $response->assertSee('record-nav-card--active');
+    }
+
+    /**
      * Sub classifications endpoint returns valid JSON.
      */
     public function test_sub_classifications_endpoint()

@@ -177,4 +177,42 @@ class RecordOnlineDownloadDropdownTest extends TestCase
         $response->assertSee('id="btn-export-offline-csv"', false);
         $response->assertSee('Download CSV (.csv)');
     }
+
+    /**
+     * TEST 9: KP OWL (Online) landing page DIV reordering:
+     * 1. Banner (manage-record-hero)
+     * 2. Statistic Cards (kpi-summary-container)
+     * 3. Toolbar (record-section-header with title and download dropdown)
+     * 4. Navigation Cards (record-navigation-row)
+     * 5. Main Content (classification-summary-card)
+     */
+    public function test_online_landing_page_reordered_div_layout(): void
+    {
+        $response = $this->actingAs($this->admin)->get(route('manage.record.online'));
+        $response->assertStatus(200);
+
+        $content = $response->getContent();
+        $body = substr($content, strpos($content, '<body'));
+
+        $posHero = strpos($body, 'manage-record-hero');
+        $posKpi = strpos($body, 'id="kpi-summary-container"');
+        $posToolbar = strpos($body, 'class="card border-0 shadow-sm p-3 p-md-4 mb-4 rounded-3 bg-white record-section-header"');
+        $posNav = strpos($body, 'record-navigation-row');
+        $posClassification = strpos($body, 'classification-summary-card');
+
+        $this->assertNotFalse($posHero, 'Banner (manage-record-hero) must exist');
+        $this->assertNotFalse($posKpi, 'Statistic cards (kpi-summary-container) must exist');
+        $this->assertNotFalse($posToolbar, 'Toolbar (record-section-header) must exist');
+        $this->assertNotFalse($posNav, 'Navigation cards (record-navigation-row) must exist');
+        $this->assertNotFalse($posClassification, 'Classification summary (classification-summary-card) must exist');
+
+        $this->assertLessThan($posKpi, $posHero, 'Banner must precede Statistic Cards');
+        $this->assertLessThan($posToolbar, $posKpi, 'Statistic Cards must precede Toolbar');
+        $this->assertLessThan($posNav, $posToolbar, 'Toolbar must precede Navigation Cards');
+        $this->assertLessThan($posClassification, $posNav, 'Navigation Cards must precede Classification Summary');
+
+        // Check active state for KP OWL
+        $response->assertSee('KP OWL');
+        $response->assertSee('record-nav-card--active');
+    }
 }

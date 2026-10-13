@@ -37,6 +37,46 @@ class OfflineTrainingRefactorUiTest extends TestCase
     }
 
     /**
+     * Test offline landing page DIV reordering:
+     * 1. Banner (record-hero)
+     * 2. Statistic Cards (offline-kpi-summary-container)
+     * 3. Toolbar (record-section-header with Add Training, Import, Download)
+     * 4. Navigation Cards (record-navigation-row)
+     * 5. Main Content (classification-summary-card)
+     */
+    public function test_offline_landing_page_reordered_div_layout(): void
+    {
+        $response = $this->actingAs($this->admin)->get(route('manage.record.offline'));
+        $response->assertStatus(200);
+
+        $content = $response->getContent();
+
+        $body = substr($content, strpos($content, '<body'));
+
+        $posHero = strpos($body, 'manage-record-hero');
+        $posKpi = strpos($body, 'id="offline-kpi-summary-container"');
+        $posToolbar = strpos($body, 'class="card border-0 shadow-sm p-3 p-md-4 mb-4 rounded-3 bg-white record-section-header"');
+        $posNav = strpos($body, 'record-navigation-row');
+        $posClassification = strpos($body, 'classification-summary-card');
+
+        $this->assertNotFalse($posHero, 'Banner (manage-record-hero) must exist');
+        $this->assertNotFalse($posKpi, 'Statistic cards (offline-kpi-summary-container) must exist');
+        $this->assertNotFalse($posToolbar, 'Toolbar (record-section-header) must exist');
+        $this->assertNotFalse($posNav, 'Navigation cards (record-navigation-row) must exist');
+        $this->assertNotFalse($posClassification, 'Classification summary (classification-summary-card) must exist');
+
+        $this->assertLessThan($posKpi, $posHero, 'Banner must precede Statistic Cards');
+        $this->assertLessThan($posToolbar, $posKpi, 'Statistic Cards must precede Toolbar');
+        $this->assertLessThan($posNav, $posToolbar, 'Toolbar must precede Navigation Cards');
+        $this->assertLessThan($posClassification, $posNav, 'Navigation Cards must precede Classification Summary');
+
+        // Verify required toolbar elements
+        $response->assertSee('id="btn-open-offline-add"', false);
+        $response->assertSee('id="btn-open-offline-import"', false);
+        $response->assertSee('id="btn-download-dropdown"', false);
+    }
+
+    /**
      * Test Case 1, 2, 3, 4, 8:
      * Check Create page renders with:
      * - Schedule header renamed to SCHEDULE & DURATION PROGRAM EVALUATION

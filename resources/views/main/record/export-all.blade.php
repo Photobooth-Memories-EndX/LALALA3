@@ -13,8 +13,6 @@
 
         @include('main.record.components.record-hero')
 
-        @include('main.record.components.record-navigation')
-
         <!-- SECTION HEADER: Export KP OWL -->
         <div class="card border-0 shadow-sm p-3 p-md-4 mb-4 rounded-3 bg-white record-section-header">
             <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
@@ -36,6 +34,8 @@
                 </div>
             </div>
         </div>
+
+        @include('main.record.components.record-navigation')
 
         <!-- EXPORT CENTER MAIN FORM CONTAINER -->
         <form id="export-center-form" action="{{ route('manage.record.export-all.download') }}" method="GET" target="_blank">
