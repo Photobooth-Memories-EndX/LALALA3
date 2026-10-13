@@ -13,6 +13,7 @@ class ManageAccessPermissionController extends Controller
         User::ROLE_SUBADMIN_DIVISION,
         User::ROLE_ADMIN,
         User::ROLE_SUPER_ADMIN,
+        User::ROLE_APPROVER,
     ];
 
     private array $modules = [

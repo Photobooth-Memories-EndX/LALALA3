@@ -18,6 +18,7 @@ class User extends Authenticatable
     public const ROLE_ADMIN = 2;
     public const ROLE_SUPER_ADMIN = 3;
     public const ROLE_SUBADMIN_DIVISION = 4;
+    public const ROLE_APPROVER = 5;
 
     /**
      * The attributes that are mass assignable.
@@ -93,6 +94,16 @@ class User extends Authenticatable
     {
         return (int) $this->role === self::ROLE_SUBADMIN_DIVISION;
     }
+
+    public function isApprover(): bool
+    {
+        return (int) $this->role === self::ROLE_APPROVER;
+    }
+
+    public function canApproveTraining(): bool
+    {
+        return $this->isApprover() || $this->isAdmin() || $this->isSuperAdmin();
+    }
 public function canManageLms()
 {
     return in_array((int) $this->role, [
@@ -128,6 +139,7 @@ public function canManageLms()
             static::ROLE_ADMIN              => 'Administrator',
             static::ROLE_SUPER_ADMIN        => 'Super Admin',
             static::ROLE_SUBADMIN_DIVISION  => 'Sub Admin',
+            static::ROLE_APPROVER           => 'Approver',
         ];
     }
 

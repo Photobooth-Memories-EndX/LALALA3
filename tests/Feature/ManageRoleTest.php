@@ -37,7 +37,7 @@ class ManageRoleTest extends TestCase
         ]);
     }
 
-    public function test_role_dropdown_contains_all_four_roles_in_exact_order(): void
+    public function test_role_dropdown_contains_all_five_roles_in_exact_order(): void
     {
         $response = $this->actingAs($this->superAdmin)
             ->get(route('manage.role.index'));
@@ -45,7 +45,7 @@ class ManageRoleTest extends TestCase
         $response->assertOk();
         $response->assertSee('Edit User Organization');
 
-        // Verify exact order in dropdown: User (1) -> Sub Admin (4) -> Administrator (2) -> Super Admin (3)
+        // Verify exact order in dropdown: User (1) -> Sub Admin (4) -> Administrator (2) -> Super Admin (3) -> Approver (5)
         $response->assertSeeInOrder([
             '<option value="1"',
             'User',
@@ -55,6 +55,8 @@ class ManageRoleTest extends TestCase
             'Administrator',
             '<option value="3"',
             'Super Admin',
+            '<option value="5"',
+            'Approver',
         ], false);
     }
 
@@ -101,6 +103,19 @@ class ManageRoleTest extends TestCase
         $responseSubadmin->assertRedirect(route('manage.role.index'));
         $this->assertEquals(User::ROLE_SUBADMIN_DIVISION, (int) $this->targetUser->fresh()->role);
 
+        // Test assign Approver (Role 5)
+        $responseApprover = $this->actingAs($this->superAdmin)
+            ->put(route('manage.role.update', $this->targetUser->id), [
+                'role' => User::ROLE_APPROVER,
+                'division' => 'Technology',
+                'department' => 'IT',
+                'team' => 'Management',
+            ]);
+        $responseApprover->assertRedirect(route('manage.role.index'));
+        $this->assertEquals(User::ROLE_APPROVER, (int) $this->targetUser->fresh()->role);
+        $this->assertTrue($this->targetUser->fresh()->isApprover());
+        $this->assertEquals('Approver', $this->targetUser->fresh()->role_name);
+
         // Test assign User (Role 1)
         $responseUser = $this->actingAs($this->superAdmin)
             ->put(route('manage.role.update', $this->targetUser->id), [
@@ -118,6 +133,7 @@ class ManageRoleTest extends TestCase
         $admin = $this->createTestUser(User::ROLE_ADMIN);
         $user = $this->createTestUser(User::ROLE_USER);
         $subadmin = $this->createTestUser(User::ROLE_SUBADMIN_DIVISION);
+        $approver = $this->createTestUser(User::ROLE_APPROVER);
 
         // Guest redirect
         $this->get(route('manage.role.index'))
@@ -140,6 +156,12 @@ class ManageRoleTest extends TestCase
         // Subadmin Division (4) forbidden
         $this->actingAs($subadmin)->get(route('manage.role.index'))->assertForbidden();
         $this->actingAs($subadmin)->put(route('manage.role.update', $this->targetUser->id), [
+            'role' => User::ROLE_SUPER_ADMIN,
+        ])->assertForbidden();
+
+        // Approver (5) forbidden
+        $this->actingAs($approver)->get(route('manage.role.index'))->assertForbidden();
+        $this->actingAs($approver)->put(route('manage.role.update', $this->targetUser->id), [
             'role' => User::ROLE_SUPER_ADMIN,
         ])->assertForbidden();
     }
