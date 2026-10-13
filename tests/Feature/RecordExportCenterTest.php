@@ -324,4 +324,88 @@ class RecordExportCenterTest extends TestCase
         $memDiffMb = ($endMem - $startMem) / (1024 * 1024);
         $this->assertLessThan(40, $memDiffMb, "Memory increased by {$memDiffMb} MB");
     }
+
+    /**
+     * CASE 16: Step 5 Export Format is rendered as full-width dropdown, not cards.
+     */
+    public function test_case_16_step_5_format_dropdown_rendered()
+    {
+        $response = $this->actingAs($this->admin)->get(route('manage.record.export-all'));
+
+        $response->assertStatus(200);
+        // Heading & subtitle preserved
+        $response->assertSee('Choose Export Format');
+        $response->assertSee('Select the target file format for your generated report.');
+
+        // Format dropdown exists
+        $response->assertSee('Select Export Format');
+        $response->assertSee('id="selected-format"', false);
+        $response->assertSee('name="format"', false);
+        $response->assertSee('value="xlsx"', false);
+        $response->assertSee('value="csv"', false);
+        $response->assertSee('value="pdf"', false);
+        $response->assertSee('Excel Spreadsheet (.xlsx)');
+        $response->assertSee('CSV Delimited (.csv)');
+        $response->assertSee('PDF Landscape (.pdf)');
+
+        // Format cards are removed
+        $response->assertDontSee('format-card');
+        $response->assertDontSee('format-check-icon');
+
+        // Full width class present
+        $response->assertSee('export-format-select w-100', false);
+
+        // PDF limit notice container exists
+        $response->assertSee('id="pdf-limit-notice"', false);
+
+        // Action summary element exists
+        $response->assertSee('id="action-summary-text"', false);
+    }
+
+    /**
+     * CASE 17: Step 1 Data Source is rendered as full-width native dropdown, not cards.
+     */
+    public function test_case_17_step_1_source_dropdown_rendered()
+    {
+        $response = $this->actingAs($this->admin)->get(route('manage.record.export-all'));
+
+        $response->assertStatus(200);
+        // Step 1 title preserved
+        $response->assertSee('Choose Data Source');
+        $response->assertSee('Select the learning repository to export.');
+
+        // Step 1 dropdown exists
+        $response->assertSee('Select Data Source');
+        $response->assertSee('id="selected-source"', false);
+        $response->assertSee('name="source"', false);
+        $response->assertSee('value="online"', false);
+        $response->assertSee('value="offline"', false);
+        $response->assertSee('value="all"', false);
+        $response->assertSee('Online Learning Record (KP OWL)');
+        $response->assertSee('Offline Training Record (Non KP OWL)');
+        $response->assertSee('Combined Learning Record (All Sources)');
+
+        // Full width class present
+        $response->assertSee('export-source-select w-100', false);
+
+        // Source cards are removed
+        $response->assertDontSee('source-card');
+        $response->assertDontSee('source-check-icon');
+    }
+
+    /**
+     * CASE 18: Form does not contain duplicate source or format input fields.
+     */
+    public function test_case_18_no_duplicate_source_or_format_inputs()
+    {
+        $response = $this->actingAs($this->admin)->get(route('manage.record.export-all'));
+
+        $response->assertStatus(200);
+        $content = $response->getContent();
+
+        // Exactly 1 occurrence of name="source" and name="format"
+        $this->assertEquals(1, substr_count($content, 'name="source"'), 'Expected exactly one name="source" field');
+        $this->assertEquals(1, substr_count($content, 'name="format"'), 'Expected exactly one name="format" field');
+    }
 }
+
