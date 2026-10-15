@@ -60,7 +60,7 @@
                                 </span>
                                 <select class="form-select export-source-select w-100 rounded-end-3 py-2 ps-2" name="source" id="selected-source" aria-label="Select Data Source">
                                     <option value="online" selected>Online Learning Record (KP OWL)</option>
-                                    <option value="offline">Offline Training Record (Non KP OWL)</option>
+                                    <option value="offline">Offline Learning Record (Non KP OWL)</option>
                                     <option value="all">Combined Learning Record (All Sources)</option>
                                 </select>
                             </div>
@@ -85,17 +85,7 @@
                 </div>
                 <div class="card-body px-4 pb-4 pt-2">
                     <div class="row g-3">
-                        <!-- Learning Title / Course Name -->
-                        <div class="col-12 col-md-6 col-lg-4">
-                            <label class="form-label fw-bold text-dark small" for="filter-title">
-                                <i class="ti ti-book me-1 text-muted"></i> <span id="label-learning-title">Learning / Course Title</span>
-                            </label>
-                            <input type="text" id="filter-title" name="learning_title" class="form-control rounded-3"
-                                   placeholder="Search course title..." autocomplete="off">
-                            <small class="text-muted" style="font-size: 0.75rem;">Matches course, document, video, or playlist title.</small>
-                        </div>
-
-                        <!-- Main Classification -->
+                        <!-- 1. Main Classification -->
                         <div class="col-12 col-md-6 col-lg-4">
                             <label class="form-label fw-bold text-dark small" for="filter-classification">
                                 <i class="ti ti-category me-1 text-muted"></i> Main Classification
@@ -108,18 +98,7 @@
                             </select>
                         </div>
 
-                        <!-- Sub Classification (Offline & Combined) -->
-                        <div class="col-12 col-md-6 col-lg-4 filter-sub-classification-wrapper" id="wrapper-sub-classification" style="display: none;">
-                            <label class="form-label fw-bold text-dark small" for="filter-sub-classification">
-                                <i class="ti ti-subtask me-1 text-muted"></i> Sub Classification
-                            </label>
-                            <select id="filter-sub-classification" name="sub_classification" class="form-select rounded-3">
-                                <option value="all">All Sub Classifications</option>
-                            </select>
-                            <small class="text-muted" style="font-size: 0.75rem;">Dynamically updates based on chosen Main Classification.</small>
-                        </div>
-
-                        <!-- Content Type (Online Only) -->
+                        <!-- 2. Content Type (Online & Combined) / Training Type (Offline) -->
                         <div class="col-12 col-md-6 col-lg-4 filter-online-only" id="wrapper-content-type">
                             <label class="form-label fw-bold text-dark small" for="filter-content-type">
                                 <i class="ti ti-file-text me-1 text-muted"></i> Content Type
@@ -131,22 +110,9 @@
                             </select>
                         </div>
 
-                        <!-- Online Category Source (Online Only) -->
-                        <div class="col-12 col-md-6 col-lg-4 filter-online-only" id="wrapper-online-category">
-                            <label class="form-label fw-bold text-dark small" for="filter-online-category-select">
-                                <i class="ti ti-folders me-1 text-muted"></i> Online Source Category
-                            </label>
-                            <select id="filter-online-category-select" name="category" class="form-select rounded-3">
-                                <option value="all">All (Content &amp; Playlists)</option>
-                                <option value="all_content">Single Content Only</option>
-                                <option value="playlist">Playlists Only</option>
-                            </select>
-                        </div>
-
-                        <!-- Training Type (Offline Only) -->
                         <div class="col-12 col-md-6 col-lg-4 filter-offline-only" id="wrapper-training-type" style="display: none;">
                             <label class="form-label fw-bold text-dark small" for="filter-training-type">
-                                <i class="ti ti-school me-1 text-muted"></i> Training Type
+                                <i class="ti ti-school me-1 text-muted"></i> Content Type
                             </label>
                             <select id="filter-training-type" name="type" class="form-select rounded-3" disabled>
                                 <option value="all">All Training Types</option>
@@ -156,10 +122,21 @@
                             </select>
                         </div>
 
-                        <!-- Offline Category (Offline Only) -->
+                        <!-- 3. Category (Online Source Category / Offline Category) -->
+                        <div class="col-12 col-md-6 col-lg-4 filter-online-only" id="wrapper-online-category">
+                            <label class="form-label fw-bold text-dark small" for="filter-online-category-select">
+                                <i class="ti ti-folders me-1 text-muted"></i> Category
+                            </label>
+                            <select id="filter-online-category-select" name="category" class="form-select rounded-3">
+                                <option value="all">All (Content &amp; Playlists)</option>
+                                <option value="all_content">Single Content Only</option>
+                                <option value="playlist">Playlists Only</option>
+                            </select>
+                        </div>
+
                         <div class="col-12 col-md-6 col-lg-4 filter-offline-only" id="wrapper-offline-category" style="display: none;">
                             <label class="form-label fw-bold text-dark small" for="filter-offline-category-select">
-                                <i class="ti ti-tag me-1 text-muted"></i> Training Category
+                                <i class="ti ti-tag me-1 text-muted"></i> Category
                             </label>
                             <select id="filter-offline-category-select" name="category" class="form-select rounded-3" disabled>
                                 <option value="all">All Categories</option>
@@ -169,7 +146,17 @@
                             </select>
                         </div>
 
-                        <!-- Status -->
+                        <!-- 4. Learning Title (Content / Playlist / Course Title search) -->
+                        <div class="col-12 col-md-6 col-lg-4">
+                            <label class="form-label fw-bold text-dark small" for="filter-title">
+                                <i class="ti ti-book me-1 text-muted"></i> <span id="label-learning-title">Learning / Course Title</span>
+                            </label>
+                            <input type="text" id="filter-title" name="learning_title" class="form-control rounded-3"
+                                   placeholder="Search course title..." autocomplete="off">
+                            <small class="text-muted" style="font-size: 0.75rem;">Matches course, document, video, or playlist title.</small>
+                        </div>
+
+                        <!-- 5. Completion Status -->
                         <div class="col-12 col-md-6 col-lg-4">
                             <label class="form-label fw-bold text-dark small" for="filter-status">
                                 <i class="ti ti-chart-dots me-1 text-muted"></i> Completion Status
@@ -182,7 +169,7 @@
                             </select>
                         </div>
 
-                        <!-- Progress Range -->
+                        <!-- 6. Progress Range -->
                         <div class="col-12 col-md-6 col-lg-4">
                             <label class="form-label fw-bold text-dark small" for="filter-progress">
                                 <i class="ti ti-percentage me-1 text-muted"></i> Progress Range
@@ -198,19 +185,15 @@
                             </select>
                         </div>
 
-                        <!-- Participant Learning Hours Range (Combined & Offline) -->
-                        <div class="col-12 col-md-6 col-lg-4 filter-hours-wrapper" id="wrapper-hours">
-                            <label class="form-label fw-bold text-dark small" for="filter-hours">
-                                <i class="ti ti-clock me-1 text-muted"></i> Learning Hours Range
+                        <!-- Sub Classification (Offline & Combined) -->
+                        <div class="col-12 col-md-6 col-lg-4 filter-sub-classification-wrapper" id="wrapper-sub-classification" style="display: none;">
+                            <label class="form-label fw-bold text-dark small" for="filter-sub-classification">
+                                <i class="ti ti-subtask me-1 text-muted"></i> Sub Classification
                             </label>
-                            <select id="filter-hours" name="learning_hours_range" class="form-select rounded-3">
-                                <option value="all">All Hours</option>
-                                <option value="lt05">&lt; 0.5 Hour</option>
-                                <option value="05-1">0.5 – &lt; 1 Hour</option>
-                                <option value="1-2">1 – &lt; 2 Hours</option>
-                                <option value="2-4">2 – &lt; 4 Hours</option>
-                                <option value="gte4">&ge; 4 Hours</option>
+                            <select id="filter-sub-classification" name="sub_classification" class="form-select rounded-3">
+                                <option value="all">All Sub Classifications</option>
                             </select>
+                            <small class="text-muted" style="font-size: 0.75rem;">Dynamically updates based on chosen Main Classification.</small>
                         </div>
 
                         <!-- Batch (Offline Only) -->
@@ -274,28 +257,18 @@
                 </div>
             </div>
 
-            <!-- STEP 3: EMPLOYEE & ORGANIZATION FILTERS -->
+            <!-- STEP 3: LEARNERS FILTERS -->
             <div class="card border-0 shadow-sm rounded-4 mb-4 step-card">
                 <div class="card-header bg-transparent border-0 pt-4 pb-2 px-4">
                     <div class="d-flex align-items-center gap-2">
                         <span class="badge bg-primary text-white rounded-circle p-2 d-inline-flex align-items-center justify-content-center" style="width: 26px; height: 26px; font-size: 0.75rem;">3</span>
-                        <h4 class="card-title fw-bold text-dark mb-0">Employee &amp; Organization Filters</h4>
+                        <h4 class="card-title fw-bold text-dark mb-0">3. Learners Filters</h4>
                     </div>
-                    <p class="text-muted small mb-0 mt-1 ms-4 ps-1">Scope report by participant details, company, division, department, team, and level.</p>
+                    <p class="text-muted small mb-0 mt-1 ms-4 ps-1">Scope report by learner details, group, company, division, department, team, and employee.</p>
                 </div>
                 <div class="card-body px-4 pb-4 pt-2">
                     <div class="row g-3">
-                        <!-- Employee / NIP Search -->
-                        <div class="col-12 col-md-6 col-lg-4">
-                            <label class="form-label fw-bold text-dark small" for="filter-employee">
-                                <i class="ti ti-user me-1 text-muted"></i> Employee / NIP
-                            </label>
-                            <input type="text" id="filter-employee" name="employee_id" class="form-control rounded-3"
-                                   placeholder="Search NIP or Name..." autocomplete="off">
-                            <small class="text-muted" style="font-size: 0.75rem;">Matches NIP or employee name across systems.</small>
-                        </div>
-
-                        <!-- Company -->
+                        <!-- 1. Company -->
                         <div class="col-12 col-md-6 col-lg-4">
                             <label class="form-label fw-bold text-dark small" for="filter-company">
                                 <i class="ti ti-building me-1 text-muted"></i> Company
@@ -308,7 +281,7 @@
                             </select>
                         </div>
 
-                        <!-- Division -->
+                        <!-- 2. Division -->
                         <div class="col-12 col-md-6 col-lg-4">
                             <label class="form-label fw-bold text-dark small" for="filter-division">
                                 <i class="ti ti-layout-grid me-1 text-muted"></i> Division
@@ -321,7 +294,7 @@
                             </select>
                         </div>
 
-                        <!-- Department -->
+                        <!-- 3. Department -->
                         <div class="col-12 col-md-6 col-lg-4">
                             <label class="form-label fw-bold text-dark small" for="filter-department">
                                 <i class="ti ti-sitemap me-1 text-muted"></i> Department
@@ -334,12 +307,33 @@
                             </select>
                         </div>
 
-                        <!-- Team -->
+                        <!-- 4. Team / Section -->
                         <div class="col-12 col-md-6 col-lg-4">
                             <label class="form-label fw-bold text-dark small" for="filter-team">
                                 <i class="ti ti-users me-1 text-muted"></i> Team / Section
                             </label>
                             <input type="text" id="filter-team" name="team" class="form-control rounded-3" placeholder="Search team...">
+                        </div>
+
+                        <!-- 5. Group (New Placeholder Input) -->
+                        <div class="col-12 col-md-6 col-lg-4">
+                            <label class="form-label fw-bold text-dark small" for="filter-group">
+                                <i class="ti ti-users-group me-1 text-muted"></i> Group
+                            </label>
+                            <select id="filter-group" name="group" class="form-select rounded-3">
+                                <option value="all" selected>All Groups</option>
+                            </select>
+                            <small class="text-muted" style="font-size: 0.75rem;">Scope by learner group classification.</small>
+                        </div>
+
+                        <!-- 6. Employee / NIP -->
+                        <div class="col-12 col-md-6 col-lg-4">
+                            <label class="form-label fw-bold text-dark small" for="filter-employee">
+                                <i class="ti ti-user me-1 text-muted"></i> Employee / NIP
+                            </label>
+                            <input type="text" id="filter-employee" name="employee_id" class="form-control rounded-3"
+                                   placeholder="Search NIP or Name..." autocomplete="off">
+                            <small class="text-muted" style="font-size: 0.75rem;">Matches NIP or employee name across systems.</small>
                         </div>
 
                         <!-- Job Position (Offline Only) -->
@@ -373,38 +367,99 @@
                         <span class="badge bg-primary text-white rounded-circle p-2 d-inline-flex align-items-center justify-content-center" style="width: 26px; height: 26px; font-size: 0.75rem;">4</span>
                         <h4 class="card-title fw-bold text-dark mb-0">Period Filters</h4>
                     </div>
-                    <p class="text-muted small mb-0 mt-1 ms-4 ps-1">Define reporting timeframe by year or specific start and finish date range.</p>
+                    <p class="text-muted small mb-0 mt-1 ms-4 ps-1">Define reporting timeframe dynamically by week, month, year, or custom date range.</p>
                 </div>
                 <div class="card-body px-4 pb-4 pt-2">
-                    <div class="row g-3">
-                        <!-- Year -->
-                        <div class="col-12 col-md-6 col-lg-4">
+                    <div class="row g-3 align-items-start">
+                        <!-- Primary Dropdown: Period Type -->
+                        <div class="col-12 col-md-6 col-lg-3" id="wrapper-period-type">
+                            <label class="form-label fw-bold text-dark small" for="filter-period-type">
+                                <i class="ti ti-calendar-time me-1 text-muted"></i> Period Type
+                            </label>
+                            <select id="filter-period-type" name="period_type" class="form-select rounded-3">
+                                <option value="Year" selected>Yearly (Year)</option>
+                                <option value="Month">Monthly (Month)</option>
+                                <option value="Week">Weekly (Week)</option>
+                                <option value="Custom">Custom Range (Custom)</option>
+                            </select>
+                            <small class="text-muted" style="font-size: 0.75rem;">Choose reporting timeframe mode.</small>
+                        </div>
+
+                        <!-- Dynamic Dropdown: Select Week (Visible when Week is selected) -->
+                        <div class="col-12 col-md-6 col-lg-3 filter-period-element" id="wrapper-period-week" style="display: none;">
+                            <label class="form-label fw-bold text-dark small" for="filter-week">
+                                <i class="ti ti-calendar-week me-1 text-muted"></i> Select Week
+                            </label>
+                            <select id="filter-week" name="week" class="form-select rounded-3">
+                                <option value="1" selected>Week 1 (Days 1 - 7)</option>
+                                <option value="2">Week 2 (Days 8 - 14)</option>
+                                <option value="3">Week 3 (Days 15 - 21)</option>
+                                <option value="4">Week 4 (Days 22 - 28)</option>
+                                <option value="5">Week 5 (Days 29 - End)</option>
+                            </select>
+                            <small class="text-muted" style="font-size: 0.75rem;">Week of selected month.</small>
+                        </div>
+
+                        <!-- Dynamic Dropdown: Select Month (Visible when Month or Week is selected) -->
+                        <div class="col-12 col-md-6 col-lg-3 filter-period-element" id="wrapper-period-month" style="display: none;">
+                            <label class="form-label fw-bold text-dark small" for="filter-month">
+                                <i class="ti ti-calendar me-1 text-muted"></i> Select Month
+                            </label>
+                            <select id="filter-month" name="month" class="form-select rounded-3">
+                                @php
+                                    $currentMonthNum = (int) date('n');
+                                    $monthNames = [
+                                        1 => 'January', 2 => 'February', 3 => 'March', 4 => 'April',
+                                        5 => 'May', 6 => 'June', 7 => 'July', 8 => 'August',
+                                        9 => 'September', 10 => 'October', 11 => 'November', 12 => 'December'
+                                    ];
+                                @endphp
+                                @foreach ($monthNames as $num => $name)
+                                    <option value="{{ $num }}" {{ $num === $currentMonthNum ? 'selected' : '' }}>
+                                        {{ $name }} ({{ sprintf('%02d', $num) }})
+                                    </option>
+                                @endforeach
+                            </select>
+                            <small class="text-muted" style="font-size: 0.75rem;">Month of reporting period.</small>
+                        </div>
+
+                        <!-- Dynamic Dropdown: Select Year (Visible when Year, Month, or Week is selected) -->
+                        <div class="col-12 col-md-6 col-lg-3 filter-period-element" id="wrapper-period-year">
                             <label class="form-label fw-bold text-dark small" for="filter-year">
-                                <i class="ti ti-calendar-event me-1 text-muted"></i> Reporting Year
+                                <i class="ti ti-calendar-event me-1 text-muted"></i> Select Year
                             </label>
                             <select id="filter-year" name="year" class="form-select rounded-3">
-                                <option value="all">All Years</option>
+                                <option value="">All Years</option>
                                 @foreach ($years as $yr)
                                     <option value="{{ $yr }}" {{ $yr == $currentYear ? 'selected' : '' }}>{{ $yr }}</option>
                                 @endforeach
                             </select>
+                            <small class="text-muted" style="font-size: 0.75rem;">Reporting year.</small>
                         </div>
 
-                        <!-- Start Date -->
-                        <div class="col-12 col-md-6 col-lg-4">
+                        <!-- Dynamic Date Picker: From Date (Visible when Custom is selected) -->
+                        <div class="col-12 col-md-6 col-lg-3 filter-period-element" id="wrapper-period-from" style="display: none;">
                             <label class="form-label fw-bold text-dark small" for="filter-from-date">
-                                <i class="ti ti-calendar me-1 text-muted"></i> From Date
+                                <i class="ti ti-calendar-stats me-1 text-muted"></i> From Date
                             </label>
-                            <input type="date" id="filter-from-date" name="from_date" class="form-control rounded-3">
+                            <input type="date" id="filter-from-date" name="from_date" class="form-control rounded-3" disabled>
+                            <small class="text-muted" style="font-size: 0.75rem;">Custom start date.</small>
                         </div>
 
-                        <!-- End Date -->
-                        <div class="col-12 col-md-6 col-lg-4">
+                        <!-- Dynamic Date Picker: To Date (Visible when Custom is selected) -->
+                        <div class="col-12 col-md-6 col-lg-3 filter-period-element" id="wrapper-period-to" style="display: none;">
                             <label class="form-label fw-bold text-dark small" for="filter-to-date">
-                                <i class="ti ti-calendar me-1 text-muted"></i> To Date
+                                <i class="ti ti-calendar-stats me-1 text-muted"></i> To Date
                             </label>
-                            <input type="date" id="filter-to-date" name="to_date" class="form-control rounded-3">
+                            <input type="date" id="filter-to-date" name="to_date" class="form-control rounded-3" disabled>
+                            <small class="text-muted" style="font-size: 0.75rem;">Custom finish date.</small>
                         </div>
+                    </div>
+
+                    <!-- Active Timeframe Indicator Badge -->
+                    <div id="period-summary-badge" class="mt-3 p-2.5 px-3 rounded-3 bg-light border text-dark small d-flex align-items-center gap-2" style="font-size: 0.825rem;">
+                        <i class="ti ti-clock-play text-primary fs-3 flex-shrink-0"></i>
+                        <span><strong>Active Timeframe:</strong> <span id="period-summary-text">Full Year {{ $currentYear }}</span></span>
                     </div>
 
                     <!-- Date Range Error Alert -->
@@ -436,8 +491,8 @@
                                 </span>
                                 <select class="form-select export-format-select w-100 rounded-end-3 py-2 ps-2" name="format" id="selected-format" aria-label="Select Export Format">
                                     <option value="xlsx" selected>Excel Spreadsheet (.xlsx)</option>
-                                    <option value="csv">CSV Delimited (.csv)</option>
-                                    <option value="pdf">PDF Landscape (.pdf)</option>
+                                    <option value="csv">CSV File (.csv)</option>
+                                    <option value="pdf">PDF Document (.pdf)</option>
                                 </select>
                             </div>
 
@@ -850,12 +905,197 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // 4. DATE RANGE VALIDATION (From Date must not be later than To Date)
+    // 4. DYNAMIC PERIOD FILTERS HANDLER (LinkedIn / Time Range Style)
+    const periodTypeSelect = document.getElementById('filter-period-type');
+    const wrapperPeriodWeek = document.getElementById('wrapper-period-week');
+    const wrapperPeriodMonth = document.getElementById('wrapper-period-month');
+    const wrapperPeriodYear = document.getElementById('wrapper-period-year');
+    const wrapperPeriodFrom = document.getElementById('wrapper-period-from');
+    const wrapperPeriodTo = document.getElementById('wrapper-period-to');
+
+    const weekSelect = document.getElementById('filter-week');
+    const monthSelect = document.getElementById('filter-month');
+    const yearSelect = document.getElementById('filter-year');
     const fromDateInput = document.getElementById('filter-from-date');
     const toDateInput = document.getElementById('filter-to-date');
     const dateRangeError = document.getElementById('date-range-error');
+    const periodSummaryText = document.getElementById('period-summary-text');
 
+    function getDaysInMonth(year, month) {
+        return new Date(year, month, 0).getDate();
+    }
+
+    function padZero(num) {
+        return String(num).padStart(2, '0');
+    }
+
+    function updateWeekOptions(daysInMonth) {
+        if (!weekSelect) return;
+        const currentVal = parseInt(weekSelect.value, 10) || 1;
+        weekSelect.innerHTML = '';
+
+        const weeks = [
+            { val: 1, label: 'Week 1 (Days 1 - 7)' },
+            { val: 2, label: 'Week 2 (Days 8 - 14)' },
+            { val: 3, label: 'Week 3 (Days 15 - 21)' },
+            { val: 4, label: 'Week 4 (Days 22 - 28)' },
+        ];
+
+        if (daysInMonth > 28) {
+            weeks.push({ val: 5, label: `Week 5 (Days 29 - ${daysInMonth})` });
+        }
+
+        weeks.forEach(w => {
+            const opt = document.createElement('option');
+            opt.value = w.val;
+            opt.textContent = w.label;
+            if (w.val === currentVal || (currentVal > 4 && w.val === weeks.length)) {
+                opt.selected = true;
+            }
+            weekSelect.appendChild(opt);
+        });
+    }
+
+    function updatePeriodDisplayAndDates() {
+        if (!periodTypeSelect) return;
+        const type = periodTypeSelect.value;
+        const yVal = yearSelect ? yearSelect.value : '';
+        const mVal = monthSelect ? parseInt(monthSelect.value, 10) : (new Date().getMonth() + 1);
+        const wVal = weekSelect ? parseInt(weekSelect.value, 10) : 1;
+        const currentYearNum = new Date().getFullYear();
+        const yearNum = (yVal && yVal !== 'all') ? parseInt(yVal, 10) : currentYearNum;
+
+        const monthNames = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        const daysInMonth = getDaysInMonth(yearNum, mVal);
+        updateWeekOptions(daysInMonth);
+
+        if (type === 'Week') {
+            const startDay = Math.min(daysInMonth, (wVal - 1) * 7 + 1);
+            const endDay = (wVal === 5) ? daysInMonth : Math.min(daysInMonth, wVal * 7);
+            const fromDateStr = `${yearNum}-${padZero(mVal)}-${padZero(startDay)}`;
+            const toDateStr = `${yearNum}-${padZero(mVal)}-${padZero(endDay)}`;
+
+            if (fromDateInput) {
+                fromDateInput.value = fromDateStr;
+                fromDateInput.disabled = false;
+            }
+            if (toDateInput) {
+                toDateInput.value = toDateStr;
+                toDateInput.disabled = false;
+            }
+            if (yearSelect) yearSelect.disabled = false;
+
+            if (periodSummaryText) {
+                periodSummaryText.textContent = `Week ${wVal} of ${monthNames[mVal]} ${yearNum} (${fromDateStr} to ${toDateStr})`;
+            }
+        } else if (type === 'Month') {
+            const fromDateStr = `${yearNum}-${padZero(mVal)}-01`;
+            const toDateStr = `${yearNum}-${padZero(mVal)}-${padZero(daysInMonth)}`;
+
+            if (fromDateInput) {
+                fromDateInput.value = fromDateStr;
+                fromDateInput.disabled = false;
+            }
+            if (toDateInput) {
+                toDateInput.value = toDateStr;
+                toDateInput.disabled = false;
+            }
+            if (yearSelect) yearSelect.disabled = false;
+
+            if (periodSummaryText) {
+                periodSummaryText.textContent = `${monthNames[mVal]} ${yearNum} (${fromDateStr} to ${toDateStr})`;
+            }
+        } else if (type === 'Year') {
+            if (fromDateInput) {
+                fromDateInput.value = '';
+                fromDateInput.disabled = true;
+            }
+            if (toDateInput) {
+                toDateInput.value = '';
+                toDateInput.disabled = true;
+            }
+            if (yearSelect) yearSelect.disabled = false;
+
+            if (periodSummaryText) {
+                periodSummaryText.textContent = (yVal && yVal !== 'all') ? `Full Year ${yVal}` : 'All Years';
+            }
+        } else if (type === 'Custom') {
+            if (fromDateInput) fromDateInput.disabled = false;
+            if (toDateInput) toDateInput.disabled = false;
+            if (yearSelect) {
+                yearSelect.disabled = true;
+            }
+
+            const fromVal = fromDateInput ? fromDateInput.value : '';
+            const toVal = toDateInput ? toDateInput.value : '';
+            if (periodSummaryText) {
+                if (fromVal && toVal) {
+                    periodSummaryText.textContent = `Custom Range: ${fromVal} to ${toVal}`;
+                } else if (fromVal) {
+                    periodSummaryText.textContent = `From ${fromVal} onwards`;
+                } else if (toVal) {
+                    periodSummaryText.textContent = `Up to ${toVal}`;
+                } else {
+                    periodSummaryText.textContent = 'Custom Range (Select dates)';
+                }
+            }
+        }
+    }
+
+    function setPeriodType(type) {
+        if (!periodTypeSelect) return;
+        periodTypeSelect.value = type;
+
+        // Dynamic visibility per requirement:
+        // - IF "Week": Show dropdowns for "Select Week" + "Select Month" + "Select Year".
+        // - IF "Month": Show dropdowns for "Select Month" + "Select Year".
+        // - IF "Year": Show dropdown for "Select Year" only.
+        // - IF "Custom": Show date pickers for "From Date" and "To Date".
+        if (wrapperPeriodWeek) wrapperPeriodWeek.style.display = (type === 'Week') ? '' : 'none';
+        if (wrapperPeriodMonth) wrapperPeriodMonth.style.display = (type === 'Week' || type === 'Month') ? '' : 'none';
+        if (wrapperPeriodYear) wrapperPeriodYear.style.display = (type === 'Custom') ? 'none' : '';
+        if (wrapperPeriodFrom) wrapperPeriodFrom.style.display = (type === 'Custom') ? '' : 'none';
+        if (wrapperPeriodTo) wrapperPeriodTo.style.display = (type === 'Custom') ? '' : 'none';
+
+        updatePeriodDisplayAndDates();
+        validateDateRange();
+    }
+
+    if (periodTypeSelect) {
+        periodTypeSelect.addEventListener('change', function () {
+            setPeriodType(this.value);
+        });
+    }
+
+    if (weekSelect) {
+        weekSelect.addEventListener('change', function () {
+            updatePeriodDisplayAndDates();
+        });
+    }
+
+    if (monthSelect) {
+        monthSelect.addEventListener('change', function () {
+            updatePeriodDisplayAndDates();
+        });
+    }
+
+    if (yearSelect) {
+        yearSelect.addEventListener('change', function () {
+            updatePeriodDisplayAndDates();
+        });
+    }
+
+    // 5. DATE RANGE VALIDATION (From Date must not be later than To Date when Custom range is active)
     function validateDateRange() {
+        if (!periodTypeSelect) return true;
+        const currentType = periodTypeSelect.value;
+        if (currentType !== 'Custom') {
+            if (dateRangeError) dateRangeError.classList.add('d-none');
+            if (fromDateInput) fromDateInput.classList.remove('is-invalid');
+            if (toDateInput) toDateInput.classList.remove('is-invalid');
+            return true;
+        }
+
         if (!fromDateInput || !toDateInput) return true;
         const fromVal = fromDateInput.value;
         const toVal = toDateInput.value;
@@ -880,6 +1120,9 @@ document.addEventListener('DOMContentLoaded', function () {
             } else if (toDateInput) {
                 toDateInput.removeAttribute('min');
             }
+            if (periodTypeSelect && periodTypeSelect.value === 'Custom') {
+                updatePeriodDisplayAndDates();
+            }
             validateDateRange();
         });
     }
@@ -891,12 +1134,16 @@ document.addEventListener('DOMContentLoaded', function () {
             } else if (fromDateInput) {
                 fromDateInput.removeAttribute('max');
             }
+            if (periodTypeSelect && periodTypeSelect.value === 'Custom') {
+                updatePeriodDisplayAndDates();
+            }
             validateDateRange();
         });
     }
 
     if (form) {
         form.addEventListener('submit', function (e) {
+            updatePeriodDisplayAndDates();
             if (!validateDateRange()) {
                 e.preventDefault();
                 fromDateInput.focus();
@@ -905,7 +1152,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // 5. RESET FILTERS HANDLER
+    // 6. RESET FILTERS HANDLER
     if (resetBtn) {
         resetBtn.addEventListener('click', function () {
             form.reset();
@@ -920,6 +1167,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             setSource('online');
             setFormat('xlsx');
+            setPeriodType('Year');
             updateSubClassifications('all');
         });
     }
@@ -927,6 +1175,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Initial load: Set initial states without making automatic preview requests
     setSource('online');
     setFormat('xlsx');
+    setPeriodType('Year');
     updateSubClassifications('all');
     validateDateRange();
 });

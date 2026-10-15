@@ -213,7 +213,7 @@ class RecordExportController extends Controller
             $source = 'online';
         }
 
-        $filters = $request->all();
+        $filters = $this->normalizeFilters($request->all());
         $previewLimit = (int) $request->input('limit', 25);
         if ($previewLimit < 5 || $previewLimit > 100) {
             $previewLimit = 25;
@@ -384,16 +384,68 @@ class RecordExportController extends Controller
     }
 
     /**
+     * Normalize period and general filters for preview and export queries.
+     */
+    protected function normalizeFilters(array $filters): array
+    {
+        if (isset($filters['year']) && (strtolower(trim((string) $filters['year'])) === 'all' || trim((string) $filters['year']) === '')) {
+            $filters['year'] = null;
+        }
+
+        $periodType = ucfirst(strtolower(trim((string) ($filters['period_type'] ?? ''))));
+
+        if ($periodType === 'Month' && !empty($filters['month']) && !empty($filters['year']) && is_numeric($filters['year'])) {
+            $y = (int) $filters['year'];
+            $m = (int) $filters['month'];
+            if ($m >= 1 && $m <= 12) {
+                if (empty($filters['from_date'])) {
+                    $filters['from_date'] = Carbon::createFromDate($y, $m, 1)->startOfMonth()->toDateString();
+                }
+                if (empty($filters['to_date'])) {
+                    $filters['to_date'] = Carbon::createFromDate($y, $m, 1)->endOfMonth()->toDateString();
+                }
+            }
+        } elseif ($periodType === 'Week' && !empty($filters['week']) && !empty($filters['month']) && !empty($filters['year']) && is_numeric($filters['year'])) {
+            $y = (int) $filters['year'];
+            $m = (int) $filters['month'];
+            $w = (int) $filters['week'];
+            if ($m >= 1 && $m <= 12 && $w >= 1 && $w <= 5) {
+                $daysInMonth = Carbon::createFromDate($y, $m, 1)->daysInMonth;
+                $startDay = min($daysInMonth, ($w - 1) * 7 + 1);
+                $endDay = ($w === 5) ? $daysInMonth : min($daysInMonth, $w * 7);
+                if (empty($filters['from_date'])) {
+                    $filters['from_date'] = Carbon::createFromDate($y, $m, $startDay)->toDateString();
+                }
+                if (empty($filters['to_date'])) {
+                    $filters['to_date'] = Carbon::createFromDate($y, $m, $endDay)->toDateString();
+                }
+            }
+        } elseif ($periodType === 'Custom') {
+            $filters['year'] = null;
+        }
+
+        return $filters;
+    }
+
+    /**
      * Download the filtered export file (Excel, CSV, or PDF).
      */
     public function download(Request $request): Response
     {
-        $validator = Validator::make($request->all(), [
-            'source'     => 'required|string|in:online,offline,all',
-            'format'     => 'required|string|in:xlsx,csv,pdf',
-            'year'       => 'nullable|numeric|min:2000|max:2099',
-            'from_date'  => 'nullable|date_format:Y-m-d,d/m/Y,Y/m/d',
-            'to_date'    => 'nullable|date_format:Y-m-d,d/m/Y,Y/m/d',
+        $inputData = $request->all();
+        if (isset($inputData['year']) && (strtolower(trim((string) $inputData['year'])) === 'all' || trim((string) $inputData['year']) === '')) {
+            $inputData['year'] = null;
+        }
+
+        $validator = Validator::make($inputData, [
+            'source'       => 'required|string|in:online,offline,all',
+            'format'       => 'required|string|in:xlsx,csv,pdf',
+            'year'         => 'nullable|numeric|min:2000|max:2099',
+            'period_type'  => 'nullable|string',
+            'month'        => 'nullable',
+            'week'         => 'nullable',
+            'from_date'    => 'nullable|date_format:Y-m-d,d/m/Y,Y/m/d',
+            'to_date'      => 'nullable|date_format:Y-m-d,d/m/Y,Y/m/d',
         ]);
 
         if ($validator->fails()) {
@@ -412,7 +464,7 @@ class RecordExportController extends Controller
 
         $source = strtolower(trim((string) $request->input('source')));
         $format = strtolower(trim((string) $request->input('format', 'xlsx')));
-        $filters = $request->all();
+        $filters = $this->normalizeFilters($request->all());
 
         // 1. ONLINE (KP OWL) EXPORT
         if ($source === 'online') {
