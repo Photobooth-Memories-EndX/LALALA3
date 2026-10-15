@@ -103,12 +103,19 @@ class RecordOfflineQueryService
         }
 
         // 2. Filter: Employee Search (ID, participant name, or user account name)
-        $employeeParam = trim((string) ($filters['employee_id'] ?? ($filters['employee'] ?? ($filters['employee_q'] ?? ($filters['search_employee'] ?? '')))));
-        if ($employeeParam !== '' && $employeeParam !== 'all') {
+        $employeeParam = $filters['employee_id'] ?? ($filters['employee'] ?? ($filters['employees'] ?? ($filters['employee_q'] ?? ($filters['search_employee'] ?? ''))));
+        if (is_array($employeeParam) && !empty($employeeParam)) {
             $query->where(function ($q) use ($employeeParam) {
-                $q->where('otu.employee_id', 'like', "%{$employeeParam}%")
-                  ->orWhere('otu.name', 'like', "%{$employeeParam}%")
-                  ->orWhere('u.name', 'like', "%{$employeeParam}%");
+                $q->whereIn('otu.employee_id', $employeeParam)
+                  ->orWhereIn('otu.name', $employeeParam)
+                  ->orWhereIn('u.name', $employeeParam);
+            });
+        } elseif (is_string($employeeParam) && trim($employeeParam) !== '' && trim($employeeParam) !== 'all') {
+            $empStr = trim($employeeParam);
+            $query->where(function ($q) use ($empStr) {
+                $q->where('otu.employee_id', 'like', "%{$empStr}%")
+                  ->orWhere('otu.name', 'like', "%{$empStr}%")
+                  ->orWhere('u.name', 'like', "%{$empStr}%");
             });
         }
 
@@ -370,15 +377,19 @@ class RecordOfflineQueryService
         }
 
         // 21. More Filter: Department
-        $deptParam = trim((string) ($filters['department'] ?? 'all'));
-        if (filled($deptParam) && $deptParam !== 'all') {
-            $query->where('otu.department', $deptParam);
+        $deptParam = $filters['department'] ?? ($filters['departments'] ?? 'all');
+        if (is_array($deptParam) && !empty($deptParam)) {
+            $query->whereIn('otu.department', $deptParam);
+        } elseif (is_string($deptParam) && filled($deptParam) && $deptParam !== 'all') {
+            $query->where('otu.department', trim($deptParam));
         }
 
         // 22. More Filter: Company
-        $companyParam = trim((string) ($filters['company'] ?? 'all'));
-        if (filled($companyParam) && $companyParam !== 'all') {
-            $query->where('otu.company', $companyParam);
+        $companyParam = $filters['company'] ?? ($filters['companies'] ?? 'all');
+        if (is_array($companyParam) && !empty($companyParam)) {
+            $query->whereIn('otu.company', $companyParam);
+        } elseif (is_string($companyParam) && filled($companyParam) && $companyParam !== 'all') {
+            $query->where('otu.company', trim($companyParam));
         }
 
         // 23. More Filter: Grade
@@ -394,17 +405,25 @@ class RecordOfflineQueryService
         }
 
         // 25. More Filter: Division
-        $divisionParam = trim((string) ($filters['division'] ?? 'all'));
-        if (filled($divisionParam) && $divisionParam !== 'all') {
-            $query->where('u.division', $divisionParam);
+        $divisionParam = $filters['division'] ?? ($filters['divisions'] ?? 'all');
+        if (is_array($divisionParam) && !empty($divisionParam)) {
+            $query->whereIn('u.division', $divisionParam);
+        } elseif (is_string($divisionParam) && filled($divisionParam) && $divisionParam !== 'all') {
+            $query->where('u.division', trim($divisionParam));
         }
 
         // 26. More Filter: Team
-        $teamParam = trim((string) ($filters['team'] ?? ''));
-        if (filled($teamParam) && $teamParam !== 'all') {
+        $teamParam = $filters['team'] ?? ($filters['teams'] ?? '');
+        if (is_array($teamParam) && !empty($teamParam)) {
             $query->where(function ($q) use ($teamParam) {
-                $q->where('otu.team', 'like', "%{$teamParam}%")
-                  ->orWhere('u.team', 'like', "%{$teamParam}%");
+                $q->whereIn('otu.team', $teamParam)
+                  ->orWhereIn('u.team', $teamParam);
+            });
+        } elseif (is_string($teamParam) && filled($teamParam) && $teamParam !== 'all') {
+            $teamStr = trim($teamParam);
+            $query->where(function ($q) use ($teamStr) {
+                $q->where('otu.team', 'like', "%{$teamStr}%")
+                  ->orWhere('u.team', 'like', "%{$teamStr}%");
             });
         }
 

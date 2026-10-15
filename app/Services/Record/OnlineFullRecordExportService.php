@@ -141,15 +141,19 @@ class OnlineFullRecordExportService
         ]);
 
         // Additional filter for team if provided
-        $team = trim((string) ($filters['team'] ?? 'all'));
-        if (filled($team) && $team !== 'all') {
-            $query->where('u.team', $team);
+        $team = $filters['team'] ?? ($filters['teams'] ?? 'all');
+        if (is_array($team) && !empty($team)) {
+            $query->whereIn('u.team', $team);
+        } elseif (is_string($team) && filled($team) && $team !== 'all') {
+            $query->where('u.team', trim($team));
         }
 
         // Additional filter for division if provided
-        $division = trim((string) ($filters['division'] ?? 'all'));
-        if (filled($division) && $division !== 'all') {
-            $query->where('u.division', $division);
+        $division = $filters['division'] ?? ($filters['divisions'] ?? 'all');
+        if (is_array($division) && !empty($division)) {
+            $query->whereIn('u.division', $division);
+        } elseif (is_string($division) && filled($division) && $division !== 'all') {
+            $query->where('u.division', trim($division));
         }
 
         if (empty($filters['sort'])) {

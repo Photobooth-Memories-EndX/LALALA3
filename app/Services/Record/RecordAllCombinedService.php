@@ -655,8 +655,18 @@ class RecordAllCombinedService
             $matchedUserIds = array_unique(array_filter($matchedUserIds));
             $q->whereIn("{$recordAlias}.user_id", !empty($matchedUserIds) ? $matchedUserIds : [-1]);
         } else {
-            $employee = trim((string) ($filters['employee_id'] ?? ($filters['employee'] ?? '')));
-            if ($employee !== '') {
+            $employeeParam = $filters['employee_id'] ?? ($filters['employee'] ?? ($filters['employees'] ?? null));
+            if (is_array($employeeParam) && !empty($employeeParam)) {
+                $userIds = DB::table('users')
+                    ->where(function ($sub) use ($employeeParam) {
+                        $sub->whereIn('id_emp', $employeeParam)
+                            ->orWhereIn('name', $employeeParam);
+                    })
+                    ->pluck('id')
+                    ->toArray();
+                $q->whereIn("{$recordAlias}.user_id", !empty($userIds) ? $userIds : [-1]);
+            } elseif (is_string($employeeParam) && trim($employeeParam) !== '' && trim($employeeParam) !== 'all') {
+                $employee = trim($employeeParam);
                 $userIds = DB::table('users')
                     ->where('id_emp', 'like', "%{$employee}%")
                     ->orWhere('name', 'like', "%{$employee}%")
@@ -829,30 +839,42 @@ class RecordAllCombinedService
         }
 
         // 10. Department Filter
-        $department = trim((string) ($filters['department'] ?? 'all'));
-        if ($department !== '' && $department !== 'all') {
-            $deptUserIds = DB::table('users')->where('department', $department)->pluck('id')->toArray();
+        $department = $filters['department'] ?? ($filters['departments'] ?? 'all');
+        if (is_array($department) && !empty($department)) {
+            $deptUserIds = DB::table('users')->whereIn('department', $department)->pluck('id')->toArray();
+            $q->whereIn("{$recordAlias}.user_id", !empty($deptUserIds) ? $deptUserIds : [-1]);
+        } elseif (is_string($department) && filled($department) && $department !== 'all') {
+            $deptUserIds = DB::table('users')->where('department', trim($department))->pluck('id')->toArray();
             $q->whereIn("{$recordAlias}.user_id", !empty($deptUserIds) ? $deptUserIds : [-1]);
         }
 
         // 11. Company Filter
-        $company = trim((string) ($filters['company'] ?? 'all'));
-        if ($company !== '' && $company !== 'all') {
-            $compUserIds = DB::table('users')->where('company_name', $company)->pluck('id')->toArray();
+        $company = $filters['company'] ?? ($filters['companies'] ?? 'all');
+        if (is_array($company) && !empty($company)) {
+            $compUserIds = DB::table('users')->whereIn('company_name', $company)->pluck('id')->toArray();
+            $q->whereIn("{$recordAlias}.user_id", !empty($compUserIds) ? $compUserIds : [-1]);
+        } elseif (is_string($company) && filled($company) && $company !== 'all') {
+            $compUserIds = DB::table('users')->where('company_name', trim($company))->pluck('id')->toArray();
             $q->whereIn("{$recordAlias}.user_id", !empty($compUserIds) ? $compUserIds : [-1]);
         }
 
         // 11c. Division Filter
-        $division = trim((string) ($filters['division'] ?? 'all'));
-        if ($division !== '' && $division !== 'all') {
-            $divUserIds = DB::table('users')->where('division', $division)->pluck('id')->toArray();
+        $division = $filters['division'] ?? ($filters['divisions'] ?? 'all');
+        if (is_array($division) && !empty($division)) {
+            $divUserIds = DB::table('users')->whereIn('division', $division)->pluck('id')->toArray();
+            $q->whereIn("{$recordAlias}.user_id", !empty($divUserIds) ? $divUserIds : [-1]);
+        } elseif (is_string($division) && filled($division) && $division !== 'all') {
+            $divUserIds = DB::table('users')->where('division', trim($division))->pluck('id')->toArray();
             $q->whereIn("{$recordAlias}.user_id", !empty($divUserIds) ? $divUserIds : [-1]);
         }
 
         // 11d. Team Filter
-        $team = trim((string) ($filters['team'] ?? ''));
-        if ($team !== '' && $team !== 'all') {
-            $teamUserIds = DB::table('users')->where('team', 'like', "%{$team}%")->pluck('id')->toArray();
+        $team = $filters['team'] ?? ($filters['teams'] ?? 'all');
+        if (is_array($team) && !empty($team)) {
+            $teamUserIds = DB::table('users')->whereIn('team', $team)->pluck('id')->toArray();
+            $q->whereIn("{$recordAlias}.user_id", !empty($teamUserIds) ? $teamUserIds : [-1]);
+        } elseif (is_string($team) && filled($team) && $team !== 'all') {
+            $teamUserIds = DB::table('users')->where('team', 'like', '%' . trim($team) . '%')->pluck('id')->toArray();
             $q->whereIn("{$recordAlias}.user_id", !empty($teamUserIds) ? $teamUserIds : [-1]);
         }
 
@@ -942,8 +964,14 @@ class RecordAllCombinedService
                 }
             });
         } else {
-            $employee = trim((string) ($filters['employee_id'] ?? ($filters['employee'] ?? '')));
-            if ($employee !== '') {
+            $employeeParam = $filters['employee_id'] ?? ($filters['employee'] ?? ($filters['employees'] ?? null));
+            $employee = is_string($employeeParam) ? trim($employeeParam) : '';
+            if (is_array($employeeParam) && !empty($employeeParam)) {
+                $q->where(function ($sub) use ($employeeParam) {
+                    $sub->whereIn('otu.employee_id', $employeeParam)
+                        ->orWhereIn('otu.name', $employeeParam);
+                });
+            } elseif ($employee !== '' && $employee !== 'all') {
                 $q->where(function ($sub) use ($employee) {
                     $sub->where('otu.employee_id', 'like', "%{$employee}%")
                         ->orWhere('otu.name', 'like', "%{$employee}%");
@@ -1039,11 +1067,20 @@ class RecordAllCombinedService
         }
 
         // 8. Department Filter
-        $department = trim((string) ($filters['department'] ?? 'all'));
-        if ($department !== '' && $department !== 'all') {
-            $deptUserIds = DB::table('users')->where('department', $department)->pluck('id')->toArray();
+        $department = $filters['department'] ?? ($filters['departments'] ?? 'all');
+        if (is_array($department) && !empty($department)) {
+            $deptUserIds = DB::table('users')->whereIn('department', $department)->pluck('id')->toArray();
             $q->where(function ($sub) use ($department, $deptUserIds) {
-                $sub->where('otu.department', $department);
+                $sub->whereIn('otu.department', $department);
+                if (!empty($deptUserIds)) {
+                    $sub->orWhereIn('otu.user_id', $deptUserIds);
+                }
+            });
+        } elseif (is_string($department) && filled($department) && $department !== 'all') {
+            $deptTrim = trim($department);
+            $deptUserIds = DB::table('users')->where('department', $deptTrim)->pluck('id')->toArray();
+            $q->where(function ($sub) use ($deptTrim, $deptUserIds) {
+                $sub->where('otu.department', $deptTrim);
                 if (!empty($deptUserIds)) {
                     $sub->orWhereIn('otu.user_id', $deptUserIds);
                 }
@@ -1051,11 +1088,20 @@ class RecordAllCombinedService
         }
 
         // 9. Company Filter
-        $company = trim((string) ($filters['company'] ?? 'all'));
-        if ($company !== '' && $company !== 'all') {
-            $compUserIds = DB::table('users')->where('company_name', $company)->pluck('id')->toArray();
+        $company = $filters['company'] ?? ($filters['companies'] ?? 'all');
+        if (is_array($company) && !empty($company)) {
+            $compUserIds = DB::table('users')->whereIn('company_name', $company)->pluck('id')->toArray();
             $q->where(function ($sub) use ($company, $compUserIds) {
-                $sub->where('otu.company', $company);
+                $sub->whereIn('otu.company', $company);
+                if (!empty($compUserIds)) {
+                    $sub->orWhereIn('otu.user_id', $compUserIds);
+                }
+            });
+        } elseif (is_string($company) && filled($company) && $company !== 'all') {
+            $compTrim = trim($company);
+            $compUserIds = DB::table('users')->where('company_name', $compTrim)->pluck('id')->toArray();
+            $q->where(function ($sub) use ($compTrim, $compUserIds) {
+                $sub->where('otu.company', $compTrim);
                 if (!empty($compUserIds)) {
                     $sub->orWhereIn('otu.user_id', $compUserIds);
                 }
@@ -1063,18 +1109,31 @@ class RecordAllCombinedService
         }
 
         // 9b. Division Filter
-        $division = trim((string) ($filters['division'] ?? 'all'));
-        if ($division !== '' && $division !== 'all') {
-            $divUserIds = DB::table('users')->where('division', $division)->pluck('id')->toArray();
+        $division = $filters['division'] ?? ($filters['divisions'] ?? 'all');
+        if (is_array($division) && !empty($division)) {
+            $divUserIds = DB::table('users')->whereIn('division', $division)->pluck('id')->toArray();
+            $q->whereIn('otu.user_id', !empty($divUserIds) ? $divUserIds : [-1]);
+        } elseif (is_string($division) && filled($division) && $division !== 'all') {
+            $divTrim = trim($division);
+            $divUserIds = DB::table('users')->where('division', $divTrim)->pluck('id')->toArray();
             $q->whereIn('otu.user_id', !empty($divUserIds) ? $divUserIds : [-1]);
         }
 
         // 9c. Team Filter
-        $team = trim((string) ($filters['team'] ?? ''));
-        if ($team !== '' && $team !== 'all') {
-            $teamUserIds = DB::table('users')->where('team', 'like', "%{$team}%")->pluck('id')->toArray();
+        $team = $filters['team'] ?? ($filters['teams'] ?? '');
+        if (is_array($team) && !empty($team)) {
+            $teamUserIds = DB::table('users')->whereIn('team', $team)->pluck('id')->toArray();
             $q->where(function ($sub) use ($team, $teamUserIds) {
-                $sub->where('otu.team', 'like', "%{$team}%");
+                $sub->whereIn('otu.team', $team);
+                if (!empty($teamUserIds)) {
+                    $sub->orWhereIn('otu.user_id', $teamUserIds);
+                }
+            });
+        } elseif (is_string($team) && filled($team) && $team !== 'all') {
+            $teamTrim = trim($team);
+            $teamUserIds = DB::table('users')->where('team', 'like', "%{$teamTrim}%")->pluck('id')->toArray();
+            $q->where(function ($sub) use ($teamTrim, $teamUserIds) {
+                $sub->where('otu.team', 'like', "%{$teamTrim}%");
                 if (!empty($teamUserIds)) {
                     $sub->orWhereIn('otu.user_id', $teamUserIds);
                 }

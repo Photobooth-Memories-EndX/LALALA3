@@ -262,73 +262,32 @@
                     <p class="text-muted small mb-0 mt-1 ms-4 ps-1">Scope report by learner details, group, company, division, department, team, and employee.</p>
                 </div>
                 <div class="card-body px-4 pb-4 pt-2">
-                    <div class="row g-3">
-                        <!-- 1. Company -->
-                        <div class="col-12 col-md-6 col-lg-4">
-                            <label class="form-label fw-bold text-dark small" for="filter-company">
-                                <i class="ti ti-building me-1 text-muted"></i> Company
+                    <div class="row g-3 align-items-start">
+                        <!-- Left Input (Stage 1): Filter Scope Type Dropdown -->
+                        <div class="col-12 col-md-4 col-lg-4">
+                            <label class="form-label fw-bold text-dark small" for="filter-scope-type">
+                                <i class="ti ti-adjustments me-1 text-muted"></i> Filter Scope Type
                             </label>
-                            <select id="filter-company" name="company" class="form-select rounded-3">
-                                <option value="all">All Companies</option>
-                                @foreach ($companies as $comp)
-                                    <option value="{{ $comp }}">{{ $comp }}</option>
-                                @endforeach
+                            <select id="filter-scope-type" name="filter_scope_type" class="form-select rounded-3">
+                                <option value="company" selected>Company</option>
+                                <option value="division">Division</option>
+                                <option value="department">Department</option>
+                                <option value="team">Team / Section</option>
+                                <option value="group">Group</option>
+                                <option value="employee">Employee / Learners (NIP / Name)</option>
                             </select>
+                            <small class="text-muted" style="font-size: 0.75rem;">Select attribute to scope reporting.</small>
                         </div>
 
-                        <!-- 2. Division -->
-                        <div class="col-12 col-md-6 col-lg-4">
-                            <label class="form-label fw-bold text-dark small" for="filter-division">
-                                <i class="ti ti-layout-grid me-1 text-muted"></i> Division
+                        <!-- Right Input (Stage 2): Dynamic Multi-Select / Search Input -->
+                        <div class="col-12 col-md-8 col-lg-8">
+                            <label class="form-label fw-bold text-dark small" for="filter-scope-values">
+                                <i class="ti ti-filter me-1 text-muted"></i> <span id="label-scope-values">Select Company</span>
                             </label>
-                            <select id="filter-division" name="division" class="form-select rounded-3">
-                                <option value="all">All Divisions</option>
-                                @foreach ($divisions as $div)
-                                    <option value="{{ $div }}">{{ $div }}</option>
-                                @endforeach
+                            <select id="filter-scope-values" name="filter_scope_values[]" class="form-select rounded-3" multiple="multiple" style="width: 100%;">
+                                <!-- Dynamically populated by JavaScript -->
                             </select>
-                        </div>
-
-                        <!-- 3. Department -->
-                        <div class="col-12 col-md-6 col-lg-4">
-                            <label class="form-label fw-bold text-dark small" for="filter-department">
-                                <i class="ti ti-sitemap me-1 text-muted"></i> Department
-                            </label>
-                            <select id="filter-department" name="department" class="form-select rounded-3">
-                                <option value="all">All Departments</option>
-                                @foreach ($departments as $dept)
-                                    <option value="{{ $dept }}">{{ $dept }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <!-- 4. Team / Section -->
-                        <div class="col-12 col-md-6 col-lg-4">
-                            <label class="form-label fw-bold text-dark small" for="filter-team">
-                                <i class="ti ti-users me-1 text-muted"></i> Team / Section
-                            </label>
-                            <input type="text" id="filter-team" name="team" class="form-control rounded-3" placeholder="Search team...">
-                        </div>
-
-                        <!-- 5. Group (New Placeholder Input) -->
-                        <div class="col-12 col-md-6 col-lg-4">
-                            <label class="form-label fw-bold text-dark small" for="filter-group">
-                                <i class="ti ti-users-group me-1 text-muted"></i> Group
-                            </label>
-                            <select id="filter-group" name="group" class="form-select rounded-3">
-                                <option value="all" selected>All Groups</option>
-                            </select>
-                            <small class="text-muted" style="font-size: 0.75rem;">Scope by learner group classification.</small>
-                        </div>
-
-                        <!-- 6. Employee / NIP -->
-                        <div class="col-12 col-md-6 col-lg-4">
-                            <label class="form-label fw-bold text-dark small" for="filter-employee">
-                                <i class="ti ti-user me-1 text-muted"></i> Employee / NIP
-                            </label>
-                            <input type="text" id="filter-employee" name="employee_id" class="form-control rounded-3"
-                                   placeholder="Search NIP or Name..." autocomplete="off">
-                            <small class="text-muted" style="font-size: 0.75rem;">Matches NIP or employee name across systems.</small>
+                            <small class="text-muted d-block mt-1" id="help-scope-values" style="font-size: 0.75rem;">Choose one or more items to filter records.</small>
                         </div>
 
                         <!-- Job Position (Offline Only) -->
@@ -639,7 +598,68 @@
         border-color: #60a5fa;
     }
 
+    /* SELECT2 CUSTOMIZATION FOR TWO-STAGE FILTER */
+    .select2-container--bootstrap-5 .select2-selection--multiple {
+        min-height: 42px;
+        border-radius: 0.5rem;
+        border-color: #d8e2ef;
+        padding: 3px 6px;
+    }
+    .select2-container--bootstrap-5.select2-container--focus .select2-selection--multiple {
+        border-color: #0c5b9e;
+        box-shadow: 0 0 0 0.25rem rgba(12, 91, 158, 0.15);
+    }
+    .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice {
+        background-color: #e0f2fe;
+        color: #0369a1;
+        border: 1px solid #bae6fd;
+        border-radius: 0.375rem;
+        padding: 3px 8px;
+        font-size: 0.825rem;
+        font-weight: 500;
+        margin-top: 4px;
+        margin-bottom: 4px;
+    }
+    .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice__remove {
+        color: #0284c7;
+        margin-right: 5px;
+    }
+    .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice__remove:hover {
+        color: #b91c1c;
+    }
+    .select2-container--bootstrap-5 .select2-dropdown {
+        border-color: #d8e2ef;
+        border-radius: 0.5rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        z-index: 1060;
+    }
+    [data-bs-theme="dark"] .select2-container--bootstrap-5 .select2-selection--multiple,
+    body.dark-mode .select2-container--bootstrap-5 .select2-selection--multiple {
+        background-color: #0f172a;
+        border-color: rgba(255, 255, 255, 0.15);
+        color: #f8fafc;
+    }
+    [data-bs-theme="dark"] .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice,
+    body.dark-mode .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice {
+        background-color: #1e3a5f;
+        color: #93c5fd;
+        border-color: #2563eb;
+    }
+    [data-bs-theme="dark"] .select2-container--bootstrap-5 .select2-dropdown,
+    body.dark-mode .select2-container--bootstrap-5 .select2-dropdown {
+        background-color: #1e293b;
+        border-color: rgba(255, 255, 255, 0.15);
+        color: #f8fafc;
+    }
+    [data-bs-theme="dark"] .select2-container--bootstrap-5 .select2-results__option--highlighted[aria-selected],
+    body.dark-mode .select2-container--bootstrap-5 .select2-results__option--highlighted[aria-selected] {
+        background-color: #0c5b9e;
+        color: #ffffff;
+    }
+
 </style>
+<link rel="stylesheet" href="{{ asset('vendor/select2/select2.min.css') }}">
+<link rel="stylesheet" href="{{ asset('vendor/select2/select2-bootstrap-5-theme.min.css') }}">
 @endsection
 
 @section('script')
@@ -892,6 +912,150 @@ document.addEventListener('DOMContentLoaded', function () {
     if (mainClassSelect) {
         mainClassSelect.addEventListener('change', function () {
             updateSubClassifications(this.value);
+        });
+    }
+
+    // 3b. DYNAMIC TWO-STAGE LEARNERS FILTERS (STAGE 1 & STAGE 2)
+    const scopeTypeSelect = document.getElementById('filter-scope-type');
+    const scopeValuesSelect = document.getElementById('filter-scope-values');
+    const $scopeValuesSelect = $(scopeValuesSelect);
+    const labelScopeValues = document.getElementById('label-scope-values');
+    const helpScopeValues = document.getElementById('help-scope-values');
+
+    const staticScopeOptions = {
+        company: @json($companies ?? []),
+        division: @json($divisions ?? []),
+        department: @json($departments ?? []),
+        team: @json($teams ?? []),
+        group: @json($groups ?? [])
+    };
+
+    const scopeMeta = {
+        company: {
+            label: 'Company Values',
+            placeholder: 'Select or search companies...',
+            help: 'Select one or more companies using tag badges.'
+        },
+        division: {
+            label: 'Division Values',
+            placeholder: 'Select or search divisions...',
+            help: 'Select one or more divisions using tag badges.'
+        },
+        department: {
+            label: 'Department Values',
+            placeholder: 'Select or search departments...',
+            help: 'Select one or more departments using tag badges.'
+        },
+        team: {
+            label: 'Team / Section Values',
+            placeholder: 'Select or search teams / sections...',
+            help: 'Select one or more teams / sections using tag badges.'
+        },
+        group: {
+            label: 'Group Values',
+            placeholder: 'Select or search groups...',
+            help: 'Select one or more groups using tag badges.'
+        },
+        employee: {
+            label: 'Employee / Learners (NIP / Name)',
+            placeholder: 'Type to search learner name or NIP...',
+            help: 'Search by NIP or Name across online and offline records.'
+        }
+    };
+
+    function initScopeSelect2(scopeType) {
+        if (!$scopeValuesSelect.length) return;
+
+        // Destroy existing Select2 instance if already initialized
+        if ($scopeValuesSelect.hasClass('select2-hidden-accessible')) {
+            $scopeValuesSelect.select2('destroy');
+        }
+        $scopeValuesSelect.empty();
+
+        const meta = scopeMeta[scopeType] || scopeMeta.company;
+        if (labelScopeValues) labelScopeValues.textContent = meta.label;
+        if (helpScopeValues) helpScopeValues.textContent = meta.help;
+
+        if (scopeType === 'employee') {
+            // Employee mode: AJAX dynamic search
+            $scopeValuesSelect.select2({
+                theme: 'bootstrap-5',
+                placeholder: meta.placeholder,
+                allowClear: true,
+                closeOnSelect: false,
+                width: '100%',
+                minimumInputLength: 1,
+                ajax: {
+                    url: "{{ route('manage.record.export-all.scope-options') }}",
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                        return {
+                            type: 'employee',
+                            q: params.term || ''
+                        };
+                    },
+                    processResults: function (data) {
+                        const items = data.results || data.data || [];
+                        return {
+                            results: items
+                        };
+                    },
+                    cache: true
+                }
+            });
+        } else {
+            // Standard mode: populate distinct options from staticScopeOptions
+            const items = staticScopeOptions[scopeType] || [];
+            if (items.length > 0) {
+                items.forEach(function (item) {
+                    const opt = new Option(item, item, false, false);
+                    $scopeValuesSelect.append(opt);
+                });
+                $scopeValuesSelect.select2({
+                    theme: 'bootstrap-5',
+                    placeholder: meta.placeholder,
+                    allowClear: true,
+                    closeOnSelect: false,
+                    width: '100%'
+                });
+            } else {
+                fetch(`{{ route('manage.record.export-all.scope-options') }}?type=${encodeURIComponent(scopeType)}`, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(res => res.json())
+                .then(json => {
+                    const opts = json.results || json.data || [];
+                    opts.forEach(function (o) {
+                        const val = o.id || o;
+                        const text = o.text || o;
+                        const opt = new Option(text, val, false, false);
+                        $scopeValuesSelect.append(opt);
+                    });
+                    $scopeValuesSelect.select2({
+                        theme: 'bootstrap-5',
+                        placeholder: meta.placeholder,
+                        allowClear: true,
+                        closeOnSelect: false,
+                        width: '100%'
+                    });
+                })
+                .catch(() => {
+                    $scopeValuesSelect.select2({
+                        theme: 'bootstrap-5',
+                        placeholder: meta.placeholder,
+                        allowClear: true,
+                        closeOnSelect: false,
+                        width: '100%'
+                    });
+                });
+            }
+        }
+    }
+
+    if (scopeTypeSelect) {
+        scopeTypeSelect.addEventListener('change', function () {
+            initScopeSelect2(this.value);
         });
     }
 
@@ -1159,6 +1323,10 @@ document.addEventListener('DOMContentLoaded', function () {
             setFormat('xlsx');
             setPeriodType('Year');
             updateSubClassifications('all');
+            if (scopeTypeSelect) {
+                scopeTypeSelect.value = 'company';
+            }
+            initScopeSelect2('company');
         });
     }
 
@@ -1167,6 +1335,7 @@ document.addEventListener('DOMContentLoaded', function () {
     setFormat('xlsx');
     setPeriodType('Year');
     updateSubClassifications('all');
+    initScopeSelect2(scopeTypeSelect ? scopeTypeSelect.value : 'company');
     validateDateRange();
 });
 </script>

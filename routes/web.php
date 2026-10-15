@@ -573,6 +573,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
             Route::match(['get', 'post'], 'export-all/preview', [RecordExportController::class, 'preview'])->name('export-all.preview');
             Route::get('export-all/download', [RecordExportController::class, 'download'])->name('export-all.download');
             Route::get('export-all/sub-classifications', [RecordExportController::class, 'subClassifications'])->name('export-all.sub-classifications');
+            Route::get('export-all/scope-options', [RecordExportController::class, 'scopeOptions'])->name('export-all.scope-options');
         });
     });
 

@@ -256,8 +256,18 @@ class LearningDatatableService
             $cuSelect->where('cu.user_id', $exactUserId);
             $pcuSelect->where('pcu.user_id', $exactUserId);
         } else {
-            $employeeParam = $filters['employee_id'] ?? ($filters['employee'] ?? null);
-            if (filled($employeeParam) && $employeeParam !== 'all') {
+            $employeeParam = $filters['employee_id'] ?? ($filters['employee'] ?? ($filters['employees'] ?? null));
+            if (is_array($employeeParam) && !empty($employeeParam)) {
+                $userIds = DB::table('users')
+                    ->where(function ($q) use ($employeeParam) {
+                        $q->whereIn('id_emp', $employeeParam)
+                          ->orWhereIn('name', $employeeParam);
+                    })
+                    ->pluck('id')
+                    ->toArray();
+                $cuSelect->whereIn('cu.user_id', !empty($userIds) ? $userIds : [-1]);
+                $pcuSelect->whereIn('pcu.user_id', !empty($userIds) ? $userIds : [-1]);
+            } elseif (filled($employeeParam) && $employeeParam !== 'all') {
                 if (is_numeric($employeeParam)) {
                     // Check if numeric ID matches user ID directly or exact id_emp
                     $exactUserIds = DB::table('users')
@@ -481,24 +491,32 @@ class LearningDatatableService
         }
 
         // 11b. Department, Company, Division & Team Filters
-        $department = trim((string) ($filters['department'] ?? 'all'));
-        if (filled($department) && $department !== 'all') {
-            $query->where('u.department', $department);
+        $department = $filters['department'] ?? ($filters['departments'] ?? 'all');
+        if (is_array($department) && !empty($department)) {
+            $query->whereIn('u.department', $department);
+        } elseif (is_string($department) && filled($department) && $department !== 'all') {
+            $query->where('u.department', trim($department));
         }
 
-        $company = trim((string) ($filters['company'] ?? 'all'));
-        if (filled($company) && $company !== 'all') {
-            $query->where('u.company_name', $company);
+        $company = $filters['company'] ?? ($filters['companies'] ?? 'all');
+        if (is_array($company) && !empty($company)) {
+            $query->whereIn('u.company_name', $company);
+        } elseif (is_string($company) && filled($company) && $company !== 'all') {
+            $query->where('u.company_name', trim($company));
         }
 
-        $division = trim((string) ($filters['division'] ?? 'all'));
-        if (filled($division) && $division !== 'all') {
-            $query->where('u.division', $division);
+        $division = $filters['division'] ?? ($filters['divisions'] ?? 'all');
+        if (is_array($division) && !empty($division)) {
+            $query->whereIn('u.division', $division);
+        } elseif (is_string($division) && filled($division) && $division !== 'all') {
+            $query->where('u.division', trim($division));
         }
 
-        $team = trim((string) ($filters['team'] ?? 'all'));
-        if (filled($team) && $team !== 'all') {
-            $query->where('u.team', 'like', '%' . $team . '%');
+        $team = $filters['team'] ?? ($filters['teams'] ?? 'all');
+        if (is_array($team) && !empty($team)) {
+            $query->whereIn('u.team', $team);
+        } elseif (is_string($team) && filled($team) && $team !== 'all') {
+            $query->where('u.team', 'like', '%' . trim($team) . '%');
         }
 
         // 12. Sorting

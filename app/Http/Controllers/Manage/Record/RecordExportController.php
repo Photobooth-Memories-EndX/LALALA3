@@ -141,6 +141,31 @@ class RecordExportController extends Controller
             ->values()
             ->all();
 
+        // 8. Distinct Teams
+        $teams = DB::table('users')
+            ->whereNotNull('team')
+            ->where('team', '!=', '')
+            ->distinct()
+            ->pluck('team')
+            ->toArray();
+        if (Schema::hasTable('offline_training_users')) {
+            $offlineTeams = DB::table('offline_training_users')
+                ->whereNull('deleted_at')
+                ->whereNotNull('team')
+                ->where('team', '!=', '')
+                ->distinct()
+                ->pluck('team')
+                ->toArray();
+            if (!empty($offlineTeams)) {
+                $teams = array_merge($teams, $offlineTeams);
+            }
+        }
+        $teams = array_values(array_unique(array_filter(array_map('trim', $teams))));
+        sort($teams);
+
+        // 9. Placeholder Groups
+        $groups = ['Management', 'Operations', 'Technical', 'General Staff', 'Contractor'];
+
         return view('main.record.export-all', [
             'title'               => 'Export KP OWL',
             'subtitle'            => 'Learning Record Export Center',
@@ -150,6 +175,8 @@ class RecordExportController extends Controller
             'departments'         => $filterOptions['departments'] ?? [],
             'divisions'           => $divisions,
             'companies'           => $filterOptions['companies'] ?? [],
+            'teams'               => $teams,
+            'groups'              => $groups,
             'trainingTypes'       => $trainingTypes,
             'offlineCategories'   => $offlineCategories,
             'providers'           => $providers,
@@ -200,6 +227,157 @@ class RecordExportController extends Controller
         return response()->json([
             'success' => true,
             'data'    => $results,
+        ]);
+    }
+
+    /**
+     * AJAX endpoint to get options for Section 3 two-stage filter.
+     */
+    public function scopeOptions(Request $request): JsonResponse
+    {
+        $scopeType = strtolower(trim((string) $request->input('type', 'company')));
+        $search = trim((string) $request->input('q', ''));
+
+        $options = [];
+
+        switch ($scopeType) {
+            case 'company':
+                $userCompanies = DB::table('users')
+                    ->whereNotNull('company_name')
+                    ->where('company_name', '!=', '')
+                    ->distinct()
+                    ->pluck('company_name')
+                    ->toArray();
+                $offlineCompanies = [];
+                if (Schema::hasTable('offline_training_users')) {
+                    $offlineCompanies = DB::table('offline_training_users')
+                        ->whereNull('deleted_at')
+                        ->whereNotNull('company')
+                        ->where('company', '!=', '')
+                        ->distinct()
+                        ->pluck('company')
+                        ->toArray();
+                }
+                $companies = array_values(array_unique(array_filter(array_merge($userCompanies, $offlineCompanies))));
+                sort($companies);
+                if ($search !== '') {
+                    $companies = array_values(array_filter($companies, fn($item) => stripos($item, $search) !== false));
+                }
+                $options = array_map(fn($item) => ['id' => $item, 'text' => $item], $companies);
+                break;
+
+            case 'division':
+                $query = DB::table('users')
+                    ->whereNotNull('division')
+                    ->where('division', '!=', '');
+                if ($search !== '') {
+                    $query->where('division', 'like', "%{$search}%");
+                }
+                $divisions = $query->distinct()->pluck('division')->sort()->values()->toArray();
+                $options = array_map(fn($item) => ['id' => $item, 'text' => $item], $divisions);
+                break;
+
+            case 'department':
+                $userDepts = DB::table('users')
+                    ->whereNotNull('department')
+                    ->where('department', '!=', '')
+                    ->distinct()
+                    ->pluck('department')
+                    ->toArray();
+                $offlineDepts = [];
+                if (Schema::hasTable('offline_training_users')) {
+                    $offlineDepts = DB::table('offline_training_users')
+                        ->whereNull('deleted_at')
+                        ->whereNotNull('department')
+                        ->where('department', '!=', '')
+                        ->distinct()
+                        ->pluck('department')
+                        ->toArray();
+                }
+                $depts = array_values(array_unique(array_filter(array_merge($userDepts, $offlineDepts))));
+                sort($depts);
+                if ($search !== '') {
+                    $depts = array_values(array_filter($depts, fn($item) => stripos($item, $search) !== false));
+                }
+                $options = array_map(fn($item) => ['id' => $item, 'text' => $item], $depts);
+                break;
+
+            case 'team':
+            case 'team_section':
+                $userTeams = DB::table('users')
+                    ->whereNotNull('team')
+                    ->where('team', '!=', '')
+                    ->distinct()
+                    ->pluck('team')
+                    ->toArray();
+                $offlineTeams = [];
+                if (Schema::hasTable('offline_training_users')) {
+                    $offlineTeams = DB::table('offline_training_users')
+                        ->whereNull('deleted_at')
+                        ->whereNotNull('team')
+                        ->where('team', '!=', '')
+                        ->distinct()
+                        ->pluck('team')
+                        ->toArray();
+                }
+                $teams = array_values(array_unique(array_filter(array_merge($userTeams, $offlineTeams))));
+                sort($teams);
+                if ($search !== '') {
+                    $teams = array_values(array_filter($teams, fn($item) => stripos($item, $search) !== false));
+                }
+                $options = array_map(fn($item) => ['id' => $item, 'text' => $item], $teams);
+                break;
+
+            case 'group':
+                $groups = ['Management', 'Operations', 'Technical', 'General Staff', 'Contractor'];
+                if ($search !== '') {
+                    $groups = array_values(array_filter($groups, fn($item) => stripos($item, $search) !== false));
+                }
+                $options = array_map(fn($item) => ['id' => $item, 'text' => $item], $groups);
+                break;
+
+            case 'employee':
+            case 'employee_id':
+            case 'learner':
+                $query = DB::table('users')
+                    ->select('id_emp', 'name')
+                    ->where(function ($q) {
+                        $q->whereNotNull('id_emp')->where('id_emp', '!=', '')
+                          ->orWhere(function ($q2) {
+                              $q2->whereNotNull('name')->where('name', '!=', '');
+                          });
+                    });
+
+                if ($search !== '') {
+                    $query->where(function ($q) use ($search) {
+                        $q->where('id_emp', 'like', "%{$search}%")
+                          ->orWhere('name', 'like', "%{$search}%");
+                    });
+                }
+                $users = $query->limit(50)->get();
+                $options = [];
+                foreach ($users as $u) {
+                    $empId = trim((string) $u->id_emp);
+                    $name = trim((string) $u->name);
+                    $idVal = $empId !== '' ? $empId : $name;
+                    $label = $empId !== '' ? "{$empId} - {$name}" : $name;
+                    $options[] = [
+                        'id'   => $idVal,
+                        'text' => $label,
+                    ];
+                }
+                break;
+
+            default:
+                $options = [];
+                break;
+        }
+
+        return response()->json([
+            'success' => true,
+            'type'    => $scopeType,
+            'data'    => $options,
+            'results' => $options,
         ]);
     }
 
@@ -424,6 +602,43 @@ class RecordExportController extends Controller
             $filters['year'] = null;
         }
 
+        // Section 3: Two-stage filter unpack
+        $scopeType = strtolower(trim((string) ($filters['filter_scope_type'] ?? '')));
+        $scopeValues = (array) ($filters['filter_scope_values'] ?? []);
+        $scopeValues = array_values(array_filter(array_map('trim', $scopeValues), fn($v) => $v !== '' && $v !== 'all'));
+
+        if ($scopeType !== '' && !empty($scopeValues)) {
+            switch ($scopeType) {
+                case 'company':
+                    $filters['company'] = $scopeValues;
+                    $filters['companies'] = $scopeValues;
+                    break;
+                case 'division':
+                    $filters['division'] = $scopeValues;
+                    $filters['divisions'] = $scopeValues;
+                    break;
+                case 'department':
+                    $filters['department'] = $scopeValues;
+                    $filters['departments'] = $scopeValues;
+                    break;
+                case 'team':
+                case 'team_section':
+                    $filters['team'] = $scopeValues;
+                    $filters['teams'] = $scopeValues;
+                    break;
+                case 'group':
+                    $filters['group'] = $scopeValues;
+                    break;
+                case 'employee':
+                case 'employee_id':
+                case 'learner':
+                    $filters['employee_id'] = $scopeValues;
+                    $filters['employee'] = $scopeValues;
+                    $filters['employees'] = $scopeValues;
+                    break;
+            }
+        }
+
         return $filters;
     }
 
@@ -438,14 +653,17 @@ class RecordExportController extends Controller
         }
 
         $validator = Validator::make($inputData, [
-            'source'       => 'required|string|in:online,offline,all',
-            'format'       => 'required|string|in:xlsx,csv,pdf',
-            'year'         => 'nullable|numeric|min:2000|max:2099',
-            'period_type'  => 'nullable|string',
-            'month'        => 'nullable',
-            'week'         => 'nullable',
-            'from_date'    => 'nullable|date_format:Y-m-d,d/m/Y,Y/m/d',
-            'to_date'      => 'nullable|date_format:Y-m-d,d/m/Y,Y/m/d',
+            'source'               => 'required|string|in:online,offline,all',
+            'format'               => 'required|string|in:xlsx,csv,pdf',
+            'year'                 => 'nullable|numeric|min:2000|max:2099',
+            'period_type'          => 'nullable|string',
+            'month'                => 'nullable',
+            'week'                 => 'nullable',
+            'from_date'            => 'nullable|date_format:Y-m-d,d/m/Y,Y/m/d',
+            'to_date'              => 'nullable|date_format:Y-m-d,d/m/Y,Y/m/d',
+            'filter_scope_type'    => 'nullable|string',
+            'filter_scope_values'  => 'nullable|array',
+            'filter_scope_values.*'=> 'nullable|string',
         ]);
 
         if ($validator->fails()) {
