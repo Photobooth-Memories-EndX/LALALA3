@@ -54,16 +54,11 @@
                             <label class="form-label fw-bold text-dark small mb-1.5" for="selected-source">
                                 <i class="ti ti-database me-1 text-muted"></i> Select Data Source
                             </label>
-                            <div class="input-group w-100">
-                                <span class="input-group-text export-source-addon border-end-0 rounded-start-3 px-3 text-muted" id="source-icon-container">
-                                    <i class="ti ti-device-laptop text-primary fs-2" id="source-icon-indicator"></i>
-                                </span>
-                                <select class="form-select export-source-select w-100 rounded-end-3 py-2 ps-2" name="source" id="selected-source" aria-label="Select Data Source">
-                                    <option value="online" selected>Online Learning Record (KP OWL)</option>
-                                    <option value="offline">Offline Learning Record (Non KP OWL)</option>
-                                    <option value="all">Combined Learning Record (All Sources)</option>
-                                </select>
-                            </div>
+                            <select class="form-select export-source-select w-100 rounded-3 py-2 px-3" name="source" id="selected-source" aria-label="Select Data Source">
+                                <option value="online" selected>Online Learning Record (KP OWL)</option>
+                                <option value="offline">Offline Learning Record (Non KP OWL)</option>
+                                <option value="all">Combined Learning Record (All Sources)</option>
+                            </select>
                             <!-- Dynamic source description -->
                             <div id="source-description-text" class="text-muted small mt-2 d-flex align-items-center gap-1.5" style="font-size: 0.8rem;">
                                 <i class="ti ti-info-circle text-muted flex-shrink-0"></i>
@@ -485,16 +480,11 @@
                             <label class="form-label fw-bold text-dark small mb-1.5" for="selected-format">
                                 <i class="ti ti-file-export me-1 text-muted"></i> Select Export Format
                             </label>
-                            <div class="input-group w-100">
-                                <span class="input-group-text export-format-addon border-end-0 rounded-start-3 px-3 text-muted" id="format-icon-container">
-                                    <i class="ti ti-file-spreadsheet text-success fs-2" id="format-icon-indicator"></i>
-                                </span>
-                                <select class="form-select export-format-select w-100 rounded-end-3 py-2 ps-2" name="format" id="selected-format" aria-label="Select Export Format">
-                                    <option value="xlsx" selected>Excel Spreadsheet (.xlsx)</option>
-                                    <option value="csv">CSV File (.csv)</option>
-                                    <option value="pdf">PDF Document (.pdf)</option>
-                                </select>
-                            </div>
+                            <select class="form-select export-format-select w-100 rounded-3 py-2 px-3" name="format" id="selected-format" aria-label="Select Export Format">
+                                <option value="xlsx" selected>Excel Spreadsheet (.xlsx)</option>
+                                <option value="csv">CSV File (.csv)</option>
+                                <option value="pdf">PDF Document (.pdf)</option>
+                            </select>
 
                             <!-- Dynamic format description -->
                             <div id="format-description-text" class="text-muted small mt-2 d-flex align-items-center gap-1.5" style="font-size: 0.8rem;">
