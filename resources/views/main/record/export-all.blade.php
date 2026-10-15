@@ -321,41 +321,25 @@
                         <span class="badge bg-primary text-white rounded-circle p-2 d-inline-flex align-items-center justify-content-center" style="width: 26px; height: 26px; font-size: 0.75rem;">4</span>
                         <h4 class="card-title fw-bold text-dark mb-0">Period Filters</h4>
                     </div>
-                    <p class="text-muted small mb-0 mt-1 ms-4 ps-1">Define reporting timeframe dynamically by week, month, year, or custom date range.</p>
+                    <p class="text-muted small mb-0 mt-1 ms-4 ps-1">Define reporting timeframe dynamically by month, year, or custom date range.</p>
                 </div>
                 <div class="card-body px-4 pb-4 pt-2">
                     <div class="row g-3 align-items-start">
                         <!-- Primary Dropdown: Period Type -->
-                        <div class="col-12 col-md-6 col-lg-3" id="wrapper-period-type">
+                        <div class="col-12 col-md-6 col-lg-4" id="wrapper-period-type">
                             <label class="form-label fw-bold text-dark small" for="filter-period-type">
                                 <i class="ti ti-calendar-time me-1 text-muted"></i> Period Type
                             </label>
                             <select id="filter-period-type" name="period_type" class="form-select rounded-3">
                                 <option value="Year" selected>Yearly (Year)</option>
                                 <option value="Month">Monthly (Month)</option>
-                                <option value="Week">Weekly (Week)</option>
                                 <option value="Custom">Custom Range (Custom)</option>
                             </select>
                             <small class="text-muted" style="font-size: 0.75rem;">Choose reporting timeframe mode.</small>
                         </div>
 
-                        <!-- Dynamic Dropdown: Select Week (Visible when Week is selected) -->
-                        <div class="col-12 col-md-6 col-lg-3 filter-period-element" id="wrapper-period-week" style="display: none;">
-                            <label class="form-label fw-bold text-dark small" for="filter-week">
-                                <i class="ti ti-calendar-week me-1 text-muted"></i> Select Week
-                            </label>
-                            <select id="filter-week" name="week" class="form-select rounded-3">
-                                <option value="1" selected>Week 1 (Days 1 - 7)</option>
-                                <option value="2">Week 2 (Days 8 - 14)</option>
-                                <option value="3">Week 3 (Days 15 - 21)</option>
-                                <option value="4">Week 4 (Days 22 - 28)</option>
-                                <option value="5">Week 5 (Days 29 - End)</option>
-                            </select>
-                            <small class="text-muted" style="font-size: 0.75rem;">Week of selected month.</small>
-                        </div>
-
-                        <!-- Dynamic Dropdown: Select Month (Visible when Month or Week is selected) -->
-                        <div class="col-12 col-md-6 col-lg-3 filter-period-element" id="wrapper-period-month" style="display: none;">
+                        <!-- Dynamic Dropdown: Select Month (Visible when Month is selected) -->
+                        <div class="col-12 col-md-6 col-lg-4 filter-period-element" id="wrapper-period-month" style="display: none;">
                             <label class="form-label fw-bold text-dark small" for="filter-month">
                                 <i class="ti ti-calendar me-1 text-muted"></i> Select Month
                             </label>
@@ -377,8 +361,8 @@
                             <small class="text-muted" style="font-size: 0.75rem;">Month of reporting period.</small>
                         </div>
 
-                        <!-- Dynamic Dropdown: Select Year (Visible when Year, Month, or Week is selected) -->
-                        <div class="col-12 col-md-6 col-lg-3 filter-period-element" id="wrapper-period-year">
+                        <!-- Dynamic Dropdown: Select Year (Visible when Year or Month is selected) -->
+                        <div class="col-12 col-md-6 col-lg-4 filter-period-element" id="wrapper-period-year">
                             <label class="form-label fw-bold text-dark small" for="filter-year">
                                 <i class="ti ti-calendar-event me-1 text-muted"></i> Select Year
                             </label>
@@ -392,7 +376,7 @@
                         </div>
 
                         <!-- Dynamic Date Picker: From Date (Visible when Custom is selected) -->
-                        <div class="col-12 col-md-6 col-lg-3 filter-period-element" id="wrapper-period-from" style="display: none;">
+                        <div class="col-12 col-md-6 col-lg-4 filter-period-element" id="wrapper-period-from" style="display: none;">
                             <label class="form-label fw-bold text-dark small" for="filter-from-date">
                                 <i class="ti ti-calendar-stats me-1 text-muted"></i> From Date
                             </label>
@@ -401,7 +385,7 @@
                         </div>
 
                         <!-- Dynamic Date Picker: To Date (Visible when Custom is selected) -->
-                        <div class="col-12 col-md-6 col-lg-3 filter-period-element" id="wrapper-period-to" style="display: none;">
+                        <div class="col-12 col-md-6 col-lg-4 filter-period-element" id="wrapper-period-to" style="display: none;">
                             <label class="form-label fw-bold text-dark small" for="filter-to-date">
                                 <i class="ti ti-calendar-stats me-1 text-muted"></i> To Date
                             </label>
@@ -413,7 +397,7 @@
                     <!-- Active Timeframe Indicator Badge -->
                     <div id="period-summary-badge" class="mt-3 p-2.5 px-3 rounded-3 bg-light border text-dark small d-flex align-items-center gap-2" style="font-size: 0.825rem;">
                         <i class="ti ti-clock-play text-primary fs-3 flex-shrink-0"></i>
-                        <span><strong>Active Timeframe:</strong> <span id="period-summary-text">Full Year {{ $currentYear }}</span></span>
+                        <span><strong>Selected Timeframe:</strong> <span id="period-summary-text">01 Jan {{ $currentYear }} - 31 Dec {{ $currentYear }}</span></span>
                     </div>
 
                     <!-- Date Range Error Alert -->
@@ -1061,13 +1045,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // 4. DYNAMIC PERIOD FILTERS HANDLER (LinkedIn / Time Range Style)
     const periodTypeSelect = document.getElementById('filter-period-type');
-    const wrapperPeriodWeek = document.getElementById('wrapper-period-week');
     const wrapperPeriodMonth = document.getElementById('wrapper-period-month');
     const wrapperPeriodYear = document.getElementById('wrapper-period-year');
     const wrapperPeriodFrom = document.getElementById('wrapper-period-from');
     const wrapperPeriodTo = document.getElementById('wrapper-period-to');
 
-    const weekSelect = document.getElementById('filter-week');
     const monthSelect = document.getElementById('filter-month');
     const yearSelect = document.getElementById('filter-year');
     const fromDateInput = document.getElementById('filter-from-date');
@@ -1083,66 +1065,18 @@ document.addEventListener('DOMContentLoaded', function () {
         return String(num).padStart(2, '0');
     }
 
-    function updateWeekOptions(daysInMonth) {
-        if (!weekSelect) return;
-        const currentVal = parseInt(weekSelect.value, 10) || 1;
-        weekSelect.innerHTML = '';
-
-        const weeks = [
-            { val: 1, label: 'Week 1 (Days 1 - 7)' },
-            { val: 2, label: 'Week 2 (Days 8 - 14)' },
-            { val: 3, label: 'Week 3 (Days 15 - 21)' },
-            { val: 4, label: 'Week 4 (Days 22 - 28)' },
-        ];
-
-        if (daysInMonth > 28) {
-            weeks.push({ val: 5, label: `Week 5 (Days 29 - ${daysInMonth})` });
-        }
-
-        weeks.forEach(w => {
-            const opt = document.createElement('option');
-            opt.value = w.val;
-            opt.textContent = w.label;
-            if (w.val === currentVal || (currentVal > 4 && w.val === weeks.length)) {
-                opt.selected = true;
-            }
-            weekSelect.appendChild(opt);
-        });
-    }
-
     function updatePeriodDisplayAndDates() {
         if (!periodTypeSelect) return;
         const type = periodTypeSelect.value;
         const yVal = yearSelect ? yearSelect.value : '';
         const mVal = monthSelect ? parseInt(monthSelect.value, 10) : (new Date().getMonth() + 1);
-        const wVal = weekSelect ? parseInt(weekSelect.value, 10) : 1;
         const currentYearNum = new Date().getFullYear();
         const yearNum = (yVal && yVal !== 'all') ? parseInt(yVal, 10) : currentYearNum;
 
         const monthNames = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
         const daysInMonth = getDaysInMonth(yearNum, mVal);
-        updateWeekOptions(daysInMonth);
 
-        if (type === 'Week') {
-            const startDay = Math.min(daysInMonth, (wVal - 1) * 7 + 1);
-            const endDay = (wVal === 5) ? daysInMonth : Math.min(daysInMonth, wVal * 7);
-            const fromDateStr = `${yearNum}-${padZero(mVal)}-${padZero(startDay)}`;
-            const toDateStr = `${yearNum}-${padZero(mVal)}-${padZero(endDay)}`;
-
-            if (fromDateInput) {
-                fromDateInput.value = fromDateStr;
-                fromDateInput.disabled = false;
-            }
-            if (toDateInput) {
-                toDateInput.value = toDateStr;
-                toDateInput.disabled = false;
-            }
-            if (yearSelect) yearSelect.disabled = false;
-
-            if (periodSummaryText) {
-                periodSummaryText.textContent = `Week ${wVal} of ${monthNames[mVal]} ${yearNum} (${fromDateStr} to ${toDateStr})`;
-            }
-        } else if (type === 'Month') {
+        if (type === 'Month') {
             const fromDateStr = `${yearNum}-${padZero(mVal)}-01`;
             const toDateStr = `${yearNum}-${padZero(mVal)}-${padZero(daysInMonth)}`;
 
@@ -1171,7 +1105,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (yearSelect) yearSelect.disabled = false;
 
             if (periodSummaryText) {
-                periodSummaryText.textContent = (yVal && yVal !== 'all') ? `Full Year ${yVal}` : 'All Years';
+                periodSummaryText.textContent = (yVal && yVal !== 'all') ? `01 Jan ${yVal} - 31 Dec ${yVal}` : 'All Years';
             }
         } else if (type === 'Custom') {
             if (fromDateInput) fromDateInput.disabled = false;
@@ -1201,12 +1135,10 @@ document.addEventListener('DOMContentLoaded', function () {
         periodTypeSelect.value = type;
 
         // Dynamic visibility per requirement:
-        // - IF "Week": Show dropdowns for "Select Week" + "Select Month" + "Select Year".
         // - IF "Month": Show dropdowns for "Select Month" + "Select Year".
         // - IF "Year": Show dropdown for "Select Year" only.
         // - IF "Custom": Show date pickers for "From Date" and "To Date".
-        if (wrapperPeriodWeek) wrapperPeriodWeek.style.display = (type === 'Week') ? '' : 'none';
-        if (wrapperPeriodMonth) wrapperPeriodMonth.style.display = (type === 'Week' || type === 'Month') ? '' : 'none';
+        if (wrapperPeriodMonth) wrapperPeriodMonth.style.display = (type === 'Month') ? '' : 'none';
         if (wrapperPeriodYear) wrapperPeriodYear.style.display = (type === 'Custom') ? 'none' : '';
         if (wrapperPeriodFrom) wrapperPeriodFrom.style.display = (type === 'Custom') ? '' : 'none';
         if (wrapperPeriodTo) wrapperPeriodTo.style.display = (type === 'Custom') ? '' : 'none';
@@ -1218,12 +1150,6 @@ document.addEventListener('DOMContentLoaded', function () {
     if (periodTypeSelect) {
         periodTypeSelect.addEventListener('change', function () {
             setPeriodType(this.value);
-        });
-    }
-
-    if (weekSelect) {
-        weekSelect.addEventListener('change', function () {
-            updatePeriodDisplayAndDates();
         });
     }
 
