@@ -76,17 +76,18 @@
                         <span class="badge bg-primary text-white rounded-circle p-2 d-inline-flex align-items-center justify-content-center" style="width: 26px; height: 26px; font-size: 0.75rem;">2</span>
                         <h4 class="card-title fw-bold text-dark mb-0">Learning Filters</h4>
                     </div>
-                    <p class="text-muted small mb-0 mt-1 ms-4 ps-1">Filter by course title, classification, status, progress, and training parameters.</p>
+                    <p class="text-muted small mb-0 mt-1 ms-4 ps-1">Filter by classification, content type, category, status, provider, delivery method, attendance, and course title.</p>
                 </div>
                 <div class="card-body px-4 pb-4 pt-2">
-                    <div class="row g-3">
+                    <div class="row g-3 align-items-start">
+                        <!-- ROW 1 (3 Equal Columns): 1. Main Classification | 2. Content Type | 3. Category -->
                         <!-- 1. Main Classification -->
-                        <div class="col-12 col-md-6 col-lg-4">
+                        <div class="col-12 col-md-4 col-lg-4">
                             <label class="form-label fw-bold text-dark small" for="filter-classification">
                                 <i class="ti ti-category me-1 text-muted"></i> Main Classification
                             </label>
                             <select id="filter-classification" name="classification" class="form-select rounded-3">
-                                <option value="all">All Classifications</option>
+                                <option value="all" selected>All Classifications</option>
                                 @foreach ($classifications as $class)
                                     <option value="{{ $class }}">{{ $class }}</option>
                                 @endforeach
@@ -94,23 +95,23 @@
                         </div>
 
                         <!-- 2. Content Type (Online & Combined) / Training Type (Offline) -->
-                        <div class="col-12 col-md-6 col-lg-4 filter-online-only" id="wrapper-content-type">
+                        <div class="col-12 col-md-4 col-lg-4 filter-online-only" id="wrapper-content-type">
                             <label class="form-label fw-bold text-dark small" for="filter-content-type">
                                 <i class="ti ti-file-text me-1 text-muted"></i> Content Type
                             </label>
                             <select id="filter-content-type" name="type" class="form-select rounded-3">
-                                <option value="all">All Types</option>
+                                <option value="all" selected>All Types</option>
                                 <option value="Video">Video</option>
                                 <option value="Document">Document</option>
                             </select>
                         </div>
 
-                        <div class="col-12 col-md-6 col-lg-4 filter-offline-only" id="wrapper-training-type" style="display: none;">
+                        <div class="col-12 col-md-4 col-lg-4 filter-offline-only" id="wrapper-training-type" style="display: none;">
                             <label class="form-label fw-bold text-dark small" for="filter-training-type">
                                 <i class="ti ti-school me-1 text-muted"></i> Content Type
                             </label>
                             <select id="filter-training-type" name="type" class="form-select rounded-3" disabled>
-                                <option value="all">All Training Types</option>
+                                <option value="all" selected>All Types</option>
                                 @foreach ($trainingTypes as $tt)
                                     <option value="{{ $tt }}">{{ $tt }}</option>
                                 @endforeach
@@ -118,134 +119,91 @@
                         </div>
 
                         <!-- 3. Category (Online Source Category / Offline Category) -->
-                        <div class="col-12 col-md-6 col-lg-4 filter-online-only" id="wrapper-online-category">
+                        <div class="col-12 col-md-4 col-lg-4 filter-online-only" id="wrapper-online-category">
                             <label class="form-label fw-bold text-dark small" for="filter-online-category-select">
                                 <i class="ti ti-folders me-1 text-muted"></i> Category
                             </label>
                             <select id="filter-online-category-select" name="category" class="form-select rounded-3">
-                                <option value="all">All (Content &amp; Playlists)</option>
+                                <option value="all" selected>All (Content &amp; Playlists)</option>
                                 <option value="all_content">Single Content Only</option>
                                 <option value="playlist">Playlists Only</option>
                             </select>
                         </div>
 
-                        <div class="col-12 col-md-6 col-lg-4 filter-offline-only" id="wrapper-offline-category" style="display: none;">
+                        <div class="col-12 col-md-4 col-lg-4 filter-offline-only" id="wrapper-offline-category" style="display: none;">
                             <label class="form-label fw-bold text-dark small" for="filter-offline-category-select">
                                 <i class="ti ti-tag me-1 text-muted"></i> Category
                             </label>
                             <select id="filter-offline-category-select" name="category" class="form-select rounded-3" disabled>
-                                <option value="all">All Categories</option>
+                                <option value="all" selected>All Categories</option>
                                 @foreach ($offlineCategories as $cat)
                                     <option value="{{ $cat }}">{{ $cat }}</option>
                                 @endforeach
                             </select>
                         </div>
 
-                        <!-- 4. Learning Title (Content / Playlist / Course Title search) -->
-                        <div class="col-12 col-md-6 col-lg-4">
-                            <label class="form-label fw-bold text-dark small" for="filter-title">
-                                <i class="ti ti-book me-1 text-muted"></i> <span id="label-learning-title">Learning / Course Title</span>
-                            </label>
-                            <input type="text" id="filter-title" name="learning_title" class="form-control rounded-3"
-                                   placeholder="Search course title..." autocomplete="off">
-                            <small class="text-muted" style="font-size: 0.75rem;">Matches course, document, video, or playlist title.</small>
-                        </div>
-
-                        <!-- 5. Completion Status -->
-                        <div class="col-12 col-md-6 col-lg-4">
+                        <!-- ROW 2 (3 Equal Columns): 1. Completion Status | 2. Provider | 3. Delivery Method -->
+                        <!-- 4. Completion Status -->
+                        <div class="col-12 col-md-4 col-lg-4">
                             <label class="form-label fw-bold text-dark small" for="filter-status">
                                 <i class="ti ti-chart-dots me-1 text-muted"></i> Completion Status
                             </label>
                             <select id="filter-status" name="status" class="form-select rounded-3">
-                                <option value="all">All Status</option>
+                                <option value="all" selected>All Status</option>
                                 <option value="finished">Finished</option>
                                 <option value="ongoing">Ongoing</option>
                                 <option value="not_started">Not Started</option>
                             </select>
                         </div>
 
-                        <!-- 6. Progress Range -->
-                        <div class="col-12 col-md-6 col-lg-4">
-                            <label class="form-label fw-bold text-dark small" for="filter-progress">
-                                <i class="ti ti-percentage me-1 text-muted"></i> Progress Range
-                            </label>
-                            <select id="filter-progress" name="progress_range" class="form-select rounded-3">
-                                <option value="all">All Progress</option>
-                                <option value="0">0% (Not Started)</option>
-                                <option value="1-25">1% - 25%</option>
-                                <option value="26-50">26% - 50%</option>
-                                <option value="51-75">51% - 75%</option>
-                                <option value="76-99">76% - 99%</option>
-                                <option value="100">100% (Completed)</option>
-                            </select>
-                        </div>
-
-                        <!-- Sub Classification (Offline & Combined) -->
-                        <div class="col-12 col-md-6 col-lg-4 filter-sub-classification-wrapper" id="wrapper-sub-classification" style="display: none;">
-                            <label class="form-label fw-bold text-dark small" for="filter-sub-classification">
-                                <i class="ti ti-subtask me-1 text-muted"></i> Sub Classification
-                            </label>
-                            <select id="filter-sub-classification" name="sub_classification" class="form-select rounded-3">
-                                <option value="all">All Sub Classifications</option>
-                            </select>
-                            <small class="text-muted" style="font-size: 0.75rem;">Dynamically updates based on chosen Main Classification.</small>
-                        </div>
-
-                        <!-- Batch (Offline Only) -->
-                        <div class="col-12 col-md-6 col-lg-4 filter-offline-only" id="wrapper-batch" style="display: none;">
-                            <label class="form-label fw-bold text-dark small" for="filter-batch">
-                                <i class="ti ti-hash me-1 text-muted"></i> Batch
-                            </label>
-                            <input type="text" id="filter-batch" name="batch" class="form-control rounded-3" placeholder="e.g. Batch 1" disabled>
-                        </div>
-
-                        <!-- Provider (Offline Only) -->
-                        <div class="col-12 col-md-6 col-lg-4 filter-offline-only" id="wrapper-provider" style="display: none;">
+                        <!-- 5. Provider -->
+                        <div class="col-12 col-md-4 col-lg-4" id="wrapper-provider">
                             <label class="form-label fw-bold text-dark small" for="filter-provider">
                                 <i class="ti ti-building-store me-1 text-muted"></i> Provider
                             </label>
-                            <select id="filter-provider" name="provider" class="form-select rounded-3" disabled>
-                                <option value="all">All Providers</option>
+                            <select id="filter-provider" name="provider" class="form-select rounded-3">
+                                <option value="all" selected>All Providers</option>
                                 @foreach ($providers as $prov)
                                     <option value="{{ $prov }}">{{ $prov }}</option>
                                 @endforeach
                             </select>
                         </div>
 
-                        <!-- Delivery Method (Offline Only) -->
-                        <div class="col-12 col-md-6 col-lg-4 filter-offline-only" id="wrapper-delivery-method" style="display: none;">
+                        <!-- 6. Delivery Method -->
+                        <div class="col-12 col-md-4 col-lg-4" id="wrapper-delivery-method">
                             <label class="form-label fw-bold text-dark small" for="filter-delivery-method">
                                 <i class="ti ti-truck-delivery me-1 text-muted"></i> Delivery Method
                             </label>
-                            <select id="filter-delivery-method" name="delivery_method" class="form-select rounded-3" disabled>
-                                <option value="all">All Delivery Methods</option>
+                            <select id="filter-delivery-method" name="delivery_method" class="form-select rounded-3">
+                                <option value="all" selected>All Delivery Methods</option>
                                 @foreach ($deliveryMethods as $dm)
                                     <option value="{{ $dm }}">{{ $dm }}</option>
                                 @endforeach
                             </select>
                         </div>
 
-                        <!-- Attendance (Offline Only) -->
-                        <div class="col-12 col-md-6 col-lg-4 filter-offline-only" id="wrapper-attendance" style="display: none;">
+                        <!-- ROW 3 (2 Asymmetrical Columns in a 3-Column Grid): 1. Attendance (1 Col / 33.3%) | 2. Course / Training Name (2 Cols / 66.6%) -->
+                        <!-- 7. Attendance (1 Column Width) -->
+                        <div class="col-12 col-md-4 col-lg-4" id="wrapper-attendance">
                             <label class="form-label fw-bold text-dark small" for="filter-attendance">
                                 <i class="ti ti-user-check me-1 text-muted"></i> Attendance
                             </label>
-                            <select id="filter-attendance" name="attendance" class="form-select rounded-3" disabled>
-                                <option value="all">All Attendance</option>
+                            <select id="filter-attendance" name="attendance" class="form-select rounded-3">
+                                <option value="all" selected>All Attendance</option>
                                 <option value="present">Present (Attended)</option>
                                 <option value="absent">Absent</option>
                             </select>
                         </div>
 
-                        <!-- Certificate (Offline Only) -->
-                        <div class="col-12 col-md-6 col-lg-4 filter-offline-only" id="wrapper-certificate" style="display: none;">
-                            <label class="form-label fw-bold text-dark small" for="filter-certificate">
-                                <i class="ti ti-certificate-2 me-1 text-muted"></i> Certificate
+                        <!-- 8. Course / Training Name (2 Columns Width - Multi-Select with Tag Badges) -->
+                        <div class="col-12 col-md-8 col-lg-8" id="wrapper-course-title">
+                            <label class="form-label fw-bold text-dark small" for="filter-title">
+                                <i class="ti ti-book me-1 text-muted"></i> <span id="label-learning-title">Course / Training Name</span>
                             </label>
-                            <select id="filter-certificate" name="certificate" class="form-select rounded-3" disabled>
-                                <option value="all">All Status</option>
-                                <option value="yes">Available / Issued</option>
-                                <option value="no">Not Issued</option>
+                            <select id="filter-title" name="learning_title[]" class="form-select rounded-3" multiple="multiple" style="width: 100%;">
+                                @foreach ($courseTitles ?? [] as $ct)
+                                    <option value="{{ $ct }}">{{ $ct }}</option>
+                                @endforeach
                             </select>
                         </div>
                     </div>
@@ -274,7 +232,7 @@
                                 <option value="department">Department</option>
                                 <option value="team">Team / Section</option>
                                 <option value="group">Group</option>
-                                <option value="employee">Employee / Learners (NIP / Name)</option>
+                                <option value="individual">Individual</option>
                             </select>
                             <small class="text-muted" style="font-size: 0.75rem;">Select attribute to scope reporting.</small>
                         </div>
@@ -338,12 +296,25 @@
                             <small class="text-muted" style="font-size: 0.75rem;">Choose reporting timeframe mode.</small>
                         </div>
 
-                        <!-- Dynamic Dropdown: Select Month (Visible when Month is selected) -->
+                        <!-- Dynamic Dropdown: Select Year (Monthly Mode: FIRST, Standard Single-Select Dropdown) -->
+                        <div class="col-12 col-md-6 col-lg-4 filter-period-element" id="wrapper-period-year-monthly" style="display: none;">
+                            <label class="form-label fw-bold text-dark small" for="filter-year-monthly">
+                                <i class="ti ti-calendar-event me-1 text-muted"></i> Select Year
+                            </label>
+                            <select id="filter-year-monthly" name="year" class="form-select rounded-3" disabled>
+                                @foreach ($years as $yr)
+                                    <option value="{{ $yr }}" {{ $yr == $currentYear ? 'selected' : '' }}>{{ $yr }}</option>
+                                @endforeach
+                            </select>
+                            <small class="text-muted" style="font-size: 0.75rem;">Reporting year.</small>
+                        </div>
+
+                        <!-- Dynamic Dropdown: Select Month (Monthly Mode: on the right, Multi-Select Tag Badges) -->
                         <div class="col-12 col-md-6 col-lg-4 filter-period-element" id="wrapper-period-month" style="display: none;">
                             <label class="form-label fw-bold text-dark small" for="filter-month">
                                 <i class="ti ti-calendar me-1 text-muted"></i> Select Month
                             </label>
-                            <select id="filter-month" name="month" class="form-select rounded-3">
+                            <select id="filter-month" name="month[]" class="form-select rounded-3" multiple="multiple" style="width: 100%;" disabled>
                                 @php
                                     $currentMonthNum = (int) date('n');
                                     $monthNames = [
@@ -354,25 +325,24 @@
                                 @endphp
                                 @foreach ($monthNames as $num => $name)
                                     <option value="{{ $num }}" {{ $num === $currentMonthNum ? 'selected' : '' }}>
-                                        {{ $name }} ({{ sprintf('%02d', $num) }})
+                                        {{ $name }}
                                     </option>
                                 @endforeach
                             </select>
-                            <small class="text-muted" style="font-size: 0.75rem;">Month of reporting period.</small>
+                            <small class="text-muted" style="font-size: 0.75rem;">Select one or more months.</small>
                         </div>
 
-                        <!-- Dynamic Dropdown: Select Year (Visible when Year or Month is selected) -->
+                        <!-- Dynamic Dropdown: Select Year (Yearly Mode: Multi-Select Tag Badges) -->
                         <div class="col-12 col-md-6 col-lg-4 filter-period-element" id="wrapper-period-year">
                             <label class="form-label fw-bold text-dark small" for="filter-year">
                                 <i class="ti ti-calendar-event me-1 text-muted"></i> Select Year
                             </label>
-                            <select id="filter-year" name="year" class="form-select rounded-3">
-                                <option value="">All Years</option>
+                            <select id="filter-year" name="year[]" class="form-select rounded-3" multiple="multiple" style="width: 100%;">
                                 @foreach ($years as $yr)
                                     <option value="{{ $yr }}" {{ $yr == $currentYear ? 'selected' : '' }}>{{ $yr }}</option>
                                 @endforeach
                             </select>
-                            <small class="text-muted" style="font-size: 0.75rem;">Reporting year.</small>
+                            <small class="text-muted" style="font-size: 0.75rem;">Select one or more years.</small>
                         </div>
 
                         <!-- Dynamic Date Picker: From Date (Visible when Custom is selected) -->
@@ -397,7 +367,7 @@
                     <!-- Active Timeframe Indicator Badge -->
                     <div id="period-summary-badge" class="mt-3 p-2.5 px-3 rounded-3 bg-light border text-dark small d-flex align-items-center gap-2" style="font-size: 0.825rem;">
                         <i class="ti ti-clock-play text-primary fs-3 flex-shrink-0"></i>
-                        <span><strong>Selected Timeframe:</strong> <span id="period-summary-text">01 Jan {{ $currentYear }} - 31 Dec {{ $currentYear }}</span></span>
+                        <span><strong>Selected Timeframe:</strong> <span id="period-summary-text">Full Year {{ $currentYear }} (01 Jan {{ $currentYear }} - 31 Dec {{ $currentYear }})</span></span>
                     </div>
 
                     <!-- Date Range Error Alert -->
@@ -582,34 +552,73 @@
         border-color: #60a5fa;
     }
 
-    /* SELECT2 CUSTOMIZATION FOR TWO-STAGE FILTER */
+    /* SELECT2 CUSTOMIZATION FOR TWO-STAGE & MULTI-SELECT FILTERS */
+    .select2-container {
+        width: 100% !important;
+    }
     .select2-container--bootstrap-5 .select2-selection--multiple {
-        min-height: 42px;
+        min-height: 38px;
         border-radius: 0.5rem;
         border-color: #d8e2ef;
-        padding: 3px 6px;
+        padding: 2px 5px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 3px;
     }
     .select2-container--bootstrap-5.select2-container--focus .select2-selection--multiple {
         border-color: #0c5b9e;
         box-shadow: 0 0 0 0.25rem rgba(12, 91, 158, 0.15);
     }
-    .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice {
+    /* TomSelect / Custom Multi-Select Tag Item Styling */
+    .ts-control .item,
+    .select2-container--default .select2-selection--multiple .select2-selection__choice,
+    .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice,
+    .select2-selection--multiple .select2-selection__choice {
+        font-size: 11px !important;
+        font-weight: 600 !important;
+        padding: 2px 8px !important;
+        line-height: 1.2 !important;
+        border-radius: 4px !important;
+        margin-right: 4px !important;
+        margin-top: 2px !important;
+        margin-bottom: 2px !important;
         background-color: #e0f2fe;
         color: #0369a1;
         border: 1px solid #bae6fd;
-        border-radius: 0.375rem;
-        padding: 3px 8px;
-        font-size: 0.825rem;
-        font-weight: 500;
-        margin-top: 4px;
-        margin-bottom: 4px;
+        display: inline-flex;
+        align-items: center;
     }
-    .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice__remove {
+
+    /* TomSelect / Select2 Tag Close Icon Adjustments */
+    .ts-control .item .remove,
+    .select2-selection__choice__remove,
+    .tag-badge-remove {
+        font-size: 9px !important;
+        width: 12px !important;
+        height: 12px !important;
+        line-height: 12px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin-right: 3px !important;
+        opacity: 0.7 !important;
+        vertical-align: middle !important;
+        padding: 0 !important;
         color: #0284c7;
-        margin-right: 5px;
     }
-    .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice__remove:hover {
+
+    .ts-control .item .remove:hover,
+    .select2-selection__choice__remove:hover {
+        opacity: 1 !important;
         color: #b91c1c;
+    }
+    .select2-container--bootstrap-5 .select2-selection--multiple .select2-search__field {
+        margin-top: 2px;
+        margin-bottom: 2px;
+        font-size: 11px;
+        height: 22px;
+        line-height: 22px;
     }
     .select2-container--bootstrap-5 .select2-dropdown {
         border-color: #d8e2ef;
@@ -628,6 +637,24 @@
         background-color: #1e3a5f;
         color: #93c5fd;
         border-color: #2563eb;
+        font-size: 11px !important;
+        padding: 2px 8px !important;
+    }
+    [data-bs-theme="dark"] .select2-selection__choice__remove,
+    body.dark-mode .select2-selection__choice__remove {
+        color: #93c5fd;
+        font-size: 9px !important;
+    }
+    /* Fallback / Generic multi-select tag badges & TomSelect pill rules */
+    .ts-wrapper.multi .ts-control > div,
+    .badge-filter-tag,
+    .multi-select-pill {
+        font-size: 11px !important;
+        font-weight: 600 !important;
+        padding: 2px 8px !important;
+        line-height: 1.2 !important;
+        border-radius: 4px !important;
+        margin-right: 4px !important;
     }
     [data-bs-theme="dark"] .select2-container--bootstrap-5 .select2-dropdown,
     body.dark-mode .select2-container--bootstrap-5 .select2-dropdown {
@@ -668,6 +695,53 @@ document.addEventListener('DOMContentLoaded', function () {
     // Embedded mapping of Sub Classifications by Main Classification
     const subClassMap = @json($subClassMap ?? []);
 
+    // Distinct Course / Training Titles by Data Source
+    const courseTitlesBySource = {
+        online: @json($onlineTitles ?? []),
+        offline: @json($offlineTitles ?? []),
+        all: @json($courseTitles ?? [])
+    };
+
+    const titleSelect = document.getElementById('filter-title');
+    const $titleSelect = $(titleSelect);
+
+    function initCourseTitleSelect2(source) {
+        if (!$titleSelect.length) return;
+
+        const currentSelected = $titleSelect.val() || [];
+        if ($titleSelect.hasClass('select2-hidden-accessible')) {
+            $titleSelect.select2('destroy');
+        }
+        $titleSelect.empty();
+
+        let titles = courseTitlesBySource[source] || [];
+        if (!Array.isArray(titles) || titles.length === 0) {
+            titles = courseTitlesBySource.all || [];
+        }
+
+        const validSelected = [];
+        titles.forEach(function (titleText) {
+            const isSel = Array.isArray(currentSelected) && currentSelected.includes(titleText);
+            if (isSel) {
+                validSelected.push(titleText);
+            }
+            const opt = new Option(titleText, titleText, isSel, isSel);
+            $titleSelect.append(opt);
+        });
+
+        $titleSelect.select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Select or search course / training titles...',
+            allowClear: true,
+            closeOnSelect: false,
+            width: '100%'
+        });
+
+        if (validSelected.length > 0) {
+            $titleSelect.val(validSelected).trigger('change.select2');
+        }
+    }
+
     // 1. DATA SOURCE SELECTION HANDLER
     const sourceMeta = {
         'online': {
@@ -706,60 +780,64 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const onlineElements = document.querySelectorAll('.filter-online-only');
         const offlineElements = document.querySelectorAll('.filter-offline-only');
-        const subClassWrapper = document.getElementById('wrapper-sub-classification');
         const titleLabel = document.getElementById('label-learning-title');
 
-        if (source === 'online') {
-            if (titleLabel) titleLabel.textContent = 'Learning Title (Content / Playlist)';
-            onlineElements.forEach(el => {
-                el.style.display = '';
-                const ctrl = el.querySelector('select, input');
-                if (ctrl) ctrl.disabled = false;
-            });
-            offlineElements.forEach(el => {
-                el.style.display = 'none';
-                const ctrl = el.querySelector('select, input');
-                if (ctrl) ctrl.disabled = true;
-            });
-            if (subClassWrapper) {
-                subClassWrapper.style.display = 'none';
-                if (subClassSelect) subClassSelect.disabled = true;
-            }
-        } else if (source === 'offline') {
-            if (titleLabel) titleLabel.textContent = 'Course / Training Name';
-            onlineElements.forEach(el => {
-                el.style.display = 'none';
-                const ctrl = el.querySelector('select, input');
-                if (ctrl) ctrl.disabled = true;
-            });
-            offlineElements.forEach(el => {
-                el.style.display = '';
-                const ctrl = el.querySelector('select, input');
-                if (ctrl) ctrl.disabled = false;
-            });
-            if (subClassWrapper) {
-                subClassWrapper.style.display = '';
-                if (subClassSelect) subClassSelect.disabled = false;
-            }
-        } else {
-            // source === 'all' (Combined)
-            if (titleLabel) titleLabel.textContent = 'Learning / Course Title';
-            onlineElements.forEach(el => {
-                el.style.display = '';
-                const ctrl = el.querySelector('select, input');
-                if (ctrl) ctrl.disabled = false;
-            });
-            offlineElements.forEach(el => {
-                el.style.display = 'none';
-                const ctrl = el.querySelector('select, input');
-                if (ctrl) ctrl.disabled = true;
-            });
-            if (subClassWrapper) {
-                subClassWrapper.style.display = '';
-                if (subClassSelect) subClassSelect.disabled = false;
-            }
+        if (titleLabel) {
+            titleLabel.textContent = 'Course / Training Name';
         }
 
+        if (source === 'online') {
+            onlineElements.forEach(el => {
+                el.style.display = '';
+                const ctrl = el.querySelector('select, input');
+                if (ctrl) {
+                    ctrl.disabled = false;
+                    if (ctrl.tagName === 'SELECT' && !ctrl.multiple && !ctrl.value) {
+                        ctrl.value = 'all';
+                    }
+                }
+            });
+            offlineElements.forEach(el => {
+                el.style.display = 'none';
+                const ctrl = el.querySelector('select, input');
+                if (ctrl) ctrl.disabled = true;
+            });
+        } else if (source === 'offline') {
+            onlineElements.forEach(el => {
+                el.style.display = 'none';
+                const ctrl = el.querySelector('select, input');
+                if (ctrl) ctrl.disabled = true;
+            });
+            offlineElements.forEach(el => {
+                el.style.display = '';
+                const ctrl = el.querySelector('select, input');
+                if (ctrl) {
+                    ctrl.disabled = false;
+                    if (ctrl.tagName === 'SELECT' && !ctrl.multiple && !ctrl.value) {
+                        ctrl.value = 'all';
+                    }
+                }
+            });
+        } else {
+            // source === 'all' (Combined)
+            onlineElements.forEach(el => {
+                el.style.display = '';
+                const ctrl = el.querySelector('select, input');
+                if (ctrl) {
+                    ctrl.disabled = false;
+                    if (ctrl.tagName === 'SELECT' && !ctrl.multiple && !ctrl.value) {
+                        ctrl.value = 'all';
+                    }
+                }
+            });
+            offlineElements.forEach(el => {
+                el.style.display = 'none';
+                const ctrl = el.querySelector('select, input');
+                if (ctrl) ctrl.disabled = true;
+            });
+        }
+
+        initCourseTitleSelect2(source);
         updateActionSummary();
     }
 
@@ -940,9 +1018,14 @@ document.addEventListener('DOMContentLoaded', function () {
             placeholder: 'Select or search groups...',
             help: 'Select one or more groups using tag badges.'
         },
+        individual: {
+            label: 'Employee ID / Name',
+            placeholder: 'Type to search learner name, NIP, or team...',
+            help: 'Search by NIP or Name across online and offline records.'
+        },
         employee: {
-            label: 'Employee / Learners (NIP / Name)',
-            placeholder: 'Type to search learner name or NIP...',
+            label: 'Employee ID / Name',
+            placeholder: 'Type to search learner name, NIP, or team...',
             help: 'Search by NIP or Name across online and offline records.'
         }
     };
@@ -960,8 +1043,8 @@ document.addEventListener('DOMContentLoaded', function () {
         if (labelScopeValues) labelScopeValues.textContent = meta.label;
         if (helpScopeValues) helpScopeValues.textContent = meta.help;
 
-        if (scopeType === 'employee') {
-            // Employee mode: AJAX dynamic search
+        if (scopeType === 'individual' || scopeType === 'employee') {
+            // Individual / Employee mode: AJAX dynamic search
             $scopeValuesSelect.select2({
                 theme: 'bootstrap-5',
                 placeholder: meta.placeholder,
@@ -975,7 +1058,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     delay: 250,
                     data: function (params) {
                         return {
-                            type: 'employee',
+                            type: 'individual',
                             q: params.term || ''
                         };
                     },
@@ -1047,15 +1130,39 @@ document.addEventListener('DOMContentLoaded', function () {
     const periodTypeSelect = document.getElementById('filter-period-type');
     const wrapperPeriodMonth = document.getElementById('wrapper-period-month');
     const wrapperPeriodYear = document.getElementById('wrapper-period-year');
+    const wrapperPeriodYearMonthly = document.getElementById('wrapper-period-year-monthly');
     const wrapperPeriodFrom = document.getElementById('wrapper-period-from');
     const wrapperPeriodTo = document.getElementById('wrapper-period-to');
 
     const monthSelect = document.getElementById('filter-month');
     const yearSelect = document.getElementById('filter-year');
+    const yearSelectMonthly = document.getElementById('filter-year-monthly');
+    const $monthSelect = $(monthSelect);
+    const $yearSelect = $(yearSelect);
     const fromDateInput = document.getElementById('filter-from-date');
     const toDateInput = document.getElementById('filter-to-date');
     const dateRangeError = document.getElementById('date-range-error');
     const periodSummaryText = document.getElementById('period-summary-text');
+
+    if ($monthSelect.length) {
+        $monthSelect.select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Select month(s)...',
+            allowClear: true,
+            closeOnSelect: false,
+            width: '100%'
+        });
+    }
+
+    if ($yearSelect.length) {
+        $yearSelect.select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Select year(s)...',
+            allowClear: true,
+            closeOnSelect: false,
+            width: '100%'
+        });
+    }
 
     function getDaysInMonth(year, month) {
         return new Date(year, month, 0).getDate();
@@ -1065,20 +1172,52 @@ document.addEventListener('DOMContentLoaded', function () {
         return String(num).padStart(2, '0');
     }
 
+    function getSelectedYears() {
+        let vals = $yearSelect.val() || [];
+        if (!Array.isArray(vals)) {
+            vals = vals ? [vals] : [];
+        }
+        return vals.map(v => parseInt(v, 10)).filter(v => !isNaN(v) && v > 1900).sort((a, b) => a - b);
+    }
+
+    function getSelectedMonths() {
+        let vals = $monthSelect.val() || [];
+        if (!Array.isArray(vals)) {
+            vals = vals ? [vals] : [];
+        }
+        return vals.map(v => parseInt(v, 10)).filter(v => !isNaN(v) && v >= 1 && v <= 12).sort((a, b) => a - b);
+    }
+
     function updatePeriodDisplayAndDates() {
         if (!periodTypeSelect) return;
         const type = periodTypeSelect.value;
-        const yVal = yearSelect ? yearSelect.value : '';
-        const mVal = monthSelect ? parseInt(monthSelect.value, 10) : (new Date().getMonth() + 1);
+        const monthShortNames = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         const currentYearNum = new Date().getFullYear();
-        const yearNum = (yVal && yVal !== 'all') ? parseInt(yVal, 10) : currentYearNum;
-
-        const monthNames = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-        const daysInMonth = getDaysInMonth(yearNum, mVal);
 
         if (type === 'Month') {
-            const fromDateStr = `${yearNum}-${padZero(mVal)}-01`;
-            const toDateStr = `${yearNum}-${padZero(mVal)}-${padZero(daysInMonth)}`;
+            const yVal = yearSelectMonthly ? yearSelectMonthly.value : '';
+            const yearNum = (yVal && yVal !== 'all' && !isNaN(parseInt(yVal, 10))) ? parseInt(yVal, 10) : currentYearNum;
+
+            let selectedMonths = getSelectedMonths();
+            if (selectedMonths.length === 0) {
+                selectedMonths = [new Date().getMonth() + 1];
+            }
+
+            let pairs = [];
+            selectedMonths.forEach(m => {
+                pairs.push(`${monthShortNames[m]} ${yearNum}`);
+            });
+
+            const minM = selectedMonths[0];
+            const maxM = selectedMonths[selectedMonths.length - 1];
+
+            const minDay = 1;
+            const maxDay = getDaysInMonth(yearNum, maxM);
+
+            const fromDateStr = `${yearNum}-${padZero(minM)}-${padZero(minDay)}`;
+            const toDateStr = `${yearNum}-${padZero(maxM)}-${padZero(maxDay)}`;
+            const fromDateFormatted = `${padZero(minDay)} ${monthShortNames[minM]} ${yearNum}`;
+            const toDateFormatted = `${padZero(maxDay)} ${monthShortNames[maxM]} ${yearNum}`;
 
             if (fromDateInput) {
                 fromDateInput.value = fromDateStr;
@@ -1088,31 +1227,53 @@ document.addEventListener('DOMContentLoaded', function () {
                 toDateInput.value = toDateStr;
                 toDateInput.disabled = false;
             }
-            if (yearSelect) yearSelect.disabled = false;
+            if (yearSelectMonthly) yearSelectMonthly.disabled = false;
+            if ($monthSelect.length) $monthSelect.prop('disabled', false);
+            if ($yearSelect.length) $yearSelect.prop('disabled', true);
 
             if (periodSummaryText) {
-                periodSummaryText.textContent = `${monthNames[mVal]} ${yearNum} (${fromDateStr} to ${toDateStr})`;
+                if (pairs.length > 0) {
+                    periodSummaryText.textContent = `${pairs.join(', ')} (${fromDateFormatted} - ${toDateFormatted})`;
+                } else {
+                    periodSummaryText.textContent = 'Please select month(s)';
+                }
             }
         } else if (type === 'Year') {
+            let selectedYears = getSelectedYears();
+            if (selectedYears.length === 0) {
+                selectedYears = [currentYearNum];
+            }
+
+            const minY = selectedYears[0];
+            const maxY = selectedYears[selectedYears.length - 1];
+            const fromDateStr = `${minY}-01-01`;
+            const toDateStr = `${maxY}-12-31`;
+
             if (fromDateInput) {
-                fromDateInput.value = '';
+                fromDateInput.value = fromDateStr;
                 fromDateInput.disabled = true;
             }
             if (toDateInput) {
-                toDateInput.value = '';
+                toDateInput.value = toDateStr;
                 toDateInput.disabled = true;
             }
-            if (yearSelect) yearSelect.disabled = false;
+            if ($yearSelect.length) $yearSelect.prop('disabled', false);
+            if (yearSelectMonthly) yearSelectMonthly.disabled = true;
+            if ($monthSelect.length) $monthSelect.prop('disabled', true);
 
             if (periodSummaryText) {
-                periodSummaryText.textContent = (yVal && yVal !== 'all') ? `01 Jan ${yVal} - 31 Dec ${yVal}` : 'All Years';
+                if (selectedYears.length > 1) {
+                    periodSummaryText.textContent = `Full Year ${selectedYears.join(', ')} (01 Jan ${minY} - 31 Dec ${maxY})`;
+                } else {
+                    periodSummaryText.textContent = `Full Year ${selectedYears[0]} (01 Jan ${selectedYears[0]} - 31 Dec ${selectedYears[0]})`;
+                }
             }
         } else if (type === 'Custom') {
             if (fromDateInput) fromDateInput.disabled = false;
             if (toDateInput) toDateInput.disabled = false;
-            if (yearSelect) {
-                yearSelect.disabled = true;
-            }
+            if ($yearSelect.length) $yearSelect.prop('disabled', true);
+            if (yearSelectMonthly) yearSelectMonthly.disabled = true;
+            if ($monthSelect.length) $monthSelect.prop('disabled', true);
 
             const fromVal = fromDateInput ? fromDateInput.value : '';
             const toVal = toDateInput ? toDateInput.value : '';
@@ -1135,13 +1296,35 @@ document.addEventListener('DOMContentLoaded', function () {
         periodTypeSelect.value = type;
 
         // Dynamic visibility per requirement:
-        // - IF "Month": Show dropdowns for "Select Month" + "Select Year".
-        // - IF "Year": Show dropdown for "Select Year" only.
+        // - IF "Month": Show "Select Year" FIRST (Single-select dropdown), then "Select Month" (Multi-select tag badges).
+        // - IF "Year": Show "Select Year" only (Multi-select tag badges).
         // - IF "Custom": Show date pickers for "From Date" and "To Date".
+        if (wrapperPeriodYearMonthly) wrapperPeriodYearMonthly.style.display = (type === 'Month') ? '' : 'none';
         if (wrapperPeriodMonth) wrapperPeriodMonth.style.display = (type === 'Month') ? '' : 'none';
-        if (wrapperPeriodYear) wrapperPeriodYear.style.display = (type === 'Custom') ? 'none' : '';
+        if (wrapperPeriodYear) wrapperPeriodYear.style.display = (type === 'Year') ? '' : 'none';
         if (wrapperPeriodFrom) wrapperPeriodFrom.style.display = (type === 'Custom') ? '' : 'none';
         if (wrapperPeriodTo) wrapperPeriodTo.style.display = (type === 'Custom') ? '' : 'none';
+
+        // Keep year selections synchronized
+        if (type === 'Month') {
+            const yrVals = getSelectedYears();
+            if (yrVals.length > 0 && yearSelectMonthly) {
+                yearSelectMonthly.value = yrVals[0];
+            }
+            if ($monthSelect.length) {
+                $monthSelect.trigger('change.select2');
+            }
+        } else if (type === 'Year') {
+            if (yearSelectMonthly && yearSelectMonthly.value && $yearSelect.length) {
+                const currentYrs = getSelectedYears();
+                if (currentYrs.length === 0) {
+                    $yearSelect.val([yearSelectMonthly.value]).trigger('change.select2');
+                }
+            }
+            if ($yearSelect.length) {
+                $yearSelect.trigger('change.select2');
+            }
+        }
 
         updatePeriodDisplayAndDates();
         validateDateRange();
@@ -1153,17 +1336,26 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    if (monthSelect) {
-        monthSelect.addEventListener('change', function () {
+    if (yearSelectMonthly) {
+        yearSelectMonthly.addEventListener('change', function () {
+            if ($yearSelect.length && this.value) {
+                $yearSelect.val([this.value]);
+            }
             updatePeriodDisplayAndDates();
         });
     }
 
-    if (yearSelect) {
-        yearSelect.addEventListener('change', function () {
-            updatePeriodDisplayAndDates();
-        });
-    }
+    $monthSelect.on('change', function () {
+        updatePeriodDisplayAndDates();
+    });
+
+    $yearSelect.on('change', function () {
+        const yrVals = getSelectedYears();
+        if (yrVals.length > 0 && yearSelectMonthly) {
+            yearSelectMonthly.value = yrVals[0];
+        }
+        updatePeriodDisplayAndDates();
+    });
 
     // 5. DATE RANGE VALIDATION (From Date must not be later than To Date when Custom range is active)
     function validateDateRange() {
@@ -1245,6 +1437,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 toDateInput.classList.remove('is-invalid');
                 toDateInput.removeAttribute('min');
             }
+            if ($titleSelect.length) {
+                $titleSelect.val(null).trigger('change');
+            }
             setSource('online');
             setFormat('xlsx');
             setPeriodType('Year');
@@ -1253,6 +1448,17 @@ document.addEventListener('DOMContentLoaded', function () {
                 scopeTypeSelect.value = 'company';
             }
             initScopeSelect2('company');
+
+            // Reset Month & Year to defaults
+            if (yearSelectMonthly) {
+                yearSelectMonthly.value = '{{ $currentYear }}';
+            }
+            if ($monthSelect.length) {
+                $monthSelect.val(['{{ $currentMonthNum }}']).trigger('change');
+            }
+            if ($yearSelect.length) {
+                $yearSelect.val(['{{ $currentYear }}']).trigger('change');
+            }
         });
     }
 

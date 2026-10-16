@@ -166,6 +166,44 @@ class RecordExportController extends Controller
         // 9. Placeholder Groups
         $groups = ['Management', 'Operations', 'Technical', 'General Staff', 'Contractor'];
 
+        // 10. Distinct Course / Training Titles (Online, Offline, Combined)
+        $onlineContentTitles = [];
+        if (Schema::hasTable('content')) {
+            $onlineContentTitles = DB::table('content')
+                ->whereNotNull('title')
+                ->where('title', '!=', '')
+                ->distinct()
+                ->pluck('title')
+                ->toArray();
+        }
+        $onlinePlaylistTitles = [];
+        if (Schema::hasTable('trainingplan')) {
+            $onlinePlaylistTitles = DB::table('trainingplan')
+                ->whereNotNull('title')
+                ->where('title', '!=', '')
+                ->distinct()
+                ->pluck('title')
+                ->toArray();
+        }
+        $onlineTitles = array_values(array_unique(array_filter(array_map('trim', array_merge($onlineContentTitles, $onlinePlaylistTitles)))));
+        sort($onlineTitles);
+
+        $offlineTitles = [];
+        if (Schema::hasTable('offline_trainings')) {
+            $offlineTitles = DB::table('offline_trainings')
+                ->whereNull('deleted_at')
+                ->whereNotNull('course_name')
+                ->where('course_name', '!=', '')
+                ->distinct()
+                ->pluck('course_name')
+                ->toArray();
+            $offlineTitles = array_values(array_unique(array_filter(array_map('trim', $offlineTitles))));
+            sort($offlineTitles);
+        }
+
+        $courseTitles = array_values(array_unique(array_filter(array_merge($onlineTitles, $offlineTitles))));
+        sort($courseTitles);
+
         return view('main.record.export-all', [
             'title'               => 'Export KP OWL',
             'subtitle'            => 'Learning Record Export Center',
@@ -183,6 +221,9 @@ class RecordExportController extends Controller
             'deliveryMethods'     => $deliveryMethods,
             'grades'              => $grades,
             'subClassMap'         => $subClassMap,
+            'onlineTitles'        => $onlineTitles,
+            'offlineTitles'       => $offlineTitles,
+            'courseTitles'        => $courseTitles,
         ]);
     }
 
@@ -336,11 +377,12 @@ class RecordExportController extends Controller
                 $options = array_map(fn($item) => ['id' => $item, 'text' => $item], $groups);
                 break;
 
+            case 'individual':
             case 'employee':
             case 'employee_id':
             case 'learner':
                 $query = DB::table('users')
-                    ->select('id_emp', 'name')
+                    ->select('id_emp', 'name', 'team')
                     ->where(function ($q) {
                         $q->whereNotNull('id_emp')->where('id_emp', '!=', '')
                           ->orWhere(function ($q2) {
@@ -351,7 +393,8 @@ class RecordExportController extends Controller
                 if ($search !== '') {
                     $query->where(function ($q) use ($search) {
                         $q->where('id_emp', 'like', "%{$search}%")
-                          ->orWhere('name', 'like', "%{$search}%");
+                          ->orWhere('name', 'like', "%{$search}%")
+                          ->orWhere('team', 'like', "%{$search}%");
                     });
                 }
                 $users = $query->limit(50)->get();
@@ -359,8 +402,20 @@ class RecordExportController extends Controller
                 foreach ($users as $u) {
                     $empId = trim((string) $u->id_emp);
                     $name = trim((string) $u->name);
+                    $team = trim((string) ($u->team ?? ''));
+                    $teamName = $team !== '' ? $team : 'No Team';
                     $idVal = $empId !== '' ? $empId : $name;
-                    $label = $empId !== '' ? "{$empId} - {$name}" : $name;
+
+                    if ($empId !== '' && $name !== '') {
+                        $label = "{$empId} - {$name} - {$teamName}";
+                    } elseif ($empId !== '') {
+                        $label = "{$empId} - {$teamName}";
+                    } elseif ($name !== '') {
+                        $label = "{$name} - {$teamName}";
+                    } else {
+                        continue;
+                    }
+
                     $options[] = [
                         'id'   => $idVal,
                         'text' => $label,
@@ -566,40 +621,85 @@ class RecordExportController extends Controller
      */
     protected function normalizeFilters(array $filters): array
     {
-        if (isset($filters['year']) && (strtolower(trim((string) $filters['year'])) === 'all' || trim((string) $filters['year']) === '')) {
-            $filters['year'] = null;
+        if (isset($filters['year'])) {
+            if (is_array($filters['year'])) {
+                $cleanedYears = array_values(array_filter(array_map('trim', $filters['year']), fn($y) => $y !== '' && strtolower($y) !== 'all'));
+                $filters['year'] = !empty($cleanedYears) ? (count($cleanedYears) === 1 ? $cleanedYears[0] : $cleanedYears) : null;
+                $filters['years'] = $cleanedYears;
+            } elseif (strtolower(trim((string) $filters['year'])) === 'all' || trim((string) $filters['year']) === '') {
+                $filters['year'] = null;
+                $filters['years'] = [];
+            } else {
+                $filters['years'] = [$filters['year']];
+            }
+        }
+
+        if (isset($filters['month'])) {
+            if (is_array($filters['month'])) {
+                $cleanedMonths = array_values(array_filter(array_map('trim', $filters['month']), fn($m) => $m !== '' && strtolower($m) !== 'all'));
+                $filters['month'] = !empty($cleanedMonths) ? (count($cleanedMonths) === 1 ? $cleanedMonths[0] : $cleanedMonths) : null;
+                $filters['months'] = $cleanedMonths;
+            } elseif (strtolower(trim((string) $filters['month'])) === 'all' || trim((string) $filters['month']) === '') {
+                $filters['month'] = null;
+                $filters['months'] = [];
+            } else {
+                $filters['months'] = [$filters['month']];
+            }
+        }
+
+        if (isset($filters['learning_title'])) {
+            if (is_array($filters['learning_title'])) {
+                $cleanedTitles = array_values(array_filter(array_map('trim', $filters['learning_title']), fn($t) => $t !== '' && strtolower($t) !== 'all'));
+                $filters['learning_title'] = !empty($cleanedTitles) ? $cleanedTitles : null;
+                $filters['learning_titles'] = $cleanedTitles;
+            } elseif (strtolower(trim((string) $filters['learning_title'])) === 'all' || trim((string) $filters['learning_title']) === '') {
+                $filters['learning_title'] = null;
+                $filters['learning_titles'] = [];
+            } else {
+                $filters['learning_titles'] = [trim((string) $filters['learning_title'])];
+            }
         }
 
         $periodType = ucfirst(strtolower(trim((string) ($filters['period_type'] ?? ''))));
 
-        if ($periodType === 'Month' && !empty($filters['month']) && !empty($filters['year']) && is_numeric($filters['year'])) {
-            $y = (int) $filters['year'];
-            $m = (int) $filters['month'];
-            if ($m >= 1 && $m <= 12) {
+        if ($periodType === 'Month') {
+            $yList = (array) ($filters['years'] ?? ($filters['year'] ?? []));
+            $mList = (array) ($filters['months'] ?? ($filters['month'] ?? []));
+            $yList = array_values(array_filter($yList, 'is_numeric'));
+            $mList = array_values(array_filter($mList, 'is_numeric'));
+
+            if (!empty($yList) && !empty($mList)) {
+                sort($yList);
+                sort($mList);
+                $minY = (int) $yList[0];
+                $maxY = (int) end($yList);
+                $minM = (int) $mList[0];
+                $maxM = (int) end($mList);
+
                 if (empty($filters['from_date'])) {
-                    $filters['from_date'] = Carbon::createFromDate($y, $m, 1)->startOfMonth()->toDateString();
+                    $filters['from_date'] = Carbon::createFromDate($minY, $minM, 1)->startOfMonth()->toDateString();
                 }
                 if (empty($filters['to_date'])) {
-                    $filters['to_date'] = Carbon::createFromDate($y, $m, 1)->endOfMonth()->toDateString();
+                    $filters['to_date'] = Carbon::createFromDate($maxY, $maxM, 1)->endOfMonth()->toDateString();
                 }
             }
-        } elseif ($periodType === 'Week' && !empty($filters['week']) && !empty($filters['month']) && !empty($filters['year']) && is_numeric($filters['year'])) {
-            $y = (int) $filters['year'];
-            $m = (int) $filters['month'];
-            $w = (int) $filters['week'];
-            if ($m >= 1 && $m <= 12 && $w >= 1 && $w <= 5) {
-                $daysInMonth = Carbon::createFromDate($y, $m, 1)->daysInMonth;
-                $startDay = min($daysInMonth, ($w - 1) * 7 + 1);
-                $endDay = ($w === 5) ? $daysInMonth : min($daysInMonth, $w * 7);
+        } elseif ($periodType === 'Year') {
+            $yList = (array) ($filters['years'] ?? ($filters['year'] ?? []));
+            $yList = array_values(array_filter($yList, 'is_numeric'));
+            if (!empty($yList)) {
+                sort($yList);
+                $minY = (int) $yList[0];
+                $maxY = (int) end($yList);
                 if (empty($filters['from_date'])) {
-                    $filters['from_date'] = Carbon::createFromDate($y, $m, $startDay)->toDateString();
+                    $filters['from_date'] = Carbon::createFromDate($minY, 1, 1)->startOfYear()->toDateString();
                 }
                 if (empty($filters['to_date'])) {
-                    $filters['to_date'] = Carbon::createFromDate($y, $m, $endDay)->toDateString();
+                    $filters['to_date'] = Carbon::createFromDate($maxY, 12, 31)->endOfYear()->toDateString();
                 }
             }
         } elseif ($periodType === 'Custom') {
             $filters['year'] = null;
+            $filters['years'] = [];
         }
 
         // Section 3: Two-stage filter unpack
@@ -629,12 +729,14 @@ class RecordExportController extends Controller
                 case 'group':
                     $filters['group'] = $scopeValues;
                     break;
+                case 'individual':
                 case 'employee':
                 case 'employee_id':
                 case 'learner':
                     $filters['employee_id'] = $scopeValues;
                     $filters['employee'] = $scopeValues;
                     $filters['employees'] = $scopeValues;
+                    $filters['individual'] = $scopeValues;
                     break;
             }
         }
@@ -648,14 +750,19 @@ class RecordExportController extends Controller
     public function download(Request $request): Response
     {
         $inputData = $request->all();
-        if (isset($inputData['year']) && (strtolower(trim((string) $inputData['year'])) === 'all' || trim((string) $inputData['year']) === '')) {
-            $inputData['year'] = null;
+        if (isset($inputData['year'])) {
+            if (is_array($inputData['year'])) {
+                $cleanedYears = array_values(array_filter(array_map('trim', $inputData['year']), fn($y) => $y !== '' && strtolower($y) !== 'all'));
+                $inputData['year'] = !empty($cleanedYears) ? $cleanedYears : null;
+            } elseif (strtolower(trim((string) $inputData['year'])) === 'all' || trim((string) $inputData['year']) === '') {
+                $inputData['year'] = null;
+            }
         }
 
         $validator = Validator::make($inputData, [
             'source'               => 'required|string|in:online,offline,all',
             'format'               => 'required|string|in:xlsx,csv,pdf',
-            'year'                 => 'nullable|numeric|min:2000|max:2099',
+            'year'                 => 'nullable',
             'period_type'          => 'nullable|string',
             'month'                => 'nullable',
             'week'                 => 'nullable',

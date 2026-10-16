@@ -120,12 +120,23 @@ class RecordOfflineQueryService
         }
 
         // 3. Filter: Learning Title / Course Name
-        $titleParam = trim((string) ($filters['learning_title'] ?? ($filters['course_name'] ?? ($filters['title_q'] ?? ($filters['title'] ?? ($filters['training_title'] ?? ''))))));
-        if ($titleParam !== '') {
-            $query->where(function ($q) use ($titleParam) {
-                $q->where('ot.course_name', 'like', "%{$titleParam}%")
-                  ->orWhere('ot.sub_course_name', 'like', "%{$titleParam}%");
-            });
+        $rawTitleParam = $filters['learning_title'] ?? ($filters['course_name'] ?? ($filters['title_q'] ?? ($filters['title'] ?? ($filters['training_title'] ?? ''))));
+        if (is_array($rawTitleParam)) {
+            $titleList = array_values(array_filter(array_map('trim', $rawTitleParam), fn($t) => $t !== '' && strtolower($t) !== 'all'));
+            if (!empty($titleList)) {
+                $query->where(function ($q) use ($titleList) {
+                    $q->whereIn('ot.course_name', $titleList)
+                      ->orWhereIn('ot.sub_course_name', $titleList);
+                });
+            }
+        } else {
+            $titleParam = trim((string) $rawTitleParam);
+            if ($titleParam !== '' && strtolower($titleParam) !== 'all') {
+                $query->where(function ($q) use ($titleParam) {
+                    $q->where('ot.course_name', 'like', "%{$titleParam}%")
+                      ->orWhere('ot.sub_course_name', 'like', "%{$titleParam}%");
+                });
+            }
         }
 
         // 4. Filter: Type
@@ -151,8 +162,18 @@ class RecordOfflineQueryService
         }
 
         // 6. Filter: Year (from finish_date or start_date fallback)
-        $yearParam = trim((string) ($filters['year'] ?? 'all'));
-        if ($yearParam !== '' && $yearParam !== 'all') {
+        $yearParam = $filters['year'] ?? ($filters['years'] ?? 'all');
+        if (is_array($yearParam) && !empty($yearParam)) {
+            $yearInts = array_map('intval', array_filter($yearParam, 'is_numeric'));
+            if (!empty($yearInts)) {
+                $query->where(function ($q) use ($yearInts) {
+                    $q->whereIn(DB::raw('YEAR(ot.finish_date)'), $yearInts)
+                      ->orWhere(function ($q2) use ($yearInts) {
+                          $q2->whereNull('ot.finish_date')->whereIn(DB::raw('YEAR(ot.start_date)'), $yearInts);
+                      });
+                });
+            }
+        } elseif (is_string($yearParam) && $yearParam !== '' && $yearParam !== 'all') {
             $yearInt = (int) $yearParam;
             $query->where(function ($q) use ($yearInt) {
                 $q->whereYear('ot.finish_date', $yearInt)

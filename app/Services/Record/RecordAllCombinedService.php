@@ -677,8 +677,38 @@ class RecordAllCombinedService
         }
 
         // 3. Learning Title Filter
-        $title = trim((string) ($filters['learning_title'] ?? ($filters['title'] ?? '')));
-        if ($title !== '') {
+        $rawTitle = $filters['learning_title'] ?? ($filters['title'] ?? '');
+        $title = is_string($rawTitle) ? trim($rawTitle) : '';
+        if (is_array($rawTitle)) {
+            $titleList = array_values(array_filter(array_map('trim', $rawTitle), fn($t) => $t !== '' && strtolower($t) !== 'all'));
+            if (!empty($titleList)) {
+                $contentIds = DB::table('content')->whereIn('title', $titleList)->pluck('id')->toArray();
+                $tpIds = DB::table('trainingplan')->whereIn('title', $titleList)->pluck('id')->toArray();
+
+                if ($recordAlias === 'cu') {
+                    $q->whereIn("{$recordAlias}.content_id", !empty($contentIds) ? $contentIds : [-1]);
+                } else {
+                    $q->where(function ($sub) use ($contentIds, $tpIds, $recordAlias) {
+                        $matched = false;
+                        if (!empty($contentIds)) {
+                            $sub->whereIn("{$recordAlias}.content_id", $contentIds);
+                            $matched = true;
+                        }
+                        if (!empty($tpIds)) {
+                            if ($matched) {
+                                $sub->orWhereIn("{$recordAlias}.trainingplan_id", $tpIds);
+                            } else {
+                                $sub->whereIn("{$recordAlias}.trainingplan_id", $tpIds);
+                                $matched = true;
+                            }
+                        }
+                        if (!$matched) {
+                            $sub->whereRaw('1 = 0');
+                        }
+                    });
+                }
+            }
+        } elseif ($title !== '' && strtolower($title) !== 'all') {
             $contentIds = DB::table('content')->where('title', 'like', "%{$title}%")->pluck('id')->toArray();
             $tpIds = DB::table('trainingplan')->where('title', 'like', "%{$title}%")->pluck('id')->toArray();
 
@@ -729,8 +759,17 @@ class RecordAllCombinedService
         }
 
         // 5. Year Filter
-        $year = trim((string) ($filters['year'] ?? 'all'));
-        if ($year !== '' && $year !== 'all' && is_numeric($year)) {
+        $year = $filters['year'] ?? ($filters['years'] ?? 'all');
+        if (is_array($year) && !empty($year)) {
+            $yearInts = array_map('intval', array_filter($year, 'is_numeric'));
+            if (!empty($yearInts)) {
+                $q->where(function ($sub) use ($recordAlias, $yearInts) {
+                    $sub->whereIn(DB::raw("YEAR({$recordAlias}.created_at)"), $yearInts)
+                        ->orWhereIn(DB::raw("YEAR({$recordAlias}.completed_at)"), $yearInts)
+                        ->orWhereIn(DB::raw("YEAR({$recordAlias}.updated_at)"), $yearInts);
+                });
+            }
+        } elseif (is_string($year) && $year !== '' && $year !== 'all' && is_numeric($year)) {
             $q->where(function ($sub) use ($recordAlias, $year) {
                 $sub->whereYear("{$recordAlias}.created_at", (int) $year)
                     ->orWhereYear("{$recordAlias}.completed_at", (int) $year)
@@ -980,8 +1019,14 @@ class RecordAllCombinedService
         }
 
         // Learning Title filter
-        $title = trim((string) ($filters['learning_title'] ?? ($filters['title'] ?? '')));
-        if ($title !== '') {
+        $rawTitle = $filters['learning_title'] ?? ($filters['title'] ?? '');
+        $title = is_string($rawTitle) ? trim($rawTitle) : '';
+        if (is_array($rawTitle)) {
+            $titleList = array_values(array_filter(array_map('trim', $rawTitle), fn($t) => $t !== '' && strtolower($t) !== 'all'));
+            if (!empty($titleList)) {
+                $q->whereIn('ot.course_name', $titleList);
+            }
+        } elseif ($title !== '' && strtolower($title) !== 'all') {
             $q->where('ot.course_name', 'like', "%{$title}%");
         }
 
@@ -999,8 +1044,17 @@ class RecordAllCombinedService
         }
 
         // Year filter
-        $year = trim((string) ($filters['year'] ?? 'all'));
-        if ($year !== '' && $year !== 'all' && is_numeric($year)) {
+        $year = $filters['year'] ?? ($filters['years'] ?? 'all');
+        if (is_array($year) && !empty($year)) {
+            $yearInts = array_map('intval', array_filter($year, 'is_numeric'));
+            if (!empty($yearInts)) {
+                $q->where(function ($sub) use ($yearInts) {
+                    $sub->whereIn(DB::raw('YEAR(ot.finish_date)'), $yearInts)
+                        ->orWhereIn(DB::raw('YEAR(ot.start_date)'), $yearInts)
+                        ->orWhereIn(DB::raw('YEAR(otu.created_at)'), $yearInts);
+                });
+            }
+        } elseif (is_string($year) && $year !== '' && $year !== 'all' && is_numeric($year)) {
             $q->where(function ($sub) use ($year) {
                 $sub->whereYear('ot.finish_date', (int) $year)
                     ->orWhereYear('ot.start_date', (int) $year)

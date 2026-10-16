@@ -124,10 +124,16 @@ class LearningDatatableService
         }
 
         // 3. Year Filter Pushdown
-        $year = $filters['year'] ?? null;
-        if (filled($year) && $year !== 'all') {
-            $cuSelect->whereYear('cu.created_at', $year);
-            $pcuSelect->whereYear('pcu.created_at', $year);
+        $year = $filters['year'] ?? ($filters['years'] ?? null);
+        if (is_array($year) && !empty($year)) {
+            $yearInts = array_map('intval', array_filter($year, 'is_numeric'));
+            if (!empty($yearInts)) {
+                $cuSelect->whereIn(DB::raw('YEAR(cu.created_at)'), $yearInts);
+                $pcuSelect->whereIn(DB::raw('YEAR(pcu.created_at)'), $yearInts);
+            }
+        } elseif (filled($year) && $year !== 'all') {
+            $cuSelect->whereYear('cu.created_at', (int) $year);
+            $pcuSelect->whereYear('pcu.created_at', (int) $year);
         }
 
         // 4. Date Range Filter Pushdown
@@ -293,7 +299,33 @@ class LearningDatatableService
 
         // 9. Learning Title Filter Pushdown (via indexed content_id and trainingplan_id)
         $learningTitleParam = $filters['learning_title'] ?? ($filters['title'] ?? ($filters['content_title'] ?? null));
-        if (filled($learningTitleParam)) {
+        if (is_array($learningTitleParam)) {
+            $learningTitles = array_values(array_filter(array_map('trim', $learningTitleParam), fn($t) => $t !== '' && strtolower($t) !== 'all'));
+            if (!empty($learningTitles)) {
+                $contentIds = DB::table('content')->whereIn('title', $learningTitles)->pluck('id')->toArray();
+                $tpIds = DB::table('trainingplan')->whereIn('title', $learningTitles)->pluck('id')->toArray();
+
+                $cuSelect->whereIn('cu.content_id', !empty($contentIds) ? $contentIds : [-1]);
+                $pcuSelect->where(function ($q) use ($contentIds, $tpIds) {
+                    $matched = false;
+                    if (!empty($contentIds)) {
+                        $q->whereIn('pcu.content_id', $contentIds);
+                        $matched = true;
+                    }
+                    if (!empty($tpIds)) {
+                        if ($matched) {
+                            $q->orWhereIn('pcu.trainingplan_id', $tpIds);
+                        } else {
+                            $q->whereIn('pcu.trainingplan_id', $tpIds);
+                            $matched = true;
+                        }
+                    }
+                    if (!$matched) {
+                        $q->whereRaw('1 = 0');
+                    }
+                });
+            }
+        } elseif (filled($learningTitleParam) && strtolower(trim((string) $learningTitleParam)) !== 'all') {
             $contentIds = DB::table('content')->where('title', 'like', '%' . $learningTitleParam . '%')->pluck('id')->toArray();
             $tpIds = DB::table('trainingplan')->where('title', 'like', '%' . $learningTitleParam . '%')->pluck('id')->toArray();
 
