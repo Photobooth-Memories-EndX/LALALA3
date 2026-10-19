@@ -1590,13 +1590,26 @@ body.dark-mode #recordFilterBar .fast-filter-toolbar #recordMoreFiltersCount {
 .record-filter-heading {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
     justify-content: flex-start;
+    width: 100%;
     gap: 0;
+    overflow: visible !important;
 }
 
-.learning-mode-switch,
-.record-mode-switch {
+.record-mode-switch-wrapper,
+.quick-filter-row {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    margin: 16px 0 0 !important;
+    gap: 12px;
+    flex-wrap: wrap;
+    overflow: visible !important;
+}
+
+.learning-mode-switch {
     display: flex;
     align-items: center;
     justify-content: flex-start;
@@ -1606,6 +1619,50 @@ body.dark-mode #recordFilterBar .fast-filter-toolbar #recordMoreFiltersCount {
     white-space: nowrap;
     width: 100%;
     margin: 16px 0 0;
+}
+
+.record-mode-switch,
+.record-mode-switch-wrapper .learning-mode-switch,
+.quick-filter-row .learning-mode-switch {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex: 0 1 auto !important;
+    flex-wrap: wrap;
+    gap: 8px;
+    white-space: nowrap;
+    width: auto !important;
+    margin: 0 !important;
+}
+
+.record-unified-download-dropdown,
+.dropdown-download-record {
+    margin-left: auto !important;
+    flex: 0 0 auto !important;
+    position: relative;
+    overflow: visible !important;
+}
+
+.record-unified-download-dropdown > .dropdown-toggle,
+.dropdown-download-record > .dropdown-toggle {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    padding: 0 16px !important;
+    border-radius: 8px !important;
+    font-size: 0.875rem !important;
+    font-weight: 600 !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+}
+
+.record-unified-download-dropdown .dropdown-menu,
+.dropdown-download-record .dropdown-menu {
+    z-index: 1060;
+    min-width: 170px;
 }
 
 .learning-mode-switch .learning-mode-btn {

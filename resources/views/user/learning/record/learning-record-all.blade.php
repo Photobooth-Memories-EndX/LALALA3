@@ -654,15 +654,6 @@
                                     aria-label="Reset Filter">
                                 <i class="ti ti-refresh" aria-hidden="true"></i>
                             </button>
-
-                            {{-- 4. Download / Export Button --}}
-                            <a href="{{ route('user.learning.record.export', array_merge(request()->all(), ['source' => 'all'])) }}"
-                               class="btn btn-outline-success btn-learning-success record-filter-action-btn"
-                               id="recordAllExportBtn"
-                               title="Export All Learning Records"
-                               aria-label="Export All Learning Records">
-                                <i class="ti ti-download" aria-hidden="true"></i>
-                            </a>
                         </div>
                     </div>
 
@@ -829,17 +820,29 @@
                                             @endif
                                         </div>
 
-                                        {{-- Baris kedua: Subtitle (jika tersedia dan berbeda dari judul) --}}
+                                        {{-- Baris kedua: Subtitle & Requirement --}}
                                         @php
                                             $rawSubtitle = trim((string) ($row['subtitle'] ?? ''));
                                             $rawTitle = trim((string) ($row['title'] ?? ''));
-                                            $hasSubtitle = $rawSubtitle !== '' && $rawSubtitle !== '-' && strcasecmp($rawSubtitle, $rawTitle) !== 0;
+                                            $rawReq = strtolower(trim((string) ($row['requirement'] ?? $rawSubtitle)));
+                                            $isMandAll = !str_contains($rawReq, 'non-mandatory') && !str_contains($rawReq, 'non mandatory') && !str_contains($rawReq, 'optional') && str_contains($rawReq, 'mandatory');
+                                            $isReqTextSubtitle = in_array(strtolower($rawSubtitle), ['mandatory', 'non-mandatory', 'non mandatory', 'optional'], true);
+                                            $hasSubtitle = !$isReqTextSubtitle && $rawSubtitle !== '' && $rawSubtitle !== '-' && strcasecmp($rawSubtitle, $rawTitle) !== 0;
                                         @endphp
                                         @if ($hasSubtitle)
                                             <div class="record-subtitle-line text-muted small mt-1">
                                                 {{ $rawSubtitle }}
                                             </div>
                                         @endif
+
+                                        <div class="learning-record-program text-muted small mt-1 d-flex align-items-center gap-1 flex-wrap">
+                                            <span class="text-muted">Requirement:</span>
+                                            @if ($isMandAll)
+                                                <span class="badge bg-red-lt text-red fw-semibold" style="font-size: 0.7rem;">Mandatory</span>
+                                            @else
+                                                <span class="text-muted fw-medium">Non-Mandatory</span>
+                                            @endif
+                                        </div>
 
                                         {{-- Baris ketiga: Source Badge --}}
                                         <div class="record-badge-line mt-2">
@@ -930,15 +933,29 @@
                                         <span class="text-muted">—</span>
                                     @endif
                                 </td>
-                                <td class="text-center text-nowrap small text-muted">{{ $row['date_display'] }}</td>
+                                <td class="text-center text-nowrap small text-muted">{{ $row['date_display'] ?? '-' }}</td>
                                 <td class="text-center">
-                                    @if ($row['score'] !== null)
-                                        <span class="learning-score-pill {{ (float) $row['score'] >= (float) ($row['min_score'] ?? 70) ? 'bg-success-lt text-success' : 'bg-danger-lt text-danger' }}">
-                                            {{ $row['score'] }}
-                                        </span>
-                                    @else
-                                        <span class="learning-score-empty-pill">—</span>
-                                    @endif
+                                    <div class="d-flex flex-column align-items-center justify-content-center text-center">
+                                        @php
+                                            $allScoreVal = $row['score'] ?? $row['assessment_score'] ?? null;
+                                        @endphp
+                                        @if ($allScoreVal !== null)
+                                            @php
+                                                $allMinScore = (float) ($row['min_score'] ?? 70);
+                                                $allPassed = (float) $allScoreVal >= $allMinScore;
+                                            @endphp
+                                            @if ($allPassed)
+                                                <span class="badge rounded-pill learning-record-badge learning-score-pill" style="background-color: #dcfce7; color: #15803d; font-weight: 600;">Passed</span>
+                                                <div class="small fw-semibold mt-1" style="color: #15803d;">Score : {{ $allScoreVal ?? '-' }}</div>
+                                            @else
+                                                <span class="badge bg-red-lt text-red learning-record-badge learning-score-pill">FAILED</span>
+                                                <div class="small text-danger mt-1">Score : {{ $allScoreVal ?? '-' }}</div>
+                                                <div class="small text-danger">Passing Grade : {{ (int) $allMinScore }}</div>
+                                            @endif
+                                        @else
+                                            <span class="learning-score-empty-pill">—</span>
+                                        @endif
+                                    </div>
                                 </td>
                                 <td class="text-center">
                                     <div class="d-flex justify-content-center">

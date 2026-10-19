@@ -505,15 +505,6 @@
                                     aria-label="Reset Filter">
                                 <i class="ti ti-refresh" aria-hidden="true"></i>
                             </button>
-
-                            {{-- 4. Download / Export Button --}}
-                            <a href="{{ route('user.learning.record.export', array_merge(request()->all(), ['source' => 'offline'])) }}"
-                               class="btn btn-outline-success btn-learning-success record-filter-action-btn"
-                               id="recordOfflineExportBtn"
-                               title="Export Offline Training Record"
-                               aria-label="Export Offline Training Record">
-                                <i class="ti ti-download" aria-hidden="true"></i>
-                            </a>
                         </div>
                     </div>
 
@@ -629,6 +620,18 @@
                                             {{ $row['subtitle'] }}
                                         </div>
                                     @endif
+                                    @php
+                                        $offReq = strtolower(trim((string) ($row['requirement'] ?? 'non-mandatory')));
+                                        $isOffMand = !str_contains($offReq, 'non-mandatory') && !str_contains($offReq, 'non mandatory') && !str_contains($offReq, 'optional') && str_contains($offReq, 'mandatory');
+                                    @endphp
+                                    <div class="learning-record-program text-muted small mt-1 d-flex align-items-center gap-1 flex-wrap">
+                                        <span class="text-muted">Requirement:</span>
+                                        @if ($isOffMand)
+                                            <span class="badge bg-red-lt text-red fw-semibold" style="font-size: 0.7rem;">Mandatory</span>
+                                        @else
+                                            <span class="text-muted fw-medium">Non-Mandatory</span>
+                                        @endif
+                                    </div>
                                     @if (!empty($row['venue']) && $row['venue'] !== '-')
                                         <div class="text-muted small mt-1 d-flex align-items-center gap-1" style="font-size: 0.75rem;">
                                             <i class="ti ti-map-pin" style="font-size: 0.8rem;"></i>
@@ -693,15 +696,29 @@
                                         {{ $attStatus }}
                                     </button>
                                 </td>
-                                <td class="text-center text-nowrap small text-muted">{{ $row['date_display'] }}</td>
+                                <td class="text-center text-nowrap small text-muted">{{ $row['date_display'] ?? '-' }}</td>
                                 <td class="text-center">
-                                    @if ($row['score'] !== null)
-                                        <span class="learning-score-pill {{ $row['score'] >= 70 ? 'bg-success-lt text-success' : 'bg-danger-lt text-danger' }}">
-                                            {{ $row['score'] }}
-                                        </span>
-                                    @else
-                                        <span class="learning-score-empty-pill">-</span>
-                                    @endif
+                                    <div class="d-flex flex-column align-items-center justify-content-center text-center">
+                                        @php
+                                            $offScoreVal = $row['score'] ?? $row['assessment_score'] ?? null;
+                                        @endphp
+                                        @if ($offScoreVal !== null)
+                                            @php
+                                                $offMinScore = (float) ($row['min_score'] ?? 70);
+                                                $offPassed = (float) $offScoreVal >= $offMinScore;
+                                            @endphp
+                                            @if ($offPassed)
+                                                <span class="badge rounded-pill learning-record-badge learning-score-pill" style="background-color: #dcfce7; color: #15803d; font-weight: 600;">Passed</span>
+                                                <div class="small fw-semibold mt-1" style="color: #15803d;">Score : {{ $offScoreVal ?? '-' }}</div>
+                                            @else
+                                                <span class="badge bg-red-lt text-red learning-record-badge learning-score-pill">FAILED</span>
+                                                <div class="small text-danger mt-1">Score : {{ $offScoreVal ?? '-' }}</div>
+                                                <div class="small text-danger">Passing Grade : {{ (int) $offMinScore }}</div>
+                                            @endif
+                                        @else
+                                            <span class="learning-score-empty-pill">-</span>
+                                        @endif
+                                    </div>
                                 </td>
                                 <td class="text-center">
                                     <div class="d-flex justify-content-center">

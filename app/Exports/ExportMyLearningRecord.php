@@ -3,22 +3,24 @@
 namespace App\Exports;
 
 use App\Http\Controllers\LearningRecordController;
+use App\Models\Content;
 use App\Services\CertificateEligibilityService;
 use App\Services\Learning\LearningRecordPlaylistExportService;
-use App\Support\DurationFormatter;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithColumnFormatting;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, WithStyles
+class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithColumnFormatting, WithEvents, WithStyles
 {
     private Collection $rows;
     private array $parentPlaylistRows = [];
@@ -27,6 +29,20 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
     public function __construct(private readonly array $filters = [])
     {
         $this->rows = collect();
+    }
+
+    private function toExcelTime(?string $dateTimeOrTime): float|string
+    {
+        if (empty($dateTimeOrTime) || $dateTimeOrTime === '-' || $dateTimeOrTime === '—') {
+            return '-';
+        }
+
+        try {
+            $dt = Carbon::parse($dateTimeOrTime);
+            return (($dt->hour * 3600) + ($dt->minute * 60) + $dt->second) / 86400;
+        } catch (\Throwable) {
+            return '-';
+        }
     }
 
     public function array(): array
@@ -63,30 +79,32 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
 
         foreach ($this->rows as $row) {
             $durationSeconds = max(0, (int) ($row['duration_sort'] ?? 0));
-            $duration = DurationFormatter::fromSeconds($durationSeconds);
+            $durationCell = $durationSeconds > 0 ? ($durationSeconds / 86400) : '-';
 
-            $lhValue = (float) ($row['learning_hour_value'] ?? 0);
-            $learningHour = $lhValue > 0 ? (number_format($lhValue, 2) . ' hrs') : '-';
+            $lhValue = round((float) ($row['learning_hour_value'] ?? 0), 2);
 
-            $progress = isset($row['progress']) ? ((int) $row['progress'] . '%') : '-';
+            $rawProgress = $row['progress'] ?? 0;
+            $progressInt = is_numeric($rawProgress) ? max(0, min(100, (int) $rawProgress)) : 0;
+            $progressCell = $progressInt / 100;
+            $completionStatus = $progressInt >= 100 ? 'Complete' : 'Ongoing';
 
-            $start = !empty($row['start_date']) ? Carbon::parse($row['start_date'])->format('d/m/y H:i:s') : '';
-            $finish = !empty($row['finish_date']) ? Carbon::parse($row['finish_date'])->format('d/m/y H:i:s') : '';
-            if ($start !== '' && $finish !== '') {
-                $dateTime = "Start: {$start}\nFinish: {$finish}";
-            } elseif ($finish !== '') {
-                $dateTime = "Finish: {$finish}";
-            } elseif ($start !== '') {
-                $dateTime = "Start: {$start}";
-            } else {
-                $dateTime = '-';
-            }
+            $startRaw = $row['start_date'] ?? '';
+            $finishRaw = $row['finish_date'] ?? '';
+            $startDate = $startRaw !== '' ? Carbon::parse($startRaw)->format('Y-m-d') : '-';
+            $endDate = $finishRaw !== '' ? Carbon::parse($finishRaw)->format('Y-m-d') : '-';
+            $startTime = $this->toExcelTime($startRaw);
+            $endTime = $this->toExcelTime($finishRaw);
 
-            $rawProgress = $row['progress'] ?? null;
-            $isValidProgress = !is_null($rawProgress) && is_numeric($rawProgress);
-            $attendance = $row['attendance'] ?? (($isValidProgress && (int) $rawProgress >= 100) ? 'Present' : '-');
+            $attendance = $row['attendance'] ?? ($progressInt >= 100 ? 'Present' : '-');
+            $requirement = $row['requirement'] ?? Content::mapRequirement($row['subtitle'] ?? null);
 
-            $score = ($row['score'] !== null && $row['score'] !== '') ? $row['score'] : '-';
+            $hasScore = ($row['score'] !== null && $row['score'] !== '' && is_numeric($row['score']));
+            $scoreVal = $hasScore ? (float) $row['score'] : '-';
+            $minScore = (float) ($row['min_score'] ?? 70);
+            $assessmentStatus = $hasScore
+                ? ($scoreVal >= $minScore ? 'Passed' : 'Failed')
+                : '-';
+
             $certificate = ($row['cert_state'] ?? 'none') === 'ready' ? 'Available' : 'Not Available';
 
             $isPlaylist = ($row['row_kind'] ?? '') === 'playlist' || ($row['type'] ?? '') === 'Playlist';
@@ -98,15 +116,21 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
             $output[] = [
                 $number++,
                 $row['title'] ?? '-',
+                $requirement,
                 $row['type'] ?? '-',
                 $row['category'] ?? '-',
                 (!empty($row['classification']) && $row['classification'] !== '-') ? $row['classification'] : '-',
-                $duration,
-                $learningHour,
-                $progress,
-                $dateTime,
+                $durationCell,
+                $lhValue,
+                $completionStatus,
+                $progressCell,
                 $attendance,
-                $score,
+                $startDate,
+                $endDate,
+                $startTime,
+                $endTime,
+                $assessmentStatus,
+                $scoreVal,
                 $certificate,
             ];
 
@@ -116,18 +140,32 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
                 if ($playlistId && $childrenMap->has((int) $playlistId)) {
                     $children = $childrenMap->get((int) $playlistId);
                     foreach ($children as $child) {
+                        $childDurSec = max(0, (int) ($child['duration_seconds'] ?? 0));
+                        $childDurCell = $childDurSec > 0 ? ($childDurSec / 86400) : '-';
+                        $childLhVal = round((float) ($child['learning_hour_value'] ?? 0), 2);
+                        $childProgInt = max(0, min(100, (int) ($child['progress'] ?? 0)));
+                        $childScore = ($child['score'] !== null && $child['score'] !== '' && $child['score'] !== '-' && is_numeric($child['score']))
+                            ? (float) $child['score']
+                            : '-';
+
                         $output[] = [
                             '',
                             '    ' . ($child['title'] ?? '-'),
+                            $child['requirement'] ?? 'Non-Mandatory',
                             $child['type'] ?? '-',
                             'Playlist',
                             $child['classification'] ?? '-',
-                            $child['duration'] ?? '-',
-                            $child['learning_hour'] ?? '-',
-                            $child['progress_formatted'] ?? '-',
-                            $child['date_time_kp'] ?? '-',
+                            $childDurCell,
+                            $childLhVal,
+                            $child['completion_status'] ?? ($childProgInt >= 100 ? 'Complete' : 'Ongoing'),
+                            $childProgInt / 100,
                             $child['attendance'] ?? '-',
-                            $child['score'] ?? '-',
+                            $child['start_date'] ?? '-',
+                            $child['end_date'] ?? '-',
+                            $this->toExcelTime($child['start_time'] ?? null),
+                            $this->toExcelTime($child['end_time'] ?? null),
+                            $child['assessment_status'] ?? '-',
+                            $childScore,
                             '-',
                         ];
                         $this->childRows[] = count($output);
@@ -144,16 +182,46 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
         return [
             'No',
             'Course',
+            'Requirement',
             'Type',
             'Category',
             'Classification',
             'Duration',
             'Learning Hour',
+            'Completion Status',
             'Progress',
-            'Date Time',
             'Attendance',
+            'Start Date',
+            'End Date',
+            'Start Time',
+            'End Time',
+            'Assessment Status',
             'Assessment Score',
             'Certificate',
+        ];
+    }
+
+    public function columnFormats(): array
+    {
+        return [
+            'A' => NumberFormat::FORMAT_NUMBER,
+            'B' => NumberFormat::FORMAT_GENERAL,
+            'C' => NumberFormat::FORMAT_GENERAL,
+            'D' => NumberFormat::FORMAT_GENERAL,
+            'E' => NumberFormat::FORMAT_GENERAL,
+            'F' => NumberFormat::FORMAT_GENERAL,
+            'G' => NumberFormat::FORMAT_DATE_TIME4,
+            'H' => NumberFormat::FORMAT_NUMBER_00,
+            'I' => NumberFormat::FORMAT_GENERAL,
+            'J' => NumberFormat::FORMAT_PERCENTAGE,
+            'K' => NumberFormat::FORMAT_GENERAL,
+            'L' => NumberFormat::FORMAT_GENERAL,
+            'M' => NumberFormat::FORMAT_GENERAL,
+            'N' => NumberFormat::FORMAT_DATE_TIME4,
+            'O' => NumberFormat::FORMAT_DATE_TIME4,
+            'P' => NumberFormat::FORMAT_GENERAL,
+            'Q' => NumberFormat::FORMAT_GENERAL,
+            'R' => NumberFormat::FORMAT_GENERAL,
         ];
     }
 
@@ -161,10 +229,13 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
     {
         return [
             1 => [
-                'font' => ['bold' => true],
+                'font' => [
+                    'bold'  => true,
+                    'color' => ['rgb' => 'FFFFFF'],
+                ],
                 'fill' => [
                     'fillType'   => Fill::FILL_SOLID,
-                    'startColor' => ['rgb' => 'D9EAF7'],
+                    'startColor' => ['rgb' => '002B49'],
                 ],
             ],
         ];
@@ -189,15 +260,13 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
 
                 if ($highestRow >= 2) {
                     $sheet->getStyle('A2:A' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                    $sheet->getStyle('C2:D' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                    $sheet->getStyle('H2:H' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                    $sheet->getStyle('I2:I' . $highestRow)->getAlignment()->setWrapText(true);
-                    $sheet->getStyle('J2:L' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle('C2:E' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle('G2:R' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                 }
 
                 foreach ($this->parentPlaylistRows as $r) {
-                    $sheet->getStyle("A{$r}:L{$r}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('EDEDED');
-                    $sheet->getStyle("A{$r}:L{$r}")->getFont()->setBold(true);
+                    $sheet->getStyle("A{$r}:{$highestColumn}{$r}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('F1F5F9');
+                    $sheet->getStyle("A{$r}:{$highestColumn}{$r}")->getFont()->setBold(true);
                 }
 
                 foreach ($this->childRows as $r) {

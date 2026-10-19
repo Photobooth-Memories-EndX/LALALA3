@@ -10,5 +10,5 @@
 
 <div class="learning-record-shell">
     {{-- Learning Record Online: tabel Blade existing; search, filter, sorting & pagination client-side --}}
-    <x-learning.record-section :rows="$rows" :filter-options="$filterOptions" />
+    <x-learning.record-section :rows="$rows ?? collect()" :filter-options="$filterOptions ?? []" />
 </div>

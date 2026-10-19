@@ -152,9 +152,9 @@ class LearningController extends Controller
                         $q->orWhere('content_users.is_mandatory', 1);
                     }
                 });
-            } elseif ($programType === 'optional') {
+            } elseif (in_array(strtolower((string) $programType), ['non mandatory', 'non-mandatory', 'optional'], true)) {
                 $query->where(function ($q) {
-                    $q->where('content_users.status', 'optional');
+                    $q->where('content_users.status', 'non mandatory');
                     if (\Illuminate\Support\Facades\Schema::hasColumn('content_users', 'is_mandatory')) {
                         $q->orWhere('content_users.is_mandatory', 0);
                     }

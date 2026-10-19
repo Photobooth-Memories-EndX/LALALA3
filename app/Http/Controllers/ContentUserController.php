@@ -333,7 +333,7 @@ class ContentUserController extends Controller
                 'content_id' => $content->id,
             ],
             [
-                'status' => $content->status ?? 'optional',
+                'status' => $content->status ?? 'non mandatory',
             ]
         );
 
@@ -584,7 +584,7 @@ class ContentUserController extends Controller
                 'content_id' => $validated['content_id'],
             ],
             [
-                'status'     => $content->status ?? 'optional',
+                'status'     => $content->status ?? 'non mandatory',
             ]
         );
 

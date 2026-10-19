@@ -262,11 +262,29 @@
 }
 
 .learning-mode-switch,
-.ongoing-mode-switch,
-.record-mode-switch {
+.ongoing-mode-switch {
     width: 100%;
     margin: 16px 0 0;
     justify-content: flex-start;
+    flex-wrap: wrap;
+}
+
+.record-mode-switch-wrapper,
+.quick-filter-row {
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.record-mode-switch,
+.record-mode-switch-wrapper .learning-mode-switch {
+    width: auto !important;
+    margin: 0 !important;
+    justify-content: flex-start;
+    flex: 0 1 auto !important;
     flex-wrap: wrap;
 }
 

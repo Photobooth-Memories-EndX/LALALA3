@@ -281,8 +281,16 @@ function initLearningRecordOnline() {
             params.set('record_sort', sortKey);
             params.set('record_sort_direction', sortDir);
         }
-        var baseUrl = $('#recordDownloadExcel').data('export-url') || '/my-learning/learning-record/export';
+        var baseUrl = $('#recordUnifiedDownloadBtn').data('export-url') || $('#recordDownloadExcel').data('export-url') || '/my-learning/learning-record/export';
         $('#recordDownloadExcel').attr('href', baseUrl + (params.toString() ? '?' + params.toString() : ''));
+        $('.record-export-option').each(function () {
+            var $opt = $(this);
+            var optBase = $opt.data('export-url') || baseUrl;
+            var optSource = $opt.data('export-source') || 'online';
+            var optParams = new URLSearchParams(params.toString());
+            optParams.set('source', optSource);
+            $opt.attr('href', optBase + '?' + optParams.toString());
+        });
     }
 
     function updateSummaryCards(matched) {

@@ -158,12 +158,23 @@ class Content extends Model
 
     public function isMandatory(): bool
     {
-        return $this->status === 'mandatory';
+        return strtolower(trim((string) $this->status)) === 'mandatory';
     }
 
     public function isOptional(): bool
     {
-        return $this->status === 'optional';
+        return in_array(strtolower(trim((string) ($this->status ?? 'non mandatory'))), ['non mandatory', 'non-mandatory', 'optional'], true);
+    }
+
+    public static function mapRequirement(?string $status): string
+    {
+        $statusRaw = strtolower(trim((string) ($status ?? 'non mandatory')));
+        return ($statusRaw === 'mandatory') ? 'Mandatory' : 'Non-Mandatory';
+    }
+
+    public function getRequirementAttribute(): string
+    {
+        return self::mapRequirement($this->status);
     }
 
     public function isAccessibleByDeadline(): bool

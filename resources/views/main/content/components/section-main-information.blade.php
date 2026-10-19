@@ -84,21 +84,24 @@
                 <textarea name="description" id="description" rows="4" class="form-control" {{ $isLocked ? 'disabled' : 'required' }}>{{ old('description', $content->description ?? '') }}</textarea>
             </div>
 
-            {{-- 5. Status (Mandatory / Optional) --}}
+            {{-- 5. Status (Mandatory / Non-Mandatory) --}}
             <div class="col-12">
                 <label class="form-label required" for="status">Status</label>
+                @php
+                    $statusRaw = strtolower(old('status', $content->status ?? 'non mandatory'));
+                @endphp
                 @if ($isLocked)
-                    <input type="hidden" name="status" value="{{ old('status', $content->status ?? 'optional') }}">
+                    <input type="hidden" name="status" value="{{ $statusRaw === 'mandatory' ? 'mandatory' : 'non mandatory' }}">
                 @endif
                 <select name="status" id="status" class="form-select @error('status') is-invalid @enderror" {{ $isLocked ? 'disabled' : 'required' }}>
                     <option value="">-- Select Status --</option>
-                    <option value="mandatory" @selected(old('status', $content->status ?? '') === 'mandatory')>Mandatory</option>
-                    <option value="optional" @selected(old('status', $content->status ?? '') === 'optional')>Optional</option>
+                    <option value="mandatory" @selected($statusRaw === 'mandatory')>Mandatory</option>
+                    <option value="non mandatory" @selected(in_array($statusRaw, ['non mandatory', 'non-mandatory', 'optional'], true))>Non-Mandatory</option>
                 </select>
                 @error('status')
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
-                <small class="form-hint">Tentukan apakah konten ini wajib (Mandatory) atau opsional (Optional) untuk dipelajari.</small>
+                <small class="form-hint">Tentukan apakah konten ini wajib (Mandatory) atau tidak wajib (Non-Mandatory) untuk dipelajari.</small>
             </div>
         </div>
     </div>

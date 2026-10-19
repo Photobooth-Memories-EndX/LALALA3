@@ -85,6 +85,9 @@ class RecordOfflineQueryService
                 'ot.learning_hours as course_learning_hours',
                 'ot.start_date',
                 'ot.finish_date',
+                'ot.start_time',
+                'ot.end_time',
+                'ot.status',
                 'u.name as user_name',
             ]);
 

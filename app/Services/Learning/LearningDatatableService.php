@@ -59,7 +59,7 @@ class LearningDatatableService
             ]);
 
         $hasPcuStatus = self::hasPcuStatusColumn();
-        $pcuStatusSelect = $hasPcuStatus ? 'pcu.status' : DB::raw("'optional' as status");
+        $pcuStatusSelect = $hasPcuStatus ? 'pcu.status' : DB::raw("'non mandatory' as status");
 
         $pcuSelect = DB::table('playlist_content_users as pcu')
             ->select([
@@ -95,10 +95,11 @@ class LearningDatatableService
                 $pcuSelect->where('pcu.finish', '0')->where(function ($q) {
                     $q->where('pcu.progress', 0)->orWhereNull('pcu.progress');
                 });
-            } elseif (in_array($statusStr, ['mandatory', 'optional'], true)) {
-                $cuSelect->where('cu.status', $statusStr);
+            } elseif (in_array($statusStr, ['mandatory', 'non mandatory', 'non-mandatory', 'optional'], true)) {
+                $dbStatusVal = ($statusStr === 'mandatory') ? 'mandatory' : 'non mandatory';
+                $cuSelect->where('cu.status', $dbStatusVal);
                 if ($hasPcuStatus) {
-                    $pcuSelect->where('pcu.status', $statusStr);
+                    $pcuSelect->where('pcu.status', $dbStatusVal);
                 } else {
                     $pcuSelect->whereRaw('1 = 0');
                 }
@@ -111,10 +112,11 @@ class LearningDatatableService
         $programType = $filters['program_type'] ?? ($filters['program'] ?? ($filters['status_type'] ?? null));
         if (filled($programType) && $programType !== 'all') {
             $programTypeStr = strtolower(trim((string) $programType));
-            if (in_array($programTypeStr, ['mandatory', 'optional'], true)) {
-                $cuSelect->where('cu.status', $programTypeStr);
+            if (in_array($programTypeStr, ['mandatory', 'non mandatory', 'non-mandatory', 'optional'], true)) {
+                $dbProgramVal = ($programTypeStr === 'mandatory') ? 'mandatory' : 'non mandatory';
+                $cuSelect->where('cu.status', $dbProgramVal);
                 if ($hasPcuStatus) {
-                    $pcuSelect->where('pcu.status', $programTypeStr);
+                    $pcuSelect->where('pcu.status', $dbProgramVal);
                 } else {
                     $pcuSelect->whereRaw('1 = 0');
                 }
@@ -674,22 +676,21 @@ class LearningDatatableService
 
     private function statusBadge($row): string
     {
-        $status = (string) ($row->status ?? '-');
-        $lower = strtolower($status);
+        $status = strtolower((string) ($row->status ?? 'non mandatory'));
 
-        if ($lower === 'mandatory') {
+        if ($status === 'mandatory') {
             return '<span class="badge bg-red-lt text-red">Mandatory</span>';
         }
 
-        if ($lower === 'optional') {
-            return '<span class="badge bg-blue-lt text-blue">Optional</span>';
+        if (in_array($status, ['non mandatory', 'non-mandatory', 'optional'], true)) {
+            return '<span class="badge bg-blue-lt text-blue">Non-Mandatory</span>';
         }
 
-        if ($lower === 'playlist') {
+        if ($status === 'playlist') {
             return '<span class="badge bg-purple-lt text-purple">Playlist</span>';
         }
 
-        return '<span class="badge bg-secondary-lt text-secondary">' . e(ucfirst($status)) . '</span>';
+        return '<span class="badge bg-secondary-lt text-secondary">' . e(ucfirst((string) ($row->status ?? '-'))) . '</span>';
     }
 
     private function categoryBadge($row): string

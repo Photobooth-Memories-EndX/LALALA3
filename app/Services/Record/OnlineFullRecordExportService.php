@@ -136,6 +136,7 @@ class OnlineFullRecordExportService
 
         $query->addSelect([
             'c.author as content_author',
+            'c.status as content_status',
             'c.learning_hours as content_training_hours',
             'tp.learning_hours as playlist_training_hours',
         ]);
@@ -234,7 +235,7 @@ class OnlineFullRecordExportService
             $statusStr = 'Ongoing';
         }
 
-        // 3. Learning Title
+        // 3. Learning Title & Requirement
         $title = trim((string) ($row->content_title ?? ($row->title ?? '')));
         if ($title === '') {
             $title = trim((string) ($row->playlist_title ?? ''));
@@ -242,6 +243,7 @@ class OnlineFullRecordExportService
         if ($title === '') {
             $title = '-';
         }
+        $requirement = \App\Models\Content::mapRequirement($row->content_status ?? ($row->status ?? null));
 
         // 4. Type (Video / Document / Playlist)
         $rawType = strtolower(trim((string) ($row->content_type ?? ($row->type ?? ''))));
@@ -345,7 +347,7 @@ class OnlineFullRecordExportService
             $department,              // 9: Department
             $company,                 // 10: Company
             $title,                   // 11: Learning Title
-            '',                       // 12: Sub Title
+            $requirement,             // 12: Sub Title / Requirement
             $type,                    // 13: Type
             $category,                // 14: Category
             '',                       // 15: Level

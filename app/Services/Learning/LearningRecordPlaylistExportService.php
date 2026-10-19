@@ -164,9 +164,14 @@ class LearningRecordPlaylistExportService
                 $learningHourFormatted = $childHoursVal > 0 ? (number_format($childHoursVal, 2) . ' hrs') : '-';
                 $attendance = ($childProgress >= 100) ? 'Present' : '-';
 
-                // Format dates
+                // Format dates & times
                 $startStr = $startDt ? Carbon::parse($startDt)->format('d/m/y H:i:s') : '';
                 $finishStr = $finishDt ? Carbon::parse($finishDt)->format('d/m/y H:i:s') : '';
+                $startDateOnly = $startDt ? Carbon::parse($startDt)->format('Y-m-d') : '-';
+                $endDateOnly = $finishDt ? Carbon::parse($finishDt)->format('Y-m-d') : '-';
+                $startTimeOnly = $startDt ? Carbon::parse($startDt)->format('H:i:s') : '-';
+                $endTimeOnly = $finishDt ? Carbon::parse($finishDt)->format('H:i:s') : '-';
+
                 if ($startStr !== '' && $finishStr !== '') {
                     $dateTimeKp = "Start: {$startStr}\nFinish: {$finishStr}";
                 } elseif ($finishStr !== '') {
@@ -182,11 +187,18 @@ class LearningRecordPlaylistExportService
                     : ($startDt ? Carbon::parse($startDt)->format('d M Y') : '—');
 
                 $score = $scoresMap->get($cid);
-                $scoreDisplay = ($score !== null && $score !== '') ? $score : '-';
+                $hasScore = ($score !== null && $score !== '');
+                $scoreDisplay = $hasScore ? (float) $score : '-';
+                $assessmentStatus = $hasScore
+                    ? (((float) $score >= 70) ? 'Passed' : 'Failed')
+                    : '-';
+                $completionStatus = $childProgress >= 100 ? 'Complete' : 'Ongoing';
+                $requirement = \App\Models\Content::mapRequirement($content->status ?? ($cu?->status ?? null));
 
                 $children->push([
                     'content_id'          => $cid,
                     'title'               => $content->title ?? '-',
+                    'requirement'         => $requirement,
                     'type'                => ContentTypeHelper::label($content->type) ?: 'Content',
                     'category'            => 'Playlist',
                     'classification'      => $content->classification?->classification_name ?? '-',
@@ -196,9 +208,15 @@ class LearningRecordPlaylistExportService
                     'learning_hour_value' => $childHoursVal,
                     'progress'            => $childProgress,
                     'progress_formatted'  => $childProgress . '%',
+                    'completion_status'   => $completionStatus,
                     'attendance'          => $attendance,
+                    'start_date'          => $startDateOnly,
+                    'end_date'            => $endDateOnly,
+                    'start_time'          => $startTimeOnly,
+                    'end_time'            => $endTimeOnly,
                     'date_time_kp'        => $dateTimeKp,
                     'date_display_all'    => $dateDisplayAll,
+                    'assessment_status'   => $assessmentStatus,
                     'score'               => $scoreDisplay,
                     'certificate'         => '-',
                 ]);

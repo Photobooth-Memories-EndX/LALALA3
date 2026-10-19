@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Exports\CertificateExport;
 use App\Models\Certificate;
 use App\Models\CertificateSetting;
+use App\Models\Content;
 use App\Models\ContentUser;
 use App\Models\TrainingPlan;
 use App\Services\CertificateEligibilityService;
@@ -179,10 +180,11 @@ class LearningRecordController extends Controller
             } elseif ($progress < 100) {
                 $rowStatuses[] = 'ongoing';
             }
-            $subtitle = mb_strtolower((string) ($row['subtitle'] ?? ''));
-            $rowProgram = str_contains($subtitle, 'mandatory')
-                ? 'mandatory'
-                : (str_contains($subtitle, 'optional') ? 'optional' : '');
+            $reqText = mb_strtolower((string) ($row['requirement'] ?? $row['subtitle'] ?? ''));
+            $isNonMandatory = str_contains($reqText, 'non-mandatory') || str_contains($reqText, 'non mandatory') || str_contains($reqText, 'optional');
+            $rowProgram = $isNonMandatory
+                ? 'optional'
+                : (str_contains($reqText, 'mandatory') ? 'mandatory' : '');
 
             if ($search !== '' && ! str_contains(mb_strtolower(($row['title'] ?? '') . ' ' . ($row['classification'] ?? '')), $search)) {
                 return false;
@@ -214,7 +216,10 @@ class LearningRecordController extends Controller
                     return false;
                 }
             }
-            if ($program !== 'all' && $rowProgram !== $program) {
+            $normalizedProgram = in_array(mb_strtolower($program), ['non-mandatory', 'non mandatory', 'optional'], true)
+                ? 'optional'
+                : mb_strtolower($program);
+            if ($normalizedProgram !== 'all' && $rowProgram !== $normalizedProgram) {
                 return false;
             }
             if ($learningStatuses !== [] && empty(array_intersect($learningStatuses, $rowStatuses))) {
@@ -592,39 +597,44 @@ class LearningRecordController extends Controller
                 $modalMessage = '';
             }
 
-            $rawProgress = $cu->progress;
+            $rawProgress = $cu->progress ?? 0;
             $hasValidProgress = !is_null($rawProgress) && is_numeric($rawProgress);
             $contentProgress = $hasValidProgress ? (int) $rawProgress : 0;
             $attendanceStatus = ($hasValidProgress && (int) $rawProgress >= 100) ? 'Present' : '-';
+            $status = strtolower(trim((string) ($cu->content->status ?? ($cu->status ?? 'non mandatory'))));
+            $requirement = ($status === 'mandatory') ? 'Mandatory' : 'Non-Mandatory';
+            $scoreVal = $eligibility?->score();
 
             return [
                 'row_kind'        => 'content',
                 'category'        => 'Content',
-                'title'           => $content->title ?? '-',
-                'slug'            => $content->slug,
+                'title'           => optional($content)->title ?? '-',
+                'slug'            => optional($content)->slug,
                 'playlist_url'    => null,
-                'subtitle'        => ucfirst($cu->status ?? '-'),
+                'subtitle'        => $requirement,
+                'requirement'     => $requirement,
                 'playlist_names'  => $playlists->pluck('title')->filter()->values()->all(),
                 // Id playlist pemilik content — dipakai filter Playlist client-side.
                 'playlist_ids'    => $playlists->pluck('id')->values()->all(),
-                'type'            => \App\Support\ContentTypeHelper::label($content->type) ?: 'Content',
-                'classification'  => $content->classification->classification_name ?? '-',
-                'duration'        => DurationFormatter::formatForLearningRecord($content->duration),
-                'duration_sort'   => DurationFormatter::toSeconds($content->duration) ?? -1,
+                'type'            => \App\Support\ContentTypeHelper::label(optional($content)->type) ?: 'Content',
+                'classification'  => optional(optional($content)->classification)->classification_name ?? '-',
+                'duration'        => DurationFormatter::formatForLearningRecord(optional($content)->duration),
+                'duration_sort'   => DurationFormatter::toSeconds(optional($content)->duration) ?? -1,
                 'learning_hour'   => $formattedHours,
                 'learning_hour_bucket' => $actualHours,
                 'learning_hour_value'  => $actualHours,
                 'progress'        => $contentProgress,
                 'attendance'      => $attendanceStatus,
                 'attendance_status' => $attendanceStatus,
-                'min_progress'    => $setting ? (int) $setting->minimum_progress : 0,
+                'min_progress'    => $setting ? (int) ($setting->minimum_progress ?? 0) : 0,
                 'start_date'      => optional($cu->created_at)->format('Y-m-d H:i:s') ?? '',
-                'finish_date'     => (int) $cu->finish === 1
+                'finish_date'     => (int) ($cu->finish ?? 0) === 1
                     ? (optional($cu->completed_at ?? $cu->updated_at)->format('Y-m-d H:i:s') ?? '')
                     : '',
                 // Score & ambangnya dari CertificateEligibilityResult — angka
                 // yang sama dengan yang dipakai menentukan tombol Generate.
-                'score'                => $eligibility?->score(),
+                'score'                => $scoreVal,
+                'assessment_score'     => $scoreVal,
                 'min_score'            => (int) ($eligibility?->minimumScore ?? 0),
                 'assessment_required'  => (bool) ($eligibility?->assessmentRequired ?? false),
                 'cert_state'      => $certState,
@@ -632,7 +642,7 @@ class LearningRecordController extends Controller
                 'cert_action_url' => route('certificate.generate', $cu->id),
                 'cert_is_form'    => false,
                 'playlist_items'  => [],
-                'item_id'         => 'content_' . $content->id,
+                'item_id'         => 'content_' . (optional($content)->id ?? $cu->content_id),
                 'access_status'   => $accessStatus,
                 'can_open'        => $canOpen,
                 'modal_message'   => $modalMessage,
@@ -662,7 +672,7 @@ class LearningRecordController extends Controller
             ->orderByRaw('CAST(tpd.content_order AS UNSIGNED) ASC')
             ->get(['tpd.trainingplan_id as plan_id', 'c.slug as slug'])
             ->groupBy('plan_id')
-            ->map(fn ($items) => $items->first()->slug);
+            ->map(fn ($items) => $items->first()?->slug);
     }
 
     /**
@@ -689,6 +699,7 @@ class LearningRecordController extends Controller
                 'c.title as title',
                 'c.slug as slug',
                 'c.type as type',
+                'c.status as status',
                 'c.active as active',
                 'c.has_deadline as has_deadline',
                 'c.from_date as from_date',
@@ -760,12 +771,16 @@ class LearningRecordController extends Controller
                 $itemCanOpen = $itemAccessStatus === 'ACTIVE';
                 $itemModalMessage = $itemAccessStatus === 'INACTIVE' ? 'This content is currently inactive.' : ($itemAccessStatus === 'EXPIRED' ? 'This content period has expired.' : '');
 
+                $status = strtolower(trim((string) ($item->status ?? 'non mandatory')));
+                $itemRequirement = ($status === 'mandatory') ? 'Mandatory' : 'Non-Mandatory';
+
                 return [
-                    'content_id'    => $item->content_id,
+                    'content_id'    => $item->content_id ?? null,
                     'title'         => $item->title ?? '-',
-                    'slug'          => $item->slug,
-                    'type'          => \App\Support\ContentTypeHelper::label($item->type) ?: 'Content',
-                    'url'           => ($plan->slug && $item->slug)
+                    'slug'          => $item->slug ?? null,
+                    'type'          => \App\Support\ContentTypeHelper::label($item->type ?? null) ?: 'Content',
+                    'requirement'   => $itemRequirement,
+                    'url'           => ($plan->slug && ($item->slug ?? null))
                         ? route('playlist.user.view', [$plan->slug, $item->slug])
                         : null,
                     'access_status' => $itemAccessStatus,
@@ -778,6 +793,10 @@ class LearningRecordController extends Controller
             $actualHours = $playlistActualHours?->get($plan->id)
                 ?? (float) $this->recordLhService()->calculatePlaylistSingle((int) Auth::id(), $plan);
             $formattedHours = $this->recordLhService()->formatHours($actualHours);
+            $playlistRequirement = collect($playlistItems)->contains(fn ($it) => ($it['requirement'] ?? '') === 'Mandatory')
+                ? 'Mandatory'
+                : 'Non-Mandatory';
+            $playlistScore = $eligibility?->score();
 
             return [
                 'row_kind'        => 'playlist',
@@ -790,6 +809,7 @@ class LearningRecordController extends Controller
                     : null,
                 'playlist_items'  => $playlistItems,
                 'subtitle'        => (int) ($plan->finished_items ?? 0) . ' / ' . (int) ($plan->total_items ?? count($playlistItems)) . ' content selesai',
+                'requirement'     => $playlistRequirement,
                 'playlist_names'  => [],
                 'playlist_ids'    => [$plan->id],
                 'plan_id'         => $plan->id,
@@ -810,7 +830,8 @@ class LearningRecordController extends Controller
                 'finish_date'     => $finishDate,
                 // Pola sama dengan Content: score dari CertificateEligibilityResult —
                 // playlist ber-assessment kini menampilkan nilai sungguhan.
-                'score'                => $eligibility?->score(),
+                'score'                => $playlistScore,
+                'assessment_score'     => $playlistScore,
                 'min_score'            => (int) ($eligibility?->minimumScore ?? 0),
                 'assessment_required'  => (bool) ($eligibility?->assessmentRequired ?? false),
                 // Aturan playlist sudah di CertificateEligibilityService:

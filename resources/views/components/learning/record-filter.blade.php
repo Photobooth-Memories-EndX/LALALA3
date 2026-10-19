@@ -188,16 +188,6 @@
                         aria-label="Reset Filter">
                     <i class="ti ti-refresh" aria-hidden="true"></i>
                 </button>
-
-                {{-- 4. Download Excel Button --}}
-                <a href="{{ route('user.learning.record.export', request()->all()) }}"
-                   data-export-url="{{ route('user.learning.record.export') }}"
-                   class="btn btn-outline-success btn-learning-success record-filter-action-btn"
-                   id="recordDownloadExcel"
-                   title="Download Excel"
-                   aria-label="Download Excel">
-                    <i class="ti ti-download" aria-hidden="true"></i>
-                </a>
             </div>
         </div>
     </div>

@@ -4,7 +4,7 @@
     {{-- ApexCharts: dimuat di awal agar tersedia saat tab Monitoring (AJAX) dirender. --}}
     <script src="{{ asset('Tabler/dist/libs/apexcharts/dist/apexcharts.min.js') }}"></script>
     {{-- Learning Record: search, filter, sorting & pagination client-side (jQuery, tanpa AJAX). --}}
-    <script src="{{ asset('js/learning-record.js') }}"></script>
+    <script src="{{ asset('js/learning-record.js') }}?v={{ filemtime(public_path('js/learning-record.js')) }}"></script>
 
     <script>
         var _activeTab = null;
@@ -47,10 +47,13 @@
                 '<div class="fast-filter-header-copy">' +
                     '<h3 class="card-title fast-filter-title">Quick Filter</h3>' +
                 '</div>' +
-                '<div class="learning-mode-switch record-mode-switch" role="group" aria-label="Learning Record mode">' +
-                    '<button type="button" class="btn learning-mode-btn record-mode-btn ' + (mode === 'online' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="online" title="KP OWL" aria-label="KP OWL"><i class="ti ti-device-laptop"></i><span>KP OWL</span></button>' +
-                    '<button type="button" class="btn learning-mode-btn record-mode-btn ' + (mode === 'offline' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="offline" title="Non KP OWL" aria-label="Non KP OWL"><i class="ti ti-certificate"></i><span>Non KP OWL</span></button>' +
-                    '<button type="button" class="btn learning-mode-btn record-mode-btn ' + (mode === 'all' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="all" title="All Record" aria-label="All Record"><i class="ti ti-stack-2"></i><span>All Record</span></button>' +
+                '<div class="d-flex align-items-center justify-content-between gap-2 w-100 mt-3 mb-0 quick-filter-row record-mode-switch-wrapper">' +
+                    '<div class="learning-mode-switch record-mode-switch d-flex align-items-center gap-2" role="group" aria-label="Learning Record mode">' +
+                        '<button type="button" class="btn learning-mode-btn record-mode-btn ' + (mode === 'online' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="online" title="KP OWL" aria-label="KP OWL"><i class="ti ti-device-laptop"></i><span>KP OWL</span></button>' +
+                        '<button type="button" class="btn learning-mode-btn record-mode-btn ' + (mode === 'offline' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="offline" title="Non KP OWL" aria-label="Non KP OWL"><i class="ti ti-certificate"></i><span>Non KP OWL</span></button>' +
+                        '<button type="button" class="btn learning-mode-btn record-mode-btn ' + (mode === 'all' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="all" title="All Record" aria-label="All Record"><i class="ti ti-stack-2"></i><span>All Record</span></button>' +
+                    '</div>' +
+                    '<span class="placeholder rounded-3 ms-auto" style="width:118px;height:40px;"></span>' +
                 '</div>' +
             '</div>';
 

@@ -3,9 +3,9 @@
 {{-- Learning Record: style tabel client-side (dipisah — clean code). --}}
 <link rel="stylesheet" href="{{ asset('css/learning-record.css') }}?v={{ filemtime(public_path('css/learning-record.css')) }}">
 <link rel="stylesheet" href="{{ asset('css/learning-assessment.css') }}?v={{ filemtime(public_path('css/learning-assessment.css')) }}">
-<link rel="stylesheet" href="{{ asset('css/learning-certificate.css') }}">
-<link rel="stylesheet" href="{{ asset('css/learning-ongoing.css') }}">
-<link rel="stylesheet" href="{{ asset('css/mooc.css') }}">
+<link rel="stylesheet" href="{{ asset('css/learning-certificate.css') }}?v={{ filemtime(public_path('css/learning-certificate.css')) }}">
+<link rel="stylesheet" href="{{ asset('css/learning-ongoing.css') }}?v={{ filemtime(public_path('css/learning-ongoing.css')) }}">
+<link rel="stylesheet" href="{{ asset('css/mooc.css') }}?v={{ filemtime(public_path('css/mooc.css')) }}">
 @include('user.learning.partials.hero-style')
 
 <style>

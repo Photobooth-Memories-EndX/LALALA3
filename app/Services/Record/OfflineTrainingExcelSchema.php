@@ -33,7 +33,7 @@ class OfflineTrainingExcelSchema
                 'start_col' => 'I',
                 'end_col'   => 'AG',
                 'span'      => 25,
-                'color'     => 'FEF3C7', // Amber 100
+                'color'     => 'F1F5F9', // Neutral Slate 100
             ],
             'attendance' => [
                 'title'     => 'ATTENDANCE',

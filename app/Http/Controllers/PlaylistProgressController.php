@@ -102,7 +102,7 @@ class PlaylistProgressController extends Controller
                 'content_id'      => $content->id,
             ],
             [
-                'status'          => $content->status ?? 'optional',
+                'status'          => $content->status ?? 'non mandatory',
             ]
         );
         $playlistContentUser->setRelation('content', $content);

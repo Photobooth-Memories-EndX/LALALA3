@@ -530,7 +530,7 @@ class ContentController extends Controller
             ],
             'status' => [
                 'required',
-                'in:mandatory,optional',
+                'in:mandatory,non mandatory,optional',
             ],
         ]);
 
@@ -569,7 +569,7 @@ class ContentController extends Controller
             'page_duration'    => $pageDuration,
             'total_page'       => $documentTotalPages,
             'description'      => $request->description ?? '',
-            'status'           => $request->status ?? 'optional',
+            'status'           => $request->status ?? 'non mandatory',
             'playlistonly'     => 'N',
             'link'             => $linkToStore,
             'has_deadline'     => $hasDeadline,
@@ -717,7 +717,7 @@ class ContentController extends Controller
                 }
             }],
             'learning_hours' => ['nullable'],
-            'status' => ['required', 'in:mandatory,optional'],
+            'status' => ['required', 'in:mandatory,non mandatory,optional'],
         ]);
 
         $path = public_path('storage/files/content/' . $request->id . '');
@@ -860,7 +860,7 @@ class ContentController extends Controller
                 'page_duration'    => $pageDuration,
                 'total_page'       => $totalPage,
                 'description'      => $request->description ?? ($targetContent->description ?? ''),
-                'status'           => $request->status ?? ($targetContent->status ?? 'optional'),
+                'status'           => $request->status ?? ($targetContent->status ?? 'non mandatory'),
                 'playlistonly'     => $targetContent->playlistonly ?? 'N',
                 'active'           => $active,
                 'link'             => $linkToStore,
@@ -1067,8 +1067,8 @@ class ContentController extends Controller
                 'is_expired'               => $content->isExpired(),
                 'exam'                     => $content->exam,
                 'exam_label'               => $content->exam === 'OK' ? 'With Exam (OK)' : 'Without Exam (NOT)',
-                'status'                   => $content->status ?? 'optional',
-                'status_label'             => ucfirst($content->status ?? 'optional'),
+                'status'                   => $content->status ?? 'non mandatory',
+                'status_label'             => (strtolower($content->status ?? 'non mandatory') === 'mandatory') ? 'Mandatory' : 'Non-Mandatory',
                 'playlistonly'             => $content->playlistonly,
                 'playlist_label'           => $content->playlistonly === 'Y' ? 'Playlist Only' : 'General Content',
                 'playlists'                => $playlists,
