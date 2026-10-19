@@ -97,6 +97,7 @@ class ExportMyAllLearningRecord implements FromArray, ShouldAutoSize, WithColumn
 
         foreach ($this->rows as $row) {
             $isOffline = ($row['source'] ?? '') === 'offline';
+            $sourceLabel = $isOffline ? 'Non-KP OWL' : 'KP OWL';
 
             $rowEmpId = ($isOffline && !empty($row['employee_id']) && $row['employee_id'] !== '-') ? (string) $row['employee_id'] : $empId;
             $rowName = ($isOffline && !empty($row['participant_name']) && $row['participant_name'] !== '-') ? (string) $row['participant_name'] : $userName;
@@ -168,32 +169,33 @@ class ExportMyAllLearningRecord implements FromArray, ShouldAutoSize, WithColumn
 
             $output[] = [
                 $number++,                              // A: No
-                $rowEmpId,                              // B: Employee. ID
-                $rowName,                               // C: Name
-                $rowTeam,                               // D: Team
-                $title,                                 // E: Course Title
-                $row['type'] ?? '-',                    // F: Type
-                $row['category'] ?? '-',                // G: Category
-                $row['classification'] ?? '-',          // H: Main Classification
-                $durationCell,                          // I: Duration
-                $lhValue,                               // J: Learning Hour
-                $progressCell,                          // K: Progress
-                $startDate,                             // L: Start Date
-                $endDate,                               // M: End Date
-                $startTime,                             // N: Start Time
-                $endTime,                               // O: End Time
-                $requirement,                           // P: Requirement
-                $deliveryMethod,                        // Q: Delivery Method
-                $provider,                              // R: Provider
-                $providerName,                          // S: Provider Name
-                $venue,                                 // T: Venue
-                $attendance,                            // U: Attendance
-                $scoreVal,                              // V: Score (L2)
-                $bondStatus,                            // W: Bond Status
-                $bondDuration,                          // X: Bond Duration
-                $bondEndDate,                           // Y: Bond End Date
-                $bondAmount,                            // Z: Bond Amount
-                $certificate,                           // AA: Certificate
+                $sourceLabel,                           // B: Source (KP OWL / Non-KP OWL)
+                $rowEmpId,                              // C: Employee ID
+                $rowName,                               // D: Name
+                $rowTeam,                               // E: Team
+                $title,                                 // F: Course Title
+                $row['type'] ?? '-',                    // G: Type
+                $row['category'] ?? '-',                // H: Category
+                $row['classification'] ?? '-',          // I: Main Classification
+                $durationCell,                          // J: Duration
+                $lhValue,                               // K: Learning Hours
+                $progressCell,                          // L: % Progress
+                $startDate,                             // M: Start Date
+                $endDate,                               // N: End Date
+                $startTime,                             // O: Start Time
+                $endTime,                               // P: End Time
+                $requirement,                           // Q: Requirement
+                $deliveryMethod,                        // R: Delivery Method
+                $provider,                              // S: Provider
+                $providerName,                          // T: Provider Name
+                $venue,                                 // U: Venue
+                $attendance,                            // V: Attendance
+                $scoreVal,                              // W: Score (L2)
+                $bondStatus,                            // X: Bond Status
+                $bondDuration,                          // Y: Bond Duration
+                $bondEndDate,                           // Z: Bond End Date
+                $bondAmount,                            // AA: Bond Amount
+                $certificate,                           // AB: Certificate
             ];
 
             if ($isPlaylist) {
@@ -212,32 +214,33 @@ class ExportMyAllLearningRecord implements FromArray, ShouldAutoSize, WithColumn
 
                         $output[] = [
                             '',                                                     // A: No
-                            $empId,                                                 // B: Employee. ID
-                            $userName,                                              // C: Name
-                            $userTeam,                                              // D: Team
-                            '    ' . ($child['title'] ?? '-'),                      // E: Course Title
-                            $child['type'] ?? '-',                                  // F: Type
-                            'Playlist',                                             // G: Category
-                            $child['classification'] ?? '-',                        // H: Main Classification
-                            $childDurCell,                                          // I: Duration
-                            $childLhVal,                                            // J: Learning Hour
-                            $childProgInt / 100,                                    // K: Progress
-                            $this->toExcelDate($child['start_date'] ?? null),       // L: Start Date
-                            $this->toExcelDate($child['end_date'] ?? null),         // M: End Date
-                            $this->toExcelTime($child['start_time'] ?? null),       // N: Start Time
-                            $this->toExcelTime($child['end_time'] ?? null),         // O: End Time
-                            $child['requirement'] ?? 'Non-Mandatory',               // P: Requirement
-                            '-',                                                    // Q: Delivery Method
-                            '-',                                                    // R: Provider
-                            '-',                                                    // S: Provider Name
-                            '-',                                                    // T: Venue
-                            $child['attendance'] ?? '-',                            // U: Attendance
-                            $childScore,                                            // V: Score (L2)
-                            '-',                                                    // W: Bond Status
-                            '-',                                                    // X: Bond Duration
-                            '-',                                                    // Y: Bond End Date
-                            '-',                                                    // Z: Bond Amount
-                            '-',                                                    // AA: Certificate
+                            'KP OWL',                                               // B: Source
+                            $empId,                                                 // C: Employee ID
+                            $userName,                                              // D: Name
+                            $userTeam,                                              // E: Team
+                            '    ' . ($child['title'] ?? '-'),                      // F: Course Title
+                            $child['type'] ?? '-',                                  // G: Type
+                            'Playlist',                                             // H: Category
+                            $child['classification'] ?? '-',                        // I: Main Classification
+                            $childDurCell,                                          // J: Duration
+                            $childLhVal,                                            // K: Learning Hours
+                            $childProgInt / 100,                                    // L: % Progress
+                            $this->toExcelDate($child['start_date'] ?? null),       // M: Start Date
+                            $this->toExcelDate($child['end_date'] ?? null),         // N: End Date
+                            $this->toExcelTime($child['start_time'] ?? null),       // O: Start Time
+                            $this->toExcelTime($child['end_time'] ?? null),         // P: End Time
+                            $child['requirement'] ?? 'Non-Mandatory',               // Q: Requirement
+                            '-',                                                    // R: Delivery Method
+                            '-',                                                    // S: Provider
+                            '-',                                                    // T: Provider Name
+                            '-',                                                    // U: Venue
+                            $child['attendance'] ?? '-',                            // V: Attendance
+                            $childScore,                                            // W: Score (L2)
+                            '-',                                                    // X: Bond Status
+                            '-',                                                    // Y: Bond Duration
+                            '-',                                                    // Z: Bond End Date
+                            '-',                                                    // AA: Bond Amount
+                            '-',                                                    // AB: Certificate
                         ];
                         $this->childRows[] = count($output);
                     }
@@ -252,32 +255,33 @@ class ExportMyAllLearningRecord implements FromArray, ShouldAutoSize, WithColumn
     {
         return [
             'No',                   // A
-            'Employee. ID',         // B
-            'Name',                 // C
-            'Team',                 // D
-            'Course Title',         // E
-            'Type',                 // F
-            'Category',             // G
-            'Main Classification',  // H
-            'Duration',             // I
-            'Learning Hour',        // J
-            'Progress',             // K
-            'Start Date',           // L
-            'End Date',             // M
-            'Start Time',           // N
-            'End Time',             // O
-            'Requirement',          // P
-            'Delivery Method',      // Q
-            'Provider',             // R
-            'Provider Name',        // S
-            'Venue',                // T
-            'Attendance',           // U
-            'Score (L2)',           // V
-            'Bond Status',          // W
-            'Bond Duration',        // X
-            'Bond End Date',        // Y
-            'Bond Amount',          // Z
-            'Certificate',          // AA
+            'Source',               // B
+            'Employee ID',          // C
+            'Name',                 // D
+            'Team',                 // E
+            'Course Title',         // F
+            'Type',                 // G
+            'Category',             // H
+            'Main Classification',  // I
+            'Duration',             // J
+            'Learning Hours',       // K
+            '% Progress',           // L
+            'Start Date',           // M
+            'End Date',             // N
+            'Start Time',           // O
+            'End Time',             // P
+            'Requirement',          // Q
+            'Delivery Method',      // R
+            'Provider',             // S
+            'Provider Name',        // T
+            'Venue',                // U
+            'Attendance',           // V
+            'Score (L2)',           // W
+            'Bond Status',          // X
+            'Bond Duration',        // Y
+            'Bond End Date',        // Z
+            'Bond Amount',          // AA
+            'Certificate',          // AB
         ];
     }
 
@@ -285,32 +289,33 @@ class ExportMyAllLearningRecord implements FromArray, ShouldAutoSize, WithColumn
     {
         return [
             'A'  => NumberFormat::FORMAT_NUMBER,        // No
-            'B'  => NumberFormat::FORMAT_GENERAL,       // Employee. ID
-            'C'  => NumberFormat::FORMAT_GENERAL,       // Name
-            'D'  => NumberFormat::FORMAT_GENERAL,       // Team
-            'E'  => NumberFormat::FORMAT_GENERAL,       // Course Title
-            'F'  => NumberFormat::FORMAT_GENERAL,       // Type
-            'G'  => NumberFormat::FORMAT_GENERAL,       // Category
-            'H'  => NumberFormat::FORMAT_GENERAL,       // Main Classification
-            'I'  => NumberFormat::FORMAT_DATE_TIME4,    // Duration (HH:mm:ss)
-            'J'  => NumberFormat::FORMAT_NUMBER_00,     // Learning Hour (Decimal)
-            'K'  => NumberFormat::FORMAT_PERCENTAGE,    // Progress (0% - 100%)
-            'L'  => 'yyyy-mm-dd',                       // Start Date
-            'M'  => 'yyyy-mm-dd',                       // End Date
-            'N'  => NumberFormat::FORMAT_DATE_TIME4,    // Start Time (HH:mm:ss)
-            'O'  => NumberFormat::FORMAT_DATE_TIME4,    // End Time (HH:mm:ss)
-            'P'  => NumberFormat::FORMAT_GENERAL,       // Requirement
-            'Q'  => NumberFormat::FORMAT_GENERAL,       // Delivery Method
-            'R'  => NumberFormat::FORMAT_GENERAL,       // Provider
-            'S'  => NumberFormat::FORMAT_GENERAL,       // Provider Name
-            'T'  => NumberFormat::FORMAT_GENERAL,       // Venue
-            'U'  => NumberFormat::FORMAT_GENERAL,       // Attendance
-            'V'  => '0.##',                             // Score (L2)
-            'W'  => NumberFormat::FORMAT_GENERAL,       // Bond Status
-            'X'  => '0.##',                             // Bond Duration
-            'Y'  => 'yyyy-mm-dd',                       // Bond End Date
-            'Z'  => '"Rp "#,##0',                       // Bond Amount
-            'AA' => NumberFormat::FORMAT_GENERAL,       // Certificate
+            'B'  => NumberFormat::FORMAT_GENERAL,       // Source
+            'C'  => NumberFormat::FORMAT_GENERAL,       // Employee ID
+            'D'  => NumberFormat::FORMAT_GENERAL,       // Name
+            'E'  => NumberFormat::FORMAT_GENERAL,       // Team
+            'F'  => NumberFormat::FORMAT_GENERAL,       // Course Title
+            'G'  => NumberFormat::FORMAT_GENERAL,       // Type
+            'H'  => NumberFormat::FORMAT_GENERAL,       // Category
+            'I'  => NumberFormat::FORMAT_GENERAL,       // Main Classification
+            'J'  => NumberFormat::FORMAT_DATE_TIME4,    // Duration (HH:mm:ss)
+            'K'  => NumberFormat::FORMAT_NUMBER_00,     // Learning Hours (Decimal)
+            'L'  => NumberFormat::FORMAT_PERCENTAGE,    // % Progress (0% - 100%)
+            'M'  => 'yyyy-mm-dd',                       // Start Date
+            'N'  => 'yyyy-mm-dd',                       // End Date
+            'O'  => NumberFormat::FORMAT_DATE_TIME4,    // Start Time (HH:mm:ss)
+            'P'  => NumberFormat::FORMAT_DATE_TIME4,    // End Time (HH:mm:ss)
+            'Q'  => NumberFormat::FORMAT_GENERAL,       // Requirement
+            'R'  => NumberFormat::FORMAT_GENERAL,       // Delivery Method
+            'S'  => NumberFormat::FORMAT_GENERAL,       // Provider
+            'T'  => NumberFormat::FORMAT_GENERAL,       // Provider Name
+            'U'  => NumberFormat::FORMAT_GENERAL,       // Venue
+            'V'  => NumberFormat::FORMAT_GENERAL,       // Attendance
+            'W'  => '0.##',                             // Score (L2)
+            'X'  => NumberFormat::FORMAT_GENERAL,       // Bond Status
+            'Y'  => '0.##',                             // Bond Duration
+            'Z'  => 'yyyy-mm-dd',                       // Bond End Date
+            'AA' => '"Rp "#,##0',                       // Bond Amount
+            'AB' => NumberFormat::FORMAT_GENERAL,       // Certificate
         ];
     }
 
@@ -348,12 +353,12 @@ class ExportMyAllLearningRecord implements FromArray, ShouldAutoSize, WithColumn
                     ->setVertical(Alignment::VERTICAL_CENTER);
 
                 if ($highestRow >= 2) {
-                    $sheet->getStyle('A2:B' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                    $sheet->getStyle('F2:G' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                    $sheet->getStyle('I2:R' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                    $sheet->getStyle('U2:Y' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                    $sheet->getStyle('Z2:Z' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-                    $sheet->getStyle('AA2:AA' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle('A2:C' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle('G2:H' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle('J2:S' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle('V2:Z' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle('AA2:AA' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                    $sheet->getStyle('AB2:AB' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                 }
 
                 foreach ($this->parentPlaylistRows as $r) {
@@ -361,7 +366,7 @@ class ExportMyAllLearningRecord implements FromArray, ShouldAutoSize, WithColumn
                 }
 
                 foreach ($this->childRows as $r) {
-                    $sheet->getStyle("E{$r}")->getAlignment()->setIndent(1);
+                    $sheet->getStyle("F{$r}")->getAlignment()->setIndent(1);
                     $sheet->getRowDimension($r)->setOutlineLevel(1);
                 }
 

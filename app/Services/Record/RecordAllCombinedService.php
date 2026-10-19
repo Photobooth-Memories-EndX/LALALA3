@@ -469,6 +469,7 @@ class RecordAllCombinedService
                 'c.id as content_id',
                 'c.title as content_title',
                 'c.slug as content_slug',
+                'c.status as content_status',
                 'tp.id as playlist_id',
                 'tp.slug as playlist_slug',
                 'tp.title as playlist_title',
@@ -490,7 +491,11 @@ class RecordAllCombinedService
                     WHEN unified.source_type = 'playlist' THEN COALESCE(tp.title, c.title, 'Playlist')
                     ELSE COALESCE(c.title, 'Untitled Content')
                 END as learning_title"),
-                DB::raw("CASE WHEN unified.source = 'offline' THEN ot.sub_course_name ELSE NULL END as sub_course_name"),
+                DB::raw("CASE
+                    WHEN unified.source = 'offline' THEN ot.sub_course_name
+                    WHEN LOWER(TRIM(COALESCE(c.status, 'non mandatory'))) = 'mandatory' THEN 'Mandatory'
+                    ELSE 'Non-Mandatory'
+                END as sub_course_name"),
                 DB::raw("COALESCE(c.slug, '') as learning_slug"),
                 DB::raw("CASE
                     WHEN unified.source = 'offline' THEN COALESCE(NULLIF(TRIM(ot.type), ''), 'Offline Training')
