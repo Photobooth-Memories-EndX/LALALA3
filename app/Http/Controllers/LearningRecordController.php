@@ -600,10 +600,14 @@ class LearningRecordController extends Controller
             $rawProgress = $cu->progress ?? 0;
             $hasValidProgress = !is_null($rawProgress) && is_numeric($rawProgress);
             $contentProgress = $hasValidProgress ? (int) $rawProgress : 0;
-            $attendanceStatus = ($hasValidProgress && (int) $rawProgress >= 100) ? 'Present' : '-';
+            $attendanceStatus = ($hasValidProgress && (int) $rawProgress >= 100) ? 'Yes' : 'No';
             $status = strtolower(trim((string) ($cu->content->status ?? ($cu->status ?? 'non mandatory'))));
             $requirement = ($status === 'mandatory') ? 'Mandatory' : 'Non-Mandatory';
             $scoreVal = $eligibility?->score();
+            $startDatetimeStr = optional($cu->created_at)->format('Y-m-d H:i:s') ?? '';
+            $finishDatetimeStr = (int) ($cu->finish ?? 0) === 1
+                ? (optional($cu->completed_at ?? $cu->updated_at)->format('Y-m-d H:i:s') ?? '')
+                : '';
 
             return [
                 'row_kind'        => 'content',
@@ -627,10 +631,10 @@ class LearningRecordController extends Controller
                 'attendance'      => $attendanceStatus,
                 'attendance_status' => $attendanceStatus,
                 'min_progress'    => $setting ? (int) ($setting->minimum_progress ?? 0) : 0,
-                'start_date'      => optional($cu->created_at)->format('Y-m-d H:i:s') ?? '',
-                'finish_date'     => (int) ($cu->finish ?? 0) === 1
-                    ? (optional($cu->completed_at ?? $cu->updated_at)->format('Y-m-d H:i:s') ?? '')
-                    : '',
+                'start_date'      => $startDatetimeStr,
+                'finish_date'     => $finishDatetimeStr,
+                'start_datetime'  => $startDatetimeStr,
+                'end_datetime'    => $finishDatetimeStr,
                 // Score & ambangnya dari CertificateEligibilityResult — angka
                 // yang sama dengan yang dipakai menentukan tombol Generate.
                 'score'                => $scoreVal,
@@ -823,11 +827,13 @@ class LearningRecordController extends Controller
                 'learning_hour_bucket' => $actualHours,
                 'learning_hour_value'  => $actualHours,
                 'progress'        => 100,
-                'attendance'      => 'Present',
-                'attendance_status' => 'Present',
+                'attendance'      => 'Yes',
+                'attendance_status' => 'Yes',
                 'min_progress'    => $setting ? (int) ($setting->minimum_progress ?? 0) : 0,
                 'start_date'      => $startDate ? Carbon::parse($startDate)->format('Y-m-d H:i:s') : '',
                 'finish_date'     => $finishDate,
+                'start_datetime'  => $startDate ? Carbon::parse($startDate)->format('Y-m-d H:i:s') : '',
+                'end_datetime'    => $finishDate,
                 // Pola sama dengan Content: score dari CertificateEligibilityResult —
                 // playlist ber-assessment kini menampilkan nilai sungguhan.
                 'score'                => $playlistScore,

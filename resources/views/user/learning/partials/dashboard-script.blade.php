@@ -71,6 +71,7 @@
                     '<td><span class="placeholder col-8" style="height:14px;"></span></td>' +
                     '<td class="text-center"><span class="placeholder col-5" style="height:14px;"></span></td>' +
                     '<td class="text-center"><span class="placeholder col-5" style="height:14px;"></span></td>' +
+                    '<td class="text-center"><span class="placeholder col-5" style="height:14px;"></span></td>' +
                 '</tr>';
             }
 
@@ -93,16 +94,17 @@
                                 '<thead>' +
                                     '<tr>' +
                                         '<th class="text-center" style="width:4%">No</th>' +
-                                        '<th style="width:24%">Course / Training Title</th>' +
-                                        '<th style="width:8%">Type</th>' +
-                                        '<th style="width:8%">Category</th>' +
-                                        '<th style="width:10%">Classification</th>' +
-                                        '<th style="width:8%">Duration</th>' +
+                                        '<th style="width:22%">Course Title</th>' +
+                                        '<th style="width:7%">Type</th>' +
+                                        '<th style="width:7%">Category</th>' +
+                                        '<th style="width:9%">Main Classification</th>' +
+                                        '<th style="width:7%">Duration</th>' +
                                         '<th style="width:8%">Learning Hour</th>' +
                                         '<th style="width:7%">Progress</th>' +
-                                        '<th style="width:10%">Date</th>' +
-                                        '<th class="text-center" style="width:8%">Score</th>' +
-                                        '<th class="text-center" style="width:6%">Certificate</th>' +
+                                        '<th style="width:11%">Date Time</th>' +
+                                        '<th class="text-center" style="width:7%">Attendance</th>' +
+                                        '<th class="text-center" style="width:6%">Assessment Score</th>' +
+                                        '<th class="text-center" style="width:5%">Certificate</th>' +
                                     '</tr>' +
                                 '</thead>' +
                                 '<tbody>' + tableRows + '</tbody>' +
@@ -754,22 +756,15 @@
             if (!attendanceStatus) attendanceStatus = '-';
 
             // Status badge styling mapping
-            var statusLower = attendanceStatus.toLowerCase();
-            var badgeClass = 'bg-secondary-lt text-secondary';
-            if (statusLower === 'present') {
-                badgeClass = 'bg-success-lt text-success';
-            } else if (statusLower === 'absent') {
-                badgeClass = 'bg-danger-lt text-danger';
-            } else if (statusLower === 'excused' || statusLower === 'sick') {
-                badgeClass = 'bg-warning-lt text-warning';
-            } else if (statusLower === 'leave') {
-                badgeClass = 'bg-info-lt text-info';
-            }
+            var statusLower = String(attendanceStatus).toLowerCase().trim();
+            var isYes = (statusLower === 'present' || statusLower === 'yes' || statusLower === '1' || statusLower === 'true');
+            var displayStatus = isYes ? 'Yes' : 'No';
+            var badgeClass = isYes ? 'bg-success-lt text-success' : 'bg-danger-lt text-danger';
 
             // Attendance Reason Logic:
             // IF attendance_reason tidak null dan tidak kosong -> tampilkan nilai attendance_reason
             // IF attendance_reason NULL / kosong:
-            //   - untuk Present: "Employee attended the training."
+            //   - untuk Yes/Present: "Employee attended the training."
             //   - untuk non-Present: "No attendance reason recorded."
             // Jangan pernah menampilkan null, undefined, -, atau N/A.
             var finalReason = '';
@@ -787,7 +782,7 @@
                        precomputedReason.toLowerCase() !== 'undefined' &&
                        precomputedReason.toLowerCase() !== 'n/a') {
                 finalReason = precomputedReason;
-            } else if (statusLower === 'present') {
+            } else if (isYes) {
                 finalReason = 'Employee attended the training.';
             } else {
                 finalReason = 'No attendance reason recorded.';
@@ -795,7 +790,7 @@
 
             // Safe DOM population using jQuery .text() to prevent XSS
             $('#attendanceTrainingTitle').text(trainingTitle);
-            $('#attendanceStatus').removeClass().addClass('badge fw-bold px-2.5 py-1 ' + badgeClass).text(attendanceStatus);
+            $('#attendanceStatus').removeClass().addClass('badge fw-bold px-2.5 py-1 ' + badgeClass).text(displayStatus);
             $('#attendanceReason').text(finalReason);
             $('#attendanceDate').text(trainingDate);
             $('#attendanceVenue').text(venue);

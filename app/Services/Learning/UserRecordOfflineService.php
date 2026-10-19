@@ -121,20 +121,24 @@ class UserRecordOfflineService
 
         $startTime = $training->start_time ? Carbon::parse($training->start_time)->format('H:i') : '';
         $endTime = $training->end_time ? Carbon::parse($training->end_time)->format('H:i') : '';
+        $startTimeFull = $training->start_time ? Carbon::parse($training->start_time)->format('H:i:s') : '00:00:00';
+        $endTimeFull = $training->end_time ? Carbon::parse($training->end_time)->format('H:i:s') : '00:00:00';
         $timeDisplay = ($startTime && $endTime) ? "{$startTime} - {$endTime}" : ($startTime ?: ($endTime ?: '-'));
+
+        $startDatetimeStr = $startDateStr ? "{$startDateStr} {$startTimeFull}" : '';
+        $endDatetimeStr = $finishDateStr ? "{$finishDateStr} {$endTimeFull}" : '';
 
         $progress = (float) ($otu->progress ?? 0);
         $score = $otu->assessment_score !== null ? (float) $otu->assessment_score : null;
 
         $attendanceRaw = $otu->attendance;
-        if (is_string($attendanceRaw) && !in_array($attendanceRaw, ['0', '1', ''], true)) {
-            $attendanceStatus = ucfirst(trim($attendanceRaw));
+        $attendanceNorm = is_string($attendanceRaw) ? strtolower(trim($attendanceRaw)) : $attendanceRaw;
+        if (in_array($attendanceNorm, [true, 1, '1', 'present', 'yes', 'y', 'attended'], true)) {
+            $attendanceStatus = 'Yes';
+        } elseif (in_array($attendanceNorm, [false, 0, '0', 'absent', 'no', 'n', null, '', '-'], true)) {
+            $attendanceStatus = 'No';
         } else {
-            $attendanceStatus = match ($attendanceRaw) {
-                true, 1, '1' => 'Present',
-                false, 0, '0' => 'Absent',
-                default => '-',
-            };
+            $attendanceStatus = 'No';
         }
 
         $rawAttendanceReason = (!empty($otu->attendance_reason) && trim((string) $otu->attendance_reason) !== '-')
@@ -143,10 +147,8 @@ class UserRecordOfflineService
 
         if ($rawAttendanceReason !== null && $rawAttendanceReason !== '') {
             $attendanceReasonDisplay = $rawAttendanceReason;
-        } elseif ($attendanceStatus === 'Present') {
+        } elseif ($attendanceStatus === 'Yes') {
             $attendanceReasonDisplay = 'Employee attended the training.';
-        } elseif ($attendanceStatus === 'Absent') {
-            $attendanceReasonDisplay = 'No attendance reason recorded.';
         } else {
             $attendanceReasonDisplay = 'No attendance reason recorded.';
         }
@@ -206,6 +208,8 @@ class UserRecordOfflineService
             'progress'                  => (int) round($progress),
             'start_date'                => $startDateStr,
             'finish_date'               => $finishDateStr,
+            'start_datetime'            => $startDatetimeStr,
+            'end_datetime'              => $endDatetimeStr,
             'start_time'                => $startTime ?: '-',
             'end_time'                  => $endTime ?: '-',
             'time_display'              => $timeDisplay,
@@ -220,7 +224,7 @@ class UserRecordOfflineService
             'cert_reason'               => $certReason,
             'cert_action_url'           => $certActionUrl,
             'cert_is_form'              => false,
-            'attendance'                => $attendanceRaw !== null ? (bool) $attendanceRaw : null,
+            'attendance'                => $attendanceStatus,
             'attendance_status'         => $attendanceStatus,
             'attendance_reason'         => $rawAttendanceReason ?: '-',
             'raw_attendance_reason'     => $rawAttendanceReason,
@@ -360,15 +364,16 @@ class UserRecordOfflineService
                 return false;
             }
 
-            // 11. Attendance filter (all, present, absent)
+            // 11. Attendance filter (all, present/yes, absent/no)
             if ($attendance !== 'all') {
                 $normAttendance = strtolower(trim($attendance));
-                if (in_array($normAttendance, ['present', '1', 'attended'], true)) {
-                    if (($row['attendance_status'] ?? '') !== 'Present') {
+                $rowAtt = strtolower(trim((string) ($row['attendance_status'] ?? '')));
+                if (in_array($normAttendance, ['present', 'yes', '1', 'attended'], true)) {
+                    if (!in_array($rowAtt, ['yes', 'present'], true)) {
                         return false;
                     }
-                } elseif (in_array($normAttendance, ['absent', '0'], true)) {
-                    if (($row['attendance_status'] ?? '') !== 'Absent') {
+                } elseif (in_array($normAttendance, ['absent', 'no', '0'], true)) {
+                    if (!in_array($rowAtt, ['no', 'absent'], true)) {
                         return false;
                     }
                 }

@@ -7,12 +7,13 @@
 
 @php
     // Nilai untuk filter client-side (jQuery mencocokkan data-attribute, bukan HTML).
-    $finishDateRaw = (string) ($row['finish_date'] ?? '');
-    $finishTimestamp = $finishDateRaw !== '' ? \Illuminate\Support\Carbon::parse($finishDateRaw) : null;
-    $startDateDisplay = ($row['start_date'] ?? '') !== ''
-        ? \Illuminate\Support\Carbon::parse($row['start_date'])->format('d/m/y H:i:s')
-        : '';
-    $finishDateDisplay = $finishTimestamp?->format('d/m/y H:i:s') ?? '';
+    $startDateRaw = (string) ($row['start_datetime'] ?? $row['start_date'] ?? '');
+    $finishDateRaw = (string) ($row['end_datetime'] ?? $row['finish_date'] ?? '');
+    $finishTimestamp = $finishDateRaw !== '' ? \Carbon\Carbon::parse($finishDateRaw) : null;
+    $startDateDisplay = $startDateRaw !== ''
+        ? \Carbon\Carbon::parse($startDateRaw)->format('d/m/y H:i:s')
+        : '-';
+    $finishDateDisplay = $finishTimestamp?->format('d/m/y H:i:s') ?? '-';
 
     // Search memakai title + classification untuk Content dan Playlist.
     $rowTitle = (string) ($row['title'] ?? '-');
@@ -40,7 +41,11 @@
         $durationSeconds % 60
     );
     $learningHourDisplay = str_replace([' hours', ' hour'], [' h', ' h'], $row['learning_hour'] ?? '-');
-    $attendanceStatus = ($row['attendance'] ?? '') ?: (($progressValue >= 100) ? 'Present' : '-');
+    $rawAtt = $row['attendance'] ?? null;
+    $attLower = strtolower(trim((string) $rawAtt));
+    $attendanceStatus = in_array($attLower, ['1', 'true', 'present', 'yes'], true)
+        ? 'Yes'
+        : (($rawAtt === null || $rawAtt === '') && $progressValue >= 100 ? 'Yes' : 'No');
 @endphp
 
 <tr class="record-row"
@@ -167,8 +172,10 @@
     <td><x-learning.record-progress-cell :row="$row" /></td>
 
     <td class="text-muted small learning-record-datetime">
-        <div class="learning-record-date-row text-nowrap"><strong>Start&nbsp;&nbsp;:</strong> {{ $startDateDisplay }}</div>
-        <div class="learning-record-date-row text-nowrap"><strong>Finish :</strong> {{ $finishDateDisplay }}</div>
+        <div class="text-xs text-muted">
+            <div class="learning-record-date-row text-nowrap">Start : {{ $startDateDisplay }}</div>
+            <div class="learning-record-date-row text-nowrap">Finish : {{ $finishDateDisplay }}</div>
+        </div>
     </td>
 
     <td class="text-center learning-record-attendance">

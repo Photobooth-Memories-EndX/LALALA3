@@ -302,9 +302,12 @@ class AllRecordExport implements FromQuery, WithHeadings, WithChunkReading, With
                 }
 
                 // Attendance
-                $attendanceStr = '';
+                $attendanceStr = 'No';
                 if ($row->attendance !== null) {
-                    $attendanceStr = (bool) $row->attendance ? 'Present' : 'Absent';
+                    $attLower = strtolower(trim((string) $row->attendance));
+                    $attendanceStr = in_array($attLower, ['1', 'true', 'present', 'yes'], true) ? 'Yes' : 'No';
+                } elseif (isset($row->progress) && (float) $row->progress >= 100) {
+                    $attendanceStr = 'Yes';
                 }
 
                 // Counted as Corporate KPI

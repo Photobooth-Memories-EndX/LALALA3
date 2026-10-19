@@ -1443,14 +1443,13 @@ class RecordAllCombinedService
                 return '<span class="badge bg-blue-lt text-primary fw-bold" style="font-size: 0.725rem;" title="' . $cert . '"><i class="ti ti-file-certificate me-1"></i> Available</span>';
             })
             ->addColumn('attendance_badge', function ($row) {
-                if ($row->attendance === null || $row->attendance === '') {
-                    return '<span class="text-muted">-</span>';
+                $val = (string) ($row->attendance ?? '');
+                $isYes = in_array(strtolower(trim($val)), ['1', 'yes', 'true', 'present'], true)
+                    || (($row->source ?? '') === 'online' && ((float) ($row->progress ?? 0) >= 100));
+                if ($isYes) {
+                    return '<span class="badge bg-success-lt text-success fw-bold" style="font-size: 0.725rem;">Yes</span>';
                 }
-                $val = (string) $row->attendance;
-                if ($val === '1' || strtolower($val) === 'yes' || strtolower($val) === 'true' || strtolower($val) === 'present') {
-                    return '<span class="badge bg-success-lt text-success fw-bold" style="font-size: 0.725rem;">Present</span>';
-                }
-                return '<span class="badge bg-danger-lt text-danger fw-bold" style="font-size: 0.725rem;">Absent</span>';
+                return '<span class="badge bg-danger-lt text-danger fw-bold" style="font-size: 0.725rem;">No</span>';
             })
             ->addColumn('bond_end_date_formatted', function ($row) {
                 $d = $row->bond_end_date ?? null;

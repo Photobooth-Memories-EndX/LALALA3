@@ -162,7 +162,7 @@ class LearningRecordPlaylistExportService
                 $durationFormatted = DurationFormatter::fromSeconds($durationSeconds);
 
                 $learningHourFormatted = $childHoursVal > 0 ? (number_format($childHoursVal, 2) . ' hrs') : '-';
-                $attendance = ($childProgress >= 100) ? 'Present' : '-';
+                $attendance = ($childProgress >= 100) ? 'Yes' : 'No';
 
                 // Format dates & times
                 $startStr = $startDt ? Carbon::parse($startDt)->format('d/m/y H:i:s') : '';

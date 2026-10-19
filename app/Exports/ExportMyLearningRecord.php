@@ -113,7 +113,8 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithColumnFor
             $startTime = $this->toExcelTime($startRaw);
             $endTime = $this->toExcelTime($finishRaw);
 
-            $attendance = $row['attendance'] ?? ($progressInt >= 100 ? 'Present' : '-');
+            $rawAttendance = $row['attendance'] ?? ($progressInt >= 100 ? 'Yes' : 'No');
+            $attendance = in_array(strtolower(trim((string) $rawAttendance)), ['1', 'true', 'present', 'yes'], true) ? 'Yes' : 'No';
             $requirement = $row['requirement'] ?? Content::mapRequirement($row['subtitle'] ?? null);
 
             $deliveryMethod = (!empty($row['delivery_method']) && $row['delivery_method'] !== '—') ? $row['delivery_method'] : '-';
@@ -184,6 +185,8 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithColumnFor
                         $childScore = ($child['score'] !== null && $child['score'] !== '' && $child['score'] !== '-' && is_numeric($child['score']))
                             ? (float) $child['score']
                             : '-';
+                        $rawChildAtt = $child['attendance'] ?? ($childProgInt >= 100 ? 'Yes' : 'No');
+                        $childAtt = in_array(strtolower(trim((string) $rawChildAtt)), ['1', 'true', 'present', 'yes'], true) ? 'Yes' : 'No';
 
                         $output[] = [
                             '',                                                     // A: No
@@ -206,7 +209,7 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithColumnFor
                             '-',                                                    // R: Provider
                             '-',                                                    // S: Provider Name
                             '-',                                                    // T: Venue
-                            $child['attendance'] ?? '-',                            // U: Attendance
+                            $childAtt,                                              // U: Attendance
                             $childScore,                                            // V: Score (L2)
                             '-',                                                    // W: Bond Status
                             '-',                                                    // X: Bond Duration

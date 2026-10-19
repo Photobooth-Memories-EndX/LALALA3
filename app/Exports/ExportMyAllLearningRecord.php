@@ -115,7 +115,8 @@ class ExportMyAllLearningRecord implements FromArray, ShouldAutoSize, WithColumn
             $progressInt = is_numeric($rawProgress) ? max(0, min(100, (int) $rawProgress)) : 0;
             $progressCell = $progressInt / 100;
 
-            $attendance = (!empty($row['attendance_status']) && $row['attendance_status'] !== '—') ? $row['attendance_status'] : '-';
+            $rawAttendance = $row['attendance_status'] ?? $row['attendance'] ?? ($progressInt >= 100 ? 'Yes' : 'No');
+            $attendance = in_array(strtolower(trim((string) $rawAttendance)), ['1', 'true', 'present', 'yes'], true) ? 'Yes' : 'No';
 
             $startRaw = $row['start_date'] ?? '';
             $finishRaw = $row['finish_date'] ?? '';
@@ -211,6 +212,8 @@ class ExportMyAllLearningRecord implements FromArray, ShouldAutoSize, WithColumn
                         $childScore = ($child['score'] !== null && $child['score'] !== '' && $child['score'] !== '-' && is_numeric($child['score']))
                             ? (float) $child['score']
                             : '-';
+                        $rawChildAtt = $child['attendance'] ?? ($childProgInt >= 100 ? 'Yes' : 'No');
+                        $childAtt = in_array(strtolower(trim((string) $rawChildAtt)), ['1', 'true', 'present', 'yes'], true) ? 'Yes' : 'No';
 
                         $output[] = [
                             '',                                                     // A: No
@@ -234,7 +237,7 @@ class ExportMyAllLearningRecord implements FromArray, ShouldAutoSize, WithColumn
                             '-',                                                    // S: Provider
                             '-',                                                    // T: Provider Name
                             '-',                                                    // U: Venue
-                            $child['attendance'] ?? '-',                            // V: Attendance
+                            $childAtt,                                              // V: Attendance
                             $childScore,                                            // W: Score (L2)
                             '-',                                                    // X: Bond Status
                             '-',                                                    // Y: Bond Duration

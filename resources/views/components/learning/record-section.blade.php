@@ -37,18 +37,18 @@
     // Kolom tabel; 'sort' = key data-sort-* pada baris (learning-record.js),
     // 'type' = cara membandingkan nilai saat sorting (text/number/duration).
     $columns = [
-        ['label' => 'No',               'width' => '4%'],
-        ['label' => 'Course',           'width' => '22%', 'sort' => 'title',          'type' => 'text'],
-        ['label' => 'Type',             'width' => '7%',  'sort' => 'type',           'type' => 'text'],
-        ['label' => 'Category',         'width' => '7%',  'sort' => 'category',       'type' => 'text'],
-        ['label' => 'Classification',   'width' => '9%',  'sort' => 'classification', 'type' => 'text'],
-        ['label' => 'Duration',         'width' => '7%',  'sort' => 'duration',       'type' => 'duration'],
-        ['label' => 'Learning Hour',    'width' => '8%',  'sort' => 'learning-hour',  'type' => 'number'],
-        ['label' => 'Progress',         'width' => '7%',  'sort' => 'progress',       'type' => 'number'],
-        ['label' => 'Date Time',        'width' => '11%', 'sort' => 'finish',         'type' => 'text'],
-        ['label' => 'ATTENDANCE',       'width' => '8%',  'sort' => 'attendance',     'type' => 'text'],
-        ['label' => 'Assessment Score', 'width' => '7%',  'sort' => 'score',          'type' => 'number'],
-        ['label' => 'Certificate',      'width' => '7%'],
+        ['label' => 'No',                  'width' => '4%'],
+        ['label' => 'Course Title',        'width' => '22%', 'sort' => 'title',          'type' => 'text'],
+        ['label' => 'Type',                'width' => '7%',  'sort' => 'type',           'type' => 'text'],
+        ['label' => 'Category',            'width' => '7%',  'sort' => 'category',       'type' => 'text'],
+        ['label' => 'Main Classification', 'width' => '9%',  'sort' => 'classification', 'type' => 'text'],
+        ['label' => 'Duration',            'width' => '7%',  'sort' => 'duration',       'type' => 'duration'],
+        ['label' => 'Learning Hour',       'width' => '8%',  'sort' => 'learning-hour',  'type' => 'number'],
+        ['label' => 'Progress',            'width' => '7%',  'sort' => 'progress',       'type' => 'number'],
+        ['label' => 'Date Time',           'width' => '11%', 'sort' => 'finish',         'type' => 'text'],
+        ['label' => 'Attendance',          'width' => '8%',  'sort' => 'attendance',     'type' => 'text'],
+        ['label' => 'Assessment Score',    'width' => '7%',  'sort' => 'score',          'type' => 'number'],
+        ['label' => 'Certificate',         'width' => '7%'],
     ];
 @endphp
 

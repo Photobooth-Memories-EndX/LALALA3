@@ -102,7 +102,8 @@ class ExportMyOfflineLearningRecord implements FromArray, ShouldAutoSize, WithCo
                 ? $row['raw_provider_name']
                 : ((!empty($row['provider_name']) && $row['provider_name'] !== '—') ? $row['provider_name'] : '-');
             $venue = (!empty($row['venue']) && $row['venue'] !== '—') ? $row['venue'] : '-';
-            $attendance = (!empty($row['attendance_status']) && $row['attendance_status'] !== '—') ? $row['attendance_status'] : '-';
+            $rawAttendance = $row['attendance_status'] ?? $row['attendance'] ?? 'No';
+            $attendance = in_array(strtolower(trim((string) $rawAttendance)), ['1', 'true', 'present', 'yes'], true) ? 'Yes' : 'No';
 
             $rawScore = $row['l2_numerical'] ?? $row['score'] ?? $row['assessment_score'] ?? null;
             $hasScore = ($rawScore !== null && $rawScore !== '' && is_numeric($rawScore));

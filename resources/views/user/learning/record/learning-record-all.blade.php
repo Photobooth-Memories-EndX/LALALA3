@@ -765,16 +765,16 @@
                         <thead>
                             <tr>
                                 <th class="text-muted text-center" style="width: 3%">No</th>
-                                <th class="text-muted" style="width: 24%; min-width: 280px;">Training Title</th>
-                                <th class="text-muted text-center" style="width: 8%">Type</th>
-                                <th class="text-muted text-center" style="width: 8%">Category</th>
-                                <th class="text-muted text-center" style="width: 9%">Classification</th>
+                                <th class="text-muted" style="width: 24%; min-width: 280px;">Course Title</th>
+                                <th class="text-muted text-center" style="width: 7%">Type</th>
+                                <th class="text-muted text-center" style="width: 7%">Category</th>
+                                <th class="text-muted text-center" style="width: 9%">Main Classification</th>
                                 <th class="text-muted text-center" style="width: 7%">Duration</th>
                                 <th class="text-muted text-center" style="width: 8%">Learning Hour</th>
                                 <th class="text-muted text-center" style="width: 7%">Progress</th>
-                                <th class="text-muted text-center" style="width: 7%">Attendance</th>
-                                <th class="text-muted text-center" style="width: 8%">Date</th>
-                                <th class="text-muted text-center" style="width: 5%">Score</th>
+                                <th class="text-muted" style="width: 11%">Date Time</th>
+                                <th class="text-muted text-center" style="width: 6%">Attendance</th>
+                                <th class="text-muted text-center" style="width: 5%">Assessment Score</th>
                                 <th class="text-muted text-center" style="width: 6%">Certificate</th>
                             </tr>
                         </thead>
@@ -898,20 +898,25 @@
                                         <span class="badge bg-secondary-lt fw-bold px-2 py-1">0%</span>
                                     @endif
                                 </td>
+                                @php
+                                    $allStartDt = $row['start_datetime'] ?? ($row['start_date'] ?? '');
+                                    $allEndDt = $row['end_datetime'] ?? ($row['finish_date'] ?? '');
+                                @endphp
+                                <td class="text-muted small learning-record-datetime">
+                                    <div class="text-xs text-muted">
+                                        <div class="learning-record-date-row text-nowrap">Start : {{ $allStartDt !== '' ? \Carbon\Carbon::parse($allStartDt)->format('d/m/y H:i:s') : '-' }}</div>
+                                        <div class="learning-record-date-row text-nowrap">Finish : {{ $allEndDt !== '' ? \Carbon\Carbon::parse($allEndDt)->format('d/m/y H:i:s') : '-' }}</div>
+                                    </div>
+                                </td>
                                 <td class="text-center">
-                                    @if ($row['source'] === 'offline' && ($row['attendance_status'] ?? '—') !== '—')
+                                    @if ($row['source'] === 'offline')
                                         @php
-                                            $attStatus = $row['attendance_status'] ?? '-';
-                                            $statusKey = strtolower(trim((string) $attStatus));
-                                            $badgeClass = match ($statusKey) {
-                                                'present' => 'bg-success-lt text-success',
-                                                'absent' => 'bg-danger-lt text-danger',
-                                                'excused' => 'bg-warning-lt text-warning',
-                                                'leave' => 'bg-info-lt text-info',
-                                                'sick' => 'bg-warning-lt text-warning',
-                                                default => 'bg-secondary-lt text-secondary',
-                                            };
-                                            $rawReason = $row['raw_attendance_reason'] ?? ($row['attendance_reason'] !== '-' ? $row['attendance_reason'] : '');
+                                            $rawAtt = $row['attendance_status'] ?? $row['attendance'] ?? 'No';
+                                            $statusKey = strtolower(trim((string) $rawAtt));
+                                            $isAttYes = ($rawAtt === true || $rawAtt === 1 || in_array($statusKey, ['1', 'true', 'present', 'yes'], true));
+                                            $attStatus = $isAttYes ? 'Yes' : 'No';
+                                            $badgeClass = $isAttYes ? 'bg-success-lt text-success' : 'bg-danger-lt text-danger';
+                                            $rawReason = $row['raw_attendance_reason'] ?? (($row['attendance_reason'] ?? '-') !== '-' ? $row['attendance_reason'] : '');
                                             $displayReason = $row['attendance_reason_display'] ?? '';
                                         @endphp
                                         <button type="button"
@@ -927,13 +932,10 @@
                                                 aria-label="View attendance detail for {{ $row['title'] }}">
                                             {{ $attStatus }}
                                         </button>
-                                    @elseif ($row['source'] === 'online')
-                                        <x-learning.record-attendance-cell :row="$row" />
                                     @else
-                                        <span class="text-muted">—</span>
+                                        <x-learning.record-attendance-cell :row="$row" />
                                     @endif
                                 </td>
-                                <td class="text-center text-nowrap small text-muted">{{ $row['date_display'] ?? '-' }}</td>
                                 <td class="text-center">
                                     <div class="d-flex flex-column align-items-center justify-content-center text-center">
                                         @php

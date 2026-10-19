@@ -54,9 +54,10 @@ class UserRecordAllService
             $hasCertificate = ($row['cert_state'] ?? 'none') === 'ready';
 
             $isOnlinePresent = ((int) ($row['progress'] ?? 0) >= 100);
-            $onlineAttendance = $isOnlinePresent ? 'Present' : '-';
-            $attendance = $row['attendance'] ?? $onlineAttendance;
-            $attendanceStatus = $row['attendance_status'] ?? $attendance;
+            $rawAtt = $row['attendance'] ?? ($isOnlinePresent ? 'Yes' : 'No');
+            $attLower = strtolower(trim((string) $rawAtt));
+            $attendance = in_array($attLower, ['1', 'true', 'present', 'yes'], true) ? 'Yes' : 'No';
+            $attendanceStatus = $attendance;
 
             return array_merge($row, [
                 'unique_id'         => 'online_' . ($row['item_id'] ?? $row['slug'] ?? uniqid()),
@@ -73,6 +74,8 @@ class UserRecordAllService
                 'progress'          => (int) ($row['progress'] ?? 0),
                 'attendance'        => $attendance,
                 'attendance_status' => $attendanceStatus,
+                'start_datetime'    => $row['start_datetime'] ?? $row['start_date'] ?? '',
+                'end_datetime'      => $row['end_datetime'] ?? $row['finish_date'] ?? '',
                 'date_display'      => $dateTimeDisplay,
                 'venue'             => '',
                 'instructor'        => '',
@@ -97,9 +100,9 @@ class UserRecordAllService
                 ? $row['duration']
                 : '—';
 
-            $attStatus = ($row['attendance_status'] ?? '') !== '-' && !empty($row['attendance_status'])
-                ? $row['attendance_status']
-                : '—';
+            $rawAtt = $row['attendance_status'] ?? 'No';
+            $attLower = strtolower(trim((string) $rawAtt));
+            $attStatus = in_array($attLower, ['1', 'true', 'present', 'yes'], true) ? 'Yes' : 'No';
 
             return array_merge($row, [
                 'unique_id'         => 'offline_' . $otu->id,
@@ -110,6 +113,7 @@ class UserRecordAllService
                 'score'             => $row['score'] ?? $row['assessment_score'] ?? null,
                 'assessment_score'  => $row['assessment_score'] ?? $row['score'] ?? null,
                 'duration'          => $dur,
+                'attendance'        => $attStatus,
                 'attendance_status' => $attStatus,
                 'cert_action_url'   => null,
                 'cert_is_form'      => false,
@@ -290,12 +294,12 @@ class UserRecordAllService
             if ($attendance !== 'all' && $attendance !== '') {
                 $normAttendance = strtolower(trim($attendance));
                 $rowAttendanceStatus = strtolower(trim((string) ($row['attendance_status'] ?? '')));
-                if (in_array($normAttendance, ['present', '1', 'attended'], true)) {
-                    if ($rowAttendanceStatus !== 'present') {
+                if (in_array($normAttendance, ['present', 'yes', '1', 'attended'], true)) {
+                    if (!in_array($rowAttendanceStatus, ['yes', 'present'], true)) {
                         return false;
                     }
-                } elseif (in_array($normAttendance, ['absent', '0'], true)) {
-                    if ($rowAttendanceStatus !== 'absent') {
+                } elseif (in_array($normAttendance, ['absent', 'no', '0'], true)) {
+                    if (!in_array($rowAttendanceStatus, ['no', 'absent'], true)) {
                         return false;
                     }
                 }

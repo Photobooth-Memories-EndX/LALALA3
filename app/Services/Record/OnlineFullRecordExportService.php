@@ -332,7 +332,7 @@ class OnlineFullRecordExportService
         }
 
         // 14. Attendance
-        $attendance = $isCompleted ? 'Present' : 'Not Completed';
+        $attendance = $isCompleted ? 'Yes' : 'No';
 
         // Canonical 46 columns matching AllRecordExport
         return [
