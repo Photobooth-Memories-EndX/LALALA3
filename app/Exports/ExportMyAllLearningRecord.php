@@ -15,6 +15,7 @@ use Maatwebsite\Excel\Concerns\WithColumnFormatting;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Events\AfterSheet;
+use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
@@ -29,6 +30,20 @@ class ExportMyAllLearningRecord implements FromArray, ShouldAutoSize, WithColumn
     public function __construct(private readonly array $filters = [])
     {
         $this->rows = collect();
+    }
+
+    private function toExcelDate(?string $dateStr): float|int|string
+    {
+        if (empty($dateStr) || $dateStr === '-' || $dateStr === '—') {
+            return '-';
+        }
+
+        try {
+            $dt = Carbon::parse($dateStr)->startOfDay();
+            return ExcelDate::PHPToExcel($dt);
+        } catch (\Throwable) {
+            return '-';
+        }
     }
 
     private function toExcelTime(?string $dateTimeOrTime): float|string
@@ -55,6 +70,10 @@ class ExportMyAllLearningRecord implements FromArray, ShouldAutoSize, WithColumn
             return [$this->headings()];
         }
 
+        $empId = !empty($user->id_emp) ? (string) $user->id_emp : '-';
+        $userName = !empty($user->name) ? (string) $user->name : '-';
+        $userTeam = !empty($user->team) ? (string) $user->team : (!empty($user->department) ? (string) $user->department : '-');
+
         $allService = app(UserRecordAllService::class);
         $eligibilityService = app(CertificateEligibilityService::class);
         $this->rows = $allService->getRecords((int) $user->id, $user->id_emp, $eligibilityService, $this->filters);
@@ -77,6 +96,12 @@ class ExportMyAllLearningRecord implements FromArray, ShouldAutoSize, WithColumn
         $number = 1;
 
         foreach ($this->rows as $row) {
+            $isOffline = ($row['source'] ?? '') === 'offline';
+
+            $rowEmpId = ($isOffline && !empty($row['employee_id']) && $row['employee_id'] !== '-') ? (string) $row['employee_id'] : $empId;
+            $rowName = ($isOffline && !empty($row['participant_name']) && $row['participant_name'] !== '-') ? (string) $row['participant_name'] : $userName;
+            $rowTeam = ($isOffline && !empty($row['team']) && $row['team'] !== '-') ? (string) $row['team'] : $userTeam;
+
             $title = !empty($row['training_title']) ? $row['training_title'] : (!empty($row['title']) ? $row['title'] : '-');
             $requirement = $row['requirement'] ?? Content::mapRequirement($row['subtitle'] ?? null);
 
@@ -88,28 +113,49 @@ class ExportMyAllLearningRecord implements FromArray, ShouldAutoSize, WithColumn
             $rawProgress = $row['progress'] ?? 0;
             $progressInt = is_numeric($rawProgress) ? max(0, min(100, (int) $rawProgress)) : 0;
             $progressCell = $progressInt / 100;
-            $completionStatus = $progressInt >= 100 ? 'Complete' : 'Ongoing';
 
             $attendance = (!empty($row['attendance_status']) && $row['attendance_status'] !== '—') ? $row['attendance_status'] : '-';
 
             $startRaw = $row['start_date'] ?? '';
             $finishRaw = $row['finish_date'] ?? '';
-            $startDate = $startRaw !== '' ? Carbon::parse($startRaw)->format('Y-m-d') : '-';
-            $endDate = $finishRaw !== '' ? Carbon::parse($finishRaw)->format('Y-m-d') : ($startDate !== '-' && ($row['source'] ?? '') === 'offline' ? $startDate : '-');
+            $startDate = $this->toExcelDate($startRaw);
+            $endDate = $finishRaw !== ''
+                ? $this->toExcelDate($finishRaw)
+                : ($startRaw !== '' && $isOffline ? $startDate : '-');
 
-            if (($row['source'] ?? '') === 'offline') {
+            if ($isOffline) {
                 $startTime = $this->toExcelTime($row['start_time'] ?? null);
                 $endTime = $this->toExcelTime($row['end_time'] ?? null);
+                $deliveryMethod = (!empty($row['delivery_method']) && $row['delivery_method'] !== '—') ? $row['delivery_method'] : '-';
+                $provider = (!empty($row['provider_type']) && $row['provider_type'] !== '—')
+                    ? $row['provider_type']
+                    : ((!empty($row['provider']) && $row['provider'] !== '—') ? $row['provider'] : '-');
+                $providerName = (!empty($row['raw_provider_name']) && $row['raw_provider_name'] !== '—')
+                    ? $row['raw_provider_name']
+                    : ((!empty($row['provider_name']) && $row['provider_name'] !== '—') ? $row['provider_name'] : '-');
+                $venue = (!empty($row['venue']) && $row['venue'] !== '—') ? $row['venue'] : '-';
             } else {
                 $startTime = $this->toExcelTime($startRaw);
                 $endTime = $this->toExcelTime($finishRaw);
+                $deliveryMethod = '-';
+                $provider = '-';
+                $providerName = '-';
+                $venue = '-';
             }
 
-            $hasScore = ($row['score'] !== null && $row['score'] !== '' && is_numeric($row['score']));
-            $scoreVal = $hasScore ? (float) $row['score'] : '-';
-            $minScore = (float) ($row['min_score'] ?? 70);
-            $assessmentStatus = $hasScore
-                ? ($scoreVal >= $minScore ? 'Passed' : 'Failed')
+            $rawScore = $isOffline
+                ? ($row['l2_numerical'] ?? $row['score'] ?? $row['assessment_score'] ?? null)
+                : ($row['score'] ?? $row['assessment_score'] ?? null);
+            $hasScore = ($rawScore !== null && $rawScore !== '' && is_numeric($rawScore));
+            $scoreVal = $hasScore ? (float) $rawScore : '-';
+
+            $bondStatus = ($isOffline && !empty($row['bond_status']) && $row['bond_status'] !== '—') ? $row['bond_status'] : '-';
+            $bondDuration = ($isOffline && isset($row['bond_duration']) && $row['bond_duration'] !== '' && is_numeric($row['bond_duration']))
+                ? (float) $row['bond_duration']
+                : '-';
+            $bondEndDate = $isOffline ? $this->toExcelDate($row['bond_end_date'] ?? null) : '-';
+            $bondAmount = ($isOffline && isset($row['bond_amount']) && $row['bond_amount'] !== '' && is_numeric($row['bond_amount']))
+                ? (float) $row['bond_amount']
                 : '-';
 
             $certificate = (($row['has_certificate'] ?? false) || ($row['cert_state'] ?? '') === 'ready') ? 'Available' : 'Not Available';
@@ -121,24 +167,33 @@ class ExportMyAllLearningRecord implements FromArray, ShouldAutoSize, WithColumn
             }
 
             $output[] = [
-                $number++,
-                $title,
-                $requirement,
-                $row['type'] ?? '-',
-                $row['category'] ?? '-',
-                $row['classification'] ?? '-',
-                $durationCell,
-                $lhValue,
-                $completionStatus,
-                $progressCell,
-                $attendance,
-                $startDate,
-                $endDate,
-                $startTime,
-                $endTime,
-                $assessmentStatus,
-                $scoreVal,
-                $certificate,
+                $number++,                              // A: No
+                $rowEmpId,                              // B: Employee. ID
+                $rowName,                               // C: Name
+                $rowTeam,                               // D: Team
+                $title,                                 // E: Course Title
+                $row['type'] ?? '-',                    // F: Type
+                $row['category'] ?? '-',                // G: Category
+                $row['classification'] ?? '-',          // H: Main Classification
+                $durationCell,                          // I: Duration
+                $lhValue,                               // J: Learning Hour
+                $progressCell,                          // K: Progress
+                $startDate,                             // L: Start Date
+                $endDate,                               // M: End Date
+                $startTime,                             // N: Start Time
+                $endTime,                               // O: End Time
+                $requirement,                           // P: Requirement
+                $deliveryMethod,                        // Q: Delivery Method
+                $provider,                              // R: Provider
+                $providerName,                          // S: Provider Name
+                $venue,                                 // T: Venue
+                $attendance,                            // U: Attendance
+                $scoreVal,                              // V: Score (L2)
+                $bondStatus,                            // W: Bond Status
+                $bondDuration,                          // X: Bond Duration
+                $bondEndDate,                           // Y: Bond End Date
+                $bondAmount,                            // Z: Bond Amount
+                $certificate,                           // AA: Certificate
             ];
 
             if ($isPlaylist) {
@@ -156,24 +211,33 @@ class ExportMyAllLearningRecord implements FromArray, ShouldAutoSize, WithColumn
                             : '-';
 
                         $output[] = [
-                            '',
-                            '    ' . ($child['title'] ?? '-'),
-                            $child['requirement'] ?? 'Non-Mandatory',
-                            $child['type'] ?? '-',
-                            'Playlist',
-                            $child['classification'] ?? '-',
-                            $childDurCell,
-                            $childLhVal,
-                            $child['completion_status'] ?? ($childProgInt >= 100 ? 'Complete' : 'Ongoing'),
-                            $childProgInt / 100,
-                            $child['attendance'] ?? '-',
-                            $child['start_date'] ?? '-',
-                            $child['end_date'] ?? '-',
-                            $this->toExcelTime($child['start_time'] ?? null),
-                            $this->toExcelTime($child['end_time'] ?? null),
-                            $child['assessment_status'] ?? '-',
-                            $childScore,
-                            '-',
+                            '',                                                     // A: No
+                            $empId,                                                 // B: Employee. ID
+                            $userName,                                              // C: Name
+                            $userTeam,                                              // D: Team
+                            '    ' . ($child['title'] ?? '-'),                      // E: Course Title
+                            $child['type'] ?? '-',                                  // F: Type
+                            'Playlist',                                             // G: Category
+                            $child['classification'] ?? '-',                        // H: Main Classification
+                            $childDurCell,                                          // I: Duration
+                            $childLhVal,                                            // J: Learning Hour
+                            $childProgInt / 100,                                    // K: Progress
+                            $this->toExcelDate($child['start_date'] ?? null),       // L: Start Date
+                            $this->toExcelDate($child['end_date'] ?? null),         // M: End Date
+                            $this->toExcelTime($child['start_time'] ?? null),       // N: Start Time
+                            $this->toExcelTime($child['end_time'] ?? null),         // O: End Time
+                            $child['requirement'] ?? 'Non-Mandatory',               // P: Requirement
+                            '-',                                                    // Q: Delivery Method
+                            '-',                                                    // R: Provider
+                            '-',                                                    // S: Provider Name
+                            '-',                                                    // T: Venue
+                            $child['attendance'] ?? '-',                            // U: Attendance
+                            $childScore,                                            // V: Score (L2)
+                            '-',                                                    // W: Bond Status
+                            '-',                                                    // X: Bond Duration
+                            '-',                                                    // Y: Bond End Date
+                            '-',                                                    // Z: Bond Amount
+                            '-',                                                    // AA: Certificate
                         ];
                         $this->childRows[] = count($output);
                     }
@@ -187,48 +251,66 @@ class ExportMyAllLearningRecord implements FromArray, ShouldAutoSize, WithColumn
     public function headings(): array
     {
         return [
-            'No',
-            'Training Title',
-            'Requirement',
-            'Type',
-            'Category',
-            'Classification',
-            'Duration',
-            'Learning Hour',
-            'Completion Status',
-            'Progress',
-            'Attendance',
-            'Start Date',
-            'End Date',
-            'Start Time',
-            'End Time',
-            'Assessment Status',
-            'Assessment Score',
-            'Certificate',
+            'No',                   // A
+            'Employee. ID',         // B
+            'Name',                 // C
+            'Team',                 // D
+            'Course Title',         // E
+            'Type',                 // F
+            'Category',             // G
+            'Main Classification',  // H
+            'Duration',             // I
+            'Learning Hour',        // J
+            'Progress',             // K
+            'Start Date',           // L
+            'End Date',             // M
+            'Start Time',           // N
+            'End Time',             // O
+            'Requirement',          // P
+            'Delivery Method',      // Q
+            'Provider',             // R
+            'Provider Name',        // S
+            'Venue',                // T
+            'Attendance',           // U
+            'Score (L2)',           // V
+            'Bond Status',          // W
+            'Bond Duration',        // X
+            'Bond End Date',        // Y
+            'Bond Amount',          // Z
+            'Certificate',          // AA
         ];
     }
 
     public function columnFormats(): array
     {
         return [
-            'A' => NumberFormat::FORMAT_NUMBER,
-            'B' => NumberFormat::FORMAT_GENERAL,
-            'C' => NumberFormat::FORMAT_GENERAL,
-            'D' => NumberFormat::FORMAT_GENERAL,
-            'E' => NumberFormat::FORMAT_GENERAL,
-            'F' => NumberFormat::FORMAT_GENERAL,
-            'G' => NumberFormat::FORMAT_DATE_TIME4,
-            'H' => NumberFormat::FORMAT_NUMBER_00,
-            'I' => NumberFormat::FORMAT_GENERAL,
-            'J' => NumberFormat::FORMAT_PERCENTAGE,
-            'K' => NumberFormat::FORMAT_GENERAL,
-            'L' => NumberFormat::FORMAT_GENERAL,
-            'M' => NumberFormat::FORMAT_GENERAL,
-            'N' => NumberFormat::FORMAT_DATE_TIME4,
-            'O' => NumberFormat::FORMAT_DATE_TIME4,
-            'P' => NumberFormat::FORMAT_GENERAL,
-            'Q' => NumberFormat::FORMAT_GENERAL,
-            'R' => NumberFormat::FORMAT_GENERAL,
+            'A'  => NumberFormat::FORMAT_NUMBER,        // No
+            'B'  => NumberFormat::FORMAT_GENERAL,       // Employee. ID
+            'C'  => NumberFormat::FORMAT_GENERAL,       // Name
+            'D'  => NumberFormat::FORMAT_GENERAL,       // Team
+            'E'  => NumberFormat::FORMAT_GENERAL,       // Course Title
+            'F'  => NumberFormat::FORMAT_GENERAL,       // Type
+            'G'  => NumberFormat::FORMAT_GENERAL,       // Category
+            'H'  => NumberFormat::FORMAT_GENERAL,       // Main Classification
+            'I'  => NumberFormat::FORMAT_DATE_TIME4,    // Duration (HH:mm:ss)
+            'J'  => NumberFormat::FORMAT_NUMBER_00,     // Learning Hour (Decimal)
+            'K'  => NumberFormat::FORMAT_PERCENTAGE,    // Progress (0% - 100%)
+            'L'  => 'yyyy-mm-dd',                       // Start Date
+            'M'  => 'yyyy-mm-dd',                       // End Date
+            'N'  => NumberFormat::FORMAT_DATE_TIME4,    // Start Time (HH:mm:ss)
+            'O'  => NumberFormat::FORMAT_DATE_TIME4,    // End Time (HH:mm:ss)
+            'P'  => NumberFormat::FORMAT_GENERAL,       // Requirement
+            'Q'  => NumberFormat::FORMAT_GENERAL,       // Delivery Method
+            'R'  => NumberFormat::FORMAT_GENERAL,       // Provider
+            'S'  => NumberFormat::FORMAT_GENERAL,       // Provider Name
+            'T'  => NumberFormat::FORMAT_GENERAL,       // Venue
+            'U'  => NumberFormat::FORMAT_GENERAL,       // Attendance
+            'V'  => '0.##',                             // Score (L2)
+            'W'  => NumberFormat::FORMAT_GENERAL,       // Bond Status
+            'X'  => '0.##',                             // Bond Duration
+            'Y'  => 'yyyy-mm-dd',                       // Bond End Date
+            'Z'  => '"Rp "#,##0',                       // Bond Amount
+            'AA' => NumberFormat::FORMAT_GENERAL,       // Certificate
         ];
     }
 
@@ -265,19 +347,21 @@ class ExportMyAllLearningRecord implements FromArray, ShouldAutoSize, WithColumn
                     ->getAlignment()
                     ->setVertical(Alignment::VERTICAL_CENTER);
 
-                if ($highestRow > 1) {
-                    $sheet->getStyle('A2:A' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                    $sheet->getStyle('C2:E' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                    $sheet->getStyle('G2:R' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                if ($highestRow >= 2) {
+                    $sheet->getStyle('A2:B' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle('F2:G' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle('I2:R' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle('U2:Y' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle('Z2:Z' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                    $sheet->getStyle('AA2:AA' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                 }
 
                 foreach ($this->parentPlaylistRows as $r) {
-                    $sheet->getStyle("A{$r}:{$highestColumn}{$r}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('F1F5F9');
                     $sheet->getStyle("A{$r}:{$highestColumn}{$r}")->getFont()->setBold(true);
                 }
 
                 foreach ($this->childRows as $r) {
-                    $sheet->getStyle("B{$r}")->getAlignment()->setIndent(1);
+                    $sheet->getStyle("E{$r}")->getAlignment()->setIndent(1);
                     $sheet->getRowDimension($r)->setOutlineLevel(1);
                 }
 

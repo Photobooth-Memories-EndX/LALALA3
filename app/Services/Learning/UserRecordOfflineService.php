@@ -228,7 +228,9 @@ class UserRecordOfflineService
             'venue'                     => $training->venue ?: ($training->location ?: '-'),
             'instructor'                => $training->instructor ?: '-',
             'provider'                  => $training->provider_name ?: ($training->provider ?: '-'),
+            'provider_type'             => $training->provider ?: '-',
             'provider_name'             => $training->provider_name ?: ($training->provider ?: '-'),
+            'raw_provider_name'         => $training->provider_name ?: '-',
 
             // Evaluation (Kirkpatrick L1 - L3)
             'l1_program'           => $otu->l1_program ?: '-',
