@@ -2,9 +2,14 @@
     6 types: File Submission | Course Assignment | Assessment/Quiz | Survey | Essay/Reflection | Action Plan
     NOTE: this is a partial included via @include, so it must NOT @extend any layout. --}}
 @php
+    $defaultParentType = request('parent_type')
+        ?? (request('scope') === 'non_kp' ? 'offline_training' : 'playlist');
+    if (! array_key_exists($defaultParentType, \App\Models\Task::PARENT_TYPES)) {
+        $defaultParentType = 'playlist';
+    }
     $currentType = old('type', $task->type ?? 'action_plan');
     $currentLinkType = old('link_type', $task->link_type ?? 'lms');
-    $currentParentType = old('parent_type', $task->parent_type ?? ($lockedParent['type'] ?? 'playlist'));
+    $currentParentType = old('parent_type', $task->parent_type ?? ($lockedParent['type'] ?? $defaultParentType));
     $currentParentId = old('parent_id', isset($task) ? $task->parentId() : ($lockedParent['id'] ?? ''));
     $linkedCourse = old('linked_training_plan_id', $task->linked_training_plan_id ?? '');
     $sameChecked = $currentParentType === 'playlist'
@@ -40,6 +45,18 @@
                     </div>
                     <input type="hidden" name="parent_type" value="{{ $lockedParent['type'] }}">
                     <input type="hidden" name="parent_id" value="{{ $lockedParent['id'] }}">
+                    @if ($lockedParent['type'] === 'standalone')
+                        <div class="mt-3">
+                            <label class="form-label" for="access_code">Unique Code (Optional)</label>
+                            <input type="text" name="access_code" id="access_code"
+                                   class="form-control text-uppercase @error('access_code') is-invalid @enderror"
+                                   value="{{ old('access_code', $task->access_code ?? '') }}"
+                                   maxlength="8" placeholder="Enter unique code" style="max-width:280px"
+                                   autocomplete="off">
+                            <small class="text-muted d-block mt-1">Unique code to access this global task (optional, max 8 characters).</small>
+                            @error('access_code')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                        </div>
+                    @endif
                 @else
                     <select class="form-select @error('parent_type') is-invalid @enderror"
                             id="parent_type" name="parent_type" required>
@@ -51,7 +68,7 @@
                     </select>
                     @error('parent_type')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
 
-                    <label class="form-label required mt-3" id="parentPickerLabel">Playlist</label>
+                    <label class="form-label required mt-3" id="parentPickerLabel">{{ \App\Models\Task::PARENT_TYPES[$currentParentType] ?? 'Playlist' }}</label>
                     <div class="position-relative" id="parentPicker">
                         <input type="hidden" name="parent_id" id="parent_id" value="{{ $currentParentId }}"
                                data-url-template="{{ route('manage.task.parents', ['type' => '__TYPE__']) }}">
@@ -72,6 +89,18 @@
                     </div>
                     <div class="invalid-feedback" id="parentIdError" style="display:none">Pick where this task should live.</div>
                     @error('parent_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+
+                    {{-- Unique Code: optional, standalone only (samain seperti di asesmen) --}}
+                    <div class="mt-3" id="accessCodeWrap" style="display:none">
+                        <label class="form-label" for="access_code">Unique Code (Optional)</label>
+                        <input type="text" name="access_code" id="access_code"
+                               class="form-control text-uppercase @error('access_code') is-invalid @enderror"
+                               value="{{ old('access_code', $task->access_code ?? '') }}"
+                               maxlength="8" placeholder="Enter unique code" style="max-width:280px"
+                               autocomplete="off">
+                        <small class="text-muted d-block mt-1">Unique code to access this global task (optional, max 8 characters).</small>
+                        @error('access_code')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                    </div>
                 @endif
             </div>
 
@@ -153,8 +182,8 @@
 
                 <div id="linkLmsWrap">
                     <label class="form-label" for="linked_training_plan_id">Target course</label>
-                    <select class="form-select @error('linked_training_plan_id') is-invalid @enderror"
-                            id="linked_training_plan_id" name="linked_training_plan_id">
+                    <select class="form-select d-none @error('linked_training_plan_id') is-invalid @enderror"
+                            id="linked_training_plan_id" name="linked_training_plan_id" tabindex="-1" aria-hidden="true">
                         <option value="">— Select target course —</option>
                         @foreach ($trainingPlans as $trainingPlan)
                             <option value="{{ $trainingPlan->id }}"
@@ -163,6 +192,22 @@
                             </option>
                         @endforeach
                     </select>
+                    <div class="position-relative" id="coursePicker">
+                        <button type="button"
+                                class="form-select text-start d-flex justify-content-between align-items-center"
+                                id="coursePickerBtn" aria-haspopup="listbox" aria-expanded="false">
+                            <span id="coursePickerText">— Select target course —</span>
+                            <i class="ti ti-chevron-down ms-2"></i>
+                        </button>
+                        <div class="card position-absolute w-100 shadow mt-1" id="coursePanel"
+                             style="display:none; z-index:1050;">
+                            <div class="p-2 border-bottom">
+                                <input type="search" id="coursePanelSearch" class="form-control"
+                                       placeholder="Type to search..." autocomplete="off">
+                            </div>
+                            <div id="coursePanelList" class="overflow-auto" style="max-height:240px;" role="listbox"></div>
+                        </div>
+                    </div>
                     @error('linked_training_plan_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                     <div id="sameCourseWrap" style="{{ $currentParentType === 'playlist' ? '' : 'display:none' }}">
                         <label class="form-check mt-2">
@@ -228,7 +273,14 @@
         var FIELD_TYPES   = @json(\App\Models\TaskField::TYPES);
         var TASK_TYPES    = @json(\App\Models\Task::TYPES);
         var FIELD_BY_TASK = @json(\App\Models\Task::FIELD_TYPES_BY_TASK);
+        // Types without a question builder (their cards would sit hidden and
+        // their `required` inputs would silently block form submission).
+        function typeHasBuilder(t) { return t !== 'course_assignment'; }
         var TYPE_HINTS    = @json(\App\Models\Task::TYPE_HINTS);
+        var FILE_TYPE_GROUPS  = @json(\App\Models\TaskField::FILE_TYPE_GROUPS);
+        var MAX_FILES_OPTIONS = @json(\App\Models\TaskField::MAX_FILES_OPTIONS);
+        var MAX_SIZE_OPTIONS  = @json(\App\Models\TaskField::MAX_SIZE_OPTIONS);
+        var DEFAULT_MAX_SIZE_MB = @json(\App\Models\TaskField::DEFAULT_MAX_SIZE_MB);
 
         var typeSelect    = document.getElementById('type');
         var typeHint      = document.getElementById('typeHint');
@@ -242,7 +294,6 @@
 
         var BUILDER_HINTS = {
             file_submission: 'The user answers by uploading file(s). Just write what they need to submit.',
-            assessment: 'Write the question, add at least 2 answer options, then tick the one correct answer. Scoring is automatic.',
             survey: 'Collect opinions — multiple choice or written answers, no scoring.',
             essay: 'The user writes a reflection in long text; you score it manually.',
             action_plan: 'File uploads and written answers. Reviewed manually.'
@@ -256,7 +307,6 @@
 
         function currentType() { return typeSelect.value; }
         function allowedTypes() { return FIELD_BY_TASK[currentType()] || []; }
-        function isQuiz() { return currentType() === 'assessment'; }
 
         function typeOptions(selected) {
             var html = '';
@@ -317,6 +367,60 @@
             if (show) reindexOptions(card.querySelector('.optionsList'));
         }
 
+        // ── File-upload settings (ala Google Form) ──────────────────────
+        function fileTypeSelectHTML(i, selected) {
+            var html = '<option value="">All types</option>';
+            Object.keys(FILE_TYPE_GROUPS).forEach(function (key) {
+                html += '<option value="' + key + '"' + (key === selected ? ' selected' : '') + '>' +
+                    esc(FILE_TYPE_GROUPS[key].label) + '</option>';
+            });
+            return html;
+        }
+
+        function selectOptionsHTML(options, selected, suffix) {
+            var html = '';
+            options.forEach(function (v) {
+                html += '<option value="' + v + '"' + (String(v) === String(selected) ? ' selected' : '') + '>' +
+                    v + (suffix || '') + '</option>';
+            });
+            return html;
+        }
+
+        function fileSettingsHTML(i, data) {
+            return '<div class="fileSettings mt-2" style="display:none">' +
+                '<div class="mb-2" style="max-width:280px">' +
+                    '<label class="form-label small mb-1">File type</label>' +
+                    '<select class="form-select form-select-sm" name="fields[' + i + '][file_types]">' +
+                        fileTypeSelectHTML(i, data.file_types || '') +
+                    '</select>' +
+                '</div>' +
+                '<div class="d-flex flex-wrap gap-3">' +
+                    '<div>' +
+                        '<label class="form-label small mb-1">Maximum number of files</label>' +
+                        '<select class="form-select form-select-sm" name="fields[' + i + '][max_files]" style="width:auto">' +
+                            selectOptionsHTML(MAX_FILES_OPTIONS, data.max_files || 1, '') +
+                        '</select>' +
+                    '</div>' +
+                    '<div>' +
+                        '<label class="form-label small mb-1">Maximum file size</label>' +
+                        '<select class="form-select form-select-sm" name="fields[' + i + '][max_size_mb]" style="width:auto">' +
+                            selectOptionsHTML(MAX_SIZE_OPTIONS, data.max_size_mb || DEFAULT_MAX_SIZE_MB, ' MB') +
+                        '</select>' +
+                    '</div>' +
+                '</div>' +
+                '<label class="form-check mt-2 mb-0">' +
+                    '<input type="checkbox" class="form-check-input" name="fields[' + i + '][allow_link]" value="1"' +
+                        (data.allow_link ? ' checked' : '') + '>' +
+                    '<span class="form-check-label">Allow Drive link as an alternative</span>' +
+                '</label>' +
+            '</div>';
+        }
+
+        function toggleFileSettings(card) {
+            var show = card.dataset.ftype === 'file';
+            card.querySelector('.fileSettings').style.display = show ? '' : 'none';
+        }
+
         // ── One question card (compact single row) ──────────────────────
         function addField(data) {
             data = data || {};
@@ -350,7 +454,8 @@
                     '<button type="button" class="btn btn-sm btn-outline-secondary btnAddOption">' +
                         '<i class="ti ti-plus"></i> Add option</button>' +
                     '<div class="form-hint mt-1 optionsHint"></div>' +
-                '</div>';
+                '</div>' +
+                fileSettingsHTML(i, data);
             wrap.appendChild(card);
 
             var list = card.querySelector('.optionsList');
@@ -363,6 +468,7 @@
                 : 'No correct answer in a survey — just collect the options.';
 
             toggleOptionsEditor(card);
+            toggleFileSettings(card);
         }
 
         // ── Events (delegation) ─────────────────────────────────────────
@@ -403,6 +509,7 @@
                 var card = e.target.closest('.field-card');
                 card.dataset.ftype = e.target.value;
                 toggleOptionsEditor(card);
+                toggleFileSettings(card);
             }
         });
 
@@ -431,10 +538,23 @@
             if (w) w.style.display = (currentPlacement === 'playlist') ? '' : 'none';
         }
 
+        // Standalone tasks are not tied to any placement → hide the item picker,
+        // show the (optional, manual) access code field instead.
+        function syncPlacementPicker() {
+            var isStandalone = currentPlacement === 'standalone';
+            if (parentPickerLabel) parentPickerLabel.style.display = isStandalone ? 'none' : '';
+            if (parentPicker) parentPicker.style.display = isStandalone ? 'none' : '';
+            var accessCodeWrap = document.getElementById('accessCodeWrap');
+            if (accessCodeWrap) accessCodeWrap.style.display = isStandalone ? '' : 'none';
+        }
+
         function renderParentItems(items) {
             parentPanelList.innerHTML = '';
             if (!items.length) {
-                parentPanelList.innerHTML = '<div class="p-3 text-muted text-center">No results found.</div>';
+                var emptyMsg = currentPlacement === 'offline_training'
+                    ? 'No offline training records found.'
+                    : 'No results found.';
+                parentPanelList.innerHTML = '<div class="p-3 text-muted text-center">' + emptyMsg + '</div>';
                 return;
             }
             items.forEach(function (it) {
@@ -462,9 +582,9 @@
             parentPanel.style.display = '';
             parentPickerBtn.setAttribute('aria-expanded', 'true');
             parentPanelSearch.value = '';
-            parentPanelSearch.disabled = (currentPlacement === 'offline_training');
+            parentPanelSearch.disabled = false;
             loadParentItems('');
-            setTimeout(function () { if (!parentPanelSearch.disabled) parentPanelSearch.focus(); }, 50);
+            setTimeout(function () { parentPanelSearch.focus(); }, 50);
         }
 
         function closeParentPanel() {
@@ -475,10 +595,6 @@
 
         var parentSearchTimer = null;
         function loadParentItems(query) {
-            if (currentPlacement === 'offline_training') {
-                parentPanelList.innerHTML = '<div class="p-3 text-muted text-center">Offline training data is not available yet.</div>';
-                return;
-            }
             var url = parentIdInput.dataset.urlTemplate.replace('__TYPE__', currentPlacement)
                 + '?q=' + encodeURIComponent(query || '');
             parentPanelList.innerHTML = '<div class="p-3 text-muted text-center">Loading...</div>';
@@ -498,6 +614,7 @@
                 if (sameCourse) sameCourse.checked = false;
                 setPickerLabel();
                 syncSameCourseWrap();
+                syncPlacementPicker();
                 syncSameCourse();
             });
         }
@@ -522,11 +639,106 @@
                 parentSearchTimer = setTimeout(function () { loadParentItems(q); }, 300);
             });
         }
+
+        // ── Target course: searchable dropdown (dibangun dari <option> yang ada) ──
+        var coursePickerBtn   = document.getElementById('coursePickerBtn');
+        var coursePickerText  = document.getElementById('coursePickerText');
+        var coursePicker      = document.getElementById('coursePicker');
+        var coursePanel       = document.getElementById('coursePanel');
+        var coursePanelSearch = document.getElementById('coursePanelSearch');
+        var coursePanelList   = document.getElementById('coursePanelList');
+
+        function courseOptions() {
+            var out = [];
+            if (!linkedSelect) return out;
+            Array.prototype.forEach.call(linkedSelect.options, function (o) {
+                if (!o.value) return; // lewati placeholder
+                out.push({ id: o.value, title: o.textContent.trim() });
+            });
+            return out;
+        }
+
+        function syncCoursePickerText() {
+            if (!linkedSelect || !coursePickerText) return;
+            var sel = linkedSelect.options[linkedSelect.selectedIndex];
+            coursePickerText.textContent = (sel && sel.value)
+                ? sel.textContent.trim()
+                : '— Select target course —';
+        }
+
+        function renderCourseItems(items) {
+            coursePanelList.innerHTML = '';
+            if (!items.length) {
+                coursePanelList.innerHTML = '<div class="p-3 text-muted text-center">No results found.</div>';
+                return;
+            }
+            items.forEach(function (it) {
+                var b = document.createElement('button');
+                b.type = 'button';
+                b.className = 'list-group-item list-group-item-action';
+                b.textContent = it.title;
+                b.setAttribute('role', 'option');
+                if (linkedSelect && String(linkedSelect.value) === String(it.id)) b.classList.add('active');
+                b.addEventListener('click', function () {
+                    linkedSelect.value = it.id;
+                    linkedSelect.dispatchEvent(new Event('change'));
+                    closeCoursePanel();
+                });
+                coursePanelList.appendChild(b);
+            });
+        }
+
+        function filterCourseItems(q) {
+            q = (q || '').toLowerCase().trim();
+            var items = courseOptions();
+            if (q) items = items.filter(function (it) {
+                return it.title.toLowerCase().indexOf(q) !== -1;
+            });
+            renderCourseItems(items);
+        }
+
+        function openCoursePanel() {
+            if (!coursePanel) return;
+            coursePanel.style.display = '';
+            coursePickerBtn.setAttribute('aria-expanded', 'true');
+            coursePanelSearch.value = '';
+            filterCourseItems('');
+            setTimeout(function () { coursePanelSearch.focus(); }, 50);
+        }
+
+        function closeCoursePanel() {
+            if (!coursePanel) return;
+            coursePanel.style.display = 'none';
+            coursePickerBtn.setAttribute('aria-expanded', 'false');
+        }
+
+        if (coursePickerBtn && linkedSelect) {
+            linkedSelect.addEventListener('change', syncCoursePickerText);
+            coursePickerBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                if (coursePanel.style.display === 'none') openCoursePanel();
+                else closeCoursePanel();
+            });
+            document.addEventListener('click', function (e) {
+                if (coursePicker && !coursePicker.contains(e.target)) closeCoursePanel();
+            });
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') closeCoursePanel();
+            });
+            if (coursePanelSearch) {
+                coursePanelSearch.addEventListener('click', function (e) { e.stopPropagation(); });
+                coursePanelSearch.addEventListener('input', function () {
+                    filterCourseItems(coursePanelSearch.value);
+                });
+            }
+            syncCoursePickerText();
+        }
         // Guard: don't submit without a picked parent (hidden inputs skip browser validation).
         var taskFormEl = document.getElementById('taskForm');
         if (taskFormEl && parentIdInput) {
             taskFormEl.addEventListener('submit', function (e) {
-                if (!parentIdInput.value && currentPlacement !== 'offline_training') {
+                // Standalone tasks are not tied to any placement → no parent needed.
+                if (!parentIdInput.value && !['offline_training', 'standalone'].includes(currentPlacement)) {
                     e.preventDefault();
                     if (parentIdError) parentIdError.style.display = '';
                     openParentPanel();
@@ -535,6 +747,7 @@
         }
         setPickerLabel();
         syncSameCourseWrap();
+        syncPlacementPicker();
 
         // ── Course Assignment: link type radios + "same playlist" ────────
         function courseField() {
@@ -546,7 +759,10 @@
             if (!sameCourse || !linkedSelect || !sameCourse.checked) return;
             if (placementType() !== 'playlist') return;
             var cf = courseField();
-            if (cf && cf.value) linkedSelect.value = cf.value;
+            if (cf && cf.value) {
+                linkedSelect.value = cf.value;
+                linkedSelect.dispatchEvent(new Event('change'));
+            }
         }
         if (sameCourse) {
             sameCourse.addEventListener('change', syncSameCourse);
@@ -569,15 +785,30 @@
             typeHint.textContent = TYPE_HINTS[t] || '';
             var isLink = (t === 'course_assignment');
 
-            linkSection.style.display    = isLink ? '' : 'none';
-            builderSection.style.display = isLink ? 'none' : '';
+            linkSection.style.display       = isLink ? '' : 'none';
+            builderSection.style.display    = isLink ? 'none' : '';
             builderHint.textContent = BUILDER_HINTS[t] || '';
 
             if (isLink) {
-                refreshLinkWraps();
-                syncSameCourse();
+                // These types have no question builder: disable every input
+                // inside the hidden cards. Hidden `required` inputs would
+                // otherwise block form submission silently (browser refuses
+                // to submit, no visible error). Disabled inputs are also
+                // excluded from the POST.
+                wrap.querySelectorAll('input, select, textarea, button').forEach(function (el) {
+                    el.disabled = true;
+                });
+                if (isLink) {
+                    refreshLinkWraps();
+                    syncSameCourse();
+                }
                 return;
             }
+
+            // Builder visible again: re-enable the cards' inputs.
+            wrap.querySelectorAll('input, select, textarea, button').forEach(function (el) {
+                el.disabled = false;
+            });
 
             // Rebuild each card's type column for the newly allowed set.
             var allowed = allowedTypes();
@@ -588,6 +819,7 @@
                 card.querySelector('.typeCol').innerHTML =
                     typeColHTML(card.dataset.index, next);
                 toggleOptionsEditor(card);
+                toggleFileSettings(card);
             });
             // refresh the per-editor hint (quiz vs survey wording)
             wrap.querySelectorAll('.field-card').forEach(function (card) {
@@ -599,8 +831,11 @@
         }
         typeSelect.addEventListener('change', function () {
             refreshTypeUI();
-            // Coming back from Course Assignment with an empty builder → start with 1 card.
-            if (currentType() !== 'course_assignment' && wrap.querySelectorAll('.field-card').length === 0) {
+            // Coming back to a type with a builder and an empty builder → start with 1 card.
+            // (Never auto-add for types without a builder: a hidden card's
+            // `required` input would silently block submit.)
+            var t = currentType();
+            if (typeHasBuilder(t) && wrap.querySelectorAll('.field-card').length === 0) {
                 addField();
             }
         });
@@ -608,8 +843,12 @@
         // ── Initial render ──────────────────────────────────────────────
         var initialFields = @json($initialFields ?? []);
         refreshTypeUI();
+        setPickerLabel();
+        syncPlacementPicker();
+        syncSameCourseWrap();
         syncSameCourse();
-        if (currentType() !== 'course_assignment') {
+        // No builder for course_assignment → never seed cards there.
+        if (typeHasBuilder(currentType())) {
             initialFields.forEach(function (f) { addField(f); });
             if (initialFields.length === 0) addField();
         }
