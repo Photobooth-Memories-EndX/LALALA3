@@ -276,9 +276,11 @@ class TaskManageController extends Controller
                 ->orderBy('title')->limit(50)->get(['id', 'title']),
             'offline_training' => OfflineTraining::when($q !== '', fn ($qq) => $qq->where(function ($w) use ($q) {
                     $w->where('title', 'like', "%{$q}%")
-                      ->orWhere('course_name', 'like', "%{$q}%");
+                      ->orWhere('course_name', 'like', "%{$q}%")
+                      ->orWhere('batch', 'like', "%{$q}%")
+                      ->orWhere('training_code', 'like', "%{$q}%");
                 }))
-                ->selectRaw('id, COALESCE(NULLIF(title, ""), course_name, CONCAT("Offline Training #", id)) as title')
+                ->selectRaw('id, CONCAT(COALESCE(NULLIF(title, ""), course_name, CONCAT("Offline Training #", id)), IF(batch IS NOT NULL AND batch != "", CONCAT(" (", batch, ")"), "")) as title')
                 ->orderBy('title')->limit(50)->get(),
             default    => collect(),
         };

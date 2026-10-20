@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\OfflineTraining;
+use App\Models\OfflineTrainingUser;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
@@ -127,5 +128,90 @@ class TaskManagementNonKpOwlTest extends TestCase
             'offline_training_id' => $offline->id,
             'status'              => 'published',
         ]);
+    }
+
+    public function test_enrolled_user_can_see_offline_training_task_in_my_task(): void
+    {
+        $user = User::where('role', '1')->first() ?? User::first();
+
+        $offline = OfflineTraining::create([
+            'title'       => 'Welding Certification 2026',
+            'course_name' => 'Welding Certification 2026',
+            'batch'       => 'WELD-BATCH-01',
+            'category'    => 'Technical',
+            'instructor'  => 'Trainer B',
+            'location'    => 'Workshop A',
+            'quota'       => 15,
+            'status'      => 'Open Registration',
+            'start_date'  => '2026-11-10',
+            'end_date'    => '2026-11-12',
+            'start_time'  => '08:00',
+            'end_time'    => '17:00',
+        ]);
+
+        OfflineTrainingUser::create([
+            'offline_training_id' => $offline->id,
+            'user_id'             => $user->id,
+            'name'                => $user->name,
+            'employee_id'         => $user->employee_id ?? 'EMP-999',
+            'attendance'          => 1,
+            'progress'            => 100,
+        ]);
+
+        $task = \App\Models\Task::create([
+            'parent_type'         => 'offline_training',
+            'offline_training_id' => $offline->id,
+            'title'               => 'Upload Welding Photo Evidence',
+            'type'                => 'file_submission',
+            'status'              => 'published',
+            'created_by'          => $this->admin->id,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('user.learning.dashboard.partial', ['tab' => 'my-task']));
+
+        $response->assertStatus(200);
+        $response->assertSee('Welding Certification 2026');
+        $response->assertSee('Offline Training');
+
+        $detailResponse = $this->actingAs($user)->get(route('user.learning.dashboard.partial', [
+            'tab'            => 'my-task',
+            'my_task_parent' => 'offline_training:' . $offline->id,
+        ]));
+
+        $detailResponse->assertStatus(200);
+        $detailResponse->assertSee('Upload Welding Photo Evidence');
+    }
+
+    public function test_non_enrolled_user_does_not_see_offline_training_task_in_my_task(): void
+    {
+        $user = User::where('role', '1')->first() ?? User::first();
+
+        $offline = OfflineTraining::create([
+            'title'       => 'Secret Plant Training 2026',
+            'course_name' => 'Secret Plant Training 2026',
+            'category'    => 'Confidential',
+            'instructor'  => 'Trainer C',
+            'location'    => 'Secret Room',
+            'quota'       => 5,
+            'status'      => 'Open Registration',
+            'start_date'  => '2026-11-10',
+            'end_date'    => '2026-11-12',
+            'start_time'  => '08:00',
+            'end_time'    => '17:00',
+        ]);
+
+        \App\Models\Task::create([
+            'parent_type'         => 'offline_training',
+            'offline_training_id' => $offline->id,
+            'title'               => 'Confidential Report Upload',
+            'type'                => 'file_submission',
+            'status'              => 'published',
+            'created_by'          => $this->admin->id,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('user.learning.dashboard.partial', ['tab' => 'my-task']));
+
+        $response->assertStatus(200);
+        $response->assertDontSee('Confidential Report Upload');
     }
 }

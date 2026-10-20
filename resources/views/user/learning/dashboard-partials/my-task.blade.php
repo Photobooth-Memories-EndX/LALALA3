@@ -27,14 +27,16 @@
     // status badge always matches one of the tabs.
     $displayStatus = fn ($s) => $s === 'not_started' ? 'in_progress' : $s;
     $parentTypeBadge = [
-        'playlist'   => 'bg-primary-lt text-primary',
-        'content'    => 'bg-info-lt text-info',
-        'standalone' => 'bg-secondary-lt text-secondary',
+        'playlist'         => 'bg-primary-lt text-primary',
+        'content'          => 'bg-info-lt text-info',
+        'offline_training' => 'bg-warning-lt text-warning',
+        'standalone'       => 'bg-secondary-lt text-secondary',
     ];
     $parentTypeLabel = [
-        'playlist'   => 'Playlist',
-        'content'    => 'Content',
-        'standalone' => 'Global Task',
+        'playlist'         => 'Playlist',
+        'content'          => 'Content',
+        'offline_training' => 'Offline Training',
+        'standalone'       => 'Global Task',
     ];
     // Drill-down navigation: parent list <-> one parent's tasks.
     $baseParams = array_filter([

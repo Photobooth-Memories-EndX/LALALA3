@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\ContentUser;
+use App\Models\OfflineTraining;
+use App\Models\OfflineTrainingRegister;
+use App\Models\OfflineTrainingUser;
 use App\Models\PlaylistContentUser;
 use App\Models\AssesmentResult;
 use App\Models\Task;
@@ -212,6 +215,10 @@ class MyTaskController extends Controller
             return route('user.playlist.show', $task->trainingPlan->slug);
         }
 
+        if ($task->parent_type === 'offline_training') {
+            return route('trainingplan.user.index');
+        }
+
         return null;
     }
 
@@ -406,18 +413,19 @@ class MyTaskController extends Controller
         // Playlist: task baru muncul setelah user menyelesaikan course 100%
         // DAN mengklik tombol Task di halaman course (unlock tercatat di
         // task_playlist_unlocks). Bukan lagi sekadar "pernah membuka".
-        $planIds    = $this->unlockedPlanIds($user->id);
-        $contentIds = $this->openedContentIds($user->id);
+        $planIds     = $this->unlockedPlanIds($user->id);
+        $contentIds  = $this->openedContentIds($user->id);
+        $offlineIds  = $this->enrolledOfflineTrainingIds($user->id);
         // Standalone tasks the user unlocked via access code / link / QR.
         // (Fetched up front so the main query needs no nested closures.)
         $redeemedIds = TaskCodeRedemption::where('user_id', $user->id)->pluck('task_id')->all();
 
-        return Task::with(['trainingPlan', 'linkedPlan', 'content', 'fields' => fn ($q) => $q->ordered()])
+        return Task::with(['trainingPlan', 'linkedPlan', 'content', 'offlineTraining', 'fields' => fn ($q) => $q->ordered()])
             ->with([
                 'submissions' => fn ($q) => $q->where('user_id', $user->id),
             ])
             ->published()
-            ->where(function ($q) use ($planIds, $contentIds, $redeemedIds) {
+            ->where(function ($q) use ($planIds, $contentIds, $offlineIds, $redeemedIds) {
                 // Playlists yang sudah 100% + user mengklik tombol Task
                 // di halaman course (logic baru 2026-10-13).
                 $q->where(function ($w) use ($planIds) {
@@ -428,6 +436,11 @@ class MyTaskController extends Controller
                 ->orWhere(function ($w) use ($contentIds) {
                     $w->where('parent_type', 'content')
                       ->whereIn('content_id', $contentIds);
+                })
+                // Offline trainings where the user is registered / assigned as participant.
+                ->orWhere(function ($w) use ($offlineIds) {
+                    $w->where('parent_type', 'offline_training')
+                      ->whereIn('offline_training_id', $offlineIds);
                 })
                 // Standalone tasks are not tied to any placement and are always
                 // private: only users who redeemed the task's access code see it.
@@ -508,7 +521,7 @@ class MyTaskController extends Controller
     {
         return match ($task->parent_type) {
             'content'          => in_array($task->content_id, $this->openedContentIds($userId)),
-            'offline_training' => false, // no tracking table yet
+            'offline_training' => in_array($task->offline_training_id, $this->enrolledOfflineTrainingIds($userId)),
             // Standalone is always private: only users who redeemed the code.
             'standalone'       => TaskCodeRedemption::where('task_id', $task->id)
                                     ->where('user_id', $userId)
@@ -624,5 +637,23 @@ class MyTaskController extends Controller
             ->pluck('content_id')
             ->values()
             ->all();
+    }
+
+    /**
+     * ID offline training yang diikuti user (baik terdaftar di offline_training_users
+     * maupun registrasi mandiri yang disetujui di offline_training_registers).
+     */
+    protected function enrolledOfflineTrainingIds(int $userId): array
+    {
+        $direct = OfflineTrainingUser::where('user_id', $userId)
+            ->pluck('offline_training_id')
+            ->all();
+
+        $registered = OfflineTrainingRegister::where('user_id', $userId)
+            ->where('status', 'approved')
+            ->pluck('offline_training_id')
+            ->all();
+
+        return array_values(array_unique(array_merge($direct, $registered)));
     }
 }

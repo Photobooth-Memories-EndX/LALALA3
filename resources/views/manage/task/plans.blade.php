@@ -229,7 +229,7 @@
                                     $key = "{$row->parent_type}:{$row->parent_id}";
                                     $pending = $pendingByParent[$key] ?? 0;
                                     $name = $row->parent_type === 'offline_training'
-                                        ? 'Offline Training' . ($row->parent_id ? " #{$row->parent_id}" : '')
+                                        ? ($row->parent_name ?: ('Offline Training' . ($row->parent_id ? " #{$row->parent_id}" : '')))
                                         : ($row->parent_type === 'standalone'
                                             ? 'Global Task'
                                             : ($row->parent_name ?? '—'));
