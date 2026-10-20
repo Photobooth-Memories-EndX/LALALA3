@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\TaskSubmissionsExport;
+use App\Models\Assesment;
 use App\Models\Content;
+use App\Models\OfflineTraining;
 use App\Models\Task;
 use App\Models\TaskField;
 use App\Models\TaskSubmission;
@@ -10,8 +13,11 @@ use App\Models\TrainingPlan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Maatwebsite\Excel\Facades\Excel;
 
 /**
  * TaskManageController — ADMIN side.
@@ -36,26 +42,32 @@ class TaskManageController extends Controller
             $scope = 'kp';
         }
 
-        $type = $request->input('parent_type', 'playlist'); // playlist|content (KP OWL only)
-        if (! in_array($type, ['playlist', 'content'], true)) {
-            $type = 'playlist';
+        $type = $request->input('parent_type', 'all'); // all|playlist|content|standalone (KP OWL only)
+        if (! in_array($type, ['all', 'playlist', 'content', 'standalone'], true)) {
+            $type = 'all';
         }
 
         $search = trim($request->input('search', ''));
 
-        // KP OWL = online parents (playlist/content). NON KP OWL = offline training (no data yet).
-        $allowedTypes = $scope === 'kp' ? [$type] : ['offline_training'];
+        // KP OWL = online parents (playlist/content/standalone). NON KP OWL = offline training (no data yet).
+        $allowedTypes = $scope === 'kp'
+            ? ($type === 'all' ? ['playlist', 'content', 'standalone'] : [$type])
+            : ['offline_training'];
 
         $baseQuery = Task::query()
             ->leftJoin('trainingplan', 'trainingplan.id', '=', 'tasks.training_plan_id')
             ->leftJoin('content', 'content.id', '=', 'tasks.content_id')
+            ->leftJoin('offline_trainings', 'offline_trainings.id', '=', 'tasks.offline_training_id')
             ->whereIn('tasks.parent_type', $allowedTypes)
             ->when($search !== '', fn ($q) => $q->where(function ($w) use ($search) {
                 $w->where('trainingplan.title', 'like', "%{$search}%")
-                  ->orWhere('content.title', 'like', "%{$search}%");
+                  ->orWhere('content.title', 'like', "%{$search}%")
+                  ->orWhere('offline_trainings.title', 'like', "%{$search}%")
+                  ->orWhere('offline_trainings.course_name', 'like', "%{$search}%")
+                  ->orWhere('tasks.title', 'like', "%{$search}%");
             }))
             ->selectRaw('tasks.parent_type, COALESCE(tasks.training_plan_id, tasks.content_id, tasks.offline_training_id) AS parent_id')
-            ->selectRaw('MAX(COALESCE(trainingplan.title, content.title)) AS parent_name')
+            ->selectRaw('MAX(COALESCE(trainingplan.title, content.title, offline_trainings.title, offline_trainings.course_name)) AS parent_name')
             ->selectRaw("COUNT(*) AS total, SUM(tasks.status = 'published') AS published, SUM(tasks.status = 'draft') AS draft")
             ->groupBy('tasks.parent_type', 'tasks.training_plan_id', 'tasks.content_id', 'tasks.offline_training_id')
             ->orderBy('parent_name');
@@ -67,10 +79,14 @@ class TaskManageController extends Controller
         $taskScope = Task::query()
             ->leftJoin('trainingplan', 'trainingplan.id', '=', 'tasks.training_plan_id')
             ->leftJoin('content', 'content.id', '=', 'tasks.content_id')
+            ->leftJoin('offline_trainings', 'offline_trainings.id', '=', 'tasks.offline_training_id')
             ->whereIn('tasks.parent_type', $allowedTypes)
             ->when($search !== '', fn ($q) => $q->where(function ($w) use ($search) {
                 $w->where('trainingplan.title', 'like', "%{$search}%")
-                  ->orWhere('content.title', 'like', "%{$search}%");
+                  ->orWhere('content.title', 'like', "%{$search}%")
+                  ->orWhere('offline_trainings.title', 'like', "%{$search}%")
+                  ->orWhere('offline_trainings.course_name', 'like', "%{$search}%")
+                  ->orWhere('tasks.title', 'like', "%{$search}%");
             }));
         $taskIds   = (clone $taskScope)->pluck('tasks.id');
         $stats = [
@@ -90,29 +106,124 @@ class TaskManageController extends Controller
             ->get()
             ->mapWithKeys(fn ($r) => ["{$r->parent_type}:{$r->parent_id}" => $r->cnt]);
 
-        return view('manage.task.plans', compact('parents', 'stats', 'pendingByParent', 'scope', 'type', 'search'));
+        $trashCount = Task::onlyTrashed()->count();
+
+        return view('manage.task.plans', compact('parents', 'stats', 'pendingByParent', 'scope', 'type', 'search', 'trashCount'));
+    }
+
+    /**
+     * GET /manage/task/{id}/qr — share page for a standalone task.
+     * With a code: QR + redeem link + raw code.
+     * Without a code: QR + signed link (unguessable, still private).
+     * Either way the link unlocks the task for whoever visits it (must log in).
+     */
+    public function qr(Request $request, $id)
+    {
+        $task = Task::findOrFail($id);
+        abort_unless($task->parent_type === 'standalone', 404);
+
+        if ($task->access_code) {
+            $redeemUrl = route('my-task.redeem-link', ['code' => $task->access_code]);
+            $shareNote = 'Share this code, link or QR with specific users — only they can unlock this task.';
+        } else {
+            $redeemUrl = URL::signedRoute('my-task.redeem-signed', ['task' => $task->id]);
+            $shareNote = 'This task has no unique code. Share this link or QR to unlock the task.';
+        }
+
+        $qrSvg = class_exists(\SimpleSoftwareIO\QrCode\Facades\QrCode::class)
+            ? (string) \SimpleSoftwareIO\QrCode\Facades\QrCode::size(240)->margin(1)->generate($redeemUrl)
+            : null;
+
+        if ($request->ajax() || $request->wantsJson() || $request->query('format') === 'json') {
+            return response()->json([
+                'success'     => true,
+                'id'          => $task->id,
+                'title'       => $task->title,
+                'access_code' => $task->access_code,
+                'redeem_url'  => $redeemUrl,
+                'qr_svg'      => $qrSvg,
+                'share_note'  => $shareNote,
+            ]);
+        }
+
+        return view('manage.task.qr', compact('task', 'redeemUrl', 'qrSvg', 'shareNote'));
+    }
+
+    /**
+     * GET /manage/task/trash — soft-deleted tasks. Restore or delete forever.
+     */
+    public function trash()
+    {
+        $tasks = Task::onlyTrashed()
+            ->with(['creator', 'trainingPlan', 'content'])
+            ->orderByDesc('deleted_at')
+            ->paginate(20);
+
+        return view('manage.task.trash', compact('tasks'));
+    }
+
+    /**
+     * POST /manage/task/{id}/restore — bring a trashed task back
+     * (questions, answers and files are untouched by the soft delete).
+     */
+    public function restore($id)
+    {
+        $task = Task::withTrashed()->findOrFail($id);
+        $task->restore();
+
+        return back()->with('success', 'Task restored.');
+    }
+
+    /**
+     * DELETE /manage/task/{id}/force — permanent delete: task, questions,
+     * submissions, attachments and answer files are wiped for real.
+     */
+    public function forceDestroy($id)
+    {
+        $task = Task::withTrashed()->findOrFail($id);
+
+        if ($task->attachment) {
+            Storage::disk('public')->delete($task->attachment);
+        }
+
+        // Delete users' per-field answer files too (DB rows cascade).
+        foreach ($task->submissions as $submission) {
+            foreach ($submission->answers as $answer) {
+                foreach ($answer->filePaths() as $oldPath) {
+                    Storage::disk('public')->delete($oldPath);
+                }
+            }
+        }
+
+        $task->forceDelete();
+
+        return back()->with('success', 'Task permanently deleted.');
     }
 
     /**
      * GET /manage/task/parent/{parentType}/{parentId} — tasks of one parent.
+     * parentType=standalone lists tasks not tied to any placement.
      */
     public function parentTasks(Request $request, string $parentType, int $parentId)
     {
         abort_unless(array_key_exists($parentType, Task::PARENT_TYPES), 404);
 
         $parent = $this->resolveParent($parentType, $parentId);
-        abort_if($parentType !== 'offline_training' && ! $parent, 404);
+        abort_if(! in_array($parentType, ['offline_training', 'standalone'], true) && ! $parent, 404);
 
-        $parentName = $parent?->title
-            ?? ($parentType === 'offline_training' ? 'Offline Training' : '—');
+        $parentName = $parent?->title ?? $parent?->course_name
+            ?? ($parentType === 'standalone' ? 'Global Task'
+                : ($parentType === 'offline_training' ? ('Offline Training' . ($parentId ? " #{$parentId}" : '')) : '—'));
 
-        $tasks = Task::with(['content', 'creator'])
+        $parentColumn = $this->parentColumn($parentType);
+
+        $tasks = Task::with(['content', 'creator', 'offlineTraining'])
             ->withCount([
                 'submissions as pending_submissions_count'   => fn ($q) => $q->where('status', 'pending'),
                 'submissions as completed_submissions_count' => fn ($q) => $q->where('status', 'completed'),
             ])
             ->where('parent_type', $parentType)
-            ->where($this->parentColumn($parentType), $parentId)
+            ->when($parentColumn, fn ($q) => $q->where($parentColumn, $parentId))
             ->when($request->search, fn ($q, $s) => $q->where('title', 'like', "%{$s}%"))
             ->when($request->status, fn ($q, $st) => $q->where('status', $st))
             ->orderByDesc('created_at')
@@ -134,10 +245,15 @@ class TaskManageController extends Controller
 
         $lockedParent = $this->lockedParent($request);
 
-        // Name for the currently-selected parent (old input after failed validation).
+        // Name for the currently-selected parent (old input after failed validation or from query).
         $selectedParentName = '';
-        if (! $lockedParent && old('parent_type') && old('parent_id')) {
-            $selectedParentName = $this->resolveParent(old('parent_type'), (int) old('parent_id'))?->title ?? '';
+        if (! $lockedParent) {
+            $effectiveParentType = old('parent_type', $request->input('parent_type') ?? ($request->input('scope') === 'non_kp' ? 'offline_training' : null));
+            $effectiveParentId = old('parent_id', $request->input('parent_id'));
+            if ($effectiveParentType && $effectiveParentId) {
+                $resolved = $this->resolveParent($effectiveParentType, (int) $effectiveParentId);
+                $selectedParentName = $resolved?->title ?? $resolved?->course_name ?? '';
+            }
         }
 
         return view('manage.task.create', compact('trainingPlans', 'initialFields', 'lockedParent', 'selectedParentName'));
@@ -158,7 +274,12 @@ class TaskManageController extends Controller
                 ->orderBy('title')->limit(50)->get(['id', 'title']),
             'content'  => Content::when($q !== '', fn ($qq) => $qq->where('title', 'like', "%{$q}%"))
                 ->orderBy('title')->limit(50)->get(['id', 'title']),
-            // Offline training data has not been merged yet.
+            'offline_training' => OfflineTraining::when($q !== '', fn ($qq) => $qq->where(function ($w) use ($q) {
+                    $w->where('title', 'like', "%{$q}%")
+                      ->orWhere('course_name', 'like', "%{$q}%");
+                }))
+                ->selectRaw('id, COALESCE(NULLIF(title, ""), course_name, CONCAT("Offline Training #", id)) as title')
+                ->orderBy('title')->limit(50)->get(),
             default    => collect(),
         };
 
@@ -200,7 +321,7 @@ class TaskManageController extends Controller
         }
 
         $task = Task::create($taskData);
-        $this->syncFields($task, $task->isCourseAssignment() ? [] : ($validated['fields'] ?? []));
+        $this->syncFields($task, $task->needsFields() ? ($validated['fields'] ?? []) : []);
 
         return redirect()
             ->route('manage.task.parent', $task->parentRouteParams())
@@ -223,6 +344,10 @@ class TaskManageController extends Controller
                 'required' => $f->required,
                 'options'  => $f->options ?? [],
                 'correct'  => max(0, (int) array_search($f->correct_answer, $f->options ?? [])),
+                'file_types'  => $f->fileTypeGroups()[0] ?? '',
+                'max_files'   => $f->maxFiles(),
+                'max_size_mb' => $f->maxSizeMb(),
+                'allow_link'  => (bool) $f->allow_link,
             ])->all();
         }
 
@@ -264,7 +389,13 @@ class TaskManageController extends Controller
 
         $task->update($taskData);
         $task->refresh();
-        $this->syncFields($task, $task->isCourseAssignment() ? [] : ($validated['fields'] ?? []));
+
+        // Leaving standalone: old code redemptions no longer mean anything.
+        if ($task->parent_type !== 'standalone') {
+            $task->codeRedemptions()->delete();
+        }
+
+        $this->syncFields($task, $task->needsFields() ? ($validated['fields'] ?? []) : []);
 
         return redirect()
             ->route('manage.task.parent', $task->parentRouteParams())
@@ -275,24 +406,13 @@ class TaskManageController extends Controller
     {
         $params = $task->parentRouteParams();
 
-        if ($task->attachment) {
-            Storage::disk('public')->delete($task->attachment);
-        }
-
-        // Delete users' per-field answer files too (DB rows cascade).
-        foreach ($task->submissions as $submission) {
-            foreach ($submission->answers as $answer) {
-                if ($answer->file_path) {
-                    Storage::disk('public')->delete($answer->file_path);
-                }
-            }
-        }
-
+        // Soft delete → Trash. Questions, submissions and files stay intact
+        // so the task can be restored. Permanent wipe lives in forceDestroy().
         $task->delete();
 
         return redirect()
             ->route('manage.task.parent', $params)
-            ->with('success', 'Task deleted successfully.');
+            ->with('success', 'Task moved to trash. You can restore it from the Trash page.');
     }
 
     public function publish(Task $task)
@@ -313,7 +433,7 @@ class TaskManageController extends Controller
         $task->load(['fields', 'linkedPlan']);
 
         $submissions = $task->submissions()
-            ->with(['user', 'answers.field'])
+            ->with('user')
             ->when($request->status, fn ($q, $st) => $q->where('status', $st))
             ->orderByDesc('submitted_at')
             ->get();
@@ -336,38 +456,106 @@ class TaskManageController extends Controller
 
         $submission->markCompleted($validated['score'] ?? null, $validated['feedback'] ?? null);
 
-        return back()->with('success', 'Submission marked as complete.');
+        return back()->with('success', 'Response marked as complete.');
+    }
+
+    /**
+     * Ask the user to resubmit: sets the flag and reverts the response to
+     * pending so the user sees the resubmit form on their My Task page.
+     */
+    public function requestResubmit(Request $request, Task $task, TaskSubmission $submission)
+    {
+        abort_if($submission->task_id !== $task->id, 404);
+
+        $submission->update(['resubmit_requested' => true, 'status' => 'pending']);
+
+        return back()->with('success', 'Resubmit requested. The user can now resubmit their answers.');
+    }
+
+    /**
+     * GET /manage/task/{task}/submissions/export — export submissions to Excel (.xlsx).
+     */
+    public function exportSubmissions(Task $task)
+    {
+        $safeTitle = Str::slug($task->title) ?: 'task-' . $task->id;
+        $filename = 'Submissions-' . $safeTitle . '-' . now()->format('Ymd_His') . '.xlsx';
+
+        return Excel::download(new TaskSubmissionsExport($task), $filename);
+    }
+
+    /**
+     * POST /manage/task/{task}/submissions/bulk-complete — mark multiple submissions as completed.
+     */
+    public function bulkComplete(Request $request, Task $task)
+    {
+        $validated = $request->validate([
+            'submission_ids'   => 'required|array|min:1',
+            'submission_ids.*' => 'integer',
+            'score'            => 'nullable|integer|min:0|max:100',
+            'feedback'         => 'nullable|string|max:2000',
+        ]);
+
+        $submissions = $task->submissions()
+            ->whereIn('id', $validated['submission_ids'])
+            ->get();
+
+        if ($submissions->isEmpty()) {
+            return back()->with('error', 'No valid submissions selected.');
+        }
+
+        $count = 0;
+        foreach ($submissions as $submission) {
+            $submission->markCompleted($validated['score'] ?? null, $validated['feedback'] ?? null);
+            $count++;
+        }
+
+        return back()->with('success', "{$count} responses successfully marked as complete.");
     }
 
     // ── Placement helpers ────────────────────────────────────────────────
 
-    /** DB column that holds the parent id for a placement type. */
-    protected function parentColumn(string $parentType): string
+    /** DB column that holds the parent id for a placement type (null = no column). */
+    protected function parentColumn(string $parentType): ?string
     {
         return match ($parentType) {
             'content'          => 'content_id',
             'offline_training' => 'offline_training_id',
+            'standalone'       => null,
             default            => 'training_plan_id',
         };
     }
 
-    /** Load the parent model (null for offline training — no data yet). */
+    /** Load the parent model (playlist, content, or offline training). */
     protected function resolveParent(string $parentType, int $parentId)
     {
         return match ($parentType) {
-            'playlist' => TrainingPlan::find($parentId),
-            'content'  => Content::find($parentId),
-            default    => null,
+            'playlist'         => TrainingPlan::find($parentId),
+            'content'          => Content::find($parentId),
+            'offline_training' => OfflineTraining::find($parentId),
+            default            => null,
         };
     }
 
-    /** Write exactly one parent column; the other two are nulled. */
+    /**
+     * Write exactly one parent column; the other two are nulled.
+     * Access code is typed manually by the admin and optional — empty
+     * stays empty. Tasks without a code are shared via an unguessable
+     * signed link/QR instead (still private).
+     * Other placements never carry a code.
+     */
     protected function applyPlacement(array &$taskData, string $parentType, $parentId): void
     {
         $taskData['parent_type']          = $parentType;
         $taskData['training_plan_id']    = $parentType === 'playlist' ? $parentId : null;
         $taskData['content_id']          = $parentType === 'content' ? $parentId : null;
         $taskData['offline_training_id'] = $parentType === 'offline_training' ? $parentId : null;
+
+        if ($parentType === 'standalone') {
+            $code = trim((string) ($taskData['access_code'] ?? ''));
+            $taskData['access_code'] = $code !== '' ? strtoupper($code) : null;
+        } else {
+            $taskData['access_code'] = null;
+        }
     }
 
     /**
@@ -379,7 +567,20 @@ class TaskManageController extends Controller
         $type = $request->input('parent_type');
         $id   = $request->input('parent_id');
 
-        if (! $type || ! $id || ! array_key_exists($type, Task::PARENT_TYPES)) {
+        if (! $type || ! array_key_exists($type, Task::PARENT_TYPES)) {
+            return null;
+        }
+
+        if ($type === 'standalone') {
+            return [
+                'type'  => 'standalone',
+                'id'    => 0,
+                'label' => Task::PARENT_TYPES['standalone'],
+                'name'  => 'Global Task',
+            ];
+        }
+
+        if (! $id) {
             return null;
         }
 
@@ -389,7 +590,7 @@ class TaskManageController extends Controller
             'type'  => $type,
             'id'    => (int) $id,
             'label' => Task::PARENT_TYPES[$type],
-            'name'  => $parent?->title ?? ('#' . $id),
+            'name'  => $parent?->title ?? $parent?->course_name ?? ('#' . $id),
         ];
     }
 
@@ -398,7 +599,6 @@ class TaskManageController extends Controller
     /**
      * Validate the task form. Rules adapt to the chosen task type:
      * - course_assignment: course link (LMS course or external URL), no questions.
-     * - assessment: multiple-choice questions with options + correct answer.
      * - survey: answer/choice questions (choice has options, no correct answer).
      * - file_submission / essay / action_plan: restricted field types.
      */
@@ -407,17 +607,34 @@ class TaskManageController extends Controller
         $type = $request->input('type');
         $allowedFieldTypes = Task::FIELD_TYPES_BY_TASK[$type] ?? [];
 
-        // Parent must exist in its own table (offline: no table yet).
+        // Unique code (optional, max 8 chars, alpha_dash) — same logic and process as in assessment.
+        $rawCode = $request->input('unique_code') ?? $request->input('access_code');
+        $code = trim((string) $rawCode);
+        $request->merge(['access_code' => $code !== '' ? strtoupper($code) : null]);
+
+        // Parent must exist in its own table.
         $parentTable = [
-            'playlist' => 'trainingplan',
-            'content'  => 'content',
+            'playlist'         => 'trainingplan',
+            'content'          => 'content',
+            'offline_training' => 'offline_trainings',
         ][$request->input('parent_type')] ?? null;
+
+        $routeTask = $request->route('task');
 
         $rules = [
             'parent_type'      => ['required', Rule::in(array_keys(Task::PARENT_TYPES))],
-            'parent_id'        => $parentTable
-                ? ['required', 'integer', Rule::exists($parentTable, 'id')]
-                : ['required', 'integer', 'min:1'],
+            // Standalone tasks are not tied to any placement → no parent_id.
+            'parent_id'        => $request->input('parent_type') === 'standalone'
+                ? ['nullable']
+                : ($parentTable
+                    ? ['required', 'integer', Rule::exists($parentTable, 'id')]
+                    : ['required', 'integer', 'min:1']),
+            // Standalone: unique code is optional, max 8 chars, alpha_dash (same as assessment).
+            'access_code'      => [
+                'nullable', 'string', 'max:8', 'alpha_dash',
+                Rule::unique('tasks', 'access_code')
+                    ->ignore($routeTask instanceof Task ? $routeTask->id : null),
+            ],
             'title'            => ['required', 'string', 'max:255'],
             'description'      => ['nullable', 'string'],
             'type'             => ['required', Rule::in(array_keys(Task::TYPES))],
@@ -445,6 +662,11 @@ class TaskManageController extends Controller
             $rules['fields.*.options'] = ['nullable', 'array'];
             $rules['fields.*.options.*'] = ['nullable', 'string', 'max:255'];
             $rules['fields.*.correct'] = ['nullable', 'integer', 'min:0'];
+            // File-upload settings (ala Google Form): single dropdown.
+            $rules['fields.*.file_types'] = ['nullable', 'string', Rule::in(array_keys(TaskField::FILE_TYPE_GROUPS))];
+            $rules['fields.*.max_files'] = ['nullable', 'integer', 'min:1', 'max:10'];
+            $rules['fields.*.max_size_mb'] = ['nullable', 'integer', 'min:1', 'max:100'];
+            $rules['fields.*.allow_link'] = ['nullable'];
         }
 
         $validator = Validator::make($request->all(), $rules, [
@@ -472,15 +694,6 @@ class TaskManageController extends Controller
                         'Multiple choice needs at least 2 options.'
                     );
                 }
-                if ($type === 'assessment') {
-                    $ci = $field['correct'] ?? null;
-                    if ($ci === null || ! isset($options[(int) $ci])) {
-                        $validator->errors()->add(
-                            "fields.{$i}.correct",
-                            'Tick the one correct answer for this quiz question.'
-                        );
-                    }
-                }
             }
         });
 
@@ -500,6 +713,12 @@ class TaskManageController extends Controller
             'required' => ! empty($f['required']),
             'options'  => array_values($f['options'] ?? []),
             'correct'  => (int) ($f['correct'] ?? 0),
+            'file_types'  => is_array($f['file_types'] ?? null)
+                ? ($f['file_types'][0] ?? '')
+                : ($f['file_types'] ?? ''),
+            'max_files'   => (int) ($f['max_files'] ?? 1),
+            'max_size_mb' => (int) ($f['max_size_mb'] ?? TaskField::DEFAULT_MAX_SIZE_MB),
+            'allow_link'  => ! empty($f['allow_link']),
         ])->values()->all();
     }
 
@@ -526,7 +745,24 @@ class TaskManageController extends Controller
                 'sort_order'     => $index,
                 'options'        => null,
                 'correct_answer' => null,
+                'file_types'     => null,
+                'max_files'      => 1,
+                'max_size_mb'    => null,
+                'allow_link'     => false,
             ];
+
+            if ($input['type'] === 'file') {
+                // File-upload settings (ala Google Form): single dropdown value.
+                $ft = $input['file_types'] ?? '';
+                $ft = is_array($ft) ? ($ft[0] ?? '') : $ft;
+                $data['file_types'] = in_array($ft, array_keys(TaskField::FILE_TYPE_GROUPS), true) ? [$ft] : null;
+                $data['max_files'] = max(1, min(10, (int) ($input['max_files'] ?? 1)));
+                $sizeMb = $input['max_size_mb'] ?? null;
+                $data['max_size_mb'] = ($sizeMb === null || $sizeMb === '')
+                    ? null
+                    : max(1, min(100, (int) $sizeMb));
+                $data['allow_link'] = ! empty($input['allow_link']);
+            }
 
             if ($input['type'] === 'choice') {
                 $options = array_values(array_filter(
@@ -534,11 +770,6 @@ class TaskManageController extends Controller
                     fn ($o) => $o !== ''
                 ));
                 $data['options'] = $options;
-                if ($task->isAssessment()) {
-                    // Quiz: exactly one correct option per question.
-                    $ci = (int) ($input['correct'] ?? 0);
-                    $data['correct_answer'] = $options[$ci] ?? ($options[0] ?? null);
-                }
             }
 
             if ($field) {
@@ -551,14 +782,20 @@ class TaskManageController extends Controller
         }
 
         // Fields removed from the form → delete + clean their answer files.
-        $task->fields()->whereNotIn('id', $keepIds)->with('answers')->get()
-            ->each(function (TaskField $field) {
-                foreach ($field->answers as $answer) {
-                    if ($answer->file_path) {
-                        Storage::disk('public')->delete($answer->file_path);
+        $removedFields = $task->fields()->whereNotIn('id', $keepIds)->get();
+        if ($removedFields->isNotEmpty()) {
+            $removedIds = $removedFields->pluck('id')->all();
+            foreach ($task->submissions as $submission) {
+                $answersByField = $submission->answersByField();
+                foreach ($removedIds as $rId) {
+                    if ($ans = $answersByField->get($rId)) {
+                        foreach ($ans->filePaths() as $oldPath) {
+                            Storage::disk('public')->delete($oldPath);
+                        }
                     }
                 }
-                $field->delete(); // answers cascade
-            });
+            }
+            $task->fields()->whereIn('id', $removedIds)->delete();
+        }
     }
 }
