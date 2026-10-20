@@ -59,13 +59,7 @@
                 </span>
             @endif
 
-            <button type="button"
-                    class="btn btn-outline-secondary flex-fill"
-                    title="My Task is not available yet."
-                    disabled>
-                <i class="ti ti-list-check me-2" aria-hidden="true"></i>
-                My Task
-            </button>
+            @include('components.my-task-gate-button', ['planId' => $playlist->id])
 
             @if ($certificateDebugOverride !== null)
                 @if ($certificateDebugOverride === 'available' && $playlistCertificateSetting)

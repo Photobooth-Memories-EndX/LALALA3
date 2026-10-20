@@ -38,7 +38,7 @@
                     role="tab"
                     aria-selected="{{ $active === 'my-task' ? 'true' : 'false' }}">
                 <i class="ti ti-list-check"></i>
-                <span>My Task</span>
+                <span>Task</span>
             </button>
 
             {{-- <button class="btn btn-white learning-tab-btn" data-target="#tab-claim" type="button">

@@ -10,271 +10,292 @@
 
 @php
     $statusLabels = [
-        'all'         => 'All',
-        'not_started' => 'Not started',
+        'in_progress' => 'In Progress',
         'submitted'   => 'Pending review',
         'completed'   => 'Completed',
         'overdue'     => 'Overdue',
+        'resubmit'    => 'Resubmit Requested',
     ];
     $statusBadges = [
-        'not_started' => 'bg-secondary-lt text-secondary',
-        'submitted'   => 'bg-warning-lt text-warning',
+        'in_progress' => 'bg-primary-lt text-primary',
+        'submitted'   => 'bg-info-lt text-info',
         'completed'   => 'bg-success-lt text-success',
         'overdue'     => 'bg-danger-lt text-danger',
+        'resubmit'    => 'bg-warning-lt text-warning fw-bold',
     ];
-    $filterUrl = fn ($key) => route('user.learning.dashboard', array_filter([
+    // "Not started" is not a filter tab — display it as In Progress so the
+    // status badge always matches one of the tabs.
+    $displayStatus = fn ($s) => $s === 'not_started' ? 'in_progress' : $s;
+    $parentTypeBadge = [
+        'playlist'   => 'bg-primary-lt text-primary',
+        'content'    => 'bg-info-lt text-info',
+        'standalone' => 'bg-secondary-lt text-secondary',
+    ];
+    $parentTypeLabel = [
+        'playlist'   => 'Playlist',
+        'content'    => 'Content',
+        'standalone' => 'Global Task',
+    ];
+    // Drill-down navigation: parent list <-> one parent's tasks.
+    $baseParams = array_filter([
+        'learning_tab'   => 'my-task',
+        'my_task_status' => $filter === 'all' ? null : $filter,
+        'my_task_q'      => ($search ?? '') !== '' ? $search : null,
+    ]);
+    $backUrl = route('user.learning.dashboard', $baseParams);
+    $groupTasksUrl = fn ($key) => route('user.learning.dashboard', $baseParams + ['my_task_parent' => $key]);
+    $resetUrl = route('user.learning.dashboard', array_filter([
+        'learning_tab'   => 'my-task',
+        'my_task_parent' => ($activeGroup ?? null) ? $activeGroup['key'] : null,
+    ]));
+    $tabs = [
+        'all'         => ['label' => 'All',           'icon' => 'ti-layers'],
+        'in_progress' => ['label' => 'In Progress',  'icon' => 'ti-loader-2'],
+        'submitted'   => ['label' => 'Pending review','icon' => 'ti-clock'],
+        'completed'   => ['label' => 'Completed',     'icon' => 'ti-check'],
+        'overdue'     => ['label' => 'Overdue',       'icon' => 'ti-alert-triangle'],
+    ];
+    if (($summary['resubmit'] ?? 0) > 0) {
+        $tabs['resubmit'] = [
+            'label' => 'Perlu Revisi (' . $summary['resubmit'] . ')',
+            'icon'  => 'ti-refresh',
+        ];
+    }
+    // Clicking a tab navigates immediately (keeps search + parent context).
+    $tabUrl = fn ($key) => route('user.learning.dashboard', array_filter([
         'learning_tab'   => 'my-task',
         'my_task_status' => $key === 'all' ? null : $key,
+        'my_task_q'      => ($search ?? '') !== '' ? $search : null,
+        'my_task_parent' => ($activeGroup ?? null) ? $activeGroup['key'] : null,
     ]));
 @endphp
 
-{{-- Status filter --}}
+{{-- Banner Notifikasi Tugas Perlu Revisi --}}
+@if (($summary['resubmit'] ?? 0) > 0)
+    <div class="alert alert-warning border-start border-warning border-4 rounded-4 shadow-sm mb-3">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-3">
+                <span class="avatar bg-warning text-dark rounded-circle shadow-sm">
+                    <i class="ti ti-refresh fs-2"></i>
+                </span>
+                <div>
+                    <h4 class="alert-title mb-1 fw-bold text-dark">
+                        Ada {{ $summary['resubmit'] }} Tugas Memerlukan Revisi
+                    </h4>
+                    <div class="text-muted small">
+                        Admin telah memeriksa dan meminta perbaikan jawaban pada tugas Anda. Silakan buka tugas bertanda <strong>Resubmit Requested</strong> untuk melihat catatan dan mengirim ulang jawaban.
+                    </div>
+                </div>
+            </div>
+            @if ($filter !== 'resubmit')
+                <a href="{{ $tabUrl('resubmit') }}" class="btn btn-warning text-dark fw-semibold px-3 py-2 rounded-pill shadow-sm">
+                    <i class="ti ti-eye me-1"></i> Lihat Tugas Revisi ({{ $summary['resubmit'] }})
+                </a>
+            @endif
+        </div>
+    </div>
+@endif
+
+{{-- Access code: unlock standalone tasks shared with specific users --}}
+@if (($showRedeemCard ?? false) && Route::has('my-task.redeem'))
+    <div class="card border-0 shadow-sm rounded-4 mb-3">
+        <div class="card-body py-2 px-3">
+            @if (session('redeem_notice'))
+                <div class="alert alert-{{ session('redeem_notice')['type'] === 'success' ? 'success' : 'danger' }} py-2 mb-2">
+                    {{ session('redeem_notice')['text'] }}
+                </div>
+                @php session()->forget('redeem_notice'); @endphp
+            @endif
+            <form method="POST" action="{{ route('my-task.redeem') }}" class="d-flex flex-wrap gap-2 align-items-center">
+                @csrf
+                <span class="text-muted small d-flex align-items-center">
+                    <i class="ti ti-key me-1"></i>Have an access code? <span class="ms-1 d-none d-md-inline">You can also open the shared link / scan the QR code.</span>
+                </span>
+                <input type="text" name="code" class="form-control form-control-sm text-uppercase"
+                       style="max-width:160px" placeholder="Enter code" maxlength="12" required>
+                <button type="submit" class="btn btn-sm btn-primary">Unlock</button>
+            </form>
+        </div>
+    </div>
+@endif
+
+{{-- Quick Filter --}}
 <div class="card border-0 shadow-sm rounded-4 mb-3">
-    <div class="card-body py-2">
-        <div class="d-flex flex-wrap gap-2">
-            @foreach ($statusLabels as $key => $label)
-                <a href="{{ $filterUrl($key) }}"
-                   class="btn {{ $filter === $key ? 'btn-primary' : 'btn-white' }} btn-sm">
-                    {{ $label }}
-                    @if ($key !== 'all')
-                        <span class="badge {{ $filter === $key ? 'bg-white text-primary' : 'bg-primary-lt text-primary' }} ms-1">{{ $summary[$key] ?? 0 }}</span>
-                    @endif
+    <div class="card-body">
+        <div class="text-muted small mb-2">Quick Filter</div>
+        <div class="d-flex flex-wrap gap-2 mb-2">
+            @foreach ($tabs as $key => $tab)
+                <a href="{{ $tabUrl($key) }}"
+                   class="btn {{ $filter === $key ? 'btn-primary' : 'btn-white' }}">
+                    <i class="ti {{ $tab['icon'] }} me-1"></i>{{ $tab['label'] }}
                 </a>
             @endforeach
         </div>
+        <form method="GET" action="{{ route('user.learning.dashboard') }}" class="d-flex flex-wrap gap-2 align-items-center">
+            <input type="hidden" name="learning_tab" value="my-task">
+            <input type="hidden" name="my_task_status" value="{{ $filter }}">
+            @if ($activeGroup ?? null)
+                <input type="hidden" name="my_task_parent" value="{{ $activeGroup['key'] }}">
+            @endif
+            <div class="input-icon flex-grow-1" style="min-width:180px">
+                <span class="input-icon-addon"><i class="ti ti-search"></i></span>
+                <input type="text" name="my_task_q" class="form-control" placeholder="Search..." value="{{ $search ?? '' }}">
+            </div>
+            <button type="submit" class="btn btn-primary" title="Search"><i class="ti ti-search"></i></button>
+            <a href="{{ $resetUrl }}" class="btn btn-white" title="Reset filter"><i class="ti ti-refresh"></i></a>
+        </form>
     </div>
 </div>
 
-{{-- Task list --}}
-<div class="row g-3">
-    @forelse ($tasks as $task)
-        @php
-            $status     = $task->userStatusFor(auth()->user());
-            $submission = $task->submissionFor(auth()->user());
-            $answersByField = $submission ? $submission->answersByField() : collect();
-        @endphp
-        <div class="col-12">
-            <div class="card border-0 shadow-sm rounded-4">
-                <div class="card-body p-4">
-                    <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-2">
-                        <div>
-                            <h3 class="card-title mb-1">
-                                @if ($task->trainingPlan)
-                                    <a href="{{ route('user.playlist.show', $task->trainingPlan->slug) }}" class="text-body text-decoration-none">{{ $task->title }}</a>
-                                @else
-                                    {{ $task->title }}
+@if ($activeGroup ?? null)
+    {{-- Detail: tasks of one parent --}}
+    <div class="mb-3">
+        <a href="{{ $backUrl }}" class="text-primary text-decoration-none fw-semibold d-inline-flex align-items-center gap-1">
+            <i class="ti ti-arrow-left"></i> Back
+        </a>
+    </div>
+    <div class="card border-0 shadow-sm rounded-4 mb-3">
+        <div class="card-body p-3">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge {{ $parentTypeBadge[$activeGroup['parent_type']] ?? 'bg-secondary-lt text-secondary' }}">
+                        {{ $parentTypeLabel[$activeGroup['parent_type']] ?? $activeGroup['parent_type'] }}
+                    </span>
+                    @if ($activeGroup['parent_url'])
+                        <a href="{{ $activeGroup['parent_url'] }}" class="fw-semibold text-body text-decoration-none">{{ $activeGroup['parent_name'] }}</a>
+                    @else
+                        <span class="fw-semibold">{{ $activeGroup['parent_name'] }}</span>
+                    @endif
+                    @if ($activeGroup['has_overdue'])
+                        <span class="badge bg-danger-lt text-danger">Overdue</span>
+                    @endif
+                </div>
+                <span class="small text-muted">{{ $activeGroup['completed'] }}/{{ $activeGroup['total'] }} completed</span>
+            </div>
+            <div class="progress mt-2" style="height:6px">
+                <div class="progress-bar bg-success" role="progressbar"
+                     style="width: {{ $activeGroup['total'] ? round($activeGroup['completed'] / $activeGroup['total'] * 100) : 0 }}%"></div>
+            </div>
+        </div>
+    </div>
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="table-responsive">
+            <table class="table table-vcenter mb-0">
+                <thead>
+                    <tr>
+                        <th class="w-1">NO</th>
+                        <th>TASK</th>
+                        <th>TYPE</th>
+                        <th>DEADLINE</th>
+                        <th class="text-center">SCORE</th>
+                        <th>STATUS</th>
+                        <th class="text-end">ACTION</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($activeGroup['tasks'] as $i => $task)
+                        @php
+                            $tStatus = $task->userStatusFor(auth()->user());
+                            $tSubmission = $task->submissionFor(auth()->user());
+                        @endphp
+                        <tr>
+                            <td class="text-muted">{{ $i + 1 }}</td>
+                            <td>
+                                <span class="fw-semibold">{{ $task->title }}</span>
+                                @if ($task->description)
+                                    <div class="text-muted small">{{ Str::limit($task->description, 80) }}</div>
                                 @endif
-                            </h3>
-                            <div class="text-muted small">
-                                <i class="ti ti-book-2 me-1"></i>{{ $task->parentName() }}
+                            </td>
+                            <td><span class="badge bg-primary-lt text-primary">{{ $task->typeLabel() }}</span></td>
+                            <td class="text-nowrap">
                                 @if ($task->deadline)
-                                    <span class="ms-2"><i class="ti ti-calendar-due me-1"></i>Deadline: {{ $task->deadline->format('d M Y H:i') }}</span>
-                                @endif
-                            </div>
-                        </div>
-                        <div class="d-flex flex-wrap gap-1">
-                            <span class="badge bg-primary-lt text-primary">{{ $task->typeLabel() }}</span>
-                            <span class="badge {{ $statusBadges[$status] }}">{{ $statusLabels[$status] }}</span>
-                        </div>
-                    </div>
-
-                    @if ($task->description)
-                        <p class="text-muted mb-2">{{ $task->description }}</p>
-                    @endif
-
-                    @if ($task->attachment)
-                        <div class="mb-3">
-                            <a href="{{ Storage::url($task->attachment) }}" target="_blank" class="btn btn-sm btn-outline-primary">
-                                <i class="ti ti-download me-1"></i>Download task attachment
-                            </a>
-                        </div>
-                    @endif
-
-                    @if ($status === 'completed')
-                        <div class="alert alert-success mb-0">
-                            <i class="ti ti-check me-1"></i>
-                            {{ $task->isAssessment() ? 'Quiz auto-scored.' : 'Reviewed by admin.' }}
-                            @if ($submission && !is_null($submission->score))
-                                <span class="badge bg-success ms-2">Score: {{ $submission->score }}</span>
-                            @endif
-                        </div>
-                        {{-- Summary of submitted answers --}}
-                        @if ($answersByField->isNotEmpty() && $task->fields->isNotEmpty())
-                            <div class="mt-2 small">
-                                @foreach ($task->fields as $field)
-                                    @php $ans = $answersByField->get($field->id); @endphp
-                                    @if ($ans && ($ans->file_path || $ans->answer_text))
-                                        <div class="mb-1">
-                                            <span class="fw-semibold">{{ $field->label }}:</span>
-                                            @if ($ans->file_path)
-                                                <a href="{{ Storage::url($ans->file_path) }}" target="_blank">View file</a>
-                                            @else
-                                                <span class="text-muted">{{ Str::limit($ans->answer_text, 100) }}</span>
-                                            @endif
-                                            @if ($task->isAssessment() && $field->isChoice())
-                                                @php $isCorrect = $ans->answer_text === $field->correct_answer; @endphp
-                                                <span class="badge {{ $isCorrect ? 'bg-success' : 'bg-danger' }} ms-1">
-                                                    {{ $isCorrect ? 'Correct' : 'Wrong — correct: ' . $field->correct_answer }}
-                                                </span>
-                                            @endif
-                                        </div>
-                                    @endif
-                                @endforeach
-                            </div>
-                        @elseif ($submission && $submission->file_path)
-                            {{-- Legacy submission (single file, before the question builder): show the uploaded file --}}
-                            <div class="mt-2 small">
-                                <span class="fw-semibold">Your submitted file:</span>
-                                <a href="{{ Storage::url($submission->file_path) }}" target="_blank">Download answer</a>
-                                @if ($submission->submitted_at)
-                                    <span class="text-muted">— submitted {{ $submission->submitted_at->format('d M Y H:i') }}</span>
-                                @endif
-                            </div>
-                        @elseif ($submission && ! $task->isCourseAssignment())
-                            <div class="mt-2 small text-muted">No answer file recorded for this submission.</div>
-                        @endif
-                        @if ($submission && $submission->feedback)
-                            <div class="alert alert-info mt-2 mb-0">
-                                <i class="ti ti-message-circle me-1"></i>
-                                <strong>Admin feedback:</strong><br>{{ $submission->feedback }}
-                            </div>
-                        @endif
-                    @elseif ($task->isCourseAssignment())
-                        {{-- ── Course Assignment: open the linked course, then confirm ── --}}
-                        @if ($submission)
-                            <div class="alert alert-warning d-flex flex-wrap align-items-center justify-content-between gap-2 mb-0">
-                                <div>
-                                    <i class="ti ti-clock me-1"></i>
-                                    Marked as done {{ $submission->submitted_at?->format('d M Y H:i') }} — waiting for admin review.
-                                </div>
-                                <span class="badge bg-warning text-dark">Pending</span>
-                            </div>
-                        @else
-                            <div class="d-flex flex-wrap gap-2 align-items-center">
-                                @if ($task->link_type === 'lms' && $task->linkedPlan)
-                                    <a href="{{ route('user.playlist.show', $task->linkedPlan->slug) }}"
-                                       class="btn btn-primary">
-                                        <i class="ti ti-book-2 me-1"></i>Open Course: {{ $task->linkedPlan->title }}
-                                    </a>
-                                @elseif ($task->link_type === 'external' && $task->external_url)
-                                    <a href="{{ $task->external_url }}" target="_blank"
-                                       class="btn btn-primary">
-                                        <i class="ti ti-external-link me-1"></i>Open External Course
-                                    </a>
-                                @endif
-                                <form action="{{ route('my-task.submit', $task) }}" method="POST" class="d-inline">
-                                    @csrf
-                                    <button type="submit" class="btn btn-outline-success">
-                                        <i class="ti ti-check me-1"></i>Mark as Complete
-                                    </button>
-                                </form>
-                            </div>
-                            <div class="form-hint mt-1">Open the course above, finish it, then click “Mark as Complete”.</div>
-                        @endif
-                    @else
-                        @if ($submission)
-                            <div class="alert alert-warning d-flex flex-wrap align-items-center justify-content-between gap-2">
-                                <div>
-                                    <i class="ti ti-clock me-1"></i>
-                                    Answers submitted {{ $submission->submitted_at?->format('d M Y H:i') }} — waiting for admin review.
-                                </div>
-                                <span class="badge bg-warning text-dark">Pending</span>
-                            </div>
-                        @endif
-
-                        @if ($task->isAssessment())
-                            <div class="alert alert-info">
-                                <i class="ti ti-bulb me-1"></i>
-                                This quiz has {{ $task->fields->count() }} multiple-choice questions and is scored automatically.
-                            </div>
-                        @endif
-
-                        {{-- Dynamic answer form following the task fields --}}
-                        <form action="{{ route('my-task.submit', $task) }}" method="POST" enctype="multipart/form-data" class="mt-2">
-                            @csrf
-                            @if (! $task->isAssessment())
-                                <div class="mb-2 fw-semibold small">
-                                    {{ $submission ? 'Update answers (only changed fields are replaced)' : 'Submit answers' }}
-                                </div>
-                            @endif
-
-                            @foreach ($task->fields as $field)
-                                @php
-                                    $ans = $answersByField->get($field->id);
-                                    $fieldKey = 'fields.' . $field->id;
-                                    $hasFile = $ans && $ans->file_path;
-                                @endphp
-                                <div class="mb-3">
-                                    <label class="form-label small fw-semibold">
-                                        {{ $field->label }}
-                                        @if ($field->required)
-                                            <span class="text-danger">*</span>
-                                        @endif
-                                        <span class="text-muted fw-normal">({{ $field->typeLabel() }})</span>
-                                    </label>
-
-                                    @if ($field->isFile())
-                                        @if ($hasFile)
-                                            <div class="form-hint mb-1">
-                                                Current file:
-                                                <a href="{{ Storage::url($ans->file_path) }}" target="_blank">view</a>
-                                                — upload a new one to replace it.
-                                            </div>
-                                        @endif
-                                        <input type="file"
-                                               name="fields[{{ $field->id }}]"
-                                               class="form-control @error($fieldKey) is-invalid @enderror"
-                                               {{ $field->required && ! $hasFile ? 'required' : '' }}>
-                                        <div class="form-hint">Max 5 MB per file.</div>
-                                    @elseif ($field->isChoice())
-                                        @foreach ($field->options ?? [] as $opt)
-                                            @php
-                                                $checked = old($fieldKey, $ans->answer_text ?? null) === $opt;
-                                            @endphp
-                                            <label class="form-check">
-                                                <input type="radio" class="form-check-input @error($fieldKey) is-invalid @enderror"
-                                                       name="fields[{{ $field->id }}]" value="{{ $opt }}"
-                                                       {{ $checked ? 'checked' : '' }}
-                                                       {{ $field->required || $task->isAssessment() ? 'required' : '' }}>
-                                                <span class="form-check-label">{{ $opt }}</span>
-                                            </label>
-                                        @endforeach
+                                    @php
+                                        $tdl = $task->deadline;
+                                        $tdlOverdue = $tStatus === 'overdue' || ($tdl->isPast() && $tStatus !== 'completed');
+                                        $tdlAction = in_array($tStatus, ['overdue', 'not_started', 'resubmit', 'in_progress'], true);
+                                        $hoursUntil = now()->diffInHours($tdl, false);
+                                        $isToday = $tdlAction && ! $tdlOverdue && $hoursUntil <= 24 && $hoursUntil >= 0;
+                                        $isUrgent = $tdlAction && ! $tdlOverdue && $hoursUntil <= 48 && $hoursUntil > 24;
+                                        $tdlSoon = $tdlAction && ! $tdlOverdue && $tdl->diffInDays(now()) <= 3;
+                                    @endphp
+                                    @if ($tdlOverdue)
+                                        <span class="badge bg-danger"><i class="ti ti-alert-circle me-1"></i>{{ $tdl->format('d M Y H:i') }}</span>
+                                    @elseif ($isToday)
+                                        <span class="badge bg-danger text-white"><i class="ti ti-flame me-1"></i>Hari Ini ({{ $tdl->format('H:i') }})</span>
+                                    @elseif ($isUrgent)
+                                        <span class="badge bg-warning text-dark"><i class="ti ti-clock-exclamation me-1"></i>H-1 / H-2 ({{ $tdl->format('d M') }})</span>
+                                    @elseif ($tdlSoon)
+                                        <span class="badge bg-warning-lt text-warning"><i class="ti ti-clock me-1"></i>{{ $tdl->format('d M Y H:i') }}</span>
                                     @else
-                                        <textarea name="fields[{{ $field->id }}]" rows="2"
-                                                  class="form-control @error($fieldKey) is-invalid @enderror"
-                                                  {{ $field->required ? 'required' : '' }}>{{ old($fieldKey, $ans->answer_text ?? '') }}</textarea>
+                                        <span class="text-muted">{{ $tdl->format('d M Y H:i') }}</span>
                                     @endif
+                                @else
+                                    <span class="text-muted">-</span>
+                                @endif
+                            </td>
+                            <td class="text-center">
+                                @if ($tSubmission && ! is_null($tSubmission->score))
+                                    <span class="badge bg-success">{{ $tSubmission->score }}</span>
+                                @else
+                                    <span class="text-muted">-</span>
+                                @endif
+                            </td>
+                            <td><span class="badge {{ $statusBadges[$displayStatus($tStatus)] }}">{{ $statusLabels[$displayStatus($tStatus)] }}</span></td>
+                            <td class="text-end">
+                                @if ($tStatus === 'resubmit')
+                                    <button type="button" class="btn btn-sm btn-warning text-dark fw-semibold shadow-sm"
+                                            data-task-toggle="{{ $task->id }}">
+                                        <i class="ti ti-refresh me-1"></i> Revisi
+                                        <i class="ti ti-chevron-down ms-1"></i>
+                                    </button>
+                                @else
+                                    <button type="button" class="btn btn-sm {{ in_array($tStatus, ['completed', 'submitted']) ? 'btn-white' : 'btn-success' }}"
+                                            data-task-toggle="{{ $task->id }}">
+                                        {{ in_array($tStatus, ['completed', 'submitted']) ? 'View' : 'Start' }}
+                                        <i class="ti ti-chevron-down ms-1"></i>
+                                    </button>
+                                @endif
+                            </td>
+                        </tr>
+                        <tr id="task-detail-{{ $task->id }}" class="d-none">
+                            <td colspan="7">
+                                @include('user.learning.dashboard-partials.my-task-card', ['task' => $task])
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+@else
 
-                                    @error($fieldKey)
-                                        <div class="invalid-feedback d-block">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                            @endforeach
 
-                            @if ($task->fields->isEmpty())
-                                <div class="alert alert-warning">This task has no questions yet.</div>
-                            @else
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="ti ti-upload me-1"></i>{{ $task->isAssessment() ? 'Submit Quiz' : ($submission ? 'Resubmit' : 'Submit') }}
-                                </button>
-                            @endif
-                        </form>
-                    @endif
-                </div>
+    {{-- Parent list --}}
+    @if ($groups->isNotEmpty())
+        @include('user.learning.dashboard-partials.my-task-parent-table', ['tableGroups' => $groups])
+    @else
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4 text-center text-muted">
+                <i class="ti ti-list-check fs-1 d-block mb-2"></i>
+                @if ($filter === 'all' && ($search ?? '') === '')
+                    No tasks yet. Open a playlist or content you follow first — tasks will appear here after you open it.
+                @else
+                    No tasks match this filter.
+                @endif
             </div>
         </div>
-    @empty
-        <div class="col-12">
-            <div class="card border-0 shadow-sm rounded-4">
-                <div class="card-body p-4 text-center text-muted">
-                    <i class="ti ti-list-check fs-1 d-block mb-2"></i>
-                    @if ($filter === 'all')
-                        No tasks yet. Open a course you follow first — tasks will appear here after you click the course.
-                    @else
-                        No tasks with this filter.
-                    @endif
-                </div>
-            </div>
-        </div>
-    @endforelse
-</div>
+    @endif
+@endif
+
+<script>
+(function () {
+    if (window._myTaskTableToggleBound) return;
+    window._myTaskTableToggleBound = true;
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-task-toggle]');
+        if (!btn) return;
+        var row = document.getElementById('task-detail-' + btn.getAttribute('data-task-toggle'));
+        if (row) row.classList.toggle('d-none');
+    });
+})();
+</script>

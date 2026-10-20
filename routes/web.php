@@ -203,6 +203,10 @@ Route::get('/assessment-hub', [AssesmentUserController::class, 'index'])->middle
 Route::group(['prefix' => 'my-task', 'middleware' => 'auth'], function () {
     Route::get('/', [MyTaskController::class, 'index'])->name('my-task.index');
     Route::post('/{task}/submit', [MyTaskController::class, 'submit'])->name('my-task.submit');
+    Route::post('/redeem', [MyTaskController::class, 'redeemCode'])->name('my-task.redeem');
+    Route::get('/redeem/{code}', [MyTaskController::class, 'redeemViaLink'])->name('my-task.redeem-link');
+    Route::get('/unlock/{task}', [MyTaskController::class, 'redeemViaSignedLink'])->name('my-task.redeem-signed');
+    Route::get('/unlock-playlist/{playlist}', [MyTaskController::class, 'unlockPlaylist'])->name('my-task.unlock-playlist');
 });
 
 /*
@@ -483,6 +487,13 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
             // Dashboard: induk (playlist / content / offline training) yang punya task
             Route::get('/', [TaskManageController::class, 'index'])->name('index');
 
+            Route::get('trash', [TaskManageController::class, 'trash'])->name('trash');
+Route::post('{id}/restore', [TaskManageController::class, 'restore'])->name('restore');
+Route::delete('{id}/force', [TaskManageController::class, 'forceDestroy'])->name('force-destroy');
+Route::get('{task}/qr', [TaskManageController::class, 'qr'])->name('qr');
+
+
+
             // AJAX: dropdown + search induk untuk form create/edit
             Route::get('parents/{type}', [TaskManageController::class, 'parentOptions'])->name('parents');
 
@@ -500,6 +511,9 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
 
             // Review submission user
             Route::get('/{task}/submissions', [TaskManageController::class, 'submissions'])->name('submissions');
+            Route::get('/{task}/submissions/export', [TaskManageController::class, 'exportSubmissions'])->name('submissions.export');
+            Route::post('/{task}/submissions/bulk-complete', [TaskManageController::class, 'bulkComplete'])->name('submissions.bulk-complete');
+            Route::post('/{task}/submissions/{submission}/resubmit', [TaskManageController::class, 'requestResubmit'])->name('submissions.resubmit');
 
             // Koreksi submission user -> tandai selesai
             Route::post('/{task}/submissions/{submission}/complete', [TaskManageController::class, 'completeSubmission'])

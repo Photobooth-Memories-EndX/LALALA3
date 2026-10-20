@@ -1,6 +1,6 @@
 @props([
     'badge' => 'My Learning',
-    'title' => 'My Task',
+    'title' => 'Task',
     'subtitle' => null,
     'description' => 'Track tasks from the courses you joined and monitor their review status.',
     'stats' => [],
@@ -35,7 +35,7 @@
 
             <div class="col-lg-4 d-flex justify-content-lg-end">
                 <div class="learning-hero-ds-panel learning-hero-ds-panel--grid" role="group"
-                    aria-label="My task statistics">
+                    aria-label="Task statistics">
                     <div class="learning-hero-ds-card learning-hero-ds-card--primary">
                         <span class="learning-hero-ds-label">Total Tasks</span>
                         <strong class="learning-hero-ds-value">

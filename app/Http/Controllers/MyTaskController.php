@@ -4,11 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\ContentUser;
 use App\Models\PlaylistContentUser;
+use App\Models\AssesmentResult;
 use App\Models\Task;
+use App\Models\TaskCodeRedemption;
+use App\Models\TaskPlaylistUnlock;
+use App\Models\TrainingPlanDetail;
 use App\Models\TaskSubmission;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
 /**
@@ -34,20 +39,180 @@ class MyTaskController extends Controller
 
         $tasks = $this->tasksFor($user);
 
+
+        // LMS-linked Course Assignments complete automatically once the
+        // linked course reaches 100% progress.
+        $this->syncCourseCompletions($user, $tasks);
+
         $filter = $request->get('my_task_status', 'all');
-        if ($filter !== 'all') {
+        $search = trim((string) $request->get('my_task_q', ''));
+        if ($search !== '') {
+            $tasks = $tasks->filter(fn ($task) => stripos($task->title, $search) !== false)->values();
+        }
+
+        $allTasks = $tasks;
+        $summary = [
+            'total'       => $allTasks->count(),
+            'not_started' => $allTasks->filter(fn ($t) => $t->userStatusFor($user) === 'not_started')->count(),
+            'submitted'   => $allTasks->filter(fn ($t) => $t->userStatusFor($user) === 'submitted')->count(),
+            'completed'   => $allTasks->filter(fn ($t) => $t->userStatusFor($user) === 'completed')->count(),
+            'overdue'     => $allTasks->filter(fn ($t) => $t->userStatusFor($user) === 'overdue')->count(),
+            'resubmit'    => $allTasks->filter(fn ($t) => $t->userStatusFor($user) === 'resubmit')->count(),
+        ];
+
+        if ($filter === 'resubmit') {
+            $tasks = $tasks->filter(fn ($task) => $task->userStatusFor($user) === 'resubmit')->values();
+        } elseif ($filter === 'in_progress') {
+            $tasks = $tasks->filter(fn ($task) => $task->userStatusFor($user) !== 'completed')->values();
+        } elseif ($filter !== 'all') {
             $tasks = $tasks->filter(fn ($task) => $task->userStatusFor($user) === $filter)->values();
         }
 
-        $summary = [
-            'total'       => $tasks->count(),
-            'not_started' => $tasks->filter(fn ($t) => $t->userStatusFor($user) === 'not_started')->count(),
-            'submitted'   => $tasks->filter(fn ($t) => $t->userStatusFor($user) === 'submitted')->count(),
-            'completed'   => $tasks->filter(fn ($t) => $t->userStatusFor($user) === 'completed')->count(),
-            'overdue'     => $tasks->filter(fn ($t) => $t->userStatusFor($user) === 'overdue')->count(),
-        ];
+        // Group tasks per parent (playlist / content) so the user always
+        // sees which course each task belongs to. Overdue groups first,
+        // then by nearest deadline (tasks inside keep deadline order).
+        $groups = $tasks
+            ->groupBy(fn ($task) => $task->parent_type . ':' . $task->parentId())
+            ->map(function ($groupTasks, $key) use ($user) {
+                /** @var \App\Models\Task $first */
+                $first = $groupTasks->first();
+                $statuses = $groupTasks->map(fn ($t) => $t->userStatusFor($user));
 
-        return view('user.learning.dashboard-partials.my-task', compact('tasks', 'summary', 'filter'));
+                // Nearest deadline that still needs the user's attention
+                // (overdue, not started, or resubmit requested). Completed / pending-review tasks
+                // never trigger the red deadline badge.
+                $needsAction = $groupTasks->filter(
+                    fn ($t) => in_array($t->userStatusFor($user), ['overdue', 'not_started', 'resubmit'], true)
+                );
+
+                return [
+                    'key'              => $key,
+                    'parent_type'      => $first->parent_type,
+                    'parent_name'      => $first->parentName(),
+                    'parent_url'       => $this->parentUrl($first),
+                    'tasks'            => $groupTasks->values(),
+                    'total'            => $groupTasks->count(),
+                    'completed'        => $statuses->filter(fn ($s) => $s === 'completed')->count(),
+                    'has_overdue'      => $statuses->contains('overdue'),
+                    'nearest_deadline' => $needsAction->map->deadline->filter()->min(),
+                ];
+            })
+            ->sortBy(fn ($g) => [$g['nearest_deadline'] === null, $g['nearest_deadline']])
+            ->sortByDesc('has_overdue')
+            ->values();
+
+        // Drill-down: ?my_task_parent=playlist:5 shows only that parent's tasks.
+        $activeKey = $request->get('my_task_parent');
+        $activeGroup = $activeKey ? $groups->firstWhere('key', (string) $activeKey) : null;
+
+        // Show the "enter access code" card when standalone tasks exist
+        // (they always carry a code — manual or auto-generated).
+        $showRedeemCard = Task::where('parent_type', 'standalone')
+            ->where('status', 'published')
+            ->exists();
+
+        return view('user.learning.dashboard-partials.my-task', compact('groups', 'activeGroup', 'summary', 'filter', 'search', 'showRedeemCard'));
+    }
+
+    /**
+     * POST /my-task/redeem — user enters a standalone task's access code.
+     * On success the task is unlocked and appears in their My Task list.
+     */
+    public function redeemCode(Request $request)
+    {
+        $code = strtoupper(trim((string) $request->input('code', '')));
+        $task = $this->redeemAccessCode($request->user()->id, $code);
+
+        // Persistent (not flashed): the My Task partial is AJAX-loaded,
+        // so a normal flash would be gone before the partial renders.
+        session()->put('redeem_notice', $task
+            ? ['type' => 'success', 'text' => 'Task unlocked: ' . $task->title]
+            : ['type' => 'error', 'text' => 'Invalid code. Check the code and try again.']);
+
+        return back();
+    }
+
+    /**
+     * GET /my-task/redeem/{code} — redeem via shared link / QR code.
+     * Same unlock logic; lands on the My Task tab with a notice.
+     */
+    public function redeemViaLink(Request $request, string $code)
+    {
+        $task = $this->redeemAccessCode($request->user()->id, $code);
+
+        session()->put('redeem_notice', $task
+            ? ['type' => 'success', 'text' => 'Task unlocked: ' . $task->title]
+            : ['type' => 'error', 'text' => 'This link is invalid or the task is no longer available.']);
+
+        return redirect()->route('user.learning.dashboard', ['learning_tab' => 'my-task']);
+    }
+
+    /**
+     * GET /my-task/unlock/{task} — redeem via signed link / QR code
+     * (for standalone tasks without an access code). The signature
+     * proves the link came from the admin; it cannot be guessed.
+     */
+    public function redeemViaSignedLink(Request $request, Task $task)
+    {
+        abort_unless($request->hasValidSignature(), 403);
+        abort_unless(
+            $task->parent_type === 'standalone' && $task->status === 'published',
+            404
+        );
+
+        TaskCodeRedemption::firstOrCreate([
+            'task_id' => $task->id,
+            'user_id' => $request->user()->id,
+        ]);
+
+        session()->put('redeem_notice', [
+            'type' => 'success',
+            'text' => 'Task unlocked: ' . $task->title,
+        ]);
+
+        return redirect()->route('user.learning.dashboard', ['learning_tab' => 'my-task']);
+    }
+
+    /**
+     * Core unlock: find a published standalone task by code and record
+     * the redemption. Returns the task, or null when the code is invalid.
+     */
+    protected function redeemAccessCode(int $userId, string $code): ?Task
+    {
+        $code = strtoupper(trim($code));
+        if ($code === '') {
+            return null;
+        }
+
+        $task = Task::where('access_code', $code)
+            ->where('parent_type', 'standalone')
+            ->where('status', 'published')
+            ->first();
+
+        if (! $task) {
+            return null;
+        }
+
+        TaskCodeRedemption::firstOrCreate([
+            'task_id' => $task->id,
+            'user_id' => $userId,
+        ]);
+
+        return $task;
+    }
+
+    /**
+     * Link to the parent a task belongs to (null when unknown).
+     * Playlist → playlist detail page; content → no user detail route
+     * in this payload, so the group header shows the name only.
+     */
+    protected function parentUrl(Task $task): ?string
+    {
+        if ($task->parent_type === 'playlist' && $task->trainingPlan) {
+            return route('user.playlist.show', $task->trainingPlan->slug);
+        }
+
+        return null;
     }
 
     /**
@@ -63,8 +228,10 @@ class MyTaskController extends Controller
      * POST /my-task/{task}/submit — user submits answers.
      *
      * Behaviour depends on the task type (mentor revision 2026-10-01):
-     * - course_assignment: no questions — user just confirms they did it (pending review).
-     * - assessment: multiple choice, auto-scored, marked completed immediately.
+     * - course_assignment (linked LMS course): auto-completed when the
+     *   linked course reaches 100% progress.
+     * - course_assignment (external link): no progress data — user
+     *   confirms manually (pending review).
      * - others: per-field answers (file/text/choice), pending admin review.
      */
     public function submit(Request $request, Task $task)
@@ -82,72 +249,34 @@ class MyTaskController extends Controller
         $user = $request->user();
         $dashboard = redirect()->route('user.learning.dashboard', ['learning_tab' => 'my-task']);
 
-        // ── 1. Course Assignment: confirm completion, no questions ──
+        // ── 1. Course Assignment: auto-completed at 100% course progress ──
         if ($task->isCourseAssignment()) {
-            TaskSubmission::updateOrCreate(
-                ['task_id' => $task->id, 'user_id' => $user->id],
-                ['status' => 'pending', 'submitted_at' => now()]
-            );
-
-            return $dashboard->with('success', 'Course assignment marked as done. Waiting for admin review.');
-        }
-
-        // ── 2. Assessment/Quiz: auto-scored multiple choice (one correct option) ──
-        if ($task->isAssessment()) {
-            $rules = [];
-            foreach ($task->fields as $field) {
-                $rules["fields.{$field->id}"] = [
-                    'required', 'string', Rule::in($field->options ?? []),
-                ];
-            }
-            $validated = $request->validate($rules, [
-                'fields.*.required' => 'Please answer all quiz questions.',
-            ]);
-            $inputFields = $validated['fields'] ?? [];
-
-            $total = $task->fields->count();
-            $correctCount = $task->fields->filter(
-                fn ($field) => ($inputFields[$field->id] ?? null) === $field->correct_answer
-            )->count();
-            $score = $total > 0 ? (int) round($correctCount / $total * 100) : 0;
-
-            $submission = TaskSubmission::updateOrCreate(
-                ['task_id' => $task->id, 'user_id' => $user->id],
-                ['status' => 'completed', 'score' => $score, 'submitted_at' => now()]
-            );
-
-            foreach ($task->fields as $field) {
-                $submission->answers()->updateOrCreate(
-                    ['task_field_id' => $field->id],
-                    ['answer_text' => $inputFields[$field->id] ?? null, 'file_path' => null]
-                );
-            }
-
-            return $dashboard->with(
-                'success',
-                "Quiz submitted! Your score: {$score} ({$correctCount}/{$total} correct)."
-            );
+            return $dashboard->with('info', 'This task completes automatically once you finish the course (100% progress).');
         }
 
         // ── 3. Other types: per-field answers, pending admin review ──
         $existing = TaskSubmission::where('task_id', $task->id)
             ->where('user_id', $user->id)
-            ->with('answers')
             ->first();
-        $existingAnswers = $existing ? $existing->answers->keyBy('task_field_id') : collect();
+        $existingAnswers = $existing ? $existing->answersByField() : collect();
+
+        // Tolak submit ganda: hanya boleh submit kalau belum pernah,
+        // atau kalau admin meminta resubmit.
+        if ($existing && ! $existing->resubmit_requested) {
+            return $dashboard->with('info', 'You have already submitted this task. Waiting for admin review.');
+        }
 
         // Validasi dinamis mengikuti field task.
         $rules = [];
         foreach ($task->fields as $field) {
             $key = "fields.{$field->id}";
             if ($field->isFile()) {
-                $alreadyUploaded = isset($existingAnswers[$field->id])
-                    && $existingAnswers[$field->id]->file_path;
-                // Saat kirim ulang: file wajib hanya jika belum ada file tersimpan.
-                $rules[$key] = [
-                    ($field->required && ! $alreadyUploaded) ? 'required' : 'nullable',
-                    'file', 'max:5120', // 5 MB per file
-                ];
+                // Upload jamak (fields[id][]): jumlah & ukuran mengikuti setting soal.
+                $rules[$key] = ['nullable', 'array', 'max:' . $field->maxFiles()];
+                $rules[$key . '.*'] = ['file', 'max:' . $field->maxSizeKb()];
+                if ($field->allow_link) {
+                    $rules["drive_links.{$field->id}"] = ['nullable', 'url', 'max:500'];
+                }
             } elseif ($field->isChoice()) {
                 $rules[$key] = [
                     $field->required ? 'required' : 'nullable',
@@ -160,40 +289,108 @@ class MyTaskController extends Controller
                 ];
             }
         }
-        $validated = $request->validate($rules);
+        $validator = Validator::make($request->all(), $rules, [
+            'fields.*.max'   => 'Too many files for this question.',
+            'fields.*.*.max' => 'One of the files is too large.',
+        ]);
+
+        // File wajib (saat belum ada file tersimpan) + batas tipe file dicek manual.
+        $validator->after(function ($validator) use ($task, $existingAnswers, $request) {
+            foreach ($task->fields as $field) {
+                if (! $field->isFile()) {
+                    continue;
+                }
+                $files = $request->file("fields.{$field->id}");
+                $files = is_array($files)
+                    ? array_values(array_filter($files))
+                    : array_values(array_filter((array) $files));
+
+                $existingAnswer = $existingAnswers[$field->id] ?? null;
+                $link = $field->allow_link
+                    ? trim($request->input("drive_links.{$field->id}") ?? '')
+                    : '';
+                $hasExisting = $existingAnswer
+                    && ($existingAnswer->hasFiles()
+                        || ($field->allow_link && $existingAnswer->answer_text));
+
+                if ($field->required && ! $hasExisting && empty($files) && $link === '') {
+                    $validator->errors()->add(
+                        "fields.{$field->id}",
+                        'Please upload a file or paste a Drive link.'
+                    );
+                }
+
+                $allowed = $field->allowedExtensions();
+                if (! empty($allowed)) {
+                    foreach ($files as $file) {
+                        $ext = strtolower($file->getClientOriginalExtension());
+                        if (! in_array($ext, $allowed, true)) {
+                            $validator->errors()->add(
+                                "fields.{$field->id}",
+                                "File type .{$ext} is not allowed here."
+                                . ' Allowed: ' . $field->allowedTypesLabel() . '.'
+                            );
+                            break;
+                        }
+                    }
+                }
+            }
+        });
+
+        $validated = $validator->validate();
 
         $inputFields   = $validated['fields'] ?? [];
         $uploadedFiles = $request->file('fields', []);
 
-        $submission = TaskSubmission::updateOrCreate(
-            ['task_id' => $task->id, 'user_id' => $user->id],
-            [
-                'status'       => 'pending',
-                'submitted_at' => now(),
-            ]
-        );
+        $submission = TaskSubmission::firstOrNew([
+            'task_id' => $task->id,
+            'user_id' => $user->id,
+        ]);
+
+        $existingAnswers = $submission->answersByField();
+        $newAnswers = [];
 
         foreach ($task->fields as $field) {
-            $answer = $submission->answers()->firstOrNew([
-                'task_field_id' => $field->id,
-            ]);
+            $existingAnswer = $existingAnswers->get($field->id);
+            $existingPaths = $existingAnswer ? $existingAnswer->filePaths() : [];
+            $paths = $existingPaths;
+            $answerText = null;
 
             if ($field->isFile()) {
-                $file = $uploadedFiles[$field->id] ?? null;
-                if ($file) {
+                $files = $uploadedFiles[$field->id] ?? null;
+                $files = is_array($files)
+                    ? array_values(array_filter($files))
+                    : array_values(array_filter((array) $files));
+                if (! empty($files)) {
                     // Hapus file lama jika user upload ulang field ini.
-                    if ($answer->file_path) {
-                        Storage::disk('public')->delete($answer->file_path);
+                    foreach ($existingPaths as $oldPath) {
+                        Storage::disk('public')->delete($oldPath);
                     }
-                    $answer->file_path = $file->store("task-submissions/{$task->id}", 'public');
+                    $paths = [];
+                    foreach ($files as $file) {
+                        $paths[] = $file->store("task-submissions/{$task->id}", 'public');
+                    }
                 }
-                $answer->answer_text = null;
+                $driveLink = $field->allow_link
+                    ? trim($request->input("drive_links.{$field->id}") ?? '')
+                    : '';
+                $answerText = $driveLink !== '' ? $driveLink : null;
             } else {
-                $answer->answer_text = $inputFields[$field->id] ?? null;
+                $answerText = $inputFields[$field->id] ?? null;
             }
 
-            $answer->save();
+            $newAnswers[$field->id] = [
+                'task_field_id' => (int) $field->id,
+                'answer_text'   => $answerText,
+                'file_path'     => $paths,
+            ];
         }
+
+        $submission->status             = 'pending';
+        $submission->submitted_at       = now();
+        $submission->resubmit_requested = false;
+        $submission->answers            = $newAnswers;
+        $submission->save();
 
         return $dashboard->with('success', 'Answers submitted successfully. Waiting for admin review.');
     }
@@ -206,17 +403,23 @@ class MyTaskController extends Controller
      */
     protected function tasksFor(User $user)
     {
-        $planIds    = $this->enrolledPlanIds($user->id);
+        // Playlist: task baru muncul setelah user menyelesaikan course 100%
+        // DAN mengklik tombol Task di halaman course (unlock tercatat di
+        // task_playlist_unlocks). Bukan lagi sekadar "pernah membuka".
+        $planIds    = $this->unlockedPlanIds($user->id);
         $contentIds = $this->openedContentIds($user->id);
+        // Standalone tasks the user unlocked via access code / link / QR.
+        // (Fetched up front so the main query needs no nested closures.)
+        $redeemedIds = TaskCodeRedemption::where('user_id', $user->id)->pluck('task_id')->all();
 
         return Task::with(['trainingPlan', 'linkedPlan', 'content', 'fields' => fn ($q) => $q->ordered()])
             ->with([
                 'submissions' => fn ($q) => $q->where('user_id', $user->id),
-                'submissions.answers',
             ])
             ->published()
-            ->where(function ($q) use ($planIds, $contentIds) {
-                // Playlists the user opened (original logic).
+            ->where(function ($q) use ($planIds, $contentIds, $redeemedIds) {
+                // Playlists yang sudah 100% + user mengklik tombol Task
+                // di halaman course (logic baru 2026-10-13).
                 $q->where(function ($w) use ($planIds) {
                     $w->where('parent_type', 'playlist')
                       ->whereIn('training_plan_id', $planIds);
@@ -225,10 +428,76 @@ class MyTaskController extends Controller
                 ->orWhere(function ($w) use ($contentIds) {
                     $w->where('parent_type', 'content')
                       ->whereIn('content_id', $contentIds);
+                })
+                // Standalone tasks are not tied to any placement and are always
+                // private: only users who redeemed the task's access code see it.
+                ->orWhere(function ($w) use ($redeemedIds) {
+                    $w->where('parent_type', 'standalone')
+                      ->whereIn('id', $redeemedIds);
                 });
             })
             ->orderByRaw('deadline IS NULL, deadline ASC')
             ->get();
+    }
+
+    /**
+     * Auto-complete Course Assignment tasks linked to an LMS course.
+     *
+     * A task with link_type=lms is marked completed once the user has
+     * finished every content of the linked playlist (course progress
+     * 100%): for each trainingplandetail row of the linked playlist,
+     * the user's playlist_content_users row is finished
+     * (finish = 1 or progress >= 100).
+     */
+    protected function syncCourseCompletions(User $user, $tasks): void
+    {
+        foreach ($tasks as $task) {
+            if (! $task->isCourseAssignment()) {
+                continue;
+            }
+            $planId = $task->linked_training_plan_id ?: $task->training_plan_id;
+            if (! $planId) {
+                continue;
+            }
+
+            $contentIds = TrainingPlanDetail::where('trainingplan_id', $planId)
+                ->pluck('content_id')->unique()->values();
+            $total = $contentIds->count();
+            if ($total === 0) {
+                continue;
+            }
+
+            $finishedQuery = PlaylistContentUser::where('user_id', $user->id)
+                ->where('trainingplan_id', $planId)
+                ->whereIn('content_id', $contentIds)
+                ->where(fn ($q) => $q->where('finish', '1')
+                    ->orWhere('finish', 1)
+                    ->orWhere('progress', '>=', 100));
+
+            if ($finishedQuery->count() < $total) {
+                continue;
+            }
+
+            $submission = TaskSubmission::firstOrNew([
+                'task_id' => $task->id,
+                'user_id' => $user->id,
+            ]);
+
+            // Already auto-completed before — leave it (and any admin
+            // feedback) untouched.
+            if ($submission->exists && $submission->status === 'completed') {
+                continue;
+            }
+
+            $submission->status = 'completed';
+            $submission->submitted_at = PlaylistContentUser::where('user_id', $user->id)
+                ->where('trainingplan_id', $planId)
+                ->whereIn('content_id', $contentIds)
+                ->max('completed_at') ?? now();
+            $submission->save();
+
+            $task->setRelation('submissions', collect([$submission]));
+        }
     }
 
     /**
@@ -240,8 +509,88 @@ class MyTaskController extends Controller
         return match ($task->parent_type) {
             'content'          => in_array($task->content_id, $this->openedContentIds($userId)),
             'offline_training' => false, // no tracking table yet
+            // Standalone is always private: only users who redeemed the code.
+            'standalone'       => TaskCodeRedemption::where('task_id', $task->id)
+                                    ->where('user_id', $userId)
+                                    ->exists(),
+            // Playlist: hanya yang sudah di-unlock via tombol Task (100%).
+            'playlist'         => in_array($task->training_plan_id, $this->unlockedPlanIds($userId)),
             default            => in_array($task->training_plan_id, $this->enrolledPlanIds($userId)),
         };
+    }
+
+    /**
+     * GET /my-task/unlock-playlist/{playlist} — user mengklik tombol Task
+     * di halaman course setelah progress 100%.
+     *
+     * Mencatat unlock lalu mengarahkan ke tab Task. Task playlist ini
+     * baru muncul di My Task setelah unlock tercatat (logic 2026-10-13).
+     */
+    public function unlockPlaylist(Request $request, $playlist)
+    {
+        $user = $request->user();
+        $planId = (int) $playlist;
+
+        abort_unless(
+            $this->playlistProgress($user, $planId) >= 100,
+            403,
+            'Complete the course 100% first to unlock Task.'
+        );
+
+        TaskPlaylistUnlock::firstOrCreate([
+            'user_id'          => $user->id,
+            'training_plan_id' => $planId,
+        ]);
+
+        // Langsung ke list task playlist ini (drill-down), bukan dashboard grup.
+        return redirect()->route('user.learning.dashboard', [
+            'learning_tab'   => 'my-task',
+            'my_task_parent' => 'playlist:' . $planId,
+        ]);
+    }
+
+    /**
+     * Progress user di sebuah playlist (0-100) — SAMA PERSIS dengan angka
+     * "N% Progress" di Content List:
+     *   TrainingPlan::calculateProgressPercentage(completed, total)
+     *   = round(finished / total * 100)
+     * dengan definisi finished mengikuti ResolvedProgress::isFinished()
+     * (finish == 1 atau progress >= 100). Termasuk debug override
+     * (playlist_debug → 'pass' = 100).
+     */
+    protected function playlistProgress(User $user, int $planId): int
+    {
+        if (session('playlist_debug.' . $planId . '.learning_progress') === 'pass') {
+            return 100;
+        }
+
+        $contentIds = TrainingPlanDetail::where('trainingplan_id', $planId)
+            ->pluck('content_id');
+        $total = $contentIds->count();
+        if ($total === 0) {
+            return 0;
+        }
+
+        $finished = PlaylistContentUser::where('user_id', $user->id)
+            ->where('trainingplan_id', $planId)
+            ->whereIn('content_id', $contentIds)
+            ->get()
+            ->filter(fn ($pcu) => (int) $pcu->finish === 1 || (int) $pcu->progress >= 100)
+            ->count();
+
+        return (int) round($finished / $total * 100);
+    }
+
+    /**
+     * ID training plan yang task-nya sudah di-unlock user via tombol Task
+     * di halaman course (setelah progress 100%).
+     */
+    protected function unlockedPlanIds(int $userId): array
+    {
+        return TaskPlaylistUnlock::where('user_id', $userId)
+            ->pluck('training_plan_id')
+            ->values()
+            ->all();
     }
 
     /**
