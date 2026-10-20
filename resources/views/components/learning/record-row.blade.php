@@ -63,6 +63,7 @@
     data-cert="{{ $row['cert_state'] ?? 'none' }}"
     {{-- Nilai sorting client-side (learning-record.js) — teks di-lowercase agar
          urutan tidak terpengaruh kapitalisasi. --}}
+    data-sort-no="{{ $index }}"
     data-sort-title="{{ mb_strtolower($rowTitle) }}"
     data-sort-category="{{ mb_strtolower($rowCategory) }}"
     data-sort-type="{{ mb_strtolower($rowType) }}"
@@ -72,7 +73,8 @@
     data-sort-progress="{{ $progressValue }}"
     data-sort-finish="{{ $finishDateRaw }}"
     data-sort-attendance="{{ mb_strtolower($attendanceStatus) }}"
-    data-sort-score="{{ $scoreVal ?? '' }}">
+    data-sort-score="{{ $scoreVal ?? '' }}"
+    data-sort-certificate="{{ $row['cert_state'] ?? 'none' }}">
 
     <td class="text-muted record-row-index">{{ $index }}</td>
 

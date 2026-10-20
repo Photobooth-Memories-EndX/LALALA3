@@ -482,7 +482,7 @@ class RecordOfflineController extends Controller
                     : '-';
             })
             ->addColumn('type_badge', function ($row) {
-                return '<span class="badge bg-light text-secondary border px-2 py-1">' . htmlspecialchars($row->type ?: 'In-House') . '</span>';
+                return '<span class="badge bg-light text-secondary border px-2 py-1">' . htmlspecialchars($row->type ?: '-') . '</span>';
             })
             ->addColumn('category', function ($row) {
                 return htmlspecialchars($row->category ?: '-');
@@ -1397,7 +1397,7 @@ class RecordOfflineController extends Controller
                     : '-';
             })
             ->addColumn('type_badge', function ($row) {
-                return '<span class="badge bg-light text-secondary border px-2 py-1">' . htmlspecialchars($row->type ?: 'In-House') . '</span>';
+                return '<span class="badge bg-light text-secondary border px-2 py-1">' . htmlspecialchars($row->type ?: '-') . '</span>';
             })
             ->addColumn('category', function ($row) {
                 return htmlspecialchars($row->category ?: '-');

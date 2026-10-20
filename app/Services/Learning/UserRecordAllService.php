@@ -108,6 +108,7 @@ class UserRecordAllService
                 'unique_id'         => 'offline_' . $otu->id,
                 'source'            => 'offline',
                 'source_label'      => 'Offline',
+                'type'              => '-',
                 'training_title'    => $row['title'] ?? '-',
                 'requirement'       => $row['requirement'] ?? 'Non-Mandatory',
                 'score'             => $row['score'] ?? $row['assessment_score'] ?? null,

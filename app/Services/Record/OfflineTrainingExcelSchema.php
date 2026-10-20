@@ -182,14 +182,14 @@ class OfflineTrainingExcelSchema
             9 => [
                 'col_index' => 9,
                 'col_letter' => 'I',
-                'header'   => 'Course Name',
+                'header'   => 'Course Title',
                 'group'    => 'TRAINING INFORMATION',
                 'key'      => 'course_name',
                 'required' => true,
                 'type'     => 'string',
                 'example'  => 'High Voltage Safety & Operation',
                 'note'     => 'Primary course / training title',
-                'aliases'  => ['course name', 'course', 'nama course', 'training name', 'nama training', 'judul training', 'training title'],
+                'aliases'  => ['course title', 'course name', 'course', 'nama course', 'training name', 'nama training', 'judul training', 'training title'],
             ],
             10 => [
                 'col_index' => 10,
@@ -211,7 +211,7 @@ class OfflineTrainingExcelSchema
                 'key'      => 'type',
                 'required' => false,
                 'type'     => 'string',
-                'example'  => 'In-House',
+                'example'  => '-',
                 'note'     => 'In-House, Public, Certification, Workshop, etc.',
                 'aliases'  => ['type', 'tipe', 'training type', 'tipe training', 'jenis training', 'tipe pelatihan'],
             ],
@@ -510,7 +510,7 @@ class OfflineTrainingExcelSchema
             32 => [
                 'col_index' => 32,
                 'col_letter' => 'AF',
-                'header'   => 'Assessment Score',
+                'header'   => 'Score (L2)',
                 'group'    => 'TRAINING INFORMATION',
                 'key'      => 'assessment_score',
                 'required' => false,
@@ -518,6 +518,8 @@ class OfflineTrainingExcelSchema
                 'example'  => 85.5,
                 'note'     => 'Evaluation score (0-100)',
                 'aliases'  => [
+                    'score (l2)',
+                    'score l2',
                     'assessment score',
                     'post test score',
                     'nilai assessment',

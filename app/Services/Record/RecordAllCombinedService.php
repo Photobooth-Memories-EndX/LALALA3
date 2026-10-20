@@ -498,7 +498,7 @@ class RecordAllCombinedService
                 END as sub_course_name"),
                 DB::raw("COALESCE(c.slug, '') as learning_slug"),
                 DB::raw("CASE
-                    WHEN unified.source = 'offline' THEN COALESCE(NULLIF(TRIM(ot.type), ''), 'Offline Training')
+                    WHEN unified.source = 'offline' THEN '-'
                     WHEN unified.source_type = 'playlist' THEN 'Playlist'
                     ELSE COALESCE(c.type, 'Document')
                 END as type"),

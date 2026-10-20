@@ -1170,6 +1170,73 @@ function initStandardRecordPagination(tableSelector, pageLengthSelector, infoSel
     var $pagination = $(paginationSelector);
 
     var pageLength = parseInt($pageLength.val() || '10', 10);
+    var sortKey = null;
+    var sortDir = null;
+
+    function durationSeconds(raw) {
+        raw = String(raw || '').trim();
+        if (!raw || raw === '-' || raw === '—') return -1;
+        if (raw.indexOf(':') !== -1) {
+            return raw.split(':').reduce(function (total, part) {
+                return total * 60 + (parseFloat(part) || 0);
+            }, 0);
+        }
+        var n = parseFloat(raw);
+        return isNaN(n) ? -1 : n;
+    }
+
+    function sortValue(tr, key, type) {
+        var raw = $(tr).attr('data-sort-' + key) || '';
+        if (type === 'number') {
+            var n = parseFloat(raw);
+            return isNaN(n) ? -1 : n;
+        }
+        if (type === 'duration') {
+            return durationSeconds(raw);
+        }
+        return raw;
+    }
+
+    function applySort() {
+        var type = $table.find('th[data-sort-key="' + sortKey + '"]').attr('data-sort-type') || 'text';
+        var rowArray = $rows.get();
+        rowArray.sort(function (a, b) {
+            var va = sortValue(a, sortKey, type);
+            var vb = sortValue(b, sortKey, type);
+            var cmp = type === 'text' ? String(va).localeCompare(String(vb)) : va - vb;
+            return sortDir === 'desc' ? -cmp : cmp;
+        });
+        $.each(rowArray, function (_, tr) {
+            $tbody.append(tr);
+        });
+        $rows = $(rowArray);
+    }
+
+    function updateSortIcons() {
+        var $headers = $table.find('th.record-sortable');
+        $headers.removeClass('is-sorted').find('.record-sort-icons span').removeClass('active');
+        $headers.filter('[data-sort-key="' + sortKey + '"]')
+            .addClass('is-sorted')
+            .find(sortDir === 'asc' ? '.record-sort-asc' : '.record-sort-desc')
+            .addClass('active');
+    }
+
+    $table.find('th.record-sortable').on('click', function (e) {
+        var key = $(this).attr('data-sort-key');
+        if ($(e.target).hasClass('record-sort-asc')) {
+            sortDir = 'asc';
+        } else if ($(e.target).hasClass('record-sort-desc')) {
+            sortDir = 'desc';
+        } else if (sortKey === key) {
+            sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+        } else {
+            sortDir = 'asc';
+        }
+        sortKey = key;
+        applySort();
+        updateSortIcons();
+        render();
+    });
     var currentPage = 1;
 
     function buildPagination(pages) {

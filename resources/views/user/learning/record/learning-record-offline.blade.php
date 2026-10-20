@@ -591,23 +591,101 @@
                            id="learningRecordOfflineTable" style="width:100%">
                         <thead>
                             <tr>
-                                <th class="text-muted text-center" style="width: 3%">No</th>
-                                <th class="text-muted" style="width: 22%">Course Title</th>
-                                <th class="text-muted text-center" style="width: 7%">Type</th>
-                                <th class="text-muted text-center" style="width: 7%">Category</th>
-                                <th class="text-muted text-center" style="width: 10%">Main Classification</th>
-                                <th class="text-muted text-center" style="width: 7%">Duration</th>
-                                <th class="text-muted text-center" style="width: 8%">Learning Hour</th>
-                                <th class="text-muted text-center" style="width: 7%">Progress</th>
-                                <th class="text-muted" style="width: 11%">Date Time</th>
-                                <th class="text-muted text-center" style="width: 7%">Attendance</th>
-                                <th class="text-muted text-center" style="width: 6%">Assessment Score</th>
-                                <th class="text-muted text-center" style="width: 7%">Certificate</th>
+                                <th class="text-muted text-center record-sortable" style="width: 3%" data-sort-key="no" data-sort-type="number">
+                                    <span class="record-sort-header">
+                                        <span class="record-sort-label">No</span>
+                                        <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
+                                    </span>
+                                </th>
+                                <th class="text-muted record-sortable" style="width: 22%" data-sort-key="title" data-sort-type="text">
+                                    <span class="record-sort-header">
+                                        <span class="record-sort-label">Course Title</span>
+                                        <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
+                                    </span>
+                                </th>
+                                <th class="text-muted text-center record-sortable" style="width: 7%" data-sort-key="type" data-sort-type="text">
+                                    <span class="record-sort-header">
+                                        <span class="record-sort-label">Type</span>
+                                        <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
+                                    </span>
+                                </th>
+                                <th class="text-muted text-center record-sortable" style="width: 7%" data-sort-key="category" data-sort-type="text">
+                                    <span class="record-sort-header">
+                                        <span class="record-sort-label">Category</span>
+                                        <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
+                                    </span>
+                                </th>
+                                <th class="text-muted text-center record-sortable" style="width: 10%" data-sort-key="classification" data-sort-type="text">
+                                    <span class="record-sort-header">
+                                        <span class="record-sort-label">Main Classification</span>
+                                        <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
+                                    </span>
+                                </th>
+                                <th class="text-muted text-center record-sortable" style="width: 7%" data-sort-key="duration" data-sort-type="duration">
+                                    <span class="record-sort-header">
+                                        <span class="record-sort-label">Duration</span>
+                                        <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
+                                    </span>
+                                </th>
+                                <th class="text-muted text-center record-sortable" style="width: 8%" data-sort-key="learning-hour" data-sort-type="number">
+                                    <span class="record-sort-header">
+                                        <span class="record-sort-label">Learning Hour</span>
+                                        <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
+                                    </span>
+                                </th>
+                                <th class="text-muted text-center record-sortable" style="width: 7%" data-sort-key="progress" data-sort-type="number">
+                                    <span class="record-sort-header">
+                                        <span class="record-sort-label">Progress</span>
+                                        <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
+                                    </span>
+                                </th>
+                                <th class="text-muted record-sortable" style="width: 11%" data-sort-key="finish" data-sort-type="text">
+                                    <span class="record-sort-header">
+                                        <span class="record-sort-label">Date Time</span>
+                                        <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
+                                    </span>
+                                </th>
+                                <th class="text-muted text-center record-sortable" style="width: 7%" data-sort-key="attendance" data-sort-type="text">
+                                    <span class="record-sort-header">
+                                        <span class="record-sort-label">Attendance</span>
+                                        <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
+                                    </span>
+                                </th>
+                                <th class="text-muted text-center record-sortable" style="width: 6%" data-sort-key="score" data-sort-type="number">
+                                    <span class="record-sort-header">
+                                        <span class="record-sort-label">Score (L2)</span>
+                                        <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
+                                    </span>
+                                </th>
+                                <th class="text-muted text-center record-sortable" style="width: 7%" data-sort-key="certificate" data-sort-type="text">
+                                    <span class="record-sort-header">
+                                        <span class="record-sort-label">Certificate</span>
+                                        <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
+                                    </span>
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach ($rows as $index => $row)
-                            <tr class="record-row record-row-offline">
+                            @php
+                                $offSortAttRaw = $row['attendance_status'] ?? $row['attendance'] ?? 'No';
+                                $offSortAtt = ($offSortAttRaw === true || $offSortAttRaw === 1 || in_array(strtolower(trim((string) $offSortAttRaw)), ['1', 'true', 'present', 'yes'], true)) ? 'yes' : 'no';
+                                $offSortScore = $row['score'] ?? $row['assessment_score'] ?? '';
+                                $offSortCert = (($row['has_certificate'] ?? false) || ($row['cert_state'] ?? '') === 'ready') ? 'ready' : 'none';
+                            @endphp
+                            <tr class="record-row record-row-offline"
+                                data-sort-no="{{ $loop->iteration }}"
+                                data-sort-title="{{ mb_strtolower((string) ($row['title'] ?? '-')) }}"
+                                data-sort-type="-"
+                                data-sort-category="{{ mb_strtolower((string) ($row['category'] ?? '-')) }}"
+                                data-sort-classification="{{ mb_strtolower((string) ($row['classification'] ?? '-')) }}"
+                                data-sort-duration="{{ $row['duration_sort'] ?? ($row['duration_seconds'] ?? -1) }}"
+                                data-sort-learning-hour="{{ $row['learning_hour_value'] ?? 0 }}"
+                                data-sort-progress="{{ (int) ($row['progress'] ?? 0) }}"
+                                data-sort-finish="{{ $row['end_datetime'] ?? ($row['finish_date'] ?? '') }}"
+                                data-sort-attendance="{{ $offSortAtt }}"
+                                data-sort-score="{{ $offSortScore }}"
+                                data-sort-certificate="{{ $offSortCert }}">
                                 <td class="text-center text-muted record-row-index">{{ $loop->iteration }}</td>
                                 <td class="learning-record-course-cell">
                                     <button type="button"
@@ -643,7 +721,7 @@
                                 </td>
                                 <td class="text-center">
                                     <span class="badge bg-secondary-lt learning-record-type-badge">
-                                        {{ $row['type'] }}
+                                        -
                                     </span>
                                 </td>
                                 <td class="text-center">

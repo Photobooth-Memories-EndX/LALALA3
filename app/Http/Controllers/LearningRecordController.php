@@ -258,6 +258,7 @@ class LearningRecordController extends Controller
             'finish'         => fn (array $row) => (string) ($row['finish_date'] ?? ''),
             'attendance'     => fn (array $row) => mb_strtolower((string) ($row['attendance'] ?? '')),
             'score'          => fn (array $row) => (float) ($row['score'] ?? -1),
+            'certificate'    => fn (array $row) => mb_strtolower((string) ($row['cert_state'] ?? 'none')),
         ];
 
         if (isset($sortKeys[$sort]) && in_array($direction, ['asc', 'desc'], true)) {

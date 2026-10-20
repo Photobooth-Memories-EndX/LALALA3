@@ -179,7 +179,7 @@ class UserRecordOfflineService
             $certActionUrl = null;
         }
 
-        $statusRaw = strtolower(trim((string) ($training->status ?? 'non mandatory')));
+        $statusRaw = strtolower(trim((string) ($training->requirement ?? $training->status ?? 'non mandatory')));
         $requirement = ($statusRaw === 'mandatory') ? 'Mandatory' : 'Non-Mandatory';
 
         return [
@@ -191,7 +191,7 @@ class UserRecordOfflineService
             'requirement'               => $requirement,
             'course_name'               => optional($training)->course_name ?: (optional($training)->title ?: 'Offline Training'),
             'sub_course_name'           => optional($training)->sub_course_name ?: '',
-            'type'                      => optional($training)->type ?: 'Offline',
+            'type'                      => '-',
             'category'                  => optional($training)->category ?: 'Offline',
             'level'                     => optional($training)->level ?: '-',
             'batch'                     => optional($training)->batch ?: '-',

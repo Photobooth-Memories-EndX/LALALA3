@@ -22,7 +22,9 @@
     $isPlaylist = in_array($normalizedType, ['playlist'], true);
 @endphp
 
-@if ($isPlaylist && $url)
+@if ($normalizedType === '-' || $normalizedType === '')
+    <span class="text-muted">-</span>
+@elseif ($isPlaylist && $url)
     <a href="{{ $url }}" class="badge {{ $class }} learning-record-type-badge record-playlist-link"><i class="ti ti-playlist me-1" aria-hidden="true"></i>{{ \App\Support\ContentTypeHelper::label($type) }}</a>
 @else
     <span class="badge {{ $class }} learning-record-type-badge">@if ($isPlaylist)<i class="ti ti-playlist me-1" aria-hidden="true"></i>@endif{{ \App\Support\ContentTypeHelper::label($type) }}</span>

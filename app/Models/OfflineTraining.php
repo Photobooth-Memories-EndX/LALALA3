@@ -26,6 +26,7 @@ class OfflineTraining extends Model
         'prerequisites',
         'quota',
         'status',
+        'requirement',
         'start_date',
         'end_date',
         'registration_close_date',
