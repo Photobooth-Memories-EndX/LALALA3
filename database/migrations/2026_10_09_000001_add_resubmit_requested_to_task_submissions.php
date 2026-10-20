@@ -6,21 +6,17 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Tambah nilai & feedback admin ke task_submissions.
-     */
     public function up(): void
     {
         Schema::table('task_submissions', function (Blueprint $table) {
-            $table->unsignedTinyInteger('score')->nullable()->after('status');
-            $table->text('feedback')->nullable()->after('score');
+            $table->boolean('resubmit_requested')->default(false)->after('feedback');
         });
     }
 
     public function down(): void
     {
         Schema::table('task_submissions', function (Blueprint $table) {
-            $table->dropColumn(['score', 'feedback']);
+            $table->dropColumn('resubmit_requested');
         });
     }
 };

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Model Task — disesuaikan dengan tabel `tasks` yang sudah ada di project
@@ -14,13 +15,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class Task extends Model
 {
+    use SoftDeletes;
+
     /**
      * 6 task types (mentor revision 2026-10-01).
      */
     public const TYPES = [
         'file_submission'   => 'File Submission',
         'course_assignment' => 'Course Assignment',
-        'assessment'        => 'Assessment/Quiz',
         'survey'            => 'Survey',
         'essay'             => 'Essay/Reflection',
         'action_plan'       => 'Action Plan',
@@ -28,12 +30,12 @@ class Task extends Model
 
     /**
      * Which question field types are allowed per task type
-     * (empty array = no question builder, e.g. course link only).
+     * (empty array = no question builder).
+     * - course_assignment: user opens a linked course, no questions.
      */
     public const FIELD_TYPES_BY_TASK = [
         'file_submission'   => ['file'],
         'course_assignment' => [],
-        'assessment'        => ['choice'],
         'survey'            => ['textarea', 'choice'],
         'essay'             => ['textarea'],
         'action_plan'       => ['file', 'textarea'],
@@ -42,8 +44,7 @@ class Task extends Model
     /** Short explanation shown under the type dropdown in the admin form. */
     public const TYPE_HINTS = [
         'file_submission'   => 'User uploads file(s) as the answer. Add file-upload questions below.',
-        'course_assignment' => 'User opens a course (inside this LMS or an external link), then marks it done. No questions needed.',
-        'assessment'        => 'Quiz with multiple-choice questions. Tick the one correct answer for each — scoring is automatic.',
+        'course_assignment' => 'User opens a course (inside this LMS or an external link). An LMS course completes this task automatically at 100% progress.',
         'survey'            => 'Collect opinions. Multiple choice, short & long answers — no scoring.',
         'essay'             => 'Written reflection. User answers in long text; admin scores manually.',
         'action_plan'       => 'Google Form-style task: file uploads, short & long answers; admin reviews manually.',
@@ -52,15 +53,18 @@ class Task extends Model
     /**
      * Where a task can live (placement). Offline training data has not been
      * merged into the project yet, so its dropdown stays empty for now.
+     * Standalone = not tied to any playlist / content (visible to all users).
      */
     public const PARENT_TYPES = [
         'playlist'         => 'Playlist',
         'content'          => 'Content',
         'offline_training' => 'Offline Training',
+        'standalone'       => 'Global Task',
     ];
 
     protected $fillable = [
         'training_plan_id', 'content_id', 'offline_training_id', 'parent_type',
+        'access_code',
         'title', 'description',
         'type', 'deadline', 'attachment', 'created_by', 'status',
         'link_type', 'linked_training_plan_id', 'external_url',
@@ -80,6 +84,11 @@ class Task extends Model
     public function content(): BelongsTo
     {
         return $this->belongsTo(Content::class);
+    }
+
+    public function offlineTraining(): BelongsTo
+    {
+        return $this->belongsTo(OfflineTraining::class);
     }
 
     public function creator(): BelongsTo
@@ -139,11 +148,6 @@ class Task extends Model
         return $this->type === 'course_assignment';
     }
 
-    public function isAssessment(): bool
-    {
-        return $this->type === 'assessment';
-    }
-
     // ── Placement helpers (playlist | content | offline_training) ─────────
 
     public function parentTypeLabel(): string
@@ -157,16 +161,18 @@ class Task extends Model
         return match ($this->parent_type) {
             'content'          => $this->content_id,
             'offline_training' => $this->offline_training_id,
+            'standalone'       => null,
             default            => $this->training_plan_id,
         };
     }
 
-    /** Display name of the parent (playlist / content / offline training). */
+    /** Display name of the parent (playlist / content / offline training / standalone). */
     public function parentName(): string
     {
         return match ($this->parent_type) {
             'content'          => $this->content?->title ?? '—',
-            'offline_training' => 'Offline Training' . ($this->offline_training_id ? ' #' . $this->offline_training_id : ''),
+            'offline_training' => $this->offlineTraining?->title ?? $this->offlineTraining?->course_name ?? ('Offline Training' . ($this->offline_training_id ? ' #' . $this->offline_training_id : '')),
+            'standalone'       => 'Global Task',
             default            => $this->trainingPlan?->title ?? '—',
         };
     }
@@ -174,7 +180,13 @@ class Task extends Model
     /** Route parameters for this task's parent task list. */
     public function parentRouteParams(): array
     {
-        return ['parentType' => $this->parent_type, 'parentId' => $this->parentId()];
+        return ['parentType' => $this->parent_type, 'parentId' => $this->parentId() ?? 0];
+    }
+
+    /** Users who redeemed this standalone task's access code. */
+    public function codeRedemptions(): HasMany
+    {
+        return $this->hasMany(TaskCodeRedemption::class);
     }
 
     /** Submission milik user tertentu untuk task ini (1 user = 1 row). */
@@ -211,7 +223,7 @@ class Task extends Model
 
     /**
      * Status task dari sudut pandang user:
-     * completed | submitted | overdue | not_started
+     * completed | resubmit | submitted | overdue | not_started
      */
     public function userStatusFor(User $user): string
     {
@@ -219,6 +231,9 @@ class Task extends Model
 
         if ($submission && $submission->status === 'completed') {
             return 'completed';
+        }
+        if ($submission && $submission->resubmit_requested) {
+            return 'resubmit';
         }
         if ($submission) {
             return 'submitted'; // menunggu koreksi admin
