@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\User\Record;
 
 use App\Http\Controllers\Controller;
-use App\Models\ContentUser;
+use App\Http\Controllers\LearningRecordController;
 use App\Services\Learning\CompletedPlaylistService;
 use App\Services\Learning\LearningRecordLearningHourService;
 use App\Services\Learning\UserRecordOfflineService;
@@ -29,29 +29,16 @@ class LearningRecordOfflineController extends Controller
         $rows = $this->offlineService->getRecords($userId, $userEmpId);
         $filterOptions = $this->offlineService->getFilterOptions($userId, $userEmpId);
 
-        // Canonical hero stats agar hero card tetap konsisten (Step 18)
-        $completedPlaylists = $this->completedPlaylistService->forLearningRecord($userId);
-        $completedPlaylistLearning = $completedPlaylists->count();
-        $completedContentLearning = ContentUser::join('content', 'content.id', '=', 'content_users.content_id')
-            ->where('content_users.user_id', $userId)
-            ->where('content_users.finish', '1')
-            ->whereNull('content.deleted_at')
-            ->whereIn('content.type', ['Video', 'Document'])
-            ->count();
-        $learningHours = $this->recordLhService->getOfflineLearningHours($userId, $userEmpId);
-
-        $recordStats = [
-            'courseCompleted'    => $completedContentLearning,
-            'playlistCompleted'  => $completedPlaylistLearning,
-            'totalLearningHours' => $learningHours,
-        ];
+        $recordStats = app(LearningRecordController::class)->calculateHeroStats('offline', $userId, $userEmpId);
 
         $hasOfflineRecords = $this->offlineService->queryForUser($userId, $userEmpId)->exists();
 
         return view('user.learning.record.learning-record-offline', [
             'rows'              => $rows,
             'filterOptions'     => $filterOptions,
+            'recordMode'        => 'offline',
             'recordStats'       => $recordStats,
+            'stats'             => $recordStats,
             'hasOfflineRecords' => $hasOfflineRecords,
         ]);
     }

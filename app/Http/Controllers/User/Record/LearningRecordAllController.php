@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\User\Record;
 
 use App\Http\Controllers\Controller;
-use App\Models\ContentUser;
+use App\Http\Controllers\LearningRecordController;
 use App\Services\CertificateEligibilityService;
 use App\Services\Learning\CompletedPlaylistService;
 use App\Services\Learning\LearningRecordLearningHourService;
@@ -50,29 +50,16 @@ class LearningRecordAllController extends Controller
         ]);
         $filterOptions = $this->allService->getFilterOptions($unfilteredRows);
 
-        // Canonical hero stats agar hero card tetap konsisten (Step 18)
-        $completedPlaylists = $this->completedPlaylistService->forLearningRecord($userId);
-        $completedPlaylistLearning = $completedPlaylists->count();
-        $completedContentLearning = ContentUser::join('content', 'content.id', '=', 'content_users.content_id')
-            ->where('content_users.user_id', $userId)
-            ->where('content_users.finish', '1')
-            ->whereNull('content.deleted_at')
-            ->whereIn('content.type', ['Video', 'Document'])
-            ->count();
-        $learningHours = $this->recordLhService->getTotalLearningHoursByMode('all', $userId, $userEmpId);
-
-        $recordStats = [
-            'courseCompleted'    => $completedContentLearning,
-            'playlistCompleted'  => $completedPlaylistLearning,
-            'totalLearningHours' => $learningHours,
-        ];
+        $recordStats = app(LearningRecordController::class)->calculateHeroStats('all', $userId, $userEmpId, $eligibilityService);
 
         $hasAnyRecords = $this->allService->hasAnyRecords($userId, $userEmpId, $eligibilityService);
 
         return view('user.learning.record.learning-record-all', [
             'rows'          => $rows,
             'filterOptions' => $filterOptions,
+            'recordMode'    => 'all',
             'recordStats'   => $recordStats,
+            'stats'         => $recordStats,
             'hasAnyRecords' => $hasAnyRecords,
         ]);
     }

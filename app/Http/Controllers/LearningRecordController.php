@@ -61,10 +61,12 @@ class LearningRecordController extends Controller
         $allRows = $this->getRawOnlineRows($userId, $eligibilityService, $completedPlaylists, $cert);
         $rows = $this->applyRecordFilters($allRows);
 
-        $recordStats = [
-            'courseCompleted'    => $rows->where('row_kind', 'content')->count(),
-            'playlistCompleted'  => $rows->where('row_kind', 'playlist')->count(),
-            'totalLearningHours' => round((float) $rows->sum(fn (array $r) => (float) ($r['learning_hour_value'] ?? 0)), 2),
+        $recordMode = (string) request('record_mode', 'online');
+        $recordStats = $this->calculateHeroStats($recordMode, $userId, Auth::user()?->id_emp, $eligibilityService, $rows);
+        $legacyStats = [
+            'courseCompleted'    => $recordStats['courseCompleted'] ?? 0,
+            'playlistCompleted'  => $recordStats['playlistCompleted'] ?? 0,
+            'totalLearningHours' => $recordStats['totalLearningHours'] ?? 0,
         ];
 
         return view('user.learning.dashboard-partials.record', [
@@ -72,8 +74,118 @@ class LearningRecordController extends Controller
             // Section prioritas paling atas: certificate yang sudah memenuhi syarat.
             'certificateReady' => $this->certificateReady($cert, $completedPlaylists),
             'filterOptions'    => $this->recordFilterOptions($userId, $completedPlaylists, $allRows),
-            'recordStats'      => $recordStats,
+            'recordMode'       => $recordStats['record_mode'] ?? 'online',
+            'recordStats'      => array_merge($legacyStats, $recordStats),
+            'stats'            => array_merge($legacyStats, $recordStats),
         ]);
+    }
+
+    /**
+     * Calculate three distinct sets of hero card metrics depending on the active record_mode parameter:
+     *  - 'online' / 'owl' (KP OWL): total_hours, content_completed, playlist_completed
+     *  - 'offline' / 'non_owl' (Non-KP OWL): total_hours, internal_count, external_count
+     *  - 'all' (All Records): total_hours, owl_completed, non_owl_completed
+     */
+    public function calculateHeroStats(
+        string $recordMode = 'online',
+        ?int $userId = null,
+        ?string $userEmpId = null,
+        ?CertificateEligibilityService $eligibilityService = null,
+        ?Collection $onlineRows = null,
+        ?Collection $offlineRows = null
+    ): array {
+        $userId = $userId ?? (int) Auth::id();
+        if ($userEmpId === null) {
+            $userEmpId = Auth::id() === $userId
+                ? Auth::user()?->id_emp
+                : \App\Models\User::where('id', $userId)->value('id_emp');
+        }
+
+        $normalizedMode = match (strtolower(trim($recordMode))) {
+            'offline', 'non_owl', 'non-owl' => 'offline',
+            'all'                           => 'all',
+            default                         => 'online',
+        };
+
+        if ($normalizedMode === 'offline') {
+            $offlineService = app(\App\Services\Learning\UserRecordOfflineService::class);
+            $rawOffline = $offlineService->queryForUser($userId, $userEmpId)
+                ->get()
+                ->filter(fn (\App\Models\OfflineTrainingUser $otu) => $otu->training !== null);
+
+            $totalHours = round((float) $rawOffline->sum(function (\App\Models\OfflineTrainingUser $otu) {
+                return (float) ($otu->learning_hours ?? $otu->training?->learning_hours ?? 0);
+            }), 2);
+
+            $internalCount = $rawOffline->filter(function (\App\Models\OfflineTrainingUser $otu) {
+                $provider = strtolower(trim((string) ($otu->training?->provider ?? '')));
+                return $provider === 'internal' || str_starts_with($provider, 'internal');
+            })->count();
+
+            $externalCount = $rawOffline->filter(function (\App\Models\OfflineTrainingUser $otu) {
+                $provider = strtolower(trim((string) ($otu->training?->provider ?? '')));
+                return $provider === 'external' || str_starts_with($provider, 'external');
+            })->count();
+
+            return [
+                'record_mode'        => 'offline',
+                'total_hours'        => $totalHours,
+                'internal_count'     => $internalCount,
+                'external_count'     => $externalCount,
+                'totalLearningHours' => $totalHours,
+                'courseCompleted'    => $rawOffline->count(),
+                'playlistCompleted'  => 0,
+            ];
+        }
+
+        if ($normalizedMode === 'all') {
+            $offlineService = app(\App\Services\Learning\UserRecordOfflineService::class);
+            $rawOffline = $offlineService->queryForUser($userId, $userEmpId)
+                ->get()
+                ->filter(fn (\App\Models\OfflineTrainingUser $otu) => $otu->training !== null);
+
+            $offlineHours = (float) $rawOffline->sum(function (\App\Models\OfflineTrainingUser $otu) {
+                return (float) ($otu->learning_hours ?? $otu->training?->learning_hours ?? 0);
+            });
+            $onlineHours = $this->recordLhService()->getTotalLearningHours($userId);
+            $totalHours = round($onlineHours + $offlineHours, 2);
+
+            $owlCompleted = $this->getCompletedContents($userId)->count();
+            $nonOwlCompleted = $rawOffline->count();
+            $playlistCompleted = $this->completedPlaylistService->forLearningRecord($userId)->count();
+
+            return [
+                'record_mode'        => 'all',
+                'total_hours'        => $totalHours,
+                'owl_completed'      => $owlCompleted,
+                'non_owl_completed'  => $nonOwlCompleted,
+                'totalLearningHours' => $totalHours,
+                'courseCompleted'    => $owlCompleted + $nonOwlCompleted,
+                'playlistCompleted'  => $playlistCompleted,
+            ];
+        }
+
+        // Default mode: 'online' / 'owl' (KP OWL)
+        if ($onlineRows !== null) {
+            $contentCompleted = $onlineRows->where('row_kind', 'content')->count();
+            $playlistCompleted = $onlineRows->where('row_kind', 'playlist')->count();
+            $totalHours = round((float) $onlineRows->sum(fn (array $r) => (float) ($r['learning_hour_value'] ?? 0)), 2);
+        } else {
+            $contentCompleted = $this->getCompletedContents($userId)->count();
+            $playlistCompleted = $this->completedPlaylistService->forLearningRecord($userId)->count();
+            $totalHours = $this->recordLhService()->getTotalLearningHours($userId);
+        }
+
+        return [
+            'record_mode'        => 'online',
+            'total_hours'        => $totalHours,
+            'content_completed'  => $contentCompleted,
+            'playlist_completed' => $playlistCompleted,
+            'totalLearningHours' => $totalHours,
+            'courseCompleted'    => $contentCompleted,
+            'playlistCompleted'  => $playlistCompleted,
+        ];
+
     }
 
     /**

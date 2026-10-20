@@ -73,6 +73,7 @@ class LearningController extends Controller
             ? $requestedRecordMode
             : 'online';
         $learningHours = $recordHourService->getTotalLearningHoursByMode($recordMode, (int) $userId, $user?->id_emp);
+        $recordStats = app(LearningRecordController::class)->calculateHeroStats($recordMode, (int) $userId, $user?->id_emp);
 
         $certificates = Certificate::where('user_id', $userId)
             ->get(['certificate_type']);
@@ -94,6 +95,8 @@ class LearningController extends Controller
             'completedContentLearning',
             'completedPlaylistLearning',
             'certificateStats',
+            'recordMode',
+            'recordStats',
             'averageProgress'
         ));
     }

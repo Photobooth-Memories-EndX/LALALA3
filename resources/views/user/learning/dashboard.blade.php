@@ -38,7 +38,8 @@
                  class="{{ $initialLearningTab === 'record' ? '' : 'd-none' }}"
                  aria-hidden="{{ $initialLearningTab === 'record' ? 'false' : 'true' }}">
                 <x-shared.hero-learning-record
-                    :stats="[
+                    :recordMode="$recordMode ?? request('record_mode', 'online')"
+                    :stats="$recordStats ?? [
                         ['label' => 'Course Completed', 'value' => number_format($completedContentLearning ?? 0)],
                         ['label' => 'Playlist Completed', 'value' => number_format($completedPlaylistLearning ?? 0)],
                         ['label' => 'Learning Hours', 'value' => number_format($learningHours ?? 0, 2)],

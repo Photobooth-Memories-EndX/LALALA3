@@ -48,7 +48,8 @@
 
 <template data-learning-record-hero>
     <x-shared.hero-learning-record
-        :stats="[
+        recordMode="all"
+        :stats="$recordStats ?? [
             ['label' => 'Course Completed', 'value' => number_format($recordStats['courseCompleted'] ?? 0)],
             ['label' => 'Playlist Completed', 'value' => number_format($recordStats['playlistCompleted'] ?? 0)],
             ['label' => 'Learning Hours', 'value' => number_format($recordStats['totalLearningHours'] ?? 0, 2)],

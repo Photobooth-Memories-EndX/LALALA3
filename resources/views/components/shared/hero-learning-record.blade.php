@@ -3,8 +3,33 @@
     'title' => 'Learning Record',
     'subtitle' => null,
     'description' => 'Review your learning history, completion progress, and learning hours.',
+    'recordMode' => null,
     'stats' => [],
 ])
+
+@php
+    $rawMode = strtolower(trim((string) ($recordMode ?? data_get($stats, 'record_mode') ?? request('record_mode', 'online'))));
+    $recordMode = match ($rawMode) {
+        'offline', 'non_owl', 'non-owl' => 'offline',
+        'all'                           => 'all',
+        default                         => 'online',
+    };
+
+    $rawTotalHours = data_get($stats, 'total_hours', data_get($stats, 'totalLearningHours', data_get($stats, '2.value', 0)));
+    if (is_string($rawTotalHours)) {
+        $rawTotalHours = (float) str_replace(',', '', $rawTotalHours);
+    }
+
+    $stats = [
+        'total_hours'        => (float) ($rawTotalHours ?? 0),
+        'internal_count'     => (int) str_replace(',', '', (string) data_get($stats, 'internal_count', 0)),
+        'external_count'     => (int) str_replace(',', '', (string) data_get($stats, 'external_count', 0)),
+        'owl_completed'      => (int) str_replace(',', '', (string) data_get($stats, 'owl_completed', data_get($stats, 'content_completed', data_get($stats, 'courseCompleted', data_get($stats, '0.value', 0))))),
+        'non_owl_completed'  => (int) str_replace(',', '', (string) data_get($stats, 'non_owl_completed', 0)),
+        'content_completed'  => (int) str_replace(',', '', (string) data_get($stats, 'content_completed', data_get($stats, 'courseCompleted', data_get($stats, '0.value', 0)))),
+        'playlist_completed' => (int) str_replace(',', '', (string) data_get($stats, 'playlist_completed', data_get($stats, 'playlistCompleted', data_get($stats, '1.value', 0)))),
+    ];
+@endphp
 
 <section {{ $attributes->class(['card mb-4 overflow-hidden learning-module-hero learning-module-hero--record learning-hero-ds']) }}>
     <div class="card-body p-4 p-lg-5 text-white">
@@ -26,28 +51,28 @@
             <div class="col-lg-4 d-flex justify-content-lg-end">
                 <div class="learning-hero-ds-panel learning-hero-ds-panel--split" role="group"
                     aria-label="Learning record statistics">
-                    <div class="learning-hero-ds-card learning-hero-ds-card--primary">
-                        <span class="learning-hero-ds-label">Total Learning Hours</span>
-                        <strong class="learning-hero-ds-value learning-hero-ds-value--large" data-record-stat="hours">
-                            {{ is_numeric(data_get($stats, '2.value')) ? number_format((float) data_get($stats, '2.value'), 2) : data_get($stats, '2.value', '—') }}
-                        </strong>
-                    </div>
-
-                    <div class="learning-hero-ds-stack">
-                        <div class="learning-hero-ds-card learning-hero-ds-card--secondary">
-                            <span class="learning-hero-ds-label">Course Completed</span>
-                            <strong class="learning-hero-ds-value" data-record-stat="course">
-                                {{ data_get($stats, '0.value', '—') }}
-                            </strong>
+                    @if($recordMode === 'offline')
+                        {{-- Non-KP OWL Header Cards --}}
+                        <x-shared.learning-stat-large label="TOTAL LEARNING HOURS" :value="number_format($stats['total_hours'], 2)" />
+                        <div class="d-flex flex-column gap-2">
+                            <x-shared.learning-stat-small label="INTERNAL TRAINING" :value="$stats['internal_count']" />
+                            <x-shared.learning-stat-small label="EXTERNAL TRAINING" :value="$stats['external_count']" />
                         </div>
-
-                        <div class="learning-hero-ds-card learning-hero-ds-card--success">
-                            <span class="learning-hero-ds-label">Playlist Completed</span>
-                            <strong class="learning-hero-ds-value" data-record-stat="playlist">
-                                {{ data_get($stats, '1.value', '—') }}
-                            </strong>
+                    @elseif($recordMode === 'all')
+                        {{-- All Records Header Cards --}}
+                        <x-shared.learning-stat-large label="TOTAL LEARNING HOURS" :value="number_format($stats['total_hours'], 2)" />
+                        <div class="d-flex flex-column gap-2">
+                            <x-shared.learning-stat-small label="OWL COURSE COMPLETED" :value="$stats['owl_completed']" />
+                            <x-shared.learning-stat-small label="NON OWL COURSE COMPLETED" :value="$stats['non_owl_completed']" />
                         </div>
-                    </div>
+                    @else
+                        {{-- Default KP OWL Header Cards --}}
+                        <x-shared.learning-stat-large label="TOTAL LEARNING HOURS" :value="number_format($stats['total_hours'], 2)" />
+                        <div class="d-flex flex-column gap-2">
+                            <x-shared.learning-stat-small label="COURSE COMPLETED" :value="$stats['content_completed']" />
+                            <x-shared.learning-stat-small label="PLAYLIST COMPLETED" :value="$stats['playlist_completed']" />
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
