@@ -95,11 +95,16 @@ class PlaylistProgressController extends Controller
         }
 
         // 4. Lazy creation of PlaylistContentUser record
-        $playlistContentUser = PlaylistContentUser::firstOrCreate([
-            'user_id'         => $userId,
-            'trainingplan_id' => $trainingplan->id,
-            'content_id'      => $content->id,
-        ]);
+        $playlistContentUser = PlaylistContentUser::firstOrCreate(
+            [
+                'user_id'         => $userId,
+                'trainingplan_id' => $trainingplan->id,
+                'content_id'      => $content->id,
+            ],
+            [
+                'status'          => $content->status ?? 'optional',
+            ]
+        );
         $playlistContentUser->setRelation('content', $content);
 
         $previousProgress = (int) $playlistContentUser->progress;

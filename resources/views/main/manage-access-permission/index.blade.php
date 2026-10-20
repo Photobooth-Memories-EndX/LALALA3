@@ -66,6 +66,10 @@
                                         <span class="badge bg-yellow-lt">
                                             Unit Monitoring
                                         </span>
+                                    @elseif ($role === \App\Models\User::ROLE_APPROVER)
+                                        <span class="badge bg-purple-lt">
+                                            Training Approval
+                                        </span>
                                     @else
                                         <span class="badge bg-secondary-lt">
                                             Learning User

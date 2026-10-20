@@ -30,7 +30,7 @@ class OfflineTrainingUpdateService
             ]);
         }
 
-        $normalizedTraining = $this->normalizeTrainingData($data);
+        $normalizedTraining = $this->normalizeTrainingData($data, $training);
         $this->validateTrainingData($normalizedTraining);
 
         $normalizedParticipant = $this->normalizeParticipantData(
@@ -53,13 +53,48 @@ class OfflineTrainingUpdateService
     /**
      * Normalize training event level data.
      */
-    public function normalizeTrainingData(array $raw): array
+    public function normalizeTrainingData(array $raw, ?OfflineTraining $existing = null): array
     {
         $durationSeconds = $this->normalizeDuration($raw['duration'] ?? ($raw['duration_seconds'] ?? null));
         $learningHours = $this->normalizeLearningHours($raw['learning_hours'] ?? ($raw['course_learning_hours'] ?? null));
 
         if ($learningHours === null && $durationSeconds !== null && $durationSeconds > 0) {
             $learningHours = round($durationSeconds / 3600, 2);
+        }
+
+        $rawKpi = $raw['counted_corporate_kpi'] ?? null;
+        $countedKpi = $this->normalizeBoolean($rawKpi);
+        $kpiYear = null;
+        $subKpi = null;
+
+        // Support for "Yes (2026)" format in raw input
+        if ($rawKpi !== null && is_string($rawKpi)) {
+            $trimmedKpi = trim($rawKpi);
+            if (preg_match('/^(?:yes|ya)\s*\(\s*(\d{2,4})\s*\)$/i', $trimmedKpi, $m)) {
+                $countedKpi = true;
+                $extractedYear = (int) $m[1];
+                if ($extractedYear < 100) {
+                    $extractedYear += 2000;
+                }
+                $kpiYear = $extractedYear;
+            }
+        }
+
+        if ($countedKpi === true) {
+            if (!$kpiYear && !empty($raw['corporate_kpi_year'])) {
+                $kpiYear = (int) $raw['corporate_kpi_year'];
+            } elseif (!$kpiYear && !empty($raw['sub_corporate_kpi']) && preg_match('/^\d{4}$/', trim((string) $raw['sub_corporate_kpi']))) {
+                $kpiYear = (int) trim((string) $raw['sub_corporate_kpi']);
+            } elseif (!$kpiYear && !empty($raw['start_date'])) {
+                $kpiYear = (int) substr((string) $raw['start_date'], 0, 4);
+            } elseif (!$kpiYear) {
+                $kpiYear = (int) date('Y');
+            }
+            $subKpi = $kpiYear ? (string) $kpiYear : $this->normalizeString($raw['sub_corporate_kpi'] ?? null);
+        } else {
+            $countedKpi = false;
+            $kpiYear = null;
+            $subKpi = null;
         }
 
         return [
@@ -71,11 +106,9 @@ class OfflineTrainingUpdateService
             'batch'                 => $this->normalizeString($raw['batch'] ?? null),
             'main_classification'   => $this->normalizeString($raw['main_classification'] ?? null),
             'sub_classification'    => $this->normalizeString($raw['sub_classification'] ?? null),
-            'counted_corporate_kpi' => $this->normalizeBoolean($raw['counted_corporate_kpi'] ?? null),
-            'sub_corporate_kpi'     => $this->normalizeString($raw['sub_corporate_kpi'] ?? null),
-            'corporate_kpi_year'    => !empty($raw['corporate_kpi_year'])
-                ? (int) $raw['corporate_kpi_year']
-                : (!empty($raw['start_date']) ? (int) substr((string) $raw['start_date'], 0, 4) : null),
+            'counted_corporate_kpi' => $countedKpi,
+            'sub_corporate_kpi'     => $subKpi,
+            'corporate_kpi_year'    => $kpiYear,
             'delivery_method'       => $this->normalizeString($raw['delivery_method'] ?? null),
             'sub_delivery_method'   => $this->normalizeString($raw['sub_delivery_method'] ?? null),
             'provider'              => $this->normalizeString($raw['provider'] ?? null),
@@ -87,6 +120,12 @@ class OfflineTrainingUpdateService
             'learning_hours'        => $learningHours,
             'start_date'            => $this->normalizeDate($raw['start_date'] ?? null),
             'finish_date'           => $this->normalizeDate($raw['finish_date'] ?? null),
+            'start_time'            => array_key_exists('start_time', $raw)
+                ? $this->normalizeTime($raw['start_time'], $existing?->start_time ?: '08:00:00')
+                : ($existing?->start_time ?: '08:00:00'),
+            'end_time'              => array_key_exists('end_time', $raw)
+                ? $this->normalizeTime($raw['end_time'], $existing?->end_time ?: '16:00:00')
+                : ($existing?->end_time ?: '16:00:00'),
         ];
     }
 
@@ -102,9 +141,25 @@ class OfflineTrainingUpdateService
         }
 
         if (!empty($t['start_date']) && !empty($t['finish_date'])) {
-            if ($t['finish_date'] < $t['start_date']) {
-                $errors['finish_date'] = ["Finish date ({$t['finish_date']}) cannot be earlier than start date ({$t['start_date']})."];
+            $startTime = !empty($t['start_time']) ? $t['start_time'] : '08:00:00';
+            $endTime = !empty($t['end_time']) ? $t['end_time'] : '16:00:00';
+
+            try {
+                $start = Carbon::parse("{$t['start_date']} {$startTime}");
+                $finish = Carbon::parse("{$t['finish_date']} {$endTime}");
+
+                if ($finish->lt($start)) {
+                    $errors['finish_date'] = ["Finish date and time ({$t['finish_date']} " . substr($endTime, 0, 5) . ") cannot be earlier than start date and time ({$t['start_date']} " . substr($startTime, 0, 5) . ")."];
+                }
+            } catch (\Throwable $e) {
+                if ("{$t['finish_date']} {$endTime}" < "{$t['start_date']} {$startTime}") {
+                    $errors['finish_date'] = ["Finish date ({$t['finish_date']}) cannot be earlier than start date ({$t['start_date']})."];
+                }
             }
+        }
+
+        if (($t['counted_corporate_kpi'] === true || $t['counted_corporate_kpi'] === 1) && empty($t['corporate_kpi_year'])) {
+            $errors['corporate_kpi_year'] = ['Corporate KPI Year is required when Counted as Corporate KPI is Yes.'];
         }
 
         if (!empty($errors)) {
@@ -224,8 +279,8 @@ class OfflineTrainingUpdateService
         if (is_bool($value)) return $value;
 
         $str = strtolower(trim((string) $value));
-        if (in_array($str, ['1', 'true', 'yes', 'y'], true)) return true;
-        if (in_array($str, ['0', 'false', 'no', 'n'], true)) return false;
+        if (in_array($str, ['1', 'true', 'yes', 'y', 'ya'], true) || preg_match('/^(?:yes|ya)\s*\(\s*\d{2,4}\s*\)$/', $str)) return true;
+        if (in_array($str, ['0', 'false', 'no', 'n', 'tidak'], true)) return false;
 
         return null;
     }
@@ -315,5 +370,31 @@ class OfflineTrainingUpdateService
             return round((float) $cleaned, $precision);
         }
         return null;
+    }
+
+    public function normalizeTime($value, ?string $default = null): ?string
+    {
+        if ($value === null) {
+            return $default;
+        }
+        $str = trim((string) $value);
+        if ($str === '') {
+            return $default;
+        }
+
+        if (preg_match('/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/', $str, $m)) {
+            $h = (int) $m[1];
+            $i = (int) $m[2];
+            $s = isset($m[3]) ? (int) $m[3] : 0;
+            if ($h >= 0 && $h <= 23 && $i >= 0 && $i <= 59 && $s >= 0 && $s <= 59) {
+                return sprintf('%02d:%02d:%02d', $h, $i, $s);
+            }
+        }
+
+        try {
+            return Carbon::parse($str)->format('H:i:s');
+        } catch (\Throwable $e) {
+            return $default;
+        }
     }
 }

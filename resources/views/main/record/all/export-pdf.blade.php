@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>All KP OWL - {{ $classificationName }} - Report</title>
+    <title>All Record - {{ $classificationName }} - Report</title>
     <style>
         @page {
             size: a2 landscape;
@@ -108,9 +108,9 @@
 <body>
 
     <div class="report-header">
-        <div class="report-title">All KP OWL — Combined Learning Records</div>
+        <div class="report-title">All Record — Combined Learning Records</div>
         <div class="report-subtitle">Classification: {{ $classificationName }}</div>
-        
+
         <table class="meta-table">
             <tr>
                 <td style="width: 50%;"><strong>Generated:</strong> {{ $generatedAt }} WIB</td>
@@ -129,11 +129,11 @@
                 </td>
             </tr>
         </table>
-        
+
         <div class="note-box">
-            <strong>Source Guide:</strong> 
-            <strong>KP OWL</strong> = Online Learning Record | 
-            <strong>Non KP OWL</strong> = Offline Training Record. 
+            <strong>Source Guide:</strong>
+            <strong>KP OWL</strong> = Online Learning Record |
+            <strong>Non KP OWL</strong> = Offline Training Record.
             Non-applicable fields for a particular source are displayed as &quot;-&quot;.
         </div>
     </div>

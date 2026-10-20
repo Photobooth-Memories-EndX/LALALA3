@@ -112,7 +112,12 @@ class OfflineTrainingExport implements WithMultipleSheets, FromQuery, WithHeadin
         // Counted as Corporate KPI
         $kpiStr = '-';
         if ($row->counted_corporate_kpi !== null) {
-            $kpiStr = (bool) $row->counted_corporate_kpi ? 'Yes' : 'No';
+            if ((bool) $row->counted_corporate_kpi) {
+                $year = !empty($row->corporate_kpi_year) ? $row->corporate_kpi_year : (!empty($row->sub_corporate_kpi) && preg_match('/^\d{4}$/', (string)$row->sub_corporate_kpi) ? $row->sub_corporate_kpi : null);
+                $kpiStr = $year ? "Yes ({$year})" : "Yes";
+            } else {
+                $kpiStr = 'No';
+            }
         }
 
         return [

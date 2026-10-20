@@ -3,8 +3,10 @@
 namespace App\Services\Record;
 
 use App\Http\Controllers\LearningManageController;
+use App\Http\Controllers\Manage\Record\RecordAllController;
 use App\Models\OfflineTraining;
 use App\Models\OfflineTrainingUser;
+use App\Models\User;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -40,32 +42,25 @@ class RecordAllCombinedService
         $hasOfflineTables = Schema::hasTable('offline_trainings') && Schema::hasTable('offline_training_users');
 
         if ($hasOfflineTables) {
-            $offlineTotal = (int) DB::table('offline_training_users as otu')
+            $baseOfflineUserQuery = DB::table('offline_training_users as otu')
                 ->join('offline_trainings as ot', 'ot.id', '=', 'otu.offline_training_id')
                 ->whereNull('otu.deleted_at')
-                ->whereNull('ot.deleted_at')
-                ->count();
+                ->whereNull('ot.deleted_at');
+            OfflineTraining::applyRecordScope($baseOfflineUserQuery, 'ot');
 
-            $offlineOngoing = (int) DB::table('offline_training_users as otu')
-                ->join('offline_trainings as ot', 'ot.id', '=', 'otu.offline_training_id')
-                ->whereNull('otu.deleted_at')
-                ->whereNull('ot.deleted_at')
+            $offlineTotal = (int) (clone $baseOfflineUserQuery)->count();
+
+            $offlineOngoing = (int) (clone $baseOfflineUserQuery)
                 ->where('otu.progress', '>', 0)
                 ->where('otu.progress', '<', 100)
                 ->count();
 
-            $offlineFinished = (int) DB::table('offline_training_users as otu')
-                ->join('offline_trainings as ot', 'ot.id', '=', 'otu.offline_training_id')
-                ->whereNull('otu.deleted_at')
-                ->whereNull('ot.deleted_at')
+            $offlineFinished = (int) (clone $baseOfflineUserQuery)
                 ->where('otu.progress', '>=', 100)
                 ->count();
 
             // Strictly credited participant learning hours from offline_training_users!
-            $offlineHours = (float) DB::table('offline_training_users as otu')
-                ->join('offline_trainings as ot', 'ot.id', '=', 'otu.offline_training_id')
-                ->whereNull('otu.deleted_at')
-                ->whereNull('ot.deleted_at')
+            $offlineHours = (float) (clone $baseOfflineUserQuery)
                 ->sum('otu.learning_hours');
         } else {
             $offlineTotal = 0;
@@ -132,10 +127,13 @@ class RecordAllCombinedService
         $hasOfflineTables = Schema::hasTable('offline_trainings') && Schema::hasTable('offline_training_users');
 
         if ($hasOfflineTables) {
-            $offlineData = DB::table('offline_training_users as otu')
+            $offlineQuery = DB::table('offline_training_users as otu')
                 ->join('offline_trainings as ot', 'ot.id', '=', 'otu.offline_training_id')
                 ->whereNull('otu.deleted_at')
-                ->whereNull('ot.deleted_at')
+                ->whereNull('ot.deleted_at');
+            OfflineTraining::applyRecordScope($offlineQuery, 'ot');
+
+            $offlineData = $offlineQuery
                 ->select([
                     DB::raw("COALESCE(NULLIF(TRIM(ot.main_classification), ''), 'Unclassified') as class_name"),
                     DB::raw("COUNT(otu.id) as total_count"),
@@ -234,10 +232,12 @@ class RecordAllCombinedService
 
         // Offline classifications
         if (Schema::hasTable('offline_trainings')) {
-            $offlineClasses = DB::table('offline_trainings')
+            $offlineClassesQuery = DB::table('offline_trainings')
                 ->whereNotNull('main_classification')
                 ->where('main_classification', '!=', '')
-                ->whereNull('deleted_at')
+                ->whereNull('deleted_at');
+            OfflineTraining::applyRecordScope($offlineClassesQuery);
+            $offlineClasses = $offlineClassesQuery
                 ->distinct()
                 ->pluck('main_classification')
                 ->toArray();
@@ -254,8 +254,13 @@ class RecordAllCombinedService
 
         // Offline years
         if (Schema::hasTable('offline_trainings')) {
-            $offYears1 = DB::table('offline_trainings')->whereNull('deleted_at')->whereNotNull('start_date')->selectRaw('DISTINCT YEAR(start_date) as yr')->pluck('yr')->toArray();
-            $offYears2 = DB::table('offline_trainings')->whereNull('deleted_at')->whereNotNull('finish_date')->selectRaw('DISTINCT YEAR(finish_date) as yr')->pluck('yr')->toArray();
+            $offYears1Query = DB::table('offline_trainings')->whereNull('deleted_at')->whereNotNull('start_date');
+            OfflineTraining::applyRecordScope($offYears1Query);
+            $offYears1 = $offYears1Query->selectRaw('DISTINCT YEAR(start_date) as yr')->pluck('yr')->toArray();
+
+            $offYears2Query = DB::table('offline_trainings')->whereNull('deleted_at')->whereNotNull('finish_date');
+            OfflineTraining::applyRecordScope($offYears2Query);
+            $offYears2 = $offYears2Query->selectRaw('DISTINCT YEAR(finish_date) as yr')->pluck('yr')->toArray();
             $years = array_merge($years, $offYears1, $offYears2);
         }
 
@@ -385,6 +390,12 @@ class RecordAllCombinedService
                     DB::raw('1 as source_id'),
                     DB::raw("'online' as source"),
                     DB::raw("'content' as source_type"),
+                    DB::raw('CAST(NULL AS UNSIGNED) as content_id'),
+                    DB::raw("'' as content_title"),
+                    DB::raw('CAST(NULL AS UNSIGNED) as playlist_id'),
+                    DB::raw("'' as playlist_slug"),
+                    DB::raw("'' as playlist_title"),
+                    DB::raw('CAST(NULL AS UNSIGNED) as offline_training_id'),
                     DB::raw("'' as row_id"),
                     DB::raw("'' as employee_id"),
                     DB::raw("'' as employee_name"),
@@ -454,6 +465,14 @@ class RecordAllCombinedService
                 'unified.source_id',
                 'unified.source',
                 'unified.source_type',
+                'unified.user_id as user_id',
+                'c.id as content_id',
+                'c.title as content_title',
+                'c.slug as content_slug',
+                'tp.id as playlist_id',
+                'tp.slug as playlist_slug',
+                'tp.title as playlist_title',
+                'ot.id as offline_training_id',
                 DB::raw("CASE
                     WHEN unified.source = 'offline' THEN CONCAT('offline:', unified.source_id)
                     WHEN unified.source_type = 'playlist' THEN CONCAT('online:playlist:', unified.source_id)
@@ -621,20 +640,75 @@ class RecordAllCombinedService
             }
         }
 
-        // 2. Employee Filter (ID or Name)
-        $employee = trim((string) ($filters['employee_id'] ?? ($filters['employee'] ?? '')));
-        if ($employee !== '') {
-            $userIds = DB::table('users')
-                ->where('id_emp', 'like', "%{$employee}%")
-                ->orWhere('name', 'like', "%{$employee}%")
-                ->pluck('id')
-                ->toArray();
-            $q->whereIn("{$recordAlias}.user_id", !empty($userIds) ? $userIds : [-1]);
+        // 2. Employee Filter (ID or Name or Exact Participant)
+        if (!empty($filters['exact_participant'])) {
+            $pUserId = $filters['exact_participant']['user_id'] ?? null;
+            $pEmpId = $filters['exact_participant']['employee_id'] ?? null;
+            $matchedUserIds = [];
+            if ($pUserId) {
+                $matchedUserIds[] = (int) $pUserId;
+            }
+            if (!empty($pEmpId)) {
+                $uIds = DB::table('users')->where('id_emp', $pEmpId)->pluck('id')->toArray();
+                $matchedUserIds = array_merge($matchedUserIds, $uIds);
+            }
+            $matchedUserIds = array_unique(array_filter($matchedUserIds));
+            $q->whereIn("{$recordAlias}.user_id", !empty($matchedUserIds) ? $matchedUserIds : [-1]);
+        } else {
+            $employeeParam = $filters['employee_id'] ?? ($filters['employee'] ?? ($filters['employees'] ?? null));
+            if (is_array($employeeParam) && !empty($employeeParam)) {
+                $userIds = DB::table('users')
+                    ->where(function ($sub) use ($employeeParam) {
+                        $sub->whereIn('id_emp', $employeeParam)
+                            ->orWhereIn('name', $employeeParam);
+                    })
+                    ->pluck('id')
+                    ->toArray();
+                $q->whereIn("{$recordAlias}.user_id", !empty($userIds) ? $userIds : [-1]);
+            } elseif (is_string($employeeParam) && trim($employeeParam) !== '' && trim($employeeParam) !== 'all') {
+                $employee = trim($employeeParam);
+                $userIds = DB::table('users')
+                    ->where('id_emp', 'like', "%{$employee}%")
+                    ->orWhere('name', 'like', "%{$employee}%")
+                    ->pluck('id')
+                    ->toArray();
+                $q->whereIn("{$recordAlias}.user_id", !empty($userIds) ? $userIds : [-1]);
+            }
         }
 
         // 3. Learning Title Filter
-        $title = trim((string) ($filters['learning_title'] ?? ($filters['title'] ?? '')));
-        if ($title !== '') {
+        $rawTitle = $filters['learning_title'] ?? ($filters['title'] ?? '');
+        $title = is_string($rawTitle) ? trim($rawTitle) : '';
+        if (is_array($rawTitle)) {
+            $titleList = array_values(array_filter(array_map('trim', $rawTitle), fn($t) => $t !== '' && strtolower($t) !== 'all'));
+            if (!empty($titleList)) {
+                $contentIds = DB::table('content')->whereIn('title', $titleList)->pluck('id')->toArray();
+                $tpIds = DB::table('trainingplan')->whereIn('title', $titleList)->pluck('id')->toArray();
+
+                if ($recordAlias === 'cu') {
+                    $q->whereIn("{$recordAlias}.content_id", !empty($contentIds) ? $contentIds : [-1]);
+                } else {
+                    $q->where(function ($sub) use ($contentIds, $tpIds, $recordAlias) {
+                        $matched = false;
+                        if (!empty($contentIds)) {
+                            $sub->whereIn("{$recordAlias}.content_id", $contentIds);
+                            $matched = true;
+                        }
+                        if (!empty($tpIds)) {
+                            if ($matched) {
+                                $sub->orWhereIn("{$recordAlias}.trainingplan_id", $tpIds);
+                            } else {
+                                $sub->whereIn("{$recordAlias}.trainingplan_id", $tpIds);
+                                $matched = true;
+                            }
+                        }
+                        if (!$matched) {
+                            $sub->whereRaw('1 = 0');
+                        }
+                    });
+                }
+            }
+        } elseif ($title !== '' && strtolower($title) !== 'all') {
             $contentIds = DB::table('content')->where('title', 'like', "%{$title}%")->pluck('id')->toArray();
             $tpIds = DB::table('trainingplan')->where('title', 'like', "%{$title}%")->pluck('id')->toArray();
 
@@ -685,8 +759,17 @@ class RecordAllCombinedService
         }
 
         // 5. Year Filter
-        $year = trim((string) ($filters['year'] ?? 'all'));
-        if ($year !== '' && $year !== 'all' && is_numeric($year)) {
+        $year = $filters['year'] ?? ($filters['years'] ?? 'all');
+        if (is_array($year) && !empty($year)) {
+            $yearInts = array_map('intval', array_filter($year, 'is_numeric'));
+            if (!empty($yearInts)) {
+                $q->where(function ($sub) use ($recordAlias, $yearInts) {
+                    $sub->whereIn(DB::raw("YEAR({$recordAlias}.created_at)"), $yearInts)
+                        ->orWhereIn(DB::raw("YEAR({$recordAlias}.completed_at)"), $yearInts)
+                        ->orWhereIn(DB::raw("YEAR({$recordAlias}.updated_at)"), $yearInts);
+                });
+            }
+        } elseif (is_string($year) && $year !== '' && $year !== 'all' && is_numeric($year)) {
             $q->where(function ($sub) use ($recordAlias, $year) {
                 $sub->whereYear("{$recordAlias}.created_at", (int) $year)
                     ->orWhereYear("{$recordAlias}.completed_at", (int) $year)
@@ -795,17 +878,62 @@ class RecordAllCombinedService
         }
 
         // 10. Department Filter
-        $department = trim((string) ($filters['department'] ?? 'all'));
-        if ($department !== '' && $department !== 'all') {
-            $deptUserIds = DB::table('users')->where('department', $department)->pluck('id')->toArray();
+        $department = $filters['department'] ?? ($filters['departments'] ?? 'all');
+        if (is_array($department) && !empty($department)) {
+            $deptUserIds = DB::table('users')->whereIn('department', $department)->pluck('id')->toArray();
+            $q->whereIn("{$recordAlias}.user_id", !empty($deptUserIds) ? $deptUserIds : [-1]);
+        } elseif (is_string($department) && filled($department) && $department !== 'all') {
+            $deptUserIds = DB::table('users')->where('department', trim($department))->pluck('id')->toArray();
             $q->whereIn("{$recordAlias}.user_id", !empty($deptUserIds) ? $deptUserIds : [-1]);
         }
 
         // 11. Company Filter
-        $company = trim((string) ($filters['company'] ?? 'all'));
-        if ($company !== '' && $company !== 'all') {
-            $compUserIds = DB::table('users')->where('company_name', $company)->pluck('id')->toArray();
+        $company = $filters['company'] ?? ($filters['companies'] ?? 'all');
+        if (is_array($company) && !empty($company)) {
+            $compUserIds = DB::table('users')->whereIn('company_name', $company)->pluck('id')->toArray();
             $q->whereIn("{$recordAlias}.user_id", !empty($compUserIds) ? $compUserIds : [-1]);
+        } elseif (is_string($company) && filled($company) && $company !== 'all') {
+            $compUserIds = DB::table('users')->where('company_name', trim($company))->pluck('id')->toArray();
+            $q->whereIn("{$recordAlias}.user_id", !empty($compUserIds) ? $compUserIds : [-1]);
+        }
+
+        // 11c. Division Filter
+        $division = $filters['division'] ?? ($filters['divisions'] ?? 'all');
+        if (is_array($division) && !empty($division)) {
+            $divUserIds = DB::table('users')->whereIn('division', $division)->pluck('id')->toArray();
+            $q->whereIn("{$recordAlias}.user_id", !empty($divUserIds) ? $divUserIds : [-1]);
+        } elseif (is_string($division) && filled($division) && $division !== 'all') {
+            $divUserIds = DB::table('users')->where('division', trim($division))->pluck('id')->toArray();
+            $q->whereIn("{$recordAlias}.user_id", !empty($divUserIds) ? $divUserIds : [-1]);
+        }
+
+        // 11d. Team Filter
+        $team = $filters['team'] ?? ($filters['teams'] ?? 'all');
+        if (is_array($team) && !empty($team)) {
+            $teamUserIds = DB::table('users')->whereIn('team', $team)->pluck('id')->toArray();
+            $q->whereIn("{$recordAlias}.user_id", !empty($teamUserIds) ? $teamUserIds : [-1]);
+        } elseif (is_string($team) && filled($team) && $team !== 'all') {
+            $teamUserIds = DB::table('users')->where('team', 'like', '%' . trim($team) . '%')->pluck('id')->toArray();
+            $q->whereIn("{$recordAlias}.user_id", !empty($teamUserIds) ? $teamUserIds : [-1]);
+        }
+
+        // 12. Content Type Filter (Document / Video)
+        $type = trim((string) ($filters['type'] ?? ($filters['content_type'] ?? 'all')));
+        if ($type !== '' && $type !== 'all') {
+            $typeStr = strtolower($type);
+            $typeContentIds = DB::table('content')
+                ->where(function ($sub) use ($typeStr) {
+                    if ($typeStr === 'document') {
+                        $sub->where('type', 'Document');
+                    } elseif ($typeStr === 'video') {
+                        $sub->whereIn('type', ['Video', 'YouTube']);
+                    } else {
+                        $sub->where('type', $typeStr);
+                    }
+                })
+                ->pluck('id')
+                ->toArray();
+            $q->whereIn("{$recordAlias}.content_id", !empty($typeContentIds) ? $typeContentIds : [-1]);
         }
     }
 
@@ -817,8 +945,11 @@ class RecordAllCombinedService
         $q = DB::table('offline_training_users as otu')
             ->join('offline_trainings as ot', 'ot.id', '=', 'otu.offline_training_id')
             ->whereNull('otu.deleted_at')
-            ->whereNull('ot.deleted_at')
-            ->select([
+            ->whereNull('ot.deleted_at');
+
+        OfflineTraining::applyRecordScope($q, 'ot');
+
+        $q->select([
                 'otu.id as source_id',
                 DB::raw("'offline' as source"),
                 DB::raw("'offline_training' as source_type"),
@@ -849,26 +980,53 @@ class RecordAllCombinedService
         }
 
         // Employee filter
-        $employee = trim((string) ($filters['employee_id'] ?? ($filters['employee'] ?? '')));
-        if ($employee !== '') {
-            $userMatchedIds = DB::table('users')
-                ->where('name', 'like', "%{$employee}%")
-                ->orWhere('id_emp', 'like', "%{$employee}%")
-                ->pluck('id')
-                ->toArray();
-
-            $q->where(function ($sub) use ($employee, $userMatchedIds) {
-                $sub->where('otu.employee_id', 'like', "%{$employee}%")
-                    ->orWhere('otu.name', 'like', "%{$employee}%");
-                if (!empty($userMatchedIds)) {
-                    $sub->orWhereIn('otu.user_id', $userMatchedIds);
+        if (!empty($filters['exact_participant'])) {
+            $pUserId = $filters['exact_participant']['user_id'] ?? null;
+            $pEmpId = $filters['exact_participant']['employee_id'] ?? null;
+            $pName = $filters['exact_participant']['name'] ?? null;
+            $q->where(function ($sub) use ($pUserId, $pEmpId, $pName) {
+                $matched = false;
+                if (!empty($pEmpId)) {
+                    $sub->where('otu.employee_id', $pEmpId);
+                    $matched = true;
+                }
+                if (!empty($pUserId)) {
+                    if ($matched) {
+                        $sub->orWhere('otu.user_id', (int) $pUserId);
+                    } else {
+                        $sub->where('otu.user_id', (int) $pUserId);
+                        $matched = true;
+                    }
+                }
+                if (!$matched && !empty($pName)) {
+                    $sub->where('otu.name', $pName);
                 }
             });
+        } else {
+            $employeeParam = $filters['employee_id'] ?? ($filters['employee'] ?? ($filters['employees'] ?? null));
+            $employee = is_string($employeeParam) ? trim($employeeParam) : '';
+            if (is_array($employeeParam) && !empty($employeeParam)) {
+                $q->where(function ($sub) use ($employeeParam) {
+                    $sub->whereIn('otu.employee_id', $employeeParam)
+                        ->orWhereIn('otu.name', $employeeParam);
+                });
+            } elseif ($employee !== '' && $employee !== 'all') {
+                $q->where(function ($sub) use ($employee) {
+                    $sub->where('otu.employee_id', 'like', "%{$employee}%")
+                        ->orWhere('otu.name', 'like', "%{$employee}%");
+                });
+            }
         }
 
         // Learning Title filter
-        $title = trim((string) ($filters['learning_title'] ?? ($filters['title'] ?? '')));
-        if ($title !== '') {
+        $rawTitle = $filters['learning_title'] ?? ($filters['title'] ?? '');
+        $title = is_string($rawTitle) ? trim($rawTitle) : '';
+        if (is_array($rawTitle)) {
+            $titleList = array_values(array_filter(array_map('trim', $rawTitle), fn($t) => $t !== '' && strtolower($t) !== 'all'));
+            if (!empty($titleList)) {
+                $q->whereIn('ot.course_name', $titleList);
+            }
+        } elseif ($title !== '' && strtolower($title) !== 'all') {
             $q->where('ot.course_name', 'like', "%{$title}%");
         }
 
@@ -886,8 +1044,17 @@ class RecordAllCombinedService
         }
 
         // Year filter
-        $year = trim((string) ($filters['year'] ?? 'all'));
-        if ($year !== '' && $year !== 'all' && is_numeric($year)) {
+        $year = $filters['year'] ?? ($filters['years'] ?? 'all');
+        if (is_array($year) && !empty($year)) {
+            $yearInts = array_map('intval', array_filter($year, 'is_numeric'));
+            if (!empty($yearInts)) {
+                $q->where(function ($sub) use ($yearInts) {
+                    $sub->whereIn(DB::raw('YEAR(ot.finish_date)'), $yearInts)
+                        ->orWhereIn(DB::raw('YEAR(ot.start_date)'), $yearInts)
+                        ->orWhereIn(DB::raw('YEAR(otu.created_at)'), $yearInts);
+                });
+            }
+        } elseif (is_string($year) && $year !== '' && $year !== 'all' && is_numeric($year)) {
             $q->where(function ($sub) use ($year) {
                 $sub->whereYear('ot.finish_date', (int) $year)
                     ->orWhereYear('ot.start_date', (int) $year)
@@ -954,11 +1121,20 @@ class RecordAllCombinedService
         }
 
         // 8. Department Filter
-        $department = trim((string) ($filters['department'] ?? 'all'));
-        if ($department !== '' && $department !== 'all') {
-            $deptUserIds = DB::table('users')->where('department', $department)->pluck('id')->toArray();
+        $department = $filters['department'] ?? ($filters['departments'] ?? 'all');
+        if (is_array($department) && !empty($department)) {
+            $deptUserIds = DB::table('users')->whereIn('department', $department)->pluck('id')->toArray();
             $q->where(function ($sub) use ($department, $deptUserIds) {
-                $sub->where('otu.department', $department);
+                $sub->whereIn('otu.department', $department);
+                if (!empty($deptUserIds)) {
+                    $sub->orWhereIn('otu.user_id', $deptUserIds);
+                }
+            });
+        } elseif (is_string($department) && filled($department) && $department !== 'all') {
+            $deptTrim = trim($department);
+            $deptUserIds = DB::table('users')->where('department', $deptTrim)->pluck('id')->toArray();
+            $q->where(function ($sub) use ($deptTrim, $deptUserIds) {
+                $sub->where('otu.department', $deptTrim);
                 if (!empty($deptUserIds)) {
                     $sub->orWhereIn('otu.user_id', $deptUserIds);
                 }
@@ -966,15 +1142,86 @@ class RecordAllCombinedService
         }
 
         // 9. Company Filter
-        $company = trim((string) ($filters['company'] ?? 'all'));
-        if ($company !== '' && $company !== 'all') {
-            $compUserIds = DB::table('users')->where('company_name', $company)->pluck('id')->toArray();
+        $company = $filters['company'] ?? ($filters['companies'] ?? 'all');
+        if (is_array($company) && !empty($company)) {
+            $compUserIds = DB::table('users')->whereIn('company_name', $company)->pluck('id')->toArray();
             $q->where(function ($sub) use ($company, $compUserIds) {
-                $sub->where('otu.company', $company);
+                $sub->whereIn('otu.company', $company);
                 if (!empty($compUserIds)) {
                     $sub->orWhereIn('otu.user_id', $compUserIds);
                 }
             });
+        } elseif (is_string($company) && filled($company) && $company !== 'all') {
+            $compTrim = trim($company);
+            $compUserIds = DB::table('users')->where('company_name', $compTrim)->pluck('id')->toArray();
+            $q->where(function ($sub) use ($compTrim, $compUserIds) {
+                $sub->where('otu.company', $compTrim);
+                if (!empty($compUserIds)) {
+                    $sub->orWhereIn('otu.user_id', $compUserIds);
+                }
+            });
+        }
+
+        // 9b. Division Filter
+        $division = $filters['division'] ?? ($filters['divisions'] ?? 'all');
+        if (is_array($division) && !empty($division)) {
+            $divUserIds = DB::table('users')->whereIn('division', $division)->pluck('id')->toArray();
+            $q->whereIn('otu.user_id', !empty($divUserIds) ? $divUserIds : [-1]);
+        } elseif (is_string($division) && filled($division) && $division !== 'all') {
+            $divTrim = trim($division);
+            $divUserIds = DB::table('users')->where('division', $divTrim)->pluck('id')->toArray();
+            $q->whereIn('otu.user_id', !empty($divUserIds) ? $divUserIds : [-1]);
+        }
+
+        // 9c. Team Filter
+        $team = $filters['team'] ?? ($filters['teams'] ?? '');
+        if (is_array($team) && !empty($team)) {
+            $teamUserIds = DB::table('users')->whereIn('team', $team)->pluck('id')->toArray();
+            $q->where(function ($sub) use ($team, $teamUserIds) {
+                $sub->whereIn('otu.team', $team);
+                if (!empty($teamUserIds)) {
+                    $sub->orWhereIn('otu.user_id', $teamUserIds);
+                }
+            });
+        } elseif (is_string($team) && filled($team) && $team !== 'all') {
+            $teamTrim = trim($team);
+            $teamUserIds = DB::table('users')->where('team', 'like', "%{$teamTrim}%")->pluck('id')->toArray();
+            $q->where(function ($sub) use ($teamTrim, $teamUserIds) {
+                $sub->where('otu.team', 'like', "%{$teamTrim}%");
+                if (!empty($teamUserIds)) {
+                    $sub->orWhereIn('otu.user_id', $teamUserIds);
+                }
+            });
+        }
+
+        // 10. Sub Classification
+        $subClass = trim((string) ($filters['sub_classification'] ?? 'all'));
+        if ($subClass !== '' && $subClass !== 'all') {
+            $q->where('ot.sub_classification', $subClass);
+        }
+
+        // 11. Type
+        $typeParam = trim((string) ($filters['type'] ?? ($filters['training_type'] ?? 'all')));
+        if ($typeParam !== '' && $typeParam !== 'all') {
+            $q->where('ot.type', $typeParam);
+        }
+
+        // 12. Batch
+        $batch = trim((string) ($filters['batch'] ?? 'all'));
+        if ($batch !== '' && $batch !== 'all') {
+            $q->where('ot.batch', $batch);
+        }
+
+        // 13. Provider
+        $provider = trim((string) ($filters['provider'] ?? 'all'));
+        if ($provider !== '' && $provider !== 'all') {
+            $q->where('ot.provider', $provider);
+        }
+
+        // 14. Delivery Method
+        $delivery = trim((string) ($filters['delivery_method'] ?? 'all'));
+        if ($delivery !== '' && $delivery !== 'all') {
+            $q->where('ot.delivery_method', $delivery);
         }
 
         return $q;
@@ -1031,6 +1278,13 @@ class RecordAllCombinedService
             $dataTable->setFilteredRecords($sourceTotal);
         }
 
+        $classificationParam = trim((string) ($request->input('classification', '')));
+        $classificationSlug = '';
+        if ($classificationParam !== '' && strtolower($classificationParam) !== 'all') {
+            $resolvedClass = RecordAllController::resolveClassification($classificationParam, false);
+            $classificationSlug = $resolvedClass['slug'];
+        }
+
         return $dataTable
             ->addIndexColumn()
             ->setRowId('row_id')
@@ -1052,11 +1306,80 @@ class RecordAllCombinedService
             ->addColumn('employee_id', function ($row) {
                 return $row->employee_id ?: '-';
             })
-            ->addColumn('employee_name', function ($row) {
-                return $row->employee_name ?: '-';
+            ->addColumn('employee_name', function ($row) use ($classificationSlug) {
+                $name = $row->employee_name ?: '-';
+                if ($name === '-' || $name === '') {
+                    return '<span class="text-muted">-</span>';
+                }
+
+                $identifier = !empty($row->employee_id) ? $row->employee_id : (!empty($row->user_id) ? $row->user_id : null);
+                $escaped = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
+                if ($identifier) {
+                    $params = ['identifier' => $identifier];
+                    if ($classificationSlug) {
+                        $params['classification'] = $classificationSlug;
+                    }
+                    $url = route('manage.record.all.participant', $params);
+                    return '<div class="fw-semibold employee-name-cell"><a href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '" class="text-primary text-decoration-none hover-underline participant-link" title="View participant details">'
+                        . $escaped . '</a></div>';
+                }
+
+                return '<div class="fw-semibold text-dark employee-name-cell" title="' . $escaped . '">' . $escaped . '</div>';
             })
-            ->addColumn('employee', function ($row) {
-                return $row->employee_name ?: '-';
+            ->addColumn('employee', function ($row) use ($classificationSlug) {
+                $name = $row->employee_name ?: '-';
+                if ($name === '-' || $name === '') {
+                    return '<span class="text-muted">-</span>';
+                }
+
+                $identifier = !empty($row->employee_id) ? $row->employee_id : (!empty($row->user_id) ? $row->user_id : null);
+                $escaped = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
+                if ($identifier) {
+                    $params = ['identifier' => $identifier];
+                    if ($classificationSlug) {
+                        $params['classification'] = $classificationSlug;
+                    }
+                    $url = route('manage.record.all.participant', $params);
+                    return '<div class="fw-semibold employee-name-cell"><a href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '" class="text-primary text-decoration-none hover-underline participant-link" title="View participant details">'
+                        . $escaped . '</a></div>';
+                }
+
+                return '<div class="fw-semibold text-dark employee-name-cell" title="' . $escaped . '">' . $escaped . '</div>';
+            })
+            ->addColumn('learning_title', function ($row) use ($classificationSlug) {
+                $title = $row->learning_title ?: '-';
+                if ($title === '-' || $title === '') {
+                    return '<span class="text-muted">-</span>';
+                }
+                $escaped = htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
+
+                $url = null;
+                if ($row->source === 'offline' && !empty($row->offline_training_id)) {
+                    $params = ['training' => $row->offline_training_id, 'from' => 'all'];
+                    if ($classificationSlug) {
+                        $params['classification'] = $classificationSlug;
+                    }
+                    $url = route('manage.record.offline.course', $params);
+                } elseif ($row->source_type === 'content' && !empty($row->content_slug)) {
+                    $params = ['slug' => $row->content_slug, 'from' => 'all'];
+                    if ($classificationSlug) {
+                        $params['classification'] = $classificationSlug;
+                    }
+                    $url = route('learning.manage.content', $params);
+                } elseif ($row->source_type === 'playlist') {
+                    $pSlug = !empty($row->playlist_slug) ? $row->playlist_slug : $row->learning_slug;
+                    if (!empty($pSlug)) {
+                        $url = url('/playlist/' . $pSlug);
+                    }
+                }
+
+                if ($url) {
+                    return '<div class="fw-semibold text-truncate" style="max-width: 250px;" title="' . $escaped . '">'
+                        . '<a href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '" class="course-link" title="View details">'
+                        . $escaped . '</a></div>';
+                }
+
+                return '<div class="fw-semibold text-dark text-truncate" style="max-width: 250px;" title="' . $escaped . '">' . $escaped . '</div>';
             })
             ->addColumn('kpi_badge', function ($row) {
                 if ($row->counted_corporate_kpi === null || $row->counted_corporate_kpi === '') {
@@ -1141,25 +1464,724 @@ class RecordAllCombinedService
                 return ($row->l3_numerical !== null && $row->l3_numerical !== '') ? number_format((float) $row->l3_numerical, 1) : '-';
             })
             ->addColumn('action', function ($row) {
+                $user = auth()->user();
+                $canRecord = $user && $user->canAccessManageModule('record_management');
+                $canLearning = $user && $user->canAccessManageModule('learning_management');
+                $canContent = $user && $user->canAccessManageModule('content_repository');
+                $canPlaylist = $user && $user->canAccessManageModule('playlist_learning_path');
+
                 if ($row->source === 'offline') {
-                    return '<button type="button" class="btn btn-sm btn-outline-primary rounded-pill btn-view-offline-detail px-3" data-id="' . $row->source_id . '">'
-                        . '<i class="ti ti-eye me-1"></i> Detail'
-                        . '</button>';
+                    $sourceId = (int) $row->source_id;
+                    $empName = htmlspecialchars($row->employee_name ?: ($row->employee ?: 'Participant'), ENT_QUOTES);
+                    $empNip = htmlspecialchars($row->employee_id ?: '', ENT_QUOTES);
+                    $courseName = htmlspecialchars($row->learning_title ?: 'Training', ENT_QUOTES);
+                    $classSlug = Str::slug($row->classification ?? 'unclassified');
+                    $editUrl = route('manage.record.offline.edit', [
+                        'id'             => $sourceId,
+                        'return'         => 'all_classification',
+                        'classification' => $classSlug,
+                    ]);
+
+                    $items = [];
+                    $items[] = '<li>
+                        <button type="button" class="dropdown-item d-flex align-items-center gap-2 btn-view-offline-detail" 
+                                data-id="' . $sourceId . '">
+                            <i class="ti ti-eye text-primary fs-3"></i>
+                            <span>View Detail</span>
+                        </button>
+                    </li>';
+
+                    if ($canRecord) {
+                        $items[] = '<li>
+                            <a href="' . $editUrl . '" class="dropdown-item d-flex align-items-center gap-2 btn-edit-offline-record">
+                                <i class="ti ti-edit text-warning fs-3"></i>
+                                <span>Edit Record</span>
+                            </a>
+                        </li>';
+                        $items[] = '<li><hr class="dropdown-divider my-1"></li>';
+                        $items[] = '<li>
+                            <button type="button" class="dropdown-item d-flex align-items-center gap-2 text-danger btn-delete-offline-record" 
+                                    data-id="' . $sourceId . '" 
+                                    data-employee="' . $empName . '" 
+                                    data-nip="' . $empNip . '" 
+                                    data-course="' . $courseName . '">
+                                <i class="ti ti-trash text-danger fs-3"></i>
+                                <span>Delete Record</span>
+                            </button>
+                        </li>';
+                    }
+
+                    return '<div class="dropdown text-end dropdown-action-menu">
+                        <button type="button" class="btn btn-sm btn-icon btn-ghost-secondary rounded-2 btn-action-trigger" 
+                                data-bs-toggle="dropdown" 
+                                data-bs-boundary="body" 
+                                data-bs-popper-config=\'{"strategy":"fixed"}\'
+                                aria-expanded="false" 
+                                title="Action">
+                            <i class="ti ti-dots-vertical fs-3"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 py-1 rounded-3" style="min-width: 180px;">
+                            ' . implode("\n", $items) . '
+                        </ul>
+                    </div>';
                 }
-                if (!empty($row->learning_slug)) {
-                    return '<a href="' . route('learning.manage.content', $row->learning_slug) . '" class="btn btn-sm btn-outline-primary rounded-pill px-3">'
-                        . '<i class="ti ti-eye me-1"></i> View'
-                        . '</a>';
+
+                // source === 'online'
+                $sourceId = (int) $row->source_id;
+                $sourceType = htmlspecialchars($row->source_type ?? 'content', ENT_QUOTES);
+                $empName = htmlspecialchars($row->employee_name ?: '', ENT_QUOTES);
+                $empNip = htmlspecialchars($row->employee_id ?: '', ENT_QUOTES);
+                $learningTitle = htmlspecialchars($row->learning_title ?: 'Content', ENT_QUOTES);
+                $contentSlug = htmlspecialchars($row->learning_slug ?: '', ENT_QUOTES);
+                $playlistSlug = htmlspecialchars($row->playlist_slug ?: '', ENT_QUOTES);
+
+                $items = [];
+
+                // 1. Learning Record Section (Peserta)
+                $items[] = '<h6 class="dropdown-header text-uppercase text-muted fw-bold extra-small px-3 py-1 mb-0" style="font-size: 0.68rem; letter-spacing: 0.05em;">Learning Record</h6>';
+                $items[] = '<li>
+                    <button type="button" class="dropdown-item d-flex align-items-center gap-2 btn-view-online-detail" 
+                            data-id="' . $sourceId . '" 
+                            data-type="' . $sourceType . '">
+                        <i class="ti ti-eye text-primary fs-3"></i>
+                        <span>View Detail</span>
+                    </button>
+                </li>';
+
+                if ($canRecord || $canLearning) {
+                    $items[] = '<li>
+                        <button type="button" class="dropdown-item d-flex align-items-center gap-2 btn-edit-online-record" 
+                                data-id="' . $sourceId . '" 
+                                data-type="' . $sourceType . '">
+                            <i class="ti ti-adjustments text-warning fs-3"></i>
+                            <span>Edit Progress</span>
+                        </button>
+                    </li>';
+
+                    $items[] = '<li>
+                        <button type="button" class="dropdown-item d-flex align-items-center gap-2 text-warning btn-reset-online-record" 
+                                data-id="' . $sourceId . '" 
+                                data-type="' . $sourceType . '" 
+                                data-employee="' . $empName . '" 
+                                data-title="' . $learningTitle . '">
+                            <i class="ti ti-rotate-clockwise-2 text-warning fs-3"></i>
+                            <span>Reset Progress</span>
+                        </button>
+                    </li>';
+
+                    $items[] = '<li>
+                        <button type="button" class="dropdown-item d-flex align-items-center gap-2 text-danger btn-delete-online-record" 
+                                data-id="' . $sourceId . '" 
+                                data-type="' . $sourceType . '" 
+                                data-employee="' . $empName . '" 
+                                data-nip="' . $empNip . '" 
+                                data-title="' . $learningTitle . '">
+                            <i class="ti ti-trash text-danger fs-3"></i>
+                            <span>Delete Record</span>
+                        </button>
+                    </li>';
                 }
-                return '<span class="text-muted small">-</span>';
+
+                // 2. Master Entity Section (Content or Playlist)
+                if ($sourceType === 'content') {
+                    $masterItems = [];
+                    if (!empty($contentSlug)) {
+                        $masterItems[] = '<li>
+                            <a href="' . route('learning.manage.content', $contentSlug) . '" class="dropdown-item d-flex align-items-center gap-2" target="_blank">
+                                <i class="ti ti-external-link text-info fs-3"></i>
+                                <span>View Content</span>
+                            </a>
+                        </li>';
+
+                        if ($canContent) {
+                            $masterItems[] = '<li>
+                                <a href="' . route('content.edit', $contentSlug) . '" class="dropdown-item d-flex align-items-center gap-2 btn-edit-content-master" target="_blank">
+                                    <i class="ti ti-edit text-success fs-3"></i>
+                                    <span>Edit Content (Master)</span>
+                                </a>
+                            </li>';
+
+                            $masterItems[] = '<li>
+                                <button type="button" class="dropdown-item d-flex align-items-center gap-2 text-danger btn-delete-content-master" 
+                                        data-slug="' . $contentSlug . '" 
+                                        data-title="' . $learningTitle . '" 
+                                        data-type="content">
+                                    <i class="ti ti-trash-x text-danger fs-3"></i>
+                                    <span>Delete Content (Master)</span>
+                                </button>
+                            </li>';
+                        }
+                    }
+
+                    if (!empty($masterItems)) {
+                        $items[] = '<li><hr class="dropdown-divider my-1"></li>';
+                        $items[] = '<h6 class="dropdown-header text-uppercase text-muted fw-bold extra-small px-3 py-1 mb-0" style="font-size: 0.68rem; letter-spacing: 0.05em;">Master Content</h6>';
+                        $items = array_merge($items, $masterItems);
+                    }
+                } elseif ($sourceType === 'playlist') {
+                    $masterItems = [];
+                    $targetSlug = !empty($playlistSlug) ? $playlistSlug : (!empty($row->learning_slug) ? $row->learning_slug : '');
+                    if (!empty($targetSlug)) {
+                        $masterItems[] = '<li>
+                            <a href="' . url('/playlist/' . $targetSlug) . '" class="dropdown-item d-flex align-items-center gap-2" target="_blank">
+                                <i class="ti ti-external-link text-info fs-3"></i>
+                                <span>View Playlist</span>
+                            </a>
+                        </li>';
+
+                        if ($canPlaylist) {
+                            $masterItems[] = '<li>
+                                <a href="' . route('playlist.edit', $targetSlug) . '" class="dropdown-item d-flex align-items-center gap-2 btn-edit-playlist-master" target="_blank">
+                                    <i class="ti ti-edit text-success fs-3"></i>
+                                    <span>Edit Playlist (Master)</span>
+                                </a>
+                            </li>';
+
+                            $masterItems[] = '<li>
+                                <button type="button" class="dropdown-item d-flex align-items-center gap-2 text-danger btn-delete-playlist-master" 
+                                        data-slug="' . $targetSlug . '" 
+                                        data-title="' . $learningTitle . '" 
+                                        data-type="playlist">
+                                    <i class="ti ti-trash-x text-danger fs-3"></i>
+                                    <span>Delete Playlist (Master)</span>
+                                </button>
+                            </li>';
+                        }
+                    }
+
+                    if (!empty($masterItems)) {
+                        $items[] = '<li><hr class="dropdown-divider my-1"></li>';
+                        $items[] = '<h6 class="dropdown-header text-uppercase text-muted fw-bold extra-small px-3 py-1 mb-0" style="font-size: 0.68rem; letter-spacing: 0.05em;">Master Playlist</h6>';
+                        $items = array_merge($items, $masterItems);
+                    }
+                }
+
+                return '<div class="dropdown text-end dropdown-action-menu">
+                    <button type="button" class="btn btn-sm btn-icon btn-ghost-secondary rounded-2 btn-action-trigger" 
+                            data-bs-toggle="dropdown" 
+                            data-bs-boundary="body" 
+                            data-bs-popper-config=\'{"strategy":"fixed"}\'
+                            aria-expanded="false" 
+                            title="Action">
+                        <i class="ti ti-dots-vertical fs-3"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 py-1 rounded-3" style="min-width: 200px;">
+                        ' . implode("\n", $items) . '
+                    </ul>
+                </div>';
             })
             ->rawColumns([
                 'source_badge',
                 'status_badge',
+                'employee_name',
+                'employee',
+                'learning_title',
                 'kpi_badge',
                 'progress_bar',
                 'certificate_badge',
                 'attendance_badge',
+                'action',
+            ])
+            ->make(true);
+    }
+
+    /**
+     * Resolve a participant identity across Online users and Offline training participants.
+     */
+    public function resolveParticipant(string $identifier): ?array
+    {
+        $identifier = trim($identifier);
+        if ($identifier === '') {
+            return null;
+        }
+
+        $user = null;
+        $offlineUser = null;
+
+        if (is_numeric($identifier) && (int) $identifier > 0) {
+            $user = User::whereNull('deleted_at')->find((int) $identifier);
+            if (!$user) {
+                $user = User::whereNull('deleted_at')->where('id_emp', $identifier)->first();
+            }
+            if (!$user && Schema::hasTable('offline_training_users')) {
+                $offlineUser = DB::table('offline_training_users')
+                    ->whereNull('deleted_at')
+                    ->where(function ($q) use ($identifier) {
+                        $q->where('user_id', (int) $identifier)
+                          ->orWhere('employee_id', $identifier);
+                    })
+                    ->orderByDesc('id')
+                    ->first();
+            }
+        } else {
+            $user = User::whereNull('deleted_at')->where('id_emp', $identifier)->first();
+            if (!$user && Schema::hasTable('offline_training_users')) {
+                $offlineUser = DB::table('offline_training_users')
+                    ->whereNull('deleted_at')
+                    ->where('employee_id', $identifier)
+                    ->orderByDesc('id')
+                    ->first();
+            }
+            if (!$user && !$offlineUser) {
+                $user = User::whereNull('deleted_at')->where('name', $identifier)->first();
+            }
+            if (!$user && !$offlineUser && Schema::hasTable('offline_training_users')) {
+                $offlineUser = DB::table('offline_training_users')
+                    ->whereNull('deleted_at')
+                    ->where('name', $identifier)
+                    ->orderByDesc('id')
+                    ->first();
+            }
+        }
+
+        // If user found, look for matching offline training user to enrich grade/job_position/team
+        if ($user && !$offlineUser && Schema::hasTable('offline_training_users')) {
+            $offlineUser = DB::table('offline_training_users')
+                ->whereNull('deleted_at')
+                ->where(function ($q) use ($user) {
+                    $q->where('user_id', $user->id);
+                    if (!empty($user->id_emp)) {
+                        $q->orWhere('employee_id', $user->id_emp);
+                    }
+                })
+                ->orderByDesc('id')
+                ->first();
+        }
+
+        // If offline record found without user, backfill user
+        if ($offlineUser && !$user) {
+            if (!empty($offlineUser->user_id)) {
+                $user = User::whereNull('deleted_at')->find($offlineUser->user_id);
+            }
+            if (!$user && !empty($offlineUser->employee_id)) {
+                $user = User::whereNull('deleted_at')->where('id_emp', $offlineUser->employee_id)->first();
+            }
+        }
+
+        if (!$user && !$offlineUser) {
+            return null;
+        }
+
+        $userId = $user?->id ?? ($offlineUser?->user_id ? (int) $offlineUser->user_id : null);
+        $employeeId = $offlineUser?->employee_id ?: ($user?->id_emp ?: '');
+        $name = ($offlineUser && !empty($offlineUser->name)) ? $offlineUser->name : ($user?->name ?: 'Participant');
+        $grade = $offlineUser?->grade ?: ($user?->grade ?? '-');
+        $jobPosition = $offlineUser?->job_position ?: ($user?->job_position ?? '-');
+        $team = $offlineUser?->team ?: ($user?->team ?? '-');
+        $department = $offlineUser?->department ?: ($user?->department ?? '-');
+        $company = $offlineUser?->company ?: ($user?->company_name ?? 'PT Krakatau Posco');
+
+        $rawIdentifier = !empty($employeeId) ? $employeeId : ($userId ? (string) $userId : $identifier);
+
+        return [
+            'user'           => $user,
+            'user_id'        => $userId,
+            'employee_id'    => $employeeId,
+            'name'           => $name,
+            'grade'          => $grade,
+            'job_position'   => $jobPosition,
+            'team'           => $team,
+            'department'     => $department,
+            'company'        => $company,
+            'raw_identifier' => $rawIdentifier,
+        ];
+    }
+
+    /**
+     * Compute combined KPI summary for a specific participant.
+     */
+    public function getParticipantSummary(array $participant, ?string $classification = null): array
+    {
+        $filters = ['exact_participant' => $participant];
+        if (filled($classification) && strtolower($classification) !== 'all') {
+            $resolvedClass = RecordAllController::resolveClassification($classification, false);
+            $filters['classification'] = $resolvedClass['is_unclassified'] ? 'Unclassified' : $resolvedClass['name'];
+        }
+
+        $query = $this->buildCombinedQuery($filters);
+        $records = $query->get();
+
+        $totalLearning = $records->count();
+        $finished = 0;
+        $ongoing = 0;
+        $totalHours = 0.0;
+
+        foreach ($records as $r) {
+            $prog = (float) ($r->progress ?? 0);
+            $st = (string) ($r->status ?? '');
+            if ($st === 'Finished' || $prog >= 100) {
+                $finished++;
+            } elseif ($prog > 0) {
+                $ongoing++;
+            }
+
+            $totalHours += (float) ($r->learning_hours ?? 0);
+        }
+
+        return [
+            'total_learning' => $totalLearning,
+            'finished'       => $finished,
+            'ongoing'        => $ongoing,
+            'learning_hours' => round($totalHours, 2),
+        ];
+    }
+
+    /**
+     * Build combined query locked strictly to a participant.
+     */
+    public function buildParticipantCombinedQuery(array $participant, array $filters = []): Builder
+    {
+        $filters['exact_participant'] = $participant;
+        return $this->buildCombinedQuery($filters);
+    }
+
+    /**
+     * Server-side DataTable for combined learning records of a single participant.
+     */
+    public function participantDatatable(array $participant, Request $request): JsonResponse
+    {
+        $length = (int) ($request->input('length') ?: ($request->input('entries') ?: 25));
+        if ($length <= 0) {
+            $length = 25;
+        }
+        $request->merge(['length' => $length]);
+        if (!$request->has('start')) {
+            $request->merge(['start' => 0]);
+        }
+        app()->instance('request', $request);
+        app()->forgetInstance('datatables.request');
+
+        $filters = $request->all();
+        $filters['exact_participant'] = $participant;
+
+        $classificationParam = trim((string) ($request->input('classification', '')));
+        $classificationSlug = '';
+        if ($classificationParam !== '' && strtolower($classificationParam) !== 'all') {
+            $resolvedClass = RecordAllController::resolveClassification($classificationParam, false);
+            $classificationSlug = $resolvedClass['slug'];
+            $filters['classification'] = $resolvedClass['is_unclassified'] ? 'Unclassified' : $resolvedClass['name'];
+        }
+
+        $query = $this->buildCombinedQuery($filters);
+
+        // Sorting: default is latest finish_date / record_date
+        $hasCustomSort = $request->filled('order');
+        if (!$hasCustomSort) {
+            $query->orderBy('raw_finish_date', 'desc')
+                ->orderBy('record_date', 'desc');
+        }
+
+        $totalRecords = (clone $query)->count();
+
+        $dataTable = DataTables::of($query)
+            ->setTotalRecords($totalRecords)
+            ->setFilteredRecords($totalRecords);
+
+        return $dataTable
+            ->addIndexColumn()
+            ->setRowId('row_id')
+            ->addColumn('source_badge', function ($row) {
+                if ($row->source === 'online') {
+                    return '<span class="badge" style="background-color: #e0f2fe; color: #0284c7; font-weight: 600; font-size: 0.725rem; border-radius: 6px; padding: 3px 8px;">KP OWL</span>';
+                }
+                return '<span class="badge" style="background-color: #fef3c7; color: #d97706; font-weight: 600; font-size: 0.725rem; border-radius: 6px; padding: 3px 8px;">Non KP OWL</span>';
+            })
+            ->addColumn('status_badge', function ($row) {
+                $st = $row->status ?? 'Not Started';
+                if ($st === 'Finished') {
+                    return '<span class="badge bg-success-lt text-success fw-bold" style="font-size: 0.725rem;">Finished</span>';
+                } elseif ($st === 'Ongoing') {
+                    return '<span class="badge bg-warning-lt text-warning fw-bold" style="font-size: 0.725rem;">Ongoing</span>';
+                }
+                return '<span class="badge bg-secondary-lt text-secondary fw-bold" style="font-size: 0.725rem;">Not Started</span>';
+            })
+            ->addColumn('learning_title', function ($row) use ($classificationSlug) {
+                $title = $row->learning_title ?: '-';
+                if ($title === '-' || $title === '') {
+                    return '<span class="text-muted">-</span>';
+                }
+                $escaped = htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
+
+                $url = null;
+                if ($row->source === 'offline' && !empty($row->offline_training_id)) {
+                    $params = ['training' => $row->offline_training_id, 'from' => 'all'];
+                    if ($classificationSlug) {
+                        $params['classification'] = $classificationSlug;
+                    }
+                    $url = route('manage.record.offline.course', $params);
+                } elseif ($row->source_type === 'content' && !empty($row->content_slug)) {
+                    $params = ['slug' => $row->content_slug, 'from' => 'all'];
+                    if ($classificationSlug) {
+                        $params['classification'] = $classificationSlug;
+                    }
+                    $url = route('learning.manage.content', $params);
+                } elseif ($row->source_type === 'playlist') {
+                    $pSlug = !empty($row->playlist_slug) ? $row->playlist_slug : $row->learning_slug;
+                    if (!empty($pSlug)) {
+                        $url = url('/playlist/' . $pSlug);
+                    }
+                }
+
+                if ($url) {
+                    return '<div class="fw-semibold text-truncate" style="max-width: 250px;" title="' . $escaped . '">'
+                        . '<a href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '" class="course-link" title="View details">'
+                        . $escaped . '</a></div>';
+                }
+
+                return '<div class="fw-semibold text-dark text-truncate" style="max-width: 250px;" title="' . $escaped . '">' . $escaped . '</div>';
+            })
+            ->addColumn('type', function ($row) {
+                return htmlspecialchars($row->type ?: '-');
+            })
+            ->addColumn('category', function ($row) {
+                return htmlspecialchars($row->category ?: '-');
+            })
+            ->addColumn('classification', function ($row) {
+                return htmlspecialchars($row->classification ?: '-');
+            })
+            ->addColumn('duration_formatted', function ($row) {
+                $sec = (int) ($row->duration_seconds ?? 0);
+                if ($sec <= 0) {
+                    return '-';
+                }
+                $h = floor($sec / 3600);
+                $m = floor(($sec % 3600) / 60);
+                $s = $sec % 60;
+                return sprintf('%02d:%02d:%02d', $h, $m, $s);
+            })
+            ->addColumn('learning_hours_formatted', function ($row) {
+                $lh = (float) ($row->learning_hours ?? 0);
+                return '<span class="fw-semibold">' . number_format($lh, 2) . 'h</span>';
+            })
+            ->addColumn('progress_badge', function ($row) {
+                $p = min(100, max(0, (float) ($row->progress ?? 0)));
+                $barClass = $p >= 100 ? 'bg-success' : ($p > 0 ? 'bg-warning' : 'bg-secondary');
+                return '<div class="d-flex align-items-center gap-2" style="min-width: 90px;">
+                    <div class="progress flex-grow-1" style="height: 6px;">
+                        <div class="progress-bar ' . $barClass . '" style="width: ' . $p . '%;"></div>
+                    </div>
+                    <span class="small fw-semibold text-muted" style="font-size: 0.72rem; min-width: 32px;">' . round($p) . '%</span>
+                </div>';
+            })
+            ->addColumn('record_date_formatted', function ($row) {
+                $d = $row->finish_date ?? ($row->start_date ?? ($row->record_date ?? null));
+                return ($d && $d !== '-') ? date('d M Y', strtotime($d)) : '-';
+            })
+            ->addColumn('action', function ($row) use ($participant, $classificationSlug) {
+                $user = auth()->user();
+                $canRecord = $user && $user->canAccessManageModule('record_management');
+                $canLearning = $user && $user->canAccessManageModule('learning_management');
+                $canContent = $user && $user->canAccessManageModule('content_repository');
+                $canPlaylist = $user && $user->canAccessManageModule('playlist_learning_path');
+
+                if ($row->source === 'offline') {
+                    $sourceId = (int) $row->source_id;
+                    $empName = htmlspecialchars($row->employee_name ?: ($participant['name'] ?: 'Participant'), ENT_QUOTES);
+                    $empNip = htmlspecialchars($row->employee_id ?: ($participant['employee_id'] ?: ''), ENT_QUOTES);
+                    $courseName = htmlspecialchars($row->learning_title ?: 'Training', ENT_QUOTES);
+                    $classSlug = !empty($classificationSlug) ? $classificationSlug : Str::slug($row->classification ?? 'unclassified');
+                    $rawIdentifier = $participant['raw_identifier'] ?? ($participant['user_id'] ?? $participant['employee_id']);
+                    $editUrl = route('manage.record.offline.edit', [
+                        'id'             => $sourceId,
+                        'return'         => 'all_participant',
+                        'identifier'     => $rawIdentifier,
+                        'classification' => $classSlug,
+                    ]);
+
+                    $items = [];
+                    $items[] = '<li>
+                        <button type="button" class="dropdown-item d-flex align-items-center gap-2 btn-view-offline-detail" 
+                                data-id="' . $sourceId . '">
+                            <i class="ti ti-eye text-primary fs-3"></i>
+                            <span>View Detail</span>
+                        </button>
+                    </li>';
+
+                    if ($canRecord) {
+                        $items[] = '<li>
+                            <a href="' . $editUrl . '" class="dropdown-item d-flex align-items-center gap-2 btn-edit-offline-record">
+                                <i class="ti ti-edit text-warning fs-3"></i>
+                                <span>Edit Record</span>
+                            </a>
+                        </li>';
+                        $items[] = '<li><hr class="dropdown-divider my-1"></li>';
+                        $items[] = '<li>
+                            <button type="button" class="dropdown-item d-flex align-items-center gap-2 text-danger btn-delete-offline-record" 
+                                    data-id="' . $sourceId . '" 
+                                    data-employee="' . $empName . '" 
+                                    data-nip="' . $empNip . '" 
+                                    data-course="' . $courseName . '">
+                                <i class="ti ti-trash text-danger fs-3"></i>
+                                <span>Delete Record</span>
+                            </button>
+                        </li>';
+                    }
+
+                    return '<div class="dropdown text-end dropdown-action-menu">
+                        <button type="button" class="btn btn-sm btn-icon btn-ghost-secondary rounded-2 btn-action-trigger" 
+                                data-bs-toggle="dropdown" 
+                                data-bs-boundary="body" 
+                                data-bs-popper-config=\'{"strategy":"fixed"}\'
+                                aria-expanded="false" 
+                                title="Action">
+                            <i class="ti ti-dots-vertical fs-3"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 py-1 rounded-3" style="min-width: 180px;">
+                            ' . implode("\n", $items) . '
+                        </ul>
+                    </div>';
+                }
+
+                // source === 'online'
+                $sourceId = (int) $row->source_id;
+                $sourceType = htmlspecialchars($row->source_type ?? 'content', ENT_QUOTES);
+                $empName = htmlspecialchars($row->employee_name ?: ($participant['name'] ?: ''), ENT_QUOTES);
+                $empNip = htmlspecialchars($row->employee_id ?: ($participant['employee_id'] ?: ''), ENT_QUOTES);
+                $learningTitle = htmlspecialchars($row->learning_title ?: 'Content', ENT_QUOTES);
+                $contentSlug = htmlspecialchars($row->learning_slug ?: ($row->content_slug ?? ''), ENT_QUOTES);
+                $playlistSlug = htmlspecialchars($row->playlist_slug ?: ($row->learning_slug ?? ''), ENT_QUOTES);
+
+                $items = [];
+
+                // 1. Learning Record Section (Peserta)
+                $items[] = '<h6 class="dropdown-header text-uppercase text-muted fw-bold extra-small px-3 py-1 mb-0" style="font-size: 0.68rem; letter-spacing: 0.05em;">Learning Record</h6>';
+                $items[] = '<li>
+                    <button type="button" class="dropdown-item d-flex align-items-center gap-2 btn-view-online-detail" 
+                            data-id="' . $sourceId . '" 
+                            data-type="' . $sourceType . '">
+                        <i class="ti ti-eye text-primary fs-3"></i>
+                        <span>View Detail</span>
+                    </button>
+                </li>';
+
+                if ($canRecord || $canLearning) {
+                    $items[] = '<li>
+                        <button type="button" class="dropdown-item d-flex align-items-center gap-2 btn-edit-online-record" 
+                                data-id="' . $sourceId . '" 
+                                data-type="' . $sourceType . '">
+                            <i class="ti ti-adjustments text-warning fs-3"></i>
+                            <span>Edit Progress</span>
+                        </button>
+                    </li>';
+
+                    $items[] = '<li>
+                        <button type="button" class="dropdown-item d-flex align-items-center gap-2 text-warning btn-reset-online-record" 
+                                data-id="' . $sourceId . '" 
+                                data-type="' . $sourceType . '" 
+                                data-employee="' . $empName . '" 
+                                data-title="' . $learningTitle . '">
+                            <i class="ti ti-rotate-clockwise-2 text-warning fs-3"></i>
+                            <span>Reset Progress</span>
+                        </button>
+                    </li>';
+
+                    $items[] = '<li>
+                        <button type="button" class="dropdown-item d-flex align-items-center gap-2 text-danger btn-delete-online-record" 
+                                data-id="' . $sourceId . '" 
+                                data-type="' . $sourceType . '" 
+                                data-employee="' . $empName . '" 
+                                data-nip="' . $empNip . '" 
+                                data-title="' . $learningTitle . '">
+                            <i class="ti ti-trash text-danger fs-3"></i>
+                            <span>Delete Record</span>
+                        </button>
+                    </li>';
+                }
+
+                // 2. Master Entity Section (Content or Playlist)
+                if ($sourceType === 'content') {
+                    $masterItems = [];
+                    if (!empty($contentSlug)) {
+                        $masterItems[] = '<li>
+                            <a href="' . route('learning.manage.content', $contentSlug) . '" class="dropdown-item d-flex align-items-center gap-2" target="_blank">
+                                <i class="ti ti-external-link text-info fs-3"></i>
+                                <span>View Content</span>
+                            </a>
+                        </li>';
+
+                        if ($canContent) {
+                            $masterItems[] = '<li>
+                                <a href="' . route('content.edit', $contentSlug) . '" class="dropdown-item d-flex align-items-center gap-2 btn-edit-content-master" target="_blank">
+                                    <i class="ti ti-edit text-success fs-3"></i>
+                                    <span>Edit Content (Master)</span>
+                                </a>
+                            </li>';
+
+                            $masterItems[] = '<li>
+                                <button type="button" class="dropdown-item d-flex align-items-center gap-2 text-danger btn-delete-content-master" 
+                                        data-slug="' . $contentSlug . '" 
+                                        data-title="' . $learningTitle . '" 
+                                        data-type="content">
+                                    <i class="ti ti-trash-x text-danger fs-3"></i>
+                                    <span>Delete Content (Master)</span>
+                                </button>
+                            </li>';
+                        }
+                    }
+
+                    if (!empty($masterItems)) {
+                        $items[] = '<li><hr class="dropdown-divider my-1"></li>';
+                        $items[] = '<h6 class="dropdown-header text-uppercase text-muted fw-bold extra-small px-3 py-1 mb-0" style="font-size: 0.68rem; letter-spacing: 0.05em;">Master Content</h6>';
+                        $items = array_merge($items, $masterItems);
+                    }
+                } elseif ($sourceType === 'playlist') {
+                    $masterItems = [];
+                    $targetSlug = !empty($playlistSlug) ? $playlistSlug : (!empty($row->learning_slug) ? $row->learning_slug : '');
+                    if (!empty($targetSlug)) {
+                        $masterItems[] = '<li>
+                            <a href="' . url('/playlist/' . $targetSlug) . '" class="dropdown-item d-flex align-items-center gap-2" target="_blank">
+                                <i class="ti ti-external-link text-info fs-3"></i>
+                                <span>View Playlist</span>
+                            </a>
+                        </li>';
+
+                        if ($canPlaylist) {
+                            $masterItems[] = '<li>
+                                <a href="' . route('playlist.edit', $targetSlug) . '" class="dropdown-item d-flex align-items-center gap-2 btn-edit-playlist-master" target="_blank">
+                                    <i class="ti ti-edit text-success fs-3"></i>
+                                    <span>Edit Playlist (Master)</span>
+                                </a>
+                            </li>';
+
+                            $masterItems[] = '<li>
+                                <button type="button" class="dropdown-item d-flex align-items-center gap-2 text-danger btn-delete-playlist-master" 
+                                        data-slug="' . $targetSlug . '" 
+                                        data-title="' . $learningTitle . '" 
+                                        data-type="playlist">
+                                    <i class="ti ti-trash-x text-danger fs-3"></i>
+                                    <span>Delete Playlist (Master)</span>
+                                </button>
+                            </li>';
+                        }
+                    }
+
+                    if (!empty($masterItems)) {
+                        $items[] = '<li><hr class="dropdown-divider my-1"></li>';
+                        $items[] = '<h6 class="dropdown-header text-uppercase text-muted fw-bold extra-small px-3 py-1 mb-0" style="font-size: 0.68rem; letter-spacing: 0.05em;">Master Playlist</h6>';
+                        $items = array_merge($items, $masterItems);
+                    }
+                }
+
+                return '<div class="dropdown text-end dropdown-action-menu">
+                    <button type="button" class="btn btn-sm btn-icon btn-ghost-secondary rounded-2 btn-action-trigger" 
+                            data-bs-toggle="dropdown" 
+                            data-bs-boundary="body" 
+                            data-bs-popper-config=\'{"strategy":"fixed"}\'
+                            aria-expanded="false" 
+                            title="Action">
+                        <i class="ti ti-dots-vertical fs-3"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 py-1 rounded-3" style="min-width: 200px;">
+                        ' . implode("\n", $items) . '
+                    </ul>
+                </div>';
+            })
+            ->rawColumns([
+                'source_badge',
+                'status_badge',
+                'learning_title',
+                'learning_hours_formatted',
+                'progress_badge',
                 'action',
             ])
             ->make(true);

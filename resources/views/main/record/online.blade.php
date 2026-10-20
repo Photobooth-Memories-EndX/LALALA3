@@ -13,26 +13,59 @@
 
         @include('main.record.components.record-hero')
 
-        @include('main.record.components.record-navigation')
-
-        <!-- SECTION HEADER: KP OWL -->
-        <div class="card border-0 shadow-sm p-3 p-md-4 mb-4 rounded-3 bg-white record-section-header">
-            <div class="d-flex align-items-center gap-3">
-                <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 record-section-icon"
-                     style="width: 54px; height: 54px; background-color: #e0f2fe; color: #0284c7; border-radius: 12px;">
-                    <i class="ti ti-device-laptop fs-1"></i>
-                </div>
-                <div>
-                    <h2 class="h3 fw-bold mb-1 text-dark">KP OWL</h2>
-                    <p class="text-muted small mb-0">Online Learning Record — Monitor learning progress, status, and employee training completion in OWL LMS.</p>
-                </div>
-            </div>
-        </div>
-
         <!-- 4 KPI SUMMARY CARDS (ASYNC SKELETON SHELL) -->
         <div id="kpi-summary-container">
             @include('main.record.components.online-kpi-skeleton')
         </div>
+
+        <!-- SECTION HEADER: KP OWL -->
+        <div class="card border-0 shadow-sm p-3 p-md-4 mb-4 rounded-3 bg-white record-section-header">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 record-section-icon"
+                         style="width: 54px; height: 54px; background-color: #e0f2fe; color: #0284c7; border-radius: 12px;">
+                        <i class="ti ti-device-laptop fs-1"></i>
+                    </div>
+                    <div>
+                        <h2 class="h3 fw-bold mb-1 text-dark">KP OWL</h2>
+                        <p class="text-muted small mb-0">Online Learning Record — Monitor learning progress, status, and employee training completion in OWL LMS.</p>
+                    </div>
+                </div>
+
+                <!-- Action Buttons: Download Online Record -->
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <div class="dropdown">
+                        <button type="button" class="btn btn-outline-secondary dropdown-toggle rounded-3 px-3 d-inline-flex align-items-center gap-1.5"
+                                data-bs-toggle="dropdown" data-toggle="dropdown" aria-expanded="false" id="btn-download-dropdown">
+                            <i class="ti ti-download fs-2"></i>
+                            <span>Download</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border rounded-3 mt-1 py-1" aria-labelledby="btn-download-dropdown" style="min-width: 250px;">
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.record.online.export', request()->query()) }}" id="btn-export-online-xlsx">
+                                    <i class="ti ti-file-spreadsheet text-success fs-3"></i>
+                                    <span>Download Online Record (.xlsx)</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.record.online.export.pdf', request()->query()) }}" id="btn-export-online-pdf">
+                                    <i class="ti ti-file-type-pdf text-danger fs-3"></i>
+                                    <span>Download PDF (.pdf)</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.record.online.export.csv', request()->query()) }}" id="btn-export-online-csv">
+                                    <i class="ti ti-file-type-csv text-primary fs-3"></i>
+                                    <span>Download CSV (.csv)</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @include('main.record.components.record-navigation')
 
         <!-- CLASSIFICATION SUMMARY (ASYNC SKELETON SHELL) -->
         <div class="card border-0 shadow-sm mb-4 classification-summary-card">

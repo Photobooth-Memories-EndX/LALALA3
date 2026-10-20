@@ -5,9 +5,9 @@
     <div class="container-xl">
         <!-- BACK BUTTON -->
         <div class="mb-3">
-            <a href="{{ route('manage.record.offline.classification', $classification['slug']) }}" class="btn-back d-inline-flex align-items-center gap-1 text-decoration-none fw-medium">
+            <a href="{{ $backUrl ?? route('manage.record.offline.classification', $classification['slug']) }}" class="btn-back d-inline-flex align-items-center gap-1 text-decoration-none fw-medium">
                 <i class="ti ti-arrow-left"></i>
-                <span>Back to {{ $classification['name'] }}</span>
+                <span>{{ $backTitle ?? ('Back to ' . $classification['name']) }}</span>
             </a>
         </div>
 
@@ -56,6 +56,11 @@
             @csrf
             @method('PUT')
 
+            <input type="hidden" name="return_type" value="{{ $returnType ?? '' }}">
+            <input type="hidden" name="return_training_id" value="{{ $returnTrainingId ?? '' }}">
+            <input type="hidden" name="return_participant_id" value="{{ $returnParticipantId ?? '' }}">
+            <input type="hidden" name="return_classification" value="{{ $returnClassification ?? '' }}">
+
             <!-- ============================================================= -->
             <!-- SECTION 1: TRAINING INFORMATION -->
             <!-- ============================================================= -->
@@ -73,23 +78,35 @@
 
                     @php
                         $shortYear = "'" . substr((string) ($kpiYear ?? date('Y')), -2);
+                        $defaultL2Verbal = ['Passed', 'Failed', 'Excellent', 'Very Good', 'Good', 'Satisfactory'];
+                        $dbL2Verbal = \App\Models\OfflineTrainingUser::whereNotNull('l2_verbal')->where('l2_verbal', '!=', '')->distinct()->pluck('l2_verbal')->all();
+                        $l2VerbalOptions = array_values(array_unique(array_filter(array_merge($defaultL2Verbal, $dbL2Verbal))));
+
+                        $defaultL3Verbal = ['Implemented successfully in plant', 'Project completed on schedule'];
+                        $dbL3Verbal = \App\Models\OfflineTrainingUser::whereNotNull('l3_verbal')->where('l3_verbal', '!=', '')->distinct()->pluck('l3_verbal')->all();
+                        $l3VerbalOptions = array_values(array_unique(array_filter(array_merge($defaultL3Verbal, $dbL3Verbal))));
+
+                        $defaultPic = ['HRDC Team', 'HRDC Training Team'];
+                        $dbPic = \App\Models\OfflineTrainingUser::whereNotNull('pic')->where('pic', '!=', '')->distinct()->pluck('pic')->all();
+                        $picOptions = array_values(array_unique(array_filter(array_merge($defaultPic, $dbPic))));
                     @endphp
                     <input type="hidden" id="edit-corporate-kpi-year" name="corporate_kpi_year" value="{{ old('corporate_kpi_year', $training->corporate_kpi_year ?: $kpiYear) }}">
 
                     <div class="row g-3 mb-4">
                         <div class="col-12 col-md-8">
                             <label for="edit-course-name" class="form-label small fw-semibold">Course Name <span class="text-danger">*</span></label>
-                            <div class="input-group">
-                                <input type="text" class="form-control rounded-start-2 @error('course_name') is-invalid @enderror" id="edit-course-name" name="course_name" value="{{ old('course_name', $training->course_name) }}" placeholder="e.g. High Voltage Safety &amp; Operation" required list="edit-course-name-datalist" autocomplete="off">
-                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="course_name" data-target="#edit-course-name" data-datalist="#edit-course-name-datalist" data-title="Course Name" title="Add new Course Name" tabindex="-1">
-                                    <i class="ti ti-plus"></i>
-                                </button>
+                            <div class="position-relative master-combobox" data-type="course_name">
+                                <div class="input-group">
+                                    <input type="text" class="form-control rounded-start-2 master-combobox-input @error('course_name') is-invalid @enderror" id="edit-course-name" name="course_name" value="{{ old('course_name', $training->course_name) }}" placeholder="e.g. High Voltage Safety &amp; Operation" required autocomplete="off">
+                                    <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split master-combobox-toggle" title="View options" tabindex="-1">
+                                        <span class="visually-hidden">Toggle Dropdown</span>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="course_name" data-target="#edit-course-name" data-title="Course Name" title="Add new Course Name" tabindex="-1">
+                                        <i class="ti ti-plus"></i>
+                                    </button>
+                                </div>
+                                <div class="dropdown-menu master-combobox-menu shadow-sm w-100 py-1" style="display: none; max-height: 260px; overflow-y: auto; z-index: 1050; position: absolute; top: 100%; left: 0;"></div>
                             </div>
-                            <datalist id="edit-course-name-datalist">
-                                @foreach ($options['course_name'] ?? [] as $opt)
-                                    <option value="{{ $opt->value }}"></option>
-                                @endforeach
-                            </datalist>
                             @error('course_name')
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
@@ -98,24 +115,38 @@
                             <label for="edit-batch" class="form-label small fw-semibold">Batch</label>
                             <input type="text" class="form-control rounded-2" id="edit-batch" name="batch" value="{{ old('batch', $training->batch) }}" placeholder="e.g. Batch 1">
                         </div>
-                        <div class="col-12 col-md-6">
+                        <div class="col-12">
                             <label for="edit-sub-course-name" class="form-label small fw-semibold">Sub Course Name</label>
                             <div class="input-group">
-                                <input type="text" class="form-control rounded-start-2" id="edit-sub-course-name" name="sub_course_name" value="{{ old('sub_course_name', $training->sub_course_name) }}" placeholder="e.g. Switchgear Troubleshooting Module" list="edit-sub-course-name-datalist" autocomplete="off">
-                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="sub_course_name" data-target="#edit-sub-course-name" data-datalist="#edit-sub-course-name-datalist" data-title="Sub Course Name" title="Add new Sub Course Name" tabindex="-1">
+                                <select class="form-select rounded-start-2 select2-master-option" id="edit-sub-course-name" name="sub_course_name" data-type="sub_course_name" data-placeholder="Select Sub Course Name" data-tags="true">
+                                    <option value="">Select Sub Course Name</option>
+                                    @php
+                                        $currentSubCourse = old('sub_course_name', $training->sub_course_name);
+                                        $subCourseOpts = collect($options['sub_course_name'] ?? [])->pluck('value')->filter()->all();
+                                        if ($currentSubCourse && !in_array($currentSubCourse, $subCourseOpts, true)) {
+                                            $subCourseOpts[] = $currentSubCourse;
+                                        }
+                                    @endphp
+                                    @foreach ($subCourseOpts as $scOpt)
+                                        <option value="{{ $scOpt }}" {{ $currentSubCourse === $scOpt ? 'selected' : '' }}>{{ $scOpt }}</option>
+                                    @endforeach
+                                </select>
+                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="sub_course_name" data-target="#edit-sub-course-name" data-title="Sub Course Name" title="Add new Sub Course Name" tabindex="-1">
                                     <i class="ti ti-plus"></i>
                                 </button>
                             </div>
-                            <datalist id="edit-sub-course-name-datalist">
-                                @foreach ($options['sub_course_name'] ?? [] as $opt)
-                                    <option value="{{ $opt->value }}"></option>
-                                @endforeach
-                            </datalist>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label for="edit-l1-program" class="form-label small fw-semibold">L1 Program</label>
+                            <input type="text" class="form-control rounded-2 @error('l1_program') is-invalid @enderror" id="edit-l1-program" name="l1_program" value="{{ old('l1_program', $record->l1_program) }}" placeholder="e.g. 4.8 / Very Good">
+                            @error('l1_program')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
                         </div>
                         <div class="col-12 col-md-6">
                             <label for="edit-type" class="form-label small fw-semibold">Type</label>
                             <div class="input-group">
-                                <select class="form-select rounded-start-2 select2-master-option" id="edit-type" name="type" data-type="type" data-placeholder="Select Type">
+                                <select class="form-select rounded-start-2 select2-master-option" id="edit-type" name="type" data-type="type" data-placeholder="Select Type" data-allow-clear="false">
                                     <option value="">Select Type</option>
                                     @php
                                         $currentType = old('type', $training->type);
@@ -136,16 +167,23 @@
                         <div class="col-12 col-md-6">
                             <label for="edit-category" class="form-label small fw-semibold">Category</label>
                             <div class="input-group">
-                                <input type="text" class="form-control rounded-start-2" id="edit-category" name="category" value="{{ old('category', $training->category) }}" placeholder="e.g. Technical Competency" list="edit-category-datalist" autocomplete="off">
-                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="category" data-target="#edit-category" data-datalist="#edit-category-datalist" data-title="Category" title="Add new Category" tabindex="-1">
+                                <select class="form-select rounded-start-2 select2-master-option" id="edit-category" name="category" data-type="category" data-placeholder="Select Category" data-tags="true">
+                                    <option value="">Select Category</option>
+                                    @php
+                                        $currentCategory = old('category', $training->category);
+                                        $categoryOpts = collect($options['category'] ?? [])->pluck('value')->filter()->all();
+                                        if ($currentCategory && !in_array($currentCategory, $categoryOpts, true)) {
+                                            $categoryOpts[] = $currentCategory;
+                                        }
+                                    @endphp
+                                    @foreach ($categoryOpts as $cOpt)
+                                        <option value="{{ $cOpt }}" {{ $currentCategory === $cOpt ? 'selected' : '' }}>{{ $cOpt }}</option>
+                                    @endforeach
+                                </select>
+                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="category" data-target="#edit-category" data-title="Category" title="Add new Category" tabindex="-1">
                                     <i class="ti ti-plus"></i>
                                 </button>
                             </div>
-                            <datalist id="edit-category-datalist">
-                                @foreach ($options['category'] ?? [] as $opt)
-                                    <option value="{{ $opt->value }}"></option>
-                                @endforeach
-                            </datalist>
                         </div>
                         <div class="col-12 col-md-6">
                             <label for="edit-level" class="form-label small fw-semibold">Level</label>
@@ -197,43 +235,54 @@
                         <div class="col-12 col-md-6">
                             <label for="edit-sub-classification" class="form-label small fw-semibold">Sub Classification</label>
                             <div class="input-group">
-                                <input type="text" class="form-control rounded-start-2" id="edit-sub-classification" name="sub_classification" value="{{ old('sub_classification', $training->sub_classification) }}" placeholder="e.g. Plant Maintenance" list="edit-sub-classification-datalist" autocomplete="off">
-                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="sub_classification" data-target="#edit-sub-classification" data-datalist="#edit-sub-classification-datalist" data-title="Sub Classification" title="Add new Sub Classification" tabindex="-1">
+                                <select class="form-select rounded-start-2 select2-master-option" id="edit-sub-classification" name="sub_classification" data-type="sub_classification" data-placeholder="Select Sub Classification" data-tags="true">
+                                    <option value="">Select Sub Classification</option>
+                                    @php
+                                        $currentSubClass = old('sub_classification', $training->sub_classification);
+                                        $subClassOpts = collect($options['sub_classification'] ?? [])->pluck('value')->filter()->all();
+                                        if ($currentSubClass && !in_array($currentSubClass, $subClassOpts, true)) {
+                                            $subClassOpts[] = $currentSubClass;
+                                        }
+                                    @endphp
+                                    @foreach ($subClassOpts as $scOpt)
+                                        <option value="{{ $scOpt }}" {{ $currentSubClass === $scOpt ? 'selected' : '' }}>{{ $scOpt }}</option>
+                                    @endforeach
+                                </select>
+                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="sub_classification" data-target="#edit-sub-classification" data-title="Sub Classification" title="Add new Sub Classification" tabindex="-1">
                                     <i class="ti ti-plus"></i>
                                 </button>
                             </div>
-                            <datalist id="edit-sub-classification-datalist">
-                                @foreach ($options['sub_classification'] ?? [] as $opt)
-                                    <option value="{{ $opt->value }}"></option>
-                                @endforeach
-                            </datalist>
                         </div>
+                        @php
+                            $isKpiChecked = (bool) old('counted_corporate_kpi', $training->counted_corporate_kpi);
+                            $selectedKpiYear = old('corporate_kpi_year', $training->corporate_kpi_year ?: ($training->sub_corporate_kpi && preg_match('/^\d{4}$/', (string)$training->sub_corporate_kpi) ? $training->sub_corporate_kpi : ($training->start_date ? $training->start_date->format('Y') : date('Y'))));
+                        @endphp
                         <div class="col-12 col-md-6">
-                            <label class="form-label small fw-semibold d-block" id="label-edit-counted-kpi">Counted as {{ $shortYear }} Corporate KPI</label>
+                            <label class="form-label small fw-semibold d-block" id="label-edit-counted-kpi">Counted as Corporate KPI</label>
                             <div class="d-flex align-items-center gap-3 pt-1">
                                 <div class="form-check form-check-inline mb-0">
-                                    <input class="form-check-input" type="radio" name="counted_corporate_kpi" id="edit-counted-kpi-yes" value="1" {{ old('counted_corporate_kpi', $training->counted_corporate_kpi) ? 'checked' : '' }}>
-                                    <label class="form-check-label small" for="edit-counted-kpi-yes">Yes</label>
+                                    <input class="form-check-input" type="radio" name="counted_corporate_kpi" id="edit-counted-kpi-no" value="0" {{ !$isKpiChecked ? 'checked' : '' }}>
+                                    <label class="form-check-label small" for="edit-counted-kpi-no">No</label>
                                 </div>
                                 <div class="form-check form-check-inline mb-0">
-                                    <input class="form-check-input" type="radio" name="counted_corporate_kpi" id="edit-counted-kpi-no" value="0" {{ !old('counted_corporate_kpi', $training->counted_corporate_kpi) ? 'checked' : '' }}>
-                                    <label class="form-check-label small" for="edit-counted-kpi-no">No</label>
+                                    <input class="form-check-input" type="radio" name="counted_corporate_kpi" id="edit-counted-kpi-yes" value="1" {{ $isKpiChecked ? 'checked' : '' }}>
+                                    <label class="form-check-label small" for="edit-counted-kpi-yes">Yes</label>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-12 col-md-6">
-                            <label for="edit-sub-corporate-kpi" class="form-label small fw-semibold" id="label-edit-sub-kpi">Sub {{ $shortYear }} Corporate KPI</label>
+                        <div class="col-12 col-md-6" id="edit-container-kpi-year" style="{{ $isKpiChecked ? '' : 'display: none;' }}">
+                            <label for="edit-corporate-kpi-year" class="form-label small fw-semibold">Corporate KPI Year <span class="text-danger">*</span></label>
                             <div class="input-group">
-                                <input type="text" class="form-control rounded-start-2" id="edit-sub-corporate-kpi" name="sub_corporate_kpi" value="{{ old('sub_corporate_kpi', $training->sub_corporate_kpi) }}" placeholder="e.g. Safety Incident Reduction" list="edit-sub-corporate-kpi-datalist" autocomplete="off">
-                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="sub_corporate_kpi" data-target="#edit-sub-corporate-kpi" data-datalist="#edit-sub-corporate-kpi-datalist" data-title="Sub Corporate KPI" data-year="{{ $kpiYear }}" title="Add new Sub Corporate KPI" tabindex="-1">
+                                <select class="form-select rounded-start-2" id="edit-corporate-kpi-year" name="corporate_kpi_year" {{ $isKpiChecked ? '' : 'disabled' }}>
+                                    @foreach ($kpiYears ?? [2026, 2025, 2024, 2023, 2022] as $yr)
+                                        <option value="{{ $yr }}" {{ $yr == $selectedKpiYear ? 'selected' : '' }}>{{ $yr }}</option>
+                                    @endforeach
+                                </select>
+                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="sub_corporate_kpi" data-target="#edit-corporate-kpi-year" data-title="KPI Year" title="Add new KPI Year" tabindex="-1">
                                     <i class="ti ti-plus"></i>
                                 </button>
                             </div>
-                            <datalist id="edit-sub-corporate-kpi-datalist">
-                                @foreach ($options['sub_corporate_kpi'] ?? [] as $opt)
-                                    <option value="{{ $opt->value }}"></option>
-                                @endforeach
-                            </datalist>
+                            <input type="hidden" name="sub_corporate_kpi" id="edit-sub-corporate-kpi" value="{{ $isKpiChecked ? $selectedKpiYear : '' }}">
                         </div>
                     </div>
 
@@ -246,7 +295,7 @@
                         <div class="col-12 col-md-6">
                             <label for="edit-delivery-method" class="form-label small fw-semibold">Delivery Method</label>
                             <div class="input-group">
-                                <select class="form-select rounded-start-2 select2-master-option" id="edit-delivery-method" name="delivery_method" data-type="delivery_method" data-placeholder="Select Delivery Method">
+                                <select class="form-select rounded-start-2 select2-master-option" id="edit-delivery-method" name="delivery_method" data-type="delivery_method" data-placeholder="Select Delivery Method" data-allow-clear="false">
                                     <option value="">Select Delivery Method</option>
                                     @php
                                         $currentDm = old('delivery_method', $training->delivery_method);
@@ -267,21 +316,28 @@
                         <div class="col-12 col-md-6">
                             <label for="edit-sub-delivery-method" class="form-label small fw-semibold">Sub Delivery Method</label>
                             <div class="input-group">
-                                <input type="text" class="form-control rounded-start-2" id="edit-sub-delivery-method" name="sub_delivery_method" value="{{ old('sub_delivery_method', $training->sub_delivery_method) }}" placeholder="e.g. Hands-on Lab" list="edit-sub-delivery-method-datalist" autocomplete="off">
-                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="sub_delivery_method" data-target="#edit-sub-delivery-method" data-datalist="#edit-sub-delivery-method-datalist" data-title="Sub Delivery Method" title="Add new Sub Delivery Method" tabindex="-1">
+                                <select class="form-select rounded-start-2 select2-master-option" id="edit-sub-delivery-method" name="sub_delivery_method" data-type="sub_delivery_method" data-placeholder="Select Sub Delivery Method" data-tags="true">
+                                    <option value="">Select Sub Delivery Method</option>
+                                    @php
+                                        $currentSubDm = old('sub_delivery_method', $training->sub_delivery_method);
+                                        $subDmOpts = collect($options['sub_delivery_method'] ?? [])->pluck('value')->filter()->all();
+                                        if ($currentSubDm && !in_array($currentSubDm, $subDmOpts, true)) {
+                                            $subDmOpts[] = $currentSubDm;
+                                        }
+                                    @endphp
+                                    @foreach ($subDmOpts as $sdmOpt)
+                                        <option value="{{ $sdmOpt }}" {{ $currentSubDm === $sdmOpt ? 'selected' : '' }}>{{ $sdmOpt }}</option>
+                                    @endforeach
+                                </select>
+                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="sub_delivery_method" data-target="#edit-sub-delivery-method" data-title="Sub Delivery Method" title="Add new Sub Delivery Method" tabindex="-1">
                                     <i class="ti ti-plus"></i>
                                 </button>
                             </div>
-                            <datalist id="edit-sub-delivery-method-datalist">
-                                @foreach ($options['sub_delivery_method'] ?? [] as $opt)
-                                    <option value="{{ $opt->value }}"></option>
-                                @endforeach
-                            </datalist>
                         </div>
                         <div class="col-12 col-md-6">
                             <label for="edit-provider" class="form-label small fw-semibold">Provider</label>
                             <div class="input-group">
-                                <select class="form-select rounded-start-2 select2-master-option" id="edit-provider" name="provider" data-type="provider" data-placeholder="Select Provider">
+                                <select class="form-select rounded-start-2 select2-master-option" id="edit-provider" name="provider" data-type="provider" data-placeholder="Select Provider" data-allow-clear="false">
                                     <option value="">Select Provider</option>
                                     @php
                                         $currentProv = old('provider', $training->provider);
@@ -302,7 +358,7 @@
                         <div class="col-12 col-md-6">
                             <label for="edit-sub-provider" class="form-label small fw-semibold">Sub Provider</label>
                             <div class="input-group">
-                                <select class="form-select rounded-start-2 select2-master-option" id="edit-sub-provider" name="sub_provider" data-type="sub_provider" data-placeholder="Select Sub Provider">
+                                <select class="form-select rounded-start-2 select2-master-option" id="edit-sub-provider" name="sub_provider" data-type="sub_provider" data-placeholder="Select Sub Provider" data-allow-clear="false">
                                     <option value="">Select Sub Provider</option>
                                     @php
                                         $currentSubProv = old('sub_provider', $training->sub_provider);
@@ -323,22 +379,29 @@
                         <div class="col-12">
                             <label for="edit-provider-name" class="form-label small fw-semibold">Provider Name</label>
                             <div class="input-group">
-                                <input type="text" class="form-control rounded-start-2" id="edit-provider-name" name="provider_name" value="{{ old('provider_name', $training->provider_name) }}" placeholder="e.g. PT Schneider Indonesia" list="edit-provider-name-datalist" autocomplete="off">
-                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="provider_name" data-target="#edit-provider-name" data-datalist="#edit-provider-name-datalist" data-title="Provider Name" title="Add new Provider Name" tabindex="-1">
+                                <select class="form-select rounded-start-2 select2-master-option" id="edit-provider-name" name="provider_name" data-type="provider_name" data-placeholder="Select Provider Name" data-tags="true">
+                                    <option value="">Select Provider Name</option>
+                                    @php
+                                        $currentProvName = old('provider_name', $training->provider_name);
+                                        $provNameOpts = collect($options['provider_name'] ?? [])->pluck('value')->filter()->all();
+                                        if ($currentProvName && !in_array($currentProvName, $provNameOpts, true)) {
+                                            $provNameOpts[] = $currentProvName;
+                                        }
+                                    @endphp
+                                    @foreach ($provNameOpts as $pnOpt)
+                                        <option value="{{ $pnOpt }}" {{ $currentProvName === $pnOpt ? 'selected' : '' }}>{{ $pnOpt }}</option>
+                                    @endforeach
+                                </select>
+                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="provider_name" data-target="#edit-provider-name" data-title="Provider Name" title="Add new Provider Name" tabindex="-1">
                                     <i class="ti ti-plus"></i>
                                 </button>
                             </div>
-                            <datalist id="edit-provider-name-datalist">
-                                @foreach ($options['provider_name'] ?? [] as $opt)
-                                    <option value="{{ $opt->value }}"></option>
-                                @endforeach
-                            </datalist>
                         </div>
                     </div>
 
-                    <!-- SUBSECTION: SCHEDULE & DURATION -->
+                    <!-- SUBSECTION: Schedule & Duration Program Evaluation -->
                     <div class="subsection-header p-2 px-3 rounded-2 mb-3 bg-light-subtle border-start border-primary border-3">
-                        <span class="fw-bold text-primary small text-uppercase">Schedule &amp; Duration</span>
+                        <span class="fw-bold text-primary small text-uppercase">Schedule &amp; Duration Program Evaluation</span>
                     </div>
 
                     @php
@@ -351,22 +414,35 @@
                         }
                         $startDateFormatted = $training->start_date ? (is_string($training->start_date) ? substr($training->start_date, 0, 10) : $training->start_date->format('Y-m-d')) : '';
                         $finishDateFormatted = $training->finish_date ? (is_string($training->finish_date) ? substr($training->finish_date, 0, 10) : $training->finish_date->format('Y-m-d')) : '';
+                        $startTimeFormatted = $training->start_time ? substr((string) $training->start_time, 0, 5) : '08:00';
+                        $endTimeFormatted = $training->end_time ? substr((string) $training->end_time, 0, 5) : '16:00';
                         $monthFormatted = $startDateFormatted ? date('M Y', strtotime($startDateFormatted)) : '';
                     @endphp
 
                     <div class="row g-3">
-                        <div class="col-12 col-sm-6 col-md-3">
+                        <div class="col-12 col-sm-6 col-md-4">
                             <label for="edit-duration" class="form-label small fw-semibold">Duration (HH:MM:SS)</label>
                             <input type="text" class="form-control rounded-2" id="edit-duration" name="duration" value="{{ old('duration', $durationFormatted) }}" placeholder="08:00:00">
                         </div>
-                        <div class="col-12 col-sm-6 col-md-3">
+                        <div class="col-12 col-sm-6 col-md-4">
                             <label for="edit-course-learning-hours" class="form-label small fw-semibold">Course Hours</label>
                             <input type="number" step="0.1" min="0" class="form-control rounded-2" id="edit-course-learning-hours" name="learning_hours" value="{{ old('learning_hours', $training->learning_hours) }}" placeholder="8.0">
+                        </div>
+                        <div class="col-12 col-sm-6 col-md-4">
+                            <label for="edit-month" class="form-label small fw-semibold">Month</label>
+                            <input type="text" class="form-control rounded-2 bg-light text-muted" id="edit-month" readonly placeholder="Auto from Start Date" value="{{ $monthFormatted }}">
                         </div>
                         <div class="col-12 col-sm-6 col-md-3">
                             <label for="edit-start-date" class="form-label small fw-semibold">Start Date</label>
                             <input type="date" class="form-control rounded-2 @error('start_date') is-invalid @enderror" id="edit-start-date" name="start_date" value="{{ old('start_date', $startDateFormatted) }}">
                             @error('start_date')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-12 col-sm-6 col-md-3">
+                            <label for="edit-start-time" class="form-label small fw-semibold">Start Time</label>
+                            <input type="time" class="form-control rounded-2 @error('start_time') is-invalid @enderror" id="edit-start-time" name="start_time" value="{{ old('start_time', $startTimeFormatted) }}">
+                            @error('start_time')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
@@ -377,37 +453,54 @@
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
-                        <div class="col-12 col-sm-6 col-md-4">
-                            <label for="edit-month" class="form-label small fw-semibold">Month</label>
-                            <input type="text" class="form-control rounded-2 bg-light text-muted" id="edit-month" readonly placeholder="Auto from Start Date" value="{{ $monthFormatted }}">
+                        <div class="col-12 col-sm-6 col-md-3">
+                            <label for="edit-end-time" class="form-label small fw-semibold">Finish Time</label>
+                            <input type="time" class="form-control rounded-2 @error('end_time') is-invalid @enderror" id="edit-end-time" name="end_time" value="{{ old('end_time', $endTimeFormatted) }}">
+                            @error('end_time')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
-                        <div class="col-12 col-sm-6 col-md-4">
+                        <div class="col-12 col-md-6">
                             <label for="edit-venue" class="form-label small fw-semibold">Venue</label>
                             <div class="input-group">
-                                <input type="text" class="form-control rounded-start-2" id="edit-venue" name="venue" value="{{ old('venue', $training->venue) }}" placeholder="e.g. Auditorium Hall B" list="edit-venue-datalist" autocomplete="off">
-                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="venue" data-target="#edit-venue" data-datalist="#edit-venue-datalist" data-title="Venue" title="Add new Venue" tabindex="-1">
+                                <select class="form-select rounded-start-2 select2-master-option" id="edit-venue" name="venue" data-type="venue" data-placeholder="Select Venue" data-tags="true">
+                                    <option value="">Select Venue</option>
+                                    @php
+                                        $currentVenue = old('venue', $training->venue);
+                                        $venueOpts = collect($options['venue'] ?? [])->pluck('value')->values()->all();
+                                        if ($currentVenue && !in_array($currentVenue, $venueOpts, true)) {
+                                            $venueOpts[] = $currentVenue;
+                                        }
+                                    @endphp
+                                    @foreach ($venueOpts as $vOpt)
+                                        <option value="{{ $vOpt }}" {{ $currentVenue === $vOpt ? 'selected' : '' }}>{{ $vOpt }}</option>
+                                    @endforeach
+                                </select>
+                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="venue" data-target="#edit-venue" data-title="Venue" title="Add new Venue" tabindex="-1">
                                     <i class="ti ti-plus"></i>
                                 </button>
                             </div>
-                            <datalist id="edit-venue-datalist">
-                                @foreach ($options['venue'] ?? [] as $opt)
-                                    <option value="{{ $opt->value }}"></option>
-                                @endforeach
-                            </datalist>
                         </div>
-                        <div class="col-12 col-sm-6 col-md-4">
+                        <div class="col-12 col-md-6">
                             <label for="edit-instructor" class="form-label small fw-semibold">Instructor</label>
                             <div class="input-group">
-                                <input type="text" class="form-control rounded-start-2" id="edit-instructor" name="instructor" value="{{ old('instructor', $training->instructor) }}" placeholder="e.g. Ir. Gunawan, M.T." list="edit-instructor-datalist" autocomplete="off">
-                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="instructor" data-target="#edit-instructor" data-datalist="#edit-instructor-datalist" data-title="Instructor" title="Add new Instructor" tabindex="-1">
+                                <select class="form-select rounded-start-2 select2-master-option" id="edit-instructor" name="instructor" data-type="instructor" data-placeholder="Select Instructor" data-tags="true">
+                                    <option value="">Select Instructor</option>
+                                    @php
+                                        $currentInstructor = old('instructor', $training->instructor);
+                                        $instructorOpts = collect($options['instructor'] ?? [])->pluck('value')->values()->all();
+                                        if ($currentInstructor && !in_array($currentInstructor, $instructorOpts, true)) {
+                                            $instructorOpts[] = $currentInstructor;
+                                        }
+                                    @endphp
+                                    @foreach ($instructorOpts as $instOpt)
+                                        <option value="{{ $instOpt }}" {{ $currentInstructor === $instOpt ? 'selected' : '' }}>{{ $instOpt }}</option>
+                                    @endforeach
+                                </select>
+                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="instructor" data-target="#edit-instructor" data-title="Instructor" title="Add new Instructor" tabindex="-1">
                                     <i class="ti ti-plus"></i>
                                 </button>
                             </div>
-                            <datalist id="edit-instructor-datalist">
-                                @foreach ($options['instructor'] ?? [] as $opt)
-                                    <option value="{{ $opt->value }}"></option>
-                                @endforeach
-                            </datalist>
                         </div>
                     </div>
                 </div>
@@ -562,23 +655,31 @@
                         </div>
                     </div>
 
-                    <!-- SUBSECTION: EVALUATION (L1, L2, L3) -->
+                    <!-- SUBSECTION: EVALUATION (L2, L3) -->
                     <div class="subsection-header p-2 px-3 rounded-2 mb-3 bg-light-subtle border-start border-primary border-3">
-                        <span class="fw-bold text-primary small text-uppercase">Kirkpatrick Evaluation (L1 - L3)</span>
+                        <span class="fw-bold text-primary small text-uppercase">Kirkpatrick Evaluation (L2 - L3)</span>
                     </div>
 
                     <div class="row g-3">
-                        <div class="col-12 col-md-4">
-                            <label for="edit-l1-program" class="form-label extra-small fw-bold text-muted text-uppercase mb-1">L1 &bull; Program</label>
-                            <input type="text" class="form-control form-control-sm rounded-2" id="edit-l1-program" name="l1_program" value="{{ old('l1_program', $record->l1_program) }}" placeholder="e.g. 4.8 / Very Good">
-                        </div>
-                        <div class="col-12 col-sm-6 col-md-4">
+                        <div class="col-12 col-sm-6 col-md-6">
                             <label for="edit-l2-numerical" class="form-label extra-small fw-bold text-muted text-uppercase mb-1">L2 (Post Test) &bull; Numerical</label>
                             <input type="number" step="0.1" min="0" max="100" class="form-control form-control-sm rounded-2" id="edit-l2-numerical" name="l2_numerical" value="{{ old('l2_numerical', $record->l2_numerical) }}" placeholder="Score (0-100)">
                         </div>
-                        <div class="col-12 col-sm-6 col-md-4">
+                        <div class="col-12 col-sm-6 col-md-6">
                             <label for="edit-l2-verbal" class="form-label extra-small fw-bold text-muted text-uppercase mb-1">L2 (Post Test) &bull; Verbal</label>
-                            <input type="text" class="form-control form-control-sm rounded-2" id="edit-l2-verbal" name="l2_verbal" value="{{ old('l2_verbal', $record->l2_verbal) }}" placeholder="e.g. Passed">
+                            @php
+                                $currentL2Verbal = old('l2_verbal', $record->l2_verbal);
+                                $currL2Opts = $l2VerbalOptions;
+                                if ($currentL2Verbal && !in_array($currentL2Verbal, $currL2Opts, true)) {
+                                    $currL2Opts[] = $currentL2Verbal;
+                                }
+                            @endphp
+                            <select class="form-select form-select-sm rounded-2 select2-searchable-field" id="edit-l2-verbal" name="l2_verbal" data-placeholder="Select or type verbal result" data-tags="true">
+                                <option value="">Select or type verbal result</option>
+                                @foreach ($currL2Opts as $opt)
+                                    <option value="{{ $opt }}" {{ $currentL2Verbal === $opt ? 'selected' : '' }}>{{ $opt }}</option>
+                                @endforeach
+                            </select>
                         </div>
                         <div class="col-12 col-sm-6 col-md-4">
                             <label for="edit-l3-numerical" class="form-label extra-small fw-bold text-muted text-uppercase mb-1">L3 (Project) &bull; Numerical</label>
@@ -586,11 +687,35 @@
                         </div>
                         <div class="col-12 col-sm-6 col-md-4">
                             <label for="edit-l3-verbal" class="form-label extra-small fw-bold text-muted text-uppercase mb-1">L3 (Project) &bull; Verbal</label>
-                            <input type="text" class="form-control form-control-sm rounded-2" id="edit-l3-verbal" name="l3_verbal" value="{{ old('l3_verbal', $record->l3_verbal) }}" placeholder="e.g. Implemented in Plant">
+                            @php
+                                $currentL3Verbal = old('l3_verbal', $record->l3_verbal);
+                                $currL3Opts = $l3VerbalOptions;
+                                if ($currentL3Verbal && !in_array($currentL3Verbal, $currL3Opts, true)) {
+                                    $currL3Opts[] = $currentL3Verbal;
+                                }
+                            @endphp
+                            <select class="form-select form-select-sm rounded-2 select2-searchable-field" id="edit-l3-verbal" name="l3_verbal" data-placeholder="Select or type project verbal" data-tags="true">
+                                <option value="">Select or type project verbal</option>
+                                @foreach ($currL3Opts as $opt)
+                                    <option value="{{ $opt }}" {{ $currentL3Verbal === $opt ? 'selected' : '' }}>{{ $opt }}</option>
+                                @endforeach
+                            </select>
                         </div>
                         <div class="col-12 col-md-4">
                             <label for="edit-pic" class="form-label extra-small fw-bold text-muted text-uppercase mb-1">L3 (Project) &bull; PIC</label>
-                            <input type="text" class="form-control form-control-sm rounded-2" id="edit-pic" name="pic" value="{{ old('pic', $record->pic) }}" placeholder="e.g. HRDC Team">
+                            @php
+                                $currentPic = old('pic', $record->pic);
+                                $currPicOpts = $picOptions;
+                                if ($currentPic && !in_array($currentPic, $currPicOpts, true)) {
+                                    $currPicOpts[] = $currentPic;
+                                }
+                            @endphp
+                            <select class="form-select form-select-sm rounded-2 select2-searchable-field" id="edit-pic" name="pic" data-placeholder="Select or type PIC" data-tags="true">
+                                <option value="">Select or type PIC</option>
+                                @foreach ($currPicOpts as $opt)
+                                    <option value="{{ $opt }}" {{ $currentPic === $opt ? 'selected' : '' }}>{{ $opt }}</option>
+                                @endforeach
+                            </select>
                         </div>
                     </div>
                 </div>
@@ -601,7 +726,7 @@
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                     <div class="text-danger small fw-semibold" id="edit-form-alert" style="display: none;"></div>
                     <div class="d-flex align-items-center gap-2 ms-auto">
-                        <a href="{{ route('manage.record.offline.classification', $classification['slug']) }}" class="btn btn-outline-secondary px-3" id="btn-cancel-edit">Cancel</a>
+                        <a href="{{ $backUrl ?? route('manage.record.offline.classification', $classification['slug']) }}" class="btn btn-outline-secondary px-3" id="btn-cancel-edit">Cancel</a>
                         <button type="submit" class="btn btn-primary px-4 d-inline-flex align-items-center gap-1.5" id="btn-submit-edit" style="background-color: #d97706; border-color: #d97706;">
                             <i class="ti ti-check fs-2"></i>
                             <span>Save Changes</span>
@@ -650,6 +775,9 @@
     }
 
     /* SELECT2 IN INPUT GROUP & [+] BUTTON FIX */
+    .select2-container {
+        width: 100% !important;
+    }
     .input-group > .select2-container--bootstrap-5,
     .input-group > .select2-container {
         flex: 1 1 auto;
@@ -659,6 +787,9 @@
     .input-group > .select2-container .select2-selection {
         border-top-right-radius: 0 !important;
         border-bottom-right-radius: 0 !important;
+    }
+    .select2-dropdown {
+        z-index: 1060 !important;
     }
     .btn-add-option-modal {
         border-color: #d1d5db;
@@ -670,6 +801,43 @@
         background-color: #0c5b9e;
         border-color: #0c5b9e;
         color: #ffffff;
+    }
+
+    /* MASTER SEARCHABLE COMBOBOX */
+    .master-combobox {
+        position: relative;
+    }
+    .master-combobox .dropdown-menu {
+        max-height: 250px;
+        overflow-y: auto;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e5e7eb;
+        border-radius: 0.375rem;
+        z-index: 1060;
+    }
+    .master-combobox .dropdown-item {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .master-combobox .dropdown-item:hover,
+    .master-combobox .dropdown-item:focus {
+        background-color: #f0f7ff;
+        color: #0c5b9e;
+    }
+    [data-bs-theme="dark"] .master-combobox .dropdown-menu,
+    body.dark-mode .master-combobox .dropdown-menu {
+        background-color: #1e293b;
+        border-color: #334155;
+        color: #f8fafc;
+    }
+    [data-bs-theme="dark"] .master-combobox .dropdown-item:hover,
+    body.dark-mode .master-combobox .dropdown-item:hover {
+        background-color: #334155;
+        color: #60a5fa;
     }
 
     /* DARK MODE OVERRIDES */
@@ -700,6 +868,13 @@
     body.theme-dark .bg-light-subtle {
         background-color: #111827 !important;
     }
+
+    [data-bs-theme="dark"] .select2-container--bootstrap-5 .select2-search__field,
+    body.dark-mode .select2-container--bootstrap-5 .select2-search__field {
+        background-color: #0f172a !important;
+        border-color: #334155 !important;
+        color: #f8fafc !important;
+    }
 </style>
 @endsection
 
@@ -717,18 +892,138 @@
                 .replace(/'/g, '&#039;');
         }
 
-        // --- Select2 Initialization for Master Option Dropdowns ---
+        // --- Select2 Initialization for Master Option & Searchable Dropdowns ---
         if ($.fn.select2) {
-            $('.select2-master-option').each(function () {
+            $('.select2-master-option, .select2-searchable-field').each(function () {
                 const placeholder = $(this).data('placeholder') || 'Select option';
+                const isTags = $(this).data('tags') === true || $(this).data('tags') === 'true';
+                const dataType = $(this).data('type');
+                const allowClearData = $(this).data('allow-clear');
+                const noClearTypes = ['type', 'delivery_method', 'provider', 'sub_provider'];
+                let isAllowClear = true;
+                if (allowClearData === false || allowClearData === 'false' || noClearTypes.includes(dataType)) {
+                    isAllowClear = false;
+                }
                 $(this).select2({
                     theme: 'bootstrap-5',
                     placeholder: placeholder,
-                    allowClear: true,
+                    allowClear: isAllowClear,
+                    tags: isTags,
                     width: 'resolve'
                 });
             });
         }
+
+        // --- Course Name Master Options & Searchable Combobox ---
+        let masterCourseOptions = {!! json_encode(collect($options['course_name'] ?? [])->pluck('value')->values()->all()) !!};
+
+        function initCourseNameCombobox() {
+            const $combobox = $('.master-combobox[data-type="course_name"]');
+            if (!$combobox.length) return;
+
+            const $input = $combobox.find('.master-combobox-input');
+            const $toggle = $combobox.find('.master-combobox-toggle');
+            const $menu = $combobox.find('.master-combobox-menu');
+
+            function renderOptions(query) {
+                const q = (query || '').toLowerCase().trim();
+                const filtered = masterCourseOptions.filter(item => {
+                    return !q || item.toLowerCase().includes(q);
+                });
+
+                $menu.empty();
+
+                if (filtered.length > 0) {
+                    filtered.forEach(item => {
+                        const $a = $(`
+                            <a href="#" class="dropdown-item d-flex align-items-center justify-content-between py-2 combobox-item" data-value="${escapeHtml(item)}">
+                                <span class="text-truncate" style="max-width: 85%;">${escapeHtml(item)}</span>
+                                <span class="badge bg-light text-muted border extra-small">master</span>
+                            </a>
+                        `);
+                        $menu.append($a);
+                    });
+                } else if (!q) {
+                    $menu.append('<div class="p-2 text-muted small text-center">No master courses found. Type to create new.</div>');
+                }
+
+                if (q) {
+                    const exactMatch = masterCourseOptions.some(item => item.toLowerCase() === q);
+                    if (!exactMatch) {
+                        $menu.append(`
+                            <div class="p-2 border-top bg-light-subtle extra-small text-muted">
+                                <i class="ti ti-sparkles text-primary me-1"></i>New course will be registered: <strong>"${escapeHtml(query.trim())}"</strong>
+                            </div>
+                        `);
+                    }
+                }
+            }
+
+            $input.on('focus input', function () {
+                renderOptions($(this).val());
+                $menu.show();
+            });
+
+            $toggle.on('click', function (e) {
+                e.stopPropagation();
+                if ($menu.is(':visible')) {
+                    $menu.hide();
+                } else {
+                    renderOptions($input.val());
+                    $menu.show();
+                    $input.focus();
+                }
+            });
+
+            $menu.on('click', '.combobox-item', function (e) {
+                e.preventDefault();
+                const val = $(this).data('value');
+                $input.val(val).trigger('input').trigger('change');
+                $menu.hide();
+            });
+
+            $(document).on('click', function (e) {
+                if (!$(e.target).closest($combobox).length) {
+                    $menu.hide();
+                }
+            });
+
+            $input.on('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    $menu.hide();
+                }
+            });
+        }
+
+        initCourseNameCombobox();
+
+        // --- Corporate KPI Toggle & Logic ---
+        function syncEditKpiUi() {
+            const isKpi = $('input[name="counted_corporate_kpi"]:checked').val() === '1';
+            const $container = $('#edit-container-kpi-year');
+            const $yearSelect = $('#edit-corporate-kpi-year');
+            const $subKpiHidden = $('#edit-sub-corporate-kpi');
+
+            if (isKpi) {
+                $container.show();
+                $yearSelect.prop('disabled', false);
+                $subKpiHidden.val($yearSelect.val());
+            } else {
+                $container.hide();
+                $yearSelect.prop('disabled', true);
+                $subKpiHidden.val('');
+            }
+        }
+
+        $('input[name="counted_corporate_kpi"]').on('change', function () {
+            syncEditKpiUi();
+        });
+
+        $('#edit-corporate-kpi-year').on('change', function () {
+            $('#edit-sub-corporate-kpi').val($(this).val());
+        });
+
+        syncEditKpiUi();
 
         // --- Helper: Get Current KPI Year from Start Date or fallback ---
         function getCurrentKpiYear() {
@@ -739,34 +1034,26 @@
                     return y;
                 }
             }
-            return {{ $kpiYear ?? date('Y') }};
+            const selectedYr = $('#edit-corporate-kpi-year').val();
+            return selectedYr ? parseInt(selectedYr, 10) : {{ $kpiYear ?? date('Y') }};
         }
 
-        // --- Helper: Update Dynamic Yearly Corporate KPI Labels & Options ---
+        // --- Helper: Update Dynamic Yearly Corporate KPI Options ---
         function updateKpiYearDisplay() {
             const kpiYear = getCurrentKpiYear();
-            const shortYear = "'" + String(kpiYear).slice(-2);
-            $('#label-edit-counted-kpi').text(`Counted as ${shortYear} Corporate KPI`);
-            $('#label-edit-sub-kpi').text(`Sub ${shortYear} Corporate KPI`);
-            $('#edit-corporate-kpi-year').val(kpiYear);
-
-            // Update button data-year attribute
-            $('.btn-add-option-modal[data-type="sub_corporate_kpi"]').data('year', kpiYear);
-
-            // Fetch and refresh sub_corporate_kpi datalist for this year
-            $.ajax({
-                url: "{{ route('manage.record.offline.options.index') }}",
-                type: 'GET',
-                data: { type: 'sub_corporate_kpi', year: kpiYear },
-                success: function (res) {
-                    const results = (res && res.results) ? res.results : [];
-                    const $dl = $('#edit-sub-corporate-kpi-datalist');
-                    $dl.empty();
-                    results.forEach(function (item) {
-                        $dl.append(`<option value="${escapeHtml(item.value)}"></option>`);
-                    });
+            const $yearSelect = $('#edit-corporate-kpi-year');
+            if ($yearSelect.length) {
+                let hasYear = false;
+                $yearSelect.find('option').each(function () {
+                    if (parseInt($(this).val(), 10) === kpiYear) {
+                        hasYear = true;
+                    }
+                });
+                if (!hasYear && kpiYear >= 1970 && kpiYear <= 2100) {
+                    $yearSelect.prepend(new Option(kpiYear, kpiYear, false, false));
                 }
-            });
+            }
+            $('.btn-add-option-modal[data-type="sub_corporate_kpi"]').data('year', kpiYear);
         }
 
         // Month auto-derive and dynamic KPI year from start date
@@ -887,6 +1174,33 @@
                         // If target is an <input>
                         const $inp = $(targetSelect);
                         $inp.val(optVal).trigger('input').trigger('change');
+                    }
+
+                    if (type === 'course_name') {
+                        if (!masterCourseOptions.includes(optVal)) {
+                            masterCourseOptions.push(optVal);
+                            masterCourseOptions.sort();
+                        }
+                        $('#edit-course-name').val(optVal).trigger('input').trigger('change');
+                    }
+
+                    if (type === 'sub_corporate_kpi') {
+                        const $kpiSelect = $('#edit-corporate-kpi-year');
+                        if ($kpiSelect.length) {
+                            let kpiOptExists = false;
+                            $kpiSelect.find('option').each(function () {
+                                if ($(this).val() === optVal) {
+                                    kpiOptExists = true;
+                                }
+                            });
+                            if (!kpiOptExists) {
+                                $kpiSelect.prepend(new Option(optVal, optVal, true, true));
+                            } else {
+                                $kpiSelect.val(optVal);
+                            }
+                            $('#edit-counted-kpi-yes').prop('checked', true).trigger('change');
+                            $kpiSelect.trigger('change');
+                        }
                     }
 
                     // If target has an associated <datalist>

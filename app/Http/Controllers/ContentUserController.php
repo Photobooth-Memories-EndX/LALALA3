@@ -327,11 +327,15 @@ class ContentUserController extends Controller
         $content->views += 1;
         $content->save();
 
-        // add content to user learning on going if not exist yet
-        $content_user = ContentUser::firstOrCreate([
-            'user_id' => auth()->user()->id,
-            'content_id' => $content->id
-        ]);
+        $content_user = ContentUser::firstOrCreate(
+            [
+                'user_id' => auth()->user()->id,
+                'content_id' => $content->id,
+            ],
+            [
+                'status' => $content->status ?? 'optional',
+            ]
+        );
 
         $queryAssessment = Assesment::query()
             ->where('type', 'content')
@@ -574,10 +578,15 @@ class ContentUserController extends Controller
 
         $content = Content::findOrFail($validated['content_id']);
 
-        $contentUser = ContentUser::firstOrCreate([
-            'user_id'    => auth()->id(),
-            'content_id' => $validated['content_id'],
-        ]);
+        $contentUser = ContentUser::firstOrCreate(
+            [
+                'user_id'    => auth()->id(),
+                'content_id' => $validated['content_id'],
+            ],
+            [
+                'status'     => $content->status ?? 'optional',
+            ]
+        );
 
         $previousProgress = (int) $contentUser->progress;
         $computed = null;

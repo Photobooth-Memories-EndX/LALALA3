@@ -66,6 +66,9 @@
     }
 
     /* SELECT2 IN INPUT GROUP & [+] BUTTON FIX */
+    .select2-container {
+        width: 100% !important;
+    }
     .input-group > .select2-container--bootstrap-5,
     .input-group > .select2-container {
         flex: 1 1 auto;
@@ -75,6 +78,9 @@
     .input-group > .select2-container .select2-selection {
         border-top-right-radius: 0 !important;
         border-bottom-right-radius: 0 !important;
+    }
+    .select2-dropdown {
+        z-index: 1060 !important;
     }
     .btn-add-option-modal {
         border-color: #d1d5db;
@@ -86,6 +92,43 @@
         background-color: #0c5b9e;
         border-color: #0c5b9e;
         color: #ffffff;
+    }
+
+    /* MASTER SEARCHABLE COMBOBOX */
+    .master-combobox {
+        position: relative;
+    }
+    .master-combobox .dropdown-menu {
+        max-height: 250px;
+        overflow-y: auto;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e5e7eb;
+        border-radius: 0.375rem;
+        z-index: 1060;
+    }
+    .master-combobox .dropdown-item {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .master-combobox .dropdown-item:hover,
+    .master-combobox .dropdown-item:focus {
+        background-color: #f0f7ff;
+        color: #0c5b9e;
+    }
+    [data-bs-theme="dark"] .master-combobox .dropdown-menu,
+    body.dark-mode .master-combobox .dropdown-menu {
+        background-color: #1e293b;
+        border-color: #334155;
+        color: #f8fafc;
+    }
+    [data-bs-theme="dark"] .master-combobox .dropdown-item:hover,
+    body.dark-mode .master-combobox .dropdown-item:hover {
+        background-color: #334155;
+        color: #60a5fa;
     }
 
     /* DARK MODE OVERRIDES */
@@ -115,6 +158,13 @@
     body.dark-mode .bg-light-subtle,
     body.theme-dark .bg-light-subtle {
         background-color: #111827 !important;
+    }
+
+    [data-bs-theme="dark"] .select2-container--bootstrap-5 .select2-search__field,
+    body.dark-mode .select2-container--bootstrap-5 .select2-search__field {
+        background-color: #0f172a !important;
+        border-color: #334155 !important;
+        color: #f8fafc !important;
     }
 
     /* ============================================================= */

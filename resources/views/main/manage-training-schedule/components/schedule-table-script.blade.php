@@ -4,8 +4,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const searchInput = document.getElementById('scheduleSearchInput');
     const categorySelect = document.getElementById('scheduleCategorySelect');
     const statusSelect = document.getElementById('scheduleStatusSelect');
+    const monthSelect = document.getElementById('scheduleMonthSelect');
     const yearSelect = document.getElementById('scheduleYearSelect');
     const btnReset = document.getElementById('btnResetScheduleFilter');
+    const btnExport = document.getElementById('btnExportSchedule');
     const totalBadge = document.getElementById('scheduleTotalBadge');
     const tableBody = document.getElementById('scheduleTableBody');
     const emptyState = document.getElementById('scheduleTableEmpty');
@@ -22,11 +24,51 @@ document.addEventListener('DOMContentLoaded', function () {
     const btnApplyMoreFilters = document.getElementById('btnApplyMoreScheduleFilters');
     const btnResetMoreFilters = document.getElementById('btnResetMoreScheduleFilters');
 
+    // --- Update Export URLs with active filters (Excel, PDF, JPG) ---
+    function updateExportUrls() {
+        const params = new URLSearchParams();
+        const category = (categorySelect?.value || modalFilterCategory?.value || '').trim();
+        const status = (statusSelect?.value || modalFilterStatus?.value || '').trim();
+        const month = (monthSelect?.value || '').trim();
+        const year = (yearSelect?.value || '').trim();
+        const search = (searchInput?.value || '').trim();
+
+        if (category && category !== 'all') params.set('category', category);
+        if (status && status !== 'all') params.set('status', status);
+        if (month && month !== 'all') params.set('month', month);
+        if (year && year !== 'all') params.set('year', year);
+        if (search) {
+            params.set('search', search);
+            params.set('q', search);
+        }
+
+        const queryString = params.toString() ? '?' + params.toString() : '';
+
+        const btnExcel = document.getElementById('btnExportExcel');
+        const btnPdf = document.getElementById('btnExportPdf');
+        const btnJpg = document.getElementById('btnExportJpg');
+        const legacyBtn = document.getElementById('btnExportSchedule');
+
+        const excelBase = '{{ route("manage.training.export.excel") }}';
+        const pdfBase = '{{ route("manage.training.export.pdf") }}';
+        const jpgBase = '{{ route("manage.training.export.jpg") }}';
+        const legacyBase = '{{ route("manage.training.export") }}';
+
+        if (btnExcel) btnExcel.href = excelBase + queryString;
+        if (btnPdf) btnPdf.href = pdfBase + queryString;
+        if (btnJpg) btnJpg.href = jpgBase + queryString;
+        if (legacyBtn && legacyBtn.tagName === 'A') legacyBtn.href = legacyBase + queryString;
+    }
+
+    // Call initially on page load
+    updateExportUrls();
+
     // --- Filter Logic ---
     function filterScheduleTable() {
         const query = (searchInput?.value || '').toLowerCase().trim();
         const category = (categorySelect?.value || modalFilterCategory?.value || '').trim();
         const status = (statusSelect?.value || modalFilterStatus?.value || '').trim();
+        const month = (monthSelect?.value || '').trim();
         const year = (yearSelect?.value || '').trim();
         const instructor = (modalFilterInstructor?.value || '').trim().toLowerCase();
         const location = (modalFilterLocation?.value || '').trim().toLowerCase();
@@ -40,6 +82,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const rowText = row.textContent.toLowerCase();
             const rowCat = row.getAttribute('data-category') || '';
             const rowStatus = row.getAttribute('data-status') || '';
+            const rowMonth = row.getAttribute('data-month') || '';
             const rowYear = row.getAttribute('data-year') || '';
             const rowInstructor = (row.getAttribute('data-instructor') || '').toLowerCase();
             const rowLocation = (row.getAttribute('data-location') || '').toLowerCase();
@@ -47,7 +90,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const matchesSearch = !query || rowText.includes(query);
             const matchesCategory = !category || rowCat === category;
-            const matchesStatus = !status || rowStatus === status;
+            const matchesStatus = !status || rowStatus === status || (row.getAttribute('data-status-label') || '').toLowerCase() === status.toLowerCase();
+            const matchesMonth = !month || rowMonth === month || parseInt(rowMonth, 10) === parseInt(month, 10);
             const matchesYear = !year || rowYear === year;
             const matchesInstructor = !instructor || rowInstructor.includes(instructor);
             const matchesLocation = !location || rowLocation.includes(location);
@@ -60,13 +104,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 matchesDate = matchesDate && (rowDate <= toDate);
             }
 
-            if (matchesSearch && matchesCategory && matchesStatus && matchesYear && matchesInstructor && matchesLocation && matchesDate) {
+            if (matchesSearch && matchesCategory && matchesStatus && matchesMonth && matchesYear && matchesInstructor && matchesLocation && matchesDate) {
                 row.style.display = '';
                 visibleCount++;
             } else {
                 row.style.display = 'none';
             }
         });
+
+        // Update Export URLs
+        updateExportUrls();
 
         // Update Total Badge in Header Hero Card
         const totalCount = document.getElementById('scheduleTotalCount');
@@ -95,13 +142,10 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Form submit listener
+    // Form submit listener: allow GET request submission so active query parameters apply across all paginated pages
     const filterForm = document.getElementById('scheduleFilterForm');
     if (filterForm) {
-        filterForm.addEventListener('submit', function (e) {
-            e.preventDefault();
-            filterScheduleTable();
-        });
+        // Native GET submission preserves all active parameters in URL
     }
 
     // Attach quick filter event listeners & sync with modal
@@ -118,6 +162,7 @@ document.addEventListener('DOMContentLoaded', function () {
             filterScheduleTable();
         });
     }
+    if (monthSelect) monthSelect.addEventListener('change', filterScheduleTable);
     if (yearSelect) yearSelect.addEventListener('change', filterScheduleTable);
 
     // Apply button inside More Filters modal
@@ -129,7 +174,11 @@ document.addEventListener('DOMContentLoaded', function () {
             if (modalFilterStatus && statusSelect) {
                 statusSelect.value = modalFilterStatus.value;
             }
-            filterScheduleTable();
+            if (filterForm) {
+                filterForm.submit();
+            } else {
+                filterScheduleTable();
+            }
         });
     }
 
@@ -144,6 +193,8 @@ document.addEventListener('DOMContentLoaded', function () {
             if (modalFilterToDate) modalFilterToDate.value = '';
             if (categorySelect) categorySelect.value = '';
             if (statusSelect) statusSelect.value = '';
+            if (monthSelect) monthSelect.value = '';
+            if (yearSelect) yearSelect.value = '';
             filterScheduleTable();
         });
     }
@@ -152,9 +203,14 @@ document.addEventListener('DOMContentLoaded', function () {
     if (btnReset) {
         btnReset.addEventListener('click', function (e) {
             e.preventDefault();
+            if (window.location.search) {
+                window.location.href = "{{ route('manage.training-schedule.index') }}";
+                return;
+            }
             if (searchInput) searchInput.value = '';
             if (categorySelect) categorySelect.value = '';
             if (statusSelect) statusSelect.value = '';
+            if (monthSelect) monthSelect.value = '';
             if (yearSelect) yearSelect.value = '';
             if (modalFilterCategory) modalFilterCategory.value = '';
             if (modalFilterStatus) modalFilterStatus.value = '';
@@ -163,6 +219,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (modalFilterFromDate) modalFilterFromDate.value = '';
             if (modalFilterToDate) modalFilterToDate.value = '';
             filterScheduleTable();
+            updateExportUrls();
         });
     }
 
@@ -178,7 +235,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             const title = document.getElementById('inputTrainingTitle')?.value || '';
-            const category = document.getElementById('inputTrainingCategory')?.value || 'Soft Skill';
+            const category = document.getElementById('inputTrainingCategory')?.value || 'Leadership';
             const instructor = document.getElementById('inputTrainingInstructor')?.value || '';
             const location = document.getElementById('inputTrainingLocation')?.value || '';
             const quota = document.getElementById('inputTrainingQuota')?.value || 30;
@@ -201,14 +258,30 @@ document.addEventListener('DOMContentLoaded', function () {
             let catColor = '#003b6d';
             let catBg = '#eef2ff';
             let catIcon = 'ti-school';
-            if (category === 'Technical Skill') {
+            if (category === 'Job Functional' || category === 'Technical Skill') {
                 catColor = '#0284c7';
                 catBg = '#e0f2fe';
                 catIcon = 'ti-file-spreadsheet';
-            } else if (category === 'Compliance & Safety') {
+            } else if (category === 'Compliance' || category === 'Compliance & Safety') {
                 catColor = '#d97706';
                 catBg = '#fef3c7';
                 catIcon = 'ti-shield-check';
+            } else if (category === 'Leadership') {
+                catColor = '#7c3aed';
+                catBg = '#f3e8ff';
+                catIcon = 'ti-crown';
+            } else if (category === 'Innovation') {
+                catColor = '#047857';
+                catBg = '#ecfdf5';
+                catIcon = 'ti-bulb';
+            } else if (category === 'Language') {
+                catColor = '#b91c1c';
+                catBg = '#fef2f2';
+                catIcon = 'ti-language';
+            } else if (category === 'Basic & Common Duties') {
+                catColor = '#475569';
+                catBg = '#f1f5f9';
+                catIcon = 'ti-clipboard-list';
             }
 
             // Status Badge
@@ -310,34 +383,18 @@ document.addEventListener('DOMContentLoaded', function () {
                     showConfirmButton: false
                 });
             } else {
-                alert(`Training "${title}" successfully created!`);
+                console.log(`Training "${title}" successfully created!`);
             }
         });
     }
 
-    // --- Action Button Handlers (Edit, Participants, Delete) ---
+    // --- Action Button Handlers (Participants) ---
     document.addEventListener('click', function (e) {
-        // Edit Schedule
-        const editBtn = e.target.closest('.btn-edit-schedule');
-        if (editBtn) {
-            const title = editBtn.getAttribute('data-title') || 'this training';
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    icon: 'info',
-                    title: 'Edit Schedule',
-                    text: `Editing details for "${title}". Full edit form will be available in Stage 2.`,
-                    confirmButtonColor: '#003b6d'
-                });
-            } else {
-                alert(`Editing details for "${title}".`);
-            }
-            return;
-        }
-
         // View Participants -> Switch to Inline Participant Tracking Tab
         const partBtn = e.target.closest('.btn-participants-schedule');
         if (partBtn) {
-            const id = partBtn.getAttribute('data-id') || '1';
+            e.preventDefault();
+            const id = partBtn.getAttribute('data-id');
             const title = partBtn.getAttribute('data-title') || 'this training';
 
             // 1. Switch top pill to Participant Tracking & Approvals
@@ -370,51 +427,30 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             return;
         }
-
-        // Delete Schedule
-        const delBtn = e.target.closest('.btn-delete-schedule');
-        if (delBtn) {
-            const row = delBtn.closest('tr.schedule-table-row');
-            const title = delBtn.getAttribute('data-title') || 'this training';
-
-            const executeDelete = () => {
-                if (row) {
-                    row.remove();
-                    filterScheduleTable();
-                }
-                if (typeof Swal !== 'undefined') {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Deleted!',
-                        text: `"${title}" has been removed from the schedule.`,
-                        timer: 2000,
-                        showConfirmButton: false
-                    });
-                }
-            };
-
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    title: 'Delete Training Schedule?',
-                    text: `Are you sure you want to remove "${title}"? This cannot be undone.`,
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#d33',
-                    cancelButtonColor: '#6c757d',
-                    confirmButtonText: 'Yes, Delete',
-                    cancelButtonText: 'Cancel'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        executeDelete();
-                    }
-                });
-            } else {
-                if (confirm(`Are you sure you want to delete "${title}"?`)) {
-                    executeDelete();
-                }
-            }
-        }
     });
+
+    // --- Delete Confirmation Modal Dynamic Setup ---
+    const deleteModal = document.getElementById('deleteScheduleModal');
+    if (deleteModal) {
+        deleteModal.addEventListener('show.bs.modal', function (e) {
+            const btn = e.relatedTarget;
+            if (!btn) return;
+            const title = btn.getAttribute('data-training-title') || '-';
+            const code = btn.getAttribute('data-training-code') || '-';
+            const date = btn.getAttribute('data-training-date') || '-';
+            const deleteUrl = btn.getAttribute('data-delete-url') || '';
+
+            const titleEl = document.getElementById('deleteModalTrainingTitle');
+            const codeEl = document.getElementById('deleteModalTrainingCode');
+            const dateEl = document.getElementById('deleteModalTrainingDate');
+            const formEl = document.getElementById('deleteScheduleForm');
+
+            if (titleEl) titleEl.textContent = title;
+            if (codeEl) codeEl.textContent = code;
+            if (dateEl) dateEl.textContent = date;
+            if (formEl) formEl.action = deleteUrl;
+        });
+    }
 
     // --- Dynamic Syllabus Builder in Add Training Modal ---
     const btnAddSyllabus = document.getElementById('btnAddSyllabusRow');

@@ -2,11 +2,37 @@
     $types = collect($filterOptions['types'] ?? []);
     $classifications = collect($filterOptions['classifications'] ?? []);
     $years = collect($filterOptions['years'] ?? []);
+    $categories = collect($filterOptions['categories'] ?? []);
+    $subClassifications = collect($filterOptions['subClassifications'] ?? []);
+    $batches = collect($filterOptions['batches'] ?? []);
+    $deliveryMethods = collect($filterOptions['deliveryMethods'] ?? []);
+    $providers = collect($filterOptions['providers'] ?? []);
 
     $filterType = request('record_filter_type', request('type', 'all'));
     $filterClassification = request('record_filter_classification', request('classification', 'all'));
     $filterYear = request('record_filter_year', request('year', 'all'));
     $search = request('record_search', request('search', request('q', '')));
+
+    // More Filters
+    $filterCategory = request('record_filter_category', request('category', 'all'));
+    $filterSubClassification = request('record_filter_sub_classification', request('sub_classification', 'all'));
+    $filterBatch = request('record_filter_batch', request('batch', 'all'));
+    $filterDeliveryMethod = request('record_filter_delivery_method', request('delivery_method', 'all'));
+    $filterProvider = request('record_filter_provider', request('provider', 'all'));
+    $filterAttendance = request('record_filter_attendance', request('attendance', 'all'));
+    $filterCertificate = request('record_filter_certificate', request('certificate', 'all'));
+
+    $activeMoreFilterCount = 0;
+    if ($filterCategory !== 'all') $activeMoreFilterCount++;
+    if ($filterSubClassification !== 'all') $activeMoreFilterCount++;
+    if ($filterBatch !== 'all') $activeMoreFilterCount++;
+    if ($filterDeliveryMethod !== 'all') $activeMoreFilterCount++;
+    if ($filterProvider !== 'all') $activeMoreFilterCount++;
+    if ($filterAttendance !== 'all') $activeMoreFilterCount++;
+    if ($filterCertificate !== 'all') $activeMoreFilterCount++;
+
+    $isFiltered = ($search !== '' || $filterType !== 'all' || $filterClassification !== 'all' || $filterYear !== 'all' || $activeMoreFilterCount > 0);
+    $hasOfflineRecords = (bool) ($hasOfflineRecords ?? false);
 @endphp
 
 <template data-learning-record-hero>
@@ -18,6 +44,324 @@
         ]"
     />
 </template>
+<style>
+    .record-offline-title-link {
+        display: inline-block;
+        background: transparent;
+        border: 0;
+        padding: 0;
+        margin: 0;
+        font-family: inherit;
+        font-size: inherit;
+        font-weight: 600;
+        line-height: 1.35;
+        color: inherit;
+        text-align: left;
+        text-decoration: none;
+        cursor: pointer;
+        transition: color 0.15s ease-in-out, text-decoration-color 0.15s ease-in-out;
+    }
+    .record-offline-title-link:hover {
+        color: var(--tblr-primary, #206bc4) !important;
+        text-decoration: underline !important;
+    }
+    .record-offline-title-link:focus-visible {
+        outline: 2px solid var(--tblr-primary, #206bc4);
+        outline-offset: 2px;
+        border-radius: 2px;
+    }
+    button.attendance-detail-trigger {
+        border: 0;
+        cursor: pointer;
+        font-family: inherit;
+        text-decoration: none;
+        user-select: none;
+        transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+    }
+    button.attendance-detail-trigger:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
+        filter: brightness(0.95);
+    }
+    button.attendance-detail-trigger:active {
+        transform: translateY(0);
+        box-shadow: none;
+        filter: brightness(0.9);
+    }
+    button.attendance-detail-trigger:focus-visible {
+        outline: 2px solid var(--tblr-primary, #206bc4);
+        outline-offset: 2px;
+        border-radius: 4px;
+    }
+    /* Table Horizontal Scroll & Full Training Title Readability (Standardized with Online Reference) */
+    .learning-record-scroll {
+        overflow-x: auto !important;
+        overflow-y: visible !important;
+        max-height: none !important;
+        width: 100% !important;
+        -webkit-overflow-scrolling: touch;
+    }
+    .learning-record-table {
+        min-width: 1280px !important;
+        width: 100% !important;
+    }
+
+    /* Certificate Action Buttons (Standardized with Online Reference) */
+    .btn-learning-certificate,
+    .btn-learning-certificate-disabled {
+        width: 36px !important;
+        height: 36px !important;
+        padding: 0 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border-radius: 8px !important;
+        font-size: 1.1rem !important;
+        box-sizing: border-box !important;
+    }
+    .btn-learning-certificate {
+        background-color: #16a34a !important;
+        border: 1px solid #16a34a !important;
+        color: #ffffff !important;
+        box-shadow: 0 2px 6px rgba(22, 163, 74, 0.18) !important;
+        cursor: pointer !important;
+        line-height: 1 !important;
+        text-decoration: none !important;
+        transition: transform 200ms ease, box-shadow 200ms ease, background-color 200ms ease, border-color 200ms ease !important;
+    }
+    .btn-learning-certificate > i {
+        margin: 0 !important;
+        font-size: 1.15rem !important;
+        line-height: 1 !important;
+        color: #ffffff !important;
+    }
+    .btn-learning-certificate:hover,
+    .btn-learning-certificate:focus-visible {
+        border-color: #15803d !important;
+        background-color: #15803d !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 10px rgba(22, 163, 74, 0.22) !important;
+        transform: translateY(-1px);
+    }
+    .btn-learning-certificate:active {
+        border-color: #166534 !important;
+        background-color: #166534 !important;
+        box-shadow: 0 1px 3px rgba(22, 101, 52, 0.2) !important;
+        transform: scale(0.96);
+    }
+    .btn-learning-certificate-disabled {
+        background-color: #d1d5db !important;
+        border: 1px solid #bfc6cf !important;
+        color: #4b5563 !important;
+        opacity: 1 !important;
+        cursor: not-allowed !important;
+        pointer-events: auto !important;
+        box-shadow: none !important;
+    }
+    .btn-learning-certificate-disabled:hover,
+    .btn-learning-certificate-disabled:focus,
+    .btn-learning-certificate-disabled:active {
+        background-color: #d1d5db !important;
+        border-color: #bfc6cf !important;
+        color: #4b5563 !important;
+        box-shadow: none !important;
+    }
+
+    /* Polished More Filter Modal Dialog (Standardized with Online Reference) */
+    #recordOfflineMoreFilterModal .modal-dialog {
+        max-width: 760px;
+    }
+    #recordOfflineMoreFilterModal .record-filter-modal {
+        border-radius: 16px !important;
+        border: none !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
+        overflow: hidden;
+    }
+    #recordOfflineMoreFilterModal .modal-header {
+        background-color: #ffffff !important;
+        border-bottom: 1px solid #f0f2f5 !important;
+        padding: 1.25rem 2rem !important;
+    }
+    #recordOfflineMoreFilterModal .modal-title {
+        font-size: 1.25rem !important;
+        font-weight: 700 !important;
+        color: #1e293b !important;
+    }
+    #recordOfflineMoreFilterModal .modal-body {
+        max-height: 72vh;
+        overflow-y: auto;
+        padding: 1.5rem 2rem !important;
+        background-color: #ffffff !important;
+    }
+    #recordOfflineMoreFilterModal .modal-body::-webkit-scrollbar {
+        width: 6px;
+    }
+    #recordOfflineMoreFilterModal .modal-body::-webkit-scrollbar-track {
+        background: #f8fafc;
+        border-radius: 999px;
+    }
+    #recordOfflineMoreFilterModal .modal-body::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 999px;
+    }
+    #recordOfflineMoreFilterModal .modal-body::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+    #recordOfflineMoreFilterModal .record-filter-select {
+        width: 100% !important;
+        border-radius: 8px !important;
+        border: 1px solid #d1d5db !important;
+        padding: 0.5rem 0.85rem !important;
+        font-size: 0.875rem !important;
+        color: #334155 !important;
+        background-color: #ffffff !important;
+        height: 42px !important;
+    }
+    #recordOfflineMoreFilterModal .record-filter-select:focus {
+        border-color: #206bc4 !important;
+        box-shadow: 0 0 0 3px rgba(32, 107, 196, 0.15) !important;
+    }
+    #recordOfflineMoreFilterModal .modal-footer {
+        background-color: #ffffff !important;
+        border-top: 1px solid #f0f2f5 !important;
+        padding: 1rem 2rem !important;
+    }
+    #recordOfflineMoreFilterModal .modal-footer .btn {
+        min-height: 40px !important;
+        border-radius: 8px !important;
+        padding: 0.5rem 1.25rem !important;
+        font-weight: 600 !important;
+        font-size: 0.875rem !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 0.5rem !important;
+    }
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) #recordOfflineMoreFilterModal .record-filter-modal {
+        background-color: var(--tblr-bg-surface-dark, #1e293b) !important;
+        border-color: #334155 !important;
+    }
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) #recordOfflineMoreFilterModal .modal-header {
+        background-color: var(--tblr-bg-surface-dark, #1e293b) !important;
+        border-bottom-color: #334155 !important;
+    }
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) #recordOfflineMoreFilterModal .modal-title {
+        color: #f1f5f9 !important;
+    }
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) #recordOfflineMoreFilterModal .modal-header .btn-close {
+        filter: invert(1) grayscale(100%) brightness(200%);
+    }
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) #recordOfflineMoreFilterModal .modal-body,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) #recordOfflineMoreFilterModal .record-more-filters {
+        background-color: var(--tblr-bg-surface-dark, #1e293b) !important;
+        color: #f1f5f9 !important;
+    }
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) #recordOfflineMoreFilterModal .modal-body::-webkit-scrollbar-track {
+        background: #0f172a;
+    }
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) #recordOfflineMoreFilterModal .modal-body::-webkit-scrollbar-thumb {
+        background: #475569;
+    }
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) #recordOfflineMoreFilterModal .learning-filter-group .form-label {
+        color: #f1f5f9 !important;
+    }
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) #recordOfflineMoreFilterModal .record-filter-select {
+        background-color: #192d45 !important;
+        border-color: rgba(255, 255, 255, 0.12) !important;
+        color: #f1f5f9 !important;
+    }
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) #recordOfflineMoreFilterModal .modal-footer {
+        background-color: #152235 !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+    }
+
+    /* Compact Dynamic Quick Filter & Toolbar Alignment for Offline Record */
+    #recordOfflineFilterBar .fast-filter-toolbar {
+        display: flex !important;
+        align-items: center !important;
+        flex-wrap: nowrap !important;
+        gap: 8px !important;
+        width: 100% !important;
+    }
+    #recordOfflineFilterBar .learning-quick-dropdowns {
+        display: flex !important;
+        align-items: center !important;
+        flex-wrap: nowrap !important;
+        flex: 0 1 auto !important;
+        gap: 6px !important;
+        width: auto !important;
+    }
+    #recordOfflineFilterBar .learning-quick-dropdowns .dropdown {
+        flex: 0 0 auto !important;
+    }
+    #recordOfflineFilterBar .learning-quick-dropdowns .dropdown-toggle {
+        width: auto !important;
+        width: max-content !important;
+        min-width: 0 !important;
+        max-width: 220px !important;
+        padding: 0.375rem 0.65rem !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 4px !important;
+        white-space: nowrap !important;
+        font-size: 0.8125rem !important;
+        line-height: 1.4 !important;
+    }
+    #recordOfflineFilterBar .learning-quick-dropdowns .dropdown-toggle .fw-semibold {
+        display: inline-block !important;
+        max-width: 125px !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        vertical-align: middle !important;
+    }
+    #recordOfflineFilterBar .learning-quick-dropdowns .dropdown-toggle::after {
+        margin-left: 4px !important;
+        flex-shrink: 0 !important;
+    }
+    #recordOfflineFilterBar .learning-quick-dropdowns .dropdown-menu {
+        min-width: 100% !important;
+        width: max-content !important;
+        max-width: 320px !important;
+    }
+    #recordOfflineFilterBar .record-toolbar-search {
+        flex: 1 1 auto !important;
+        min-width: 140px !important;
+        width: auto !important;
+    }
+    #recordOfflineFilterBar .record-toolbar-search .form-control {
+        width: 100% !important;
+        min-height: 38px !important;
+        height: 38px !important;
+    }
+    #recordOfflineFilterBar .record-filter-actions {
+        flex: 0 0 auto !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+    }
+
+    @media (max-width: 767.98px) {
+        #recordOfflineFilterBar .fast-filter-toolbar {
+            flex-wrap: wrap !important;
+            gap: 8px !important;
+        }
+        #recordOfflineFilterBar .learning-quick-dropdowns {
+            width: 100% !important;
+            flex: 1 1 100% !important;
+            flex-wrap: wrap !important;
+        }
+        #recordOfflineFilterBar .record-toolbar-search {
+            width: 100% !important;
+            min-width: 100% !important;
+            flex: 1 1 100% !important;
+        }
+        #recordOfflineFilterBar .record-filter-actions {
+            width: 100% !important;
+            justify-content: flex-end !important;
+        }
+    }
+</style>
 
 <div class="learning-record-shell">
     {{-- Filter Card Offline --}}
@@ -32,8 +376,8 @@
                 </div>
 
                 <div class="record-fast-filter-section">
-                    <div class="fast-filter-toolbar d-flex align-items-center flex-wrap gap-2">
-                        <div class="learning-quick-dropdowns learning-fast-filter d-flex align-items-center flex-wrap gap-2">
+                    <div class="fast-filter-toolbar">
+                        <div class="learning-quick-dropdowns learning-fast-filter">
                             {{-- Dropdown Type --}}
                             <div class="dropdown">
                                 <button type="button"
@@ -120,18 +464,19 @@
                         </div>
 
                         {{-- Search Input --}}
-                        <div class="record-toolbar-search flex-grow-1" style="min-width: 220px;">
+                        <div class="record-toolbar-search">
                             <label class="visually-hidden" for="recordOfflineSearch">Search offline records</label>
                             <div class="input-icon">
                                 <span class="input-icon-addon"><i class="ti ti-search"></i></span>
                                 <input type="text" class="form-control" id="recordOfflineSearch"
                                        value="{{ $search }}"
-                                       placeholder="Search offline training, type, provider..." autocomplete="off">
+                                       placeholder="Search offline training, batch, provider..." autocomplete="off">
                             </div>
                         </div>
 
                         {{-- Action Buttons --}}
                         <div class="record-filter-actions d-flex align-items-center gap-2">
+                            {{-- 1. Search Button --}}
                             <button type="button" class="btn btn-primary btn-learning-primary record-offline-apply-btn record-filter-action-btn"
                                     id="recordOfflineApplyBtn"
                                     title="Search & Apply Filter"
@@ -139,76 +484,178 @@
                                 <i class="ti ti-search" aria-hidden="true"></i>
                             </button>
 
+                            {{-- 2. More Filter Button --}}
+                            <button type="button"
+                                    class="btn btn-outline-primary btn-learning-secondary record-filter-action-btn position-relative {{ $activeMoreFilterCount > 0 ? 'active' : '' }}"
+                                    id="recordOfflineMoreFilterBtn"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#recordOfflineMoreFilterModal"
+                                    title="More Filters"
+                                    aria-label="More Filters">
+                                <i class="ti ti-adjustments-horizontal" aria-hidden="true"></i>
+                                @if ($activeMoreFilterCount > 0)
+                                    <span class="badge bg-primary text-white position-absolute top-0 start-100 translate-middle rounded-pill" style="font-size: 10px; min-width: 18px; height: 18px; padding: 0 4px; display: inline-flex; align-items: center; justify-content: center;">{{ $activeMoreFilterCount }}</span>
+                                @endif
+                            </button>
+
+                            {{-- 3. Reset Button --}}
                             <button type="button" class="btn btn-outline-secondary btn-learning-outline record-offline-reset-btn record-filter-action-btn"
                                     id="recordOfflineResetBtn"
                                     title="Reset Filter"
                                     aria-label="Reset Filter">
                                 <i class="ti ti-refresh" aria-hidden="true"></i>
                             </button>
+
+                            {{-- 4. Download / Export Button --}}
+                            <a href="{{ route('user.learning.record.export', array_merge(request()->all(), ['source' => 'offline'])) }}"
+                               class="btn btn-outline-success btn-learning-success record-filter-action-btn"
+                               id="recordOfflineExportBtn"
+                               title="Export Offline Training Record"
+                               aria-label="Export Offline Training Record">
+                                <i class="ti ti-download" aria-hidden="true"></i>
+                            </a>
                         </div>
                     </div>
+
+                    {{-- Active More Filter Badges --}}
+                    @if ($activeMoreFilterCount > 0)
+                        <div class="d-flex align-items-center flex-wrap gap-1 mt-2 pt-2 border-top">
+                            <span class="text-muted small me-1">Active filters:</span>
+                            @if ($filterCategory !== 'all')
+                                <span class="badge bg-blue-lt d-inline-flex align-items-center gap-1">
+                                    Category: {{ $filterCategory }}
+                                    <a href="#" class="text-reset text-decoration-none record-offline-clear-single-filter" data-param="record_filter_category">&times;</a>
+                                </span>
+                            @endif
+                            @if ($filterSubClassification !== 'all')
+                                <span class="badge bg-blue-lt d-inline-flex align-items-center gap-1">
+                                    Sub Class: {{ $filterSubClassification }}
+                                    <a href="#" class="text-reset text-decoration-none record-offline-clear-single-filter" data-param="record_filter_sub_classification">&times;</a>
+                                </span>
+                            @endif
+                            @if ($filterBatch !== 'all')
+                                <span class="badge bg-blue-lt d-inline-flex align-items-center gap-1">
+                                    Batch: {{ $filterBatch }}
+                                    <a href="#" class="text-reset text-decoration-none record-offline-clear-single-filter" data-param="record_filter_batch">&times;</a>
+                                </span>
+                            @endif
+                            @if ($filterDeliveryMethod !== 'all')
+                                <span class="badge bg-blue-lt d-inline-flex align-items-center gap-1">
+                                    Method: {{ $filterDeliveryMethod }}
+                                    <a href="#" class="text-reset text-decoration-none record-offline-clear-single-filter" data-param="record_filter_delivery_method">&times;</a>
+                                </span>
+                            @endif
+                            @if ($filterProvider !== 'all')
+                                <span class="badge bg-blue-lt d-inline-flex align-items-center gap-1">
+                                    Provider: {{ $filterProvider }}
+                                    <a href="#" class="text-reset text-decoration-none record-offline-clear-single-filter" data-param="record_filter_provider">&times;</a>
+                                </span>
+                            @endif
+                            @if ($filterAttendance !== 'all')
+                                <span class="badge bg-blue-lt d-inline-flex align-items-center gap-1">
+                                    Attendance: {{ ucfirst($filterAttendance) }}
+                                    <a href="#" class="text-reset text-decoration-none record-offline-clear-single-filter" data-param="record_filter_attendance">&times;</a>
+                                </span>
+                            @endif
+                            @if ($filterCertificate !== 'all')
+                                <span class="badge bg-blue-lt d-inline-flex align-items-center gap-1">
+                                    Certificate: {{ ucfirst($filterCertificate) }}
+                                    <a href="#" class="text-reset text-decoration-none record-offline-clear-single-filter" data-param="record_filter_certificate">&times;</a>
+                                </span>
+                            @endif
+                            <a href="#" class="small text-danger ms-1 text-decoration-none" id="recordOfflineClearAllMoreFilters">Clear all</a>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
 
-        {{-- Table Offline --}}
-        <div class="card-body p-0">
-            <div class="table-responsive learning-record-scroll">
-                <table class="table table-vcenter table-hover card-table mb-0 learning-record-table"
-                       id="learningRecordOfflineTable" style="width:100%">
-                    <thead>
-                        <tr>
-                            <th class="text-muted text-center" style="width: 4%">No</th>
-                            <th class="text-muted" style="width: 24%">Training Title</th>
-                            <th class="text-muted" style="width: 9%">Type</th>
-                            <th class="text-muted" style="width: 9%">Category</th>
-                            <th class="text-muted" style="width: 11%">Classification</th>
-                            <th class="text-muted" style="width: 8%">Duration</th>
-                            <th class="text-muted" style="width: 8%">Learning Hour</th>
-                            <th class="text-muted" style="width: 7%">Progress</th>
-                            <th class="text-muted" style="width: 10%">Date</th>
-                            <th class="text-muted text-center" style="width: 8%">Score</th>
-                            <th class="text-muted text-center" style="width: 6%">Certificate</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($rows as $index => $row)
+        {{-- Table or Empty State Offline --}}
+        @if ($rows->isEmpty())
+            <div class="card-body text-center py-5">
+                <div class="py-4">
+                    <div class="text-muted mb-3">
+                        @if ($hasOfflineRecords && $isFiltered)
+                            <i class="ti ti-search-off text-muted" style="font-size: 3rem; opacity: 0.5;"></i>
+                        @else
+                            <i class="ti ti-folder-off text-muted" style="font-size: 3rem; opacity: 0.5;"></i>
+                        @endif
+                    </div>
+                    @if ($hasOfflineRecords && $isFiltered)
+                        <h4 class="fw-bold text-dark mb-1">No matching records found.</h4>
+                        <p class="text-muted mb-3">Try adjusting your filters or search criteria.</p>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="recordOfflineEmptyResetBtn">
+                            <i class="ti ti-refresh me-1"></i> Reset Filters
+                        </button>
+                    @else
+                        <h4 class="fw-bold text-dark mb-1">No offline learning records found.</h4>
+                        <p class="text-muted mb-0">Your offline training records will appear here when they become available.</p>
+                    @endif
+                </div>
+            </div>
+        @else
+            <div class="card-body p-0">
+                <div class="table-responsive learning-record-scroll">
+                    <table class="table table-vcenter table-hover card-table mb-0 learning-record-table"
+                           id="learningRecordOfflineTable" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th class="text-muted text-center" style="width: 3%">No</th>
+                                <th class="text-muted" style="width: 22%">Training Title</th>
+                                <th class="text-muted text-center" style="width: 8%">Type</th>
+                                <th class="text-muted text-center" style="width: 8%">Category</th>
+                                <th class="text-muted text-center" style="width: 10%">Classification</th>
+                                <th class="text-muted text-center" style="width: 7%">Duration</th>
+                                <th class="text-muted text-center" style="width: 8%">Learning Hour</th>
+                                <th class="text-muted text-center" style="width: 7%">Progress</th>
+                                <th class="text-muted text-center" style="width: 7%">Attendance</th>
+                                <th class="text-muted text-center" style="width: 9%">Date</th>
+                                <th class="text-muted text-center" style="width: 6%">Score</th>
+                                <th class="text-muted text-center" style="width: 8%">Certificate</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($rows as $index => $row)
                             <tr class="record-row record-row-offline">
-                                <td class="text-center text-muted">{{ $loop->iteration }}</td>
+                                <td class="text-center text-muted record-row-index">{{ $loop->iteration }}</td>
                                 <td class="learning-record-course-cell">
-                                    <div class="learning-record-title fw-semibold text-dark">
+                                    <button type="button"
+                                            class="learning-record-title record-offline-title-link btn-record-offline-detail text-start"
+                                            data-record-id="{{ $row['id'] }}">
                                         {{ $row['title'] }}
-                                    </div>
+                                    </button>
                                     @if (!empty($row['subtitle']))
-                                        <div class="text-muted small mt-0.5">
+                                        <div class="text-muted small mt-1">
                                             {{ $row['subtitle'] }}
                                         </div>
                                     @endif
-                                    @if (!empty($row['venue']))
-                                        <div class="text-muted small mt-0.5 d-flex align-items-center gap-1" style="font-size: 0.72rem;">
-                                            <i class="ti ti-map-pin" style="font-size: 0.75rem;"></i>
+                                    @if (!empty($row['venue']) && $row['venue'] !== '-')
+                                        <div class="text-muted small mt-1 d-flex align-items-center gap-1" style="font-size: 0.75rem;">
+                                            <i class="ti ti-map-pin" style="font-size: 0.8rem;"></i>
                                             <span>{{ $row['venue'] }}</span>
                                         </div>
                                     @endif
+                                    {{-- Hidden JSON storage for instant zero-N+1 modal population --}}
+                                    <script type="application/json" id="record-offline-data-{{ $row['id'] }}">@json($row)</script>
                                 </td>
-                                <td>
+                                <td class="text-center">
                                     <span class="badge bg-secondary-lt learning-record-type-badge">
                                         {{ $row['type'] }}
                                     </span>
                                 </td>
-                                <td>
-                                    <span class="badge bg-light text-muted border px-2 py-1" style="font-size: 11px;">
-                                        {{ $row['category'] }}
+                                <td class="text-center">
+                                    <span class="badge bg-secondary-lt text-secondary learning-record-badge">
+                                        {{ $row['category'] ?: '—' }}
                                     </span>
                                 </td>
-                                <td>
+                                <td class="text-center">
                                     <span class="badge bg-blue-lt learning-classification-badge">
                                         {{ $row['classification'] }}
                                     </span>
                                 </td>
-                                <td class="text-nowrap">{{ $row['duration'] }}</td>
-                                <td class="text-nowrap fw-semibold text-primary">{{ $row['learning_hour'] }}</td>
-                                <td>
+                                <td class="text-center text-nowrap">{{ $row['duration'] }}</td>
+                                <td class="text-center text-nowrap fw-semibold text-primary">{{ $row['learning_hour'] }}</td>
+                                <td class="text-center">
                                     @if ($row['progress'] >= 100)
                                         <span class="badge bg-success-lt text-success fw-bold px-2 py-1">100%</span>
                                     @elseif ($row['progress'] > 0)
@@ -217,7 +664,36 @@
                                         <span class="badge bg-secondary-lt fw-bold px-2 py-1">0%</span>
                                     @endif
                                 </td>
-                                <td class="text-nowrap small text-muted">{{ $row['date_display'] }}</td>
+                                <td class="text-center">
+                                    @php
+                                        $attStatus = $row['attendance_status'] ?? '-';
+                                        $statusKey = strtolower(trim((string) $attStatus));
+                                        $badgeClass = match ($statusKey) {
+                                            'present' => 'bg-success-lt text-success',
+                                            'absent' => 'bg-danger-lt text-danger',
+                                            'excused' => 'bg-warning-lt text-warning',
+                                            'leave' => 'bg-info-lt text-info',
+                                            'sick' => 'bg-warning-lt text-warning',
+                                            default => 'bg-secondary-lt text-secondary',
+                                        };
+                                        $rawReason = $row['raw_attendance_reason'] ?? ($row['attendance_reason'] !== '-' ? $row['attendance_reason'] : '');
+                                        $displayReason = $row['attendance_reason_display'] ?? '';
+                                    @endphp
+                                    <button type="button"
+                                            class="badge {{ $badgeClass }} fw-bold px-2 py-1 attendance-detail-trigger text-decoration-none"
+                                            data-record-id="{{ $row['id'] }}"
+                                            data-training-title="{{ $row['course_name'] ?: $row['title'] }}"
+                                            data-attendance="{{ $attStatus }}"
+                                            data-attendance-reason="{{ $rawReason }}"
+                                            data-attendance-reason-display="{{ $displayReason }}"
+                                            data-training-date="{{ $row['date_display'] ?: '-' }}"
+                                            data-venue="{{ $row['venue'] ?: '-' }}"
+                                            title="Click to view attendance detail"
+                                            aria-label="View attendance detail for {{ $row['title'] }}">
+                                        {{ $attStatus }}
+                                    </button>
+                                </td>
+                                <td class="text-center text-nowrap small text-muted">{{ $row['date_display'] }}</td>
                                 <td class="text-center">
                                     @if ($row['score'] !== null)
                                         <span class="learning-score-pill {{ $row['score'] >= 70 ? 'bg-success-lt text-success' : 'bg-danger-lt text-danger' }}">
@@ -228,39 +704,208 @@
                                     @endif
                                 </td>
                                 <td class="text-center">
-                                    @if (!empty($row['certificate']))
-                                        <span class="badge bg-success-lt text-success p-1" title="Certificate available">
-                                            <i class="ti ti-certificate fs-3"></i>
-                                        </span>
-                                    @else
-                                        <span class="text-muted small">-</span>
-                                    @endif
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="11" class="text-center text-muted py-5">
-                                    <div class="empty py-3">
-                                        <div class="empty-icon text-muted mb-3">
-                                            <i class="ti ti-certificate fs-1 opacity-50"></i>
-                                        </div>
-                                        <p class="empty-title fw-bold text-dark mb-1">No Offline Training Records Found</p>
-                                        <p class="empty-subtitle text-muted mb-0 small">
-                                            You currently do not have any recorded offline training or certification history.
-                                        </p>
+                                    <div class="d-flex justify-content-center">
+                                        @if (($row['has_certificate'] ?? false) || ($row['cert_state'] ?? '') === 'ready')
+                                            @if (!empty($row['cert_action_url']))
+                                                <a href="{{ $row['cert_action_url'] }}"
+                                                   class="btn btn-learning-certificate"
+                                                   target="_blank"
+                                                   title="Certificate Available"
+                                                   aria-label="Certificate Available">
+                                                    <i class="ti ti-certificate" aria-hidden="true"></i>
+                                                </a>
+                                            @else
+                                                <button type="button"
+                                                        class="btn btn-learning-certificate"
+                                                        title="Certificate Available"
+                                                        aria-label="Certificate Available">
+                                                    <i class="ti ti-certificate" aria-hidden="true"></i>
+                                                </button>
+                                            @endif
+                                        @else
+                                            <button type="button"
+                                                    class="btn btn-learning-certificate-disabled"
+                                                    disabled
+                                                    title="Certificate Not Available"
+                                                    data-bs-toggle="tooltip"
+                                                    data-bs-title="{{ $row['cert_reason'] ?? 'Certificate Not Available' }}"
+                                                    aria-label="Certificate Not Available">
+                                                <i class="ti ti-certificate" aria-hidden="true"></i>
+                                            </button>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>
-                        @endforelse
+                        @endforeach
                     </tbody>
                 </table>
             </div>
         </div>
 
         @if ($rows->isNotEmpty())
-            <div class="card-footer d-flex align-items-center justify-content-between py-2 px-4">
-                <span class="text-muted small">Showing {{ $rows->count() }} records</span>
+            <div class="card-footer d-flex flex-wrap align-items-center justify-content-between gap-2">
+                <div class="d-flex align-items-center gap-2">
+                    <select class="form-select form-select-sm w-auto" id="recordOfflinePageLength">
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                    </select>
+                    <span class="text-muted small" id="recordOfflineTableInfo"></span>
+                </div>
+
+                <ul class="pagination pagination-sm mb-0" id="recordOfflinePagination"></ul>
             </div>
+        @endif
         @endif
     </div>
 </div>
+
+{{-- ========================================================================= --}}
+{{-- MODAL: MORE FILTER OFFLINE RECORD                                         --}}
+{{-- ========================================================================= --}}
+<div class="modal fade" id="recordOfflineMoreFilterModal" tabindex="-1" role="dialog" aria-labelledby="recordOfflineMoreFilterModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered learning-filter-modal" role="document">
+        <div class="modal-content rounded-4 border-0 shadow record-filter-modal">
+            <div class="modal-header border-0 pb-0">
+                <h3 class="modal-title fw-semibold d-flex align-items-center gap-1" id="recordOfflineMoreFilterModalLabel" style="font-size: 1.1rem;">
+                    <i class="ti ti-adjustments-horizontal text-primary me-1"></i>
+                    <span>More Filters — Offline Record</span>
+                </h3>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pt-2 record-more-filters" id="recordOfflineMoreFilters">
+                <p class="text-muted extra-small mb-3">
+                    All filters can be combined with the search and quick filters above.
+                </p>
+
+                <form id="recordOfflineMoreFilterForm">
+                    <div class="record-filter-sections d-flex flex-column">
+
+                        {{-- 1. Category --}}
+                        <div class="learning-filter-group">
+                            <label class="form-label fw-semibold text-dark small mb-2" for="mf_category">Category</label>
+                            <div class="w-100">
+                                <select class="form-select rounded-3 record-filter-select w-100" id="mf_category" name="record_filter_category">
+                                    <option value="all" {{ $filterCategory === 'all' ? 'selected' : '' }}>All Categories</option>
+                                    @foreach ($categories as $cat)
+                                        <option value="{{ $cat }}" {{ (string) $filterCategory === (string) $cat ? 'selected' : '' }}>{{ $cat }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+
+                        <hr class="my-3 text-light-subtle">
+
+                        {{-- 2. Sub Classification --}}
+                        <div class="learning-filter-group">
+                            <label class="form-label fw-semibold text-dark small mb-2" for="mf_sub_classification">Sub Classification</label>
+                            <div class="w-100">
+                                <select class="form-select rounded-3 record-filter-select w-100" id="mf_sub_classification" name="record_filter_sub_classification">
+                                    <option value="all" {{ $filterSubClassification === 'all' ? 'selected' : '' }}>All Sub Classifications</option>
+                                    @foreach ($subClassifications as $subClass)
+                                        <option value="{{ $subClass }}" {{ (string) $filterSubClassification === (string) $subClass ? 'selected' : '' }}>{{ $subClass }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+
+                        <hr class="my-3 text-light-subtle">
+
+                        {{-- 3. Batch --}}
+                        <div class="learning-filter-group">
+                            <label class="form-label fw-semibold text-dark small mb-2" for="mf_batch">Batch</label>
+                            <div class="w-100">
+                                <select class="form-select rounded-3 record-filter-select w-100" id="mf_batch" name="record_filter_batch">
+                                    <option value="all" {{ $filterBatch === 'all' ? 'selected' : '' }}>All Batches</option>
+                                    @foreach ($batches as $bat)
+                                        <option value="{{ $bat }}" {{ (string) $filterBatch === (string) $bat ? 'selected' : '' }}>{{ $bat }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+
+                        <hr class="my-3 text-light-subtle">
+
+                        {{-- 4. Delivery Method --}}
+                        <div class="learning-filter-group">
+                            <label class="form-label fw-semibold text-dark small mb-2" for="mf_delivery_method">Delivery Method</label>
+                            <div class="w-100">
+                                <select class="form-select rounded-3 record-filter-select w-100" id="mf_delivery_method" name="record_filter_delivery_method">
+                                    <option value="all" {{ $filterDeliveryMethod === 'all' ? 'selected' : '' }}>All Methods</option>
+                                    @foreach ($deliveryMethods as $method)
+                                        <option value="{{ $method }}" {{ (string) $filterDeliveryMethod === (string) $method ? 'selected' : '' }}>{{ $method }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+
+                        <hr class="my-3 text-light-subtle">
+
+                        {{-- 5. Provider --}}
+                        <div class="learning-filter-group">
+                            <label class="form-label fw-semibold text-dark small mb-2" for="mf_provider">Provider</label>
+                            <div class="w-100">
+                                <select class="form-select rounded-3 record-filter-select w-100" id="mf_provider" name="record_filter_provider">
+                                    <option value="all" {{ $filterProvider === 'all' ? 'selected' : '' }}>All Providers</option>
+                                    @foreach ($providers as $prov)
+                                        <option value="{{ $prov }}" {{ (string) $filterProvider === (string) $prov ? 'selected' : '' }}>{{ $prov }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+
+                        <hr class="my-3 text-light-subtle">
+
+                        {{-- 6. Attendance --}}
+                        <div class="learning-filter-group">
+                            <label class="form-label fw-semibold text-dark small mb-2" for="mf_attendance">Attendance</label>
+                            <div class="w-100">
+                                <select class="form-select rounded-3 record-filter-select w-100" id="mf_attendance" name="record_filter_attendance">
+                                    <option value="all" {{ $filterAttendance === 'all' ? 'selected' : '' }}>All</option>
+                                    <option value="present" {{ strtolower($filterAttendance) === 'present' ? 'selected' : '' }}>Present</option>
+                                    <option value="absent" {{ strtolower($filterAttendance) === 'absent' ? 'selected' : '' }}>Absent</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <hr class="my-3 text-light-subtle">
+
+                        {{-- 7. Certificate --}}
+                        <div class="learning-filter-group">
+                            <label class="form-label fw-semibold text-dark small mb-2" for="mf_certificate">Certificate</label>
+                            <div class="w-100">
+                                <select class="form-select rounded-3 record-filter-select w-100" id="mf_certificate" name="record_filter_certificate">
+                                    <option value="all" {{ $filterCertificate === 'all' ? 'selected' : '' }}>All</option>
+                                    <option value="certified" {{ in_array(strtolower($filterCertificate), ['certified', 'yes'], true) ? 'selected' : '' }}>Certified (Yes)</option>
+                                    <option value="uncertified" {{ in_array(strtolower($filterCertificate), ['uncertified', 'no'], true) ? 'selected' : '' }}>Not Certified (No)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-top pt-3 d-flex justify-content-end align-items-center gap-2">
+                <!-- Reset Button (Placed right next to Apply Filter) -->
+                <button type="button" class="btn btn-outline-secondary px-3 rounded-3 d-inline-flex align-items-center gap-1" id="btnResetMoreFilterModal">
+                    <i class="ti ti-refresh fs-2"></i> Reset
+                </button>
+
+                <!-- Apply Filter Button -->
+                <button type="button" class="btn btn-primary px-4 rounded-3 d-inline-flex align-items-center gap-1" id="btnApplyMoreFilterModal" style="background-color: #003b6d; border-color: #003b6d;">
+                    <i class="ti ti-search fs-2"></i> Apply Filter
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- ========================================================================= --}}
+{{-- MODAL: ATTENDANCE DETAIL                                                  --}}
+{{-- ========================================================================= --}}
+<x-learning.record-attendance-modal />
+
+{{-- ========================================================================= --}}
+{{-- MODAL: VIEW DETAIL OFFLINE RECORD                                         --}}
+{{-- ========================================================================= --}}
+<x-learning.record-offline-detail-modal />

@@ -17,7 +17,7 @@
                         </div>
                         <div class="text-muted small d-flex align-items-center gap-1" id="modalStatusDate">
                             <i class="ti ti-calendar text-primary"></i>
-                            <span id="modalSelectedDateText">Friday, 18 September 2026</span>
+                            <span id="modalSelectedDateText">{{ \Carbon\Carbon::today()->format('l, d F Y') }}</span>
                         </div>
                     </div>
                 </div>
@@ -28,7 +28,7 @@
             <div class="modal-body p-4 modal-scrollable-body" style="max-height: 420px; overflow-y: auto;">
                 <!-- Training Items List Container -->
                 <div class="d-flex flex-column gap-2" id="modalTrainingItemsList">
-                    {{-- Dynamically populated via JavaScript --}}
+                    {{-- Dynamically populated via JavaScript openTrainingListModal() --}}
                 </div>
 
                 <!-- Empty State Container -->
@@ -81,4 +81,18 @@
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
         border-color: #cbd5e1 !important;
     }
+    .w-auto { width: auto; }
+    .min-w-max { min-width: max-content; }
+    .whitespace-nowrap { white-space: nowrap; }
+    .bg-sky-100 { background-color: #e0f2fe; }
+    .text-sky-800 { color: #075985; }
+    .rounded-md { border-radius: 0.375rem; }
+    .shrink-0 { flex-shrink: 0; }
+    .bg-emerald-100 { background-color: #d1fae5 !important; }
+    .text-emerald-700 { color: #047857 !important; }
+    .bg-gray-100 { background-color: #f3f4f6 !important; }
+    .text-gray-600 { color: #4b5563 !important; }
+    .bg-gray-200 { background-color: #e5e7eb !important; }
+    .text-gray-500 { color: #6b7280 !important; }
+    .cursor-not-allowed { cursor: not-allowed !important; }
 </style>

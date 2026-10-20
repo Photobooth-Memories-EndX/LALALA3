@@ -1,5 +1,5 @@
 @php
-    $availableTrainings = $availableTrainings ?? \App\Models\OfflineTraining::withCount('participants')->where('status', '!=', 'Closed')->orderBy('start_date', 'asc')->get();
+    $availableTrainings = $availableTrainings ?? \App\Models\OfflineTraining::withCount('participants')->latest()->paginate(10)->appends(array_merge(request()->query(), ['tab' => 'available']));
 @endphp
 {{-- Tab Training Tersedia / Available Training (Table View Layout) --}}
 <style>
@@ -21,43 +21,139 @@
     .text-purple {
         color: #6f42c1 !important;
     }
+    .font-semibold {
+        font-weight: 600 !important;
+    }
+    .text-gray-900 {
+        color: #111827 !important;
+    }
+    .text-gray-500 {
+        color: #6b7280 !important;
+    }
+    .text-gray-400 {
+        color: #9ca3af !important;
+    }
+    .text-sm {
+        font-size: 0.875rem !important;
+        line-height: 1.25rem !important;
+    }
+    .text-xs {
+        font-size: 0.75rem !important;
+        line-height: 1rem !important;
+    }
+    .mt-0\.5 {
+        margin-top: 0.125rem !important;
+    }
 </style>
 <div class="card border border-light-subtle shadow-sm rounded-4 bg-white p-4 mb-4">
     
-    {{-- Quick Filter Bar --}}
-    <div class="row g-3 align-items-center mb-4 pb-2 border-bottom border-light-subtle">
-        <div class="col-lg-5 col-md-5">
-            <div class="input-icon">
-                <span class="input-icon-addon">
-                    <i class="ti ti-search text-muted fs-2"></i>
-                </span>
-                <input type="text" id="filterTrainingSearch" class="form-control rounded-3" placeholder="Search training title, instructor, or keywords...">
+    {{-- Quick Filter Bar matching schedule-filter.blade.php --}}
+    <div class="mb-4 pb-3 border-bottom border-light-subtle">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+            <div class="text-secondary small fw-semibold" style="color: #6c757d !important; font-size: 0.85rem;">
+                Quick Filter
             </div>
-        </div>
-        <div class="col-lg-3 col-md-3">
-            <select id="filterTrainingCategory" class="form-select rounded-3">
-                <option value="">All Category</option>
-                <option value="Soft Skill">Soft Skill</option>
-                <option value="Technical Skill">Technical Skill</option>
-                <option value="Compliance & Safety">Compliance & Safety</option>
-                <option value="Leadership">Leadership</option>
-            </select>
-        </div>
-        <div class="col-lg-2 col-md-2">
-            <select id="filterTrainingStatus" class="form-select rounded-3">
-                <option value="">All Status</option>
-                <option value="open">Open Registration</option>
-                <option value="running">Running</option>
-                <option value="pending">Pending Approval</option>
-                <option value="registered">Registered</option>
-                <option value="closed">Closed Registration</option>
-            </select>
-        </div>
-        <div class="col-lg-2 col-md-2 d-flex justify-content-end">
-            <span class="badge bg-light text-secondary border px-3 py-2 rounded-pill fw-medium align-self-center" id="availableTrainingTotalBadge">
-                Total: {{ $availableTrainings->count() }} Training{{ $availableTrainings->count() === 1 ? '' : 's' }}
+            <span class="badge bg-light text-secondary border px-3 py-2 rounded-pill fw-medium" id="availableTrainingTotalBadge">
+                Total: {{ method_exists($availableTrainings, 'total') ? $availableTrainings->total() : $availableTrainings->count() }} Training{{ (method_exists($availableTrainings, 'total') ? $availableTrainings->total() : $availableTrainings->count()) === 1 ? '' : 's' }}
             </span>
         </div>
+
+        <form id="availableFilterForm" method="GET" action="{{ route('trainingplan.user.index') }}">
+            <input type="hidden" name="tab" value="available">
+            <div class="d-flex align-items-center gap-2 flex-wrap flex-lg-nowrap">
+                <!-- 1. Category Select (Width: ~130px) -->
+                <div style="min-width: 130px; flex-shrink: 0;">
+                    @php
+                        $categoriesList = [
+                            'Compliance & Safety', 'Core Competency', 'Environmental', 'General Competency',
+                            'Innovation', 'Job Functional', 'Leadership', 'Maintenance', 'Quality', 'Safety',
+                            'Soft Skill', 'Technical', 'Basic & Common Duties', 'Compliance', 'Language'
+                        ];
+                    @endphp
+                    <select id="filterTrainingCategory" name="category" class="form-select rounded-3" onchange="this.form.submit()">
+                        <option value="" {{ request('category') == '' ? 'selected' : '' }}>All Category</option>
+                        @foreach ($categoriesList as $cat)
+                            <option value="{{ $cat }}" {{ request('category') == $cat ? 'selected' : '' }}>{{ $cat }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <!-- 2. Status Select (Width: ~120px) -->
+                <div style="min-width: 120px; flex-shrink: 0;">
+                    @php
+                        $statusesList = [
+                            'open'    => 'Open Registration',
+                            'running' => 'Running',
+                            'closed'  => 'Registration Closed',
+                        ];
+                    @endphp
+                    <select id="filterTrainingStatus" name="status" class="form-select rounded-3" onchange="this.form.submit()">
+                        <option value="" {{ request('status') == '' ? 'selected' : '' }}>All Status</option>
+                        @foreach ($statusesList as $st => $stLabel)
+                            <option value="{{ $st }}" {{ request('status') == $st || request('status') == $stLabel ? 'selected' : '' }}>{{ $stLabel }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <!-- 3. Month Select (Width: ~110px) -->
+                <div style="min-width: 110px; flex-shrink: 0;">
+                    @php
+                        $monthsList = [
+                            '01' => 'January', '02' => 'February', '03' => 'March',
+                            '04' => 'April', '05' => 'May', '06' => 'June',
+                            '07' => 'July', '08' => 'August', '09' => 'September',
+                            '10' => 'October', '11' => 'November', '12' => 'December'
+                        ];
+                    @endphp
+                    <select id="filterTrainingMonth" name="month" class="form-select rounded-3" onchange="this.form.submit()">
+                        <option value="" {{ request('month') == '' ? 'selected' : '' }}>All Month</option>
+                        @foreach ($monthsList as $m => $monthName)
+                            <option value="{{ $m }}" {{ ((int) request('month') == (int) $m && request('month') != '') || request('month') == $m ? 'selected' : '' }}>{{ $monthName }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <!-- 4. Year Select (Width: ~100px) -->
+                <div style="min-width: 100px; flex-shrink: 0;">
+                    @php
+                        $yearsList = ['2026', '2025', '2027'];
+                    @endphp
+                    <select id="filterTrainingYear" name="year" class="form-select rounded-3" onchange="this.form.submit()">
+                        <option value="" {{ request('year') == '' ? 'selected' : '' }}>All Year</option>
+                        @foreach ($yearsList as $y)
+                            <option value="{{ $y }}" {{ request('year') == $y ? 'selected' : '' }}>{{ $y }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <!-- 5. Search Input (Flex grow 1 with Search Icon on left) -->
+                <div class="position-relative flex-grow-1" style="min-width: 200px;">
+                    <div class="input-icon">
+                        <span class="input-icon-addon">
+                            <i class="ti ti-search text-muted fs-2"></i>
+                        </span>
+                        <input type="text" id="filterTrainingSearch" name="search" class="form-control rounded-3" 
+                               value="{{ request('search') ?? request('q') }}"
+                               placeholder="Search training title, instructor, or room..." autocomplete="off">
+                    </div>
+                </div>
+
+                <!-- 6. Action Buttons Group (Right side) -->
+                <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                    <!-- Search Submit Button -->
+                    <button type="submit" id="btnSubmitAvailableFilter" class="btn btn-primary px-3 rounded-3" 
+                            style="background-color: #003b6d; border-color: #003b6d;" title="Apply Filter">
+                        <i class="ti ti-search fs-2"></i>
+                    </button>
+
+                    <!-- Reset Link Button -->
+                    <a href="{{ route('trainingplan.user.index', ['tab' => 'available']) }}" id="btnResetFilter" class="btn btn-outline-primary px-3 rounded-3 d-inline-flex align-items-center justify-content-center" 
+                       style="color: #003b6d; border-color: #003b6d;" title="Reset Filters">
+                        <i class="ti ti-refresh fs-2"></i>
+                    </a>
+                </div>
+            </div>
+        </form>
     </div>
 
     {{-- Available Training Table --}}
@@ -66,8 +162,7 @@
             <thead>
                 <tr class="text-muted extra-small text-uppercase fw-bold" style="letter-spacing: 0.05em; background-color: #f8fafc;">
                     <th class="w-1 text-center align-middle py-3">NO</th>
-                    <th class="text-center align-middle py-3" style="min-width: 200px;">TRAINING NAME</th>
-                    <th class="text-center align-middle py-3">CATEGORY</th>
+                    <th class="text-start align-middle py-3" style="min-width: 200px;">TRAINING NAME</th>
                     <th class="text-center align-middle py-3" style="min-width: 140px;">DATE</th>
                     <th class="text-center align-middle py-3" style="min-width: 120px;">TIME</th>
                     <th class="text-center align-middle py-3">LOCATION</th>
@@ -80,30 +175,36 @@
             <tbody class="divide-y">
                 @forelse ($availableTrainings as $item)
                     @php
-                        $enrolled = $item->participants_count ?? ($item->relationLoaded('participants') ? $item->participants->count() : 0);
+                        $training = $item;
+                        $title = $training->title ?? ($training->course_name ?? 'Training Schedule');
+                        $enrolled = $item->registered_seats_count ?? ($item->relationLoaded('registrations') ? $item->registrations->whereIn('status', ['Pending', 'Approved', 'Completed'])->count() : 0);
                         $quota = $item->quota > 0 ? $item->quota : 1;
                         $remaining = max(0, $quota - $enrolled);
                         $percent = min(100, round(($enrolled / $quota) * 100));
                         $isFull = $remaining <= 0;
                         $barColor = $isFull ? '#ef4444' : ($remaining <= 10 ? '#f97316' : '#003b6d');
 
-                        $catStyle = match($item->category) {
-                            'Technical Skill'     => 'background-color: #e0f2fe; color: #0284c7;',
-                            'Compliance & Safety' => 'background-color: #fef3c7; color: #b45309;',
-                            'Leadership'          => 'background-color: #f3e8ff; color: #7c3aed;',
-                            default               => 'background-color: #e0f2fe; color: #0369a1;',
-                        };
+                        $myReg = $item->relationLoaded('registrations') ? $item->registrations->firstWhere('user_id', Auth::id()) : null;
+                        $myRegStatus = $myReg ? $myReg->status : null;
 
-                        $statusBadgeClass = match($item->status) {
+                        $regCloseDate = \Carbon\Carbon::parse($item->registration_close_date ?? $item->start_date);
+                        $regCloseTime = $item->registration_close_time ? substr($item->registration_close_time, 0, 5) : '23:59';
+                        $closeDatetime = \Carbon\Carbon::parse($regCloseDate->format('Y-m-d') . ' ' . $regCloseTime . ':59');
+                        $isRegDeadlinePassed = \Carbon\Carbon::now()->gt($closeDatetime);
+                        $displayStatus = ($item->status === 'Open Registration' && $isRegDeadlinePassed) ? 'Closed' : $item->status;
+
+                        $statusBadgeClass = match($displayStatus) {
                             'Open Registration' => 'bg-success-subtle text-success',
                             'Running'           => 'bg-warning-subtle text-warning border border-warning-subtle',
+                            'Closed'            => 'bg-secondary-subtle text-secondary',
                             default             => 'bg-info-subtle text-info',
                         };
 
-                        $dataStatus = match($item->status) {
+                        $dataStatus = match($displayStatus) {
                             'Open Registration' => 'open',
                             'Running'           => 'running',
-                            default             => strtolower($item->status),
+                            'Closed'            => 'closed',
+                            default             => strtolower($displayStatus ?? 'open'),
                         };
 
                         $startDate = \Carbon\Carbon::parse($item->start_date);
@@ -114,18 +215,17 @@
                         data-id="{{ $item->id }}" 
                         data-category="{{ $item->category }}" 
                         data-status="{{ $dataStatus }}" 
+                        data-month="{{ (int)$startDate->format('n') }}" 
+                        data-year="{{ $startDate->format('Y') }}"
+                        data-location="{{ $item->location }}"
                         data-instructor="{{ $item->instructor }}">
-                        <td class="text-center align-middle text-muted fw-semibold">{{ $loop->iteration }}</td>
-                        <td class="text-center align-middle" style="min-width: 200px;">
-                            <div class="fw-bold text-dark fs-3">{{ $item->title }}</div>
-                            @if (!empty($item->training_code))
-                                <div class="text-muted extra-small font-monospace">{{ $item->training_code }}</div>
+                        <td class="text-center align-middle text-muted fw-semibold">{{ method_exists($availableTrainings, 'firstItem') && $availableTrainings->firstItem() ? ($availableTrainings->firstItem() + $loop->index) : $loop->iteration }}</td>
+                        <td class="align-middle" style="min-width: 200px;">
+                            <div class="font-semibold text-gray-900 text-sm">{{ $training->title }}</div>
+                            @if($training->sub_course_name)
+                                <div class="text-xs text-gray-500">{{ $training->sub_course_name }}</div>
                             @endif
-                        </td>
-                        <td class="text-center align-middle">
-                            <span class="badge rounded-pill px-2 py-1 fw-semibold" style="{{ $catStyle }}">
-                                {{ $item->category }}
-                            </span>
+                            <div class="text-xs text-gray-400 mt-0.5">Code: {{ $training->batch ?? '-' }}</div>
                         </td>
                         <td class="fw-semibold text-dark text-center align-middle" style="min-width: 140px;">
                             @if($item->end_date && $item->start_date != $item->end_date)
@@ -148,10 +248,15 @@
                             <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 d-inline-flex align-items-center gap-1 btn-view-syllabus" 
                                     data-bs-toggle="modal" data-bs-target="#syllabusModal" 
                                     data-id="{{ $item->id }}" 
-                                    data-title="{{ $item->title }}" 
+                                    data-title="{{ $title }}" 
                                     data-category="{{ $item->category }}" 
                                     data-instructor="{{ $item->instructor }}"
                                     data-duration="{{ $startTime }} - {{ $endTime }} WIB"
+                                    data-start-time="{{ $startTime }}"
+                                    data-end-time="{{ $endTime }}"
+                                    data-duration-hours="{{ \Carbon\Carbon::parse($item->start_time)->diffInHours(\Carbon\Carbon::parse($item->end_time)) . ' Hours' }}"
+                                    data-requirements="{{ $item->requirements ?? ($item->prerequisites ?? '') }}"
+                                    data-target="{{ $item->target_employee ?? '' }}"
                                     data-description="{{ $item->description ?? '' }}"
                                     data-objectives="{{ $item->learning_objectives ?? '' }}"
                                     data-syllabus="{{ json_encode($item->syllabus ?? []) }}">
@@ -167,14 +272,38 @@
                         </td>
                         <td class="text-center align-middle">
                             <span class="badge {{ $statusBadgeClass }} rounded-pill px-3 py-1 fw-semibold">
-                                {{ $item->status }}
+                                {{ $displayStatus }}
                             </span>
                         </td>
-                        <td class="text-center align-middle pe-4">
-                            @if ($item->status === 'Open Registration' && !$isFull)
-                                <button type="button" class="btn btn-owl-register rounded-pill px-4 py-1-5 fw-semibold d-inline-flex align-items-center gap-1">
-                                    <span>Register</span>
-                                </button>
+                        <!-- <td class="text-center align-middle pe-4">
+                            @if ($myRegStatus === 'Pending')
+                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-3 py-1-5 fw-semibold d-inline-flex align-items-center gap-1">
+                                    <i class="ti ti-clock"></i>
+                                    <span>Pending Approval</span>
+                                </span>
+                            @elseif ($myRegStatus === 'Approved')
+                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1-5 fw-semibold d-inline-flex align-items-center gap-1">
+                                    <i class="ti ti-check"></i>
+                                    <span>Approved</span>
+                                </span>
+                            @elseif ($myRegStatus === 'Completed')
+                                <span class="badge bg-info-subtle text-info border border-info-subtle rounded-pill px-3 py-1-5 fw-semibold d-inline-flex align-items-center gap-1">
+                                    <i class="ti ti-certificate"></i>
+                                    <span>Completed</span>
+                                </span>
+                            @elseif ($myRegStatus === 'Rejected')
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-1-5 fw-semibold d-inline-flex align-items-center gap-1" title="{{ $myReg->rejection_reason ?? 'Registration was rejected' }}">
+                                    <i class="ti ti-x"></i>
+                                    <span>Rejected</span>
+                                </span>
+                            @elseif ($item->status === 'Open Registration' && !$isFull)
+                                <form action="{{ route('trainingplan.register', $item->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Register for {{ addslashes($title) }}?');">
+                                    @csrf
+                                    <button type="submit" class="btn btn-owl-register rounded-pill px-4 py-1-5 fw-semibold d-inline-flex align-items-center gap-1">
+                                        <i class="ti ti-pencil-plus"></i>
+                                        <span>Register</span>
+                                    </button>
+                                </form>
                             @elseif ($item->status === 'Running')
                                 <button type="button" class="btn btn-secondary rounded-pill px-4 py-1-5 fw-semibold" disabled>
                                     <span>Running</span>
@@ -184,11 +313,11 @@
                                     <span>Full</span>
                                 </button>
                             @endif
-                        </td>
+                        </td> -->
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="10" class="text-center py-5 text-muted">
+                        <td colspan="9" class="text-center py-5 text-muted">
                             <div class="avatar avatar-xl rounded-circle bg-light text-muted mb-3 mx-auto">
                                 <i class="ti ti-calendar-off fs-1"></i>
                             </div>
@@ -200,4 +329,21 @@
             </tbody>
         </table>
     </div>
+
+    @if (method_exists($availableTrainings, 'hasPages') && $availableTrainings->hasPages())
+        <div class="card-footer bg-white border-0 py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div class="text-muted small">
+                Showing {{ $availableTrainings->firstItem() ?? 0 }} to {{ $availableTrainings->lastItem() ?? 0 }} of {{ $availableTrainings->total() }} available training(s)
+            </div>
+            <div>
+                {{ $availableTrainings->appends(array_merge(request()->query(), ['tab' => 'available']))->links('pagination::bootstrap-5') }}
+            </div>
+        </div>
+    @elseif (method_exists($availableTrainings, 'total') && $availableTrainings->total() > 0)
+        <div class="card-footer bg-white border-0 py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div class="text-muted small">
+                Showing {{ $availableTrainings->firstItem() ?? 0 }} to {{ $availableTrainings->lastItem() ?? 0 }} of {{ $availableTrainings->total() }} available training(s)
+            </div>
+        </div>
+    @endif
 </div>

@@ -13,9 +13,12 @@
 
         @include('main.record.components.record-hero')
 
-        @include('main.record.components.record-navigation')
+        <!-- 4 KPI SUMMARY CARDS + SOURCE SUMMARY (ASYNC SKELETON SHELL) -->
+        <div id="all-kpi-summary-container">
+            @include('main.record.components.all-kpi-skeleton')
+        </div>
 
-        <!-- SECTION HEADER: All KP OWL -->
+        <!-- SECTION HEADER: All Record -->
         <div class="card border-0 shadow-sm p-3 p-md-4 mb-4 rounded-3 bg-white record-section-header">
             <div class="d-flex align-items-center gap-3">
                 <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
@@ -23,16 +26,13 @@
                     <i class="ti ti-stack-2 fs-1"></i>
                 </div>
                 <div>
-                    <h2 class="h3 fw-bold mb-1 text-dark">All KP OWL</h2>
+                    <h2 class="h3 fw-bold mb-1 text-dark">All Record</h2>
                     <p class="text-muted small mb-0">Combined Learning Overview — Unified overview of KP OWL online learning and Non KP OWL offline training records.</p>
                 </div>
             </div>
         </div>
 
-        <!-- 4 KPI SUMMARY CARDS + SOURCE SUMMARY (ASYNC SKELETON SHELL) -->
-        <div id="all-kpi-summary-container">
-            @include('main.record.components.all-kpi-skeleton')
-        </div>
+        @include('main.record.components.record-navigation')
 
         <!-- CLASSIFICATION SUMMARY CARD (ASYNC SKELETON SHELL) -->
         <div class="card border-0 shadow-sm rounded-4 mb-4">

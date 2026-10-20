@@ -287,6 +287,7 @@ class PlaylistUserController extends Controller
                 'last_page'        => $resolvedCurrent->lastPage,
                 'total_pages'      => $resolvedCurrent->totalPages,
                 'duration_seconds' => $resolvedCurrent->durationSeconds,
+                'status'           => $content->status ?? 'optional',
             ]
         );
 

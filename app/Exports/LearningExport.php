@@ -71,50 +71,14 @@ class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
 
     public function headings(): array
     {
-        return [
-            '#',
-            'Status',
-            'Employee ID',
-            'Name',
-            'Department',
-            'Team',
-            'Title',
-            'Type',
-            'Classification',
-            'Category',
-            'Duration',
-            'Date',
-            'Progress',
-        ];
+        return \App\Services\Learning\LearningExportService::headings();
     }
 
     public function map($row): array
     {
         $this->rowNumber++;
 
-        $title = $row->content_title ?? '-';
-        if (!empty($row->playlist_title)) {
-            $title .= ' (Playlist: ' . $row->playlist_title . ')';
-        }
-
-        $rawType = (string) ($row->content_type ?? '');
-        $type = in_array(strtolower($rawType), ['video', 'youtube', 'mooc'], true) ? 'Video' : 'Document';
-
-        return [
-            $this->rowNumber,
-            $row->status ?? '-',
-            $row->user_id_emp ?? '-',
-            $row->user_name ?? '-',
-            $row->user_department ?? '-',
-            $row->user_team ?? '-',
-            $title,
-            $type,
-            $row->classification_name ?? '-',
-            $row->category_source ?? 'All Content',
-            DurationFormatter::format($row->content_duration ?? null),
-            $row->created_at,
-            ($row->progress ?? 0) . '%',
-        ];
+        return \App\Services\Learning\LearningExportService::mapRow($row, $this->rowNumber);
     }
 
     public function chunkSize(): int
@@ -124,28 +88,12 @@ class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
 
     public function columnWidths(): array
     {
-        return [
-            'A' => 6,
-            'B' => 12,
-            'C' => 15,
-            'D' => 25,
-            'E' => 20,
-            'F' => 20,
-            'G' => 45,
-            'H' => 14,
-            'I' => 25,
-            'J' => 15,
-            'K' => 12,
-            'L' => 20,
-            'M' => 10,
-        ];
+        return \App\Services\Learning\LearningExportService::columnWidths();
     }
 
     public function styles(Worksheet $sheet)
     {
-        return [
-            1 => ['font' => ['bold' => true]],
-        ];
+        return \App\Services\Learning\LearningExportService::styles($sheet);
     }
 
     public function download(?string $fileName = null): BinaryFileResponse
@@ -169,6 +117,10 @@ class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
 
     public function generateXlsxFile(): string
     {
+        if (class_exists(\Barryvdh\Debugbar\Facades\Debugbar::class)) {
+            \Barryvdh\Debugbar\Facades\Debugbar::disable();
+        }
+
         $tempXlsx = tempnam(sys_get_temp_dir(), 'xlsx_export_') . '.xlsx';
         $opt = new ArchiveOptions();
         $opt->setSendHttpHeaders(false);
@@ -222,19 +174,31 @@ class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
             . '<font><sz val="11"/><name val="Calibri"/></font>'
             . '<font><b/><sz val="11"/><name val="Calibri"/></font>'
             . '</fonts>'
-            . '<fills count="2">'
+            . '<fills count="3">'
             . '<fill><patternFill patternType="none"/></fill>'
             . '<fill><patternFill patternType="gray125"/></fill>'
+            . '<fill><patternFill patternType="solid"><fgColor rgb="FFD9EAF7"/></patternFill></fill>'
             . '</fills>'
-            . '<borders count="1">'
+            . '<borders count="2">'
             . '<border><left/><right/><top/><bottom/><diagonal/></border>'
+            . '<border>'
+            . '<left style="thin"><color rgb="FFD1D5DB"/></left>'
+            . '<right style="thin"><color rgb="FFD1D5DB"/></right>'
+            . '<top style="thin"><color rgb="FFD1D5DB"/></top>'
+            . '<bottom style="thin"><color rgb="FFD1D5DB"/></bottom>'
+            . '</border>'
             . '</borders>'
             . '<cellStyleXfs count="1">'
             . '<xf numFmtId="0" fontId="0" fillId="0" borderId="0"/>'
             . '</cellStyleXfs>'
-            . '<cellXfs count="2">'
-            . '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
-            . '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/>'
+            . '<cellXfs count="7">'
+            . '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0"><alignment vertical="center"/></xf>'
+            . '<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0"><alignment horizontal="left" vertical="center"/></xf>'
+            . '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0"><alignment horizontal="left" vertical="center" wrapText="1"/></xf>'
+            . '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0"><alignment horizontal="right" vertical="center"/></xf>'
+            . '<xf numFmtId="49" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1"><alignment horizontal="center" vertical="center"/></xf>'
             . '</cellXfs>'
             . '</styleSheet>'
         );
@@ -245,6 +209,7 @@ class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
 
         fwrite($sfh, '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' . "\n");
         fwrite($sfh, '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' . "\n");
+        fwrite($sfh, '<sheetViews><sheetView tabSelected="1" workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>' . "\n");
         fwrite($sfh, '<cols>' . "\n");
         foreach ($this->columnWidths() as $colLetter => $w) {
             $colIdx = Coordinate::columnIndexFromString($colLetter);
@@ -255,10 +220,10 @@ class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
 
         // Header row
         $headers = $this->headings();
-        $colLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M'];
         fwrite($sfh, '<row r="1">' . "\n");
         foreach ($headers as $i => $h) {
-            $c = $colLetters[$i] . '1';
+            $colLetter = Coordinate::stringFromColumnIndex($i + 1);
+            $c = $colLetter . '1';
             $val = $this->escapeXml($h);
             fwrite($sfh, "<c r=\"{$c}\" t=\"inlineStr\" s=\"1\"><is><t>{$val}</t></is></c>\n");
         }
@@ -270,63 +235,83 @@ class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
 
         $pdo = DB::connection()->getPdo();
         $wasBuffered = $pdo->getAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY);
-        $pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
+        $pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, true);
 
         $buffer = '';
-        $batchSize = 2000;
+        $batchSize = 500;
+        $batchRows = [];
 
         try {
             $stmt = $pdo->prepare($query->toSql());
             $stmt->execute($query->getBindings());
 
             while ($row = $stmt->fetch(\PDO::FETCH_OBJ)) {
-                $rowCount++;
-                $r = $rowCount + 1;
+                $batchRows[] = $row;
+                if (count($batchRows) >= $batchSize) {
+                    $context = \App\Services\Learning\LearningExportService::buildBatchContext($batchRows);
+                    foreach ($batchRows as $item) {
+                        $rowCount++;
+                        $r = $rowCount + 1;
+                        $data = \App\Services\Learning\LearningExportService::mapRow($item, $rowCount, $context);
 
-                $title = $row->content_title ?? '-';
-                if (!empty($row->playlist_title)) {
-                    $title .= ' (Playlist: ' . $row->playlist_title . ')';
-                }
+                        $rowXml = "<row r=\"{$r}\">";
+                        foreach ($data as $idx => $val) {
+                            $colLetter = Coordinate::stringFromColumnIndex($idx + 1);
+                            $coord = $colLetter . $r;
+                            $escaped = $this->escapeXml($val);
 
-                $rawType = (string) ($row->content_type ?? '');
-                $type = in_array(strtolower($rawType), ['video', 'youtube', 'mooc'], true) ? 'Video' : 'Document';
+                            $styleIdx = match ($idx) {
+                                0, 6, 9, 11, 12, 13, 14, 15, 16 => 2,
+                                1 => 6,
+                                2, 5, 7 => 4,
+                                3, 4, 8 => 3,
+                                10 => 5,
+                                default => 0,
+                            };
 
-                $duration = DurationFormatter::format($row->content_duration ?? null);
-                $progress = ($row->progress ?? 0) . '%';
+                            $rowXml .= "<c r=\"{$coord}\" t=\"inlineStr\" s=\"{$styleIdx}\"><is><t>{$escaped}</t></is></c>";
+                        }
+                        $rowXml .= "</row>\n";
+                        $buffer .= $rowXml;
+                    }
 
-                $data = [
-                    $row->status ?? '-',
-                    $row->user_id_emp ?? '-',
-                    $row->user_name ?? '-',
-                    $row->user_department ?? '-',
-                    $row->user_team ?? '-',
-                    $title,
-                    $type,
-                    $row->classification_name ?? '-',
-                    $row->category_source ?? 'All Content',
-                    $duration,
-                    $row->created_at,
-                    $progress,
-                ];
-
-                $rowXml = "<row r=\"{$r}\"><c r=\"A{$r}\"><v>{$rowCount}</v></c>";
-                foreach ($data as $idx => $val) {
-                    $coord = $colLetters[$idx + 1] . $r;
-                    $escaped = $this->escapeXml($val);
-                    $rowXml .= "<c r=\"{$coord}\" t=\"inlineStr\"><is><t>{$escaped}</t></is></c>";
-                }
-                $rowXml .= "</row>\n";
-
-                $buffer .= $rowXml;
-                if ($rowCount % $batchSize === 0) {
                     fwrite($sfh, $buffer);
                     $buffer = '';
+                    $batchRows = [];
                 }
             }
 
-            if ($buffer !== '') {
+            if (!empty($batchRows)) {
+                $context = \App\Services\Learning\LearningExportService::buildBatchContext($batchRows);
+                foreach ($batchRows as $item) {
+                    $rowCount++;
+                    $r = $rowCount + 1;
+                    $data = \App\Services\Learning\LearningExportService::mapRow($item, $rowCount, $context);
+
+                    $rowXml = "<row r=\"{$r}\">";
+                    foreach ($data as $idx => $val) {
+                        $colLetter = Coordinate::stringFromColumnIndex($idx + 1);
+                        $coord = $colLetter . $r;
+                        $escaped = $this->escapeXml($val);
+
+                        $styleIdx = match ($idx) {
+                            0, 6, 9, 11, 12, 13, 14, 15, 16 => 2,
+                            1 => 6,
+                            2, 5, 7 => 4,
+                            3, 4, 8 => 3,
+                            10 => 5,
+                            default => 0,
+                        };
+
+                        $rowXml .= "<c r=\"{$coord}\" t=\"inlineStr\" s=\"{$styleIdx}\"><is><t>{$escaped}</t></is></c>";
+                    }
+                    $rowXml .= "</row>\n";
+                    $buffer .= $rowXml;
+                }
+
                 fwrite($sfh, $buffer);
                 $buffer = '';
+                $batchRows = [];
             }
 
             $stmt->closeCursor();
@@ -335,6 +320,9 @@ class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
         }
 
         fwrite($sfh, '</sheetData>' . "\n");
+        $lastCol = Coordinate::stringFromColumnIndex(count($headers));
+        $lastRow = max(1, $rowCount + 1);
+        fwrite($sfh, "<autoFilter ref=\"A1:{$lastCol}{$lastRow}\"/>\n");
         fwrite($sfh, '</worksheet>' . "\n");
         rewind($sfh);
 

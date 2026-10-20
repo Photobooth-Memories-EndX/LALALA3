@@ -16,6 +16,7 @@ $(function () {
         const select = form.find('.certificate-item-select');
         if (type === 'content') return select.data('selected-content');
         if (type === 'playlist') return select.data('selected-trainingplan');
+        if (type === 'training_offline' || type === 'offline') return select.data('selected-offline');
         return select.data('selected-assessment');
     }
 
@@ -56,7 +57,7 @@ $(function () {
         const select = form.find('.certificate-item-select');
         const selectedId = selectedTarget(form, type);
         form.find('.certificate-item-label').text(
-            type === 'content' ? 'Nama Content' : (type === 'playlist' ? 'Nama Playlist' : 'Nama Global Assessment')
+            type === 'content' ? 'Nama Content' : (type === 'playlist' ? 'Nama Playlist' : (type === 'training_offline' || type === 'offline' ? 'Nama Training Offline' : 'Nama Global Assessment'))
         );
         select.html('<option value="">Loading...</option>');
         $.get(@json(route('certificate.setting.ajax.items')), {type: type}).done(function (items) {
@@ -83,7 +84,10 @@ $(function () {
     $(document).on('change', '.certificate-type-select', function () {
         const form = $(this).closest('form');
         form.find('.certificate-item-select')
-            .data('selected-content', '').data('selected-trainingplan', '').data('selected-assessment', '');
+            .data('selected-content', '')
+            .data('selected-trainingplan', '')
+            .data('selected-offline', '')
+            .data('selected-assessment', '');
         form.find('.certificate-assessment-select').data('selected', '');
         toggleFields(form);
         loadItems(form);

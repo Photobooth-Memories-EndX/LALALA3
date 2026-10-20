@@ -103,7 +103,7 @@ class RecordAllCombinedTest extends TestCase
         $response->assertViewIs('main.record.all');
 
         // Verify Page title and Navigation
-        $response->assertSee('All KP OWL');
+        $response->assertSee('All Record');
         $response->assertSee('Combined Online');
         $response->assertSee('ACTIVE'); // Active badge on navigation Card 3
 
@@ -134,6 +134,44 @@ class RecordAllCombinedTest extends TestCase
         }
         $this->assertFalse($hasHeavyUnion, 'Initial GET /manage/record/all must not execute heavy aggregation queries.');
         $this->assertLessThan(2.0, $duration, 'Initial shell load should complete within 2 seconds.');
+    }
+
+    /**
+     * Test All Record landing page DIV reordering:
+     * 1. Banner (manage-record-hero)
+     * 2. Statistic Cards (all-kpi-summary-container)
+     * 3. Toolbar (record-section-header with All Record title and description)
+     * 4. Navigation Cards (record-navigation-row)
+     * 5. Main Content (all-classification-container)
+     */
+    public function test_all_record_landing_page_reordered_div_layout(): void
+    {
+        $response = $this->actingAs($this->admin)->get('/manage/record/all');
+        $response->assertStatus(200);
+
+        $content = $response->getContent();
+        $body = substr($content, strpos($content, '<body'));
+
+        $posHero = strpos($body, 'manage-record-hero');
+        $posKpi = strpos($body, 'id="all-kpi-summary-container"');
+        $posToolbar = strpos($body, 'class="card border-0 shadow-sm p-3 p-md-4 mb-4 rounded-3 bg-white record-section-header"');
+        $posNav = strpos($body, 'record-navigation-row');
+        $posClassification = strpos($body, 'id="all-classification-container"');
+
+        $this->assertNotFalse($posHero, 'Banner (manage-record-hero) must exist');
+        $this->assertNotFalse($posKpi, 'Statistic cards (all-kpi-summary-container) must exist');
+        $this->assertNotFalse($posToolbar, 'Toolbar (record-section-header) must exist');
+        $this->assertNotFalse($posNav, 'Navigation cards (record-navigation-row) must exist');
+        $this->assertNotFalse($posClassification, 'Classification summary (all-classification-container) must exist');
+
+        $this->assertLessThan($posKpi, $posHero, 'Banner must precede Statistic Cards');
+        $this->assertLessThan($posToolbar, $posKpi, 'Statistic Cards must precede Toolbar');
+        $this->assertLessThan($posNav, $posToolbar, 'Toolbar must precede Navigation Cards');
+        $this->assertLessThan($posClassification, $posNav, 'Navigation Cards must precede Classification Summary');
+
+        // Check active state for All Record
+        $response->assertSee('All Record');
+        $response->assertSee('record-nav-card--active');
     }
 
     /**
@@ -416,7 +454,7 @@ class RecordAllCombinedTest extends TestCase
         $respByName = $this->actingAs($this->admin)->getJson("/manage/record/all/datatable?employee={$uniqueName}");
         $respByName->assertStatus(200);
         $this->assertEquals(1, $respByName->json('recordsFiltered'));
-        $this->assertEquals($uniqueName, $respByName->json('data.0.employee_name'));
+        $this->assertStringContainsString($uniqueName, $respByName->json('data.0.employee_name'));
     }
 
     /**
@@ -434,7 +472,7 @@ class RecordAllCombinedTest extends TestCase
         $resp = $this->actingAs($this->admin)->getJson("/manage/record/all/datatable?learning_title=" . urlencode($uniqueTitle));
         $resp->assertStatus(200);
         $this->assertEquals(1, $resp->json('recordsFiltered'));
-        $this->assertEquals($uniqueTitle, $resp->json('data.0.learning_title'));
+        $this->assertStringContainsString($uniqueTitle, $resp->json('data.0.learning_title'));
     }
 
     /**
@@ -536,7 +574,7 @@ class RecordAllCombinedTest extends TestCase
         $onlineResp->assertStatus(200);
         $onlineAction = $onlineResp->json('data.0.action');
         if (str_contains($onlineAction, 'View')) {
-            $this->assertStringContainsString('btn btn-sm btn-outline-primary', $onlineAction);
+            $this->assertStringContainsString('btn-view-online-detail', $onlineAction);
             $this->assertStringNotContainsString('btn-view-offline-detail', $onlineAction);
         }
     }
@@ -943,19 +981,19 @@ class RecordAllCombinedTest extends TestCase
 
         $data = collect($resp->json('data'));
 
-        $finRow = $data->firstWhere('employee_name', 'FD Finished Participant');
+        $finRow = $data->first(fn($r) => str_contains($r['employee_name'] ?? '', 'FD Finished Participant'));
         $this->assertNotNull($finRow);
         $this->assertEquals('Finished', $finRow['status']);
         $this->assertEquals('2026-08-15', $finRow['finish_date']);
         $this->assertEquals('15 Aug 2026', $finRow['finish_date_formatted']);
 
-        $ongRow = $data->firstWhere('employee_name', 'FD Ongoing Participant');
+        $ongRow = $data->first(fn($r) => str_contains($r['employee_name'] ?? '', 'FD Ongoing Participant'));
         $this->assertNotNull($ongRow);
         $this->assertEquals('Ongoing', $ongRow['status']);
         $this->assertNull($ongRow['finish_date'], 'Ongoing record must have NULL finish_date');
         $this->assertEquals('-', $ongRow['finish_date_formatted'], 'Ongoing record must display "-" for finish_date');
 
-        $notRow = $data->firstWhere('employee_name', 'FD Not Started Participant');
+        $notRow = $data->first(fn($r) => str_contains($r['employee_name'] ?? '', 'FD Not Started Participant'));
         $this->assertNotNull($notRow);
         $this->assertEquals('Not Started', $notRow['status']);
         $this->assertNull($notRow['finish_date'], 'Not Started record must have NULL finish_date');
@@ -1022,7 +1060,7 @@ class RecordAllCombinedTest extends TestCase
         $offResp = $this->actingAs($this->admin)->getJson('/manage/record/all/datatable?source=offline&learning_title=' . urlencode($uniqueCourse));
         $offResp->assertStatus(200);
 
-        $offRow = collect($offResp->json('data'))->firstWhere('employee_name', $uniqueParticipant);
+        $offRow = collect($offResp->json('data'))->first(fn($r) => str_contains($r['employee_name'] ?? '', $uniqueParticipant));
         $this->assertNotNull($offRow);
 
         // Verify Offline fields populated
@@ -1033,7 +1071,7 @@ class RecordAllCombinedTest extends TestCase
         $this->assertEquals('Alpha Team', $offRow['team']);
         $this->assertEquals('Maintenance', $offRow['department']);
         $this->assertEquals('TEST_COMBINED_CORP', $offRow['company']);
-        $this->assertEquals($uniqueCourse, $offRow['learning_title']);
+        $this->assertStringContainsString($uniqueCourse, $offRow['learning_title']);
         $this->assertEquals('Module Superset', $offRow['sub_course_name']);
         $this->assertEquals('In-House', $offRow['type']);
         $this->assertEquals('TEST_COMBINED_CAT', $offRow['category']);
@@ -1191,7 +1229,7 @@ class RecordAllCombinedTest extends TestCase
         // Filter 1: Date Range matching only training 2
         $respDate = $this->actingAs($this->admin)->getJson('/manage/record/all/classification/leadership/datatable?from_date=2026-06-01&to_date=2026-06-30&source=offline');
         $respDate->assertStatus(200);
-        $namesDate = collect($respDate->json('data'))->pluck('employee_name')->all();
+        $namesDate = collect($respDate->json('data'))->pluck('employee_name')->map(fn($n) => strip_tags($n))->all();
         $this->assertContains($uniqueB, $namesDate);
         $this->assertNotContains($uniqueA, $namesDate);
         $this->assertNotContains($uniqueC, $namesDate);
@@ -1199,7 +1237,7 @@ class RecordAllCombinedTest extends TestCase
         // Filter 2: Progress Range 100 matching only training 1
         $respProg = $this->actingAs($this->admin)->getJson('/manage/record/all/classification/leadership/datatable?progress_range=100&source=offline');
         $respProg->assertStatus(200);
-        $namesProg = collect($respProg->json('data'))->pluck('employee_name')->all();
+        $namesProg = collect($respProg->json('data'))->pluck('employee_name')->map(fn($n) => strip_tags($n))->all();
         $this->assertContains($uniqueA, $namesProg);
         $this->assertNotContains($uniqueB, $namesProg);
         $this->assertNotContains($uniqueC, $namesProg);
@@ -1207,21 +1245,21 @@ class RecordAllCombinedTest extends TestCase
         // Filter 3: Progress Range 26-50 matching training 2
         $respProg50 = $this->actingAs($this->admin)->getJson('/manage/record/all/classification/leadership/datatable?progress_range=26-50&source=offline');
         $respProg50->assertStatus(200);
-        $namesProg50 = collect($respProg50->json('data'))->pluck('employee_name')->all();
+        $namesProg50 = collect($respProg50->json('data'))->pluck('employee_name')->map(fn($n) => strip_tags($n))->all();
         $this->assertContains($uniqueB, $namesProg50);
         $this->assertNotContains($uniqueA, $namesProg50);
 
         // Filter 4: Learning Hours Range 1-2 matching training 1 (1.5 hrs)
         $respHours = $this->actingAs($this->admin)->getJson('/manage/record/all/classification/leadership/datatable?learning_hours_range=1-2&source=offline');
         $respHours->assertStatus(200);
-        $namesHours = collect($respHours->json('data'))->pluck('employee_name')->all();
+        $namesHours = collect($respHours->json('data'))->pluck('employee_name')->map(fn($n) => strip_tags($n))->all();
         $this->assertContains($uniqueA, $namesHours);
         $this->assertNotContains($uniqueB, $namesHours);
 
         // Filter 5: Department FILTER_TEST_DEPT_A matching training 1 and 3
         $respDept = $this->actingAs($this->admin)->getJson('/manage/record/all/classification/leadership/datatable?department=' . urlencode('FILTER_TEST_DEPT_A') . '&source=offline');
         $respDept->assertStatus(200);
-        $namesDept = collect($respDept->json('data'))->pluck('employee_name')->all();
+        $namesDept = collect($respDept->json('data'))->pluck('employee_name')->map(fn($n) => strip_tags($n))->all();
         $this->assertContains($uniqueA, $namesDept);
         $this->assertContains($uniqueC, $namesDept);
         $this->assertNotContains($uniqueB, $namesDept);
@@ -1229,7 +1267,7 @@ class RecordAllCombinedTest extends TestCase
         // Filter 6: Company FILTER_TEST_COMP_B matching training 2 and 3
         $respComp = $this->actingAs($this->admin)->getJson('/manage/record/all/classification/leadership/datatable?company=' . urlencode('FILTER_TEST_COMP_B') . '&source=offline');
         $respComp->assertStatus(200);
-        $namesComp = collect($respComp->json('data'))->pluck('employee_name')->all();
+        $namesComp = collect($respComp->json('data'))->pluck('employee_name')->map(fn($n) => strip_tags($n))->all();
         $this->assertContains($uniqueB, $namesComp);
         $this->assertContains($uniqueC, $namesComp);
         $this->assertNotContains($uniqueA, $namesComp);

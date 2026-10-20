@@ -474,7 +474,7 @@ class LearningRecordActualLearningHourTest extends TestCase
 
         $this->assertNotNull($row);
         $this->assertEquals('00:04:30', $row[5]); // Column 5 = Duration (hh:mm:ss)
-        $this->assertEquals(0.08, $row[6]); // Column 6 = Learning Hour (numeric)
+        $this->assertEquals('0.08 hrs', $row[6]); // Column 6 = Learning Hour (e.g. 8.00 hrs)
     }
 
     /**

@@ -31,6 +31,7 @@
         $durationSeconds % 60
     );
     $learningHourDisplay = str_replace([' hours', ' hour'], [' h', ' h'], $row['learning_hour'] ?? '');
+    $attendanceStatus = ($row['attendance'] ?? '') ?: (($progressValue >= 100) ? 'Present' : '-');
 @endphp
 
 <tr class="record-row"
@@ -56,6 +57,7 @@
     data-sort-learning-hour="{{ $row['learning_hour_bucket'] ?? 0 }}"
     data-sort-progress="{{ $row['progress'] }}"
     data-sort-finish="{{ $row['finish_date'] }}"
+    data-sort-attendance="{{ mb_strtolower($attendanceStatus) }}"
     data-sort-score="{{ $row['score'] ?? '' }}">
 
     <td class="text-muted record-row-index">{{ $index }}</td>
@@ -158,6 +160,10 @@
     <td class="text-muted small learning-record-datetime">
         <div class="learning-record-date-row text-nowrap"><strong>Start&nbsp;&nbsp;:</strong> {{ $startDateDisplay }}</div>
         <div class="learning-record-date-row text-nowrap"><strong>Finish :</strong> {{ $finishDateDisplay }}</div>
+    </td>
+
+    <td class="text-center learning-record-attendance">
+        <x-learning.record-attendance-cell :row="$row" />
     </td>
 
     <td><x-learning.record-score-cell :row="$row" /></td>

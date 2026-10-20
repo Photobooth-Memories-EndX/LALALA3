@@ -11,13 +11,75 @@ use Illuminate\Support\Collection;
 class LearningRecordLearningHourService
 {
     public function __construct(
-        private readonly ?CompletedPlaylistService $completedPlaylistService = null
+        private readonly ?CompletedPlaylistService $completedPlaylistService = null,
+        private readonly ?UserRecordOfflineService $offlineService = null
     ) {
     }
 
     private function completedPlaylistsService(): CompletedPlaylistService
     {
         return $this->completedPlaylistService ?? app(CompletedPlaylistService::class);
+    }
+
+    private function offlineService(): UserRecordOfflineService
+    {
+        return $this->offlineService ?? app(UserRecordOfflineService::class);
+    }
+
+    /**
+     * Canonical total actual completed learning hours for online record.
+     *
+     * @param int $userId
+     * @return float Rounded to 2 decimal places
+     */
+    public function getOnlineLearningHours(int $userId): float
+    {
+        return $this->getTotalLearningHours($userId);
+    }
+
+    /**
+     * Canonical total completed learning hours for offline record.
+     *
+     * @param int $userId
+     * @param string|null $userEmpId
+     * @return float Rounded to 2 decimal places
+     */
+    public function getOfflineLearningHours(int $userId, ?string $userEmpId = null): float
+    {
+        return $this->offlineService()->getTotalLearningHours($userId, $userEmpId);
+    }
+
+    /**
+     * Canonical total learning hours by active record mode.
+     *
+     * Mapping:
+     * - 'online' (default / empty / invalid) => Online only
+     * - 'offline'                            => Offline only
+     * - 'all'                                => Online + Offline
+     * - 'export'                             => Online + Offline
+     *
+     * @param string|null $mode
+     * @param int $userId
+     * @param string|null $userEmpId
+     * @return float Rounded to 2 decimal places
+     */
+    public function getTotalLearningHoursByMode(?string $mode, int $userId, ?string $userEmpId = null): float
+    {
+        $normalizedMode = match (strtolower(trim((string) $mode))) {
+            'offline' => 'offline',
+            'all'     => 'all',
+            'export'  => 'export',
+            default   => 'online',
+        };
+
+        return match ($normalizedMode) {
+            'offline' => $this->getOfflineLearningHours($userId, $userEmpId),
+            'all', 'export' => round(
+                $this->getOnlineLearningHours($userId) + $this->getOfflineLearningHours($userId, $userEmpId),
+                2
+            ),
+            default   => $this->getOnlineLearningHours($userId),
+        };
     }
 
     /**

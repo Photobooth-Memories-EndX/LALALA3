@@ -16,6 +16,24 @@ class LearningDatatableService
 {
     public const PLAYLIST_CUTOFF = LearningManageController::PLAYLIST_CUTOFF;
 
+    protected static ?bool $hasPcuStatus = null;
+
+    /**
+     * Check if playlist_content_users table has status column (cached per process).
+     */
+    public static function hasPcuStatusColumn(): bool
+    {
+        if (self::$hasPcuStatus === null) {
+            try {
+                self::$hasPcuStatus = \Illuminate\Support\Facades\Schema::hasColumn('playlist_content_users', 'status');
+            } catch (\Throwable $e) {
+                self::$hasPcuStatus = false;
+            }
+        }
+
+        return self::$hasPcuStatus;
+    }
+
     /**
      * Build unified query builder for learning data (ContentUser + PlaylistContentUser).
      */
@@ -35,7 +53,13 @@ class LearningDatatableService
                 'cu.finish',
                 'cu.progress',
                 'cu.created_at',
+                'cu.updated_at',
+                'cu.completed_at',
+                'cu.learning_hours',
             ]);
+
+        $hasPcuStatus = self::hasPcuStatusColumn();
+        $pcuStatusSelect = $hasPcuStatus ? 'pcu.status' : DB::raw("'optional' as status");
 
         $pcuSelect = DB::table('playlist_content_users as pcu')
             ->select([
@@ -45,10 +69,13 @@ class LearningDatatableService
                 'pcu.user_id',
                 'pcu.content_id',
                 'pcu.trainingplan_id',
-                DB::raw("'Playlist' as status"),
+                $pcuStatusSelect,
                 'pcu.finish',
                 'pcu.progress',
                 'pcu.created_at',
+                'pcu.updated_at',
+                'pcu.completed_at',
+                'pcu.learning_hour as learning_hours',
             ]);
 
         // 1. Status Filter Pushdown
@@ -70,7 +97,11 @@ class LearningDatatableService
                 });
             } elseif (in_array($statusStr, ['mandatory', 'optional'], true)) {
                 $cuSelect->where('cu.status', $statusStr);
-                $pcuSelect->whereRaw('1 = 0');
+                if ($hasPcuStatus) {
+                    $pcuSelect->where('pcu.status', $statusStr);
+                } else {
+                    $pcuSelect->whereRaw('1 = 0');
+                }
             } elseif ($statusStr === 'playlist') {
                 $cuSelect->whereRaw('1 = 0');
             }
@@ -82,17 +113,27 @@ class LearningDatatableService
             $programTypeStr = strtolower(trim((string) $programType));
             if (in_array($programTypeStr, ['mandatory', 'optional'], true)) {
                 $cuSelect->where('cu.status', $programTypeStr);
-                $pcuSelect->whereRaw('1 = 0');
+                if ($hasPcuStatus) {
+                    $pcuSelect->where('pcu.status', $programTypeStr);
+                } else {
+                    $pcuSelect->whereRaw('1 = 0');
+                }
             } elseif ($programTypeStr === 'playlist') {
                 $cuSelect->whereRaw('1 = 0');
             }
         }
 
         // 3. Year Filter Pushdown
-        $year = $filters['year'] ?? null;
-        if (filled($year) && $year !== 'all') {
-            $cuSelect->whereYear('cu.created_at', $year);
-            $pcuSelect->whereYear('pcu.created_at', $year);
+        $year = $filters['year'] ?? ($filters['years'] ?? null);
+        if (is_array($year) && !empty($year)) {
+            $yearInts = array_map('intval', array_filter($year, 'is_numeric'));
+            if (!empty($yearInts)) {
+                $cuSelect->whereIn(DB::raw('YEAR(cu.created_at)'), $yearInts);
+                $pcuSelect->whereIn(DB::raw('YEAR(pcu.created_at)'), $yearInts);
+            }
+        } elseif (filled($year) && $year !== 'all') {
+            $cuSelect->whereYear('cu.created_at', (int) $year);
+            $pcuSelect->whereYear('pcu.created_at', (int) $year);
         }
 
         // 4. Date Range Filter Pushdown
@@ -158,13 +199,19 @@ class LearningDatatableService
         }
 
         // 6. Classification Filter Pushdown (via indexed content_id)
-        $classSlug = $filters['classification_slug'] ?? ($type === 'category' ? $slug : null);
-        if (filled($classSlug)) {
-            $classContentIds = DB::table('content')
-                ->join('classification', 'classification.id', '=', 'content.classification_id')
-                ->where('classification.slug', $classSlug)
-                ->pluck('content.id')
-                ->toArray();
+        $classParam = $filters['classification_slug'] ?? ($filters['classification'] ?? ($filters['classification_id'] ?? ($type === 'category' ? $slug : null)));
+        if (filled($classParam) && $classParam !== 'all') {
+            $classContentQuery = DB::table('content')
+                ->join('classification', 'classification.id', '=', 'content.classification_id');
+            if (is_numeric($classParam)) {
+                $classContentQuery->where('classification.id', (int) $classParam);
+            } else {
+                $classContentQuery->where(function ($q) use ($classParam) {
+                    $q->where('classification.slug', $classParam)
+                      ->orWhere('classification.classification_name', $classParam);
+                });
+            }
+            $classContentIds = $classContentQuery->pluck('content.id')->toArray();
             $cuSelect->whereIn('cu.content_id', !empty($classContentIds) ? $classContentIds : [-1]);
             $pcuSelect->whereIn('pcu.content_id', !empty($classContentIds) ? $classContentIds : [-1]);
         }
@@ -197,23 +244,88 @@ class LearningDatatableService
             $pcuSelect->where('pcu.content_id', $contentId ?: -1);
         }
 
+        // 7b. Playlist Filter Pushdown (via indexed trainingplan_id)
+        $playlistParam = $filters['playlist_id'] ?? ($filters['trainingplan_id'] ?? ($type === 'playlist' ? $slug : null));
+        if (filled($playlistParam)) {
+            $playlistId = is_numeric($playlistParam)
+                ? (int) $playlistParam
+                : (int) DB::table('trainingplan')->where('slug', $playlistParam)->value('id');
+
+            // Standalone content_users records never belong to a playlist
+            $cuSelect->whereRaw('1 = 0');
+            $pcuSelect->where('pcu.trainingplan_id', $playlistId ?: -1);
+        }
+
         // 8. Employee ID / NIP / Name Filter Pushdown (via indexed user_id)
-        $employeeParam = $filters['employee_id'] ?? ($filters['user_id'] ?? ($filters['employee'] ?? null));
-        if (filled($employeeParam) && $employeeParam !== 'all') {
-            $userQuery = DB::table('users')
-                ->where('id_emp', 'like', '%' . $employeeParam . '%')
-                ->orWhere('name', 'like', '%' . $employeeParam . '%');
-            if (is_numeric($employeeParam)) {
-                $userQuery->orWhere('id', (int) $employeeParam);
+        if (isset($filters['user_id']) && is_numeric($filters['user_id'])) {
+            $exactUserId = (int) $filters['user_id'];
+            $cuSelect->where('cu.user_id', $exactUserId);
+            $pcuSelect->where('pcu.user_id', $exactUserId);
+        } else {
+            $employeeParam = $filters['employee_id'] ?? ($filters['employee'] ?? ($filters['employees'] ?? null));
+            if (is_array($employeeParam) && !empty($employeeParam)) {
+                $userIds = DB::table('users')
+                    ->where(function ($q) use ($employeeParam) {
+                        $q->whereIn('id_emp', $employeeParam)
+                          ->orWhereIn('name', $employeeParam);
+                    })
+                    ->pluck('id')
+                    ->toArray();
+                $cuSelect->whereIn('cu.user_id', !empty($userIds) ? $userIds : [-1]);
+                $pcuSelect->whereIn('pcu.user_id', !empty($userIds) ? $userIds : [-1]);
+            } elseif (filled($employeeParam) && $employeeParam !== 'all') {
+                if (is_numeric($employeeParam)) {
+                    // Check if numeric ID matches user ID directly or exact id_emp
+                    $exactUserIds = DB::table('users')
+                        ->where('id', (int) $employeeParam)
+                        ->orWhere('id_emp', (string) $employeeParam)
+                        ->pluck('id')
+                        ->toArray();
+                    $cuSelect->whereIn('cu.user_id', !empty($exactUserIds) ? $exactUserIds : [-1]);
+                    $pcuSelect->whereIn('pcu.user_id', !empty($exactUserIds) ? $exactUserIds : [-1]);
+                } else {
+                    $userIds = DB::table('users')
+                        ->where(function ($q) use ($employeeParam) {
+                            $q->where('id_emp', 'like', '%' . $employeeParam . '%')
+                              ->orWhere('name', 'like', '%' . $employeeParam . '%');
+                        })
+                        ->pluck('id')
+                        ->toArray();
+                    $cuSelect->whereIn('cu.user_id', !empty($userIds) ? $userIds : [-1]);
+                    $pcuSelect->whereIn('pcu.user_id', !empty($userIds) ? $userIds : [-1]);
+                }
             }
-            $userIds = $userQuery->pluck('id')->toArray();
-            $cuSelect->whereIn('cu.user_id', !empty($userIds) ? $userIds : [-1]);
-            $pcuSelect->whereIn('pcu.user_id', !empty($userIds) ? $userIds : [-1]);
         }
 
         // 9. Learning Title Filter Pushdown (via indexed content_id and trainingplan_id)
         $learningTitleParam = $filters['learning_title'] ?? ($filters['title'] ?? ($filters['content_title'] ?? null));
-        if (filled($learningTitleParam)) {
+        if (is_array($learningTitleParam)) {
+            $learningTitles = array_values(array_filter(array_map('trim', $learningTitleParam), fn($t) => $t !== '' && strtolower($t) !== 'all'));
+            if (!empty($learningTitles)) {
+                $contentIds = DB::table('content')->whereIn('title', $learningTitles)->pluck('id')->toArray();
+                $tpIds = DB::table('trainingplan')->whereIn('title', $learningTitles)->pluck('id')->toArray();
+
+                $cuSelect->whereIn('cu.content_id', !empty($contentIds) ? $contentIds : [-1]);
+                $pcuSelect->where(function ($q) use ($contentIds, $tpIds) {
+                    $matched = false;
+                    if (!empty($contentIds)) {
+                        $q->whereIn('pcu.content_id', $contentIds);
+                        $matched = true;
+                    }
+                    if (!empty($tpIds)) {
+                        if ($matched) {
+                            $q->orWhereIn('pcu.trainingplan_id', $tpIds);
+                        } else {
+                            $q->whereIn('pcu.trainingplan_id', $tpIds);
+                            $matched = true;
+                        }
+                    }
+                    if (!$matched) {
+                        $q->whereRaw('1 = 0');
+                    }
+                });
+            }
+        } elseif (filled($learningTitleParam) && strtolower(trim((string) $learningTitleParam)) !== 'all') {
             $contentIds = DB::table('content')->where('title', 'like', '%' . $learningTitleParam . '%')->pluck('id')->toArray();
             $tpIds = DB::table('trainingplan')->where('title', 'like', '%' . $learningTitleParam . '%')->pluck('id')->toArray();
 
@@ -312,6 +424,12 @@ class LearningDatatableService
                     $q->orWhereIn('pcu.trainingplan_id', $searchTpIds);
                     $matched = true;
                 }
+                if (!empty($statusMatches)) {
+                    if ($hasPcuStatus) {
+                        $q->orWhereIn('pcu.status', $statusMatches);
+                    }
+                    $matched = true;
+                }
                 if (in_array('playlist', $statusMatches) || $matchCatPlaylist) {
                     $q->orWhereRaw('1 = 1');
                     $matched = true;
@@ -325,7 +443,7 @@ class LearningDatatableService
         // Union Assembly
         if ($categoryParam === 'all_content') {
             $union = $cuSelect;
-        } elseif ($categoryParam === 'playlist') {
+        } elseif ($categoryParam === 'playlist' || filled($playlistParam)) {
             $union = $pcuSelect;
         } else {
             $union = $cuSelect->unionAll($pcuSelect);
@@ -348,12 +466,16 @@ class LearningDatatableService
                 'unified.finish',
                 'unified.progress',
                 'unified.created_at',
+                'unified.updated_at',
+                'unified.completed_at',
+                'unified.learning_hours',
                 'u.id_emp',
                 'u.id_emp as user_id_emp',
                 'u.name as employee_name',
                 'u.name as user_name',
                 'u.department as user_department',
                 'u.team as user_team',
+                'u.company_name as user_company',
                 'u.ssohash as user_ssohash',
                 'c.title as content_title',
                 'c.slug as content_slug',
@@ -398,6 +520,35 @@ class LearningDatatableService
                     $query->whereRaw($durationInSeconds . ($excludeMaximum ? ' < ?' : ' <= ?'), [$maximum]);
                 }
             }
+        }
+
+        // 11b. Department, Company, Division & Team Filters
+        $department = $filters['department'] ?? ($filters['departments'] ?? 'all');
+        if (is_array($department) && !empty($department)) {
+            $query->whereIn('u.department', $department);
+        } elseif (is_string($department) && filled($department) && $department !== 'all') {
+            $query->where('u.department', trim($department));
+        }
+
+        $company = $filters['company'] ?? ($filters['companies'] ?? 'all');
+        if (is_array($company) && !empty($company)) {
+            $query->whereIn('u.company_name', $company);
+        } elseif (is_string($company) && filled($company) && $company !== 'all') {
+            $query->where('u.company_name', trim($company));
+        }
+
+        $division = $filters['division'] ?? ($filters['divisions'] ?? 'all');
+        if (is_array($division) && !empty($division)) {
+            $query->whereIn('u.division', $division);
+        } elseif (is_string($division) && filled($division) && $division !== 'all') {
+            $query->where('u.division', trim($division));
+        }
+
+        $team = $filters['team'] ?? ($filters['teams'] ?? 'all');
+        if (is_array($team) && !empty($team)) {
+            $query->whereIn('u.team', $team);
+        } elseif (is_string($team) && filled($team) && $team !== 'all') {
+            $query->where('u.team', 'like', '%' . trim($team) . '%');
         }
 
         // 12. Sorting
@@ -544,7 +695,20 @@ class LearningDatatableService
     private function categoryBadge($row): string
     {
         if ($row->category_source === 'Playlist') {
-            return '<span class="badge bg-green-lt text-green">Playlist</span>';
+            if (!empty($row->playlist_title) && !empty($row->trainingplan_id)) {
+                $url = route('learning.manage.playlist', ['id' => $row->trainingplan_id]);
+
+                return '<div class="playlist-category text-start">'
+                    . '<span class="fw-semibold playlist-category-label">Playlist:</span> '
+                    . '<a href="' . e($url) . '" class="text-primary fw-semibold playlist-cell-link" title="' . e($row->playlist_title) . '">'
+                    . e($row->playlist_title)
+                    . '</a>'
+                    . '</div>';
+            }
+
+            return '<div class="playlist-category text-start">'
+                . '<span class="fw-semibold playlist-category-label">Playlist</span>'
+                . '</div>';
         }
 
         return '<span class="badge bg-azure-lt text-azure">All Content</span>';
@@ -578,15 +742,7 @@ class LearningDatatableService
             ? '<a href="' . route('learning.manage.content', $row->content_slug) . '" class="text-reset fw-semibold">' . e($row->content_title) . '</a>'
             : '<span class="fw-semibold">' . e($row->content_title) . '</span>';
 
-        $playlistSubtext = '';
-        if ($row->category_source === 'Playlist' && !empty($row->playlist_title)) {
-            $playlistSubtext = '<div class="text-muted small mt-1" style="font-size: 0.78rem;"><i class="ti ti-list-details me-1"></i>Playlist: ' . e($row->playlist_title) . '</div>';
-        }
-
-        return '<div class="text-start">'
-            . $titleLink
-            . $playlistSubtext
-            . '</div>';
+        return '<div class="text-start">' . $titleLink . '</div>';
     }
 
     private function classificationColumn($row): string

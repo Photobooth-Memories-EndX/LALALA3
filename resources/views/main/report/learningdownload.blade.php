@@ -27,17 +27,19 @@
                 <td>{{ $list->user_team ?? ($list->user->team ?? '-') }}</td>
                 <td>
                     {{ $list->content_title ?? ($list->content->title ?? '-') }}
-                    @if (!empty($list->playlist_title))
-                        (Playlist: {{ $list->playlist_title }})
-                    @endif
                 </td>
                 @php
                     $rawType = (string) ($list->content_type ?? ($list->content->type ?? ''));
                     $mappedType = in_array(strtolower($rawType), ['video', 'youtube', 'mooc'], true) ? 'Video' : 'Document';
+
+                    $category = $list->category_source ?? 'All Content';
+                    if ($category === 'Playlist' && !empty($list->playlist_title)) {
+                        $category = 'Playlist: ' . $list->playlist_title;
+                    }
                 @endphp
                 <td>{{ $mappedType }}</td>
                 <td>{{ $list->classification_name ?? ($list->content->classification->classification_name ?? '-') }}</td>
-                <td>{{ $list->category_source ?? 'All Content' }}</td>
+                <td>{{ $category }}</td>
                 <td>{{ \App\Support\DurationFormatter::format($list->content_duration ?? ($list->content->duration ?? null)) }}</td>
                 <td>{{ $list->created_at }}</td>
                 <td>{{ $list->progress ?? 0 }}%</td>

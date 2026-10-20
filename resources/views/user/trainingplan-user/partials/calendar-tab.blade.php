@@ -1,7 +1,44 @@
 @php
     $trainings = $trainings ?? \App\Models\OfflineTraining::withCount('participants')->orderBy('start_date', 'asc')->get();
-    $firstDate = $trainings->first() ? \Carbon\Carbon::parse($trainings->first()->start_date) : \Carbon\Carbon::now();
+    $activeDateStr = $selectedDate ?? request('selected_date', \Carbon\Carbon::today()->format('Y-m-d'));
+    $activeCarbonDate = request()->filled('selected_date') ? \Carbon\Carbon::parse(request('selected_date')) : \Carbon\Carbon::today();
+    $todaysAgenda = $todaysAgenda ?? $trainings->filter(function($t) use ($activeDateStr) {
+        $sDate = \Carbon\Carbon::parse($t->start_date)->format('Y-m-d');
+        $eDate = \Carbon\Carbon::parse($t->end_date ?? $t->start_date)->format('Y-m-d');
+        return $activeDateStr >= $sDate && $activeDateStr <= $eDate;
+    })->values();
 @endphp
+<style>
+    .cal-day-cell.is-today {
+        background-color: #e0f2fe !important;
+        border: 2px solid #0284c7 !important;
+        position: relative;
+        z-index: 1;
+    }
+    .cal-day-cell.is-today:hover {
+        background-color: #bae6fd !important;
+    }
+    .bg-success-light {
+        background-color: #ecfdf5 !important;
+    }
+    .bg-secondary-light {
+        background-color: #f1f5f9 !important;
+    }
+    .bg-warning-light {
+        background-color: #fef3c7 !important;
+        color: #b45309 !important;
+    }
+    .bg-dark-light {
+        background-color: #475569 !important;
+        color: #ffffff !important;
+    }
+    .cal-status-badge-ended {
+        background-color: #475569 !important;
+        color: #ffffff !important;
+        border-color: #334155 !important;
+    }
+</style>
+
 {{-- Tab Calendar & Agenda (Dynamic Interactive JS Calendar) --}}
 <div class="row g-4">
     {{-- Left Column: Monthly Calendar Grid (col-lg-8) --}}
@@ -11,7 +48,7 @@
                 {{-- Calendar Header Bar --}}
                 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
                     <div class="d-flex align-items-center gap-2">
-                        <h3 class="fw-bold mb-0 text-dark" id="calendarMonthYear">{{ $firstDate->format('F Y') }}</h3>
+                        <h3 class="fw-bold mb-0 text-dark" id="calendarMonthYear">{{ $activeCarbonDate->format('F Y') }}</h3>
                         <div class="btn-group btn-group-sm ms-2" role="group">
                             <button type="button" class="btn btn-outline-secondary px-2 py-1" id="calPrevBtn" title="Previous Month">
                                 <i class="ti ti-chevron-left"></i>
@@ -20,11 +57,6 @@
                                 <i class="ti ti-chevron-right"></i>
                             </button>
                         </div>
-                    </div>
-                    <div>
-                        <button type="button" class="btn btn-sm btn-outline-primary fw-semibold px-3 py-1-5 rounded-pill" id="calTodayBtn">
-                            <i class="ti ti-calendar-event me-1"></i> Today
-                        </button>
                     </div>
                 </div>
 
@@ -44,8 +76,8 @@
                         </thead>
                         <tbody id="calGridBody">
                             @php
-                                $year = (int)$firstDate->format('Y');
-                                $month = (int)$firstDate->format('n');
+                                $year = (int)$activeCarbonDate->format('Y');
+                                $month = (int)$activeCarbonDate->format('n');
                                 $today = \Carbon\Carbon::today()->format('Y-m-d');
 
                                 $firstDayOfMonth = \Carbon\Carbon::createFromDate($year, $month, 1);
@@ -80,46 +112,69 @@
                                                     $eDate = \Carbon\Carbon::parse($t->end_date ?? $t->start_date)->format('Y-m-d');
                                                     return $cellDateFormatted >= $sDate && $cellDateFormatted <= $eDate;
                                                 });
+
+                                                $countsByStatus = ['open' => 0, 'closed' => 0, 'running' => 0, 'ended' => 0];
+                                                foreach ($activeTrainingsForDay as $t) {
+                                                    // $cellDate represents the specific day square rendered on the calendar grid
+                                                    // $today represents the current real-world date (e.g., Oct 13, 2026)
+                                                    $cellStatus = \App\Http\Controllers\OfflineTrainingController::evaluateCalendarCellStatus($t, $cellDateFormatted, $today);
+                                                    $countsByStatus[strtolower($cellStatus)]++;
+                                                }
                                             @endphp
-                                            <td class="p-1 cal-day-cell">
+                                            <td class="p-1 cal-day-cell {{ $isToday ? 'is-today' : '' }}" role="button" data-cal-date="{{ $cellDateFormatted }}" data-year="{{ $year }}" data-month="{{ $month - 1 }}" data-day="{{ $day }}">
                                                 <div class="cal-day-num text-end pe-1">
                                                     @if ($isToday)
-                                                        <span class="cal-today-badge">{{ $day }}</span>
+                                                         <span class="cal-today-badge">{{ $day }}</span>
                                                     @else
-                                                        <span class="{{ $isWeekend ? 'text-danger' : '' }}">{{ $day }}</span>
+                                                         <span class="{{ $isWeekend ? 'text-danger' : '' }}">{{ $day }}</span>
                                                     @endif
                                                 </div>
                                                 @if ($activeTrainingsForDay->count() > 0)
                                                     <div class="mt-1 d-flex flex-column gap-1">
-                                                        @if ($cellDateFormatted < $today)
-                                                            <span class="badge bg-secondary-subtle text-secondary rounded-pill extra-small py-1 px-2 opacity-75 cal-status-badge cal-status-badge-closed"
-                                                                  role="button"
-                                                                  data-year="{{ $year }}"
-                                                                  data-month="{{ $month - 1 }}"
-                                                                  data-day="{{ $day }}"
-                                                                  data-status="closed"
-                                                                  title="{{ $activeTrainingsForDay->count() }} Closed Training(s)">
-                                                                Done: {{ $activeTrainingsForDay->count() }}
-                                                            </span>
-                                                        @elseif ($cellDateFormatted == $today)
-                                                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill extra-small py-1 px-2 fw-semibold cal-status-badge cal-status-badge-running"
-                                                                  role="button"
-                                                                  data-year="{{ $year }}"
-                                                                  data-month="{{ $month - 1 }}"
-                                                                  data-day="{{ $day }}"
-                                                                  data-status="running"
-                                                                  title="{{ $activeTrainingsForDay->count() }} Running Training(s)">
-                                                                Running: {{ $activeTrainingsForDay->count() }}
-                                                            </span>
-                                                        @else
-                                                            <span class="badge bg-success-subtle text-success rounded-pill extra-small py-1 px-2 fw-semibold cal-status-badge cal-status-badge-open"
+                                                        @if ($countsByStatus['open'] > 0)
+                                                            <span class="badge bg-success-light bg-success-subtle text-success border border-success-subtle rounded-pill extra-small py-1 px-2 fw-semibold cal-status-badge cal-status-badge-open"
                                                                   role="button"
                                                                   data-year="{{ $year }}"
                                                                   data-month="{{ $month - 1 }}"
                                                                   data-day="{{ $day }}"
                                                                   data-status="open"
-                                                                  title="{{ $activeTrainingsForDay->count() }} Open Training(s)">
-                                                                Open: {{ $activeTrainingsForDay->count() }}
+                                                                  title="{{ $countsByStatus['open'] }} Open Training(s)">
+                                                                Open: {{ $countsByStatus['open'] }}
+                                                            </span>
+                                                        @endif
+                                                        @if ($countsByStatus['closed'] > 0)
+                                                            <span class="badge bg-secondary-light bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill extra-small py-1 px-2 fw-semibold cal-status-badge cal-status-badge-closed"
+                                                                  style="background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;"
+                                                                  role="button"
+                                                                  data-year="{{ $year }}"
+                                                                  data-month="{{ $month - 1 }}"
+                                                                  data-day="{{ $day }}"
+                                                                  data-status="closed"
+                                                                  title="{{ $countsByStatus['closed'] }} Closed Training(s)">
+                                                                Closed: {{ $countsByStatus['closed'] }}
+                                                            </span>
+                                                        @endif
+                                                        @if ($countsByStatus['running'] > 0)
+                                                            <span class="badge bg-warning-light text-warning border border-warning-subtle rounded-pill extra-small py-1 px-2 fw-semibold cal-status-badge cal-status-badge-running"
+                                                                  role="button"
+                                                                  data-year="{{ $year }}"
+                                                                  data-month="{{ $month - 1 }}"
+                                                                  data-day="{{ $day }}"
+                                                                  data-status="running"
+                                                                  title="{{ $countsByStatus['running'] }} Running Training(s)">
+                                                                Running: {{ $countsByStatus['running'] }}
+                                                            </span>
+                                                        @endif
+                                                        @if ($countsByStatus['ended'] > 0)
+                                                            <span class="badge bg-dark-light text-dark rounded-pill extra-small py-1 px-2 fw-semibold cal-status-badge cal-status-badge-ended"
+                                                                  style="background-color: #475569; color: #ffffff; border: 1px solid #334155;"
+                                                                  role="button"
+                                                                  data-year="{{ $year }}"
+                                                                  data-month="{{ $month - 1 }}"
+                                                                  data-day="{{ $day }}"
+                                                                  data-status="ended"
+                                                                  title="{{ $countsByStatus['ended'] }} Ended Training(s)">
+                                                                Ended: {{ $countsByStatus['ended'] }}
                                                             </span>
                                                         @endif
                                                     </div>
@@ -145,15 +200,19 @@
                 {{-- Legend --}}
                 <div class="d-flex flex-wrap align-items-center gap-3 mt-3 pt-2 text-muted small">
                     <span class="d-inline-flex align-items-center gap-2">
-                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0-5 rounded-pill fw-semibold">Open: X</span>
+                        <span class="badge bg-success-light text-success border border-success-subtle px-2 py-0-5 rounded-pill fw-semibold">Open</span>
                         <span>Open Registration</span>
                     </span>
                     <span class="d-inline-flex align-items-center gap-2">
-                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-0-5 rounded-pill fw-semibold">Running: Y</span>
-                        <span>Running / Today</span>
+                        <span class="badge bg-secondary-light text-secondary border border-secondary-subtle px-2 py-0-5 rounded-pill fw-semibold">Closed</span>
+                        <span>Registration Closed</span>
                     </span>
                     <span class="d-inline-flex align-items-center gap-2">
-                        <span class="badge bg-secondary-subtle text-secondary px-2 py-0-5 rounded-pill opacity-75">Done: Z</span>
+                        <span class="badge bg-warning-light text-warning border border-warning-subtle px-2 py-0-5 rounded-pill fw-semibold">Running</span>
+                        <span>Running / Today's Session</span>
+                    </span>
+                    <span class="d-inline-flex align-items-center gap-2">
+                        <span class="badge bg-dark-light text-dark rounded-pill px-2 py-0-5 fw-semibold cal-status-badge-ended" style="background-color: #475569; color: #ffffff; border: 1px solid #334155;">Ended</span>
                         <span>Past Training Session</span>
                     </span>
                 </div>
@@ -162,75 +221,5 @@
     </div>
 
     {{-- Right Column: Today's Agenda Panel (col-lg-4) --}}
-    <div class="col-lg-4">
-        <div class="card border border-light-subtle shadow-sm rounded-4 h-100 bg-white">
-            <div class="card-body p-4 d-flex flex-column">
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                    <div class="d-flex align-items-center gap-2">
-                        <div class="avatar avatar-sm rounded-3 d-flex align-items-center justify-content-center"
-                             style="background-color: #eef2ff; color: #003b6d;">
-                            <i class="ti ti-calendar-time fs-2"></i>
-                        </div>
-                        <h4 class="fw-bold mb-0 text-dark">Today's Agenda</h4>
-                    </div>
-                    <span class="badge bg-primary text-white rounded-pill px-2 py-1 fw-semibold small">
-                        Active Date
-                    </span>
-                </div>
-                
-                <div class="text-primary fw-semibold small mb-3" id="todayAgendaDateLabel">
-                    <i class="ti ti-clock me-1"></i> {{ $firstDate->format('l, d F Y') }}
-                </div>
-
-                {{-- Timeline / Agenda List --}}
-                <div class="timeline-schedule flex-grow-1" id="agendaTimelineList">
-                    @forelse ($trainings as $item)
-                        @php
-                            $startDate = \Carbon\Carbon::parse($item->start_date);
-                            $startTime = substr($item->start_time, 0, 5);
-                            $endTime = substr($item->end_time, 0, 5);
-                        @endphp
-                        <div class="timeline-schedule-item mb-3 p-3 rounded-3 border border-light-subtle bg-light-subtle position-relative"
-                             role="button"
-                             data-id="{{ $item->id }}"
-                             data-title="{{ $item->title }}"
-                             data-category="{{ $item->category }}"
-                             data-date="{{ $startDate->format('d F Y') }}, {{ $startTime }} - {{ $endTime }} WIB"
-                             data-location="{{ $item->location }}"
-                             data-instructor="{{ $item->instructor }}"
-                             data-description="{{ $item->description ?? '' }}">
-                            <div class="d-flex align-items-center justify-content-between mb-1">
-                                <span class="badge bg-primary text-white rounded-pill px-2 py-0-5 small fw-semibold">{{ $startTime }} - {{ $endTime }} WIB</span>
-                                <span class="badge bg-primary-lt text-primary small">{{ $item->category }}</span>
-                            </div>
-                            <h5 class="fw-bold text-dark mb-1">{{ $item->title }}</h5>
-                            <div class="text-muted small d-flex align-items-center gap-1 mb-1">
-                                <i class="ti ti-map-pin text-primary"></i>
-                                <span>{{ $item->location }}</span>
-                            </div>
-                            <div class="text-muted small d-flex align-items-center gap-1">
-                                <i class="ti ti-user-check text-primary"></i>
-                                <span>{{ $item->instructor }}</span>
-                            </div>
-                        </div>
-                    @empty
-                        <div class="text-center py-5 text-muted">
-                            <div class="avatar avatar-lg rounded-circle bg-light text-muted mb-2 mx-auto">
-                                <i class="ti ti-calendar-off fs-1"></i>
-                            </div>
-                            <h5 class="fw-bold text-dark mb-1">No Scheduled Agenda</h5>
-                            <p class="small text-muted mb-0">No training schedules found. Click '+ Add Training Schedule' in Manage page to publish new trainings.</p>
-                        </div>
-                    @endforelse
-                </div>
-
-                <div class="mt-auto pt-2 border-top border-light-subtle">
-                    <button type="button" class="btn btn-outline-primary w-100 rounded-3 py-2 fw-semibold d-inline-flex align-items-center justify-content-center gap-2 btn-switch-to-available">
-                        <span>Explore All Available Training</span>
-                        <i class="ti ti-arrow-right"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
+    @include('user.trainingplan-user.partials.todays-agenda')
 </div>

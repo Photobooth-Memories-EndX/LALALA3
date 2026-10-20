@@ -11,7 +11,10 @@
                         <h3 class="card-title mb-1">MOOC</h3>
                         <div class="text-muted small">Massive Open Online Courses</div>
                     </div>
-                    <x-learning.ongoing-mode-switch mode="mooc" />
+                    <div class="ongoing-mooc-actions">
+                        <x-learning.ongoing-mode-switch mode="mooc" />
+                        <x-learning.ongoing-export mode="mooc" />
+                    </div>
                 </div>
             </div>
         </div>

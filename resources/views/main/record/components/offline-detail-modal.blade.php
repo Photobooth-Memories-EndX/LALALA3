@@ -130,11 +130,11 @@
                             </div>
                         </div>
 
-                        <!-- Section 4: Schedule & Duration -->
+                        <!-- Section 4: Schedule Duration & Program Evaluation -->
                         <div class="col-md-6">
                             <div class="card border-0 bg-light p-3 rounded-3 h-100">
                                 <div class="fw-bold small text-dark mb-2 text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.05em;">
-                                    <i class="ti ti-calendar-time me-1 text-primary"></i> 4. Schedule & Duration
+                                    <i class="ti ti-calendar-time me-1 text-primary"></i> 4. Schedule Duration & Program Evaluation
                                 </div>
                                 <div class="row g-2 small">
                                     <div class="col-6">

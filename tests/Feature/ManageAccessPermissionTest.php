@@ -255,7 +255,7 @@ class ManageAccessPermissionTest extends TestCase
 
         $response->assertOk();
 
-        // Assert exact sequence: User (Role 1) -> Sub Admin (Role 4) -> Administrator (Role 2) -> Super Admin (Role 3)
+        // Assert exact sequence: User (Role 1) -> Sub Admin (Role 4) -> Administrator (Role 2) -> Super Admin (Role 3) -> Approver (Role 5)
         $response->assertSeeInOrder([
             'User',
             'Learning User',
@@ -269,6 +269,9 @@ class ManageAccessPermissionTest extends TestCase
             'Super Admin',
             'Full Access',
             route('manage.access-permission.edit', User::ROLE_SUPER_ADMIN),
+            'Approver',
+            'Training Approval',
+            route('manage.access-permission.edit', User::ROLE_APPROVER),
         ]);
     }
 
@@ -376,6 +379,7 @@ class ManageAccessPermissionTest extends TestCase
         $admin = $this->createTestUser(User::ROLE_ADMIN);
         $user = $this->createTestUser(User::ROLE_USER);
         $subadmin = $this->createTestUser(User::ROLE_SUBADMIN_DIVISION);
+        $approver = $this->createTestUser(User::ROLE_APPROVER);
 
         // Guest redirect
         $this->get(route('manage.access-permission.index'))
@@ -395,6 +399,11 @@ class ManageAccessPermissionTest extends TestCase
         $this->actingAs($subadmin)->get(route('manage.access-permission.index'))->assertForbidden();
         $this->actingAs($subadmin)->get(route('manage.access-permission.edit', User::ROLE_SUBADMIN_DIVISION))->assertForbidden();
         $this->actingAs($subadmin)->put(route('manage.access-permission.update', User::ROLE_SUBADMIN_DIVISION), [])->assertForbidden();
+
+        // Approver (5) forbidden
+        $this->actingAs($approver)->get(route('manage.access-permission.index'))->assertForbidden();
+        $this->actingAs($approver)->get(route('manage.access-permission.edit', User::ROLE_APPROVER))->assertForbidden();
+        $this->actingAs($approver)->put(route('manage.access-permission.update', User::ROLE_APPROVER), [])->assertForbidden();
     }
 
     public function test_saving_super_admin_permissions_does_not_affect_other_roles(): void
@@ -420,5 +429,64 @@ class ManageAccessPermissionTest extends TestCase
 
         $this->assertTrue((bool) $adminPermission->can_access);
         $this->assertFalse((bool) $superAdminPermission->can_access);
+    }
+
+    public function test_super_admin_can_access_edit_for_approver_role(): void
+    {
+        $response = $this->actingAs($this->superAdmin)
+            ->get(route('manage.access-permission.edit', User::ROLE_APPROVER));
+
+        $response->assertOk();
+        $response->assertSee('Edit Access Permission');
+        $response->assertSee('Role 5');
+        $response->assertSee('Approver');
+        $response->assertSee('Configure Manage LMS modules for the <strong>Approver</strong> role.', false);
+        $response->assertSee('Save Permissions');
+    }
+
+    public function test_super_admin_can_update_approver_role_permissions(): void
+    {
+        $response = $this->actingAs($this->superAdmin)
+            ->put(route('manage.access-permission.update', User::ROLE_APPROVER), [
+                'permissions' => [
+                    'learning_management',
+                ],
+            ]);
+
+        $response->assertRedirect(route('manage.access-permission.index'));
+        $response->assertSessionHas('success', 'Access permission role berhasil diperbarui.');
+
+        $learningMgmt = RoleAccessPermission::where('role', User::ROLE_APPROVER)
+            ->where('module_key', 'learning_management')
+            ->first();
+        $adminMgmt = RoleAccessPermission::where('role', User::ROLE_APPROVER)
+            ->where('module_key', 'admin_management')
+            ->first();
+
+        $this->assertNotNull($learningMgmt);
+        $this->assertTrue((bool) $learningMgmt->can_access);
+        $this->assertNotNull($adminMgmt);
+        $this->assertFalse((bool) $adminMgmt->can_access);
+    }
+
+    public function test_approver_role_seeder_is_idempotent_and_does_not_reset_customized_permissions(): void
+    {
+        // Explicitly set a permission to true
+        RoleAccessPermission::updateOrCreate(
+            ['role' => User::ROLE_APPROVER, 'module_key' => 'monitoring'],
+            ['can_access' => true]
+        );
+
+        // Run ApproverRoleSeeder
+        $seeder = new \Database\Seeders\ApproverRoleSeeder();
+        $seeder->run();
+
+        // The customized permission MUST remain true (not overwritten)
+        $monitoringPerm = RoleAccessPermission::where('role', User::ROLE_APPROVER)
+            ->where('module_key', 'monitoring')
+            ->first();
+
+        $this->assertNotNull($monitoringPerm);
+        $this->assertTrue((bool) $monitoringPerm->can_access);
     }
 }

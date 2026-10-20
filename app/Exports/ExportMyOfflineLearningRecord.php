@@ -3,7 +3,6 @@
 namespace App\Exports;
 
 use App\Services\Learning\UserRecordOfflineService;
-use App\Support\DurationFormatter;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Concerns\FromArray;
@@ -12,7 +11,6 @@ use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
-use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
@@ -39,6 +37,13 @@ class ExportMyOfflineLearningRecord implements FromArray, ShouldAutoSize, WithEv
         $number = 1;
 
         foreach ($this->rows as $row) {
+            $learningHour = !empty($row['learning_hour']) ? $row['learning_hour'] : '-';
+            $progress = isset($row['progress']) ? ((int) $row['progress'] . '%') : '-';
+            $score = ($row['score'] !== null && $row['score'] !== '') ? $row['score'] : '-';
+            $attendance = !empty($row['attendance_status']) ? $row['attendance_status'] : '-';
+            $date = !empty($row['date_display']) ? $row['date_display'] : '-';
+            $certificate = ($row['has_certificate'] ?? false) ? 'Available' : 'Not Available';
+
             $output[] = [
                 $number++,
                 $row['title'] ?? '-',
@@ -46,33 +51,14 @@ class ExportMyOfflineLearningRecord implements FromArray, ShouldAutoSize, WithEv
                 $row['category'] ?? '-',
                 $row['classification'] ?? '-',
                 $row['duration'] ?? '-',
-                round((float) ($row['learning_hour_value'] ?? 0), 2),
-                ($row['progress'] ?? 0) . '%',
-                $row['start_date'] ?: '-',
-                $row['finish_date'] ?: '-',
-                $row['score'] !== null ? $row['score'] : '-',
-                $row['certificate'] ?: '-',
+                $learningHour,
+                $progress,
+                $attendance,
+                $date,
+                $score,
+                $certificate,
             ];
         }
-
-        $durationSeconds = (int) $this->rows->sum(fn (array $r) => max(0, (int) ($r['duration_seconds'] ?? 0)));
-        $learningHours = (float) $this->rows->sum(fn (array $r) => (float) ($r['learning_hour_value'] ?? 0));
-
-        $output[] = array_fill(0, count($this->headings()), '');
-        $output[] = [
-            'TOTAL',
-            '',
-            '',
-            '',
-            '',
-            DurationFormatter::fromSeconds($durationSeconds),
-            round($learningHours, 2),
-            '',
-            '',
-            '',
-            '',
-            '',
-        ];
 
         return $output;
     }
@@ -87,47 +73,56 @@ class ExportMyOfflineLearningRecord implements FromArray, ShouldAutoSize, WithEv
             'Classification',
             'Duration',
             'Learning Hour',
-            'Learning Progress',
-            'Start Date',
-            'Finish Date',
-            'Assessment Score',
+            'Progress',
+            'Attendance',
+            'Date',
+            'Score',
             'Certificate',
         ];
     }
 
     public function styles(Worksheet $sheet): array
     {
-        return [1 => ['font' => ['bold' => true], 'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FEF3C7']]]];
+        return [
+            1 => [
+                'font' => ['bold' => true],
+                'fill' => [
+                    'fillType'   => Fill::FILL_SOLID,
+                    'startColor' => ['rgb' => 'FEF3C7'],
+                ],
+            ],
+        ];
     }
 
     public function registerEvents(): array
     {
-        return [AfterSheet::class => function (AfterSheet $event) {
-            $sheet = $event->sheet->getDelegate();
-            $sheet->freezePane('A2');
-            $sheet->getStyle('A1:L1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('A1:L' . max(1, $sheet->getHighestRow()))->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+        return [
+            AfterSheet::class => function (AfterSheet $event) {
+                $sheet = $event->sheet->getDelegate();
+                $sheet->freezePane('A2');
+                $highestColumn = $sheet->getHighestColumn();
+                $highestRow = max(1, $sheet->getHighestRow());
 
-            $summaryRow = $sheet->getHighestRow();
-            $sheet->getStyle('A' . $summaryRow . ':L' . $summaryRow)->applyFromArray([
-                'font' => ['bold' => true],
-                'fill' => [
-                    'fillType' => Fill::FILL_SOLID,
-                    'startColor' => ['rgb' => 'EDEDED'],
-                ],
-                'borders' => [
-                    'top' => [
-                        'borderStyle' => Border::BORDER_THIN,
-                        'color' => ['rgb' => '808080'],
-                    ],
-                ],
-            ]);
-            $sheet->getStyle('F' . $summaryRow . ':G' . $summaryRow)
-                ->getAlignment()
-                ->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-            $sheet->getStyle('G2:G' . $summaryRow)
-                ->getNumberFormat()
-                ->setFormatCode('0.00');
-        }];
+                $sheet->getStyle('A1:' . $highestColumn . '1')
+                    ->getAlignment()
+                    ->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+                $sheet->getStyle('A1:' . $highestColumn . $highestRow)
+                    ->getAlignment()
+                    ->setVertical(Alignment::VERTICAL_CENTER);
+
+                if ($highestRow > 1) {
+                    $sheet->getStyle('A2:A' . $highestRow)
+                        ->getAlignment()
+                        ->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle('H2:I' . $highestRow)
+                        ->getAlignment()
+                        ->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle('K2:L' . $highestRow)
+                        ->getAlignment()
+                        ->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                }
+            },
+        ];
     }
 }

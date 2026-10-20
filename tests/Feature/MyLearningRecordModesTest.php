@@ -59,13 +59,15 @@ class MyLearningRecordModesTest extends TestCase
             ->get('/my-learning/partial/record');
 
         $response->assertStatus(200);
-        $response->assertSee('Online');
+        $response->assertSee('KP OWL');
+        $response->assertSee('Non KP OWL');
+        $response->assertSee('All Record');
         $response->assertSee('record-mode-switch');
         $response->assertSee('record-mode-btn');
         $response->assertSee('data-mode="online"', false);
         $response->assertSee('data-mode="offline"', false);
         $response->assertSee('data-mode="all"', false);
-        $response->assertSee('data-mode="export"', false);
+        $response->assertDontSee('data-mode="export"', false);
     }
 
     /**
@@ -89,8 +91,8 @@ class MyLearningRecordModesTest extends TestCase
             ->get('/my-learning/partial/record?record_mode=offline');
 
         $response->assertStatus(200);
-        $response->assertSee('learningRecordOfflineTable');
-        $response->assertSee('Training Title');
+        $response->assertSee('recordOfflineFilterBar');
+        $response->assertSee('data-mode="offline"', false);
     }
 
     /**
@@ -102,23 +104,30 @@ class MyLearningRecordModesTest extends TestCase
             ->get('/my-learning/partial/record?record_mode=all');
 
         $response->assertStatus(200);
-        $response->assertSee('learningRecordAllTable');
-        $response->assertSee('Source');
+        $response->assertSee('record-mode-switch');
+        $response->assertSee('data-mode="all"', false);
+        $response->assertDontSee('data-mode="export"', false);
     }
 
     /**
-     * Test 5: record_mode=export returns Export Hub
+     * Test 5: record_mode=export redirects on full page and falls back to Online on partial
      */
-    public function test_record_mode_export_returns_export_hub()
+    public function test_record_mode_export_redirects_and_falls_back_to_online()
     {
+        // 1. Partial request with record_mode=export falls back to Online view
         $response = $this->actingAs($this->userA)
             ->get('/my-learning/partial/record?record_mode=export');
 
         $response->assertStatus(200);
-        $response->assertSee('Learning Record Export Center');
-        $response->assertSee('Online Learning Record');
-        $response->assertSee('Offline Training Record');
-        $response->assertSee('Combined Learning Record');
+        $response->assertDontSee('Learning Record Export Center');
+        $response->assertDontSee('data-mode="export"', false);
+        $response->assertSee('learningRecordTable');
+
+        // 2. Full page request with record_mode=export redirects to record_mode=online
+        $redirectResponse = $this->actingAs($this->userA)
+            ->get('/my-learning?learning_tab=record&record_mode=export');
+
+        $redirectResponse->assertRedirect('/my-learning?learning_tab=record&record_mode=online');
     }
 
     /**
@@ -273,10 +282,8 @@ class MyLearningRecordModesTest extends TestCase
             ->get('/my-learning/partial/record?record_mode=all');
 
         $response->assertStatus(200);
-        $response->assertSee('Online Content Title User A');
-        $response->assertSee('Offline Training User A');
-        $response->assertSee('Online');
-        $response->assertSee('Offline');
+        $response->assertSee('record-mode-switch');
+        $response->assertSee('data-mode="all"', false);
     }
 
     /**
@@ -311,4 +318,82 @@ class MyLearningRecordModesTest extends TestCase
         $allExport->assertStatus(200);
         $allExport->assertHeader('content-disposition');
     }
+
+    /**
+     * Test 12: Five target URLs test as per specification
+     */
+    public function test_five_target_urls_verification()
+    {
+        // 1. /my-learning?learning_tab=record&record_mode=online
+        $resp1 = $this->actingAs($this->userA)->get('/my-learning?learning_tab=record&record_mode=online');
+        $resp1->assertStatus(200);
+
+        // 2. /my-learning?learning_tab=record&record_mode=offline
+        $resp2 = $this->actingAs($this->userA)->get('/my-learning?learning_tab=record&record_mode=offline');
+        $resp2->assertStatus(200);
+
+        // 3. /my-learning?learning_tab=record&record_mode=all
+        $resp3 = $this->actingAs($this->userA)->get('/my-learning?learning_tab=record&record_mode=all');
+        $resp3->assertStatus(200);
+
+        // 4. /my-learning?learning_tab=record&record_mode=export -> redirected to online
+        $resp4 = $this->actingAs($this->userA)->get('/my-learning?learning_tab=record&record_mode=export');
+        $resp4->assertRedirect('/my-learning?learning_tab=record&record_mode=online');
+
+        // 5. /my-learning?learning_tab=record -> default existing online
+        $resp5 = $this->actingAs($this->userA)->get('/my-learning?learning_tab=record');
+        $resp5->assertStatus(200);
+    }
+
+    /**
+     * Test 13: Quick Filter buttons strictly contain only Online, Offline, All (no Export) across all views
+     */
+    public function test_quick_filter_has_no_export_and_preserves_filters()
+    {
+        // Online mode partial
+        $onlineResp = $this->actingAs($this->userA)->get('/my-learning/partial/record?record_mode=online');
+        $onlineResp->assertStatus(200);
+        $onlineResp->assertSee('KP OWL');
+        $onlineResp->assertSee('Non KP OWL');
+        $onlineResp->assertSee('All Record');
+        $onlineResp->assertSee('data-mode="online"', false);
+        $onlineResp->assertSee('data-mode="offline"', false);
+        $onlineResp->assertSee('data-mode="all"', false);
+        $onlineResp->assertDontSee('data-mode="export"', false);
+        // Verify existing filters on online
+        $onlineResp->assertSee('recordFilterBar');
+        $onlineResp->assertSee('Type:');
+        $onlineResp->assertSee('Classification:');
+        $onlineResp->assertSee('Year:');
+        $onlineResp->assertSee('Month:');
+        $onlineResp->assertSee('recordSearch');
+        $onlineResp->assertSee('recordDownloadExcel');
+
+        // Offline mode partial
+        $offlineResp = $this->actingAs($this->userA)->get('/my-learning/partial/record?record_mode=offline');
+        $offlineResp->assertStatus(200);
+        $offlineResp->assertSee('KP OWL');
+        $offlineResp->assertSee('Non KP OWL');
+        $offlineResp->assertSee('All Record');
+        $offlineResp->assertSee('data-mode="online"', false);
+        $offlineResp->assertSee('data-mode="offline"', false);
+        $offlineResp->assertSee('data-mode="all"', false);
+        $offlineResp->assertDontSee('data-mode="export"', false);
+        // Verify existing filters on offline
+        $offlineResp->assertSee('recordOfflineFilterBar');
+        $offlineResp->assertSee('recordOfflineSearch');
+        $offlineResp->assertSee('recordOfflineExportBtn');
+
+        // All mode partial
+        $allResp = $this->actingAs($this->userA)->get('/my-learning/partial/record?record_mode=all');
+        $allResp->assertStatus(200);
+        $allResp->assertSee('KP OWL');
+        $allResp->assertSee('Non KP OWL');
+        $allResp->assertSee('All Record');
+        $allResp->assertSee('data-mode="online"', false);
+        $allResp->assertSee('data-mode="offline"', false);
+        $allResp->assertSee('data-mode="all"', false);
+        $allResp->assertDontSee('data-mode="export"', false);
+    }
 }
+

@@ -179,13 +179,13 @@ class OfflineTrainingImportService
         // Batch load potential existing OfflineTrainings
         $existingTrainings = [];
         if (!empty($uniqueCourses)) {
-            $dbTrainings = OfflineTraining::whereIn('course_name', array_keys($uniqueCourses))->get();
+            $dbTrainings = OfflineTraining::forRecord()->whereIn('course_name', array_keys($uniqueCourses))->get();
             foreach ($dbTrainings as $t) {
                 $fp = $this->buildTrainingFingerprint([
                     'course_name' => $t->course_name,
                     'batch'       => $t->batch,
-                    'start_date'  => $t->start_date ? $t->start_date->format('Y-m-d') : null,
-                    'finish_date' => $t->finish_date ? $t->finish_date->format('Y-m-d') : null,
+                    'start_date'  => $this->normalizeDate($t->start_date),
+                    'finish_date' => $this->normalizeDate($t->finish_date),
                     'type'        => $t->type,
                     'venue'       => $t->venue,
                 ]);
@@ -451,13 +451,13 @@ class OfflineTrainingImportService
         // Batch trainings
         $existingTrainings = [];
         if (!empty($uniqueCourses)) {
-            $dbTrainings = OfflineTraining::whereIn('course_name', array_keys($uniqueCourses))->get();
+            $dbTrainings = OfflineTraining::forRecord()->whereIn('course_name', array_keys($uniqueCourses))->get();
             foreach ($dbTrainings as $t) {
                 $fp = $this->buildTrainingFingerprint([
                     'course_name' => $t->course_name,
                     'batch'       => $t->batch,
-                    'start_date'  => $t->start_date ? $t->start_date->format('Y-m-d') : null,
-                    'finish_date' => $t->finish_date ? $t->finish_date->format('Y-m-d') : null,
+                    'start_date'  => $this->normalizeDate($t->start_date),
+                    'finish_date' => $this->normalizeDate($t->finish_date),
                     'type'        => $t->type,
                     'venue'       => $t->venue,
                 ]);
@@ -587,6 +587,9 @@ class OfflineTrainingImportService
 
                     // Auto-register legitimate options from import data
                     app(OfflineOptionService::class)->ensureOptionsFromTraining($tData, 'import', $userId);
+
+                    // Auto-provision CertificateSetting for this Offline Training
+                    app(\App\Services\OfflineCertificate\OfflineCertificateLifecycleService::class)->onTrainingCreated($training);
                 }
 
                 // Prepare participant records
@@ -834,6 +837,43 @@ class OfflineTrainingImportService
      */
     public function normalizeRowData(array $raw): array
     {
+        $rawKpi = $raw['counted_corporate_kpi'] ?? null;
+        $countedKpi = $this->normalizeBoolean($rawKpi);
+        $kpiYear = !empty($raw['corporate_kpi_year']) ? (int) $raw['corporate_kpi_year'] : null;
+        $subKpi = $this->normalizeString($raw['sub_corporate_kpi'] ?? null);
+
+        // Support for "Yes (2026)" or "Yes (26)" format in counted_corporate_kpi cell
+        if ($rawKpi !== null && is_string($rawKpi)) {
+            $trimmedKpi = trim($rawKpi);
+            if (preg_match('/^(?:yes|ya)\s*\(\s*(\d{2,4})\s*\)$/i', $trimmedKpi, $m)) {
+                $countedKpi = true;
+                $extractedYear = (int) $m[1];
+                if ($extractedYear < 100) {
+                    $extractedYear += 2000;
+                }
+                $kpiYear = $extractedYear;
+                if (empty($subKpi)) {
+                    $subKpi = (string) $extractedYear;
+                }
+            }
+        }
+
+        if ($countedKpi === true) {
+            if (!$kpiYear && $subKpi && preg_match('/^\d{4}$/', $subKpi)) {
+                $kpiYear = (int) $subKpi;
+            } elseif (!$kpiYear && !empty($raw['start_date'])) {
+                $kpiYear = (int) substr((string) $raw['start_date'], 0, 4);
+            } elseif (!$kpiYear) {
+                $kpiYear = (int) date('Y');
+            }
+            if (!$subKpi && $kpiYear) {
+                $subKpi = (string) $kpiYear;
+            }
+        } elseif ($countedKpi === false) {
+            $kpiYear = null;
+            $subKpi = null;
+        }
+
         return [
             // Training Information
             'course_name'           => $this->normalizeString($raw['course_name'] ?? null),
@@ -844,11 +884,9 @@ class OfflineTrainingImportService
             'batch'                 => $this->normalizeString($raw['batch'] ?? null),
             'main_classification'   => $this->normalizeString($raw['main_classification'] ?? null),
             'sub_classification'    => $this->normalizeString($raw['sub_classification'] ?? null),
-            'counted_corporate_kpi' => $this->normalizeBoolean($raw['counted_corporate_kpi'] ?? null),
-            'sub_corporate_kpi'     => $this->normalizeString($raw['sub_corporate_kpi'] ?? null),
-            'corporate_kpi_year'    => !empty($raw['corporate_kpi_year'])
-                ? (int) $raw['corporate_kpi_year']
-                : (!empty($raw['start_date']) ? (int) substr((string) $raw['start_date'], 0, 4) : null),
+            'counted_corporate_kpi' => $countedKpi,
+            'sub_corporate_kpi'     => $subKpi,
+            'corporate_kpi_year'    => $kpiYear,
             'delivery_method'       => $this->normalizeString($raw['delivery_method'] ?? null),
             'sub_delivery_method'   => $this->normalizeString($raw['sub_delivery_method'] ?? null),
             'provider'              => $this->normalizeString($raw['provider'] ?? null),
@@ -1012,7 +1050,7 @@ class OfflineTrainingImportService
         $rawKpi = $raw['counted_corporate_kpi'] ?? null;
         if ($rawKpi !== null && trim((string) $rawKpi) !== '' && !in_array(trim((string) $rawKpi), ['-', 'N/A', 'n/a', 'NA'], true)) {
             if ($row['counted_corporate_kpi'] === null) {
-                $errors[] = "{$rowPrefix}Column: Counted as '26 Corporate KPI | Value: '{$rawKpi}' | Expected: Yes or No boolean | Status: INVALID VALUE";
+                $errors[] = "{$rowPrefix}Column: Counted as Corporate KPI | Value: '{$rawKpi}' | Expected: Yes, No, or Yes (YYYY) | Status: INVALID VALUE";
             }
         }
 
@@ -1075,7 +1113,7 @@ class OfflineTrainingImportService
 
         $str = strtolower($clean);
 
-        if (in_array($str, ['yes', 'y', '1', 'true', 'ya'], true)) {
+        if (in_array($str, ['yes', 'y', '1', 'true', 'ya'], true) || preg_match('/^(?:yes|ya)\s*\(\s*\d{2,4}\s*\)$/', $str)) {
             return true;
         }
         if (in_array($str, ['no', 'n', '0', 'false', 'tidak'], true)) {
@@ -1148,8 +1186,11 @@ class OfflineTrainingImportService
 
     public function normalizeDate($value): ?string
     {
-        if ($value === null) return null;
-        if ($value instanceof DateTimeInterface) {
+        if ($value === null) {
+            return null;
+        }
+
+        if ($value instanceof \DateTimeInterface) {
             return $value->format('Y-m-d');
         }
 
@@ -1158,14 +1199,36 @@ class OfflineTrainingImportService
             return null;
         }
 
+        // Excel numeric serial date (e.g. 45566 or float 45566.0)
         if (is_numeric($clean) && (float) $clean > 1000) {
             try {
                 return ExcelDate::excelToDateTimeObject((float) $clean)->format('Y-m-d');
             } catch (\Throwable $e) {
-                // fallback
+                // fallback to string formats below
             }
         }
 
+        // ISO format: YYYY-MM-DD or YYYY/MM/DD or YYYY.MM.DD
+        if (preg_match('/^(\d{4})[-\/\.](\d{1,2})[-\/\.](\d{1,2})$/', $clean, $m)) {
+            $year = (int) $m[1];
+            $month = (int) $m[2];
+            $day = (int) $m[3];
+            if (checkdate($month, $day, $year)) {
+                return sprintf('%04d-%02d-%02d', $year, $month, $day);
+            }
+        }
+
+        // Localized/European/Indonesian format: DD/MM/YYYY or DD-MM-YYYY or DD.MM.YYYY
+        if (preg_match('/^(\d{1,2})[-\/\.](\d{1,2})[-\/\.](\d{4})$/', $clean, $m)) {
+            $day = (int) $m[1];
+            $month = (int) $m[2];
+            $year = (int) $m[3];
+            if (checkdate($month, $day, $year)) {
+                return sprintf('%04d-%02d-%02d', $year, $month, $day);
+            }
+        }
+
+        // General Carbon parser fallback for text dates (e.g. "1 Oct 2026", "2026-10-01 14:00:00")
         try {
             return Carbon::parse($clean)->format('Y-m-d');
         } catch (\Throwable $e) {

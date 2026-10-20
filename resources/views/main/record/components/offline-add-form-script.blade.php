@@ -7,6 +7,7 @@
         let addParticipants = [];
         let currentActiveParticipantIndex = -1;
         let empSearchTimer = null;
+        let empSearchXhr = null;
 
         // --- Helper: Format Month from Date ---
         function deriveMonthString(dateStr) {
@@ -43,18 +44,150 @@
                 .replace(/'/g, '&#039;');
         }
 
-        // --- Select2 Initialization for Master Option Dropdowns ---
+        // --- Select2 Helper: Set value safely with tags support ---
+        function setSelect2Val($elem, val) {
+            if (!$elem.length) return;
+            val = (val !== null && val !== undefined) ? String(val) : '';
+            if (val && !$elem.find(`option[value="${CSS.escape(val)}"]`).length) {
+                $elem.append(new Option(val, val, true, true));
+            }
+            $elem.val(val).trigger('change');
+        }
+
+        // --- Select2 Initialization for Master Option & Searchable Dropdowns ---
         if ($.fn.select2) {
-            $('.select2-master-option').each(function () {
+            $('.select2-master-option, .select2-searchable-field').each(function () {
                 const placeholder = $(this).data('placeholder') || 'Select option';
+                const isTags = $(this).data('tags') === true || $(this).data('tags') === 'true';
+                const dataType = $(this).data('type');
+                const allowClearData = $(this).data('allow-clear');
+                const noClearTypes = ['type', 'delivery_method', 'provider', 'sub_provider'];
+                let isAllowClear = true;
+                if (allowClearData === false || allowClearData === 'false' || noClearTypes.includes(dataType)) {
+                    isAllowClear = false;
+                }
                 $(this).select2({
                     theme: 'bootstrap-5',
                     placeholder: placeholder,
-                    allowClear: true,
+                    allowClear: isAllowClear,
+                    tags: isTags,
                     width: 'resolve'
                 });
             });
         }
+
+        // --- Course Name Master Options & Searchable Combobox ---
+        let masterCourseOptions = {!! json_encode(collect($options['course_name'] ?? [])->pluck('value')->values()->all()) !!};
+
+        function initCourseNameCombobox() {
+            const $combobox = $('.master-combobox[data-type="course_name"]');
+            if (!$combobox.length) return;
+
+            const $input = $combobox.find('.master-combobox-input');
+            const $toggle = $combobox.find('.master-combobox-toggle');
+            const $menu = $combobox.find('.master-combobox-menu');
+
+            function renderOptions(query) {
+                const q = (query || '').toLowerCase().trim();
+                const filtered = masterCourseOptions.filter(item => {
+                    return !q || item.toLowerCase().includes(q);
+                });
+
+                $menu.empty();
+
+                if (filtered.length > 0) {
+                    filtered.forEach(item => {
+                        const $a = $(`
+                            <a href="#" class="dropdown-item d-flex align-items-center justify-content-between py-2 combobox-item" data-value="${escapeHtml(item)}">
+                                <span class="text-truncate" style="max-width: 85%;">${escapeHtml(item)}</span>
+                                <span class="badge bg-light text-muted border extra-small">master</span>
+                            </a>
+                        `);
+                        $menu.append($a);
+                    });
+                } else if (!q) {
+                    $menu.append('<div class="p-2 text-muted small text-center">No master courses found. Type to create new.</div>');
+                }
+
+                if (q) {
+                    const exactMatch = masterCourseOptions.some(item => item.toLowerCase() === q);
+                    if (!exactMatch) {
+                        $menu.append(`
+                            <div class="p-2 border-top bg-light-subtle extra-small text-muted">
+                                <i class="ti ti-sparkles text-primary me-1"></i>New course will be registered: <strong>"${escapeHtml(query.trim())}"</strong>
+                            </div>
+                        `);
+                    }
+                }
+            }
+
+            $input.on('focus input', function () {
+                renderOptions($(this).val());
+                $menu.show();
+            });
+
+            $toggle.on('click', function (e) {
+                e.stopPropagation();
+                if ($menu.is(':visible')) {
+                    $menu.hide();
+                } else {
+                    renderOptions($input.val());
+                    $menu.show();
+                    $input.focus();
+                }
+            });
+
+            $menu.on('click', '.combobox-item', function (e) {
+                e.preventDefault();
+                const val = $(this).data('value');
+                $input.val(val).trigger('input').trigger('change');
+                $menu.hide();
+            });
+
+            $(document).on('click', function (e) {
+                if (!$(e.target).closest($combobox).length) {
+                    $menu.hide();
+                }
+            });
+
+            $input.on('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    $menu.hide();
+                }
+            });
+        }
+
+        initCourseNameCombobox();
+
+        // --- Corporate KPI Toggle & Logic ---
+        function syncKpiUi() {
+            const isKpi = $('input[name="counted_corporate_kpi"]:checked').val() === '1';
+            const $container = $('#container-kpi-year');
+            const $yearSelect = $('#add-corporate-kpi-year');
+            const $subKpiHidden = $('#add-sub-corporate-kpi');
+
+            if (isKpi) {
+                $container.show();
+                $yearSelect.prop('disabled', false);
+                $subKpiHidden.val($yearSelect.val());
+            } else {
+                $container.hide();
+                $yearSelect.prop('disabled', true);
+                $subKpiHidden.val('');
+            }
+            updateSection4Review();
+        }
+
+        $('input[name="counted_corporate_kpi"]').on('change', function () {
+            syncKpiUi();
+        });
+
+        $('#add-corporate-kpi-year').on('change', function () {
+            $('#add-sub-corporate-kpi').val($(this).val());
+            updateSection4Review();
+        });
+
+        syncKpiUi();
 
         // --- Helper: Get Current KPI Year from Start Date or fallback ---
         function getCurrentKpiYear() {
@@ -65,36 +198,29 @@
                     return y;
                 }
             }
-            return {{ $currentYear ?? date('Y') }};
+            const selectedYr = $('#add-corporate-kpi-year').val();
+            return selectedYr ? parseInt(selectedYr, 10) : {{ $currentYear ?? date('Y') }};
         }
 
-        // --- Helper: Update Dynamic Yearly Corporate KPI Labels & Options ---
+        // --- Helper: Update Dynamic Yearly Corporate KPI Options ---
         function updateKpiYearDisplay() {
             const kpiYear = getCurrentKpiYear();
-            const shortYear = "'" + String(kpiYear).slice(-2);
-            $('#label-counted-corporate-kpi').text(`Counted as ${shortYear} Corporate KPI`);
-            $('#label-sub-corporate-kpi').text(`Sub ${shortYear} Corporate KPI`);
-
-            // Update button data-year attribute
-            $('.btn-add-option-modal[data-type="sub_corporate_kpi"]').data('year', kpiYear);
-
-            // Fetch and refresh sub_corporate_kpi datalist for this year
-            $.ajax({
-                url: "{{ route('manage.record.offline.options.index') }}",
-                type: 'GET',
-                data: { type: 'sub_corporate_kpi', year: kpiYear },
-                success: function (res) {
-                    const results = (res && res.results) ? res.results : [];
-                    const $dl = $('#sub-corporate-kpi-datalist');
-                    $dl.empty();
-                    results.forEach(function (item) {
-                        $dl.append(`<option value="${escapeHtml(item.value)}"></option>`);
-                    });
+            const $yearSelect = $('#add-corporate-kpi-year');
+            if ($yearSelect.length) {
+                let hasYear = false;
+                $yearSelect.find('option').each(function () {
+                    if (parseInt($(this).val(), 10) === kpiYear) {
+                        hasYear = true;
+                    }
+                });
+                if (!hasYear && kpiYear >= 1970 && kpiYear <= 2100) {
+                    $yearSelect.prepend(new Option(kpiYear, kpiYear, false, false));
                 }
-            });
+            }
+            $('.btn-add-option-modal[data-type="sub_corporate_kpi"]').data('year', kpiYear);
         }
 
-        // --- Schedule & Duration Watchers ---
+        // --- Schedule Duration & Program Evaluation Watchers ---
         $('#add-start-date').on('change', function () {
             const startVal = $(this).val();
             const monthText = deriveMonthString(startVal);
@@ -108,7 +234,7 @@
             updateSection4Review();
         });
 
-        $('#add-finish-date').on('change', function () {
+        $('#add-finish-date, #add-start-time, #add-end-time').on('change input', function () {
             updateSection4Review();
         });
 
@@ -133,20 +259,32 @@
         const $empSearchInput = $('#participant-search-input');
         const $empSearchResults = $('#participant-search-results');
 
-        $empSearchInput.on('input', function () {
+        function executeParticipantSearch(query, immediate) {
             clearTimeout(empSearchTimer);
-            const query = $(this).val().trim();
+            query = (query || '').trim();
             if (query.length < 2) {
                 $empSearchResults.hide().empty();
                 return;
             }
 
-            empSearchTimer = setTimeout(function () {
-                $.ajax({
-                    url: "{{ route('manage.record.offline.search-employees') }}",
+            if (empSearchXhr) {
+                empSearchXhr.abort();
+                empSearchXhr = null;
+            }
+
+            function doSearch() {
+                $empSearchResults.html('<div class="p-2 text-muted small text-center"><span class="spinner-border spinner-border-sm me-1" role="status"></span> Searching...</div>').show();
+
+                empSearchXhr = $.ajax({
+                    url: "{{ route('manage.record.offline.search-employees', [], false) }}",
                     type: 'GET',
-                    data: { q: query },
+                    data: { q: query, search: query },
+                    dataType: 'json',
+                    headers: {
+                        'Accept': 'application/json'
+                    },
                     success: function (res) {
+                        empSearchXhr = null;
                         const list = (res && res.results) ? res.results : [];
                         if (list.length === 0) {
                             $empSearchResults.html('<div class="p-2 text-muted small text-center">No employee found.</div>').show();
@@ -169,19 +307,47 @@
                         });
                         $empSearchResults.html(html).show();
                     },
-                    error: function () {
+                    error: function (xhr, status, error) {
+                        if (status === 'abort') {
+                            return;
+                        }
+                        empSearchXhr = null;
+                        console.error('Participant search failed:', {
+                            status: xhr ? xhr.status : null,
+                            statusText: status,
+                            error: error,
+                            responseText: xhr ? xhr.responseText : null
+                        });
                         $empSearchResults.html('<div class="p-2 text-danger small text-center">Search error.</div>').show();
                     }
                 });
-            }, 300);
+            }
+
+            if (immediate) {
+                doSearch();
+            } else {
+                empSearchTimer = setTimeout(doSearch, 300);
+            }
+        }
+
+        $empSearchInput.on('input', function () {
+            executeParticipantSearch($(this).val(), false);
         });
 
-        $('#btn-search-participant').on('click', function () {
-            $empSearchInput.trigger('input');
+        $empSearchInput.on('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                executeParticipantSearch($(this).val(), true);
+            }
+        });
+
+        $('#btn-search-participant').on('click', function (e) {
+            e.preventDefault();
+            executeParticipantSearch($empSearchInput.val(), true);
         });
 
         $(document).on('click', function (e) {
-            if (!$(e.target).closest('#participant-search-input, #participant-search-results').length) {
+            if (!$(e.target).closest('#participant-search-input, #participant-search-results, #btn-search-participant').length) {
                 $empSearchResults.hide();
             }
         });
@@ -264,6 +430,7 @@
             }
 
             const defaultLearningHours = parseFloat($('#add-learning-hours').val()) || null;
+            const defaultL1Program = ($('#res-l1-program').val() || '').trim();
 
             // Push participant with default learning results
             addParticipants.push({
@@ -284,7 +451,7 @@
                 bond_status: 'No',
                 bond_end_date: '',
                 bond_amount: '',
-                l1_program: '',
+                l1_program: defaultL1Program,
                 l2_numerical: '',
                 l2_verbal: '',
                 l3_numerical: '',
@@ -464,10 +631,10 @@
 
             $('#res-l1-program').val(p.l1_program || '');
             $('#res-l2-numerical').val(p.l2_numerical || '');
-            $('#res-l2-verbal').val(p.l2_verbal || '');
+            setSelect2Val($('#res-l2-verbal'), p.l2_verbal || '');
             $('#res-l3-numerical').val(p.l3_numerical || '');
-            $('#res-l3-verbal').val(p.l3_verbal || '');
-            $('#res-pic').val(p.pic || '');
+            setSelect2Val($('#res-l3-verbal'), p.l3_verbal || '');
+            setSelect2Val($('#res-pic'), p.pic || '');
 
             $('#save-result-status-msg').text(`Configuring results for: ${p.name}`);
         }
@@ -482,16 +649,16 @@
             p.assessment_score = $('#res-assessment-score').val() !== '' ? parseFloat($('#res-assessment-score').val()) : null;
             p.certificate = $('#res-certificate').val();
             p.attendance = $('#res-attendance-yes').is(':checked') ? 1 : 0;
-            p.attendance_reason = $('#res-attendance-reason').val().trim();
+            p.attendance_reason = ($('#res-attendance-reason').val() || '').trim();
             p.bond_status = $('#res-bond-status').val();
             p.bond_end_date = p.bond_status === 'Yes' ? $('#res-bond-end-date').val() : null;
             p.bond_amount = p.bond_status === 'Yes' && $('#res-bond-amount').val() !== '' ? parseFloat($('#res-bond-amount').val()) : null;
-            p.l1_program = $('#res-l1-program').val().trim();
+            p.l1_program = ($('#res-l1-program').val() || '').trim();
             p.l2_numerical = $('#res-l2-numerical').val() !== '' ? parseFloat($('#res-l2-numerical').val()) : null;
-            p.l2_verbal = $('#res-l2-verbal').val().trim();
+            p.l2_verbal = ($('#res-l2-verbal').val() || '').trim();
             p.l3_numerical = $('#res-l3-numerical').val() !== '' ? parseFloat($('#res-l3-numerical').val()) : null;
-            p.l3_verbal = $('#res-l3-verbal').val().trim();
-            p.pic = $('#res-pic').val().trim();
+            p.l3_verbal = ($('#res-l3-verbal').val() || '').trim();
+            p.pic = ($('#res-pic').val() || '').trim();
         }
 
         // Live status badge updater
@@ -535,15 +702,27 @@
             updateSection4Review();
         });
 
+        $('#res-l1-program').on('input change', function () {
+            if (currentActiveParticipantIndex >= 0 && addParticipants[currentActiveParticipantIndex]) {
+                addParticipants[currentActiveParticipantIndex].l1_program = ($(this).val() || '').trim();
+                updateSection4Review();
+            }
+        });
+
         $('#btn-save-participant-result').on('click', function () {
+            const $btn = $(this);
+            if ($btn.prop('disabled')) return;
+            $btn.prop('disabled', true);
+
             saveCurrentActiveParticipantForm();
             updateSection4Review();
-            $('#save-result-status-msg').html('<span class="text-success fw-bold"><i class="ti ti-check"></i> Result saved for this participant!</span>');
+            $('#save-result-status-msg').html('<span class="text-success fw-bold"><i class="ti ti-check"></i> Result saved and submitted for this participant!</span>');
             setTimeout(function () {
+                $btn.prop('disabled', false);
                 if (currentActiveParticipantIndex >= 0 && addParticipants[currentActiveParticipantIndex]) {
                     $('#save-result-status-msg').text(`Configuring results for: ${addParticipants[currentActiveParticipantIndex].name}`);
                 }
-            }, 2000);
+            }, 1000);
         });
 
         // Helper: Format Date for Review Display (e.g., "10 Aug 2026")
@@ -587,28 +766,29 @@
             $('#rev-table-container').show();
 
             // Extract training-level fields once (repeated across all participant rows)
-            const courseName = $('#add-course-name').val().trim() || '-';
-            const subCourseName = $('#add-sub-course-name').val().trim() || '-';
+            const courseName = ($('#add-course-name').val() || '').trim() || '-';
+            const subCourseName = ($('#add-sub-course-name').val() || '').trim() || '-';
             const type = $('#add-type').val() || '-';
-            const category = $('#add-category').val().trim() || '-';
+            const category = ($('#add-category').val() || '').trim() || '-';
             const level = $('#add-level').val() || '-';
-            const batch = $('#add-batch').val().trim() || '-';
+            const batch = ($('#add-batch').val() || '').trim() || '-';
             const mainClass = $('#add-main-classification').val() || '-';
-            const subClass = $('#add-sub-classification').val().trim() || '-';
+            const subClass = ($('#add-sub-classification').val() || '').trim() || '-';
             const isKpi = $('input[name="counted_corporate_kpi"]:checked').val() === '1';
-            const subKpi = $('#add-sub-corporate-kpi').val().trim() || '-';
+            const kpiYear = isKpi ? $('#add-corporate-kpi-year').val() : null;
+            const subKpi = kpiYear ? String(kpiYear) : '-';
             const delivery = $('#add-delivery-method').val() || '-';
-            const subDelivery = $('#add-sub-delivery-method').val().trim() || '-';
+            const subDelivery = ($('#add-sub-delivery-method').val() || '').trim() || '-';
             const provider = $('#add-provider').val() || '-';
             const subProvider = $('#add-sub-provider').val() || '-';
-            const duration = $('#add-duration').val().trim() || '-';
+            const duration = ($('#add-duration').val() || '').trim() || '-';
             const defaultHours = parseFloat($('#add-learning-hours').val()) || 0;
             const startDate = $('#add-start-date').val() || '-';
             const finishDate = $('#add-finish-date').val() || (startDate !== '-' ? startDate : '-');
             const month = $('#add-month').val() || deriveMonthString($('#add-start-date').val()) || '-';
-            const providerName = $('#add-provider-name').val().trim() || '-';
-            const venue = $('#add-venue').val().trim() || '-';
-            const instructor = $('#add-instructor').val().trim() || '-';
+            const providerName = ($('#add-provider-name').val() || '').trim() || '-';
+            const venue = ($('#add-venue').val() || '').trim() || '-';
+            const instructor = ($('#add-instructor').val() || '').trim() || '-';
 
             let rowsHtml = '';
             addParticipants.forEach(function (p, idx) {
@@ -644,7 +824,7 @@
 
                 // Counted KPI
                 const kpiHtml = isKpi
-                    ? '<span class="badge bg-blue-lt text-primary px-2 py-0.5">Yes</span>'
+                    ? `<span class="badge bg-blue-lt text-primary px-2 py-0.5">Yes (${escapeHtml(String(kpiYear || ''))})</span>`
                     : '<span class="badge bg-light text-muted border px-2 py-0.5">No</span>';
 
                 // Type badge
@@ -780,6 +960,15 @@
                 return;
             }
 
+            // Client Validation: KPI Year
+            const isKpiSelected = $('input[name="counted_corporate_kpi"]:checked').val() === '1';
+            const kpiYearVal = $('#add-corporate-kpi-year').val();
+            if (isKpiSelected && !kpiYearVal) {
+                $addAlert.text('Corporate KPI Year is required when Counted as Corporate KPI is Yes.').show();
+                scrollToSection('#section-1-training-info', '#add-corporate-kpi-year');
+                return;
+            }
+
             // Client Validation: Participants
             if (addParticipants.length === 0) {
                 $addAlert.text('At least one participant is required in Section 2.').show();
@@ -790,27 +979,29 @@
             // Prepare Payload
             const payload = {
                 course_name: courseName,
-                sub_course_name: $('#add-sub-course-name').val().trim(),
+                sub_course_name: ($('#add-sub-course-name').val() || '').trim(),
                 type: $('#add-type').val(),
-                category: $('#add-category').val().trim(),
+                category: ($('#add-category').val() || '').trim(),
                 level: $('#add-level').val(),
-                batch: $('#add-batch').val().trim(),
+                batch: ($('#add-batch').val() || '').trim(),
                 main_classification: $('#add-main-classification').val(),
-                sub_classification: $('#add-sub-classification').val().trim(),
-                counted_corporate_kpi: $('input[name="counted_corporate_kpi"]:checked').val(),
-                sub_corporate_kpi: $('#add-sub-corporate-kpi').val().trim(),
-                corporate_kpi_year: getCurrentKpiYear(),
+                sub_classification: ($('#add-sub-classification').val() || '').trim(),
+                counted_corporate_kpi: isKpiSelected ? 1 : 0,
+                corporate_kpi_year: isKpiSelected ? parseInt(kpiYearVal, 10) : null,
+                sub_corporate_kpi: isKpiSelected ? String(kpiYearVal) : null,
                 delivery_method: $('#add-delivery-method').val(),
-                sub_delivery_method: $('#add-sub-delivery-method').val().trim(),
+                sub_delivery_method: ($('#add-sub-delivery-method').val() || '').trim(),
                 provider: $('#add-provider').val(),
                 sub_provider: $('#add-sub-provider').val(),
-                provider_name: $('#add-provider-name').val().trim(),
-                duration: $('#add-duration').val().trim(),
+                provider_name: ($('#add-provider-name').val() || '').trim(),
+                duration: ($('#add-duration').val() || '').trim(),
                 learning_hours: $('#add-learning-hours').val(),
                 start_date: startDate || null,
                 finish_date: finishDate || null,
-                venue: $('#add-venue').val().trim(),
-                instructor: $('#add-instructor').val().trim(),
+                start_time: ($('#add-start-time').val() || '').trim() || '08:00',
+                end_time: ($('#add-end-time').val() || '').trim() || '16:00',
+                venue: ($('#add-venue').val() || '').trim(),
+                instructor: ($('#add-instructor').val() || '').trim(),
                 participants: addParticipants,
                 _token: $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}'
             };
@@ -955,6 +1146,33 @@
                         // If target is an <input>
                         const $inp = $(targetSelect);
                         $inp.val(optVal).trigger('input').trigger('change');
+                    }
+
+                    if (type === 'course_name') {
+                        if (!masterCourseOptions.includes(optVal)) {
+                            masterCourseOptions.push(optVal);
+                            masterCourseOptions.sort();
+                        }
+                        $('#add-course-name').val(optVal).trigger('input').trigger('change');
+                    }
+
+                    if (type === 'sub_corporate_kpi') {
+                        const $kpiSelect = $('#add-corporate-kpi-year');
+                        if ($kpiSelect.length) {
+                            let kpiOptExists = false;
+                            $kpiSelect.find('option').each(function () {
+                                if ($(this).val() === optVal) {
+                                    kpiOptExists = true;
+                                }
+                            });
+                            if (!kpiOptExists) {
+                                $kpiSelect.prepend(new Option(optVal, optVal, true, true));
+                            } else {
+                                $kpiSelect.val(optVal);
+                            }
+                            $('#add-counted-kpi-yes').prop('checked', true).trigger('change');
+                            $kpiSelect.trigger('change');
+                        }
                     }
 
                     // If target has an associated <datalist>

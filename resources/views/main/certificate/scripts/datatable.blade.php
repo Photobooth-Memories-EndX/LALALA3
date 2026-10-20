@@ -121,6 +121,7 @@
             form.find('.certificate-item-select')
                 .data('selected-content', setting.content_id || '')
                 .data('selected-trainingplan', setting.trainingplan_id || '')
+                .data('selected-offline', setting.offline_training_id || '')
                 .data('selected-assessment', setting.assessment_id || '');
             form.find('.certificate-assessment-select').data('selected', setting.assessment_id || '');
             form.find('.certificate-assessment-required').prop('checked', setting.is_assessment_required);

@@ -1,7 +1,7 @@
 @section('style')
 <link rel="stylesheet" href="{{ asset('css/dataTables.bootstrap5.min.css') }}">
 {{-- Learning Record: style tabel client-side (dipisah — clean code). --}}
-<link rel="stylesheet" href="{{ asset('css/learning-record.css') }}">
+<link rel="stylesheet" href="{{ asset('css/learning-record.css') }}?v={{ filemtime(public_path('css/learning-record.css')) }}">
 <link rel="stylesheet" href="{{ asset('css/learning-assessment.css') }}?v={{ filemtime(public_path('css/learning-assessment.css')) }}">
 <link rel="stylesheet" href="{{ asset('css/learning-certificate.css') }}">
 <link rel="stylesheet" href="{{ asset('css/learning-ongoing.css') }}">
@@ -839,6 +839,30 @@
     body.dark-mode #assessment-search-results .dropdown-item .text-dark,
     body.dark-mode #certificate-search-results .dropdown-item .text-dark {
         color: #f1f5f9 !important;
+    }
+
+    button.attendance-detail-trigger {
+        border: 0;
+        cursor: pointer;
+        font-family: inherit;
+        text-decoration: none;
+        user-select: none;
+        transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+    }
+    button.attendance-detail-trigger:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
+        filter: brightness(0.95);
+    }
+    button.attendance-detail-trigger:active {
+        transform: translateY(0);
+        box-shadow: none;
+        filter: brightness(0.9);
+    }
+    button.attendance-detail-trigger:focus-visible {
+        outline: 2px solid var(--tblr-primary, #206bc4);
+        outline-offset: 2px;
+        border-radius: 4px;
     }
 </style>
 @endsection

@@ -90,6 +90,10 @@ Route::middleware(['auth'])->group(function () {
 
 
     Route::get('/trainingplan', [OfflineTrainingController::class, 'userIndex'])->name('trainingplan.user.index');
+    Route::get('/trainingplan/history/download', [OfflineTrainingController::class, 'downloadMyHistory'])->name('trainingplan.my-history.download');
+    Route::get('/training-schedule/{id}/download-syllabus', [OfflineTrainingController::class, 'downloadSyllabusPdf'])->name('training.download-syllabus');
+    Route::post('/trainingplan/{training}/register', [OfflineTrainingController::class, 'register'])->name('trainingplan.register');
+    Route::post('/trainingplan/{registration}/cancel', [OfflineTrainingController::class, 'cancelRegistration'])->name('trainingplan.cancel');
 
     Route::post('/assessment-access-by-unique-code', [HomeUserController::class, 'accessAssessmentByUniqueCode'])
         ->name('home.user.access.assessment.by.unique.code');
@@ -112,6 +116,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/my-learning/learning-record/export', [LearningRecordExportController::class, 'download'])->name('user.learning.record.export');
 
     // Learning On Going — dua mode terpisah (fragment AJAX): Content & Playlist.
+    Route::get('/my-learning/ongoing/export', [LearningOngoingController::class, 'download'])->name('user.learning.ongoing.export');
     Route::get('/my-learning/content', [LearningOngoingController::class, 'content'])->name('user.learning.ongoing.content');
     Route::get('/my-learning/playlist', [LearningOngoingController::class, 'playlist'])->name('user.learning.ongoing.playlist');
     Route::get('/user/learning/ongoing/search-autocomplete', [LearningOngoingController::class, 'autocomplete'])->name('user.learning.ongoing.autocomplete');
@@ -261,6 +266,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/certificate/generate-setting/{certificateSetting}', [UserCertificateController::class, 'generateSetting'])
         ->name('certificate.generate.setting');
 
+    Route::get('/certificate/generate-offline/{offlineTrainingUser}', [UserCertificateController::class, 'generateOffline'])
+        ->name('certificate.generate.offline');
+
     Route::get('/certificate/{credentialId}/preview', [UserCertificateController::class, 'preview'])
         ->name('certificate.preview');
 
@@ -295,8 +303,20 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
     Route::get('/', [ManageDashboardController::class, 'index'])->name('manage.index');
     Route::get('/dashboard', [ManageDashboardController::class, 'index'])->name('manage.dashboard');
     Route::get('/training-schedule', [OfflineTrainingController::class, 'index'])->name('manage.training-schedule.index');
+    Route::get('/training-schedule/export', [OfflineTrainingController::class, 'exportExcel'])->name('manage.training.export');
+    Route::get('/training-schedule/export/excel', [OfflineTrainingController::class, 'exportExcel'])->name('manage.training.export.excel');
+    Route::get('/training-schedule/export/pdf', [OfflineTrainingController::class, 'exportPdf'])->name('manage.training.export.pdf');
+    Route::get('/training-schedule/export/jpg', [OfflineTrainingController::class, 'exportJpg'])->name('manage.training.export.jpg');
+    Route::get('/training-schedule/export-roster', [OfflineTrainingController::class, 'exportRoster'])->name('manage.roster.export');
     Route::get('/training-schedule/create', [OfflineTrainingController::class, 'create'])->name('manage.training-schedule.create');
     Route::post('/training-schedule', [OfflineTrainingController::class, 'store'])->name('manage.training-schedule.store');
+    Route::post('/training-schedule/options', [OfflineTrainingController::class, 'storeOption'])->name('manage.training-schedule.options.store');
+    Route::get('/training-schedule/{id}/edit', [OfflineTrainingController::class, 'edit'])->name('training-schedule.edit');
+    Route::put('/training-schedule/{id}', [OfflineTrainingController::class, 'update'])->name('manage.training-schedule.update');
+    Route::delete('/training-schedule/{id}', [OfflineTrainingController::class, 'destroy'])->name('manage.training-schedule.destroy');
+    Route::get('/training-schedule/{id}/participants', [OfflineTrainingController::class, 'participants'])->name('manage.training-schedule.participants');
+    Route::patch('/training-schedule/registrations/{registration}/status', [OfflineTrainingController::class, 'updateRegistrationStatus'])->name('manage.training-schedule.registrations.status');
+    Route::post('/training-schedule/registrations/{registration}/complete', [OfflineTrainingController::class, 'completeRegistration'])->name('manage.training-schedule.registrations.complete');
 
     Route::group(['middleware' => 'mpermission:admin_management'], function () {
         Route::resource('admin', AdminController::class)->only(['index', 'store', 'update']);
@@ -313,6 +333,10 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
         Route::get('user-search', [UserController::class, 'searchUser'])->name('user.search');
         Route::get('user/get-employee/{id_emp}', [UserController::class, 'getEmployeeData'])->name('user.getEmployeeData');
         Route::get('user/profile/{hash}', [ProfileUserController::class, 'index'])->name('user.manage.profile');
+        Route::get('user/profile/{hash}/learning-datatable', [ProfileUserController::class, 'learningDatatable'])->name('user.manage.profile.learning.datatable');
+        Route::get('user/profile/{hash}/export', [ProfileUserController::class, 'exportExcel'])->name('user.manage.profile.export.excel');
+        Route::get('user/profile/{hash}/export/csv', [ProfileUserController::class, 'exportCsv'])->name('user.manage.profile.export.csv');
+        Route::get('user/profile/{hash}/export/pdf', [ProfileUserController::class, 'exportPdf'])->name('user.manage.profile.export.pdf');
     });
 
     Route::group(['middleware' => 'mpermission:certificate_setting'], function () {
@@ -344,6 +368,18 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
     Route::group(['middleware' => 'mpermission:category_classification'], function () {
         Route::get('classification/search-autocomplete', [ClassificationController::class, 'autocompleteSearch'])->name('manage.classification.autocomplete');
         Route::get('classification/autocomplete', [ClassificationController::class, 'autocompleteSearch']);
+
+        // Option Management routes
+        Route::prefix('classification/options')->name('manage.classification.options.')->group(function () {
+            Route::post('/', [ClassificationController::class, 'storeOption'])->name('store');
+            Route::get('{id}', [ClassificationController::class, 'getOption'])->name('show');
+            Route::put('{id}', [ClassificationController::class, 'updateOption'])->name('update');
+            Route::patch('{id}/toggle-status', [ClassificationController::class, 'toggleOptionStatus'])->name('toggle-status');
+            Route::get('{id}/usage', [ClassificationController::class, 'checkOptionUsage'])->name('usage');
+            Route::delete('{id}', [ClassificationController::class, 'destroyOption'])->name('destroy');
+            Route::get('parents/{type}', [ClassificationController::class, 'getParentOptions'])->name('parents');
+        });
+
         Route::resource('classification', ClassificationController::class)->names([
             'index' => 'manage.classification.index',
             'create' => 'manage.classification.create',
@@ -474,10 +510,13 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
         Route::get('learning/category/{slug}', [LearningManageController::class, 'category'])->name('learning.manage.category');
         Route::get('learning/manage.category');
         Route::get('learning/content/{slug}', [LearningManageController::class, 'content'])->name('learning.manage.content');
+        Route::get('learning/playlist/{id}', [LearningManageController::class, 'playlistDetail'])->name('learning.manage.playlist');
         Route::get('learning/record-detail/{type}/{id}', [LearningManageController::class, 'recordDetail'])->name('learning.manage.record-detail');
         Route::match(['put', 'patch'], 'learning/record/{type}/{id}', [LearningManageController::class, 'updateRecord'])->name('learning.manage.record.update');
         Route::post('learning/record/{type}/{id}/reset', [LearningManageController::class, 'resetRecord'])->name('learning.manage.record.reset');
         Route::get('learning/download', [LearningManageController::class, 'download'])->name('manage.learning.download');
+        Route::get('learning/download/pdf', [LearningManageController::class, 'downloadPdf'])->name('manage.learning.download.pdf');
+        Route::get('learning/download/csv', [LearningManageController::class, 'downloadCsv'])->name('manage.learning.download.csv');
     });
 
     // ── Task Management ─────────────────────────────────────────────
@@ -529,14 +568,32 @@ Route::get('{task}/qr', [TaskManageController::class, 'qr'])->name('qr');
             Route::get('online/datatable', [RecordOnlineController::class, 'datatable'])->name('online.datatable');
             Route::get('online/search-employees', [RecordOnlineController::class, 'searchEmployees'])->name('online.search-employees');
             Route::get('online/search-titles', [RecordOnlineController::class, 'searchTitles'])->name('online.search-titles');
+            Route::get('online/export', [RecordOnlineController::class, 'export'])->name('online.export');
+            Route::get('online/export/pdf', [RecordOnlineController::class, 'exportPdf'])->name('online.export.pdf');
+            Route::get('online/export/csv', [RecordOnlineController::class, 'exportCsv'])->name('online.export.csv');
             Route::get('online/download', [RecordOnlineController::class, 'download'])->name('online.download');
+            Route::get('online/{type}/{id}/detail', [RecordOnlineController::class, 'detail'])->name('online.detail');
+            Route::delete('online/{type}/{id}', [RecordOnlineController::class, 'destroy'])->name('online.destroy');
 
             Route::get('offline', [RecordOfflineController::class, 'index'])->name('offline');
             Route::get('offline/ajax/summary', [RecordOfflineController::class, 'ajaxSummary'])->name('offline.ajax.summary');
             Route::get('offline/ajax/classification', [RecordOfflineController::class, 'ajaxClassification'])->name('offline.ajax.classification');
             Route::get('offline/classification/{classification}', [RecordOfflineController::class, 'classification'])->name('offline.classification');
             Route::get('offline/classification/{classification}/datatable', [RecordOfflineController::class, 'classificationDatatable'])->name('offline.classification.datatable');
-            Route::get('offline/classification/{classification}/download', [RecordOfflineController::class, 'classificationDownload'])->name('offline.classification.download');
+            Route::get('offline/classification/{classification}/download/{format?}', [RecordOfflineController::class, 'classificationDownload'])->name('offline.classification.download');
+            Route::get('offline/classification/{classification}/export/excel', [RecordOfflineController::class, 'classificationExportExcel'])->name('offline.classification.export.excel');
+            Route::get('offline/classification/{classification}/export/csv', [RecordOfflineController::class, 'classificationExportCsv'])->name('offline.classification.export.csv');
+            Route::get('offline/classification/{classification}/export/pdf', [RecordOfflineController::class, 'classificationExportPdf'])->name('offline.classification.export.pdf');
+            Route::get('offline/participant/{identifier}', [RecordOfflineController::class, 'participantDetail'])->name('offline.participant');
+            Route::get('offline/participant/{identifier}/datatable', [RecordOfflineController::class, 'participantDatatable'])->name('offline.participant.datatable');
+            Route::get('offline/participant/{identifier}/export/excel', [RecordOfflineController::class, 'participantExportExcel'])->name('offline.participant.export.excel');
+            Route::get('offline/participant/{identifier}/export/csv', [RecordOfflineController::class, 'participantExportCsv'])->name('offline.participant.export.csv');
+            Route::get('offline/participant/{identifier}/export/pdf', [RecordOfflineController::class, 'participantExportPdf'])->name('offline.participant.export.pdf');
+            Route::get('offline/course/{training}', [RecordOfflineController::class, 'courseDetail'])->name('offline.course');
+            Route::get('offline/course/{training}/datatable', [RecordOfflineController::class, 'courseDatatable'])->name('offline.course.datatable');
+            Route::get('offline/course/{training}/export/excel', [RecordOfflineController::class, 'courseExportExcel'])->name('offline.course.export.excel');
+            Route::get('offline/course/{training}/export/csv', [RecordOfflineController::class, 'courseExportCsv'])->name('offline.course.export.csv');
+            Route::get('offline/course/{training}/export/pdf', [RecordOfflineController::class, 'courseExportPdf'])->name('offline.course.export.pdf');
             Route::get('offline/datatable', [RecordOfflineController::class, 'datatable'])->name('offline.datatable');
             Route::get('offline/options', [OfflineTrainingOptionController::class, 'index'])->name('offline.options.index');
             Route::post('offline/options', [OfflineTrainingOptionController::class, 'store'])->name('offline.options.store');
@@ -563,7 +620,18 @@ Route::get('{task}/qr', [TaskManageController::class, 'qr'])->name('qr');
             Route::get('all/classification/{classification}/datatable', [RecordAllController::class, 'classificationDatatable'])->name('all.classification.datatable');
             Route::get('all/classification/{classification}/download/{format?}', [RecordAllController::class, 'classificationDownload'])->name('all.classification.download');
             Route::get('all/datatable', [RecordAllController::class, 'datatable'])->name('all.datatable');
+            Route::get('all/participant/{identifier}', [RecordAllController::class, 'participantDetail'])->name('all.participant');
+            Route::get('all/participant/{identifier}/datatable', [RecordAllController::class, 'participantDatatable'])->name('all.participant.datatable');
+            Route::get('all/participant/{identifier}/summary', [RecordAllController::class, 'participantAjaxSummary'])->name('all.participant.summary');
+            Route::get('all/participant/{identifier}/export/excel', [RecordAllController::class, 'participantExportExcel'])->name('all.participant.export.excel');
+            Route::get('all/participant/{identifier}/export/csv', [RecordAllController::class, 'participantExportCsv'])->name('all.participant.export.csv');
+            Route::get('all/participant/{identifier}/export/pdf', [RecordAllController::class, 'participantExportPdf'])->name('all.participant.export.pdf');
+            Route::get('all/course/{type}/{id}', [RecordAllController::class, 'courseRedirect'])->name('all.course');
             Route::get('export-all', [RecordExportController::class, 'index'])->name('export-all');
+            Route::match(['get', 'post'], 'export-all/preview', [RecordExportController::class, 'preview'])->name('export-all.preview');
+            Route::get('export-all/download', [RecordExportController::class, 'download'])->name('export-all.download');
+            Route::get('export-all/sub-classifications', [RecordExportController::class, 'subClassifications'])->name('export-all.sub-classifications');
+            Route::get('export-all/scope-options', [RecordExportController::class, 'scopeOptions'])->name('export-all.scope-options');
         });
     });
 

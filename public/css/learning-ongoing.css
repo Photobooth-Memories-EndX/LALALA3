@@ -278,9 +278,42 @@
     padding: 0;
 }
 
-.learning-mode-switch .learning-mode-btn,
-.ongoing-mode-switch .ongoing-mode-btn,
-.record-mode-switch .record-mode-btn {
+.ongoing-download-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 40px;
+    text-decoration: none;
+}
+
+.ongoing-mooc-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.ongoing-mooc-actions .ongoing-mode-switch {
+    width: auto;
+    margin: 0;
+}
+
+.ongoing-mooc-actions .ongoing-filter-action-btn {
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+    min-height: 40px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 8px !important;
+}
+
+.ongoing-mooc-actions .ongoing-download-button {
+    flex: 0 0 40px;
+}
+
+.ongoing-mode-switch .ongoing-mode-btn {
     width: 104px;
     min-width: 104px;
     flex: 0 1 104px;
@@ -443,6 +476,16 @@
 }
 
 @media (max-width: 575.98px) {
+    .ongoing-mooc-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .ongoing-mooc-actions .ongoing-mode-switch {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
     .ongoing-filter-heading {
         align-items: flex-start;
     }

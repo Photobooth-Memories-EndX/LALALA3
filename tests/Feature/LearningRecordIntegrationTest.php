@@ -265,7 +265,7 @@ class LearningRecordIntegrationTest extends TestCase
         $this->assertEquals('Playlist', $playlistRow[3]);
         $this->assertEquals('-', $playlistRow[4]);
         $this->assertEquals('100%', $playlistRow[7]);
-        $this->assertEquals('Available', $playlistRow[11]);
+        $this->assertEquals('Available', $playlistRow[10]);
     }
 
     /**
@@ -297,7 +297,7 @@ class LearningRecordIntegrationTest extends TestCase
         $this->assertEquals('Playlist', $playlistRow[3]);
         $this->assertEquals('-', $playlistRow[4]);
         $this->assertEquals('100%', $playlistRow[7]);
-        $this->assertEquals('Available', $playlistRow[11]);
+        $this->assertEquals('Available', $playlistRow[10]);
     }
 
     /**

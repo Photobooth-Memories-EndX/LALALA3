@@ -194,11 +194,11 @@ class LearningRecordFilterCardExportTest extends TestCase
         // Export
         $export = new ExportMyLearningRecord([]);
         $data = $export->array();
-        $exportItems = array_filter(array_slice($data, 1, -2), fn ($r) => !empty($r[0]));
-        $totalRow = end($data);
+        $exportItems = array_filter(array_slice($data, 1), fn ($r) => !empty($r[0]));
+        $this->assertNull(collect($data)->firstWhere(0, 'TOTAL'));
 
         $this->assertCount(3, $exportItems);
-        $this->assertEquals(0.35, $totalRow[6]);
+        $this->assertEquals(0.35, round((float) collect($exportItems)->sum(fn($r) => (float) str_replace([' hrs', ' hr'], '', $r[6])), 2));
     }
 
     public function test_year_2023_filter_controls_table_card_and_export(): void
@@ -217,11 +217,11 @@ class LearningRecordFilterCardExportTest extends TestCase
 
         $export = new ExportMyLearningRecord(['record_filter_year' => '2023']);
         $data = $export->array();
-        $exportItems = array_filter(array_slice($data, 1, -2), fn ($r) => !empty($r[0]));
-        $totalRow = end($data);
+        $exportItems = array_filter(array_slice($data, 1), fn ($r) => !empty($r[0]));
+        $this->assertNull(collect($data)->firstWhere(0, 'TOTAL'));
 
         $this->assertCount(1, $exportItems);
-        $this->assertEquals(0.05, $totalRow[6]);
+        $this->assertEquals(0.05, round((float) collect($exportItems)->sum(fn($r) => (float) str_replace([' hrs', ' hr'], '', $r[6])), 2));
     }
 
     public function test_year_2025_filter_controls_table_card_and_export(): void
@@ -240,11 +240,11 @@ class LearningRecordFilterCardExportTest extends TestCase
 
         $export = new ExportMyLearningRecord(['year' => '2025']);
         $data = $export->array();
-        $exportItems = array_filter(array_slice($data, 1, -2), fn ($r) => !empty($r[0]));
-        $totalRow = end($data);
+        $exportItems = array_filter(array_slice($data, 1), fn ($r) => !empty($r[0]));
+        $this->assertNull(collect($data)->firstWhere(0, 'TOTAL'));
 
         $this->assertCount(2, $exportItems);
-        $this->assertEquals(0.30, $totalRow[6]);
+        $this->assertEquals(0.30, round((float) collect($exportItems)->sum(fn($r) => (float) str_replace([' hrs', ' hr'], '', $r[6])), 2));
     }
 
     public function test_combined_type_and_year_filter_matches(): void
@@ -263,11 +263,11 @@ class LearningRecordFilterCardExportTest extends TestCase
 
         $export = new ExportMyLearningRecord(['type' => 'Document', 'year' => '2025']);
         $data = $export->array();
-        $exportItems = array_filter(array_slice($data, 1, -2), fn ($r) => !empty($r[0]));
-        $totalRow = end($data);
+        $exportItems = array_filter(array_slice($data, 1), fn ($r) => !empty($r[0]));
+        $this->assertNull(collect($data)->firstWhere(0, 'TOTAL'));
 
         $this->assertCount(1, $exportItems);
-        $this->assertEquals(0.10, $totalRow[6]);
+        $this->assertEquals(0.10, round((float) collect($exportItems)->sum(fn($r) => (float) str_replace([' hrs', ' hr'], '', $r[6])), 2));
     }
 
     public function test_search_and_year_filter_matches(): void
@@ -285,11 +285,11 @@ class LearningRecordFilterCardExportTest extends TestCase
 
         $export = new ExportMyLearningRecord(['search' => 'Technical', 'year' => '2023']);
         $data = $export->array();
-        $exportItems = array_filter(array_slice($data, 1, -2), fn ($r) => !empty($r[0]));
-        $totalRow = end($data);
+        $exportItems = array_filter(array_slice($data, 1), fn ($r) => !empty($r[0]));
+        $this->assertNull(collect($data)->firstWhere(0, 'TOTAL'));
 
         $this->assertCount(1, $exportItems);
-        $this->assertEquals(0.05, $totalRow[6]);
+        $this->assertEquals(0.05, round((float) collect($exportItems)->sum(fn($r) => (float) str_replace([' hrs', ' hr'], '', $r[6])), 2));
     }
 
     public function test_classification_filter_controls_table_card_and_export(): void
@@ -308,11 +308,11 @@ class LearningRecordFilterCardExportTest extends TestCase
 
         $export = new ExportMyLearningRecord(['classification' => 'Technical Operations']);
         $data = $export->array();
-        $exportItems = array_filter(array_slice($data, 1, -2), fn ($r) => !empty($r[0]));
-        $totalRow = end($data);
+        $exportItems = array_filter(array_slice($data, 1), fn ($r) => !empty($r[0]));
+        $this->assertNull(collect($data)->firstWhere(0, 'TOTAL'));
 
         $this->assertCount(1, $exportItems);
-        $this->assertEquals(0.05, $totalRow[6]);
+        $this->assertEquals(0.05, round((float) collect($exportItems)->sum(fn($r) => (float) str_replace([' hrs', ' hr'], '', $r[6])), 2));
     }
 
     public function test_quick_filter_mode_controls_table_card_and_export(): void
@@ -332,9 +332,9 @@ class LearningRecordFilterCardExportTest extends TestCase
 
         $exportContent = new ExportMyLearningRecord(['quickFilter' => 'content']);
         $dataContent = $exportContent->array();
-        $itemsContent = array_filter(array_slice($dataContent, 1, -2), fn ($r) => !empty($r[0]));
+        $itemsContent = array_filter(array_slice($dataContent, 1), fn ($r) => !empty($r[0]));
         $this->assertCount(2, $itemsContent);
-        $this->assertEquals(0.15, end($dataContent)[6]);
+        $this->assertEquals(0.15, round((float) collect($itemsContent)->sum(fn($r) => (float) str_replace([' hrs', ' hr'], '', $r[6])), 2));
 
         // Mode: Playlist only
         request()->replace(['record_quick' => 'playlist']);
@@ -349,9 +349,9 @@ class LearningRecordFilterCardExportTest extends TestCase
 
         $exportPl = new ExportMyLearningRecord(['quickFilter' => 'playlist']);
         $dataPl = $exportPl->array();
-        $itemsPl = array_filter(array_slice($dataPl, 1, -2), fn ($r) => !empty($r[0]));
+        $itemsPl = array_filter(array_slice($dataPl, 1), fn ($r) => !empty($r[0]));
         $this->assertCount(1, $itemsPl);
-        $this->assertEquals(0.20, end($dataPl)[6]);
+        $this->assertEquals(0.20, round((float) collect($itemsPl)->sum(fn($r) => (float) str_replace([' hrs', ' hr'], '', $r[6])), 2));
     }
 
     public function test_non_matching_filter_yields_zero_across_all(): void
@@ -370,11 +370,10 @@ class LearningRecordFilterCardExportTest extends TestCase
 
         $export = new ExportMyLearningRecord(['record_filter_year' => '2019']);
         $data = $export->array();
-        $exportItems = array_filter(array_slice($data, 1, -2), fn ($r) => !empty($r[0]));
-        $totalRow = end($data);
+        $exportItems = array_filter(array_slice($data, 1), fn ($r) => !empty($r[0]));
 
         $this->assertCount(0, $exportItems);
-        $this->assertEquals(0.0, $totalRow[6]);
+        $this->assertCount(1, $data); // Only headings row
     }
 
     public function test_real_database_user_consistency_across_years(): void
@@ -394,16 +393,17 @@ class LearningRecordFilterCardExportTest extends TestCase
 
             $export = new ExportMyLearningRecord(['year' => $targetYear]);
             $data = $export->array();
-            $exportItems = array_filter(array_slice($data, 1, -2), fn ($r) => !empty($r[0]));
-            $totalRow = end($data);
+            $exportItems = array_filter(array_slice($data, 1), fn ($r) => !empty($r[0]));
+            $this->assertNull(collect($data)->firstWhere(0, 'TOTAL'));
 
             // 1. Table Count == Card Total == Export Count
             $this->assertCount($rows->count(), $exportItems, "Mismatch in count for year {$targetYear}");
             $this->assertEquals($rows->count(), $stats['courseCompleted'] + $stats['playlistCompleted']);
 
-            // 2. Table Hours == Card Hours == Export Total Row
+            // 2. Table Hours == Card Hours == Export Data Sum
             $expectedHours = round((float) $stats['totalLearningHours'], 2);
-            $this->assertEquals($expectedHours, $totalRow[6], "Mismatch in hours for year {$targetYear}");
+            $exportedHours = round((float) collect($exportItems)->sum(fn($r) => (float) str_replace([' hrs', ' hr'], '', $r[6])), 2);
+            $this->assertEqualsWithDelta($expectedHours, $exportedHours, 0.05, "Mismatch in hours for year {$targetYear}");
         }
     }
 
@@ -422,7 +422,7 @@ class LearningRecordFilterCardExportTest extends TestCase
         $rowsMandatory = $viewMandatory->getData()['rows'];
 
         $exportMandatory = new ExportMyLearningRecord(['program' => 'mandatory']);
-        $exportItemsMandatory = array_values(array_filter(array_slice($exportMandatory->array(), 1, -2), fn ($r) => !empty($r[0])));
+        $exportItemsMandatory = array_values(array_filter(array_slice($exportMandatory->array(), 1), fn ($r) => !empty($r[0])));
 
         $this->assertCount(1, $rowsMandatory);
         $this->assertCount(1, $exportItemsMandatory);
@@ -434,7 +434,7 @@ class LearningRecordFilterCardExportTest extends TestCase
         $rowsOptional = $viewOptional->getData()['rows'];
 
         $exportOptional = new ExportMyLearningRecord(['program' => 'optional']);
-        $exportItemsOptional = array_values(array_filter(array_slice($exportOptional->array(), 1, -2), fn ($r) => !empty($r[0])));
+        $exportItemsOptional = array_values(array_filter(array_slice($exportOptional->array(), 1), fn ($r) => !empty($r[0])));
 
         $this->assertCount(1, $rowsOptional);
         $this->assertCount(1, $exportItemsOptional);
@@ -449,7 +449,7 @@ class LearningRecordFilterCardExportTest extends TestCase
         request()->replace(['record_filter_duration' => '0-600']);
         $rows = $this->controller->partial($this->eligibilityService)->getData()['rows'];
         $export = new ExportMyLearningRecord(['duration' => '0-600']);
-        $exportItems = array_values(array_filter(array_slice($export->array(), 1, -2), fn ($r) => !empty($r[0])));
+        $exportItems = array_values(array_filter(array_slice($export->array(), 1), fn ($r) => !empty($r[0])));
 
         $this->assertCount(2, $rows);
         $this->assertCount(2, $exportItems);
@@ -459,7 +459,7 @@ class LearningRecordFilterCardExportTest extends TestCase
         request()->replace(['record_filter_duration' => '600-1800']);
         $rows = $this->controller->partial($this->eligibilityService)->getData()['rows'];
         $export = new ExportMyLearningRecord(['duration' => '600-1800']);
-        $exportItems = array_values(array_filter(array_slice($export->array(), 1, -2), fn ($r) => !empty($r[0])));
+        $exportItems = array_values(array_filter(array_slice($export->array(), 1), fn ($r) => !empty($r[0])));
 
         $this->assertCount(2, $rows);
         $this->assertCount(2, $exportItems);
@@ -474,7 +474,7 @@ class LearningRecordFilterCardExportTest extends TestCase
         request()->replace(['record_filter_learning_hour' => '0-1']);
         $rows = $this->controller->partial($this->eligibilityService)->getData()['rows'];
         $export = new ExportMyLearningRecord(['learningHour' => '0-1']);
-        $exportItems = array_values(array_filter(array_slice($export->array(), 1, -2), fn ($r) => !empty($r[0])));
+        $exportItems = array_values(array_filter(array_slice($export->array(), 1), fn ($r) => !empty($r[0])));
 
         $this->assertCount(3, $rows);
         $this->assertCount(3, $exportItems);
@@ -484,7 +484,7 @@ class LearningRecordFilterCardExportTest extends TestCase
         request()->replace(['record_filter_learning_hour' => 'gt3']);
         $rowsGt3 = $this->controller->partial($this->eligibilityService)->getData()['rows'];
         $exportGt3 = new ExportMyLearningRecord(['learningHour' => 'gt3']);
-        $exportItemsGt3 = array_values(array_filter(array_slice($exportGt3->array(), 1, -2), fn ($r) => !empty($r[0])));
+        $exportItemsGt3 = array_values(array_filter(array_slice($exportGt3->array(), 1), fn ($r) => !empty($r[0])));
 
         $this->assertCount(0, $rowsGt3);
         $this->assertCount(0, $exportItemsGt3);
@@ -497,7 +497,7 @@ class LearningRecordFilterCardExportTest extends TestCase
         request()->replace(['record_filter_completion' => 'completed']);
         $rows = $this->controller->partial($this->eligibilityService)->getData()['rows'];
         $export = new ExportMyLearningRecord(['completion' => 'completed']);
-        $exportItems = array_values(array_filter(array_slice($export->array(), 1, -2), fn ($r) => !empty($r[0])));
+        $exportItems = array_values(array_filter(array_slice($export->array(), 1), fn ($r) => !empty($r[0])));
 
         $this->assertCount(3, $rows);
         $this->assertCount(3, $exportItems);
@@ -512,7 +512,7 @@ class LearningRecordFilterCardExportTest extends TestCase
         request()->replace(['record_filter_modal_month' => ['5']]);
         $rows = $this->controller->partial($this->eligibilityService)->getData()['rows'];
         $export = new ExportMyLearningRecord(['modalMonths' => ['5']]);
-        $exportItems = array_values(array_filter(array_slice($export->array(), 1, -2), fn ($r) => !empty($r[0])));
+        $exportItems = array_values(array_filter(array_slice($export->array(), 1), fn ($r) => !empty($r[0])));
 
         $this->assertCount(1, $rows);
         $this->assertCount(1, $exportItems);
@@ -528,7 +528,7 @@ class LearningRecordFilterCardExportTest extends TestCase
         request()->replace(['record_filter_activity_sort' => 'oldest']);
         $rowsOldest = $this->controller->partial($this->eligibilityService)->getData()['rows'];
         $exportOldest = new ExportMyLearningRecord(['record_filter_activity_sort' => 'oldest']);
-        $exportItemsOldest = array_values(array_filter(array_slice($exportOldest->array(), 1, -2), fn ($r) => !empty($r[0])));
+        $exportItemsOldest = array_values(array_filter(array_slice($exportOldest->array(), 1), fn ($r) => !empty($r[0])));
 
         $this->assertEquals($rowsOldest->pluck('title')->values()->all(), array_column($exportItemsOldest, 1));
         $this->assertEquals('Technical Video Course 2023', $rowsOldest->first()['title']);
@@ -537,7 +537,7 @@ class LearningRecordFilterCardExportTest extends TestCase
         request()->replace(['record_filter_activity_sort' => 'ascending']);
         $rowsAsc = $this->controller->partial($this->eligibilityService)->getData()['rows'];
         $exportAsc = new ExportMyLearningRecord(['record_filter_activity_sort' => 'ascending']);
-        $exportItemsAsc = array_values(array_filter(array_slice($exportAsc->array(), 1, -2), fn ($r) => !empty($r[0])));
+        $exportItemsAsc = array_values(array_filter(array_slice($exportAsc->array(), 1), fn ($r) => !empty($r[0])));
 
         $this->assertEquals($rowsAsc->pluck('title')->values()->all(), array_column($exportItemsAsc, 1));
     }
@@ -578,14 +578,15 @@ class LearningRecordFilterCardExportTest extends TestCase
             $rows = $this->controller->partial($this->eligibilityService)->getData()['rows'];
             $export = new ExportMyLearningRecord($filters);
             $exportData = $export->array();
-            $exportItems = array_values(array_filter(array_slice($exportData, 1, -2), fn ($r) => !empty($r[0])));
-            $totalRow = end($exportData);
+            $exportItems = array_values(array_filter(array_slice($exportData, 1), fn ($r) => !empty($r[0])));
+            $this->assertNull(collect($exportData)->firstWhere(0, 'TOTAL'));
 
             $this->assertCount($rows->count(), $exportItems, "Mismatch in item count for scenario: {$scenario}");
             $this->assertEquals($rows->pluck('title')->values()->all(), array_column($exportItems, 1), "Mismatch in title dataset order for scenario: {$scenario}");
 
             $expectedHours = round((float) $rows->sum(fn (array $r) => (float) ($r['learning_hour_value'] ?? 0)), 2);
-            $this->assertEquals($expectedHours, $totalRow[6], "Mismatch in total learning hours for scenario: {$scenario}");
+            $exportedHours = round((float) collect($exportItems)->sum(fn($r) => (float) str_replace([' hrs', ' hr'], '', $r[6])), 2);
+            $this->assertEqualsWithDelta($expectedHours, $exportedHours, 0.05, "Mismatch in total learning hours for scenario: {$scenario}");
         }
     }
 }

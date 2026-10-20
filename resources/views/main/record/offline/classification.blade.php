@@ -33,7 +33,7 @@
                 <div class="text-secondary small fw-semibold mb-2" style="color: #6c757d !important; font-size: 0.85rem;">
                     Quick Filter
                 </div>
-                <form id="offline-filter-form" onsubmit="return false;">
+                <form id="offline-filter-form" class="w-100" onsubmit="return false;">
                     <!-- Hidden inputs from More Filters Modal to preserve in datatable & export queries -->
                     <input type="hidden" id="filter-from-date" name="from_date" value="{{ request('from_date') ?? request('date_from') }}">
                     <input type="hidden" id="filter-to-date" name="to_date" value="{{ request('to_date') ?? request('date_to') }}">
@@ -45,23 +45,23 @@
                     <input type="hidden" id="filter-hours-min" name="hours_min" value="{{ request('hours_min') ?? request('learning_hours_min') }}">
                     <input type="hidden" id="filter-hours-max" name="hours_max" value="{{ request('hours_max') ?? request('learning_hours_max') }}">
 
-                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <div class="d-flex align-items-center gap-2 flex-wrap w-100">
                         <!-- Employee Search -->
-                        <div class="position-relative flex-grow-1" style="min-width: 200px; max-width: 260px;">
-                            <input type="text" id="offline-employee-input" class="form-control rounded-3" 
-                                   placeholder="Search employee or NIP..." autocomplete="off" 
+                        <div class="position-relative flex-grow-1" style="min-width: 180px;">
+                            <input type="text" id="offline-employee-input" class="form-control rounded-3 w-100"
+                                   placeholder="Search employee or NIP..." autocomplete="off"
                                    value="{{ request('employee_id') ?? request('employee') }}">
                         </div>
 
                         <!-- Learning Title / Course Name Search -->
-                        <div class="position-relative flex-grow-1" style="min-width: 220px; max-width: 280px;">
-                            <input type="text" id="offline-course-input" class="form-control rounded-3" 
-                                   placeholder="Search learning title..." autocomplete="off" 
+                        <div class="position-relative flex-grow-1" style="min-width: 200px;">
+                            <input type="text" id="offline-course-input" class="form-control rounded-3 w-100"
+                                   placeholder="Search learning title..." autocomplete="off"
                                    value="{{ request('course_name') ?? (request('learning_title') ?? request('title')) }}">
                         </div>
 
                         <!-- Type Dropdown -->
-                        <div style="min-width: 125px; flex-shrink: 0;">
+                        <div class="flex-shrink-0" style="min-width: 125px;">
                             <select class="form-select rounded-3" id="offline-type-select">
                                 <option value="all" {{ request('type', 'all') === 'all' ? 'selected' : '' }}>Type: All</option>
                                 @foreach ($trainingTypes as $type)
@@ -71,7 +71,7 @@
                         </div>
 
                         <!-- Status Dropdown -->
-                        <div style="min-width: 120px; flex-shrink: 0;">
+                        <div class="flex-shrink-0" style="min-width: 120px;">
                             <select class="form-select rounded-3" id="offline-status-select">
                                 <option value="all" {{ request('status', 'all') === 'all' ? 'selected' : '' }}>All Status</option>
                                 <option value="finished" {{ in_array(request('status'), ['finished', 'finish', '1']) ? 'selected' : '' }}>Finished</option>
@@ -81,7 +81,7 @@
                         </div>
 
                         <!-- Year Dropdown -->
-                        <div style="min-width: 110px; flex-shrink: 0;">
+                        <div class="flex-shrink-0" style="min-width: 105px;">
                             <select class="form-select rounded-3" id="offline-year-select">
                                 <option value="all" {{ request('year', 'all') === 'all' ? 'selected' : '' }}>All Year</option>
                                 @foreach ($years as $year)
@@ -91,28 +91,67 @@
                         </div>
 
                         <!-- 1. Icon Button: Apply Filter -->
-                        <button type="button" id="btn-apply-offline-filter" class="btn btn-primary btn-icon px-3 flex-shrink-0" 
+                        <button type="button" id="btn-apply-offline-filter" class="btn btn-primary btn-icon px-3 flex-shrink-0"
                                 style="background-color: #003b6d; border-color: #003b6d;" data-bs-toggle="tooltip" data-bs-title="Apply Filter" title="Apply Filter">
                             <i class="ti ti-search fs-2"></i>
                         </button>
 
                         <!-- 2. Icon Button: More Filters -->
-                        <button type="button" id="btn-more-offline-filters" class="btn btn-outline-primary btn-icon px-3 position-relative btn-more-filters flex-shrink-0" 
+                        <button type="button" id="btn-more-offline-filters" class="btn btn-outline-primary btn-icon px-3 position-relative btn-more-filters flex-shrink-0"
                                 data-bs-toggle="modal" data-bs-target="#moreOfflineFiltersModal" title="More Filters">
                             <i class="ti ti-adjustments-horizontal fs-2"></i>
                             <span id="activeFilterBadge" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle d-none">0</span>
                         </button>
 
                         <!-- 3. Icon Button: Reset -->
-                        <button type="button" id="btn-reset-offline-filter" class="btn btn-outline-secondary btn-icon px-3 flex-shrink-0" 
+                        <button type="button" id="btn-reset-offline-filter" class="btn btn-outline-secondary btn-icon px-3 btn-quick-reset flex-shrink-0"
                                 data-bs-toggle="tooltip" data-bs-title="Reset Filters" title="Reset Filters">
                             <i class="ti ti-refresh fs-2"></i>
                         </button>
 
-                        <!-- 4. Button: Download Excel -->
-                        <button type="button" id="btn-download-export" class="btn btn-success rounded-3 px-3 btn-download flex-shrink-0" title="Download Excel">
-                            <i class="ti ti-download me-1"></i> Download
-                        </button>
+                        <!-- 4. Download Dropdown (Excel, CSV, PDF Landscape) -->
+                        <div class="dropdown flex-shrink-0">
+                            <button class="btn btn-success dropdown-toggle rounded-3 px-3 btn-download d-inline-flex align-items-center gap-1"
+                                    type="button" id="btn-download-export" data-bs-toggle="dropdown" aria-expanded="false" title="Export Records">
+                                <i class="ti ti-download me-1"></i>
+                                <span class="btn-download-text">Download</span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3 py-2" aria-labelledby="btn-download-export" style="min-width: 220px; z-index: 1060;">
+                                <li>
+                                    <h6 class="dropdown-header text-uppercase text-muted fw-bold small mb-1" style="font-size: 0.7rem; letter-spacing: 0.5px;">
+                                        Export Options
+                                    </h6>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2 export-format-btn" href="javascript:void(0);" data-format="xlsx" id="btn-export-classification-excel">
+                                        <i class="ti ti-file-spreadsheet text-success fs-2"></i>
+                                        <div>
+                                            <div class="fw-semibold">Excel (.xlsx)</div>
+                                            <div class="small text-muted" style="font-size: 0.72rem;">Full dataset spreadsheet</div>
+                                        </div>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2 export-format-btn" href="javascript:void(0);" data-format="csv" id="btn-export-classification-csv">
+                                        <i class="ti ti-file-text text-primary fs-2"></i>
+                                        <div>
+                                            <div class="fw-semibold">CSV (.csv)</div>
+                                            <div class="small text-muted" style="font-size: 0.72rem;">Standard UTF-8 tabular data</div>
+                                        </div>
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider my-1"></li>
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2 export-format-btn" href="javascript:void(0);" data-format="pdf" id="btn-export-classification-pdf">
+                                        <i class="ti ti-file-type-pdf text-danger fs-2"></i>
+                                        <div>
+                                            <div class="fw-semibold">PDF Landscape (.pdf)</div>
+                                            <div class="small text-muted" style="font-size: 0.72rem;">Printable A3 landscape report</div>
+                                        </div>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -352,30 +391,7 @@
 @include('main.record.components.offline-detail-modal')
 
 <!-- DELETE CONFIRMATION MODAL -->
-<div class="modal fade" id="deleteOfflineRecordModal" tabindex="-1" aria-labelledby="deleteOfflineRecordModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content rounded-3 border-0 shadow">
-            <div class="modal-body text-center p-4">
-                <div class="text-danger mb-3">
-                    <span class="avatar avatar-lg bg-danger-lt rounded-circle">
-                        <i class="ti ti-trash fs-1"></i>
-                    </span>
-                </div>
-                <h4 class="modal-title fw-bold text-dark mb-2" id="deleteOfflineRecordModalLabel">Delete Training Record?</h4>
-                <p class="text-muted small mb-3">
-                    Are you sure you want to delete the record for <strong id="delete-modal-employee-name" class="text-dark"></strong> in <em id="delete-modal-course-name"></em>? This action will remove the participant from this training.
-                </p>
-                <div class="d-flex justify-content-center gap-2">
-                    <button type="button" class="btn btn-outline-secondary px-3 rounded-2" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-danger px-3 rounded-2 d-inline-flex align-items-center gap-1" id="btn-confirm-delete-offline-record">
-                        <i class="ti ti-trash"></i>
-                        <span>Delete</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+@include('main.record.components.offline-delete-modal')
 
 @endsection
 
@@ -554,8 +570,9 @@
         border-color: #374151 !important;
     }
 
-    /* Action buttons */
-    .btn-icon {
+    /* Action buttons in table */
+    .table .btn-view-offline-detail,
+    .table .btn-icon {
         width: 30px;
         height: 30px;
         padding: 0;
@@ -563,6 +580,112 @@
         align-items: center;
         justify-content: center;
         font-size: 15px;
+    }
+
+    /* Quick Filter Toolbar Buttons Styling (Matching Manage Learning) */
+    .btn-more-filters,
+    #btn-more-filters,
+    #btn-more-offline-filters {
+        border-color: #0c5b9e !important;
+        color: #0c5b9e !important;
+        background-color: transparent !important;
+        transition: all 0.2s ease;
+    }
+    .btn-more-filters:hover,
+    .btn-more-filters:focus,
+    .btn-more-filters:active,
+    #btn-more-filters:hover,
+    #btn-more-filters:focus,
+    #btn-more-filters:active,
+    #btn-more-offline-filters:hover,
+    #btn-more-offline-filters:focus,
+    #btn-more-offline-filters:active {
+        background-color: #0c5b9e !important;
+        color: #ffffff !important;
+        border-color: #0c5b9e !important;
+    }
+    .btn-more-filters:hover i,
+    .btn-more-filters:focus i,
+    .btn-more-filters:active i,
+    #btn-more-filters:hover i,
+    #btn-more-filters:focus i,
+    #btn-more-filters:active i,
+    #btn-more-offline-filters:hover i,
+    #btn-more-offline-filters:focus i,
+    #btn-more-offline-filters:active i {
+        color: #ffffff !important;
+    }
+
+    [data-bs-theme="dark"] .btn-more-filters,
+    [data-bs-theme="dark"] #btn-more-filters,
+    [data-bs-theme="dark"] #btn-more-offline-filters,
+    body.dark-mode .btn-more-filters,
+    body.dark-mode #btn-more-filters,
+    body.dark-mode #btn-more-offline-filters,
+    body.theme-dark .btn-more-filters,
+    body.theme-dark #btn-more-filters,
+    body.theme-dark #btn-more-offline-filters {
+        background-color: transparent !important;
+        border-color: #3b82f6 !important;
+        color: #60a5fa !important;
+    }
+    [data-bs-theme="dark"] .btn-more-filters:hover,
+    [data-bs-theme="dark"] #btn-more-filters:hover,
+    [data-bs-theme="dark"] #btn-more-offline-filters:hover,
+    body.dark-mode .btn-more-filters:hover,
+    body.dark-mode #btn-more-filters:hover,
+    body.dark-mode #btn-more-offline-filters:hover,
+    body.theme-dark .btn-more-filters:hover,
+    body.theme-dark #btn-more-filters:hover,
+    body.theme-dark #btn-more-offline-filters:hover {
+        background-color: #2563eb !important;
+        color: #ffffff !important;
+        border-color: #2563eb !important;
+    }
+
+    .btn-download {
+        background-color: #2fb344 !important;
+        border-color: #2fb344 !important;
+        color: #ffffff !important;
+        transition: all 0.2s ease;
+    }
+    .btn-download:hover,
+    .btn-download:focus,
+    .btn-download:active {
+        background-color: #269639 !important;
+        border-color: #269639 !important;
+        color: #ffffff !important;
+    }
+    .btn-download:hover i,
+    .btn-download:focus i,
+    .btn-download:active i {
+        color: #ffffff !important;
+    }
+
+    .btn-quick-reset {
+        transition: all 0.2s ease;
+    }
+    .btn-quick-reset:hover {
+        background-color: #0c5b9e !important;
+        color: #ffffff !important;
+    }
+    [data-bs-theme="dark"] .btn-quick-reset,
+    body.dark-mode .btn-quick-reset,
+    body.theme-dark .btn-quick-reset {
+        background-color: transparent !important;
+        color: #94a3b8 !important;
+    }
+    [data-bs-theme="dark"] .btn-quick-reset:hover,
+    body.dark-mode .btn-quick-reset:hover,
+    body.theme-dark .btn-quick-reset:hover {
+        background-color: #0c5b9e !important;
+        color: #ffffff !important;
+    }
+
+    .hover-underline:hover,
+    .participant-link:hover,
+    .course-link:hover {
+        text-decoration: underline !important;
     }
 </style>
 @endsection
@@ -897,10 +1020,13 @@
             offlineTable.ajax.reload(null, true);
         });
 
-        // Export Download Handler
-        $('#btn-download-export').on('click', function (e) {
-            e.preventDefault();
+        // Build URL parameters representing all active filters
+        function buildClassificationExportParams(format) {
             const params = new URLSearchParams();
+
+            if (format) {
+                params.append('format', format);
+            }
 
             const empVal = $('#offline-employee-input').val().trim();
             if (empVal) params.append('employee_id', empVal);
@@ -944,8 +1070,38 @@
             const hoursMax = $('#filter-hours-max').val();
             if (hoursMax) params.append('hours_max', hoursMax);
 
+            return params;
+        }
+
+        // Export Download Trigger Handler
+        function triggerExportDownload(format) {
+            const $btn = $('#btn-download-export');
+            const $icon = $btn.find('i');
+            const $text = $btn.find('.btn-download-text');
+            const originalText = $text.text() || 'Download';
+            const originalIconClass = $icon.attr('class') || 'ti ti-download me-1';
+
+            // Visual feedback
+            $btn.prop('disabled', true);
+            $icon.attr('class', 'spinner-border spinner-border-sm me-1');
+            $text.text('Exporting...');
+
+            const params = buildClassificationExportParams(format);
             const downloadUrl = downloadBaseUrl + (downloadBaseUrl.indexOf('?') !== -1 ? '&' : '?') + params.toString();
-            window.open(downloadUrl, '_blank');
+            window.location.href = downloadUrl;
+
+            setTimeout(function () {
+                $btn.prop('disabled', false);
+                $icon.attr('class', originalIconClass);
+                $text.text(originalText);
+            }, 2500);
+        }
+
+        // Dropdown Export Format Click Handler
+        $(document).on('click', '.export-format-btn', function (e) {
+            e.preventDefault();
+            const format = $(this).data('format') || 'xlsx';
+            triggerExportDownload(format);
         });
 
         // Detail Modal Logic
@@ -1013,7 +1169,7 @@
                         $('#modal-detail-venue').text(d.venue || '-');
                         $('#modal-detail-instructor').text(d.instructor || '-');
 
-                        // Section 4: Schedule & Duration
+                        // Section 4: Schedule Duration & Program Evaluation
                         $('#modal-detail-start-date').text(d.start_date || '-');
                         $('#modal-detail-finish-date').text(d.finish_date || '-');
                         $('#modal-detail-duration-seconds').text(d.duration_seconds ? `${d.duration_seconds.toLocaleString()}s` : '-');

@@ -38,16 +38,17 @@
     // 'type' = cara membandingkan nilai saat sorting (text/number/duration).
     $columns = [
         ['label' => 'No',               'width' => '4%'],
-        ['label' => 'Course',           'width' => '24%', 'sort' => 'title',          'type' => 'text'],
-        ['label' => 'Type',             'width' => '8%',  'sort' => 'type',           'type' => 'text'],
-        ['label' => 'Category',         'width' => '8%',  'sort' => 'category',       'type' => 'text'],
-        ['label' => 'Classification',   'width' => '10%', 'sort' => 'classification', 'type' => 'text'],
-        ['label' => 'Duration',         'width' => '8%',  'sort' => 'duration',       'type' => 'duration'],
+        ['label' => 'Course',           'width' => '22%', 'sort' => 'title',          'type' => 'text'],
+        ['label' => 'Type',             'width' => '7%',  'sort' => 'type',           'type' => 'text'],
+        ['label' => 'Category',         'width' => '7%',  'sort' => 'category',       'type' => 'text'],
+        ['label' => 'Classification',   'width' => '9%',  'sort' => 'classification', 'type' => 'text'],
+        ['label' => 'Duration',         'width' => '7%',  'sort' => 'duration',       'type' => 'duration'],
         ['label' => 'Learning Hour',    'width' => '8%',  'sort' => 'learning-hour',  'type' => 'number'],
         ['label' => 'Progress',         'width' => '7%',  'sort' => 'progress',       'type' => 'number'],
-        ['label' => 'Date Time',        'width' => '12%', 'sort' => 'finish',         'type' => 'text'],
-        ['label' => 'Assessment Score', 'width' => '8%',  'sort' => 'score',          'type' => 'number'],
-        ['label' => 'Certificate',      'width' => '8%'],
+        ['label' => 'Date Time',        'width' => '11%', 'sort' => 'finish',         'type' => 'text'],
+        ['label' => 'ATTENDANCE',       'width' => '8%',  'sort' => 'attendance',     'type' => 'text'],
+        ['label' => 'Assessment Score', 'width' => '7%',  'sort' => 'score',          'type' => 'number'],
+        ['label' => 'Certificate',      'width' => '7%'],
     ];
 @endphp
 
@@ -567,7 +568,7 @@ body.dark-mode .course-preview-playlist-link:hover,
                         <x-learning.record-row :row="$row" :index="$loop->iteration" />
                     @empty
                         <tr id="recordEmptyRow">
-                            <td colspan="11" class="text-center text-muted py-4">
+                            <td colspan="12" class="text-center text-muted py-4">
                                 No completed learning found.
                             </td>
                         </tr>
@@ -576,7 +577,7 @@ body.dark-mode .course-preview-playlist-link:hover,
                     @if ($rows->isNotEmpty())
                         {{-- Ditampilkan jQuery saat kombinasi filter tidak menghasilkan baris. --}}
                         <tr id="recordNoMatchRow" class="d-none">
-                            <td colspan="11" class="text-center text-muted py-4">
+                            <td colspan="12" class="text-center text-muted py-4">
                                 No records match your search or filter.
                             </td>
                         </tr>

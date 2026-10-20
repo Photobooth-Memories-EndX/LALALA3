@@ -34,9 +34,22 @@
 @else
     <!-- TOMBOL BACK RATA KIRI ATAS -->
     <div class="mb-3">
-        <a href="{{ route('manage.index') }}" class="btn-back d-inline-flex align-items-center gap-1 text-decoration-none fw-medium">
+        @php
+            $headerBackUrl = $headerBackUrl ?? ($backUrl ?? route('manage.index'));
+            $headerBackText = $headerBackText ?? ($backText ?? 'Back');
+            if (request('from') === 'all') {
+                if (request()->filled('classification')) {
+                    $headerBackUrl = route('manage.record.all.classification', request('classification'));
+                    $headerBackText = 'Back to ' . ucwords(str_replace('-', ' ', request('classification')));
+                } else {
+                    $headerBackUrl = route('manage.record.all');
+                    $headerBackText = 'Back to All Record';
+                }
+            }
+        @endphp
+        <a href="{{ $headerBackUrl }}" class="btn-back d-inline-flex align-items-center gap-1 text-decoration-none fw-medium">
             <i class="ti ti-arrow-left"></i>
-            <span>Back</span>
+            <span>{{ $headerBackText }}</span>
         </a>
     </div>
 

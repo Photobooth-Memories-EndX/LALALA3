@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Manage\Record;
 
 use App\Exports\AllClassificationExport;
+use App\Exports\AllParticipantExport;
 use App\Http\Controllers\Controller;
 use App\Services\Record\RecordAllCombinedService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -465,5 +466,317 @@ class RecordAllController extends Controller
             'slug'            => $slugified,
             'is_unclassified' => false,
         ];
+    }
+
+    /**
+     * Render the combined Participant Detail view for All KP OWL.
+     */
+    public function participantDetail(string $identifier, Request $request)
+    {
+        $participant = $this->combinedService->resolveParticipant($identifier);
+        if (!$participant) {
+            abort(404, 'Participant not found.');
+        }
+
+        $classificationParam = $request->query('classification');
+        $resolvedClass = null;
+
+        if (filled($classificationParam) && strtolower($classificationParam) !== 'all') {
+            $resolvedClass = self::resolveClassification($classificationParam, false);
+            $backUrl = route('manage.record.all.classification', $resolvedClass['slug']);
+            $backTitle = 'Back to ' . $resolvedClass['name'];
+        } else {
+            $backUrl = route('manage.record.all');
+            $backTitle = 'Back to All KP OWL';
+        }
+
+        $summary = $this->combinedService->getParticipantSummary($participant, $classificationParam);
+        $filterOptions = $this->combinedService->getFilterOptions();
+
+        $rawIdentifier = $participant['raw_identifier'];
+
+        return view('main.record.all.participant', [
+            'title'               => "Participant: {$participant['name']}",
+            'subtitle'            => "Combined Online & Offline Learning Records for {$participant['name']}",
+            'participant'         => $participant,
+            'summary'             => $summary,
+            'backUrl'             => $backUrl,
+            'backTitle'           => $backTitle,
+            'classificationParam' => $classificationParam,
+            'classificationName'  => $resolvedClass ? $resolvedClass['name'] : null,
+            'classificationSlug'  => $resolvedClass ? $resolvedClass['slug'] : null,
+            'years'               => $filterOptions['years'] ?? [],
+            'classifications'     => $filterOptions['classifications'] ?? [],
+            'exportExcelUrl'      => route('manage.record.all.participant.export.excel', array_merge(['identifier' => $rawIdentifier], $request->query())),
+            'exportCsvUrl'        => route('manage.record.all.participant.export.csv', array_merge(['identifier' => $rawIdentifier], $request->query())),
+            'exportPdfUrl'        => route('manage.record.all.participant.export.pdf', array_merge(['identifier' => $rawIdentifier], $request->query())),
+        ]);
+    }
+
+    /**
+     * Server-side DataTable for a single participant's combined records.
+     */
+    public function participantDatatable(string $identifier, Request $request): JsonResponse
+    {
+        $participant = $this->combinedService->resolveParticipant($identifier);
+        if (!$participant) {
+            return response()->json([
+                'draw'            => (int) $request->input('draw', 1),
+                'recordsTotal'    => 0,
+                'recordsFiltered' => 0,
+                'data'            => [],
+            ]);
+        }
+
+        return $this->combinedService->participantDatatable($participant, $request);
+    }
+
+    /**
+     * Asynchronously return KPI Summary for a specific participant.
+     */
+    public function participantAjaxSummary(string $identifier, Request $request): JsonResponse
+    {
+        $participant = $this->combinedService->resolveParticipant($identifier);
+        if (!$participant) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Participant not found.',
+            ], 404);
+        }
+
+        $classificationParam = $request->query('classification');
+        $summary = $this->combinedService->getParticipantSummary($participant, $classificationParam);
+
+        return response()->json([
+            'success'        => true,
+            'data'           => $summary,
+            'total_learning' => $summary['total_learning'],
+            'finished'       => $summary['finished'],
+            'ongoing'        => $summary['ongoing'],
+            'learning_hours' => $summary['learning_hours'],
+        ]);
+    }
+
+    /**
+     * Download Excel export for a specific participant's combined records.
+     */
+    public function participantExportExcel(string $identifier, Request $request)
+    {
+        $participant = $this->combinedService->resolveParticipant($identifier);
+        if (!$participant) {
+            abort(404, 'Participant not found.');
+        }
+
+        $export = new AllParticipantExport($participant, $request);
+
+        return $export->download($export->getFileName());
+    }
+
+    /**
+     * Download CSV export for a specific participant's combined records.
+     */
+    public function participantExportCsv(string $identifier, Request $request)
+    {
+        $participant = $this->combinedService->resolveParticipant($identifier);
+        if (!$participant) {
+            abort(404, 'Participant not found.');
+        }
+
+        $filters = $request->all();
+        if (!empty($filters['classification']) && strtolower($filters['classification']) !== 'all') {
+            $resolvedClass = self::resolveClassification($filters['classification'], false);
+            $filters['classification'] = $resolvedClass['is_unclassified'] ? 'Unclassified' : $resolvedClass['name'];
+        }
+
+        $query = $this->combinedService->buildParticipantCombinedQuery($participant, $filters)
+            ->orderBy('raw_finish_date', 'desc')
+            ->orderBy('record_date', 'desc');
+
+        $rawId = Str::slug($participant['employee_id'] ?: ($participant['name'] ?: 'participant'));
+        $fileName = "all_learning_records_participant_{$rawId}_" . date('Ymd_His') . ".csv";
+
+        $headers = [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$fileName}\"",
+            'Pragma'              => 'no-cache',
+            'Cache-Control'       => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires'             => '0',
+        ];
+
+        $columnHeadings = (new AllParticipantExport($participant))->headings();
+
+        return response()->streamDownload(function () use ($query, $columnHeadings) {
+            $output = fopen('php://output', 'w');
+            fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fputcsv($output, $columnHeadings);
+
+            $pdo = DB::connection()->getPdo();
+            $wasBuffered = $pdo->getAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY);
+            $pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
+
+            try {
+                $stmt = $pdo->prepare($query->toSql());
+                $stmt->execute($query->getBindings());
+
+                $rowCount = 0;
+                while ($row = $stmt->fetch(\PDO::FETCH_OBJ)) {
+                    $rowCount++;
+
+                    $durationFormatted = '';
+                    if (!empty($row->duration_seconds)) {
+                        $secs = (int) $row->duration_seconds;
+                        $hours = floor($secs / 3600);
+                        $mins = floor(($secs % 3600) / 60);
+                        $seconds = $secs % 60;
+                        $durationFormatted = sprintf('%02d:%02d:%02d', $hours, $mins, $seconds);
+                    }
+
+                    $attendanceStr = '';
+                    if ($row->attendance !== null) {
+                        $attendanceStr = (bool) $row->attendance ? 'Present' : 'Absent';
+                    }
+
+                    $kpiStr = '';
+                    if ($row->counted_corporate_kpi !== null) {
+                        if ((bool) $row->counted_corporate_kpi) {
+                            $year = !empty($row->corporate_kpi_year) ? $row->corporate_kpi_year : (!empty($row->sub_corporate_kpi) && preg_match('/^\d{4}$/', (string)$row->sub_corporate_kpi) ? $row->sub_corporate_kpi : null);
+                            $kpiStr = $year ? "Yes ({$year})" : "Yes";
+                        } else {
+                            $kpiStr = 'No';
+                        }
+                    }
+
+                    $csvRow = [
+                        $rowCount,
+                        $row->source === 'offline' ? 'Non KP OWL' : 'KP OWL',
+                        $row->employee_id ?: '',
+                        $row->employee_name ?: '',
+                        $row->status ? ucfirst((string) $row->status) : '',
+                        $row->grade ?: '',
+                        $row->job_position ?: '',
+                        $row->team ?: '',
+                        $row->department ?: '',
+                        $row->company ?: '',
+                        $row->learning_title ?: '',
+                        $row->sub_course_name ?: '',
+                        $row->type ?: '',
+                        $row->category ?: '',
+                        $row->level ?: '',
+                        $row->batch ?: '',
+                        $row->classification ?: '',
+                        $row->sub_classification ?: '',
+                        $kpiStr,
+                        $row->sub_corporate_kpi ?: '',
+                        $row->delivery_method ?: '',
+                        $row->sub_delivery_method ?: '',
+                        $row->provider ?: '',
+                        $row->sub_provider ?: '',
+                        $row->provider_name ?: '',
+                        $row->venue ?: '',
+                        $row->instructor ?: '',
+                        $durationFormatted,
+                        $row->training_hours !== null ? number_format((float) $row->training_hours, 2) : '',
+                        $row->start_date ? date('Y-m-d', strtotime($row->start_date)) : '',
+                        $row->finish_date ? date('Y-m-d', strtotime($row->finish_date)) : '',
+                        $row->learning_hours !== null ? number_format((float) $row->learning_hours, 2) : '0.00',
+                        $row->progress !== null ? ($row->progress . '%') : '0%',
+                        $row->assessment_score !== null ? number_format((float) $row->assessment_score, 2) : '',
+                        $row->certificate ?: '',
+                        $attendanceStr,
+                        $row->attendance_reason ?: '',
+                        $row->bond_status ?: '',
+                        $row->bond_end_date ? date('Y-m-d', strtotime($row->bond_end_date)) : '',
+                        $row->bond_amount !== null ? number_format((float) $row->bond_amount, 2) : '',
+                        $row->l1_program ?: '',
+                        $row->l2_numerical !== null ? number_format((float) $row->l2_numerical, 2) : '',
+                        $row->l2_verbal ?: '',
+                        $row->l3_numerical !== null ? number_format((float) $row->l3_numerical, 2) : '',
+                        $row->l3_verbal ?: '',
+                        $row->pic ?: '',
+                    ];
+
+                    fputcsv($output, $csvRow);
+                }
+            } finally {
+                $pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, $wasBuffered);
+                fclose($output);
+            }
+        }, $fileName, $headers);
+    }
+
+    /**
+     * Download PDF export for a specific participant's combined records.
+     */
+    public function participantExportPdf(string $identifier, Request $request)
+    {
+        $participant = $this->combinedService->resolveParticipant($identifier);
+        if (!$participant) {
+            abort(404, 'Participant not found.');
+        }
+
+        $filters = $request->all();
+        if (!empty($filters['classification']) && strtolower($filters['classification']) !== 'all') {
+            $resolvedClass = self::resolveClassification($filters['classification'], false);
+            $filters['classification'] = $resolvedClass['is_unclassified'] ? 'Unclassified' : $resolvedClass['name'];
+        }
+
+        $query = $this->combinedService->buildParticipantCombinedQuery($participant, $filters);
+        $totalRecords = (clone $query)->count();
+
+        $rows = $query->orderBy('raw_finish_date', 'desc')
+            ->orderBy('record_date', 'desc')
+            ->get();
+
+        $headers = (new AllParticipantExport($participant))->headings();
+
+        $pdf = Pdf::loadView('main.record.all.participant-export-pdf', [
+            'participant'        => $participant,
+            'headers'            => $headers,
+            'rows'               => $rows,
+            'totalRecords'       => $totalRecords,
+            'generatedAt'        => date('d M Y H:i:s'),
+        ]);
+
+        $pdf->setPaper('a2', 'landscape');
+        $rawId = Str::slug($participant['employee_id'] ?: ($participant['name'] ?: 'participant'));
+        $fileName = "all_learning_records_participant_{$rawId}_" . date('Ymd_His') . ".pdf";
+
+        return $pdf->download($fileName);
+    }
+
+    /**
+     * Smart redirect to the appropriate course detail page based on source type.
+     */
+    public function courseRedirect(string $type, $id, Request $request)
+    {
+        $classification = $request->query('classification');
+        $params = ['from' => 'all'];
+        if (filled($classification)) {
+            $params['classification'] = $classification;
+        }
+
+        if ($type === 'offline') {
+            $params['training'] = $id;
+            return redirect()->route('manage.record.offline.course', $params);
+        }
+
+        if ($type === 'content') {
+            $content = DB::table('content')->where('id', $id)->first();
+            if ($content && !empty($content->slug)) {
+                $params['slug'] = $content->slug;
+                return redirect()->route('learning.manage.content', $params);
+            }
+            return redirect()->route('learning.manage.content', array_merge(['slug' => $id], $params));
+        }
+
+        if ($type === 'playlist') {
+            $playlist = DB::table('trainingplan')->where('id', $id)->first();
+            if ($playlist && !empty($playlist->slug)) {
+                return redirect()->to(url('/playlist/' . $playlist->slug . '?' . http_build_query($params)));
+            }
+            return redirect()->to(url('/playlist/' . $id . '?' . http_build_query($params)));
+        }
+
+        abort(404, 'Course type not supported.');
     }
 }

@@ -22,7 +22,7 @@
         function recordModeFromUrl() {
             var params = new URLSearchParams(window.location.search);
             var mode = String(params.get('record_mode') || 'online').toLowerCase();
-            return ['online', 'offline', 'all', 'export'].indexOf(mode) !== -1 ? mode : 'online';
+            return ['online', 'offline', 'all'].indexOf(mode) !== -1 ? mode : 'online';
         }
 
         function skeletonHtml() {
@@ -42,43 +42,17 @@
 
         function recordSkeletonHtml(mode) {
             mode = mode || 'online';
-            var isExport = (mode === 'export');
 
-            var switchInsideHeaderHtml = '<div class="learning-filter-heading fast-filter-header' + (isExport ? ' mb-0' : '') + '">' +
+            var switchInsideHeaderHtml = '<div class="learning-filter-heading fast-filter-header">' +
                 '<div class="fast-filter-header-copy">' +
                     '<h3 class="card-title fast-filter-title">Quick Filter</h3>' +
                 '</div>' +
                 '<div class="learning-mode-switch record-mode-switch" role="group" aria-label="Learning Record mode">' +
-                    '<button type="button" class="btn learning-mode-btn record-mode-btn ' + (mode === 'online' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="online"><i class="ti ti-device-laptop"></i><span>Online</span></button>' +
-                    '<button type="button" class="btn learning-mode-btn record-mode-btn ' + (mode === 'offline' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="offline"><i class="ti ti-certificate"></i><span>Offline</span></button>' +
-                    '<button type="button" class="btn learning-mode-btn record-mode-btn ' + (mode === 'all' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="all"><i class="ti ti-stack-2"></i><span>All</span></button>' +
-                    '<button type="button" class="btn learning-mode-btn record-mode-btn ' + (mode === 'export' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="export"><i class="ti ti-download"></i><span>Export</span></button>' +
+                    '<button type="button" class="btn learning-mode-btn record-mode-btn ' + (mode === 'online' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="online" title="KP OWL" aria-label="KP OWL"><i class="ti ti-device-laptop"></i><span>KP OWL</span></button>' +
+                    '<button type="button" class="btn learning-mode-btn record-mode-btn ' + (mode === 'offline' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="offline" title="Non KP OWL" aria-label="Non KP OWL"><i class="ti ti-certificate"></i><span>Non KP OWL</span></button>' +
+                    '<button type="button" class="btn learning-mode-btn record-mode-btn ' + (mode === 'all' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="all" title="All Record" aria-label="All Record"><i class="ti ti-stack-2"></i><span>All Record</span></button>' +
                 '</div>' +
             '</div>';
-
-            if (isExport) {
-                return '<div class="learning-record-shell">' +
-                    '<div class="card border-0 shadow-sm rounded-4 mb-4 learning-record-card">' +
-                        '<div class="card-body p-4">' +
-                            switchInsideHeaderHtml +
-                        '</div>' +
-                    '</div>' +
-                    '<div class="card border-0 shadow-sm rounded-4 p-4 mb-4 placeholder-glow">' +
-                        '<div class="d-flex align-items-center gap-3">' +
-                            '<span class="placeholder rounded-3" style="width:52px;height:52px;"></span>' +
-                            '<div class="flex-grow-1">' +
-                                '<span class="placeholder col-4 mb-2 d-block rounded-2" style="height:20px;"></span>' +
-                                '<span class="placeholder col-8 d-block rounded-2" style="height:14px;"></span>' +
-                            '</div>' +
-                        '</div>' +
-                    '</div>' +
-                    '<div class="row g-3 placeholder-glow">' +
-                        '<div class="col-12 col-md-4"><div class="card border-0 shadow-sm rounded-4 p-4"><span class="placeholder col-3 mb-3 rounded-pill" style="height:20px;"></span><span class="placeholder col-8 mb-2 rounded-2" style="height:20px;"></span><span class="placeholder col-12 mb-4 rounded-2" style="height:36px;"></span><span class="placeholder col-12 rounded-3" style="height:40px;"></span></div></div>' +
-                        '<div class="col-12 col-md-4"><div class="card border-0 shadow-sm rounded-4 p-4"><span class="placeholder col-3 mb-3 rounded-pill" style="height:20px;"></span><span class="placeholder col-8 mb-2 rounded-2" style="height:20px;"></span><span class="placeholder col-12 mb-4 rounded-2" style="height:36px;"></span><span class="placeholder col-12 rounded-3" style="height:40px;"></span></div></div>' +
-                        '<div class="col-12 col-md-4"><div class="card border-0 shadow-sm rounded-4 p-4"><span class="placeholder col-3 mb-3 rounded-pill" style="height:20px;"></span><span class="placeholder col-8 mb-2 rounded-2" style="height:20px;"></span><span class="placeholder col-12 mb-4 rounded-2" style="height:36px;"></span><span class="placeholder col-12 rounded-3" style="height:40px;"></span></div></div>' +
-                    '</div>' +
-                '</div>';
-            }
 
             var tableRows = '';
             for (var i = 0; i < 5; i++) {
@@ -473,8 +447,9 @@
         });
 
         // ── Mode switch Learning Record: Online | Offline | All | Export ────────────
-        $(document).on('click', '.record-mode-btn', function () {
-            var mode = String($(this).data('mode')).toLowerCase();
+        $(document).on('click', '.record-mode-btn', function (e) {
+            e.preventDefault();
+            var mode = String($(this).data('mode') || 'online').toLowerCase();
             if (['online', 'offline', 'all', 'export'].indexOf(mode) === -1) {
                 mode = 'online';
             }
@@ -546,7 +521,7 @@
             loadLearningTab('record');
         });
 
-        $(document).on('click', '#recordOfflineResetBtn', function () {
+        $(document).on('click', '#recordOfflineResetBtn, #recordOfflineEmptyResetBtn', function () {
             var params = new URLSearchParams(window.location.search);
             params.delete('page');
             Array.from(params.keys()).forEach(function (key) {
@@ -560,6 +535,283 @@
             history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
             _activeTab = null;
             loadLearningTab('record');
+        });
+
+        // ── More Filter Offline handlers ──────────────────────────────────────
+        $(document).on('click', '#btnApplyMoreFilterModal', function () {
+            var params = new URLSearchParams(window.location.search);
+            params.delete('page');
+            params.delete('record_page');
+
+            var filterKeys = [
+                'record_filter_category',
+                'record_filter_sub_classification',
+                'record_filter_batch',
+                'record_filter_delivery_method',
+                'record_filter_provider',
+                'record_filter_attendance',
+                'record_filter_certificate'
+            ];
+
+            filterKeys.forEach(function (k) {
+                var val = $('[name="' + k + '"]').val();
+                if (val && val !== 'all') {
+                    params.set(k, val);
+                } else {
+                    params.delete(k);
+                }
+            });
+
+            params.set('learning_tab', 'record');
+            params.set('record_mode', 'offline');
+
+            var modalEl = document.getElementById('recordOfflineMoreFilterModal');
+            if (modalEl) {
+                var modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) {
+                    modal.hide();
+                } else if (typeof bootstrap.Modal.getOrCreateInstance === 'function') {
+                    bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+                } else {
+                    $(modalEl).modal('hide');
+                }
+            }
+
+            var qs = params.toString();
+            history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+            _activeTab = null;
+            loadLearningTab('record');
+        });
+
+        $(document).on('click', '#btnResetMoreFilterModal', function () {
+            var params = new URLSearchParams(window.location.search);
+            params.delete('page');
+            params.delete('record_page');
+
+            var filterKeys = [
+                'record_filter_category',
+                'record_filter_sub_classification',
+                'record_filter_batch',
+                'record_filter_delivery_method',
+                'record_filter_provider',
+                'record_filter_attendance',
+                'record_filter_certificate'
+            ];
+
+            filterKeys.forEach(function (k) {
+                params.delete(k);
+                $('[name="' + k + '"]').val('all');
+            });
+
+            params.set('learning_tab', 'record');
+            params.set('record_mode', 'offline');
+
+            var modalEl = document.getElementById('recordOfflineMoreFilterModal');
+            if (modalEl) {
+                var modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) {
+                    modal.hide();
+                } else if (typeof bootstrap.Modal.getOrCreateInstance === 'function') {
+                    bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+                } else {
+                    $(modalEl).modal('hide');
+                }
+            }
+
+            var qs = params.toString();
+            history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+            _activeTab = null;
+            loadLearningTab('record');
+        });
+
+        // Clear single more filter badge
+        $(document).on('click', '.record-offline-clear-single-filter', function (e) {
+            e.preventDefault();
+            var param = $(this).data('param');
+            var params = new URLSearchParams(window.location.search);
+            params.delete('page');
+            params.delete('record_page');
+            params.delete(param);
+            params.set('learning_tab', 'record');
+            params.set('record_mode', 'offline');
+            var qs = params.toString();
+            history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+            _activeTab = null;
+            loadLearningTab('record');
+        });
+
+        $(document).on('click', '#recordOfflineClearAllMoreFilters', function (e) {
+            e.preventDefault();
+            $('#btnResetMoreFilterModal').trigger('click');
+        });
+
+        // ── View Detail Offline Modal Population ──────────────────────────────
+        $(document).on('click', '.btn-record-offline-detail', function (e) {
+            e.preventDefault();
+            var recordId = $(this).data('record-id');
+            var dataEl = document.getElementById('record-offline-data-' + recordId);
+            if (!dataEl) return;
+
+            var d = {};
+            try {
+                d = JSON.parse(dataEl.textContent);
+            } catch (err) {
+                console.error('Failed to parse record offline data:', err);
+                return;
+            }
+
+            function fallback(val, def) {
+                if (val === undefined || val === null || val === '') return def !== undefined ? def : '-';
+                return val;
+            }
+
+            // Training Information
+            $('#dtCourseName').text(fallback(d.course_name, d.title));
+            $('#detailCourseSubHeader').text(fallback(d.subtitle, d.classification));
+            $('#dtSubCourseName').text(fallback(d.sub_course_name));
+            $('#dtType').text(fallback(d.type));
+            $('#dtCategory').text(fallback(d.category));
+            $('#dtLevel').text(fallback(d.level));
+            $('#dtBatch').text(fallback(d.batch));
+            $('#dtClassification').text(fallback(d.classification));
+            $('#dtSubClassification').text(fallback(d.sub_classification));
+            $('#dtDeliveryMethod').text(fallback(d.delivery_method));
+            $('#dtSubDeliveryMethod').text(fallback(d.sub_delivery_method));
+            $('#dtProvider').text(fallback(d.provider));
+            $('#dtProviderName').text(fallback(d.provider_name));
+
+            // Schedule & Venue
+            $('#dtDateDisplay').text(fallback(d.date_display));
+            $('#dtTimeDisplay').text(fallback(d.time_display));
+            $('#dtDuration').text(fallback(d.duration));
+            $('#dtLearningHours').text(fallback(d.learning_hour));
+            $('#dtVenue').text(fallback(d.venue));
+            $('#dtInstructor').text(fallback(d.instructor));
+
+
+            // Employee Snapshot
+            $('#dtEmployeeId').text(fallback(d.employee_id));
+            $('#dtParticipantName').text(fallback(d.participant_name));
+            $('#dtGrade').text(fallback(d.grade));
+            $('#dtJobPosition').text(fallback(d.job_position));
+            $('#dtTeam').text(fallback(d.team));
+            $('#dtDepartment').text(fallback(d.department));
+            $('#dtCompany').text(fallback(d.company));
+
+            // Service Bond
+            var bondStatus = fallback(d.bond_status);
+            $('#dtBondStatus').text(bondStatus);
+            $('#dtBondEndDate').text(fallback(d.bond_end_date_display));
+            $('#dtBondAmount').text(fallback(d.bond_amount_formatted));
+
+            if (String(bondStatus).toLowerCase() === 'yes') {
+                $('#dtBondNotice').show();
+            } else {
+                $('#dtBondNotice').hide();
+            }
+
+            var modalEl = document.getElementById('recordOfflineDetailModal');
+            if (modalEl) {
+                var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                modal.show();
+            }
+        });
+
+        // ── Attendance Detail Modal Population ──────────────────────────────
+        $(document).on('click', '.attendance-detail-trigger', function (e) {
+            e.preventDefault();
+
+            var $btn = $(this);
+            var recordId = $btn.data('record-id');
+
+            // Attempt to read from data attributes first
+            var trainingTitle = ($btn.data('training-title') || '').toString().trim();
+            var attendanceStatus = ($btn.data('attendance') || '').toString().trim();
+            var rawReason = ($btn.data('attendance-reason') || '').toString().trim();
+            var precomputedReason = ($btn.data('attendance-reason-display') || '').toString().trim();
+            var trainingDate = ($btn.data('training-date') || '').toString().trim();
+            var venue = ($btn.data('venue') || '').toString().trim();
+
+            // If any data is missing and JSON element exists, read from JSON element
+            if (recordId) {
+                var dataEl = document.getElementById('record-offline-data-' + recordId);
+                if (dataEl) {
+                    try {
+                        var d = JSON.parse(dataEl.textContent);
+                        if (!trainingTitle || trainingTitle === '-') trainingTitle = (d.course_name || d.title || '-').toString().trim();
+                        if (!attendanceStatus || attendanceStatus === '-') attendanceStatus = (d.attendance_status || '-').toString().trim();
+                        if (!rawReason) {
+                            rawReason = (d.raw_attendance_reason || (d.attendance_reason !== '-' ? d.attendance_reason : '') || '').toString().trim();
+                        }
+                        if (!precomputedReason) {
+                            precomputedReason = (d.attendance_reason_display || '').toString().trim();
+                        }
+                        if (!trainingDate || trainingDate === '-') trainingDate = (d.date_display || '-').toString().trim();
+                        if (!venue || venue === '-') venue = (d.venue || '-').toString().trim();
+                    } catch (err) {
+                        console.error('Failed to parse record offline data for attendance:', err);
+                    }
+                }
+            }
+
+            // Fallbacks for display
+            if (!trainingTitle || trainingTitle === '-') trainingTitle = '-';
+            if (!trainingDate || trainingDate === '-') trainingDate = '-';
+            if (!venue || venue === '-') venue = '-';
+            if (!attendanceStatus) attendanceStatus = '-';
+
+            // Status badge styling mapping
+            var statusLower = attendanceStatus.toLowerCase();
+            var badgeClass = 'bg-secondary-lt text-secondary';
+            if (statusLower === 'present') {
+                badgeClass = 'bg-success-lt text-success';
+            } else if (statusLower === 'absent') {
+                badgeClass = 'bg-danger-lt text-danger';
+            } else if (statusLower === 'excused' || statusLower === 'sick') {
+                badgeClass = 'bg-warning-lt text-warning';
+            } else if (statusLower === 'leave') {
+                badgeClass = 'bg-info-lt text-info';
+            }
+
+            // Attendance Reason Logic:
+            // IF attendance_reason tidak null dan tidak kosong -> tampilkan nilai attendance_reason
+            // IF attendance_reason NULL / kosong:
+            //   - untuk Present: "Employee attended the training."
+            //   - untuk non-Present: "No attendance reason recorded."
+            // Jangan pernah menampilkan null, undefined, -, atau N/A.
+            var finalReason = '';
+            var isRawEmpty = !rawReason ||
+                             rawReason === '-' ||
+                             rawReason.toLowerCase() === 'null' ||
+                             rawReason.toLowerCase() === 'undefined' ||
+                             rawReason.toLowerCase() === 'n/a';
+
+            if (!isRawEmpty) {
+                finalReason = rawReason;
+            } else if (precomputedReason &&
+                       precomputedReason !== '-' &&
+                       precomputedReason.toLowerCase() !== 'null' &&
+                       precomputedReason.toLowerCase() !== 'undefined' &&
+                       precomputedReason.toLowerCase() !== 'n/a') {
+                finalReason = precomputedReason;
+            } else if (statusLower === 'present') {
+                finalReason = 'Employee attended the training.';
+            } else {
+                finalReason = 'No attendance reason recorded.';
+            }
+
+            // Safe DOM population using jQuery .text() to prevent XSS
+            $('#attendanceTrainingTitle').text(trainingTitle);
+            $('#attendanceStatus').removeClass().addClass('badge fw-bold px-2.5 py-1 ' + badgeClass).text(attendanceStatus);
+            $('#attendanceReason').text(finalReason);
+            $('#attendanceDate').text(trainingDate);
+            $('#attendanceVenue').text(venue);
+
+            var modalEl = document.getElementById('attendanceDetailModal');
+            if (modalEl) {
+                var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                modal.show();
+            }
         });
 
         $(document).on('click', '#recordAllApplyBtn', function () {
@@ -580,13 +832,159 @@
             loadLearningTab('record');
         });
 
-        $(document).on('click', '#recordAllResetBtn', function () {
+        $(document).on('click', '#recordAllResetBtn, #recordAllEmptyResetBtn', function () {
             var params = new URLSearchParams(window.location.search);
             params.delete('page');
+            params.delete('record_page');
             Array.from(params.keys()).forEach(function (key) {
                 if (key.indexOf('record_') === 0 && key !== 'record_mode') {
                     params.delete(key);
                 }
+            });
+            params.set('learning_tab', 'record');
+            params.set('record_mode', 'all');
+            var qs = params.toString();
+            history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+            _activeTab = null;
+            loadLearningTab('record');
+        });
+
+        // ── More Filter All handlers ──────────────────────────────────────────
+        $(document).on('click', '#btnApplyAllMoreFilterModal', function () {
+            var params = new URLSearchParams(window.location.search);
+            params.delete('page');
+            params.delete('record_page');
+
+            var filterKeys = [
+                'record_filter_category',
+                'record_filter_status',
+                'record_filter_duration_min',
+                'record_filter_duration_max',
+                'record_filter_lh_min',
+                'record_filter_lh_max',
+                'record_filter_certificate',
+                'record_filter_attendance',
+                'record_filter_sub_classification',
+                'record_filter_delivery_method',
+                'record_filter_provider'
+            ];
+
+            filterKeys.forEach(function (k) {
+                var $el = $('#recordAllMoreFilterModal [name="' + k + '"]');
+                var val = $el.val();
+                if (val !== undefined && val !== null && val.toString().trim() !== '' && val.toString().trim() !== 'all') {
+                    params.set(k, val.toString().trim());
+                } else {
+                    params.delete(k);
+                }
+            });
+
+            params.set('learning_tab', 'record');
+            params.set('record_mode', 'all');
+
+            var modalEl = document.getElementById('recordAllMoreFilterModal');
+            if (modalEl) {
+                var modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) {
+                    modal.hide();
+                } else if (typeof bootstrap.Modal.getOrCreateInstance === 'function') {
+                    bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+                } else {
+                    $(modalEl).modal('hide');
+                }
+            }
+
+            var qs = params.toString();
+            history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+            _activeTab = null;
+            loadLearningTab('record');
+        });
+
+        $(document).on('click', '#btnResetAllMoreFilterModal', function () {
+            var params = new URLSearchParams(window.location.search);
+            params.delete('page');
+            params.delete('record_page');
+
+            var filterKeys = [
+                'record_filter_category',
+                'record_filter_status',
+                'record_filter_duration_min',
+                'record_filter_duration_max',
+                'record_filter_lh_min',
+                'record_filter_lh_max',
+                'record_filter_certificate',
+                'record_filter_attendance',
+                'record_filter_sub_classification',
+                'record_filter_delivery_method',
+                'record_filter_provider'
+            ];
+
+            filterKeys.forEach(function (k) {
+                params.delete(k);
+                var $el = $('#recordAllMoreFilterModal [name="' + k + '"]');
+                if ($el.is('select')) {
+                    $el.val('all');
+                } else {
+                    $el.val('');
+                }
+            });
+
+            params.set('learning_tab', 'record');
+            params.set('record_mode', 'all');
+
+            var modalEl = document.getElementById('recordAllMoreFilterModal');
+            if (modalEl) {
+                var modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) {
+                    modal.hide();
+                } else if (typeof bootstrap.Modal.getOrCreateInstance === 'function') {
+                    bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+                } else {
+                    $(modalEl).modal('hide');
+                }
+            }
+
+            var qs = params.toString();
+            history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+            _activeTab = null;
+            loadLearningTab('record');
+        });
+
+        $(document).on('click', '.record-all-clear-single-filter', function (e) {
+            e.preventDefault();
+            var param = $(this).data('param');
+            var params = new URLSearchParams(window.location.search);
+            params.delete('page');
+            params.delete('record_page');
+            params.delete(param);
+            params.set('learning_tab', 'record');
+            params.set('record_mode', 'all');
+            var qs = params.toString();
+            history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+            _activeTab = null;
+            loadLearningTab('record');
+        });
+
+        $(document).on('click', '#recordAllClearAllMoreFilters', function (e) {
+            e.preventDefault();
+            var params = new URLSearchParams(window.location.search);
+            params.delete('page');
+            params.delete('record_page');
+            var filterKeys = [
+                'record_filter_category',
+                'record_filter_status',
+                'record_filter_duration_min',
+                'record_filter_duration_max',
+                'record_filter_lh_min',
+                'record_filter_lh_max',
+                'record_filter_certificate',
+                'record_filter_attendance',
+                'record_filter_sub_classification',
+                'record_filter_delivery_method',
+                'record_filter_provider'
+            ];
+            filterKeys.forEach(function (k) {
+                params.delete(k);
             });
             params.set('learning_tab', 'record');
             params.set('record_mode', 'all');
@@ -616,7 +1014,7 @@
             var om = params.get('ongoing_mode');
             _ongoingMode = (om === 'playlist' || om === 'mooc') ? om : null;
             var rm = params.get('record_mode');
-            _recordMode = ['online', 'offline', 'all', 'export'].indexOf(String(rm).toLowerCase()) !== -1
+            _recordMode = ['online', 'offline', 'all'].indexOf(String(rm).toLowerCase()) !== -1
                 ? String(rm).toLowerCase()
                 : (params.get('learning_tab') === 'record' ? 'online' : null);
             _activeTab = null;
@@ -631,7 +1029,14 @@
                 _ongoingMode = initialOngoingMode;
             }
             var initialRecordMode = initialParams.get('record_mode');
-            if (initialRecordMode && ['online', 'offline', 'all', 'export'].indexOf(initialRecordMode.toLowerCase()) !== -1) {
+            if (initialRecordMode && initialRecordMode.toLowerCase() === 'export') {
+                initialParams.set('record_mode', 'online');
+                if (!initialParams.get('learning_tab')) {
+                    initialParams.set('learning_tab', 'record');
+                }
+                history.replaceState({}, '', window.location.pathname + '?' + initialParams.toString());
+                _recordMode = 'online';
+            } else if (initialRecordMode && ['online', 'offline', 'all'].indexOf(initialRecordMode.toLowerCase()) !== -1) {
                 _recordMode = initialRecordMode.toLowerCase();
             } else if (initialParams.get('learning_tab') === 'record') {
                 _recordMode = 'online';

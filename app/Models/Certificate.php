@@ -12,6 +12,7 @@ class Certificate extends Model
         'certificate_type',
         'source_id',
         'content_user_id',
+        'offline_training_user_id',
         'assessment_result_id',
         'certificate_number',
         'credential_id',
@@ -42,6 +43,16 @@ class Certificate extends Model
         return $this->belongsTo(AssesmentResult::class);
     }
 
+    public function offlineTrainingUser()
+    {
+        return $this->belongsTo(OfflineTrainingUser::class, 'offline_training_user_id');
+    }
+
+    public function offlineTraining()
+    {
+        return $this->belongsTo(OfflineTraining::class, 'source_id');
+    }
+
     public function getLinkedInUrlAttribute(): string
     {
         return 'https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME'
@@ -51,5 +62,27 @@ class Certificate extends Model
             . '&issueMonth=' . optional($this->issued_at)->format('m')
             . '&certUrl=' . urlencode(route('certificate.verify', $this->credential_id))
             . '&certId=' . urlencode($this->credential_id);
+    }
+
+    /**
+     * Map internal/database certificate type to user-facing display label.
+     */
+    public static function typeLabel(?string $type): string
+    {
+        return match (strtolower((string) $type)) {
+            'content'                     => 'Content',
+            'playlist', 'trainingplan'    => 'Playlist',
+            'global'                      => 'Global',
+            'training_offline', 'offline' => 'Training Offline',
+            default                       => ucwords(str_replace('_', ' ', (string) $type)),
+        };
+    }
+
+    /**
+     * Get user-facing certificate type label accessor.
+     */
+    public function getTypeLabelAttribute(): string
+    {
+        return self::typeLabel($this->certificate_type);
     }
 }

@@ -16,6 +16,7 @@ class ManageRoleController extends Controller
         User::ROLE_SUBADMIN_DIVISION,  // 4 - Subadmin Division / Sub Admin
         User::ROLE_ADMIN,              // 2 - Administrator / Admin
         User::ROLE_SUPER_ADMIN,        // 3 - Super Admin
+        User::ROLE_APPROVER,           // 5 - Approver
     ];
 
     /**

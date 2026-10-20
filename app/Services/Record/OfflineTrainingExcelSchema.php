@@ -314,10 +314,13 @@ class OfflineTrainingExcelSchema
                     "kpi corporate",
                     "kpi perusahaan",
                     "counted as corporate kpi",
+                    "counted as corporate kpi (yes/no)",
                     "counted as 26 corporate kpi",
                     "corporate kpi yes/no",
                     "corporate kpi yes no",
                     "kpi yes/no",
+                    "corporate kpi year",
+                    "kpi year",
                 ],
             ],
             18 => [
