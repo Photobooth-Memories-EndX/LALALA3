@@ -214,4 +214,66 @@ class TaskManagementNonKpOwlTest extends TestCase
         $response->assertStatus(200);
         $response->assertDontSee('Confidential Report Upload');
     }
+
+    public function test_store_task_fails_validation_when_offline_training_parent_id_is_missing(): void
+    {
+        $payload = [
+            'parent_type' => 'offline_training',
+            'parent_id'   => '',
+            'type'        => 'file_submission',
+            'title'       => 'Incomplete Task',
+            'action'      => 'publish',
+        ];
+
+        $response = $this->actingAs($this->admin)->post(route('manage.task.store'), $payload);
+
+        $response->assertSessionHasErrors(['parent_id']);
+    }
+
+    public function test_offline_training_group_renders_link_to_training_schedule_history_tab(): void
+    {
+        $user = User::where('role', '1')->first() ?? User::first();
+
+        $offline = OfflineTraining::create([
+            'title'       => 'Hydraulic System Training 2026',
+            'course_name' => 'Hydraulic System Training 2026',
+            'category'    => 'Technical',
+            'instructor'  => 'Trainer D',
+            'location'    => 'Workshop B',
+            'quota'       => 10,
+            'status'      => 'Open Registration',
+            'start_date'  => '2026-11-20',
+            'end_date'    => '2026-11-22',
+            'start_time'  => '08:00',
+            'end_time'    => '17:00',
+        ]);
+
+        OfflineTrainingUser::create([
+            'offline_training_id' => $offline->id,
+            'user_id'             => $user->id,
+            'name'                => $user->name,
+            'employee_id'         => $user->employee_id ?? 'EMP-888',
+            'attendance'          => 1,
+            'progress'            => 100,
+        ]);
+
+        \App\Models\Task::create([
+            'parent_type'         => 'offline_training',
+            'offline_training_id' => $offline->id,
+            'title'               => 'Hydraulic Checklist Upload',
+            'type'                => 'file_submission',
+            'status'              => 'published',
+            'created_by'          => $this->admin->id,
+        ]);
+
+        $detailResponse = $this->actingAs($user)->get(route('user.learning.dashboard.partial', [
+            'tab'            => 'my-task',
+            'my_task_parent' => 'offline_training:' . $offline->id,
+        ]));
+
+        $detailResponse->assertStatus(200);
+        $expectedUrl = route('trainingplan.user.index', ['tab' => 'history']);
+        $detailResponse->assertSee(e($expectedUrl), false);
+    }
 }
+

@@ -738,7 +738,7 @@
         if (taskFormEl && parentIdInput) {
             taskFormEl.addEventListener('submit', function (e) {
                 // Standalone tasks are not tied to any placement → no parent needed.
-                if (!parentIdInput.value && !['offline_training', 'standalone'].includes(currentPlacement)) {
+                if (!parentIdInput.value && currentPlacement !== 'standalone') {
                     e.preventDefault();
                     if (parentIdError) parentIdError.style.display = '';
                     openParentPanel();

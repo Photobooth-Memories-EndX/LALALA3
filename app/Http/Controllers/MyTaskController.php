@@ -216,7 +216,7 @@ class MyTaskController extends Controller
         }
 
         if ($task->parent_type === 'offline_training') {
-            return route('trainingplan.user.index');
+            return route('trainingplan.user.index', ['tab' => 'history']);
         }
 
         return null;
