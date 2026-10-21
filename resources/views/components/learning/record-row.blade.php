@@ -191,7 +191,6 @@
 
     <td><x-learning.record-score-cell :row="$row" /></td>
 
-    <td><x-learning.record-certificate-cell :row="$row" /></td>
     <td class="text-center">
         <div class="dropdown">
             <button class="btn btn-sm btn-icon btn-ghost-secondary" type="button" data-bs-toggle="dropdown" aria-expanded="false">

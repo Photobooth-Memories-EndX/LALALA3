@@ -767,6 +767,20 @@ class LearningRecordController extends Controller
                 'access_status'   => $accessStatus,
                 'can_open'        => $canOpen,
                 'modal_message'   => $modalMessage,
+                'employee_id'     => Auth::user()?->employee_id ?? Auth::user()?->nip ?? Auth::user()?->id_emp ?? '-',
+                'participant_name'=> Auth::user()?->name ?? '-',
+                'name'            => Auth::user()?->name ?? '-',
+                'grade'           => Auth::user()?->grade ?? '-',
+                'job_position'    => Auth::user()?->job_position ?? Auth::user()?->position ?? '-',
+                'team'            => Auth::user()?->team ?? '-',
+                'department'      => Auth::user()?->department ?? '-',
+                'company'         => Auth::user()?->company ?? Auth::user()?->company_name ?? 'PT Krakatau Posco',
+                'attendance_reason' => '-',
+                'bond_status'     => 'No',
+                'bond_duration'   => null,
+                'bond_end_date'   => '-',
+                'bond_amount'     => '-',
+                'pic'             => '-',
             ];
         })->values();
     }
@@ -968,6 +982,20 @@ class LearningRecordController extends Controller
                 'access_status'   => $accessStatus,
                 'can_open'        => $canOpen,
                 'modal_message'   => $modalMessage,
+                'employee_id'     => Auth::user()?->employee_id ?? Auth::user()?->nip ?? Auth::user()?->id_emp ?? '-',
+                'participant_name'=> Auth::user()?->name ?? '-',
+                'name'            => Auth::user()?->name ?? '-',
+                'grade'           => Auth::user()?->grade ?? '-',
+                'job_position'    => Auth::user()?->job_position ?? Auth::user()?->position ?? '-',
+                'team'            => Auth::user()?->team ?? '-',
+                'department'      => Auth::user()?->department ?? '-',
+                'company'         => Auth::user()?->company ?? Auth::user()?->company_name ?? 'PT Krakatau Posco',
+                'attendance_reason' => '-',
+                'bond_status'     => 'No',
+                'bond_duration'   => null,
+                'bond_end_date'   => '-',
+                'bond_amount'     => '-',
+                'pic'             => '-',
             ];
         })->values();
     }
@@ -1140,6 +1168,9 @@ class LearningRecordController extends Controller
                 ], 404);
             }
 
+            $rawCert = strtolower(trim((string) ($record->certificate ?? '')));
+            $record->certificate = in_array($rawCert, ['yes', '1', 'available', 'true'], true) ? 'Available' : 'Not Available';
+
             return response()->json([
                 'success' => true,
                 'data'    => $record,
@@ -1193,18 +1224,19 @@ class LearningRecordController extends Controller
                         'finish_date'            => optional($plan->updated_at)->format('Y-m-d H:i:s') ?? '-',
                         'attendance'             => 'Yes',
                         'attendance_reason'      => '-',
-                        'certificate'            => '-',
+                        'certificate'            => (($plan->finished_items ?? 0) >= ($plan->total_items ?? 1)) ? 'Available' : 'Not Available',
                         'bond_status'            => 'No',
+                        'bond_duration'          => null,
                         'bond_end_date'          => '-',
                         'bond_amount'            => '-',
                         'pic'                    => '-',
                         'participant_name'       => Auth::user()?->name ?? '-',
-                        'employee_id'            => Auth::user()?->id_emp ?? '-',
+                        'employee_id'            => Auth::user()?->employee_id ?? Auth::user()?->nip ?? Auth::user()?->id_emp ?? '-',
                         'grade'                  => Auth::user()?->grade ?? '-',
-                        'job_position'           => Auth::user()?->position ?? '-',
+                        'job_position'           => Auth::user()?->job_position ?? Auth::user()?->position ?? '-',
                         'team'                   => Auth::user()?->team ?? '-',
                         'department'             => Auth::user()?->department ?? '-',
-                        'company'                => Auth::user()?->company_name ?? '-',
+                        'company'                => Auth::user()?->company ?? Auth::user()?->company_name ?? 'PT Krakatau Posco',
                     ],
                 ]);
             }
@@ -1250,18 +1282,19 @@ class LearningRecordController extends Controller
                 'finish_date'            => (int) ($contentUser->finish ?? 0) === 1 ? optional($contentUser->completed_at ?? $contentUser->updated_at)->format('Y-m-d H:i:s') : '-',
                 'attendance'             => ((int) ($contentUser->progress ?? 0) >= 100) ? 'Yes' : 'No',
                 'attendance_reason'      => '-',
-                'certificate'            => '-',
+                'certificate'            => ((int) ($contentUser->progress ?? 0) >= 100) ? 'Available' : 'Not Available',
                 'bond_status'            => 'No',
+                'bond_duration'          => null,
                 'bond_end_date'          => '-',
                 'bond_amount'            => '-',
                 'pic'                    => '-',
                 'participant_name'       => Auth::user()?->name ?? '-',
-                'employee_id'            => Auth::user()?->id_emp ?? '-',
+                'employee_id'            => Auth::user()?->employee_id ?? Auth::user()?->nip ?? Auth::user()?->id_emp ?? '-',
                 'grade'                  => Auth::user()?->grade ?? '-',
-                'job_position'           => Auth::user()?->position ?? '-',
+                'job_position'           => Auth::user()?->job_position ?? Auth::user()?->position ?? '-',
                 'team'                   => Auth::user()?->team ?? '-',
                 'department'             => Auth::user()?->department ?? '-',
-                'company'                => Auth::user()?->company_name ?? '-',
+                'company'                => Auth::user()?->company ?? Auth::user()?->company_name ?? 'PT Krakatau Posco',
             ],
         ]);
     }

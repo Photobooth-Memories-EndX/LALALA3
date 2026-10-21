@@ -54,7 +54,8 @@ class RecordOfflineQueryService
                 'otu.attendance',
                 'otu.attendance_reason',
                 'otu.bond_status',
-                'otu.bond_end_date',
+                'otu.bond_duration',
+            'otu.bond_end_date',
                 'otu.bond_amount',
                 'otu.l1_program',
                 'otu.l2_numerical',
@@ -648,6 +649,7 @@ class RecordOfflineQueryService
             'otu.attendance',
             'otu.attendance_reason',
             'otu.bond_status',
+            'otu.bond_duration',
             'otu.bond_end_date',
             'otu.bond_amount',
             'otu.l1_program',
@@ -1152,6 +1154,7 @@ class RecordOfflineQueryService
             'otu.attendance',
             'otu.attendance_reason',
             'otu.bond_status',
+            'otu.bond_duration',
             'otu.bond_end_date',
             'otu.bond_amount',
             'otu.l1_program',
@@ -1523,7 +1526,13 @@ class RecordOfflineQueryService
         $query = self::buildQuery()->where('otu.id', $recordId);
 
         if ($userId !== null) {
-            $query->where('otu.user_id', $userId);
+            $query->where(function ($q) use ($userId) {
+                $q->where('otu.user_id', $userId);
+                $userEmpId = \Illuminate\Support\Facades\Auth::user()?->id_emp;
+                if (!empty($userEmpId)) {
+                    $q->orWhere('otu.employee_id', $userEmpId);
+                }
+            });
         }
 
         return $query->first();

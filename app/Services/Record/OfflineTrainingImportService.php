@@ -612,6 +612,7 @@ class OfflineTrainingImportService
                         'attendance'          => $p['attendance'],
                         'attendance_reason'   => $p['attendance_reason'],
                         'bond_status'         => $p['bond_status'],
+                        'bond_duration'       => $p['bond_duration'] ?? null,
                         'bond_end_date'       => $p['bond_end_date'],
                         'bond_amount'         => $p['bond_amount'],
                         'l1_program'          => $p['l1_program'],
@@ -917,6 +918,7 @@ class OfflineTrainingImportService
 
             // Obligation
             'bond_status'           => $this->normalizeString($raw['bond_status'] ?? null),
+            'bond_duration'         => isset($raw['bond_duration']) && is_numeric($raw['bond_duration']) ? (int) $raw['bond_duration'] : null,
             'bond_end_date'         => $this->normalizeDate($raw['bond_end_date'] ?? null),
             'bond_amount'           => $this->normalizeMoney($raw['bond_amount'] ?? null),
 

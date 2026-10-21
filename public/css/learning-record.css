@@ -99,17 +99,11 @@
 }
 
 #learningRecordTable th:nth-child(12),
-#learningRecordTable td:nth-child(12) {
-    width: 90px !important;
-    min-width: 85px;
-}
-
-#learningRecordTable th:nth-child(13),
-#learningRecordTable td:nth-child(13),
-#learningRecordOfflineTable th:nth-child(13),
-#learningRecordOfflineTable td:nth-child(13),
-#learningRecordAllTable th:nth-child(13),
-#learningRecordAllTable td:nth-child(13) {
+#learningRecordTable td:nth-child(12),
+#learningRecordOfflineTable th:nth-child(12),
+#learningRecordOfflineTable td:nth-child(12),
+#learningRecordAllTable th:nth-child(12),
+#learningRecordAllTable td:nth-child(12) {
     width: 60px !important;
     min-width: 50px;
     text-align: center;
@@ -245,14 +239,7 @@
     text-align: center;
 }
 
-#learningRecordOfflineTable th:nth-child(12),
-#learningRecordOfflineTable td:nth-child(12),
-#learningRecordAllTable th:nth-child(12),
-#learningRecordAllTable td:nth-child(12) {
-    width: 90px !important;
-    min-width: 85px;
-    text-align: center;
-}
+
 
 .learning-record-table tbody tr.record-row {
     transition: background-color 0.15s ease;

@@ -603,7 +603,7 @@
                                         <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
                                     </span>
                                 </th>
-                                <th class="text-muted record-sortable" style="width: 20%" data-sort-key="title" data-sort-type="text">
+                                <th class="text-muted record-sortable" style="width: 24%" data-sort-key="title" data-sort-type="text">
                                     <span class="record-sort-header">
                                         <span class="record-sort-label">Course Title</span>
                                         <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
@@ -615,7 +615,7 @@
                                         <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
                                     </span>
                                 </th>
-                                <th class="text-muted text-center record-sortable" style="width: 6%" data-sort-key="category" data-sort-type="text">
+                                <th class="text-muted text-center record-sortable" style="width: 7%" data-sort-key="category" data-sort-type="text">
                                     <span class="record-sort-header">
                                         <span class="record-sort-label">Category</span>
                                         <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
@@ -633,13 +633,13 @@
                                         <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
                                     </span>
                                 </th>
-                                <th class="text-muted text-center record-sortable" style="width: 7%" data-sort-key="learning-hour" data-sort-type="number">
+                                <th class="text-muted text-center record-sortable" style="width: 8%" data-sort-key="learning-hour" data-sort-type="number">
                                     <span class="record-sort-header">
                                         <span class="record-sort-label">Learning Hour</span>
                                         <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
                                     </span>
                                 </th>
-                                <th class="text-muted text-center record-sortable" style="width: 6%" data-sort-key="progress" data-sort-type="number">
+                                <th class="text-muted text-center record-sortable" style="width: 7%" data-sort-key="progress" data-sort-type="number">
                                     <span class="record-sort-header">
                                         <span class="record-sort-label">Progress</span>
                                         <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
@@ -657,18 +657,13 @@
                                         <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
                                     </span>
                                 </th>
-                                <th class="text-muted text-center record-sortable" style="width: 8%" data-sort-key="score" data-sort-type="number">
+                                <th class="text-muted text-center record-sortable" style="width: 6%" data-sort-key="score" data-sort-type="number">
                                     <span class="record-sort-header">
                                         <span class="record-sort-label">Assessment Score (L2)</span>
                                         <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
                                     </span>
                                 </th>
-                                <th class="text-muted text-center record-sortable" style="width: 5%" data-sort-key="certificate" data-sort-type="text">
-                                    <span class="record-sort-header">
-                                        <span class="record-sort-label">Certificate</span>
-                                        <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
-                                    </span>
-                                </th>
+
                                 <th class="text-muted text-center" style="width: 5%">Action</th>
                             </tr>
                         </thead>
@@ -695,34 +690,22 @@
                                 data-sort-certificate="{{ $offSortCert }}">
                                 <td class="text-center text-muted record-row-index">{{ $loop->iteration }}</td>
                                 <td class="learning-record-course-cell">
-                                    <button type="button"
-                                            class="learning-record-title record-offline-title-link btn-record-offline-detail text-start"
-                                            data-record-id="{{ $row['id'] }}">
-                                        {{ $row['title'] }}
-                                    </button>
-                                    @if (!empty($row['subtitle']))
-                                        <div class="text-muted small mt-1">
-                                            {{ $row['subtitle'] }}
-                                        </div>
-                                    @endif
+                                    <div class="fw-semibold text-dark">
+                                        <button type="button"
+                                                class="record-offline-title-link btn-record-offline-detail text-start text-dark fw-semibold p-0 border-0 bg-transparent"
+                                                data-record-id="{{ $row['id'] }}"
+                                                title="Click to view details">
+                                            {{ $row['title'] }}
+                                        </button>
+                                    </div>
                                     @php
                                         $offReq = strtolower(trim((string) ($row['requirement'] ?? 'non-mandatory')));
                                         $isOffMand = !str_contains($offReq, 'non-mandatory') && !str_contains($offReq, 'non mandatory') && !str_contains($offReq, 'optional') && str_contains($offReq, 'mandatory');
+                                        $offReqLabel = $isOffMand ? 'Mandatory' : 'Non-Mandatory';
                                     @endphp
-                                    <div class="learning-record-program text-muted small mt-1 d-flex align-items-center gap-1 flex-wrap">
-                                        <span class="text-muted">Requirement:</span>
-                                        @if ($isOffMand)
-                                            <span class="badge bg-red-lt text-red fw-semibold" style="font-size: 0.7rem;">Mandatory</span>
-                                        @else
-                                            <span class="text-muted fw-medium">Non-Mandatory</span>
-                                        @endif
+                                    <div class="text-xs text-muted mt-1">
+                                        Requirement: <span class="badge bg-light text-dark">{{ $offReqLabel }}</span>
                                     </div>
-                                    @if (!empty($row['venue']) && $row['venue'] !== '-')
-                                        <div class="text-muted small mt-1 d-flex align-items-center gap-1" style="font-size: 0.75rem;">
-                                            <i class="ti ti-map-pin" style="font-size: 0.8rem;"></i>
-                                            <span>{{ $row['venue'] }}</span>
-                                        </div>
-                                    @endif
                                     {{-- Hidden JSON storage for instant zero-N+1 modal population --}}
                                     <script type="application/json" id="record-offline-data-{{ $row['id'] }}">@json($row)</script>
                                 </td>
@@ -809,39 +792,7 @@
                                         @endif
                                     </div>
                                 </td>
-                                <td class="text-center">
-                                    <div class="d-flex justify-content-center">
-                                        @if (($row['has_certificate'] ?? false) || ($row['cert_state'] ?? '') === 'ready')
-                                            @if (!empty($row['cert_action_url']))
-                                                <a href="{{ $row['cert_action_url'] }}"
-                                                   class="btn btn-learning-certificate"
-                                                   target="_blank"
-                                                   title="Certificate Available"
-                                                   aria-label="Certificate Available">
-                                                    <i class="ti ti-certificate" aria-hidden="true"></i>
-                                                </a>
-                                            @else
-                                                <button type="button"
-                                                        class="btn btn-learning-certificate"
-                                                        title="Certificate Available"
-                                                        aria-label="Certificate Available">
-                                                    <i class="ti ti-certificate" aria-hidden="true"></i>
-                                                </button>
-                                            @endif
-                                        @else
-                                            <button type="button"
-                                                    class="btn btn-learning-certificate-disabled"
-                                                    disabled
-                                                    title="Certificate Not Available"
-                                                    data-bs-toggle="tooltip"
-                                                    data-bs-title="{{ $row['cert_reason'] ?? 'Certificate Not Available' }}"
-                                                    aria-label="Certificate Not Available">
-                                                <i class="ti ti-certificate" aria-hidden="true"></i>
-                                            </button>
-                                        @endif
-                                    </div>
-                                </td>
-                                <td class="text-center">
+                                                                <td class="text-center">
                                     <div class="dropdown">
                                         <button class="btn btn-sm btn-icon btn-ghost-secondary" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                             <i class="ti ti-dots-vertical"></i>

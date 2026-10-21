@@ -34,13 +34,12 @@ class OfflineLearningRecordCertificateUiTest extends TestCase
     }
 
     /**
-     * Test: Action column is completely removed, Certificate is the last column,
-     * header th count matches body td count, and certificate button displays
-     * green (active) for yes/1/true and gray (disabled) for no/0/null.
+     * Test: Certificate column is removed from table header, Action dropdown column is present,
+     * Course Title format shows title and requirement without venue, and certificate filter works.
      */
     public function test_offline_learning_record_action_removed_and_certificate_ui_states(): void
     {
-        // 1. Training with certificate = 'Yes' (should be green active)
+        // 1. Training with certificate = 'Yes'
         $trainingYes = OfflineTraining::create([
             'course_name'         => 'Advanced Leadership Workshop',
             'type'                => 'In-House',
@@ -59,7 +58,7 @@ class OfflineLearningRecordCertificateUiTest extends TestCase
             'attendance'          => true,
         ]);
 
-        // 2. Training with certificate = '1' (should be green active)
+        // 2. Training with certificate = '1'
         $trainingOne = OfflineTraining::create([
             'course_name'         => 'Data Analytics Bootcamp',
             'type'                => 'Public',
@@ -78,7 +77,7 @@ class OfflineLearningRecordCertificateUiTest extends TestCase
             'attendance'          => true,
         ]);
 
-        // 3. Training with certificate = 'No' (should be gray disabled)
+        // 3. Training with certificate = 'No'
         $trainingNo = OfflineTraining::create([
             'course_name'         => 'Orientation Session',
             'type'                => 'Internal',
@@ -97,7 +96,7 @@ class OfflineLearningRecordCertificateUiTest extends TestCase
             'attendance'          => true,
         ]);
 
-        // 4. Training with certificate = null (should be gray disabled)
+        // 4. Training with certificate = null
         $trainingNull = OfflineTraining::create([
             'course_name'         => 'Health and Wellness Seminar',
             'type'                => 'Seminar',
@@ -116,7 +115,7 @@ class OfflineLearningRecordCertificateUiTest extends TestCase
             'attendance'          => true,
         ]);
 
-        // 5. Training with certificate = '0' (should be gray disabled)
+        // 5. Training with certificate = '0'
         $trainingZero = OfflineTraining::create([
             'course_name'         => 'Security Awareness Briefing',
             'type'                => 'Internal',
@@ -141,44 +140,24 @@ class OfflineLearningRecordCertificateUiTest extends TestCase
         $response->assertStatus(200);
         $content = $response->getContent();
 
-        // Check 1: ACTION column header is removed
-        $this->assertStringNotContainsString('<th class="text-muted text-center" style="width: 4%">Action</th>', $content);
-        $this->assertStringNotContainsString('>Action</th>', $content);
+        // Check 1: Action column exists
+        $this->assertStringContainsString('>Action</th>', $content);
 
-        // Check 2: No view/eye button in rows
-        $this->assertStringNotContainsString('ti-eye', $content);
+        // Check 2: Action dropdown contains View Detail and Certificate actions
+        $this->assertStringContainsString('View Detail', $content);
+        $this->assertStringContainsString('ti-eye', $content);
 
-        // Check 3: CERTIFICATE header exists
-        $this->assertStringContainsString('Certificate</th>', $content);
+        // Check 3: CERTIFICATE column header is removed from table header
+        $this->assertStringNotContainsString('data-sort-key="certificate"', $content);
 
-        // Check 4: Certificate buttons exist with expected classes
-        $this->assertStringContainsString('btn-learning-certificate', $content);
-        $this->assertStringContainsString('btn-learning-certificate-disabled', $content);
-
-        // Check 5: HTML structure contains active button for available
-        $this->assertMatchesRegularExpression(
-            '/class="btn btn-learning-certificate"[^>]*title="Certificate Available"/',
-            $content
-        );
-
-        // Check 6: HTML structure contains disabled button with disabled attribute
-        $this->assertMatchesRegularExpression(
-            '/class="btn btn-learning-certificate-disabled"\s+disabled\s+title="Certificate Not Available"/',
-            $content
-        );
-
-        // Check 7: No standalone text "Yes" or "No" in certificate cell
-        // (Ensure badges like 'bg-danger-lt text-danger px-1 py-0.5">No<' do not exist)
-        $this->assertStringNotContainsString('title="No certificate">No', $content);
-
-        // Check 8: Both titles appear
+        // Check 4: Both titles appear
         $this->assertStringContainsString('Advanced Leadership Workshop', $content);
         $this->assertStringContainsString('Data Analytics Bootcamp', $content);
         $this->assertStringContainsString('Orientation Session', $content);
         $this->assertStringContainsString('Health and Wellness Seminar', $content);
         $this->assertStringContainsString('Security Awareness Briefing', $content);
 
-        // Check 9: Certificate filter works
+        // Check 5: Certificate filter works
         // Filter 'certified'
         $responseCert = $this->actingAs($this->user)
             ->get('/my-learning/partial/record?record_mode=offline&record_filter_certificate=certified');
@@ -201,7 +180,7 @@ class OfflineLearningRecordCertificateUiTest extends TestCase
     }
 
     /**
-     * Regression test: Online Learning Record mode remains unaffected.
+     * Regression test: Online Learning Record mode has Action column and Certificate table column removed.
      */
     public function test_online_learning_record_remains_unaffected(): void
     {
@@ -211,8 +190,9 @@ class OfflineLearningRecordCertificateUiTest extends TestCase
         $response->assertStatus(200);
         $content = $response->getContent();
 
-        // Online table still has Certificate column and its standard structure
-        $this->assertStringContainsString('Certificate</th>', $content);
+        // Online table has Certificate column removed and Action dropdown present
+        $this->assertStringNotContainsString('data-sort-key="certificate"', $content);
+        $this->assertStringContainsString('>Action</th>', $content);
         $this->assertStringContainsString('learningRecordTable', $content);
     }
 }

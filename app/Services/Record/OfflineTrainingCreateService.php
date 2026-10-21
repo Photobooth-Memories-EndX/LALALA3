@@ -218,6 +218,7 @@ class OfflineTrainingCreateService
                 'attendance'        => $attendance !== null ? $attendance : true,
                 'attendance_reason' => $this->normalizeString($raw['attendance_reason'] ?? null),
                 'bond_status'       => $bondStatus,
+                'bond_duration'     => $isBonded && isset($raw['bond_duration']) && is_numeric($raw['bond_duration']) ? (int) $raw['bond_duration'] : null,
                 'bond_end_date'     => $isBonded ? $this->normalizeDate($raw['bond_end_date'] ?? null) : null,
                 'bond_amount'       => $isBonded ? $this->normalizeMoney($raw['bond_amount'] ?? null) : null,
                 'l1_program'        => $this->normalizeString($raw['l1_program'] ?? null),
