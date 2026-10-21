@@ -325,6 +325,37 @@ class TaskManagementNonKpOwlTest extends TestCase
             'survey_id'           => null,
         ]);
     }
+
+    public function test_can_store_standalone_task_with_access_code(): void
+    {
+        $payload = [
+            'parent_type' => 'standalone',
+            'type'        => 'action_plan',
+            'title'       => 'Annual HSE Action Plan',
+            'description' => 'Please fill out HSE form',
+            'action'      => 'publish',
+            'access_code' => 'HSE2026',
+            'fields'      => [
+                [
+                    'label'    => 'Plan Summary',
+                    'type'     => 'textarea',
+                    'required' => '1',
+                ],
+            ],
+        ];
+
+        $response = $this->actingAs($this->admin)->post(route('manage.task.store'), $payload);
+
+        $response->assertRedirect(route('manage.task.parent', ['parentType' => 'standalone', 'parentId' => 0]));
+
+        $this->assertDatabaseHas('tasks', [
+            'parent_type' => 'standalone',
+            'title'       => 'Annual HSE Action Plan',
+            'access_code' => 'HSE2026',
+            'status'      => 'published',
+        ]);
+    }
 }
+
 
 

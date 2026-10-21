@@ -308,7 +308,7 @@ class TaskManageController extends Controller
         $taskData['status']     = ($validated['action'] === 'publish') ? 'published' : 'draft';
 
         // Map the placement picker to the real columns (exactly one is set).
-        $this->applyPlacement($taskData, $validated['parent_type'], $validated['parent_id']);
+        $this->applyPlacement($taskData, $validated['parent_type'], $validated['parent_id'] ?? null);
 
         // Link columns only apply to course_assignment.
         if (($taskData['type'] ?? null) !== 'course_assignment') {
@@ -397,7 +397,7 @@ class TaskManageController extends Controller
         }
 
         $taskData = collect($validated)->except(['fields', 'parent_type', 'parent_id'])->all();
-        $this->applyPlacement($taskData, $validated['parent_type'], $validated['parent_id']);
+        $this->applyPlacement($taskData, $validated['parent_type'], $validated['parent_id'] ?? null);
 
         $task->update($taskData);
         $task->refresh();

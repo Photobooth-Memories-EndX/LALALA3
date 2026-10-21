@@ -117,18 +117,6 @@
                 </div>
                 <input type="hidden" name="parent_type" value="{{ $lockedParent['type'] }}">
                 <input type="hidden" name="parent_id" value="{{ $lockedParent['id'] }}">
-                @if ($lockedParent['type'] === 'standalone')
-                    <div class="mt-3 form-field-sm">
-                        <label class="form-label" for="access_code">Unique Access Code (Optional)</label>
-                        <input type="text" name="access_code" id="access_code"
-                               class="form-control text-uppercase @error('access_code') is-invalid @enderror"
-                               value="{{ old('access_code', $task->access_code ?? '') }}"
-                               maxlength="8" placeholder="e.g. TASK01"
-                               autocomplete="off">
-                        <small class="text-muted d-block mt-1">Unique code to unlock this standalone task (optional, max 8 alphanumeric characters).</small>
-                        @error('access_code')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
-                    </div>
-                @endif
             @else
                 {{-- Placement Category --}}
                 <div class="mb-3 form-field-md">
@@ -170,16 +158,9 @@
                     @error('parent_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                 </div>
 
-                {{-- Unique Code: optional, standalone only --}}
-                <div class="pt-2 border-top form-field-sm" id="accessCodeWrap" style="display:none">
-                    <label class="form-label" for="access_code">Unique Access Code (Optional)</label>
-                    <input type="text" name="access_code" id="access_code"
-                           class="form-control text-uppercase @error('access_code') is-invalid @enderror"
-                           value="{{ old('access_code', $task->access_code ?? '') }}"
-                           maxlength="8" placeholder="e.g. TASK01"
-                           autocomplete="off">
-                    <small class="text-muted d-block mt-1">Unique code to unlock this standalone task (optional, max 8 characters). If left blank, learners can access it via direct link or QR scan.</small>
-                    @error('access_code')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                {{-- Global Task helper notice when Standalone is chosen --}}
+                <div id="standalonePlacementNotice" class="alert alert-info py-2 px-3 rounded-3 form-field-lg mb-0" style="{{ $currentParentType === 'standalone' ? '' : 'display:none' }}">
+                    <i class="ti ti-world me-1"></i> Global Task is open to all learners and not tied to a specific playlist or course. You can configure an optional access passcode at the bottom of the form.
                 </div>
             @endif
         </div>
@@ -415,7 +396,32 @@
     </div>
 
     {{-- ======================================================== --}}
-    {{-- SECTION 5: ACTION BAR / FOOTER                           --}}
+    {{-- ACCESS CODE SETTING (Only for Global Task / Standalone)   --}}
+    {{-- ======================================================== --}}
+    <div id="accessCodeWrap" class="card form-section-card" style="{{ $currentParentType === 'standalone' ? '' : 'display:none' }}">
+        <div class="card-header bg-white py-3 px-4 d-flex align-items-center gap-3">
+            <span class="section-badge-num"><i class="ti ti-key"></i></span>
+            <div>
+                <h3 class="card-title fw-bold text-dark mb-0">5. Access & Security (Optional)</h3>
+                <div class="text-muted small">Configure an optional access passcode to unlock this Global Task.</div>
+            </div>
+        </div>
+        <div class="card-body p-4">
+            <div class="form-field-sm">
+                <label class="form-label" for="access_code">Unique Access Code</label>
+                <input type="text" name="access_code" id="access_code"
+                       class="form-control text-uppercase @error('access_code') is-invalid @enderror"
+                       value="{{ old('access_code', $task->access_code ?? '') }}"
+                       maxlength="8" placeholder="e.g. TASK01"
+                       autocomplete="off">
+                <small class="text-muted d-block mt-2">Optional (max 8 characters). If left blank, learners can access this task directly via secret link or QR code.</small>
+                @error('access_code')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+            </div>
+        </div>
+    </div>
+
+    {{-- ======================================================== --}}
+    {{-- SECTION 6: ACTION BAR / FOOTER                           --}}
     {{-- ======================================================== --}}
     <div class="card border-0 shadow-sm rounded-4 mb-4 p-3 bg-white">
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
@@ -722,6 +728,8 @@
             if (parentPicker) parentPicker.style.display = isStandalone ? 'none' : '';
             var accessCodeWrap = document.getElementById('accessCodeWrap');
             if (accessCodeWrap) accessCodeWrap.style.display = isStandalone ? '' : 'none';
+            var standaloneNotice = document.getElementById('standalonePlacementNotice');
+            if (standaloneNotice) standaloneNotice.style.display = isStandalone ? '' : 'none';
         }
 
         function renderParentItems(items) {
