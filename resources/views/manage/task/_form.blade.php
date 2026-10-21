@@ -81,14 +81,14 @@
     </style>
 
     {{-- ======================================================== --}}
-    {{-- SECTION 1: PENEMPATAN & SASARAN TUGAS (PLACEMENT & TARGET) --}}
+    {{-- SECTION 1: PLACEMENT & TASK TARGET                       --}}
     {{-- ======================================================== --}}
     <div class="card form-section-card">
         <div class="card-header bg-white py-3 px-4 d-flex align-items-center gap-3">
             <span class="section-badge-num"><i class="ti ti-map-pin"></i></span>
             <div>
-                <h3 class="card-title fw-bold text-dark mb-0">1. Penempatan & Sasaran Tugas</h3>
-                <div class="text-muted small">Tentukan di mana tugas ini ditempatkan dan bagaimana peserta dapat mengaksesnya.</div>
+                <h3 class="card-title fw-bold text-dark mb-0">1. Placement & Task Target</h3>
+                <div class="text-muted small">Specify where this task is assigned and how learners will access it.</div>
             </div>
         </div>
         <div class="card-body p-4">
@@ -96,7 +96,7 @@
                 <div class="alert alert-info d-flex align-items-center mb-0 rounded-3">
                     <i class="ti ti-book-2 fs-2 me-2"></i>
                     <div>
-                        Tugas ini akan otomatis ditambahkan ke dalam
+                        This task will be automatically added to
                         <strong>{{ $lockedParent['name'] }}</strong>
                         ({{ $lockedParent['label'] }}).
                     </div>
@@ -109,16 +109,16 @@
                         <input type="text" name="access_code" id="access_code"
                                class="form-control text-uppercase @error('access_code') is-invalid @enderror"
                                value="{{ old('access_code', $task->access_code ?? '') }}"
-                               maxlength="8" placeholder="Masukkan kode unik (cth: TUGAS01)" style="max-width:280px"
+                               maxlength="8" placeholder="e.g. TASK01" style="max-width:280px"
                                autocomplete="off">
-                        <small class="text-muted d-block mt-1">Kode unik untuk membuka tugas mandiri ini (opsional, maks 8 karakter alfanumerik).</small>
+                        <small class="text-muted d-block mt-1">Unique code to unlock this standalone task (optional, max 8 alphanumeric characters).</small>
                         @error('access_code')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                     </div>
                 @endif
             @else
                 <div class="row g-3">
                     <div class="col-md-5">
-                        <label class="form-label required" for="parent_type">Kategori Penempatan</label>
+                        <label class="form-label required" for="parent_type">Placement Category</label>
                         <select class="form-select @error('parent_type') is-invalid @enderror"
                                 id="parent_type" name="parent_type" required>
                             @foreach (\App\Models\Task::PARENT_TYPES as $key => $label)
@@ -127,7 +127,7 @@
                                 </option>
                             @endforeach
                         </select>
-                        <div class="form-hint mt-1">Pilih apakah tugas terikat ke Playlist, Konten, Offline Training, atau Global.</div>
+                        <div class="form-hint mt-1">Choose whether this task belongs to a Playlist, Content, Offline Training, or Global.</div>
                         @error('parent_type')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                     </div>
 
@@ -139,19 +139,19 @@
                             <button type="button"
                                     class="form-select text-start d-flex justify-content-between align-items-center"
                                     id="parentPickerBtn" aria-haspopup="listbox" aria-expanded="false">
-                                <span id="parentPickerText">{{ $selectedParentName ?: '— Pilih Target Penempatan —' }}</span>
+                                <span id="parentPickerText">{{ $selectedParentName ?: '— Select Target Placement —' }}</span>
                                 <i class="ti ti-chevron-down ms-2"></i>
                             </button>
                             <div class="card position-absolute w-100 shadow mt-1" id="parentPanel"
                                  style="display:none; z-index:1050;">
                                 <div class="p-2 border-bottom">
                                     <input type="search" id="parentPanelSearch" class="form-control"
-                                           placeholder="Ketik untuk mencari..." autocomplete="off">
+                                           placeholder="Type to search..." autocomplete="off">
                                 </div>
                                 <div id="parentPanelList" class="overflow-auto" style="max-height:240px;" role="listbox"></div>
                             </div>
                         </div>
-                        <div class="invalid-feedback" id="parentIdError" style="display:none">Pilih data target di mana tugas ini ditempatkan.</div>
+                        <div class="invalid-feedback" id="parentIdError" style="display:none">Please select the target item where this task will be placed.</div>
                         @error('parent_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                     </div>
                 </div>
@@ -164,9 +164,9 @@
                             <input type="text" name="access_code" id="access_code"
                                    class="form-control text-uppercase @error('access_code') is-invalid @enderror"
                                    value="{{ old('access_code', $task->access_code ?? '') }}"
-                                   maxlength="8" placeholder="Contoh: TUGAS01" style="max-width:280px"
+                                   maxlength="8" placeholder="e.g. TASK01" style="max-width:280px"
                                    autocomplete="off">
-                            <small class="text-muted d-block mt-1">Kode unik untuk membuka tugas mandiri ini (opsional, maks 8 karakter). Jika dikosongkan, tugas dapat diakses melalui tautan rahasia atau scan QR.</small>
+                            <small class="text-muted d-block mt-1">Unique code to unlock this standalone task (optional, max 8 characters). If left blank, learners can access it via direct link or QR scan.</small>
                             @error('access_code')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                         </div>
                     </div>
@@ -176,20 +176,20 @@
     </div>
 
     {{-- ======================================================== --}}
-    {{-- SECTION 2: INFORMASI DASAR TUGAS (BASIC INFORMATION)     --}}
+    {{-- SECTION 2: BASIC TASK INFORMATION                        --}}
     {{-- ======================================================== --}}
     <div class="card form-section-card">
         <div class="card-header bg-white py-3 px-4 d-flex align-items-center gap-3">
             <span class="section-badge-num"><i class="ti ti-file-text"></i></span>
             <div>
-                <h3 class="card-title fw-bold text-dark mb-0">2. Informasi Dasar Tugas</h3>
-                <div class="text-muted small">Tentukan jenis penugasan, judul tugas, dan instruksi pengerjaan bagi peserta.</div>
+                <h3 class="card-title fw-bold text-dark mb-0">2. Basic Task Information</h3>
+                <div class="text-muted small">Define the task type, title, and instructions for learners.</div>
             </div>
         </div>
         <div class="card-body p-4">
             <div class="row g-3">
                 <div class="col-md-4">
-                    <label class="form-label required" for="type">Tipe Tugas (Task Type)</label>
+                    <label class="form-label required" for="type">Task Type</label>
                     <select class="form-select @error('type') is-invalid @enderror"
                             id="type" name="type" required>
                         @foreach (\App\Models\Task::TYPES as $key => $label)
@@ -203,41 +203,41 @@
                 </div>
 
                 <div class="col-md-8">
-                    <label class="form-label required" for="title">Judul Tugas (Task Title)</label>
+                    <label class="form-label required" for="title">Task Title</label>
                     <input type="text" class="form-control @error('title') is-invalid @enderror"
                            id="title" name="title"
                            value="{{ old('title', $task->title ?? '') }}"
-                           placeholder="Contoh: Laporan Observasi Lapangan K3 & Praktik Bengkel" required>
+                           placeholder="e.g. Safety Field Observation Report & Workshop Practice" required>
                     @error('title')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
 
             <div class="mt-3">
-                <label class="form-label" for="description">Deskripsi & Instruksi Pengerjaan</label>
+                <label class="form-label" for="description">Description & Instructions</label>
                 <textarea class="form-control @error('description') is-invalid @enderror"
                           id="description" name="description"
                           rows="3"
-                          placeholder="Tuliskan petunjuk pengerjaan, ketentuan berkas, atau panduan yang perlu dipahami peserta...">{{ old('description', $task->description ?? '') }}</textarea>
+                          placeholder="Provide clear guidelines, requirements, or submission instructions for learners...">{{ old('description', $task->description ?? '') }}</textarea>
                 @error('description')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
             </div>
         </div>
     </div>
 
     {{-- ======================================================== --}}
-    {{-- SECTION 3: JADWAL & MATERI PENDUKUNG (TIMELINE & FILES)   --}}
+    {{-- SECTION 3: TIMELINE & SUPPORTING MATERIALS               --}}
     {{-- ======================================================== --}}
     <div class="card form-section-card">
         <div class="card-header bg-white py-3 px-4 d-flex align-items-center gap-3">
             <span class="section-badge-num"><i class="ti ti-calendar-time"></i></span>
             <div>
-                <h3 class="card-title fw-bold text-dark mb-0">3. Tenggat Waktu & Berkas Pendukung</h3>
-                <div class="text-muted small">Atur batas waktu pengumpulan tugas serta unggah template soal atau materi panduan (opsional).</div>
+                <h3 class="card-title fw-bold text-dark mb-0">3. Timeline & Supporting Files</h3>
+                <div class="text-muted small">Set the submission deadline and attach assignment templates or guidance materials (optional).</div>
             </div>
         </div>
         <div class="card-body p-4">
             <div class="row g-3">
                 <div class="col-md-6">
-                    <label class="form-label" for="deadline">Batas Waktu Pengumpulan (Deadline)</label>
+                    <label class="form-label" for="deadline">Submission Deadline</label>
                     <div class="input-icon">
                         <span class="input-icon-addon">
                             <i class="ti ti-calendar-event"></i>
@@ -246,22 +246,22 @@
                                id="deadline" name="deadline"
                                value="{{ old('deadline', isset($task) && $task->deadline ? $task->deadline->format('Y-m-d\TH:i') : '') }}">
                     </div>
-                    <small class="text-muted d-block mt-1">Kosongkan jika tugas ini tidak memiliki batas waktu pengumpulan.</small>
+                    <small class="text-muted d-block mt-1">Leave blank if this task has no submission deadline.</small>
                     @error('deadline')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                 </div>
 
                 <div class="col-md-6">
-                    <label class="form-label" for="attachment">Lampiran Berkas / Template Tugas (Optional)</label>
+                    <label class="form-label" for="attachment">Attachment / Task Template (Optional)</label>
                     <input type="file" class="form-control @error('attachment') is-invalid @enderror"
                            id="attachment" name="attachment">
                     @if (isset($task) && $task->attachment)
                         <div class="form-hint mt-1 d-flex align-items-center gap-1">
                             <i class="ti ti-file-check text-success"></i>
-                            <span>Berkas tersimpan:</span>
-                            <a href="{{ asset('storage/' . $task->attachment) }}" target="_blank" class="fw-semibold">Lihat Berkas</a>
+                            <span>Saved file:</span>
+                            <a href="{{ asset('storage/' . $task->attachment) }}" target="_blank" class="fw-semibold">View File</a>
                         </div>
                     @else
-                        <small class="text-muted d-block mt-1">Format PDF, DOCX, ZIP, XLSX maks 5 MB sebagai referensi pengerjaan peserta.</small>
+                        <small class="text-muted d-block mt-1">PDF, DOCX, ZIP, XLSX up to 5 MB as a reference for learners.</small>
                     @endif
                     @error('attachment')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                 </div>
@@ -270,40 +270,40 @@
     </div>
 
     {{-- ======================================================== --}}
-    {{-- SECTION 4: KONFIGURASI PENGERJAAN / PERTANYAAN           --}}
+    {{-- SECTION 4: SUBMISSION SETUP / QUESTIONS                  --}}
     {{-- ======================================================== --}}
     {{-- ── 4A: Course Link section (only for Course Assignment) ── --}}
     <div id="linkSection" class="card form-section-card" style="display:none">
         <div class="card-header bg-white py-3 px-4 d-flex align-items-center gap-3">
             <span class="section-badge-num"><i class="ti ti-link"></i></span>
             <div>
-                <h3 class="card-title fw-bold text-dark mb-0">4. Target Kursus Penugasan</h3>
-                <div class="text-muted small">Tentukan kursus di dalam LMS atau tautan kursus eksternal yang harus diselesaikan peserta.</div>
+                <h3 class="card-title fw-bold text-dark mb-0">4. Target Course Assignment</h3>
+                <div class="text-muted small">Specify the LMS course or external course URL that learners must complete.</div>
             </div>
         </div>
         <div class="card-body p-4">
             <div class="mb-3">
-                <label class="form-label fw-semibold">Tipe Tujuan Kursus</label>
+                <label class="form-label fw-semibold">Course Destination Type</label>
                 <div class="d-flex gap-3">
                     <label class="form-check form-check-inline mb-0">
                         <input type="radio" class="form-check-input" name="link_type" value="lms"
                                {{ $currentLinkType === 'lms' ? 'checked' : '' }}>
-                        <span class="form-check-label fw-semibold">Kursus di dalam OWL LMS (Auto-Complete 100%)</span>
+                        <span class="form-check-label fw-semibold">Course in OWL LMS (Auto-Complete 100%)</span>
                     </label>
                     <label class="form-check form-check-inline mb-0">
                         <input type="radio" class="form-check-input" name="link_type" value="external"
                                {{ $currentLinkType === 'external' ? 'checked' : '' }}>
-                        <span class="form-check-label fw-semibold">Tautan Kursus Eksternal (URL)</span>
+                        <span class="form-check-label fw-semibold">External Course Link (URL)</span>
                     </label>
                 </div>
                 @error('link_type')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
             </div>
 
             <div id="linkLmsWrap">
-                <label class="form-label required" for="linked_training_plan_id">Target Kursus di LMS</label>
+                <label class="form-label required" for="linked_training_plan_id">Target Course in LMS</label>
                 <select class="form-select d-none @error('linked_training_plan_id') is-invalid @enderror"
                         id="linked_training_plan_id" name="linked_training_plan_id" tabindex="-1" aria-hidden="true">
-                    <option value="">— Pilih Target Kursus —</option>
+                    <option value="">— Select Target Course —</option>
                     @foreach ($trainingPlans as $trainingPlan)
                         <option value="{{ $trainingPlan->id }}"
                             {{ (string) $linkedCourse === (string) $trainingPlan->id ? 'selected' : '' }}>
@@ -315,14 +315,14 @@
                     <button type="button"
                             class="form-select text-start d-flex justify-content-between align-items-center"
                             id="coursePickerBtn" aria-haspopup="listbox" aria-expanded="false">
-                        <span id="coursePickerText">— Pilih Target Kursus —</span>
+                        <span id="coursePickerText">— Select Target Course —</span>
                         <i class="ti ti-chevron-down ms-2"></i>
                     </button>
                     <div class="card position-absolute w-100 shadow mt-1" id="coursePanel"
                          style="display:none; z-index:1050;">
                         <div class="p-2 border-bottom">
                             <input type="search" id="coursePanelSearch" class="form-control"
-                                   placeholder="Ketik nama kursus untuk mencari..." autocomplete="off">
+                                   placeholder="Type course name to search..." autocomplete="off">
                         </div>
                         <div id="coursePanelList" class="overflow-auto" style="max-height:240px;" role="listbox"></div>
                     </div>
@@ -332,18 +332,18 @@
                     <label class="form-check mb-0">
                         <input type="checkbox" class="form-check-input" id="sameCourse"
                                {{ $sameChecked ? 'checked' : '' }}>
-                        <span class="form-check-label text-muted">Sama dengan playlist/kursus yang dipilih di atas</span>
+                        <span class="form-check-label text-muted">Same as the playlist/course selected above</span>
                     </label>
                 </div>
             </div>
 
             <div id="linkExternalWrap" style="display:none">
-                <label class="form-label required" for="external_url">URL Kursus Eksternal</label>
+                <label class="form-label required" for="external_url">External Course URL</label>
                 <input type="url" class="form-control @error('external_url') is-invalid @enderror"
                        id="external_url" name="external_url"
                        placeholder="https://example.com/course/..."
                        value="{{ old('external_url', $task->external_url ?? '') }}">
-                <small class="text-muted d-block mt-1">Masukkan tautan lengkap termasuk https://</small>
+                <small class="text-muted d-block mt-1">Enter complete URL including https://</small>
                 @error('external_url')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
             </div>
         </div>
@@ -355,12 +355,12 @@
             <div class="d-flex align-items-center gap-3">
                 <span class="section-badge-num"><i class="ti ti-list-check"></i></span>
                 <div>
-                    <h3 class="card-title fw-bold text-dark mb-0">4. Daftar Pertanyaan & Formulir Pengumpulan Jawaban</h3>
+                    <h3 class="card-title fw-bold text-dark mb-0">4. Questions & Submission Form Builder</h3>
                     <div class="text-muted small" id="builderHint"></div>
                 </div>
             </div>
             <button type="button" class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm" id="btnAddField">
-                <i class="ti ti-plus me-1"></i> Tambah Pertanyaan
+                <i class="ti ti-plus me-1"></i> Add Question
             </button>
         </div>
         <div class="card-body p-4">
@@ -379,24 +379,24 @@
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
             <div class="text-muted small">
                 @if (isset($task))
-                    <i class="ti ti-info-circle me-1"></i>Mode Edit: Perubahan akan langsung diperbarui pada tugas peserta.
+                    <i class="ti ti-info-circle me-1"></i>Edit Mode: Changes will be updated immediately for learners.
                 @else
-                    <i class="ti ti-info-circle me-1"></i>Pilih <strong>Simpan Draf</strong> untuk menyimpan sementara, atau <strong>Publikasikan</strong> agar langsung tampil untuk peserta.
+                    <i class="ti ti-info-circle me-1"></i>Choose <strong>Save as Draft</strong> to save privately, or <strong>Publish Task</strong> to make it accessible to learners immediately.
                 @endif
             </div>
             <div class="d-flex align-items-center gap-2">
-                <a href="{{ route('manage.task.index') }}" class="btn btn-outline-secondary rounded-3 px-3">Batal</a>
+                <a href="{{ route('manage.task.index') }}" class="btn btn-outline-secondary rounded-3 px-3">Cancel</a>
 
                 @if (isset($task))
                     <button type="submit" class="btn btn-primary rounded-3 px-4">
-                        <i class="ti ti-device-floppy me-1"></i> Simpan Perubahan
+                        <i class="ti ti-device-floppy me-1"></i> Save Changes
                     </button>
                 @else
                     <button type="submit" name="action" value="draft" class="btn btn-outline-primary rounded-3 px-3">
-                        <i class="ti ti-file me-1"></i> Simpan Draf
+                        <i class="ti ti-file me-1"></i> Save as Draft
                     </button>
                     <button type="submit" name="action" value="publish" class="btn btn-primary rounded-3 px-4">
-                        <i class="ti ti-send me-1"></i> Publikasikan Tugas
+                        <i class="ti ti-send me-1"></i> Publish Task
                     </button>
                 @endif
             </div>
@@ -777,7 +777,7 @@
             });
         }
 
-        // ── Target course: searchable dropdown (dibangun dari <option> yang ada) ──
+        // ── Target course: searchable dropdown (built from existing <option> elements) ──
         var coursePickerBtn   = document.getElementById('coursePickerBtn');
         var coursePickerText  = document.getElementById('coursePickerText');
         var coursePicker      = document.getElementById('coursePicker');
@@ -789,7 +789,7 @@
             var out = [];
             if (!linkedSelect) return out;
             Array.prototype.forEach.call(linkedSelect.options, function (o) {
-                if (!o.value) return; // lewati placeholder
+                if (!o.value) return; // skip placeholder
                 out.push({ id: o.value, title: o.textContent.trim() });
             });
             return out;
