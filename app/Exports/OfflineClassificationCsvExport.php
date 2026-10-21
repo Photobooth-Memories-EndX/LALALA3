@@ -165,7 +165,7 @@ class OfflineClassificationCsvExport implements FromQuery, WithHeadings, WithMap
             $this->sanitizeCsvValue($row->provider_name ?: '-'),                          // 29. Provider Name
             $this->sanitizeCsvValue($row->venue ?: '-'),                                  // 30. Venue
             $this->sanitizeCsvValue($row->instructor ?: '-'),                             // 31. Instructor
-            $row->assessment_score !== null ? (float) $row->assessment_score : '-',       // 32. Assessment Score
+            is_numeric($row->assessment_score) ? (int) round((float) $row->assessment_score) : '-',       // 32. Assessment Score
             $this->sanitizeCsvValue($row->certificate ?: '-'),                            // 33. Certificate
             $attendanceStr,                                                               // 34. Attendance Yes/No
             $this->sanitizeCsvValue($row->attendance_reason ?: '-'),                      // 35. Reason

@@ -65,19 +65,9 @@ class ExportMyAllLearningRecord implements FromArray, ShouldAutoSize, WithColumn
         }
     }
 
-    private function formatCleanScore($score): string|int|float
+    private function formatCleanScore($score): string|int
     {
-        if ($score === null || $score === '' || $score === '-' || $score === '—') {
-            return '-';
-        }
-        if (!is_numeric($score)) {
-            return (string) $score;
-        }
-        $num = (float) $score;
-        if (floor($num) == $num) {
-            return (int) $num;
-        }
-        return (float) rtrim(rtrim(number_format($num, 2, '.', ''), '0'), '.');
+        return is_numeric($score) ? (int) round((float) $score) : '-';
     }
 
     public function array(): array
@@ -383,7 +373,7 @@ class ExportMyAllLearningRecord implements FromArray, ShouldAutoSize, WithColumn
             'T'  => NumberFormat::FORMAT_GENERAL,       // Provider Name
             'U'  => NumberFormat::FORMAT_GENERAL,       // Venue
             'V'  => NumberFormat::FORMAT_GENERAL,       // Attendance
-            'W'  => '0.##',                             // Assessment Score (L2)
+            'W'  => '0',                                // Assessment Score (L2)
             'X'  => NumberFormat::FORMAT_GENERAL,       // Bond Status
             'Y'  => '0.##',                             // Bond Duration
             'Z'  => 'yyyy-mm-dd',                       // Bond End Date
@@ -423,6 +413,10 @@ class ExportMyAllLearningRecord implements FromArray, ShouldAutoSize, WithColumn
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);
+
+                if ($highestRow >= 2) {
+                    $sheet->getStyle('W2:W' . $highestRow)->getNumberFormat()->setFormatCode('0');
+                }
 
                 // Highlight main Playlist items with light blue/gray fill (#EBF3FB) and bold text
                 foreach ($this->parentPlaylistRows as $r) {

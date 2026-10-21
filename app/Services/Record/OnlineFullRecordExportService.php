@@ -322,10 +322,11 @@ class OnlineFullRecordExportService
 
         // 12. Assessment Score
         if ($context !== null) {
-            $score = $context->resolveScore($row);
+            $rawScore = $context->resolveScore($row);
         } else {
-            $score = 'Not Applicable';
+            $rawScore = $row->assessment_score ?? $row->score ?? null;
         }
+        $score = is_numeric($rawScore) ? (int) round((float) $rawScore) : '-';
 
         // 13. Certificate Eligibility
         if ($context !== null) {

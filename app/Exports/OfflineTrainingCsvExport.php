@@ -150,7 +150,7 @@ class OfflineTrainingCsvExport implements FromQuery, WithHeadings, WithMapping, 
             $row->provider_name ?: '-',                                         // 29. Provider Name
             $row->venue ?: '-',                                                 // 30. Venue
             $row->instructor ?: '-',                                            // 31. Instructor
-            $row->assessment_score !== null ? (float) $row->assessment_score : '-', // 32. Assessment Score
+            is_numeric($row->assessment_score) ? (int) round((float) $row->assessment_score) : '-', // 32. Assessment Score
             $row->certificate ?: '-',                                           // 33. Certificate
             $attendanceStr,                                                     // 34. Attendance Yes/No
             $row->attendance_reason ?: '-',                                     // 35. Reason

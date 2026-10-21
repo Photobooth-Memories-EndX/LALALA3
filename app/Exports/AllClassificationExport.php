@@ -368,7 +368,7 @@ class AllClassificationExport implements FromQuery, WithHeadings, WithChunkReadi
                     $row->finish_date ? date('Y-m-d', strtotime($row->finish_date)) : '',
                     $row->learning_hours !== null ? number_format((float) $row->learning_hours, 2) : '0.00',
                     $row->progress !== null ? ($row->progress . '%') : '0%',
-                    $row->assessment_score !== null ? number_format((float) $row->assessment_score, 2) : '',
+                    is_numeric($row->assessment_score) ? (int) round((float) $row->assessment_score) : '',
                     $row->certificate ?: '',
                     $attendanceStr,
                     $row->attendance_reason ?: '',

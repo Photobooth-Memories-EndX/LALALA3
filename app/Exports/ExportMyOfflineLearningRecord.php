@@ -60,19 +60,9 @@ class ExportMyOfflineLearningRecord implements FromArray, ShouldAutoSize, WithCo
         }
     }
 
-    private function formatCleanScore($score): string|int|float
+    private function formatCleanScore($score): string|int
     {
-        if ($score === null || $score === '' || $score === '-' || $score === '—') {
-            return '-';
-        }
-        if (!is_numeric($score)) {
-            return (string) $score;
-        }
-        $num = (float) $score;
-        if (floor($num) == $num) {
-            return (int) $num;
-        }
-        return (float) rtrim(rtrim(number_format($num, 2, '.', ''), '0'), '.');
+        return is_numeric($score) ? (int) round((float) $score) : '-';
     }
 
     public function array(): array
@@ -265,7 +255,7 @@ class ExportMyOfflineLearningRecord implements FromArray, ShouldAutoSize, WithCo
             'S'  => NumberFormat::FORMAT_GENERAL,       // Provider Name
             'T'  => NumberFormat::FORMAT_GENERAL,       // Venue
             'U'  => NumberFormat::FORMAT_GENERAL,       // Attendance
-            'V'  => '0.##',                             // Assessment Score (L2)
+            'V'  => '0',                                // Assessment Score (L2)
             'W'  => NumberFormat::FORMAT_GENERAL,       // Bond Status
             'X'  => '0.##',                             // Bond Duration
             'Y'  => 'yyyy-mm-dd',                       // Bond End Date
@@ -305,6 +295,10 @@ class ExportMyOfflineLearningRecord implements FromArray, ShouldAutoSize, WithCo
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);
+
+                if ($highestRow >= 2) {
+                    $sheet->getStyle('V2:V' . $highestRow)->getNumberFormat()->setFormatCode('0');
+                }
 
                 $sheet->setShowSummaryBelow(false);
             },

@@ -1439,7 +1439,7 @@ class RecordAllCombinedService
                     . '</div>';
             })
             ->addColumn('assessment_score_formatted', function ($row) {
-                return ($row->assessment_score !== null && $row->assessment_score !== '') ? number_format((float) $row->assessment_score, 1) : '-';
+                return is_numeric($row->assessment_score) ? (string) (int) round((float) $row->assessment_score) : '-';
             })
             ->addColumn('certificate_badge', function ($row) {
                 if (empty($row->certificate) || $row->certificate === '-') {

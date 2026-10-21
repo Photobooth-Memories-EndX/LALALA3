@@ -325,11 +325,7 @@ class AllRecordExport implements FromQuery, WithHeadings, WithChunkReading, With
                 }
 
                 // Clean Assessment Score formatting (remove trailing decimal zeros/dots)
-                $cleanScore = '-';
-                if ($row->assessment_score !== null && $row->assessment_score !== '' && is_numeric($row->assessment_score)) {
-                    $num = (float) $row->assessment_score;
-                    $cleanScore = (floor($num) == $num) ? (string) (int) $num : rtrim(rtrim(number_format($num, 2, '.', ''), '0'), '.');
-                }
+                $cleanScore = is_numeric($row->assessment_score) ? (int) round((float) $row->assessment_score) : '-';
 
                 // Prevent double calculation: under playlist, set learning_hours cell to '-' on child rows
                 $isChildUnderPlaylist = (($row->source_type ?? '') === 'playlist' && !empty($row->content_id))

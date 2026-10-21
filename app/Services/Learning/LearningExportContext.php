@@ -99,12 +99,8 @@ class LearningExportContext
     public function formatScoreValue(mixed $val): string
     {
         if (!is_numeric($val)) {
-            return (string) $val;
+            return '-';
         }
-        $floatVal = (float) $val;
-        if ($floatVal == (int) $floatVal) {
-            return (string) (int) $floatVal;
-        }
-        return number_format(round($floatVal, 2), 2);
+        return (string) (int) round((float) $val);
     }
 }

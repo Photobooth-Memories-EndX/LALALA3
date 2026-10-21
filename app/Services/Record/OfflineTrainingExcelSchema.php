@@ -514,8 +514,8 @@ class OfflineTrainingExcelSchema
                 'group'    => 'TRAINING INFORMATION',
                 'key'      => 'assessment_score',
                 'required' => false,
-                'type'     => 'number',
-                'example'  => 85.5,
+                'type'     => 'integer',
+                'example'  => 85,
                 'note'     => 'Evaluation score (0-100)',
                 'aliases'  => [
                     'assessment score (l2)',
