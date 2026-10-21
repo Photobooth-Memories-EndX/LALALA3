@@ -377,17 +377,12 @@
 
     {{-- ── 4C: Questions section (for types with question builder) ── --}}
     <div id="builderSection" class="card form-section-card">
-        <div class="card-header bg-white py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
-            <div class="d-flex align-items-center gap-3">
-                <span class="section-badge-num"><i class="ti ti-list-check"></i></span>
-                <div>
-                    <h3 class="card-title fw-bold text-dark mb-0">4. Questions & Submission Form Builder</h3>
-                    <div class="text-muted small" id="builderHint"></div>
-                </div>
+        <div class="card-header bg-white py-3 px-4 d-flex align-items-center gap-3">
+            <span class="section-badge-num"><i class="ti ti-list-check"></i></span>
+            <div>
+                <h3 class="card-title fw-bold text-dark mb-0">4. Questions & Submission Form Builder</h3>
+                <div class="text-muted small" id="builderHint"></div>
             </div>
-            <button type="button" class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm" id="btnAddField">
-                <i class="ti ti-plus me-1"></i> Add Question
-            </button>
         </div>
         <div class="card-body p-4">
             <div id="fieldsWrap"></div>
@@ -654,12 +649,24 @@
 
             toggleOptionsEditor(card);
             toggleFileSettings(card);
+            updateRemoveButtons();
+        }
+
+        function updateRemoveButtons() {
+            var cards = wrap.querySelectorAll('.field-card');
+            cards.forEach(function (c) {
+                var btn = c.querySelector('.btnRemoveField');
+                if (btn) btn.style.display = (cards.length > 1) ? '' : 'none';
+            });
         }
 
         // ── Events (delegation) ─────────────────────────────────────────
-        document.getElementById('btnAddField').addEventListener('click', function () {
-            addField();
-        });
+        var btnAddField = document.getElementById('btnAddField');
+        if (btnAddField) {
+            btnAddField.addEventListener('click', function () {
+                addField();
+            });
+        }
 
         wrap.addEventListener('click', function (e) {
             var rmField = e.target.closest('.btnRemoveField');
@@ -669,6 +676,7 @@
                     return;
                 }
                 rmField.closest('.field-card').remove();
+                updateRemoveButtons();
                 return;
             }
             var addOpt = e.target.closest('.btnAddOption');

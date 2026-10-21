@@ -60,6 +60,7 @@ class TaskManagementNonKpOwlTest extends TestCase
         $response->assertSee('<option value="playlist" selected>', false);
         $response->assertSee('id="parentPickerLabel">Select Playlist</label>', false);
         $response->assertSee('— Select Playlist —', false);
+        $response->assertDontSee('id="btnAddField"', false);
     }
 
     public function test_parent_options_endpoint_returns_offline_trainings(): void
