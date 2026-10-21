@@ -510,7 +510,7 @@ class OfflineTrainingExcelSchema
             32 => [
                 'col_index' => 32,
                 'col_letter' => 'AF',
-                'header'   => 'Score (L2)',
+                'header'   => 'Assessment Score (L2)',
                 'group'    => 'TRAINING INFORMATION',
                 'key'      => 'assessment_score',
                 'required' => false,
@@ -518,6 +518,7 @@ class OfflineTrainingExcelSchema
                 'example'  => 85.5,
                 'note'     => 'Evaluation score (0-100)',
                 'aliases'  => [
+                    'assessment score (l2)',
                     'score (l2)',
                     'score l2',
                     'assessment score',
@@ -801,7 +802,7 @@ class OfflineTrainingExcelSchema
             'AC' => 25,  // Provider Name
             'AD' => 20,  // Venue
             'AE' => 22,  // Instructor
-            'AF' => 16,  // Score
+            'AF' => 20,  // Assessment Score (L2)
             'AG' => 12,  // Certificate
             'AH' => 16,  // Attendance
             'AI' => 22,  // Reason

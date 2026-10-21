@@ -652,9 +652,9 @@
                                         <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
                                     </span>
                                 </th>
-                                <th class="text-muted text-center record-sortable" style="width: 6%" data-sort-key="score" data-sort-type="number">
+                                <th class="text-muted text-center record-sortable" style="width: 8%" data-sort-key="score" data-sort-type="number">
                                     <span class="record-sort-header">
-                                        <span class="record-sort-label">Score (L2)</span>
+                                        <span class="record-sort-label">Assessment Score (L2)</span>
                                         <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
                                     </span>
                                 </th>

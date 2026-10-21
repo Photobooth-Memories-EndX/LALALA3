@@ -52,7 +52,7 @@ class OnlineFullRecordExportService
             'Finish Date',
             'Participant Hours',
             'Progress',
-            'Assessment Score',
+            'Assessment Score (L2)',
             'Certificate',
             'Attendance',
             'Attendance Reason',
@@ -107,7 +107,7 @@ class OnlineFullRecordExportService
             'AE' => 14,  // Finish Date
             'AF' => 18,  // Participant Hours
             'AG' => 12,  // Progress
-            'AH' => 18,  // Assessment Score
+            'AH' => 20,  // Assessment Score (L2)
             'AI' => 16,  // Certificate
             'AJ' => 16,  // Attendance
             'AK' => 25,  // Attendance Reason

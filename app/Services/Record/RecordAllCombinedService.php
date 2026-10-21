@@ -487,7 +487,7 @@ class RecordAllCombinedService
                 DB::raw("COALESCE(otu.department, u.department, '') as department"),
                 DB::raw("COALESCE(otu.company, u.company_name, '') as company"),
                 DB::raw("CASE
-                    WHEN unified.source = 'offline' THEN COALESCE(ot.course_name, 'Offline Training')
+                    WHEN unified.source = 'offline' THEN COALESCE(ot.title, ot.course_name, 'Offline Training')
                     WHEN unified.source_type = 'playlist' THEN COALESCE(tp.title, c.title, 'Playlist')
                     ELSE COALESCE(c.title, 'Untitled Content')
                 END as learning_title"),
@@ -503,7 +503,7 @@ class RecordAllCombinedService
                     ELSE COALESCE(c.type, 'Document')
                 END as type"),
                 DB::raw("CASE
-                    WHEN unified.source = 'offline' THEN COALESCE(NULLIF(TRIM(ot.category), ''), 'General')
+                    WHEN unified.source = 'offline' THEN 'Non KP-OWL'
                     WHEN unified.source_type = 'playlist' THEN 'Playlist'
                     ELSE 'All Content'
                 END as category"),

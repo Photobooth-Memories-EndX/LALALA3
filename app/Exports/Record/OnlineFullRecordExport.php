@@ -141,7 +141,7 @@ class OnlineFullRecordExport implements FromQuery, WithHeadings, WithChunkReadin
             . '<fills count="3">'
             . '<fill><patternFill patternType="none"/></fill>'
             . '<fill><patternFill patternType="gray125"/></fill>'
-            . '<fill><patternFill patternType="solid"><fgColor rgb="FF003B6D"/><bgColor rgb="FF003B6D"/></patternFill></fill>'
+            . '<fill><patternFill patternType="solid"><fgColor rgb="FF002B49"/><bgColor rgb="FF002B49"/></patternFill></fill>'
             . '</fills>'
             . '<borders count="1">'
             . '<border><left/><right/><top/><bottom/><diagonal/></border>'

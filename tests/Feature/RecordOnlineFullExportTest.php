@@ -59,7 +59,7 @@ class RecordOnlineFullExportTest extends TestCase
         $this->assertEquals('Finish Date', $headings[30]);
         $this->assertEquals('Participant Hours', $headings[31]);
         $this->assertEquals('Progress', $headings[32]);
-        $this->assertEquals('Assessment Score', $headings[33]);
+        $this->assertEquals('Assessment Score (L2)', $headings[33]);
         $this->assertEquals('Certificate', $headings[34]);
         $this->assertEquals('Attendance', $headings[35]);
         $this->assertEquals('Attendance Reason', $headings[36]);
@@ -125,7 +125,7 @@ class RecordOnlineFullExportTest extends TestCase
         $this->assertEquals('IT Dept', $mapped[8]); // Department
         $this->assertEquals('PT Krakatau Posco', $mapped[9]); // Company
         $this->assertEquals('Cyber Security 101', $mapped[10]); // Title
-        $this->assertEquals('', $mapped[11]); // Sub Title
+        $this->assertEquals('Non-Mandatory', $mapped[11]); // Sub Title / Requirement
         $this->assertEquals('Video', $mapped[12]); // Type
         $this->assertEquals('Content', $mapped[13]); // Category (Standalone Content)
         $this->assertEquals('Technical', $mapped[16]); // Main Classification
@@ -136,7 +136,7 @@ class RecordOnlineFullExportTest extends TestCase
         $this->assertEquals('2025-01-10', $mapped[30]); // Finish Date
         $this->assertEquals('1.50', $mapped[31]); // Participant Hours
         $this->assertEquals('100%', $mapped[32]); // Progress
-        $this->assertEquals('Present', $mapped[35]); // Attendance
+        $this->assertEquals('Yes', $mapped[35]); // Attendance
     }
 
     /**
@@ -171,7 +171,7 @@ class RecordOnlineFullExportTest extends TestCase
         $this->assertEquals('Video', $mapped[12]); // Type preserved (not overwritten with Playlist)
         $this->assertEquals('Playlist: Leadership Onboarding 2025', $mapped[13]); // Category
         $this->assertEquals('45%', $mapped[32]); // Progress
-        $this->assertEquals('Not Completed', $mapped[35]); // Attendance
+        $this->assertEquals('No', $mapped[35]); // Attendance
     }
 
     /**
@@ -185,25 +185,25 @@ class RecordOnlineFullExportTest extends TestCase
         $rowCompleted = (object) ['progress' => 100, 'finish' => '1', 'source_type' => 'content'];
         $mappedCompleted = $service->mapRow($rowCompleted, 1, null);
         $this->assertEquals('Finished', $mappedCompleted[4]);
-        $this->assertEquals('Present', $mappedCompleted[35]);
+        $this->assertEquals('Yes', $mappedCompleted[35]);
 
         // Case B: Finish flag = 1 even if progress is 99
         $rowFinished = (object) ['progress' => 99, 'finish' => '1', 'source_type' => 'content'];
         $mappedFinished = $service->mapRow($rowFinished, 2, null);
         $this->assertEquals('Finished', $mappedFinished[4]);
-        $this->assertEquals('Present', $mappedFinished[35]);
+        $this->assertEquals('Yes', $mappedFinished[35]);
 
         // Case C: In progress (< 100)
         $rowOngoing = (object) ['progress' => 50, 'finish' => '0', 'source_type' => 'content'];
         $mappedOngoing = $service->mapRow($rowOngoing, 3, null);
         $this->assertEquals('Ongoing', $mappedOngoing[4]);
-        $this->assertEquals('Not Completed', $mappedOngoing[35]);
+        $this->assertEquals('No', $mappedOngoing[35]);
 
         // Case D: 0% progress
         $rowNotStarted = (object) ['progress' => 0, 'finish' => '0', 'source_type' => 'content'];
         $mappedNotStarted = $service->mapRow($rowNotStarted, 4, null);
         $this->assertEquals('Not Started', $mappedNotStarted[4]);
-        $this->assertEquals('Not Completed', $mappedNotStarted[35]);
+        $this->assertEquals('No', $mappedNotStarted[35]);
     }
 
     /**

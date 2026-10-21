@@ -47,7 +47,7 @@
         ['label' => 'Progress',            'width' => '7%',  'sort' => 'progress',       'type' => 'number'],
         ['label' => 'Date Time',           'width' => '11%', 'sort' => 'finish',         'type' => 'text'],
         ['label' => 'Attendance',          'width' => '8%',  'sort' => 'attendance',     'type' => 'text'],
-        ['label' => 'Score (L2)',          'width' => '7%',  'sort' => 'score',          'type' => 'number'],
+        ['label' => 'Assessment Score (L2)', 'width' => '8%',  'sort' => 'score',        'type' => 'number'],
         ['label' => 'Certificate',         'width' => '7%',  'sort' => 'certificate',    'type' => 'text'],
     ];
 @endphp

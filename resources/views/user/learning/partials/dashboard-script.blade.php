@@ -103,7 +103,7 @@
                                         '<th style="width:7%">Progress</th>' +
                                         '<th style="width:11%">Date Time</th>' +
                                         '<th class="text-center" style="width:7%">Attendance</th>' +
-                                        '<th class="text-center" style="width:6%">Assessment Score</th>' +
+                                        '<th class="text-center" style="width:7%">Assessment Score (L2)</th>' +
                                         '<th class="text-center" style="width:5%">Certificate</th>' +
                                     '</tr>' +
                                 '</thead>' +

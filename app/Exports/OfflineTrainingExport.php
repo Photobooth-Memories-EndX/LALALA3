@@ -182,7 +182,14 @@ class OfflineTrainingExport implements WithMultipleSheets, FromQuery, WithHeadin
     {
         return [
             1 => [
-                'font'      => ['bold' => true],
+                'font'      => [
+                    'bold'  => true,
+                    'color' => ['rgb' => 'FFFFFF'],
+                ],
+                'fill'      => [
+                    'fillType'   => Fill::FILL_SOLID,
+                    'startColor' => ['rgb' => '002B49'],
+                ],
                 'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
             ],
         ];

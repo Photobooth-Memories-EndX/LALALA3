@@ -78,7 +78,7 @@ class AllRecordExport implements FromQuery, WithHeadings, WithChunkReading, With
             'Finish Date',
             'Participant Hours',
             'Progress',
-            'Assessment Score',
+            'Assessment Score (L2)',
             'Certificate',
             'Attendance',
             'Attendance Reason',
@@ -135,7 +135,7 @@ class AllRecordExport implements FromQuery, WithHeadings, WithChunkReading, With
             'AE' => 14,  // Finish Date
             'AF' => 18,  // Participant Hours
             'AG' => 12,  // Progress
-            'AH' => 18,  // Assessment Score
+            'AH' => 20,  // Assessment Score (L2)
             'AI' => 14,  // Certificate
             'AJ' => 14,  // Attendance
             'AK' => 25,  // Attendance Reason
@@ -233,7 +233,7 @@ class AllRecordExport implements FromQuery, WithHeadings, WithChunkReading, With
             . '<fills count="3">'
             . '<fill><patternFill patternType="none"/></fill>'
             . '<fill><patternFill patternType="gray125"/></fill>'
-            . '<fill><patternFill patternType="solid"><fgColor rgb="FF003B6D"/><bgColor rgb="FF003B6D"/></patternFill></fill>'
+            . '<fill><patternFill patternType="solid"><fgColor rgb="FF002B49"/><bgColor rgb="FF002B49"/></patternFill></fill>'
             . '</fills>'
             . '<borders count="1">'
             . '<border><left/><right/><top/><bottom/><diagonal/></border>'
