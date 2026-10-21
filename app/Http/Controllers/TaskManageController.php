@@ -317,6 +317,11 @@ class TaskManageController extends Controller
             $taskData['external_url'] = null;
         }
 
+        // Survey column only applies to survey.
+        if (($taskData['type'] ?? null) !== 'survey') {
+            $taskData['survey_id'] = null;
+        }
+
         if ($request->hasFile('attachment')) {
             $taskData['attachment'] = $request->file('attachment')
                 ->store('task-attachments', 'public');
@@ -384,6 +389,11 @@ class TaskManageController extends Controller
             $validated['link_type'] = null;
             $validated['linked_training_plan_id'] = null;
             $validated['external_url'] = null;
+        }
+
+        // Survey column only applies to survey.
+        if (($validated['type'] ?? null) !== 'survey') {
+            $validated['survey_id'] = null;
         }
 
         $taskData = collect($validated)->except(['fields', 'parent_type', 'parent_id'])->all();
@@ -652,6 +662,9 @@ class TaskManageController extends Controller
             $rules['link_type'] = ['required', 'in:lms,external'];
             $rules['linked_training_plan_id'] = ['required_if:link_type,lms', 'nullable', 'integer', 'exists:trainingplan,id'];
             $rules['external_url'] = ['required_if:link_type,external', 'nullable', 'url', 'max:500'];
+            $rules['fields'] = ['nullable', 'array'];
+        } elseif ($type === 'survey') {
+            $rules['survey_id'] = ['nullable', 'integer'];
             $rules['fields'] = ['nullable', 'array'];
         } else {
             $rules['fields'] = ['required', 'array', 'min:1'];

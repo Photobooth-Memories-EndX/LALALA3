@@ -11,6 +11,7 @@
     $currentLinkType = old('link_type', $task->link_type ?? 'lms');
     $currentParentType = old('parent_type', $task->parent_type ?? ($lockedParent['type'] ?? $defaultParentType));
     $currentParentId = old('parent_id', isset($task) ? $task->parentId() : ($lockedParent['id'] ?? ''));
+    $currentSurveyId = old('survey_id', $task->survey_id ?? '');
     $linkedCourse = old('linked_training_plan_id', $task->linked_training_plan_id ?? '');
     $sameChecked = $currentParentType === 'playlist'
         && $currentParentId !== '' && $currentParentId !== null
@@ -349,7 +350,40 @@
         </div>
     </div>
 
-    {{-- ── 4B: Questions section (hidden for Course Assignment) ── --}}
+    {{-- ── 4B: Target Survey section (only for Survey) ── --}}
+    <div id="surveySection" class="card form-section-card" style="display:none">
+        <div class="card-header bg-white py-3 px-4 d-flex align-items-center gap-3">
+            <span class="section-badge-num"><i class="ti ti-forms"></i></span>
+            <div>
+                <h3 class="card-title fw-bold text-dark mb-0">4. Target Survey Assignment</h3>
+                <div class="text-muted small">Select the survey form that learners must complete for this task.</div>
+            </div>
+        </div>
+        <div class="card-body p-4">
+            <div class="row g-3">
+                <div class="col-md-7">
+                    <label class="form-label" for="survey_id">
+                        Survey Form
+                        <span class="badge bg-secondary-lt text-secondary fw-semibold ms-1">Available Soon</span>
+                    </label>
+                    <select class="form-select @error('survey_id') is-invalid @enderror"
+                            id="survey_id" name="survey_id">
+                        <option value="">— Select Survey (No surveys available yet) —</option>
+                        @if ($currentSurveyId)
+                            <option value="{{ $currentSurveyId }}" selected>Survey #{{ $currentSurveyId }}</option>
+                        @endif
+                    </select>
+                    <div class="form-hint mt-2 text-muted">
+                        <i class="ti ti-info-circle text-primary me-1"></i>
+                        The survey dropdown is ready for integration. Once the Survey module is active, published surveys will automatically appear here for selection.
+                    </div>
+                    @error('survey_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- ── 4C: Questions section (for types with question builder) ── --}}
     <div id="builderSection" class="card form-section-card">
         <div class="card-header bg-white py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
             <div class="d-flex align-items-center gap-3">
@@ -412,7 +446,7 @@
         var FIELD_BY_TASK = @json(\App\Models\Task::FIELD_TYPES_BY_TASK);
         // Types without a question builder (their cards would sit hidden and
         // their `required` inputs would silently block form submission).
-        function typeHasBuilder(t) { return t !== 'course_assignment'; }
+        function typeHasBuilder(t) { return t !== 'course_assignment' && t !== 'survey'; }
         var TYPE_HINTS    = @json(\App\Models\Task::TYPE_HINTS);
         var FILE_TYPE_GROUPS  = @json(\App\Models\TaskField::FILE_TYPE_GROUPS);
         var MAX_FILES_OPTIONS = @json(\App\Models\TaskField::MAX_FILES_OPTIONS);
@@ -422,6 +456,7 @@
         var typeSelect    = document.getElementById('type');
         var typeHint      = document.getElementById('typeHint');
         var linkSection   = document.getElementById('linkSection');
+        var surveySection = document.getElementById('surveySection');
         var builderSection= document.getElementById('builderSection');
         var builderHint   = document.getElementById('builderHint');
         var wrap          = document.getElementById('fieldsWrap');
@@ -920,13 +955,16 @@
         function refreshTypeUI() {
             var t = currentType();
             typeHint.textContent = TYPE_HINTS[t] || '';
-            var isLink = (t === 'course_assignment');
+            var isLink   = (t === 'course_assignment');
+            var isSurvey = (t === 'survey');
+            var hasBuilder = typeHasBuilder(t);
 
             linkSection.style.display       = isLink ? '' : 'none';
-            builderSection.style.display    = isLink ? 'none' : '';
+            if (surveySection) surveySection.style.display = isSurvey ? '' : 'none';
+            builderSection.style.display    = hasBuilder ? '' : 'none';
             builderHint.textContent = BUILDER_HINTS[t] || '';
 
-            if (isLink) {
+            if (!hasBuilder) {
                 // These types have no question builder: disable every input
                 // inside the hidden cards. Hidden `required` inputs would
                 // otherwise block form submission silently (browser refuses

@@ -36,7 +36,7 @@ class Task extends Model
     public const FIELD_TYPES_BY_TASK = [
         'file_submission'   => ['file'],
         'course_assignment' => [],
-        'survey'            => ['textarea', 'choice'],
+        'survey'            => [],
         'essay'             => ['textarea'],
         'action_plan'       => ['file', 'textarea'],
     ];
@@ -45,7 +45,7 @@ class Task extends Model
     public const TYPE_HINTS = [
         'file_submission'   => 'User uploads file(s) as the answer. Add file-upload questions below.',
         'course_assignment' => 'User opens a course (inside this LMS or an external link). An LMS course completes this task automatically at 100% progress.',
-        'survey'            => 'Collect opinions. Multiple choice, short & long answers — no scoring.',
+        'survey'            => 'Learners complete an existing survey form. Select the target survey from the dropdown below.',
         'essay'             => 'Written reflection. User answers in long text; admin scores manually.',
         'action_plan'       => 'Google Form-style task: file uploads, short & long answers; admin reviews manually.',
     ];
@@ -66,7 +66,7 @@ class Task extends Model
         'training_plan_id', 'content_id', 'offline_training_id', 'parent_type',
         'access_code',
         'title', 'description',
-        'type', 'deadline', 'attachment', 'created_by', 'status',
+        'type', 'survey_id', 'deadline', 'attachment', 'created_by', 'status',
         'link_type', 'linked_training_plan_id', 'external_url',
     ];
 

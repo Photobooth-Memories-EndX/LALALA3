@@ -275,5 +275,56 @@ class TaskManagementNonKpOwlTest extends TestCase
         $expectedUrl = route('trainingplan.user.index', ['tab' => 'history']);
         $detailResponse->assertSee(e($expectedUrl), false);
     }
+
+    public function test_create_task_form_renders_survey_section_and_survey_id_field(): void
+    {
+        $response = $this->actingAs($this->admin)->get(route('manage.task.create'));
+
+        $response->assertStatus(200);
+        $response->assertSee('id="surveySection"', false);
+        $response->assertSee('name="survey_id"', false);
+        $response->assertSee('Target Survey Assignment', false);
+    }
+
+    public function test_can_store_survey_task_without_requiring_fields(): void
+    {
+        $offline = OfflineTraining::create([
+            'title'       => 'Safety Awareness 2026',
+            'course_name' => 'Safety Awareness 2026',
+            'category'    => 'Safety',
+            'instructor'  => 'Trainer E',
+            'location'    => 'Hall A',
+            'quota'       => 15,
+            'status'      => 'Open Registration',
+            'start_date'  => '2026-11-25',
+            'end_date'    => '2026-11-26',
+            'start_time'  => '08:00',
+            'end_time'    => '17:00',
+        ]);
+
+        $payload = [
+            'parent_type' => 'offline_training',
+            'parent_id'   => $offline->id,
+            'type'        => 'survey',
+            'title'       => 'Post-Training Feedback Survey',
+            'description' => 'Please fill out this survey',
+            'action'      => 'draft',
+            'survey_id'   => null,
+        ];
+
+        $response = $this->actingAs($this->admin)->post(route('manage.task.store'), $payload);
+
+        $response->assertRedirect(route('manage.task.parent', ['parentType' => 'offline_training', 'parentId' => $offline->id]));
+
+        $this->assertDatabaseHas('tasks', [
+            'parent_type'         => 'offline_training',
+            'offline_training_id' => $offline->id,
+            'type'                => 'survey',
+            'title'               => 'Post-Training Feedback Survey',
+            'status'              => 'draft',
+            'survey_id'           => null,
+        ]);
+    }
 }
+
 
