@@ -205,7 +205,7 @@
                             <td>
                                 <span class="fw-semibold">{{ $task->title }}</span>
                                 @if ($task->description)
-                                    <div class="text-muted small">{{ Str::limit($task->description, 80) }}</div>
+                                    <div class="text-dark small" style="color: #000000;">{{ Str::limit($task->description, 80) }}</div>
                                 @endif
                             </td>
                             <td><span class="badge bg-primary-lt text-primary">{{ $task->typeLabel() }}</span></td>

@@ -504,9 +504,9 @@
                     {{-- Instructions & Overview --}}
                     <div class="mb-4" id="prevDescWrap" style="display:none;">
                         <h5 class="fw-semibold text-dark mb-2 d-flex align-items-center gap-1">
-                            <i class="ti ti-notes text-primary"></i> Instructions & Overview
+                            <i class="ti ti-notes text-dark"></i> Instructions & Overview
                         </h5>
-                        <div class="text-secondary" id="prevDescription" style="white-space: pre-wrap; line-height: 1.6;"></div>
+                        <div class="text-dark" id="prevDescription" style="white-space: pre-wrap; line-height: 1.6; color: #000000;"></div>
                     </div>
 
                     {{-- Reference Material --}}
