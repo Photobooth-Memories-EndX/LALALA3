@@ -214,7 +214,7 @@ class ExportMyOfflineLearningRecord implements FromArray, ShouldAutoSize, WithCo
             'G'  => NumberFormat::FORMAT_GENERAL,       // Category
             'H'  => NumberFormat::FORMAT_GENERAL,       // Main Classification
             'I'  => 'hh:mm:ss',                         // Duration (Native Time)
-            'J'  => '0.00',                             // Learning Hour
+            'J'  => '0.00 "h"',                         // Learning Hour
             'K'  => '0%',                               // % Progress
             'L'  => 'yyyy-mm-dd',                       // Start Date
             'M'  => 'yyyy-mm-dd',                       // End Date
@@ -273,6 +273,7 @@ class ExportMyOfflineLearningRecord implements FromArray, ShouldAutoSize, WithCo
                     $sheet->getStyle('F2:G' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                     $sheet->getStyle('I2:I' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                     $sheet->getStyle('J2:J' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                    $sheet->getStyle('J2:J' . $highestRow)->getNumberFormat()->setFormatCode('0.00 "h"');
                     $sheet->getStyle('K2:R' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                     $sheet->getStyle('U2:U' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                     $sheet->getStyle('V2:V' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);

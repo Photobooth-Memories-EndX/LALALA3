@@ -1421,7 +1421,7 @@ class RecordAllCombinedService
                 return ($d && $d !== '-') ? date('d M Y', strtotime($d)) : '-';
             })
             ->addColumn('learning_hours_formatted', function ($row) {
-                return number_format((float) ($row->learning_hours ?? 0), 2);
+                return number_format((float) ($row->learning_hours ?? 0), 2) . ' h';
             })
             ->addColumn('progress_bar', function ($row) {
                 $progress = max(0, min(100, round((float) ($row->progress ?? 0))));
@@ -1955,7 +1955,7 @@ class RecordAllCombinedService
             })
             ->addColumn('learning_hours_formatted', function ($row) {
                 $lh = (float) ($row->learning_hours ?? 0);
-                return '<span class="fw-semibold">' . number_format($lh, 2) . 'h</span>';
+                return '<span class="fw-semibold">' . number_format($lh, 2) . ' h</span>';
             })
             ->addColumn('progress_badge', function ($row) {
                 $p = min(100, max(0, (float) ($row->progress ?? 0)));

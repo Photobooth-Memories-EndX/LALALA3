@@ -161,7 +161,7 @@ class LearningRecordPlaylistExportService
                 $childHoursVal = round($moduleSec / 3600, 4);
                 $durationFormatted = DurationFormatter::fromSeconds($durationSeconds);
 
-                $learningHourFormatted = $childHoursVal > 0 ? (number_format($childHoursVal, 2) . ' hrs') : '-';
+                $learningHourFormatted = $childHoursVal > 0 ? (number_format($childHoursVal, 2) . ' h') : '-';
                 $attendance = ($childProgress >= 100) ? 'Yes' : 'No';
 
                 // Format dates & times
@@ -206,6 +206,7 @@ class LearningRecordPlaylistExportService
                     'duration_seconds'    => $durationSeconds,
                     'learning_hour'       => $learningHourFormatted,
                     'learning_hour_value' => $childHoursVal,
+                    'learning_hours'      => $childHoursVal,
                     'progress'            => $childProgress,
                     'progress_formatted'  => $childProgress . '%',
                     'completion_status'   => $completionStatus,

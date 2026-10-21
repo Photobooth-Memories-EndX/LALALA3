@@ -254,7 +254,7 @@ class ExportMyAllLearningRecord implements FromArray, ShouldAutoSize, WithColumn
                             'Playlist',                                             // H: Category
                             $child['classification'] ?? '-',                        // I: Main Classification
                             $childDurCell,                                          // J: Duration
-                            $childLhVal,                                            // K: Learning Hours
+                            '',                                                     // K: Learning Hours (Empty on child rows to avoid double-counting in SUM)
                             $childProgInt / 100,                                    // L: % Progress
                             $this->toExcelDate($child['start_date'] ?? null),       // M: Start Date
                             $this->toExcelDate($child['end_date'] ?? null),         // N: End Date
@@ -329,7 +329,7 @@ class ExportMyAllLearningRecord implements FromArray, ShouldAutoSize, WithColumn
             'H'  => NumberFormat::FORMAT_GENERAL,       // Category
             'I'  => NumberFormat::FORMAT_GENERAL,       // Main Classification
             'J'  => 'hh:mm:ss',                         // Duration (Native Time)
-            'K'  => '0.00',                             // Learning Hours
+            'K'  => '0.00 "h"',                         // Learning Hours
             'L'  => '0%',                               // % Progress
             'M'  => 'yyyy-mm-dd',                       // Start Date
             'N'  => 'yyyy-mm-dd',                       // End Date
@@ -388,6 +388,7 @@ class ExportMyAllLearningRecord implements FromArray, ShouldAutoSize, WithColumn
                     $sheet->getStyle('G2:H' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                     $sheet->getStyle('J2:J' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                     $sheet->getStyle('K2:K' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                    $sheet->getStyle('K2:K' . $highestRow)->getNumberFormat()->setFormatCode('0.00 "h"');
                     $sheet->getStyle('L2:S' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                     $sheet->getStyle('V2:V' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                     $sheet->getStyle('W2:W' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);

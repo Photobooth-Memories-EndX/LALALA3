@@ -968,7 +968,7 @@
                                     <x-learning.record-classification-badge :row="$row" />
                                 </td>
                                 <td class="text-center text-nowrap">{{ $row['duration'] }}</td>
-                                <td class="text-center text-nowrap fw-semibold text-primary">{{ $row['learning_hour'] }}</td>
+                                <td class="text-center text-nowrap fw-semibold text-primary">{{ number_format((float)($row['learning_hours'] ?? $row['learning_hour_value'] ?? $row['learning_hour'] ?? 0), 2) }} h</td>
                                 <td class="text-center">
                                     @if ($row['progress'] >= 100)
                                         <span class="badge bg-success-lt text-success fw-bold px-2 py-1">100%</span>

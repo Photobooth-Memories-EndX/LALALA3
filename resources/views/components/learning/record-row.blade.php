@@ -40,7 +40,12 @@
         intdiv($durationSeconds % 3600, 60),
         $durationSeconds % 60
     );
-    $learningHourDisplay = str_replace([' hours', ' hour'], [' h', ' h'], $row['learning_hour'] ?? '-');
+    $lhVal = $row['learning_hours'] ?? $row['learning_hour_value'] ?? null;
+    $learningHourDisplay = ($lhVal !== null && is_numeric($lhVal))
+        ? number_format((float) $lhVal, 2) . ' h'
+        : (is_numeric($row['learning_hour'] ?? null)
+            ? number_format((float) $row['learning_hour'], 2) . ' h'
+            : str_replace([' hours', ' hour', ' hrs', ' hr'], [' h', ' h', ' h', ' h'], (string) ($row['learning_hour'] ?? '-')));
     $rawAtt = $row['attendance'] ?? null;
     $attLower = strtolower(trim((string) $rawAtt));
     $attendanceStatus = in_array($attLower, ['1', 'true', 'present', 'yes'], true)
