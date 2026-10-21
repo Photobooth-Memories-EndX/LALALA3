@@ -221,19 +221,21 @@ class AllRecordExport implements FromQuery, WithHeadings, WithChunkReading, With
             . '</workbook>'
         );
 
-        // 5. xl/styles.xml with bold white text on #003B6D dark blue header
+        // 5. xl/styles.xml with bold white text on #002B49 header and #EBF3FB playlist highlight
         $zip->addFile(
             'xl/styles.xml',
             '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             . '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
-            . '<fonts count="2">'
+            . '<fonts count="3">'
             . '<font><sz val="10"/><name val="Calibri"/></font>'
             . '<font><b/><sz val="10"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>'
+            . '<font><b/><sz val="10"/><name val="Calibri"/></font>'
             . '</fonts>'
-            . '<fills count="3">'
+            . '<fills count="4">'
             . '<fill><patternFill patternType="none"/></fill>'
             . '<fill><patternFill patternType="gray125"/></fill>'
             . '<fill><patternFill patternType="solid"><fgColor rgb="FF002B49"/><bgColor rgb="FF002B49"/></patternFill></fill>'
+            . '<fill><patternFill patternType="solid"><fgColor rgb="FFEBF3FB"/><bgColor rgb="FFEBF3FB"/></patternFill></fill>'
             . '</fills>'
             . '<borders count="1">'
             . '<border><left/><right/><top/><bottom/><diagonal/></border>'
@@ -241,9 +243,10 @@ class AllRecordExport implements FromQuery, WithHeadings, WithChunkReading, With
             . '<cellStyleXfs count="1">'
             . '<xf numFmtId="0" fontId="0" fillId="0" borderId="0"/>'
             . '</cellStyleXfs>'
-            . '<cellXfs count="2">'
-            . '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
+            . '<cellXfs count="3">'
+            . '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
             . '<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<xf numFmtId="0" fontId="2" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
             . '</cellXfs>'
             . '</styleSheet>'
         );
@@ -321,61 +324,98 @@ class AllRecordExport implements FromQuery, WithHeadings, WithChunkReading, With
                     }
                 }
 
+                // Clean Assessment Score formatting (remove trailing decimal zeros/dots)
+                $cleanScore = '-';
+                if ($row->assessment_score !== null && $row->assessment_score !== '' && is_numeric($row->assessment_score)) {
+                    $num = (float) $row->assessment_score;
+                    $cleanScore = (floor($num) == $num) ? (string) (int) $num : rtrim(rtrim(number_format($num, 2, '.', ''), '0'), '.');
+                }
+
+                // Prevent double calculation: under playlist, set learning_hours cell to '-' on child rows
+                $isChildUnderPlaylist = (($row->source_type ?? '') === 'playlist' && !empty($row->content_id))
+                    || (($row->category ?? '') === 'Content Playlist');
+
+                if ($isChildUnderPlaylist) {
+                    $lhVal = '-';
+                } else {
+                    $lhVal = ($row->learning_hours !== null && $row->learning_hours !== '') ? number_format((float) $row->learning_hours, 2) : '-';
+                }
+
+                // Delivery method alignment
+                $delivMethod = $row->delivery_method ?: ($row->source === 'offline' ? 'Offline' : 'Online');
+                $subDelivMethod = $row->sub_delivery_method ?: ($row->source === 'offline' ? 'On-site' : 'E-learning');
+
+                // Bond amount formatting
+                $bondAmt = '-';
+                $idr = $row->bond_amount_idr ?? $row->bond_amount ?? null;
+                $usd = $row->bond_amount_usd ?? null;
+                if ($idr !== null && (float) $idr > 0 && $usd !== null && (float) $usd > 0) {
+                    $bondAmt = 'IDR ' . number_format((float) $idr, 0, ',', '.') . ' / USD ' . number_format((float) $usd, 2, '.', ',');
+                } elseif ($idr !== null && (float) $idr > 0) {
+                    $bondAmt = number_format((float) $idr, 2);
+                } elseif ($usd !== null && (float) $usd > 0) {
+                    $bondAmt = '$ ' . number_format((float) $usd, 2);
+                }
+
                 $data = [
                     $row->source === 'offline' ? 'Non KP OWL' : 'KP OWL',
-                    $row->employee_id ?: '',
-                    $row->employee_name ?: '',
-                    $row->status ? ucfirst((string) $row->status) : '',
-                    $row->grade ?: '',
-                    $row->job_position ?: '',
-                    $row->team ?: '',
-                    $row->department ?: '',
-                    $row->company ?: '',
-                    $row->learning_title ?: '',
-                    $row->sub_course_name ?: '',
-                    $row->type ?: '',
-                    $row->category ?: '',
-                    $row->level ?: '',
-                    $row->batch ?: '',
-                    $row->classification ?: '',
-                    $row->sub_classification ?: '',
-                    $kpiStr,
-                    $row->sub_corporate_kpi ?: '',
-                    $row->delivery_method ?: '',
-                    $row->sub_delivery_method ?: '',
-                    $row->provider ?: '',
-                    $row->sub_provider ?: '',
-                    $row->provider_name ?: '',
-                    $row->venue ?: '',
-                    $row->instructor ?: '',
-                    $durationFormatted,
-                    $row->training_hours !== null ? number_format((float) $row->training_hours, 2) : '',
-                    $row->start_date ? date('Y-m-d', strtotime($row->start_date)) : '',
-                    $row->finish_date ? date('Y-m-d', strtotime($row->finish_date)) : '',
-                    $row->learning_hours !== null ? number_format((float) $row->learning_hours, 2) : '0.00',
+                    $row->employee_id ?: '-',
+                    $row->employee_name ?: '-',
+                    $row->status ? ucfirst((string) $row->status) : '-',
+                    $row->grade ?: '-',
+                    $row->job_position ?: '-',
+                    $row->team ?: '-',
+                    $row->department ?: '-',
+                    $row->company ?: '-',
+                    $row->learning_title ?: '-',
+                    $row->sub_course_name ?: '-',
+                    $row->type ?: '-',
+                    $row->category ?: '-',
+                    $row->level ?: '-',
+                    $row->batch ?: '-',
+                    $row->classification ?: '-',
+                    $row->sub_classification ?: '-',
+                    $kpiStr ?: '-',
+                    $row->sub_corporate_kpi ?: '-',
+                    $delivMethod,
+                    $subDelivMethod,
+                    $row->provider ?: ($row->source === 'offline' ? '-' : 'Internal'),
+                    $row->sub_provider ?: '-',
+                    $row->provider_name ?: ($row->source === 'offline' ? '-' : 'KP-OWL'),
+                    $row->venue ?: ($row->source === 'offline' ? '-' : 'KP-OWL'),
+                    $row->instructor ?: '-',
+                    $durationFormatted ?: '-',
+                    $row->training_hours !== null ? number_format((float) $row->training_hours, 2) : '-',
+                    $row->start_date ? date('Y-m-d', strtotime($row->start_date)) : '-',
+                    $row->finish_date ? date('Y-m-d', strtotime($row->finish_date)) : '-',
+                    $lhVal,
                     $row->progress !== null ? ($row->progress . '%') : '0%',
-                    $row->assessment_score !== null ? number_format((float) $row->assessment_score, 2) : '',
-                    $row->certificate ?: '',
+                    $cleanScore,
+                    $row->certificate ?: '-',
                     $attendanceStr,
-                    $row->attendance_reason ?: '',
-                    $row->bond_status ?: '',
-                    $row->bond_end_date ? date('Y-m-d', strtotime($row->bond_end_date)) : '',
-                    $row->bond_amount !== null ? number_format((float) $row->bond_amount, 2) : '',
-                    $row->l1_program ?: '',
-                    $row->l2_numerical !== null ? number_format((float) $row->l2_numerical, 2) : '',
-                    $row->l2_verbal ?: '',
-                    $row->l3_numerical !== null ? number_format((float) $row->l3_numerical, 2) : '',
-                    $row->l3_verbal ?: '',
-                    $row->pic ?: '',
+                    $row->attendance_reason ?: '-',
+                    $row->bond_status ?: 'No',
+                    $row->bond_end_date ? date('Y-m-d', strtotime($row->bond_end_date)) : '-',
+                    $bondAmt,
+                    $row->l1_program ?: '-',
+                    $row->l2_numerical !== null ? number_format((float) $row->l2_numerical, 2) : '-',
+                    $row->l2_verbal ?: '-',
+                    $row->l3_numerical !== null ? number_format((float) $row->l3_numerical, 2) : '-',
+                    $row->l3_verbal ?: '-',
+                    $row->pic ?: '-',
                 ];
 
-                $rowXml = "<row r=\"{$r}\"><c r=\"A{$r}\"><v>{$rowCount}</v></c>";
+                $isPlaylistRow = ($row->type === 'Playlist');
+                $sAttr = $isPlaylistRow ? ' s="2"' : ' s="0"';
+
+                $rowXml = "<row r=\"{$r}\"><c r=\"A{$r}\"{$sAttr}><v>{$rowCount}</v></c>";
                 foreach ($data as $idx => $val) {
-                    if ($val !== '' && $val !== null) {
-                        $colLetter = Coordinate::stringFromColumnIndex($idx + 2);
-                        $escaped = $this->escapeXml($val);
-                        $rowXml .= "<c r=\"{$colLetter}{$r}\" t=\"inlineStr\"><is><t>{$escaped}</t></is></c>";
+                    if ($val === '' || $val === null) {
+                        $val = '-';
                     }
+                    $colLetter = Coordinate::stringFromColumnIndex($idx + 2);
+                    $escaped = $this->escapeXml($val);
+                    $rowXml .= "<c r=\"{$colLetter}{$r}\" t=\"inlineStr\"{$sAttr}><is><t>{$escaped}</t></is></c>";
                 }
                 $rowXml .= "</row>\n";
 

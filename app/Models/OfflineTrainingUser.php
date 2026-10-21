@@ -35,6 +35,8 @@ class OfflineTrainingUser extends Model
         'bond_status',
         'bond_duration',
         'bond_end_date',
+        'bond_amount_idr',
+        'bond_amount_usd',
         'bond_amount',
         'l1_program',
         'l2_numerical',
@@ -51,10 +53,21 @@ class OfflineTrainingUser extends Model
         'attendance'       => 'boolean',
         'bond_duration'    => 'integer',
         'bond_end_date'    => 'date',
-        'bond_amount'      => 'decimal:2',
+        'bond_amount_idr'  => 'decimal:2',
+        'bond_amount_usd'  => 'decimal:2',
         'l2_numerical'     => 'decimal:4',
         'l3_numerical'     => 'decimal:4',
     ];
+
+    public function setBondAmountAttribute($val)
+    {
+        $this->attributes['bond_amount_idr'] = $val;
+    }
+
+    public function getBondAmountAttribute()
+    {
+        return $this->bond_amount_idr;
+    }
 
     public function training(): BelongsTo
     {

@@ -239,7 +239,7 @@ class RecordOfflineFoundationTest extends TestCase
             'offline_training_id', 'user_id', 'employee_id', 'name', 'grade',
             'job_position', 'team', 'department', 'company', 'learning_hours',
             'progress', 'assessment_score', 'certificate', 'attendance', 'attendance_reason',
-            'bond_status', 'bond_end_date', 'bond_amount', 'l1_program', 'l2_numerical',
+            'bond_status', 'bond_end_date', 'bond_amount_idr', 'bond_amount_usd', 'l1_program', 'l2_numerical',
             'l2_verbal', 'l3_numerical', 'l3_verbal', 'pic'
         ];
         foreach ($userFillables as $field) {
@@ -272,7 +272,7 @@ class RecordOfflineFoundationTest extends TestCase
             'id', 'offline_training_id', 'user_id', 'employee_id', 'name', 'grade', 'job_position',
             'team', 'department', 'company', 'learning_hours', 'progress', 'assessment_score',
             'certificate', 'attendance', 'attendance_reason', 'bond_status', 'bond_end_date',
-            'bond_amount', 'l1_program', 'l2_numerical', 'l2_verbal', 'l3_numerical', 'l3_verbal',
+            'bond_amount_idr', 'bond_amount_usd', 'l1_program', 'l2_numerical', 'l2_verbal', 'l3_numerical', 'l3_verbal',
             'pic', 'created_at', 'updated_at', 'deleted_at'
         ]));
     }

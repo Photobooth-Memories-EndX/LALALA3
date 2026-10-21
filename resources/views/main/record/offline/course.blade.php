@@ -1100,7 +1100,7 @@
                 { data: 'attendance_reason', name: 'otu.attendance_reason', className: 'text-start' },
                 { data: 'bond_status', name: 'otu.bond_status', className: 'text-center' },
                 { data: 'bond_end_date', name: 'otu.bond_end_date', className: 'text-center' },
-                { data: 'bond_amount', name: 'otu.bond_amount', className: 'text-end' },
+                { data: 'bond_amount', name: 'otu.bond_amount_idr', className: 'text-end' },
                 { data: 'l1_program', name: 'otu.l1_program', className: 'text-center' },
                 { data: 'l2_numerical', name: 'otu.l2_numerical', className: 'text-center' },
                 { data: 'l2_verbal', name: 'otu.l2_verbal', className: 'text-start' },

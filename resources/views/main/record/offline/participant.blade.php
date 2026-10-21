@@ -1529,7 +1529,7 @@
                     },
                     {
                         data: 'bond_amount',
-                        name: 'otu.bond_amount',
+                        name: 'otu.bond_amount_idr',
                         className: 'text-end'
                     },
                     {

@@ -18,6 +18,9 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 use Maatwebsite\Excel\Concerns\WithStyles;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Concerns\WithColumnFormatting;
+use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
@@ -152,7 +155,7 @@ class OfflineTrainingExport implements WithMultipleSheets, FromQuery, WithHeadin
             $row->provider_name ?: '-',                                         // 29. Provider Name
             $row->venue ?: '-',                                                 // 30. Venue
             $row->instructor ?: '-',                                            // 31. Instructor
-            $row->assessment_score !== null ? (float) $row->assessment_score : '-', // 32. Assessment Score
+            $row->assessment_score !== null && is_numeric($row->assessment_score) ? ((floor((float)$row->assessment_score) == (float)$row->assessment_score) ? (int)$row->assessment_score : (float)rtrim(rtrim(number_format((float)$row->assessment_score, 2, '.', ''), '0'), '.')) : '-', // 32. Assessment Score
             $row->certificate ?: '-',                                           // 33. Certificate
             $attendanceStr,                                                     // 34. Attendance Yes/No
             $row->attendance_reason ?: '-',                                     // 35. Reason

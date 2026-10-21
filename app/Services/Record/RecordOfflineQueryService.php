@@ -56,7 +56,9 @@ class RecordOfflineQueryService
                 'otu.bond_status',
                 'otu.bond_duration',
             'otu.bond_end_date',
-                'otu.bond_amount',
+                'otu.bond_amount_idr',
+                'otu.bond_amount_usd',
+                DB::raw('otu.bond_amount_idr as bond_amount'),
                 'otu.l1_program',
                 'otu.l2_numerical',
                 'otu.l2_verbal',
@@ -67,7 +69,7 @@ class RecordOfflineQueryService
                 'ot.title',
                 'ot.course_name',
                 'ot.sub_course_name',
-                DB::raw("'-' as type"),
+                DB::raw("COALESCE(ot.type, '-') as type"),
                 'ot.requirement',
                 'ot.category',
                 'ot.level',
@@ -651,7 +653,9 @@ class RecordOfflineQueryService
             'otu.bond_status',
             'otu.bond_duration',
             'otu.bond_end_date',
-            'otu.bond_amount',
+            'otu.bond_amount_idr',
+                'otu.bond_amount_usd',
+                DB::raw('otu.bond_amount_idr as bond_amount'),
             'otu.l1_program',
             'otu.l2_numerical',
             'otu.l2_verbal',
@@ -662,7 +666,7 @@ class RecordOfflineQueryService
             'ot.id as training_id',
             'ot.course_name',
             'ot.sub_course_name',
-            DB::raw("'-' as type"),
+            DB::raw("COALESCE(ot.type, '-') as type"),
             'ot.requirement',
             'ot.category',
             'ot.level',
@@ -986,10 +990,10 @@ class RecordOfflineQueryService
         $bondAmtMin = $filters['bond_amount_min'] ?? null;
         $bondAmtMax = $filters['bond_amount_max'] ?? null;
         if (filled($bondAmtMin) && is_numeric($bondAmtMin)) {
-            $query->where('otu.bond_amount', '>=', (float) $bondAmtMin);
+            $query->where('otu.bond_amount_idr', '>=', (float) $bondAmtMin);
         }
         if (filled($bondAmtMax) && is_numeric($bondAmtMax)) {
-            $query->where('otu.bond_amount', '<=', (float) $bondAmtMax);
+            $query->where('otu.bond_amount_idr', '<=', (float) $bondAmtMax);
         }
 
         // More Filter: Provider
@@ -1156,7 +1160,9 @@ class RecordOfflineQueryService
             'otu.bond_status',
             'otu.bond_duration',
             'otu.bond_end_date',
-            'otu.bond_amount',
+            'otu.bond_amount_idr',
+                'otu.bond_amount_usd',
+                DB::raw('otu.bond_amount_idr as bond_amount'),
             'otu.l1_program',
             'otu.l2_numerical',
             'otu.l2_verbal',
@@ -1167,7 +1173,7 @@ class RecordOfflineQueryService
             'ot.id as training_id',
             'ot.course_name',
             'ot.sub_course_name',
-            DB::raw("'-' as type"),
+            DB::raw("COALESCE(ot.type, '-') as type"),
             'ot.requirement',
             'ot.category',
             'ot.level',
@@ -1395,10 +1401,10 @@ class RecordOfflineQueryService
         $bondAmtMin = $filters['bond_amount_min'] ?? null;
         $bondAmtMax = $filters['bond_amount_max'] ?? null;
         if (filled($bondAmtMin) && is_numeric($bondAmtMin)) {
-            $query->where('otu.bond_amount', '>=', (float) $bondAmtMin);
+            $query->where('otu.bond_amount_idr', '>=', (float) $bondAmtMin);
         }
         if (filled($bondAmtMax) && is_numeric($bondAmtMax)) {
-            $query->where('otu.bond_amount', '<=', (float) $bondAmtMax);
+            $query->where('otu.bond_amount_idr', '<=', (float) $bondAmtMax);
         }
 
         // 19. More Filter: L1 Program

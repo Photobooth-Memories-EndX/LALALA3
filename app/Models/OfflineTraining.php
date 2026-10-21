@@ -58,6 +58,9 @@ class OfflineTraining extends Model
         'learning_hours',
         'finish_date',
         'created_by',
+        'bond_amount_idr',
+        'bond_amount_usd',
+        'bond_amount',
     ];
 
     protected $casts = [
@@ -356,3 +359,4 @@ class OfflineTraining extends Model
           ->whereNull("{$p}syllabus");
     }
 }
+

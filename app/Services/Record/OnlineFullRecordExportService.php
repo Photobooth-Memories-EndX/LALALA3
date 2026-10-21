@@ -260,11 +260,14 @@ class OnlineFullRecordExportService
                 || (!empty($row->trainingplan_id))
                 || (($row->category_source ?? '') === 'Playlist');
 
-            if ($isPlaylist) {
-                $playlistTitle = trim((string) ($row->playlist_title ?? ($row->trainingplan->title ?? ($row->trainingPlan->title ?? ''))));
-                $category = $playlistTitle !== '' ? 'Playlist: ' . $playlistTitle : 'Playlist';
+            $cId = (int) ($row->content_id ?? ($row->content->id ?? 0));
+            $tpId = (int) ($row->trainingplan_id ?? ($row->trainingPlan->id ?? 0));
+            if ($tpId > 0 && $cId > 0) {
+                $category = 'Content Playlist';
+            } elseif ($isPlaylist) {
+                $category = 'Playlist';
             } else {
-                $category = 'Content';
+                $category = 'All Content';
             }
         }
 
@@ -335,53 +338,57 @@ class OnlineFullRecordExportService
         $attendance = $isCompleted ? 'Yes' : 'No';
 
         // Canonical 46 columns matching AllRecordExport
-        return [
+        $mappedRow = [
             $rowNumber,               // 1: No
             'KP OWL',                 // 2: Source
             $idEmp,                   // 3: Employee ID
             $name,                    // 4: Employee Name
             $statusStr,               // 5: Status
-            '',                       // 6: Grade
-            '',                       // 7: Job Position
-            $team,                    // 8: Team
-            $department,              // 9: Department
-            $company,                 // 10: Company
+            '-',                      // 6: Grade
+            '-',                      // 7: Job Position
+            $team ?: '-',             // 8: Team
+            $department ?: '-',       // 9: Department
+            $company ?: '-',          // 10: Company
             $title,                   // 11: Learning Title
-            $requirement,             // 12: Sub Title / Requirement
+            $requirement ?: '-',      // 12: Sub Title / Requirement
             $type,                    // 13: Type
             $category,                // 14: Category
-            '',                       // 15: Level
-            '',                       // 16: Batch
+            '-',                      // 15: Level
+            '-',                      // 16: Batch
             $classification,          // 17: Main Classification
-            '',                       // 18: Sub Classification
-            '',                       // 19: Corporate KPI
-            '',                       // 20: Sub Corporate KPI
-            '',                       // 21: Delivery Method
-            '',                       // 22: Sub Delivery Method
-            '',                       // 23: Provider
-            '',                       // 24: Sub Provider
-            '',                       // 25: Provider Name
-            '',                       // 26: Venue
-            $instructor,              // 27: Instructor
-            $durationFormatted,       // 28: Duration
-            $trainingHoursStr,        // 29: Training Hours
-            $startDate,               // 30: Start Date
-            $finishDate,              // 31: Finish Date
+            '-',                      // 18: Sub Classification
+            '-',                      // 19: Corporate KPI
+            '-',                      // 20: Sub Corporate KPI
+            'Online',                 // 21: Delivery Method
+            'E-learning',             // 22: Sub Delivery Method
+            'Internal',               // 23: Provider
+            '-',                      // 24: Sub Provider
+            'KP-OWL',                 // 25: Provider Name
+            'KP-OWL',                 // 26: Venue
+            $instructor ?: '-',       // 27: Instructor
+            $durationFormatted ?: '-',// 28: Duration
+            $trainingHoursStr ?: '-', // 29: Training Hours
+            $startDate ?: '-',        // 30: Start Date
+            $finishDate ?: '-',       // 31: Finish Date
             $participantHoursStr,     // 32: Participant Hours
             $progress . '%',          // 33: Progress
             $score,                   // 34: Assessment Score
             $certificate,             // 35: Certificate
             $attendance,              // 36: Attendance
-            '',                       // 37: Attendance Reason
-            '',                       // 38: Bond Status
-            '',                       // 39: Bond End Date
-            '',                       // 40: Bond Amount
-            '',                       // 41: L1 Program
-            '',                       // 42: L2 Numerical
-            '',                       // 43: L2 Verbal
-            '',                       // 44: L3 Numerical
-            '',                       // 45: L3 Verbal
-            '',                       // 46: PIC
+            '-',                      // 37: Attendance Reason
+            'No',                     // 38: Bond Status
+            '-',                      // 39: Bond End Date
+            '-',                      // 40: Bond Amount
+            '-',                      // 41: L1 Program
+            '-',                      // 42: L2 Numerical
+            '-',                      // 43: L2 Verbal
+            '-',                      // 44: L3 Numerical
+            '-',                      // 45: L3 Verbal
+            '-',                      // 46: PIC
         ];
+
+        return array_map(function ($val) {
+            return ($val === null || $val === '') ? '-' : $val;
+        }, $mappedRow);
     }
 }

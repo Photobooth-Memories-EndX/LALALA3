@@ -276,13 +276,17 @@
                                         <div class="text-xs text-muted text-uppercase" style="font-size: 0.75rem; font-weight: 500;">Bond Duration</div>
                                         <div class="fw-semibold text-dark" style="font-size: 0.875rem;" id="modal-detail-bond-duration">{{ !empty($record['bond_duration']) ? $record['bond_duration'] . ' Months' : '-' }}</div>
                                     </div>
-                                    <div class="col-md-3">
+                                    <div class="col-md-2">
                                         <div class="text-xs text-muted text-uppercase" style="font-size: 0.75rem; font-weight: 500;">Bond End Date</div>
                                         <div class="fw-semibold text-dark" style="font-size: 0.875rem;" id="modal-detail-bond-end-date">{{ $record['bond_end_date'] ?? '-' }}</div>
                                     </div>
-                                    <div class="col-md-3">
-                                        <div class="text-xs text-muted text-uppercase" style="font-size: 0.75rem; font-weight: 500;">Bond Amount</div>
-                                        <div class="fw-semibold text-dark" style="font-size: 0.875rem;" id="modal-detail-bond-amount">{{ $record['bond_amount'] ?? '-' }}</div>
+                                    <div class="col-md-2">
+                                        <div class="text-xs text-muted text-uppercase" style="font-size: 0.75rem; font-weight: 500;">Bond Amount (IDR)</div>
+                                        <div class="fw-semibold text-dark" style="font-size: 0.875rem;" id="modal-detail-bond-amount-idr">{{ $record['bond_amount_idr_formatted'] ?? $record['bond_amount_idr'] ?? $record['bond_amount'] ?? '-' }}</div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="text-xs text-muted text-uppercase" style="font-size: 0.75rem; font-weight: 500;">Bond Amount (USD)</div>
+                                        <div class="fw-semibold text-dark" style="font-size: 0.875rem;" id="modal-detail-bond-amount-usd">{{ $record['bond_amount_usd_formatted'] ?? $record['bond_amount_usd'] ?? '-' }}</div>
                                     </div>
                                     <div class="col-md-2">
                                         <div class="text-xs text-muted text-uppercase" style="font-size: 0.75rem; font-weight: 500;">PIC</div>
@@ -404,7 +408,12 @@
         $('#modal-detail-learning-hours').text(lhDisplay);
 
         var scoreVal = fallback(d.assessment_score, fallback(d.score));
-        $('#modal-detail-assessment-score').text(scoreVal !== '-' && !isNaN(scoreVal) ? parseFloat(scoreVal).toFixed(2) : scoreVal);
+        if (scoreVal !== '-' && !isNaN(scoreVal) && scoreVal !== '' && scoreVal !== null) {
+            var sNum = parseFloat(scoreVal);
+            $('#modal-detail-assessment-score').text((sNum % 1 === 0) ? sNum.toString() : sNum.toString());
+        } else {
+            $('#modal-detail-assessment-score').text('-');
+        }
 
         var rawAtt = fallback(d.attendance_status, fallback(d.attendance));
         var isPresent = (String(rawAtt).toLowerCase() === 'yes' || String(rawAtt) === '1' || String(rawAtt).toLowerCase() === 'present' || progVal >= 100);
@@ -441,6 +450,24 @@
             $('#modal-detail-bond-duration').text('-');
         }
         $('#modal-detail-bond-end-date').text(fallback(d.bond_end_date, fallback(d.bond_end_date_display)));
+        var idrVal = d.bond_amount_idr !== undefined ? d.bond_amount_idr : d.bond_amount;
+        if (idrVal !== '-' && idrVal !== null && idrVal !== undefined && idrVal !== '' && !isNaN(idrVal) && parseFloat(idrVal) > 0) {
+            $('#modal-detail-bond-amount-idr').text('Rp ' + parseFloat(idrVal).toLocaleString('id-ID'));
+        } else if (d.bond_amount_idr_formatted && d.bond_amount_idr_formatted !== '-') {
+            $('#modal-detail-bond-amount-idr').text(d.bond_amount_idr_formatted);
+        } else {
+            $('#modal-detail-bond-amount-idr').text('-');
+        }
+
+        var usdVal = d.bond_amount_usd;
+        if (usdVal !== '-' && usdVal !== null && usdVal !== undefined && usdVal !== '' && !isNaN(usdVal) && parseFloat(usdVal) > 0) {
+            $('#modal-detail-bond-amount-usd').text('$ ' + parseFloat(usdVal).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+        } else if (d.bond_amount_usd_formatted && d.bond_amount_usd_formatted !== '-') {
+            $('#modal-detail-bond-amount-usd').text(d.bond_amount_usd_formatted);
+        } else {
+            $('#modal-detail-bond-amount-usd').text('-');
+        }
+
         $('#modal-detail-bond-amount').text(fallback(d.bond_amount_formatted, fallback(d.bond_amount)));
         $('#modal-detail-pic').text(fallback(d.pic));
     }

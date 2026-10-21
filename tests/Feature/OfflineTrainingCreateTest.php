@@ -384,7 +384,7 @@ class OfflineTrainingCreateTest extends TestCase
             'attendance_reason'   => null,
             'bond_status'         => 'Yes',
             'bond_end_date'       => '2027-03-01',
-            'bond_amount'         => 5000000,
+            'bond_amount_idr'     => 5000000,
             'l1_program'          => '4.8 - Very Good',
             'l2_numerical'        => 88.5,
             'l2_verbal'           => 'Passed',
@@ -404,7 +404,7 @@ class OfflineTrainingCreateTest extends TestCase
             'attendance_reason'   => 'On Duty Emergency Callout',
             'bond_status'         => 'No',
             'bond_end_date'       => null,
-            'bond_amount'         => null,
+            'bond_amount_idr'     => null,
             'progress'            => 50,
         ]);
     }

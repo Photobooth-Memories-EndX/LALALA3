@@ -616,7 +616,7 @@ class OfflineTrainingExcelSchema
                 'type'     => 'number',
                 'example'  => '',
                 'note'     => 'Service bond value (IDR)',
-                'aliases'  => ['bond amount', 'nilai ikatan dinas', 'biaya ikatan dinas', 'nominal ikatan dinas', 'bond cost'],
+                'aliases'  => ['bond amount', 'nilai ikatan dinas', 'biaya ikatan dinas', 'nominal ikatan dinas', 'bond cost', 'bond amount (idr)', 'bond amount idr', 'bond_amount_idr', 'bond amount (usd)', 'bond amount usd', 'bond_amount_usd'],
             ],
 
             // L1 (Col 39 / AM)

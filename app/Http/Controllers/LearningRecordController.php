@@ -780,6 +780,9 @@ class LearningRecordController extends Controller
                 'bond_duration'   => null,
                 'bond_end_date'   => '-',
                 'bond_amount'     => '-',
+                'bond_amount_idr' => '-',
+                'bond_amount_usd' => '-',
+                'bond_amount_formatted' => '-',
                 'pic'             => '-',
             ];
         })->values();
@@ -995,6 +998,9 @@ class LearningRecordController extends Controller
                 'bond_duration'   => null,
                 'bond_end_date'   => '-',
                 'bond_amount'     => '-',
+                'bond_amount_idr' => '-',
+                'bond_amount_usd' => '-',
+                'bond_amount_formatted' => '-',
                 'pic'             => '-',
             ];
         })->values();
@@ -1171,6 +1177,23 @@ class LearningRecordController extends Controller
             $rawCert = strtolower(trim((string) ($record->certificate ?? '')));
             $record->certificate = in_array($rawCert, ['yes', '1', 'available', 'true'], true) ? 'Available' : 'Not Available';
 
+            $rawIdr = $record->bond_amount_idr ?? $record->bond_amount ?? null;
+            $rawUsd = $record->bond_amount_usd ?? null;
+            $parts = [];
+            if ($rawIdr !== null && (float) $rawIdr > 0) {
+                $record->bond_amount_idr_formatted = 'Rp ' . number_format((float) $rawIdr, 0, ',', '.');
+                $parts[] = $record->bond_amount_idr_formatted;
+            } else {
+                $record->bond_amount_idr_formatted = '-';
+            }
+            if ($rawUsd !== null && (float) $rawUsd > 0) {
+                $record->bond_amount_usd_formatted = '$ ' . number_format((float) $rawUsd, 2, '.', ',');
+                $parts[] = $record->bond_amount_usd_formatted;
+            } else {
+                $record->bond_amount_usd_formatted = '-';
+            }
+            $record->bond_amount_formatted = !empty($parts) ? implode(' / ', $parts) : '-';
+
             return response()->json([
                 'success' => true,
                 'data'    => $record,
@@ -1209,7 +1232,7 @@ class LearningRecordController extends Controller
                         'counted_corporate_kpi'  => 'No',
                         'sub_corporate_kpi'      => '-',
                         'delivery_method'        => 'Online',
-                        'sub_delivery_method'    => '-',
+                        'sub_delivery_method'    => 'E-learning',
                         'provider'               => 'Internal',
                         'sub_provider'           => '-',
                         'provider_name'          => 'KP-OWL',
@@ -1229,6 +1252,9 @@ class LearningRecordController extends Controller
                         'bond_duration'          => null,
                         'bond_end_date'          => '-',
                         'bond_amount'            => '-',
+                        'bond_amount_idr'        => '-',
+                        'bond_amount_usd'        => '-',
+                        'bond_amount_formatted'  => '-',
                         'pic'                    => '-',
                         'participant_name'       => Auth::user()?->name ?? '-',
                         'employee_id'            => Auth::user()?->employee_id ?? Auth::user()?->nip ?? Auth::user()?->id_emp ?? '-',
@@ -1267,7 +1293,7 @@ class LearningRecordController extends Controller
                 'counted_corporate_kpi'  => 'No',
                 'sub_corporate_kpi'      => '-',
                 'delivery_method'        => 'Online',
-                'sub_delivery_method'    => '-',
+                'sub_delivery_method'    => 'E-learning',
                 'provider'               => 'Internal',
                 'sub_provider'           => '-',
                 'provider_name'          => 'KP-OWL',
@@ -1287,6 +1313,9 @@ class LearningRecordController extends Controller
                 'bond_duration'          => null,
                 'bond_end_date'          => '-',
                 'bond_amount'            => '-',
+                'bond_amount_idr'        => '-',
+                'bond_amount_usd'        => '-',
+                'bond_amount_formatted'  => '-',
                 'pic'                    => '-',
                 'participant_name'       => Auth::user()?->name ?? '-',
                 'employee_id'            => Auth::user()?->employee_id ?? Auth::user()?->nip ?? Auth::user()?->id_emp ?? '-',

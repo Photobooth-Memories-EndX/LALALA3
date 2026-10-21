@@ -1672,8 +1672,11 @@ class RecordOfflineController extends Controller
                 'otu.attendance_reason',
                 // Bond & L1-L3
                 'otu.bond_status',
+                'otu.bond_duration',
                 'otu.bond_end_date',
-                'otu.bond_amount',
+                'otu.bond_amount_idr',
+                'otu.bond_amount_usd',
+                \Illuminate\Support\Facades\DB::raw('otu.bond_amount_idr as bond_amount'),
                 'otu.l1_program',
                 'otu.l2_numerical',
                 'otu.l2_verbal',

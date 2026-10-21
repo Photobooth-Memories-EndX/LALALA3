@@ -129,19 +129,21 @@ class OnlineFullRecordExport implements FromQuery, WithHeadings, WithChunkReadin
             . '</workbook>'
         );
 
-        // 5. xl/styles.xml with bold white text on #003B6D dark blue header
+        // 5. xl/styles.xml with bold white text on #002B49 header and #EBF3FB playlist highlight
         $zip->addFile(
             'xl/styles.xml',
             '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             . '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
-            . '<fonts count="2">'
+            . '<fonts count="3">'
             . '<font><sz val="10"/><name val="Calibri"/></font>'
             . '<font><b/><sz val="10"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>'
+            . '<font><b/><sz val="10"/><name val="Calibri"/></font>'
             . '</fonts>'
-            . '<fills count="3">'
+            . '<fills count="4">'
             . '<fill><patternFill patternType="none"/></fill>'
             . '<fill><patternFill patternType="gray125"/></fill>'
             . '<fill><patternFill patternType="solid"><fgColor rgb="FF002B49"/><bgColor rgb="FF002B49"/></patternFill></fill>'
+            . '<fill><patternFill patternType="solid"><fgColor rgb="FFEBF3FB"/><bgColor rgb="FFEBF3FB"/></patternFill></fill>'
             . '</fills>'
             . '<borders count="1">'
             . '<border><left/><right/><top/><bottom/><diagonal/></border>'
@@ -149,9 +151,10 @@ class OnlineFullRecordExport implements FromQuery, WithHeadings, WithChunkReadin
             . '<cellStyleXfs count="1">'
             . '<xf numFmtId="0" fontId="0" fillId="0" borderId="0"/>'
             . '</cellStyleXfs>'
-            . '<cellXfs count="2">'
-            . '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
+            . '<cellXfs count="3">'
+            . '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
             . '<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<xf numFmtId="0" fontId="2" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
             . '</cellXfs>'
             . '</styleSheet>'
         );
@@ -251,18 +254,23 @@ class OnlineFullRecordExport implements FromQuery, WithHeadings, WithChunkReadin
      */
     protected function buildRowXml(int $rowIdx, array $mapped): string
     {
+        // Check if row is Playlist type (Col index 12 in 0-indexed array)
+        $isPlaylist = (isset($mapped[12]) && $mapped[12] === 'Playlist');
+        $sAttr = $isPlaylist ? ' s="2"' : ' s="0"';
+
         // First column (No) as number
         $no = $mapped[0] ?? ($rowIdx - 1);
-        $xml = "<row r=\"{$rowIdx}\"><c r=\"A{$rowIdx}\"><v>{$no}</v></c>";
+        $xml = "<row r=\"{$rowIdx}\"><c r=\"A{$rowIdx}\"{$sAttr}><v>{$no}</v></c>";
 
         // Columns 2 through 46
         for ($i = 1; $i < count($mapped); $i++) {
-            $val = $mapped[$i] ?? '';
-            if ($val !== '' && $val !== null) {
-                $colLetter = Coordinate::stringFromColumnIndex($i + 1);
-                $escaped = $this->escapeXml($val);
-                $xml .= "<c r=\"{$colLetter}{$rowIdx}\" t=\"inlineStr\"><is><t>{$escaped}</t></is></c>";
+            $val = $mapped[$i] ?? '-';
+            if ($val === '' || $val === null) {
+                $val = '-';
             }
+            $colLetter = Coordinate::stringFromColumnIndex($i + 1);
+            $escaped = $this->escapeXml($val);
+            $xml .= "<c r=\"{$colLetter}{$rowIdx}\" t=\"inlineStr\"{$sAttr}><is><t>{$escaped}</t></is></c>";
         }
 
         $xml .= "</row>\n";
