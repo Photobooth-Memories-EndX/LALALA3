@@ -6,44 +6,80 @@
         <div class="col-12">
             <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-body p-4">
-                    <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-2">
-                        <div>
-                            <h3 class="card-title mb-1">{{ $task->title }}</h3>
-                            @if ($task->deadline)
-                                @php
-                                    $cdl = $task->deadline;
-                                    $cdlOverdue = $status === 'overdue' || ($cdl->isPast() && $status !== 'completed');
-                                    $hoursUntil = now()->diffInHours($cdl, false);
-                                    $isToday = in_array($status, ['not_started', 'in_progress', 'resubmit'], true) && ! $cdlOverdue && $hoursUntil <= 24 && $hoursUntil >= 0;
-                                    $isUrgent = in_array($status, ['not_started', 'in_progress', 'resubmit'], true) && ! $cdlOverdue && $hoursUntil <= 48 && $hoursUntil > 24;
-                                @endphp
-                                <div class="text-muted small d-flex align-items-center flex-wrap gap-1">
-                                    <span><i class="ti ti-calendar-due me-1"></i>Deadline: {{ $cdl->format('d M Y H:i') }}</span>
-                                    @if ($cdlOverdue)
-                                        <span class="badge bg-danger ms-1"><i class="ti ti-alert-circle me-1"></i>Overdue</span>
-                                    @elseif ($isToday)
-                                        <span class="badge bg-danger text-white ms-1"><i class="ti ti-flame me-1"></i>Tenggat Hari Ini ({{ $hoursUntil }} jam lagi)</span>
-                                    @elseif ($isUrgent)
-                                        <span class="badge bg-warning text-dark ms-1"><i class="ti ti-clock-exclamation me-1"></i>Mendekati Tenggat (H-1 / H-2)</span>
-                                    @endif
-                                </div>
+                    {{-- Top Badges Row --}}
+                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <span class="badge bg-primary-lt text-primary px-2 py-1 fs-6">{{ $task->typeLabel() }}</span>
+                            @if ($task->parentTitle())
+                                <span class="badge bg-secondary-lt text-secondary px-2 py-1 fs-6">
+                                    <i class="ti ti-bookmark me-1"></i>{{ $task->parentTitle() }}
+                                </span>
+                            @elseif ($task->isStandalone())
+                                <span class="badge bg-secondary-lt text-secondary px-2 py-1 fs-6">
+                                    <i class="ti ti-world me-1"></i>Global Task
+                                </span>
                             @endif
                         </div>
-                        <div class="d-flex flex-wrap gap-1">
-                            <span class="badge bg-primary-lt text-primary">{{ $task->typeLabel() }}</span>
-                            <span class="badge {{ $statusBadges[$displayStatus($status)] }}">{{ $statusLabels[$displayStatus($status)] }}</span>
-                        </div>
+                        <span class="badge {{ $statusBadges[$displayStatus($status)] }} px-2 py-1 fs-6">{{ $statusLabels[$displayStatus($status)] }}</span>
                     </div>
 
+                    {{-- Title --}}
+                    <h2 class="fw-bold text-dark mb-2">{{ $task->title }}</h2>
+
+                    {{-- Meta Row with Divider --}}
+                    <div class="d-flex flex-wrap align-items-center gap-3 text-muted small mb-3 pb-3 border-bottom">
+                        @if ($task->deadline)
+                            @php
+                                $cdl = $task->deadline;
+                                $cdlOverdue = $status === 'overdue' || ($cdl->isPast() && $status !== 'completed');
+                                $hoursUntil = now()->diffInHours($cdl, false);
+                                $isToday = in_array($status, ['not_started', 'in_progress', 'resubmit'], true) && ! $cdlOverdue && $hoursUntil <= 24 && $hoursUntil >= 0;
+                                $isUrgent = in_array($status, ['not_started', 'in_progress', 'resubmit'], true) && ! $cdlOverdue && $hoursUntil <= 48 && $hoursUntil > 24;
+                            @endphp
+                            <span class="d-flex align-items-center gap-1">
+                                <i class="ti ti-calendar-due text-primary me-1"></i>Deadline: <strong>{{ $cdl->format('d M Y H:i') }}</strong>
+                                @if ($cdlOverdue)
+                                    <span class="badge bg-danger ms-1"><i class="ti ti-alert-circle me-1"></i>Overdue</span>
+                                @elseif ($isToday)
+                                    <span class="badge bg-danger text-white ms-1"><i class="ti ti-flame me-1"></i>Tenggat Hari Ini ({{ $hoursUntil }} jam lagi)</span>
+                                @elseif ($isUrgent)
+                                    <span class="badge bg-warning text-dark ms-1"><i class="ti ti-clock-exclamation me-1"></i>Mendekati Tenggat (H-1 / H-2)</span>
+                                @endif
+                            </span>
+                        @else
+                            <span><i class="ti ti-calendar text-muted me-1"></i>No deadline set</span>
+                        @endif
+                        @if ($task->access_code)
+                            <span><i class="ti ti-key text-warning me-1"></i>Access Code: <code>{{ $task->access_code }}</code></span>
+                        @endif
+                    </div>
+
+                    {{-- Instructions & Overview --}}
                     @if ($task->description)
-                        <p class="text-muted mb-2">{{ $task->description }}</p>
+                        <div class="mb-4">
+                            <h5 class="fw-semibold text-dark mb-2 d-flex align-items-center gap-1">
+                                <i class="ti ti-notes text-primary"></i> Instructions & Overview
+                            </h5>
+                            <div class="text-secondary" style="white-space: pre-wrap; line-height: 1.6;">{{ $task->description }}</div>
+                        </div>
                     @endif
 
+                    {{-- Reference Material --}}
                     @if ($task->attachment)
-                        <div class="mb-3">
-                            <a href="{{ Storage::url($task->attachment) }}" target="_blank" class="btn btn-sm btn-outline-primary">
-                                <i class="ti ti-download me-1"></i>Download task attachment
-                            </a>
+                        <div class="mb-4">
+                            <h5 class="fw-semibold text-dark mb-2 d-flex align-items-center gap-1">
+                                <i class="ti ti-paperclip text-primary"></i> Reference Material
+                            </h5>
+                            <div class="p-3 rounded-3 bg-light border d-inline-flex align-items-center gap-3">
+                                <i class="ti ti-file-download text-primary fs-2"></i>
+                                <div>
+                                    <div class="fw-semibold text-dark small">{{ basename($task->attachment) }}</div>
+                                    <div class="text-muted" style="font-size:11px;">Learners can download this attachment for guidance.</div>
+                                </div>
+                                <a href="{{ Storage::url($task->attachment) }}" target="_blank" class="btn btn-sm btn-outline-primary ms-2">
+                                    <i class="ti ti-download me-1"></i> Download File
+                                </a>
+                            </div>
                         </div>
                     @endif
 
@@ -102,34 +138,44 @@
                                 <strong>Admin feedback:</strong><br>{{ $submission->feedback }}
                             </div>
                         @endif
-                    @elseif ($task->isCourseAssignment())
-                        @if ($task->link_type === 'external' && $task->external_url)
-                            <div class="d-flex flex-wrap gap-2 align-items-center">
-                                <a href="{{ $task->external_url }}" target="_blank"
-                                   class="btn btn-primary">
-                                    <i class="ti ti-external-link me-1"></i>Open External Course
-                                </a>
-                            </div>
-                            <div class="form-hint mt-1">Finish the course — this task will be marked complete automatically.</div>
-                        @else
-                            @php
-                                $targetPlan = $task->linkedPlan ?? $task->trainingPlan;
-                            @endphp
-                            @if ($targetPlan)
-                                {{-- ── Course Assignment (LMS course): auto-completes at 100% progress ── --}}
-                                <div class="d-flex flex-wrap gap-2 align-items-center">
-                                    <a href="{{ route('user.playlist.show', $targetPlan->slug) }}"
-                                       class="btn btn-primary">
-                                        <i class="ti ti-book-2 me-1"></i>Open Course: {{ $targetPlan->title }}
+                          @elseif ($task->isCourseAssignment())
+                        <div class="mb-2">
+                            <h5 class="fw-semibold text-dark mb-3 d-flex align-items-center gap-1">
+                                <i class="ti ti-book-2 text-primary"></i> Course Assignment
+                            </h5>
+                            @if ($task->link_type === 'external' && $task->external_url)
+                                <div class="p-3 bg-light rounded-3 border text-center py-4">
+                                    <i class="ti ti-external-link text-primary fs-1 mb-2 d-block"></i>
+                                    <div class="fw-bold text-dark mb-1">External Course Link</div>
+                                    <div class="text-muted small mb-3">Finish the course — this task will be marked complete automatically.</div>
+                                    <a href="{{ $task->external_url }}" target="_blank"
+                                       class="btn btn-primary rounded-3 px-4">
+                                        <i class="ti ti-external-link me-1"></i>Open External Course
                                     </a>
                                 </div>
-                                <div class="form-hint mt-1">Finish the course (100% progress) — this task will be marked complete automatically.</div>
+                                <div class="form-hint mt-2 text-center text-muted">Finish the course — this task will be marked complete automatically.</div>
                             @else
-                                <div class="d-flex flex-wrap gap-2 align-items-center">
-                                    <span class="text-muted"><i class="ti ti-info-circle me-1"></i>Course assignment link is not configured yet.</span>
-                                </div>
+                                @php
+                                    $targetPlan = $task->linkedPlan ?? $task->trainingPlan;
+                                @endphp
+                                @if ($targetPlan)
+                                    <div class="p-3 bg-light rounded-3 border text-center py-4">
+                                        <i class="ti ti-book-2 text-primary fs-1 mb-2 d-block"></i>
+                                        <div class="fw-bold text-dark mb-1">{{ $targetPlan->title }}</div>
+                                        <div class="text-muted small mb-3">Finish the course (100% progress) — this task will be marked complete automatically.</div>
+                                        <a href="{{ route('user.playlist.show', $targetPlan->slug) }}"
+                                           class="btn btn-primary rounded-3 px-4">
+                                            <i class="ti ti-book-2 me-1"></i>Open Course: {{ $targetPlan->title }}
+                                        </a>
+                                    </div>
+                                    <div class="form-hint mt-2 text-center text-muted">Finish the course (100% progress) — this task will be marked complete automatically.</div>
+                                @else
+                                    <div class="alert alert-warning mb-0">
+                                        <i class="ti ti-info-circle me-1"></i> Course assignment link is not configured yet.
+                                    </div>
+                                @endif
                             @endif
-                        @endif
+                        </div>
                     @else
                         @if ($submission && ! $submission->resubmit_requested)
                             <div class="alert alert-warning d-flex flex-wrap align-items-center justify-content-between gap-2">
@@ -172,9 +218,9 @@
                         {{-- Dynamic answer form following the task fields --}}
                         <form action="{{ route('my-task.submit', $task) }}" method="POST" enctype="multipart/form-data" class="mt-2">
                             @csrf
-                            <div class="mb-2 fw-semibold small">
-                                {{ $submission && $submission->resubmit_requested ? 'Resubmit answers' : 'Submit answers' }}
-                            </div>
+                            <h5 class="fw-semibold text-dark mb-3 d-flex align-items-center gap-1">
+                                <i class="ti ti-pencil text-primary"></i> {{ $submission && $submission->resubmit_requested ? 'Resubmit Answers' : 'Learner Submission Form' }}
+                            </h5>
 
                             @foreach ($task->fields as $field)
                                 @php
@@ -182,13 +228,13 @@
                                     $fieldKey = 'fields.' . $field->id;
                                     $hasFile = $ans && $ans->hasFiles();
                                 @endphp
-                                <div class="mb-3">
-                                    <label class="form-label small fw-semibold">
+                                <div class="mb-4 pb-3 border-bottom">
+                                    <label class="form-label fw-semibold text-dark mb-2">
                                         {{ $field->label }}
                                         @if ($field->required)
                                             <span class="text-danger">*</span>
                                         @endif
-                                        <span class="text-muted fw-normal">({{ $field->typeLabel() }})</span>
+                                        <span class="text-muted fw-normal small">({{ $field->typeLabel() }})</span>
                                     </label>
 
                                     @if ($field->isFile())
@@ -198,7 +244,7 @@
                                             $fileChoice = old('file_choice.' . $field->id, $hasSavedLink ? 'link' : 'file');
                                         @endphp
                                         @if (! empty($existingPaths))
-                                            <div class="form-hint mb-1">
+                                            <div class="form-hint mb-2">
                                                 Current file{{ count($existingPaths) > 1 ? 's' : '' }}:
                                                 @foreach ($existingPaths as $p)
                                                     <a href="{{ Storage::url($p) }}" target="_blank">{{ basename($p) }}</a>{{ ! $loop->last ? ',' : '' }}
@@ -225,37 +271,33 @@
                                             </div>
                                         @endif
                                         <div id="fileWrap{{ $field->id }}"@if ($field->allow_link && $fileChoice === 'link') style="display:none"@endif>
-                                            <input type="file"
-                                                   name="fields[{{ $field->id }}][]"
-                                                   class="form-control @error($fieldKey) is-invalid @enderror"
-                                                   @if ($field->maxFiles() > 1) multiple @endif
-                                                   @if ($field->acceptAttribute()) accept="{{ $field->acceptAttribute() }}" @endif
-                                                   {{ $field->required && empty($existingPaths) && ! $field->allow_link ? 'required' : '' }}>
-                                            <div class="p-2 mt-2 bg-light-subtle rounded-3 border d-flex flex-wrap align-items-center justify-content-between gap-2 text-muted small">
-                                                <div class="d-flex align-items-center gap-2">
-                                                    <i class="ti ti-file-upload text-primary fs-3"></i>
-                                                    <div>
+                                            <div class="border border-dashed rounded-3 p-3 bg-light-subtle">
+                                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <i class="ti ti-cloud-upload text-primary fs-2"></i>
                                                         <div>
-                                                            <strong>Format diizinkan:</strong>
-                                                            @if (! empty($field->allowedExtensions()))
-                                                                <span class="text-dark fw-semibold">{{ strtoupper(implode(', ', $field->allowedExtensions())) }}</span>
+                                                            <div class="fw-semibold small text-dark">Upload File Jawaban</div>
+                                                            <div class="text-muted" style="font-size:11px;">
+                                                                Format: <strong>{{ ! empty($field->allowedExtensions()) ? strtoupper(implode(', ', $field->allowedExtensions())) : 'Semua format file' }}</strong>
                                                                 @if ($field->allowedTypesLabel())
                                                                     <span class="badge bg-secondary-lt text-secondary ms-1">{{ $field->allowedTypesLabel() }}</span>
                                                                 @endif
-                                                            @else
-                                                                <span class="text-dark">Semua format file</span>
-                                                            @endif
-                                                        </div>
-                                                        <div class="text-muted">
-                                                            Maksimal <strong>{{ $field->maxFiles() }} file</strong>, maks. <strong>{{ $field->maxSizeMb() }} MB</strong> per file.
+                                                                | Maksimal <strong>{{ $field->maxFiles() }} file</strong>, maks. <strong>{{ $field->maxSizeMb() }} MB</strong> per file
+                                                            </div>
                                                         </div>
                                                     </div>
+                                                    @if ($field->allow_link)
+                                                        <span class="badge bg-info-lt text-info d-inline-flex align-items-center">
+                                                            <i class="ti ti-link me-1"></i> Mendukung Link Drive
+                                                        </span>
+                                                    @endif
                                                 </div>
-                                                @if ($field->allow_link)
-                                                    <span class="badge bg-info-lt text-info d-inline-flex align-items-center">
-                                                        <i class="ti ti-link me-1"></i> Mendukung Link Drive
-                                                    </span>
-                                                @endif
+                                                <input type="file"
+                                                       name="fields[{{ $field->id }}][]"
+                                                       class="form-control bg-white @error($fieldKey) is-invalid @enderror"
+                                                       @if ($field->maxFiles() > 1) multiple @endif
+                                                       @if ($field->acceptAttribute()) accept="{{ $field->acceptAttribute() }}" @endif
+                                                       {{ $field->required && empty($existingPaths) && ! $field->allow_link ? 'required' : '' }}>
                                             </div>
                                         </div>
                                         @if ($field->allow_link)
@@ -276,21 +318,24 @@
                                             </div>
                                         @endif
                                     @elseif ($field->isChoice())
-                                        @foreach ($field->options ?? [] as $opt)
-                                            @php
-                                                $checked = old($fieldKey, $ans->answer_text ?? null) === $opt;
-                                            @endphp
-                                            <label class="form-check">
-                                                <input type="radio" class="form-check-input @error($fieldKey) is-invalid @enderror"
-                                                       name="fields[{{ $field->id }}]" value="{{ $opt }}"
-                                                       {{ $checked ? 'checked' : '' }}
-                                                       {{ $field->required ? 'required' : '' }}>
-                                                <span class="form-check-label">{{ $opt }}</span>
-                                            </label>
-                                        @endforeach
+                                        <div class="d-flex flex-column gap-2 mt-2">
+                                            @foreach ($field->options ?? [] as $opt)
+                                                @php
+                                                    $checked = old($fieldKey, $ans->answer_text ?? null) === $opt;
+                                                @endphp
+                                                <label class="form-check mb-0">
+                                                    <input type="radio" class="form-check-input @error($fieldKey) is-invalid @enderror"
+                                                           name="fields[{{ $field->id }}]" value="{{ $opt }}"
+                                                           {{ $checked ? 'checked' : '' }}
+                                                           {{ $field->required ? 'required' : '' }}>
+                                                    <span class="form-check-label">{{ $opt }}</span>
+                                                </label>
+                                            @endforeach
+                                        </div>
                                     @else
-                                        <textarea name="fields[{{ $field->id }}]" rows="2"
+                                        <textarea name="fields[{{ $field->id }}]" rows="3"
                                                   class="form-control @error($fieldKey) is-invalid @enderror"
+                                                  placeholder="Tuliskan jawaban Anda di sini..."
                                                   {{ $field->required ? 'required' : '' }}>{{ old($fieldKey, $ans->answer_text ?? '') }}</textarea>
                                     @endif
 
@@ -316,8 +361,8 @@
                                 <div class="alert alert-warning">This task has no questions yet.</div>
                             @endif
 
-                            <button type="submit" class="btn btn-primary">
-                                <i class="ti ti-upload me-1"></i>{{ $submission && $submission->resubmit_requested ? 'Resubmit' : 'Submit' }}
+                            <button type="submit" class="btn btn-primary rounded-3 px-4">
+                                <i class="ti ti-send me-1"></i> {{ $submission && $submission->resubmit_requested ? 'Resubmit Answers' : 'Submit Answers' }}
                             </button>
                         </form>
 

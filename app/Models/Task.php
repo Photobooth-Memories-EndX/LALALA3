@@ -177,6 +177,16 @@ class Task extends Model
         };
     }
 
+    public function isStandalone(): bool
+    {
+        return $this->parent_type === 'standalone';
+    }
+
+    public function parentTitle(): string
+    {
+        return $this->parentName();
+    }
+
     /** Route parameters for this task's parent task list. */
     public function parentRouteParams(): array
     {

@@ -471,32 +471,64 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4 bg-light-subtle">
-                {{-- User View Card (Identical to User My Task Card) --}}
-                <div class="card border-0 shadow-sm rounded-4">
-                    <div class="card-body p-4">
-                        <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-2">
+                <div class="alert alert-info py-2 px-3 mb-3 d-flex align-items-center gap-2 rounded-3 small border-0 bg-info-lt">
+                    <i class="ti ti-device-laptop fs-2 text-info"></i>
+                    <div><strong>Learner View Simulation:</strong> This preview reflects your current inputs. Interactive inputs below are disabled in preview.</div>
+                </div>
+
+                {{-- User View Card (Identical to Learner My Task Card) --}}
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+                    {{-- Top Badges Row --}}
+                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <span class="badge bg-primary-lt text-primary px-2 py-1 fs-6" id="prevTypeBadge">Task</span>
+                            <span class="badge bg-secondary-lt text-secondary px-2 py-1 fs-6" id="prevPlacementBadge">
+                                <i class="ti ti-world me-1" id="prevPlacementIcon"></i><span id="prevPlacementText">Global Task</span>
+                            </span>
+                        </div>
+                        <span class="badge bg-secondary-lt text-secondary px-2 py-1 fs-6" id="prevStatusBadge">Not Started</span>
+                    </div>
+
+                    {{-- Title --}}
+                    <h2 class="fw-bold text-dark mb-2" id="prevTitle">Task Title</h2>
+
+                    {{-- Meta Row with Divider --}}
+                    <div class="d-flex flex-wrap align-items-center gap-3 text-muted small mb-3 pb-3 border-bottom" id="prevMetaRow">
+                        <span class="d-flex align-items-center gap-1" id="prevDeadlineWrap">
+                            <i class="ti ti-calendar-due text-primary me-1"></i>Deadline: <strong id="prevDeadlineText">No deadline set</strong>
+                            <span class="badge bg-danger ms-1" id="prevOverdueBadge" style="display:none;"><i class="ti ti-alert-circle me-1"></i>Overdue</span>
+                        </span>
+                        <span id="prevAccessCodeWrap" style="display:none;"><i class="ti ti-key text-warning me-1"></i>Access Code: <code id="prevAccessCodeText"></code></span>
+                    </div>
+
+                    {{-- Instructions & Overview --}}
+                    <div class="mb-4" id="prevDescWrap" style="display:none;">
+                        <h5 class="fw-semibold text-dark mb-2 d-flex align-items-center gap-1">
+                            <i class="ti ti-notes text-primary"></i> Instructions & Overview
+                        </h5>
+                        <div class="text-secondary" id="prevDescription" style="white-space: pre-wrap; line-height: 1.6;"></div>
+                    </div>
+
+                    {{-- Reference Material --}}
+                    <div class="mb-4" id="prevAttachmentWrap" style="display:none;">
+                        <h5 class="fw-semibold text-dark mb-2 d-flex align-items-center gap-1">
+                            <i class="ti ti-paperclip text-primary"></i> Reference Material
+                        </h5>
+                        <div class="p-3 rounded-3 bg-light border d-inline-flex align-items-center gap-3">
+                            <i class="ti ti-file-download text-primary fs-2"></i>
                             <div>
-                                <h3 class="card-title mb-1 fw-bold text-dark" id="prevTitle">Task Title</h3>
-                                <div class="text-muted small d-flex align-items-center flex-wrap gap-1" id="prevDeadlineWrap">
-                                    <span><i class="ti ti-calendar-due me-1"></i>Deadline: <span id="prevDeadlineText"></span></span>
-                                    <span class="badge bg-danger ms-1" id="prevOverdueBadge" style="display:none;"><i class="ti ti-alert-circle me-1"></i>Overdue</span>
-                                </div>
+                                <div class="fw-semibold text-dark small" id="prevAttachmentName">Reference file</div>
+                                <div class="text-muted" style="font-size:11px;">Learners can download this attachment for guidance.</div>
                             </div>
-                            <div class="d-flex flex-wrap gap-1 align-items-center">
-                                <span class="badge bg-primary-lt text-primary" id="prevTypeBadge">File Submission</span>
-                                <span class="badge bg-secondary-lt text-secondary" id="prevStatusBadge">Not Started</span>
-                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-primary ms-2" disabled>
+                                <i class="ti ti-download me-1"></i> Download File
+                            </button>
                         </div>
+                    </div>
 
-                        <p class="text-muted mb-2" id="prevDescription" style="white-space: pre-wrap;"></p>
-
-                        <div class="mb-3" id="prevAttachmentWrap" style="display:none;">
-                            <a href="javascript:void(0)" class="btn btn-sm btn-outline-primary" style="pointer-events:none;">
-                                <i class="ti ti-download me-1"></i>Download task attachment
-                            </a>
-                        </div>
-
-                        <div id="prevSubmissionSection" class="mt-2"></div>
+                    {{-- Submission Section --}}
+                    <div class="mb-2" id="prevSubmissionWrap">
+                        <div id="prevSubmissionSection"></div>
                     </div>
                 </div>
             </div>
@@ -1134,6 +1166,19 @@
             var prevType = document.getElementById('prevTypeBadge');
             if (prevType) prevType.textContent = typeText;
 
+            // Placement
+            var prevPlacementText = document.getElementById('prevPlacementText');
+            var prevPlacementIcon = document.getElementById('prevPlacementIcon');
+            if (currentPlacement === 'standalone') {
+                if (prevPlacementText) prevPlacementText.textContent = 'Global Task';
+                if (prevPlacementIcon) prevPlacementIcon.className = 'ti ti-world me-1';
+            } else {
+                var pickerText = parentPickerText ? parentPickerText.textContent.trim() : '';
+                var cleanTarget = (pickerText && pickerText.indexOf('— Select') === -1) ? pickerText : 'Unassigned';
+                if (prevPlacementText) prevPlacementText.textContent = cleanTarget;
+                if (prevPlacementIcon) prevPlacementIcon.className = 'ti ti-bookmark me-1';
+            }
+
             // Deadline and status badges
             var deadlineInput = document.getElementById('deadline');
             var deadlineWrap = document.getElementById('prevDeadlineWrap');
@@ -1155,42 +1200,63 @@
                     var isPast = d.getTime() < Date.now();
                     if (isPast) {
                         overdueBadge.style.display = '';
-                        statusBadge.className = 'badge bg-danger-lt text-danger';
+                        statusBadge.className = 'badge bg-danger text-white px-2 py-1 fs-6';
                         statusBadge.textContent = 'Overdue';
                     } else {
                         overdueBadge.style.display = 'none';
-                        statusBadge.className = 'badge bg-secondary-lt text-secondary';
+                        statusBadge.className = 'badge bg-secondary-lt text-secondary px-2 py-1 fs-6';
                         statusBadge.textContent = 'Not Started';
                     }
                 } else {
                     deadlineText.textContent = deadlineInput.value;
                     overdueBadge.style.display = 'none';
-                    statusBadge.className = 'badge bg-secondary-lt text-secondary';
+                    statusBadge.className = 'badge bg-secondary-lt text-secondary px-2 py-1 fs-6';
                     statusBadge.textContent = 'Not Started';
                 }
-                deadlineWrap.style.display = '';
             } else {
-                deadlineWrap.style.display = 'none';
-                statusBadge.className = 'badge bg-secondary-lt text-secondary';
+                deadlineText.textContent = 'No deadline set';
+                overdueBadge.style.display = 'none';
+                statusBadge.className = 'badge bg-secondary-lt text-secondary px-2 py-1 fs-6';
                 statusBadge.textContent = 'Not Started';
             }
 
-            // Description
-            var descInput = document.getElementById('description');
-            var descEl = document.getElementById('prevDescription');
-            if (descEl) {
-                var dVal = (descInput && descInput.value.trim()) ? descInput.value.trim() : '';
-                descEl.textContent = dVal;
-                descEl.style.display = dVal ? '' : 'none';
+            // Access Code
+            var accessCodeInput = document.getElementById('access_code');
+            var accessCodeWrap = document.getElementById('prevAccessCodeWrap');
+            var accessCodeText = document.getElementById('prevAccessCodeText');
+            if (currentPlacement === 'standalone' && accessCodeInput && accessCodeInput.value.trim()) {
+                if (accessCodeWrap) accessCodeWrap.style.display = '';
+                if (accessCodeText) accessCodeText.textContent = accessCodeInput.value.trim().toUpperCase();
+            } else {
+                if (accessCodeWrap) accessCodeWrap.style.display = 'none';
             }
 
-            // Attachment button
+            // Description / Instructions
+            var descInput = document.getElementById('description');
+            var descWrap = document.getElementById('prevDescWrap');
+            var descEl = document.getElementById('prevDescription');
+            var dVal = (descInput && descInput.value.trim()) ? descInput.value.trim() : '';
+            if (dVal) {
+                if (descEl) descEl.textContent = dVal;
+                if (descWrap) descWrap.style.display = '';
+            } else {
+                if (descWrap) descWrap.style.display = 'none';
+            }
+
+            // Attachment / Reference Material
             var attachInput = document.getElementById('attachment');
             var attachWrap = document.getElementById('prevAttachmentWrap');
-            var hasSavedAttachment = @json(isset($task) && $task->attachment ? true : false);
+            var attachName = document.getElementById('prevAttachmentName');
+            var hasSavedAttachment = @json(isset($task) && $task->attachment ? basename($task->attachment) : '');
             var hasNewFile = attachInput && attachInput.files && attachInput.files.length > 0;
-            if (attachWrap) {
-                attachWrap.style.display = (hasNewFile || hasSavedAttachment) ? '' : 'none';
+            if (hasNewFile) {
+                if (attachName) attachName.textContent = attachInput.files[0].name;
+                if (attachWrap) attachWrap.style.display = '';
+            } else if (hasSavedAttachment) {
+                if (attachName) attachName.textContent = hasSavedAttachment;
+                if (attachWrap) attachWrap.style.display = '';
+            } else {
+                if (attachWrap) attachWrap.style.display = 'none';
             }
 
             // Submission section
@@ -1206,20 +1272,32 @@
                     var courseName = (coursePickerText ? coursePickerText.textContent.trim() : '') || 'Selected Course';
                     if (courseName.indexOf('— Select') !== -1) courseName = 'Not yet selected';
                     subWrap.innerHTML =
-                        '<div class="d-flex flex-wrap gap-2 align-items-center">' +
-                            '<button type="button" class="btn btn-primary" disabled>' +
+                        '<h5 class="fw-semibold text-dark mb-3 d-flex align-items-center gap-1">' +
+                            '<i class="ti ti-book-2 text-primary"></i> Course Assignment' +
+                        '</h5>' +
+                        '<div class="p-3 bg-light rounded-3 border text-center py-4">' +
+                            '<i class="ti ti-book-2 text-primary fs-1 mb-2 d-block"></i>' +
+                            '<div class="fw-bold text-dark mb-1">' + esc(courseName) + '</div>' +
+                            '<div class="text-muted small mb-3">Finish the course (100% progress) — this task will be marked complete automatically.</div>' +
+                            '<button type="button" class="btn btn-primary rounded-3 px-4" disabled>' +
                                 '<i class="ti ti-book-2 me-1"></i>Open Course: ' + esc(courseName) +
                             '</button>' +
                         '</div>' +
-                        '<div class="form-hint mt-1">Finish the course (100% progress) — this task will be marked complete automatically.</div>';
+                        '<div class="form-hint mt-2 text-center text-muted">Finish the course (100% progress) — this task will be marked complete automatically.</div>';
                 } else {
                     subWrap.innerHTML =
-                        '<div class="d-flex flex-wrap gap-2 align-items-center">' +
-                            '<button type="button" class="btn btn-primary" disabled>' +
+                        '<h5 class="fw-semibold text-dark mb-3 d-flex align-items-center gap-1">' +
+                            '<i class="ti ti-book-2 text-primary"></i> Course Assignment' +
+                        '</h5>' +
+                        '<div class="p-3 bg-light rounded-3 border text-center py-4">' +
+                            '<i class="ti ti-external-link text-primary fs-1 mb-2 d-block"></i>' +
+                            '<div class="fw-bold text-dark mb-1">External Course Link</div>' +
+                            '<div class="text-muted small mb-3">Finish the course — this task will be marked complete automatically.</div>' +
+                            '<button type="button" class="btn btn-primary rounded-3 px-4" disabled>' +
                                 '<i class="ti ti-external-link me-1"></i>Open External Course' +
                             '</button>' +
                         '</div>' +
-                        '<div class="form-hint mt-1">Finish the course — this task will be marked complete automatically.</div>';
+                        '<div class="form-hint mt-2 text-center text-muted">Finish the course — this task will be marked complete automatically.</div>';
                 }
             } else if (t === 'survey') {
                 var surveySel = document.getElementById('survey_id');
@@ -1227,15 +1305,23 @@
                     ? surveySel.options[surveySel.selectedIndex].text
                     : 'Survey Form';
                 subWrap.innerHTML =
-                    '<div class="d-flex flex-wrap gap-2 align-items-center">' +
-                        '<button type="button" class="btn btn-primary" disabled>' +
+                    '<h5 class="fw-semibold text-dark mb-3 d-flex align-items-center gap-1">' +
+                        '<i class="ti ti-pencil text-primary"></i> Survey Form' +
+                    '</h5>' +
+                    '<div class="p-3 bg-light rounded-3 border text-center py-4">' +
+                        '<i class="ti ti-forms text-primary fs-1 mb-2 d-block"></i>' +
+                        '<div class="fw-bold text-dark mb-1">' + esc(surveyText) + '</div>' +
+                        '<div class="text-muted small mb-3">Complete the survey form — this task will be marked complete automatically.</div>' +
+                        '<button type="button" class="btn btn-primary rounded-3 px-4" disabled>' +
                             '<i class="ti ti-forms me-1"></i>Open Survey: ' + esc(surveyText) +
                         '</button>' +
                     '</div>' +
-                    '<div class="form-hint mt-1">Complete the survey form — this task will be marked complete automatically.</div>';
+                    '<div class="form-hint mt-2 text-center text-muted">Complete the survey form — this task will be marked complete automatically.</div>';
             } else {
                 var fieldCards = wrap ? wrap.querySelectorAll('.field-card') : [];
-                var html = '<div class="mb-2 fw-semibold small">Submit answers</div>';
+                var html = '<h5 class="fw-semibold text-dark mb-3 d-flex align-items-center gap-1">' +
+                    '<i class="ti ti-pencil text-primary"></i> Learner Submission Form' +
+                '</h5>';
 
                 if (!fieldCards.length) {
                     html += '<div class="alert alert-warning">This task has no questions yet.</div>';
@@ -1246,10 +1332,10 @@
                         var ftype = card.dataset.ftype;
                         var typeLabel = FIELD_TYPES[ftype] || 'File upload';
 
-                        html += '<div class="mb-3">' +
-                            '<label class="form-label small fw-semibold">' +
+                        html += '<div class="mb-4 pb-3 border-bottom">' +
+                            '<label class="form-label fw-semibold text-dark mb-2">' +
                                 esc(qTitle) + ' <span class="text-danger">*</span> ' +
-                                '<span class="text-muted fw-normal">(' + esc(typeLabel) + ')</span>' +
+                                '<span class="text-muted fw-normal small">(' + esc(typeLabel) + ')</span>' +
                             '</label>';
 
                         if (ftype === 'file') {
@@ -1284,42 +1370,43 @@
                             }
 
                             html += '<div>' +
-                                '<input type="file" class="form-control" disabled>' +
-                                '<div class="p-2 mt-2 bg-light-subtle rounded-3 border d-flex flex-wrap align-items-center justify-content-between gap-2 text-muted small">' +
-                                    '<div class="d-flex align-items-center gap-2">' +
-                                        '<i class="ti ti-file-upload text-primary fs-3"></i>' +
-                                        '<div>' +
+                                '<div class="border border-dashed rounded-3 p-3 bg-light-subtle">' +
+                                    '<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">' +
+                                        '<div class="d-flex align-items-center gap-2">' +
+                                            '<i class="ti ti-cloud-upload text-primary fs-2"></i>' +
                                             '<div>' +
-                                                '<strong>Format diizinkan:</strong> ' +
-                                                '<span class="text-dark fw-semibold">' + esc(extDisplay) + '</span>' +
-                                                badgeHtml +
-                                            '</div>' +
-                                            '<div class="text-muted">' +
-                                                'Maksimal <strong>' + maxFiles + ' file</strong>, maks. <strong>' + maxSize + ' MB</strong> per file.' +
+                                                '<div class="fw-semibold small text-dark">Upload File Jawaban</div>' +
+                                                '<div class="text-muted" style="font-size:11px;">' +
+                                                    'Format: <strong>' + esc(extDisplay) + '</strong>' + badgeHtml +
+                                                    ' | Maksimal <strong>' + maxFiles + ' file</strong>, maks. <strong>' + maxSize + ' MB</strong> per file' +
+                                                '</div>' +
                                             '</div>' +
                                         '</div>' +
+                                        (allowLink ? '<span class="badge bg-info-lt text-info d-inline-flex align-items-center"><i class="ti ti-link me-1"></i> Mendukung Link Drive</span>' : '') +
                                     '</div>' +
-                                    (allowLink ? '<span class="badge bg-info-lt text-info d-inline-flex align-items-center"><i class="ti ti-link me-1"></i> Mendukung Link Drive</span>' : '') +
+                                    '<input type="file" class="form-control bg-white" disabled>' +
                                 '</div>' +
                             '</div>';
                         } else if (ftype === 'choice') {
                             var opts = card.querySelectorAll('.option-row input[type="text"]');
+                            html += '<div class="d-flex flex-column gap-2 mt-2">';
                             opts.forEach(function (optInput, oIdx) {
                                 var optVal = optInput.value.trim() || ('Option ' + (oIdx + 1));
-                                html += '<label class="form-check">' +
+                                html += '<label class="form-check mb-0">' +
                                     '<input type="radio" class="form-check-input" disabled>' +
                                     '<span class="form-check-label">' + esc(optVal) + '</span>' +
                                 '</label>';
                             });
+                            html += '</div>';
                         } else {
-                            html += '<textarea rows="2" class="form-control" disabled></textarea>';
+                            html += '<textarea rows="3" class="form-control" placeholder="Tuliskan jawaban Anda di sini..." disabled style="background:#f8fafc;"></textarea>';
                         }
 
                         html += '</div>';
                     });
 
-                    html += '<button type="button" class="btn btn-primary" disabled>' +
-                        '<i class="ti ti-upload me-1"></i>Submit' +
+                    html += '<button type="button" class="btn btn-primary rounded-3 px-4" disabled>' +
+                        '<i class="ti ti-send me-1"></i> Submit Answers' +
                     '</button>';
                 }
 
