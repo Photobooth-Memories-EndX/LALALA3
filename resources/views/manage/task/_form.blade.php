@@ -95,14 +95,14 @@
     </style>
 
     {{-- ======================================================== --}}
-    {{-- SECTION 1: PLACEMENT & TASK TARGET                       --}}
+    {{-- SECTION 1: TASK PLACEMENT                                --}}
     {{-- ======================================================== --}}
     <div class="card form-section-card">
         <div class="card-header bg-white py-3 px-4 d-flex align-items-center gap-3">
             <span class="section-badge-num"><i class="ti ti-map-pin"></i></span>
             <div>
-                <h3 class="card-title fw-bold text-dark mb-0">1. Placement & Task Target</h3>
-                <div class="text-muted small">Specify where this task is assigned and how learners will access it.</div>
+                <h3 class="card-title fw-bold text-dark mb-0">1. Task Placement</h3>
+                <div class="text-muted small">Select where this task will be placed and assigned to learners.</div>
             </div>
         </div>
         <div class="card-body p-4">
