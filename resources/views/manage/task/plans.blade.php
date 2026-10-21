@@ -102,40 +102,6 @@
                 </div>
             </div>
 
-            {{-- ===== SECTION HEADER: ACTIVE SCOPE INFO & ACTION BUTTONS ===== --}}
-            <div class="card border-0 shadow-sm p-3 p-md-4 mb-4 rounded-3 bg-white record-section-header">
-                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 record-section-icon"
-                             style="width: 54px; height: 54px; background-color: {{ $scope === 'kp' ? '#e0f2fe; color: #0284c7;' : '#fef3c7; color: #d97706;' }}; border-radius: 12px;">
-                            <i class="ti {{ $scope === 'kp' ? 'ti-device-laptop' : 'ti-map-pin' }} fs-1"></i>
-                        </div>
-                        <div>
-                            <h2 class="h3 fw-bold mb-1 text-dark">{{ $scope === 'kp' ? 'KP OWL' : 'NON KP OWL' }}</h2>
-                            <p class="text-muted small mb-0">
-                                {{ $scope === 'kp' ? 'Online Task Data — Tasks from playlists, contents & standalone in OWL LMS.' : 'Offline Training Tasks — Tasks from offline trainings in OWL LMS.' }}
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- Action Buttons: Trash / Create New Task -->
-                    <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <a href="{{ route('manage.task.trash') }}" class="btn btn-outline-secondary position-relative rounded-3 px-3 d-inline-flex align-items-center gap-1.5">
-                            <i class="ti ti-trash fs-2"></i>
-                            <span>Trash</span>
-                            @if (($trashCount ?? 0) > 0)
-                                <span class="badge bg-danger ms-1">{{ $trashCount }}</span>
-                            @endif
-                        </a>
-                        <a href="{{ route('manage.task.create', array_filter(['scope' => $scope, 'parent_type' => $scope === 'non_kp' ? 'offline_training' : null])) }}"
-                           class="btn btn-primary rounded-3 px-3 d-inline-flex align-items-center gap-1.5">
-                            <i class="ti ti-plus fs-2"></i>
-                            <span>Create New Task</span>
-                        </a>
-                    </div>
-                </div>
-            </div>
-
             {{-- ===== SCOPE NAVIGATION CARDS ===== --}}
             <div class="row g-3 mb-4 record-navigation-row">
                 <!-- Card 1: KP OWL -->
@@ -184,6 +150,40 @@
                             <p class="text-muted small mb-0 mt-2" style="font-size: 0.8rem; line-height: 1.35;">Tasks from offline trainings</p>
                         </div>
                     </a>
+                </div>
+            </div>
+
+            {{-- ===== SECTION HEADER: ACTIVE SCOPE INFO & ACTION BUTTONS ===== --}}
+            <div class="card border-0 shadow-sm p-3 p-md-4 mb-4 rounded-3 bg-white record-section-header">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 record-section-icon"
+                             style="width: 54px; height: 54px; background-color: {{ $scope === 'kp' ? '#e0f2fe; color: #0284c7;' : '#fef3c7; color: #d97706;' }}; border-radius: 12px;">
+                            <i class="ti {{ $scope === 'kp' ? 'ti-device-laptop' : 'ti-map-pin' }} fs-1"></i>
+                        </div>
+                        <div>
+                            <h2 class="h3 fw-bold mb-1 text-dark">{{ $scope === 'kp' ? 'KP OWL' : 'NON KP OWL' }}</h2>
+                            <p class="text-muted small mb-0">
+                                {{ $scope === 'kp' ? 'Online Task Data — Tasks from playlists, contents & standalone in OWL LMS.' : 'Offline Training Tasks — Tasks from offline trainings in OWL LMS.' }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons: Trash / Create New Task -->
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <a href="{{ route('manage.task.trash') }}" class="btn btn-outline-secondary position-relative rounded-3 px-3 d-inline-flex align-items-center gap-1.5">
+                            <i class="ti ti-trash fs-2"></i>
+                            <span>Trash</span>
+                            @if (($trashCount ?? 0) > 0)
+                                <span class="badge bg-danger ms-1">{{ $trashCount }}</span>
+                            @endif
+                        </a>
+                        <a href="{{ route('manage.task.create', array_filter(['scope' => $scope, 'parent_type' => $scope === 'non_kp' ? 'offline_training' : null])) }}"
+                           class="btn btn-primary rounded-3 px-3 d-inline-flex align-items-center gap-1.5">
+                            <i class="ti ti-plus fs-2"></i>
+                            <span>Create New Task</span>
+                        </a>
+                    </div>
                 </div>
             </div>
 
