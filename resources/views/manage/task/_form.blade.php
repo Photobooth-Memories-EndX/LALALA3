@@ -134,15 +134,18 @@
                 </div>
 
                 {{-- Target Placement Picker --}}
+                @php
+                    $currentPlacementLabel = \App\Models\Task::PARENT_TYPES[$currentParentType] ?? 'Playlist';
+                @endphp
                 <div class="mb-3 form-field-lg">
-                    <label class="form-label required" id="parentPickerLabel">{{ \App\Models\Task::PARENT_TYPES[$currentParentType] ?? 'Playlist' }}</label>
+                    <label class="form-label required" id="parentPickerLabel">Select {{ $currentPlacementLabel }}</label>
                     <div class="position-relative" id="parentPicker">
                         <input type="hidden" name="parent_id" id="parent_id" value="{{ $currentParentId }}"
                                data-url-template="{{ route('manage.task.parents', ['type' => '__TYPE__']) }}">
                         <button type="button"
                                 class="form-select text-start d-flex justify-content-between align-items-center"
                                 id="parentPickerBtn" aria-haspopup="listbox" aria-expanded="false">
-                            <span id="parentPickerText">{{ $selectedParentName ?: '— Select Target Placement —' }}</span>
+                            <span id="parentPickerText">{{ $selectedParentName ?: ('— Select ' . $currentPlacementLabel . ' —') }}</span>
                             <i class="ti ti-chevron-down ms-2"></i>
                         </button>
                         <div class="card position-absolute w-100 shadow mt-1" id="parentPanel"
@@ -711,8 +714,14 @@
 
         function placementType() { return currentPlacement; }
 
+        function getPickerPlaceholder(placement) {
+            var label = PARENT_LABELS[placement] || 'Item';
+            return '— Select ' + label + ' —';
+        }
+
         function setPickerLabel() {
-            if (parentPickerLabel) parentPickerLabel.textContent = PARENT_LABELS[currentPlacement] || 'Item';
+            var label = PARENT_LABELS[currentPlacement] || 'Item';
+            if (parentPickerLabel) parentPickerLabel.textContent = 'Select ' + label;
         }
 
         function syncSameCourseWrap() {
@@ -766,6 +775,8 @@
             parentPanel.style.display = '';
             parentPickerBtn.setAttribute('aria-expanded', 'true');
             parentPanelSearch.value = '';
+            var label = PARENT_LABELS[currentPlacement] || 'item';
+            parentPanelSearch.placeholder = 'Type to search ' + label.toLowerCase() + '...';
             parentPanelSearch.disabled = false;
             loadParentItems('');
             setTimeout(function () { parentPanelSearch.focus(); }, 50);
@@ -794,7 +805,7 @@
             parentTypeSelect.addEventListener('change', function () {
                 currentPlacement = parentTypeSelect.value;
                 parentIdInput.value = '';
-                parentPickerText.textContent = '— Select —';
+                parentPickerText.textContent = getPickerPlaceholder(currentPlacement);
                 if (sameCourse) sameCourse.checked = false;
                 setPickerLabel();
                 syncSameCourseWrap();

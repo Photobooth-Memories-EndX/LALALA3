@@ -37,7 +37,8 @@ class TaskManagementNonKpOwlTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('<option value="offline_training" selected>', false);
-        $response->assertSee('id="parentPickerLabel">Offline Training</label>', false);
+        $response->assertSee('id="parentPickerLabel">Select Offline Training</label>', false);
+        $response->assertSee('— Select Offline Training —', false);
         $response->assertSee(route('manage.task.index', ['scope' => 'non_kp']), false);
     }
 
@@ -47,7 +48,8 @@ class TaskManagementNonKpOwlTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('<option value="offline_training" selected>', false);
-        $response->assertSee('id="parentPickerLabel">Offline Training</label>', false);
+        $response->assertSee('id="parentPickerLabel">Select Offline Training</label>', false);
+        $response->assertSee('— Select Offline Training —', false);
     }
 
     public function test_create_task_form_defaults_to_playlist_when_scope_is_kp_or_no_param(): void
@@ -56,7 +58,8 @@ class TaskManagementNonKpOwlTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('<option value="playlist" selected>', false);
-        $response->assertSee('id="parentPickerLabel">Playlist</label>', false);
+        $response->assertSee('id="parentPickerLabel">Select Playlist</label>', false);
+        $response->assertSee('— Select Playlist —', false);
     }
 
     public function test_parent_options_endpoint_returns_offline_trainings(): void
