@@ -37,7 +37,7 @@
 
             {{-- ===== 4 KPI SUMMARY CARDS (DIRECTLY UNDER HERO) ===== --}}
             <div class="row g-3 mb-4">
-                <!-- Card 1: Placements With Tasks -->
+                <!-- Card 1: Total Course -->
                 <div class="col-sm-6 col-lg-3">
                     <div class="card border-0 shadow-sm p-3 rounded-3 bg-white stat-kpi-card h-100">
                         <div class="d-flex align-items-center">
@@ -46,7 +46,7 @@
                                 <i class="ti ti-stack-2 fs-2"></i>
                             </div>
                             <div>
-                                <div class="text-muted fw-semibold" style="font-size: 0.8rem; line-height: 1.2;">Placements With Tasks</div>
+                                <div class="text-muted fw-semibold" style="font-size: 0.8rem; line-height: 1.2;">Total Course</div>
                                 <div class="fw-bold fs-3 text-dark mt-1" style="line-height: 1.1;">{{ number_format($stats['parents']) }}</div>
                             </div>
                         </div>
