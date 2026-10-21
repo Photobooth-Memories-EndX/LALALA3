@@ -1,161 +1,200 @@
 {{-- resources/views/manage/task/plans.blade.php --}}
-{{-- Dashboard: parents (playlist / content / standalone) that have tasks. --}}
+{{-- Dashboard: parents (playlist / content / standalone / offline training) that have tasks. --}}
 @extends('layouts.sidebar-master')
 
 @section('content')
 
-    <style>
-        .tm-back { display:inline-flex; align-items:center; gap:.35rem; color:#206bc4; font-weight:600; font-size:.9rem; text-decoration:none; margin-bottom:.75rem; }
-        .tm-back:hover { color:#185294; text-decoration:underline; }
-        .tm-hero { background:linear-gradient(120deg,#0a2a4d 0%,#123f73 55%,#2f7cd6 100%); border-radius:1rem; padding:2rem; color:#fff; margin-bottom:1.25rem; box-shadow:0 .5rem 1.5rem rgba(10,42,77,.25); }
-        .tm-hero-pill { display:inline-flex; align-items:center; gap:.4rem; font-size:.72rem; font-weight:700; letter-spacing:.04em; background:rgba(0,0,0,.28); border-radius:999px; padding:.3rem .85rem; margin-bottom:.9rem; color:#fff; }
-        .tm-hero h1 { color:#fff; font-size:1.75rem; font-weight:800; margin:0 0 .5rem; }
-        .tm-hero p { color:rgba(255,255,255,.85); margin:0; max-width:760px; }
-        .tm-filter-card { display:block; background:#fff; border:1px solid #e6e8eb; border-radius:.75rem; padding:.9rem 1rem; text-decoration:none; color:inherit; position:relative; height:100%; transition:border-color .15s, box-shadow .15s; }
-        .tm-filter-card:hover { border-color:#206bc4; box-shadow:0 .25rem .75rem rgba(32,107,196,.12); text-decoration:none; color:inherit; }
-        .tm-filter-card.active { border:2px solid #206bc4; padding:calc(.9rem - 1px) calc(1rem - 1px); }
-        .tm-filter-icon { width:38px; height:38px; border-radius:.55rem; display:inline-flex; align-items:center; justify-content:center; font-size:1.1rem; margin-bottom:.55rem; }
-        .tm-filter-title { font-weight:700; font-size:.95rem; color:#1a1a1a; margin-bottom:.1rem; }
-        .tm-filter-sub { font-size:.78rem; font-weight:600; margin-bottom:.2rem; }
-        .tm-filter-desc { font-size:.76rem; color:#6b7280; line-height:1.35; }
-        .tm-active-badge { position:absolute; top:.8rem; right:.8rem; background:#0a2a4d; color:#fff; font-size:.65rem; font-weight:700; letter-spacing:.05em; border-radius:999px; padding:.2rem .6rem; }
-        .tm-stat-icon { width:48px; height:48px; border-radius:.65rem; display:inline-flex; align-items:center; justify-content:center; font-size:1.4rem; color:#fff; flex-shrink:0; }
-        .tm-stat-label { font-size:.82rem; color:#6b7280; margin-bottom:.15rem; }
-        .tm-stat-number { font-size:1.45rem; font-weight:800; color:#1a1a1a; line-height:1.2; }
-        .tm-scope-btn { border-radius:999px; font-weight:600; font-size:.85rem; padding:.45rem 1.1rem; }
-    </style>
-
-    <div class="page-body">
+    <div class="page-body manage-task-page">
         <div class="container-xl">
 
-            <a href="{{ route('manage.index') }}" class="tm-back">
-                <i class="ti ti-arrow-left"></i> Back
-            </a>
-
-            {{-- ===== Hero ===== --}}
-            <div class="tm-hero">
-                <span class="tm-hero-pill"><i class="ti ti-clipboard-list"></i> TASK MANAGEMENT</span>
-                <h1>Task Management</h1>
-                <p>Manage tasks across playlists, contents, and standalone tasks, including placement data, task progress, and review status.</p>
+            <!-- TOMBOL BACK RATA KIRI ATAS -->
+            <div class="mb-3">
+                <a href="{{ route('manage.index') }}" class="btn-back d-inline-flex align-items-center gap-1 text-decoration-none fw-medium">
+                    <i class="ti ti-arrow-left"></i>
+                    <span>Back</span>
+                </a>
             </div>
+
+            {{-- ===== Hero Banner ===== --}}
+            <section class="manage-record-hero mb-4" aria-labelledby="manage-task-hero-title">
+                <div class="manage-record-hero__content">
+                    <div class="manage-record-hero__badge">
+                        <i class="ti ti-clipboard-list" aria-hidden="true"></i>
+                        <span>TASK MANAGEMENT</span>
+                    </div>
+
+                    <h1 id="manage-task-hero-title" class="manage-record-hero__title">
+                        Task Management
+                    </h1>
+
+                    <p class="manage-record-hero__description mb-0">
+                        Manage tasks across playlists, contents, and offline trainings, including placement data, task progress, and review status.
+                    </p>
+                </div>
+            </section>
 
             <x-alert type="success" />
 
-            {{-- ===== Scope cards: KP OWL / NON KP OWL ===== --}}
-            <div class="row mb-4">
-                <div class="col-md-6 col-lg-4 mb-3">
-                    <a href="{{ route('manage.task.index', ['scope' => 'kp', 'parent_type' => $type, 'search' => $search]) }}"
-                       class="tm-filter-card {{ $scope === 'kp' ? 'active' : '' }}">
-                        @if ($scope === 'kp')
-                            <span class="tm-active-badge">ACTIVE</span>
-                        @endif
-                        <div class="tm-filter-icon bg-blue-lt text-blue">
-                            <i class="ti ti-device-laptop"></i>
+            {{-- ===== 4 KPI SUMMARY CARDS (DIRECTLY UNDER HERO) ===== --}}
+            <div class="row g-3 mb-4">
+                <!-- Card 1: Placements With Tasks -->
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card border-0 shadow-sm p-3 rounded-3 bg-white stat-kpi-card h-100">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
+                                 style="width: 44px; height: 44px; background-color: #0f4c81; color: #ffffff;">
+                                <i class="ti ti-stack-2 fs-2"></i>
+                            </div>
+                            <div>
+                                <div class="text-muted fw-semibold" style="font-size: 0.8rem; line-height: 1.2;">Placements With Tasks</div>
+                                <div class="fw-bold fs-3 text-dark mt-1" style="line-height: 1.1;">{{ number_format($stats['parents']) }}</div>
+                            </div>
                         </div>
-                        <div class="tm-filter-title">KP OWL</div>
-                        <div class="tm-filter-sub text-blue">Online Task Data</div>
-                        <div class="tm-filter-desc">Tasks from playlists, contents &amp; standalone</div>
-                    </a>
+                    </div>
                 </div>
-                <div class="col-md-6 col-lg-4 mb-3">
-                    <a href="{{ route('manage.task.index', ['scope' => 'non_kp', 'search' => $search]) }}"
-                       class="tm-filter-card {{ $scope === 'non_kp' ? 'active' : '' }}">
-                        @if ($scope === 'non_kp')
-                            <span class="tm-active-badge">ACTIVE</span>
-                        @endif
-                        <div class="tm-filter-icon bg-orange-lt text-orange">
-                            <i class="ti ti-map-pin"></i>
-                        </div>
-                        <div class="tm-filter-title">NON KP OWL</div>
-                        <div class="tm-filter-sub text-orange">Offline Training Tasks</div>
-                        <div class="tm-filter-desc">Tasks from offline trainings</div>
-                    </a>
-                </div>
-            </div>
 
-            {{-- ===== Stat cards ===== --}}
-            <div class="row mb-4">
-                <div class="col-md-6 col-lg-3 mb-3">
-                    <div class="card h-100">
-                        <div class="card-body p-3">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="tm-stat-icon bg-primary">
-                                    <i class="ti ti-folder"></i>
-                                </div>
-                                <div>
-                                    <div class="tm-stat-label">Placements With Tasks</div>
-                                    <div class="tm-stat-number">{{ $stats['parents'] }}</div>
-                                </div>
+                <!-- Card 2: Total Tasks -->
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card border-0 shadow-sm p-3 rounded-3 bg-white stat-kpi-card h-100">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
+                                 style="width: 44px; height: 44px; background-color: #f59e0b; color: #ffffff;">
+                                <i class="ti ti-progress fs-2"></i>
+                            </div>
+                            <div>
+                                <div class="text-muted fw-semibold" style="font-size: 0.8rem; line-height: 1.2;">Total Tasks</div>
+                                <div class="fw-bold fs-3 text-dark mt-1" style="line-height: 1.1;">{{ number_format($stats['tasks']) }}</div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6 col-lg-3 mb-3">
-                    <div class="card h-100">
-                        <div class="card-body p-3">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="tm-stat-icon bg-info">
-                                    <i class="ti ti-clipboard-list"></i>
-                                </div>
-                                <div>
-                                    <div class="tm-stat-label">Total Tasks</div>
-                                    <div class="tm-stat-number">{{ $stats['tasks'] }}</div>
-                                </div>
+
+                <!-- Card 3: Published -->
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card border-0 shadow-sm p-3 rounded-3 bg-white stat-kpi-card h-100">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
+                                 style="width: 44px; height: 44px; background-color: #38b000; color: #ffffff;">
+                                <i class="ti ti-circle-check fs-2"></i>
+                            </div>
+                            <div>
+                                <div class="text-muted fw-semibold" style="font-size: 0.8rem; line-height: 1.2;">Published</div>
+                                <div class="fw-bold fs-3 text-dark mt-1" style="line-height: 1.1;">{{ number_format($stats['published']) }}</div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6 col-lg-3 mb-3">
-                    <div class="card h-100">
-                        <div class="card-body p-3">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="tm-stat-icon bg-success">
-                                    <i class="ti ti-circle-check"></i>
-                                </div>
-                                <div>
-                                    <div class="tm-stat-label">Published</div>
-                                    <div class="tm-stat-number">{{ $stats['published'] }}</div>
-                                </div>
+
+                <!-- Card 4: Pending Review -->
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card border-0 shadow-sm p-3 rounded-3 bg-white stat-kpi-card h-100">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
+                                 style="width: 44px; height: 44px; background-color: #0284c7; color: #ffffff;">
+                                <i class="ti ti-clock fs-2"></i>
                             </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 col-lg-3 mb-3">
-                    <div class="card h-100">
-                        <div class="card-body p-3">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="tm-stat-icon bg-warning">
-                                    <i class="ti ti-clock"></i>
-                                </div>
-                                <div>
-                                    <div class="tm-stat-label">Pending Review</div>
-                                    <div class="tm-stat-number">{{ $stats['pending'] }}</div>
-                                </div>
+                            <div>
+                                <div class="text-muted fw-semibold" style="font-size: 0.8rem; line-height: 1.2;">Pending Review</div>
+                                <div class="fw-bold fs-3 text-dark mt-1" style="line-height: 1.1;">{{ number_format($stats['pending']) }}</div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {{-- ===== Table ===== --}}
-            <div class="card">
-                <div class="card-header bg-white border-0">
-                    <div>
-                        <h3 class="card-title mb-1">Task Placement</h3>
-                        <div class="text-muted small">
-                            Only playlists, contents, or standalone tasks that have tasks are listed.
+            {{-- ===== SECTION HEADER: ACTIVE SCOPE INFO & ACTION BUTTONS ===== --}}
+            <div class="card border-0 shadow-sm p-3 p-md-4 mb-4 rounded-3 bg-white record-section-header">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 record-section-icon"
+                             style="width: 54px; height: 54px; background-color: {{ $scope === 'kp' ? '#e0f2fe; color: #0284c7;' : '#fef3c7; color: #d97706;' }}; border-radius: 12px;">
+                            <i class="ti {{ $scope === 'kp' ? 'ti-device-laptop' : 'ti-map-pin' }} fs-1"></i>
+                        </div>
+                        <div>
+                            <h2 class="h3 fw-bold mb-1 text-dark">{{ $scope === 'kp' ? 'KP OWL' : 'NON KP OWL' }}</h2>
+                            <p class="text-muted small mb-0">
+                                {{ $scope === 'kp' ? 'Online Task Data — Tasks from playlists, contents & standalone in OWL LMS.' : 'Offline Training Tasks — Tasks from offline trainings in OWL LMS.' }}
+                            </p>
                         </div>
                     </div>
-                    <div class="card-actions d-flex gap-2">
-                        <a href="{{ route('manage.task.trash') }}" class="btn btn-outline-secondary position-relative">
-                            <i class="ti ti-trash me-1"></i>Trash
+
+                    <!-- Action Buttons: Trash / Create New Task -->
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <a href="{{ route('manage.task.trash') }}" class="btn btn-outline-secondary position-relative rounded-3 px-3 d-inline-flex align-items-center gap-1.5">
+                            <i class="ti ti-trash fs-2"></i>
+                            <span>Trash</span>
                             @if (($trashCount ?? 0) > 0)
                                 <span class="badge bg-danger ms-1">{{ $trashCount }}</span>
                             @endif
                         </a>
-                        <a href="{{ route('manage.task.create', array_filter(['scope' => $scope, 'parent_type' => $scope === 'non_kp' ? 'offline_training' : null])) }}" class="btn btn-primary">
-                            <i class="ti ti-plus me-1"></i>Create New Task
+                        <a href="{{ route('manage.task.create', array_filter(['scope' => $scope, 'parent_type' => $scope === 'non_kp' ? 'offline_training' : null])) }}"
+                           class="btn btn-primary rounded-3 px-3 d-inline-flex align-items-center gap-1.5">
+                            <i class="ti ti-plus fs-2"></i>
+                            <span>Create New Task</span>
                         </a>
+                    </div>
+                </div>
+            </div>
+
+            {{-- ===== SCOPE NAVIGATION CARDS ===== --}}
+            <div class="row g-3 mb-4 record-navigation-row">
+                <!-- Card 1: KP OWL -->
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <a href="{{ route('manage.task.index', ['scope' => 'kp', 'parent_type' => $type, 'search' => $search]) }}"
+                        class="card card-link text-decoration-none h-100 record-nav-card {{ $scope === 'kp' ? 'record-nav-card--active' : '' }}">
+                        <div class="card-body p-3 d-flex flex-column justify-content-between">
+                            <div>
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <span class="avatar avatar-sm rounded-3 record-nav-icon"
+                                        style="background-color: #e0f2fe; color: #0284c7;">
+                                        <i class="ti ti-device-laptop"></i>
+                                    </span>
+                                    @if ($scope === 'kp')
+                                        <span class="badge bg-primary text-white rounded-pill px-2.5 py-1"
+                                            style="font-size: 0.725rem; font-weight: 600;">ACTIVE</span>
+                                    @endif
+                                </div>
+                                <h3 class="card-title fw-bold mb-1" style="font-size: 1.05rem;">KP OWL</h3>
+                                <div class="record-nav-subtitle fw-semibold small mb-1" style="color: #0c5b9e;">Online Task Data</div>
+                            </div>
+                            <p class="text-muted small mb-0 mt-2" style="font-size: 0.8rem; line-height: 1.35;">Tasks from playlists, contents &amp; standalone</p>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Card 2: Non KP OWL -->
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <a href="{{ route('manage.task.index', ['scope' => 'non_kp', 'search' => $search]) }}"
+                        class="card card-link text-decoration-none h-100 record-nav-card {{ $scope === 'non_kp' ? 'record-nav-card--active' : '' }}">
+                        <div class="card-body p-3 d-flex flex-column justify-content-between">
+                            <div>
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <span class="avatar avatar-sm rounded-3 record-nav-icon"
+                                        style="background-color: #fef3c7; color: #d97706;">
+                                        <i class="ti ti-map-pin"></i>
+                                    </span>
+                                    @if ($scope === 'non_kp')
+                                        <span class="badge bg-primary text-white rounded-pill px-2.5 py-1"
+                                            style="font-size: 0.725rem; font-weight: 600;">ACTIVE</span>
+                                    @endif
+                                </div>
+                                <h3 class="card-title fw-bold mb-1" style="font-size: 1.05rem;">Non KP OWL</h3>
+                                <div class="record-nav-subtitle fw-semibold small mb-1" style="color: #b45309;">Offline Training Tasks</div>
+                            </div>
+                            <p class="text-muted small mb-0 mt-2" style="font-size: 0.8rem; line-height: 1.35;">Tasks from offline trainings</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            {{-- ===== TABLE CARD ===== --}}
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-header bg-white border-0 py-3">
+                    <div>
+                        <h3 class="card-title mb-1 fw-bold text-dark">Task Placement</h3>
+                        <div class="text-muted small">
+                            Only playlists, contents, offline trainings, or standalone tasks that have tasks are listed.
+                        </div>
                     </div>
                 </div>
 
@@ -164,19 +203,19 @@
                         <div class="small text-muted mb-2">Quick Filter</div>
                         <div class="d-flex flex-wrap gap-2 mb-3">
                             <a href="{{ route('manage.task.index', ['scope' => 'kp', 'parent_type' => 'all', 'search' => $search]) }}"
-                               class="btn {{ $type === 'all' ? 'btn-primary' : 'btn-outline-secondary' }}">
+                               class="btn {{ $type === 'all' ? 'btn-primary' : 'btn-outline-secondary' }} rounded-pill">
                                 <i class="ti ti-layout-grid me-1"></i>All
                             </a>
                             <a href="{{ route('manage.task.index', ['scope' => 'kp', 'parent_type' => 'playlist', 'search' => $search]) }}"
-                               class="btn {{ $type === 'playlist' ? 'btn-primary' : 'btn-outline-secondary' }}">
+                               class="btn {{ $type === 'playlist' ? 'btn-primary' : 'btn-outline-secondary' }} rounded-pill">
                                 <i class="ti ti-list me-1"></i>Playlist
                             </a>
                             <a href="{{ route('manage.task.index', ['scope' => 'kp', 'parent_type' => 'content', 'search' => $search]) }}"
-                               class="btn {{ $type === 'content' ? 'btn-primary' : 'btn-outline-secondary' }}">
+                               class="btn {{ $type === 'content' ? 'btn-primary' : 'btn-outline-secondary' }} rounded-pill">
                                 <i class="ti ti-file-text me-1"></i>Content
                             </a>
                             <a href="{{ route('manage.task.index', ['scope' => 'kp', 'parent_type' => 'standalone', 'search' => $search]) }}"
-                               class="btn {{ $type === 'standalone' ? 'btn-primary' : 'btn-outline-secondary' }}">
+                               class="btn {{ $type === 'standalone' ? 'btn-primary' : 'btn-outline-secondary' }} rounded-pill">
                                 <i class="ti ti-world me-1"></i>Global Task
                             </a>
                         </div>
@@ -193,16 +232,16 @@
                                 </span>
                                 <input type="search"
                                        name="search"
-                                       class="form-control"
+                                       class="form-control rounded-3"
                                        value="{{ $search }}"
                                        placeholder="{{ $scope === 'kp' ? 'Search playlist / content...' : 'Search offline training...' }}"
                                        autocomplete="off">
                             </div>
-                            <button type="submit" class="btn btn-primary" title="Search" aria-label="Search">
+                            <button type="submit" class="btn btn-primary rounded-3 px-3" title="Search" aria-label="Search">
                                 <i class="ti ti-search"></i>
                             </button>
                             <a href="{{ route('manage.task.index', array_filter(['scope' => $scope, 'parent_type' => $scope === 'kp' ? $type : null])) }}"
-                               class="btn btn-outline-secondary" title="Reset" aria-label="Reset">
+                               class="btn btn-outline-secondary rounded-3 px-3" title="Reset" aria-label="Reset">
                                 <i class="ti ti-rotate-clockwise"></i>
                             </a>
                         </div>
@@ -264,7 +303,7 @@
                                     </td>
                                     <td class="text-end">
                                         <a href="{{ route('manage.task.parent', ['parentType' => $row->parent_type, 'parentId' => $row->parent_id ?? 0]) }}"
-                                           class="btn btn-outline-primary">
+                                           class="btn btn-outline-primary rounded-3">
                                             Manage Tasks <i class="ti ti-arrow-right ms-1"></i>
                                         </a>
                                     </td>
@@ -285,7 +324,7 @@
                 </div>
 
                 @if ($parents->hasPages())
-                    <div class="card-footer d-flex justify-content-center py-3">
+                    <div class="card-footer d-flex justify-content-center py-3 bg-white border-0">
                         {{ $parents->links() }}
                     </div>
                 @endif
@@ -295,4 +334,184 @@
         </div>
     </div>
 
+@endsection
+
+@section('style')
+<style>
+    .manage-task-page {
+        background: #fff;
+    }
+
+    [data-bs-theme="dark"] .manage-task-page,
+    body.dark-mode .manage-task-page,
+    body.theme-dark .manage-task-page {
+        background: var(--tblr-body-bg, #111827);
+    }
+
+    .btn-back {
+        color: #0c5b9e !important;
+        font-size: 0.95rem;
+        transition: color 0.15s ease, transform 0.15s ease;
+    }
+    .btn-back:hover {
+        color: #094475 !important;
+        transform: translateX(-2px);
+    }
+
+    .manage-record-hero {
+        display: flex;
+        align-items: center;
+        position: relative;
+        isolation: isolate;
+        min-height: 160px;
+        overflow: hidden;
+        padding: clamp(24px, 3vw, 36px);
+        border: 1px solid rgba(255, 255, 255, .18);
+        border-radius: 20px;
+        background:
+            radial-gradient(circle at 86% 16%, rgba(255, 255, 255, .18) 0%, transparent 28%),
+            linear-gradient(
+                135deg,
+                #001b44 0%,
+                #002b66 22%,
+                #004b99 50%,
+                #2a7bd1 76%,
+                #6aaed6 100%
+            );
+        color: #fff;
+        box-shadow: 0 14px 32px rgba(0, 27, 68, .16);
+    }
+
+    .manage-record-hero__content {
+        min-width: 0;
+        max-width: 800px;
+    }
+
+    .manage-record-hero__badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        margin-bottom: 12px;
+        padding: 6px 12px;
+        border: 1px solid rgba(255, 255, 255, .22);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, .14);
+        color: #fff;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+
+    .manage-record-hero__title {
+        margin: 0 0 10px;
+        color: #fff;
+        font-size: clamp(26px, 3vw, 34px);
+        font-weight: 800;
+        line-height: 1.18;
+        letter-spacing: -.02em;
+    }
+
+    .manage-record-hero__description {
+        max-width: 720px;
+        color: rgba(255, 255, 255, .88);
+        font-size: 14px;
+        line-height: 1.6;
+    }
+
+    .stat-kpi-card {
+        border-radius: 14px !important;
+        border: 1px solid #e2e8f0 !important;
+        background: #ffffff !important;
+        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03);
+        transition: all 0.2s ease;
+    }
+    .stat-kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+    }
+
+    .record-section-header {
+        border-radius: 14px !important;
+        border: 1px solid #e2e8f0 !important;
+        background: #ffffff !important;
+    }
+
+    .record-nav-card {
+        border-radius: 14px !important;
+        border: 1px solid #e2e8f0 !important;
+        background: #ffffff !important;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03);
+    }
+
+    .record-nav-card:hover {
+        transform: translateY(-3px);
+        border-color: #93c5fd !important;
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+    }
+
+    .record-nav-card--active {
+        border: 2px solid #0c5b9e !important;
+        background: #f8fafc !important;
+        box-shadow: 0 6px 18px rgba(12, 91, 158, 0.12) !important;
+    }
+
+    .record-nav-icon {
+        width: 32px !important;
+        height: 32px !important;
+        min-width: 32px !important;
+        border-radius: 8px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-shrink: 0 !important;
+    }
+
+    .record-nav-icon i {
+        font-size: 16px !important;
+        line-height: 1 !important;
+    }
+
+    [data-bs-theme="dark"] .record-nav-card,
+    body.dark-mode .record-nav-card,
+    body.theme-dark .record-nav-card {
+        background: #1e293b !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    }
+
+    [data-bs-theme="dark"] .record-nav-card:hover,
+    body.dark-mode .record-nav-card:hover,
+    body.theme-dark .record-nav-card:hover {
+        border-color: #3b82f6 !important;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+    }
+
+    [data-bs-theme="dark"] .record-nav-card--active,
+    body.dark-mode .record-nav-card--active,
+    body.theme-dark .record-nav-card--active {
+        border: 2px solid #38bdf8 !important;
+        background: rgba(14, 165, 233, 0.08) !important;
+        box-shadow: 0 6px 18px rgba(56, 189, 248, 0.18) !important;
+    }
+
+    [data-bs-theme="dark"] .record-nav-card .card-title,
+    body.dark-mode .record-nav-card .card-title,
+    body.theme-dark .record-nav-card .card-title {
+        color: #f8fafc !important;
+    }
+
+    [data-bs-theme="dark"] .record-nav-card .record-nav-subtitle,
+    body.dark-mode .record-nav-card .record-nav-subtitle,
+    body.theme-dark .record-nav-card .record-nav-subtitle {
+        color: #93c5fd !important;
+    }
+
+    [data-bs-theme="dark"] .record-nav-card .record-nav-icon,
+    body.dark-mode .record-nav-card .record-nav-icon,
+    body.theme-dark .record-nav-card .record-nav-icon {
+        filter: brightness(0.9);
+    }
+</style>
 @endsection
