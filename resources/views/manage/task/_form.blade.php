@@ -13,9 +13,6 @@
     $currentParentId = old('parent_id', isset($task) ? $task->parentId() : ($lockedParent['id'] ?? ''));
     $currentSurveyId = old('survey_id', $task->survey_id ?? '');
     $linkedCourse = old('linked_training_plan_id', $task->linked_training_plan_id ?? '');
-    $sameChecked = $currentParentType === 'playlist'
-        && $currentParentId !== '' && $currentParentId !== null
-        && $linkedCourse !== '' && (string) $currentParentId === (string) $linkedCourse;
 @endphp
 <form method="POST"
       action="{{ isset($task) ? route('manage.task.update', $task) : route('manage.task.store') }}"
@@ -323,13 +320,6 @@
                     </div>
                 </div>
                 @error('linked_training_plan_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
-                <div id="sameCourseWrap" class="mt-2" style="{{ $currentParentType === 'playlist' ? '' : 'display:none' }}">
-                    <label class="form-check mb-0">
-                        <input type="checkbox" class="form-check-input" id="sameCourse"
-                               {{ $sameChecked ? 'checked' : '' }}>
-                        <span class="form-check-label text-muted">Same as the playlist/course selected above</span>
-                    </label>
-                </div>
             </div>
 
             <div id="linkExternalWrap" class="form-field-lg" style="display:none">
@@ -578,7 +568,6 @@
         var builderHint   = document.getElementById('builderHint');
         var wrap          = document.getElementById('fieldsWrap');
         var linkedSelect  = document.getElementById('linked_training_plan_id');
-        var sameCourse    = document.getElementById('sameCourse');
         var fieldIndex    = 0;
 
         var BUILDER_HINTS = {
@@ -837,11 +826,6 @@
             if (parentPickerLabel) parentPickerLabel.textContent = 'Select ' + label;
         }
 
-        function syncSameCourseWrap() {
-            var w = document.getElementById('sameCourseWrap');
-            if (w) w.style.display = (currentPlacement === 'playlist') ? '' : 'none';
-        }
-
         // Standalone tasks are not tied to any placement → hide the item picker,
         // show the (optional, manual) access code field instead.
         function syncPlacementPicker() {
@@ -880,7 +864,6 @@
             parentPickerText.textContent = title;
             if (parentIdError) parentIdError.style.display = 'none';
             closeParentPanel();
-            syncSameCourse();
         }
 
         function openParentPanel() {
@@ -919,11 +902,8 @@
                 currentPlacement = parentTypeSelect.value;
                 parentIdInput.value = '';
                 parentPickerText.textContent = getPickerPlaceholder(currentPlacement);
-                if (sameCourse) sameCourse.checked = false;
                 setPickerLabel();
-                syncSameCourseWrap();
                 syncPlacementPicker();
-                syncSameCourse();
             });
         }
         if (parentPickerBtn) {
@@ -1054,29 +1034,9 @@
             });
         }
         setPickerLabel();
-        syncSameCourseWrap();
         syncPlacementPicker();
 
-        // ── Course Assignment: link type radios + "same playlist" ────────
-        function courseField() {
-            return document.getElementById('parent_id')
-                || document.querySelector('input[name="parent_id"]');
-        }
-
-        function syncSameCourse() {
-            if (!sameCourse || !linkedSelect || !sameCourse.checked) return;
-            if (placementType() !== 'playlist') return;
-            var cf = courseField();
-            if (cf && cf.value) {
-                linkedSelect.value = cf.value;
-                linkedSelect.dispatchEvent(new Event('change'));
-            }
-        }
-        if (sameCourse) {
-            sameCourse.addEventListener('change', syncSameCourse);
-            var cf0 = courseField();
-            if (cf0 && cf0.tagName === 'SELECT') cf0.addEventListener('change', syncSameCourse);
-        }
+        // ── Course Assignment: link type radios ─────────────────────────
         document.querySelectorAll('input[name="link_type"]').forEach(function (r) {
             r.addEventListener('change', refreshLinkWraps);
         });
@@ -1111,7 +1071,6 @@
                 });
                 if (isLink) {
                     refreshLinkWraps();
-                    syncSameCourse();
                 }
                 return;
             }
@@ -1486,8 +1445,6 @@
         refreshTypeUI();
         setPickerLabel();
         syncPlacementPicker();
-        syncSameCourseWrap();
-        syncSameCourse();
         // No builder for course_assignment → never seed cards there.
         if (typeHasBuilder(currentType())) {
             initialFields.forEach(function (f) { addField(f); });
