@@ -433,6 +433,10 @@
             <div class="d-flex align-items-center gap-2">
                 <a href="{{ route('manage.task.index') }}" class="btn btn-outline-secondary rounded-3 px-3">Cancel</a>
 
+                <button type="button" class="btn btn-outline-dark rounded-3 px-3" id="btnPreviewTask">
+                    <i class="ti ti-eye me-1"></i> Preview
+                </button>
+
                 @if (isset($task))
                     <button type="submit" class="btn btn-primary rounded-3 px-4">
                         <i class="ti ti-device-floppy me-1"></i> Save Changes
@@ -449,6 +453,90 @@
         </div>
     </div>
 </form>
+
+{{-- ======================================================== --}}
+{{-- MODAL: LEARNER TASK PREVIEW                              --}}
+{{-- ======================================================== --}}
+<div class="modal modal-blur fade" id="taskPreviewModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+        <div class="modal-content shadow-lg border-0 rounded-4 overflow-hidden">
+            <div class="modal-header bg-light py-3 px-4 border-bottom">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-primary text-white p-2 rounded-3"><i class="ti ti-eye fs-2"></i></span>
+                    <div>
+                        <h4 class="modal-title fw-bold text-dark mb-0">Learner View Preview</h4>
+                        <div class="text-muted small">Simulation of how this task appears to learners</div>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 bg-light-subtle">
+                <div class="alert alert-info py-2 px-3 mb-3 d-flex align-items-center gap-2 rounded-3 small border-0 bg-info-lt">
+                    <i class="ti ti-device-laptop fs-2 text-info"></i>
+                    <div><strong>Learner View Simulation:</strong> This preview reflects your current inputs. Interactive inputs below are disabled in preview.</div>
+                </div>
+
+                {{-- Mock Card mimicking learner view --}}
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <span class="badge bg-primary-lt text-primary px-2 py-1 fs-6" id="prevTypeBadge">Task</span>
+                            <span class="badge bg-secondary-lt text-secondary px-2 py-1 fs-6" id="prevPlacementBadge">Placement</span>
+                        </div>
+                        <span class="badge bg-light text-muted border px-2 py-1"><i class="ti ti-clock me-1"></i>Not Started</span>
+                    </div>
+
+                    <h2 class="fw-bold text-dark mb-2" id="prevTitle">Task Title</h2>
+
+                    <div class="d-flex flex-wrap align-items-center gap-3 text-muted small mb-3 pb-3 border-bottom" id="prevMetaRow">
+                        <span id="prevDeadlineWrap"><i class="ti ti-calendar-due text-primary me-1"></i>Deadline: <strong id="prevDeadlineText">No deadline set</strong></span>
+                        <span id="prevAccessCodeWrap" style="display:none;"><i class="ti ti-key text-warning me-1"></i>Access Code: <code id="prevAccessCodeText"></code></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <h5 class="fw-semibold text-dark mb-2"><i class="ti ti-notes text-primary me-1"></i> Instructions & Overview</h5>
+                        <div class="text-secondary" id="prevDescription" style="white-space: pre-wrap; line-height: 1.6;"></div>
+                    </div>
+
+                    <div id="prevAttachmentWrap" class="mb-4" style="display:none;">
+                        <h5 class="fw-semibold text-dark mb-2"><i class="ti ti-paperclip text-primary me-1"></i> Reference Material</h5>
+                        <div class="p-3 rounded-3 bg-light border d-inline-flex align-items-center gap-3">
+                            <i class="ti ti-file-download text-primary fs-2"></i>
+                            <div>
+                                <div class="fw-semibold text-dark small" id="prevAttachmentName">Reference file</div>
+                                <div class="text-muted" style="font-size:11px;">Learners can download this attachment for guidance.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-2">
+                        <h5 class="fw-semibold text-dark mb-3"><i class="ti ti-pencil text-primary me-1"></i> Learner Submission Form</h5>
+                        <div id="prevSubmissionContent"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-white py-3 px-4 border-top d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <button type="button" class="btn btn-outline-secondary rounded-3 px-3" data-bs-dismiss="modal">
+                    <i class="ti ti-arrow-left me-1"></i> Back to Edit
+                </button>
+                <div class="d-flex align-items-center gap-2">
+                    @if (isset($task))
+                        <button type="button" class="btn btn-primary rounded-3 px-4" id="btnPreviewSave">
+                            <i class="ti ti-device-floppy me-1"></i> Save Changes
+                        </button>
+                    @else
+                        <button type="button" class="btn btn-outline-primary rounded-3 px-3" id="btnPreviewDraft">
+                            <i class="ti ti-file me-1"></i> Save as Draft
+                        </button>
+                        <button type="button" class="btn btn-primary rounded-3 px-4" id="btnPreviewPublish">
+                            <i class="ti ti-send me-1"></i> Publish Task
+                        </button>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 @once
 <script>
@@ -1045,6 +1133,263 @@
                 addField();
             }
         });
+
+        // ── Preview modal generation & actions ──────────────────────────
+        function isQuiz() { return false; }
+
+        function renderTaskPreview() {
+            var titleInput = document.getElementById('title');
+            var titleVal = (titleInput ? titleInput.value.trim() : '') || 'Untitled Task';
+            var prevTitle = document.getElementById('prevTitle');
+            if (prevTitle) prevTitle.textContent = titleVal;
+
+            // Type
+            var typeSel = document.getElementById('type');
+            var typeText = (typeSel && typeSel.selectedIndex >= 0) ? typeSel.options[typeSel.selectedIndex].text : 'Task';
+            var prevType = document.getElementById('prevTypeBadge');
+            if (prevType) prevType.textContent = typeText;
+
+            // Placement
+            var parentLabel = PARENT_LABELS[currentPlacement] || 'Placement';
+            var pickerText = parentPickerText ? parentPickerText.textContent.trim() : '';
+            var prevPlacement = document.getElementById('prevPlacementBadge');
+            if (prevPlacement) {
+                if (currentPlacement === 'standalone') {
+                    prevPlacement.textContent = 'Global Task';
+                } else {
+                    var cleanTarget = (pickerText && pickerText.indexOf('— Select') === -1) ? pickerText : 'Unassigned';
+                    prevPlacement.textContent = parentLabel + ': ' + cleanTarget;
+                }
+            }
+
+            // Deadline
+            var deadlineInput = document.getElementById('deadline');
+            var deadlineWrap = document.getElementById('prevDeadlineWrap');
+            var deadlineText = document.getElementById('prevDeadlineText');
+            if (deadlineInput && deadlineInput.value) {
+                var d = new Date(deadlineInput.value);
+                if (deadlineText) {
+                    deadlineText.textContent = isNaN(d.getTime())
+                        ? deadlineInput.value
+                        : d.toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                }
+                if (deadlineWrap) deadlineWrap.style.display = '';
+            } else {
+                if (deadlineText) deadlineText.textContent = 'No deadline';
+            }
+
+            // Access Code
+            var accessCodeInput = document.getElementById('access_code');
+            var accessCodeWrap = document.getElementById('prevAccessCodeWrap');
+            var accessCodeText = document.getElementById('prevAccessCodeText');
+            if (currentPlacement === 'standalone' && accessCodeInput && accessCodeInput.value.trim()) {
+                if (accessCodeWrap) accessCodeWrap.style.display = '';
+                if (accessCodeText) accessCodeText.textContent = accessCodeInput.value.trim().toUpperCase();
+            } else {
+                if (accessCodeWrap) accessCodeWrap.style.display = 'none';
+            }
+
+            // Description
+            var descInput = document.getElementById('description');
+            var descEl = document.getElementById('prevDescription');
+            if (descEl) {
+                if (descInput && descInput.value.trim()) {
+                    descEl.textContent = descInput.value.trim();
+                    descEl.classList.remove('text-muted', 'fst-italic');
+                } else {
+                    descEl.textContent = 'No instructions provided.';
+                    descEl.classList.add('text-muted', 'fst-italic');
+                }
+            }
+
+            // Attachment
+            var attachInput = document.getElementById('attachment');
+            var attachWrap = document.getElementById('prevAttachmentWrap');
+            var attachName = document.getElementById('prevAttachmentName');
+            var hasSavedAttachment = @json(isset($task) && $task->attachment ? basename($task->attachment) : '');
+            if (attachInput && attachInput.files && attachInput.files.length > 0) {
+                if (attachWrap) attachWrap.style.display = '';
+                if (attachName) attachName.textContent = attachInput.files[0].name;
+            } else if (hasSavedAttachment) {
+                if (attachWrap) attachWrap.style.display = '';
+                if (attachName) attachName.textContent = hasSavedAttachment;
+            } else {
+                if (attachWrap) attachWrap.style.display = 'none';
+            }
+
+            // Submission content
+            var subWrap = document.getElementById('prevSubmissionContent');
+            if (!subWrap) return;
+            subWrap.innerHTML = '';
+            var t = currentType();
+
+            if (t === 'course_assignment') {
+                var linkType = document.querySelector('input[name="link_type"]:checked');
+                var isLms = !linkType || linkType.value === 'lms';
+                if (isLms) {
+                    var courseName = (coursePickerText ? coursePickerText.textContent.trim() : '') || 'Selected Course in LMS';
+                    if (courseName.indexOf('— Select') !== -1) courseName = 'Not yet selected';
+                    subWrap.innerHTML =
+                        '<div class="p-3 bg-light rounded-3 border">' +
+                            '<div class="d-flex align-items-center justify-content-between flex-wrap gap-2">' +
+                                '<div>' +
+                                    '<div class="fw-bold text-dark"><i class="ti ti-book-2 text-primary me-1"></i> Course: ' + esc(courseName) + '</div>' +
+                                    '<div class="text-muted small">Completing 100% of this course in OWL LMS automatically completes the task.</div>' +
+                                '</div>' +
+                                '<button type="button" class="btn btn-sm btn-primary rounded-pill px-3" disabled>' +
+                                    '<i class="ti ti-player-play me-1"></i> Start Course' +
+                                '</button>' +
+                            '</div>' +
+                        '</div>';
+                } else {
+                    var extUrlInput = document.getElementById('external_url');
+                    var extUrl = (extUrlInput ? extUrlInput.value.trim() : '') || 'https://...';
+                    subWrap.innerHTML =
+                        '<div class="p-3 bg-light rounded-3 border">' +
+                            '<div class="d-flex align-items-center justify-content-between flex-wrap gap-2">' +
+                                '<div>' +
+                                    '<div class="fw-bold text-dark"><i class="ti ti-external-link text-primary me-1"></i> External Course</div>' +
+                                    '<div class="text-muted small">' + esc(extUrl) + '</div>' +
+                                '</div>' +
+                                '<button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3" disabled>' +
+                                    '<i class="ti ti-external-link me-1"></i> Open Link' +
+                                '</button>' +
+                            '</div>' +
+                        '</div>';
+                }
+            } else if (t === 'survey') {
+                var surveySel = document.getElementById('survey_id');
+                var surveyText = (surveySel && surveySel.selectedIndex >= 0 && surveySel.value)
+                    ? surveySel.options[surveySel.selectedIndex].text
+                    : 'Survey Form (Upcoming Integration)';
+                subWrap.innerHTML =
+                    '<div class="p-3 bg-light rounded-3 border text-center py-4">' +
+                        '<i class="ti ti-forms text-primary fs-1 mb-2 d-block"></i>' +
+                        '<div class="fw-bold text-dark mb-1">' + esc(surveyText) + '</div>' +
+                        '<div class="text-muted small mb-3">Learners will complete this survey form to complete the task.</div>' +
+                        '<button type="button" class="btn btn-sm btn-primary rounded-pill px-3" disabled><i class="ti ti-clipboard-check me-1"></i> Open Survey</button>' +
+                    '</div>';
+            } else {
+                var fieldCards = wrap ? wrap.querySelectorAll('.field-card') : [];
+                if (!fieldCards.length) {
+                    subWrap.innerHTML = '<div class="text-muted small fst-italic">No questions added yet.</div>';
+                } else {
+                    fieldCards.forEach(function (card, idx) {
+                        var labelInput = card.querySelector('input[name$="[label]"]');
+                        var qTitle = (labelInput ? labelInput.value.trim() : '') || ('Question ' + (idx + 1));
+                        var ftype = card.dataset.ftype;
+                        var qEl = document.createElement('div');
+                        qEl.className = 'mb-3 pb-3 border-bottom';
+
+                        var html = '<label class="form-label fw-semibold text-dark mb-1">' +
+                            esc(qTitle) + ' <span class="text-danger">*</span></label>';
+
+                        if (ftype === 'file') {
+                            var groupSel = card.querySelector('select[name$="[group]"]');
+                            var groupKey = groupSel ? groupSel.value : '';
+                            var groupInfo = FILE_TYPE_GROUPS[groupKey];
+                            var groupLabel = groupInfo ? groupInfo.label : 'All file formats';
+                            var maxFilesSel = card.querySelector('select[name$="[max_files]"]');
+                            var maxFiles = maxFilesSel ? maxFilesSel.value : '1';
+                            var maxSizeSel = card.querySelector('select[name$="[max_size_mb]"]');
+                            var maxSize = maxSizeSel ? maxSizeSel.value : '10';
+                            var allowLinkChk = card.querySelector('input[name$="[allow_link]"]');
+                            var allowLink = allowLinkChk ? allowLinkChk.checked : false;
+
+                            html += '<div class="border border-dashed rounded-3 p-3 text-center bg-light-subtle">' +
+                                '<i class="ti ti-cloud-upload text-primary fs-1 mb-1 d-block"></i>' +
+                                '<div class="fw-semibold small text-dark">Click or drag file here to upload</div>' +
+                                '<div class="text-muted" style="font-size:11px;">Format: ' + esc(groupLabel) + ' | Max ' + maxFiles + ' file(s), up to ' + maxSize + ' MB each</div>' +
+                                (allowLink ? '<div class="mt-2"><span class="badge bg-info-lt text-info small"><i class="ti ti-link me-1"></i>Supports Google Drive link</span></div>' : '') +
+                            '</div>';
+                        } else if (ftype === 'choice') {
+                            var opts = card.querySelectorAll('.option-row input[type="text"]');
+                            html += '<div class="d-flex flex-column gap-2 mt-2">';
+                            opts.forEach(function (optInput, oIdx) {
+                                var optVal = optInput.value.trim() || ('Option ' + (oIdx + 1));
+                                html += '<label class="form-check mb-0">' +
+                                    '<input type="radio" class="form-check-input" disabled>' +
+                                    '<span class="form-check-label">' + esc(optVal) + '</span>' +
+                                '</label>';
+                            });
+                            html += '</div>';
+                        } else {
+                            html += '<textarea class="form-control" rows="3" placeholder="Learner will type answer here..." disabled style="background:#f8fafc;"></textarea>';
+                        }
+
+                        qEl.innerHTML = html;
+                        subWrap.appendChild(qEl);
+                    });
+                }
+            }
+        }
+
+        function submitWithAction(actionVal) {
+            var form = document.getElementById('taskForm');
+            if (!form) return;
+            var existingAction = form.querySelector('input[name="action"][type="hidden"]');
+            if (!existingAction) {
+                existingAction = document.createElement('input');
+                existingAction.type = 'hidden';
+                existingAction.name = 'action';
+                form.appendChild(existingAction);
+            }
+            existingAction.value = actionVal;
+            if (form.requestSubmit) form.requestSubmit();
+            else form.submit();
+        }
+
+        var btnPreview = document.getElementById('btnPreviewTask');
+        if (btnPreview) {
+            btnPreview.addEventListener('click', function () {
+                renderTaskPreview();
+                var modalEl = document.getElementById('taskPreviewModal');
+                if (modalEl) {
+                    if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+                    } else if (typeof $ !== 'undefined') {
+                        $(modalEl).modal('show');
+                    }
+                }
+            });
+        }
+
+        var btnPrevDraft = document.getElementById('btnPreviewDraft');
+        if (btnPrevDraft) {
+            btnPrevDraft.addEventListener('click', function () {
+                var modalEl = document.getElementById('taskPreviewModal');
+                if (modalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                    bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+                }
+                submitWithAction('draft');
+            });
+        }
+
+        var btnPrevPublish = document.getElementById('btnPreviewPublish');
+        if (btnPrevPublish) {
+            btnPrevPublish.addEventListener('click', function () {
+                var modalEl = document.getElementById('taskPreviewModal');
+                if (modalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                    bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+                }
+                submitWithAction('publish');
+            });
+        }
+
+        var btnPrevSave = document.getElementById('btnPreviewSave');
+        if (btnPrevSave) {
+            btnPrevSave.addEventListener('click', function () {
+                var modalEl = document.getElementById('taskPreviewModal');
+                if (modalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                    bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+                }
+                var form = document.getElementById('taskForm');
+                if (form) {
+                    if (form.requestSubmit) form.requestSubmit();
+                    else form.submit();
+                }
+            });
+        }
 
         // ── Initial render ──────────────────────────────────────────────
         var initialFields = @json($initialFields ?? []);
