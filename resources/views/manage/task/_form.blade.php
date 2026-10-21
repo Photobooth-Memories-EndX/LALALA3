@@ -50,12 +50,25 @@
             justify-content: center;
             flex-shrink: 0;
         }
+        .form-field-sm {
+            max-width: 320px;
+        }
+        .form-field-md {
+            max-width: 440px;
+        }
+        .form-field-lg {
+            max-width: 600px;
+        }
+        .form-field-xl {
+            max-width: 740px;
+        }
         .field-card {
             border: 1px solid #e2e8f0 !important;
             border-radius: 12px !important;
             background: #ffffff !important;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
             transition: all 0.2s ease;
+            max-width: 820px;
         }
         .field-card:hover {
             border-color: #cbd5e1 !important;
@@ -94,7 +107,7 @@
         </div>
         <div class="card-body p-4">
             @if (!empty($lockedParent))
-                <div class="alert alert-info d-flex align-items-center mb-0 rounded-3">
+                <div class="alert alert-info d-flex align-items-center mb-0 rounded-3 form-field-xl">
                     <i class="ti ti-book-2 fs-2 me-2"></i>
                     <div>
                         This task will be automatically added to
@@ -105,72 +118,68 @@
                 <input type="hidden" name="parent_type" value="{{ $lockedParent['type'] }}">
                 <input type="hidden" name="parent_id" value="{{ $lockedParent['id'] }}">
                 @if ($lockedParent['type'] === 'standalone')
-                    <div class="mt-3">
+                    <div class="mt-3 form-field-sm">
                         <label class="form-label" for="access_code">Unique Access Code (Optional)</label>
                         <input type="text" name="access_code" id="access_code"
                                class="form-control text-uppercase @error('access_code') is-invalid @enderror"
                                value="{{ old('access_code', $task->access_code ?? '') }}"
-                               maxlength="8" placeholder="e.g. TASK01" style="max-width:280px"
+                               maxlength="8" placeholder="e.g. TASK01"
                                autocomplete="off">
                         <small class="text-muted d-block mt-1">Unique code to unlock this standalone task (optional, max 8 alphanumeric characters).</small>
                         @error('access_code')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                     </div>
                 @endif
             @else
-                <div class="row g-3">
-                    <div class="col-md-5">
-                        <label class="form-label required" for="parent_type">Placement Category</label>
-                        <select class="form-select @error('parent_type') is-invalid @enderror"
-                                id="parent_type" name="parent_type" required>
-                            @foreach (\App\Models\Task::PARENT_TYPES as $key => $label)
-                                <option value="{{ $key }}" {{ $currentParentType === $key ? 'selected' : '' }}>
-                                    {{ $label }}
-                                </option>
-                            @endforeach
-                        </select>
-                        <div class="form-hint mt-1">Choose whether this task belongs to a Playlist, Content, Offline Training, or Global.</div>
-                        @error('parent_type')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
-                    </div>
+                {{-- Placement Category --}}
+                <div class="mb-3 form-field-md">
+                    <label class="form-label required" for="parent_type">Placement Category</label>
+                    <select class="form-select @error('parent_type') is-invalid @enderror"
+                            id="parent_type" name="parent_type" required>
+                        @foreach (\App\Models\Task::PARENT_TYPES as $key => $label)
+                            <option value="{{ $key }}" {{ $currentParentType === $key ? 'selected' : '' }}>
+                                {{ $label }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <div class="form-hint mt-1">Choose whether this task belongs to a Playlist, Content, Offline Training, or Global.</div>
+                    @error('parent_type')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                </div>
 
-                    <div class="col-md-7">
-                        <label class="form-label required" id="parentPickerLabel">{{ \App\Models\Task::PARENT_TYPES[$currentParentType] ?? 'Playlist' }}</label>
-                        <div class="position-relative" id="parentPicker">
-                            <input type="hidden" name="parent_id" id="parent_id" value="{{ $currentParentId }}"
-                                   data-url-template="{{ route('manage.task.parents', ['type' => '__TYPE__']) }}">
-                            <button type="button"
-                                    class="form-select text-start d-flex justify-content-between align-items-center"
-                                    id="parentPickerBtn" aria-haspopup="listbox" aria-expanded="false">
-                                <span id="parentPickerText">{{ $selectedParentName ?: '— Select Target Placement —' }}</span>
-                                <i class="ti ti-chevron-down ms-2"></i>
-                            </button>
-                            <div class="card position-absolute w-100 shadow mt-1" id="parentPanel"
-                                 style="display:none; z-index:1050;">
-                                <div class="p-2 border-bottom">
-                                    <input type="search" id="parentPanelSearch" class="form-control"
-                                           placeholder="Type to search..." autocomplete="off">
-                                </div>
-                                <div id="parentPanelList" class="overflow-auto" style="max-height:240px;" role="listbox"></div>
+                {{-- Target Placement Picker --}}
+                <div class="mb-3 form-field-lg">
+                    <label class="form-label required" id="parentPickerLabel">{{ \App\Models\Task::PARENT_TYPES[$currentParentType] ?? 'Playlist' }}</label>
+                    <div class="position-relative" id="parentPicker">
+                        <input type="hidden" name="parent_id" id="parent_id" value="{{ $currentParentId }}"
+                               data-url-template="{{ route('manage.task.parents', ['type' => '__TYPE__']) }}">
+                        <button type="button"
+                                class="form-select text-start d-flex justify-content-between align-items-center"
+                                id="parentPickerBtn" aria-haspopup="listbox" aria-expanded="false">
+                            <span id="parentPickerText">{{ $selectedParentName ?: '— Select Target Placement —' }}</span>
+                            <i class="ti ti-chevron-down ms-2"></i>
+                        </button>
+                        <div class="card position-absolute w-100 shadow mt-1" id="parentPanel"
+                             style="display:none; z-index:1050;">
+                            <div class="p-2 border-bottom">
+                                <input type="search" id="parentPanelSearch" class="form-control"
+                                       placeholder="Type to search..." autocomplete="off">
                             </div>
+                            <div id="parentPanelList" class="overflow-auto" style="max-height:240px;" role="listbox"></div>
                         </div>
-                        <div class="invalid-feedback" id="parentIdError" style="display:none">Please select the target item where this task will be placed.</div>
-                        @error('parent_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                     </div>
+                    <div class="invalid-feedback" id="parentIdError" style="display:none">Please select the target item where this task will be placed.</div>
+                    @error('parent_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                 </div>
 
                 {{-- Unique Code: optional, standalone only --}}
-                <div class="mt-3 pt-3 border-top" id="accessCodeWrap" style="display:none">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <label class="form-label" for="access_code">Unique Access Code (Optional)</label>
-                            <input type="text" name="access_code" id="access_code"
-                                   class="form-control text-uppercase @error('access_code') is-invalid @enderror"
-                                   value="{{ old('access_code', $task->access_code ?? '') }}"
-                                   maxlength="8" placeholder="e.g. TASK01" style="max-width:280px"
-                                   autocomplete="off">
-                            <small class="text-muted d-block mt-1">Unique code to unlock this standalone task (optional, max 8 characters). If left blank, learners can access it via direct link or QR scan.</small>
-                            @error('access_code')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
-                        </div>
-                    </div>
+                <div class="pt-2 border-top form-field-sm" id="accessCodeWrap" style="display:none">
+                    <label class="form-label" for="access_code">Unique Access Code (Optional)</label>
+                    <input type="text" name="access_code" id="access_code"
+                           class="form-control text-uppercase @error('access_code') is-invalid @enderror"
+                           value="{{ old('access_code', $task->access_code ?? '') }}"
+                           maxlength="8" placeholder="e.g. TASK01"
+                           autocomplete="off">
+                    <small class="text-muted d-block mt-1">Unique code to unlock this standalone task (optional, max 8 characters). If left blank, learners can access it via direct link or QR scan.</small>
+                    @error('access_code')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                 </div>
             @endif
         </div>
@@ -188,32 +197,33 @@
             </div>
         </div>
         <div class="card-body p-4">
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <label class="form-label required" for="type">Task Type</label>
-                    <select class="form-select @error('type') is-invalid @enderror"
-                            id="type" name="type" required>
-                        @foreach (\App\Models\Task::TYPES as $key => $label)
-                            <option value="{{ $key }}" {{ $currentType === $key ? 'selected' : '' }}>
-                                {{ $label }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('type')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
-                    <div class="form-hint mt-1" id="typeHint"></div>
-                </div>
-
-                <div class="col-md-8">
-                    <label class="form-label required" for="title">Task Title</label>
-                    <input type="text" class="form-control @error('title') is-invalid @enderror"
-                           id="title" name="title"
-                           value="{{ old('title', $task->title ?? '') }}"
-                           placeholder="e.g. Safety Field Observation Report & Workshop Practice" required>
-                    @error('title')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
+            {{-- Task Type --}}
+            <div class="mb-3 form-field-md">
+                <label class="form-label required" for="type">Task Type</label>
+                <select class="form-select @error('type') is-invalid @enderror"
+                        id="type" name="type" required>
+                    @foreach (\App\Models\Task::TYPES as $key => $label)
+                        <option value="{{ $key }}" {{ $currentType === $key ? 'selected' : '' }}>
+                            {{ $label }}
+                        </option>
+                    @endforeach
+                </select>
+                @error('type')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                <div class="form-hint mt-1" id="typeHint"></div>
             </div>
 
-            <div class="mt-3">
+            {{-- Task Title --}}
+            <div class="mb-3 form-field-lg">
+                <label class="form-label required" for="title">Task Title</label>
+                <input type="text" class="form-control @error('title') is-invalid @enderror"
+                       id="title" name="title"
+                       value="{{ old('title', $task->title ?? '') }}"
+                       placeholder="e.g. Safety Field Observation Report & Workshop Practice" required>
+                @error('title')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+
+            {{-- Description & Instructions --}}
+            <div class="form-field-xl">
                 <label class="form-label" for="description">Description & Instructions</label>
                 <textarea class="form-control @error('description') is-invalid @enderror"
                           id="description" name="description"
@@ -236,36 +246,36 @@
             </div>
         </div>
         <div class="card-body p-4">
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <label class="form-label" for="deadline">Submission Deadline</label>
-                    <div class="input-icon">
-                        <span class="input-icon-addon">
-                            <i class="ti ti-calendar-event"></i>
-                        </span>
-                        <input type="datetime-local" class="form-control @error('deadline') is-invalid @enderror"
-                               id="deadline" name="deadline"
-                               value="{{ old('deadline', isset($task) && $task->deadline ? $task->deadline->format('Y-m-d\TH:i') : '') }}">
-                    </div>
-                    <small class="text-muted d-block mt-1">Leave blank if this task has no submission deadline.</small>
-                    @error('deadline')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+            {{-- Submission Deadline --}}
+            <div class="mb-3 form-field-sm">
+                <label class="form-label" for="deadline">Submission Deadline</label>
+                <div class="input-icon">
+                    <span class="input-icon-addon">
+                        <i class="ti ti-calendar-event"></i>
+                    </span>
+                    <input type="datetime-local" class="form-control @error('deadline') is-invalid @enderror"
+                           id="deadline" name="deadline"
+                           value="{{ old('deadline', isset($task) && $task->deadline ? $task->deadline->format('Y-m-d\TH:i') : '') }}">
                 </div>
+                <small class="text-muted d-block mt-1">Leave blank if this task has no submission deadline.</small>
+                @error('deadline')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+            </div>
 
-                <div class="col-md-6">
-                    <label class="form-label" for="attachment">Attachment / Task Template (Optional)</label>
-                    <input type="file" class="form-control @error('attachment') is-invalid @enderror"
-                           id="attachment" name="attachment">
-                    @if (isset($task) && $task->attachment)
-                        <div class="form-hint mt-1 d-flex align-items-center gap-1">
-                            <i class="ti ti-file-check text-success"></i>
-                            <span>Saved file:</span>
-                            <a href="{{ asset('storage/' . $task->attachment) }}" target="_blank" class="fw-semibold">View File</a>
-                        </div>
-                    @else
-                        <small class="text-muted d-block mt-1">PDF, DOCX, ZIP, XLSX up to 5 MB as a reference for learners.</small>
-                    @endif
-                    @error('attachment')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
-                </div>
+            {{-- Attachment --}}
+            <div class="form-field-md">
+                <label class="form-label" for="attachment">Attachment / Task Template (Optional)</label>
+                <input type="file" class="form-control @error('attachment') is-invalid @enderror"
+                       id="attachment" name="attachment">
+                @if (isset($task) && $task->attachment)
+                    <div class="form-hint mt-1 d-flex align-items-center gap-1">
+                        <i class="ti ti-file-check text-success"></i>
+                        <span>Saved file:</span>
+                        <a href="{{ asset('storage/' . $task->attachment) }}" target="_blank" class="fw-semibold">View File</a>
+                    </div>
+                @else
+                    <small class="text-muted d-block mt-1">PDF, DOCX, ZIP, XLSX up to 5 MB as a reference for learners.</small>
+                @endif
+                @error('attachment')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
             </div>
         </div>
     </div>
@@ -283,15 +293,15 @@
             </div>
         </div>
         <div class="card-body p-4">
-            <div class="mb-3">
+            <div class="mb-3 form-field-lg">
                 <label class="form-label fw-semibold">Course Destination Type</label>
-                <div class="d-flex gap-3">
-                    <label class="form-check form-check-inline mb-0">
+                <div class="d-flex flex-column gap-2">
+                    <label class="form-check mb-0">
                         <input type="radio" class="form-check-input" name="link_type" value="lms"
                                {{ $currentLinkType === 'lms' ? 'checked' : '' }}>
                         <span class="form-check-label fw-semibold">Course in OWL LMS (Auto-Complete 100%)</span>
                     </label>
-                    <label class="form-check form-check-inline mb-0">
+                    <label class="form-check mb-0">
                         <input type="radio" class="form-check-input" name="link_type" value="external"
                                {{ $currentLinkType === 'external' ? 'checked' : '' }}>
                         <span class="form-check-label fw-semibold">External Course Link (URL)</span>
@@ -300,7 +310,7 @@
                 @error('link_type')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
             </div>
 
-            <div id="linkLmsWrap">
+            <div id="linkLmsWrap" class="form-field-lg">
                 <label class="form-label required" for="linked_training_plan_id">Target Course in LMS</label>
                 <select class="form-select d-none @error('linked_training_plan_id') is-invalid @enderror"
                         id="linked_training_plan_id" name="linked_training_plan_id" tabindex="-1" aria-hidden="true">
@@ -338,7 +348,7 @@
                 </div>
             </div>
 
-            <div id="linkExternalWrap" style="display:none">
+            <div id="linkExternalWrap" class="form-field-lg" style="display:none">
                 <label class="form-label required" for="external_url">External Course URL</label>
                 <input type="url" class="form-control @error('external_url') is-invalid @enderror"
                        id="external_url" name="external_url"
@@ -360,25 +370,23 @@
             </div>
         </div>
         <div class="card-body p-4">
-            <div class="row g-3">
-                <div class="col-md-7">
-                    <label class="form-label" for="survey_id">
-                        Survey Form
-                        <span class="badge bg-secondary-lt text-secondary fw-semibold ms-1">Available Soon</span>
-                    </label>
-                    <select class="form-select @error('survey_id') is-invalid @enderror"
-                            id="survey_id" name="survey_id">
-                        <option value="">— Select Survey (No surveys available yet) —</option>
-                        @if ($currentSurveyId)
-                            <option value="{{ $currentSurveyId }}" selected>Survey #{{ $currentSurveyId }}</option>
-                        @endif
-                    </select>
-                    <div class="form-hint mt-2 text-muted">
-                        <i class="ti ti-info-circle text-primary me-1"></i>
-                        The survey dropdown is ready for integration. Once the Survey module is active, published surveys will automatically appear here for selection.
-                    </div>
-                    @error('survey_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+            <div class="form-field-md">
+                <label class="form-label" for="survey_id">
+                    Survey Form
+                    <span class="badge bg-secondary-lt text-secondary fw-semibold ms-1">Available Soon</span>
+                </label>
+                <select class="form-select @error('survey_id') is-invalid @enderror"
+                        id="survey_id" name="survey_id">
+                    <option value="">— Select Survey (No surveys available yet) —</option>
+                    @if ($currentSurveyId)
+                        <option value="{{ $currentSurveyId }}" selected>Survey #{{ $currentSurveyId }}</option>
+                    @endif
+                </select>
+                <div class="form-hint mt-2 text-muted">
+                    <i class="ti ti-info-circle text-primary me-1"></i>
+                    The survey dropdown is ready for integration. Once the Survey module is active, published surveys will automatically appear here for selection.
                 </div>
+                @error('survey_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
             </div>
         </div>
     </div>
