@@ -12,6 +12,9 @@ use App\Services\CertificateEligibilityService;
 use App\Services\Learning\CompletedPlaylistService;
 use App\Services\Learning\LearningHourService;
 use App\Services\Learning\LearningRecordLearningHourService;
+use App\Services\Record\RecordOfflineQueryService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use App\Support\DurationFormatter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
@@ -723,6 +726,7 @@ class LearningRecordController extends Controller
                 : '';
 
             return [
+                'id'              => $cu->id,
                 'row_kind'        => 'content',
                 'category'        => 'Content',
                 'title'           => optional($content)->title ?? '-',
@@ -916,6 +920,7 @@ class LearningRecordController extends Controller
             $playlistScore = $eligibility?->score();
 
             return [
+                'id'              => $plan->id,
                 'row_kind'        => 'playlist',
                 'category'        => 'Playlist',
                 'title'           => $plan->title ?? '-',
@@ -1117,4 +1122,147 @@ class LearningRecordController extends Controller
             ->values();
     }
 
+
+    /**
+     * Get detail of a specific learning record (Online or Offline).
+     */
+    public function detail(Request $request, string $source, $id): JsonResponse
+    {
+        $userId = (int) Auth::id();
+
+        if (in_array(strtolower(trim($source)), ['offline', 'non-kp-owl', 'non_kp_owl'], true)) {
+            $record = RecordOfflineQueryService::getRecordDetail($id, $userId);
+
+            if (!$record) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Offline training record not found.',
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data'    => $record,
+            ]);
+        }
+
+        // Online Content or Playlist record detail
+        $contentUser = ContentUser::with(['user', 'content.classification'])
+            ->where('user_id', $userId)
+            ->where(function ($q) use ($id) {
+                $q->where('id', $id)->orWhere('content_id', $id);
+            })
+            ->first();
+
+        if (!$contentUser) {
+            // Check if it is a completed playlist
+            $planId = is_numeric($id) ? (int) $id : (int) str_replace('playlist_', '', (string) $id);
+            $plan = TrainingPlan::with(['trainingplandetail.content.classification'])
+                ->where('id', $planId)
+                ->first();
+
+            if ($plan) {
+                $actualHours = $this->recordLhService()->calculatePlaylist($planId, $userId);
+                return response()->json([
+                    'success' => true,
+                    'data'    => [
+                        'id'                     => 'playlist_' . $plan->id,
+                        'title'                  => $plan->title,
+                        'course_name'            => $plan->title,
+                        'type'                   => 'Playlist',
+                        'category'               => 'Playlist',
+                        'level'                  => '-',
+                        'batch'                  => '-',
+                        'main_classification'    => '-',
+                        'sub_classification'     => '-',
+                        'counted_corporate_kpi'  => 'No',
+                        'sub_corporate_kpi'      => '-',
+                        'delivery_method'        => 'Online',
+                        'sub_delivery_method'    => '-',
+                        'provider'               => 'Internal',
+                        'sub_provider'           => '-',
+                        'provider_name'          => 'KP-OWL',
+                        'venue'                  => 'KP-OWL',
+                        'instructor'             => '-',
+                        'duration'               => $plan->duration ?? '-',
+                        'duration_seconds'       => (int) ($plan->total_duration_seconds ?? 0),
+                        'course_learning_hours'  => $actualHours,
+                        'learning_hours'         => $actualHours,
+                        'progress'               => 100,
+                        'start_date'             => optional($plan->created_at)->format('Y-m-d H:i:s') ?? '-',
+                        'finish_date'            => optional($plan->updated_at)->format('Y-m-d H:i:s') ?? '-',
+                        'attendance'             => 'Yes',
+                        'attendance_reason'      => '-',
+                        'certificate'            => '-',
+                        'bond_status'            => 'No',
+                        'bond_end_date'          => '-',
+                        'bond_amount'            => '-',
+                        'pic'                    => '-',
+                        'participant_name'       => Auth::user()?->name ?? '-',
+                        'employee_id'            => Auth::user()?->id_emp ?? '-',
+                        'grade'                  => Auth::user()?->grade ?? '-',
+                        'job_position'           => Auth::user()?->position ?? '-',
+                        'team'                   => Auth::user()?->team ?? '-',
+                        'department'             => Auth::user()?->department ?? '-',
+                        'company'                => Auth::user()?->company_name ?? '-',
+                    ],
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Online learning record not found.',
+            ], 404);
+        }
+
+        $content = $contentUser->content;
+        $actualHours = $this->recordLhService()->calculateContent($contentUser);
+        $durationSec = DurationFormatter::toSeconds(optional($content)->duration) ?? 0;
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'id'                     => $contentUser->id,
+                'title'                  => optional($content)->title ?? '-',
+                'course_name'            => optional($content)->title ?? '-',
+                'sub_course_name'        => optional($content)->description ?? '',
+                'type'                   => \App\Support\ContentTypeHelper::label(optional($content)->type) ?: 'Content',
+                'category'               => 'All Content',
+                'level'                  => '-',
+                'batch'                  => '-',
+                'main_classification'    => optional(optional($content)->classification)->classification_name ?? '-',
+                'sub_classification'     => '-',
+                'counted_corporate_kpi'  => 'No',
+                'sub_corporate_kpi'      => '-',
+                'delivery_method'        => 'Online',
+                'sub_delivery_method'    => '-',
+                'provider'               => 'Internal',
+                'sub_provider'           => '-',
+                'provider_name'          => 'KP-OWL',
+                'venue'                  => 'KP-OWL',
+                'instructor'             => optional($content)->author ?: '-',
+                'duration'               => DurationFormatter::formatForLearningRecord(optional($content)->duration),
+                'duration_seconds'       => $durationSec,
+                'course_learning_hours'  => $actualHours,
+                'learning_hours'         => $actualHours,
+                'progress'               => (int) ($contentUser->progress ?? 0),
+                'start_date'             => optional($contentUser->created_at)->format('Y-m-d H:i:s') ?? '-',
+                'finish_date'            => (int) ($contentUser->finish ?? 0) === 1 ? optional($contentUser->completed_at ?? $contentUser->updated_at)->format('Y-m-d H:i:s') : '-',
+                'attendance'             => ((int) ($contentUser->progress ?? 0) >= 100) ? 'Yes' : 'No',
+                'attendance_reason'      => '-',
+                'certificate'            => '-',
+                'bond_status'            => 'No',
+                'bond_end_date'          => '-',
+                'bond_amount'            => '-',
+                'pic'                    => '-',
+                'participant_name'       => Auth::user()?->name ?? '-',
+                'employee_id'            => Auth::user()?->id_emp ?? '-',
+                'grade'                  => Auth::user()?->grade ?? '-',
+                'job_position'           => Auth::user()?->position ?? '-',
+                'team'                   => Auth::user()?->team ?? '-',
+                'department'             => Auth::user()?->department ?? '-',
+                'company'                => Auth::user()?->company_name ?? '-',
+            ],
+        ]);
+    }
 }

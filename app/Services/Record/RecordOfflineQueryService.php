@@ -1514,4 +1514,18 @@ class RecordOfflineQueryService
             'learning_hours'     => round($learningHours, 2),
         ];
     }
+
+    /**
+     * Get detail of a specific offline training record by record_id and optional user_id.
+     */
+    public static function getRecordDetail(int|string $recordId, ?int $userId = null): ?object
+    {
+        $query = self::buildQuery()->where('otu.id', $recordId);
+
+        if ($userId !== null) {
+            $query->where('otu.user_id', $userId);
+        }
+
+        return $query->first();
+    }
 }

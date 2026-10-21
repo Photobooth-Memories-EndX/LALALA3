@@ -192,4 +192,44 @@
     <td><x-learning.record-score-cell :row="$row" /></td>
 
     <td><x-learning.record-certificate-cell :row="$row" /></td>
+    <td class="text-center">
+        <div class="dropdown">
+            <button class="btn btn-sm btn-icon btn-ghost-secondary" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="ti ti-dots-vertical"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-2 btn-record-detail"
+                       href="#"
+                       data-bs-toggle="modal"
+                       data-bs-target="#recordDetailModal"
+                       data-record-id="{{ $row['id'] ?? ($row['item_id'] ?? $index) }}"
+                       data-record-source="online">
+                        <i class="ti ti-eye"></i> View Detail
+                    </a>
+                </li>
+                <li>
+                    @if (($row['cert_state'] ?? '') === 'ready' && !empty($row['cert_action_url']))
+                        @if ($row['cert_is_form'] ?? false)
+                            <form method="POST" action="{{ $row['cert_action_url'] }}" class="m-0 p-0">
+                                @csrf
+                                <button type="submit" class="dropdown-item d-flex align-items-center gap-2 text-success border-0 bg-transparent w-100">
+                                    <i class="ti ti-certificate"></i> Generate Certificate
+                                </button>
+                            </form>
+                        @else
+                            <a class="dropdown-item d-flex align-items-center gap-2 text-success" href="{{ $row['cert_action_url'] }}" target="_blank">
+                                <i class="ti ti-certificate"></i> Generate Certificate
+                            </a>
+                        @endif
+                    @else
+                        <a class="dropdown-item d-flex align-items-center gap-2 disabled text-muted" href="#" onclick="return false;" style="cursor: not-allowed;">
+                            <i class="ti ti-certificate"></i> Generate Certificate
+                        </a>
+                    @endif
+                </li>
+            </ul>
+        </div>
+        <script type="application/json" id="record-online-data-{{ $row['id'] ?? ($row['item_id'] ?? $index) }}">@json($row)</script>
+    </td>
 </tr>

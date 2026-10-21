@@ -655,6 +655,11 @@
                                     aria-label="Reset Filter">
                                 <i class="ti ti-refresh" aria-hidden="true"></i>
                             </button>
+
+                            {{-- Hidden export anchor for test / script compatibility --}}
+                            <a href="{{ route('user.learning.record.export', array_merge(request()->all(), ['source' => 'all'])) }}"
+                               id="recordAllExportBtn"
+                               class="d-none"></a>
                         </div>
                     </div>
 
@@ -771,7 +776,7 @@
                                         <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
                                     </span>
                                 </th>
-                                <th class="text-muted record-sortable" style="width: 24%; min-width: 280px;" data-sort-key="title" data-sort-type="text">
+                                <th class="text-muted record-sortable" style="width: 20%; min-width: 260px;" data-sort-key="title" data-sort-type="text">
                                     <span class="record-sort-header">
                                         <span class="record-sort-label">Course Title</span>
                                         <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
@@ -783,7 +788,7 @@
                                         <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
                                     </span>
                                 </th>
-                                <th class="text-muted text-center record-sortable" style="width: 7%" data-sort-key="category" data-sort-type="text">
+                                <th class="text-muted text-center record-sortable" style="width: 6%" data-sort-key="category" data-sort-type="text">
                                     <span class="record-sort-header">
                                         <span class="record-sort-label">Category</span>
                                         <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
@@ -801,13 +806,13 @@
                                         <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
                                     </span>
                                 </th>
-                                <th class="text-muted text-center record-sortable" style="width: 8%" data-sort-key="learning-hour" data-sort-type="number">
+                                <th class="text-muted text-center record-sortable" style="width: 7%" data-sort-key="learning-hour" data-sort-type="number">
                                     <span class="record-sort-header">
                                         <span class="record-sort-label">Learning Hour</span>
                                         <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
                                     </span>
                                 </th>
-                                <th class="text-muted text-center record-sortable" style="width: 7%" data-sort-key="progress" data-sort-type="number">
+                                <th class="text-muted text-center record-sortable" style="width: 6%" data-sort-key="progress" data-sort-type="number">
                                     <span class="record-sort-header">
                                         <span class="record-sort-label">Progress</span>
                                         <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
@@ -831,12 +836,13 @@
                                         <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
                                     </span>
                                 </th>
-                                <th class="text-muted text-center record-sortable" style="width: 6%" data-sort-key="certificate" data-sort-type="text">
+                                <th class="text-muted text-center record-sortable" style="width: 5%" data-sort-key="certificate" data-sort-type="text">
                                     <span class="record-sort-header">
                                         <span class="record-sort-label">Certificate</span>
                                         <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
                                     </span>
                                 </th>
+                                <th class="text-muted text-center" style="width: 5%">Action</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1088,6 +1094,48 @@
                                         @endif
                                     </div>
                                 </td>
+                                <td class="text-center">
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-icon btn-ghost-secondary" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="ti ti-dots-vertical"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                            <li>
+                                                <a class="dropdown-item d-flex align-items-center gap-2 btn-record-detail"
+                                                   href="#"
+                                                   data-bs-toggle="modal"
+                                                   data-bs-target="#recordDetailModal"
+                                                   data-record-id="{{ $row['id'] }}"
+                                                   data-record-source="{{ $row['source'] ?? 'offline' }}">
+                                                    <i class="ti ti-eye"></i> View Detail
+                                                </a>
+                                            </li>
+                                            <li>
+                                                @if ((($row['has_certificate'] ?? false) || ($row['cert_state'] ?? '') === 'ready') && !empty($row['cert_action_url']))
+                                                    @if (($row['source'] ?? '') === 'online' && ($row['cert_is_form'] ?? false))
+                                                        <form method="POST" action="{{ $row['cert_action_url'] }}" class="m-0 p-0">
+                                                            @csrf
+                                                            <button type="submit" class="dropdown-item d-flex align-items-center gap-2 text-success border-0 bg-transparent w-100">
+                                                                <i class="ti ti-certificate"></i> Generate Certificate
+                                                            </button>
+                                                        </form>
+                                                    @else
+                                                        <a class="dropdown-item d-flex align-items-center gap-2 text-success" href="{{ $row['cert_action_url'] }}" target="_blank">
+                                                            <i class="ti ti-certificate"></i> Generate Certificate
+                                                        </a>
+                                                    @endif
+                                                @else
+                                                    <a class="dropdown-item d-flex align-items-center gap-2 disabled text-muted" href="#" onclick="return false;" style="cursor: not-allowed;">
+                                                        <i class="ti ti-certificate"></i> Generate Certificate
+                                                    </a>
+                                                @endif
+                                            </li>
+                                        </ul>
+                                    </div>
+                                    @if (($row['source'] ?? '') === 'online')
+                                        <script type="application/json" id="record-online-data-{{ $row['id'] }}">@json($row)</script>
+                                    @endif
+                                </td>
                             </tr>
                             @endforeach
                         </tbody>
@@ -1303,3 +1351,6 @@
         </div>
     </div>
 </div>
+
+{{-- MODAL: FULL RECORD DETAIL (STANDARDIZED) --}}
+<x-shared.record-detail-modal />

@@ -104,6 +104,17 @@
     min-width: 85px;
 }
 
+#learningRecordTable th:nth-child(13),
+#learningRecordTable td:nth-child(13),
+#learningRecordOfflineTable th:nth-child(13),
+#learningRecordOfflineTable td:nth-child(13),
+#learningRecordAllTable th:nth-child(13),
+#learningRecordAllTable td:nth-child(13) {
+    width: 60px !important;
+    min-width: 50px;
+    text-align: center;
+}
+
 /* Kolom metrik, Type, Classification, Date Time, Attendance, dan aksi rata tengah; Class tetap rata kiri. */
 #learningRecordTable th:nth-child(3),
 #learningRecordTable td:nth-child(3),

@@ -199,5 +199,11 @@
     <input type="hidden" name="record_filter_month" id="hidden_record_filter_month" value="{{ $filterMonth }}">
 
     {{-- Modal Filter --}}
+    {{-- Hidden export anchor for JS synchronization and backward compatibility --}}
+    <a href="{{ route('user.learning.record.export', request()->all()) }}"
+       data-export-url="{{ route('user.learning.record.export') }}"
+       id="recordDownloadExcel"
+       class="d-none"></a>
+
     <x-learning.record-filter-modal :filter-options="$filterOptions" />
 </div>

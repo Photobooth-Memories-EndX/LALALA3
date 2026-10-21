@@ -15,6 +15,7 @@ use App\Http\Controllers\HomeUserController;
 use App\Http\Controllers\LearningController;
 use App\Http\Controllers\LearningAssessmentController;
 use App\Http\Controllers\LearningRecordExportController;
+use App\Http\Controllers\LearningRecordController;
 use App\Http\Controllers\LearningMonitoringController;
 use App\Http\Controllers\LearningOngoingController;
 use App\Http\Controllers\NewsUserController;
@@ -112,6 +113,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/my-learning/partial/{tab}', [LearningController::class, 'dashboardPartial'])->name('user.learning.dashboard.partial');
     Route::get('/my-learning/assessment/export', [LearningAssessmentController::class, 'download'])->name('user.learning.assessment.export');
     Route::get('/my-learning/learning-record/export', [LearningRecordExportController::class, 'download'])->name('user.learning.record.export');
+    Route::get('/my-learning/learning-record/detail/{source}/{id}', [LearningRecordController::class, 'detail'])->name('user.learning.record.detail');
 
     // Learning On Going — dua mode terpisah (fragment AJAX): Content & Playlist.
     Route::get('/my-learning/ongoing/export', [LearningOngoingController::class, 'download'])->name('user.learning.ongoing.export');

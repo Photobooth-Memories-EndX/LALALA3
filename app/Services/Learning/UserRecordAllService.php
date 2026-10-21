@@ -60,6 +60,7 @@ class UserRecordAllService
             $attendanceStatus = $attendance;
 
             return array_merge($row, [
+                'id'                => $row['id'] ?? ($row['item_id'] ?? uniqid()),
                 'unique_id'         => 'online_' . ($row['item_id'] ?? $row['slug'] ?? uniqid()),
                 'source'            => 'online',
                 'source_label'      => 'Online',
@@ -284,7 +285,7 @@ class UserRecordAllService
             // 11. Certificate filter (General)
             if ($certificate !== 'all' && $certificate !== '') {
                 $normCert = strtolower(trim($certificate));
-                $hasCert = (bool) ($row['has_certificate'] ?? false);
+                $hasCert = (bool) (($row['has_certificate'] ?? false) || ($row['cert_state'] ?? '') === 'ready' || strtolower(trim((string) ($row['certificate'] ?? ''))) === 'yes' || strtolower(trim((string) ($row['certificate'] ?? ''))) === 'available');
                 if (in_array($normCert, ['certified', 'yes', '1', 'ready'], true)) {
                     if (!$hasCert) {
                         return false;
@@ -298,6 +299,9 @@ class UserRecordAllService
 
             // 12. Attendance filter (Offline Specific)
             if ($attendance !== 'all' && $attendance !== '') {
+                if (($row['source'] ?? '') !== 'offline') {
+                    return false;
+                }
                 $normAttendance = strtolower(trim($attendance));
                 $rowAttendanceStatus = strtolower(trim((string) ($row['attendance_status'] ?? '')));
                 if (in_array($normAttendance, ['present', 'yes', '1', 'attended'], true)) {
