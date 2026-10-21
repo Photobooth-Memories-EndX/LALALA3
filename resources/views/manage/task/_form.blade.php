@@ -614,17 +614,13 @@
             card.dataset.ftype = selType;
             card.innerHTML =
                 '<input type="hidden" name="fields[' + i + '][id]" value="' + esc(data.id || '') + '">' +
+                '<input type="hidden" name="fields[' + i + '][required]" value="1">' +
                 '<div class="d-flex gap-2 align-items-start">' +
                     '<div class="flex-fill">' +
                         '<input type="text" class="form-control" name="fields[' + i + '][label]" ' +
                             'placeholder="Write the question" value="' + esc(data.label || '') + '" required>' +
                     '</div>' +
                     '<div class="typeCol" style="width:150px;flex-shrink:0">' + typeColHTML(i, selType) + '</div>' +
-                    '<label class="form-check mt-2 text-nowrap" title="Make this question mandatory">' +
-                        '<input type="checkbox" class="form-check-input" name="fields[' + i + '][required]" value="1"' +
-                            (data.required ? ' checked' : '') + '>' +
-                        '<span class="form-check-label">Required</span>' +
-                    '</label>' +
                     '<button type="button" class="btn btn-outline-danger btn-sm btnRemoveField mt-1" title="Delete question">' +
                         '<i class="ti ti-trash"></i>' +
                     '</button>' +
