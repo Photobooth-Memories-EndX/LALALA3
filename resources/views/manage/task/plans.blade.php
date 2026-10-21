@@ -173,9 +173,15 @@
             <div class="card border-0 shadow-sm rounded-3">
                 <div class="card-header bg-white border-0 py-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
                     <div>
-                        <h3 class="card-title mb-1 fw-bold text-dark">Task Placement</h3>
+                        <h3 class="card-title mb-1 fw-bold text-dark">
+                            {{ $scope === 'non_kp' ? 'Offline Training & Task List' : 'Course & Task List' }}
+                        </h3>
                         <div class="text-muted small">
-                            Only playlists, contents, offline trainings, or standalone tasks that have tasks are listed.
+                            @if ($scope === 'non_kp')
+                                Directory of offline training sessions containing assigned tasks.
+                            @else
+                                Directory of courses, contents, and global tasks containing assigned tasks.
+                            @endif
                         </div>
                     </div>
                     <div class="d-flex align-items-center gap-2 flex-wrap">
