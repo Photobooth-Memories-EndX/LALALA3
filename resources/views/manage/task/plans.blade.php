@@ -249,8 +249,8 @@
                         <thead>
                             <tr>
                                 <th class="w-1">NO</th>
-                                <th>TYPE</th>
-                                <th>PLACEMENT</th>
+                                <th>CATEGORY</th>
+                                <th>COURSE</th>
                                 <th class="text-center">TOTAL TASK</th>
                                 <th class="text-center">PUBLISHED</th>
                                 <th class="text-center">DRAFT</th>
