@@ -314,15 +314,15 @@ class OfflineGlobalExportTest extends TestCase
     }
 
     // =========================================================================
-    // 4. SCHEMA INTEGRITY & 44-COLUMN CANONICAL MAPPING
+    // 4. SCHEMA INTEGRITY & 43-COLUMN CANONICAL MAPPING
     // =========================================================================
 
-    public function test_export_uses_canonical_44_column_hrdc_schema(): void
+    public function test_export_uses_canonical_43_column_hrdc_schema(): void
     {
         $export = new OfflineTrainingExport(null, new Request());
 
         $headings = $export->headings();
-        $this->assertCount(44, $headings);
+        $this->assertCount(43, $headings);
         $this->assertEquals(OfflineTrainingExcelSchema::headers(), $headings);
     }
 
@@ -351,7 +351,7 @@ class OfflineGlobalExportTest extends TestCase
         $this->assertNotNull($andi);
         $mappedAndi = $export->map($andi);
 
-        $this->assertCount(44, $mappedAndi);
+        $this->assertCount(43, $mappedAndi);
         $this->assertEquals('EMPGLOBAL01', $mappedAndi[1]);                   // 2. ID
         $this->assertEquals('ANDI WIJAYA', $mappedAndi[2]);                   // 3. Name
         $this->assertEquals('3A', $mappedAndi[3]);                            // 4. Grade
@@ -379,23 +379,23 @@ class OfflineGlobalExportTest extends TestCase
         $this->assertEquals('HRDC Internal Team', $mappedAndi[30]);           // 31. Instructor
         $this->assertEquals(88.0, $mappedAndi[31]);                           // 32. Assessment Score
         $this->assertEquals('CERT-BCD-01', $mappedAndi[32]);                  // 33. Certificate
-        $this->assertEquals('Yes', $mappedAndi[33]);                          // 34. Attendance
-        $this->assertEquals('No', $mappedAndi[35]);                           // 36. Bond Status
-        $this->assertEquals('4.8 Very Good', $mappedAndi[38]);                // 39. L1 Program
-        $this->assertEquals(88.0, $mappedAndi[39]);                           // 40. L2 Numerical
-        $this->assertEquals('Passed', $mappedAndi[40]);                       // 41. L2 Verbal
-        $this->assertEquals(85.0, $mappedAndi[41]);                           // 42. L3 Numerical
-        $this->assertEquals('Applied', $mappedAndi[42]);                      // 43. L3 Verbal
-        $this->assertEquals('PIC GA', $mappedAndi[43]);                       // 44. PIC
+        $this->assertEquals('-', $mappedAndi[33]);                            // 34. Reason
+        $this->assertEquals('No', $mappedAndi[34]);                           // 35. Bond Status
+        $this->assertEquals('4.8 Very Good', $mappedAndi[37]);                // 38. L1 Program
+        $this->assertEquals(88.0, $mappedAndi[38]);                           // 39. L2 Numerical
+        $this->assertEquals('Passed', $mappedAndi[39]);                       // 40. L2 Verbal
+        $this->assertEquals(85.0, $mappedAndi[40]);                           // 41. L3 Numerical
+        $this->assertEquals('Applied', $mappedAndi[41]);                      // 42. L3 Verbal
+        $this->assertEquals('PIC GA', $mappedAndi[42]);                       // 43. PIC
 
         // 2. Verify Bambang Hermanto (Bond Yes, Amount 15,000,000)
         $bambang = $rows->firstWhere('employee_id', 'EMPGLOBAL02');
         $this->assertNotNull($bambang);
         $mappedBambang = $export->map($bambang);
 
-        $this->assertEquals('Yes', $mappedBambang[35]);                       // 36. Bond Status
-        $this->assertEquals('2028-02-16', $mappedBambang[36]);                // 37. Bond End Date
-        $this->assertEquals(15000000.0, $mappedBambang[37]);                  // 38. Bond Amount
+        $this->assertEquals('Yes', $mappedBambang[34]);                       // 35. Bond Status
+        $this->assertEquals('2028-02-16', $mappedBambang[35]);                // 36. Bond End Date
+        $this->assertEquals(15000000.0, $mappedBambang[36]);                  // 37. Bond Amount
         $this->assertEquals('Dale Carnegie Indo', $mappedBambang[28]);        // 29. Provider Name
 
         // 3. Verify Citra Dewi (Absent with Reason, Progress 60%)
@@ -404,8 +404,7 @@ class OfflineGlobalExportTest extends TestCase
         $mappedCitra = $export->map($citra);
 
         $this->assertEquals(60.0, $mappedCitra[24]);                          // 25. Progress
-        $this->assertEquals('No', $mappedCitra[33]);                          // 34. Attendance
-        $this->assertEquals('Plant emergency shift coverage', $mappedCitra[34]); // 35. Reason
+        $this->assertEquals('Plant emergency shift coverage', $mappedCitra[33]); // 34. Reason
     }
 
     // =========================================================================
@@ -474,7 +473,7 @@ class OfflineGlobalExportTest extends TestCase
         // Empty request on export
         $export = new OfflineTrainingExport(null, new Request());
         $this->assertNotNull($export->headings());
-        $this->assertCount(44, $export->headings());
+        $this->assertCount(43, $export->headings());
         $this->assertEquals(sprintf('non-kp-owl-all-records-%s.xlsx', now()->format('Y-m-d')), $export->getFileName());
     }
 }

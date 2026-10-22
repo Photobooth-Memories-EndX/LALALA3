@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\DB;
 class OnlineFullRecordExportService
 {
     /**
-     * Canonical 46-column reporting headings for KP OWL (Online) Full Record Export,
+     * Canonical 45-column reporting headings for KP OWL (Online) Full Record Export,
      * matching the All Sources (AllRecordExport) contract on Manage Record -> Export All.
      */
     public static function headings(): array
@@ -54,7 +54,6 @@ class OnlineFullRecordExportService
             'Progress',
             'Assessment Score (L2)',
             'Certificate',
-            'Attendance',
             'Attendance Reason',
             'Bond Status',
             'Bond End Date',
@@ -69,7 +68,7 @@ class OnlineFullRecordExportService
     }
 
     /**
-     * Standardized column widths for columns A to AT (46 columns).
+     * Standardized column widths for columns A to AS (45 columns).
      */
     public static function columnWidths(): array
     {
@@ -109,17 +108,16 @@ class OnlineFullRecordExportService
             'AG' => 12,  // Progress
             'AH' => 20,  // Assessment Score (L2)
             'AI' => 16,  // Certificate
-            'AJ' => 16,  // Attendance
-            'AK' => 25,  // Attendance Reason
-            'AL' => 14,  // Bond Status
-            'AM' => 15,  // Bond End Date
-            'AN' => 16,  // Bond Amount
-            'AO' => 14,  // L1 Program
-            'AP' => 15,  // L2 Numerical
-            'AQ' => 14,  // L2 Verbal
-            'AR' => 15,  // L3 Numerical
-            'AS' => 14,  // L3 Verbal
-            'AT' => 14,  // PIC
+            'AJ' => 25,  // Attendance Reason
+            'AK' => 14,  // Bond Status
+            'AL' => 15,  // Bond End Date
+            'AM' => 16,  // Bond Amount
+            'AN' => 14,  // L1 Program
+            'AO' => 15,  // L2 Numerical
+            'AP' => 14,  // L2 Verbal
+            'AQ' => 15,  // L3 Numerical
+            'AR' => 14,  // L3 Verbal
+            'AS' => 14,  // PIC
         ];
     }
 
@@ -200,7 +198,7 @@ class OnlineFullRecordExportService
     }
 
     /**
-     * Map a raw online record row into the canonical 46-column array.
+     * Map a raw online record row into the canonical 45-column array.
      */
     public function mapRow(object|array $row, int $rowNumber, ?LearningExportContext $context = null): array
     {
@@ -335,10 +333,7 @@ class OnlineFullRecordExportService
             $certificate = 'Not Available';
         }
 
-        // 14. Attendance
-        $attendance = $isCompleted ? 'Yes' : 'No';
-
-        // Canonical 46 columns matching AllRecordExport
+        // Canonical 45 columns matching AllRecordExport
         $mappedRow = [
             $rowNumber,               // 1: No
             'KP OWL',                 // 2: Source
@@ -375,17 +370,16 @@ class OnlineFullRecordExportService
             $progress . '%',          // 33: Progress
             $score,                   // 34: Assessment Score
             $certificate,             // 35: Certificate
-            $attendance,              // 36: Attendance
-            '-',                      // 37: Attendance Reason
-            'No',                     // 38: Bond Status
-            '-',                      // 39: Bond End Date
-            '-',                      // 40: Bond Amount
-            '-',                      // 41: L1 Program
-            '-',                      // 42: L2 Numerical
-            '-',                      // 43: L2 Verbal
-            '-',                      // 44: L3 Numerical
-            '-',                      // 45: L3 Verbal
-            '-',                      // 46: PIC
+            '-',                      // 36: Attendance Reason
+            'No',                     // 37: Bond Status
+            '-',                      // 38: Bond End Date
+            '-',                      // 39: Bond Amount
+            '-',                      // 40: L1 Program
+            '-',                      // 41: L2 Numerical
+            '-',                      // 42: L2 Verbal
+            '-',                      // 43: L3 Numerical
+            '-',                      // 44: L3 Verbal
+            '-',                      // 45: PIC
         ];
 
         return array_map(function ($val) {

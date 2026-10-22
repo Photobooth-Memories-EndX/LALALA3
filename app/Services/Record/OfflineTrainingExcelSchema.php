@@ -38,35 +38,35 @@ class OfflineTrainingExcelSchema
             'attendance' => [
                 'title'     => 'ATTENDANCE',
                 'start_col' => 'AH',
-                'end_col'   => 'AI',
-                'span'      => 2,
+                'end_col'   => 'AH',
+                'span'      => 1,
                 'color'     => 'DCFCE7', // Emerald 100
             ],
             'obligation' => [
                 'title'     => 'OBLIGATION',
-                'start_col' => 'AJ',
-                'end_col'   => 'AL',
+                'start_col' => 'AI',
+                'end_col'   => 'AK',
                 'span'      => 3,
                 'color'     => 'FEE2E2', // Rose 100
             ],
             'l1' => [
                 'title'     => 'L1',
-                'start_col' => 'AM',
-                'end_col'   => 'AM',
+                'start_col' => 'AL',
+                'end_col'   => 'AL',
                 'span'      => 1,
                 'color'     => 'F3E8FF', // Purple 100
             ],
             'l2' => [
                 'title'     => 'L2 (POST TEST)',
-                'start_col' => 'AN',
-                'end_col'   => 'AO',
+                'start_col' => 'AM',
+                'end_col'   => 'AN',
                 'span'      => 2,
                 'color'     => 'EDE9FE', // Violet 100
             ],
             'l3' => [
                 'title'     => 'L3 (PROJECT)',
-                'start_col' => 'AP',
-                'end_col'   => 'AR',
+                'start_col' => 'AO',
+                'end_col'   => 'AQ',
                 'span'      => 3,
                 'color'     => 'E0F2FE', // Sky 100
             ],
@@ -74,7 +74,7 @@ class OfflineTrainingExcelSchema
     }
 
     /**
-     * Complete canonical 44-column specification with column index, letter, internal key,
+     * Complete canonical 43-column specification with column index, letter, internal key,
      * required flag, expected data type, example, notes, and accepted aliases.
      */
     public static function columns(): array
@@ -546,31 +546,10 @@ class OfflineTrainingExcelSchema
                 'aliases'  => ['certificate', 'sertifikat', 'ada sertifikat', 'certificate yes/no', 'status sertifikat'],
             ],
 
-            // ATTENDANCE (Cols 34-35 / AH-AI)
+            // ATTENDANCE (Col 34 / AH)
             34 => [
                 'col_index' => 34,
                 'col_letter' => 'AH',
-                'header'   => 'Attendance Yes/No',
-                'group'    => 'ATTENDANCE',
-                'key'      => 'attendance',
-                'required' => false,
-                'type'     => 'boolean',
-                'example'  => 'Yes',
-                'note'     => 'Yes / No',
-                'aliases'  => [
-                    'attendance yes/no',
-                    'attendance',
-                    'kehadiran',
-                    'status kehadiran',
-                    'presensi',
-                    'attendence yes/no',
-                    'attendance (yes/no)',
-                    'attendance yes no',
-                ],
-            ],
-            35 => [
-                'col_index' => 35,
-                'col_letter' => 'AI',
                 'header'   => 'Reason',
                 'group'    => 'ATTENDANCE',
                 'key'      => 'attendance_reason',
@@ -581,10 +560,10 @@ class OfflineTrainingExcelSchema
                 'aliases'  => ['reason', 'attendance reason', 'alasan', 'alasan ketidakhadiran', 'justification'],
             ],
 
-            // OBLIGATION (Cols 36-38 / AJ-AL)
-            36 => [
-                'col_index' => 36,
-                'col_letter' => 'AJ',
+            // OBLIGATION (Cols 35-37 / AI-AK)
+            35 => [
+                'col_index' => 35,
+                'col_letter' => 'AI',
                 'header'   => 'Bond Status',
                 'group'    => 'OBLIGATION',
                 'key'      => 'bond_status',
@@ -594,9 +573,9 @@ class OfflineTrainingExcelSchema
                 'note'     => 'Yes / No',
                 'aliases'  => ['bond status', 'status ikatan dinas', 'ikatan dinas', 'service bond', 'bond'],
             ],
-            37 => [
-                'col_index' => 37,
-                'col_letter' => 'AK',
+            36 => [
+                'col_index' => 36,
+                'col_letter' => 'AJ',
                 'header'   => 'Bond End Date',
                 'group'    => 'OBLIGATION',
                 'key'      => 'bond_end_date',
@@ -606,9 +585,9 @@ class OfflineTrainingExcelSchema
                 'note'     => 'Format: YYYY-MM-DD',
                 'aliases'  => ['bond end date', 'tanggal selesai ikatan', 'tgl berakhir ikatan dinas', 'bond completion date'],
             ],
-            38 => [
-                'col_index' => 38,
-                'col_letter' => 'AL',
+            37 => [
+                'col_index' => 37,
+                'col_letter' => 'AK',
                 'header'   => 'Bond Amount',
                 'group'    => 'OBLIGATION',
                 'key'      => 'bond_amount',
@@ -616,13 +595,13 @@ class OfflineTrainingExcelSchema
                 'type'     => 'number',
                 'example'  => '',
                 'note'     => 'Service bond value (IDR)',
-                'aliases'  => ['bond amount', 'nilai ikatan dinas', 'biaya ikatan dinas', 'nominal ikatan dinas', 'bond cost', 'bond amount (idr)', 'bond amount idr', 'bond_amount_idr', 'bond amount (usd)', 'bond amount usd', 'bond_amount_usd'],
+                'aliases'  => ['bond amount', 'nilai ikatan dinas', 'biaya ikatan dinas', 'nominal ikatan dinas', 'bond cost', 'bond amount (idr)', 'bond amount idr', 'bond_amount_idr'],
             ],
 
-            // L1 (Col 39 / AM)
-            39 => [
-                'col_index' => 39,
-                'col_letter' => 'AM',
+            // L1 (Col 38 / AL)
+            38 => [
+                'col_index' => 38,
+                'col_letter' => 'AL',
                 'header'   => 'Program',
                 'group'    => 'L1',
                 'key'      => 'l1_program',
@@ -633,10 +612,10 @@ class OfflineTrainingExcelSchema
                 'aliases'  => ['program', 'l1 program', 'l1', 'evaluasi l1', 'level 1', 'reaction evaluation'],
             ],
 
-            // L2 (POST TEST) (Cols 40-41 / AN-AO)
-            40 => [
-                'col_index' => 40,
-                'col_letter' => 'AN',
+            // L2 (POST TEST) (Cols 39-40 / AM-AN)
+            39 => [
+                'col_index' => 39,
+                'col_letter' => 'AM',
                 'header'   => 'Numerical',
                 'group'    => 'L2 (POST TEST)',
                 'key'      => 'l2_numerical',
@@ -646,9 +625,9 @@ class OfflineTrainingExcelSchema
                 'note'     => 'Post-test score (0-100)',
                 'aliases'  => ['numerical', 'l2 numerical', 'l2 post test numerical', 'nilai post test', 'post test score', 'post test numerical', 'l2 numeric'],
             ],
-            41 => [
-                'col_index' => 41,
-                'col_letter' => 'AO',
+            40 => [
+                'col_index' => 40,
+                'col_letter' => 'AN',
                 'header'   => 'Verbal',
                 'group'    => 'L2 (POST TEST)',
                 'key'      => 'l2_verbal',
@@ -659,10 +638,10 @@ class OfflineTrainingExcelSchema
                 'aliases'  => ['verbal', 'l2 verbal', 'l2 post test verbal', 'post test verbal', 'hasil post test', 'l2 result'],
             ],
 
-            // L3 (PROJECT) (Cols 42-44 / AP-AR)
-            42 => [
-                'col_index' => 42,
-                'col_letter' => 'AP',
+            // L3 (PROJECT) (Cols 41-43 / AO-AQ)
+            41 => [
+                'col_index' => 41,
+                'col_letter' => 'AO',
                 'header'   => 'Numerical',
                 'group'    => 'L3 (PROJECT)',
                 'key'      => 'l3_numerical',
@@ -672,9 +651,9 @@ class OfflineTrainingExcelSchema
                 'note'     => 'Project implementation score (0-100)',
                 'aliases'  => ['numerical', 'l3 numerical', 'l3 project numerical', 'nilai project', 'project score', 'project numerical', 'l3 numeric'],
             ],
-            43 => [
-                'col_index' => 43,
-                'col_letter' => 'AQ',
+            42 => [
+                'col_index' => 42,
+                'col_letter' => 'AP',
                 'header'   => 'Verbal',
                 'group'    => 'L3 (PROJECT)',
                 'key'      => 'l3_verbal',
@@ -684,9 +663,9 @@ class OfflineTrainingExcelSchema
                 'note'     => 'Behavior / project result evaluation',
                 'aliases'  => ['verbal', 'l3 verbal', 'l3 project verbal', 'project verbal', 'hasil project', 'l3 result'],
             ],
-            44 => [
-                'col_index' => 44,
-                'col_letter' => 'AR',
+            43 => [
+                'col_index' => 43,
+                'col_letter' => 'AQ',
                 'header'   => 'PIC',
                 'group'    => 'L3 (PROJECT)',
                 'key'      => 'pic',
@@ -700,7 +679,7 @@ class OfflineTrainingExcelSchema
     }
 
     /**
-     * Exact flat list of 44 canonical header strings for Row 1.
+     * Exact flat list of 43 canonical header strings for Row 1.
      */
     public static function headers(): array
     {
@@ -716,7 +695,7 @@ class OfflineTrainingExcelSchema
      */
     public static function totalColumns(): int
     {
-        return count(self::columns()); // Exactly 44
+        return count(self::columns()); // Exactly 43
     }
 
     /**
@@ -744,7 +723,7 @@ class OfflineTrainingExcelSchema
     }
 
     /**
-     * Grouped Row 1 headers array (44 elements), preserved for legacy format compatibility.
+     * Grouped Row 1 headers array (43 elements), preserved for legacy format compatibility.
      */
     public static function groupedRow1Headers(): array
     {
@@ -757,7 +736,7 @@ class OfflineTrainingExcelSchema
 
         $row1[] = 'No';
 
-        for ($col = 2; $col <= 44; $col++) {
+        for ($col = 2; $col <= count(self::columns()); $col++) {
             $colLetter = Coordinate::stringFromColumnIndex($col);
             $row1[] = $groupStartMap[$colLetter] ?? '';
         }
@@ -804,17 +783,16 @@ class OfflineTrainingExcelSchema
             'AE' => 22,  // Instructor
             'AF' => 20,  // Assessment Score (L2)
             'AG' => 12,  // Certificate
-            'AH' => 16,  // Attendance
-            'AI' => 22,  // Reason
-            'AJ' => 12,  // Bond Status
-            'AK' => 14,  // Bond End Date
-            'AL' => 16,  // Bond Amount
-            'AM' => 14,  // L1
-            'AN' => 12,  // L2 Numerical
-            'AO' => 15,  // L2 Verbal
-            'AP' => 12,  // L3 Numerical
-            'AQ' => 25,  // L3 Verbal
-            'AR' => 20,  // PIC
+            'AH' => 22,  // Reason
+            'AI' => 12,  // Bond Status
+            'AJ' => 14,  // Bond End Date
+            'AK' => 16,  // Bond Amount
+            'AL' => 14,  // L1
+            'AM' => 12,  // L2 Numerical
+            'AN' => 15,  // L2 Verbal
+            'AO' => 12,  // L3 Numerical
+            'AP' => 25,  // L3 Verbal
+            'AQ' => 20,  // PIC
         ];
     }
 
@@ -868,7 +846,7 @@ class OfflineTrainingExcelSchema
         $row1Cells = [];
         $row2Cells = [];
 
-        for ($col = 1; $col <= max($highestColumnIndex, 44); $col++) {
+        for ($col = 1; $col <= max($highestColumnIndex, count(self::columns())); $col++) {
             $colLetter = Coordinate::stringFromColumnIndex($col);
             $r1Val = $worksheet->getCell($colLetter . '1')->getValue();
             $r2Val = $worksheet->getCell($colLetter . '2')->getValue();
@@ -940,7 +918,7 @@ class OfflineTrainingExcelSchema
     public static function analyzeHeaders(array $foundHeaders, string $format = 'single_row'): array
     {
         $columns = self::columns();
-        $expectedCount = 44;
+        $expectedCount = count($columns);
         $detectedCount = count($foundHeaders);
 
         // Precompute normalized canonical headers and aliases for fast lookup
@@ -991,7 +969,7 @@ class OfflineTrainingExcelSchema
             $normFound = self::normalizeHeaderString($rawFound);
             $canonical = $canonicalMap[$pos] ?? null;
 
-            // Extra unexpected column beyond 44
+            // Extra unexpected column beyond expected count
             if ($pos > $expectedCount) {
                 if ($rawFound !== '') {
                     $invalidCount++;
@@ -1003,7 +981,7 @@ class OfflineTrainingExcelSchema
                         'status'      => 'INVALID',
                         'mapped_to'   => null,
                         'key'         => null,
-                        'message'     => "Unexpected extra column {$pos} ({$colLetter}: '{$rawFound}'). Canonical schema requires exactly 44 columns.",
+                        'message'     => "Unexpected extra column {$pos} ({$colLetter}: '{$rawFound}'). Canonical schema requires exactly {$expectedCount} columns.",
                     ];
                     $columnResults[$pos] = $issue;
                     $issues[] = $issue;
@@ -1022,7 +1000,7 @@ class OfflineTrainingExcelSchema
                     'status'      => 'MISSING',
                     'mapped_to'   => null,
                     'key'         => $canonical['key'],
-                    'message'     => "Missing column {$pos} ({$colLetter}: '{$canonical['header']}'). Canonical template requires all 44 headers.",
+                    'message'     => "Missing column {$pos} ({$colLetter}: '{$canonical['header']}'). Canonical template requires all {$expectedCount} headers.",
                 ];
                 $columnResults[$pos] = $issue;
                 $issues[] = $issue;
@@ -1508,7 +1486,7 @@ class OfflineTrainingExcelSchema
     }
 
     /**
-     * Apply single canonical 44-column header styles on Row 1.
+     * Apply single canonical 43-column header styles on Row 1.
      * Bold, legible slate color, subtle fill (light red tint for required), thin borders,
      * wrapText, row height 32, and freeze pane A2 (Row 1 frozen).
      */
@@ -1562,14 +1540,14 @@ class OfflineTrainingExcelSchema
 
         $guidelines = [
             ['Section', 'Guideline & Rule', 'Details / Examples'],
-            ['1. Header Integrity', 'Do NOT rename, delete, or rearrange columns', 'The importer verifies the 44-column structure. Required headers are in Row 1. Data begins on Row 2.'],
+            ['1. Header Integrity', 'Do NOT rename, delete, or rearrange columns', 'The importer verifies the 43-column structure. Required headers are in Row 1. Data begins on Row 2.'],
             ['2. Participant Records', 'One row represents one participant record', 'Each participant attending an offline training program must be on their own separate row.'],
             ['3. Event Grouping', 'Multiple attendees belonging to the same training are grouped', 'If Course Name, Batch, Type, Venue, Start Date, and Finish Date match, they will be unified into one training event with multiple participants.'],
             ['4. Employee Matching', 'Column B (ID) matches Employee ID / NIP', 'Provide valid employee ID. LMS will automatically link participant to existing user accounts when found.'],
             ['5. Progress & Hours', 'Progress uses numbers (0–100), Hours uses decimals', 'Example: Progress = 100, Learning (Hours) = 8.0 or 16.5.'],
             ['6. Date Format', 'Dates must be formatted as YYYY-MM-DD or Excel dates', 'Example: 2026-08-10. Finish Date cannot be earlier than Start Date.'],
             ['7. Duration Format', 'Duration should be formatted as HH:MM:SS or seconds', 'Example: 08:00:00 for an 8-hour session.'],
-            ['8. Boolean Fields', 'Attendance, Corporate KPI, Certificate use Yes / No', 'Accepted values: Yes, Y, Ya, No, N.'],
+            ['8. Boolean Fields', 'Corporate KPI, Certificate use Yes / No', 'Accepted values: Yes, Y, Ya, No, N.'],
             ['9. Post Test & Projects', 'L2 and L3 evaluations are tracked per participant', 'L2 Numerical (e.g. 85), L2 Verbal (Passed), L3 Numerical (e.g. 90), L3 Verbal (Applied in Dept).'],
             ['10. Safe Deduplication', 'Duplicate participants are skipped safely', 'If the same employee is already recorded for the same training session, the row is safely skipped without corrupting database state.'],
         ];

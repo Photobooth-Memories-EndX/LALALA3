@@ -164,13 +164,8 @@ $deliveryMethod = \App\Models\OfflineTraining::normalizeDeliveryMethod($row['del
                 $bondEndDate = $this->toExcelDate($row['bond_end_date'] ?? null);
 
                 $rawIdr = $row['bond_amount_idr'] ?? $row['bond_amount'] ?? null;
-                $bondAmountIdr = (isset($rawIdr) && $rawIdr !== '' && $rawIdr !== '-' && is_numeric($rawIdr) && (float) $rawIdr > 0)
+                $bondAmount = (isset($rawIdr) && $rawIdr !== '' && $rawIdr !== '-' && is_numeric($rawIdr) && (float) $rawIdr > 0)
                     ? (float) $rawIdr
-                    : '-';
-
-                $rawUsd = $row['bond_amount_usd'] ?? null;
-                $bondAmountUsd = (isset($rawUsd) && $rawUsd !== '' && $rawUsd !== '-' && is_numeric($rawUsd) && (float) $rawUsd > 0)
-                    ? (float) $rawUsd
                     : '-';
 
                 $certificate = (!empty($row['certificate']) && $row['certificate'] !== '-' || !empty($row['has_certificate'])) ? 'Available' : 'Not Available';
@@ -187,7 +182,6 @@ $deliveryMethod = \App\Models\OfflineTraining::normalizeDeliveryMethod($row['del
                 $provider = 'Internal';
                 $providerName = 'KP-OWL';
                 $venue = 'KP-OWL';
-                $attendance = 'Yes';
 
                 $rawScore = $row['score'] ?? $row['assessment_score'] ?? null;
                 $scoreVal = $this->formatCleanScore($rawScore);
@@ -195,8 +189,7 @@ $deliveryMethod = \App\Models\OfflineTraining::normalizeDeliveryMethod($row['del
                 $bondStatus = '-';
                 $bondDuration = '-';
                 $bondEndDate = '-';
-                $bondAmountIdr = '-';
-                $bondAmountUsd = '-';
+                $bondAmount = '-';
                 $certificate = ($row['cert_state'] ?? 'none') === 'ready' ? 'Available' : 'Not Available';
             }
 
@@ -228,14 +221,12 @@ $deliveryMethod = \App\Models\OfflineTraining::normalizeDeliveryMethod($row['del
                 $provider,                              // S: Provider
                 $providerName,                          // T: Provider Name
                 $venue,                                 // U: Venue
-                $attendance,                            // V: Attendance
-                $scoreVal,                              // W: Assessment Score (L2)
-                $bondStatus,                            // X: Bond Status
-                $bondDuration,                          // Y: Bond Duration
-                $bondEndDate,                           // Z: Bond End Date
-                $bondAmountIdr,                         // AA: Bond Amount (IDR)
-                $bondAmountUsd,                         // AB: Bond Amount (USD)
-                $certificate,                           // AC: Certificate
+                $scoreVal,                              // V: Assessment Score (L2)
+                $bondStatus,                            // W: Bond Status
+                $bondDuration,                          // X: Bond Duration
+                $bondEndDate,                           // Y: Bond End Date
+                $bondAmount,                            // Z: Bond Amount
+                $certificate,                           // AA: Certificate
             ];
 
             foreach ($rowArr as $k => $v) {
@@ -256,8 +247,6 @@ $deliveryMethod = \App\Models\OfflineTraining::normalizeDeliveryMethod($row['del
                         $childDurCell = $childDurSec > 0 ? ($childDurSec / 86400) : '-';
                         $childProgInt = max(0, min(100, (int) ($child['progress'] ?? 0)));
                         $childScore = $this->formatCleanScore($child['score'] ?? null);
-                        $rawChildAtt = $child['attendance'] ?? ($childProgInt >= 100 ? 'Yes' : 'No');
-                        $childAtt = in_array(strtolower(trim((string) $rawChildAtt)), ['1', 'true', 'present', 'yes'], true) ? 'Yes' : 'No';
 
                         $childRowArr = [
                             '-',                                                    // A: No
@@ -281,14 +270,12 @@ $deliveryMethod = \App\Models\OfflineTraining::normalizeDeliveryMethod($row['del
                             'Internal',                                             // S: Provider
                             'KP-OWL',                                               // T: Provider Name
                             'KP-OWL',                                               // U: Venue
-                            $childAtt,                                              // V: Attendance
-                            $childScore,                                            // W: Assessment Score (L2)
-                            '-',                                                    // X: Bond Status
-                            '-',                                                    // Y: Bond Duration
-                            '-',                                                    // Z: Bond End Date
-                            '-',                                                    // AA: Bond Amount (IDR)
-                            '-',                                                    // AB: Bond Amount (USD)
-                            '-',                                                    // AC: Certificate
+                            $childScore,                                            // V: Assessment Score (L2)
+                            '-',                                                    // W: Bond Status
+                            '-',                                                    // X: Bond Duration
+                            '-',                                                    // Y: Bond End Date
+                            '-',                                                    // Z: Bond Amount
+                            '-',                                                    // AA: Certificate
                         ];
 
                         foreach ($childRowArr as $k => $v) {
@@ -331,14 +318,12 @@ $deliveryMethod = \App\Models\OfflineTraining::normalizeDeliveryMethod($row['del
             'Provider',             // S
             'Provider Name',        // T
             'Venue',                // U
-            'Attendance',           // V
-            'Assessment Score (L2)',// W
-            'Bond Status',          // X
-            'Bond Duration',        // Y
-            'Bond End Date',        // Z
-            'Bond Amount (IDR)',    // AA
-            'Bond Amount (USD)',    // AB
-            'Certificate',          // AC
+            'Assessment Score (L2)',// V
+            'Bond Status',          // W
+            'Bond Duration',        // X
+            'Bond End Date',        // Y
+            'Bond Amount',          // Z
+            'Certificate',          // AA
         ];
     }
 
@@ -366,14 +351,12 @@ $deliveryMethod = \App\Models\OfflineTraining::normalizeDeliveryMethod($row['del
             'S'  => NumberFormat::FORMAT_GENERAL,       // Provider
             'T'  => NumberFormat::FORMAT_GENERAL,       // Provider Name
             'U'  => NumberFormat::FORMAT_GENERAL,       // Venue
-            'V'  => NumberFormat::FORMAT_GENERAL,       // Attendance
-            'W'  => '0',                                // Assessment Score (L2)
-            'X'  => NumberFormat::FORMAT_GENERAL,       // Bond Status
-            'Y'  => '0.##',                             // Bond Duration
-            'Z'  => 'yyyy-mm-dd',                       // Bond End Date
-            'AA' => '"Rp "#,##0;;"Rp -"',               // Bond Amount (IDR)
-            'AB' => '"$ "#,##0.00;;"$ -"',              // Bond Amount (USD)
-            'AC' => NumberFormat::FORMAT_GENERAL,       // Certificate
+            'V'  => '0',                                // Assessment Score (L2)
+            'W'  => NumberFormat::FORMAT_GENERAL,       // Bond Status
+            'X'  => '0.##',                             // Bond Duration
+            'Y'  => 'yyyy-mm-dd',                       // Bond End Date
+            'Z'  => '"Rp "#,##0;;"Rp -"',               // Bond Amount
+            'AA' => NumberFormat::FORMAT_GENERAL,       // Certificate
         ];
     }
 
@@ -409,7 +392,7 @@ $deliveryMethod = \App\Models\OfflineTraining::normalizeDeliveryMethod($row['del
                     ->setVertical(Alignment::VERTICAL_CENTER);
 
                 if ($highestRow >= 2) {
-                    $sheet->getStyle('W2:W' . $highestRow)->getNumberFormat()->setFormatCode('0');
+                    $sheet->getStyle('V2:V' . $highestRow)->getNumberFormat()->setFormatCode('0');
                 }
 
                 // Highlight main Playlist items with light blue/gray fill (#EBF3FB) and bold text

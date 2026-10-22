@@ -106,13 +106,11 @@
                             <div class="col-md-3">
                                 <div class="text-xs text-muted text-uppercase">Bond Amount</div>
                                 <div class="fw-semibold text-dark fs-7" id="modal-detail-bond-amount">
-                                    {{ (!empty($record['bond_amount_usd']) && (float) $record['bond_amount_usd'] > 0)
-                                        ? '$' . number_format((float) $record['bond_amount_usd'], 2)
-                                        : ((!empty($record['bond_amount_idr']) && (float) $record['bond_amount_idr'] > 0)
-                                            ? 'Rp ' . number_format((float) $record['bond_amount_idr'], 0, ',', '.')
-                                            : ((!empty($record['bond_amount']) && is_numeric($record['bond_amount']) && (float) $record['bond_amount'] > 0)
-                                                ? 'Rp ' . number_format((float) $record['bond_amount'], 0, ',', '.')
-                                                : '-')) }}
+                                    {{ (!empty($record['bond_amount_idr']) && (float) $record['bond_amount_idr'] > 0)
+                                        ? 'Rp ' . number_format((float) $record['bond_amount_idr'], 0, ',', '.')
+                                        : ((!empty($record['bond_amount']) && is_numeric($record['bond_amount']) && (float) $record['bond_amount'] > 0)
+                                            ? 'Rp ' . number_format((float) $record['bond_amount'], 0, ',', '.')
+                                            : '-') }}
                                 </div>
                             </div>
                         </div>
@@ -201,12 +199,8 @@
         var bondAmountText = '-';
         var idrVal = d.bond_amount_idr !== undefined && d.bond_amount_idr !== null ? d.bond_amount_idr : d.bond_amount;
         var hasIdr = idrVal !== '-' && idrVal !== null && idrVal !== undefined && idrVal !== '' && !isNaN(idrVal) && parseFloat(idrVal) > 0;
-        var usdVal = d.bond_amount_usd;
-        var hasUsd = usdVal !== '-' && usdVal !== null && usdVal !== undefined && usdVal !== '' && !isNaN(usdVal) && parseFloat(usdVal) > 0;
 
-        if (hasUsd) {
-            bondAmountText = '$' + parseFloat(usdVal).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        } else if (hasIdr) {
+        if (hasIdr) {
             bondAmountText = 'Rp ' + Math.round(parseFloat(idrVal)).toLocaleString('id-ID');
         } else if (d.bond_amount_formatted && d.bond_amount_formatted !== '-') {
             bondAmountText = d.bond_amount_formatted;

@@ -59,7 +59,6 @@ class OfflineTraining extends Model
         'finish_date',
         'created_by',
         'bond_amount_idr',
-        'bond_amount_usd',
         'bond_amount',
     ];
 

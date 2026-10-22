@@ -124,9 +124,6 @@ $deliveryMethod = \App\Models\OfflineTraining::normalizeDeliveryMethod($row['del
                 : ((!empty($row['raw_provider_name']) && $row['raw_provider_name'] !== '—') ? $row['raw_provider_name'] : '-');
             $venue = (!empty($row['venue']) && $row['venue'] !== '—') ? $row['venue'] : '-';
 
-            $rawAttendance = $row['attendance_status'] ?? $row['attendance'] ?? 'No';
-            $attendance = in_array(strtolower(trim((string) $rawAttendance)), ['1', 'true', 'present', 'yes'], true) ? 'Yes' : 'No';
-
             $rawScore = $row['assessment_score'] ?? $row['l2_numerical'] ?? $row['score'] ?? null;
             $scoreVal = $this->formatCleanScore($rawScore);
 
@@ -137,13 +134,8 @@ $deliveryMethod = \App\Models\OfflineTraining::normalizeDeliveryMethod($row['del
             $bondEndDate = $this->toExcelDate($row['bond_end_date'] ?? null);
 
             $rawIdr = $row['bond_amount_idr'] ?? $row['bond_amount'] ?? null;
-            $bondAmountIdr = (isset($rawIdr) && $rawIdr !== '' && $rawIdr !== '-' && is_numeric($rawIdr) && (float) $rawIdr > 0)
+            $bondAmount = (isset($rawIdr) && $rawIdr !== '' && $rawIdr !== '-' && is_numeric($rawIdr) && (float) $rawIdr > 0)
                 ? (float) $rawIdr
-                : '-';
-
-            $rawUsd = $row['bond_amount_usd'] ?? null;
-            $bondAmountUsd = (isset($rawUsd) && $rawUsd !== '' && $rawUsd !== '-' && is_numeric($rawUsd) && (float) $rawUsd > 0)
-                ? (float) $rawUsd
                 : '-';
 
             $certificate = (!empty($row['certificate']) && $row['certificate'] !== '-' || !empty($row['has_certificate'])) ? 'Available' : 'Not Available';
@@ -169,14 +161,12 @@ $deliveryMethod = \App\Models\OfflineTraining::normalizeDeliveryMethod($row['del
                 $provider,                                          // R: Provider
                 $providerName,                                      // S: Provider Name
                 $venue,                                             // T: Venue
-                $attendance,                                        // U: Attendance
-                $scoreVal,                                          // V: Assessment Score (L2)
-                $bondStatus,                                        // W: Bond Status
-                $bondDuration,                                      // X: Bond Duration
-                $bondEndDate,                                       // Y: Bond End Date
-                $bondAmountIdr,                                     // Z: Bond Amount (IDR)
-                $bondAmountUsd,                                     // AA: Bond Amount (USD)
-                $certificate,                                       // AB: Certificate
+                $scoreVal,                                          // U: Assessment Score (L2)
+                $bondStatus,                                        // V: Bond Status
+                $bondDuration,                                      // W: Bond Duration
+                $bondEndDate,                                       // X: Bond End Date
+                $bondAmount,                                        // Y: Bond Amount
+                $certificate,                                       // Z: Certificate
             ];
 
             foreach ($rowArr as $k => $v) {
@@ -214,14 +204,12 @@ $deliveryMethod = \App\Models\OfflineTraining::normalizeDeliveryMethod($row['del
             'Provider',             // R
             'Provider Name',        // S
             'Venue',                // T
-            'Attendance',           // U
-            'Assessment Score (L2)',// V
-            'Bond Status',          // W
-            'Bond Duration',        // X
-            'Bond End Date',        // Y
-            'Bond Amount (IDR)',    // Z
-            'Bond Amount (USD)',    // AA
-            'Certificate',          // AB
+            'Assessment Score (L2)',// U
+            'Bond Status',          // V
+            'Bond Duration',        // W
+            'Bond End Date',        // X
+            'Bond Amount',          // Y
+            'Certificate',          // Z
         ];
     }
 
@@ -248,14 +236,12 @@ $deliveryMethod = \App\Models\OfflineTraining::normalizeDeliveryMethod($row['del
             'R'  => NumberFormat::FORMAT_GENERAL,       // Provider
             'S'  => NumberFormat::FORMAT_GENERAL,       // Provider Name
             'T'  => NumberFormat::FORMAT_GENERAL,       // Venue
-            'U'  => NumberFormat::FORMAT_GENERAL,       // Attendance
-            'V'  => '0',                                // Assessment Score (L2)
-            'W'  => NumberFormat::FORMAT_GENERAL,       // Bond Status
-            'X'  => '0.##',                             // Bond Duration
-            'Y'  => 'yyyy-mm-dd',                       // Bond End Date
-            'Z'  => '"Rp "#,##0;;"Rp -"',               // Bond Amount (IDR)
-            'AA' => '"$ "#,##0.00;;"$ -"',              // Bond Amount (USD)
-            'AB' => NumberFormat::FORMAT_GENERAL,       // Certificate
+            'U'  => '0',                                // Assessment Score (L2)
+            'V'  => NumberFormat::FORMAT_GENERAL,       // Bond Status
+            'W'  => '0.##',                             // Bond Duration
+            'X'  => 'yyyy-mm-dd',                       // Bond End Date
+            'Y'  => '"Rp "#,##0;;"Rp -"',               // Bond Amount
+            'Z'  => NumberFormat::FORMAT_GENERAL,       // Certificate
         ];
     }
 
@@ -291,7 +277,7 @@ $deliveryMethod = \App\Models\OfflineTraining::normalizeDeliveryMethod($row['del
                     ->setVertical(Alignment::VERTICAL_CENTER);
 
                 if ($highestRow >= 2) {
-                    $sheet->getStyle('V2:V' . $highestRow)->getNumberFormat()->setFormatCode('0');
+                    $sheet->getStyle('U2:U' . $highestRow)->getNumberFormat()->setFormatCode('0');
                 }
 
                 $sheet->setShowSummaryBelow(false);

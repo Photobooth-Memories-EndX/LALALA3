@@ -137,8 +137,7 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithColumnFor
             $bondStatus = '-';
             $bondDuration = '-';
             $bondEndDate = '-';
-            $bondAmountIdr = '-';
-            $bondAmountUsd = '-';
+            $bondAmount = '-';
 
             $certificate = ($row['cert_state'] ?? 'none') === 'ready' ? 'Available' : 'Not Available';
 
@@ -171,14 +170,12 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithColumnFor
                 $provider,                                                                                          // R: Provider
                 $providerName,                                                                                      // S: Provider Name
                 $venue,                                                                                             // T: Venue
-                $attendance,                                                                                        // U: Attendance
-                $scoreVal,                                                                                          // V: Assessment Score (L2)
-                $bondStatus,                                                                                        // W: Bond Status
-                $bondDuration,                                                                                      // X: Bond Duration
-                $bondEndDate,                                                                                       // Y: Bond End Date
-                $bondAmountIdr,                                                                                     // Z: Bond Amount (IDR)
-                $bondAmountUsd,                                                                                     // AA: Bond Amount (USD)
-                $certificate,                                                                                       // AB: Certificate
+                $scoreVal,                                                                                          // U: Assessment Score (L2)
+                $bondStatus,                                                                                        // V: Bond Status
+                $bondDuration,                                                                                      // W: Bond Duration
+                $bondEndDate,                                                                                       // X: Bond End Date
+                $bondAmount,                                                                                        // Y: Bond Amount
+                $certificate,                                                                                       // Z: Certificate
             ];
 
             // Auto-fallback empty values to '-'
@@ -199,8 +196,6 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithColumnFor
                         $childDurCell = $childDurSec > 0 ? ($childDurSec / 86400) : '-';
                         $childProgInt = max(0, min(100, (int) ($child['progress'] ?? 0)));
                         $childScore = $this->formatCleanScore($child['score'] ?? null);
-                        $rawChildAtt = $child['attendance'] ?? ($childProgInt >= 100 ? 'Yes' : 'No');
-                        $childAtt = in_array(strtolower(trim((string) $rawChildAtt)), ['1', 'true', 'present', 'yes'], true) ? 'Yes' : 'No';
 
                         $childRowArr = [
                             '-',                                                    // A: No
@@ -223,14 +218,12 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithColumnFor
                             'Internal',                                             // R: Provider
                             'KP-OWL',                                               // S: Provider Name
                             'KP-OWL',                                               // T: Venue
-                            $childAtt,                                              // U: Attendance
-                            $childScore,                                            // V: Assessment Score (L2)
-                            '-',                                                    // W: Bond Status
-                            '-',                                                    // X: Bond Duration
-                            '-',                                                    // Y: Bond End Date
-                            '-',                                                    // Z: Bond Amount (IDR)
-                            '-',                                                    // AA: Bond Amount (USD)
-                            '-',                                                    // AB: Certificate
+                            $childScore,                                            // U: Assessment Score (L2)
+                            '-',                                                    // V: Bond Status
+                            '-',                                                    // W: Bond Duration
+                            '-',                                                    // X: Bond End Date
+                            '-',                                                    // Y: Bond Amount
+                            '-',                                                    // Z: Certificate
                         ];
 
                         foreach ($childRowArr as $k => $v) {
@@ -272,14 +265,12 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithColumnFor
             'Provider',             // R
             'Provider Name',        // S
             'Venue',                // T
-            'Attendance',           // U
-            'Assessment Score (L2)',// V
-            'Bond Status',          // W
-            'Bond Duration',        // X
-            'Bond End Date',        // Y
-            'Bond Amount (IDR)',    // Z
-            'Bond Amount (USD)',    // AA
-            'Certificate',          // AB
+            'Assessment Score (L2)',// U
+            'Bond Status',          // V
+            'Bond Duration',        // W
+            'Bond End Date',        // X
+            'Bond Amount',          // Y
+            'Certificate',          // Z
         ];
     }
 
@@ -306,14 +297,12 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithColumnFor
             'R'  => NumberFormat::FORMAT_GENERAL,       // Provider
             'S'  => NumberFormat::FORMAT_GENERAL,       // Provider Name
             'T'  => NumberFormat::FORMAT_GENERAL,       // Venue
-            'U'  => NumberFormat::FORMAT_GENERAL,       // Attendance
-            'V'  => '0',                                // Assessment Score (L2)
-            'W'  => NumberFormat::FORMAT_GENERAL,       // Bond Status
-            'X'  => '0.##',                             // Bond Duration
-            'Y'  => 'yyyy-mm-dd',                       // Bond End Date
-            'Z'  => '"Rp "#,##0;;"Rp -"',               // Bond Amount (IDR)
-            'AA' => '"$ "#,##0.00;;"$ -"',              // Bond Amount (USD)
-            'AB' => NumberFormat::FORMAT_GENERAL,       // Certificate
+            'U'  => '0',                                // Assessment Score (L2)
+            'V'  => NumberFormat::FORMAT_GENERAL,       // Bond Status
+            'W'  => '0.##',                             // Bond Duration
+            'X'  => 'yyyy-mm-dd',                       // Bond End Date
+            'Y'  => '"Rp "#,##0;;"Rp -"',               // Bond Amount
+            'Z'  => NumberFormat::FORMAT_GENERAL,       // Certificate
         ];
     }
 
@@ -349,7 +338,7 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithColumnFor
                     ->setVertical(Alignment::VERTICAL_CENTER);
 
                 if ($highestRow >= 2) {
-                    $sheet->getStyle('V2:V' . $highestRow)->getNumberFormat()->setFormatCode('0');
+                    $sheet->getStyle('U2:U' . $highestRow)->getNumberFormat()->setFormatCode('0');
                 }
 
                 // Highlight main Playlist items with light blue/gray fill (#EBF3FB) and bold text

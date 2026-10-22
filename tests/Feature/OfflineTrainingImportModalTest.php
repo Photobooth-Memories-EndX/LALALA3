@@ -177,7 +177,7 @@ class OfflineTrainingImportModalTest extends TestCase
     }
 
     /**
-     * 6. Test template has single header row on Row 1 containing exactly 44 canonical columns.
+     * 6. Test template has single header row on Row 1 containing exactly 43 canonical columns.
      */
     public function test_template_seven_parent_groups_and_forty_four_columns(): void
     {
@@ -185,7 +185,7 @@ class OfflineTrainingImportModalTest extends TestCase
         $this->assertCount(7, $groups);
 
         $totalCols = OfflineTrainingExcelSchema::totalColumns();
-        $this->assertEquals(44, $totalCols);
+        $this->assertEquals(43, $totalCols);
 
         $spreadsheet = OfflineTrainingExcelSchema::generateTemplateSpreadsheet();
         $sheet = $spreadsheet->getSheet(0);
@@ -196,15 +196,15 @@ class OfflineTrainingImportModalTest extends TestCase
         $this->assertEquals('Name', $sheet->getCell('C1')->getValue());
         $this->assertEquals('Grade', $sheet->getCell('D1')->getValue());
         $this->assertEquals('Job Position', $sheet->getCell('E1')->getValue());
-        $this->assertEquals('Course Name', $sheet->getCell('I1')->getValue());
-        $this->assertEquals('Attendance Yes/No', $sheet->getCell('AH1')->getValue());
-        $this->assertEquals('Bond Status', $sheet->getCell('AJ1')->getValue());
-        $this->assertEquals('Program', $sheet->getCell('AM1')->getValue());
-        $this->assertEquals('Numerical', $sheet->getCell('AN1')->getValue()); // L2 Numerical
-        $this->assertEquals('Verbal', $sheet->getCell('AO1')->getValue());    // L2 Verbal
-        $this->assertEquals('Numerical', $sheet->getCell('AP1')->getValue()); // L3 Numerical
-        $this->assertEquals('Verbal', $sheet->getCell('AQ1')->getValue());    // L3 Verbal
-        $this->assertEquals('PIC', $sheet->getCell('AR1')->getValue());       // L3 PIC
+        $this->assertEquals('Course Title', $sheet->getCell('I1')->getValue());
+        $this->assertEquals('Reason', $sheet->getCell('AH1')->getValue());
+        $this->assertEquals('Bond Status', $sheet->getCell('AI1')->getValue());
+        $this->assertEquals('Program', $sheet->getCell('AL1')->getValue());
+        $this->assertEquals('Numerical', $sheet->getCell('AM1')->getValue()); // L2 Numerical
+        $this->assertEquals('Verbal', $sheet->getCell('AN1')->getValue());    // L2 Verbal
+        $this->assertEquals('Numerical', $sheet->getCell('AO1')->getValue()); // L3 Numerical
+        $this->assertEquals('Verbal', $sheet->getCell('AP1')->getValue());    // L3 Verbal
+        $this->assertEquals('PIC', $sheet->getCell('AQ1')->getValue());       // L3 PIC
     }
 
     /**
@@ -215,10 +215,10 @@ class OfflineTrainingImportModalTest extends TestCase
         $columns = OfflineTrainingExcelSchema::columns();
 
         // Find L2 and L3 columns by index
-        $l2Num = $columns[40];
-        $l2Ver = $columns[41];
-        $l3Num = $columns[42];
-        $l3Ver = $columns[43];
+        $l2Num = $columns[39];
+        $l2Ver = $columns[40];
+        $l3Num = $columns[41];
+        $l3Ver = $columns[42];
 
         $this->assertEquals('l2_numerical', $l2Num['key']);
         $this->assertEquals('l2_verbal', $l2Ver['key']);
@@ -230,6 +230,7 @@ class OfflineTrainingImportModalTest extends TestCase
         $this->assertEquals('L3 (PROJECT)', $l3Num['group']);
         $this->assertEquals('L3 (PROJECT)', $l3Ver['group']);
 
+        $this->assertEquals('AM', Coordinate::stringFromColumnIndex(39));
         $this->assertEquals('AN', Coordinate::stringFromColumnIndex(40));
         $this->assertEquals('AO', Coordinate::stringFromColumnIndex(41));
         $this->assertEquals('AP', Coordinate::stringFromColumnIndex(42));
@@ -441,7 +442,7 @@ class OfflineTrainingImportModalTest extends TestCase
             'id', 'offline_training_id', 'user_id', 'employee_id', 'name', 'grade', 'job_position',
             'team', 'department', 'company', 'learning_hours', 'progress', 'assessment_score',
             'certificate', 'attendance', 'attendance_reason', 'bond_status', 'bond_end_date',
-            'bond_amount_idr', 'bond_amount_usd', 'l1_program', 'l2_numerical', 'l2_verbal', 'l3_numerical', 'l3_verbal',
+            'bond_amount_idr', 'l1_program', 'l2_numerical', 'l2_verbal', 'l3_numerical', 'l3_verbal',
             'pic', 'created_at', 'updated_at'
         ];
         foreach ($expectedUserCols as $col) {

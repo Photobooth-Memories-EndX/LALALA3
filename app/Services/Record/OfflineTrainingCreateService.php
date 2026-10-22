@@ -221,7 +221,6 @@ class OfflineTrainingCreateService
                 'bond_duration'     => $isBonded && isset($raw['bond_duration']) && is_numeric($raw['bond_duration']) ? (int) $raw['bond_duration'] : null,
                 'bond_end_date'     => $isBonded ? $this->normalizeDate($raw['bond_end_date'] ?? null) : null,
                 'bond_amount_idr'   => $isBonded ? $this->normalizeMoney($raw['bond_amount_idr'] ?? $raw['bond_amount'] ?? null) : null,
-                'bond_amount_usd'   => $isBonded ? $this->normalizeMoney($raw['bond_amount_usd'] ?? null) : null,
                 'bond_amount'       => $isBonded ? $this->normalizeMoney($raw['bond_amount_idr'] ?? $raw['bond_amount'] ?? null) : null,
                 'l1_program'        => $this->normalizeString($raw['l1_program'] ?? null),
                 'l2_numerical'      => $this->normalizeDecimal($raw['l2_numerical'] ?? null, 4),

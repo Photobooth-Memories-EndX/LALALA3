@@ -93,7 +93,6 @@ class AllParticipantExport implements FromQuery, WithHeadings, WithChunkReading,
             'Progress',
             'Assessment Score (L2)',
             'Certificate',
-            'Attendance',
             'Attendance Reason',
             'Bond Status',
             'Bond End Date',
@@ -150,17 +149,16 @@ class AllParticipantExport implements FromQuery, WithHeadings, WithChunkReading,
             'AG' => 12,  // Progress
             'AH' => 20,  // Assessment Score (L2)
             'AI' => 14,  // Certificate
-            'AJ' => 14,  // Attendance
-            'AK' => 25,  // Attendance Reason
-            'AL' => 14,  // Bond Status
-            'AM' => 15,  // Bond End Date
-            'AN' => 16,  // Bond Amount
-            'AO' => 14,  // L1 Program
-            'AP' => 15,  // L2 Numerical
-            'AQ' => 14,  // L2 Verbal
-            'AR' => 15,  // L3 Numerical
-            'AS' => 14,  // L3 Verbal
-            'AT' => 14,  // PIC
+            'AJ' => 25,  // Attendance Reason
+            'AK' => 14,  // Bond Status
+            'AL' => 15,  // Bond End Date
+            'AM' => 16,  // Bond Amount
+            'AN' => 14,  // L1 Program
+            'AO' => 15,  // L2 Numerical
+            'AP' => 14,  // L2 Verbal
+            'AQ' => 15,  // L3 Numerical
+            'AR' => 14,  // L3 Verbal
+            'AS' => 14,  // PIC
         ];
     }
 
@@ -323,12 +321,6 @@ class AllParticipantExport implements FromQuery, WithHeadings, WithChunkReading,
                     $durationFormatted = sprintf('%02d:%02d:%02d', $hours, $mins, $seconds);
                 }
 
-                // Attendance
-                $attendanceStr = '';
-                if ($row->attendance !== null) {
-                    $attendanceStr = (bool) $row->attendance ? 'Present' : 'Absent';
-                }
-
                 // Counted as Corporate KPI
                 $kpiStr = '';
                 if ($row->counted_corporate_kpi !== null) {
@@ -339,6 +331,10 @@ class AllParticipantExport implements FromQuery, WithHeadings, WithChunkReading,
                         $kpiStr = 'No';
                     }
                 }
+
+                // Bond amount formatting (IDR only)
+                $idr = $row->bond_amount_idr ?? $row->bond_amount ?? null;
+                $bondAmt = ($idr !== null && (float) $idr > 0) ? 'Rp ' . number_format((float) $idr, 0, ',', '.') : '-';
 
                 $data = [
                     $row->source === 'offline' ? 'Non KP OWL' : 'KP OWL',
@@ -375,11 +371,10 @@ class AllParticipantExport implements FromQuery, WithHeadings, WithChunkReading,
                     $row->progress !== null ? ($row->progress . '%') : '0%',
                     is_numeric($row->assessment_score) ? (int) round((float) $row->assessment_score) : '',
                     $row->certificate ?: '',
-                    $attendanceStr,
                     $row->attendance_reason ?: '',
                     $row->bond_status ?: '',
                     $row->bond_end_date ? date('Y-m-d', strtotime($row->bond_end_date)) : '',
-                    $row->bond_amount !== null ? number_format((float) $row->bond_amount, 2) : '',
+                    $bondAmt,
                     $row->l1_program ?: '',
                     $row->l2_numerical !== null ? number_format((float) $row->l2_numerical, 2) : '',
                     $row->l2_verbal ?: '',

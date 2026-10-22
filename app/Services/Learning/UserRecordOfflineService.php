@@ -264,7 +264,6 @@ class UserRecordOfflineService
             'bond_end_date'        => $training->bond_end_date ? Carbon::parse($training->bond_end_date)->format('Y-m-d') : ($otu->bond_end_date ? Carbon::parse($otu->bond_end_date)->format('Y-m-d') : ''),
             'bond_end_date_display'=> $bondEndDateStr,
             'bond_amount_idr'      => $otu->bond_amount_idr ?? ($training->bond_amount_idr ?? ($otu->bond_amount ?? null)),
-            'bond_amount_usd'      => $otu->bond_amount_usd ?? ($training->bond_amount_usd ?? null),
             'bond_amount'          => $training->bond_amount ?? ($bondAmount ?: null),
             'bond_amount_formatted'=> $bondAmountFormatted,
         ];

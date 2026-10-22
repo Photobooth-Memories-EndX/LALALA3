@@ -114,12 +114,6 @@ class OfflineClassificationCsvExport implements FromQuery, WithHeadings, WithMap
             }
         }
 
-        // Attendance
-        $attendanceStr = '-';
-        if ($row->attendance !== null) {
-            $attendanceStr = (bool) $row->attendance ? 'Yes' : 'No';
-        }
-
         // Counted as Corporate KPI
         $kpiStr = '-';
         if ($row->counted_corporate_kpi !== null) {
@@ -167,17 +161,16 @@ class OfflineClassificationCsvExport implements FromQuery, WithHeadings, WithMap
             $this->sanitizeCsvValue($row->instructor ?: '-'),                             // 31. Instructor
             is_numeric($row->assessment_score) ? (int) round((float) $row->assessment_score) : '-',       // 32. Assessment Score
             $this->sanitizeCsvValue($row->certificate ?: '-'),                            // 33. Certificate
-            $attendanceStr,                                                               // 34. Attendance Yes/No
-            $this->sanitizeCsvValue($row->attendance_reason ?: '-'),                      // 35. Reason
-            $this->sanitizeCsvValue($row->bond_status ?: 'No'),                           // 36. Bond Status
-            $row->bond_end_date ?: '-',                                                   // 37. Bond End Date
-            $row->bond_amount !== null ? (float) $row->bond_amount : '-',                 // 38. Bond Amount
-            $this->sanitizeCsvValue($row->l1_program ?: '-'),                             // 39. Program
-            $row->l2_numerical !== null ? (float) $row->l2_numerical : '-',               // 40. Numerical
-            $this->sanitizeCsvValue($row->l2_verbal ?: '-'),                              // 41. Verbal
-            $row->l3_numerical !== null ? (float) $row->l3_numerical : '-',               // 42. Numerical
-            $this->sanitizeCsvValue($row->l3_verbal ?: '-'),                              // 43. Verbal
-            $this->sanitizeCsvValue($row->pic ?: '-'),                                    // 44. PIC
+            $this->sanitizeCsvValue($row->attendance_reason ?: '-'),                      // 34. Reason
+            $this->sanitizeCsvValue($row->bond_status ?: 'No'),                           // 35. Bond Status
+            $row->bond_end_date ?: '-',                                                   // 36. Bond End Date
+            $row->bond_amount !== null ? (float) $row->bond_amount : '-',                 // 37. Bond Amount
+            $this->sanitizeCsvValue($row->l1_program ?: '-'),                             // 38. Program
+            $row->l2_numerical !== null ? (float) $row->l2_numerical : '-',               // 39. Numerical
+            $this->sanitizeCsvValue($row->l2_verbal ?: '-'),                              // 40. Verbal
+            $row->l3_numerical !== null ? (float) $row->l3_numerical : '-',               // 41. Numerical
+            $this->sanitizeCsvValue($row->l3_verbal ?: '-'),                              // 42. Verbal
+            $this->sanitizeCsvValue($row->pic ?: '-'),                                    // 43. PIC
         ];
     }
 

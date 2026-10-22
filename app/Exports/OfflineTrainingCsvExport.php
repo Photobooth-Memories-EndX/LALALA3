@@ -101,12 +101,6 @@ class OfflineTrainingCsvExport implements FromQuery, WithHeadings, WithMapping, 
             }
         }
 
-        // Attendance
-        $attendanceStr = '-';
-        if ($row->attendance !== null) {
-            $attendanceStr = (bool) $row->attendance ? 'Yes' : 'No';
-        }
-
         // Counted as Corporate KPI
         $kpiStr = '-';
         if ($row->counted_corporate_kpi !== null) {
@@ -152,17 +146,16 @@ class OfflineTrainingCsvExport implements FromQuery, WithHeadings, WithMapping, 
             $row->instructor ?: '-',                                            // 31. Instructor
             is_numeric($row->assessment_score) ? (int) round((float) $row->assessment_score) : '-', // 32. Assessment Score
             $row->certificate ?: '-',                                           // 33. Certificate
-            $attendanceStr,                                                     // 34. Attendance Yes/No
-            $row->attendance_reason ?: '-',                                     // 35. Reason
-            $row->bond_status ?: 'No',                                          // 36. Bond Status
-            $row->bond_end_date ?: '-',                                         // 37. Bond End Date
-            $row->bond_amount !== null ? (float) $row->bond_amount : '-',       // 38. Bond Amount
-            $row->l1_program ?: '-',                                            // 39. Program
-            $row->l2_numerical !== null ? (float) $row->l2_numerical : '-',     // 40. Numerical
-            $row->l2_verbal ?: '-',                                             // 41. Verbal
-            $row->l3_numerical !== null ? (float) $row->l3_numerical : '-',     // 42. Numerical
-            $row->l3_verbal ?: '-',                                             // 43. Verbal
-            $row->pic ?: '-',                                                   // 44. PIC
+            $row->attendance_reason ?: '-',                                     // 34. Reason
+            $row->bond_status ?: 'No',                                          // 35. Bond Status
+            $row->bond_end_date ?: '-',                                         // 36. Bond End Date
+            $row->bond_amount !== null ? (float) $row->bond_amount : '-',       // 37. Bond Amount
+            $row->l1_program ?: '-',                                            // 38. Program
+            $row->l2_numerical !== null ? (float) $row->l2_numerical : '-',     // 39. Numerical
+            $row->l2_verbal ?: '-',                                             // 40. Verbal
+            $row->l3_numerical !== null ? (float) $row->l3_numerical : '-',     // 41. Numerical
+            $row->l3_verbal ?: '-',                                             // 42. Verbal
+            $row->pic ?: '-',                                                   // 43. PIC
         ];
     }
 

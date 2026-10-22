@@ -615,7 +615,6 @@ class OfflineTrainingImportService
                         'bond_duration'       => $p['bond_duration'] ?? null,
                         'bond_end_date'       => $p['bond_end_date'],
                         'bond_amount_idr'     => $p['bond_amount_idr'] ?? $p['bond_amount'] ?? null,
-                        'bond_amount_usd'     => $p['bond_amount_usd'] ?? null,
                         'l1_program'          => $p['l1_program'],
                         'l2_numerical'        => $p['l2_numerical'],
                         'l2_verbal'           => $p['l2_verbal'],
@@ -922,7 +921,6 @@ class OfflineTrainingImportService
             'bond_duration'         => isset($raw['bond_duration']) && is_numeric($raw['bond_duration']) ? (int) $raw['bond_duration'] : null,
             'bond_end_date'         => $this->normalizeDate($raw['bond_end_date'] ?? null),
             'bond_amount_idr'       => $this->normalizeMoney($raw['bond_amount_idr'] ?? $raw['bond_amount'] ?? null),
-            'bond_amount_usd'       => $this->normalizeMoney($raw['bond_amount_usd'] ?? null),
             'bond_amount'           => $this->normalizeMoney($raw['bond_amount_idr'] ?? $raw['bond_amount'] ?? null),
 
             // Kirkpatrick Evaluations

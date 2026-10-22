@@ -80,7 +80,6 @@ class AllRecordExport implements FromQuery, WithHeadings, WithChunkReading, With
             'Progress',
             'Assessment Score (L2)',
             'Certificate',
-            'Attendance',
             'Attendance Reason',
             'Bond Status',
             'Bond End Date',
@@ -137,17 +136,16 @@ class AllRecordExport implements FromQuery, WithHeadings, WithChunkReading, With
             'AG' => 12,  // Progress
             'AH' => 20,  // Assessment Score (L2)
             'AI' => 14,  // Certificate
-            'AJ' => 14,  // Attendance
-            'AK' => 25,  // Attendance Reason
-            'AL' => 14,  // Bond Status
-            'AM' => 15,  // Bond End Date
-            'AN' => 16,  // Bond Amount
-            'AO' => 14,  // L1 Program
-            'AP' => 15,  // L2 Numerical
-            'AQ' => 14,  // L2 Verbal
-            'AR' => 15,  // L3 Numerical
-            'AS' => 14,  // L3 Verbal
-            'AT' => 14,  // PIC
+            'AJ' => 25,  // Attendance Reason
+            'AK' => 14,  // Bond Status
+            'AL' => 15,  // Bond End Date
+            'AM' => 16,  // Bond Amount
+            'AN' => 14,  // L1 Program
+            'AO' => 15,  // L2 Numerical
+            'AP' => 14,  // L2 Verbal
+            'AQ' => 15,  // L3 Numerical
+            'AR' => 14,  // L3 Verbal
+            'AS' => 14,  // PIC
         ];
     }
 
@@ -304,26 +302,6 @@ class AllRecordExport implements FromQuery, WithHeadings, WithChunkReading, With
                     $durationFormatted = sprintf('%02d:%02d:%02d', $hours, $mins, $seconds);
                 }
 
-                // Attendance
-                $attendanceStr = 'No';
-                if ($row->attendance !== null) {
-                    $attLower = strtolower(trim((string) $row->attendance));
-                    $attendanceStr = in_array($attLower, ['1', 'true', 'present', 'yes'], true) ? 'Yes' : 'No';
-                } elseif (isset($row->progress) && (float) $row->progress >= 100) {
-                    $attendanceStr = 'Yes';
-                }
-
-                // Counted as Corporate KPI
-                $kpiStr = '';
-                if ($row->counted_corporate_kpi !== null) {
-                    if ((bool) $row->counted_corporate_kpi) {
-                        $year = !empty($row->corporate_kpi_year) ? $row->corporate_kpi_year : (!empty($row->sub_corporate_kpi) && preg_match('/^\d{4}$/', (string)$row->sub_corporate_kpi) ? $row->sub_corporate_kpi : null);
-                        $kpiStr = $year ? "Yes ({$year})" : "Yes";
-                    } else {
-                        $kpiStr = 'No';
-                    }
-                }
-
                 // Clean Assessment Score formatting (remove trailing decimal zeros/dots)
                 $cleanScore = is_numeric($row->assessment_score) ? (int) round((float) $row->assessment_score) : '-';
 
@@ -341,17 +319,9 @@ class AllRecordExport implements FromQuery, WithHeadings, WithChunkReading, With
                 $delivMethod = \App\Models\OfflineTraining::normalizeDeliveryMethod($row->delivery_method ?: ($row->source === 'offline' ? 'Offline' : 'Online'));
                 $subDelivMethod = $row->sub_delivery_method ?: ($row->source === 'offline' ? 'On-site' : 'E-learning');
 
-                // Bond amount formatting
-                $bondAmt = '-';
+                // Bond amount formatting (IDR only)
                 $idr = $row->bond_amount_idr ?? $row->bond_amount ?? null;
-                $usd = $row->bond_amount_usd ?? null;
-                if ($idr !== null && (float) $idr > 0 && $usd !== null && (float) $usd > 0) {
-                    $bondAmt = 'IDR ' . number_format((float) $idr, 0, ',', '.') . ' / USD ' . number_format((float) $usd, 2, '.', ',');
-                } elseif ($idr !== null && (float) $idr > 0) {
-                    $bondAmt = number_format((float) $idr, 2);
-                } elseif ($usd !== null && (float) $usd > 0) {
-                    $bondAmt = '$ ' . number_format((float) $usd, 2);
-                }
+                $bondAmt = ($idr !== null && (float) $idr > 0) ? 'Rp ' . number_format((float) $idr, 0, ',', '.') : '-';
 
                 $data = [
                     $row->source === 'offline' ? 'Non KP OWL' : 'KP OWL',
@@ -388,7 +358,6 @@ class AllRecordExport implements FromQuery, WithHeadings, WithChunkReading, With
                     $row->progress !== null ? ($row->progress . '%') : '0%',
                     $cleanScore,
                     $row->certificate ?: '-',
-                    $attendanceStr,
                     $row->attendance_reason ?: '-',
                     $row->bond_status ?: 'No',
                     $row->bond_end_date ? date('Y-m-d', strtotime($row->bond_end_date)) : '-',

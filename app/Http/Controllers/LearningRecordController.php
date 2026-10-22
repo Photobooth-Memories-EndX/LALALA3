@@ -782,7 +782,6 @@ class LearningRecordController extends Controller
                 'bond_end_date'   => '-',
                 'bond_amount'     => '-',
                 'bond_amount_idr' => '-',
-                'bond_amount_usd' => '-',
                 'bond_amount_formatted' => '-',
                 'pic'             => '-',
             ];
@@ -1001,7 +1000,6 @@ class LearningRecordController extends Controller
                 'bond_end_date'   => '-',
                 'bond_amount'     => '-',
                 'bond_amount_idr' => '-',
-                'bond_amount_usd' => '-',
                 'bond_amount_formatted' => '-',
                 'pic'             => '-',
             ];
@@ -1180,21 +1178,13 @@ class LearningRecordController extends Controller
             $record->certificate = in_array($rawCert, ['yes', '1', 'available', 'true'], true) ? 'Available' : 'Not Available';
 
             $rawIdr = $record->bond_amount_idr ?? $record->bond_amount ?? null;
-            $rawUsd = $record->bond_amount_usd ?? null;
-            $parts = [];
             if ($rawIdr !== null && (float) $rawIdr > 0) {
                 $record->bond_amount_idr_formatted = 'Rp ' . number_format((float) $rawIdr, 0, ',', '.');
-                $parts[] = $record->bond_amount_idr_formatted;
+                $record->bond_amount_formatted = $record->bond_amount_idr_formatted;
             } else {
                 $record->bond_amount_idr_formatted = '-';
+                $record->bond_amount_formatted = '-';
             }
-            if ($rawUsd !== null && (float) $rawUsd > 0) {
-                $record->bond_amount_usd_formatted = '$ ' . number_format((float) $rawUsd, 2, '.', ',');
-                $parts[] = $record->bond_amount_usd_formatted;
-            } else {
-                $record->bond_amount_usd_formatted = '-';
-            }
-            $record->bond_amount_formatted = !empty($parts) ? implode(' / ', $parts) : '-';
             $record->source = 'Non-KP OWL';
             $record->title = !empty($record->title) ? $record->title : (!empty($record->course_name) ? $record->course_name : 'Training Record');
             $record->user_name = !empty($record->user_name) ? $record->user_name : (!empty($record->participant_name) ? $record->participant_name : (Auth::user()?->name ?? '-'));
@@ -1267,7 +1257,6 @@ class LearningRecordController extends Controller
                         'bond_end_date'          => '-',
                         'bond_amount'            => '-',
                         'bond_amount_idr'        => '-',
-                        'bond_amount_usd'        => '-',
                         'bond_amount_formatted'  => '-',
                         'pic'                    => '-',
                         'user_name'              => Auth::user()?->name ?? '-',
@@ -1330,7 +1319,6 @@ class LearningRecordController extends Controller
                 'bond_end_date'          => '-',
                 'bond_amount'            => '-',
                 'bond_amount_idr'        => '-',
-                'bond_amount_usd'        => '-',
                 'bond_amount_formatted'  => '-',
                 'pic'                    => '-',
                 'user_name'              => Auth::user()?->name ?? '-',
