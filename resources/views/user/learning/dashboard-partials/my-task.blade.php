@@ -583,9 +583,9 @@
 
             // Update chevron icons: point up for current, down for others
             var currentId = this.id;
-            $('#parentTableAccordion .btn-task-collapse-toggle').each(function () {
+            $('#parentTableAccordion .btn-task-collapse-toggle, #parentTableAccordion .course-col-trigger').each(function () {
                 var target = $(this).data('bs-target');
-                var icon = $(this).find('i');
+                var icon = $(this).find('.ti-chevron-down, .ti-chevron-up');
                 if (target === '#' + currentId) {
                     icon.removeClass('ti-chevron-down').addClass('ti-chevron-up');
                 } else {
@@ -596,7 +596,8 @@
 
         $(document).off('hide.bs.collapse.mytask').on('hide.bs.collapse.mytask', '#parentTableAccordion .task-collapse-row', function () {
             var targetId = '#' + this.id;
-            $('#parentTableAccordion .btn-task-collapse-toggle[data-bs-target="' + targetId + '"] i')
+            $('#parentTableAccordion [data-bs-target="' + targetId + '"]')
+                .find('.ti-chevron-up')
                 .removeClass('ti-chevron-up')
                 .addClass('ti-chevron-down');
         });
