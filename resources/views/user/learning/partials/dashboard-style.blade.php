@@ -89,7 +89,11 @@
     .learning-section-wrapper > .learning-section-padding,
     .learning-filter-card,
     .learning-filter-card > .card-body,
-    .learning-filter-card form {
+    .learning-filter-card form,
+    .my-task-filter-card,
+    .my-task-filter-card > .card-body,
+    .my-task-filter-card form,
+    .my-task-toolbar {
         overflow: visible !important;
     }
 

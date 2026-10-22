@@ -41,9 +41,14 @@
         'assessment'       => 'Assessment',
     ];
     // Drill-down navigation: parent list <-> one parent's tasks.
+    // Drill-down navigation: parent list <-> one parent's tasks.
     $baseParams = array_filter([
         'learning_tab'   => 'my-task',
         'my_task_filter' => $filter === 'all' ? null : $filter,
+        'my_task_type'   => ($filterType ?? 'all') === 'all' ? null : $filterType,
+        'my_task_status' => ($filterStatus ?? 'all') === 'all' ? null : $filterStatus,
+        'my_task_year'   => ($filterYear ?? 'all') === 'all' ? null : $filterYear,
+        'my_task_month'  => ($filterMonth ?? 'all') === 'all' ? null : $filterMonth,
         'my_task_q'      => ($search ?? '') !== '' ? $search : null,
     ]);
     $backUrl = route('user.learning.dashboard', $baseParams);
@@ -53,16 +58,20 @@
         'my_task_parent' => ($activeGroup ?? null) ? $activeGroup['key'] : null,
     ]));
     $tabs = [
-        'all'      => ['label' => 'All',      'icon' => 'ti-layers'],
-        'playlist' => ['label' => 'Playlist', 'icon' => 'ti-playlist'],
-        'content'  => ['label' => 'Content',  'icon' => 'ti-device-laptop'],
-        'asesment' => ['label' => 'Assessment', 'icon' => 'ti-clipboard-check'],
-        'others'   => ['label' => 'Others',   'icon' => 'ti-world'],
+        'all'      => ['label' => 'All Tasks'],
+        'playlist' => ['label' => 'Playlist'],
+        'content'  => ['label' => 'Content'],
+        'asesment' => ['label' => 'Assessment'],
+        'others'   => ['label' => 'Others'],
     ];
-    // Clicking a tab navigates immediately (keeps search + parent context).
+    // Clicking a tab navigates immediately (keeps search + parent context + dropdown filters).
     $tabUrl = fn ($key) => route('user.learning.dashboard', array_filter([
         'learning_tab'   => 'my-task',
         'my_task_filter' => $key === 'all' ? null : $key,
+        'my_task_type'   => ($filterType ?? 'all') === 'all' ? null : $filterType,
+        'my_task_status' => ($filterStatus ?? 'all') === 'all' ? null : $filterStatus,
+        'my_task_year'   => ($filterYear ?? 'all') === 'all' ? null : $filterYear,
+        'my_task_month'  => ($filterMonth ?? 'all') === 'all' ? null : $filterMonth,
         'my_task_q'      => ($search ?? '') !== '' ? $search : null,
         'my_task_parent' => ($activeGroup ?? null) ? $activeGroup['key'] : null,
     ]));
@@ -125,59 +134,201 @@
     </div>
 @endif
 
-{{-- Access code: unlock standalone tasks shared with specific users --}}
-@if (($showRedeemCard ?? false) && Route::has('my-task.redeem'))
-    <div class="card border-0 shadow-sm rounded-4 mb-3">
-        <div class="card-body py-2 px-3">
-            @if (session('redeem_notice'))
-                <div class="alert alert-{{ session('redeem_notice')['type'] === 'success' ? 'success' : 'danger' }} py-2 mb-2">
-                    {{ session('redeem_notice')['text'] }}
-                </div>
-                @php session()->forget('redeem_notice'); @endphp
-            @endif
-            <form method="POST" action="{{ route('my-task.redeem') }}" class="d-flex flex-wrap gap-2 align-items-center">
-                @csrf
-                <span class="text-muted small d-flex align-items-center">
-                    <i class="ti ti-key me-1"></i>Have an access code? <span class="ms-1 d-none d-md-inline">You can also open the shared link / scan the QR code.</span>
-                </span>
-                <input type="text" name="code" class="form-control form-control-sm text-uppercase"
-                       style="max-width:160px" placeholder="Enter code" maxlength="12" required>
-                <button type="submit" class="btn btn-sm btn-primary">Unlock</button>
-            </form>
+{{-- Quick Filter Bar (Matching Reference Layout) --}}
+<div class="card border-0 shadow-sm rounded-4 mb-3 my-task-filter-card">
+    <div class="card-body p-3 p-md-4">
+        {{-- Header: Title & Subtitle --}}
+        <div class="mb-3">
+            <h2 class="fw-bold mb-1 my-task-filter-title">My Tasks</h2>
+            <p class="text-muted small mb-0 my-task-filter-subtitle">Manage and complete your assigned learning activities.</p>
         </div>
-    </div>
-@endif
 
-{{-- Quick Filter --}}
-<div class="card border-0 shadow-sm rounded-4 mb-3">
-    <div class="card-body">
-        <div class="text-muted small mb-2">Quick Filter</div>
-        <div class="d-flex flex-wrap gap-2 mb-2">
+        {{-- Category Filter Pills --}}
+        <div class="d-flex align-items-center flex-wrap gap-2 mb-3 my-task-pills-row">
             @foreach ($tabs as $key => $tab)
+                @php
+                    $isActive = $filter === $key;
+                @endphp
                 <a href="{{ $tabUrl($key) }}"
-                   class="btn {{ $filter === $key ? 'btn-primary' : 'btn-white' }} d-inline-flex align-items-center">
-                    <i class="ti {{ $tab['icon'] }} me-1"></i>{{ $tab['label'] }}
-                    @if (isset($categoryCounts[$key]))
-                        <span class="badge {{ $filter === $key ? 'bg-white text-primary' : 'bg-secondary-lt text-secondary' }} ms-1.5 px-1.5 py-0.5 rounded-pill fw-bold" style="font-size: 11px;">
-                            {{ $categoryCounts[$key] }}
-                        </span>
-                    @endif
+                   class="my-task-category-pill {{ $isActive ? 'active' : '' }}"
+                   title="Filter by {{ $tab['label'] }}">
+                    {{ $tab['label'] }}
                 </a>
             @endforeach
         </div>
-        <form method="GET" action="{{ route('user.learning.dashboard') }}" class="d-flex flex-wrap gap-2 align-items-center">
+
+        {{-- Subtle Divider Line --}}
+        <hr class="my-3 my-task-divider">
+
+        {{-- Fast Filter Toolbar --}}
+        <form method="GET" action="{{ route('user.learning.dashboard') }}" id="myTaskFilterForm" class="d-flex align-items-center flex-wrap gap-2 w-100 my-task-toolbar">
             <input type="hidden" name="learning_tab" value="my-task">
-            <input type="hidden" name="my_task_filter" value="{{ $filter }}">
+            <input type="hidden" name="my_task_filter" id="myTaskFilterInput" value="{{ $filter }}">
+            <input type="hidden" name="my_task_type" id="myTaskTypeInput" value="{{ $filterType }}">
+            <input type="hidden" name="my_task_status" id="myTaskStatusInput" value="{{ $filterStatus }}">
+            <input type="hidden" name="my_task_year" id="myTaskYearInput" value="{{ $filterYear }}">
+            <input type="hidden" name="my_task_month" id="myTaskMonthInput" value="{{ $filterMonth }}">
             @if ($activeGroup ?? null)
                 <input type="hidden" name="my_task_parent" value="{{ $activeGroup['key'] }}">
             @endif
-            <div class="input-icon flex-grow-1" style="min-width:180px">
-                <span class="input-icon-addon"><i class="ti ti-search"></i></span>
-                <input type="text" name="my_task_q" class="form-control" placeholder="Search..." value="{{ $search ?? '' }}">
+
+            {{-- 1. Dropdown: Type --}}
+            <div class="dropdown">
+                <button type="button"
+                        class="btn my-task-dropdown-btn dropdown-toggle {{ $filterType !== 'all' ? 'active' : '' }}"
+                        data-bs-toggle="dropdown"
+                        data-bs-display="static"
+                        aria-expanded="false">
+                    Type: <span class="fw-semibold">{{ $typeOptions[$filterType] ?? 'All' }}</span>
+                </button>
+                <div class="dropdown-menu shadow-sm">
+                    @foreach ($typeOptions as $val => $lbl)
+                        <a href="#" class="dropdown-item my-task-dropdown-item {{ $filterType === $val ? 'active' : '' }}"
+                           data-param="my_task_type" data-value="{{ $val }}">
+                            {{ $lbl }}
+                        </a>
+                    @endforeach
+                </div>
             </div>
-            <button type="submit" class="btn btn-primary" title="Search"><i class="ti ti-search"></i></button>
-            <a href="{{ $resetUrl }}" class="btn btn-white" title="Reset filter"><i class="ti ti-refresh"></i></a>
+
+            {{-- 2. Dropdown: Status --}}
+            <div class="dropdown">
+                <button type="button"
+                        class="btn my-task-dropdown-btn dropdown-toggle {{ $filterStatus !== 'all' ? 'active' : '' }}"
+                        data-bs-toggle="dropdown"
+                        data-bs-display="static"
+                        aria-expanded="false">
+                    Status: <span class="fw-semibold">{{ $statusOptions[$filterStatus] ?? 'All' }}</span>
+                </button>
+                <div class="dropdown-menu shadow-sm">
+                    @foreach ($statusOptions as $val => $lbl)
+                        <a href="#" class="dropdown-item my-task-dropdown-item {{ $filterStatus === $val ? 'active' : '' }}"
+                           data-param="my_task_status" data-value="{{ $val }}">
+                            {{ $lbl }}
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+
+            {{-- 3. Dropdown: Year --}}
+            <div class="dropdown">
+                <button type="button"
+                        class="btn my-task-dropdown-btn dropdown-toggle {{ $filterYear !== 'all' ? 'active' : '' }}"
+                        data-bs-toggle="dropdown"
+                        data-bs-display="static"
+                        aria-expanded="false">
+                    Year: <span class="fw-semibold">{{ $filterYear === 'all' ? 'All' : $filterYear }}</span>
+                </button>
+                <div class="dropdown-menu shadow-sm">
+                    <a href="#" class="dropdown-item my-task-dropdown-item {{ $filterYear === 'all' ? 'active' : '' }}"
+                       data-param="my_task_year" data-value="all">
+                        All
+                    </a>
+                    @foreach ($years as $yr)
+                        <a href="#" class="dropdown-item my-task-dropdown-item {{ (string) $filterYear === (string) $yr ? 'active' : '' }}"
+                           data-param="my_task_year" data-value="{{ $yr }}">
+                            {{ $yr }}
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+
+            {{-- 4. Dropdown: Month --}}
+            <div class="dropdown">
+                <button type="button"
+                        class="btn my-task-dropdown-btn dropdown-toggle {{ $filterMonth !== 'all' ? 'active' : '' }}"
+                        data-bs-toggle="dropdown"
+                        data-bs-display="static"
+                        aria-expanded="false">
+                    Month: <span class="fw-semibold">{{ $filterMonth === 'all' ? 'All' : ($months[(int) $filterMonth] ?? 'All') }}</span>
+                </button>
+                <div class="dropdown-menu shadow-sm" style="max-height: 280px; overflow-y: auto;">
+                    <a href="#" class="dropdown-item my-task-dropdown-item {{ $filterMonth === 'all' ? 'active' : '' }}"
+                       data-param="my_task_month" data-value="all">
+                        All
+                    </a>
+                    @foreach ($months as $num => $monthName)
+                        <a href="#" class="dropdown-item my-task-dropdown-item {{ (string) $filterMonth === (string) $num ? 'active' : '' }}"
+                           data-param="my_task_month" data-value="{{ $num }}">
+                            {{ $monthName }}
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+
+            {{-- 5. Search input --}}
+            <div class="position-relative flex-grow-1 my-task-search-wrapper" style="min-width: 220px;">
+                <span class="position-absolute top-50 start-0 translate-middle-y ps-3 text-muted pointer-events-none" style="z-index: 2;">
+                    <i class="ti ti-search" style="font-size: 15px;"></i>
+                </span>
+                <input type="text"
+                       name="my_task_q"
+                       id="myTaskSearchInput"
+                       class="form-control my-task-search-input"
+                       placeholder="Search tasks..."
+                       value="{{ $search ?? '' }}"
+                       autocomplete="off">
+                @if (!empty($search))
+                    <a href="{{ $tabUrl($filter) }}" class="btn btn-link position-absolute top-50 end-0 translate-middle-y pe-2.5 text-muted text-decoration-none my-task-search-clear" title="Clear search" style="z-index: 2;">
+                        <i class="ti ti-x"></i>
+                    </a>
+                @endif
+            </div>
+
+            {{-- 6. Blue Search Button --}}
+            <button type="submit"
+                    class="btn btn-primary my-task-btn-square my-task-btn-search"
+                    title="Search tasks">
+                <i class="ti ti-search text-white fs-3"></i>
+            </button>
+
+            {{-- 7. Reset Button --}}
+            <a href="{{ $resetUrl }}"
+               class="btn btn-white my-task-btn-square my-task-btn-reset"
+               title="Reset all filters">
+                <i class="ti ti-refresh fs-3 text-secondary"></i>
+            </a>
         </form>
+
+        {{-- Active Filters indicator (if any filter or search active) --}}
+        @php
+            $hasActiveFilters = !empty($search) || $filterType !== 'all' || $filterStatus !== 'all' || $filterYear !== 'all' || $filterMonth !== 'all';
+        @endphp
+        @if ($hasActiveFilters)
+            <div class="d-flex align-items-center flex-wrap gap-2 mt-2.5 pt-2.5 border-top">
+                <span class="text-muted small" style="font-size: 11.5px;">Active Filter:</span>
+                @if (!empty($search))
+                    <span class="badge bg-light text-dark border px-2.5 py-1 rounded-pill d-inline-flex align-items-center gap-1 shadow-none" style="font-size: 11.5px;">
+                        <i class="ti ti-search text-muted"></i>
+                        <span>"{{ $search }}"</span>
+                        <a href="{{ $tabUrl($filter) }}" class="text-muted ms-1 text-decoration-none" title="Remove search filter"><i class="ti ti-x"></i></a>
+                    </span>
+                @endif
+                @if ($filterType !== 'all')
+                    <span class="badge bg-light text-dark border px-2.5 py-1 rounded-pill d-inline-flex align-items-center gap-1 shadow-none" style="font-size: 11.5px;">
+                        <span>Type: {{ $typeOptions[$filterType] ?? $filterType }}</span>
+                    </span>
+                @endif
+                @if ($filterStatus !== 'all')
+                    <span class="badge bg-light text-dark border px-2.5 py-1 rounded-pill d-inline-flex align-items-center gap-1 shadow-none" style="font-size: 11.5px;">
+                        <span>Status: {{ $statusOptions[$filterStatus] ?? $filterStatus }}</span>
+                    </span>
+                @endif
+                @if ($filterYear !== 'all')
+                    <span class="badge bg-light text-dark border px-2.5 py-1 rounded-pill d-inline-flex align-items-center gap-1 shadow-none" style="font-size: 11.5px;">
+                        <span>Year: {{ $filterYear }}</span>
+                    </span>
+                @endif
+                @if ($filterMonth !== 'all')
+                    <span class="badge bg-light text-dark border px-2.5 py-1 rounded-pill d-inline-flex align-items-center gap-1 shadow-none" style="font-size: 11.5px;">
+                        <span>Month: {{ $months[(int)$filterMonth] ?? $filterMonth }}</span>
+                    </span>
+                @endif
+                <a href="{{ $resetUrl }}" class="text-primary small text-decoration-none ms-1 fw-semibold" style="font-size: 11.5px;">
+                    Reset all
+                </a>
+            </div>
+        @endif
     </div>
 </div>
 
@@ -302,7 +453,7 @@
 
     {{-- Parent list / Assessment table --}}
     @if ($groups->isNotEmpty())
-        @if ($filter === 'asesment')
+        @if ($filter === 'asesment' || $filterType === 'assessment')
             @include('user.learning.dashboard-partials.my-task-assessment-table', ['assessmentGroups' => $groups])
         @else
             @include('user.learning.dashboard-partials.my-task-parent-table', ['tableGroups' => $groups])
@@ -350,35 +501,39 @@
              data-bs-backdrop="static">
             <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
                 <div class="modal-content rounded-4 border-0 shadow-lg">
-                    <div class="modal-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center gap-2 flex-wrap">
-                            <span class="badge bg-purple-lt text-purple px-2.5 py-1 fs-6">
-                                <i class="ti ti-clipboard-check me-1"></i>Assessment
-                            </span>
-                            @if ($task->parentTitle())
-                                <span class="badge bg-secondary-lt text-secondary px-2 py-1 fs-6">
-                                    <i class="ti ti-bookmark me-1"></i>{{ $task->parentTitle() }}
-                                </span>
-                            @endif
-                        </div>
-                        <div class="d-flex align-items-center gap-2">
-                            @if ($task->is_completed)
-                                @if ($task->is_passed)
-                                    <span class="badge bg-success-lt text-success px-2.5 py-1 fs-6">Completed (Passed)</span>
-                                @else
-                                    <span class="badge bg-danger-lt text-danger px-2.5 py-1 fs-6">Failed</span>
-                                @endif
-                            @elseif ($task->is_expired)
-                                <span class="badge bg-danger-lt text-danger px-2.5 py-1 fs-6">Overdue</span>
-                            @else
-                                <span class="badge bg-primary-lt text-primary px-2.5 py-1 fs-6">In Progress</span>
-                            @endif
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
+                    <div class="modal-header bg-white py-2.5 px-4 border-bottom-0 d-flex align-items-center justify-content-end">
+                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <div class="modal-body p-4 bg-light-subtle">
+                    <div class="modal-body p-4 pt-1 bg-light-subtle">
                         <div class="card border-0 shadow-sm rounded-4 mb-0">
                             <div class="card-body p-4">
+                                {{-- Top Badges Row --}}
+                                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                                        <span class="badge bg-purple-lt text-purple px-2.5 py-1 fs-6">
+                                            <i class="ti ti-clipboard-check me-1"></i>Assessment
+                                        </span>
+                                        @if ($task->parentTitle())
+                                            <span class="badge bg-secondary-lt text-secondary px-2.5 py-1 fs-6">
+                                                <i class="ti ti-bookmark me-1"></i>{{ $task->parentTitle() }}
+                                            </span>
+                                        @endif
+                                    </div>
+                                    <div>
+                                        @if ($task->is_completed)
+                                            @if ($task->is_passed)
+                                                <span class="badge bg-success-lt text-success px-2.5 py-1 fs-6">Completed (Passed)</span>
+                                            @else
+                                                <span class="badge bg-danger-lt text-danger px-2.5 py-1 fs-6">Failed</span>
+                                            @endif
+                                        @elseif ($task->is_expired)
+                                            <span class="badge bg-danger-lt text-danger px-2.5 py-1 fs-6">Overdue</span>
+                                        @else
+                                            <span class="badge bg-primary-lt text-primary px-2.5 py-1 fs-6">In Progress</span>
+                                        @endif
+                                    </div>
+                                </div>
+
                                 <h2 class="fw-bold text-dark mb-2">{{ $task->title }}</h2>
                                 <div class="text-dark mb-4" style="line-height: 1.6; color: #000000;">
                                     {{ $task->description }}
@@ -485,29 +640,10 @@
              data-bs-backdrop="static">
             <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
                 <div class="modal-content rounded-4 border-0 shadow-lg">
-                    <div class="modal-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center gap-2 flex-wrap">
-                            <span class="badge bg-primary-lt text-primary px-2.5 py-1 fs-6">
-                                <i class="ti ti-file-text me-1"></i>{{ $task->typeLabel() }}
-                            </span>
-                            @if ($task->parentTitle())
-                                <span class="badge bg-secondary-lt text-secondary px-2 py-1 fs-6">
-                                    <i class="ti ti-bookmark me-1"></i>{{ $task->parentTitle() }}
-                                </span>
-                            @elseif ($task->isStandalone())
-                                <span class="badge bg-secondary-lt text-secondary px-2 py-1 fs-6">
-                                    <i class="ti ti-world me-1"></i>Global Task
-                                </span>
-                            @endif
-                        </div>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="badge {{ $statusBadges[$displayStatus($modalStatus)] }} px-2.5 py-1 fs-6">
-                                {{ $statusLabels[$displayStatus($modalStatus)] }}
-                            </span>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
+                    <div class="modal-header bg-white py-2.5 px-4 border-bottom-0 d-flex align-items-center justify-content-end">
+                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <div class="modal-body p-4 bg-light-subtle">
+                    <div class="modal-body p-4 pt-1 bg-light-subtle">
                         @include('user.learning.dashboard-partials.my-task-card', ['task' => $task, 'inModal' => true])
                     </div>
                 </div>
@@ -515,6 +651,8 @@
         </div>
     @endif
 @endforeach
+
+
 
 <script>
 (function () {
@@ -548,27 +686,75 @@
         });
     }
 
-    // Helper: Hide all open collapsible rows (except an optional excluded one)
+    // Helper: Instantly close other collapsible rows with ZERO delay (no animation lag)
     function closeOtherCollapses(excludeCollapseEl) {
         var accordion = document.getElementById('parentTableAccordion');
         if (!accordion) return;
 
-        var openRows = accordion.querySelectorAll('.task-collapse-row.show');
+        // Remove is-active from any other course-parent-row
+        var activeParentRows = accordion.querySelectorAll('.course-parent-row.is-active');
+        activeParentRows.forEach(function (pRow) {
+            var tgt = pRow.getAttribute('data-collapse-target');
+            var tgtEl = tgt ? document.querySelector(tgt) : null;
+            if (tgtEl !== excludeCollapseEl) {
+                pRow.classList.remove('is-active');
+            }
+        });
+
+        var openRows = accordion.querySelectorAll('.task-collapse-row.show, .task-collapse-row.collapsing');
         openRows.forEach(function (row) {
             if (row !== excludeCollapseEl) {
                 if (typeof bootstrap !== 'undefined' && bootstrap.Collapse) {
                     var cInst = bootstrap.Collapse.getInstance(row);
                     if (cInst) {
-                        cInst.hide();
-                    } else if (typeof $ !== 'undefined') {
-                        $(row).collapse('hide');
+                        try {
+                            cInst.dispose();
+                        } catch (err) {}
                     }
-                } else if (typeof $ !== 'undefined') {
-                    $(row).collapse('hide');
                 }
+                row.classList.remove('show', 'collapsing');
+                row.style.height = '';
+
+                // Instantly flip chevron down and update aria-expanded
+                var rowId = row.id;
+                var triggers = accordion.querySelectorAll('[data-bs-target="#' + rowId + '"]');
+                triggers.forEach(function (btn) {
+                    btn.setAttribute('aria-expanded', 'false');
+                    var icon = btn.querySelector('.ti-chevron-up');
+                    if (icon) {
+                        icon.classList.remove('ti-chevron-up');
+                        icon.classList.add('ti-chevron-down');
+                    }
+                });
             }
         });
     }
+
+    // Capture phase event listener: Intercept click on course row toggle and close other rows INSTANTLY (0ms delay)
+    document.addEventListener('click', function (e) {
+        var toggleEl = e.target.closest('#parentTableAccordion .course-col-trigger, #parentTableAccordion .btn-task-collapse-toggle');
+        if (!toggleEl) return;
+
+        var targetSelector = toggleEl.getAttribute('data-bs-target');
+        if (!targetSelector) return;
+
+        var targetRow = document.querySelector(targetSelector);
+        var parentRow = toggleEl.closest('.course-parent-row');
+
+        // If the target course is about to be opened, close other courses instantly right away
+        if (targetRow && !targetRow.classList.contains('show')) {
+            closeOtherCollapses(targetRow);
+            closeOtherDropdowns(null);
+            if (parentRow) {
+                parentRow.classList.add('is-active');
+            }
+        } else if (targetRow && targetRow.classList.contains('show')) {
+            // Target course is being closed
+            if (parentRow) {
+                parentRow.classList.remove('is-active');
+            }
+        }
+    }, true);
 
     // 2. Dropdown opening handler: opening dropdown on Course B automatically closes Course A's dropdown
     if (typeof $ !== 'undefined') {
@@ -587,6 +773,12 @@
             closeOtherCollapses(this);
             closeOtherDropdowns(null);
 
+            var targetId = '#' + this.id;
+            var parentRow = $('#parentTableAccordion .course-parent-row[data-collapse-target="' + targetId + '"]');
+            if (parentRow.length) {
+                parentRow.addClass('is-active');
+            }
+
             // Update chevron icons: point up for current, down for others
             var currentId = this.id;
             $('#parentTableAccordion .btn-task-collapse-toggle, #parentTableAccordion .course-col-trigger').each(function () {
@@ -602,6 +794,10 @@
 
         $(document).off('hide.bs.collapse.mytask').on('hide.bs.collapse.mytask', '#parentTableAccordion .task-collapse-row', function () {
             var targetId = '#' + this.id;
+            var parentRow = $('#parentTableAccordion .course-parent-row[data-collapse-target="' + targetId + '"]');
+            if (parentRow.length) {
+                parentRow.removeClass('is-active');
+            }
             $('#parentTableAccordion [data-bs-target="' + targetId + '"]')
                 .find('.ti-chevron-up')
                 .removeClass('ti-chevron-up')
@@ -617,6 +813,394 @@
         $(document).off('show.bs.modal.mytaskmodal').on('show.bs.modal.mytaskmodal', '.task-popup-modal', function () {
             closeOtherDropdowns(null);
         });
+
+        // 6. Fast filter dropdown item selection
+        $(document).off('click.myTaskDropdown').on('click.myTaskDropdown', '.my-task-dropdown-item', function (e) {
+            e.preventDefault();
+            var param = $(this).data('param');
+            var val = String($(this).data('value'));
+            if (param === 'my_task_type') $('#myTaskTypeInput').val(val);
+            if (param === 'my_task_status') $('#myTaskStatusInput').val(val);
+            if (param === 'my_task_year') $('#myTaskYearInput').val(val);
+            if (param === 'my_task_month') $('#myTaskMonthInput').val(val);
+            $('#myTaskFilterForm').submit();
+        });
+
+        // 7. Active filter pill removal (x)
+        $(document).off('click.myTaskRemovePill').on('click.myTaskRemovePill', '.remove-filter-pill', function (e) {
+            e.preventDefault();
+            var param = $(this).data('param');
+            if (param === 'my_task_type') $('#myTaskTypeInput').val('all');
+            if (param === 'my_task_status') $('#myTaskStatusInput').val('all');
+            if (param === 'my_task_year') $('#myTaskYearInput').val('all');
+            if (param === 'my_task_month') $('#myTaskMonthInput').val('all');
+            $('#myTaskFilterForm').submit();
+        });
     }
 })();
 </script>
+
+<style>
+/* ── My Task Filter UI (Matching Reference Screenshot) ───────────────────────── */
+.my-task-filter-card {
+    background: #ffffff;
+    border: 1px solid #f1f5f9;
+    overflow: visible !important;
+    position: relative !important;
+    z-index: 40 !important;
+}
+
+.my-task-filter-card .card-body {
+    overflow: visible !important;
+    position: relative;
+}
+
+#learning-tab-content > .my-task-filter-card {
+    overflow: visible !important;
+}
+
+.my-task-filter-title {
+    color: #0f172a;
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.my-task-filter-subtitle {
+    color: #64748b;
+    font-size: 0.875rem;
+}
+
+/* Category Pills */
+.my-task-pills-row {
+    margin-top: 0.75rem;
+}
+
+.my-task-category-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.45rem 1.25rem;
+    border-radius: 50rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1.2;
+    text-decoration: none;
+    white-space: nowrap;
+    background-color: #f1f5f9;
+    color: #334155;
+    border: none;
+    transition: all 0.15s ease-in-out;
+}
+
+.my-task-category-pill:hover {
+    background-color: #e2e8f0;
+    color: #0f172a;
+    text-decoration: none;
+}
+
+/* Active State: Soft sky blue with bright blue text (1:1 with reference) */
+.my-task-category-pill.active {
+    background-color: #e0f2fe !important;
+    color: #0284c7 !important;
+    font-weight: 600;
+}
+
+/* Divider */
+.my-task-divider {
+    border-top: 1px solid #e2e8f0;
+    opacity: 0.7;
+    margin: 1rem 0;
+}
+
+/* Toolbar & Dropdowns */
+.my-task-toolbar {
+    gap: 0.5rem;
+    overflow: visible !important;
+    position: relative;
+}
+
+.my-task-toolbar .dropdown {
+    position: relative;
+}
+
+.my-task-toolbar .dropdown-menu {
+    z-index: 1060 !important;
+    min-width: 175px;
+    border-radius: 10px !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.15), 0 8px 10px -6px rgba(15, 23, 42, 0.08) !important;
+    padding: 0.35rem 0;
+}
+
+.my-task-toolbar .dropdown-item {
+    font-size: 0.8125rem;
+    padding: 0.45rem 1rem;
+    color: #334155;
+    transition: all 0.15s ease-in-out;
+}
+
+.my-task-toolbar .dropdown-item:hover {
+    background-color: #f1f5f9;
+    color: #0f172a;
+}
+
+.my-task-toolbar .dropdown-item.active,
+.my-task-toolbar .dropdown-item:active {
+    background-color: #e0f2fe !important;
+    color: #0284c7 !important;
+    font-weight: 600;
+}
+
+.my-task-dropdown-btn {
+    height: 38px;
+    padding: 0.45rem 0.85rem;
+    font-size: 0.8125rem;
+    font-weight: 400;
+    color: #334155;
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.15s ease-in-out;
+    box-shadow: none !important;
+}
+
+.my-task-dropdown-btn:hover {
+    background-color: #f8fafc;
+    border-color: #cbd5e1;
+    color: #0f172a;
+}
+
+.my-task-dropdown-btn:focus,
+.my-task-dropdown-btn.show {
+    border-color: #0284c7;
+    box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15) !important;
+}
+
+.my-task-dropdown-btn.active {
+    border-color: #0284c7;
+    color: #0284c7;
+    background-color: #f0f9ff;
+}
+
+.my-task-dropdown-btn::after {
+    margin-left: 0.55rem;
+    vertical-align: 0.15em;
+}
+
+/* Search input */
+.my-task-search-input {
+    height: 38px;
+    border-radius: 8px !important;
+    padding-left: 2.25rem;
+    padding-right: 2rem;
+    font-size: 0.8125rem;
+    border: 1px solid #e2e8f0;
+    background-color: #ffffff;
+    color: #334155;
+    transition: all 0.15s ease-in-out;
+}
+
+.my-task-search-input:focus {
+    background-color: #ffffff;
+    border-color: #0284c7;
+    box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15);
+}
+
+.my-task-search-input::placeholder {
+    color: #94a3b8;
+}
+
+/* Square Action Buttons (38px x 38px, rounded 8px) */
+.my-task-btn-square {
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border-radius: 8px !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: none !important;
+    transition: all 0.15s ease-in-out;
+}
+
+.my-task-btn-search {
+    background-color: #0054a6 !important;
+    border-color: #0054a6 !important;
+}
+
+.my-task-btn-search:hover {
+    background-color: #004085 !important;
+    border-color: #004085 !important;
+}
+
+.my-task-btn-filter,
+.my-task-btn-reset {
+    background-color: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #334155 !important;
+}
+
+.my-task-btn-filter:hover,
+.my-task-btn-reset:hover {
+    background-color: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+    color: #0f172a !important;
+}
+
+/* Dark mode adjustments */
+[data-bs-theme="dark"] .my-task-filter-card,
+body.dark-mode .my-task-filter-card {
+    background: #1e293b;
+    border-color: #334155;
+}
+
+[data-bs-theme="dark"] .my-task-filter-title,
+body.dark-mode .my-task-filter-title {
+    color: #f8fafc !important;
+}
+
+[data-bs-theme="dark"] .my-task-filter-subtitle,
+body.dark-mode .my-task-filter-subtitle {
+    color: #94a3b8 !important;
+}
+
+[data-bs-theme="dark"] .my-task-category-pill,
+body.dark-mode .my-task-category-pill {
+    background-color: #334155;
+    color: #cbd5e1;
+}
+
+[data-bs-theme="dark"] .my-task-category-pill:hover,
+body.dark-mode .my-task-category-pill:hover {
+    background-color: #475569;
+    color: #ffffff;
+}
+
+[data-bs-theme="dark"] .my-task-category-pill.active,
+body.dark-mode .my-task-category-pill.active {
+    background-color: rgba(2, 132, 199, 0.25) !important;
+    color: #38bdf8 !important;
+}
+
+[data-bs-theme="dark"] .my-task-divider,
+body.dark-mode .my-task-divider {
+    border-color: #334155;
+}
+
+[data-bs-theme="dark"] .my-task-dropdown-btn,
+body.dark-mode .my-task-dropdown-btn {
+    background-color: #1e293b;
+    border-color: #334155;
+    color: #cbd5e1;
+}
+
+[data-bs-theme="dark"] .my-task-search-input,
+body.dark-mode .my-task-search-input {
+    background-color: #1e293b;
+    border-color: #334155;
+    color: #f8fafc;
+}
+
+[data-bs-theme="dark"] .my-task-btn-reset,
+body.dark-mode .my-task-btn-reset {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+    color: #cbd5e1 !important;
+}
+
+[data-bs-theme="dark"] .my-task-toolbar .dropdown-menu,
+body.dark-mode .my-task-toolbar .dropdown-menu {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+}
+[data-bs-theme="dark"] .my-task-toolbar .dropdown-item,
+body.dark-mode .my-task-toolbar .dropdown-item {
+    color: #cbd5e1 !important;
+}
+[data-bs-theme="dark"] .my-task-toolbar .dropdown-item:hover,
+body.dark-mode .my-task-toolbar .dropdown-item:hover {
+    background-color: #334155 !important;
+    color: #ffffff !important;
+}
+[data-bs-theme="dark"] .my-task-toolbar .dropdown-item.active,
+body.dark-mode .my-task-toolbar .dropdown-item.active {
+    background-color: rgba(2, 132, 199, 0.3) !important;
+    color: #38bdf8 !important;
+}
+
+#parentTableAccordion .task-collapse-row,
+#parentTableAccordion .task-collapse-row.collapsing {
+    transition: none !important;
+}
+
+/* Active Course Highlight */
+.course-parent-row.is-active > td {
+    background-color: rgba(32, 107, 196, 0.05) !important;
+}
+.course-parent-row.is-active.is-assessment-group > td {
+    background-color: rgba(121, 82, 179, 0.05) !important;
+}
+.course-parent-row.is-active > td:first-child,
+.course-parent-row.is-active + .task-collapse-row > td:first-child {
+    box-shadow: inset 4px 0 0 0 var(--tblr-primary, #206bc4) !important;
+}
+.course-parent-row.is-active.is-assessment-group > td:first-child,
+.course-parent-row.is-active.is-assessment-group + .task-collapse-row > td:first-child {
+    box-shadow: inset 4px 0 0 0 #7952b3 !important;
+}
+.course-parent-row.is-active .course-title-text {
+    color: var(--tblr-primary, #206bc4) !important;
+}
+.course-parent-row.is-active.is-assessment-group .course-title-text {
+    color: #7952b3 !important;
+}
+.course-parent-row.is-active .active-course-badge {
+    display: inline-flex !important;
+}
+.course-parent-row.is-active .btn-task-collapse-toggle {
+    background-color: var(--tblr-primary, #206bc4) !important;
+    border-color: var(--tblr-primary, #206bc4) !important;
+    color: #ffffff !important;
+}
+.course-parent-row.is-active.is-assessment-group .btn-task-collapse-toggle {
+    background-color: #7952b3 !important;
+    border-color: #7952b3 !important;
+    color: #ffffff !important;
+}
+
+/* Dark mode support */
+[data-bs-theme="dark"] .course-parent-row.is-active > td,
+body.dark-mode .course-parent-row.is-active > td {
+    background-color: rgba(56, 189, 248, 0.12) !important;
+}
+[data-bs-theme="dark"] .course-parent-row.is-active.is-assessment-group > td,
+body.dark-mode .course-parent-row.is-active.is-assessment-group > td {
+    background-color: rgba(168, 85, 247, 0.12) !important;
+}
+[data-bs-theme="dark"] .course-parent-row.is-active > td:first-child,
+[data-bs-theme="dark"] .course-parent-row.is-active + .task-collapse-row > td:first-child,
+body.dark-mode .course-parent-row.is-active > td:first-child,
+body.dark-mode .course-parent-row.is-active + .task-collapse-row > td:first-child {
+    box-shadow: inset 4px 0 0 0 #38bdf8 !important;
+}
+[data-bs-theme="dark"] .course-parent-row.is-active.is-assessment-group > td:first-child,
+[data-bs-theme="dark"] .course-parent-row.is-active.is-assessment-group + .task-collapse-row > td:first-child,
+body.dark-mode .course-parent-row.is-active.is-assessment-group > td:first-child,
+body.dark-mode .course-parent-row.is-active.is-assessment-group + .task-collapse-row > td:first-child {
+    box-shadow: inset 4px 0 0 0 #c084fc !important;
+}
+[data-bs-theme="dark"] .course-parent-row.is-active .course-title-text,
+body.dark-mode .course-parent-row.is-active .course-title-text {
+    color: #38bdf8 !important;
+}
+[data-bs-theme="dark"] .course-parent-row.is-active.is-assessment-group .course-title-text,
+body.dark-mode .course-parent-row.is-active.is-assessment-group .course-title-text {
+    color: #c084fc !important;
+}
+</style>

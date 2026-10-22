@@ -84,7 +84,101 @@ class MyTaskController extends Controller
         // Assessment groups loaded dynamically for this user
         $assessmentGroups = $this->assessmentGroups($request, $user);
 
-        // Merge all groups (tasks + assessments)
+        $filterType   = $request->get('my_task_type', 'all');
+        $filterStatus = $request->get('my_task_status', 'all');
+        $filterYear   = $request->get('my_task_year', 'all');
+        $filterMonth  = $request->get('my_task_month', 'all');
+
+        $typeOptions = [
+            'all'              => 'All',
+            'playlist'         => 'Playlist',
+            'content'          => 'Content',
+            'assessment'       => 'Assessment',
+            'standalone'       => 'Global Task',
+            'offline_training' => 'Offline Training',
+        ];
+
+        $statusOptions = [
+            'all'         => 'All',
+            'in_progress' => 'In Progress',
+            'submitted'   => 'Pending Review',
+            'completed'   => 'Completed',
+            'overdue'     => 'Overdue',
+            'resubmit'    => 'Resubmit Requested',
+        ];
+
+        $months = [
+            1 => 'January', 2 => 'February', 3 => 'March', 4 => 'April',
+            5 => 'May', 6 => 'June', 7 => 'July', 8 => 'August',
+            9 => 'September', 10 => 'October', 11 => 'November', 12 => 'December',
+        ];
+
+        $years = $tasks->map(function ($t) {
+            return $t->deadline ? $t->deadline->format('Y') : ($t->created_at ? $t->created_at->format('Y') : null);
+        })->filter()->push(date('Y'))->unique()->sortDesc()->values();
+
+        // Dropdown: Filter by Type if specified
+        if ($filterType !== 'all') {
+            $taskGroups = $taskGroups->filter(fn ($g) => $g['parent_type'] === $filterType)->values();
+            $assessmentGroups = $assessmentGroups->filter(fn ($g) => $filterType === 'assessment')->values();
+        }
+
+        // Dropdown: Filter by Status if specified
+        if ($filterStatus !== 'all') {
+            $taskGroups = $taskGroups->filter(function ($g) use ($user, $filterStatus) {
+                return match ($filterStatus) {
+                    'completed'   => $g['completed'] === $g['total'] && $g['total'] > 0,
+                    'in_progress' => $g['completed'] < $g['total'],
+                    'overdue'     => $g['has_overdue'],
+                    'submitted'   => $g['tasks']->contains(fn ($t) => $t->userStatusFor($user) === 'submitted'),
+                    'resubmit'    => $g['tasks']->contains(fn ($t) => $t->userStatusFor($user) === 'resubmit'),
+                    default       => true,
+                };
+            })->values();
+
+            $assessmentGroups = $assessmentGroups->filter(function ($g) use ($filterStatus) {
+                return match ($filterStatus) {
+                    'completed'   => $g['completed'] === 1,
+                    'in_progress' => $g['completed'] === 0 && !$g['has_overdue'],
+                    'overdue'     => $g['has_overdue'],
+                    default       => true,
+                };
+            })->values();
+        }
+
+        // Dropdown: Filter by Year if specified
+        if ($filterYear !== 'all') {
+            $taskGroups = $taskGroups->filter(function ($g) use ($filterYear) {
+                return $g['tasks']->contains(function ($t) use ($filterYear) {
+                    $y = $t->deadline ? $t->deadline->format('Y') : ($t->created_at ? $t->created_at->format('Y') : null);
+                    return (string) $y === (string) $filterYear;
+                });
+            })->values();
+
+            $assessmentGroups = $assessmentGroups->filter(function ($g) use ($filterYear) {
+                $first = $g['tasks']->first();
+                $y = $first?->deadline ? $first->deadline->format('Y') : null;
+                return (string) $y === (string) $filterYear;
+            })->values();
+        }
+
+        // Dropdown: Filter by Month if specified
+        if ($filterMonth !== 'all') {
+            $taskGroups = $taskGroups->filter(function ($g) use ($filterMonth) {
+                return $g['tasks']->contains(function ($t) use ($filterMonth) {
+                    $m = $t->deadline ? $t->deadline->format('n') : ($t->created_at ? $t->created_at->format('n') : null);
+                    return (string) $m === (string) $filterMonth;
+                });
+            })->values();
+
+            $assessmentGroups = $assessmentGroups->filter(function ($g) use ($filterMonth) {
+                $first = $g['tasks']->first();
+                $m = $first?->deadline ? $first->deadline->format('n') : null;
+                return (string) $m === (string) $filterMonth;
+            })->values();
+        }
+
+        // Merge all groups (tasks + assessments) after dropdown filters
         $allGroups = $taskGroups->concat($assessmentGroups);
 
         // Search keyword filter across parent name, course name, and task titles
@@ -128,20 +222,24 @@ class MyTaskController extends Controller
         ];
 
         // Filter groups by selected quick filter
-        $groups = match ($filter) {
-            'all'      => $taskGroups,
-            'playlist' => $taskGroups->filter(fn ($g) => $g['parent_type'] === 'playlist')->values(),
-            'content'  => $taskGroups->filter(fn ($g) => $g['parent_type'] === 'content')->values(),
-            'asesment' => $assessmentGroups->values(),
-            'others'   => $taskGroups->filter(fn ($g) => in_array($g['parent_type'], ['standalone', 'offline_training'], true) || !in_array($g['parent_type'], ['playlist', 'content'], true))->values(),
-            // Backward-compatibility: if legacy status filters are passed
-            'resubmit'    => $allGroups->filter(fn ($g) => $g['tasks']->contains(fn ($t) => $t->userStatusFor($user) === 'resubmit'))->values(),
-            'in_progress' => $allGroups->filter(fn ($g) => $g['completed'] < $g['total'])->values(),
-            'submitted'   => $allGroups->filter(fn ($g) => $g['tasks']->contains(fn ($t) => $t->userStatusFor($user) === 'submitted'))->values(),
-            'completed'   => $allGroups->filter(fn ($g) => $g['completed'] === $g['total'] && $g['total'] > 0)->values(),
-            'overdue'     => $allGroups->filter(fn ($g) => $g['has_overdue'])->values(),
-            default       => $taskGroups,
-        };
+        if ($filterType === 'assessment') {
+            $groups = $assessmentGroups->values();
+        } else {
+            $groups = match ($filter) {
+                'all'         => $taskGroups,
+                'playlist'    => $taskGroups->filter(fn ($g) => $g['parent_type'] === 'playlist')->values(),
+                'content'     => $taskGroups->filter(fn ($g) => $g['parent_type'] === 'content')->values(),
+                'asesment'    => $assessmentGroups->values(),
+                'others'      => $taskGroups->filter(fn ($g) => in_array($g['parent_type'], ['standalone', 'offline_training'], true) || !in_array($g['parent_type'], ['playlist', 'content'], true))->values(),
+                // Backward-compatibility: if legacy status filters are passed
+                'resubmit'    => $allGroups->filter(fn ($g) => $g['tasks']->contains(fn ($t) => $t->userStatusFor($user) === 'resubmit'))->values(),
+                'in_progress' => $allGroups->filter(fn ($g) => $g['completed'] < $g['total'])->values(),
+                'submitted'   => $allGroups->filter(fn ($g) => $g['tasks']->contains(fn ($t) => $t->userStatusFor($user) === 'submitted'))->values(),
+                'completed'   => $allGroups->filter(fn ($g) => $g['completed'] === $g['total'] && $g['total'] > 0)->values(),
+                'overdue'     => $allGroups->filter(fn ($g) => $g['has_overdue'])->values(),
+                default       => $taskGroups,
+            };
+        }
 
         $groups = $groups
             ->sortBy(fn ($g) => [$g['nearest_deadline'] === null, $g['nearest_deadline']])
@@ -158,7 +256,23 @@ class MyTaskController extends Controller
             ->where('status', 'published')
             ->exists();
 
-        return view('user.learning.dashboard-partials.my-task', compact('groups', 'activeGroup', 'summary', 'filter', 'search', 'showRedeemCard', 'categoryCounts'));
+        return view('user.learning.dashboard-partials.my-task', compact(
+            'groups',
+            'activeGroup',
+            'summary',
+            'filter',
+            'search',
+            'showRedeemCard',
+            'categoryCounts',
+            'filterType',
+            'filterStatus',
+            'filterYear',
+            'filterMonth',
+            'typeOptions',
+            'statusOptions',
+            'months',
+            'years'
+        ));
     }
 
     /**
@@ -319,6 +433,7 @@ class MyTaskController extends Controller
                 'has_overdue'      => $isExpired && ! $isCompleted,
                 'nearest_deadline' => $nearestDl,
                 'is_assessment'    => true,
+                'assessment'       => $assessment,
             ];
         });
     }
