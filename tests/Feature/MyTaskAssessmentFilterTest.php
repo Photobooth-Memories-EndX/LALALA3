@@ -69,13 +69,13 @@ class MyTaskAssessmentFilterTest extends TestCase
         // Verify Category Quick Filters are rendered
         $response->assertSee('Playlist');
         $response->assertSee('Content');
-        $response->assertSee('Asesmen');
+        $response->assertSee('Assessment');
         $response->assertSee('Others');
 
         // Verify Assessment appears
         $response->assertSee('Test Safety Assessment 2026');
         $response->assertSee('taskModal-assessment_' . $assessment->id);
-        $response->assertSee('Mulai Kerjakan Asesmen');
+        $response->assertSee('Start Assessment');
     }
 
     public function test_quick_filter_by_asesment_returns_only_assessments(): void

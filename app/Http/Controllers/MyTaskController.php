@@ -197,7 +197,7 @@ class MyTaskController extends Controller
                     $this->id = 'assessment_' . $assessment->id;
                     $this->title = $assessment->title;
                     $this->slug = $assessment->slug;
-                    $this->description = $assessment->description ?: 'Uji pemahaman dan evaluasi materi pelatihan.';
+                    $this->description = $assessment->description ?: 'Knowledge assessment and material evaluation.';
                     $this->deadline = $assessment->todate ? \Illuminate\Support\Carbon::parse($assessment->todate) : null;
                     $this->time_limit = $assessment->time_limit_minutes;
                     $this->passing_grade = $assessment->passing_grade;
@@ -208,7 +208,7 @@ class MyTaskController extends Controller
                 }
 
                 public function typeLabel(): string {
-                    return 'Asesmen';
+                    return 'Assessment';
                 }
 
                 public function userStatusFor($u = null): string {
@@ -228,7 +228,7 @@ class MyTaskController extends Controller
                 }
 
                 public function parentTitle(): ?string {
-                    return $this->assessment->trainingplan?->title ?? ($this->assessment->content?->title ?? 'Asesmen');
+                    return $this->assessment->trainingplan?->title ?? ($this->assessment->content?->title ?? 'Assessment');
                 }
 
                 public function isStandalone(): bool {

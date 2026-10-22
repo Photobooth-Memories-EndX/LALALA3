@@ -45,9 +45,9 @@
                                 @if ($cdlOverdue)
                                     <span class="badge bg-danger ms-1"><i class="ti ti-alert-circle me-1"></i>Overdue</span>
                                 @elseif ($isToday)
-                                    <span class="badge bg-danger text-white ms-1"><i class="ti ti-flame me-1"></i>Tenggat Hari Ini ({{ $hoursUntil }} jam lagi)</span>
+                                    <span class="badge bg-danger text-white ms-1"><i class="ti ti-flame me-1"></i>Due Today ({{ $hoursUntil }} hour{{ $hoursUntil > 1 ? 's' : '' }} left)</span>
                                 @elseif ($isUrgent)
-                                    <span class="badge bg-warning text-dark ms-1"><i class="ti ti-clock-exclamation me-1"></i>Mendekati Tenggat (H-1 / H-2)</span>
+                                    <span class="badge bg-warning text-dark ms-1"><i class="ti ti-clock-exclamation me-1"></i>Due Soon</span>
                                 @endif
                             </span>
                         @else
@@ -200,15 +200,15 @@
                                     </span>
                                     <div class="flex-grow-1">
                                         <h4 class="alert-title fw-bold text-dark mb-1">
-                                            Permintaan Revisi Tugas
+                                            Task Revision Requested
                                         </h4>
                                         <div class="text-muted small mb-2">
-                                            Admin telah memeriksa jawaban Anda dan meminta perbaikan. Silakan periksa catatan dari Admin di bawah ini dan kirimkan kembali jawaban yang sudah direvisi.
+                                            The administrator reviewed your answers and requested revisions. Please check the feedback below and submit your revised answers.
                                         </div>
                                         @if ($submission->feedback)
                                             <div class="p-3 bg-white bg-opacity-75 rounded-3 border border-warning-subtle text-dark shadow-sm">
                                                 <div class="fw-semibold text-warning d-flex align-items-center mb-1">
-                                                    <i class="ti ti-message-dots me-1"></i> Catatan & Feedback dari Admin:
+                                                    <i class="ti ti-message-dots me-1"></i> Admin Feedback & Notes:
                                                 </div>
                                                 <div class="ps-3 border-start border-3 border-warning text-dark">
                                                     {{ $submission->feedback }}
@@ -281,19 +281,19 @@
                                                     <div class="d-flex align-items-center gap-2">
                                                         <i class="ti ti-cloud-upload text-primary fs-2"></i>
                                                         <div>
-                                                            <div class="fw-semibold small text-dark">Upload File Jawaban</div>
+                                                            <div class="fw-semibold small text-dark">Upload Answer File</div>
                                                             <div class="text-muted" style="font-size:11px;">
-                                                                Format: <strong>{{ ! empty($field->allowedExtensions()) ? strtoupper(implode(', ', $field->allowedExtensions())) : 'Semua format file' }}</strong>
+                                                                Format: <strong>{{ ! empty($field->allowedExtensions()) ? strtoupper(implode(', ', $field->allowedExtensions())) : 'All file formats' }}</strong>
                                                                 @if ($field->allowedTypesLabel())
                                                                     <span class="badge bg-secondary-lt text-secondary ms-1">{{ $field->allowedTypesLabel() }}</span>
                                                                 @endif
-                                                                | Maksimal <strong>{{ $field->maxFiles() }} file</strong>, maks. <strong>{{ $field->maxSizeMb() }} MB</strong> per file
+                                                                | Max <strong>{{ $field->maxFiles() }} file{{ $field->maxFiles() > 1 ? 's' : '' }}</strong>, max <strong>{{ $field->maxSizeMb() }} MB</strong> per file
                                                             </div>
                                                         </div>
                                                     </div>
                                                     @if ($field->allow_link)
                                                         <span class="badge bg-info-lt text-info d-inline-flex align-items-center">
-                                                            <i class="ti ti-link me-1"></i> Mendukung Link Drive
+                                                            <i class="ti ti-link me-1"></i> Supports Drive Links
                                                         </span>
                                                     @endif
                                                 </div>
@@ -315,7 +315,7 @@
                                                        placeholder="https://drive.google.com/..."
                                                        value="{{ old($linkKey, $ans->answer_text ?? '') }}">
                                                 <div class="form-hint small mt-1 text-muted">
-                                                    <i class="ti ti-info-circle me-1"></i>Pastikan izin akses tautan Google Drive / OneDrive diatur ke <em>"Anyone with the link can view"</em> agar Admin dapat memeriksa jawaban Anda.
+                                                    <i class="ti ti-info-circle me-1"></i>Make sure the Google Drive / OneDrive link permission is set to <em>"Anyone with the link can view"</em> so the administrator can review your answer.
                                                 </div>
                                                 @error($linkKey)
                                                     <div class="invalid-feedback d-block">{{ $message }}</div>
@@ -340,7 +340,7 @@
                                     @else
                                         <textarea name="fields[{{ $field->id }}]" rows="3"
                                                   class="form-control @error($fieldKey) is-invalid @enderror"
-                                                  placeholder="Tuliskan jawaban Anda di sini..."
+                                                  placeholder="Type your answer here..."
                                                   {{ $field->required ? 'required' : '' }}>{{ old($fieldKey, $ans->answer_text ?? '') }}</textarea>
                                     @endif
 
@@ -372,7 +372,7 @@
                                 </button>
                                 @if ($inModal ?? false)
                                     <button type="button" class="btn btn-outline-secondary rounded-3 px-3" data-bs-dismiss="modal">
-                                        Tutup
+                                        Close
                                     </button>
                                 @endif
                             </div>

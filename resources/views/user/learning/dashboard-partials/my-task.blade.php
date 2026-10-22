@@ -38,7 +38,7 @@
         'content'          => 'Content',
         'offline_training' => 'Offline Training',
         'standalone'       => 'Global Task',
-        'assessment'       => 'Asesmen',
+        'assessment'       => 'Assessment',
     ];
     // Drill-down navigation: parent list <-> one parent's tasks.
     $baseParams = array_filter([
@@ -56,7 +56,7 @@
         'all'      => ['label' => 'All',      'icon' => 'ti-layers'],
         'playlist' => ['label' => 'Playlist', 'icon' => 'ti-playlist'],
         'content'  => ['label' => 'Content',  'icon' => 'ti-device-laptop'],
-        'asesment' => ['label' => 'Asesmen',  'icon' => 'ti-clipboard-check'],
+        'asesment' => ['label' => 'Assessment', 'icon' => 'ti-clipboard-check'],
         'others'   => ['label' => 'Others',   'icon' => 'ti-world'],
     ];
     // Clicking a tab navigates immediately (keeps search + parent context).
@@ -92,7 +92,7 @@
         <div class="d-flex align-items-center">
             <i class="ti ti-alert-triangle fs-2 me-2"></i>
             <div>
-                <strong>Perhatian:</strong> Terdapat kesalahan pada pengisian form jawaban tugas. Silakan periksa kembali form yang terbuka.
+                <strong>Notice:</strong> There was an error submitting your answers. Please review the open form.
             </div>
         </div>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
@@ -109,16 +109,16 @@
                 </span>
                 <div>
                     <h4 class="alert-title mb-1 fw-bold text-dark">
-                        Ada {{ $summary['resubmit'] }} Tugas Memerlukan Revisi
+                        {{ $summary['resubmit'] }} Task{{ ($summary['resubmit'] ?? 0) > 1 ? 's' : '' }} Require Revision
                     </h4>
                     <div class="text-muted small">
-                        Admin telah memeriksa dan meminta perbaikan jawaban pada tugas Anda. Silakan buka tugas bertanda <strong>Resubmit Requested</strong> untuk melihat catatan dan mengirim ulang jawaban.
+                        The administrator reviewed your answers and requested revisions. Please open tasks marked <strong>Resubmit Requested</strong> to review notes and resubmit your answers.
                     </div>
                 </div>
             </div>
             @if ($filter !== 'resubmit')
                 <a href="{{ $tabUrl('resubmit') }}" class="btn btn-warning text-dark fw-semibold px-3 py-2 rounded-pill shadow-sm">
-                    <i class="ti ti-eye me-1"></i> Lihat Tugas Revisi ({{ $summary['resubmit'] }})
+                    <i class="ti ti-eye me-1"></i> View Revision Tasks ({{ $summary['resubmit'] }})
                 </a>
             @endif
         </div>
@@ -255,9 +255,9 @@
                                     @if ($tdlOverdue)
                                         <span class="badge bg-danger"><i class="ti ti-alert-circle me-1"></i>{{ $tdl->format('d M Y H:i') }}</span>
                                     @elseif ($isToday)
-                                        <span class="badge bg-danger text-white"><i class="ti ti-flame me-1"></i>Hari Ini ({{ $tdl->format('H:i') }})</span>
+                                        <span class="badge bg-danger text-white"><i class="ti ti-flame me-1"></i>Today ({{ $tdl->format('H:i') }})</span>
                                     @elseif ($isUrgent)
-                                        <span class="badge bg-warning text-dark"><i class="ti ti-clock-exclamation me-1"></i>H-1 / H-2 ({{ $tdl->format('d M') }})</span>
+                                        <span class="badge bg-warning text-dark"><i class="ti ti-clock-exclamation me-1"></i>Due Soon ({{ $tdl->format('d M') }})</span>
                                     @elseif ($tdlSoon)
                                         <span class="badge bg-warning-lt text-warning"><i class="ti ti-clock me-1"></i>{{ $tdl->format('d M Y H:i') }}</span>
                                     @else
@@ -280,7 +280,7 @@
                                     <button type="button" class="btn btn-sm btn-warning text-dark fw-semibold shadow-sm"
                                             data-bs-toggle="modal"
                                             data-bs-target="#taskModal-{{ $task->id }}">
-                                        <i class="ti ti-refresh me-1"></i> Revisi
+                                        <i class="ti ti-refresh me-1"></i> Revise
                                     </button>
                                 @else
                                     <button type="button" class="btn btn-sm {{ in_array($tStatus, ['completed', 'submitted']) ? 'btn-white' : 'btn-success' }}"
@@ -347,7 +347,7 @@
                     <div class="modal-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between">
                         <div class="d-flex align-items-center gap-2 flex-wrap">
                             <span class="badge bg-purple-lt text-purple px-2.5 py-1 fs-6">
-                                <i class="ti ti-clipboard-check me-1"></i>Asesmen
+                                <i class="ti ti-clipboard-check me-1"></i>Assessment
                             </span>
                             @if ($task->parentTitle())
                                 <span class="badge bg-secondary-lt text-secondary px-2 py-1 fs-6">
@@ -358,9 +358,9 @@
                         <div class="d-flex align-items-center gap-2">
                             @if ($task->is_completed)
                                 @if ($task->is_passed)
-                                    <span class="badge bg-success-lt text-success px-2.5 py-1 fs-6">Completed (Lulus)</span>
+                                    <span class="badge bg-success-lt text-success px-2.5 py-1 fs-6">Completed (Passed)</span>
                                 @else
-                                    <span class="badge bg-danger-lt text-danger px-2.5 py-1 fs-6">Failed (Tidak Lulus)</span>
+                                    <span class="badge bg-danger-lt text-danger px-2.5 py-1 fs-6">Failed</span>
                                 @endif
                             @elseif ($task->is_expired)
                                 <span class="badge bg-danger-lt text-danger px-2.5 py-1 fs-6">Overdue</span>
@@ -388,19 +388,19 @@
                                     </div>
                                     <div class="col-6 col-md-3">
                                         <div class="p-3 bg-white border rounded-3 text-center h-100 shadow-none">
-                                            <div class="text-muted small mb-1"><i class="ti ti-clock me-1"></i>Durasi</div>
-                                            <div class="fs-3 fw-bold text-dark">{{ $task->time_limit ? $task->time_limit . ' Menit' : 'Fleksibel' }}</div>
+                                            <div class="text-muted small mb-1"><i class="ti ti-clock me-1"></i>Duration</div>
+                                            <div class="fs-3 fw-bold text-dark">{{ $task->time_limit ? $task->time_limit . ' Minutes' : 'Flexible' }}</div>
                                         </div>
                                     </div>
                                     <div class="col-6 col-md-3">
                                         <div class="p-3 bg-white border rounded-3 text-center h-100 shadow-none">
-                                            <div class="text-muted small mb-1"><i class="ti ti-calendar me-1"></i>Batas Waktu</div>
-                                            <div class="fs-4 fw-bold text-dark">{{ $task->deadline ? $task->deadline->format('d M Y') : 'Tanpa Batas' }}</div>
+                                            <div class="text-muted small mb-1"><i class="ti ti-calendar me-1"></i>Deadline</div>
+                                            <div class="fs-4 fw-bold text-dark">{{ $task->deadline ? $task->deadline->format('d M Y') : 'No Deadline' }}</div>
                                         </div>
                                     </div>
                                     <div class="col-6 col-md-3">
                                         <div class="p-3 bg-white border rounded-3 text-center h-100 shadow-none">
-                                            <div class="text-muted small mb-1"><i class="ti ti-star me-1"></i>Skor Anda</div>
+                                            <div class="text-muted small mb-1"><i class="ti ti-star me-1"></i>Your Score</div>
                                             <div class="fs-3 fw-bold {{ !is_null($task->score) ? ($task->is_passed ? 'text-success' : 'text-danger') : 'text-muted' }}">
                                                 {{ !is_null($task->score) ? $task->score : '-' }}
                                             </div>
@@ -414,8 +414,8 @@
                                         <div class="d-flex align-items-center gap-2">
                                             <i class="ti {{ $task->is_passed ? 'ti-circle-check' : 'ti-alert-circle' }} fs-2"></i>
                                             <div>
-                                                <strong>{{ $task->is_passed ? 'Selamat, Anda telah lulus asesmen ini!' : 'Nilai belum memenuhi batas kelulusan.' }}</strong>
-                                                <div class="small">Skor diperoleh: <strong>{{ $task->score }}</strong> (Passing Grade: {{ $task->passing_grade }}%)</div>
+                                                <strong>{{ $task->is_passed ? 'Congratulations, you have passed this assessment!' : 'Your score did not meet the passing grade.' }}</strong>
+                                                <div class="small">Score achieved: <strong>{{ $task->score }}</strong> (Passing Grade: {{ $task->passing_grade }}%)</div>
                                             </div>
                                         </div>
                                     </div>
@@ -423,42 +423,42 @@
                                     <div class="alert alert-danger rounded-3 d-flex align-items-center gap-2 mb-4">
                                         <i class="ti ti-alert-triangle fs-2"></i>
                                         <div>
-                                            <strong>Batas waktu pengerjaan asesmen telah berakhir.</strong>
-                                            <div class="small">Silakan hubungi admin atau instruktur jika memerlukan perpanjangan akses.</div>
+                                            <strong>The assessment access period has expired.</strong>
+                                            <div class="small">Please contact your administrator or instructor if you need an access extension.</div>
                                         </div>
                                     </div>
                                 @else
                                     <div class="alert alert-info rounded-3 d-flex align-items-center gap-2 mb-4">
                                         <i class="ti ti-info-circle fs-2"></i>
                                         <div>
-                                            <strong>Petunjuk Pengerjaan:</strong>
-                                            <div class="small">Pastikan koneksi internet Anda stabil sebelum memulai asesmen. Jawaban akan disimpan secara otomatis saat dikerjakan.</div>
+                                            <strong>Instructions:</strong>
+                                            <div class="small">Please ensure a stable internet connection before starting. Answers will be saved automatically as you progress.</div>
                                         </div>
                                     </div>
                                 @endif
 
                                 {{-- Action Buttons --}}
                                 <div class="d-flex align-items-center justify-content-end gap-2 pt-3 border-top">
-                                    <button type="button" class="btn btn-white" data-bs-dismiss="modal">Tutup</button>
+                                    <button type="button" class="btn btn-white" data-bs-dismiss="modal">Close</button>
                                     @if ($task->is_completed)
                                         @if (Route::has('assesment.user.result') && !empty($task->slug))
                                             <a href="{{ route('assesment.user.result', $task->slug) }}" class="btn btn-outline-primary">
-                                                <i class="ti ti-chart-bar me-1"></i> Lihat Hasil Ujian
+                                                <i class="ti ti-chart-bar me-1"></i> View Results
                                             </a>
                                         @endif
                                         @if (!$task->is_passed && !empty($task->slug) && Route::has('assesment.user.view'))
                                             <a href="{{ route('assesment.user.view', $task->slug) }}" class="btn btn-warning text-dark fw-semibold">
-                                                <i class="ti ti-refresh me-1"></i> Ikuti Remedial
+                                                <i class="ti ti-refresh me-1"></i> Take Remedial
                                             </a>
                                         @endif
                                     @elseif ($task->is_expired)
                                         <button type="button" class="btn btn-secondary" disabled>
-                                            <i class="ti ti-ban me-1"></i> Asesmen Kedaluwarsa
+                                            <i class="ti ti-ban me-1"></i> Assessment Expired
                                         </button>
                                     @else
                                         @if (!empty($task->slug) && Route::has('assesment.user.view'))
                                             <a href="{{ route('assesment.user.view', $task->slug) }}" class="btn btn-primary px-4 fw-semibold">
-                                                <i class="ti ti-pencil me-1"></i> Mulai Kerjakan Asesmen
+                                                <i class="ti ti-pencil me-1"></i> Start Assessment
                                             </a>
                                         @endif
                                     @endif
