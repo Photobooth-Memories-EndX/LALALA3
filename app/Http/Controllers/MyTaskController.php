@@ -118,27 +118,29 @@ class MyTaskController extends Controller
         ];
 
         // Category counts for quick filter tabs: all, playlist, content, asesment, others
+        // Note: 'all' contains course tasks. Assessments are dedicated under the 'asesment' quick filter.
         $categoryCounts = [
-            'all'      => $allGroups->count(),
-            'playlist' => $allGroups->filter(fn ($g) => $g['parent_type'] === 'playlist')->count(),
-            'content'  => $allGroups->filter(fn ($g) => $g['parent_type'] === 'content')->count(),
-            'asesment' => $allGroups->filter(fn ($g) => $g['parent_type'] === 'assessment')->count(),
-            'others'   => $allGroups->filter(fn ($g) => in_array($g['parent_type'], ['standalone', 'offline_training'], true) || !in_array($g['parent_type'], ['playlist', 'content', 'assessment'], true))->count(),
+            'all'      => $taskGroups->count(),
+            'playlist' => $taskGroups->filter(fn ($g) => $g['parent_type'] === 'playlist')->count(),
+            'content'  => $taskGroups->filter(fn ($g) => $g['parent_type'] === 'content')->count(),
+            'asesment' => $assessmentGroups->count(),
+            'others'   => $taskGroups->filter(fn ($g) => in_array($g['parent_type'], ['standalone', 'offline_training'], true) || !in_array($g['parent_type'], ['playlist', 'content'], true))->count(),
         ];
 
         // Filter groups by selected quick filter
         $groups = match ($filter) {
-            'playlist' => $allGroups->filter(fn ($g) => $g['parent_type'] === 'playlist')->values(),
-            'content'  => $allGroups->filter(fn ($g) => $g['parent_type'] === 'content')->values(),
-            'asesment' => $allGroups->filter(fn ($g) => $g['parent_type'] === 'assessment')->values(),
-            'others'   => $allGroups->filter(fn ($g) => in_array($g['parent_type'], ['standalone', 'offline_training'], true) || !in_array($g['parent_type'], ['playlist', 'content', 'assessment'], true))->values(),
+            'all'      => $taskGroups,
+            'playlist' => $taskGroups->filter(fn ($g) => $g['parent_type'] === 'playlist')->values(),
+            'content'  => $taskGroups->filter(fn ($g) => $g['parent_type'] === 'content')->values(),
+            'asesment' => $assessmentGroups->values(),
+            'others'   => $taskGroups->filter(fn ($g) => in_array($g['parent_type'], ['standalone', 'offline_training'], true) || !in_array($g['parent_type'], ['playlist', 'content'], true))->values(),
             // Backward-compatibility: if legacy status filters are passed
             'resubmit'    => $allGroups->filter(fn ($g) => $g['tasks']->contains(fn ($t) => $t->userStatusFor($user) === 'resubmit'))->values(),
             'in_progress' => $allGroups->filter(fn ($g) => $g['completed'] < $g['total'])->values(),
             'submitted'   => $allGroups->filter(fn ($g) => $g['tasks']->contains(fn ($t) => $t->userStatusFor($user) === 'submitted'))->values(),
             'completed'   => $allGroups->filter(fn ($g) => $g['completed'] === $g['total'] && $g['total'] > 0)->values(),
             'overdue'     => $allGroups->filter(fn ($g) => $g['has_overdue'])->values(),
-            default       => $allGroups,
+            default       => $taskGroups,
         };
 
         $groups = $groups

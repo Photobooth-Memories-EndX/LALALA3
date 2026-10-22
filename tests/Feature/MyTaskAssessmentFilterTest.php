@@ -61,7 +61,7 @@ class MyTaskAssessmentFilterTest extends TestCase
             'time_limit_minutes'  => 30,
         ]);
 
-        // 2. Request My Task tab partial
+        // 2. Request My Task tab partial (default: all filter)
         $response = $this->actingAs($this->user)->get(route('user.learning.dashboard.partial', ['tab' => 'my-task']));
 
         $response->assertStatus(200);
@@ -72,10 +72,20 @@ class MyTaskAssessmentFilterTest extends TestCase
         $response->assertSee('Assessment');
         $response->assertSee('Others');
 
-        // Verify Assessment appears
-        $response->assertSee('Test Safety Assessment 2026');
-        $response->assertSee('taskModal-assessment_' . $assessment->id);
-        $response->assertSee('Start Assessment');
+        // Verify Assessment is excluded from 'all' filter course table
+        $response->assertDontSee('Test Safety Assessment 2026');
+
+        // 3. Request My Task with 'asesment' filter
+        $responseAssessment = $this->actingAs($this->user)->get(route('user.learning.dashboard.partial', [
+            'tab'            => 'my-task',
+            'my_task_filter' => 'asesment',
+        ]));
+
+        $responseAssessment->assertStatus(200);
+        $responseAssessment->assertSee('Test Safety Assessment 2026');
+        $responseAssessment->assertSee('taskModal-assessment_' . $assessment->id);
+        $responseAssessment->assertSee('CATEGORY');
+        $responseAssessment->assertSee('SCORE');
     }
 
     public function test_quick_filter_by_asesment_returns_only_assessments(): void
