@@ -512,7 +512,7 @@
 
 <script>
 (function () {
-    // If validation error occurred, reopen the modal for the active task
+    // 1. If validation error occurred, reopen the modal for the active task
     @if ($errors->any() && old('active_task_id'))
         var errModalEl = document.getElementById('taskModal-{{ old('active_task_id') }}');
         if (errModalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
@@ -521,5 +521,95 @@
             }, 150);
         }
     @endif
+
+    // Helper: Hide all open dropdowns in parentTableAccordion (except an optional excluded one)
+    function closeOtherDropdowns(excludeDropdownEl) {
+        var accordion = document.getElementById('parentTableAccordion');
+        if (!accordion) return;
+
+        var openMenus = accordion.querySelectorAll('.dropdown-menu.show');
+        openMenus.forEach(function (menu) {
+            var dd = menu.closest('.dropdown');
+            if (dd && dd !== excludeDropdownEl) {
+                var btn = dd.querySelector('[data-bs-toggle="dropdown"]');
+                if (btn && typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
+                    var inst = bootstrap.Dropdown.getInstance(btn);
+                    if (inst) {
+                        inst.hide();
+                    }
+                }
+            }
+        });
+    }
+
+    // Helper: Hide all open collapsible rows (except an optional excluded one)
+    function closeOtherCollapses(excludeCollapseEl) {
+        var accordion = document.getElementById('parentTableAccordion');
+        if (!accordion) return;
+
+        var openRows = accordion.querySelectorAll('.task-collapse-row.show');
+        openRows.forEach(function (row) {
+            if (row !== excludeCollapseEl) {
+                if (typeof bootstrap !== 'undefined' && bootstrap.Collapse) {
+                    var cInst = bootstrap.Collapse.getInstance(row);
+                    if (cInst) {
+                        cInst.hide();
+                    } else if (typeof $ !== 'undefined') {
+                        $(row).collapse('hide');
+                    }
+                } else if (typeof $ !== 'undefined') {
+                    $(row).collapse('hide');
+                }
+            }
+        });
+    }
+
+    // 2. Dropdown opening handler: opening dropdown on Course B automatically closes Course A's dropdown
+    if (typeof $ !== 'undefined') {
+        $(document).off('show.bs.dropdown.mytask').on('show.bs.dropdown.mytask', '#parentTableAccordion .dropdown', function () {
+            closeOtherDropdowns(this);
+
+            // Also collapse other courses' inline accordion rows so user is focused on the clicked course
+            var currentRow = this.closest('tr');
+            var currentTarget = currentRow ? $(currentRow).find('[data-bs-toggle="collapse"]').data('bs-target') : null;
+            var currentCollapseEl = currentTarget ? document.querySelector(currentTarget) : null;
+            closeOtherCollapses(currentCollapseEl);
+        });
+
+        // 3. Collapsible rows (Accordion behavior): opening Course B's row closes Course A's row & all dropdowns
+        $(document).off('show.bs.collapse.mytask').on('show.bs.collapse.mytask', '#parentTableAccordion .task-collapse-row', function () {
+            closeOtherCollapses(this);
+            closeOtherDropdowns(null);
+
+            // Update chevron icons: point up for current, down for others
+            var currentId = this.id;
+            $('#parentTableAccordion .btn-task-collapse-toggle').each(function () {
+                var target = $(this).data('bs-target');
+                var icon = $(this).find('i');
+                if (target === '#' + currentId) {
+                    icon.removeClass('ti-chevron-down').addClass('ti-chevron-up');
+                } else {
+                    icon.removeClass('ti-chevron-up').addClass('ti-chevron-down');
+                }
+            });
+        });
+
+        $(document).off('hide.bs.collapse.mytask').on('hide.bs.collapse.mytask', '#parentTableAccordion .task-collapse-row', function () {
+            var targetId = '#' + this.id;
+            $('#parentTableAccordion .btn-task-collapse-toggle[data-bs-target="' + targetId + '"] i')
+                .removeClass('ti-chevron-up')
+                .addClass('ti-chevron-down');
+        });
+
+        // 4. When user clicks any task to open modal, close any open dropdowns immediately
+        $(document).off('click.mytaskmodal').on('click.mytaskmodal', '[data-bs-toggle="modal"][data-bs-target^="#taskModal-"], .btn-open-task-modal', function () {
+            closeOtherDropdowns(null);
+        });
+
+        // 5. When any task modal starts to show, ensure all dropdowns are dismissed cleanly
+        $(document).off('show.bs.modal.mytaskmodal').on('show.bs.modal.mytaskmodal', '.task-popup-modal', function () {
+            closeOtherDropdowns(null);
+        });
+    }
 })();
 </script>

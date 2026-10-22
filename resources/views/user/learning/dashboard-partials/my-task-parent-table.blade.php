@@ -13,7 +13,7 @@
                     <th class="text-end">TASKS & ACTION</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="parentTableAccordion">
                 @foreach ($tableGroups as $i => $group)
                     @php
                         $isAssessmentGroup = ($group['parent_type'] ?? '') === 'assessment';
@@ -164,7 +164,7 @@
                                 </div>
 
                                 {{-- Collapsible Chevron to Expand Tasks Inline --}}
-                                <button type="button" class="btn btn-sm btn-icon btn-outline-secondary"
+                                <button type="button" class="btn btn-sm btn-icon btn-outline-secondary btn-task-collapse-toggle"
                                         data-bs-toggle="collapse"
                                         data-bs-target="#collapseTasks-{{ $i }}"
                                         aria-expanded="false"
@@ -176,7 +176,7 @@
                     </tr>
 
                     {{-- Collapsible Task List Sub-row --}}
-                    <tr class="collapse bg-light-subtle" id="collapseTasks-{{ $i }}">
+                    <tr class="collapse bg-light-subtle task-collapse-row" id="collapseTasks-{{ $i }}" data-bs-parent="#parentTableAccordion">
                         <td colspan="7" class="p-3">
                             <div class="card border rounded-3 p-3 bg-white shadow-none mb-0">
                                 <div class="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom">
