@@ -300,15 +300,21 @@
 @else
 
 
-    {{-- Parent list --}}
+    {{-- Parent list / Assessment table --}}
     @if ($groups->isNotEmpty())
-        @include('user.learning.dashboard-partials.my-task-parent-table', ['tableGroups' => $groups])
+        @if ($filter === 'asesment')
+            @include('user.learning.dashboard-partials.my-task-assessment-table', ['assessmentGroups' => $groups])
+        @else
+            @include('user.learning.dashboard-partials.my-task-parent-table', ['tableGroups' => $groups])
+        @endif
     @else
         <div class="card border-0 shadow-sm rounded-4">
             <div class="card-body p-4 text-center text-muted">
                 <i class="ti ti-list-check fs-1 d-block mb-2"></i>
                 @if ($filter === 'all' && ($search ?? '') === '')
                     No tasks yet. Open a playlist or content you follow first — tasks will appear here after you open it.
+                @elseif ($filter === 'asesment')
+                    No assessments available at this time.
                 @else
                     No tasks match this filter.
                 @endif

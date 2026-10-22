@@ -89,12 +89,21 @@ class MyTaskController extends Controller
 
         // Search keyword filter across parent name, course name, and task titles
         if ($search !== '') {
-            $allGroups = $allGroups->filter(function ($g) use ($search) {
+            $taskGroups = $taskGroups->filter(function ($g) use ($search) {
                 $nameMatch = stripos($g['parent_name'], $search) !== false;
                 $courseMatch = !empty($g['course_name']) && stripos($g['course_name'], $search) !== false;
                 $taskMatch = $g['tasks']->contains(fn ($t) => stripos($t->title, $search) !== false);
                 return $nameMatch || $courseMatch || $taskMatch;
             })->values();
+
+            $assessmentGroups = $assessmentGroups->filter(function ($g) use ($search) {
+                $nameMatch = stripos($g['parent_name'], $search) !== false;
+                $courseMatch = !empty($g['course_name']) && stripos($g['course_name'], $search) !== false;
+                $taskMatch = $g['tasks']->contains(fn ($t) => stripos($t->title, $search) !== false);
+                return $nameMatch || $courseMatch || $taskMatch;
+            })->values();
+
+            $allGroups = $taskGroups->concat($assessmentGroups);
         }
 
         // Summary counts across all tasks & assessments
@@ -178,6 +187,7 @@ class MyTaskController extends Controller
                 public $assessment_id;
                 public bool $is_assessment = true;
                 public $assessment;
+                public $res;
                 public $title;
                 public $slug;
                 public $description;
@@ -193,6 +203,7 @@ class MyTaskController extends Controller
 
                 public function __construct($assessment, $res, $isCompleted, $isPassed, $isExpired) {
                     $this->assessment = $assessment;
+                    $this->res = $res;
                     $this->assessment_id = $assessment->id;
                     $this->id = 'assessment_' . $assessment->id;
                     $this->title = $assessment->title;
@@ -221,7 +232,7 @@ class MyTaskController extends Controller
                     return (object) [
                         'score' => $this->score,
                         'status' => $this->userStatusFor(),
-                        'submitted_at' => null,
+                        'submitted_at' => $this->res?->created_at,
                         'feedback' => null,
                         'resubmit_requested' => false,
                     ];
@@ -233,6 +244,60 @@ class MyTaskController extends Controller
 
                 public function isStandalone(): bool {
                     return empty($this->assessment->trainingplan_id) && empty($this->assessment->content_id);
+                }
+
+                public function categoryDisplay(): string {
+                    $rawType = strtolower((string) ($this->assessment->type ?? ''));
+                    $contentFor = strtolower((string) ($this->assessment->assasment_content_for ?? 'content'));
+                    if ($rawType === 'global') return 'Global';
+                    if ($rawType === 'trainingplan') return 'Playlist';
+                    return $contentFor === 'playlist' ? 'Playlist' : 'All Content';
+                }
+
+                public function typeDisplay(): string {
+                    $rawType = strtolower((string) ($this->assessment->type ?? ''));
+                    if ($rawType === 'global') return 'Global Assessment';
+                    if ($rawType === 'trainingplan') return 'Playlist Assessment';
+                    return 'Content Assessment';
+                }
+
+                public function filterType(): string {
+                    $rawType = strtolower((string) ($this->assessment->type ?? ''));
+                    $contentFor = strtolower((string) ($this->assessment->assasment_content_for ?? 'content'));
+                    if ($rawType === 'global') return 'global';
+                    if ($rawType === 'trainingplan') return 'trainingplan';
+                    return $contentFor === 'playlist' ? 'content_playlist' : 'content_content';
+                }
+
+                public function hasAccessPeriod(): bool {
+                    return method_exists($this->assessment, 'hasAccessPeriod')
+                        ? $this->assessment->hasAccessPeriod()
+                        : (!empty($this->assessment->fromdate) && !empty($this->assessment->todate));
+                }
+
+                public function hasTimeLimit(): bool {
+                    return method_exists($this->assessment, 'hasTimeLimit')
+                        ? $this->assessment->hasTimeLimit()
+                        : !empty($this->assessment->time_limit_minutes);
+                }
+
+                public function fromDateDisplay(): ?string {
+                    return !empty($this->assessment->fromdate)
+                        ? \Illuminate\Support\Carbon::parse($this->assessment->fromdate)->format('d M Y, H:i')
+                        : null;
+                }
+
+                public function toDateDisplay(): ?string {
+                    return !empty($this->assessment->todate)
+                        ? \Illuminate\Support\Carbon::parse($this->assessment->todate)->format('d M Y, H:i')
+                        : null;
+                }
+
+                public function takenDateDisplay(): ?string {
+                    if ($this->res && !empty($this->res->created_at)) {
+                        return \Illuminate\Support\Carbon::parse($this->res->created_at)->format('d/m/y H:i');
+                    }
+                    return null;
                 }
             };
 
