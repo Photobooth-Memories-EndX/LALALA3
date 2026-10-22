@@ -14,6 +14,7 @@ use App\Models\TaskPlaylistUnlock;
 use App\Models\TrainingPlanDetail;
 use App\Models\TaskSubmission;
 use App\Models\User;
+use App\Http\Controllers\LearningAssessmentController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
@@ -34,7 +35,7 @@ class MyTaskController extends Controller
     /**
      * GET /my-learning/partial/my-task — fragment tab My Task.
      * Dipanggil via AJAX oleh dashboard-script.blade.php.
-     * Filter: ?my_task_status=all|not_started|submitted|completed|overdue
+     * Filter: ?my_task_filter=all|playlist|content|asesment|others (or legacy status filters)
      */
     public function tabPartial(Request $request)
     {
@@ -42,48 +43,24 @@ class MyTaskController extends Controller
 
         $tasks = $this->tasksFor($user);
 
-
         // LMS-linked Course Assignments complete automatically once the
         // linked course reaches 100% progress.
         $this->syncCourseCompletions($user, $tasks);
 
-        $filter = $request->get('my_task_status', 'all');
+        $filter = $request->get('my_task_filter', $request->get('my_task_status', 'all'));
+        if ($filter === 'assessment') {
+            $filter = 'asesment';
+        }
         $search = trim((string) $request->get('my_task_q', ''));
-        if ($search !== '') {
-            $tasks = $tasks->filter(fn ($task) => stripos($task->title, $search) !== false)->values();
-        }
 
-        $allTasks = $tasks;
-        $summary = [
-            'total'       => $allTasks->count(),
-            'not_started' => $allTasks->filter(fn ($t) => $t->userStatusFor($user) === 'not_started')->count(),
-            'submitted'   => $allTasks->filter(fn ($t) => $t->userStatusFor($user) === 'submitted')->count(),
-            'completed'   => $allTasks->filter(fn ($t) => $t->userStatusFor($user) === 'completed')->count(),
-            'overdue'     => $allTasks->filter(fn ($t) => $t->userStatusFor($user) === 'overdue')->count(),
-            'resubmit'    => $allTasks->filter(fn ($t) => $t->userStatusFor($user) === 'resubmit')->count(),
-        ];
-
-        if ($filter === 'resubmit') {
-            $tasks = $tasks->filter(fn ($task) => $task->userStatusFor($user) === 'resubmit')->values();
-        } elseif ($filter === 'in_progress') {
-            $tasks = $tasks->filter(fn ($task) => $task->userStatusFor($user) !== 'completed')->values();
-        } elseif ($filter !== 'all') {
-            $tasks = $tasks->filter(fn ($task) => $task->userStatusFor($user) === $filter)->values();
-        }
-
-        // Group tasks per parent (playlist / content) so the user always
-        // sees which course each task belongs to. Overdue groups first,
-        // then by nearest deadline (tasks inside keep deadline order).
-        $groups = $tasks
+        // Group tasks per parent (playlist / content / offline_training / standalone)
+        $taskGroups = $tasks
             ->groupBy(fn ($task) => $task->parent_type . ':' . $task->parentId())
             ->map(function ($groupTasks, $key) use ($user) {
                 /** @var \App\Models\Task $first */
                 $first = $groupTasks->first();
                 $statuses = $groupTasks->map(fn ($t) => $t->userStatusFor($user));
 
-                // Nearest deadline that still needs the user's attention
-                // (overdue, not started, or resubmit requested). Completed / pending-review tasks
-                // never trigger the red deadline badge.
                 $needsAction = $groupTasks->filter(
                     fn ($t) => in_array($t->userStatusFor($user), ['overdue', 'not_started', 'resubmit'], true)
                 );
@@ -93,20 +70,76 @@ class MyTaskController extends Controller
                     'parent_type'      => $first->parent_type,
                     'parent_name'      => $first->parentName(),
                     'parent_url'       => $this->parentUrl($first),
+                    'course_name'      => null,
                     'tasks'            => $groupTasks->values(),
                     'total'            => $groupTasks->count(),
                     'completed'        => $statuses->filter(fn ($s) => $s === 'completed')->count(),
                     'has_overdue'      => $statuses->contains('overdue'),
                     'nearest_deadline' => $needsAction->map->deadline->filter()->min(),
+                    'is_assessment'    => false,
                 ];
             })
+            ->values();
+
+        // Assessment groups loaded dynamically for this user
+        $assessmentGroups = $this->assessmentGroups($request, $user);
+
+        // Merge all groups (tasks + assessments)
+        $allGroups = $taskGroups->concat($assessmentGroups);
+
+        // Search keyword filter across parent name, course name, and task titles
+        if ($search !== '') {
+            $allGroups = $allGroups->filter(function ($g) use ($search) {
+                $nameMatch = stripos($g['parent_name'], $search) !== false;
+                $courseMatch = !empty($g['course_name']) && stripos($g['course_name'], $search) !== false;
+                $taskMatch = $g['tasks']->contains(fn ($t) => stripos($t->title, $search) !== false);
+                return $nameMatch || $courseMatch || $taskMatch;
+            })->values();
+        }
+
+        // Summary counts across all tasks & assessments
+        $allTasksAndAssessments = $allGroups->pluck('tasks')->flatten();
+        $summary = [
+            'total'       => $allTasksAndAssessments->count(),
+            'not_started' => $allTasksAndAssessments->filter(fn ($t) => in_array($t->userStatusFor($user), ['not_started', 'in_progress'], true) && $t->userStatusFor($user) !== 'completed')->count(),
+            'submitted'   => $allTasksAndAssessments->filter(fn ($t) => $t->userStatusFor($user) === 'submitted')->count(),
+            'completed'   => $allTasksAndAssessments->filter(fn ($t) => $t->userStatusFor($user) === 'completed')->count(),
+            'overdue'     => $allTasksAndAssessments->filter(fn ($t) => $t->userStatusFor($user) === 'overdue')->count(),
+            'resubmit'    => $allTasksAndAssessments->filter(fn ($t) => $t->userStatusFor($user) === 'resubmit')->count(),
+        ];
+
+        // Category counts for quick filter tabs: all, playlist, content, asesment, others
+        $categoryCounts = [
+            'all'      => $allGroups->count(),
+            'playlist' => $allGroups->filter(fn ($g) => $g['parent_type'] === 'playlist')->count(),
+            'content'  => $allGroups->filter(fn ($g) => $g['parent_type'] === 'content')->count(),
+            'asesment' => $allGroups->filter(fn ($g) => $g['parent_type'] === 'assessment')->count(),
+            'others'   => $allGroups->filter(fn ($g) => in_array($g['parent_type'], ['standalone', 'offline_training'], true) || !in_array($g['parent_type'], ['playlist', 'content', 'assessment'], true))->count(),
+        ];
+
+        // Filter groups by selected quick filter
+        $groups = match ($filter) {
+            'playlist' => $allGroups->filter(fn ($g) => $g['parent_type'] === 'playlist')->values(),
+            'content'  => $allGroups->filter(fn ($g) => $g['parent_type'] === 'content')->values(),
+            'asesment' => $allGroups->filter(fn ($g) => $g['parent_type'] === 'assessment')->values(),
+            'others'   => $allGroups->filter(fn ($g) => in_array($g['parent_type'], ['standalone', 'offline_training'], true) || !in_array($g['parent_type'], ['playlist', 'content', 'assessment'], true))->values(),
+            // Backward-compatibility: if legacy status filters are passed
+            'resubmit'    => $allGroups->filter(fn ($g) => $g['tasks']->contains(fn ($t) => $t->userStatusFor($user) === 'resubmit'))->values(),
+            'in_progress' => $allGroups->filter(fn ($g) => $g['completed'] < $g['total'])->values(),
+            'submitted'   => $allGroups->filter(fn ($g) => $g['tasks']->contains(fn ($t) => $t->userStatusFor($user) === 'submitted'))->values(),
+            'completed'   => $allGroups->filter(fn ($g) => $g['completed'] === $g['total'] && $g['total'] > 0)->values(),
+            'overdue'     => $allGroups->filter(fn ($g) => $g['has_overdue'])->values(),
+            default       => $allGroups,
+        };
+
+        $groups = $groups
             ->sortBy(fn ($g) => [$g['nearest_deadline'] === null, $g['nearest_deadline']])
             ->sortByDesc('has_overdue')
             ->values();
 
-        // Drill-down: ?my_task_parent=playlist:5 shows only that parent's tasks.
+        // Drill-down: ?my_task_parent=... shows only that parent's tasks.
         $activeKey = $request->get('my_task_parent');
-        $activeGroup = $activeKey ? $groups->firstWhere('key', (string) $activeKey) : null;
+        $activeGroup = $activeKey ? $allGroups->firstWhere('key', (string) $activeKey) : null;
 
         // Show the "enter access code" card when standalone tasks exist
         // (they always carry a code — manual or auto-generated).
@@ -114,7 +147,113 @@ class MyTaskController extends Controller
             ->where('status', 'published')
             ->exists();
 
-        return view('user.learning.dashboard-partials.my-task', compact('groups', 'activeGroup', 'summary', 'filter', 'search', 'showRedeemCard'));
+        return view('user.learning.dashboard-partials.my-task', compact('groups', 'activeGroup', 'summary', 'filter', 'search', 'showRedeemCard', 'categoryCounts'));
+    }
+
+    /**
+     * Map user assessments into the unified task group structure
+     * so assessments appear seamlessly in the My Task tab.
+     */
+    protected function assessmentGroups(Request $request, User $user): \Illuminate\Support\Collection
+    {
+        try {
+            $assessmentCtrl = app(LearningAssessmentController::class);
+            $userAssessments = $assessmentCtrl->getFilteredUserAssessments($request, (int) $user->id);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Failed loading user assessments for MyTask: ' . $e->getMessage());
+            return collect();
+        }
+
+        return $userAssessments->map(function ($assessment) use ($user) {
+            $res = LearningAssessmentController::resolveCanonicalAssessmentResult($assessment, (int) $user->id);
+            $isCompleted = ($res !== null);
+            $isPassed = $res && (bool) ($res->pass ?? ($res->score !== null && $assessment->passing_grade !== null && (float) $res->score >= (float) $assessment->passing_grade));
+            $isExpired = false;
+            if ($assessment->hasAccessPeriod() && !empty($assessment->todate)) {
+                $isExpired = now()->gt(\Illuminate\Support\Carbon::parse($assessment->todate));
+            }
+
+            $assessmentItem = new class($assessment, $res, $isCompleted, $isPassed, $isExpired) {
+                public $id;
+                public $assessment_id;
+                public bool $is_assessment = true;
+                public $assessment;
+                public $title;
+                public $slug;
+                public $description;
+                public $type = 'assessment';
+                public $deadline;
+                public $time_limit;
+                public $passing_grade;
+                public $score;
+                public bool $is_passed;
+                public bool $is_completed;
+                public bool $is_expired;
+                public $parent_type = 'assessment';
+
+                public function __construct($assessment, $res, $isCompleted, $isPassed, $isExpired) {
+                    $this->assessment = $assessment;
+                    $this->assessment_id = $assessment->id;
+                    $this->id = 'assessment_' . $assessment->id;
+                    $this->title = $assessment->title;
+                    $this->slug = $assessment->slug;
+                    $this->description = $assessment->description ?: 'Uji pemahaman dan evaluasi materi pelatihan.';
+                    $this->deadline = $assessment->todate ? \Illuminate\Support\Carbon::parse($assessment->todate) : null;
+                    $this->time_limit = $assessment->time_limit_minutes;
+                    $this->passing_grade = $assessment->passing_grade;
+                    $this->score = $res?->score;
+                    $this->is_passed = (bool) $isPassed;
+                    $this->is_completed = (bool) $isCompleted;
+                    $this->is_expired = (bool) $isExpired;
+                }
+
+                public function typeLabel(): string {
+                    return 'Asesmen';
+                }
+
+                public function userStatusFor($u = null): string {
+                    if ($this->is_completed) return 'completed';
+                    if ($this->is_expired) return 'overdue';
+                    return 'in_progress';
+                }
+
+                public function submissionFor($u = null) {
+                    return (object) [
+                        'score' => $this->score,
+                        'status' => $this->userStatusFor(),
+                        'submitted_at' => null,
+                        'feedback' => null,
+                        'resubmit_requested' => false,
+                    ];
+                }
+
+                public function parentTitle(): ?string {
+                    return $this->assessment->trainingplan?->title ?? ($this->assessment->content?->title ?? 'Asesmen');
+                }
+
+                public function isStandalone(): bool {
+                    return empty($this->assessment->trainingplan_id) && empty($this->assessment->content_id);
+                }
+            };
+
+            $nearestDl = $assessment->todate ? \Illuminate\Support\Carbon::parse($assessment->todate) : null;
+
+            return [
+                'key'              => 'assessment:' . $assessment->id,
+                'parent_type'      => 'assessment',
+                'parent_name'      => $assessment->title,
+                'parent_url'       => !empty($assessment->slug) && \Illuminate\Support\Facades\Route::has('assesment.user.view')
+                                        ? route('assesment.user.view', $assessment->slug)
+                                        : null,
+                'course_name'      => $assessment->trainingplan?->title ?? ($assessment->content?->title ?? null),
+                'tasks'            => collect([$assessmentItem]),
+                'total'            => 1,
+                'completed'        => $isCompleted ? 1 : 0,
+                'has_overdue'      => $isExpired && ! $isCompleted,
+                'nearest_deadline' => $nearestDl,
+                'is_assessment'    => true,
+            ];
+        });
     }
 
     /**

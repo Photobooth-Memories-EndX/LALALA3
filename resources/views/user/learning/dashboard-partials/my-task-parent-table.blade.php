@@ -15,10 +15,26 @@
             </thead>
             <tbody>
                 @foreach ($tableGroups as $i => $group)
+                    @php
+                        $isAssessmentGroup = ($group['parent_type'] ?? '') === 'assessment';
+                        $firstTask = $group['tasks']->first();
+                    @endphp
                     <tr>
                         <td class="text-muted">{{ $i + 1 }}</td>
                         <td>
-                            @if ($group['parent_url'])
+                            @if ($isAssessmentGroup)
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="avatar avatar-xs bg-purple-lt text-purple rounded">
+                                        <i class="ti ti-clipboard-check"></i>
+                                    </span>
+                                    <div>
+                                        <span class="fw-bold text-dark">{{ $group['parent_name'] }}</span>
+                                        @if (!empty($group['course_name']))
+                                            <div class="text-muted small">{{ $group['course_name'] }}</div>
+                                        @endif
+                                    </div>
+                                </div>
+                            @elseif ($group['parent_url'])
                                 <a href="{{ $group['parent_url'] }}" class="fw-bold text-dark text-decoration-none d-inline-flex align-items-center gap-1">
                                     <i class="ti ti-book-2 text-primary"></i> {{ $group['parent_name'] }}
                                 </a>
@@ -59,12 +75,18 @@
                             @endif
                         </td>
                         <td>
-                            @if (in_array($filter, ['submitted', 'completed', 'overdue'], true))
-                                {{-- A task-status tab is active: every row has this status --}}
-                                <span class="badge {{ $statusBadges[$filter] }}">{{ $statusLabels[$filter] }}</span>
+                            @if ($isAssessmentGroup && $firstTask && ($firstTask->is_completed ?? false))
+                                @if ($firstTask->is_passed ?? false)
+                                    <span class="badge bg-success-lt text-success">Completed</span>
+                                @else
+                                    <span class="badge bg-danger-lt text-danger">Failed</span>
+                                @endif
+                            @elseif (in_array($filter, ['submitted', 'completed', 'overdue'], true))
+                                {{-- Legacy task-status tab --}}
+                                <span class="badge {{ $statusBadges[$filter] ?? 'bg-secondary-lt text-secondary' }}">{{ $statusLabels[$filter] ?? $filter }}</span>
                             @elseif ($group['has_overdue'])
                                 <span class="badge bg-danger-lt text-danger">Overdue</span>
-                            @elseif ($group['completed'] === $group['total'])
+                            @elseif ($group['completed'] === $group['total'] && $group['total'] > 0)
                                 <span class="badge bg-success-lt text-success">Completed</span>
                             @else
                                 <span class="badge bg-primary-lt text-primary">In Progress</span>
@@ -72,7 +94,7 @@
                         </td>
                         <td class="text-end">
                             <div class="d-inline-flex align-items-center gap-1">
-                                {{-- Dropdown Task List --}}
+                                {{-- Dropdown Task / Assessment List --}}
                                 <div class="dropdown">
                                     <button class="btn btn-sm btn-primary dropdown-toggle d-inline-flex align-items-center gap-1 shadow-sm px-2.5 py-1.5"
                                             type="button"
@@ -80,8 +102,8 @@
                                             data-bs-toggle="dropdown"
                                             data-bs-popper-config='{"strategy":"fixed"}'
                                             aria-expanded="false">
-                                        <i class="ti ti-list-check me-1"></i>
-                                        <span>Pilih Tugas</span>
+                                        <i class="ti {{ $isAssessmentGroup ? 'ti-clipboard-check' : 'ti-list-check' }} me-1"></i>
+                                        <span>{{ $isAssessmentGroup ? 'Pilih Asesmen' : 'Pilih Tugas' }}</span>
                                         <span class="badge bg-white text-primary ms-1 px-1.5 py-0.5 rounded-pill fw-bold">{{ $group['total'] }}</span>
                                     </button>
                                     <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 p-2"
@@ -89,7 +111,8 @@
                                          style="min-width: 340px; max-width: 440px; z-index: 1060;">
                                         <div class="px-3 py-2 border-bottom mb-2 d-flex justify-content-between align-items-center bg-light-subtle rounded-top-3">
                                             <span class="fw-bold text-dark small d-flex align-items-center gap-1">
-                                                <i class="ti ti-checklist text-primary"></i> Tugas: {{ Str::limit($group['parent_name'], 25) }}
+                                                <i class="ti {{ $isAssessmentGroup ? 'ti-clipboard-check text-purple' : 'ti-checklist text-primary' }}"></i>
+                                                {{ $isAssessmentGroup ? 'Asesmen' : 'Tugas' }}: {{ Str::limit($group['parent_name'], 25) }}
                                             </span>
                                             <span class="badge bg-success-lt text-success">{{ $group['completed'] }}/{{ $group['total'] }} Selesai</span>
                                         </div>
@@ -99,6 +122,7 @@
                                                     $tStatus = $task->userStatusFor(auth()->user());
                                                     $tSubmission = $task->submissionFor(auth()->user());
                                                     $isPending = in_array($tStatus, ['not_started', 'in_progress', 'resubmit', 'overdue']);
+                                                    $isTaskAssessment = $task->is_assessment ?? false;
                                                 @endphp
                                                 <button type="button"
                                                         class="dropdown-item py-2 px-3 rounded-3 text-start d-flex align-items-center justify-content-between gap-2 btn-open-task-modal"
@@ -106,21 +130,29 @@
                                                         data-bs-target="#taskModal-{{ $task->id }}">
                                                     <div class="me-2 text-wrap" style="max-width: 220px;">
                                                         <div class="fw-semibold text-dark text-truncate" title="{{ $task->title }}">
-                                                            <i class="ti ti-file-pencil text-primary me-1"></i>{{ $task->title }}
+                                                            <i class="ti {{ $isTaskAssessment ? 'ti-clipboard-text text-purple' : 'ti-file-pencil text-primary' }} me-1"></i>{{ $task->title }}
                                                         </div>
                                                         <div class="d-flex align-items-center gap-1 text-muted" style="font-size: 11px;">
-                                                            <span class="badge bg-secondary-lt px-1 py-0" style="font-size: 10px;">{{ $task->typeLabel() }}</span>
+                                                            <span class="badge {{ $isTaskAssessment ? 'bg-purple-lt text-purple' : 'bg-secondary-lt' }} px-1 py-0" style="font-size: 10px;">{{ $task->typeLabel() }}</span>
                                                             @if ($task->deadline)
                                                                 <span>&middot; {{ $task->deadline->format('d M') }}</span>
                                                             @endif
                                                         </div>
                                                     </div>
                                                     <div class="d-flex flex-column align-items-end flex-shrink-0 gap-1">
-                                                        <span class="badge {{ $statusBadges[$displayStatus($tStatus)] }}" style="font-size: 10px;">
-                                                            {{ $statusLabels[$displayStatus($tStatus)] }}
-                                                        </span>
+                                                        @if ($isTaskAssessment && ($task->is_completed ?? false))
+                                                            <span class="badge {{ ($task->is_passed ?? false) ? 'bg-success-lt text-success' : 'bg-danger-lt text-danger' }}" style="font-size: 10px;">
+                                                                {{ ($task->is_passed ?? false) ? 'Lulus' : 'Tidak Lulus' }}
+                                                            </span>
+                                                        @else
+                                                            <span class="badge {{ $statusBadges[$displayStatus($tStatus)] ?? 'bg-secondary-lt text-secondary' }}" style="font-size: 10px;">
+                                                                {{ $statusLabels[$displayStatus($tStatus)] ?? $displayStatus($tStatus) }}
+                                                            </span>
+                                                        @endif
                                                         @if ($isPending)
-                                                            <span class="text-primary fw-semibold" style="font-size: 10px;">Kerjakan <i class="ti ti-arrow-right"></i></span>
+                                                            <span class="text-primary fw-semibold" style="font-size: 10px;">
+                                                                {{ $isTaskAssessment ? 'Mulai' : 'Kerjakan' }} <i class="ti ti-arrow-right"></i>
+                                                            </span>
                                                         @else
                                                             <span class="text-muted" style="font-size: 10px;">Lihat <i class="ti ti-eye"></i></span>
                                                         @endif
@@ -136,7 +168,7 @@
                                         data-bs-toggle="collapse"
                                         data-bs-target="#collapseTasks-{{ $i }}"
                                         aria-expanded="false"
-                                        title="Tampilkan daftar tugas di bawah baris">
+                                        title="Tampilkan daftar di bawah baris">
                                     <i class="ti ti-chevron-down"></i>
                                 </button>
                             </div>
@@ -149,16 +181,17 @@
                             <div class="card border rounded-3 p-3 bg-white shadow-none mb-0">
                                 <div class="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom">
                                     <span class="fw-bold text-dark small d-flex align-items-center gap-1">
-                                        <i class="ti ti-list-check text-primary"></i> Daftar Tugas: {{ $group['parent_name'] }}
+                                        <i class="ti {{ $isAssessmentGroup ? 'ti-clipboard-check text-purple' : 'ti-list-check text-primary' }}"></i>
+                                        Daftar {{ $isAssessmentGroup ? 'Asesmen' : 'Tugas' }}: {{ $group['parent_name'] }}
                                     </span>
-                                    <span class="text-muted small">Klik <strong>Kerjakan / Buka Tugas</strong> untuk membuka form pop up</span>
+                                    <span class="text-muted small">Klik <strong>{{ $isAssessmentGroup ? 'Buka Asesmen' : 'Kerjakan / Buka Tugas' }}</strong> untuk membuka form pop up</span>
                                 </div>
                                 <div class="table-responsive">
                                     <table class="table table-sm table-vcenter mb-0">
                                         <thead>
                                             <tr>
                                                 <th class="w-1">NO</th>
-                                                <th>JUDUL TUGAS</th>
+                                                <th>{{ $isAssessmentGroup ? 'JUDUL ASESMEN' : 'JUDUL TUGAS' }}</th>
                                                 <th>TIPE</th>
                                                 <th>DEADLINE</th>
                                                 <th class="text-center">SKOR</th>
@@ -171,6 +204,7 @@
                                                 @php
                                                     $tStatus = $task->userStatusFor(auth()->user());
                                                     $tSubmission = $task->submissionFor(auth()->user());
+                                                    $isTaskAssessment = $task->is_assessment ?? false;
                                                 @endphp
                                                 <tr>
                                                     <td class="text-muted">{{ $tIdx + 1 }}</td>
@@ -180,17 +214,35 @@
                                                             <div class="text-muted small" style="color: #000000;">{{ Str::limit($task->description, 60) }}</div>
                                                         @endif
                                                     </td>
-                                                    <td><span class="badge bg-primary-lt text-primary">{{ $task->typeLabel() }}</span></td>
+                                                    <td>
+                                                        <span class="badge {{ $isTaskAssessment ? 'bg-purple-lt text-purple' : 'bg-primary-lt text-primary' }}">
+                                                            {{ $task->typeLabel() }}
+                                                        </span>
+                                                    </td>
                                                     <td class="text-nowrap small">
                                                         {{ $task->deadline ? $task->deadline->format('d M Y H:i') : '-' }}
                                                     </td>
                                                     <td class="text-center small">
-                                                        {{ $tSubmission && ! is_null($tSubmission->score) ? $tSubmission->score : '-' }}
+                                                        @if (!is_null($task->score ?? null))
+                                                            <span class="fw-bold {{ ($task->is_passed ?? false) ? 'text-success' : 'text-danger' }}">
+                                                                {{ $task->score }}
+                                                            </span>
+                                                        @elseif ($tSubmission && ! is_null($tSubmission->score))
+                                                            {{ $tSubmission->score }}
+                                                        @else
+                                                            -
+                                                        @endif
                                                     </td>
                                                     <td>
-                                                        <span class="badge {{ $statusBadges[$displayStatus($tStatus)] }}">
-                                                            {{ $statusLabels[$displayStatus($tStatus)] }}
-                                                        </span>
+                                                        @if ($isTaskAssessment && ($task->is_completed ?? false))
+                                                            <span class="badge {{ ($task->is_passed ?? false) ? 'bg-success-lt text-success' : 'bg-danger-lt text-danger' }}">
+                                                                {{ ($task->is_passed ?? false) ? 'Lulus' : 'Tidak Lulus' }}
+                                                            </span>
+                                                        @else
+                                                            <span class="badge {{ $statusBadges[$displayStatus($tStatus)] ?? 'bg-secondary-lt text-secondary' }}">
+                                                                {{ $statusLabels[$displayStatus($tStatus)] ?? $displayStatus($tStatus) }}
+                                                            </span>
+                                                        @endif
                                                     </td>
                                                     <td class="text-end">
                                                         <button type="button"
@@ -198,7 +250,7 @@
                                                                 data-bs-toggle="modal"
                                                                 data-bs-target="#taskModal-{{ $task->id }}">
                                                             <i class="ti {{ in_array($tStatus, ['completed', 'submitted']) ? 'ti-eye' : 'ti-pencil' }} me-1"></i>
-                                                            {{ in_array($tStatus, ['completed', 'submitted']) ? 'Lihat Tugas' : 'Kerjakan' }}
+                                                            {{ in_array($tStatus, ['completed', 'submitted']) ? 'Lihat' : ($isTaskAssessment ? 'Buka Asesmen' : 'Kerjakan') }}
                                                         </button>
                                                     </td>
                                                 </tr>

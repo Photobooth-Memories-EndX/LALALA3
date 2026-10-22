@@ -31,17 +31,19 @@
         'content'          => 'bg-info-lt text-info',
         'offline_training' => 'bg-warning-lt text-warning',
         'standalone'       => 'bg-secondary-lt text-secondary',
+        'assessment'       => 'bg-purple-lt text-purple',
     ];
     $parentTypeLabel = [
         'playlist'         => 'Playlist',
         'content'          => 'Content',
         'offline_training' => 'Offline Training',
         'standalone'       => 'Global Task',
+        'assessment'       => 'Asesmen',
     ];
     // Drill-down navigation: parent list <-> one parent's tasks.
     $baseParams = array_filter([
         'learning_tab'   => 'my-task',
-        'my_task_status' => $filter === 'all' ? null : $filter,
+        'my_task_filter' => $filter === 'all' ? null : $filter,
         'my_task_q'      => ($search ?? '') !== '' ? $search : null,
     ]);
     $backUrl = route('user.learning.dashboard', $baseParams);
@@ -51,22 +53,16 @@
         'my_task_parent' => ($activeGroup ?? null) ? $activeGroup['key'] : null,
     ]));
     $tabs = [
-        'all'         => ['label' => 'All',           'icon' => 'ti-layers'],
-        'in_progress' => ['label' => 'In Progress',  'icon' => 'ti-loader-2'],
-        'submitted'   => ['label' => 'Pending review','icon' => 'ti-clock'],
-        'completed'   => ['label' => 'Completed',     'icon' => 'ti-check'],
-        'overdue'     => ['label' => 'Overdue',       'icon' => 'ti-alert-triangle'],
+        'all'      => ['label' => 'All',      'icon' => 'ti-layers'],
+        'playlist' => ['label' => 'Playlist', 'icon' => 'ti-playlist'],
+        'content'  => ['label' => 'Content',  'icon' => 'ti-device-laptop'],
+        'asesment' => ['label' => 'Asesmen',  'icon' => 'ti-clipboard-check'],
+        'others'   => ['label' => 'Others',   'icon' => 'ti-world'],
     ];
-    if (($summary['resubmit'] ?? 0) > 0) {
-        $tabs['resubmit'] = [
-            'label' => 'Perlu Revisi (' . $summary['resubmit'] . ')',
-            'icon'  => 'ti-refresh',
-        ];
-    }
     // Clicking a tab navigates immediately (keeps search + parent context).
     $tabUrl = fn ($key) => route('user.learning.dashboard', array_filter([
         'learning_tab'   => 'my-task',
-        'my_task_status' => $key === 'all' ? null : $key,
+        'my_task_filter' => $key === 'all' ? null : $key,
         'my_task_q'      => ($search ?? '') !== '' ? $search : null,
         'my_task_parent' => ($activeGroup ?? null) ? $activeGroup['key'] : null,
     ]));
@@ -159,14 +155,19 @@
         <div class="d-flex flex-wrap gap-2 mb-2">
             @foreach ($tabs as $key => $tab)
                 <a href="{{ $tabUrl($key) }}"
-                   class="btn {{ $filter === $key ? 'btn-primary' : 'btn-white' }}">
+                   class="btn {{ $filter === $key ? 'btn-primary' : 'btn-white' }} d-inline-flex align-items-center">
                     <i class="ti {{ $tab['icon'] }} me-1"></i>{{ $tab['label'] }}
+                    @if (isset($categoryCounts[$key]))
+                        <span class="badge {{ $filter === $key ? 'bg-white text-primary' : 'bg-secondary-lt text-secondary' }} ms-1.5 px-1.5 py-0.5 rounded-pill fw-bold" style="font-size: 11px;">
+                            {{ $categoryCounts[$key] }}
+                        </span>
+                    @endif
                 </a>
             @endforeach
         </div>
         <form method="GET" action="{{ route('user.learning.dashboard') }}" class="d-flex flex-wrap gap-2 align-items-center">
             <input type="hidden" name="learning_tab" value="my-task">
-            <input type="hidden" name="my_task_status" value="{{ $filter }}">
+            <input type="hidden" name="my_task_filter" value="{{ $filter }}">
             @if ($activeGroup ?? null)
                 <input type="hidden" name="my_task_parent" value="{{ $activeGroup['key'] }}">
             @endif
@@ -316,7 +317,7 @@
     @endif
 @endif
 
-{{-- ── Task Pop Up Modals (Focused Workspace) ──────────────────── --}}
+{{-- ── Task & Assessment Pop Up Modals (Focused Workspace) ──────────────────── --}}
 @php
     $allModalTasks = collect();
     if (isset($groups) && $groups->isNotEmpty()) {
@@ -330,43 +331,183 @@
 @foreach ($allModalTasks as $task)
     @php
         $modalStatus = $task->userStatusFor(auth()->user());
+        $isAssessment = $task->is_assessment ?? false;
     @endphp
-    <div class="modal modal-blur fade task-popup-modal"
-         id="taskModal-{{ $task->id }}"
-         tabindex="-1"
-         role="dialog"
-         aria-hidden="true"
-         data-bs-backdrop="static">
-        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
-            <div class="modal-content rounded-4 border-0 shadow-lg">
-                <div class="modal-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between">
-                    <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <span class="badge bg-primary-lt text-primary px-2.5 py-1 fs-6">
-                            <i class="ti ti-file-text me-1"></i>{{ $task->typeLabel() }}
-                        </span>
-                        @if ($task->parentTitle())
-                            <span class="badge bg-secondary-lt text-secondary px-2 py-1 fs-6">
-                                <i class="ti ti-bookmark me-1"></i>{{ $task->parentTitle() }}
+
+    @if ($isAssessment)
+        {{-- Assessment Pop Up Modal --}}
+        <div class="modal modal-blur fade task-popup-modal"
+             id="taskModal-{{ $task->id }}"
+             tabindex="-1"
+             role="dialog"
+             aria-hidden="true"
+             data-bs-backdrop="static">
+            <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+                <div class="modal-content rounded-4 border-0 shadow-lg">
+                    <div class="modal-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <span class="badge bg-purple-lt text-purple px-2.5 py-1 fs-6">
+                                <i class="ti ti-clipboard-check me-1"></i>Asesmen
                             </span>
-                        @elseif ($task->isStandalone())
-                            <span class="badge bg-secondary-lt text-secondary px-2 py-1 fs-6">
-                                <i class="ti ti-world me-1"></i>Global Task
-                            </span>
-                        @endif
+                            @if ($task->parentTitle())
+                                <span class="badge bg-secondary-lt text-secondary px-2 py-1 fs-6">
+                                    <i class="ti ti-bookmark me-1"></i>{{ $task->parentTitle() }}
+                                </span>
+                            @endif
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            @if ($task->is_completed)
+                                @if ($task->is_passed)
+                                    <span class="badge bg-success-lt text-success px-2.5 py-1 fs-6">Completed (Lulus)</span>
+                                @else
+                                    <span class="badge bg-danger-lt text-danger px-2.5 py-1 fs-6">Failed (Tidak Lulus)</span>
+                                @endif
+                            @elseif ($task->is_expired)
+                                <span class="badge bg-danger-lt text-danger px-2.5 py-1 fs-6">Overdue</span>
+                            @else
+                                <span class="badge bg-primary-lt text-primary px-2.5 py-1 fs-6">In Progress</span>
+                            @endif
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
                     </div>
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="badge {{ $statusBadges[$displayStatus($modalStatus)] }} px-2.5 py-1 fs-6">
-                            {{ $statusLabels[$displayStatus($modalStatus)] }}
-                        </span>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <div class="modal-body p-4 bg-light-subtle">
+                        <div class="card border-0 shadow-sm rounded-4 mb-0">
+                            <div class="card-body p-4">
+                                <h2 class="fw-bold text-dark mb-2">{{ $task->title }}</h2>
+                                <div class="text-dark mb-4" style="line-height: 1.6; color: #000000;">
+                                    {{ $task->description }}
+                                </div>
+
+                                {{-- Assessment Metadata Grid --}}
+                                <div class="row g-3 mb-4">
+                                    <div class="col-6 col-md-3">
+                                        <div class="p-3 bg-white border rounded-3 text-center h-100 shadow-none">
+                                            <div class="text-muted small mb-1"><i class="ti ti-award me-1"></i>Passing Grade</div>
+                                            <div class="fs-3 fw-bold text-dark">{{ $task->passing_grade ?? '-' }}%</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-3">
+                                        <div class="p-3 bg-white border rounded-3 text-center h-100 shadow-none">
+                                            <div class="text-muted small mb-1"><i class="ti ti-clock me-1"></i>Durasi</div>
+                                            <div class="fs-3 fw-bold text-dark">{{ $task->time_limit ? $task->time_limit . ' Menit' : 'Fleksibel' }}</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-3">
+                                        <div class="p-3 bg-white border rounded-3 text-center h-100 shadow-none">
+                                            <div class="text-muted small mb-1"><i class="ti ti-calendar me-1"></i>Batas Waktu</div>
+                                            <div class="fs-4 fw-bold text-dark">{{ $task->deadline ? $task->deadline->format('d M Y') : 'Tanpa Batas' }}</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-3">
+                                        <div class="p-3 bg-white border rounded-3 text-center h-100 shadow-none">
+                                            <div class="text-muted small mb-1"><i class="ti ti-star me-1"></i>Skor Anda</div>
+                                            <div class="fs-3 fw-bold {{ !is_null($task->score) ? ($task->is_passed ? 'text-success' : 'text-danger') : 'text-muted' }}">
+                                                {{ !is_null($task->score) ? $task->score : '-' }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- Status Alert Box --}}
+                                @if ($task->is_completed)
+                                    <div class="alert {{ $task->is_passed ? 'alert-success' : 'alert-danger' }} rounded-3 d-flex align-items-center justify-content-between mb-4">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="ti {{ $task->is_passed ? 'ti-circle-check' : 'ti-alert-circle' }} fs-2"></i>
+                                            <div>
+                                                <strong>{{ $task->is_passed ? 'Selamat, Anda telah lulus asesmen ini!' : 'Nilai belum memenuhi batas kelulusan.' }}</strong>
+                                                <div class="small">Skor diperoleh: <strong>{{ $task->score }}</strong> (Passing Grade: {{ $task->passing_grade }}%)</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @elseif ($task->is_expired)
+                                    <div class="alert alert-danger rounded-3 d-flex align-items-center gap-2 mb-4">
+                                        <i class="ti ti-alert-triangle fs-2"></i>
+                                        <div>
+                                            <strong>Batas waktu pengerjaan asesmen telah berakhir.</strong>
+                                            <div class="small">Silakan hubungi admin atau instruktur jika memerlukan perpanjangan akses.</div>
+                                        </div>
+                                    </div>
+                                @else
+                                    <div class="alert alert-info rounded-3 d-flex align-items-center gap-2 mb-4">
+                                        <i class="ti ti-info-circle fs-2"></i>
+                                        <div>
+                                            <strong>Petunjuk Pengerjaan:</strong>
+                                            <div class="small">Pastikan koneksi internet Anda stabil sebelum memulai asesmen. Jawaban akan disimpan secara otomatis saat dikerjakan.</div>
+                                        </div>
+                                    </div>
+                                @endif
+
+                                {{-- Action Buttons --}}
+                                <div class="d-flex align-items-center justify-content-end gap-2 pt-3 border-top">
+                                    <button type="button" class="btn btn-white" data-bs-dismiss="modal">Tutup</button>
+                                    @if ($task->is_completed)
+                                        @if (Route::has('assesment.user.result') && !empty($task->slug))
+                                            <a href="{{ route('assesment.user.result', $task->slug) }}" class="btn btn-outline-primary">
+                                                <i class="ti ti-chart-bar me-1"></i> Lihat Hasil Ujian
+                                            </a>
+                                        @endif
+                                        @if (!$task->is_passed && !empty($task->slug) && Route::has('assesment.user.view'))
+                                            <a href="{{ route('assesment.user.view', $task->slug) }}" class="btn btn-warning text-dark fw-semibold">
+                                                <i class="ti ti-refresh me-1"></i> Ikuti Remedial
+                                            </a>
+                                        @endif
+                                    @elseif ($task->is_expired)
+                                        <button type="button" class="btn btn-secondary" disabled>
+                                            <i class="ti ti-ban me-1"></i> Asesmen Kedaluwarsa
+                                        </button>
+                                    @else
+                                        @if (!empty($task->slug) && Route::has('assesment.user.view'))
+                                            <a href="{{ route('assesment.user.view', $task->slug) }}" class="btn btn-primary px-4 fw-semibold">
+                                                <i class="ti ti-pencil me-1"></i> Mulai Kerjakan Asesmen
+                                            </a>
+                                        @endif
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <div class="modal-body p-4 bg-light-subtle">
-                    @include('user.learning.dashboard-partials.my-task-card', ['task' => $task, 'inModal' => true])
                 </div>
             </div>
         </div>
-    </div>
+    @else
+        {{-- Task Pop Up Modal --}}
+        <div class="modal modal-blur fade task-popup-modal"
+             id="taskModal-{{ $task->id }}"
+             tabindex="-1"
+             role="dialog"
+             aria-hidden="true"
+             data-bs-backdrop="static">
+            <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+                <div class="modal-content rounded-4 border-0 shadow-lg">
+                    <div class="modal-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <span class="badge bg-primary-lt text-primary px-2.5 py-1 fs-6">
+                                <i class="ti ti-file-text me-1"></i>{{ $task->typeLabel() }}
+                            </span>
+                            @if ($task->parentTitle())
+                                <span class="badge bg-secondary-lt text-secondary px-2 py-1 fs-6">
+                                    <i class="ti ti-bookmark me-1"></i>{{ $task->parentTitle() }}
+                                </span>
+                            @elseif ($task->isStandalone())
+                                <span class="badge bg-secondary-lt text-secondary px-2 py-1 fs-6">
+                                    <i class="ti ti-world me-1"></i>Global Task
+                                </span>
+                            @endif
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge {{ $statusBadges[$displayStatus($modalStatus)] }} px-2.5 py-1 fs-6">
+                                {{ $statusLabels[$displayStatus($modalStatus)] }}
+                            </span>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                    </div>
+                    <div class="modal-body p-4 bg-light-subtle">
+                        @include('user.learning.dashboard-partials.my-task-card', ['task' => $task, 'inModal' => true])
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 @endforeach
 
 <script>
