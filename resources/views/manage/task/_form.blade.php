@@ -313,8 +313,8 @@
             <div class="d-flex align-items-center gap-3">
                 <span class="section-badge-num"><i class="ti ti-calendar-time"></i></span>
                 <div>
-                    <h3 class="card-title fw-bold text-dark mb-0">3. Timeline & Supporting Files</h3>
-                    <div class="text-muted small">Set the submission deadline and attach assignment templates or guidance materials (optional).</div>
+                    <h3 class="card-title fw-bold text-dark mb-0" id="section3Title">{{ $currentType === 'file_submission' ? '3. Timeline & Supporting Files' : '3. Timeline' }}</h3>
+                    <div class="text-muted small" id="section3Subtitle">{{ $currentType === 'file_submission' ? 'Set the submission deadline and attach assignment templates or guidance materials (optional).' : 'Set the submission deadline for learners (optional).' }}</div>
                 </div>
             </div>
             <span class="badge bg-primary text-white fw-semibold px-2.5 py-1 rounded-pill section-active-indicator align-items-center gap-1 shadow-sm">
@@ -337,11 +337,11 @@
                 @error('deadline')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
             </div>
 
-            {{-- Attachment --}}
-            <div class="form-field-md">
+            {{-- Attachment / Task Template (Only for File Submission) --}}
+            <div class="form-field-md" id="attachmentWrapper" style="{{ $currentType === 'file_submission' ? '' : 'display:none;' }}">
                 <label class="form-label" for="attachment">Attachment / Task Template (Optional)</label>
                 <input type="file" class="form-control @error('attachment') is-invalid @enderror"
-                       id="attachment" name="attachment">
+                       id="attachment" name="attachment" {{ $currentType === 'file_submission' ? '' : 'disabled' }}>
                 @if (isset($task) && $task->attachment)
                     <div class="form-hint mt-1 d-flex align-items-center gap-1">
                         <i class="ti ti-file-check text-success"></i>
@@ -637,24 +637,10 @@
                     </div>
                 </div>
             </div>
-            <div class="modal-footer bg-white py-3 px-4 border-top d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div class="modal-footer bg-white py-3 px-4 border-top d-flex justify-content-end align-items-center gap-2">
                 <button type="button" class="btn btn-outline-secondary rounded-3 px-3" data-bs-dismiss="modal">
                     <i class="ti ti-arrow-left me-1"></i> Back to Edit
                 </button>
-                <div class="d-flex align-items-center gap-2">
-                    @if (isset($task))
-                        <button type="button" class="btn btn-primary rounded-3 px-4" id="btnPreviewSave">
-                            <i class="ti ti-device-floppy me-1"></i> Save Changes
-                        </button>
-                    @else
-                        <button type="button" class="btn btn-outline-primary rounded-3 px-3" id="btnPreviewDraft">
-                            <i class="ti ti-file me-1"></i> Save as Draft
-                        </button>
-                        <button type="button" class="btn btn-primary rounded-3 px-4" id="btnPreviewPublish">
-                            <i class="ti ti-send me-1"></i> Publish Task
-                        </button>
-                    @endif
-                </div>
             </div>
         </div>
     </div>
@@ -1169,12 +1155,38 @@
             typeHint.textContent = TYPE_HINTS[t] || '';
             var isLink   = (t === 'course_assignment');
             var isSurvey = (t === 'survey');
+            var isFileSubmission = (t === 'file_submission');
             var hasBuilder = typeHasBuilder(t);
 
             linkSection.style.display       = isLink ? '' : 'none';
             if (surveySection) surveySection.style.display = isSurvey ? '' : 'none';
             builderSection.style.display    = hasBuilder ? '' : 'none';
             builderHint.textContent = BUILDER_HINTS[t] || '';
+
+            // Section 3: Attachment / Task Template only visible for File Submission
+            var attachmentWrapper = document.getElementById('attachmentWrapper');
+            var attachmentInput   = document.getElementById('attachment');
+            var section3Title     = document.getElementById('section3Title');
+            var section3Subtitle  = document.getElementById('section3Subtitle');
+
+            if (attachmentWrapper) {
+                attachmentWrapper.style.display = isFileSubmission ? '' : 'none';
+            }
+            if (attachmentInput) {
+                attachmentInput.disabled = !isFileSubmission;
+                if (!isFileSubmission) {
+                    attachmentInput.value = '';
+                }
+            }
+            if (section3Title) {
+                section3Title.textContent = isFileSubmission ? '3. Timeline & Supporting Files' : '3. Timeline';
+            }
+            if (section3Subtitle) {
+                section3Subtitle.textContent = isFileSubmission
+                    ? 'Set the submission deadline and attach assignment templates or guidance materials (optional).'
+                    : 'Set the submission deadline for learners (optional).';
+            }
+
             ensureValidActiveSection();
 
             if (!hasBuilder) {
@@ -1319,17 +1331,15 @@
                 if (descWrap) descWrap.style.display = 'none';
             }
 
-            // Attachment / Reference Material
+            // Attachment / Reference Material (only for File Submission)
+            var isFileSubmission = currentType() === 'file_submission';
             var attachInput = document.getElementById('attachment');
             var attachWrap = document.getElementById('prevAttachmentWrap');
             var attachName = document.getElementById('prevAttachmentName');
             var hasSavedAttachment = @json(isset($task) && $task->attachment ? basename($task->attachment) : '');
             var hasNewFile = attachInput && attachInput.files && attachInput.files.length > 0;
-            if (hasNewFile) {
-                if (attachName) attachName.textContent = attachInput.files[0].name;
-                if (attachWrap) attachWrap.style.display = '';
-            } else if (hasSavedAttachment) {
-                if (attachName) attachName.textContent = hasSavedAttachment;
+            if (isFileSubmission && (hasNewFile || hasSavedAttachment)) {
+                if (attachName) attachName.textContent = hasNewFile ? attachInput.files[0].name : hasSavedAttachment;
                 if (attachWrap) attachWrap.style.display = '';
             } else {
                 if (attachWrap) attachWrap.style.display = 'none';
@@ -1446,21 +1456,18 @@
                             }
 
                             html += '<div>' +
-                                '<div class="border border-dashed rounded-3 p-3 bg-light-subtle">' +
-                                    '<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">' +
-                                        '<div class="d-flex align-items-center gap-2">' +
-                                            '<i class="ti ti-cloud-upload text-primary fs-2"></i>' +
-                                            '<div>' +
-                                                '<div class="fw-semibold small text-dark">Upload File Jawaban</div>' +
-                                                '<div class="text-muted" style="font-size:11px;">' +
-                                                    'Format: <strong>' + esc(extDisplay) + '</strong>' + badgeHtml +
-                                                    ' | Maksimal <strong>' + maxFiles + ' file</strong>, maks. <strong>' + maxSize + ' MB</strong> per file' +
-                                                '</div>' +
-                                            '</div>' +
-                                        '</div>' +
-                                        (allowLink ? '<span class="badge bg-info-lt text-info d-inline-flex align-items-center"><i class="ti ti-link me-1"></i> Mendukung Link Drive</span>' : '') +
+                                '<div class="border border-2 border-dashed rounded-3 p-4 text-center bg-light-subtle" style="border-color:#cbd5e1!important;">' +
+                                    '<div class="avatar avatar-md rounded-circle bg-primary-lt text-primary mx-auto mb-2 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">' +
+                                        '<i class="ti ti-cloud-upload fs-1"></i>' +
                                     '</div>' +
-                                    '<input type="file" class="form-control bg-white" disabled>' +
+                                    '<div class="fw-semibold text-dark mb-1">' +
+                                        'Tarik &amp; lepas file ke sini, atau <span class="text-primary text-decoration-underline">pilih file</span>' +
+                                    '</div>' +
+                                    '<div class="text-muted small" style="font-size: 11.5px;">' +
+                                        'Format: <strong>' + esc(extDisplay) + '</strong>' + badgeHtml +
+                                        ' | Maksimal <strong>' + maxFiles + ' file</strong>, maks. <strong>' + maxSize + ' MB</strong> per file' +
+                                    '</div>' +
+                                    (allowLink ? '<div class="mt-2"><span class="badge bg-info-lt text-info d-inline-flex align-items-center"><i class="ti ti-link me-1"></i> Mendukung Link Drive</span></div>' : '') +
                                 '</div>' +
                             '</div>';
                         } else if (ftype === 'choice') {
@@ -1481,28 +1488,15 @@
                         html += '</div>';
                     });
 
-                    html += '<button type="button" class="btn btn-primary rounded-3 px-4" disabled>' +
-                        '<i class="ti ti-send me-1"></i> Submit Answers' +
-                    '</button>';
+                    html += '<div class="d-flex align-items-center justify-content-end gap-2 mt-4 pt-3 border-top">' +
+                        '<button type="button" class="btn btn-primary rounded-3 px-4" disabled>' +
+                            '<i class="ti ti-send me-1"></i> Submit Answers' +
+                        '</button>' +
+                    '</div>';
                 }
 
                 subWrap.innerHTML = html;
             }
-        }
-
-        function submitWithAction(actionVal) {
-            var form = document.getElementById('taskForm');
-            if (!form) return;
-            var existingAction = form.querySelector('input[name="action"][type="hidden"]');
-            if (!existingAction) {
-                existingAction = document.createElement('input');
-                existingAction.type = 'hidden';
-                existingAction.name = 'action';
-                form.appendChild(existingAction);
-            }
-            existingAction.value = actionVal;
-            if (form.requestSubmit) form.requestSubmit();
-            else form.submit();
         }
 
         var btnPreview = document.getElementById('btnPreviewTask');
@@ -1516,43 +1510,6 @@
                     } else if (typeof $ !== 'undefined') {
                         $(modalEl).modal('show');
                     }
-                }
-            });
-        }
-
-        var btnPrevDraft = document.getElementById('btnPreviewDraft');
-        if (btnPrevDraft) {
-            btnPrevDraft.addEventListener('click', function () {
-                var modalEl = document.getElementById('taskPreviewModal');
-                if (modalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-                    bootstrap.Modal.getOrCreateInstance(modalEl).hide();
-                }
-                submitWithAction('draft');
-            });
-        }
-
-        var btnPrevPublish = document.getElementById('btnPreviewPublish');
-        if (btnPrevPublish) {
-            btnPrevPublish.addEventListener('click', function () {
-                var modalEl = document.getElementById('taskPreviewModal');
-                if (modalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-                    bootstrap.Modal.getOrCreateInstance(modalEl).hide();
-                }
-                submitWithAction('publish');
-            });
-        }
-
-        var btnPrevSave = document.getElementById('btnPreviewSave');
-        if (btnPrevSave) {
-            btnPrevSave.addEventListener('click', function () {
-                var modalEl = document.getElementById('taskPreviewModal');
-                if (modalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-                    bootstrap.Modal.getOrCreateInstance(modalEl).hide();
-                }
-                var form = document.getElementById('taskForm');
-                if (form) {
-                    if (form.requestSubmit) form.requestSubmit();
-                    else form.submit();
                 }
             });
         }
