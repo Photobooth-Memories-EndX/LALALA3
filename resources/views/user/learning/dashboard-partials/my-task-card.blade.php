@@ -3,9 +3,13 @@
             $submission = $task->submissionFor(auth()->user());
             $answersByField = $submission ? $submission->answersByField() : collect();
         @endphp
+@if (! ($inModal ?? false))
         <div class="col-12">
             <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-body p-4">
+@else
+        <div class="task-modal-card bg-white p-4 rounded-4 shadow-sm border">
+@endif
                     {{-- Top Badges Row --}}
                     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
                         <div class="d-flex align-items-center gap-2 flex-wrap">
@@ -218,6 +222,7 @@
                         {{-- Dynamic answer form following the task fields --}}
                         <form action="{{ route('my-task.submit', $task) }}" method="POST" enctype="multipart/form-data" class="mt-2">
                             @csrf
+                            <input type="hidden" name="active_task_id" value="{{ $task->id }}">
                             <h5 class="fw-semibold text-dark mb-3 d-flex align-items-center gap-1">
                                 <i class="ti ti-pencil text-primary"></i> {{ $submission && $submission->resubmit_requested ? 'Resubmit Answers' : 'Learner Submission Form' }}
                             </h5>
@@ -361,16 +366,27 @@
                                 <div class="alert alert-warning">This task has no questions yet.</div>
                             @endif
 
-                            <button type="submit" class="btn btn-primary rounded-3 px-4">
-                                <i class="ti ti-send me-1"></i> {{ $submission && $submission->resubmit_requested ? 'Resubmit Answers' : 'Submit Answers' }}
-                            </button>
+                            <div class="d-flex align-items-center gap-2 mt-4 pt-2 border-top">
+                                <button type="submit" class="btn btn-primary rounded-3 px-4">
+                                    <i class="ti ti-send me-1"></i> {{ $submission && $submission->resubmit_requested ? 'Resubmit Answers' : 'Submit Answers' }}
+                                </button>
+                                @if ($inModal ?? false)
+                                    <button type="button" class="btn btn-outline-secondary rounded-3 px-3" data-bs-dismiss="modal">
+                                        Tutup
+                                    </button>
+                                @endif
+                            </div>
                         </form>
 
                         @endif {{-- show form only when not submitted yet or resubmit was requested --}}
                     @endif {{-- status: completed / course assignment / answer form --}}
+@if (! ($inModal ?? false))
                 </div>
             </div>
         </div>
+@else
+        </div>
+@endif
 
 @once
 <script>

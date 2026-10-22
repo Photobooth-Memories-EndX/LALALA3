@@ -72,6 +72,37 @@
     ]));
 @endphp
 
+{{-- Flash Alerts --}}
+@if (session('success'))
+    <div class="alert alert-success alert-dismissible shadow-sm rounded-4 mb-3" role="alert">
+        <div class="d-flex align-items-center">
+            <i class="ti ti-check fs-2 me-2"></i>
+            <div class="fw-semibold">{{ session('success') }}</div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif
+@if (session('info'))
+    <div class="alert alert-info alert-dismissible shadow-sm rounded-4 mb-3" role="alert">
+        <div class="d-flex align-items-center">
+            <i class="ti ti-info-circle fs-2 me-2"></i>
+            <div>{{ session('info') }}</div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif
+@if ($errors->any())
+    <div class="alert alert-danger alert-dismissible shadow-sm rounded-4 mb-3" role="alert">
+        <div class="d-flex align-items-center">
+            <i class="ti ti-alert-triangle fs-2 me-2"></i>
+            <div>
+                <strong>Perhatian:</strong> Terdapat kesalahan pada pengisian form jawaban tugas. Silakan periksa kembali form yang terbuka.
+            </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif
+
 {{-- Banner Notifikasi Tugas Perlu Revisi --}}
 @if (($summary['resubmit'] ?? 0) > 0)
     <div class="alert alert-warning border-start border-warning border-4 rounded-4 shadow-sm mb-3">
@@ -246,22 +277,18 @@
                             <td class="text-end">
                                 @if ($tStatus === 'resubmit')
                                     <button type="button" class="btn btn-sm btn-warning text-dark fw-semibold shadow-sm"
-                                            data-task-toggle="{{ $task->id }}">
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#taskModal-{{ $task->id }}">
                                         <i class="ti ti-refresh me-1"></i> Revisi
-                                        <i class="ti ti-chevron-down ms-1"></i>
                                     </button>
                                 @else
                                     <button type="button" class="btn btn-sm {{ in_array($tStatus, ['completed', 'submitted']) ? 'btn-white' : 'btn-success' }}"
-                                            data-task-toggle="{{ $task->id }}">
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#taskModal-{{ $task->id }}">
+                                        <i class="ti {{ in_array($tStatus, ['completed', 'submitted']) ? 'ti-eye' : 'ti-pencil' }} me-1"></i>
                                         {{ in_array($tStatus, ['completed', 'submitted']) ? 'View' : 'Start' }}
-                                        <i class="ti ti-chevron-down ms-1"></i>
                                     </button>
                                 @endif
-                            </td>
-                        </tr>
-                        <tr id="task-detail-{{ $task->id }}" class="d-none">
-                            <td colspan="7">
-                                @include('user.learning.dashboard-partials.my-task-card', ['task' => $task])
                             </td>
                         </tr>
                     @endforeach
@@ -289,15 +316,69 @@
     @endif
 @endif
 
+{{-- ── Task Pop Up Modals (Focused Workspace) ──────────────────── --}}
+@php
+    $allModalTasks = collect();
+    if (isset($groups) && $groups->isNotEmpty()) {
+        $allModalTasks = $groups->pluck('tasks')->flatten()->unique('id');
+    }
+    if (isset($activeGroup) && ! empty($activeGroup['tasks'])) {
+        $allModalTasks = $allModalTasks->concat($activeGroup['tasks'])->unique('id');
+    }
+@endphp
+
+@foreach ($allModalTasks as $task)
+    @php
+        $modalStatus = $task->userStatusFor(auth()->user());
+    @endphp
+    <div class="modal modal-blur fade task-popup-modal"
+         id="taskModal-{{ $task->id }}"
+         tabindex="-1"
+         role="dialog"
+         aria-hidden="true"
+         data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+            <div class="modal-content rounded-4 border-0 shadow-lg">
+                <div class="modal-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <span class="badge bg-primary-lt text-primary px-2.5 py-1 fs-6">
+                            <i class="ti ti-file-text me-1"></i>{{ $task->typeLabel() }}
+                        </span>
+                        @if ($task->parentTitle())
+                            <span class="badge bg-secondary-lt text-secondary px-2 py-1 fs-6">
+                                <i class="ti ti-bookmark me-1"></i>{{ $task->parentTitle() }}
+                            </span>
+                        @elseif ($task->isStandalone())
+                            <span class="badge bg-secondary-lt text-secondary px-2 py-1 fs-6">
+                                <i class="ti ti-world me-1"></i>Global Task
+                            </span>
+                        @endif
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge {{ $statusBadges[$displayStatus($modalStatus)] }} px-2.5 py-1 fs-6">
+                            {{ $statusLabels[$displayStatus($modalStatus)] }}
+                        </span>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                </div>
+                <div class="modal-body p-4 bg-light-subtle">
+                    @include('user.learning.dashboard-partials.my-task-card', ['task' => $task, 'inModal' => true])
+                </div>
+            </div>
+        </div>
+    </div>
+@endforeach
+
 <script>
 (function () {
-    if (window._myTaskTableToggleBound) return;
-    window._myTaskTableToggleBound = true;
-    document.addEventListener('click', function (e) {
-        var btn = e.target.closest('[data-task-toggle]');
-        if (!btn) return;
-        var row = document.getElementById('task-detail-' + btn.getAttribute('data-task-toggle'));
-        if (row) row.classList.toggle('d-none');
-    });
+    // If validation error occurred, reopen the modal for the active task
+    @if ($errors->any() && old('active_task_id'))
+        var errModalEl = document.getElementById('taskModal-{{ old('active_task_id') }}');
+        if (errModalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            setTimeout(function () {
+                bootstrap.Modal.getOrCreateInstance(errModalEl).show();
+            }, 150);
+        }
+    @endif
 })();
 </script>
