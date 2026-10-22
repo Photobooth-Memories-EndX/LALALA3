@@ -26,13 +26,29 @@
     <style>
         .form-section-card {
             border: 1px solid #e2e8f0 !important;
+            border-left: 6px solid transparent !important;
             border-radius: 16px !important;
             background: #ffffff !important;
             box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
             margin-bottom: 1.5rem;
+            transition: border-color 0.25s ease, border-left-color 0.25s ease, box-shadow 0.25s ease;
+            position: relative;
+        }
+        .form-section-card:not(.is-active):hover {
+            border-color: #cbd5e1 !important;
+            border-left-color: #cbd5e1 !important;
+        }
+        .form-section-card.is-active {
+            border-color: #cbd5e1 #cbd5e1 #cbd5e1 var(--tblr-primary, #206bc4) !important;
+            border-left: 6px solid var(--tblr-primary, #206bc4) !important;
+            box-shadow: 0 10px 25px -5px rgba(32, 107, 196, 0.12), 0 8px 10px -6px rgba(32, 107, 196, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04) !important;
         }
         .form-section-card .card-header {
             border-bottom: 1px solid #f1f5f9 !important;
+            transition: background-color 0.25s ease;
+        }
+        .form-section-card.is-active .card-header {
+            background-color: rgba(32, 107, 196, 0.03) !important;
         }
         .section-badge-num {
             width: 32px;
@@ -46,6 +62,30 @@
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
+            transition: all 0.25s ease;
+        }
+        .form-section-card.is-active .section-badge-num {
+            background-color: var(--tblr-primary, #206bc4) !important;
+            color: #ffffff !important;
+            box-shadow: 0 2px 8px rgba(32, 107, 196, 0.35);
+            transform: scale(1.05);
+        }
+        .section-active-indicator {
+            display: none !important;
+        }
+        .form-section-card.is-active .section-active-indicator {
+            display: inline-flex !important;
+            animation: activeIndicatorFade 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes activeIndicatorFade {
+            from {
+                opacity: 0;
+                transform: translateY(-2px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
         }
         .form-field-sm {
             max-width: 320px;
@@ -61,6 +101,7 @@
         }
         .field-card {
             border: 1px solid #e2e8f0 !important;
+            border-left: 4px solid transparent !important;
             border-radius: 12px !important;
             background: #ffffff !important;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
@@ -69,13 +110,39 @@
         }
         .field-card:hover {
             border-color: #cbd5e1 !important;
+            border-left-color: #cbd5e1 !important;
             box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+        }
+        .field-card:focus-within {
+            border-color: #cbd5e1 !important;
+            border-left: 4px solid var(--tblr-primary, #206bc4) !important;
+            box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
         }
         [data-bs-theme="dark"] .form-section-card,
         body.dark-mode .form-section-card,
         body.theme-dark .form-section-card {
             background: #1e293b !important;
             border-color: rgba(255, 255, 255, 0.1) !important;
+            border-left-color: transparent !important;
+        }
+        [data-bs-theme="dark"] .form-section-card:not(.is-active):hover,
+        body.dark-mode .form-section-card:not(.is-active):hover,
+        body.theme-dark .form-section-card:not(.is-active):hover {
+            border-color: rgba(255, 255, 255, 0.2) !important;
+            border-left-color: rgba(255, 255, 255, 0.2) !important;
+        }
+        [data-bs-theme="dark"] .form-section-card.is-active,
+        body.dark-mode .form-section-card.is-active,
+        body.theme-dark .form-section-card.is-active {
+            background: #1e293b !important;
+            border-color: rgba(255, 255, 255, 0.18) !important;
+            border-left: 6px solid var(--tblr-primary, #38bdf8) !important;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.45) !important;
+        }
+        [data-bs-theme="dark"] .form-section-card.is-active .card-header,
+        body.dark-mode .form-section-card.is-active .card-header,
+        body.theme-dark .form-section-card.is-active .card-header {
+            background: rgba(56, 189, 248, 0.06) !important;
         }
         [data-bs-theme="dark"] .section-badge-num,
         body.dark-mode .section-badge-num,
@@ -83,24 +150,42 @@
             background-color: rgba(14, 165, 233, 0.15) !important;
             color: #38bdf8 !important;
         }
+        [data-bs-theme="dark"] .form-section-card.is-active .section-badge-num,
+        body.dark-mode .form-section-card.is-active .section-badge-num,
+        body.theme-dark .form-section-card.is-active .section-badge-num {
+            background-color: #0284c7 !important;
+            color: #ffffff !important;
+        }
         [data-bs-theme="dark"] .field-card,
         body.dark-mode .field-card,
         body.theme-dark .field-card {
             background: #0f172a !important;
             border-color: rgba(255, 255, 255, 0.08) !important;
+            border-left-color: transparent !important;
+        }
+        [data-bs-theme="dark"] .field-card:focus-within,
+        body.dark-mode .field-card:focus-within,
+        body.theme-dark .field-card:focus-within {
+            border-color: rgba(255, 255, 255, 0.18) !important;
+            border-left-color: var(--tblr-primary, #38bdf8) !important;
         }
     </style>
 
     {{-- ======================================================== --}}
     {{-- SECTION 1: TASK PLACEMENT                                --}}
     {{-- ======================================================== --}}
-    <div class="card form-section-card">
-        <div class="card-header bg-white py-3 px-4 d-flex align-items-center gap-3">
-            <span class="section-badge-num"><i class="ti ti-map-pin"></i></span>
-            <div>
-                <h3 class="card-title fw-bold text-dark mb-0">1. Task Placement</h3>
-                <div class="text-muted small">Select where this task will be placed and assigned to learners.</div>
+    <div class="card form-section-card is-active" data-section="1">
+        <div class="card-header bg-white py-3 px-4 d-flex align-items-center justify-content-between gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <span class="section-badge-num"><i class="ti ti-map-pin"></i></span>
+                <div>
+                    <h3 class="card-title fw-bold text-dark mb-0">1. Task Placement</h3>
+                    <div class="text-muted small">Select where this task will be placed and assigned to learners.</div>
+                </div>
             </div>
+            <span class="badge bg-primary text-white fw-semibold px-2.5 py-1 rounded-pill section-active-indicator align-items-center gap-1 shadow-sm">
+                <i class="ti ti-pencil"></i> Active Section
+            </span>
         </div>
         <div class="card-body p-4">
             @if (!empty($lockedParent))
@@ -169,13 +254,18 @@
     {{-- ======================================================== --}}
     {{-- SECTION 2: BASIC TASK INFORMATION                        --}}
     {{-- ======================================================== --}}
-    <div class="card form-section-card">
-        <div class="card-header bg-white py-3 px-4 d-flex align-items-center gap-3">
-            <span class="section-badge-num"><i class="ti ti-file-text"></i></span>
-            <div>
-                <h3 class="card-title fw-bold text-dark mb-0">2. Basic Task Information</h3>
-                <div class="text-muted small">Define the task type, title, and instructions for learners.</div>
+    <div class="card form-section-card" data-section="2">
+        <div class="card-header bg-white py-3 px-4 d-flex align-items-center justify-content-between gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <span class="section-badge-num"><i class="ti ti-file-text"></i></span>
+                <div>
+                    <h3 class="card-title fw-bold text-dark mb-0">2. Basic Task Information</h3>
+                    <div class="text-muted small">Define the task type, title, and instructions for learners.</div>
+                </div>
             </div>
+            <span class="badge bg-primary text-white fw-semibold px-2.5 py-1 rounded-pill section-active-indicator align-items-center gap-1 shadow-sm">
+                <i class="ti ti-pencil"></i> Active Section
+            </span>
         </div>
         <div class="card-body p-4">
             {{-- Task Type --}}
@@ -218,13 +308,18 @@
     {{-- ======================================================== --}}
     {{-- SECTION 3: TIMELINE & SUPPORTING MATERIALS               --}}
     {{-- ======================================================== --}}
-    <div class="card form-section-card">
-        <div class="card-header bg-white py-3 px-4 d-flex align-items-center gap-3">
-            <span class="section-badge-num"><i class="ti ti-calendar-time"></i></span>
-            <div>
-                <h3 class="card-title fw-bold text-dark mb-0">3. Timeline & Supporting Files</h3>
-                <div class="text-muted small">Set the submission deadline and attach assignment templates or guidance materials (optional).</div>
+    <div class="card form-section-card" data-section="3">
+        <div class="card-header bg-white py-3 px-4 d-flex align-items-center justify-content-between gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <span class="section-badge-num"><i class="ti ti-calendar-time"></i></span>
+                <div>
+                    <h3 class="card-title fw-bold text-dark mb-0">3. Timeline & Supporting Files</h3>
+                    <div class="text-muted small">Set the submission deadline and attach assignment templates or guidance materials (optional).</div>
+                </div>
             </div>
+            <span class="badge bg-primary text-white fw-semibold px-2.5 py-1 rounded-pill section-active-indicator align-items-center gap-1 shadow-sm">
+                <i class="ti ti-pencil"></i> Active Section
+            </span>
         </div>
         <div class="card-body p-4">
             {{-- Submission Deadline --}}
@@ -265,13 +360,18 @@
     {{-- SECTION 4: SUBMISSION SETUP / QUESTIONS                  --}}
     {{-- ======================================================== --}}
     {{-- ── 4A: Course Link section (only for Course Assignment) ── --}}
-    <div id="linkSection" class="card form-section-card" style="display:none">
-        <div class="card-header bg-white py-3 px-4 d-flex align-items-center gap-3">
-            <span class="section-badge-num"><i class="ti ti-link"></i></span>
-            <div>
-                <h3 class="card-title fw-bold text-dark mb-0">4. Target Course Assignment</h3>
-                <div class="text-muted small">Specify the LMS course or external course URL that learners must complete.</div>
+    <div id="linkSection" class="card form-section-card" data-section="4" style="display:none">
+        <div class="card-header bg-white py-3 px-4 d-flex align-items-center justify-content-between gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <span class="section-badge-num"><i class="ti ti-link"></i></span>
+                <div>
+                    <h3 class="card-title fw-bold text-dark mb-0">4. Target Course Assignment</h3>
+                    <div class="text-muted small">Specify the LMS course or external course URL that learners must complete.</div>
+                </div>
             </div>
+            <span class="badge bg-primary text-white fw-semibold px-2.5 py-1 rounded-pill section-active-indicator align-items-center gap-1 shadow-sm">
+                <i class="ti ti-pencil"></i> Active Section
+            </span>
         </div>
         <div class="card-body p-4">
             <div class="mb-3 form-field-lg">
@@ -335,13 +435,18 @@
     </div>
 
     {{-- ── 4B: Target Survey section (only for Survey) ── --}}
-    <div id="surveySection" class="card form-section-card" style="display:none">
-        <div class="card-header bg-white py-3 px-4 d-flex align-items-center gap-3">
-            <span class="section-badge-num"><i class="ti ti-forms"></i></span>
-            <div>
-                <h3 class="card-title fw-bold text-dark mb-0">4. Target Survey Assignment</h3>
-                <div class="text-muted small">Select the survey form that learners must complete for this task.</div>
+    <div id="surveySection" class="card form-section-card" data-section="4" style="display:none">
+        <div class="card-header bg-white py-3 px-4 d-flex align-items-center justify-content-between gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <span class="section-badge-num"><i class="ti ti-forms"></i></span>
+                <div>
+                    <h3 class="card-title fw-bold text-dark mb-0">4. Target Survey Assignment</h3>
+                    <div class="text-muted small">Select the survey form that learners must complete for this task.</div>
+                </div>
             </div>
+            <span class="badge bg-primary text-white fw-semibold px-2.5 py-1 rounded-pill section-active-indicator align-items-center gap-1 shadow-sm">
+                <i class="ti ti-pencil"></i> Active Section
+            </span>
         </div>
         <div class="card-body p-4">
             <div class="form-field-md">
@@ -366,13 +471,18 @@
     </div>
 
     {{-- ── 4C: Questions section (for types with question builder) ── --}}
-    <div id="builderSection" class="card form-section-card">
-        <div class="card-header bg-white py-3 px-4 d-flex align-items-center gap-3">
-            <span class="section-badge-num"><i class="ti ti-list-check"></i></span>
-            <div>
-                <h3 class="card-title fw-bold text-dark mb-0">4. Questions & Submission Form Builder</h3>
-                <div class="text-muted small" id="builderHint"></div>
+    <div id="builderSection" class="card form-section-card" data-section="4">
+        <div class="card-header bg-white py-3 px-4 d-flex align-items-center justify-content-between gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <span class="section-badge-num"><i class="ti ti-list-check"></i></span>
+                <div>
+                    <h3 class="card-title fw-bold text-dark mb-0">4. Questions & Submission Form Builder</h3>
+                    <div class="text-muted small" id="builderHint"></div>
+                </div>
             </div>
+            <span class="badge bg-primary text-white fw-semibold px-2.5 py-1 rounded-pill section-active-indicator align-items-center gap-1 shadow-sm">
+                <i class="ti ti-pencil"></i> Active Section
+            </span>
         </div>
         <div class="card-body p-4">
             <div id="fieldsWrap"></div>
@@ -386,13 +496,18 @@
     {{-- ======================================================== --}}
     {{-- ACCESS CODE SETTING (Only for Global Task / Standalone)   --}}
     {{-- ======================================================== --}}
-    <div id="accessCodeWrap" class="card form-section-card" style="{{ $currentParentType === 'standalone' ? '' : 'display:none' }}">
-        <div class="card-header bg-white py-3 px-4 d-flex align-items-center gap-3">
-            <span class="section-badge-num"><i class="ti ti-key"></i></span>
-            <div>
-                <h3 class="card-title fw-bold text-dark mb-0">5. Access & Security (Optional)</h3>
-                <div class="text-muted small">Configure an optional access passcode to unlock this Global Task.</div>
+    <div id="accessCodeWrap" class="card form-section-card" data-section="5" style="{{ $currentParentType === 'standalone' ? '' : 'display:none' }}">
+        <div class="card-header bg-white py-3 px-4 d-flex align-items-center justify-content-between gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <span class="section-badge-num"><i class="ti ti-key"></i></span>
+                <div>
+                    <h3 class="card-title fw-bold text-dark mb-0">5. Access & Security (Optional)</h3>
+                    <div class="text-muted small">Configure an optional access passcode to unlock this Global Task.</div>
+                </div>
             </div>
+            <span class="badge bg-primary text-white fw-semibold px-2.5 py-1 rounded-pill section-active-indicator align-items-center gap-1 shadow-sm">
+                <i class="ti ti-pencil"></i> Active Section
+            </span>
         </div>
         <div class="card-body p-4">
             <div class="form-field-sm">
@@ -836,6 +951,7 @@
             if (accessCodeWrap) accessCodeWrap.style.display = isStandalone ? '' : 'none';
             var standaloneNotice = document.getElementById('standalonePlacementNotice');
             if (standaloneNotice) standaloneNotice.style.display = isStandalone ? '' : 'none';
+            ensureValidActiveSection();
         }
 
         function renderParentItems(items) {
@@ -1059,6 +1175,7 @@
             if (surveySection) surveySection.style.display = isSurvey ? '' : 'none';
             builderSection.style.display    = hasBuilder ? '' : 'none';
             builderHint.textContent = BUILDER_HINTS[t] || '';
+            ensureValidActiveSection();
 
             if (!hasBuilder) {
                 // These types have no question builder: disable every input
@@ -1440,11 +1557,47 @@
             });
         }
 
+        // ── Active Section Tracking (Google Forms Style) ────────────────
+        function activateSection(card) {
+            if (!card || !card.classList.contains('form-section-card')) return;
+            if (card.style.display === 'none') return;
+            if (card.classList.contains('is-active')) return;
+
+            document.querySelectorAll('.form-section-card.is-active').forEach(function (el) {
+                el.classList.remove('is-active');
+            });
+            card.classList.add('is-active');
+        }
+
+        function ensureValidActiveSection() {
+            var cur = document.querySelector('.form-section-card.is-active');
+            if (!cur || cur.style.display === 'none' || cur.offsetParent === null) {
+                var allSections = document.querySelectorAll('.form-section-card');
+                for (var i = 0; i < allSections.length; i++) {
+                    if (allSections[i].style.display !== 'none' && allSections[i].offsetParent !== null) {
+                        activateSection(allSections[i]);
+                        break;
+                    }
+                }
+            }
+        }
+
+        document.addEventListener('focusin', function (e) {
+            var sec = e.target.closest('.form-section-card');
+            if (sec) activateSection(sec);
+        });
+
+        document.addEventListener('click', function (e) {
+            var sec = e.target.closest('.form-section-card');
+            if (sec) activateSection(sec);
+        });
+
         // ── Initial render ──────────────────────────────────────────────
         var initialFields = @json($initialFields ?? []);
         refreshTypeUI();
         setPickerLabel();
         syncPlacementPicker();
+        ensureValidActiveSection();
         // No builder for course_assignment → never seed cards there.
         if (typeHasBuilder(currentType())) {
             initialFields.forEach(function (f) { addField(f); });
