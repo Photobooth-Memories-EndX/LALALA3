@@ -805,7 +805,7 @@
                                                    data-bs-target="#recordDetailModal"
                                                    data-record-id="{{ $row['id'] }}"
                                                    data-record-source="offline">
-                                                    <i class="ti ti-eye"></i> View Detail
+                                                    <i class="ti ti-info-circle"></i> More Information
                                                 </a>
                                             </li>
                                             <li>

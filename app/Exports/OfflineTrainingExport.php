@@ -33,13 +33,15 @@ class OfflineTrainingExport implements WithMultipleSheets, FromQuery, WithHeadin
     protected int $rowNumber = 0;
     protected string $fileName;
 
-    public function __construct(?string $classification = null, $filters = [])
+    public function __construct(?string $classification = null, $filters = [], ?string $fileName = null)
     {
         $this->classification = !empty($classification) ? (string) $classification : null;
         $this->filters = $filters instanceof Request ? $filters->all() : (array) $filters;
         $this->rowNumber = 0;
 
-        if ($this->classification !== null) {
+        if ($fileName !== null) {
+            $this->fileName = $fileName;
+        } elseif ($this->classification !== null) {
             $resolved = RecordOfflineController::resolveClassification($this->classification);
             $slug = $resolved['slug'] ?: 'unclassified';
             $this->fileName = sprintf('non-kp-owl-%s-%s.xlsx', $slug, now()->format('Y-m-d'));

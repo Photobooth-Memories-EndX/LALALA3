@@ -26,7 +26,7 @@ class OnlineFullRecordExport implements FromQuery, WithHeadings, WithChunkReadin
     {
         $this->filters = $filters instanceof Request ? $filters->all() : (array) $filters;
         $this->rowNumber = 0;
-        $this->fileName = $fileName ?? sprintf('kp-owl-online-records-%s.xlsx', now()->format('Y-m-d'));
+        $this->fileName = $fileName ?? OnlineFullRecordExportService::generateManageFileName();
         $this->service = app(OnlineFullRecordExportService::class);
     }
 

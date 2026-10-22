@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Exports\ExportMyAllLearningRecord;
 use App\Exports\ExportMyLearningRecord;
 use App\Exports\ExportMyOfflineLearningRecord;
+use App\Services\Record\OfflineTrainingExcelSchema;
+use App\Services\Record\OnlineFullRecordExportService;
+use App\Services\Record\RecordAllCombinedService;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -27,22 +30,21 @@ class LearningRecordExportController extends Controller
         }
 
         $user = $request->user();
-        $rawEmpId = (string) ($user?->id_emp ?: $user?->id ?: '0');
+        $rawEmpId = (string) ($user?->employee_id ?: ($user?->nip ?: ($user?->id_emp ?: ($user?->id ?: '0'))));
         $employeeId = preg_replace('/[^A-Za-z0-9_-]/', '', $rawEmpId) ?: '0';
-        $dateTime = now()->format('Ymd_His');
 
         return match ($source) {
             'offline' => Excel::download(
                 new ExportMyOfflineLearningRecord($request->all()),
-                "MyNonOWLrecord_{$dateTime}_{$employeeId}.xlsx"
+                OfflineTrainingExcelSchema::generateUserFileName($employeeId)
             ),
             'all' => Excel::download(
                 new ExportMyAllLearningRecord($request->all()),
-                "MyAllrecord_{$dateTime}_{$employeeId}.xlsx"
+                RecordAllCombinedService::generateUserFileName($employeeId)
             ),
             default => Excel::download(
                 new ExportMyLearningRecord($request->all()),
-                "MyOWLrecord_{$dateTime}_{$employeeId}.xlsx"
+                OnlineFullRecordExportService::generateUserFileName($employeeId)
             ),
         };
     }

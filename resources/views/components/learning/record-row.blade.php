@@ -204,7 +204,7 @@
                        data-bs-target="#recordDetailModal"
                        data-record-id="{{ $row['id'] ?? ($row['item_id'] ?? $index) }}"
                        data-record-source="online">
-                        <i class="ti ti-eye"></i> View Detail
+                        <i class="ti ti-info-circle"></i> More Information
                     </a>
                 </li>
                 <li>

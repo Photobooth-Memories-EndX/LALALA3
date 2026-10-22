@@ -15,6 +15,7 @@ use App\Models\OfflineTraining;
 use App\Models\OfflineTrainingOption;
 use App\Models\User;
 use App\Services\Learning\LearningDatatableService;
+use App\Services\Record\OfflineTrainingExcelSchema;
 use App\Services\Record\OnlineFullRecordExportService;
 use App\Services\Record\RecordAllCombinedService;
 use App\Services\Record\RecordOfflineQueryService;
@@ -906,7 +907,7 @@ class RecordExportController extends Controller
         }
 
         // Default: XLSX
-        $fileName = sprintf('kp-owl-online-records-%s.xlsx', $dateSuffix);
+        $fileName = OnlineFullRecordExportService::generateManageFileName();
         return (new OnlineFullRecordExport($filters, $fileName))->download();
     }
 
@@ -957,8 +958,8 @@ class RecordExportController extends Controller
         }
 
         // Default: XLSX
-        $export = new OfflineTrainingExport(null, $filters);
-        $fileName = sprintf('non-kp-owl-records-%s.xlsx', $dateSuffix);
+        $fileName = OfflineTrainingExcelSchema::generateManageFileName();
+        $export = new OfflineTrainingExport(null, $filters, $fileName);
         return $export->download($fileName);
     }
 
@@ -1137,7 +1138,7 @@ class RecordExportController extends Controller
         }
 
         // Default: XLSX
-        $fileName = sprintf('all-kp-owl-combined-records-%s.xlsx', $dateSuffix);
+        $fileName = RecordAllCombinedService::generateManageFileName();
         return (new AllRecordExport($filters, $fileName))->download();
     }
 }

@@ -392,4 +392,35 @@ class OnlineFullRecordExportService
             return ($val === null || $val === '') ? '-' : $val;
         }, $mappedRow);
     }
+
+    /**
+     * Format timestamp as dM Y \a\t H.i.s (e.g., 21Okt2026 at 09.35.00)
+     */
+    public static function formatExportTimestamp(?\DateTimeInterface $date = null): string
+    {
+        $dt = $date ? Carbon::parse($date) : Carbon::now();
+        $monthMap = [
+            1 => 'Jan', 2 => 'Feb', 3 => 'Mar', 4 => 'Apr',
+            5 => 'Mei', 6 => 'Jun', 7 => 'Jul', 8 => 'Agu',
+            9 => 'Sep', 10 => 'Okt', 11 => 'Nov', 12 => 'Des',
+        ];
+        $day = $dt->format('d');
+        $month = $monthMap[(int) $dt->format('n')] ?? $dt->format('M');
+        $year = $dt->format('Y');
+        $time = $dt->format('H.i.s');
+
+        return "{$day}{$month}{$year} at {$time}";
+    }
+
+    public static function generateUserFileName(string $employeeId, ?\DateTimeInterface $date = null): string
+    {
+        $timestamp = self::formatExportTimestamp($date);
+        return "MyOWLrecord_{$employeeId}_{$timestamp}.xlsx";
+    }
+
+    public static function generateManageFileName(?\DateTimeInterface $date = null): string
+    {
+        $timestamp = self::formatExportTimestamp($date);
+        return "EmployeeOWLrecord_{$timestamp}.xlsx";
+    }
 }

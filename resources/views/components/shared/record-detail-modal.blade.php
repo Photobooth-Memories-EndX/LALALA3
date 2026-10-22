@@ -41,71 +41,71 @@
 
                     <!-- 1. Employee Information Card -->
                     <div class="card border-0 bg-light-subtle rounded-3 p-3 mb-3">
-                        <h6 class="fw-bold text-uppercase text-muted text-xs mb-3">
+                        <h5 class="fw-bold text-dark fs-6 mb-3">
                             <i class="ti ti-user me-1 text-primary"></i> Employee Information
-                        </h6>
+                        </h5>
                         <div class="row g-3">
                             <div class="col-md-4">
-                                <div class="text-xs text-muted text-uppercase">Employee Name</div>
-                                <div class="fw-semibold text-dark" id="modal-detail-employee-name">{{ $record['user_name'] ?? ($record['participant_name'] ?? (auth()->user()->name ?? '-')) }}</div>
+                                <div class="text-xs text-muted text-uppercase">Employee ID</div>
+                                <div class="fw-semibold text-dark fs-7" id="modal-detail-employee-id">{{ $record['employee_id'] ?? ($record['nip'] ?? (auth()->user()->employee_id ?? (auth()->user()->nip ?? (auth()->user()->id_emp ?? '-')))) }}</div>
                             </div>
                             <div class="col-md-4">
-                                <div class="text-xs text-muted text-uppercase">Employee ID</div>
-                                <div class="fw-semibold text-dark" id="modal-detail-employee-id">{{ $record['employee_id'] ?? (auth()->user()->employee_id ?? (auth()->user()->nip ?? (auth()->user()->id_emp ?? '-'))) }}</div>
+                                <div class="text-xs text-muted text-uppercase">Employee Name</div>
+                                <div class="fw-semibold text-dark fs-7" id="modal-detail-employee-name">{{ $record['user_name'] ?? ($record['participant_name'] ?? (auth()->user()->name ?? '-')) }}</div>
                             </div>
                             <div class="col-md-4">
                                 <div class="text-xs text-muted text-uppercase">Team</div>
-                                <div class="fw-semibold text-dark" id="modal-detail-team">{{ $record['team'] ?? (auth()->user()->team ?? '-') }}</div>
+                                <div class="fw-semibold text-dark fs-7" id="modal-detail-team">{{ $record['team'] ?? (auth()->user()->team ?? '-') }}</div>
                             </div>
                         </div>
                     </div>
 
                     <!-- 2. Training Information Card -->
                     <div class="card border-0 bg-light-subtle rounded-3 p-3 mb-3">
-                        <h6 class="fw-bold text-uppercase text-muted text-xs mb-3">
+                        <h5 class="fw-bold text-dark fs-6 mb-3">
                             <i class="ti ti-info-circle me-1 text-primary"></i> Training Information
-                        </h6>
+                        </h5>
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <div class="text-xs text-muted text-uppercase">Delivery Method</div>
-                                <div class="fw-semibold text-dark" id="modal-detail-delivery-method">{{ \App\Models\OfflineTraining::normalizeDeliveryMethod($record['delivery_method'] ?? '-') }}</div>
+                                <div class="fw-semibold text-dark fs-7" id="modal-detail-delivery-method">{{ \App\Models\OfflineTraining::normalizeDeliveryMethod($record['delivery_method'] ?? '-') }}</div>
                             </div>
                             <div class="col-md-6">
                                 <div class="text-xs text-muted text-uppercase">Provider</div>
-                                <div class="fw-semibold text-dark" id="modal-detail-provider">{{ $record['provider'] ?? '-' }}</div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="text-xs text-muted text-uppercase">Provider Name</div>
-                                <div class="fw-semibold text-dark" id="modal-detail-provider-name">{{ $record['provider_name'] ?? '-' }}</div>
+                                <div class="fw-semibold text-dark fs-7" id="modal-detail-provider">{{ $record['provider'] ?? '-' }}</div>
                             </div>
                             <div class="col-md-6">
                                 <div class="text-xs text-muted text-uppercase">Venue</div>
-                                <div class="fw-semibold text-dark" id="modal-detail-venue">{{ $record['venue'] ?? '-' }}</div>
+                                <div class="fw-semibold text-dark fs-7" id="modal-detail-venue">{{ $record['venue'] ?? '-' }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="text-xs text-muted text-uppercase">Provider Name</div>
+                                <div class="fw-semibold text-dark fs-7" id="modal-detail-provider-name">{{ $record['provider_name'] ?? '-' }}</div>
                             </div>
                         </div>
                     </div>
 
                     <!-- 3. Bond Information Card -->
                     <div class="card border-0 bg-light-subtle rounded-3 p-3">
-                        <h6 class="fw-bold text-uppercase text-muted text-xs mb-3">
+                        <h5 class="fw-bold text-dark fs-6 mb-3">
                             <i class="ti ti-file-text me-1 text-primary"></i> Bond Information
-                        </h6>
+                        </h5>
                         <div class="row g-3">
                             <div class="col-md-3">
                                 <div class="text-xs text-muted text-uppercase">Bond Status</div>
-                                <div class="fw-semibold text-dark" id="modal-detail-bond-status">{{ $record['bond_status'] ?? '-' }}</div>
+                                <div class="fw-semibold text-dark fs-7" id="modal-detail-bond-status">{{ $record['bond_status'] ?? '-' }}</div>
                             </div>
                             <div class="col-md-3">
                                 <div class="text-xs text-muted text-uppercase">Bond Duration</div>
-                                <div class="fw-semibold text-dark" id="modal-detail-bond-duration">{{ !empty($record['bond_duration']) ? $record['bond_duration'] . ' Months' : '-' }}</div>
+                                <div class="fw-semibold text-dark fs-7" id="modal-detail-bond-duration">{{ !empty($record['bond_duration']) ? $record['bond_duration'] . ' Months' : '-' }}</div>
                             </div>
                             <div class="col-md-3">
                                 <div class="text-xs text-muted text-uppercase">Bond End Date</div>
-                                <div class="fw-semibold text-dark" id="modal-detail-bond-end-date">{{ $record['bond_end_date'] ?? '-' }}</div>
+                                <div class="fw-semibold text-dark fs-7" id="modal-detail-bond-end-date">{{ $record['bond_end_date'] ?? '-' }}</div>
                             </div>
                             <div class="col-md-3">
                                 <div class="text-xs text-muted text-uppercase">Bond Amount</div>
-                                <div class="fw-semibold text-dark" id="modal-detail-bond-amount">
+                                <div class="fw-semibold text-dark fs-7" id="modal-detail-bond-amount">
                                     {{ (!empty($record['bond_amount_usd']) && (float) $record['bond_amount_usd'] > 0)
                                         ? '$' . number_format((float) $record['bond_amount_usd'], 2)
                                         : ((!empty($record['bond_amount_idr']) && (float) $record['bond_amount_idr'] > 0)
@@ -167,26 +167,26 @@
         var title = fallback(d.title, fallback(d.course_name, '-'));
         $('#modal-detail-course-name').text(title);
 
-        // 2. Card 1: Employee Information
+        // 2. Card 1: Employee Information (ID, Name, Team)
         var authName = '{{ auth()->user()->name ?? '-' }}';
         var authEmpId = '{{ auth()->user()->employee_id ?? (auth()->user()->nip ?? (auth()->user()->id_emp ?? '-')) }}';
         var authTeam = '{{ auth()->user()->team ?? '-' }}';
 
-        var employeeName = fallback(d.user_name, fallback(d.participant_name, fallback(d.name, authName)));
         var employeeId = fallback(d.employee_id, fallback(d.nip, authEmpId));
+        var employeeName = fallback(d.user_name, fallback(d.participant_name, fallback(d.name, authName)));
         var team = fallback(d.team, authTeam);
 
-        $('#modal-detail-employee-name').text(employeeName);
         $('#modal-detail-employee-id').text(employeeId);
+        $('#modal-detail-employee-name').text(employeeName);
         $('#modal-detail-team').text(team);
 
-        // 3. Card 2: Training Information
+        // 3. Card 2: Training Information (Delivery Method, Provider, Venue, Provider Name)
         $('#modal-detail-delivery-method').text(normalizeDeliveryMethod(d.delivery_method, isOnline));
         $('#modal-detail-provider').text(fallback(d.provider, isOnline ? 'Internal' : 'External'));
-        $('#modal-detail-provider-name').text(fallback(d.provider_name, isOnline ? 'KP-OWL' : '-'));
         $('#modal-detail-venue').text(fallback(d.venue, isOnline ? 'KP-OWL' : '-'));
+        $('#modal-detail-provider-name').text(fallback(d.provider_name, isOnline ? 'KP-OWL' : '-'));
 
-        // 4. Card 3: Bond Information
+        // 4. Card 3: Bond Information (Status, Duration, End Date, Amount)
         $('#modal-detail-bond-status').text(fallback(d.bond_status, 'No'));
 
         var bondDur = fallback(d.bond_duration);

@@ -25,7 +25,7 @@ class AllRecordExport implements FromQuery, WithHeadings, WithChunkReading, With
     {
         $this->filters = $filters instanceof Request ? $filters->all() : (array) $filters;
         $this->rowNumber = 0;
-        $this->fileName = $fileName ?? sprintf('all-kp-owl-combined-records-%s.xlsx', now()->format('Y-m-d'));
+        $this->fileName = $fileName ?? RecordAllCombinedService::generateManageFileName();
     }
 
     public function getFileName(): string
