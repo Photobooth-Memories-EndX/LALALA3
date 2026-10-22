@@ -767,6 +767,7 @@ class LearningRecordController extends Controller
                 'access_status'   => $accessStatus,
                 'can_open'        => $canOpen,
                 'modal_message'   => $modalMessage,
+                'user_name'       => Auth::user()?->name ?? '-',
                 'employee_id'     => Auth::user()?->employee_id ?? Auth::user()?->nip ?? Auth::user()?->id_emp ?? '-',
                 'participant_name'=> Auth::user()?->name ?? '-',
                 'name'            => Auth::user()?->name ?? '-',
@@ -985,6 +986,7 @@ class LearningRecordController extends Controller
                 'access_status'   => $accessStatus,
                 'can_open'        => $canOpen,
                 'modal_message'   => $modalMessage,
+                'user_name'       => Auth::user()?->name ?? '-',
                 'employee_id'     => Auth::user()?->employee_id ?? Auth::user()?->nip ?? Auth::user()?->id_emp ?? '-',
                 'participant_name'=> Auth::user()?->name ?? '-',
                 'name'            => Auth::user()?->name ?? '-',
@@ -1193,8 +1195,11 @@ class LearningRecordController extends Controller
                 $record->bond_amount_usd_formatted = '-';
             }
             $record->bond_amount_formatted = !empty($parts) ? implode(' / ', $parts) : '-';
-            $record->source = 'Non KP OWL';
+            $record->source = 'Non-KP OWL';
             $record->title = !empty($record->title) ? $record->title : (!empty($record->course_name) ? $record->course_name : 'Training Record');
+            $record->user_name = !empty($record->user_name) ? $record->user_name : (!empty($record->participant_name) ? $record->participant_name : (Auth::user()?->name ?? '-'));
+            $record->employee_id = !empty($record->employee_id) ? $record->employee_id : (Auth::user()?->employee_id ?? Auth::user()?->nip ?? Auth::user()?->id_emp ?? '-');
+            $record->team = !empty($record->team) ? $record->team : (Auth::user()?->team ?? '-');
             $record->delivery_method = \App\Models\OfflineTraining::normalizeDeliveryMethod($record->delivery_method ?? 'Offline');
             $record->provider = !empty($record->provider) ? $record->provider : 'External';
             $record->provider_name = !empty($record->provider_name) ? $record->provider_name : '-';
@@ -1265,6 +1270,7 @@ class LearningRecordController extends Controller
                         'bond_amount_usd'        => '-',
                         'bond_amount_formatted'  => '-',
                         'pic'                    => '-',
+                        'user_name'              => Auth::user()?->name ?? '-',
                         'participant_name'       => Auth::user()?->name ?? '-',
                         'employee_id'            => Auth::user()?->employee_id ?? Auth::user()?->nip ?? Auth::user()?->id_emp ?? '-',
                         'grade'                  => Auth::user()?->grade ?? '-',
@@ -1327,6 +1333,7 @@ class LearningRecordController extends Controller
                 'bond_amount_usd'        => '-',
                 'bond_amount_formatted'  => '-',
                 'pic'                    => '-',
+                'user_name'              => Auth::user()?->name ?? '-',
                 'participant_name'       => Auth::user()?->name ?? '-',
                 'employee_id'            => Auth::user()?->employee_id ?? Auth::user()?->nip ?? Auth::user()?->id_emp ?? '-',
                 'grade'                  => Auth::user()?->grade ?? '-',

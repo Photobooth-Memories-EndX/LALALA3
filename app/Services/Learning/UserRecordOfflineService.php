@@ -250,6 +250,7 @@ class UserRecordOfflineService
 
             // Employee Snapshot at Training Time
             'employee_id'          => $otu->employee_id ?: '-',
+            'user_name'            => $otu->name ?: '-',
             'participant_name'     => $otu->name ?: '-',
             'grade'                => $otu->grade ?: '-',
             'job_position'         => $otu->job_position ?: '-',
@@ -262,6 +263,8 @@ class UserRecordOfflineService
             'bond_duration'        => $training->bond_duration ?? ($otu->bond_duration ?? null),
             'bond_end_date'        => $training->bond_end_date ? Carbon::parse($training->bond_end_date)->format('Y-m-d') : ($otu->bond_end_date ? Carbon::parse($otu->bond_end_date)->format('Y-m-d') : ''),
             'bond_end_date_display'=> $bondEndDateStr,
+            'bond_amount_idr'      => $otu->bond_amount_idr ?? ($training->bond_amount_idr ?? ($otu->bond_amount ?? null)),
+            'bond_amount_usd'      => $otu->bond_amount_usd ?? ($training->bond_amount_usd ?? null),
             'bond_amount'          => $training->bond_amount ?? ($bondAmount ?: null),
             'bond_amount_formatted'=> $bondAmountFormatted,
         ];

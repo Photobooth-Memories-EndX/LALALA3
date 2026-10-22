@@ -1543,7 +1543,11 @@ class RecordOfflineQueryService
 
         $record = $query->first();
         if ($record) {
+            $record->source = 'Non-KP OWL';
             $record->delivery_method = \App\Models\OfflineTraining::normalizeDeliveryMethod($record->delivery_method ?? 'Offline');
+            $record->user_name = !empty($record->user_name) ? $record->user_name : (!empty($record->participant_name) ? $record->participant_name : (\Illuminate\Support\Facades\Auth::user()?->name ?? '-'));
+            $record->employee_id = !empty($record->employee_id) ? $record->employee_id : (\Illuminate\Support\Facades\Auth::user()?->employee_id ?? \Illuminate\Support\Facades\Auth::user()?->nip ?? \Illuminate\Support\Facades\Auth::user()?->id_emp ?? '-');
+            $record->team = !empty($record->team) ? $record->team : (\Illuminate\Support\Facades\Auth::user()?->team ?? '-');
         }
 
         return $record;
