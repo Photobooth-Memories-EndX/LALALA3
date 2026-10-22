@@ -3,11 +3,14 @@
 @section('content')
 
 @php
-    $learningTabs = ['ongoing', 'record', 'assessment', 'my-task', 'certificate'];
-    $initialLearningTab = in_array(request('learning_tab'), $learningTabs, true)
-        ? request('learning_tab')
+    $learningTabs = ['ongoing', 'record', 'my-task', 'certificate'];
+    $rawTab = request('learning_tab');
+    if ($rawTab === 'assessment') {
+        $rawTab = 'my-task';
+    }
+    $initialLearningTab = in_array($rawTab, $learningTabs, true)
+        ? $rawTab
         : 'ongoing';
-
 @endphp
 
 <div class="page-body owl-unified-theme-page learning-dashboard-page">

@@ -8,7 +8,7 @@
 
     <script>
         var _activeTab = null;
-        var _learningTabs = ['ongoing', 'record', 'assessment', 'my-task', 'certificate'];
+        var _learningTabs = ['ongoing', 'record', 'my-task', 'certificate'];
         var _ongoingMode = null;
         var _recordMode = null;
         var _tabFetchSequence = 0;
@@ -16,6 +16,9 @@
 
         function learningTabFromUrl() {
             var tab = String(new URLSearchParams(window.location.search).get('learning_tab') || 'ongoing');
+            if (tab === 'assessment') {
+                return 'my-task';
+            }
             return _learningTabs.indexOf(tab) !== -1 ? tab : 'ongoing';
         }
 
