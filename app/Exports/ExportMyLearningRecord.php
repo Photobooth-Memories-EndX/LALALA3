@@ -126,7 +126,7 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithColumnFor
             $attendance = 'Yes';
             $requirement = $row['requirement'] ?? Content::mapRequirement($row['subtitle'] ?? ($row['status'] ?? null));
 
-            $deliveryMethod = 'Online';
+            $deliveryMethod = \App\Models\OfflineTraining::normalizeDeliveryMethod($row['delivery_method'] ?? 'Online');
             $provider = 'Internal';
             $providerName = 'KP-OWL';
             $venue = 'KP-OWL';

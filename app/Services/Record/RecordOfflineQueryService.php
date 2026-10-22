@@ -66,7 +66,7 @@ class RecordOfflineQueryService
                 'otu.l3_verbal',
                 'otu.pic',
                 'otu.created_at',
-                'ot.title',
+                \Illuminate\Support\Facades\DB::raw("COALESCE(ot.title, ot.course_name, 'Training Record') as title"),
                 'ot.course_name',
                 'ot.sub_course_name',
                 DB::raw("COALESCE(ot.type, '-') as type"),
@@ -1541,6 +1541,11 @@ class RecordOfflineQueryService
             });
         }
 
-        return $query->first();
+        $record = $query->first();
+        if ($record) {
+            $record->delivery_method = \App\Models\OfflineTraining::normalizeDeliveryMethod($record->delivery_method ?? 'Offline');
+        }
+
+        return $record;
     }
 }

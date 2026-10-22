@@ -368,7 +368,7 @@ class OfflineGlobalExportTest extends TestCase
         $this->assertEquals('Basic & Common Duties', $mappedAndi[14]);        // 15. Main Classification
         $this->assertEquals('Ethics', $mappedAndi[15]);                       // 16. Sub Classification
         $this->assertEquals('Yes', $mappedAndi[16]);                          // 17. Corporate KPI
-        $this->assertEquals('Classroom', $mappedAndi[18]);                    // 19. Delivery Method
+        $this->assertEquals('Offline', $mappedAndi[18]);                      // 19. Delivery Method
         $this->assertEquals('Internal', $mappedAndi[20]);                     // 21. Provider
         $this->assertEquals('04:00:00', $mappedAndi[22]);                     // 23. Duration
         $this->assertEquals(4.0, $mappedAndi[23]);                            // 24. Learning Hours

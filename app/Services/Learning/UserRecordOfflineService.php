@@ -198,7 +198,7 @@ class UserRecordOfflineService
             'classification'            => optional($training)->main_classification ?: 'Unclassified',
             'main_classification'       => optional($training)->main_classification ?: 'Unclassified',
             'sub_classification'        => optional($training)->sub_classification ?: '-',
-            'delivery_method'           => optional($training)->delivery_method ?: '-',
+            'delivery_method'           => \App\Models\OfflineTraining::normalizeDeliveryMethod(optional($training)->delivery_method ?: 'Offline'),
             'sub_delivery_method'       => optional($training)->sub_delivery_method ?: '-',
             'duration'                  => $durationFormatted,
             'duration_seconds'          => $durationSeconds,

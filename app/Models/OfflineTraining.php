@@ -128,6 +128,32 @@ class OfflineTraining extends Model
         });
     }
 
+    /**
+     * Standardize Delivery Method into: "Offline", "Online", or "Blended".
+     */
+    public static function normalizeDeliveryMethod(?string $method): string
+    {
+        $raw = strtolower(trim((string) $method));
+        if (in_array($raw, ['in class', 'classroom', 'on-site', 'off-site', 'offline'], true)) {
+            return 'Offline';
+        }
+        if (in_array($raw, ['e-learning', 'webinar', 'online', 'kp-owl', 'kp owl'], true)) {
+            return 'Online';
+        }
+        if (in_array($raw, ['hybrid', 'blended'], true)) {
+            return 'Blended';
+        }
+        return !empty($method) && $method !== '-' ? ucfirst(trim((string) $method)) : '-';
+    }
+
+    public function getDeliveryMethodAttribute($value): ?string
+    {
+        if ($value === null || $value === '' || $value === '-') {
+            return $value;
+        }
+        return self::normalizeDeliveryMethod($value);
+    }
+
     public function getCourseNameAttribute($value): ?string
     {
         return $value ?? $this->attributes['title'] ?? null;

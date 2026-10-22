@@ -355,7 +355,7 @@ class AllClassificationExport implements FromQuery, WithHeadings, WithChunkReadi
                     $row->sub_classification ?: '',
                     $kpiStr,
                     $row->sub_corporate_kpi ?: '',
-                    $row->delivery_method ?: '',
+                    \App\Models\OfflineTraining::normalizeDeliveryMethod($row->delivery_method),
                     $row->sub_delivery_method ?: '',
                     $row->provider ?: '',
                     $row->sub_provider ?: '',

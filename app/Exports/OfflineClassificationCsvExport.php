@@ -152,7 +152,7 @@ class OfflineClassificationCsvExport implements FromQuery, WithHeadings, WithMap
             $this->sanitizeCsvValue($row->sub_classification ?: '-'),                     // 16. Sub Classification
             $kpiStr,                                                                      // 17. Counted as Corporate KPI
             $this->sanitizeCsvValue($row->sub_corporate_kpi ?: '-'),                      // 18. Sub Corporate KPI
-            $this->sanitizeCsvValue($row->delivery_method ?: '-'),                        // 19. Delivery Method
+            $this->sanitizeCsvValue(\App\Models\OfflineTraining::normalizeDeliveryMethod($row->delivery_method)),                        // 19. Delivery Method
             $this->sanitizeCsvValue($row->sub_delivery_method ?: '-'),                    // 20. Sub_Delivery Method
             $this->sanitizeCsvValue($row->provider ?: '-'),                               // 21. Provider
             $this->sanitizeCsvValue($row->sub_provider ?: '-'),                           // 22. Sub_Provider

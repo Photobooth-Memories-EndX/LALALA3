@@ -126,7 +126,7 @@ class OfflineParticipantDataSheet implements FromQuery, WithHeadings, WithMappin
             $row->sub_classification ?: '',                                            // 16. Sub Classification
             $kpiStr,                                                                    // 17. Counted as Corporate KPI
             $row->sub_corporate_kpi ?: '',                                             // 18. Sub Corporate KPI
-            $row->delivery_method ?: '',                                               // 19. Delivery Method
+            \App\Models\OfflineTraining::normalizeDeliveryMethod($row->delivery_method), // 19. Delivery Method
             $row->sub_delivery_method ?: '',                                           // 20. Sub_Delivery Method
             $row->provider ?: '',                                                      // 21. Provider
             $row->sub_provider ?: '',                                                  // 22. Sub_Provider

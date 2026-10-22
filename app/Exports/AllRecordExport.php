@@ -338,7 +338,7 @@ class AllRecordExport implements FromQuery, WithHeadings, WithChunkReading, With
                 }
 
                 // Delivery method alignment
-                $delivMethod = $row->delivery_method ?: ($row->source === 'offline' ? 'Offline' : 'Online');
+                $delivMethod = \App\Models\OfflineTraining::normalizeDeliveryMethod($row->delivery_method ?: ($row->source === 'offline' ? 'Offline' : 'Online'));
                 $subDelivMethod = $row->sub_delivery_method ?: ($row->source === 'offline' ? 'On-site' : 'E-learning');
 
                 // Bond amount formatting

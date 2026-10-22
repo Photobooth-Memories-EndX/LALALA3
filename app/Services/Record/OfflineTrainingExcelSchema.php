@@ -819,6 +819,24 @@ class OfflineTrainingExcelSchema
     }
 
     /**
+     * Standardize Delivery Method into: "Offline", "Online", or "Blended".
+     */
+    public static function normalizeDeliveryMethod(?string $method): string
+    {
+        $raw = strtolower(trim((string) $method));
+        if (in_array($raw, ['in class', 'classroom', 'on-site', 'off-site', 'offline'], true)) {
+            return 'Offline';
+        }
+        if (in_array($raw, ['e-learning', 'webinar', 'online', 'kp-owl', 'kp owl'], true)) {
+            return 'Online';
+        }
+        if (in_array($raw, ['hybrid', 'blended'], true)) {
+            return 'Blended';
+        }
+        return !empty($method) && $method !== '-' ? ucfirst(trim((string) $method)) : '-';
+    }
+
+    /**
      * Normalize header string for consistent, resilient comparison.
      */
     public static function normalizeHeaderString(?string $header): string

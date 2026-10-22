@@ -114,13 +114,7 @@ class ExportMyOfflineLearningRecord implements FromArray, ShouldAutoSize, WithCo
             $reqRaw = strtolower(trim((string) ($row['requirement'] ?? '')));
             $requirement = ($reqRaw === 'mandatory') ? 'Mandatory' : 'Non-Mandatory';
 
-            $delivRaw = strtolower(trim((string) ($row['delivery_method'] ?? '')));
-            $subRaw = strtolower(trim((string) ($row['sub_delivery_method'] ?? '')));
-            if (str_contains($delivRaw, 'blend') || str_contains($subRaw, 'blend') || str_contains($delivRaw, 'hybrid') || str_contains($subRaw, 'hybrid')) {
-                $deliveryMethod = 'Blended';
-            } else {
-                $deliveryMethod = 'Offline';
-            }
+$deliveryMethod = \App\Models\OfflineTraining::normalizeDeliveryMethod($row['delivery_method'] ?? 'Offline');
 
             $provider = (!empty($row['provider']) && $row['provider'] !== '—' && $row['provider'] !== '-')
                 ? $row['provider']

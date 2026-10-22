@@ -1193,6 +1193,14 @@ class LearningRecordController extends Controller
                 $record->bond_amount_usd_formatted = '-';
             }
             $record->bond_amount_formatted = !empty($parts) ? implode(' / ', $parts) : '-';
+            $record->source = 'Non KP OWL';
+            $record->title = !empty($record->title) ? $record->title : (!empty($record->course_name) ? $record->course_name : 'Training Record');
+            $record->delivery_method = \App\Models\OfflineTraining::normalizeDeliveryMethod($record->delivery_method ?? 'Offline');
+            $record->provider = !empty($record->provider) ? $record->provider : 'External';
+            $record->provider_name = !empty($record->provider_name) ? $record->provider_name : '-';
+            $record->venue = !empty($record->venue) ? $record->venue : '-';
+            $record->bond_status = !empty($record->bond_status) ? $record->bond_status : 'No';
+            $record->bond_end_date = !empty($record->bond_end_date) ? $record->bond_end_date : '-';
 
             return response()->json([
                 'success' => true,
@@ -1221,6 +1229,7 @@ class LearningRecordController extends Controller
                     'success' => true,
                     'data'    => [
                         'id'                     => 'playlist_' . $plan->id,
+                        'source'                 => 'KP OWL',
                         'title'                  => $plan->title,
                         'course_name'            => $plan->title,
                         'type'                   => 'Playlist',
@@ -1281,6 +1290,7 @@ class LearningRecordController extends Controller
             'success' => true,
             'data'    => [
                 'id'                     => $contentUser->id,
+                'source'                 => 'KP OWL',
                 'title'                  => optional($content)->title ?? '-',
                 'course_name'            => optional($content)->title ?? '-',
                 'sub_course_name'        => optional($content)->description ?? '',
