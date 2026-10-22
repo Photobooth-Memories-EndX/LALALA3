@@ -19,7 +19,7 @@
                         $isAssessmentGroup = ($group['parent_type'] ?? '') === 'assessment';
                         $firstTask = $group['tasks']->first();
                     @endphp
-                    <tr>
+                    <tr class="course-parent-row {{ $isAssessmentGroup ? 'is-assessment-group' : '' }}" data-collapse-target="#collapseTasks-{{ $i }}">
                         <td class="text-muted">{{ $i + 1 }}</td>
                         <td class="course-col-trigger"
                             data-bs-toggle="collapse"
@@ -36,6 +36,7 @@
                                     <div>
                                         <div class="fw-bold text-dark course-title-text d-inline-flex align-items-center gap-1">
                                             <span>{{ $group['parent_name'] }}</span>
+                                            <span class="badge {{ $isAssessmentGroup ? 'bg-purple' : 'bg-primary' }} text-white rounded-pill px-1.5 py-0.5 active-course-badge d-none ms-1" style="font-size: 10px; font-weight: 600; letter-spacing: 0.3px;">Active</span>
                                             <i class="ti ti-chevron-down text-muted small ms-1 transition-transform"></i>
                                         </div>
                                         @if (!empty($group['course_name']))
@@ -97,30 +98,19 @@
                             @endif
                         </td>
                         <td class="text-end">
-                            <div class="d-inline-flex align-items-center gap-1">
-                                @if ($group['parent_url'])
-                                    <a href="{{ $group['parent_url'] }}"
-                                       class="btn btn-sm btn-icon btn-ghost-secondary"
-                                       title="Open course details"
-                                       target="_blank"
-                                       onclick="event.stopPropagation();">
-                                        <i class="ti ti-external-link"></i>
-                                    </a>
-                                @endif
-                                <button type="button"
-                                        class="btn btn-sm btn-icon btn-outline-secondary btn-task-collapse-toggle"
-                                        data-bs-toggle="collapse"
-                                        data-bs-target="#collapseTasks-{{ $i }}"
-                                        aria-expanded="false"
-                                        title="Show tasks below">
-                                    <i class="ti ti-chevron-down transition-transform"></i>
-                                </button>
-                            </div>
+                            <button type="button"
+                                    class="btn btn-sm btn-icon btn-outline-secondary btn-task-collapse-toggle"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#collapseTasks-{{ $i }}"
+                                    aria-expanded="false"
+                                    title="Show tasks below">
+                                <i class="ti ti-chevron-down transition-transform"></i>
+                            </button>
                         </td>
                     </tr>
 
                     {{-- Collapsible Task List Sub-row --}}
-                    <tr class="collapse bg-light-subtle task-collapse-row" id="collapseTasks-{{ $i }}" data-bs-parent="#parentTableAccordion">
+                    <tr class="collapse bg-light-subtle task-collapse-row" id="collapseTasks-{{ $i }}">
                         <td colspan="7" class="p-3">
                             <div class="card border rounded-3 p-3 bg-white shadow-none mb-0">
                                 <div class="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom">
@@ -349,5 +339,74 @@
 }
 .transition-transform {
     transition: transform 0.2s ease-in-out;
+}
+#parentTableAccordion .task-collapse-row,
+#parentTableAccordion .task-collapse-row.collapsing {
+    transition: none !important;
+}
+
+/* Active Course Highlight */
+.course-parent-row.is-active > td {
+    background-color: rgba(32, 107, 196, 0.05) !important;
+}
+.course-parent-row.is-active.is-assessment-group > td {
+    background-color: rgba(121, 82, 179, 0.05) !important;
+}
+.course-parent-row.is-active > td:first-child,
+.course-parent-row.is-active + .task-collapse-row > td:first-child {
+    box-shadow: inset 4px 0 0 0 var(--tblr-primary, #206bc4) !important;
+}
+.course-parent-row.is-active.is-assessment-group > td:first-child,
+.course-parent-row.is-active.is-assessment-group + .task-collapse-row > td:first-child {
+    box-shadow: inset 4px 0 0 0 #7952b3 !important;
+}
+.course-parent-row.is-active .course-title-text {
+    color: var(--tblr-primary, #206bc4) !important;
+}
+.course-parent-row.is-active.is-assessment-group .course-title-text {
+    color: #7952b3 !important;
+}
+.course-parent-row.is-active .active-course-badge {
+    display: inline-flex !important;
+}
+.course-parent-row.is-active .btn-task-collapse-toggle {
+    background-color: var(--tblr-primary, #206bc4) !important;
+    border-color: var(--tblr-primary, #206bc4) !important;
+    color: #ffffff !important;
+}
+.course-parent-row.is-active.is-assessment-group .btn-task-collapse-toggle {
+    background-color: #7952b3 !important;
+    border-color: #7952b3 !important;
+    color: #ffffff !important;
+}
+
+/* Dark mode support */
+[data-bs-theme="dark"] .course-parent-row.is-active > td,
+body.dark-mode .course-parent-row.is-active > td {
+    background-color: rgba(56, 189, 248, 0.12) !important;
+}
+[data-bs-theme="dark"] .course-parent-row.is-active.is-assessment-group > td,
+body.dark-mode .course-parent-row.is-active.is-assessment-group > td {
+    background-color: rgba(168, 85, 247, 0.12) !important;
+}
+[data-bs-theme="dark"] .course-parent-row.is-active > td:first-child,
+[data-bs-theme="dark"] .course-parent-row.is-active + .task-collapse-row > td:first-child,
+body.dark-mode .course-parent-row.is-active > td:first-child,
+body.dark-mode .course-parent-row.is-active + .task-collapse-row > td:first-child {
+    box-shadow: inset 4px 0 0 0 #38bdf8 !important;
+}
+[data-bs-theme="dark"] .course-parent-row.is-active.is-assessment-group > td:first-child,
+[data-bs-theme="dark"] .course-parent-row.is-active.is-assessment-group + .task-collapse-row > td:first-child,
+body.dark-mode .course-parent-row.is-active.is-assessment-group > td:first-child,
+body.dark-mode .course-parent-row.is-active.is-assessment-group + .task-collapse-row > td:first-child {
+    box-shadow: inset 4px 0 0 0 #c084fc !important;
+}
+[data-bs-theme="dark"] .course-parent-row.is-active .course-title-text,
+body.dark-mode .course-parent-row.is-active .course-title-text {
+    color: #38bdf8 !important;
+}
+[data-bs-theme="dark"] .course-parent-row.is-active.is-assessment-group .course-title-text,
+body.dark-mode .course-parent-row.is-active.is-assessment-group .course-title-text {
+    color: #c084fc !important;
 }
 </style>

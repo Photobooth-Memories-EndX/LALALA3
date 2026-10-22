@@ -10,21 +10,25 @@
 @else
         <div class="task-modal-card bg-white p-4 rounded-4 shadow-sm border">
 @endif
-                    {{-- Top Badges Row --}}
+                    {{-- Top Badges Row (Placed inside the task card) --}}
                     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
                         <div class="d-flex align-items-center gap-2 flex-wrap">
-                            <span class="badge bg-primary-lt text-primary px-2 py-1 fs-6">{{ $task->typeLabel() }}</span>
+                            <span class="badge bg-primary-lt text-primary px-2.5 py-1 fs-6">
+                                <i class="ti ti-file-text me-1"></i>{{ $task->typeLabel() }}
+                            </span>
                             @if ($task->parentTitle())
-                                <span class="badge bg-secondary-lt text-secondary px-2 py-1 fs-6">
+                                <span class="badge bg-secondary-lt text-secondary px-2.5 py-1 fs-6">
                                     <i class="ti ti-bookmark me-1"></i>{{ $task->parentTitle() }}
                                 </span>
                             @elseif ($task->isStandalone())
-                                <span class="badge bg-secondary-lt text-secondary px-2 py-1 fs-6">
+                                <span class="badge bg-secondary-lt text-secondary px-2.5 py-1 fs-6">
                                     <i class="ti ti-world me-1"></i>Global Task
                                 </span>
                             @endif
                         </div>
-                        <span class="badge {{ $statusBadges[$displayStatus($status)] }} px-2 py-1 fs-6">{{ $statusLabels[$displayStatus($status)] }}</span>
+                        <span class="badge {{ $statusBadges[$displayStatus($status)] }} px-2.5 py-1 fs-6">
+                            {{ $statusLabels[$displayStatus($status)] }}
+                        </span>
                     </div>
 
                     {{-- Title --}}
@@ -157,7 +161,6 @@
                                         <i class="ti ti-external-link me-1"></i>Open External Course
                                     </a>
                                 </div>
-                                <div class="form-hint mt-2 text-center text-muted">Finish the course — this task will be marked complete automatically.</div>
                             @else
                                 @php
                                     $targetPlan = $task->linkedPlan ?? $task->trainingPlan;
@@ -169,10 +172,9 @@
                                         <div class="text-muted small mb-3">Finish the course (100% progress) — this task will be marked complete automatically.</div>
                                         <a href="{{ route('user.playlist.show', $targetPlan->slug) }}"
                                            class="btn btn-primary rounded-3 px-4">
-                                            <i class="ti ti-book-2 me-1"></i>Open Course: {{ $targetPlan->title }}
+                                            <i class="ti ti-book-2 me-1"></i>Open Course
                                         </a>
                                     </div>
-                                    <div class="form-hint mt-2 text-center text-muted">Finish the course (100% progress) — this task will be marked complete automatically.</div>
                                 @else
                                     <div class="alert alert-warning mb-0">
                                         <i class="ti ti-info-circle me-1"></i> Course assignment link is not configured yet.
@@ -275,34 +277,69 @@
                                                 </label>
                                             </div>
                                         @endif
-                                        <div id="fileWrap{{ $field->id }}"@if ($field->allow_link && $fileChoice === 'link') style="display:none"@endif>
-                                            <div class="border border-dashed rounded-3 p-3 bg-light-subtle">
-                                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
-                                                    <div class="d-flex align-items-center gap-2">
-                                                        <i class="ti ti-cloud-upload text-primary fs-2"></i>
-                                                        <div>
-                                                            <div class="fw-semibold small text-dark">Upload Answer File</div>
-                                                            <div class="text-muted" style="font-size:11px;">
-                                                                Format: <strong>{{ ! empty($field->allowedExtensions()) ? strtoupper(implode(', ', $field->allowedExtensions())) : 'All file formats' }}</strong>
-                                                                @if ($field->allowedTypesLabel())
-                                                                    <span class="badge bg-secondary-lt text-secondary ms-1">{{ $field->allowedTypesLabel() }}</span>
-                                                                @endif
-                                                                | Max <strong>{{ $field->maxFiles() }} file{{ $field->maxFiles() > 1 ? 's' : '' }}</strong>, max <strong>{{ $field->maxSizeMb() }} MB</strong> per file
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    @if ($field->allow_link)
-                                                        <span class="badge bg-info-lt text-info d-inline-flex align-items-center">
-                                                            <i class="ti ti-link me-1"></i> Supports Drive Links
-                                                        </span>
-                                                    @endif
-                                                </div>
+                                        <div id="fileWrap{{ $field->id }}" class="task-file-wrap"@if ($field->allow_link && $fileChoice === 'link') style="display:none"@endif>
+                                            <div class="task-dropzone border border-2 border-dashed rounded-3 p-4 text-center bg-light-subtle position-relative @error($fieldKey) border-danger @enderror"
+                                                 id="dropzone-{{ $field->id }}"
+                                                 data-field-id="{{ $field->id }}"
+                                                 data-max-files="{{ $field->maxFiles() }}"
+                                                 data-max-size-mb="{{ $field->maxSizeMb() }}"
+                                                 data-allowed-exts="{{ strtolower(implode(',', $field->allowedExtensions() ?? [])) }}"
+                                                 style="cursor: pointer; transition: all 0.2s ease; border-color: @error($fieldKey) #d63939 @else #cbd5e1 @enderror !important;">
+
                                                 <input type="file"
+                                                       id="fileInput{{ $field->id }}"
                                                        name="fields[{{ $field->id }}][]"
-                                                       class="form-control bg-white @error($fieldKey) is-invalid @enderror"
+                                                       class="task-file-input position-absolute top-0 start-0 w-100 h-100 opacity-0"
+                                                       style="cursor: pointer; z-index: 5;"
                                                        @if ($field->maxFiles() > 1) multiple @endif
                                                        @if ($field->acceptAttribute()) accept="{{ $field->acceptAttribute() }}" @endif
                                                        {{ $field->required && empty($existingPaths) && ! $field->allow_link ? 'required' : '' }}>
+
+                                                <!-- Default Prompt State -->
+                                                <div class="dropzone-prompt">
+                                                    <div class="avatar avatar-md rounded-circle bg-primary-lt text-primary mx-auto mb-2 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                                                        <i class="ti ti-cloud-upload fs-1"></i>
+                                                    </div>
+                                                    <div class="fw-semibold text-dark mb-1">
+                                                        Tarik &amp; lepas file ke sini, atau <span class="text-primary text-decoration-underline">pilih file</span>
+                                                    </div>
+                                                    <div class="text-muted small" style="font-size: 11.5px;">
+                                                        Format: <strong>{{ ! empty($field->allowedExtensions()) ? strtoupper(implode(', ', $field->allowedExtensions())) : 'Semua format file' }}</strong>
+                                                        @if ($field->allowedTypesLabel())
+                                                            <span class="badge bg-secondary-lt text-secondary ms-1">{{ $field->allowedTypesLabel() }}</span>
+                                                        @endif
+                                                        | Maksimal <strong>{{ $field->maxFiles() }} file{{ $field->maxFiles() > 1 ? 's' : '' }}</strong>, maks. <strong>{{ $field->maxSizeMb() }} MB</strong> per file
+                                                    </div>
+                                                    @if ($field->allow_link)
+                                                        <div class="mt-2">
+                                                            <span class="badge bg-info-lt text-info d-inline-flex align-items-center">
+                                                                <i class="ti ti-link me-1"></i> Mendukung Link Drive
+                                                            </span>
+                                                        </div>
+                                                    @endif
+                                                </div>
+
+                                                <!-- Dragover Overlay Indicator -->
+                                                <div class="dropzone-dragover-indicator d-none position-absolute top-0 start-0 w-100 h-100 rounded-3 d-flex flex-column align-items-center justify-content-center bg-primary-lt" style="pointer-events: none; z-index: 6;">
+                                                    <i class="ti ti-download fs-1 text-primary mb-1 animate-bounce"></i>
+                                                    <span class="fw-bold text-primary">Lepaskan file di sini</span>
+                                                </div>
+
+                                                <!-- Selected Files State -->
+                                                <div class="dropzone-preview d-none text-start pt-1 position-relative" style="z-index: 6;">
+                                                    <div class="d-flex align-items-center justify-content-between mb-2 pb-1 border-bottom">
+                                                        <span class="fw-semibold small text-dark d-flex align-items-center gap-1">
+                                                            <i class="ti ti-circle-check text-success"></i> File Dipilih:
+                                                        </span>
+                                                        <button type="button" class="btn btn-sm btn-ghost-danger py-0 px-2 rounded-2 dropzone-clear-btn" data-field-id="{{ $field->id }}" title="Hapus dan pilih ulang">
+                                                            <i class="ti ti-x me-1"></i> Ganti File
+                                                        </button>
+                                                    </div>
+                                                    <div class="selected-files-list d-flex flex-column gap-1"></div>
+                                                </div>
+
+                                                <!-- Inline Error message -->
+                                                <div class="dropzone-error-msg alert alert-danger py-1 px-2 mt-2 small text-start d-none" style="z-index: 7; position: relative;"></div>
                                             </div>
                                         </div>
                                         @if ($field->allow_link)
@@ -366,20 +403,28 @@
                                 <div class="alert alert-warning">This task has no questions yet.</div>
                             @endif
 
-                            <div class="d-flex align-items-center gap-2 mt-4 pt-2 border-top">
-                                <button type="submit" class="btn btn-primary rounded-3 px-4">
-                                    <i class="ti ti-send me-1"></i> {{ $submission && $submission->resubmit_requested ? 'Resubmit Answers' : 'Submit Answers' }}
-                                </button>
+                            <div class="d-flex align-items-center justify-content-end gap-2 mt-4 pt-3 border-top">
                                 @if ($inModal ?? false)
                                     <button type="button" class="btn btn-outline-secondary rounded-3 px-3" data-bs-dismiss="modal">
                                         Close
                                     </button>
                                 @endif
+                                <button type="submit" class="btn btn-primary rounded-3 px-4">
+                                    <i class="ti ti-send me-1"></i> {{ $submission && $submission->resubmit_requested ? 'Resubmit Answers' : 'Submit Answers' }}
+                                </button>
                             </div>
                         </form>
 
                         @endif {{-- show form only when not submitted yet or resubmit was requested --}}
                     @endif {{-- status: completed / course assignment / answer form --}}
+
+                    @if (($inModal ?? false) && ($status === 'completed' || $task->isCourseAssignment() || ($submission && ! $submission->resubmit_requested)))
+                        <div class="d-flex align-items-center justify-content-end gap-2 mt-4 pt-3 border-top">
+                            <button type="button" class="btn btn-outline-secondary rounded-3 px-3" data-bs-dismiss="modal">
+                                Close
+                            </button>
+                        </div>
+                    @endif
 @if (! ($inModal ?? false))
                 </div>
             </div>
@@ -389,8 +434,131 @@
 @endif
 
 @once
+<style>
+.task-dropzone {
+    border-color: #cbd5e1 !important;
+    transition: all 0.2s ease-in-out;
+}
+.task-dropzone:hover {
+    border-color: #206bc4 !important;
+    background-color: #f8fafc !important;
+}
+.task-dropzone.is-dragover {
+    border-color: #206bc4 !important;
+    background-color: #f0f7ff !important;
+    transform: scale(1.005);
+}
+.task-dropzone .animate-bounce {
+    animation: dropzoneBounce 1s infinite;
+}
+@keyframes dropzoneBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+</style>
 <script>
 (function () {
+    function formatBytes(bytes) {
+        if (!bytes || bytes === 0) return '0 B';
+        var k = 1024;
+        var sizes = ['B', 'KB', 'MB', 'GB'];
+        var i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+
+    function escapeHtml(str) {
+        var div = document.createElement('div');
+        div.textContent = str || '';
+        return div.innerHTML;
+    }
+
+    function getFileIconClass(filename) {
+        var ext = (filename || '').split('.').pop().toLowerCase();
+        if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'].indexOf(ext) !== -1) return 'ti ti-photo text-info';
+        if (['pdf'].indexOf(ext) !== -1) return 'ti ti-file-text text-danger';
+        if (['doc', 'docx'].indexOf(ext) !== -1) return 'ti ti-file-description text-primary';
+        if (['xls', 'xlsx', 'csv'].indexOf(ext) !== -1) return 'ti ti-file-spreadsheet text-success';
+        if (['zip', 'rar', '7z', 'tar', 'gz'].indexOf(ext) !== -1) return 'ti ti-file-zip text-warning';
+        if (['mp4', 'mov', 'avi', 'mkv', 'webm'].indexOf(ext) !== -1) return 'ti ti-video text-purple';
+        return 'ti ti-file text-secondary';
+    }
+
+    function updateDropzonePreview(input) {
+        var dropzone = input.closest('.task-dropzone');
+        if (!dropzone) return;
+
+        var promptEl = dropzone.querySelector('.dropzone-prompt');
+        var previewEl = dropzone.querySelector('.dropzone-preview');
+        var listEl = dropzone.querySelector('.selected-files-list');
+        var errorEl = dropzone.querySelector('.dropzone-error-msg');
+        var maxSizeMb = parseFloat(dropzone.dataset.maxSizeMb || '10');
+        var maxSizeBytes = maxSizeMb * 1024 * 1024;
+        var allowedExtsStr = (dropzone.dataset.allowedExts || '').trim();
+        var allowedExts = allowedExtsStr ? allowedExtsStr.split(',').map(function (s) { return s.trim().toLowerCase(); }).filter(Boolean) : [];
+
+        var files = input.files;
+        if (!files || files.length === 0) {
+            if (promptEl) promptEl.classList.remove('d-none');
+            if (previewEl) previewEl.classList.add('d-none');
+            if (listEl) listEl.innerHTML = '';
+            if (errorEl) {
+                errorEl.textContent = '';
+                errorEl.classList.add('d-none');
+            }
+            dropzone.style.borderColor = '#cbd5e1';
+            input.setCustomValidity('');
+            return;
+        }
+
+        var errors = [];
+        var listHtml = '';
+
+        for (var i = 0; i < files.length; i++) {
+            var f = files[i];
+            var ext = (f.name || '').split('.').pop().toLowerCase();
+
+            if (f.size > maxSizeBytes) {
+                errors.push('File "' + f.name + '" (' + formatBytes(f.size) + ') melebihi batas maksimal ' + maxSizeMb + ' MB.');
+            }
+
+            if (allowedExts.length > 0 && allowedExts.indexOf(ext) === -1) {
+                errors.push('Format file "' + f.name + '" tidak diizinkan. Hanya format: ' + allowedExts.join(', ').toUpperCase());
+            }
+
+            var icon = getFileIconClass(f.name);
+            listHtml += '<div class="d-flex align-items-center justify-content-between p-2 rounded-2 bg-white border">' +
+                '<div class="d-flex align-items-center gap-2 overflow-hidden me-2">' +
+                    '<i class="' + icon + ' fs-2 flex-shrink-0"></i>' +
+                    '<div class="text-truncate">' +
+                        '<div class="fw-semibold text-dark text-truncate" style="font-size:12px;">' + escapeHtml(f.name) + '</div>' +
+                        '<div class="text-muted" style="font-size:11px;">' + formatBytes(f.size) + '</div>' +
+                    '</div>' +
+                '</div>' +
+                '<span class="badge bg-success-lt text-success flex-shrink-0">' +
+                    '<i class="ti ti-check me-1"></i> Siap upload' +
+                '</span>' +
+            '</div>';
+        }
+
+        if (listEl) listEl.innerHTML = listHtml;
+        if (promptEl) promptEl.classList.add('d-none');
+        if (previewEl) previewEl.classList.remove('d-none');
+
+        if (errorEl) {
+            if (errors.length > 0) {
+                errorEl.innerHTML = '<i class="ti ti-alert-triangle me-1"></i> ' + errors.join('<br>');
+                errorEl.classList.remove('d-none');
+                dropzone.style.borderColor = '#d63939';
+                input.setCustomValidity(errors[0]);
+            } else {
+                errorEl.textContent = '';
+                errorEl.classList.add('d-none');
+                dropzone.style.borderColor = '#2fb344';
+                input.setCustomValidity('');
+            }
+        }
+    }
+
     function syncFileChoice(radio) {
         var fieldId = radio.getAttribute('data-field');
         var fileWrap = document.getElementById('fileWrap' + fieldId);
@@ -404,12 +572,85 @@
             if (linkInput) linkInput.value = '';
         } else if (!showFile && fileWrap) {
             var fileInput = fileWrap.querySelector('input[type="file"]');
-            if (fileInput) fileInput.value = '';
+            if (fileInput) {
+                fileInput.value = '';
+                updateDropzonePreview(fileInput);
+            }
         }
     }
+
     document.addEventListener('change', function (e) {
         if (e.target && e.target.classList && e.target.classList.contains('file-choice-radio')) {
             syncFileChoice(e.target);
+        }
+        if (e.target && e.target.classList && e.target.classList.contains('task-file-input')) {
+            updateDropzonePreview(e.target);
+        }
+    });
+
+    // Drag and Drop Event Listeners
+    ['dragenter', 'dragover'].forEach(function (eventName) {
+        document.addEventListener(eventName, function (e) {
+            var dz = e.target.closest('.task-dropzone');
+            if (dz) {
+                e.preventDefault();
+                dz.classList.add('is-dragover');
+                var ind = dz.querySelector('.dropzone-dragover-indicator');
+                if (ind) ind.classList.remove('d-none');
+            }
+        }, false);
+    });
+
+    ['dragleave', 'dragend'].forEach(function (eventName) {
+        document.addEventListener(eventName, function (e) {
+            var dz = e.target.closest('.task-dropzone');
+            if (dz && (!e.relatedTarget || !dz.contains(e.relatedTarget))) {
+                dz.classList.remove('is-dragover');
+                var ind = dz.querySelector('.dropzone-dragover-indicator');
+                if (ind) ind.classList.add('d-none');
+            }
+        }, false);
+    });
+
+    document.addEventListener('drop', function (e) {
+        var dz = e.target.closest('.task-dropzone');
+        if (dz) {
+            e.preventDefault();
+            dz.classList.remove('is-dragover');
+            var ind = dz.querySelector('.dropzone-dragover-indicator');
+            if (ind) ind.classList.add('d-none');
+
+            var files = e.dataTransfer ? e.dataTransfer.files : null;
+            if (files && files.length > 0) {
+                var input = dz.querySelector('.task-file-input');
+                if (input) {
+                    var maxFiles = parseInt(dz.dataset.maxFiles || '1', 10);
+                    var dt = new DataTransfer();
+                    var count = Math.min(files.length, maxFiles);
+                    for (var i = 0; i < count; i++) {
+                        dt.items.add(files[i]);
+                    }
+                    input.files = dt.files;
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            }
+        }
+    }, false);
+
+    // Click on "Ganti File" button
+    document.addEventListener('click', function (e) {
+        var clearBtn = e.target.closest('.dropzone-clear-btn');
+        if (clearBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            var dz = clearBtn.closest('.task-dropzone');
+            if (dz) {
+                var input = dz.querySelector('.task-file-input');
+                if (input) {
+                    input.value = '';
+                    updateDropzonePreview(input);
+                }
+            }
         }
     });
 })();
