@@ -398,7 +398,15 @@ class LearningManageController extends Controller
         }
 
         return (new LearningExport($request->all(), $request->input('type', ''), $request->input('slug', '')))
-            ->download(now()->format('Ymd_His') . '_learning_data.xlsx');
+            ->download((function() {
+                $monthMap = [1 => 'Jan', 2 => 'Feb', 3 => 'Mar', 4 => 'Apr', 5 => 'Mei', 6 => 'Jun', 7 => 'Jul', 8 => 'Agu', 9 => 'Sep', 10 => 'Okt', 11 => 'Nov', 12 => 'Des'];
+                $dt = \Carbon\Carbon::now();
+                $day = $dt->format('d');
+                $month = $monthMap[(int) $dt->format('n')] ?? $dt->format('M');
+                $year = $dt->format('Y');
+                $time = $dt->format('H.i.s');
+                return "EmployeeOWLrecord_{$day}{$month}{$year} at {$time}.xlsx";
+            })());
     }
 
     public function downloadPdf(Request $request)

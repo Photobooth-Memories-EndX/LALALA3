@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\Manage\ClassificationAllRecordExport;
+use App\Exports\Manage\ClassificationOfflineRecordExport;
+use App\Exports\Manage\ClassificationOnlineRecordExport;
 use App\Http\Controllers\Manage\Record\RecordAllController;
 use App\Http\Controllers\Manage\Record\RecordOfflineController;
 use App\Http\Controllers\Manage\Record\RecordOnlineController;
@@ -9,9 +12,11 @@ use App\Models\OfflineTraining;
 use App\Models\OfflineTrainingUser;
 use App\Models\ContentUser;
 use App\Models\PlaylistContentUser;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ManageRecordController extends Controller
 {
@@ -73,6 +78,124 @@ class ManageRecordController extends Controller
     public function allParticipant($identifier, Request $request)
     {
         return $this->allController->participantDetail($identifier, $request);
+    }
+
+    public static function formatExportDateTime(?\DateTimeInterface $date = null): string
+    {
+        $dt = $date ? Carbon::parse($date) : Carbon::now();
+        $monthMap = [
+            1 => 'Jan', 2 => 'Feb', 3 => 'Mar', 4 => 'Apr',
+            5 => 'Mei', 6 => 'Jun', 7 => 'Jul', 8 => 'Agu',
+            9 => 'Sep', 10 => 'Okt', 11 => 'Nov', 12 => 'Des',
+        ];
+        $day = $dt->format('d');
+        $month = $monthMap[(int) $dt->format('n')] ?? $dt->format('M');
+        $year = $dt->format('Y');
+        $time = $dt->format('H.i.s');
+
+        return "{$day}{$month}{$year} at {$time}";
+    }
+
+    public function exportOnline(Request $request)
+    {
+        ini_set('memory_limit', '2048M');
+        ini_set('max_execution_time', 600);
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(600);
+        }
+
+        $dateTime = self::formatExportDateTime();
+        $fileName = "EmployeeOWLrecord_{$dateTime}.xlsx";
+
+        return app(\App\Services\Record\ManageOnlineRecordExportService::class)->download($request->all(), $fileName);
+    }
+
+    public function exportOffline(Request $request)
+    {
+        ini_set('memory_limit', '2048M');
+        ini_set('max_execution_time', 600);
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(600);
+        }
+
+        $dateTime = self::formatExportDateTime();
+        $fileName = "EmployeeNonOWLrecord_{$dateTime}.xlsx";
+
+        return app(\App\Services\Record\ManageOfflineRecordExportService::class)->download($request->all(), $fileName);
+    }
+
+    public function exportAll(Request $request)
+    {
+        ini_set('memory_limit', '2048M');
+        ini_set('max_execution_time', 600);
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(600);
+        }
+
+        $dateTime = self::formatExportDateTime();
+        $fileName = "EmployeeAllrecord_{$dateTime}.xlsx";
+
+        return app(\App\Services\Record\ManageAllRecordExportService::class)->download($request->all(), $fileName);
+    }
+
+    public function exportClassification(Request $request, $classification = null)
+    {
+        $source = strtolower((string) $request->input('source', 'all'));
+        $classVal = $classification ?? $request->input('classification');
+
+        if ($source === 'online' || $source === 'owl') {
+            return $this->exportClassificationOnline($request, $classVal);
+        }
+        if ($source === 'offline' || $source === 'non-owl') {
+            return $this->exportClassificationOffline($request, $classVal);
+        }
+
+        return $this->exportClassificationAll($request, $classVal);
+    }
+
+    public function exportClassificationOnline(Request $request, $classification = null)
+    {
+        ini_set('memory_limit', '2048M');
+        ini_set('max_execution_time', 600);
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(600);
+        }
+
+        $classVal = $classification ?? $request->input('classification');
+        $dateTime = self::formatExportDateTime();
+        $fileName = "EmployeeOWLrecord_{$dateTime}.xlsx";
+
+        return Excel::download(new ClassificationOnlineRecordExport($classVal, $request->all(), $fileName), $fileName);
+    }
+
+    public function exportClassificationOffline(Request $request, $classification = null)
+    {
+        ini_set('memory_limit', '2048M');
+        ini_set('max_execution_time', 600);
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(600);
+        }
+
+        $classVal = $classification ?? $request->input('classification');
+        $dateTime = self::formatExportDateTime();
+        $fileName = "EmployeeNonOWLrecord_{$dateTime}.xlsx";
+
+        return Excel::download(new ClassificationOfflineRecordExport($classVal, $request->all(), $fileName), $fileName);
+    }
+
+    public function exportClassificationAll(Request $request, $classification = null)
+    {
+        ini_set('memory_limit', '2048M');
+        ini_set('max_execution_time', 600);
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(600);
+        }
+
+        $classVal = $classification ?? $request->input('classification');
+        $dateTime = self::formatExportDateTime();
+        $fileName = "EmployeeAllrecord_{$dateTime}.xlsx";
+
+        return Excel::download(new ClassificationAllRecordExport($classVal, $request->all(), $fileName), $fileName);
     }
 
     /**

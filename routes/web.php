@@ -580,6 +580,10 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
             Route::get('export/online', [\App\Http\Controllers\ManageRecordExportController::class, 'exportOnline'])->name('export.online');
             Route::get('export/offline', [\App\Http\Controllers\ManageRecordExportController::class, 'exportOffline'])->name('export.offline');
             Route::get('export/all', [\App\Http\Controllers\ManageRecordExportController::class, 'exportAll'])->name('export.all');
+            Route::get('export/classification', [\App\Http\Controllers\ManageRecordExportController::class, 'exportClassification'])->name('export.classification');
+            Route::get('export/classification/online/{classification?}', [\App\Http\Controllers\ManageRecordExportController::class, 'exportClassificationOnline'])->name('export.classification.online');
+            Route::get('export/classification/offline/{classification?}', [\App\Http\Controllers\ManageRecordExportController::class, 'exportClassificationOffline'])->name('export.classification.offline');
+            Route::get('export/classification/all/{classification?}', [\App\Http\Controllers\ManageRecordExportController::class, 'exportClassificationAll'])->name('export.classification.all');
             Route::get('{id}/edit', [\App\Http\Controllers\ManageRecordController::class, 'edit'])->name('edit');
             Route::get('{id}/more-info', [\App\Http\Controllers\ManageRecordController::class, 'moreInformation'])->name('more-info');
         });

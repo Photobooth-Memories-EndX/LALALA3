@@ -221,10 +221,10 @@ class OnlineRecordExport implements Responsable
 
     public function generateXlsxFile(): string
     {
-        ini_set('max_execution_time', 300);
-        ini_set('memory_limit', '512M');
+        ini_set('memory_limit', '2048M');
+        ini_set('max_execution_time', 600);
         if (function_exists('set_time_limit')) {
-            @set_time_limit(300);
+            @set_time_limit(600);
         }
 
         $tempXlsx = tempnam(sys_get_temp_dir(), 'online_record_') . '.xlsx';
@@ -353,7 +353,12 @@ class OnlineRecordExport implements Responsable
         $buffer = '';
         $batchSize = 1000;
 
-        foreach ($query->cursor() as $row) {
+        $pdo = DB::connection()->getPdo();
+        $wasBuffered = $pdo->getAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY);
+        $pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
+
+        try {
+            foreach ($query->cursor() as $row) {
             $rowCount++;
             $excelRow++;
             $r = $excelRow;
@@ -519,6 +524,9 @@ class OnlineRecordExport implements Responsable
                 $buffer = '';
             }
         }
+    } finally {
+        $pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, $wasBuffered);
+    }
 
         if ($buffer !== '') {
             fwrite($sfh, $buffer);

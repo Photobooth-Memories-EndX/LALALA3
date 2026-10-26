@@ -180,10 +180,10 @@ class AllRecordExport implements Responsable
 
     public function generateXlsxFile(): string
     {
-        ini_set('max_execution_time', 300);
-        ini_set('memory_limit', '512M');
+        ini_set('memory_limit', '2048M');
+        ini_set('max_execution_time', 600);
         if (function_exists('set_time_limit')) {
-            @set_time_limit(300);
+            @set_time_limit(600);
         }
 
         $tempXlsx = tempnam(sys_get_temp_dir(), 'all_record_') . '.xlsx';
@@ -308,127 +308,135 @@ class AllRecordExport implements Responsable
         $buffer = '';
         $batchSize = 1000;
 
-        foreach ($query->cursor() as $row) {
-            $rowCount++;
-            $r = $rowCount + 1;
+        $pdo = DB::connection()->getPdo();
+        $wasBuffered = $pdo->getAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY);
+        $pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
 
-            $isPlaylistRow = ($row->type === 'Playlist' || ($row->source_type ?? '') === 'playlist');
+        try {
+            foreach ($query->cursor() as $row) {
+                $rowCount++;
+                $r = $rowCount + 1;
 
-            // Duration formatted as HH:MM:SS
-            $durationFormatted = '-';
-            if (!empty($row->duration_seconds)) {
-                $secs = (int) $row->duration_seconds;
-                $hours = floor($secs / 3600);
-                $mins = floor(($secs % 3600) / 60);
-                $seconds = $secs % 60;
-                $durationFormatted = sprintf('%02d:%02d:%02d', $hours, $mins, $seconds);
+                $isPlaylistRow = ($row->type === 'Playlist' || ($row->source_type ?? '') === 'playlist');
+
+                // Duration formatted as HH:MM:SS
+                $durationFormatted = '-';
+                if (!empty($row->duration_seconds)) {
+                    $secs = (int) $row->duration_seconds;
+                    $hours = floor($secs / 3600);
+                    $mins = floor(($secs % 3600) / 60);
+                    $seconds = $secs % 60;
+                    $durationFormatted = sprintf('%02d:%02d:%02d', $hours, $mins, $seconds);
+                }
+
+                // Learning Hours: Append "h" unit (e.g. 0.20 h)
+                $lhVal = ($row->learning_hours !== null && $row->learning_hours !== '') ? (number_format((float) $row->learning_hours, 2) . ' h') : '-';
+
+                // Progress & Status
+                $progressNum = (float) ($row->progress ?? 0);
+                $progressDecimal = round($progressNum / 100, 4);
+                $progressStatus = ($progressNum >= 100 || ($row->status ?? '') === 'Finished') ? 'Finished' : (($progressNum > 0) ? 'Ongoing' : 'Not Started');
+
+                // Delivery method alignment
+                $delivMethod = OfflineTraining::normalizeDeliveryMethod($row->delivery_method ?: ($row->source === 'offline' ? 'Offline' : 'Online'));
+                $subDelivMethod = $row->sub_delivery_method ?: ($row->source === 'offline' ? 'On-site' : 'E-learning');
+
+                // Date & Time split
+                $startDateStr = !empty($row->start_date) ? date('Y-m-d', strtotime($row->start_date)) : '-';
+                $endDateStr = !empty($row->end_date)
+                    ? date('Y-m-d', strtotime($row->end_date))
+                    : (!empty($row->finish_date) ? date('Y-m-d', strtotime($row->finish_date)) : '-');
+
+                $startTimeStr = !empty($row->start_time) ? date('H:i:s', strtotime($row->start_time)) : '-';
+                $endTimeStr = !empty($row->end_time) ? date('H:i:s', strtotime($row->end_time)) : '-';
+
+                $recordMonthDate = $row->start_date ?: ($row->finish_date ?: ($row->record_date ?? null));
+                $recordMonthStr = !empty($recordMonthDate) ? date('F', strtotime($recordMonthDate)) : '-';
+
+                // Attendance: strictly Yes or No
+                $attendanceStr = '-';
+                if ($row->attendance !== null && $row->attendance !== '') {
+                    $rawAtt = strtolower((string) $row->attendance);
+                    $attendanceStr = ((bool) $row->attendance || in_array($rawAtt, ['1', 'yes', 'present', 'true'], true)) ? 'Yes' : 'No';
+                } elseif ($row->source === 'online') {
+                    $attendanceStr = ($progressNum >= 100) ? 'Yes' : (($progressNum > 0) ? 'No' : '-');
+                }
+
+                // Bond amount formatting (IDR only)
+                $idr = $row->bond_amount_idr ?? $row->bond_amount ?? null;
+                $hasBond = ($idr !== null && (float) $idr > 0);
+
+                // Scores
+                $scoreL1 = is_numeric($row->l1_program) ? (float) $row->l1_program : null;
+                $scoreL2 = is_numeric($row->assessment_score)
+                    ? (int) round((float) $row->assessment_score)
+                    : (is_numeric($row->l2_numerical) ? (int) round((float) $row->l2_numerical) : null);
+                $scoreL3 = is_numeric($row->l3_numerical) ? (float) $row->l3_numerical : null;
+
+                $textStyle = $isPlaylistRow ? '2' : '0';
+                $intStyle = $isPlaylistRow ? '10' : '4';
+                $pctStyle = $isPlaylistRow ? '11' : '6';
+
+                // 47 columns
+                $cells = [
+                    ['A', 'num', $rowCount, $textStyle],
+                    ['B', 'str', $row->source === 'offline' ? 'Non KP OWL' : 'KP OWL', $textStyle],
+                    ['C', 'str', $row->employee_id ?: '-', $textStyle],
+                    ['D', 'str', $row->employee_name ?: '-', $textStyle],
+                    ['E', 'str', $row->grade ?: '-', $textStyle],
+                    ['F', 'str', $row->job_position ?: '-', $textStyle],
+                    ['G', 'str', $row->team ?: '-', $textStyle],
+                    ['H', 'str', $row->department ?: '-', $textStyle],
+                    ['I', 'str', $row->company ?: '-', $textStyle],
+                    ['J', 'str', $row->learning_title ?: '-', $textStyle],
+                    ['K', 'str', $row->sub_course_name ?: '-', $textStyle],
+                    ['L', 'str', $row->type ?: '-', $textStyle],
+                    ['M', 'str', $row->category ?: '-', $textStyle],
+                    ['N', 'str', $row->level ?: '-', $textStyle],
+                    ['O', 'str', $row->batch ?: '-', $textStyle],
+                    ['P', 'str', $row->classification ?: 'Unclassified', $textStyle],
+                    ['Q', 'str', $row->sub_classification ?: '-', $textStyle],
+                    ['R', 'str', $delivMethod, $textStyle],
+                    ['S', 'str', $subDelivMethod, $textStyle],
+                    ['T', 'str', $row->provider_name ?: ($row->source === 'offline' ? '-' : 'KP-OWL'), $textStyle],
+                    ['U', 'str', $row->venue ?: ($row->source === 'offline' ? '-' : 'KP-OWL'), $textStyle],
+                    ['V', 'str', $row->instructor ?: '-', $textStyle],
+                    ['W', 'str', $durationFormatted, $textStyle], // Course Duration
+                    ['X', 'str', $durationFormatted, $textStyle], // Total Engagement Duration
+                    ['Y', 'str', $lhVal, $textStyle], // Learning Hours (with 'h')
+                    ['Z', 'pct', $progressDecimal, $pctStyle],
+                    ['AA', 'str', $progressStatus, $textStyle],
+                    ['AB', 'str', $startDateStr, $textStyle],
+                    ['AC', 'str', $endDateStr, $textStyle],
+                    ['AD', 'str', $startTimeStr, $textStyle],
+                    ['AE', 'str', $endTimeStr, $textStyle],
+                    ['AF', 'str', $recordMonthStr, $textStyle],
+                    ['AG', 'str', $row->requirement ?: 'Mandatory', $textStyle],
+                    ['AH', 'str', $attendanceStr, $textStyle],
+                    ['AI', 'str', $row->attendance_reason ?: '-', $textStyle],
+                    ['AJ', 'str', $row->bond_status ?: 'No', $textStyle],
+                    ['AK', 'str', !empty($row->bond_duration) ? $row->bond_duration . ' Months' : '-', $textStyle],
+                    ['AL', 'str', !empty($row->bond_end_date) ? date('Y-m-d', strtotime($row->bond_end_date)) : '-', $textStyle],
+                    ['AM', $hasBond ? 'curr' : 'str', $hasBond ? (float) $idr : '-', $hasBond ? '9' : $textStyle],
+                    ['AN', $scoreL1 !== null ? 'float' : 'str', $scoreL1 !== null ? $scoreL1 : '-', $scoreL1 !== null ? '5' : $textStyle],
+                    ['AO', $scoreL2 !== null ? 'int' : 'str', $scoreL2 !== null ? $scoreL2 : '-', $scoreL2 !== null ? $intStyle : $textStyle],
+                    ['AP', 'str', $row->l2_verbal ?: ($scoreL2 !== null ? ($scoreL2 >= 70 ? 'Passed' : 'Failed') : '-'), $textStyle],
+                    ['AQ', $scoreL3 !== null ? 'float' : 'str', $scoreL3 !== null ? $scoreL3 : '-', $scoreL3 !== null ? '5' : $textStyle],
+                    ['AR', 'str', $row->l3_verbal ?: '-', $textStyle],
+                    ['AS', 'str', $row->pic ?: '-', $textStyle],
+                    ['AT', 'str', $row->certificate ?: '-', $textStyle],
+                    ['AU', 'str', $lhVal, $textStyle], // Total Engagement Time (LH)
+                ];
+
+                $buffer .= $this->buildXmlRow($r, $cells);
+
+                if ($rowCount % $batchSize === 0) {
+                    fwrite($sfh, $buffer);
+                    $buffer = '';
+                }
             }
-
-            // Learning Hours: Append "h" unit (e.g. 0.20 h)
-            $lhVal = ($row->learning_hours !== null && $row->learning_hours !== '') ? (number_format((float) $row->learning_hours, 2) . ' h') : '-';
-
-            // Progress & Status
-            $progressNum = (float) ($row->progress ?? 0);
-            $progressDecimal = round($progressNum / 100, 4);
-            $progressStatus = ($progressNum >= 100 || ($row->status ?? '') === 'Finished') ? 'Finished' : (($progressNum > 0) ? 'Ongoing' : 'Not Started');
-
-            // Delivery method alignment
-            $delivMethod = OfflineTraining::normalizeDeliveryMethod($row->delivery_method ?: ($row->source === 'offline' ? 'Offline' : 'Online'));
-            $subDelivMethod = $row->sub_delivery_method ?: ($row->source === 'offline' ? 'On-site' : 'E-learning');
-
-            // Date & Time split
-            $startDateStr = !empty($row->start_date) ? date('Y-m-d', strtotime($row->start_date)) : '-';
-            $endDateStr = !empty($row->end_date)
-                ? date('Y-m-d', strtotime($row->end_date))
-                : (!empty($row->finish_date) ? date('Y-m-d', strtotime($row->finish_date)) : '-');
-
-            $startTimeStr = !empty($row->start_time) ? date('H:i:s', strtotime($row->start_time)) : '-';
-            $endTimeStr = !empty($row->end_time) ? date('H:i:s', strtotime($row->end_time)) : '-';
-
-            $recordMonthDate = $row->start_date ?: ($row->finish_date ?: ($row->record_date ?? null));
-            $recordMonthStr = !empty($recordMonthDate) ? date('F', strtotime($recordMonthDate)) : '-';
-
-            // Attendance: strictly Yes or No
-            $attendanceStr = '-';
-            if ($row->attendance !== null && $row->attendance !== '') {
-                $rawAtt = strtolower((string) $row->attendance);
-                $attendanceStr = ((bool) $row->attendance || in_array($rawAtt, ['1', 'yes', 'present', 'true'], true)) ? 'Yes' : 'No';
-            } elseif ($row->source === 'online') {
-                $attendanceStr = ($progressNum >= 100) ? 'Yes' : (($progressNum > 0) ? 'No' : '-');
-            }
-
-            // Bond amount formatting (IDR only)
-            $idr = $row->bond_amount_idr ?? $row->bond_amount ?? null;
-            $hasBond = ($idr !== null && (float) $idr > 0);
-
-            // Scores
-            $scoreL1 = is_numeric($row->l1_program) ? (float) $row->l1_program : null;
-            $scoreL2 = is_numeric($row->assessment_score)
-                ? (int) round((float) $row->assessment_score)
-                : (is_numeric($row->l2_numerical) ? (int) round((float) $row->l2_numerical) : null);
-            $scoreL3 = is_numeric($row->l3_numerical) ? (float) $row->l3_numerical : null;
-
-            $textStyle = $isPlaylistRow ? '2' : '0';
-            $intStyle = $isPlaylistRow ? '10' : '4';
-            $pctStyle = $isPlaylistRow ? '11' : '6';
-
-            // 47 columns
-            $cells = [
-                ['A', 'num', $rowCount, $textStyle],
-                ['B', 'str', $row->source === 'offline' ? 'Non KP OWL' : 'KP OWL', $textStyle],
-                ['C', 'str', $row->employee_id ?: '-', $textStyle],
-                ['D', 'str', $row->employee_name ?: '-', $textStyle],
-                ['E', 'str', $row->grade ?: '-', $textStyle],
-                ['F', 'str', $row->job_position ?: '-', $textStyle],
-                ['G', 'str', $row->team ?: '-', $textStyle],
-                ['H', 'str', $row->department ?: '-', $textStyle],
-                ['I', 'str', $row->company ?: '-', $textStyle],
-                ['J', 'str', $row->learning_title ?: '-', $textStyle],
-                ['K', 'str', $row->sub_course_name ?: '-', $textStyle],
-                ['L', 'str', $row->type ?: '-', $textStyle],
-                ['M', 'str', $row->category ?: '-', $textStyle],
-                ['N', 'str', $row->level ?: '-', $textStyle],
-                ['O', 'str', $row->batch ?: '-', $textStyle],
-                ['P', 'str', $row->classification ?: 'Unclassified', $textStyle],
-                ['Q', 'str', $row->sub_classification ?: '-', $textStyle],
-                ['R', 'str', $delivMethod, $textStyle],
-                ['S', 'str', $subDelivMethod, $textStyle],
-                ['T', 'str', $row->provider_name ?: ($row->source === 'offline' ? '-' : 'KP-OWL'), $textStyle],
-                ['U', 'str', $row->venue ?: ($row->source === 'offline' ? '-' : 'KP-OWL'), $textStyle],
-                ['V', 'str', $row->instructor ?: '-', $textStyle],
-                ['W', 'str', $durationFormatted, $textStyle], // Course Duration
-                ['X', 'str', $durationFormatted, $textStyle], // Total Engagement Duration
-                ['Y', 'str', $lhVal, $textStyle], // Learning Hours (with 'h')
-                ['Z', 'pct', $progressDecimal, $pctStyle],
-                ['AA', 'str', $progressStatus, $textStyle],
-                ['AB', 'str', $startDateStr, $textStyle],
-                ['AC', 'str', $endDateStr, $textStyle],
-                ['AD', 'str', $startTimeStr, $textStyle],
-                ['AE', 'str', $endTimeStr, $textStyle],
-                ['AF', 'str', $recordMonthStr, $textStyle],
-                ['AG', 'str', $row->requirement ?: 'Mandatory', $textStyle],
-                ['AH', 'str', $attendanceStr, $textStyle],
-                ['AI', 'str', $row->attendance_reason ?: '-', $textStyle],
-                ['AJ', 'str', $row->bond_status ?: 'No', $textStyle],
-                ['AK', 'str', !empty($row->bond_duration) ? $row->bond_duration . ' Months' : '-', $textStyle],
-                ['AL', 'str', !empty($row->bond_end_date) ? date('Y-m-d', strtotime($row->bond_end_date)) : '-', $textStyle],
-                ['AM', $hasBond ? 'curr' : 'str', $hasBond ? (float) $idr : '-', $hasBond ? '9' : $textStyle],
-                ['AN', $scoreL1 !== null ? 'float' : 'str', $scoreL1 !== null ? $scoreL1 : '-', $scoreL1 !== null ? '5' : $textStyle],
-                ['AO', $scoreL2 !== null ? 'int' : 'str', $scoreL2 !== null ? $scoreL2 : '-', $scoreL2 !== null ? $intStyle : $textStyle],
-                ['AP', 'str', $row->l2_verbal ?: ($scoreL2 !== null ? ($scoreL2 >= 70 ? 'Passed' : 'Failed') : '-'), $textStyle],
-                ['AQ', $scoreL3 !== null ? 'float' : 'str', $scoreL3 !== null ? $scoreL3 : '-', $scoreL3 !== null ? '5' : $textStyle],
-                ['AR', 'str', $row->l3_verbal ?: '-', $textStyle],
-                ['AS', 'str', $row->pic ?: '-', $textStyle],
-                ['AT', 'str', $row->certificate ?: '-', $textStyle],
-                ['AU', 'str', $lhVal, $textStyle], // Total Engagement Time (LH)
-            ];
-
-            $buffer .= $this->buildXmlRow($r, $cells);
-
-            if ($rowCount % $batchSize === 0) {
-                fwrite($sfh, $buffer);
-                $buffer = '';
-            }
+        } finally {
+            $pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, $wasBuffered);
         }
 
         if ($buffer !== '') {
