@@ -507,6 +507,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
     Route::group(['middleware' => 'mpermission:record_management'], function () {
         Route::prefix('record')->name('manage.record.')->group(function () {
             Route::get('online', [RecordOnlineController::class, 'index'])->name('online');
+            Route::get('online/course/{id?}', [\App\Http\Controllers\ManageRecordController::class, 'onlineCourse'])->name('online.course');
             Route::get('online/ajax/summary', [RecordOnlineController::class, 'ajaxSummary'])->name('online.ajax.summary');
             Route::get('online/ajax/classification', [RecordOnlineController::class, 'ajaxClassification'])->name('online.ajax.classification');
             Route::get('online/datatable', [RecordOnlineController::class, 'datatable'])->name('online.datatable');
@@ -576,6 +577,11 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
             Route::get('export-all/download', [RecordExportController::class, 'download'])->name('export-all.download');
             Route::get('export-all/sub-classifications', [RecordExportController::class, 'subClassifications'])->name('export-all.sub-classifications');
             Route::get('export-all/scope-options', [RecordExportController::class, 'scopeOptions'])->name('export-all.scope-options');
+            Route::get('export/online', [\App\Http\Controllers\ManageRecordExportController::class, 'exportOnline'])->name('export.online');
+            Route::get('export/offline', [\App\Http\Controllers\ManageRecordExportController::class, 'exportOffline'])->name('export.offline');
+            Route::get('export/all', [\App\Http\Controllers\ManageRecordExportController::class, 'exportAll'])->name('export.all');
+            Route::get('{id}/edit', [\App\Http\Controllers\ManageRecordController::class, 'edit'])->name('edit');
+            Route::get('{id}/more-info', [\App\Http\Controllers\ManageRecordController::class, 'moreInformation'])->name('more-info');
         });
     });
 

@@ -20,14 +20,24 @@
 
         <!-- SECTION HEADER: All Record -->
         <div class="card border-0 shadow-sm p-3 p-md-4 mb-4 rounded-3 bg-white record-section-header">
-            <div class="d-flex align-items-center gap-3">
-                <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
-                     style="width: 54px; height: 54px; background-color: #ede9fe; color: #7c3aed; border-radius: 12px;">
-                    <i class="ti ti-stack-2 fs-1"></i>
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
+                         style="width: 54px; height: 54px; background-color: #ede9fe; color: #7c3aed; border-radius: 12px;">
+                        <i class="ti ti-stack-2 fs-1"></i>
+                    </div>
+                    <div>
+                        <h2 class="h3 fw-bold mb-1 text-dark">All Record</h2>
+                        <p class="text-muted small mb-0">Combined Learning Overview — Unified overview of KP OWL online learning and Non KP OWL offline training records.</p>
+                    </div>
                 </div>
-                <div>
-                    <h2 class="h3 fw-bold mb-1 text-dark">All Record</h2>
-                    <p class="text-muted small mb-0">Combined Learning Overview — Unified overview of KP OWL online learning and Non KP OWL offline training records.</p>
+
+                <!-- Action Buttons: Download All Record -->
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <a href="{{ route('manage.record.export.all') }}" class="btn btn-outline-secondary rounded-3 px-3 d-inline-flex align-items-center gap-1.5" id="btn-export-all-combined">
+                        <i class="ti ti-download fs-2"></i>
+                        <span>Export All Record (.xlsx)</span>
+                    </a>
                 </div>
             </div>
         </div>
@@ -51,6 +61,7 @@
         </div>
     </div>
 </div>
+@include('main.record.components.more-information-modal')
 @endsection
 
 @section('style')

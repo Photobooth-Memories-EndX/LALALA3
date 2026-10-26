@@ -99,14 +99,26 @@ class RecordOfflineQueryService
         // 1. Classification Scope (Priority to locked route parameter)
         $classificationTarget = $lockedClassification ?? ($filters['main_classification'] ?? ($filters['classification'] ?? null));
         if (filled($classificationTarget) && $classificationTarget !== 'all') {
-            $resolved = RecordOfflineController::resolveClassification($classificationTarget);
+            $categorySlug = trim((string) $classificationTarget);
+            $classificationSlug = str_replace('-', ' ', strtolower($categorySlug));
+            $resolved = RecordOfflineController::resolveClassification($categorySlug);
+
             if ($resolved['is_unclassified']) {
                 $query->where(function ($q) {
                     $q->whereNull('ot.main_classification')
                       ->orWhere('ot.main_classification', '');
                 });
             } else {
-                $query->where('ot.main_classification', $resolved['name']);
+                $resolvedName = $resolved['name'];
+                $query->where(function ($q) use ($categorySlug, $classificationSlug, $resolvedName) {
+                    $q->where('ot.main_classification', $resolvedName)
+                      ->orWhere('ot.main_classification', $categorySlug)
+                      ->orWhereRaw('LOWER(ot.main_classification) = ?', [strtolower($resolvedName)])
+                      ->orWhereRaw('LOWER(ot.main_classification) = ?', [$classificationSlug])
+                      ->orWhereRaw('LOWER(ot.main_classification) = ?', [strtolower($categorySlug)])
+                      ->orWhereRaw("LOWER(REPLACE(REPLACE(ot.main_classification, ' ', '-'), '&', 'and')) = ?", [strtolower(\Illuminate\Support\Str::slug($categorySlug))])
+                      ->orWhereRaw("LOWER(REPLACE(ot.main_classification, ' ', '-')) = ?", [strtolower(\Illuminate\Support\Str::slug($categorySlug))]);
+                });
             }
         }
 
@@ -684,7 +696,10 @@ class RecordOfflineQueryService
             'ot.duration_seconds',
             'ot.learning_hours as course_learning_hours',
             'ot.start_date',
+            'ot.end_date',
             'ot.finish_date',
+            'ot.start_time',
+            'ot.end_time',
             'u.name as user_name',
         ]);
 
@@ -889,14 +904,23 @@ class RecordOfflineQueryService
         // More Filter: Main Classification (Strictly from More Filters explicitly, NEVER from back-button navigation context)
         $classParam = trim((string) ($filters['filter_classification'] ?? ($filters['main_classification'] ?? '')));
         if ($classParam !== '' && $classParam !== 'all') {
-            $resolved = RecordOfflineController::resolveClassification($classParam);
+            $categorySlug = $classParam;
+            $classificationSlug = str_replace('-', ' ', strtolower($categorySlug));
+            $resolved = RecordOfflineController::resolveClassification($categorySlug);
             if ($resolved['is_unclassified']) {
                 $query->where(function ($q) {
                     $q->whereNull('ot.main_classification')
                       ->orWhere('ot.main_classification', '');
                 });
             } else {
-                $query->where('ot.main_classification', $resolved['name']);
+                $resolvedName = $resolved['name'];
+                $query->where(function ($q) use ($categorySlug, $classificationSlug, $resolvedName) {
+                    $q->where('ot.main_classification', $resolvedName)
+                      ->orWhere('ot.main_classification', $categorySlug)
+                      ->orWhereRaw('LOWER(ot.main_classification) = ?', [strtolower($resolvedName)])
+                      ->orWhereRaw('LOWER(ot.main_classification) = ?', [$classificationSlug])
+                      ->orWhereRaw('LOWER(ot.main_classification) = ?', [strtolower($categorySlug)]);
+                });
             }
         }
 
@@ -1190,7 +1214,10 @@ class RecordOfflineQueryService
             'ot.duration_seconds',
             'ot.learning_hours as course_learning_hours',
             'ot.start_date',
+            'ot.end_date',
             'ot.finish_date',
+            'ot.start_time',
+            'ot.end_time',
             'u.name as user_name',
         ]);
 

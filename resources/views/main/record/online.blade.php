@@ -34,6 +34,10 @@
 
                 <!-- Action Buttons: Download Online Record -->
                 <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <a href="{{ route('manage.record.online.course') }}" class="btn btn-primary rounded-3 px-3 d-inline-flex align-items-center gap-1.5" id="btn-view-online-records">
+                        <i class="ti ti-table fs-2"></i>
+                        <span>View Records</span>
+                    </a>
                     <div class="dropdown">
                         <button type="button" class="btn btn-outline-secondary dropdown-toggle rounded-3 px-3 d-inline-flex align-items-center gap-1.5"
                                 data-bs-toggle="dropdown" data-toggle="dropdown" aria-expanded="false" id="btn-download-dropdown">
@@ -82,6 +86,9 @@
         </div>
     </div>
 </div>
+
+@include('main.record.components.online-detail-modal')
+@include('main.record.components.more-information-modal')
 @endsection
 
 @section('style')

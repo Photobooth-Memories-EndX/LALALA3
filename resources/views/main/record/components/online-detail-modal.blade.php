@@ -85,6 +85,14 @@
                                         <span class="text-muted d-block">Company:</span>
                                         <span class="fw-semibold text-dark" id="online-modal-employee-company">-</span>
                                     </div>
+                                    <div class="col-6">
+                                        <span class="text-muted d-block">Grade:</span>
+                                        <span class="fw-semibold text-dark" id="online-modal-employee-grade">-</span>
+                                    </div>
+                                    <div class="col-6">
+                                        <span class="text-muted d-block">Job Position:</span>
+                                        <span class="fw-semibold text-dark" id="online-modal-employee-job-position">-</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -107,6 +115,14 @@
                                     <div class="col-6">
                                         <span class="text-muted d-block">Classification:</span>
                                         <span class="fw-semibold text-dark" id="online-modal-classification">-</span>
+                                    </div>
+                                    <div class="col-6">
+                                        <span class="text-muted d-block">Level:</span>
+                                        <span class="fw-semibold text-dark" id="online-modal-level">-</span>
+                                    </div>
+                                    <div class="col-6">
+                                        <span class="text-muted d-block">Batch:</span>
+                                        <span class="fw-semibold text-dark" id="online-modal-batch">-</span>
                                     </div>
                                     <div class="col-6">
                                         <span class="text-muted d-block">Enrollment Type:</span>
@@ -213,6 +229,38 @@
                                             <div class="col-4">
                                                 <span class="text-muted d-block">Last Activity:</span>
                                                 <span class="fw-semibold text-dark" id="online-modal-last-activity">-</span>
+                                            </div>
+                                            <div class="col-6 pt-2">
+                                                <span class="text-muted d-block">Attendance Reason:</span>
+                                                <span class="fw-semibold text-dark" id="online-modal-attendance-reason">-</span>
+                                            </div>
+                                            <div class="col-6 pt-2">
+                                                <span class="text-muted d-block">Certificate Status:</span>
+                                                <span class="fw-semibold text-dark" id="online-modal-certificate-status">-</span>
+                                            </div>
+                                            <div class="col-6 pt-1">
+                                                <span class="text-muted d-block">L2 Status:</span>
+                                                <span class="fw-semibold text-dark" id="online-modal-l2-status">-</span>
+                                            </div>
+                                            <div class="col-6 pt-1">
+                                                <span class="text-muted d-block">L3 Status:</span>
+                                                <span class="fw-semibold text-dark" id="online-modal-l3-status">-</span>
+                                            </div>
+                                            <div class="col-3 pt-1">
+                                                <span class="text-muted d-block">Bond Status:</span>
+                                                <span class="fw-semibold text-dark" id="online-modal-bond-status">No</span>
+                                            </div>
+                                            <div class="col-3 pt-1">
+                                                <span class="text-muted d-block">Bond Duration:</span>
+                                                <span class="fw-semibold text-dark" id="online-modal-bond-duration">-</span>
+                                            </div>
+                                            <div class="col-3 pt-1">
+                                                <span class="text-muted d-block">Bond End Date:</span>
+                                                <span class="fw-semibold text-dark" id="online-modal-bond-end-date">-</span>
+                                            </div>
+                                            <div class="col-3 pt-1">
+                                                <span class="text-muted d-block">Bond Amount (IDR):</span>
+                                                <span class="fw-semibold text-dark font-monospace" id="online-modal-bond-amount">-</span>
                                             </div>
                                         </div>
                                     </div>

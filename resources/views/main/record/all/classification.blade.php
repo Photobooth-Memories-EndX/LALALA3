@@ -197,53 +197,36 @@
                         <table class="table table-hover align-middle mb-0" id="all-classification-learning-table">
                             <thead class="bg-light text-muted small text-uppercase">
                                 <tr>
-                                    <th style="width: 40px; min-width: 40px; max-width: 40px;">No</th>
-                                    <th style="width: 85px; min-width: 85px; max-width: 85px;">Source</th>
-                                    <th style="width: 75px; min-width: 75px; max-width: 75px;">ID</th>
-                                    <th style="width: 260px; min-width: 260px; max-width: 260px;">Employee</th>
-                                    <th style="width: 95px; min-width: 95px;">Status</th>
-                                    <th style="width: 70px; min-width: 70px;">Grade</th>
-                                    <th style="min-width: 160px;">Job Position</th>
-                                    <th style="min-width: 140px;">Team</th>
-                                    <th style="min-width: 160px;">Department</th>
-                                    <th style="min-width: 160px;">Company</th>
-                                    <th style="min-width: 240px;">Learning Title</th>
-                                    <th style="min-width: 160px;">Sub Title</th>
-                                    <th style="min-width: 110px;">Type</th>
-                                    <th style="min-width: 130px;">Category</th>
-                                    <th style="min-width: 90px;">Level</th>
-                                    <th style="min-width: 90px;">Batch</th>
-                                    <th style="min-width: 160px;">Main Classification</th>
-                                    <th style="min-width: 150px;">Sub Classification</th>
-                                    <th style="min-width: 100px;">Corporate KPI</th>
-                                    <th style="min-width: 150px;">Sub Corporate KPI</th>
-                                    <th style="min-width: 130px;">Delivery Method</th>
-                                    <th style="min-width: 140px;">Sub Delivery Method</th>
-                                    <th style="min-width: 110px;">Provider</th>
-                                    <th style="min-width: 120px;">Sub Provider</th>
-                                    <th style="min-width: 160px;">Provider Name</th>
-                                    <th style="min-width: 130px;">Venue</th>
-                                    <th style="min-width: 140px;">Instructor</th>
-                                    <th style="min-width: 95px;">Duration</th>
-                                    <th class="text-center" style="min-width: 110px;">Training Hours</th>
-                                    <th style="min-width: 105px;">Start Date</th>
-                                    <th style="min-width: 105px;">Finish Date</th>
-                                    <th class="text-center" style="min-width: 120px;">Participant Hours</th>
-                                    <th style="min-width: 130px;">Progress</th>
-                                    <th class="text-center" style="min-width: 115px;">Assessment Score</th>
-                                    <th style="min-width: 105px;">Certificate</th>
-                                    <th style="min-width: 105px;">Attendance</th>
-                                    <th style="min-width: 160px;">Attendance Reason</th>
-                                    <th style="min-width: 100px;">Bond Status</th>
-                                    <th style="min-width: 110px;">Bond End Date</th>
-                                    <th style="min-width: 125px;">Bond Amount</th>
-                                    <th style="min-width: 110px;">L1 Program</th>
-                                    <th class="text-center" style="min-width: 105px;">L2 Numerical</th>
-                                    <th style="min-width: 100px;">L2 Verbal</th>
-                                    <th class="text-center" style="min-width: 105px;">L3 Numerical</th>
-                                    <th style="min-width: 100px;">L3 Verbal</th>
-                                    <th style="min-width: 110px;">PIC</th>
-                                    <th class="text-end" style="width: 90px; min-width: 90px;">Action</th>
+                                    <th style="width: 45px; text-align: center;">NO</th>
+                                    <th style="min-width: 95px;">Source</th>
+                                    <th style="min-width: 110px;">Employee ID</th>
+                                    <th style="min-width: 160px;">Employee Name</th>
+                                    <th style="min-width: 130px;">Team</th>
+                                    <th style="min-width: 140px;">Department</th>
+                                    <th style="min-width: 130px;">Company</th>
+                                    <th style="min-width: 220px;">Course Title</th>
+                                    <th style="min-width: 100px;">Type</th>
+                                    <th style="min-width: 110px;">Category</th>
+                                    <th style="min-width: 140px;">Main Classification</th>
+                                    <th style="min-width: 140px;">Sub Classification</th>
+                                    <th style="min-width: 120px;">Delivery Method</th>
+                                    <th style="min-width: 130px;">Sub Delivery Method</th>
+                                    <th style="min-width: 130px;">Provider Name</th>
+                                    <th style="min-width: 120px;">Venue</th>
+                                    <th style="min-width: 110px;">Course Duration</th>
+                                    <th style="min-width: 110px;">Learning Hours</th>
+                                    <th style="min-width: 110px;">% Progress</th>
+                                    <th style="min-width: 110px;">Progress Status</th>
+                                    <th style="min-width: 140px;">Date Time</th>
+                                    <th style="min-width: 110px;">Record Month</th>
+                                    <th style="min-width: 110px;">Requirement</th>
+                                    <th style="min-width: 100px;">Attendance</th>
+                                    <th style="min-width: 120px;">Score (L1) - Course</th>
+                                    <th style="min-width: 90px;">Score (L2)</th>
+                                    <th style="min-width: 90px;">Score (L3)</th>
+                                    <th style="min-width: 130px;">Person In Charge (PIC)</th>
+                                    <th style="min-width: 130px;">Total Engagement Time (LH)</th>
+                                    <th class="text-end" style="width: 80px;">ACTION</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -483,6 +466,7 @@
     </div>
 
     <!-- INCLUDE OFFLINE DETAIL MODAL -->
+    @include('main.record.components.more-information-modal')
     @include('main.record.components.offline-detail-modal')
 
     <!-- INCLUDE ONLINE DETAIL MODAL -->
@@ -1332,9 +1316,7 @@
                     [10, 25, 50, 100],
                     [10, 25, 50, 100]
                 ],
-                order: [
-                    [30, 'desc']
-                ], // Finish date column (Index 30)
+                order: [],
                 dom: 't',
                 ajax: {
                     url: datatableUrl,
@@ -1357,7 +1339,8 @@
                         d.entries = $('#all-table-entries-select').val() || defaultEntries;
                     }
                 },
-                columns: [{
+                columns: [
+                    {
                         data: 'DT_RowIndex',
                         name: 'DT_RowIndex',
                         orderable: false,
@@ -1373,344 +1356,160 @@
                         data: 'employee_id',
                         name: 'employee_id',
                         orderable: true,
-                        defaultContent: '-',
-                        className: 'text-muted fw-semibold'
+                        defaultContent: '-'
                     },
                     {
                         data: 'employee_name',
                         name: 'employee_name',
                         orderable: true,
-                        defaultContent: '-',
-                        render: function(data, type) {
-                            if (type !== 'display') return data;
-                            if (!data || data === '-') return '<span class="text-muted">-</span>';
-                            return data;
-                        }
-                    },
-                    {
-                        data: 'status_badge',
-                        name: 'status',
-                        orderable: true
-                    },
-                    {
-                        data: 'grade',
-                        name: 'grade',
-                        orderable: true,
-                        defaultContent: '-',
-                        render: renderSafeText
-                    },
-                    {
-                        data: 'job_position',
-                        name: 'job_position',
-                        orderable: true,
-                        defaultContent: '-',
-                        render: function(data, type) {
-                            if (type !== 'display') return data;
-                            if (!data || data === '-') return '<span class="text-muted">-</span>';
-                            const text = $('<div>').text(data).html();
-                            return '<div class="text-truncate" style="max-width: 180px;" title="' +
-                                text + '">' + text + '</div>';
-                        }
+                        defaultContent: '-'
                     },
                     {
                         data: 'team',
                         name: 'team',
                         orderable: true,
-                        defaultContent: '-',
-                        render: renderSafeText
+                        defaultContent: '-'
                     },
                     {
                         data: 'department',
                         name: 'department',
                         orderable: true,
-                        defaultContent: '-',
-                        render: function(data, type) {
-                            if (type !== 'display') return data;
-                            if (!data || data === '-') return '<span class="text-muted">-</span>';
-                            const text = $('<div>').text(data).html();
-                            return '<div class="text-truncate" style="max-width: 180px;" title="' +
-                                text + '">' + text + '</div>';
-                        }
+                        defaultContent: '-'
                     },
                     {
                         data: 'company',
                         name: 'company',
                         orderable: true,
-                        defaultContent: '-',
-                        render: function(data, type) {
-                            if (type !== 'display') return data;
-                            if (!data || data === '-') return '<span class="text-muted">-</span>';
-                            const text = $('<div>').text(data).html();
-                            return '<div class="text-truncate" style="max-width: 180px;" title="' +
-                                text + '">' + text + '</div>';
-                        }
+                        defaultContent: '-'
                     },
                     {
-                        data: 'learning_title',
+                        data: 'course_title',
                         name: 'learning_title',
                         orderable: true,
-                        defaultContent: '-',
-                        render: function(data, type) {
-                            if (type !== 'display') return data;
-                            if (!data || data === '-') return '<span class="text-muted">-</span>';
-                            return data;
-                        }
-                    },
-                    {
-                        data: 'sub_course_name',
-                        name: 'sub_course_name',
-                        orderable: true,
-                        defaultContent: '-',
-                        render: function(data, type) {
-                            if (type !== 'display') return data;
-                            if (!data || data === '-') return '<span class="text-muted">-</span>';
-                            const text = $('<div>').text(data).html();
-                            return '<div class="text-truncate" style="max-width: 180px;" title="' +
-                                text + '">' + text + '</div>';
-                        }
+                        defaultContent: '-'
                     },
                     {
                         data: 'type',
                         name: 'type',
                         orderable: true,
-                        defaultContent: '-',
-                        render: renderSafeText
+                        defaultContent: '-'
                     },
                     {
                         data: 'category',
                         name: 'category',
                         orderable: true,
-                        defaultContent: '-',
-                        render: renderSafeText
+                        defaultContent: '-'
                     },
                     {
-                        data: 'level',
-                        name: 'level',
-                        orderable: true,
-                        defaultContent: '-',
-                        render: renderSafeText
-                    },
-                    {
-                        data: 'batch',
-                        name: 'batch',
-                        orderable: true,
-                        defaultContent: '-',
-                        render: renderSafeText
-                    },
-                    {
-                        data: 'classification',
+                        data: 'main_classification',
                         name: 'classification',
                         orderable: true,
-                        defaultContent: '-',
-                        render: renderSafeText
+                        defaultContent: '-'
                     },
                     {
                         data: 'sub_classification',
                         name: 'sub_classification',
                         orderable: true,
-                        defaultContent: '-',
-                        render: renderSafeText
-                    },
-                    {
-                        data: 'kpi_badge',
-                        name: 'counted_corporate_kpi',
-                        orderable: true,
                         defaultContent: '-'
-                    },
-                    {
-                        data: 'sub_corporate_kpi',
-                        name: 'sub_corporate_kpi',
-                        orderable: true,
-                        defaultContent: '-',
-                        render: renderSafeText
                     },
                     {
                         data: 'delivery_method',
                         name: 'delivery_method',
                         orderable: true,
-                        defaultContent: '-',
-                        render: renderSafeText
+                        defaultContent: '-'
                     },
                     {
                         data: 'sub_delivery_method',
                         name: 'sub_delivery_method',
                         orderable: true,
-                        defaultContent: '-',
-                        render: renderSafeText
-                    },
-                    {
-                        data: 'provider',
-                        name: 'provider',
-                        orderable: true,
-                        defaultContent: '-',
-                        render: renderSafeText
-                    },
-                    {
-                        data: 'sub_provider',
-                        name: 'sub_provider',
-                        orderable: true,
-                        defaultContent: '-',
-                        render: renderSafeText
+                        defaultContent: '-'
                     },
                     {
                         data: 'provider_name',
                         name: 'provider_name',
                         orderable: true,
-                        defaultContent: '-',
-                        render: function(data, type) {
-                            if (type !== 'display') return data;
-                            if (!data || data === '-') return '<span class="text-muted">-</span>';
-                            const text = $('<div>').text(data).html();
-                            return '<div class="text-truncate" style="max-width: 180px;" title="' +
-                                text + '">' + text + '</div>';
-                        }
+                        defaultContent: '-'
                     },
                     {
                         data: 'venue',
                         name: 'venue',
                         orderable: true,
-                        defaultContent: '-',
-                        render: renderSafeText
+                        defaultContent: '-'
                     },
                     {
-                        data: 'instructor',
-                        name: 'instructor',
-                        orderable: true,
-                        defaultContent: '-',
-                        render: renderSafeText
-                    },
-                    {
-                        data: 'duration_formatted',
+                        data: 'course_duration',
                         name: 'duration_seconds',
                         orderable: true,
                         defaultContent: '-'
                     },
                     {
-                        data: 'training_hours_formatted',
-                        name: 'training_hours',
-                        orderable: true,
-                        defaultContent: '-',
-                        className: 'text-center'
-                    },
-                    {
-                        data: 'start_date_formatted',
-                        name: 'start_date',
-                        orderable: true,
-                        defaultContent: '-',
-                        className: 'text-nowrap'
-                    },
-                    {
-                        data: 'finish_date_formatted',
-                        name: 'finish_date',
-                        orderable: true,
-                        defaultContent: '-',
-                        className: 'text-nowrap'
-                    },
-                    {
-                        data: 'learning_hours_formatted',
+                        data: 'learning_hours',
                         name: 'learning_hours',
-                        orderable: true,
-                        defaultContent: '-',
-                        className: 'text-center fw-bold text-dark'
-                    },
-                    {
-                        data: 'progress_bar',
-                        name: 'progress',
-                        orderable: true
-                    },
-                    {
-                        data: 'assessment_score_formatted',
-                        name: 'assessment_score',
-                        orderable: true,
-                        defaultContent: '-',
-                        className: 'text-center'
-                    },
-                    {
-                        data: 'certificate_badge',
-                        name: 'certificate',
                         orderable: true,
                         defaultContent: '-'
                     },
                     {
-                        data: 'attendance_badge',
+                        data: 'progress_percent',
+                        name: 'progress',
+                        orderable: true
+                    },
+                    {
+                        data: 'progress_status',
+                        name: 'status',
+                        orderable: true
+                    },
+                    {
+                        data: 'date_time_merged',
+                        name: 'start_date',
+                        orderable: true
+                    },
+                    {
+                        data: 'record_month',
+                        name: 'record_month',
+                        orderable: false,
+                        defaultContent: '-'
+                    },
+                    {
+                        data: 'requirement',
+                        name: 'requirement',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    {
+                        data: 'attendance',
                         name: 'attendance',
                         orderable: true,
                         defaultContent: '-'
                     },
                     {
-                        data: 'attendance_reason',
-                        name: 'attendance_reason',
-                        orderable: true,
-                        defaultContent: '-',
-                        render: function(data, type) {
-                            if (type !== 'display') return data;
-                            if (!data || data === '-') return '<span class="text-muted">-</span>';
-                            const text = $('<div>').text(data).html();
-                            return '<div class="text-truncate" style="max-width: 180px;" title="' +
-                                text + '">' + text + '</div>';
-                        }
-                    },
-                    {
-                        data: 'bond_status',
-                        name: 'bond_status',
-                        orderable: true,
-                        defaultContent: '-',
-                        render: renderSafeText
-                    },
-                    {
-                        data: 'bond_end_date_formatted',
-                        name: 'bond_end_date',
-                        orderable: true,
-                        defaultContent: '-',
-                        className: 'text-nowrap'
-                    },
-                    {
-                        data: 'bond_amount_formatted',
-                        name: 'bond_amount',
+                        data: 'score_l1',
+                        name: 'score_l1',
                         orderable: true,
                         defaultContent: '-'
                     },
                     {
-                        data: 'l1_program',
-                        name: 'l1_program',
+                        data: 'score_l2',
+                        name: 'score_l2',
                         orderable: true,
-                        defaultContent: '-',
-                        render: renderSafeText
+                        defaultContent: '-'
                     },
                     {
-                        data: 'l2_numerical_formatted',
-                        name: 'l2_numerical',
+                        data: 'score_l3',
+                        name: 'score_l3',
                         orderable: true,
-                        defaultContent: '-',
-                        className: 'text-center'
-                    },
-                    {
-                        data: 'l2_verbal',
-                        name: 'l2_verbal',
-                        orderable: true,
-                        defaultContent: '-',
-                        render: renderSafeText
-                    },
-                    {
-                        data: 'l3_numerical_formatted',
-                        name: 'l3_numerical',
-                        orderable: true,
-                        defaultContent: '-',
-                        className: 'text-center'
-                    },
-                    {
-                        data: 'l3_verbal',
-                        name: 'l3_verbal',
-                        orderable: true,
-                        defaultContent: '-',
-                        render: renderSafeText
+                        defaultContent: '-'
                     },
                     {
                         data: 'pic',
                         name: 'pic',
                         orderable: true,
-                        defaultContent: '-',
-                        render: renderSafeText
+                        defaultContent: '-'
+                    },
+                    {
+                        data: 'total_engagement_time',
+                        name: 'total_engagement_time',
+                        orderable: true,
+                        defaultContent: '-'
                     },
                     {
                         data: 'action',

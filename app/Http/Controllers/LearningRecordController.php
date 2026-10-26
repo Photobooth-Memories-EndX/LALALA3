@@ -1204,7 +1204,7 @@ class LearningRecordController extends Controller
         }
 
         // Online Content or Playlist record detail
-        $contentUser = ContentUser::with(['user', 'content.classification'])
+        $contentUser = ContentUser::with(['user:id,id_emp,name,team,department,company_name', 'content.classification'])
             ->where('user_id', $userId)
             ->where(function ($q) use ($id) {
                 $q->where('id', $id)->orWhere('content_id', $id);

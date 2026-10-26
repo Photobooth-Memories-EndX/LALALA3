@@ -115,6 +115,7 @@
 
 @include('main.record.components.offline-detail-modal')
 @include('main.record.components.offline-import-modal')
+@include('main.record.components.more-information-modal')
 
 @endsection
 

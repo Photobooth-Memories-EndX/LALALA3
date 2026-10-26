@@ -629,14 +629,57 @@ class LearningDatatableService
             ->setRowId(fn ($row) => $row->source_type . ':' . $row->source_id)
             ->addColumn('status_badge', fn ($row) => $this->statusBadge($row))
             ->addColumn('id_emp', fn ($row) => $this->idEmpColumn($row))
+            ->addColumn('employee_id', fn ($row) => $this->idEmpColumn($row))
             ->addColumn('employee', fn ($row) => $this->employeeColumn($row))
+            ->addColumn('employee_name', fn ($row) => $this->employeeColumn($row))
+            ->addColumn('team', fn ($row) => e($row->user_team ?: '-'))
+            ->addColumn('department', fn ($row) => e($row->user_department ?: '-'))
+            ->addColumn('company', fn ($row) => e($row->user_company ?: '-'))
             ->addColumn('learning_title', fn ($row) => $this->learningTitleColumn($row))
+            ->addColumn('course_title', fn ($row) => $this->learningTitleColumn($row))
             ->addColumn('type_badge', fn ($row) => $this->typeBadge($row))
+            ->addColumn('type', fn ($row) => $this->typeBadge($row))
             ->addColumn('classification_name', fn ($row) => $this->classificationColumn($row))
+            ->addColumn('main_classification', fn ($row) => $this->classificationColumn($row))
+            ->addColumn('sub_classification', fn () => '-')
+            ->addColumn('delivery_method', fn () => 'Online')
+            ->addColumn('sub_delivery_method', fn ($row) => $row->category_source === 'Playlist' ? 'Playlist / Path' : 'Self-Paced / LMS')
+            ->addColumn('provider_name', fn () => 'KP OWL')
+            ->addColumn('venue', fn () => 'Online LMS')
             ->addColumn('category_badge', fn ($row) => $this->categoryBadge($row))
+            ->addColumn('category', fn ($row) => $this->categoryBadge($row))
             ->addColumn('duration', fn ($row) => e(DurationFormatter::format($row->content_duration ?? null)))
+            ->addColumn('course_duration', fn ($row) => e(DurationFormatter::format($row->content_duration ?? null)))
+            ->addColumn('learning_hours', fn ($row) => number_format((float) ($row->learning_hours ?? 0), 1) . 'h')
             ->addColumn('learning_date', fn ($row) => $row->created_at ? Carbon::parse($row->created_at)->format('d M Y') : '-')
+            ->addColumn('date_time_merged', function ($row) {
+                $startStr = $row->created_at ? Carbon::parse($row->created_at)->format('d M Y, H:i') : '-';
+                $endStr = $row->completed_at ? Carbon::parse($row->completed_at)->format('d M Y, H:i') : ($row->finish == 1 && $row->updated_at ? Carbon::parse($row->updated_at)->format('d M Y, H:i') : '-');
+                return '<div class="text-nowrap small">
+                    <div><span class="text-muted">Start:</span> ' . e($startStr) . '</div>
+                    <div><span class="text-muted">End:</span> ' . e($endStr) . '</div>
+                </div>';
+            })
+            ->addColumn('record_month', fn ($row) => $row->created_at ? Carbon::parse($row->created_at)->format('F') : '-')
+            ->addColumn('requirement', function ($row) {
+                $status = strtolower((string) ($row->status ?? 'non mandatory'));
+                return $status === 'mandatory' ? '<span class="badge bg-red-lt text-red">Mandatory</span>' : '<span class="badge bg-blue-lt text-blue">Non-Mandatory</span>';
+            })
+            ->addColumn('attendance', function ($row) {
+                $progress = (float) ($row->progress ?? 0);
+                if ($progress > 0 || $row->finish == 1) {
+                    return '<span class="badge bg-success-lt text-success fw-bold px-2 py-1">Present</span>';
+                }
+                return '<span class="badge bg-secondary-lt fw-bold px-2 py-1">-</span>';
+            })
+            ->addColumn('score_l1', fn () => '<span class="text-muted small">-</span>')
+            ->addColumn('score_l2', fn () => '<span class="text-muted small">-</span>')
+            ->addColumn('score_l3', fn () => '<span class="text-muted small">-</span>')
+            ->addColumn('pic', fn () => '<span class="text-muted small">-</span>')
+            ->addColumn('total_engagement_time', fn ($row) => '<span class="fw-semibold">' . number_format((float) ($row->learning_hours ?? 0), 1) . 'h</span>')
             ->addColumn('progress_bar', fn ($row) => $this->progressBar($row))
+            ->addColumn('progress_percent', fn ($row) => $this->progressBar($row))
+            ->addColumn('progress_status', fn ($row) => $this->statusBadge($row))
             ->addColumn('action', fn ($row) => $this->actionColumn($row))
             ->orderColumn('status_badge', 'unified.status $1')
             ->orderColumn('id_emp', 'u.id_emp $1')
@@ -651,12 +694,28 @@ class LearningDatatableService
             ->rawColumns([
                 'status_badge',
                 'id_emp',
+                'employee_id',
                 'employee',
+                'employee_name',
                 'learning_title',
+                'course_title',
                 'type_badge',
+                'type',
                 'classification_name',
+                'main_classification',
                 'category_badge',
+                'category',
                 'progress_bar',
+                'progress_percent',
+                'progress_status',
+                'date_time_merged',
+                'requirement',
+                'attendance',
+                'score_l1',
+                'score_l2',
+                'score_l3',
+                'pic',
+                'total_engagement_time',
                 'action',
             ])
             ->make(true);
@@ -775,34 +834,35 @@ class LearningDatatableService
 
     private function actionColumn($row): string
     {
-        $sourceType = e($row->source_type ?? 'content');
-        $sourceId = e($row->source_id ?? '');
+        $id = $row->source_id ?? '';
+        $editUrl = route('manage.record.edit', $id);
 
-        $viewBtn = '<button type="button" class="btn btn-sm btn-icon text-primary owl-action-btn owl-action-btn-view btn-view-learning-detail" '
-            . 'data-source-type="' . $sourceType . '" '
-            . 'data-source-id="' . $sourceId . '" '
-            . 'data-bs-toggle="tooltip" data-bs-placement="top" title="View Details" aria-label="View Details">'
-            . '<i class="ti ti-eye"></i>'
-            . '</button>';
-
-        $editBtn = '<button type="button" class="btn btn-sm btn-icon text-warning owl-action-btn owl-action-btn-edit btn-edit-learning-record" '
-            . 'data-source-type="' . $sourceType . '" '
-            . 'data-source-id="' . $sourceId . '" '
-            . 'data-bs-toggle="tooltip" data-bs-placement="top" title="Edit Record" aria-label="Edit Record">'
-            . '<i class="ti ti-pencil"></i>'
-            . '</button>';
-
-        $deleteBtn = '<button type="button" class="btn btn-sm btn-icon text-danger owl-action-btn owl-action-btn-reset btn-delete-learning-record btn-reset-learning-record" '
-            . 'data-source-type="' . $sourceType . '" '
-            . 'data-source-id="' . $sourceId . '" '
-            . 'data-bs-toggle="tooltip" data-bs-placement="top" title="Reset Learning Progress" aria-label="Reset Learning Progress">'
-            . '<i class="ti ti-trash"></i>'
-            . '</button>';
-
-        return '<div class="d-flex align-items-center justify-content-center gap-1 flex-nowrap">'
-            . $viewBtn
-            . $editBtn
-            . $deleteBtn
-            . '</div>';
+        return '<div class="dropdown">
+            <button class="btn btn-sm btn-icon btn-ghost-secondary" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="ti ti-dots-vertical"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-2" href="#" data-bs-toggle="modal" data-bs-target="#moreInformationModal" data-record-id="' . e($id) . '" data-record-source="online">
+                        <i class="ti ti-eye text-primary"></i> More Information
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-2" href="' . e($editUrl) . '">
+                        <i class="ti ti-edit text-warning"></i> Edit Record
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-2 text-danger" href="#" data-bs-toggle="modal" data-bs-target="#deleteRecordModal" data-record-id="' . e($id) . '" data-record-source="online">
+                        <i class="ti ti-trash"></i> Delete Record
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-2 disabled text-muted" href="#" onclick="return false;" style="cursor: not-allowed;">
+                        <i class="ti ti-certificate"></i> Generate Certificate
+                    </a>
+                </li>
+            </ul>
+        </div>';
     }
 }

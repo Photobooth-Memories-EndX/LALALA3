@@ -53,6 +53,66 @@ class RecordOfflineController extends Controller
         'General',
     ];
 
+    public static function renderActionDropdown($id, string $source = 'offline'): string
+    {
+        $editUrl = route('manage.record.edit', $id);
+
+        return '<div class="dropdown">
+            <button class="btn btn-sm btn-icon btn-ghost-secondary" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="ti ti-dots-vertical"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-2" href="#" data-bs-toggle="modal" data-bs-target="#moreInformationModal" data-record-id="' . $id . '" data-record-source="' . $source . '">
+                        <i class="ti ti-eye text-primary"></i> More Information
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-2" href="' . $editUrl . '">
+                        <i class="ti ti-edit text-warning"></i> Edit Record
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-2 text-danger" href="#" data-bs-toggle="modal" data-bs-target="#deleteRecordModal" data-record-id="' . $id . '" data-record-source="' . $source . '">
+                        <i class="ti ti-trash"></i> Delete Record
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-2 disabled text-muted" href="#" onclick="return false;" style="cursor: not-allowed;">
+                        <i class="ti ti-certificate"></i> Generate Certificate
+                    </a>
+                </li>
+            </ul>
+        </div>';
+    }
+
+    public static function renderMergedDateTime($startDate, $endDate, $startTime = null, $endTime = null): string
+    {
+        $startStr = '-';
+        if (!empty($startDate)) {
+            $startStr = date('d M Y', strtotime($startDate));
+            if (!empty($startTime)) {
+                $startStr .= ', ' . date('H:i', strtotime($startTime));
+            }
+        }
+        $endStr = '-';
+        if (!empty($endDate)) {
+            $endStr = date('d M Y', strtotime($endDate));
+            if (!empty($endTime)) {
+                $endStr .= ', ' . date('H:i', strtotime($endTime));
+            }
+        }
+
+        if ($startStr === '-' && $endStr === '-') {
+            return '<span class="text-muted">-</span>';
+        }
+
+        return '<div class="text-nowrap small">
+            <div><span class="text-muted">Start:</span> ' . htmlspecialchars($startStr) . '</div>
+            <div><span class="text-muted">End:</span> ' . htmlspecialchars($endStr) . '</div>
+        </div>';
+    }
+
     public function index(Request $request)
     {
         return view('main.record.offline', [
@@ -241,9 +301,7 @@ class RecordOfflineController extends Controller
      */
     public function export(Request $request)
     {
-        $export = new OfflineTrainingExport(null, $request);
-
-        return $export->download($export->getFileName());
+        return app(\App\Services\Record\ManageOfflineRecordExportService::class)->download($request->all());
     }
 
     /**
@@ -654,60 +712,108 @@ class RecordOfflineController extends Controller
             ->addColumn('pic', function ($row) {
                 return htmlspecialchars($row->pic ?: '-');
             })
-            ->addColumn('action', function ($row) use ($participant, $classificationParam) {
-                $name = $participant['name'] ?: ($row->participant_name ?: 'Participant');
-                $course = $row->course_name ?: 'Training';
-                $nip = $participant['employee_id'] ?? ($row->employee_id ?: '');
-                $rawIdentifier = $participant['raw_identifier'] ?? ($participant['user_id'] ?? $participant['employee_id']);
-                $editUrl = route('manage.record.offline.edit', [
-                    'id'             => $row->id,
-                    'return'         => 'participant',
-                    'identifier'     => $rawIdentifier,
-                    'classification' => $classificationParam,
-                ]);
-
-                return '<div class="d-inline-flex align-items-center justify-content-center gap-1">
-                    <button type="button" class="btn btn-sm btn-icon btn-outline-primary btn-view-offline-detail rounded-2" 
-                            data-id="' . $row->id . '" 
-                            title="View" 
-                            aria-label="View" 
-                            data-bs-toggle="tooltip">
-                        <i class="ti ti-eye"></i>
-                    </button>
-                    <a href="' . $editUrl . '" class="btn btn-sm btn-icon btn-outline-warning rounded-2 btn-edit-offline-record" 
-                        title="Edit" 
-                        aria-label="Edit" 
-                        data-bs-toggle="tooltip">
-                        <i class="ti ti-edit"></i>
-                    </a>
-                    <button type="button" class="btn btn-sm btn-icon btn-outline-danger btn-delete-offline-record rounded-2" 
-                            data-id="' . $row->id . '" 
-                            data-employee="' . htmlspecialchars($name, ENT_QUOTES) . '" 
-                            data-course="' . htmlspecialchars($course, ENT_QUOTES) . '" 
-                            data-nip="' . htmlspecialchars($nip, ENT_QUOTES) . '" 
-                            title="Delete" 
-                            aria-label="Delete" 
-                            data-bs-toggle="tooltip">
-                        <i class="ti ti-trash"></i>
-                    </button>
+            ->addColumn('employee_name', function ($row) {
+                return '<div class="fw-semibold text-dark text-nowrap">' . htmlspecialchars($row->participant_name ?: ($row->user_name ?: '-')) . '</div>';
+            })
+            ->addColumn('course_title', function ($row) {
+                return '<div class="fw-semibold text-dark text-nowrap">' . htmlspecialchars($row->course_name ?: '-') . '</div>';
+            })
+            ->addColumn('course_duration', function ($row) {
+                if (!empty($row->duration_seconds)) {
+                    $secs = (int) $row->duration_seconds;
+                    $hours = floor($secs / 3600);
+                    $mins = floor(($secs % 3600) / 60);
+                    $seconds = $secs % 60;
+                    return sprintf('%02d:%02d:%02d', $hours, $mins, $seconds);
+                }
+                return '-';
+            })
+            ->addColumn('progress_percent', function ($row) {
+                $progress = (float) ($row->progress ?? 0);
+                $color = $progress >= 100 ? 'bg-success' : ($progress > 0 ? 'bg-warning' : 'bg-secondary');
+                return '<div class="d-flex align-items-center gap-2" style="min-width: 85px;">
+                    <div class="progress progress-xs flex-grow-1" style="width: 50px; height: 6px;">
+                        <div class="progress-bar ' . $color . '" style="width: ' . min(100, $progress) . '%"></div>
+                    </div>
+                    <span class="small fw-semibold text-muted">' . round($progress) . '%</span>
                 </div>';
+            })
+            ->addColumn('progress_status', function ($row) {
+                $progress = (float) ($row->progress ?? 0);
+                if ($progress >= 100) {
+                    return '<span class="badge bg-success-lt text-success fw-bold px-2 py-1">Finished</span>';
+                } elseif ($progress > 0) {
+                    return '<span class="badge bg-warning-lt text-warning fw-bold px-2 py-1">Ongoing (' . round($progress) . '%)</span>';
+                }
+                return '<span class="badge bg-secondary-lt fw-bold px-2 py-1">Not Started</span>';
+            })
+            ->addColumn('date_time_merged', function ($row) {
+                return self::renderMergedDateTime($row->start_date ?? null, $row->finish_date ?? ($row->end_date ?? null), $row->start_time ?? null, $row->end_time ?? null);
+            })
+            ->addColumn('record_month', function ($row) {
+                $dateForMonth = $row->start_date ?: ($row->finish_date ?: ($row->end_date ?? null));
+                if (!empty($dateForMonth)) {
+                    try {
+                        return date('F', strtotime($dateForMonth));
+                    } catch (\Throwable $e) {
+                        return '-';
+                    }
+                }
+                return '-';
+            })
+            ->addColumn('requirement', function ($row) {
+                return htmlspecialchars($row->requirement ?: ($row->status ?: '-'));
+            })
+            ->addColumn('score_l1', function ($row) {
+                if ($row->assessment_score !== null && $row->assessment_score !== '') {
+                    return '<span class="fw-semibold">' . number_format((float) $row->assessment_score, 1) . '</span>';
+                }
+                return htmlspecialchars($row->l1_program ?: '-');
+            })
+            ->addColumn('score_l2', function ($row) {
+                if ($row->l2_numerical !== null && $row->l2_numerical !== '') {
+                    return '<span class="fw-semibold">' . number_format((float) $row->l2_numerical, 1) . '</span>';
+                }
+                return !empty($row->l2_verbal) ? htmlspecialchars($row->l2_verbal) : '-';
+            })
+            ->addColumn('score_l3', function ($row) {
+                if ($row->l3_numerical !== null && $row->l3_numerical !== '') {
+                    return '<span class="fw-semibold">' . number_format((float) $row->l3_numerical, 1) . '</span>';
+                }
+                return !empty($row->l3_verbal) ? htmlspecialchars($row->l3_verbal) : '-';
+            })
+            ->addColumn('total_engagement_time', function ($row) {
+                $hours = (float) ($row->learning_hours ?? 0);
+                return '<span class="fw-semibold">' . number_format($hours, 1) . 'h</span>';
+            })
+            ->addColumn('action', function ($row) {
+                return self::renderActionDropdown($row->id, 'offline');
             })
             ->rawColumns([
                 'status_badge',
                 'participant_name',
+                'employee_name',
                 'job_position',
                 'department',
                 'course_name',
+                'course_title',
                 'sub_course_name',
                 'type_badge',
                 'counted_corporate_kpi',
                 'course_learning_hours',
                 'learning_hours',
                 'progress_badge',
-                'assessment_score',
-                'certificate_badge',
+                'progress_percent',
+                'progress_status',
+                'date_time_merged',
                 'attendance_badge',
                 'attendance_reason',
+                'score_l1',
+                'score_l2',
+                'score_l3',
+                'total_engagement_time',
+                'assessment_score',
+                'certificate_badge',
                 'bond_status',
                 'bond_amount',
                 'l2_numerical',
@@ -1115,59 +1221,108 @@ class RecordOfflineController extends Controller
             ->addColumn('pic', function ($row) {
                 return htmlspecialchars($row->pic ?: '-');
             })
-            ->addColumn('action', function ($row) use ($trainingModel, $classificationParam) {
-                $name = $row->participant_name ?: ($row->employee_id ?: 'Participant');
-                $course = $trainingModel->course_name ?: 'Training';
-                $nip = $row->employee_id ?: '';
-                $editUrl = route('manage.record.offline.edit', [
-                    'id'             => $row->id,
-                    'return'         => 'course',
-                    'training'       => $trainingModel->id,
-                    'classification' => $classificationParam,
-                ]);
-
-                return '<div class="d-inline-flex align-items-center justify-content-center gap-1">
-                    <button type="button" class="btn btn-sm btn-icon btn-outline-primary btn-view-offline-detail rounded-2" 
-                            data-id="' . $row->id . '" 
-                            title="View" 
-                            aria-label="View" 
-                            data-bs-toggle="tooltip">
-                        <i class="ti ti-eye"></i>
-                    </button>
-                    <a href="' . $editUrl . '" class="btn btn-sm btn-icon btn-outline-warning rounded-2 btn-edit-offline-record" 
-                        title="Edit" 
-                        aria-label="Edit" 
-                        data-bs-toggle="tooltip">
-                        <i class="ti ti-edit"></i>
-                    </a>
-                    <button type="button" class="btn btn-sm btn-icon btn-outline-danger btn-delete-offline-record rounded-2" 
-                            data-id="' . $row->id . '" 
-                            data-employee="' . htmlspecialchars($name, ENT_QUOTES) . '" 
-                            data-course="' . htmlspecialchars($course, ENT_QUOTES) . '" 
-                            data-nip="' . htmlspecialchars($nip, ENT_QUOTES) . '" 
-                            title="Delete" 
-                            aria-label="Delete" 
-                            data-bs-toggle="tooltip">
-                        <i class="ti ti-trash"></i>
-                    </button>
+            ->addColumn('employee_name', function ($row) {
+                return '<div class="fw-semibold text-dark text-nowrap">' . htmlspecialchars($row->participant_name ?: ($row->user_name ?: '-')) . '</div>';
+            })
+            ->addColumn('course_title', function ($row) {
+                return '<div class="fw-semibold text-dark text-nowrap">' . htmlspecialchars($row->course_name ?: '-') . '</div>';
+            })
+            ->addColumn('course_duration', function ($row) {
+                if (!empty($row->duration_seconds)) {
+                    $secs = (int) $row->duration_seconds;
+                    $hours = floor($secs / 3600);
+                    $mins = floor(($secs % 3600) / 60);
+                    $seconds = $secs % 60;
+                    return sprintf('%02d:%02d:%02d', $hours, $mins, $seconds);
+                }
+                return '-';
+            })
+            ->addColumn('progress_percent', function ($row) {
+                $progress = (float) ($row->progress ?? 0);
+                $color = $progress >= 100 ? 'bg-success' : ($progress > 0 ? 'bg-warning' : 'bg-secondary');
+                return '<div class="d-flex align-items-center gap-2" style="min-width: 85px;">
+                    <div class="progress progress-xs flex-grow-1" style="width: 50px; height: 6px;">
+                        <div class="progress-bar ' . $color . '" style="width: ' . min(100, $progress) . '%"></div>
+                    </div>
+                    <span class="small fw-semibold text-muted">' . round($progress) . '%</span>
                 </div>';
+            })
+            ->addColumn('progress_status', function ($row) {
+                $progress = (float) ($row->progress ?? 0);
+                if ($progress >= 100) {
+                    return '<span class="badge bg-success-lt text-success fw-bold px-2 py-1">Finished</span>';
+                } elseif ($progress > 0) {
+                    return '<span class="badge bg-warning-lt text-warning fw-bold px-2 py-1">Ongoing (' . round($progress) . '%)</span>';
+                }
+                return '<span class="badge bg-secondary-lt fw-bold px-2 py-1">Not Started</span>';
+            })
+            ->addColumn('date_time_merged', function ($row) {
+                return self::renderMergedDateTime($row->start_date ?? null, $row->finish_date ?? ($row->end_date ?? null), $row->start_time ?? null, $row->end_time ?? null);
+            })
+            ->addColumn('record_month', function ($row) {
+                $dateForMonth = $row->start_date ?: ($row->finish_date ?: ($row->end_date ?? null));
+                if (!empty($dateForMonth)) {
+                    try {
+                        return date('F', strtotime($dateForMonth));
+                    } catch (\Throwable $e) {
+                        return '-';
+                    }
+                }
+                return '-';
+            })
+            ->addColumn('requirement', function ($row) {
+                return htmlspecialchars($row->requirement ?: ($row->status ?: '-'));
+            })
+            ->addColumn('score_l1', function ($row) {
+                if ($row->assessment_score !== null && $row->assessment_score !== '') {
+                    return '<span class="fw-semibold">' . number_format((float) $row->assessment_score, 1) . '</span>';
+                }
+                return htmlspecialchars($row->l1_program ?: '-');
+            })
+            ->addColumn('score_l2', function ($row) {
+                if ($row->l2_numerical !== null && $row->l2_numerical !== '') {
+                    return '<span class="fw-semibold">' . number_format((float) $row->l2_numerical, 1) . '</span>';
+                }
+                return !empty($row->l2_verbal) ? htmlspecialchars($row->l2_verbal) : '-';
+            })
+            ->addColumn('score_l3', function ($row) {
+                if ($row->l3_numerical !== null && $row->l3_numerical !== '') {
+                    return '<span class="fw-semibold">' . number_format((float) $row->l3_numerical, 1) . '</span>';
+                }
+                return !empty($row->l3_verbal) ? htmlspecialchars($row->l3_verbal) : '-';
+            })
+            ->addColumn('total_engagement_time', function ($row) {
+                $hours = (float) ($row->learning_hours ?? 0);
+                return '<span class="fw-semibold">' . number_format($hours, 1) . 'h</span>';
+            })
+            ->addColumn('action', function ($row) {
+                return self::renderActionDropdown($row->id, 'offline');
             })
             ->rawColumns([
                 'status_badge',
                 'participant_name',
+                'employee_name',
                 'job_position',
                 'department',
                 'course_name',
+                'course_title',
                 'sub_course_name',
                 'type_badge',
                 'counted_corporate_kpi',
                 'course_learning_hours',
                 'learning_hours',
                 'progress_badge',
-                'assessment_score',
-                'certificate_badge',
+                'progress_percent',
+                'progress_status',
+                'date_time_merged',
                 'attendance_badge',
                 'attendance_reason',
+                'score_l1',
+                'score_l2',
+                'score_l3',
+                'total_engagement_time',
+                'assessment_score',
+                'certificate_badge',
                 'bond_status',
                 'bond_amount',
                 'l2_numerical',
@@ -1577,51 +1732,107 @@ class RecordOfflineController extends Controller
             ->addColumn('pic', function ($row) {
                 return htmlspecialchars($row->pic ?: '-');
             })
-            ->addColumn('action', function ($row) {
-                $name = $row->participant_name ?: ($row->user_name ?: 'Participant');
-                $course = $row->course_name ?: 'Training';
-                $editUrl = route('manage.record.offline.edit', $row->id);
-
-                return '<div class="d-inline-flex align-items-center justify-content-center gap-1">
-                    <button type="button" class="btn btn-sm btn-icon btn-outline-primary btn-view-offline-detail rounded-2" 
-                            data-id="' . $row->id . '" 
-                            title="View Detail" 
-                            aria-label="View Detail" 
-                            data-bs-toggle="tooltip">
-                        <i class="ti ti-eye"></i>
-                    </button>
-                    <a href="' . $editUrl . '" class="btn btn-sm btn-icon btn-outline-warning rounded-2 btn-edit-offline-record" 
-                        title="Edit Record" 
-                        aria-label="Edit Record" 
-                        data-bs-toggle="tooltip">
-                        <i class="ti ti-edit"></i>
-                    </a>
-                    <button type="button" class="btn btn-sm btn-icon btn-outline-danger btn-delete-offline-record rounded-2" 
-                            data-id="' . $row->id . '" 
-                            data-employee="' . htmlspecialchars($name, ENT_QUOTES) . '" 
-                            data-course="' . htmlspecialchars($course, ENT_QUOTES) . '" 
-                            title="Delete Record" 
-                            aria-label="Delete Record" 
-                            data-bs-toggle="tooltip">
-                        <i class="ti ti-trash"></i>
-                    </button>
+            ->addColumn('employee_name', function ($row) {
+                return '<div class="fw-semibold text-dark text-nowrap">' . htmlspecialchars($row->participant_name ?: ($row->user_name ?: '-')) . '</div>';
+            })
+            ->addColumn('course_title', function ($row) {
+                return '<div class="fw-semibold text-dark text-nowrap">' . htmlspecialchars($row->course_name ?: '-') . '</div>';
+            })
+            ->addColumn('course_duration', function ($row) {
+                if (!empty($row->duration_seconds)) {
+                    $secs = (int) $row->duration_seconds;
+                    $hours = floor($secs / 3600);
+                    $mins = floor(($secs % 3600) / 60);
+                    $seconds = $secs % 60;
+                    return sprintf('%02d:%02d:%02d', $hours, $mins, $seconds);
+                }
+                return '-';
+            })
+            ->addColumn('progress_percent', function ($row) {
+                $progress = (float) ($row->progress ?? 0);
+                $color = $progress >= 100 ? 'bg-success' : ($progress > 0 ? 'bg-warning' : 'bg-secondary');
+                return '<div class="d-flex align-items-center gap-2" style="min-width: 85px;">
+                    <div class="progress progress-xs flex-grow-1" style="width: 50px; height: 6px;">
+                        <div class="progress-bar ' . $color . '" style="width: ' . min(100, $progress) . '%"></div>
+                    </div>
+                    <span class="small fw-semibold text-muted">' . round($progress) . '%</span>
                 </div>';
+            })
+            ->addColumn('progress_status', function ($row) {
+                $progress = (float) ($row->progress ?? 0);
+                if ($progress >= 100) {
+                    return '<span class="badge bg-success-lt text-success fw-bold px-2 py-1">Finished</span>';
+                } elseif ($progress > 0) {
+                    return '<span class="badge bg-warning-lt text-warning fw-bold px-2 py-1">Ongoing (' . round($progress) . '%)</span>';
+                }
+                return '<span class="badge bg-secondary-lt fw-bold px-2 py-1">Not Started</span>';
+            })
+            ->addColumn('date_time_merged', function ($row) {
+                return self::renderMergedDateTime($row->start_date ?? null, $row->finish_date ?? ($row->end_date ?? null), $row->start_time ?? null, $row->end_time ?? null);
+            })
+            ->addColumn('record_month', function ($row) {
+                $dateForMonth = $row->start_date ?: ($row->finish_date ?: ($row->end_date ?? null));
+                if (!empty($dateForMonth)) {
+                    try {
+                        return date('F', strtotime($dateForMonth));
+                    } catch (\Throwable $e) {
+                        return '-';
+                    }
+                }
+                return '-';
+            })
+            ->addColumn('requirement', function ($row) {
+                return htmlspecialchars($row->requirement ?: ($row->status ?: '-'));
+            })
+            ->addColumn('score_l1', function ($row) {
+                if ($row->assessment_score !== null && $row->assessment_score !== '') {
+                    return '<span class="fw-semibold">' . number_format((float) $row->assessment_score, 1) . '</span>';
+                }
+                return htmlspecialchars($row->l1_program ?: '-');
+            })
+            ->addColumn('score_l2', function ($row) {
+                if ($row->l2_numerical !== null && $row->l2_numerical !== '') {
+                    return '<span class="fw-semibold">' . number_format((float) $row->l2_numerical, 1) . '</span>';
+                }
+                return !empty($row->l2_verbal) ? htmlspecialchars($row->l2_verbal) : '-';
+            })
+            ->addColumn('score_l3', function ($row) {
+                if ($row->l3_numerical !== null && $row->l3_numerical !== '') {
+                    return '<span class="fw-semibold">' . number_format((float) $row->l3_numerical, 1) . '</span>';
+                }
+                return !empty($row->l3_verbal) ? htmlspecialchars($row->l3_verbal) : '-';
+            })
+            ->addColumn('total_engagement_time', function ($row) {
+                $hours = (float) ($row->learning_hours ?? 0);
+                return '<span class="fw-semibold">' . number_format($hours, 1) . 'h</span>';
+            })
+            ->addColumn('action', function ($row) {
+                return self::renderActionDropdown($row->id, 'offline');
             })
             ->rawColumns([
                 'status_badge',
                 'participant_name',
+                'employee_name',
                 'employee',
                 'job_position',
                 'department',
                 'course_name',
+                'course_title',
                 'sub_course_name',
                 'type_badge',
                 'counted_corporate_kpi',
                 'course_learning_hours',
                 'learning_hours',
                 'progress_badge',
+                'progress_percent',
+                'progress_status',
+                'date_time_merged',
                 'attendance_badge',
                 'attendance_reason',
+                'score_l1',
+                'score_l2',
+                'score_l3',
+                'total_engagement_time',
                 'assessment_score',
                 'certificate_badge',
                 'bond_status',

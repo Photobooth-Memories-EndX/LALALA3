@@ -170,6 +170,12 @@ class AllRecordExport implements FromQuery, WithHeadings, WithChunkReading, With
 
     public function generateXlsxFile(): string
     {
+        ini_set('max_execution_time', 300);
+        ini_set('memory_limit', '512M');
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(300);
+        }
+
         $tempXlsx = tempnam(sys_get_temp_dir(), 'all_record_') . '.xlsx';
         $opt = new ArchiveOptions();
         $opt->setSendHttpHeaders(false);
@@ -273,132 +279,120 @@ class AllRecordExport implements FromQuery, WithHeadings, WithChunkReading, With
         }
         fwrite($sfh, '</row>' . "\n");
 
-        // Single unbuffered streaming query execution: zero offset loops, zero memory bloat
+        // High-performance streaming query execution using cursor: zero offset loops, zero memory bloat
         $query = $this->query();
         $rowCount = 0;
-
-        $pdo = DB::connection()->getPdo();
-        $wasBuffered = $pdo->getAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY);
-        $pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
-
         $buffer = '';
         $batchSize = 2000;
 
-        try {
-            $stmt = $pdo->prepare($query->toSql());
-            $stmt->execute($query->getBindings());
+        foreach ($query->cursor() as $row) {
+            $rowCount++;
+            $r = $rowCount + 1;
 
-            while ($row = $stmt->fetch(\PDO::FETCH_OBJ)) {
-                $rowCount++;
-                $r = $rowCount + 1;
-
-                // Duration formatted as HH:MM:SS
-                $durationFormatted = '';
-                if (!empty($row->duration_seconds)) {
-                    $secs = (int) $row->duration_seconds;
-                    $hours = floor($secs / 3600);
-                    $mins = floor(($secs % 3600) / 60);
-                    $seconds = $secs % 60;
-                    $durationFormatted = sprintf('%02d:%02d:%02d', $hours, $mins, $seconds);
-                }
-
-                // Clean Assessment Score formatting (remove trailing decimal zeros/dots)
-                $cleanScore = is_numeric($row->assessment_score) ? (int) round((float) $row->assessment_score) : '-';
-
-                // Prevent double calculation: under playlist, set learning_hours cell to '-' on child rows
-                $isChildUnderPlaylist = (($row->source_type ?? '') === 'playlist' && !empty($row->content_id))
-                    || (($row->category ?? '') === 'Content Playlist');
-
-                if ($isChildUnderPlaylist) {
-                    $lhVal = '-';
-                } else {
-                    $lhVal = ($row->learning_hours !== null && $row->learning_hours !== '') ? number_format((float) $row->learning_hours, 2) : '-';
-                }
-
-                // Delivery method alignment
-                $delivMethod = \App\Models\OfflineTraining::normalizeDeliveryMethod($row->delivery_method ?: ($row->source === 'offline' ? 'Offline' : 'Online'));
-                $subDelivMethod = $row->sub_delivery_method ?: ($row->source === 'offline' ? 'On-site' : 'E-learning');
-
-                // Bond amount formatting (IDR only)
-                $idr = $row->bond_amount_idr ?? $row->bond_amount ?? null;
-                $bondAmt = ($idr !== null && (float) $idr > 0) ? 'Rp ' . number_format((float) $idr, 0, ',', '.') : '-';
-
-                $data = [
-                    $row->source === 'offline' ? 'Non KP OWL' : 'KP OWL',
-                    $row->employee_id ?: '-',
-                    $row->employee_name ?: '-',
-                    $row->status ? ucfirst((string) $row->status) : '-',
-                    $row->grade ?: '-',
-                    $row->job_position ?: '-',
-                    $row->team ?: '-',
-                    $row->department ?: '-',
-                    $row->company ?: '-',
-                    $row->learning_title ?: '-',
-                    $row->sub_course_name ?: '-',
-                    $row->type ?: '-',
-                    $row->category ?: '-',
-                    $row->level ?: '-',
-                    $row->batch ?: '-',
-                    $row->classification ?: '-',
-                    $row->sub_classification ?: '-',
-                    $kpiStr ?: '-',
-                    $row->sub_corporate_kpi ?: '-',
-                    $delivMethod,
-                    $subDelivMethod,
-                    $row->provider ?: ($row->source === 'offline' ? '-' : 'Internal'),
-                    $row->sub_provider ?: '-',
-                    $row->provider_name ?: ($row->source === 'offline' ? '-' : 'KP-OWL'),
-                    $row->venue ?: ($row->source === 'offline' ? '-' : 'KP-OWL'),
-                    $row->instructor ?: '-',
-                    $durationFormatted ?: '-',
-                    $row->training_hours !== null ? number_format((float) $row->training_hours, 2) : '-',
-                    $row->start_date ? date('Y-m-d', strtotime($row->start_date)) : '-',
-                    $row->finish_date ? date('Y-m-d', strtotime($row->finish_date)) : '-',
-                    $lhVal,
-                    $row->progress !== null ? ($row->progress . '%') : '0%',
-                    $cleanScore,
-                    $row->certificate ?: '-',
-                    $row->attendance_reason ?: '-',
-                    $row->bond_status ?: 'No',
-                    $row->bond_end_date ? date('Y-m-d', strtotime($row->bond_end_date)) : '-',
-                    $bondAmt,
-                    $row->l1_program ?: '-',
-                    $row->l2_numerical !== null ? number_format((float) $row->l2_numerical, 2) : '-',
-                    $row->l2_verbal ?: '-',
-                    $row->l3_numerical !== null ? number_format((float) $row->l3_numerical, 2) : '-',
-                    $row->l3_verbal ?: '-',
-                    $row->pic ?: '-',
-                ];
-
-                $isPlaylistRow = ($row->type === 'Playlist');
-                $sAttr = $isPlaylistRow ? ' s="2"' : ' s="0"';
-
-                $rowXml = "<row r=\"{$r}\"><c r=\"A{$r}\"{$sAttr}><v>{$rowCount}</v></c>";
-                foreach ($data as $idx => $val) {
-                    if ($val === '' || $val === null) {
-                        $val = '-';
-                    }
-                    $colLetter = Coordinate::stringFromColumnIndex($idx + 2);
-                    $escaped = $this->escapeXml($val);
-                    $rowXml .= "<c r=\"{$colLetter}{$r}\" t=\"inlineStr\"{$sAttr}><is><t>{$escaped}</t></is></c>";
-                }
-                $rowXml .= "</row>\n";
-
-                $buffer .= $rowXml;
-                if ($rowCount % $batchSize === 0) {
-                    fwrite($sfh, $buffer);
-                    $buffer = '';
-                }
+            // Duration formatted as HH:MM:SS
+            $durationFormatted = '';
+            if (!empty($row->duration_seconds)) {
+                $secs = (int) $row->duration_seconds;
+                $hours = floor($secs / 3600);
+                $mins = floor(($secs % 3600) / 60);
+                $seconds = $secs % 60;
+                $durationFormatted = sprintf('%02d:%02d:%02d', $hours, $mins, $seconds);
             }
 
-            if ($buffer !== '') {
+            // Clean Assessment Score formatting (remove trailing decimal zeros/dots)
+            $cleanScore = is_numeric($row->assessment_score) ? (int) round((float) $row->assessment_score) : '-';
+
+            // Prevent double calculation: under playlist, set learning_hours cell to '-' on child rows
+            $isChildUnderPlaylist = (($row->source_type ?? '') === 'playlist' && !empty($row->content_id))
+                || (($row->category ?? '') === 'Content Playlist');
+
+            if ($isChildUnderPlaylist) {
+                $lhVal = '-';
+            } else {
+                $lhVal = ($row->learning_hours !== null && $row->learning_hours !== '') ? number_format((float) $row->learning_hours, 2) : '-';
+            }
+
+            // Delivery method alignment
+            $delivMethod = \App\Models\OfflineTraining::normalizeDeliveryMethod($row->delivery_method ?: ($row->source === 'offline' ? 'Offline' : 'Online'));
+            $subDelivMethod = $row->sub_delivery_method ?: ($row->source === 'offline' ? 'On-site' : 'E-learning');
+
+            // Bond amount formatting (IDR only)
+            $idr = $row->bond_amount_idr ?? $row->bond_amount ?? null;
+            $bondAmt = ($idr !== null && (float) $idr > 0) ? 'Rp ' . number_format((float) $idr, 0, ',', '.') : '-';
+
+            $kpiStr = $row->counted_corporate_kpi ?? $row->corporate_kpi ?? '-';
+
+            $data = [
+                $row->source === 'offline' ? 'Non KP OWL' : 'KP OWL',
+                $row->employee_id ?: '-',
+                $row->employee_name ?: '-',
+                $row->status ? ucfirst((string) $row->status) : '-',
+                $row->grade ?: '-',
+                $row->job_position ?: '-',
+                $row->team ?: '-',
+                $row->department ?: '-',
+                $row->company ?: '-',
+                $row->learning_title ?: '-',
+                $row->sub_course_name ?: '-',
+                $row->type ?: '-',
+                $row->category ?: '-',
+                $row->level ?: '-',
+                $row->batch ?: '-',
+                $row->classification ?: '-',
+                $row->sub_classification ?: '-',
+                $kpiStr ?: '-',
+                $row->sub_corporate_kpi ?: '-',
+                $delivMethod,
+                $subDelivMethod,
+                $row->provider ?: ($row->source === 'offline' ? '-' : 'Internal'),
+                $row->sub_provider ?: '-',
+                $row->provider_name ?: ($row->source === 'offline' ? '-' : 'KP-OWL'),
+                $row->venue ?: ($row->source === 'offline' ? '-' : 'KP-OWL'),
+                $row->instructor ?: '-',
+                $durationFormatted ?: '-',
+                $row->training_hours !== null ? number_format((float) $row->training_hours, 2) : '-',
+                $row->start_date ? date('Y-m-d', strtotime($row->start_date)) : '-',
+                $row->finish_date ? date('Y-m-d', strtotime($row->finish_date)) : '-',
+                $lhVal,
+                $row->progress !== null ? ($row->progress . '%') : '0%',
+                $cleanScore,
+                $row->certificate ?: '-',
+                $row->attendance_reason ?: '-',
+                $row->bond_status ?: 'No',
+                $row->bond_end_date ? date('Y-m-d', strtotime($row->bond_end_date)) : '-',
+                $bondAmt,
+                $row->l1_program ?: '-',
+                $row->l2_numerical !== null ? number_format((float) $row->l2_numerical, 2) : '-',
+                $row->l2_verbal ?: '-',
+                $row->l3_numerical !== null ? number_format((float) $row->l3_numerical, 2) : '-',
+                $row->l3_verbal ?: '-',
+                $row->pic ?: '-',
+            ];
+
+            $isPlaylistRow = ($row->type === 'Playlist');
+            $sAttr = $isPlaylistRow ? ' s="2"' : ' s="0"';
+
+            $rowXml = "<row r=\"{$r}\"><c r=\"A{$r}\"{$sAttr}><v>{$rowCount}</v></c>";
+            foreach ($data as $idx => $val) {
+                if ($val === '' || $val === null) {
+                    $val = '-';
+                }
+                $colLetter = Coordinate::stringFromColumnIndex($idx + 2);
+                $escaped = $this->escapeXml($val);
+                $rowXml .= "<c r=\"{$colLetter}{$r}\" t=\"inlineStr\"{$sAttr}><is><t>{$escaped}</t></is></c>";
+            }
+            $rowXml .= "</row>\n";
+
+            $buffer .= $rowXml;
+            if ($rowCount % $batchSize === 0) {
                 fwrite($sfh, $buffer);
                 $buffer = '';
             }
+        }
 
-            $stmt->closeCursor();
-        } finally {
-            $pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, $wasBuffered);
+        if ($buffer !== '') {
+            fwrite($sfh, $buffer);
+            $buffer = '';
         }
 
         fwrite($sfh, '</sheetData>' . "\n");

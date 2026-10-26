@@ -226,52 +226,34 @@
                         <thead>
                             <tr>
                                 <th class="text-center" style="min-width: 45px; width: 45px;">NO</th>
-                                <th class="text-center" style="min-width: 105px;">STATUS</th>
-                                <th class="text-center" style="min-width: 90px;">NIP</th>
-                                <th style="min-width: 180px;">PARTICIPANT</th>
-                                <th class="text-center" style="min-width: 75px;">GRADE</th>
-                                <th style="min-width: 160px;">JOB POSITION</th>
+                                <th class="text-center" style="min-width: 90px;">EMPLOYEE ID</th>
+                                <th style="min-width: 180px;">EMPLOYEE NAME</th>
                                 <th style="min-width: 140px;">TEAM</th>
                                 <th style="min-width: 160px;">DEPARTMENT</th>
                                 <th style="min-width: 160px;">COMPANY</th>
-                                <th style="min-width: 220px;">COURSE NAME</th>
-                                <th style="min-width: 180px;">SUB COURSE NAME</th>
+                                <th style="min-width: 220px;">COURSE TITLE</th>
                                 <th class="text-center" style="min-width: 100px;">TYPE</th>
                                 <th style="min-width: 130px;">CATEGORY</th>
-                                <th class="text-center" style="min-width: 90px;">LEVEL</th>
-                                <th class="text-center" style="min-width: 85px;">BATCH</th>
                                 <th style="min-width: 150px;">MAIN CLASSIFICATION</th>
                                 <th style="min-width: 150px;">SUB CLASSIFICATION</th>
-                                <th class="text-center" style="min-width: 110px;">COUNTED CORPORATE KPI</th>
-                                <th style="min-width: 160px;">SUB CORPORATE KPI</th>
                                 <th class="text-center" style="min-width: 120px;">DELIVERY METHOD</th>
                                 <th style="min-width: 140px;">SUB DELIVERY METHOD</th>
-                                <th class="text-center" style="min-width: 100px;">PROVIDER</th>
-                                <th style="min-width: 120px;">SUB PROVIDER</th>
                                 <th style="min-width: 160px;">PROVIDER NAME</th>
                                 <th style="min-width: 140px;">VENUE</th>
-                                <th style="min-width: 140px;">INSTRUCTOR</th>
-                                <th class="text-center" style="min-width: 95px;">DURATION</th>
-                                <th class="text-center" style="min-width: 110px;">TRAINING HOURS</th>
-                                <th class="text-center" style="min-width: 105px;">START DATE</th>
-                                <th class="text-center" style="min-width: 105px;">FINISH DATE</th>
-                                <th class="text-center" style="min-width: 95px;">MONTH</th>
-                                <th class="text-center" style="min-width: 115px;">PARTICIPANT HOURS</th>
-                                <th class="text-center" style="min-width: 110px;">PROGRESS</th>
-                                <th class="text-center" style="min-width: 80px;">SCORE</th>
-                                <th class="text-center" style="min-width: 110px;">CERTIFICATE</th>
+                                <th class="text-center" style="min-width: 100px;">COURSE DURATION</th>
+                                <th class="text-center" style="min-width: 110px;">LEARNING HOURS</th>
+                                <th class="text-center" style="min-width: 110px;">% PROGRESS</th>
+                                <th class="text-center" style="min-width: 110px;">PROGRESS STATUS</th>
+                                <th class="text-center" style="min-width: 140px;">DATE TIME</th>
+                                <th class="text-center" style="min-width: 100px;">RECORD MONTH</th>
+                                <th class="text-center" style="min-width: 110px;">REQUIREMENT</th>
                                 <th class="text-center" style="min-width: 105px;">ATTENDANCE</th>
-                                <th style="min-width: 180px;">ATTENDANCE REASON</th>
-                                <th class="text-center" style="min-width: 95px;">BOND STATUS</th>
-                                <th class="text-center" style="min-width: 110px;">BOND END DATE</th>
-                                <th class="text-end" style="min-width: 125px;">BOND AMOUNT</th>
-                                <th class="text-center" style="min-width: 120px;">L1 PROGRAM</th>
-                                <th class="text-center" style="min-width: 105px;">L2 NUMERICAL</th>
-                                <th style="min-width: 140px;">L2 VERBAL</th>
-                                <th class="text-center" style="min-width: 105px;">L3 NUMERICAL</th>
-                                <th style="min-width: 160px;">L3 VERBAL</th>
-                                <th style="min-width: 130px;">PIC</th>
-                                <th class="text-center" style="min-width: 75px; width: 75px;">ACTION</th>
+                                <th class="text-center" style="min-width: 120px;">SCORE (L1) - COURSE</th>
+                                <th class="text-center" style="min-width: 105px;">SCORE (L2)</th>
+                                <th class="text-center" style="min-width: 105px;">SCORE (L3)</th>
+                                <th style="min-width: 130px;">PERSON IN CHARGE (PIC)</th>
+                                <th class="text-center" style="min-width: 120px;">TOTAL ENGAGEMENT TIME (LH)</th>
+                                <th class="text-center" style="min-width: 60px; width: 60px;">ACTION</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -602,6 +584,7 @@
 
 <!-- DELETE CONFIRMATION MODAL -->
 @include('main.record.components.offline-delete-modal')
+@include('main.record.components.more-information-modal')
 
 @endsection
 
@@ -1062,51 +1045,33 @@
             },
             columns: [
                 { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false, className: 'text-center' },
-                { data: 'status_badge', name: 'otu.progress', className: 'text-center' },
                 { data: 'employee_id', name: 'otu.employee_id', className: 'text-center' },
                 { data: 'participant_name', name: 'otu.name', className: 'text-start' },
-                { data: 'grade', name: 'otu.grade', className: 'text-center' },
-                { data: 'job_position', name: 'otu.job_position', className: 'text-start' },
                 { data: 'team', name: 'otu.team', className: 'text-start' },
                 { data: 'department', name: 'otu.department', className: 'text-start' },
                 { data: 'company', name: 'otu.company', className: 'text-start' },
                 { data: 'course_name', name: 'ot.course_name', className: 'text-start' },
-                { data: 'sub_course_name', name: 'ot.sub_course_name', className: 'text-start' },
                 { data: 'type_badge', name: 'ot.type', className: 'text-center' },
                 { data: 'category', name: 'ot.category', className: 'text-start' },
-                { data: 'level', name: 'ot.level', className: 'text-center' },
-                { data: 'batch', name: 'ot.batch', className: 'text-center' },
                 { data: 'main_classification', name: 'ot.main_classification', className: 'text-start' },
                 { data: 'sub_classification', name: 'ot.sub_classification', className: 'text-start' },
-                { data: 'counted_corporate_kpi', name: 'ot.counted_corporate_kpi', className: 'text-center' },
-                { data: 'sub_corporate_kpi', name: 'ot.sub_corporate_kpi', className: 'text-start' },
                 { data: 'delivery_method', name: 'ot.delivery_method', className: 'text-center' },
                 { data: 'sub_delivery_method', name: 'ot.sub_delivery_method', className: 'text-start' },
-                { data: 'provider', name: 'ot.provider', className: 'text-center' },
-                { data: 'sub_provider', name: 'ot.sub_provider', className: 'text-start' },
                 { data: 'provider_name', name: 'ot.provider_name', className: 'text-start' },
                 { data: 'venue', name: 'ot.venue', className: 'text-start' },
-                { data: 'instructor', name: 'ot.instructor', className: 'text-start' },
-                { data: 'duration', name: 'ot.duration_seconds', className: 'text-center' },
+                { data: 'course_duration', name: 'ot.duration_seconds', className: 'text-center' },
                 { data: 'course_learning_hours', name: 'ot.learning_hours', className: 'text-center' },
-                { data: 'start_date', name: 'ot.start_date', className: 'text-center' },
-                { data: 'finish_date', name: 'ot.finish_date', className: 'text-center' },
-                { data: 'month', name: 'ot.start_date', className: 'text-center', orderable: false },
-                { data: 'learning_hours', name: 'otu.learning_hours', className: 'text-center' },
-                { data: 'progress_badge', name: 'otu.progress', className: 'text-center' },
-                { data: 'assessment_score', name: 'otu.assessment_score', className: 'text-center' },
-                { data: 'certificate_badge', name: 'otu.certificate', className: 'text-center' },
+                { data: 'progress_percent', name: 'otu.progress', className: 'text-center' },
+                { data: 'progress_status', name: 'otu.progress', className: 'text-center' },
+                { data: 'date_time_merged', name: 'ot.start_date', className: 'text-center', orderable: false },
+                { data: 'record_month', name: 'ot.start_date', className: 'text-center', orderable: false },
+                { data: 'requirement', name: 'ot.requirement', className: 'text-center' },
                 { data: 'attendance_badge', name: 'otu.attendance', className: 'text-center' },
-                { data: 'attendance_reason', name: 'otu.attendance_reason', className: 'text-start' },
-                { data: 'bond_status', name: 'otu.bond_status', className: 'text-center' },
-                { data: 'bond_end_date', name: 'otu.bond_end_date', className: 'text-center' },
-                { data: 'bond_amount', name: 'otu.bond_amount_idr', className: 'text-end' },
-                { data: 'l1_program', name: 'otu.l1_program', className: 'text-center' },
-                { data: 'l2_numerical', name: 'otu.l2_numerical', className: 'text-center' },
-                { data: 'l2_verbal', name: 'otu.l2_verbal', className: 'text-start' },
-                { data: 'l3_numerical', name: 'otu.l3_numerical', className: 'text-center' },
-                { data: 'l3_verbal', name: 'otu.l3_verbal', className: 'text-start' },
+                { data: 'score_l1', name: 'otu.assessment_score', className: 'text-center' },
+                { data: 'score_l2', name: 'otu.l2_numerical', className: 'text-center' },
+                { data: 'score_l3', name: 'otu.l3_numerical', className: 'text-center' },
                 { data: 'pic', name: 'otu.pic', className: 'text-start' },
+                { data: 'total_engagement_time', name: 'otu.learning_hours', className: 'text-center' },
                 { data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-center' }
             ],
             language: {

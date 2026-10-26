@@ -260,6 +260,10 @@
                                         <span class="fw-semibold text-dark" id="modal-detail-bond-status">-</span>
                                     </div>
                                     <div class="col-sm-4 col-md-3">
+                                        <span class="text-muted d-block">Bond Duration:</span>
+                                        <span class="fw-semibold text-dark" id="modal-detail-bond-duration">-</span>
+                                    </div>
+                                    <div class="col-sm-4 col-md-3">
                                         <span class="text-muted d-block">Bond End Date:</span>
                                         <span class="fw-semibold text-dark" id="modal-detail-bond-end-date">-</span>
                                     </div>

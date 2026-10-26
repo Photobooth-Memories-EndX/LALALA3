@@ -304,17 +304,36 @@
                         <table class="table table-hover align-middle mb-0" id="all-participant-learning-table">
                             <thead class="bg-light text-muted small text-uppercase">
                                 <tr>
-                                    <th style="width: 45px; text-align: center;">No</th>
-                                    <th style="width: 100px;">Source</th>
-                                    <th style="min-width: 240px;">Learning Title</th>
-                                    <th style="min-width: 120px;">Type</th>
-                                    <th style="min-width: 130px;">Category</th>
-                                    <th style="min-width: 160px;">Classification</th>
-                                    <th style="width: 100px;">Duration</th>
-                                    <th style="width: 110px;">Hours</th>
-                                    <th style="width: 140px;">Progress</th>
-                                    <th style="width: 120px;">Date</th>
-                                    <th class="text-end" style="width: 80px;">Action</th>
+                                    <th style="width: 45px; text-align: center;">NO</th>
+                                    <th style="min-width: 95px;">Source</th>
+                                    <th style="min-width: 110px;">Employee ID</th>
+                                    <th style="min-width: 160px;">Employee Name</th>
+                                    <th style="min-width: 130px;">Team</th>
+                                    <th style="min-width: 140px;">Department</th>
+                                    <th style="min-width: 130px;">Company</th>
+                                    <th style="min-width: 220px;">Course Title</th>
+                                    <th style="min-width: 100px;">Type</th>
+                                    <th style="min-width: 110px;">Category</th>
+                                    <th style="min-width: 140px;">Main Classification</th>
+                                    <th style="min-width: 140px;">Sub Classification</th>
+                                    <th style="min-width: 120px;">Delivery Method</th>
+                                    <th style="min-width: 130px;">Sub Delivery Method</th>
+                                    <th style="min-width: 130px;">Provider Name</th>
+                                    <th style="min-width: 120px;">Venue</th>
+                                    <th style="min-width: 110px;">Course Duration</th>
+                                    <th style="min-width: 110px;">Learning Hours</th>
+                                    <th style="min-width: 110px;">% Progress</th>
+                                    <th style="min-width: 110px;">Progress Status</th>
+                                    <th style="min-width: 140px;">Date Time</th>
+                                    <th style="min-width: 110px;">Record Month</th>
+                                    <th style="min-width: 110px;">Requirement</th>
+                                    <th style="min-width: 100px;">Attendance</th>
+                                    <th style="min-width: 120px;">Score (L1) - Course</th>
+                                    <th style="min-width: 90px;">Score (L2)</th>
+                                    <th style="min-width: 90px;">Score (L3)</th>
+                                    <th style="min-width: 130px;">Person In Charge (PIC)</th>
+                                    <th style="min-width: 130px;">Total Engagement Time (LH)</th>
+                                    <th class="text-end" style="width: 80px;">ACTION</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -337,6 +356,7 @@
     </div>
 
     <!-- INCLUDE DETAIL MODALS -->
+    @include('main.record.components.more-information-modal')
     @include('main.record.components.offline-detail-modal')
     @include('main.record.components.online-detail-modal')
     @include('main.record.components.offline-delete-modal')
@@ -681,7 +701,8 @@
                         d.entries = $('#participant-table-entries-select').val() || defaultEntries;
                     }
                 },
-                columns: [{
+                columns: [
+                    {
                         data: 'DT_RowIndex',
                         name: 'DT_RowIndex',
                         orderable: false,
@@ -694,14 +715,40 @@
                         orderable: true
                     },
                     {
-                        data: 'learning_title',
+                        data: 'employee_id',
+                        name: 'employee_id',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    {
+                        data: 'employee_name',
+                        name: 'employee_name',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    {
+                        data: 'team',
+                        name: 'team',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    {
+                        data: 'department',
+                        name: 'department',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    {
+                        data: 'company',
+                        name: 'company',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    {
+                        data: 'course_title',
                         name: 'learning_title',
                         orderable: true,
-                        render: function(data, type) {
-                            if (type !== 'display') return data;
-                            if (!data || data === '-') return '<span class="text-muted">-</span>';
-                            return data;
-                        }
+                        defaultContent: '-'
                     },
                     {
                         data: 'type',
@@ -716,31 +763,113 @@
                         defaultContent: '-'
                     },
                     {
-                        data: 'classification',
+                        data: 'main_classification',
                         name: 'classification',
                         orderable: true,
                         defaultContent: '-'
                     },
                     {
-                        data: 'duration_formatted',
+                        data: 'sub_classification',
+                        name: 'sub_classification',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    {
+                        data: 'delivery_method',
+                        name: 'delivery_method',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    {
+                        data: 'sub_delivery_method',
+                        name: 'sub_delivery_method',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    {
+                        data: 'provider_name',
+                        name: 'provider_name',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    {
+                        data: 'venue',
+                        name: 'venue',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    {
+                        data: 'course_duration',
                         name: 'duration_seconds',
                         orderable: true,
                         defaultContent: '-'
                     },
                     {
-                        data: 'learning_hours_formatted',
+                        data: 'learning_hours',
                         name: 'learning_hours',
                         orderable: true,
                         defaultContent: '-'
                     },
                     {
-                        data: 'progress_badge',
+                        data: 'progress_percent',
                         name: 'progress',
                         orderable: true
                     },
                     {
-                        data: 'record_date_formatted',
-                        name: 'record_date',
+                        data: 'progress_status',
+                        name: 'status',
+                        orderable: true
+                    },
+                    {
+                        data: 'date_time_merged',
+                        name: 'start_date',
+                        orderable: true
+                    },
+                    {
+                        data: 'record_month',
+                        name: 'record_month',
+                        orderable: false,
+                        defaultContent: '-'
+                    },
+                    {
+                        data: 'requirement',
+                        name: 'requirement',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    {
+                        data: 'attendance',
+                        name: 'attendance',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    {
+                        data: 'score_l1',
+                        name: 'score_l1',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    {
+                        data: 'score_l2',
+                        name: 'score_l2',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    {
+                        data: 'score_l3',
+                        name: 'score_l3',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    {
+                        data: 'pic',
+                        name: 'pic',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    {
+                        data: 'total_engagement_time',
+                        name: 'total_engagement_time',
                         orderable: true,
                         defaultContent: '-'
                     },

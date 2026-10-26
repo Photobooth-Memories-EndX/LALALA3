@@ -111,10 +111,7 @@ class RecordOnlineController extends Controller
 
     public function export(Request $request)
     {
-        $fileName = sprintf('kp-owl-online-records-%s.xlsx', now()->format('Y-m-d'));
-
-        return (new LearningExport($request->all(), $request->input('type', ''), $request->input('slug', '')))
-            ->download($fileName);
+        return app(\App\Services\Record\ManageOnlineRecordExportService::class)->download($request->all());
     }
 
     public function download(Request $request)

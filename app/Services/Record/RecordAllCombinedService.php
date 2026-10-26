@@ -426,6 +426,10 @@ class RecordAllCombinedService
                     DB::raw("CAST(NULL AS DECIMAL(10,2)) as training_hours"),
                     DB::raw("CAST(NULL AS CHAR) as start_date"),
                     DB::raw("CAST(NULL AS CHAR) as finish_date"),
+                    DB::raw("CAST(NULL AS CHAR) as end_date"),
+                    DB::raw("CAST(NULL AS CHAR) as start_time"),
+                    DB::raw("CAST(NULL AS CHAR) as end_time"),
+                    DB::raw("CAST(NULL AS CHAR) as requirement"),
                     DB::raw("0.0 as learning_hours"),
                     DB::raw("0 as progress"),
                     DB::raw("'' as status"),
@@ -544,6 +548,14 @@ class RecordAllCombinedService
                     ELSE NULL
                 END as start_date"),
                 DB::raw("DATE_FORMAT(unified.finish_date, '%Y-%m-%d') as finish_date"),
+                DB::raw("CASE WHEN unified.source = 'offline' THEN DATE_FORMAT(ot.end_date, '%Y-%m-%d') ELSE NULL END as end_date"),
+                DB::raw("CASE WHEN unified.source = 'offline' THEN ot.start_time ELSE NULL END as start_time"),
+                DB::raw("CASE WHEN unified.source = 'offline' THEN ot.end_time ELSE NULL END as end_time"),
+                DB::raw("CASE
+                    WHEN unified.source = 'offline' THEN COALESCE(ot.requirement, 'Mandatory')
+                    WHEN LOWER(TRIM(COALESCE(c.status, 'non mandatory'))) = 'mandatory' THEN 'Mandatory'
+                    ELSE 'Non-Mandatory'
+                END as requirement"),
                 DB::raw("COALESCE(ROUND(unified.learning_hours, 2), 0) as learning_hours"),
                 DB::raw("COALESCE(unified.progress, 0) as progress"),
                 DB::raw("CASE
@@ -748,7 +760,12 @@ class RecordAllCombinedService
         // 4. Classification Filter
         $classification = trim((string) ($filters['classification'] ?? 'all'));
         if ($classification !== '' && $classification !== 'all') {
-            if (strtolower($classification) === 'unclassified') {
+            $categorySlug = $classification;
+            $classificationSlug = str_replace('-', ' ', strtolower($categorySlug));
+            $resolvedClass = RecordAllController::resolveClassification($categorySlug, false);
+            $resolvedName = $resolvedClass['name'] ?? $categorySlug;
+
+            if (strtolower($classification) === 'unclassified' || ($resolvedClass['is_unclassified'] ?? false)) {
                 $classContentIds = DB::table('content')
                     ->leftJoin('classification', 'classification.id', '=', 'content.classification_id')
                     ->where(function ($sub) {
@@ -760,7 +777,15 @@ class RecordAllCombinedService
             } else {
                 $classContentIds = DB::table('content')
                     ->join('classification', 'classification.id', '=', 'content.classification_id')
-                    ->where('classification.classification_name', $classification)
+                    ->where(function ($q) use ($categorySlug, $classificationSlug, $resolvedName) {
+                        $q->where('classification.slug', $categorySlug)
+                          ->orWhere('classification.slug', Str::slug($categorySlug))
+                          ->orWhere('classification.classification_name', $resolvedName)
+                          ->orWhere('classification.classification_name', $categorySlug)
+                          ->orWhereRaw('LOWER(classification.classification_name) = ?', [strtolower($resolvedName)])
+                          ->orWhereRaw('LOWER(classification.classification_name) = ?', [$classificationSlug])
+                          ->orWhereRaw('LOWER(classification.classification_name) = ?', [strtolower($categorySlug)]);
+                    })
                     ->pluck('content.id')
                     ->toArray();
             }
@@ -1042,13 +1067,26 @@ class RecordAllCombinedService
         // Classification filter
         $classification = trim((string) ($filters['classification'] ?? 'all'));
         if ($classification !== '' && $classification !== 'all') {
-            if (strtolower($classification) === 'unclassified') {
+            $categorySlug = $classification;
+            $classificationSlug = str_replace('-', ' ', strtolower($categorySlug));
+            $resolvedClass = RecordAllController::resolveClassification($categorySlug, false);
+            $resolvedName = $resolvedClass['name'] ?? $categorySlug;
+
+            if (strtolower($classification) === 'unclassified' || ($resolvedClass['is_unclassified'] ?? false)) {
                 $q->where(function ($sub) {
                     $sub->whereNull('ot.main_classification')
                         ->orWhere('ot.main_classification', '');
                 });
             } else {
-                $q->where('ot.main_classification', $classification);
+                $q->where(function ($q) use ($categorySlug, $classificationSlug, $resolvedName) {
+                    $q->where('ot.main_classification', $resolvedName)
+                      ->orWhere('ot.main_classification', $categorySlug)
+                      ->orWhereRaw('LOWER(ot.main_classification) = ?', [strtolower($resolvedName)])
+                      ->orWhereRaw('LOWER(ot.main_classification) = ?', [$classificationSlug])
+                      ->orWhereRaw('LOWER(ot.main_classification) = ?', [strtolower($categorySlug)])
+                      ->orWhereRaw("LOWER(REPLACE(REPLACE(ot.main_classification, ' ', '-'), '&', 'and')) = ?", [strtolower(Str::slug($categorySlug))])
+                      ->orWhereRaw("LOWER(REPLACE(ot.main_classification, ' ', '-')) = ?", [strtolower(Str::slug($categorySlug))]);
+                });
             }
         }
 
@@ -1471,210 +1509,205 @@ class RecordAllCombinedService
             ->addColumn('l3_numerical_formatted', function ($row) {
                 return ($row->l3_numerical !== null && $row->l3_numerical !== '') ? number_format((float) $row->l3_numerical, 1) : '-';
             })
+            ->addColumn('course_title', function ($row) {
+                return htmlspecialchars($row->learning_title ?: '-');
+            })
+            ->addColumn('employee_id', function ($row) {
+                return htmlspecialchars($row->employee_id ?: '-');
+            })
+            ->addColumn('employee_name', function ($row) {
+                return htmlspecialchars($row->employee_name ?: '-');
+            })
+            ->addColumn('team', function ($row) {
+                return htmlspecialchars($row->team ?: '-');
+            })
+            ->addColumn('department', function ($row) {
+                return htmlspecialchars($row->department ?: '-');
+            })
+            ->addColumn('company', function ($row) {
+                return htmlspecialchars($row->company ?: '-');
+            })
+            ->addColumn('main_classification', function ($row) {
+                return htmlspecialchars($row->classification ?: '-');
+            })
+            ->addColumn('sub_classification', function ($row) {
+                return htmlspecialchars($row->sub_classification ?: '-');
+            })
+            ->addColumn('delivery_method', function ($row) {
+                if ($row->source === 'online') {
+                    return 'Online';
+                }
+                return htmlspecialchars($row->delivery_method ?: '-');
+            })
+            ->addColumn('sub_delivery_method', function ($row) {
+                if ($row->source === 'online') {
+                    return ($row->source_type ?? '') === 'playlist' ? 'Playlist / Path' : 'Self-Paced / LMS';
+                }
+                return htmlspecialchars($row->sub_delivery_method ?: '-');
+            })
+            ->addColumn('provider_name', function ($row) {
+                if ($row->source === 'online') {
+                    return 'KP OWL';
+                }
+                return htmlspecialchars($row->provider_name ?: '-');
+            })
+            ->addColumn('venue', function ($row) {
+                if ($row->source === 'online') {
+                    return 'Online LMS';
+                }
+                return htmlspecialchars($row->venue ?: '-');
+            })
+            ->addColumn('learning_hours', function ($row) {
+                $hours = (float) ($row->training_hours ?? ($row->learning_hours ?? 0));
+                return '<span class="fw-semibold">' . number_format($hours, 1) . 'h</span>';
+            })
+            ->addColumn('sub_classification', function ($row) {
+                return htmlspecialchars($row->sub_classification ?: '-');
+            })
+            ->addColumn('delivery_method', function ($row) {
+                if ($row->source === 'online') {
+                    return 'Online';
+                }
+                return htmlspecialchars($row->delivery_method ?: '-');
+            })
+            ->addColumn('sub_delivery_method', function ($row) {
+                if ($row->source === 'online') {
+                    return ($row->source_type ?? '') === 'playlist' ? 'Playlist / Path' : 'Self-Paced / LMS';
+                }
+                return htmlspecialchars($row->sub_delivery_method ?: '-');
+            })
+            ->addColumn('provider_name', function ($row) {
+                if ($row->source === 'online') {
+                    return 'KP OWL';
+                }
+                return htmlspecialchars($row->provider_name ?: '-');
+            })
+            ->addColumn('venue', function ($row) {
+                if ($row->source === 'online') {
+                    return 'Online LMS';
+                }
+                return htmlspecialchars($row->venue ?: '-');
+            })
+            ->addColumn('learning_hours', function ($row) {
+                $hours = (float) ($row->training_hours ?? ($row->learning_hours ?? 0));
+                return '<span class="fw-semibold">' . number_format($hours, 1) . 'h</span>';
+            })
+            ->addColumn('course_duration', function ($row) {
+                $sec = (int) ($row->duration_seconds ?? 0);
+                if ($sec <= 0) {
+                    return '-';
+                }
+                $h = floor($sec / 3600);
+                $m = floor(($sec % 3600) / 60);
+                $s = $sec % 60;
+                return sprintf('%02d:%02d:%02d', $h, $m, $s);
+            })
+            ->addColumn('progress_percent', function ($row) {
+                $progress = max(0, min(100, round((float) ($row->progress ?? 0))));
+                $color = $progress >= 100 ? 'bg-success' : ($progress > 0 ? 'bg-warning' : 'bg-secondary');
+                return '<div class="d-flex align-items-center gap-2" style="min-width: 85px;">
+                    <div class="progress progress-xs flex-grow-1" style="width: 50px; height: 6px;">
+                        <div class="progress-bar ' . $color . '" style="width: ' . $progress . '%"></div>
+                    </div>
+                    <span class="small fw-semibold text-muted">' . $progress . '%</span>
+                </div>';
+            })
+            ->addColumn('progress_status', function ($row) {
+                $progress = (float) ($row->progress ?? 0);
+                if ($progress >= 100) {
+                    return '<span class="badge bg-success-lt text-success fw-bold px-2 py-1">Finished</span>';
+                } elseif ($progress > 0) {
+                    return '<span class="badge bg-warning-lt text-warning fw-bold px-2 py-1">Ongoing (' . round($progress) . '%)</span>';
+                }
+                return '<span class="badge bg-secondary-lt fw-bold px-2 py-1">Not Started</span>';
+            })
+            ->addColumn('date_time_merged', function ($row) {
+                return \App\Http\Controllers\Manage\Record\RecordOfflineController::renderMergedDateTime($row->start_date ?? null, $row->finish_date ?? ($row->end_date ?? null), $row->start_time ?? null, $row->end_time ?? null);
+            })
+            ->addColumn('record_month', function ($row) {
+                $d = $row->finish_date ?: ($row->start_date ?: ($row->record_date ?? null));
+                if (!empty($d) && $d !== '-') {
+                    try {
+                        return date('F', strtotime($d));
+                    } catch (\Throwable $e) {
+                        return '-';
+                    }
+                }
+                return '-';
+            })
+            ->addColumn('requirement', function ($row) {
+                $req = $row->requirement ?? ($row->status ?? '-');
+                if (strtolower($req) === 'mandatory') {
+                    return '<span class="badge bg-red-lt text-red">Mandatory</span>';
+                }
+                return htmlspecialchars($req);
+            })
+            ->addColumn('attendance', function ($row) {
+                $val = (string) ($row->attendance ?? '');
+                $isYes = in_array(strtolower(trim($val)), ['1', 'yes', 'true', 'present'], true)
+                    || (($row->source ?? '') === 'online' && ((float) ($row->progress ?? 0) >= 100));
+                if ($isYes) {
+                    return '<span class="badge bg-success-lt text-success fw-bold px-2 py-1">Present</span>';
+                }
+                return '<span class="badge bg-secondary-lt fw-bold px-2 py-1">-</span>';
+            })
+            ->addColumn('score_l1', function ($row) {
+                if (isset($row->assessment_score) && is_numeric($row->assessment_score)) {
+                    return '<span class="fw-semibold">' . number_format((float) $row->assessment_score, 1) . '</span>';
+                }
+                if (!empty($row->l1_program) && $row->l1_program !== '-') {
+                    return htmlspecialchars($row->l1_program);
+                }
+                return '<span class="text-muted small">-</span>';
+            })
+            ->addColumn('score_l2', function ($row) {
+                if (isset($row->l2_numerical) && is_numeric($row->l2_numerical)) {
+                    return '<span class="fw-semibold">' . number_format((float) $row->l2_numerical, 1) . '</span>';
+                }
+                return '<span class="text-muted small">-</span>';
+            })
+            ->addColumn('score_l3', function ($row) {
+                if (isset($row->l3_numerical) && is_numeric($row->l3_numerical)) {
+                    return '<span class="fw-semibold">' . number_format((float) $row->l3_numerical, 1) . '</span>';
+                }
+                return '<span class="text-muted small">-</span>';
+            })
+            ->addColumn('pic', function ($row) {
+                return !empty($row->pic) ? htmlspecialchars($row->pic) : '<span class="text-muted small">-</span>';
+            })
+            ->addColumn('total_engagement_time', function ($row) {
+                return '<span class="fw-semibold">' . number_format((float) ($row->learning_hours ?? 0), 1) . 'h</span>';
+            })
             ->addColumn('action', function ($row) {
-                $user = auth()->user();
-                $canRecord = $user && $user->canAccessManageModule('record_management');
-                $canLearning = $user && $user->canAccessManageModule('learning_management');
-                $canContent = $user && $user->canAccessManageModule('content_repository');
-                $canPlaylist = $user && $user->canAccessManageModule('playlist_learning_path');
+                $source = $row->source ?? 'online';
+                $id = $row->source_id ?? '';
+                $editUrl = route('manage.record.edit', $id) . '?source=' . e($source);
 
-                if ($row->source === 'offline') {
-                    $sourceId = (int) $row->source_id;
-                    $empName = htmlspecialchars($row->employee_name ?: ($row->employee ?: 'Participant'), ENT_QUOTES);
-                    $empNip = htmlspecialchars($row->employee_id ?: '', ENT_QUOTES);
-                    $courseName = htmlspecialchars($row->learning_title ?: 'Training', ENT_QUOTES);
-                    $classSlug = Str::slug($row->classification ?? 'unclassified');
-                    $editUrl = route('manage.record.offline.edit', [
-                        'id'             => $sourceId,
-                        'return'         => 'all_classification',
-                        'classification' => $classSlug,
-                    ]);
-
-                    $items = [];
-                    $items[] = '<li>
-                        <button type="button" class="dropdown-item d-flex align-items-center gap-2 btn-view-offline-detail" 
-                                data-id="' . $sourceId . '">
-                            <i class="ti ti-eye text-primary fs-3"></i>
-                            <span>View Detail</span>
-                        </button>
-                    </li>';
-
-                    if ($canRecord) {
-                        $items[] = '<li>
-                            <a href="' . $editUrl . '" class="dropdown-item d-flex align-items-center gap-2 btn-edit-offline-record">
-                                <i class="ti ti-edit text-warning fs-3"></i>
-                                <span>Edit Record</span>
-                            </a>
-                        </li>';
-                        $items[] = '<li><hr class="dropdown-divider my-1"></li>';
-                        $items[] = '<li>
-                            <button type="button" class="dropdown-item d-flex align-items-center gap-2 text-danger btn-delete-offline-record" 
-                                    data-id="' . $sourceId . '" 
-                                    data-employee="' . $empName . '" 
-                                    data-nip="' . $empNip . '" 
-                                    data-course="' . $courseName . '">
-                                <i class="ti ti-trash text-danger fs-3"></i>
-                                <span>Delete Record</span>
-                            </button>
-                        </li>';
-                    }
-
-                    return '<div class="dropdown text-end dropdown-action-menu">
-                        <button type="button" class="btn btn-sm btn-icon btn-ghost-secondary rounded-2 btn-action-trigger" 
-                                data-bs-toggle="dropdown" 
-                                data-bs-boundary="body" 
-                                data-bs-popper-config=\'{"strategy":"fixed"}\'
-                                aria-expanded="false" 
-                                title="Action">
-                            <i class="ti ti-dots-vertical fs-3"></i>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 py-1 rounded-3" style="min-width: 180px;">
-                            ' . implode("\n", $items) . '
-                        </ul>
-                    </div>';
-                }
-
-                // source === 'online'
-                $sourceId = (int) $row->source_id;
-                $sourceType = htmlspecialchars($row->source_type ?? 'content', ENT_QUOTES);
-                $empName = htmlspecialchars($row->employee_name ?: '', ENT_QUOTES);
-                $empNip = htmlspecialchars($row->employee_id ?: '', ENT_QUOTES);
-                $learningTitle = htmlspecialchars($row->learning_title ?: 'Content', ENT_QUOTES);
-                $contentSlug = htmlspecialchars($row->learning_slug ?: '', ENT_QUOTES);
-                $playlistSlug = htmlspecialchars($row->playlist_slug ?: '', ENT_QUOTES);
-
-                $items = [];
-
-                // 1. Learning Record Section (Peserta)
-                $items[] = '<h6 class="dropdown-header text-uppercase text-muted fw-bold extra-small px-3 py-1 mb-0" style="font-size: 0.68rem; letter-spacing: 0.05em;">Learning Record</h6>';
-                $items[] = '<li>
-                    <button type="button" class="dropdown-item d-flex align-items-center gap-2 btn-view-online-detail" 
-                            data-id="' . $sourceId . '" 
-                            data-type="' . $sourceType . '">
-                        <i class="ti ti-eye text-primary fs-3"></i>
-                        <span>View Detail</span>
+                return '<div class="dropdown">
+                    <button class="btn btn-sm btn-icon btn-ghost-secondary" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="ti ti-dots-vertical"></i>
                     </button>
-                </li>';
-
-                if ($canRecord || $canLearning) {
-                    $items[] = '<li>
-                        <button type="button" class="dropdown-item d-flex align-items-center gap-2 btn-edit-online-record" 
-                                data-id="' . $sourceId . '" 
-                                data-type="' . $sourceType . '">
-                            <i class="ti ti-adjustments text-warning fs-3"></i>
-                            <span>Edit Progress</span>
-                        </button>
-                    </li>';
-
-                    $items[] = '<li>
-                        <button type="button" class="dropdown-item d-flex align-items-center gap-2 text-warning btn-reset-online-record" 
-                                data-id="' . $sourceId . '" 
-                                data-type="' . $sourceType . '" 
-                                data-employee="' . $empName . '" 
-                                data-title="' . $learningTitle . '">
-                            <i class="ti ti-rotate-clockwise-2 text-warning fs-3"></i>
-                            <span>Reset Progress</span>
-                        </button>
-                    </li>';
-
-                    $items[] = '<li>
-                        <button type="button" class="dropdown-item d-flex align-items-center gap-2 text-danger btn-delete-online-record" 
-                                data-id="' . $sourceId . '" 
-                                data-type="' . $sourceType . '" 
-                                data-employee="' . $empName . '" 
-                                data-nip="' . $empNip . '" 
-                                data-title="' . $learningTitle . '">
-                            <i class="ti ti-trash text-danger fs-3"></i>
-                            <span>Delete Record</span>
-                        </button>
-                    </li>';
-                }
-
-                // 2. Master Entity Section (Content or Playlist)
-                if ($sourceType === 'content') {
-                    $masterItems = [];
-                    if (!empty($contentSlug)) {
-                        $masterItems[] = '<li>
-                            <a href="' . route('learning.manage.content', $contentSlug) . '" class="dropdown-item d-flex align-items-center gap-2" target="_blank">
-                                <i class="ti ti-external-link text-info fs-3"></i>
-                                <span>View Content</span>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2" href="#" data-bs-toggle="modal" data-bs-target="#moreInformationModal" data-record-id="' . e($id) . '" data-record-source="' . e($source) . '">
+                                <i class="ti ti-eye text-primary"></i> More Information
                             </a>
-                        </li>';
-
-                        if ($canContent) {
-                            $masterItems[] = '<li>
-                                <a href="' . route('content.edit', $contentSlug) . '" class="dropdown-item d-flex align-items-center gap-2 btn-edit-content-master" target="_blank">
-                                    <i class="ti ti-edit text-success fs-3"></i>
-                                    <span>Edit Content (Master)</span>
-                                </a>
-                            </li>';
-
-                            $masterItems[] = '<li>
-                                <button type="button" class="dropdown-item d-flex align-items-center gap-2 text-danger btn-delete-content-master" 
-                                        data-slug="' . $contentSlug . '" 
-                                        data-title="' . $learningTitle . '" 
-                                        data-type="content">
-                                    <i class="ti ti-trash-x text-danger fs-3"></i>
-                                    <span>Delete Content (Master)</span>
-                                </button>
-                            </li>';
-                        }
-                    }
-
-                    if (!empty($masterItems)) {
-                        $items[] = '<li><hr class="dropdown-divider my-1"></li>';
-                        $items[] = '<h6 class="dropdown-header text-uppercase text-muted fw-bold extra-small px-3 py-1 mb-0" style="font-size: 0.68rem; letter-spacing: 0.05em;">Master Content</h6>';
-                        $items = array_merge($items, $masterItems);
-                    }
-                } elseif ($sourceType === 'playlist') {
-                    $masterItems = [];
-                    $targetSlug = !empty($playlistSlug) ? $playlistSlug : (!empty($row->learning_slug) ? $row->learning_slug : '');
-                    if (!empty($targetSlug)) {
-                        $masterItems[] = '<li>
-                            <a href="' . url('/playlist/' . $targetSlug) . '" class="dropdown-item d-flex align-items-center gap-2" target="_blank">
-                                <i class="ti ti-external-link text-info fs-3"></i>
-                                <span>View Playlist</span>
+                        </li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2" href="' . e($editUrl) . '">
+                                <i class="ti ti-edit text-warning"></i> Edit Record
                             </a>
-                        </li>';
-
-                        if ($canPlaylist) {
-                            $masterItems[] = '<li>
-                                <a href="' . route('playlist.edit', $targetSlug) . '" class="dropdown-item d-flex align-items-center gap-2 btn-edit-playlist-master" target="_blank">
-                                    <i class="ti ti-edit text-success fs-3"></i>
-                                    <span>Edit Playlist (Master)</span>
-                                </a>
-                            </li>';
-
-                            $masterItems[] = '<li>
-                                <button type="button" class="dropdown-item d-flex align-items-center gap-2 text-danger btn-delete-playlist-master" 
-                                        data-slug="' . $targetSlug . '" 
-                                        data-title="' . $learningTitle . '" 
-                                        data-type="playlist">
-                                    <i class="ti ti-trash-x text-danger fs-3"></i>
-                                    <span>Delete Playlist (Master)</span>
-                                </button>
-                            </li>';
-                        }
-                    }
-
-                    if (!empty($masterItems)) {
-                        $items[] = '<li><hr class="dropdown-divider my-1"></li>';
-                        $items[] = '<h6 class="dropdown-header text-uppercase text-muted fw-bold extra-small px-3 py-1 mb-0" style="font-size: 0.68rem; letter-spacing: 0.05em;">Master Playlist</h6>';
-                        $items = array_merge($items, $masterItems);
-                    }
-                }
-
-                return '<div class="dropdown text-end dropdown-action-menu">
-                    <button type="button" class="btn btn-sm btn-icon btn-ghost-secondary rounded-2 btn-action-trigger" 
-                            data-bs-toggle="dropdown" 
-                            data-bs-boundary="body" 
-                            data-bs-popper-config=\'{"strategy":"fixed"}\'
-                            aria-expanded="false" 
-                            title="Action">
-                        <i class="ti ti-dots-vertical fs-3"></i>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 py-1 rounded-3" style="min-width: 200px;">
-                        ' . implode("\n", $items) . '
+                        </li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2 text-danger" href="#" data-bs-toggle="modal" data-bs-target="#deleteRecordModal" data-record-id="' . e($id) . '" data-record-source="' . e($source) . '">
+                                <i class="ti ti-trash"></i> Delete Record
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2 disabled text-muted" href="#" onclick="return false;" style="cursor: not-allowed;">
+                                <i class="ti ti-certificate"></i> Generate Certificate
+                            </a>
+                        </li>
                     </ul>
                 </div>';
             })
@@ -1684,10 +1717,24 @@ class RecordAllCombinedService
                 'employee_name',
                 'employee',
                 'learning_title',
+                'course_title',
+                'main_classification',
                 'kpi_badge',
                 'progress_bar',
+                'progress_badge',
+                'progress_percent',
+                'progress_status',
+                'date_time_merged',
+                'requirement',
+                'attendance',
                 'certificate_badge',
                 'attendance_badge',
+                'score_l1',
+                'score_l2',
+                'score_l3',
+                'learning_hours',
+                'pic',
+                'total_engagement_time',
                 'action',
             ])
             ->make(true);
@@ -1975,221 +2022,155 @@ class RecordAllCombinedService
                 $d = $row->finish_date ?? ($row->start_date ?? ($row->record_date ?? null));
                 return ($d && $d !== '-') ? date('d M Y', strtotime($d)) : '-';
             })
-            ->addColumn('action', function ($row) use ($participant, $classificationSlug) {
-                $user = auth()->user();
-                $canRecord = $user && $user->canAccessManageModule('record_management');
-                $canLearning = $user && $user->canAccessManageModule('learning_management');
-                $canContent = $user && $user->canAccessManageModule('content_repository');
-                $canPlaylist = $user && $user->canAccessManageModule('playlist_learning_path');
-
-                if ($row->source === 'offline') {
-                    $sourceId = (int) $row->source_id;
-                    $empName = htmlspecialchars($row->employee_name ?: ($participant['name'] ?: 'Participant'), ENT_QUOTES);
-                    $empNip = htmlspecialchars($row->employee_id ?: ($participant['employee_id'] ?: ''), ENT_QUOTES);
-                    $courseName = htmlspecialchars($row->learning_title ?: 'Training', ENT_QUOTES);
-                    $classSlug = !empty($classificationSlug) ? $classificationSlug : Str::slug($row->classification ?? 'unclassified');
-                    $rawIdentifier = $participant['raw_identifier'] ?? ($participant['user_id'] ?? $participant['employee_id']);
-                    $editUrl = route('manage.record.offline.edit', [
-                        'id'             => $sourceId,
-                        'return'         => 'all_participant',
-                        'identifier'     => $rawIdentifier,
-                        'classification' => $classSlug,
-                    ]);
-
-                    $items = [];
-                    $items[] = '<li>
-                        <button type="button" class="dropdown-item d-flex align-items-center gap-2 btn-view-offline-detail" 
-                                data-id="' . $sourceId . '">
-                            <i class="ti ti-eye text-primary fs-3"></i>
-                            <span>View Detail</span>
-                        </button>
-                    </li>';
-
-                    if ($canRecord) {
-                        $items[] = '<li>
-                            <a href="' . $editUrl . '" class="dropdown-item d-flex align-items-center gap-2 btn-edit-offline-record">
-                                <i class="ti ti-edit text-warning fs-3"></i>
-                                <span>Edit Record</span>
-                            </a>
-                        </li>';
-                        $items[] = '<li><hr class="dropdown-divider my-1"></li>';
-                        $items[] = '<li>
-                            <button type="button" class="dropdown-item d-flex align-items-center gap-2 text-danger btn-delete-offline-record" 
-                                    data-id="' . $sourceId . '" 
-                                    data-employee="' . $empName . '" 
-                                    data-nip="' . $empNip . '" 
-                                    data-course="' . $courseName . '">
-                                <i class="ti ti-trash text-danger fs-3"></i>
-                                <span>Delete Record</span>
-                            </button>
-                        </li>';
-                    }
-
-                    return '<div class="dropdown text-end dropdown-action-menu">
-                        <button type="button" class="btn btn-sm btn-icon btn-ghost-secondary rounded-2 btn-action-trigger" 
-                                data-bs-toggle="dropdown" 
-                                data-bs-boundary="body" 
-                                data-bs-popper-config=\'{"strategy":"fixed"}\'
-                                aria-expanded="false" 
-                                title="Action">
-                            <i class="ti ti-dots-vertical fs-3"></i>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 py-1 rounded-3" style="min-width: 180px;">
-                            ' . implode("\n", $items) . '
-                        </ul>
-                    </div>';
+            ->addColumn('course_title', function ($row) {
+                return htmlspecialchars($row->learning_title ?: '-');
+            })
+            ->addColumn('main_classification', function ($row) {
+                return htmlspecialchars($row->classification ?: '-');
+            })
+            ->addColumn('course_duration', function ($row) {
+                $sec = (int) ($row->duration_seconds ?? 0);
+                if ($sec <= 0) {
+                    return '-';
                 }
+                $h = floor($sec / 3600);
+                $m = floor(($sec % 3600) / 60);
+                $s = $sec % 60;
+                return sprintf('%02d:%02d:%02d', $h, $m, $s);
+            })
+            ->addColumn('progress_percent', function ($row) {
+                $progress = max(0, min(100, round((float) ($row->progress ?? 0))));
+                $color = $progress >= 100 ? 'bg-success' : ($progress > 0 ? 'bg-warning' : 'bg-secondary');
+                return '<div class="d-flex align-items-center gap-2" style="min-width: 85px;">
+                    <div class="progress progress-xs flex-grow-1" style="width: 50px; height: 6px;">
+                        <div class="progress-bar ' . $color . '" style="width: ' . $progress . '%"></div>
+                    </div>
+                    <span class="small fw-semibold text-muted">' . $progress . '%</span>
+                </div>';
+            })
+            ->addColumn('progress_status', function ($row) {
+                $progress = (float) ($row->progress ?? 0);
+                if ($progress >= 100) {
+                    return '<span class="badge bg-success-lt text-success fw-bold px-2 py-1">Finished</span>';
+                } elseif ($progress > 0) {
+                    return '<span class="badge bg-warning-lt text-warning fw-bold px-2 py-1">Ongoing (' . round($progress) . '%)</span>';
+                }
+                return '<span class="badge bg-secondary-lt fw-bold px-2 py-1">Not Started</span>';
+            })
+            ->addColumn('date_time_merged', function ($row) {
+                return \App\Http\Controllers\Manage\Record\RecordOfflineController::renderMergedDateTime($row->start_date ?? null, $row->finish_date ?? ($row->end_date ?? null), $row->start_time ?? null, $row->end_time ?? null);
+            })
+            ->addColumn('record_month', function ($row) {
+                $d = $row->finish_date ?: ($row->start_date ?: ($row->record_date ?? null));
+                if (!empty($d) && $d !== '-') {
+                    try {
+                        return date('F', strtotime($d));
+                    } catch (\Throwable $e) {
+                        return '-';
+                    }
+                }
+                return '-';
+            })
+            ->addColumn('requirement', function ($row) {
+                $req = $row->requirement ?? ($row->status ?? '-');
+                if (strtolower($req) === 'mandatory') {
+                    return '<span class="badge bg-red-lt text-red">Mandatory</span>';
+                }
+                return htmlspecialchars($req);
+            })
+            ->addColumn('attendance', function ($row) {
+                $val = (string) ($row->attendance ?? '');
+                $isYes = in_array(strtolower(trim($val)), ['1', 'yes', 'true', 'present'], true)
+                    || (($row->source ?? '') === 'online' && ((float) ($row->progress ?? 0) >= 100));
+                if ($isYes) {
+                    return '<span class="badge bg-success-lt text-success fw-bold px-2 py-1">Present</span>';
+                }
+                return '<span class="badge bg-secondary-lt fw-bold px-2 py-1">-</span>';
+            })
+            ->addColumn('score_l1', function ($row) {
+                if (isset($row->assessment_score) && is_numeric($row->assessment_score)) {
+                    return '<span class="fw-semibold">' . number_format((float) $row->assessment_score, 1) . '</span>';
+                }
+                if (!empty($row->l1_program) && $row->l1_program !== '-') {
+                    return htmlspecialchars($row->l1_program);
+                }
+                return '<span class="text-muted small">-</span>';
+            })
+            ->addColumn('score_l2', function ($row) {
+                if (isset($row->l2_numerical) && is_numeric($row->l2_numerical)) {
+                    return '<span class="fw-semibold">' . number_format((float) $row->l2_numerical, 1) . '</span>';
+                }
+                return '<span class="text-muted small">-</span>';
+            })
+            ->addColumn('score_l3', function ($row) {
+                if (isset($row->l3_numerical) && is_numeric($row->l3_numerical)) {
+                    return '<span class="fw-semibold">' . number_format((float) $row->l3_numerical, 1) . '</span>';
+                }
+                return '<span class="text-muted small">-</span>';
+            })
+            ->addColumn('pic', function ($row) {
+                return !empty($row->pic) ? htmlspecialchars($row->pic) : '<span class="text-muted small">-</span>';
+            })
+            ->addColumn('total_engagement_time', function ($row) {
+                return '<span class="fw-semibold">' . number_format((float) ($row->learning_hours ?? 0), 1) . 'h</span>';
+            })
+            ->addColumn('action', function ($row) {
+                $source = $row->source ?? 'online';
+                $id = $row->source_id ?? '';
+                $editUrl = route('manage.record.edit', $id) . '?source=' . e($source);
 
-                // source === 'online'
-                $sourceId = (int) $row->source_id;
-                $sourceType = htmlspecialchars($row->source_type ?? 'content', ENT_QUOTES);
-                $empName = htmlspecialchars($row->employee_name ?: ($participant['name'] ?: ''), ENT_QUOTES);
-                $empNip = htmlspecialchars($row->employee_id ?: ($participant['employee_id'] ?: ''), ENT_QUOTES);
-                $learningTitle = htmlspecialchars($row->learning_title ?: 'Content', ENT_QUOTES);
-                $contentSlug = htmlspecialchars($row->learning_slug ?: ($row->content_slug ?? ''), ENT_QUOTES);
-                $playlistSlug = htmlspecialchars($row->playlist_slug ?: ($row->learning_slug ?? ''), ENT_QUOTES);
-
-                $items = [];
-
-                // 1. Learning Record Section (Peserta)
-                $items[] = '<h6 class="dropdown-header text-uppercase text-muted fw-bold extra-small px-3 py-1 mb-0" style="font-size: 0.68rem; letter-spacing: 0.05em;">Learning Record</h6>';
-                $items[] = '<li>
-                    <button type="button" class="dropdown-item d-flex align-items-center gap-2 btn-view-online-detail" 
-                            data-id="' . $sourceId . '" 
-                            data-type="' . $sourceType . '">
-                        <i class="ti ti-eye text-primary fs-3"></i>
-                        <span>View Detail</span>
+                return '<div class="dropdown">
+                    <button class="btn btn-sm btn-icon btn-ghost-secondary" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="ti ti-dots-vertical"></i>
                     </button>
-                </li>';
-
-                if ($canRecord || $canLearning) {
-                    $items[] = '<li>
-                        <button type="button" class="dropdown-item d-flex align-items-center gap-2 btn-edit-online-record" 
-                                data-id="' . $sourceId . '" 
-                                data-type="' . $sourceType . '">
-                            <i class="ti ti-adjustments text-warning fs-3"></i>
-                            <span>Edit Progress</span>
-                        </button>
-                    </li>';
-
-                    $items[] = '<li>
-                        <button type="button" class="dropdown-item d-flex align-items-center gap-2 text-warning btn-reset-online-record" 
-                                data-id="' . $sourceId . '" 
-                                data-type="' . $sourceType . '" 
-                                data-employee="' . $empName . '" 
-                                data-title="' . $learningTitle . '">
-                            <i class="ti ti-rotate-clockwise-2 text-warning fs-3"></i>
-                            <span>Reset Progress</span>
-                        </button>
-                    </li>';
-
-                    $items[] = '<li>
-                        <button type="button" class="dropdown-item d-flex align-items-center gap-2 text-danger btn-delete-online-record" 
-                                data-id="' . $sourceId . '" 
-                                data-type="' . $sourceType . '" 
-                                data-employee="' . $empName . '" 
-                                data-nip="' . $empNip . '" 
-                                data-title="' . $learningTitle . '">
-                            <i class="ti ti-trash text-danger fs-3"></i>
-                            <span>Delete Record</span>
-                        </button>
-                    </li>';
-                }
-
-                // 2. Master Entity Section (Content or Playlist)
-                if ($sourceType === 'content') {
-                    $masterItems = [];
-                    if (!empty($contentSlug)) {
-                        $masterItems[] = '<li>
-                            <a href="' . route('learning.manage.content', $contentSlug) . '" class="dropdown-item d-flex align-items-center gap-2" target="_blank">
-                                <i class="ti ti-external-link text-info fs-3"></i>
-                                <span>View Content</span>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2" href="#" data-bs-toggle="modal" data-bs-target="#moreInformationModal" data-record-id="' . e($id) . '" data-record-source="' . e($source) . '">
+                                <i class="ti ti-eye text-primary"></i> More Information
                             </a>
-                        </li>';
-
-                        if ($canContent) {
-                            $masterItems[] = '<li>
-                                <a href="' . route('content.edit', $contentSlug) . '" class="dropdown-item d-flex align-items-center gap-2 btn-edit-content-master" target="_blank">
-                                    <i class="ti ti-edit text-success fs-3"></i>
-                                    <span>Edit Content (Master)</span>
-                                </a>
-                            </li>';
-
-                            $masterItems[] = '<li>
-                                <button type="button" class="dropdown-item d-flex align-items-center gap-2 text-danger btn-delete-content-master" 
-                                        data-slug="' . $contentSlug . '" 
-                                        data-title="' . $learningTitle . '" 
-                                        data-type="content">
-                                    <i class="ti ti-trash-x text-danger fs-3"></i>
-                                    <span>Delete Content (Master)</span>
-                                </button>
-                            </li>';
-                        }
-                    }
-
-                    if (!empty($masterItems)) {
-                        $items[] = '<li><hr class="dropdown-divider my-1"></li>';
-                        $items[] = '<h6 class="dropdown-header text-uppercase text-muted fw-bold extra-small px-3 py-1 mb-0" style="font-size: 0.68rem; letter-spacing: 0.05em;">Master Content</h6>';
-                        $items = array_merge($items, $masterItems);
-                    }
-                } elseif ($sourceType === 'playlist') {
-                    $masterItems = [];
-                    $targetSlug = !empty($playlistSlug) ? $playlistSlug : (!empty($row->learning_slug) ? $row->learning_slug : '');
-                    if (!empty($targetSlug)) {
-                        $masterItems[] = '<li>
-                            <a href="' . url('/playlist/' . $targetSlug) . '" class="dropdown-item d-flex align-items-center gap-2" target="_blank">
-                                <i class="ti ti-external-link text-info fs-3"></i>
-                                <span>View Playlist</span>
+                        </li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2" href="' . e($editUrl) . '">
+                                <i class="ti ti-edit text-warning"></i> Edit Record
                             </a>
-                        </li>';
-
-                        if ($canPlaylist) {
-                            $masterItems[] = '<li>
-                                <a href="' . route('playlist.edit', $targetSlug) . '" class="dropdown-item d-flex align-items-center gap-2 btn-edit-playlist-master" target="_blank">
-                                    <i class="ti ti-edit text-success fs-3"></i>
-                                    <span>Edit Playlist (Master)</span>
-                                </a>
-                            </li>';
-
-                            $masterItems[] = '<li>
-                                <button type="button" class="dropdown-item d-flex align-items-center gap-2 text-danger btn-delete-playlist-master" 
-                                        data-slug="' . $targetSlug . '" 
-                                        data-title="' . $learningTitle . '" 
-                                        data-type="playlist">
-                                    <i class="ti ti-trash-x text-danger fs-3"></i>
-                                    <span>Delete Playlist (Master)</span>
-                                </button>
-                            </li>';
-                        }
-                    }
-
-                    if (!empty($masterItems)) {
-                        $items[] = '<li><hr class="dropdown-divider my-1"></li>';
-                        $items[] = '<h6 class="dropdown-header text-uppercase text-muted fw-bold extra-small px-3 py-1 mb-0" style="font-size: 0.68rem; letter-spacing: 0.05em;">Master Playlist</h6>';
-                        $items = array_merge($items, $masterItems);
-                    }
-                }
-
-                return '<div class="dropdown text-end dropdown-action-menu">
-                    <button type="button" class="btn btn-sm btn-icon btn-ghost-secondary rounded-2 btn-action-trigger" 
-                            data-bs-toggle="dropdown" 
-                            data-bs-boundary="body" 
-                            data-bs-popper-config=\'{"strategy":"fixed"}\'
-                            aria-expanded="false" 
-                            title="Action">
-                        <i class="ti ti-dots-vertical fs-3"></i>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 py-1 rounded-3" style="min-width: 200px;">
-                        ' . implode("\n", $items) . '
+                        </li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2 text-danger" href="#" data-bs-toggle="modal" data-bs-target="#deleteRecordModal" data-record-id="' . e($id) . '" data-record-source="' . e($source) . '">
+                                <i class="ti ti-trash"></i> Delete Record
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2 disabled text-muted" href="#" onclick="return false;" style="cursor: not-allowed;">
+                                <i class="ti ti-certificate"></i> Generate Certificate
+                            </a>
+                        </li>
                     </ul>
                 </div>';
             })
             ->rawColumns([
                 'source_badge',
                 'status_badge',
+                'employee_name',
+                'employee',
                 'learning_title',
-                'learning_hours_formatted',
+                'course_title',
+                'main_classification',
+                'kpi_badge',
+                'progress_bar',
                 'progress_badge',
+                'progress_percent',
+                'progress_status',
+                'date_time_merged',
+                'requirement',
+                'attendance',
+                'certificate_badge',
+                'attendance_badge',
+                'score_l1',
+                'score_l2',
+                'score_l3',
+                'learning_hours',
+                'pic',
+                'total_engagement_time',
                 'action',
             ])
             ->make(true);
