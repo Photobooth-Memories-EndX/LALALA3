@@ -2,35 +2,152 @@
 
 namespace App\Exports;
 
+use App\Models\OfflineTraining;
 use App\Services\Record\RecordAllCombinedService;
+use Carbon\Carbon;
 use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Maatwebsite\Excel\Concerns\FromQuery;
-use Maatwebsite\Excel\Concerns\WithChunkReading;
-use Maatwebsite\Excel\Concerns\WithColumnWidths;
-use Maatwebsite\Excel\Concerns\WithHeadings;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use ZipStream\Option\Archive as ArchiveOptions;
 use ZipStream\ZipStream;
 
-class AllRecordExport implements FromQuery, WithHeadings, WithChunkReading, WithColumnWidths, Responsable
+class AllRecordExport implements Responsable
 {
     protected array $filters = [];
-    protected int $rowNumber = 0;
     protected string $fileName;
 
     public function __construct($filters = [], ?string $fileName = null)
     {
         $this->filters = $filters instanceof Request ? $filters->all() : (array) $filters;
-        $this->rowNumber = 0;
-        $this->fileName = $fileName ?? RecordAllCombinedService::generateManageFileName();
+        $this->fileName = $fileName ?? self::generateFileName();
+    }
+
+    public static function generateFileName(): string
+    {
+        $dt = Carbon::now();
+        $monthMap = [
+            1 => 'Jan', 2 => 'Feb', 3 => 'Mar', 4 => 'Apr',
+            5 => 'Mei', 6 => 'Jun', 7 => 'Jul', 8 => 'Agu',
+            9 => 'Sep', 10 => 'Okt', 11 => 'Nov', 12 => 'Des',
+        ];
+        $day = $dt->format('d');
+        $month = $monthMap[(int) $dt->format('n')] ?? $dt->format('M');
+        $year = $dt->format('Y');
+        $time = $dt->format('H.i.s');
+
+        return "EmployeeAllrecord_{$day}{$month}{$year} at {$time}.xlsx";
     }
 
     public function getFileName(): string
     {
         return $this->fileName;
+    }
+
+    public static function headings(): array
+    {
+        return [
+            'NO',
+            'Source',
+            'Employee ID',
+            'Employee Name',
+            'Grade',
+            'Job Position',
+            'Team',
+            'Department',
+            'Company',
+            'Course Title',
+            'Sub Course Title',
+            'Type',
+            'Category',
+            'Level',
+            'Batch',
+            'Main Classification',
+            'Sub Classification',
+            'Delivery Method',
+            'Sub Delivery Method',
+            'Provider Name',
+            'Venue',
+            'Instructor',
+            'Course Duration',
+            'Total Engagement Duration',
+            'Learning Hours',
+            '% Progress',
+            'Progress Status',
+            'Start Date',
+            'End Date',
+            'Start Time',
+            'End Time',
+            'Record Month',
+            'Requirement',
+            'Attendance',
+            'Attendance Reason',
+            'Bond Status',
+            'Bond Duration',
+            'Bond End Date',
+            'Bond Amount',
+            'Score (L1) - Course',
+            'Score (L2)',
+            'L2 Status',
+            'Score (L3)',
+            'L3 Status',
+            'Person in Charge (PIC)',
+            'Certificate',
+            'Total Engagement Time (LH)',
+        ];
+    }
+
+    public static function columnWidths(): array
+    {
+        return [
+            'A'  => 6,   // NO
+            'B'  => 14,  // Source
+            'C'  => 16,  // Employee ID
+            'D'  => 30,  // Employee Name
+            'E'  => 12,  // Grade
+            'F'  => 25,  // Job Position
+            'G'  => 20,  // Team
+            'H'  => 25,  // Department
+            'I'  => 25,  // Company
+            'J'  => 35,  // Course Title
+            'K'  => 25,  // Sub Course Title
+            'L'  => 15,  // Type
+            'M'  => 18,  // Category
+            'N'  => 12,  // Level
+            'O'  => 12,  // Batch
+            'P'  => 25,  // Main Classification
+            'Q'  => 25,  // Sub Classification
+            'R'  => 18,  // Delivery Method
+            'S'  => 20,  // Sub Delivery Method
+            'T'  => 25,  // Provider Name
+            'U'  => 20,  // Venue
+            'V'  => 22,  // Instructor
+            'W'  => 16,  // Course Duration
+            'X'  => 25,  // Total Engagement Duration
+            'Y'  => 16,  // Learning Hours
+            'Z'  => 14,  // % Progress
+            'AA' => 16,  // Progress Status
+            'AB' => 14,  // Start Date
+            'AC' => 14,  // End Date
+            'AD' => 14,  // Start Time
+            'AE' => 14,  // End Time
+            'AF' => 16,  // Record Month
+            'AG' => 15,  // Requirement
+            'AH' => 14,  // Attendance
+            'AI' => 25,  // Attendance Reason
+            'AJ' => 14,  // Bond Status
+            'AK' => 16,  // Bond Duration
+            'AL' => 15,  // Bond End Date
+            'AM' => 18,  // Bond Amount
+            'AN' => 20,  // Score (L1) - Course
+            'AO' => 14,  // Score (L2)
+            'AP' => 14,  // L2 Status
+            'AQ' => 14,  // Score (L3)
+            'AR' => 14,  // L3 Status
+            'AS' => 22,  // Person in Charge (PIC)
+            'AT' => 14,  // Certificate
+            'AU' => 25,  // Total Engagement Time (LH)
+        ];
     }
 
     public function query()
@@ -40,113 +157,6 @@ class AllRecordExport implements FromQuery, WithHeadings, WithChunkReading, With
         return $service->buildCombinedQuery($this->filters)
             ->orderBy('raw_finish_date', 'desc')
             ->orderBy('record_date', 'desc');
-    }
-
-    public function headings(): array
-    {
-        return [
-            'No',
-            'Source',
-            'Employee ID',
-            'Employee Name',
-            'Status',
-            'Grade',
-            'Job Position',
-            'Team',
-            'Department',
-            'Company',
-            'Learning Title',
-            'Sub Title',
-            'Type',
-            'Category',
-            'Level',
-            'Batch',
-            'Main Classification',
-            'Sub Classification',
-            'Corporate KPI',
-            'Sub Corporate KPI',
-            'Delivery Method',
-            'Sub Delivery Method',
-            'Provider',
-            'Sub Provider',
-            'Provider Name',
-            'Venue',
-            'Instructor',
-            'Duration',
-            'Training Hours',
-            'Start Date',
-            'Finish Date',
-            'Participant Hours',
-            'Progress',
-            'Assessment Score (L2)',
-            'Certificate',
-            'Attendance Reason',
-            'Bond Status',
-            'Bond End Date',
-            'Bond Amount',
-            'L1 Program',
-            'L2 Numerical',
-            'L2 Verbal',
-            'L3 Numerical',
-            'L3 Verbal',
-            'PIC',
-        ];
-    }
-
-    public function chunkSize(): int
-    {
-        return 2000;
-    }
-
-    public function columnWidths(): array
-    {
-        return [
-            'A'  => 6,   // No
-            'B'  => 14,  // Source
-            'C'  => 14,  // Employee ID
-            'D'  => 30,  // Employee Name
-            'E'  => 14,  // Status
-            'F'  => 10,  // Grade
-            'G'  => 25,  // Job Position
-            'H'  => 20,  // Team
-            'I'  => 25,  // Department
-            'J'  => 25,  // Company
-            'K'  => 35,  // Learning Title
-            'L'  => 25,  // Sub Title
-            'M'  => 15,  // Type
-            'N'  => 18,  // Category
-            'O'  => 12,  // Level
-            'P'  => 12,  // Batch
-            'Q'  => 25,  // Main Classification
-            'R'  => 25,  // Sub Classification
-            'S'  => 15,  // Corporate KPI
-            'T'  => 22,  // Sub Corporate KPI
-            'U'  => 18,  // Delivery Method
-            'V'  => 20,  // Sub Delivery Method
-            'W'  => 15,  // Provider
-            'X'  => 18,  // Sub Provider
-            'Y'  => 25,  // Provider Name
-            'Z'  => 20,  // Venue
-            'AA' => 22,  // Instructor
-            'AB' => 14,  // Duration
-            'AC' => 16,  // Training Hours
-            'AD' => 14,  // Start Date
-            'AE' => 14,  // Finish Date
-            'AF' => 18,  // Participant Hours
-            'AG' => 12,  // Progress
-            'AH' => 20,  // Assessment Score (L2)
-            'AI' => 14,  // Certificate
-            'AJ' => 25,  // Attendance Reason
-            'AK' => 14,  // Bond Status
-            'AL' => 15,  // Bond End Date
-            'AM' => 16,  // Bond Amount
-            'AN' => 14,  // L1 Program
-            'AO' => 15,  // L2 Numerical
-            'AP' => 14,  // L2 Verbal
-            'AQ' => 15,  // L3 Numerical
-            'AR' => 14,  // L3 Verbal
-            'AS' => 14,  // PIC
-        ];
     }
 
     public function download(?string $fileName = null): BinaryFileResponse
@@ -230,6 +240,11 @@ class AllRecordExport implements FromQuery, WithHeadings, WithChunkReading, With
             'xl/styles.xml',
             '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             . '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+            . '<numFmts count="3">'
+            . '<numFmt numFmtId="164" formatCode="&quot;Rp&quot;#,##0"/>'
+            . '<numFmt numFmtId="165" formatCode="yyyy-mm-dd"/>'
+            . '<numFmt numFmtId="166" formatCode="hh:mm:ss"/>'
+            . '</numFmts>'
             . '<fonts count="3">'
             . '<font><sz val="10"/><name val="Calibri"/></font>'
             . '<font><b/><sz val="10"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>'
@@ -247,10 +262,19 @@ class AllRecordExport implements FromQuery, WithHeadings, WithChunkReading, With
             . '<cellStyleXfs count="1">'
             . '<xf numFmtId="0" fontId="0" fillId="0" borderId="0"/>'
             . '</cellStyleXfs>'
-            . '<cellXfs count="3">'
+            . '<cellXfs count="12">'
+            . '<xf numFmtId="49" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
+            . '<xf numFmtId="49" fontId="2" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
             . '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
-            . '<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
-            . '<xf numFmtId="0" fontId="2" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<xf numFmtId="1" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<xf numFmtId="2" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<xf numFmtId="9" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<xf numFmtId="166" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<xf numFmtId="1" fontId="2" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<xf numFmtId="9" fontId="2" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
             . '</cellXfs>'
             . '</styleSheet>'
         );
@@ -262,7 +286,7 @@ class AllRecordExport implements FromQuery, WithHeadings, WithChunkReading, With
         fwrite($sfh, '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' . "\n");
         fwrite($sfh, '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' . "\n");
         fwrite($sfh, '<cols>' . "\n");
-        foreach ($this->columnWidths() as $colLetter => $w) {
+        foreach (self::columnWidths() as $colLetter => $w) {
             $colIdx = Coordinate::columnIndexFromString($colLetter);
             fwrite($sfh, "<col min=\"{$colIdx}\" max=\"{$colIdx}\" width=\"{$w}\" customWidth=\"1\"/>\n");
         }
@@ -270,7 +294,7 @@ class AllRecordExport implements FromQuery, WithHeadings, WithChunkReading, With
         fwrite($sfh, '<sheetData>' . "\n");
 
         // Header row
-        $headers = $this->headings();
+        $headers = self::headings();
         fwrite($sfh, '<row r="1" ht="28" customHeight="1">' . "\n");
         foreach ($headers as $i => $h) {
             $coord = Coordinate::stringFromColumnIndex($i + 1) . '1';
@@ -279,18 +303,19 @@ class AllRecordExport implements FromQuery, WithHeadings, WithChunkReading, With
         }
         fwrite($sfh, '</row>' . "\n");
 
-        // High-performance streaming query execution using cursor: zero offset loops, zero memory bloat
         $query = $this->query();
         $rowCount = 0;
         $buffer = '';
-        $batchSize = 2000;
+        $batchSize = 1000;
 
         foreach ($query->cursor() as $row) {
             $rowCount++;
             $r = $rowCount + 1;
 
+            $isPlaylistRow = ($row->type === 'Playlist' || ($row->source_type ?? '') === 'playlist');
+
             // Duration formatted as HH:MM:SS
-            $durationFormatted = '';
+            $durationFormatted = '-';
             if (!empty($row->duration_seconds)) {
                 $secs = (int) $row->duration_seconds;
                 $hours = floor($secs / 3600);
@@ -299,91 +324,107 @@ class AllRecordExport implements FromQuery, WithHeadings, WithChunkReading, With
                 $durationFormatted = sprintf('%02d:%02d:%02d', $hours, $mins, $seconds);
             }
 
-            // Clean Assessment Score formatting (remove trailing decimal zeros/dots)
-            $cleanScore = is_numeric($row->assessment_score) ? (int) round((float) $row->assessment_score) : '-';
+            // Learning Hours: Append "h" unit (e.g. 0.20 h)
+            $lhVal = ($row->learning_hours !== null && $row->learning_hours !== '') ? (number_format((float) $row->learning_hours, 2) . ' h') : '-';
 
-            // Prevent double calculation: under playlist, set learning_hours cell to '-' on child rows
-            $isChildUnderPlaylist = (($row->source_type ?? '') === 'playlist' && !empty($row->content_id))
-                || (($row->category ?? '') === 'Content Playlist');
-
-            if ($isChildUnderPlaylist) {
-                $lhVal = '-';
-            } else {
-                $lhVal = ($row->learning_hours !== null && $row->learning_hours !== '') ? number_format((float) $row->learning_hours, 2) : '-';
-            }
+            // Progress & Status
+            $progressNum = (float) ($row->progress ?? 0);
+            $progressDecimal = round($progressNum / 100, 4);
+            $progressStatus = ($progressNum >= 100 || ($row->status ?? '') === 'Finished') ? 'Finished' : (($progressNum > 0) ? 'Ongoing' : 'Not Started');
 
             // Delivery method alignment
-            $delivMethod = \App\Models\OfflineTraining::normalizeDeliveryMethod($row->delivery_method ?: ($row->source === 'offline' ? 'Offline' : 'Online'));
+            $delivMethod = OfflineTraining::normalizeDeliveryMethod($row->delivery_method ?: ($row->source === 'offline' ? 'Offline' : 'Online'));
             $subDelivMethod = $row->sub_delivery_method ?: ($row->source === 'offline' ? 'On-site' : 'E-learning');
+
+            // Date & Time split
+            $startDateStr = !empty($row->start_date) ? date('Y-m-d', strtotime($row->start_date)) : '-';
+            $endDateStr = !empty($row->end_date)
+                ? date('Y-m-d', strtotime($row->end_date))
+                : (!empty($row->finish_date) ? date('Y-m-d', strtotime($row->finish_date)) : '-');
+
+            $startTimeStr = !empty($row->start_time) ? date('H:i:s', strtotime($row->start_time)) : '-';
+            $endTimeStr = !empty($row->end_time) ? date('H:i:s', strtotime($row->end_time)) : '-';
+
+            $recordMonthDate = $row->start_date ?: ($row->finish_date ?: ($row->record_date ?? null));
+            $recordMonthStr = !empty($recordMonthDate) ? date('F', strtotime($recordMonthDate)) : '-';
+
+            // Attendance: strictly Yes or No
+            $attendanceStr = '-';
+            if ($row->attendance !== null && $row->attendance !== '') {
+                $rawAtt = strtolower((string) $row->attendance);
+                $attendanceStr = ((bool) $row->attendance || in_array($rawAtt, ['1', 'yes', 'present', 'true'], true)) ? 'Yes' : 'No';
+            } elseif ($row->source === 'online') {
+                $attendanceStr = ($progressNum >= 100) ? 'Yes' : (($progressNum > 0) ? 'No' : '-');
+            }
 
             // Bond amount formatting (IDR only)
             $idr = $row->bond_amount_idr ?? $row->bond_amount ?? null;
-            $bondAmt = ($idr !== null && (float) $idr > 0) ? 'Rp ' . number_format((float) $idr, 0, ',', '.') : '-';
+            $hasBond = ($idr !== null && (float) $idr > 0);
 
-            $kpiStr = $row->counted_corporate_kpi ?? $row->corporate_kpi ?? '-';
+            // Scores
+            $scoreL1 = is_numeric($row->l1_program) ? (float) $row->l1_program : null;
+            $scoreL2 = is_numeric($row->assessment_score)
+                ? (int) round((float) $row->assessment_score)
+                : (is_numeric($row->l2_numerical) ? (int) round((float) $row->l2_numerical) : null);
+            $scoreL3 = is_numeric($row->l3_numerical) ? (float) $row->l3_numerical : null;
 
-            $data = [
-                $row->source === 'offline' ? 'Non KP OWL' : 'KP OWL',
-                $row->employee_id ?: '-',
-                $row->employee_name ?: '-',
-                $row->status ? ucfirst((string) $row->status) : '-',
-                $row->grade ?: '-',
-                $row->job_position ?: '-',
-                $row->team ?: '-',
-                $row->department ?: '-',
-                $row->company ?: '-',
-                $row->learning_title ?: '-',
-                $row->sub_course_name ?: '-',
-                $row->type ?: '-',
-                $row->category ?: '-',
-                $row->level ?: '-',
-                $row->batch ?: '-',
-                $row->classification ?: '-',
-                $row->sub_classification ?: '-',
-                $kpiStr ?: '-',
-                $row->sub_corporate_kpi ?: '-',
-                $delivMethod,
-                $subDelivMethod,
-                $row->provider ?: ($row->source === 'offline' ? '-' : 'Internal'),
-                $row->sub_provider ?: '-',
-                $row->provider_name ?: ($row->source === 'offline' ? '-' : 'KP-OWL'),
-                $row->venue ?: ($row->source === 'offline' ? '-' : 'KP-OWL'),
-                $row->instructor ?: '-',
-                $durationFormatted ?: '-',
-                $row->training_hours !== null ? number_format((float) $row->training_hours, 2) : '-',
-                $row->start_date ? date('Y-m-d', strtotime($row->start_date)) : '-',
-                $row->finish_date ? date('Y-m-d', strtotime($row->finish_date)) : '-',
-                $lhVal,
-                $row->progress !== null ? ($row->progress . '%') : '0%',
-                $cleanScore,
-                $row->certificate ?: '-',
-                $row->attendance_reason ?: '-',
-                $row->bond_status ?: 'No',
-                $row->bond_end_date ? date('Y-m-d', strtotime($row->bond_end_date)) : '-',
-                $bondAmt,
-                $row->l1_program ?: '-',
-                $row->l2_numerical !== null ? number_format((float) $row->l2_numerical, 2) : '-',
-                $row->l2_verbal ?: '-',
-                $row->l3_numerical !== null ? number_format((float) $row->l3_numerical, 2) : '-',
-                $row->l3_verbal ?: '-',
-                $row->pic ?: '-',
+            $textStyle = $isPlaylistRow ? '2' : '0';
+            $intStyle = $isPlaylistRow ? '10' : '4';
+            $pctStyle = $isPlaylistRow ? '11' : '6';
+
+            // 47 columns
+            $cells = [
+                ['A', 'num', $rowCount, $textStyle],
+                ['B', 'str', $row->source === 'offline' ? 'Non KP OWL' : 'KP OWL', $textStyle],
+                ['C', 'str', $row->employee_id ?: '-', $textStyle],
+                ['D', 'str', $row->employee_name ?: '-', $textStyle],
+                ['E', 'str', $row->grade ?: '-', $textStyle],
+                ['F', 'str', $row->job_position ?: '-', $textStyle],
+                ['G', 'str', $row->team ?: '-', $textStyle],
+                ['H', 'str', $row->department ?: '-', $textStyle],
+                ['I', 'str', $row->company ?: '-', $textStyle],
+                ['J', 'str', $row->learning_title ?: '-', $textStyle],
+                ['K', 'str', $row->sub_course_name ?: '-', $textStyle],
+                ['L', 'str', $row->type ?: '-', $textStyle],
+                ['M', 'str', $row->category ?: '-', $textStyle],
+                ['N', 'str', $row->level ?: '-', $textStyle],
+                ['O', 'str', $row->batch ?: '-', $textStyle],
+                ['P', 'str', $row->classification ?: 'Unclassified', $textStyle],
+                ['Q', 'str', $row->sub_classification ?: '-', $textStyle],
+                ['R', 'str', $delivMethod, $textStyle],
+                ['S', 'str', $subDelivMethod, $textStyle],
+                ['T', 'str', $row->provider_name ?: ($row->source === 'offline' ? '-' : 'KP-OWL'), $textStyle],
+                ['U', 'str', $row->venue ?: ($row->source === 'offline' ? '-' : 'KP-OWL'), $textStyle],
+                ['V', 'str', $row->instructor ?: '-', $textStyle],
+                ['W', 'str', $durationFormatted, $textStyle], // Course Duration
+                ['X', 'str', $durationFormatted, $textStyle], // Total Engagement Duration
+                ['Y', 'str', $lhVal, $textStyle], // Learning Hours (with 'h')
+                ['Z', 'pct', $progressDecimal, $pctStyle],
+                ['AA', 'str', $progressStatus, $textStyle],
+                ['AB', 'str', $startDateStr, $textStyle],
+                ['AC', 'str', $endDateStr, $textStyle],
+                ['AD', 'str', $startTimeStr, $textStyle],
+                ['AE', 'str', $endTimeStr, $textStyle],
+                ['AF', 'str', $recordMonthStr, $textStyle],
+                ['AG', 'str', $row->requirement ?: 'Mandatory', $textStyle],
+                ['AH', 'str', $attendanceStr, $textStyle],
+                ['AI', 'str', $row->attendance_reason ?: '-', $textStyle],
+                ['AJ', 'str', $row->bond_status ?: 'No', $textStyle],
+                ['AK', 'str', !empty($row->bond_duration) ? $row->bond_duration . ' Months' : '-', $textStyle],
+                ['AL', 'str', !empty($row->bond_end_date) ? date('Y-m-d', strtotime($row->bond_end_date)) : '-', $textStyle],
+                ['AM', $hasBond ? 'curr' : 'str', $hasBond ? (float) $idr : '-', $hasBond ? '9' : $textStyle],
+                ['AN', $scoreL1 !== null ? 'float' : 'str', $scoreL1 !== null ? $scoreL1 : '-', $scoreL1 !== null ? '5' : $textStyle],
+                ['AO', $scoreL2 !== null ? 'int' : 'str', $scoreL2 !== null ? $scoreL2 : '-', $scoreL2 !== null ? $intStyle : $textStyle],
+                ['AP', 'str', $row->l2_verbal ?: ($scoreL2 !== null ? ($scoreL2 >= 70 ? 'Passed' : 'Failed') : '-'), $textStyle],
+                ['AQ', $scoreL3 !== null ? 'float' : 'str', $scoreL3 !== null ? $scoreL3 : '-', $scoreL3 !== null ? '5' : $textStyle],
+                ['AR', 'str', $row->l3_verbal ?: '-', $textStyle],
+                ['AS', 'str', $row->pic ?: '-', $textStyle],
+                ['AT', 'str', $row->certificate ?: '-', $textStyle],
+                ['AU', 'str', $lhVal, $textStyle], // Total Engagement Time (LH)
             ];
 
-            $isPlaylistRow = ($row->type === 'Playlist');
-            $sAttr = $isPlaylistRow ? ' s="2"' : ' s="0"';
+            $buffer .= $this->buildXmlRow($r, $cells);
 
-            $rowXml = "<row r=\"{$r}\"><c r=\"A{$r}\"{$sAttr}><v>{$rowCount}</v></c>";
-            foreach ($data as $idx => $val) {
-                if ($val === '' || $val === null) {
-                    $val = '-';
-                }
-                $colLetter = Coordinate::stringFromColumnIndex($idx + 2);
-                $escaped = $this->escapeXml($val);
-                $rowXml .= "<c r=\"{$colLetter}{$r}\" t=\"inlineStr\"{$sAttr}><is><t>{$escaped}</t></is></c>";
-            }
-            $rowXml .= "</row>\n";
-
-            $buffer .= $rowXml;
             if ($rowCount % $batchSize === 0) {
                 fwrite($sfh, $buffer);
                 $buffer = '';
@@ -407,6 +448,35 @@ class AllRecordExport implements FromQuery, WithHeadings, WithChunkReading, With
         fclose($fh);
 
         return $tempXlsx;
+    }
+
+    protected function buildXmlRow(int $r, array $cells): string
+    {
+        $xml = "<row r=\"{$r}\">";
+        foreach ($cells as $c) {
+            [$colLetter, $type, $val, $styleId] = $c;
+            $coord = "{$colLetter}{$r}";
+
+            if ($val === null || $val === '' || $val === '-') {
+                $xml .= "<c r=\"{$coord}\" t=\"inlineStr\" s=\"{$styleId}\"><is><t>-</t></is></c>";
+            } elseif ($type === 'pct') {
+                $xml .= "<c r=\"{$coord}\" s=\"{$styleId}\"><v>{$val}</v></c>";
+            } elseif ($type === 'int') {
+                $intVal = (int) $val;
+                $xml .= "<c r=\"{$coord}\" s=\"{$styleId}\"><v>{$intVal}</v></c>";
+            } elseif ($type === 'float') {
+                $floatVal = number_format((float) $val, 2, '.', '');
+                $xml .= "<c r=\"{$coord}\" s=\"{$styleId}\"><v>{$floatVal}</v></c>";
+            } elseif ($type === 'curr') {
+                $currVal = (float) $val;
+                $xml .= "<c r=\"{$coord}\" s=\"{$styleId}\"><v>{$currVal}</v></c>";
+            } else {
+                $escaped = $this->escapeXml($val);
+                $xml .= "<c r=\"{$coord}\" t=\"inlineStr\" s=\"{$styleId}\"><is><t>{$escaped}</t></is></c>";
+            }
+        }
+        $xml .= "</row>\n";
+        return $xml;
     }
 
     protected function escapeXml($value): string

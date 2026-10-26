@@ -19,7 +19,7 @@ class ManageAllRecordExportService
             @set_time_limit(300);
         }
 
-        $fileName = $fileName ?: sprintf('all-record-combined-%s.xlsx', now()->format('Y-m-d'));
+        $fileName = $fileName ?: AllRecordExport::generateFileName();
         $export = new AllRecordExport($filters, $fileName);
 
         return $export->download($fileName);

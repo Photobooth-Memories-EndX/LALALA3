@@ -2,14 +2,13 @@
 
 namespace App\Services\Record;
 
-use App\Exports\OfflineTrainingExport;
-use Illuminate\Http\Request;
+use App\Exports\OfflineRecordExport;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ManageOfflineRecordExportService
 {
     /**
-     * Non-KP OWL Export: Include list of offline courses only (no playlists or sub-contents).
+     * Non-KP OWL Export: Include offline course items only (no playlists or child content expansion).
      */
     public function download(array $filters = [], ?string $fileName = null): BinaryFileResponse
     {
@@ -19,8 +18,8 @@ class ManageOfflineRecordExportService
             @set_time_limit(300);
         }
 
-        $fileName = $fileName ?: OfflineTrainingExcelSchema::generateManageFileName();
-        $export = new OfflineTrainingExport(null, $filters, $fileName);
+        $fileName = $fileName ?: OfflineRecordExport::generateFileName();
+        $export = new OfflineRecordExport($filters, $fileName);
 
         return $export->download($fileName);
     }
