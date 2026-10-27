@@ -39,6 +39,17 @@ class AllRecordExport implements Responsable
         return "EmployeeAllrecord_{$day}{$month}{$year} at {$time}.xlsx";
     }
 
+    public static function formatHours($val): string
+    {
+        if ($val === null || $val === '' || $val === '-') {
+            return '-';
+        }
+        $hours = (float) $val;
+        return ($hours == (int) $hours)
+            ? (int) $hours . ' h'
+            : rtrim(rtrim(number_format($hours, 2, '.', ''), '0'), '.') . ' h';
+    }
+
     public function getFileName(): string
     {
         return $this->fileName;
@@ -329,8 +340,8 @@ class AllRecordExport implements Responsable
                     $durationFormatted = sprintf('%02d:%02d:%02d', $hours, $mins, $seconds);
                 }
 
-                // Learning Hours: Append "h" unit (e.g. 0.20 h)
-                $lhVal = ($row->learning_hours !== null && $row->learning_hours !== '') ? (number_format((float) $row->learning_hours, 2) . ' h') : '-';
+                // Learning Hours: Append "h" unit (e.g. 4 h, 0.3 h)
+                $lhVal = self::formatHours($row->learning_hours);
 
                 // Progress & Status
                 $progressNum = (float) ($row->progress ?? 0);
@@ -377,11 +388,15 @@ class AllRecordExport implements Responsable
                 $intStyle = $isPlaylistRow ? '10' : '4';
                 $pctStyle = $isPlaylistRow ? '11' : '6';
 
+                // Employee ID: raw string/integer only
+                $rawEmp = $row->employee_id ?: '-';
+                $cleanEmpId = ($rawEmp !== '-') ? preg_replace('/\s*[\/\-]\s*NIP.*$/i', '', trim((string) $rawEmp)) : '-';
+
                 // 47 columns
                 $cells = [
                     ['A', 'num', $rowCount, $textStyle],
                     ['B', 'str', $row->source === 'offline' ? 'Non KP OWL' : 'KP OWL', $textStyle],
-                    ['C', 'str', $row->employee_id ?: '-', $textStyle],
+                    ['C', 'str', $cleanEmpId, $textStyle],
                     ['D', 'str', $row->employee_name ?: '-', $textStyle],
                     ['E', 'str', $row->grade ?: '-', $textStyle],
                     ['F', 'str', $row->job_position ?: '-', $textStyle],

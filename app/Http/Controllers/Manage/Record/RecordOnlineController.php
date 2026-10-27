@@ -111,7 +111,16 @@ class RecordOnlineController extends Controller
 
     public function export(Request $request)
     {
-        return app(\App\Services\Record\ManageOnlineRecordExportService::class)->download($request->all());
+        ini_set('memory_limit', '2048M');
+        ini_set('max_execution_time', 600);
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(600);
+        }
+
+        $dateTime = \App\Http\Controllers\ManageRecordController::formatExportDateTime();
+        $fileName = "EmployeeOWLrecord_{$dateTime}.xlsx";
+
+        return app(\App\Services\Record\ManageOnlineRecordExportService::class)->download($request->all(), $fileName);
     }
 
     public function download(Request $request)

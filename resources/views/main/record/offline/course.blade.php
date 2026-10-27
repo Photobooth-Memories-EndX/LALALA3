@@ -1281,8 +1281,22 @@
                         $('#modal-detail-corporate-kpi').text(d.counted_corporate_kpi ? 'Yes' : (d.counted_corporate_kpi === false ? 'No' : '-'));
                         $('#modal-detail-sub-corporate-kpi').text(d.sub_corporate_kpi || '-');
 
+                        // Helpers for integer formatting without trailing decimals
+                        const formatModalHours = function(h) {
+                            if (h === null || h === undefined || h === '' || isNaN(h)) return '-';
+                            const num = parseFloat(h);
+                            return (num % 1 === 0 ? num.toFixed(0) : parseFloat(num.toFixed(2)).toString()) + ' Hours';
+                        };
+                        const formatModalScore = function(s) {
+                            if (s === null || s === undefined || s === '' || isNaN(s)) return '-';
+                            const num = parseFloat(s);
+                            return (num % 1 === 0 ? num.toFixed(0) : parseFloat(num.toFixed(2)).toString());
+                        };
+
                         // Section 3: Delivery & Provider
-                        $('#modal-detail-delivery-method').text(d.delivery_method || '-');
+                        const rawDeliv = (d.delivery_method || '').toLowerCase().trim();
+                        const deliv = ['online', 'e-learning', 'webinar', 'kp-owl', 'kp owl'].includes(rawDeliv) ? 'Online' : 'Offline';
+                        $('#modal-detail-delivery-method').text(deliv);
                         $('#modal-detail-sub-delivery-method').text(d.sub_delivery_method || '-');
                         $('#modal-detail-provider').text(d.provider || '-');
                         $('#modal-detail-sub-provider').text(d.sub_provider || '-');
@@ -1294,7 +1308,7 @@
                         $('#modal-detail-start-date').text(d.start_date || '-');
                         $('#modal-detail-finish-date').text(d.finish_date || '-');
                         $('#modal-detail-duration-seconds').text(d.duration_seconds ? `${d.duration_seconds.toLocaleString()}s` : '-');
-                        $('#modal-detail-course-hours').text(d.course_learning_hours ? `${parseFloat(d.course_learning_hours).toFixed(1)} Hours` : '-');
+                        $('#modal-detail-course-hours').text(formatModalHours(d.course_learning_hours));
 
                         // Section 5: Participant & Job Info
                         $('#modal-detail-employee-id').text(d.employee_id || '-');
@@ -1306,18 +1320,21 @@
                         $('#modal-detail-company').text(d.company || '-');
 
                         // Section 6: Progress & Evaluation
-                        $('#modal-detail-progress').text(`${progress.toFixed(1)}%`);
-                        $('#modal-detail-learning-hours').text(d.participant_learning_hours ? `${parseFloat(d.participant_learning_hours).toFixed(1)} Hours` : '-');
-                        $('#modal-detail-assessment-score').text(d.assessment_score !== null && d.assessment_score !== undefined ? parseFloat(d.assessment_score).toFixed(1) : '-');
+                        const progVal = parseFloat(progress || 0);
+                        $('#modal-detail-progress').text((progVal % 1 === 0 ? progVal.toFixed(0) : progVal.toFixed(1)) + '%');
+                        $('#modal-detail-learning-hours').text(formatModalHours(d.participant_learning_hours));
+                        $('#modal-detail-assessment-score').text(formatModalScore(d.assessment_score));
 
-                        if (d.attendance === null || d.attendance === undefined) {
-                            $('#modal-detail-attendance').text('-');
-                        } else {
-                            $('#modal-detail-attendance').html(d.attendance
-                                ? '<span class="badge bg-success-lt text-success">Present</span>'
-                                : '<span class="badge bg-danger-lt text-danger">Absent</span>'
-                            );
+                        const rawAtt = String(d.attendance ?? '').toLowerCase().trim();
+                        let isAttYes = ['1', 'yes', 'true', 'present', 'hadir', 'completed', 'finished'].includes(rawAtt);
+                        if (!isAttYes && (rawAtt === '' || d.attendance === null || d.attendance === undefined)) {
+                            isAttYes = (progVal >= 100 || !!d.finish_date);
                         }
+
+                        $('#modal-detail-attendance').html(isAttYes
+                            ? '<span class="badge bg-success-lt text-success">Yes</span>'
+                            : '<span class="badge bg-danger-lt text-danger">No</span>'
+                        );
 
                         $('#modal-detail-attendance-reason').text(d.attendance_reason || '-');
                         $('#modal-detail-certificate').text(d.certificate || '-');
@@ -1326,10 +1343,10 @@
                         $('#modal-detail-bond-status').text(d.bond_status || 'No');
                         $('#modal-detail-bond-end-date').text(d.bond_end_date || '-');
                         $('#modal-detail-bond-amount').text(d.bond_amount ? `Rp ${parseFloat(d.bond_amount).toLocaleString('id-ID')}` : '-');
-                        $('#modal-detail-l1-program').text(d.l1_program || '-');
-                        $('#modal-detail-l2-numerical').text(d.l2_numerical !== null && d.l2_numerical !== undefined ? parseFloat(d.l2_numerical).toFixed(1) : '-');
+                        $('#modal-detail-l1-program').text(formatModalScore(d.l1_program));
+                        $('#modal-detail-l2-numerical').text(formatModalScore(d.l2_numerical));
                         $('#modal-detail-l2-verbal').text(d.l2_verbal || '-');
-                        $('#modal-detail-l3-numerical').text(d.l3_numerical !== null && d.l3_numerical !== undefined ? parseFloat(d.l3_numerical).toFixed(1) : '-');
+                        $('#modal-detail-l3-numerical').text(formatModalScore(d.l3_numerical));
                         $('#modal-detail-l3-verbal').text(d.l3_verbal || '-');
                         $('#modal-detail-pic').text(d.pic || '-');
 

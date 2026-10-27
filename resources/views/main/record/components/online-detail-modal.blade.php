@@ -58,7 +58,7 @@
                                 </div>
                                 <div class="row g-2 small">
                                     <div class="col-6">
-                                        <span class="text-muted d-block">Employee ID (NIP):</span>
+                                        <span class="text-muted d-block">Employee ID:</span>
                                         <span class="fw-semibold text-dark" id="online-modal-employee-id">-</span>
                                     </div>
                                     <div class="col-6">
@@ -105,7 +105,7 @@
                                 </div>
                                 <div class="row g-2 small">
                                     <div class="col-12">
-                                        <span class="text-muted d-block">Content Title:</span>
+                                        <span class="text-muted d-block">Course Title:</span>
                                         <span class="fw-semibold text-dark" id="online-modal-content-title">-</span>
                                     </div>
                                     <div class="col-6">
@@ -113,7 +113,7 @@
                                         <span class="fw-semibold text-dark" id="online-modal-content-type">-</span>
                                     </div>
                                     <div class="col-6">
-                                        <span class="text-muted d-block">Classification:</span>
+                                        <span class="text-muted d-block">Main Classification:</span>
                                         <span class="fw-semibold text-dark" id="online-modal-classification">-</span>
                                     </div>
                                     <div class="col-6">
@@ -129,11 +129,11 @@
                                         <span class="fw-semibold text-dark" id="online-modal-enrollment-type">-</span>
                                     </div>
                                     <div class="col-6">
-                                        <span class="text-muted d-block">Catalog Duration:</span>
+                                        <span class="text-muted d-block">Course Duration:</span>
                                         <span class="fw-semibold text-dark" id="online-modal-catalog-duration">-</span>
                                     </div>
                                     <div class="col-6">
-                                        <span class="text-muted d-block">Catalog Learning Hours:</span>
+                                        <span class="text-muted d-block">Learning Hours:</span>
                                         <span class="fw-semibold text-dark" id="online-modal-catalog-hours">-</span>
                                     </div>
                                     <div class="col-6">

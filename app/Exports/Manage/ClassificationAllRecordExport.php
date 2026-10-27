@@ -10,15 +10,17 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\WithColumnFormatting;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class ClassificationAllRecordExport implements FromCollection, WithHeadings, WithColumnWidths, WithStyles, WithEvents, Responsable
+class ClassificationAllRecordExport implements FromCollection, WithHeadings, WithColumnWidths, WithColumnFormatting, WithStyles, WithEvents, Responsable
 {
     use Exportable;
 
@@ -52,6 +54,17 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
         $time = $dt->format('H.i.s');
 
         return "EmployeeAllrecord_{$day}{$month}{$year} at {$time}.xlsx";
+    }
+
+    public static function formatHours($val): string
+    {
+        if ($val === null || $val === '' || $val === '-') {
+            return '-';
+        }
+        $hours = (float) $val;
+        return ($hours == (int) $hours)
+            ? (int) $hours . ' h'
+            : rtrim(rtrim(number_format($hours, 2, '.', ''), '0'), '.') . ' h';
     }
 
     public function getFileName(): string
@@ -165,6 +178,20 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
         ];
     }
 
+    public function columnFormats(): array
+    {
+        return [
+            'C'  => NumberFormat::FORMAT_TEXT,
+            'Z'  => '0%',
+            'AB' => 'yyyy-mm-dd',
+            'AC' => 'yyyy-mm-dd',
+            'AD' => 'hh:mm:ss',
+            'AE' => 'hh:mm:ss',
+            'AM' => '"Rp"#,##0',
+            'AO' => '0',
+        ];
+    }
+
     public function collection(): Collection
     {
         ini_set('memory_limit', '2048M');
@@ -199,14 +226,12 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
                 $durationFormatted = sprintf('%02d:%02d:%02d', $hours, $mins, $seconds);
             }
 
-            // Learning Hours: Append "h" unit
-            $lhVal = ($row->learning_hours !== null && $row->learning_hours !== '')
-                ? (number_format((float) $row->learning_hours, 2) . ' h')
-                : '-';
+            // Learning Hours: Append "h" unit (e.g. 4 h, 0.3 h)
+            $lhVal = self::formatHours($row->learning_hours);
 
             // Progress & Status
             $progressNum = (float) ($row->progress ?? 0);
-            $progressPercentStr = round($progressNum) . '%';
+            $progressDecimal = round($progressNum / 100, 4);
             $progressStatus = ($progressNum >= 100 || ($row->status ?? '') === 'Finished') ? 'Finished' : (($progressNum > 0) ? 'Ongoing' : 'Not Started');
 
             // Delivery method alignment
@@ -228,8 +253,8 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
             // Attendance: strictly Yes or No
             $attendanceStr = '-';
             if ($row->attendance !== null && $row->attendance !== '') {
-                $rawAtt = strtolower((string) $row->attendance);
-                $attendanceStr = ((bool) $row->attendance || in_array($rawAtt, ['1', 'yes', 'present', 'true'], true)) ? 'Yes' : 'No';
+                $rawAtt = strtolower(trim((string) $row->attendance));
+                $attendanceStr = in_array($rawAtt, ['1', 'yes', 'present', 'true', 'hadir', 'completed', 'finished'], true) ? 'Yes' : 'No';
             } elseif ($row->source === 'online') {
                 $attendanceStr = ($progressNum >= 100) ? 'Yes' : (($progressNum > 0) ? 'No' : '-');
             }
@@ -237,7 +262,6 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
             // Bond amount formatting
             $idr = $row->bond_amount_idr ?? $row->bond_amount ?? null;
             $hasBond = ($idr !== null && (float) $idr > 0);
-            $bondAmtStr = $hasBond ? 'Rp ' . number_format((float) $idr, 0, ',', '.') : '-';
 
             // Scores
             $scoreL1 = is_numeric($row->l1_program) ? (float) $row->l1_program : null;
@@ -246,10 +270,14 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
                 : (is_numeric($row->l2_numerical) ? (int) round((float) $row->l2_numerical) : null);
             $scoreL3 = is_numeric($row->l3_numerical) ? (float) $row->l3_numerical : null;
 
+            // Employee ID: raw string/integer only
+            $rawEmp = $row->employee_id ?: '-';
+            $cleanEmpId = ($rawEmp !== '-') ? preg_replace('/\s*[\/\-]\s*NIP.*$/i', '', trim((string) $rawEmp)) : '-';
+
             $rows->push([
                 $rowCount,
                 $row->source === 'offline' ? 'Non KP OWL' : 'KP OWL',
-                $row->employee_id ?: '-',
+                $cleanEmpId,
                 $row->employee_name ?: '-',
                 $row->grade ?: '-',
                 $row->job_position ?: '-',
@@ -272,7 +300,7 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
                 $durationFormatted, // Course Duration
                 $durationFormatted, // Total Engagement Duration
                 $lhVal, // Learning Hours
-                $progressPercentStr,
+                $progressDecimal, // numeric decimal for 0% format code
                 $progressStatus,
                 $startDateStr,
                 $endDateStr,
@@ -285,9 +313,9 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
                 $row->bond_status ?: 'No',
                 !empty($row->bond_duration) ? $row->bond_duration . ' Months' : '-',
                 !empty($row->bond_end_date) ? date('Y-m-d', strtotime($row->bond_end_date)) : '-',
-                $bondAmtStr,
+                $hasBond ? (float) $idr : '-',
                 $scoreL1 !== null ? number_format($scoreL1, 2) : '-',
-                $scoreL2 !== null ? (int) $scoreL2 : '-', // strictly integer
+                $scoreL2 !== null ? (int) $scoreL2 : '-', // strictly pure integer
                 $row->l2_verbal ?: ($scoreL2 !== null ? ($scoreL2 >= 70 ? 'Passed' : 'Failed') : '-'),
                 $scoreL3 !== null ? number_format($scoreL3, 2) : '-',
                 $row->l3_verbal ?: '-',

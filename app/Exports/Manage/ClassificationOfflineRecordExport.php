@@ -10,15 +10,17 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\WithColumnFormatting;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class ClassificationOfflineRecordExport implements FromCollection, WithHeadings, WithColumnWidths, WithStyles, WithEvents, Responsable
+class ClassificationOfflineRecordExport implements FromCollection, WithHeadings, WithColumnWidths, WithColumnFormatting, WithStyles, WithEvents, Responsable
 {
     use Exportable;
 
@@ -47,6 +49,17 @@ class ClassificationOfflineRecordExport implements FromCollection, WithHeadings,
         $time = $dt->format('H.i.s');
 
         return "EmployeeNonOWLrecord_{$day}{$month}{$year} at {$time}.xlsx";
+    }
+
+    public static function formatHours($val): string
+    {
+        if ($val === null || $val === '' || $val === '-') {
+            return '-';
+        }
+        $hours = (float) $val;
+        return ($hours == (int) $hours)
+            ? (int) $hours . ' h'
+            : rtrim(rtrim(number_format($hours, 2, '.', ''), '0'), '.') . ' h';
     }
 
     public function getFileName(): string
@@ -152,7 +165,28 @@ class ClassificationOfflineRecordExport implements FromCollection, WithHeadings,
             'AP' => 14,  // L3 Status
             'AQ' => 22,  // Person in Charge (PIC)
             'AR' => 14,  // Certificate
-            'AS' => 25,  // Total Engagement Time (LH)
+            'AS' => 25,  // Total Engagement Time
+        ];
+    }
+
+    public function columnFormats(): array
+    {
+        return [
+            'A'  => '0',
+            'B'  => NumberFormat::FORMAT_TEXT,
+            'W'  => 'General" h"',
+            'X'  => '0%',
+            'Z'  => 'yyyy-mm-dd',
+            'AA' => 'yyyy-mm-dd',
+            'AB' => 'hh:mm:ss',
+            'AC' => 'hh:mm:ss',
+            'AI' => '0',
+            'AJ' => 'yyyy-mm-dd',
+            'AK' => '"Rp"#,##0',
+            'AL' => '0.##',
+            'AM' => '0',
+            'AO' => '0.##',
+            'AS' => 'General" h"',
         ];
     }
 
@@ -193,54 +227,95 @@ class ClassificationOfflineRecordExport implements FromCollection, WithHeadings,
             }
 
             // Learning Hours
-            $lHoursStr = ($row->course_learning_hours !== null && $row->course_learning_hours !== '')
-                ? (number_format((float) $row->course_learning_hours, 2) . ' h')
-                : '-';
+            $rawLh = $row->course_learning_hours ?? ($row->learning_hours ?? null);
+            if ($rawLh !== null && $rawLh !== '' && is_numeric($rawLh)) {
+                $hours = (float) $rawLh;
+                $lHoursNumeric = ($hours == (int) $hours) ? (int) $hours : round($hours, 2);
+            } else {
+                $lHoursNumeric = '-';
+            }
 
             // Progress & Status
             $progressNum = (float) ($row->progress ?? 0);
-            $progressPercentStr = round($progressNum) . '%';
+            $progressDecimal = round($progressNum / 100, 4);
             $progressStatus = ($progressNum >= 100) ? 'Finished' : (($progressNum > 0) ? 'Ongoing' : 'Not Started');
 
             // Date & Time split
             $startDateStr = !empty($row->start_date) ? date('Y-m-d', strtotime($row->start_date)) : '-';
-            $endDateStr = !empty($row->end_date) ? date('Y-m-d', strtotime($row->end_date)) : '-';
+            $endDateStr = !empty($row->end_date)
+                ? date('Y-m-d', strtotime($row->end_date))
+                : (!empty($row->finish_date) ? date('Y-m-d', strtotime($row->finish_date)) : '-');
             $startTimeStr = !empty($row->start_time) ? date('H:i:s', strtotime($row->start_time)) : '-';
             $endTimeStr = !empty($row->end_time) ? date('H:i:s', strtotime($row->end_time)) : '-';
 
-            $recordMonthDate = $row->start_date ?: ($row->end_date ?? null);
+            $recordMonthDate = $row->start_date ?: ($row->end_date ?: ($row->created_at ?? null));
             $recordMonthStr = !empty($recordMonthDate) ? date('F', strtotime($recordMonthDate)) : '-';
 
             // Attendance: strictly Yes or No
-            $attendanceStr = '-';
-            if ($row->attendance !== null && $row->attendance !== '') {
-                $rawAtt = strtolower((string) $row->attendance);
-                $attendanceStr = ((bool) $row->attendance || in_array($rawAtt, ['1', 'yes', 'present', 'true'], true)) ? 'Yes' : 'No';
+            $rawAtt = strtolower(trim((string) ($row->attendance ?? '')));
+            if ($rawAtt !== '') {
+                $attendanceStr = in_array($rawAtt, ['1', 'yes', 'present', 'true', 'hadir', 'completed', 'finished'], true) ? 'Yes' : 'No';
+            } else {
+                $attendanceStr = ($progressNum >= 100 || !empty($row->finish_date)) ? 'Yes' : 'No';
             }
 
-            // Delivery method alignment
-            $delivMethod = OfflineTraining::normalizeDeliveryMethod($row->delivery_method ?: 'Offline');
+            // Delivery method alignment: strictly Online or Offline
+            $rawDeliv = strtolower(trim((string) ($row->delivery_method ?? '')));
+            $delivMethod = in_array($rawDeliv, ['online', 'e-learning', 'webinar', 'kp-owl', 'kp owl'], true) ? 'Online' : 'Offline';
             $subDelivMethod = $row->sub_delivery_method ?: 'On-site';
 
-            // Bond amount
-            $idr = $row->bond_amount_idr ?? $row->bond_amount ?? null;
-            $hasBond = ($idr !== null && (float) $idr > 0);
-            $bondAmtStr = $hasBond ? 'Rp ' . number_format((float) $idr, 0, ',', '.') : '-';
+            // Bond amount & duration
+            $idr = $row->bond_amount_idr ?? ($row->bond_amount ?? null);
+            $hasBond = ($idr !== null && is_numeric($idr) && (float) $idr > 0);
 
-            // Scores
-            $scoreL1 = is_numeric($row->l1_program) ? (float) $row->l1_program : null;
-            $scoreL2 = is_numeric($row->assessment_score)
-                ? (int) round((float) $row->assessment_score)
-                : (is_numeric($row->l2_numerical) ? (int) round((float) $row->l2_numerical) : null);
-            $scoreL3 = is_numeric($row->l3_numerical) ? (float) $row->l3_numerical : null;
+            $bondDurationMonths = null;
+            if (!empty($row->bond_duration)) {
+                $parsedDur = (int) preg_replace('/\D/', '', (string) $row->bond_duration);
+                if ($parsedDur > 0) {
+                    $bondDurationMonths = $parsedDur;
+                }
+            }
 
-            $totalEngagementStr = ($row->learning_hours !== null && $row->learning_hours !== '')
-                ? (number_format((float) $row->learning_hours, 2) . ' h')
-                : '-';
+            $bondEndDateStr = !empty($row->bond_end_date) ? date('Y-m-d', strtotime($row->bond_end_date)) : '-';
+
+            // Scores: strictly whole integers if whole number
+            $scoreL1 = null;
+            if (isset($row->l1_program) && is_numeric($row->l1_program)) {
+                $val = (float) $row->l1_program;
+                $intVal = (int) round($val);
+                $scoreL1 = (abs($val - $intVal) < 0.0001) ? $intVal : round($val, 2);
+            }
+
+            $scoreL2 = null;
+            $rawScoreL2 = $row->assessment_score ?? ($row->l2_numerical ?? null);
+            if ($rawScoreL2 !== null && is_numeric($rawScoreL2)) {
+                $val = (float) $rawScoreL2;
+                $intVal = (int) round($val);
+                $scoreL2 = (abs($val - $intVal) < 0.0001) ? $intVal : round($val, 2);
+            }
+
+            $scoreL3 = null;
+            if (isset($row->l3_numerical) && is_numeric($row->l3_numerical)) {
+                $val = (float) $row->l3_numerical;
+                $intVal = (int) round($val);
+                $scoreL3 = (abs($val - $intVal) < 0.0001) ? $intVal : round($val, 2);
+            }
+
+            $totalEngVal = $row->learning_hours ?? ($row->course_learning_hours ?? null);
+            if ($totalEngVal !== null && $totalEngVal !== '' && is_numeric($totalEngVal)) {
+                $hours = (float) $totalEngVal;
+                $totalEngNumeric = ($hours == (int) $hours) ? (int) $hours : round($hours, 2);
+            } else {
+                $totalEngNumeric = '-';
+            }
+
+            // Employee ID: raw string/integer only
+            $rawEmp = $row->employee_id ?: ($row->id_emp ?? '-');
+            $cleanEmpId = ($rawEmp !== '-') ? preg_replace('/\s*[\/\-]\s*NIP.*$/i', '', trim((string) $rawEmp)) : '-';
 
             $rows->push([
                 $rowCount,
-                $row->employee_id ?: '-',
+                $cleanEmpId,
                 $row->participant_name ?: ($row->user_name ?? '-'),
                 $row->grade ?: '-',
                 $row->job_position ?: '-',
@@ -261,8 +336,8 @@ class ClassificationOfflineRecordExport implements FromCollection, WithHeadings,
                 $row->venue ?: '-',
                 $row->instructor ?: '-',
                 $durationFormatted,
-                $lHoursStr,
-                $progressPercentStr,
+                $lHoursNumeric,
+                $progressDecimal, // numeric decimal for 0% format code
                 $progressStatus,
                 $startDateStr,
                 $endDateStr,
@@ -272,18 +347,18 @@ class ClassificationOfflineRecordExport implements FromCollection, WithHeadings,
                 $row->requirement ?: 'Mandatory',
                 $attendanceStr,
                 $row->attendance_reason ?: '-',
-                $row->bond_status ?: 'No',
-                !empty($row->bond_duration) ? $row->bond_duration . ' Months' : '-',
-                !empty($row->bond_end_date) ? date('Y-m-d', strtotime($row->bond_end_date)) : '-',
-                $bondAmtStr,
-                $scoreL1 !== null ? number_format($scoreL1, 2) : '-',
-                $scoreL2 !== null ? (int) $scoreL2 : '-', // strictly integer
+                $hasBond ? 'Yes' : ($row->bond_status ?: 'No'),
+                $bondDurationMonths !== null ? $bondDurationMonths : '-',
+                $bondEndDateStr,
+                $hasBond ? (float) $idr : '-',
+                $scoreL1 !== null ? $scoreL1 : '-',
+                $scoreL2 !== null ? $scoreL2 : '-',
                 $row->l2_verbal ?: ($scoreL2 !== null ? ($scoreL2 >= 70 ? 'Passed' : 'Failed') : '-'),
-                $scoreL3 !== null ? number_format($scoreL3, 2) : '-',
+                $scoreL3 !== null ? $scoreL3 : '-',
                 $row->l3_verbal ?: '-',
                 $row->pic ?: '-',
                 $row->certificate ?: '-',
-                $totalEngagementStr, // Total Engagement Time (LH)
+                $totalEngNumeric,
             ]);
         }
 

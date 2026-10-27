@@ -22,7 +22,7 @@
                     </td>
                     <td class="text-center fw-semibold text-dark">{{ number_format((int) ($list->programs ?? 0)) }}</td>
                     <td class="text-center fw-semibold text-dark">{{ number_format((int) ($list->total_participants ?? 0)) }}</td>
-                    <td class="text-center fw-semibold text-dark">{{ number_format((float) ($list->learning_hours ?? 0), 2) }} Hours</td>
+                    <td class="text-center fw-semibold text-dark">{{ (fmod((float) ($list->learning_hours ?? 0), 1) == 0 ? (int) ($list->learning_hours ?? 0) : round((float) ($list->learning_hours ?? 0), 2)) }} Hours</td>
                     <td class="text-center text-warning fw-semibold">{{ number_format((int) ($list->ongoing ?? 0)) }}</td>
                     <td class="text-center text-success fw-semibold">{{ number_format((int) ($list->finished ?? 0)) }}</td>
                 </tr>

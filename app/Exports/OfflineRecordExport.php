@@ -7,15 +7,17 @@ use App\Services\Record\RecordOfflineQueryService;
 use Carbon\Carbon;
 use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use ZipStream\Option\Archive as ArchiveOptions;
 use ZipStream\ZipStream;
 
-class OfflineRecordExport implements Responsable
+class OfflineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\WithHeadings, \Maatwebsite\Excel\Concerns\WithMapping
 {
     protected array $filters = [];
     protected string $fileName;
+    protected int $rowCount = 0;
 
     public function __construct($filters = [], ?string $fileName = null)
     {
@@ -39,12 +41,23 @@ class OfflineRecordExport implements Responsable
         return "EmployeeNonOWLrecord_{$day}{$month}{$year} at {$time}.xlsx";
     }
 
+    public static function formatHours($val): string
+    {
+        if ($val === null || $val === '' || $val === '-') {
+            return '-';
+        }
+        $hours = (float) $val;
+        return ($hours == (int) $hours)
+            ? (int) $hours . ' h'
+            : rtrim(rtrim(number_format($hours, 2, '.', ''), '0'), '.') . ' h';
+    }
+
     public function getFileName(): string
     {
         return $this->fileName;
     }
 
-    public static function headings(): array
+    public static function headers(): array
     {
         return [
             'NO',
@@ -92,6 +105,156 @@ class OfflineRecordExport implements Responsable
             'Person in Charge (PIC)',
             'Certificate',
             'Total Engagement Time',
+        ];
+    }
+
+    public function headings(): array
+    {
+        return self::headers();
+    }
+
+    public function map($row): array
+    {
+        $this->rowCount++;
+
+        // Duration formatted as HH:MM:SS
+        $durationFormatted = '-';
+        if (!empty($row->duration_seconds)) {
+            $secs = (int) $row->duration_seconds;
+            $hours = floor($secs / 3600);
+            $mins = floor(($secs % 3600) / 60);
+            $seconds = $secs % 60;
+            $durationFormatted = sprintf('%02d:%02d:%02d', $hours, $mins, $seconds);
+        }
+
+        // Learning Hours: Format without trailing dots (e.g. 4 h, 0.3 h)
+        $rawLh = $row->course_learning_hours ?? ($row->learning_hours ?? null);
+        $formattedLHours = ($rawLh !== null && $rawLh !== '' && is_numeric($rawLh))
+            ? self::formatHours($rawLh)
+            : '-';
+
+        // Progress & Status (raw numeric decimal)
+        $progressNum = (float) ($row->progress ?? 0);
+        $progressDecimal = round($progressNum / 100, 4);
+        $progressStatus = ($progressNum >= 100) ? 'Finished' : (($progressNum > 0) ? 'Ongoing' : 'Not Started');
+
+        // Date & Time split
+        $startDateStr = !empty($row->start_date) ? date('Y-m-d', strtotime($row->start_date)) : '-';
+        $endDateStr = !empty($row->end_date)
+            ? date('Y-m-d', strtotime($row->end_date))
+            : (!empty($row->finish_date) ? date('Y-m-d', strtotime($row->finish_date)) : '-');
+
+        $startTimeStr = !empty($row->start_time) ? date('H:i:s', strtotime($row->start_time)) : '-';
+        $endTimeStr = !empty($row->end_time) ? date('H:i:s', strtotime($row->end_time)) : '-';
+
+        $recordMonthDate = $row->start_date ?: ($row->end_date ?: ($row->created_at ?? null));
+        $recordMonthStr = !empty($recordMonthDate) ? date('F', strtotime($recordMonthDate)) : '-';
+
+        // Attendance: strictly Yes or No
+        $rawAtt = strtolower(trim((string) ($row->attendance ?? '')));
+        if ($rawAtt !== '') {
+            $attendanceStr = in_array($rawAtt, ['1', 'yes', 'present', 'true', 'hadir', 'completed', 'finished'], true) ? 'Yes' : 'No';
+        } else {
+            $attendanceStr = ($progressNum >= 100 || !empty($row->finish_date)) ? 'Yes' : 'No';
+        }
+
+        // Delivery Method: strictly Online or Offline
+        $rawDeliv = strtolower(trim((string) ($row->delivery_method ?? '')));
+        $delivMethod = in_array($rawDeliv, ['online', 'e-learning', 'webinar', 'kp-owl', 'kp owl'], true) ? 'Online' : 'Offline';
+        $subDelivMethod = $row->sub_delivery_method ?: 'On-site';
+
+        // Bond Amount & Duration
+        $idr = $row->bond_amount_idr ?? ($row->bond_amount ?? null);
+        $hasBond = ($idr !== null && is_numeric($idr) && (float) $idr > 0);
+
+        $bondDurationMonths = null;
+        if (!empty($row->bond_duration)) {
+            $parsedDur = (int) preg_replace('/\D/', '', (string) $row->bond_duration);
+            if ($parsedDur > 0) {
+                $bondDurationMonths = $parsedDur;
+            }
+        }
+
+        $bondEndDateStr = !empty($row->bond_end_date) ? date('Y-m-d', strtotime($row->bond_end_date)) : '-';
+
+        // Scores: strictly whole integers if whole number
+        $scoreL1 = null;
+        if (isset($row->l1_program) && is_numeric($row->l1_program)) {
+            $val = (float) $row->l1_program;
+            $intVal = (int) round($val);
+            $scoreL1 = (abs($val - $intVal) < 0.0001) ? $intVal : round($val, 2);
+        }
+
+        $scoreL2 = null;
+        $rawScoreL2 = $row->assessment_score ?? ($row->l2_numerical ?? null);
+        if ($rawScoreL2 !== null && is_numeric($rawScoreL2)) {
+            $val = (float) $rawScoreL2;
+            $intVal = (int) round($val);
+            $scoreL2 = (abs($val - $intVal) < 0.0001) ? $intVal : round($val, 2);
+        }
+
+        $scoreL3 = null;
+        if (isset($row->l3_numerical) && is_numeric($row->l3_numerical)) {
+            $val = (float) $row->l3_numerical;
+            $intVal = (int) round($val);
+            $scoreL3 = (abs($val - $intVal) < 0.0001) ? $intVal : round($val, 2);
+        }
+
+        $totalEngVal = $row->learning_hours ?? ($row->course_learning_hours ?? null);
+        $formattedTotalEng = ($totalEngVal !== null && $totalEngVal !== '' && is_numeric($totalEngVal))
+            ? self::formatHours($totalEngVal)
+            : '-';
+
+        // Employee ID: clean without / NIP
+        $rawEmp = $row->employee_id ?? ($row->id_emp ?? '-');
+        $cleanEmpId = ($rawEmp !== '-') ? preg_replace('/\s*[\/\-]\s*NIP.*$/i', '', trim((string) $rawEmp)) : '-';
+
+        return [
+            $this->rowCount,
+            $cleanEmpId,
+            $row->participant_name ?? ($row->user_name ?? ($row->name ?? '-')),
+            $row->grade ?? '-',
+            $row->job_position ?? '-',
+            $row->team ?? '-',
+            $row->department ?? '-',
+            $row->company ?? '-',
+            $row->course_name ?? ($row->title ?? '-'),
+            $row->sub_course_name ?? '-',
+            $row->type ?? '-',
+            $row->category ?? '-',
+            $row->level ?? '-',
+            $row->batch ?? '-',
+            $row->main_classification ?? 'Unclassified',
+            $row->sub_classification ?? '-',
+            $delivMethod,
+            $subDelivMethod,
+            $row->provider_name ?? ($row->provider ?? '-'),
+            $row->venue ?? '-',
+            $row->instructor ?? '-',
+            $durationFormatted,
+            $formattedLHours,
+            $progressDecimal,
+            $progressStatus,
+            $startDateStr,
+            $endDateStr,
+            $startTimeStr,
+            $endTimeStr,
+            $recordMonthStr,
+            $row->requirement ?? 'Mandatory',
+            $attendanceStr,
+            $row->attendance_reason ?? '-',
+            $hasBond ? 'Yes' : ($row->bond_status ?? 'No'),
+            $bondDurationMonths !== null ? $bondDurationMonths : '-',
+            $bondEndDateStr,
+            $hasBond ? (float) $idr : '-',
+            $scoreL1 !== null ? $scoreL1 : '-',
+            $scoreL2 !== null ? $scoreL2 : '-',
+            $row->l2_verbal ?? ($scoreL2 !== null ? ($scoreL2 >= 70 ? 'Passed' : 'Failed') : '-'),
+            $scoreL3 !== null ? $scoreL3 : '-',
+            $row->l3_verbal ?? '-',
+            $row->pic ?? '-',
+            $row->certificate ?? '-',
+            $formattedTotalEng,
         ];
     }
 
@@ -235,10 +398,12 @@ class OfflineRecordExport implements Responsable
             'xl/styles.xml',
             '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             . '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
-            . '<numFmts count="3">'
+            . '<numFmts count="5">'
             . '<numFmt numFmtId="164" formatCode="&quot;Rp&quot;#,##0"/>'
             . '<numFmt numFmtId="165" formatCode="yyyy-mm-dd"/>'
             . '<numFmt numFmtId="166" formatCode="hh:mm:ss"/>'
+            . '<numFmt numFmtId="167" formatCode="General&quot; h&quot;"/>'
+            . '<numFmt numFmtId="168" formatCode="0.##"/>'
             . '</numFmts>'
             . '<fonts count="3">'
             . '<font><sz val="10"/><name val="Calibri"/></font>'
@@ -256,7 +421,7 @@ class OfflineRecordExport implements Responsable
             . '<cellStyleXfs count="1">'
             . '<xf numFmtId="0" fontId="0" fillId="0" borderId="0"/>'
             . '</cellStyleXfs>'
-            . '<cellXfs count="10">'
+            . '<cellXfs count="12">'
             . '<xf numFmtId="49" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
             . '<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
             . '<xf numFmtId="49" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
@@ -267,6 +432,8 @@ class OfflineRecordExport implements Responsable
             . '<xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
             . '<xf numFmtId="166" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
             . '<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<xf numFmtId="167" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<xf numFmtId="168" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
             . '</cellXfs>'
             . '</styleSheet>'
         );
@@ -320,9 +487,14 @@ class OfflineRecordExport implements Responsable
             }
 
             // Learning Hours
-            $lHoursStr = ($row->course_learning_hours !== null && $row->course_learning_hours !== '')
-                ? (number_format((float) $row->course_learning_hours, 2) . ' h')
-                : '-';
+            $rawLh = $row->course_learning_hours ?? ($row->learning_hours ?? null);
+            $lHoursNumeric = null;
+            if ($rawLh !== null && $rawLh !== '' && is_numeric($rawLh)) {
+                $val = (float) $rawLh;
+                $intVal = (int) round($val);
+                $lHoursNumeric = (abs($val - $intVal) < 0.0001) ? $intVal : round($val, 2);
+            }
+            $lHoursCell = ($lHoursNumeric !== null) ? ['W', 'lh', $lHoursNumeric, '10'] : ['W', 'str', '-', '0'];
 
             // Progress & Status
             $progressNum = (float) ($row->progress ?? 0);
@@ -342,34 +514,71 @@ class OfflineRecordExport implements Responsable
             $recordMonthStr = !empty($recordMonthDate) ? date('F', strtotime($recordMonthDate)) : '-';
 
             // Attendance: strictly Yes or No
-            $attendanceStr = '-';
-            if ($row->attendance !== null && $row->attendance !== '') {
-                $rawAtt = strtolower((string) $row->attendance);
-                $attendanceStr = ((bool) $row->attendance || in_array($rawAtt, ['1', 'yes', 'present', 'true'], true)) ? 'Yes' : 'No';
+            $rawAtt = strtolower(trim((string) ($row->attendance ?? '')));
+            if ($rawAtt !== '') {
+                $attendanceStr = in_array($rawAtt, ['1', 'yes', 'present', 'true', 'hadir', 'completed', 'finished'], true) ? 'Yes' : 'No';
+            } else {
+                $attendanceStr = ($progressNum >= 100 || !empty($row->finish_date)) ? 'Yes' : 'No';
             }
 
-            // Delivery method alignment
-            $delivMethod = OfflineTraining::normalizeDeliveryMethod($row->delivery_method ?: 'Offline');
+            // Delivery method alignment: strictly Online or Offline
+            $rawDeliv = strtolower(trim((string) ($row->delivery_method ?? '')));
+            $delivMethod = in_array($rawDeliv, ['online', 'e-learning', 'webinar', 'kp-owl', 'kp owl'], true) ? 'Online' : 'Offline';
             $subDelivMethod = $row->sub_delivery_method ?: 'On-site';
 
-            // Bond amount
-            $idr = $row->bond_amount_idr ?? $row->bond_amount ?? null;
-            $hasBond = ($idr !== null && (float) $idr > 0);
+            // Bond amount & duration
+            $idr = $row->bond_amount_idr ?? ($row->bond_amount ?? null);
+            $hasBond = ($idr !== null && is_numeric($idr) && (float) $idr > 0);
 
-            // Scores
-            $scoreL1 = is_numeric($row->l1_program) ? (float) $row->l1_program : null;
-            $scoreL2 = is_numeric($row->assessment_score)
-                ? (int) round((float) $row->assessment_score)
-                : (is_numeric($row->l2_numerical) ? (int) round((float) $row->l2_numerical) : null);
-            $scoreL3 = is_numeric($row->l3_numerical) ? (float) $row->l3_numerical : null;
+            $bondDurationMonths = null;
+            if (!empty($row->bond_duration)) {
+                $parsedDur = (int) preg_replace('/\D/', '', (string) $row->bond_duration);
+                if ($parsedDur > 0) {
+                    $bondDurationMonths = $parsedDur;
+                }
+            }
 
-            $totalEngagementStr = ($row->learning_hours !== null && $row->learning_hours !== '')
-                ? (number_format((float) $row->learning_hours, 2) . ' h')
-                : '-';
+            $bondEndDateStr = !empty($row->bond_end_date) ? date('Y-m-d', strtotime($row->bond_end_date)) : '-';
+
+            // Scores: strictly whole integers if whole number
+            $scoreL1 = null;
+            if (isset($row->l1_program) && is_numeric($row->l1_program)) {
+                $val = (float) $row->l1_program;
+                $intVal = (int) round($val);
+                $scoreL1 = (abs($val - $intVal) < 0.0001) ? $intVal : round($val, 2);
+            }
+
+            $scoreL2 = null;
+            $rawScoreL2 = $row->assessment_score ?? ($row->l2_numerical ?? null);
+            if ($rawScoreL2 !== null && is_numeric($rawScoreL2)) {
+                $val = (float) $rawScoreL2;
+                $intVal = (int) round($val);
+                $scoreL2 = (abs($val - $intVal) < 0.0001) ? $intVal : round($val, 2);
+            }
+
+            $scoreL3 = null;
+            if (isset($row->l3_numerical) && is_numeric($row->l3_numerical)) {
+                $val = (float) $row->l3_numerical;
+                $intVal = (int) round($val);
+                $scoreL3 = (abs($val - $intVal) < 0.0001) ? $intVal : round($val, 2);
+            }
+
+            $totalEngVal = $row->learning_hours ?? ($row->course_learning_hours ?? null);
+            $totalEngNumeric = null;
+            if ($totalEngVal !== null && $totalEngVal !== '' && is_numeric($totalEngVal)) {
+                $val = (float) $totalEngVal;
+                $intVal = (int) round($val);
+                $totalEngNumeric = (abs($val - $intVal) < 0.0001) ? $intVal : round($val, 2);
+            }
+            $totalEngCell = ($totalEngNumeric !== null) ? ['AS', 'lh', $totalEngNumeric, '10'] : ['AS', 'str', '-', '0'];
+
+            // Employee ID: raw string/integer only
+            $rawEmp = $row->employee_id ?: ($row->id_emp ?? '-');
+            $cleanEmpId = ($rawEmp !== '-') ? preg_replace('/\s*[\/\-]\s*NIP.*$/i', '', trim((string) $rawEmp)) : '-';
 
             $cells = [
-                ['A', 'num', $rowCount, '0'],
-                ['B', 'str', $row->employee_id ?: '-', '0'],
+                ['A', 'int', $rowCount, '4'],
+                ['B', 'str', $cleanEmpId, '0'],
                 ['C', 'str', $row->participant_name ?: ($row->user_name ?? '-'), '0'],
                 ['D', 'str', $row->grade ?: '-', '0'],
                 ['E', 'str', $row->job_position ?: '-', '0'],
@@ -390,29 +599,29 @@ class OfflineRecordExport implements Responsable
                 ['T', 'str', $row->venue ?: '-', '0'],
                 ['U', 'str', $row->instructor ?: '-', '0'],
                 ['V', 'str', $durationFormatted, '0'],
-                ['W', 'str', $lHoursStr, '0'],
+                $lHoursCell,
                 ['X', 'pct', $progressDecimal, '6'],
                 ['Y', 'str', $progressStatus, '0'],
-                ['Z', 'str', $startDateStr, '0'],
-                ['AA', 'str', $endDateStr, '0'],
-                ['AB', 'str', $startTimeStr, '0'],
-                ['AC', 'str', $endTimeStr, '0'],
+                ['Z', $startDateStr !== '-' ? 'date' : 'str', $startDateStr, $startDateStr !== '-' ? '7' : '0'],
+                ['AA', $endDateStr !== '-' ? 'date' : 'str', $endDateStr, $endDateStr !== '-' ? '7' : '0'],
+                ['AB', $startTimeStr !== '-' ? 'time' : 'str', $startTimeStr, $startTimeStr !== '-' ? '8' : '0'],
+                ['AC', $endTimeStr !== '-' ? 'time' : 'str', $endTimeStr, $endTimeStr !== '-' ? '8' : '0'],
                 ['AD', 'str', $recordMonthStr, '0'],
                 ['AE', 'str', $row->requirement ?: 'Mandatory', '0'],
                 ['AF', 'str', $attendanceStr, '0'],
                 ['AG', 'str', $row->attendance_reason ?: '-', '0'],
-                ['AH', 'str', $row->bond_status ?: 'No', '0'],
-                ['AI', 'str', !empty($row->bond_duration) ? $row->bond_duration . ' Months' : '-', '0'],
-                ['AJ', 'str', !empty($row->bond_end_date) ? date('Y-m-d', strtotime($row->bond_end_date)) : '-', '0'],
+                ['AH', 'str', $hasBond ? 'Yes' : ($row->bond_status ?: 'No'), '0'],
+                $bondDurationMonths !== null ? ['AI', 'int', $bondDurationMonths, '4'] : ['AI', 'str', '-', '0'],
+                ['AJ', $bondEndDateStr !== '-' ? 'date' : 'str', $bondEndDateStr, $bondEndDateStr !== '-' ? '7' : '0'],
                 ['AK', $hasBond ? 'curr' : 'str', $hasBond ? (float) $idr : '-', $hasBond ? '9' : '0'],
-                ['AL', $scoreL1 !== null ? 'float' : 'str', $scoreL1 !== null ? $scoreL1 : '-', $scoreL1 !== null ? '5' : '0'],
-                ['AM', $scoreL2 !== null ? 'int' : 'str', $scoreL2 !== null ? $scoreL2 : '-', $scoreL2 !== null ? '4' : '0'],
+                $scoreL1 !== null ? (is_int($scoreL1) ? ['AL', 'int', $scoreL1, '4'] : ['AL', 'float', $scoreL1, '11']) : ['AL', 'str', '-', '0'],
+                $scoreL2 !== null ? (is_int($scoreL2) ? ['AM', 'int', $scoreL2, '4'] : ['AM', 'float', $scoreL2, '11']) : ['AM', 'str', '-', '0'],
                 ['AN', 'str', $row->l2_verbal ?: ($scoreL2 !== null ? ($scoreL2 >= 70 ? 'Passed' : 'Failed') : '-'), '0'],
-                ['AO', $scoreL3 !== null ? 'float' : 'str', $scoreL3 !== null ? $scoreL3 : '-', $scoreL3 !== null ? '5' : '0'],
+                $scoreL3 !== null ? (is_int($scoreL3) ? ['AO', 'int', $scoreL3, '4'] : ['AO', 'float', $scoreL3, '11']) : ['AO', 'str', '-', '0'],
                 ['AP', 'str', $row->l3_verbal ?: '-', '0'],
                 ['AQ', 'str', $row->pic ?: '-', '0'],
                 ['AR', 'str', $row->certificate ?: '-', '0'],
-                ['AS', 'str', $totalEngagementStr, '0'],
+                $totalEngCell,
             ];
 
             $buffer .= $this->buildXmlRow($r, $cells);
@@ -456,6 +665,9 @@ class OfflineRecordExport implements Responsable
                 $xml .= "<c r=\"{$coord}\" t=\"inlineStr\" s=\"{$styleId}\"><is><t>-</t></is></c>";
             } elseif ($type === 'pct') {
                 $xml .= "<c r=\"{$coord}\" s=\"{$styleId}\"><v>{$val}</v></c>";
+            } elseif ($type === 'lh') {
+                $lhVal = (float) $val;
+                $xml .= "<c r=\"{$coord}\" s=\"{$styleId}\"><v>{$lhVal}</v></c>";
             } elseif ($type === 'int') {
                 $intVal = (int) $val;
                 $xml .= "<c r=\"{$coord}\" s=\"{$styleId}\"><v>{$intVal}</v></c>";

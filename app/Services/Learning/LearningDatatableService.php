@@ -637,20 +637,36 @@ class LearningDatatableService
             ->addColumn('company', fn ($row) => e($row->user_company ?: '-'))
             ->addColumn('learning_title', fn ($row) => $this->learningTitleColumn($row))
             ->addColumn('course_title', fn ($row) => $this->learningTitleColumn($row))
+            ->addColumn('sub_course_title', fn () => '<span class="text-muted small">-</span>')
             ->addColumn('type_badge', fn ($row) => $this->typeBadge($row))
             ->addColumn('type', fn ($row) => $this->typeBadge($row))
-            ->addColumn('classification_name', fn ($row) => $this->classificationColumn($row))
-            ->addColumn('main_classification', fn ($row) => $this->classificationColumn($row))
-            ->addColumn('sub_classification', fn () => '-')
-            ->addColumn('delivery_method', fn () => 'Online')
-            ->addColumn('sub_delivery_method', fn ($row) => $row->category_source === 'Playlist' ? 'Playlist / Path' : 'Self-Paced / LMS')
-            ->addColumn('provider_name', fn () => 'KP OWL')
-            ->addColumn('venue', fn () => 'Online LMS')
             ->addColumn('category_badge', fn ($row) => $this->categoryBadge($row))
             ->addColumn('category', fn ($row) => $this->categoryBadge($row))
+            ->addColumn('level', fn () => '<span class="text-muted small">-</span>')
+            ->addColumn('batch', fn () => '<span class="text-muted small">-</span>')
+            ->addColumn('classification_name', fn ($row) => $this->classificationColumn($row))
+            ->addColumn('main_classification', fn ($row) => $this->classificationColumn($row))
+            ->addColumn('sub_classification', fn () => '<span class="text-muted small">-</span>')
+            ->addColumn('delivery_method', fn () => '<span class="badge bg-blue-lt text-blue">Online</span>')
+            ->addColumn('sub_delivery_method', fn ($row) => e($row->category_source === 'Playlist' ? 'Playlist / Path' : 'Self-Paced / LMS'))
+            ->addColumn('provider_name', fn () => 'KP OWL')
+            ->addColumn('venue', fn () => 'Online LMS')
             ->addColumn('duration', fn ($row) => e(DurationFormatter::format($row->content_duration ?? null)))
             ->addColumn('course_duration', fn ($row) => e(DurationFormatter::format($row->content_duration ?? null)))
-            ->addColumn('learning_hours', fn ($row) => number_format((float) ($row->learning_hours ?? 0), 1) . 'h')
+            ->addColumn('total_engagement_duration', function ($row) {
+                $hours = (float) ($row->learning_hours ?? 0);
+                $fmt = ($hours == (int) $hours) ? (int) $hours . ' h' : rtrim(rtrim(number_format($hours, 2, '.', ''), '0'), '.') . ' h';
+                return '<span class="fw-semibold">' . $fmt . '</span>';
+            })
+            ->addColumn('total_engagement_time', function ($row) {
+                $hours = (float) ($row->learning_hours ?? 0);
+                $fmt = ($hours == (int) $hours) ? (int) $hours . ' h' : rtrim(rtrim(number_format($hours, 2, '.', ''), '0'), '.') . ' h';
+                return '<span class="fw-semibold">' . $fmt . '</span>';
+            })
+            ->addColumn('learning_hours', function ($row) {
+                $hours = (float) ($row->learning_hours ?? 0);
+                return ($hours == (int) $hours) ? (int) $hours . ' h' : rtrim(rtrim(number_format($hours, 2, '.', ''), '0'), '.') . ' h';
+            })
             ->addColumn('learning_date', fn ($row) => $row->created_at ? Carbon::parse($row->created_at)->format('d M Y') : '-')
             ->addColumn('date_time_merged', function ($row) {
                 $startStr = $row->created_at ? Carbon::parse($row->created_at)->format('d M Y, H:i') : '-';
@@ -668,15 +684,16 @@ class LearningDatatableService
             ->addColumn('attendance', function ($row) {
                 $progress = (float) ($row->progress ?? 0);
                 if ($progress > 0 || $row->finish == 1) {
-                    return '<span class="badge bg-success-lt text-success fw-bold px-2 py-1">Present</span>';
+                    return '<span class="badge bg-success-lt text-success fw-bold px-2 py-1">Yes</span>';
                 }
-                return '<span class="badge bg-secondary-lt fw-bold px-2 py-1">-</span>';
+                return '<span class="badge bg-danger-lt text-danger fw-bold px-2 py-1">No</span>';
             })
+            ->addColumn('attendance_reason', fn () => '<span class="text-muted small">-</span>')
             ->addColumn('score_l1', fn () => '<span class="text-muted small">-</span>')
             ->addColumn('score_l2', fn () => '<span class="text-muted small">-</span>')
             ->addColumn('score_l3', fn () => '<span class="text-muted small">-</span>')
             ->addColumn('pic', fn () => '<span class="text-muted small">-</span>')
-            ->addColumn('total_engagement_time', fn ($row) => '<span class="fw-semibold">' . number_format((float) ($row->learning_hours ?? 0), 1) . 'h</span>')
+            ->addColumn('certificate', fn () => '<span class="text-muted small">-</span>')
             ->addColumn('progress_bar', fn ($row) => $this->progressBar($row))
             ->addColumn('progress_percent', fn ($row) => $this->progressBar($row))
             ->addColumn('progress_status', fn ($row) => $this->statusBadge($row))
@@ -699,23 +716,32 @@ class LearningDatatableService
                 'employee_name',
                 'learning_title',
                 'course_title',
+                'sub_course_title',
                 'type_badge',
                 'type',
                 'classification_name',
                 'main_classification',
+                'sub_classification',
                 'category_badge',
                 'category',
+                'level',
+                'batch',
+                'delivery_method',
+                'sub_delivery_method',
+                'total_engagement_duration',
+                'total_engagement_time',
                 'progress_bar',
                 'progress_percent',
                 'progress_status',
                 'date_time_merged',
                 'requirement',
                 'attendance',
+                'attendance_reason',
                 'score_l1',
                 'score_l2',
                 'score_l3',
                 'pic',
-                'total_engagement_time',
+                'certificate',
                 'action',
             ])
             ->make(true);
@@ -777,6 +803,9 @@ class LearningDatatableService
     private function idEmpColumn($row): string
     {
         $idEmp = $row->id_emp ?? '-';
+        if ($idEmp !== '-') {
+            $idEmp = preg_replace('/\s*[\/\-]\s*NIP.*$/i', '', trim((string) $idEmp));
+        }
 
         return '<span class="fw-semibold text-secondary">' . e($idEmp) . '</span>';
     }

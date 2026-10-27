@@ -113,6 +113,58 @@ class RecordOfflineController extends Controller
         </div>';
     }
 
+    public static function normalizeDeliveryMethod($method): string
+    {
+        $raw = strtolower(trim((string) $method));
+        return in_array($raw, ['online', 'e-learning', 'webinar', 'kp-owl', 'kp owl'], true) ? 'Online' : 'Offline';
+    }
+
+    public static function formatAttendanceBadge($attendance, $reason = null, $progress = 0, $finishDate = null): string
+    {
+        $rawAtt = strtolower(trim((string) $attendance));
+        $isYes = in_array($rawAtt, ['1', 'yes', 'present', 'true', 'hadir', 'completed', 'finished'], true);
+        if (!$isYes && ($rawAtt === '' || $attendance === null)) {
+            $prog = (float) ($progress ?? 0);
+            $isYes = ($prog >= 100 || !empty($finishDate));
+        }
+
+        if ($isYes) {
+            return '<span class="badge bg-success-lt text-success px-2 py-1">Yes</span>';
+        }
+
+        $title = !empty($reason) ? ' title="' . htmlspecialchars($reason) . '"' : '';
+        return '<span class="badge bg-danger-lt text-danger px-2 py-1"' . $title . '>No</span>';
+    }
+
+    public static function formatScore($rawScore): string
+    {
+        if ($rawScore === null || $rawScore === '' || $rawScore === '-') {
+            return '-';
+        }
+        if (!is_numeric($rawScore)) {
+            return htmlspecialchars((string) $rawScore);
+        }
+        $val = (float) $rawScore;
+        if (abs($val - round($val)) < 0.0001) {
+            return (string) ((int) round($val));
+        }
+        return (string) round($val, 2);
+    }
+
+    public static function formatHours($rawHours): string
+    {
+        if ($rawHours === null || $rawHours === '' || $rawHours === '-') {
+            return '-';
+        }
+        if (!is_numeric($rawHours)) {
+            return htmlspecialchars((string) $rawHours);
+        }
+        $hours = (float) $rawHours;
+        return ($hours == (int) $hours)
+            ? (int) $hours . ' h'
+            : rtrim(rtrim(number_format($hours, 2, '.', ''), '0'), '.') . ' h';
+    }
+
     public function index(Request $request)
     {
         return view('main.record.offline', [
@@ -569,7 +621,7 @@ class RecordOfflineController extends Controller
                 return htmlspecialchars($row->sub_corporate_kpi ?: '-');
             })
             ->addColumn('delivery_method', function ($row) {
-                return htmlspecialchars($row->delivery_method ?: '-');
+                return htmlspecialchars(self::normalizeDeliveryMethod($row->delivery_method));
             })
             ->addColumn('sub_delivery_method', function ($row) {
                 return htmlspecialchars($row->sub_delivery_method ?: '-');
@@ -600,10 +652,9 @@ class RecordOfflineController extends Controller
                 return '-';
             })
             ->addColumn('course_learning_hours', function ($row) {
-                if ($row->course_learning_hours !== null && $row->course_learning_hours !== '') {
-                    return '<span class="fw-semibold">' . number_format((float) $row->course_learning_hours, 1) . 'h</span>';
-                }
-                return '-';
+                $rawLh = $row->course_learning_hours ?? ($row->learning_hours ?? null);
+                $fmt = self::formatHours($rawLh);
+                return $fmt !== '-' ? '<span class="fw-semibold">' . $fmt . '</span>' : '-';
             })
             ->addColumn('start_date', function ($row) {
                 return $row->start_date ? date('d M Y', strtotime($row->start_date)) : '-';
@@ -628,8 +679,8 @@ class RecordOfflineController extends Controller
                 return '-';
             })
             ->addColumn('learning_hours', function ($row) {
-                $hours = (float) ($row->learning_hours ?? 0);
-                return '<span class="fw-semibold">' . number_format($hours, 1) . 'h</span>';
+                $fmt = self::formatHours($row->learning_hours);
+                return $fmt !== '-' ? '<span class="fw-semibold">' . $fmt . '</span>' : '-';
             })
             ->addColumn('progress_badge', function ($row) {
                 $progress = (float) ($row->progress ?? 0);
@@ -642,10 +693,8 @@ class RecordOfflineController extends Controller
                 </div>';
             })
             ->addColumn('assessment_score', function ($row) {
-                if ($row->assessment_score === null || $row->assessment_score === '') {
-                    return '<span class="text-muted small">-</span>';
-                }
-                return '<span class="fw-semibold">' . number_format((float) $row->assessment_score, 1) . '</span>';
+                $fmt = self::formatScore($row->assessment_score);
+                return $fmt !== '-' ? '<span class="fw-semibold">' . $fmt . '</span>' : '<span class="text-muted small">-</span>';
             })
             ->addColumn('certificate_badge', function ($row) {
                 if (!empty($row->certificate)) {
@@ -654,12 +703,7 @@ class RecordOfflineController extends Controller
                 return '<span class="text-muted small">-</span>';
             })
             ->addColumn('attendance_badge', function ($row) {
-                if ($row->attendance === null || $row->attendance === '') {
-                    return '<span class="text-muted small">-</span>';
-                }
-                return $row->attendance
-                    ? '<span class="badge bg-success-lt text-success px-2 py-1">Present</span>'
-                    : '<span class="badge bg-danger-lt text-danger px-2 py-1" title="' . htmlspecialchars($row->attendance_reason ?: 'Absent') . '">Absent</span>';
+                return self::formatAttendanceBadge($row->attendance, $row->attendance_reason ?? null, $row->progress ?? 0, $row->finish_date ?? null);
             })
             ->addColumn('attendance_reason', function ($row) {
                 if (!empty($row->attendance_reason)) {
@@ -683,13 +727,11 @@ class RecordOfflineController extends Controller
                 return '-';
             })
             ->addColumn('l1_program', function ($row) {
-                return htmlspecialchars($row->l1_program ?: '-');
+                return self::formatScore($row->l1_program);
             })
             ->addColumn('l2_numerical', function ($row) {
-                if ($row->l2_numerical !== null && $row->l2_numerical !== '') {
-                    return '<span class="fw-semibold">' . number_format((float) $row->l2_numerical, 1) . '</span>';
-                }
-                return '-';
+                $fmt = self::formatScore($row->l2_numerical);
+                return $fmt !== '-' ? '<span class="fw-semibold">' . $fmt . '</span>' : '-';
             })
             ->addColumn('l2_verbal', function ($row) {
                 if (!empty($row->l2_verbal)) {
@@ -698,10 +740,8 @@ class RecordOfflineController extends Controller
                 return '-';
             })
             ->addColumn('l3_numerical', function ($row) {
-                if ($row->l3_numerical !== null && $row->l3_numerical !== '') {
-                    return '<span class="fw-semibold">' . number_format((float) $row->l3_numerical, 1) . '</span>';
-                }
-                return '-';
+                $fmt = self::formatScore($row->l3_numerical);
+                return $fmt !== '-' ? '<span class="fw-semibold">' . $fmt . '</span>' : '-';
             })
             ->addColumn('l3_verbal', function ($row) {
                 if (!empty($row->l3_verbal)) {
@@ -765,26 +805,33 @@ class RecordOfflineController extends Controller
                 return htmlspecialchars($row->requirement ?: ($row->status ?: '-'));
             })
             ->addColumn('score_l1', function ($row) {
-                if ($row->assessment_score !== null && $row->assessment_score !== '') {
-                    return '<span class="fw-semibold">' . number_format((float) $row->assessment_score, 1) . '</span>';
-                }
-                return htmlspecialchars($row->l1_program ?: '-');
+                $score = $row->l1_program ?? ($row->assessment_score ?? null);
+                $fmt = self::formatScore($score);
+                return $fmt !== '-' ? '<span class="fw-semibold">' . $fmt . '</span>' : '-';
             })
             ->addColumn('score_l2', function ($row) {
-                if ($row->l2_numerical !== null && $row->l2_numerical !== '') {
-                    return '<span class="fw-semibold">' . number_format((float) $row->l2_numerical, 1) . '</span>';
+                $score = $row->assessment_score ?? ($row->l2_numerical ?? null);
+                if ($score !== null && $score !== '') {
+                    $fmt = self::formatScore($score);
+                    if ($fmt !== '-') {
+                        return '<span class="fw-semibold">' . $fmt . '</span>';
+                    }
                 }
                 return !empty($row->l2_verbal) ? htmlspecialchars($row->l2_verbal) : '-';
             })
             ->addColumn('score_l3', function ($row) {
                 if ($row->l3_numerical !== null && $row->l3_numerical !== '') {
-                    return '<span class="fw-semibold">' . number_format((float) $row->l3_numerical, 1) . '</span>';
+                    $fmt = self::formatScore($row->l3_numerical);
+                    if ($fmt !== '-') {
+                        return '<span class="fw-semibold">' . $fmt . '</span>';
+                    }
                 }
                 return !empty($row->l3_verbal) ? htmlspecialchars($row->l3_verbal) : '-';
             })
             ->addColumn('total_engagement_time', function ($row) {
-                $hours = (float) ($row->learning_hours ?? 0);
-                return '<span class="fw-semibold">' . number_format($hours, 1) . 'h</span>';
+                $lh = $row->learning_hours ?? ($row->course_learning_hours ?? null);
+                $fmt = self::formatHours($lh);
+                return $fmt !== '-' ? '<span class="fw-semibold">' . $fmt . '</span>' : '-';
             })
             ->addColumn('action', function ($row) {
                 return self::renderActionDropdown($row->id, 'offline');
@@ -1077,7 +1124,7 @@ class RecordOfflineController extends Controller
                 return htmlspecialchars($row->sub_corporate_kpi ?: '-');
             })
             ->addColumn('delivery_method', function ($row) {
-                return htmlspecialchars($row->delivery_method ?: '-');
+                return htmlspecialchars(self::normalizeDeliveryMethod($row->delivery_method));
             })
             ->addColumn('sub_delivery_method', function ($row) {
                 return htmlspecialchars($row->sub_delivery_method ?: '-');
@@ -1108,10 +1155,9 @@ class RecordOfflineController extends Controller
                 return '-';
             })
             ->addColumn('course_learning_hours', function ($row) {
-                if ($row->course_learning_hours !== null && $row->course_learning_hours !== '') {
-                    return '<span class="fw-semibold">' . number_format((float) $row->course_learning_hours, 1) . 'h</span>';
-                }
-                return '-';
+                $rawLh = $row->course_learning_hours ?? ($row->learning_hours ?? null);
+                $fmt = self::formatHours($rawLh);
+                return $fmt !== '-' ? '<span class="fw-semibold">' . $fmt . '</span>' : '-';
             })
             ->addColumn('start_date', function ($row) {
                 return $row->start_date ? date('d M Y', strtotime($row->start_date)) : '-';
@@ -1136,8 +1182,8 @@ class RecordOfflineController extends Controller
                 return '-';
             })
             ->addColumn('learning_hours', function ($row) {
-                $hours = (float) ($row->learning_hours ?? 0);
-                return '<span class="fw-semibold">' . number_format($hours, 1) . 'h</span>';
+                $fmt = self::formatHours($row->learning_hours);
+                return $fmt !== '-' ? '<span class="fw-semibold">' . $fmt . '</span>' : '-';
             })
             ->addColumn('progress_badge', function ($row) {
                 $progress = (float) ($row->progress ?? 0);
@@ -1150,10 +1196,8 @@ class RecordOfflineController extends Controller
                 </div>';
             })
             ->addColumn('assessment_score', function ($row) {
-                if ($row->assessment_score === null || $row->assessment_score === '') {
-                    return '<span class="text-muted small">-</span>';
-                }
-                return '<span class="fw-semibold">' . number_format((float) $row->assessment_score, 1) . '</span>';
+                $fmt = self::formatScore($row->assessment_score);
+                return $fmt !== '-' ? '<span class="fw-semibold">' . $fmt . '</span>' : '<span class="text-muted small">-</span>';
             })
             ->addColumn('certificate_badge', function ($row) {
                 if (!empty($row->certificate)) {
@@ -1162,13 +1206,7 @@ class RecordOfflineController extends Controller
                 return '<span class="text-muted small">-</span>';
             })
             ->addColumn('attendance_badge', function ($row) {
-                if ($row->attendance === 1 || $row->attendance === true || $row->attendance === '1') {
-                    return '<span class="badge bg-success-lt text-success fw-bold px-2 py-1">Present</span>';
-                } elseif ($row->attendance === 0 || $row->attendance === false || $row->attendance === '0') {
-                    return '<span class="badge bg-danger-lt text-danger fw-bold px-2 py-1">Absent</span>';
-                }
-
-                return '<span class="badge bg-secondary-lt fw-bold px-2 py-1">-</span>';
+                return self::formatAttendanceBadge($row->attendance, $row->attendance_reason ?? null, $row->progress ?? 0, $row->finish_date ?? null);
             })
             ->addColumn('attendance_reason', function ($row) {
                 if (!empty($row->attendance_reason)) {
@@ -1192,13 +1230,11 @@ class RecordOfflineController extends Controller
                 return '-';
             })
             ->addColumn('l1_program', function ($row) {
-                return htmlspecialchars($row->l1_program ?: '-');
+                return self::formatScore($row->l1_program);
             })
             ->addColumn('l2_numerical', function ($row) {
-                if ($row->l2_numerical !== null && $row->l2_numerical !== '') {
-                    return '<span class="fw-semibold">' . number_format((float) $row->l2_numerical, 1) . '</span>';
-                }
-                return '-';
+                $fmt = self::formatScore($row->l2_numerical);
+                return $fmt !== '-' ? '<span class="fw-semibold">' . $fmt . '</span>' : '-';
             })
             ->addColumn('l2_verbal', function ($row) {
                 if (!empty($row->l2_verbal)) {
@@ -1207,10 +1243,8 @@ class RecordOfflineController extends Controller
                 return '-';
             })
             ->addColumn('l3_numerical', function ($row) {
-                if ($row->l3_numerical !== null && $row->l3_numerical !== '') {
-                    return '<span class="fw-semibold">' . number_format((float) $row->l3_numerical, 1) . '</span>';
-                }
-                return '-';
+                $fmt = self::formatScore($row->l3_numerical);
+                return $fmt !== '-' ? '<span class="fw-semibold">' . $fmt . '</span>' : '-';
             })
             ->addColumn('l3_verbal', function ($row) {
                 if (!empty($row->l3_verbal)) {
@@ -1274,26 +1308,33 @@ class RecordOfflineController extends Controller
                 return htmlspecialchars($row->requirement ?: ($row->status ?: '-'));
             })
             ->addColumn('score_l1', function ($row) {
-                if ($row->assessment_score !== null && $row->assessment_score !== '') {
-                    return '<span class="fw-semibold">' . number_format((float) $row->assessment_score, 1) . '</span>';
-                }
-                return htmlspecialchars($row->l1_program ?: '-');
+                $score = $row->l1_program ?? ($row->assessment_score ?? null);
+                $fmt = self::formatScore($score);
+                return $fmt !== '-' ? '<span class="fw-semibold">' . $fmt . '</span>' : '-';
             })
             ->addColumn('score_l2', function ($row) {
-                if ($row->l2_numerical !== null && $row->l2_numerical !== '') {
-                    return '<span class="fw-semibold">' . number_format((float) $row->l2_numerical, 1) . '</span>';
+                $score = $row->assessment_score ?? ($row->l2_numerical ?? null);
+                if ($score !== null && $score !== '') {
+                    $fmt = self::formatScore($score);
+                    if ($fmt !== '-') {
+                        return '<span class="fw-semibold">' . $fmt . '</span>';
+                    }
                 }
                 return !empty($row->l2_verbal) ? htmlspecialchars($row->l2_verbal) : '-';
             })
             ->addColumn('score_l3', function ($row) {
                 if ($row->l3_numerical !== null && $row->l3_numerical !== '') {
-                    return '<span class="fw-semibold">' . number_format((float) $row->l3_numerical, 1) . '</span>';
+                    $fmt = self::formatScore($row->l3_numerical);
+                    if ($fmt !== '-') {
+                        return '<span class="fw-semibold">' . $fmt . '</span>';
+                    }
                 }
                 return !empty($row->l3_verbal) ? htmlspecialchars($row->l3_verbal) : '-';
             })
             ->addColumn('total_engagement_time', function ($row) {
-                $hours = (float) ($row->learning_hours ?? 0);
-                return '<span class="fw-semibold">' . number_format($hours, 1) . 'h</span>';
+                $lh = $row->learning_hours ?? ($row->course_learning_hours ?? null);
+                $fmt = self::formatHours($lh);
+                return $fmt !== '-' ? '<span class="fw-semibold">' . $fmt . '</span>' : '-';
             })
             ->addColumn('action', function ($row) {
                 return self::renderActionDropdown($row->id, 'offline');
@@ -1585,7 +1626,7 @@ class RecordOfflineController extends Controller
                 return htmlspecialchars($row->sub_corporate_kpi ?: '-');
             })
             ->addColumn('delivery_method', function ($row) {
-                return htmlspecialchars($row->delivery_method ?: '-');
+                return htmlspecialchars(self::normalizeDeliveryMethod($row->delivery_method));
             })
             ->addColumn('sub_delivery_method', function ($row) {
                 return htmlspecialchars($row->sub_delivery_method ?: '-');
@@ -1616,10 +1657,9 @@ class RecordOfflineController extends Controller
                 return '-';
             })
             ->addColumn('course_learning_hours', function ($row) {
-                if ($row->course_learning_hours !== null && $row->course_learning_hours !== '') {
-                    return '<span class="fw-semibold">' . number_format((float) $row->course_learning_hours, 1) . 'h</span>';
-                }
-                return '-';
+                $rawLh = $row->course_learning_hours ?? ($row->learning_hours ?? null);
+                $fmt = self::formatHours($rawLh);
+                return $fmt !== '-' ? '<span class="fw-semibold">' . $fmt . '</span>' : '-';
             })
             ->addColumn('start_date', function ($row) {
                 return $row->start_date ? date('d M Y', strtotime($row->start_date)) : '-';
@@ -1645,8 +1685,8 @@ class RecordOfflineController extends Controller
                 return '-';
             })
             ->addColumn('learning_hours', function ($row) {
-                $hours = (float) ($row->learning_hours ?? 0);
-                return '<span class="fw-semibold">' . number_format($hours, 1) . 'h</span>';
+                $fmt = self::formatHours($row->learning_hours);
+                return $fmt !== '-' ? '<span class="fw-semibold">' . $fmt . '</span>' : '-';
             })
             ->addColumn('progress_badge', function ($row) {
                 $progress = (float) ($row->progress ?? 0);
@@ -1659,11 +1699,8 @@ class RecordOfflineController extends Controller
                 </div>';
             })
             ->addColumn('assessment_score', function ($row) {
-                if ($row->assessment_score === null || $row->assessment_score === '') {
-                    return '<span class="text-muted small">-</span>';
-                }
-
-                return '<span class="fw-semibold">' . number_format((float) $row->assessment_score, 1) . '</span>';
+                $fmt = self::formatScore($row->assessment_score);
+                return $fmt !== '-' ? '<span class="fw-semibold">' . $fmt . '</span>' : '<span class="text-muted small">-</span>';
             })
             ->addColumn('certificate_badge', function ($row) {
                 if (!empty($row->certificate)) {
@@ -1673,13 +1710,7 @@ class RecordOfflineController extends Controller
                 return '<span class="text-muted small">-</span>';
             })
             ->addColumn('attendance_badge', function ($row) {
-                if ($row->attendance === null || $row->attendance === '') {
-                    return '<span class="text-muted small">-</span>';
-                }
-
-                return $row->attendance
-                    ? '<span class="badge bg-success-lt text-success px-2 py-1">Present</span>'
-                    : '<span class="badge bg-danger-lt text-danger px-2 py-1" title="' . htmlspecialchars($row->attendance_reason ?: 'Absent') . '">Absent</span>';
+                return self::formatAttendanceBadge($row->attendance, $row->attendance_reason ?? null, $row->progress ?? 0, $row->finish_date ?? null);
             })
             ->addColumn('attendance_reason', function ($row) {
                 if (!empty($row->attendance_reason)) {
@@ -1703,13 +1734,11 @@ class RecordOfflineController extends Controller
                 return '-';
             })
             ->addColumn('l1_program', function ($row) {
-                return htmlspecialchars($row->l1_program ?: '-');
+                return self::formatScore($row->l1_program);
             })
             ->addColumn('l2_numerical', function ($row) {
-                if ($row->l2_numerical !== null && $row->l2_numerical !== '') {
-                    return '<span class="fw-semibold">' . number_format((float) $row->l2_numerical, 1) . '</span>';
-                }
-                return '-';
+                $fmt = self::formatScore($row->l2_numerical);
+                return $fmt !== '-' ? '<span class="fw-semibold">' . $fmt . '</span>' : '-';
             })
             ->addColumn('l2_verbal', function ($row) {
                 if (!empty($row->l2_verbal)) {
@@ -1718,10 +1747,8 @@ class RecordOfflineController extends Controller
                 return '-';
             })
             ->addColumn('l3_numerical', function ($row) {
-                if ($row->l3_numerical !== null && $row->l3_numerical !== '') {
-                    return '<span class="fw-semibold">' . number_format((float) $row->l3_numerical, 1) . '</span>';
-                }
-                return '-';
+                $fmt = self::formatScore($row->l3_numerical);
+                return $fmt !== '-' ? '<span class="fw-semibold">' . $fmt . '</span>' : '-';
             })
             ->addColumn('l3_verbal', function ($row) {
                 if (!empty($row->l3_verbal)) {
@@ -1785,26 +1812,33 @@ class RecordOfflineController extends Controller
                 return htmlspecialchars($row->requirement ?: ($row->status ?: '-'));
             })
             ->addColumn('score_l1', function ($row) {
-                if ($row->assessment_score !== null && $row->assessment_score !== '') {
-                    return '<span class="fw-semibold">' . number_format((float) $row->assessment_score, 1) . '</span>';
-                }
-                return htmlspecialchars($row->l1_program ?: '-');
+                $score = $row->l1_program ?? ($row->assessment_score ?? null);
+                $fmt = self::formatScore($score);
+                return $fmt !== '-' ? '<span class="fw-semibold">' . $fmt . '</span>' : '-';
             })
             ->addColumn('score_l2', function ($row) {
-                if ($row->l2_numerical !== null && $row->l2_numerical !== '') {
-                    return '<span class="fw-semibold">' . number_format((float) $row->l2_numerical, 1) . '</span>';
+                $score = $row->assessment_score ?? ($row->l2_numerical ?? null);
+                if ($score !== null && $score !== '') {
+                    $fmt = self::formatScore($score);
+                    if ($fmt !== '-') {
+                        return '<span class="fw-semibold">' . $fmt . '</span>';
+                    }
                 }
                 return !empty($row->l2_verbal) ? htmlspecialchars($row->l2_verbal) : '-';
             })
             ->addColumn('score_l3', function ($row) {
                 if ($row->l3_numerical !== null && $row->l3_numerical !== '') {
-                    return '<span class="fw-semibold">' . number_format((float) $row->l3_numerical, 1) . '</span>';
+                    $fmt = self::formatScore($row->l3_numerical);
+                    if ($fmt !== '-') {
+                        return '<span class="fw-semibold">' . $fmt . '</span>';
+                    }
                 }
                 return !empty($row->l3_verbal) ? htmlspecialchars($row->l3_verbal) : '-';
             })
             ->addColumn('total_engagement_time', function ($row) {
-                $hours = (float) ($row->learning_hours ?? 0);
-                return '<span class="fw-semibold">' . number_format($hours, 1) . 'h</span>';
+                $lh = $row->learning_hours ?? ($row->course_learning_hours ?? null);
+                $fmt = self::formatHours($lh);
+                return $fmt !== '-' ? '<span class="fw-semibold">' . $fmt . '</span>' : '-';
             })
             ->addColumn('action', function ($row) {
                 return self::renderActionDropdown($row->id, 'offline');

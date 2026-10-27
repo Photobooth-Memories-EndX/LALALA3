@@ -13,10 +13,11 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use ZipStream\Option\Archive as ArchiveOptions;
 use ZipStream\ZipStream;
 
-class OnlineRecordExport implements Responsable
+class OnlineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\WithHeadings, \Maatwebsite\Excel\Concerns\WithMapping
 {
     protected array $filters = [];
     protected string $fileName;
+    protected int $rowCount = 0;
 
     public function __construct($filters = [], ?string $fileName = null)
     {
@@ -40,12 +41,23 @@ class OnlineRecordExport implements Responsable
         return "EmployeeOWLrecord_{$day}{$month}{$year} at {$time}.xlsx";
     }
 
+    public static function formatHours($val): string
+    {
+        if ($val === null || $val === '' || $val === '-') {
+            return '-';
+        }
+        $hours = (float) $val;
+        return ($hours == (int) $hours)
+            ? (int) $hours . ' h'
+            : rtrim(rtrim(number_format($hours, 2, '.', ''), '0'), '.') . ' h';
+    }
+
     public function getFileName(): string
     {
         return $this->fileName;
     }
 
-    public static function headings(): array
+    public static function headers(): array
     {
         return [
             'NO',
@@ -93,6 +105,97 @@ class OnlineRecordExport implements Responsable
             'Person in Charge (PIC)',
             'Certificate',
             'Total Engagement Time',
+        ];
+    }
+
+    public function headings(): array
+    {
+        return self::headers();
+    }
+
+    public function map($row): array
+    {
+        $this->rowCount++;
+        $isPlaylist = (($row->source_type ?? '') === 'playlist') || (!empty($row->trainingplan_id));
+
+        $durationFormatted = '-';
+        if (!empty($row->content_duration)) {
+            $durationFormatted = DurationFormatter::format($row->content_duration, '-');
+        }
+
+        $lHoursVal = $row->content_training_hours ?? ($row->playlist_training_hours ?? ($row->learning_hours ?? null));
+        $formattedLHours = self::formatHours($lHoursVal);
+
+        $progressNum = (float) ($row->progress ?? 0);
+        $progressDecimal = round($progressNum / 100, 4);
+        $isFinished = ($row->finish == '1' || $progressNum >= 100);
+        $progressStatus = $isFinished ? 'Finished' : ($progressNum > 0 ? 'Ongoing' : 'Not Started');
+
+        $createdAt = !empty($row->created_at) ? strtotime($row->created_at) : null;
+        $completedAt = (!empty($row->completed_at) && $isFinished) ? strtotime($row->completed_at) : null;
+
+        $startDateStr = $createdAt ? date('Y-m-d', $createdAt) : '-';
+        $endDateStr = $completedAt ? date('Y-m-d', $completedAt) : '-';
+        $startTimeStr = $createdAt ? date('H:i:s', $createdAt) : '-';
+        $endTimeStr = $completedAt ? date('H:i:s', $completedAt) : '-';
+        $recordMonthStr = $createdAt ? date('F', $createdAt) : '-';
+
+        $attendanceStr = ($isFinished || $progressNum > 0) ? 'Yes' : 'No';
+
+        $rawEmp = $row->id_emp ?: ($row->user_id_emp ?? '-');
+        $cleanEmpId = ($rawEmp !== '-') ? preg_replace('/\s*[\/\-]\s*NIP.*$/i', '', trim((string) $rawEmp)) : '-';
+
+        $courseTitle = $isPlaylist ? ($row->playlist_title ?: 'Playlist') : ($row->content_title ?: 'Untitled Content');
+        $mainClass = $row->classification_name ?: 'Unclassified';
+
+        $scoreL2Val = (isset($row->score_l2) && is_numeric($row->score_l2)) ? (int) round((float) $row->score_l2) : '-';
+
+        return [
+            $this->rowCount,
+            $cleanEmpId,
+            $row->employee_name ?: ($row->user_name ?? '-'),
+            '-', // Grade
+            '-', // Job Position
+            $row->user_team ?: '-',
+            $row->user_department ?: '-',
+            $row->user_company ?: '-',
+            $courseTitle,
+            '-', // Sub Course Title
+            $isPlaylist ? 'Playlist' : ($row->content_type ?: 'Content'),
+            $isPlaylist ? 'Playlist' : 'Content',
+            '-', // Level
+            '-', // Batch
+            $mainClass,
+            '-', // Sub Classification
+            'Online',
+            'E-learning',
+            'KP-OWL',
+            'KP-OWL',
+            ($row->content_author ?? ($row->author ?? '-')) ?: '-',
+            $durationFormatted,
+            $formattedLHours,
+            $progressDecimal,
+            $progressStatus,
+            $startDateStr,
+            $endDateStr,
+            $startTimeStr,
+            $endTimeStr,
+            $recordMonthStr,
+            'Mandatory',
+            $attendanceStr,
+            '-', // Attendance Reason
+            'No', // Bond Status
+            '-', // Bond Duration
+            '-', // Bond End Date
+            '-', // Bond Amount
+            '-', // Score L1
+            $scoreL2Val, // Score L2
+            '-', // L2 Status
+            '-', // Score L3
+            '-', // L3 Status
+            '-', // PIC
+            '-', // Certificate
+            $formattedLHours, // Total Engagement Time
         ];
     }
 
@@ -281,10 +384,11 @@ class OnlineRecordExport implements Responsable
             'xl/styles.xml',
             '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             . '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
-            . '<numFmts count="3">'
+            . '<numFmts count="4">'
             . '<numFmt numFmtId="164" formatCode="&quot;Rp&quot;#,##0"/>'
             . '<numFmt numFmtId="165" formatCode="yyyy-mm-dd"/>'
             . '<numFmt numFmtId="166" formatCode="hh:mm:ss"/>'
+            . '<numFmt numFmtId="167" formatCode="General&quot; h&quot;"/>'
             . '</numFmts>'
             . '<fonts count="4">'
             . '<font><sz val="10"/><name val="Calibri"/></font>'
@@ -304,7 +408,7 @@ class OnlineRecordExport implements Responsable
             . '<cellStyleXfs count="1">'
             . '<xf numFmtId="0" fontId="0" fillId="0" borderId="0"/>'
             . '</cellStyleXfs>'
-            . '<cellXfs count="13">'
+            . '<cellXfs count="15">'
             . '<xf numFmtId="49" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
             . '<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
             . '<xf numFmtId="49" fontId="2" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
@@ -318,6 +422,8 @@ class OnlineRecordExport implements Responsable
             . '<xf numFmtId="1" fontId="2" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
             . '<xf numFmtId="9" fontId="2" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
             . '<xf numFmtId="165" fontId="2" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<xf numFmtId="167" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<xf numFmtId="167" fontId="2" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
             . '</cellXfs>'
             . '</styleSheet>'
         );
@@ -373,7 +479,7 @@ class OnlineRecordExport implements Responsable
 
             // Learning hours
             $lHoursVal = $row->content_training_hours ?? ($row->playlist_training_hours ?? ($row->learning_hours ?? null));
-            $lHoursStr = ($lHoursVal !== null && $lHoursVal !== '') ? (number_format((float) $lHoursVal, 2) . ' h') : '-';
+            $lHoursNumeric = ($lHoursVal !== null && $lHoursVal !== '') ? (float) $lHoursVal : null;
 
             // Progress & Status
             $progressNum = (float) ($row->progress ?? 0);
@@ -393,7 +499,7 @@ class OnlineRecordExport implements Responsable
             $recordMonthStr = $createdAt ? date('F', $createdAt) : '-';
 
             // Attendance: strictly Yes or No
-            $attendanceStr = $isFinished ? 'Yes' : ($progressNum > 0 ? 'No' : '-');
+            $attendanceStr = ($isFinished || $progressNum > 0) ? 'Yes' : 'No';
 
             // Titles & Classification
             $courseTitle = $isPlaylist ? ($row->playlist_title ?: 'Playlist') : ($row->content_title ?: 'Untitled Content');
@@ -404,10 +510,25 @@ class OnlineRecordExport implements Responsable
             $intStyle = $isPlaylist ? '10' : '4';
             $pctStyle = $isPlaylist ? '11' : '6';
 
+            // Learning hours styling
+            $lhStyle = $isPlaylist ? '14' : '13';
+            $lhType = ($lHoursNumeric !== null) ? 'lh' : 'str';
+            $lhVal = ($lHoursNumeric !== null) ? $lHoursNumeric : '-';
+            $lhActualStyle = ($lHoursNumeric !== null) ? $lhStyle : $textStyle;
+
+            // Score L2 integer
+            $scoreL2Val = (isset($row->score_l2) && is_numeric($row->score_l2)) ? (int) round((float) $row->score_l2) : '-';
+            $scoreL2Type = ($scoreL2Val !== '-') ? 'int' : 'str';
+            $scoreL2Style = ($scoreL2Val !== '-') ? $intStyle : $textStyle;
+
+            // Employee ID: raw string/integer only
+            $rawEmp = $row->id_emp ?: ($row->user_id_emp ?? '-');
+            $cleanEmpId = ($rawEmp !== '-') ? preg_replace('/\s*[\/\-]\s*NIP.*$/i', '', trim((string) $rawEmp)) : '-';
+
             // Row cell mapping (45 columns)
             $cells = [
                 ['A', 'num', $rowCount, $textStyle],
-                ['B', 'str', $row->id_emp ?: ($row->user_id_emp ?? '-'), $textStyle],
+                ['B', 'str', $cleanEmpId, $textStyle],
                 ['C', 'str', $row->employee_name ?: ($row->user_name ?? '-'), $textStyle],
                 ['D', 'str', '-', $textStyle], // Grade
                 ['E', 'str', '-', $textStyle], // Job Position
@@ -426,9 +547,9 @@ class OnlineRecordExport implements Responsable
                 ['R', 'str', 'E-learning', $textStyle],
                 ['S', 'str', 'KP-OWL', $textStyle],
                 ['T', 'str', 'KP-OWL', $textStyle],
-                ['U', 'str', $row->content_author ?: '-', $textStyle],
+                ['U', 'str', ($row->content_author ?? ($row->author ?? '-')) ?: '-', $textStyle],
                 ['V', 'str', $durationFormatted, $textStyle],
-                ['W', 'str', $lHoursStr, $textStyle],
+                ['W', $lhType, $lhVal, $lhActualStyle],
                 ['X', 'pct', $progressDecimal, $pctStyle],
                 ['Y', 'str', $progressStatus, $textStyle],
                 ['Z', 'str', $startDateStr, $textStyle],
@@ -444,13 +565,13 @@ class OnlineRecordExport implements Responsable
                 ['AJ', 'str', '-', $textStyle], // Bond End Date
                 ['AK', 'str', '-', $textStyle], // Bond Amount
                 ['AL', 'str', '-', $textStyle], // Score L1
-                ['AM', 'str', '-', $textStyle], // Score L2
+                ['AM', $scoreL2Type, $scoreL2Val, $scoreL2Style], // Score L2
                 ['AN', 'str', '-', $textStyle], // L2 Status
                 ['AO', 'str', '-', $textStyle], // Score L3
                 ['AP', 'str', '-', $textStyle], // L3 Status
                 ['AQ', 'str', '-', $textStyle], // PIC
                 ['AR', 'str', '-', $textStyle], // Certificate
-                ['AS', 'str', $lHoursStr, $textStyle], // Total Engagement Time
+                ['AS', $lhType, $lhVal, $lhActualStyle], // Total Engagement Time
             ];
 
             $buffer .= $this->buildXmlRow($r, $cells);
@@ -468,7 +589,7 @@ class OnlineRecordExport implements Responsable
 
                         $childCells = [
                             ['A', 'str', '-', '3'],
-                            ['B', 'str', $row->id_emp ?: ($row->user_id_emp ?? '-'), '3'],
+                            ['B', 'str', $cleanEmpId, '3'],
                             ['C', 'str', $row->employee_name ?: ($row->user_name ?? '-'), '3'],
                             ['D', 'str', '-', '3'],
                             ['E', 'str', '-', '3'],
@@ -558,6 +679,9 @@ class OnlineRecordExport implements Responsable
                 $xml .= "<c r=\"{$coord}\" t=\"inlineStr\" s=\"{$styleId}\"><is><t>-</t></is></c>";
             } elseif ($type === 'pct') {
                 $xml .= "<c r=\"{$coord}\" s=\"{$styleId}\"><v>{$val}</v></c>";
+            } elseif ($type === 'lh') {
+                $lhFloat = (float) $val;
+                $xml .= "<c r=\"{$coord}\" s=\"{$styleId}\"><v>{$lhFloat}</v></c>";
             } elseif ($type === 'int') {
                 $intVal = (int) $val;
                 $xml .= "<c r=\"{$coord}\" s=\"{$styleId}\"><v>{$intVal}</v></c>";

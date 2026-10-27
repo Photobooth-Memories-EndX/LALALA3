@@ -11,15 +11,17 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\WithColumnFormatting;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class ClassificationOnlineRecordExport implements FromCollection, WithHeadings, WithColumnWidths, WithStyles, WithEvents, Responsable
+class ClassificationOnlineRecordExport implements FromCollection, WithHeadings, WithColumnWidths, WithColumnFormatting, WithStyles, WithEvents, Responsable
 {
     use Exportable;
 
@@ -54,6 +56,17 @@ class ClassificationOnlineRecordExport implements FromCollection, WithHeadings, 
         $time = $dt->format('H.i.s');
 
         return "EmployeeOWLrecord_{$day}{$month}{$year} at {$time}.xlsx";
+    }
+
+    public static function formatHours($val): string
+    {
+        if ($val === null || $val === '' || $val === '-') {
+            return '-';
+        }
+        $hours = (float) $val;
+        return ($hours == (int) $hours)
+            ? (int) $hours . ' h'
+            : rtrim(rtrim(number_format($hours, 2, '.', ''), '0'), '.') . ' h';
     }
 
     public function getFileName(): string
@@ -159,7 +172,23 @@ class ClassificationOnlineRecordExport implements FromCollection, WithHeadings, 
             'AP' => 14,  // L3 Status
             'AQ' => 22,  // Person in Charge (PIC)
             'AR' => 14,  // Certificate
-            'AS' => 25,  // Total Engagement Time (LH)
+            'AS' => 25,  // Total Engagement Time
+        ];
+    }
+
+    public function columnFormats(): array
+    {
+        return [
+            'B'  => NumberFormat::FORMAT_TEXT,
+            'W'  => 'General" h"',
+            'X'  => '0%',
+            'Z'  => 'yyyy-mm-dd',
+            'AA' => 'yyyy-mm-dd',
+            'AB' => 'hh:mm:ss',
+            'AC' => 'hh:mm:ss',
+            'AK' => '"Rp"#,##0',
+            'AM' => '0',
+            'AS' => 'General" h"',
         ];
     }
 
@@ -206,11 +235,16 @@ class ClassificationOnlineRecordExport implements FromCollection, WithHeadings, 
 
             // Learning hours
             $lHoursVal = $row->content_training_hours ?? ($row->playlist_training_hours ?? ($row->learning_hours ?? null));
-            $lHoursStr = ($lHoursVal !== null && $lHoursVal !== '') ? (number_format((float) $lHoursVal, 2) . ' h') : '-';
+            if ($lHoursVal !== null && $lHoursVal !== '' && is_numeric($lHoursVal)) {
+                $hours = (float) $lHoursVal;
+                $lHoursNumeric = ($hours == (int) $hours) ? (int) $hours : round($hours, 2);
+            } else {
+                $lHoursNumeric = '-';
+            }
 
             // Progress & Status
             $progressNum = (float) ($row->progress ?? 0);
-            $progressPercentStr = round($progressNum) . '%';
+            $progressDecimal = round($progressNum / 100, 4);
             $isFinished = ($row->finish == '1' || $progressNum >= 100);
             $progressStatus = $isFinished ? 'Finished' : ($progressNum > 0 ? 'Ongoing' : 'Not Started');
 
@@ -226,7 +260,14 @@ class ClassificationOnlineRecordExport implements FromCollection, WithHeadings, 
             $recordMonthStr = $createdAt ? date('F', $createdAt) : '-';
 
             // Attendance: strictly Yes or No
-            $attendanceStr = $isFinished ? 'Yes' : ($progressNum > 0 ? 'No' : '-');
+            $attendanceStr = ($isFinished || $progressNum > 0) ? 'Yes' : 'No';
+
+            // Score L2 integer
+            $scoreL2Val = (isset($row->score_l2) && is_numeric($row->score_l2)) ? (int) round((float) $row->score_l2) : '-';
+
+            // Employee ID: raw string/integer only
+            $rawEmp = $row->id_emp ?: ($row->user_id_emp ?? '-');
+            $cleanEmpId = ($rawEmp !== '-') ? preg_replace('/\s*[\/\-]\s*NIP.*$/i', '', trim((string) $rawEmp)) : '-';
 
             // Titles & Classification
             $courseTitle = $isPlaylist ? ($row->playlist_title ?: 'Playlist') : ($row->content_title ?: 'Untitled Content');
@@ -234,7 +275,7 @@ class ClassificationOnlineRecordExport implements FromCollection, WithHeadings, 
 
             $rows->push([
                 $rowCount,
-                $row->id_emp ?: ($row->user_id_emp ?? '-'),
+                $cleanEmpId,
                 $row->employee_name ?: ($row->user_name ?? '-'),
                 '-', // Grade
                 '-', // Job Position
@@ -253,10 +294,10 @@ class ClassificationOnlineRecordExport implements FromCollection, WithHeadings, 
                 'E-learning',
                 'KP-OWL',
                 'KP-OWL',
-                $row->content_author ?: '-',
+                ($row->content_author ?? ($row->author ?? '-')) ?: '-',
                 $durationFormatted,
-                $lHoursStr,
-                $progressPercentStr,
+                $lHoursNumeric,
+                $progressDecimal, // numeric decimal for 0% format code
                 $progressStatus,
                 $startDateStr,
                 $endDateStr,
@@ -271,13 +312,13 @@ class ClassificationOnlineRecordExport implements FromCollection, WithHeadings, 
                 '-', // Bond End Date
                 '-', // Bond Amount
                 '-', // Score L1
-                '-', // Score L2 (integer)
+                $scoreL2Val, // Score L2 (integer)
                 '-', // L2 Status
                 '-', // Score L3
                 '-', // L3 Status
                 '-', // PIC
                 '-', // Certificate
-                $lHoursStr, // Total Engagement Time (LH)
+                $lHoursNumeric, // Total Engagement Time
             ]);
 
             // Expand Child Contents for Playlist
@@ -290,7 +331,7 @@ class ClassificationOnlineRecordExport implements FromCollection, WithHeadings, 
 
                         $rows->push([
                             '-',
-                            $row->id_emp ?: ($row->user_id_emp ?? '-'),
+                            $cleanEmpId,
                             $row->employee_name ?: ($row->user_name ?? '-'),
                             '-',
                             '-',
@@ -333,7 +374,7 @@ class ClassificationOnlineRecordExport implements FromCollection, WithHeadings, 
                             '-',
                             '-',
                             '-',
-                            '-', // Total Engagement Time (LH) - child is '-'
+                            '-', // Total Engagement Time - child is '-'
                         ]);
                     }
                 }
@@ -341,6 +382,94 @@ class ClassificationOnlineRecordExport implements FromCollection, WithHeadings, 
         }
 
         return $rows;
+    }
+
+    public function map($row): array
+    {
+        if (is_array($row)) {
+            return $row;
+        }
+
+        $durationFormatted = '-';
+        if (!empty($row->content_duration)) {
+            $durationFormatted = DurationFormatter::format($row->content_duration, '-');
+        }
+
+        $lHoursVal = $row->content_training_hours ?? ($row->playlist_training_hours ?? ($row->learning_hours ?? null));
+        $lHoursNumeric = ($lHoursVal !== null && $lHoursVal !== '') ? (float) $lHoursVal : '-';
+
+        $progressNum = (float) ($row->progress ?? 0);
+        $progressDecimal = round($progressNum / 100, 4);
+        $isFinished = ($row->finish == '1' || $progressNum >= 100);
+        $progressStatus = $isFinished ? 'Finished' : ($progressNum > 0 ? 'Ongoing' : 'Not Started');
+
+        $createdAt = !empty($row->created_at) ? strtotime($row->created_at) : null;
+        $completedAt = (!empty($row->completed_at) && $isFinished) ? strtotime($row->completed_at) : null;
+
+        $startDateStr = $createdAt ? date('Y-m-d', $createdAt) : '-';
+        $endDateStr = $completedAt ? date('Y-m-d', $completedAt) : '-';
+        $startTimeStr = $createdAt ? date('H:i:s', $createdAt) : '-';
+        $endTimeStr = $completedAt ? date('H:i:s', $completedAt) : '-';
+        $recordMonthStr = $createdAt ? date('F', $createdAt) : '-';
+
+        $attendanceStr = ($isFinished || $progressNum > 0) ? 'Yes' : 'No';
+
+        $rawEmp = $row->id_emp ?: ($row->user_id_emp ?? '-');
+        $cleanEmpId = ($rawEmp !== '-') ? preg_replace('/\s*[\/\-]\s*NIP.*$/i', '', trim((string) $rawEmp)) : '-';
+
+        $isPlaylist = (($row->source_type ?? '') === 'playlist') || (!empty($row->trainingplan_id));
+        $courseTitle = $isPlaylist ? ($row->playlist_title ?: 'Playlist') : ($row->content_title ?: 'Untitled Content');
+        $mainClass = $row->classification_name ?: 'Unclassified';
+
+        $scoreL2Val = (isset($row->score_l2) && is_numeric($row->score_l2)) ? (int) round((float) $row->score_l2) : '-';
+
+        return [
+            1,
+            $cleanEmpId,
+            $row->employee_name ?: ($row->user_name ?? '-'),
+            '-',
+            '-',
+            $row->user_team ?: '-',
+            $row->user_department ?: '-',
+            $row->user_company ?: '-',
+            $courseTitle,
+            '-',
+            $isPlaylist ? 'Playlist' : ($row->content_type ?: 'Content'),
+            $isPlaylist ? 'Playlist' : 'Content',
+            '-',
+            '-',
+            $mainClass,
+            '-',
+            'Online',
+            'E-learning',
+            'KP-OWL',
+            'KP-OWL',
+            ($row->content_author ?? ($row->author ?? '-')) ?: '-',
+            $durationFormatted,
+            $lHoursNumeric,
+            $progressDecimal,
+            $progressStatus,
+            $startDateStr,
+            $endDateStr,
+            $startTimeStr,
+            $endTimeStr,
+            $recordMonthStr,
+            'Mandatory',
+            $attendanceStr,
+            '-',
+            'No',
+            '-',
+            '-',
+            '-',
+            '-',
+            $scoreL2Val,
+            '-',
+            '-',
+            '-',
+            '-',
+            '-',
+            $lHoursNumeric,
+        ];
     }
 
     protected function getPlaylistChildrenMap(): array
