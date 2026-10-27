@@ -99,6 +99,7 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
             'Instructor',
             'Course Duration',
             'Total Engagement Duration',
+            'Total Recognized Duration',
             'Learning Hours',
             '% Progress',
             'Progress Status',
@@ -152,43 +153,51 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
             'V'  => 22,  // Instructor
             'W'  => 16,  // Course Duration
             'X'  => 22,  // Total Engagement Duration
-            'Y'  => 16,  // Learning Hours
-            'Z'  => 14,  // % Progress
-            'AA' => 16,  // Progress Status
-            'AB' => 14,  // Start Date
-            'AC' => 14,  // End Date
-            'AD' => 14,  // Start Time
-            'AE' => 14,  // End Time
-            'AF' => 16,  // Record Month
-            'AG' => 15,  // Requirement
-            'AH' => 14,  // Attendance
-            'AI' => 25,  // Attendance Reason
-            'AJ' => 14,  // Bond Status
-            'AK' => 16,  // Bond Duration
-            'AL' => 15,  // Bond End Date
-            'AM' => 18,  // Bond Amount
-            'AN' => 20,  // Score (L1) - Course
-            'AO' => 14,  // Score (L2)
-            'AP' => 14,  // L2 Status
-            'AQ' => 14,  // Score (L3)
-            'AR' => 14,  // L3 Status
-            'AS' => 22,  // Person in Charge (PIC)
-            'AT' => 14,  // Certificate
-            'AU' => 25,  // Total Engagement Time (LH)
+            'Y'  => 22,  // Total Recognized Duration
+            'Z'  => 16,  // Learning Hours
+            'AA' => 14,  // % Progress
+            'AB' => 16,  // Progress Status
+            'AC' => 14,  // Start Date
+            'AD' => 14,  // End Date
+            'AE' => 14,  // Start Time
+            'AF' => 14,  // End Time
+            'AG' => 16,  // Record Month
+            'AH' => 15,  // Requirement
+            'AI' => 14,  // Attendance
+            'AJ' => 25,  // Attendance Reason
+            'AK' => 14,  // Bond Status
+            'AL' => 16,  // Bond Duration
+            'AM' => 15,  // Bond End Date
+            'AN' => 18,  // Bond Amount
+            'AO' => 20,  // Score (L1) - Course
+            'AP' => 14,  // Score (L2)
+            'AQ' => 14,  // L2 Status
+            'AR' => 14,  // Score (L3)
+            'AS' => 14,  // L3 Status
+            'AT' => 22,  // Person in Charge (PIC)
+            'AU' => 14,  // Certificate
+            'AV' => 25,  // Total Engagement Time (LH)
         ];
     }
 
     public function columnFormats(): array
     {
         return [
+            'A'  => '0',
             'C'  => NumberFormat::FORMAT_TEXT,
-            'Z'  => '0%',
-            'AB' => 'yyyy-mm-dd',
+            'Y'  => '0.##" h"',
+            'Z'  => '0.##" h"',
+            'AA' => '0%',
             'AC' => 'yyyy-mm-dd',
-            'AD' => 'hh:mm:ss',
+            'AD' => 'yyyy-mm-dd',
             'AE' => 'hh:mm:ss',
-            'AM' => '"Rp"#,##0',
-            'AO' => '0',
+            'AF' => 'hh:mm:ss',
+            'AM' => 'yyyy-mm-dd',
+            'AN' => '"Rp"#,##0',
+            'AO' => '0.##',
+            'AP' => '0',
+            'AR' => '0.##',
+            'AV' => '0.##" h"',
         ];
     }
 
@@ -226,8 +235,10 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
                 $durationFormatted = sprintf('%02d:%02d:%02d', $hours, $mins, $seconds);
             }
 
-            // Learning Hours: Append "h" unit (e.g. 4 h, 0.3 h)
-            $lhVal = self::formatHours($row->learning_hours);
+            // Learning Hours (raw numeric float for SUM calculations)
+            $lhNumeric = ($row->learning_hours !== null && $row->learning_hours !== '' && is_numeric($row->learning_hours))
+                ? (float) $row->learning_hours
+                : '-';
 
             // Progress & Status
             $progressNum = (float) ($row->progress ?? 0);
@@ -299,7 +310,8 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
                 $row->instructor ?: '-',
                 $durationFormatted, // Course Duration
                 $durationFormatted, // Total Engagement Duration
-                $lhVal, // Learning Hours
+                '-', // Total Recognized Duration
+                $lhNumeric, // Learning Hours
                 $progressDecimal, // numeric decimal for 0% format code
                 $progressStatus,
                 $startDateStr,
@@ -314,14 +326,14 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
                 !empty($row->bond_duration) ? $row->bond_duration . ' Months' : '-',
                 !empty($row->bond_end_date) ? date('Y-m-d', strtotime($row->bond_end_date)) : '-',
                 $hasBond ? (float) $idr : '-',
-                $scoreL1 !== null ? number_format($scoreL1, 2) : '-',
+                $scoreL1 !== null ? (float) $scoreL1 : '-',
                 $scoreL2 !== null ? (int) $scoreL2 : '-', // strictly pure integer
                 $row->l2_verbal ?: ($scoreL2 !== null ? ($scoreL2 >= 70 ? 'Passed' : 'Failed') : '-'),
-                $scoreL3 !== null ? number_format($scoreL3, 2) : '-',
+                $scoreL3 !== null ? (float) $scoreL3 : '-',
                 $row->l3_verbal ?: '-',
                 $row->pic ?: '-',
                 $row->certificate ?: '-',
-                $lhVal, // Total Engagement Time (LH)
+                $lhNumeric, // Total Engagement Time (LH)
             ]);
         }
 
@@ -360,6 +372,11 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);
+
+                // Set format codes for SUM calculation
+                $sheet->getStyle('Y2:Y' . $highestRow)->getNumberFormat()->setFormatCode('0.##" h"');
+                $sheet->getStyle('Z2:Z' . $highestRow)->getNumberFormat()->setFormatCode('0.##" h"');
+                $sheet->getStyle('AV2:AV' . $highestRow)->getNumberFormat()->setFormatCode('0.##" h"');
             },
         ];
     }

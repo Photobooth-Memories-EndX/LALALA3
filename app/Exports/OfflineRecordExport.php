@@ -82,6 +82,8 @@ class OfflineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wi
             'Venue',
             'Instructor',
             'Course Duration',
+            'Total Engagement Duration',
+            'Total Recognized Duration',
             'Learning Hours',
             '% Progress',
             'Progress Status',
@@ -104,7 +106,7 @@ class OfflineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wi
             'L3 Status',
             'Person in Charge (PIC)',
             'Certificate',
-            'Total Engagement Time',
+            'Total Engagement Time (LH)',
         ];
     }
 
@@ -127,10 +129,10 @@ class OfflineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wi
             $durationFormatted = sprintf('%02d:%02d:%02d', $hours, $mins, $seconds);
         }
 
-        // Learning Hours: Format without trailing dots (e.g. 4 h, 0.3 h)
+        // Learning Hours (raw numeric float for SUM calculations)
         $rawLh = $row->course_learning_hours ?? ($row->learning_hours ?? null);
-        $formattedLHours = ($rawLh !== null && $rawLh !== '' && is_numeric($rawLh))
-            ? self::formatHours($rawLh)
+        $lHoursNumeric = ($rawLh !== null && $rawLh !== '' && is_numeric($rawLh))
+            ? (float) $rawLh
             : '-';
 
         // Progress & Status (raw numeric decimal)
@@ -201,8 +203,8 @@ class OfflineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wi
         }
 
         $totalEngVal = $row->learning_hours ?? ($row->course_learning_hours ?? null);
-        $formattedTotalEng = ($totalEngVal !== null && $totalEngVal !== '' && is_numeric($totalEngVal))
-            ? self::formatHours($totalEngVal)
+        $totalEngNumeric = ($totalEngVal !== null && $totalEngVal !== '' && is_numeric($totalEngVal))
+            ? (float) $totalEngVal
             : '-';
 
         // Employee ID: clean without / NIP
@@ -232,7 +234,9 @@ class OfflineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wi
             $row->venue ?? '-',
             $row->instructor ?? '-',
             $durationFormatted,
-            $formattedLHours,
+            $durationFormatted, // Total Engagement Duration
+            '-', // Total Recognized Duration
+            $lHoursNumeric, // Learning Hours
             $progressDecimal,
             $progressStatus,
             $startDateStr,
@@ -254,7 +258,7 @@ class OfflineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wi
             $row->l3_verbal ?? '-',
             $row->pic ?? '-',
             $row->certificate ?? '-',
-            $formattedTotalEng,
+            $totalEngNumeric, // Total Engagement Time (LH)
         ];
     }
 
@@ -283,29 +287,31 @@ class OfflineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wi
             'T'  => 20,  // Venue
             'U'  => 22,  // Instructor
             'V'  => 16,  // Course Duration
-            'W'  => 16,  // Learning Hours
-            'X'  => 14,  // % Progress
-            'Y'  => 16,  // Progress Status
-            'Z'  => 14,  // Start Date
-            'AA' => 14,  // End Date
-            'AB' => 14,  // Start Time
-            'AC' => 14,  // End Time
-            'AD' => 16,  // Record Month
-            'AE' => 15,  // Requirement
-            'AF' => 14,  // Attendance
-            'AG' => 25,  // Attendance Reason
-            'AH' => 14,  // Bond Status
-            'AI' => 16,  // Bond Duration
-            'AJ' => 15,  // Bond End Date
-            'AK' => 18,  // Bond Amount
-            'AL' => 20,  // Score (L1) - Course
-            'AM' => 14,  // Score (L2)
-            'AN' => 14,  // L2 Status
-            'AO' => 14,  // Score (L3)
-            'AP' => 14,  // L3 Status
-            'AQ' => 22,  // Person in Charge (PIC)
-            'AR' => 14,  // Certificate
-            'AS' => 22,  // Total Engagement Time
+            'W'  => 22,  // Total Engagement Duration
+            'X'  => 22,  // Total Recognized Duration
+            'Y'  => 16,  // Learning Hours
+            'Z'  => 14,  // % Progress
+            'AA' => 16,  // Progress Status
+            'AB' => 14,  // Start Date
+            'AC' => 14,  // End Date
+            'AD' => 14,  // Start Time
+            'AE' => 14,  // End Time
+            'AF' => 16,  // Record Month
+            'AG' => 15,  // Requirement
+            'AH' => 14,  // Attendance
+            'AI' => 25,  // Attendance Reason
+            'AJ' => 14,  // Bond Status
+            'AK' => 16,  // Bond Duration
+            'AL' => 15,  // Bond End Date
+            'AM' => 18,  // Bond Amount
+            'AN' => 20,  // Score (L1) - Course
+            'AO' => 14,  // Score (L2)
+            'AP' => 14,  // L2 Status
+            'AQ' => 14,  // Score (L3)
+            'AR' => 14,  // L3 Status
+            'AS' => 22,  // Person in Charge (PIC)
+            'AT' => 14,  // Certificate
+            'AU' => 25,  // Total Engagement Time (LH)
         ];
     }
 
@@ -402,7 +408,7 @@ class OfflineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wi
             . '<numFmt numFmtId="164" formatCode="&quot;Rp&quot;#,##0"/>'
             . '<numFmt numFmtId="165" formatCode="yyyy-mm-dd"/>'
             . '<numFmt numFmtId="166" formatCode="hh:mm:ss"/>'
-            . '<numFmt numFmtId="167" formatCode="General&quot; h&quot;"/>'
+            . '<numFmt numFmtId="167" formatCode="0.##&quot; h&quot;"/>'
             . '<numFmt numFmtId="168" formatCode="0.##"/>'
             . '</numFmts>'
             . '<fonts count="3">'
@@ -486,15 +492,13 @@ class OfflineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wi
                 $durationFormatted = sprintf('%02d:%02d:%02d', $hours, $mins, $seconds);
             }
 
-            // Learning Hours
+            // Learning Hours (raw numeric float for SUM calculations)
             $rawLh = $row->course_learning_hours ?? ($row->learning_hours ?? null);
             $lHoursNumeric = null;
             if ($rawLh !== null && $rawLh !== '' && is_numeric($rawLh)) {
-                $val = (float) $rawLh;
-                $intVal = (int) round($val);
-                $lHoursNumeric = (abs($val - $intVal) < 0.0001) ? $intVal : round($val, 2);
+                $lHoursNumeric = (float) $rawLh;
             }
-            $lHoursCell = ($lHoursNumeric !== null) ? ['W', 'lh', $lHoursNumeric, '10'] : ['W', 'str', '-', '0'];
+            $lHoursCell = ($lHoursNumeric !== null) ? ['Y', 'lh', $lHoursNumeric, '10'] : ['Y', 'str', '-', '0'];
 
             // Progress & Status
             $progressNum = (float) ($row->progress ?? 0);
@@ -566,11 +570,9 @@ class OfflineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wi
             $totalEngVal = $row->learning_hours ?? ($row->course_learning_hours ?? null);
             $totalEngNumeric = null;
             if ($totalEngVal !== null && $totalEngVal !== '' && is_numeric($totalEngVal)) {
-                $val = (float) $totalEngVal;
-                $intVal = (int) round($val);
-                $totalEngNumeric = (abs($val - $intVal) < 0.0001) ? $intVal : round($val, 2);
+                $totalEngNumeric = (float) $totalEngVal;
             }
-            $totalEngCell = ($totalEngNumeric !== null) ? ['AS', 'lh', $totalEngNumeric, '10'] : ['AS', 'str', '-', '0'];
+            $totalEngCell = ($totalEngNumeric !== null) ? ['AU', 'lh', $totalEngNumeric, '10'] : ['AU', 'str', '-', '0'];
 
             // Employee ID: raw string/integer only
             $rawEmp = $row->employee_id ?: ($row->id_emp ?? '-');
@@ -598,29 +600,31 @@ class OfflineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wi
                 ['S', 'str', $row->provider_name ?: ($row->provider ?: '-'), '0'],
                 ['T', 'str', $row->venue ?: '-', '0'],
                 ['U', 'str', $row->instructor ?: '-', '0'],
-                ['V', 'str', $durationFormatted, '0'],
-                $lHoursCell,
-                ['X', 'pct', $progressDecimal, '6'],
-                ['Y', 'str', $progressStatus, '0'],
-                ['Z', $startDateStr !== '-' ? 'date' : 'str', $startDateStr, $startDateStr !== '-' ? '7' : '0'],
-                ['AA', $endDateStr !== '-' ? 'date' : 'str', $endDateStr, $endDateStr !== '-' ? '7' : '0'],
-                ['AB', $startTimeStr !== '-' ? 'time' : 'str', $startTimeStr, $startTimeStr !== '-' ? '8' : '0'],
-                ['AC', $endTimeStr !== '-' ? 'time' : 'str', $endTimeStr, $endTimeStr !== '-' ? '8' : '0'],
-                ['AD', 'str', $recordMonthStr, '0'],
-                ['AE', 'str', $row->requirement ?: 'Mandatory', '0'],
-                ['AF', 'str', $attendanceStr, '0'],
-                ['AG', 'str', $row->attendance_reason ?: '-', '0'],
-                ['AH', 'str', $hasBond ? 'Yes' : ($row->bond_status ?: 'No'), '0'],
-                $bondDurationMonths !== null ? ['AI', 'int', $bondDurationMonths, '4'] : ['AI', 'str', '-', '0'],
-                ['AJ', $bondEndDateStr !== '-' ? 'date' : 'str', $bondEndDateStr, $bondEndDateStr !== '-' ? '7' : '0'],
-                ['AK', $hasBond ? 'curr' : 'str', $hasBond ? (float) $idr : '-', $hasBond ? '9' : '0'],
-                $scoreL1 !== null ? (is_int($scoreL1) ? ['AL', 'int', $scoreL1, '4'] : ['AL', 'float', $scoreL1, '11']) : ['AL', 'str', '-', '0'],
-                $scoreL2 !== null ? (is_int($scoreL2) ? ['AM', 'int', $scoreL2, '4'] : ['AM', 'float', $scoreL2, '11']) : ['AM', 'str', '-', '0'],
-                ['AN', 'str', $row->l2_verbal ?: ($scoreL2 !== null ? ($scoreL2 >= 70 ? 'Passed' : 'Failed') : '-'), '0'],
-                $scoreL3 !== null ? (is_int($scoreL3) ? ['AO', 'int', $scoreL3, '4'] : ['AO', 'float', $scoreL3, '11']) : ['AO', 'str', '-', '0'],
-                ['AP', 'str', $row->l3_verbal ?: '-', '0'],
-                ['AQ', 'str', $row->pic ?: '-', '0'],
-                ['AR', 'str', $row->certificate ?: '-', '0'],
+                ['V', 'str', $durationFormatted, '0'], // Course Duration
+                ['W', 'str', $durationFormatted, '0'], // Total Engagement Duration
+                ['X', 'str', '-', '0'], // Total Recognized Duration
+                $lHoursCell, // Y: Learning Hours
+                ['Z', 'pct', $progressDecimal, '6'],
+                ['AA', 'str', $progressStatus, '0'],
+                ['AB', $startDateStr !== '-' ? 'date' : 'str', $startDateStr, $startDateStr !== '-' ? '7' : '0'],
+                ['AC', $endDateStr !== '-' ? 'date' : 'str', $endDateStr, $endDateStr !== '-' ? '7' : '0'],
+                ['AD', $startTimeStr !== '-' ? 'time' : 'str', $startTimeStr, $startTimeStr !== '-' ? '8' : '0'],
+                ['AE', $endTimeStr !== '-' ? 'time' : 'str', $endTimeStr, $endTimeStr !== '-' ? '8' : '0'],
+                ['AF', 'str', $recordMonthStr, '0'],
+                ['AG', 'str', $row->requirement ?: 'Mandatory', '0'],
+                ['AH', 'str', $attendanceStr, '0'],
+                ['AI', 'str', $row->attendance_reason ?: '-', '0'],
+                ['AJ', 'str', $hasBond ? 'Yes' : ($row->bond_status ?: 'No'), '0'],
+                $bondDurationMonths !== null ? ['AK', 'int', $bondDurationMonths, '4'] : ['AK', 'str', '-', '0'],
+                ['AL', $bondEndDateStr !== '-' ? 'date' : 'str', $bondEndDateStr, $bondEndDateStr !== '-' ? '7' : '0'],
+                ['AM', $hasBond ? 'curr' : 'str', $hasBond ? (float) $idr : '-', $hasBond ? '9' : '0'],
+                $scoreL1 !== null ? (is_int($scoreL1) ? ['AN', 'int', $scoreL1, '4'] : ['AN', 'float', $scoreL1, '11']) : ['AN', 'str', '-', '0'],
+                $scoreL2 !== null ? (is_int($scoreL2) ? ['AO', 'int', $scoreL2, '4'] : ['AO', 'float', $scoreL2, '11']) : ['AO', 'str', '-', '0'],
+                ['AP', 'str', $row->l2_verbal ?: ($scoreL2 !== null ? ($scoreL2 >= 70 ? 'Passed' : 'Failed') : '-'), '0'],
+                $scoreL3 !== null ? (is_int($scoreL3) ? ['AQ', 'int', $scoreL3, '4'] : ['AQ', 'float', $scoreL3, '11']) : ['AQ', 'str', '-', '0'],
+                ['AR', 'str', $row->l3_verbal ?: '-', '0'],
+                ['AS', 'str', $row->pic ?: '-', '0'],
+                ['AT', 'str', $row->certificate ?: '-', '0'],
                 $totalEngCell,
             ];
 

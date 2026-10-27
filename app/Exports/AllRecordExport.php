@@ -7,6 +7,7 @@ use App\Services\Record\RecordAllCombinedService;
 use Carbon\Carbon;
 use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use ZipStream\Option\Archive as ArchiveOptions;
@@ -82,6 +83,7 @@ class AllRecordExport implements Responsable
             'Instructor',
             'Course Duration',
             'Total Engagement Duration',
+            'Total Recognized Duration',
             'Learning Hours',
             '% Progress',
             'Progress Status',
@@ -134,30 +136,31 @@ class AllRecordExport implements Responsable
             'U'  => 20,  // Venue
             'V'  => 22,  // Instructor
             'W'  => 16,  // Course Duration
-            'X'  => 25,  // Total Engagement Duration
-            'Y'  => 16,  // Learning Hours
-            'Z'  => 14,  // % Progress
-            'AA' => 16,  // Progress Status
-            'AB' => 14,  // Start Date
-            'AC' => 14,  // End Date
-            'AD' => 14,  // Start Time
-            'AE' => 14,  // End Time
-            'AF' => 16,  // Record Month
-            'AG' => 15,  // Requirement
-            'AH' => 14,  // Attendance
-            'AI' => 25,  // Attendance Reason
-            'AJ' => 14,  // Bond Status
-            'AK' => 16,  // Bond Duration
-            'AL' => 15,  // Bond End Date
-            'AM' => 18,  // Bond Amount
-            'AN' => 20,  // Score (L1) - Course
-            'AO' => 14,  // Score (L2)
-            'AP' => 14,  // L2 Status
-            'AQ' => 14,  // Score (L3)
-            'AR' => 14,  // L3 Status
-            'AS' => 22,  // Person in Charge (PIC)
-            'AT' => 14,  // Certificate
-            'AU' => 25,  // Total Engagement Time (LH)
+            'X'  => 22,  // Total Engagement Duration
+            'Y'  => 22,  // Total Recognized Duration
+            'Z'  => 16,  // Learning Hours
+            'AA' => 14,  // % Progress
+            'AB' => 16,  // Progress Status
+            'AC' => 14,  // Start Date
+            'AD' => 14,  // End Date
+            'AE' => 14,  // Start Time
+            'AF' => 14,  // End Time
+            'AG' => 16,  // Record Month
+            'AH' => 15,  // Requirement
+            'AI' => 14,  // Attendance
+            'AJ' => 25,  // Attendance Reason
+            'AK' => 14,  // Bond Status
+            'AL' => 16,  // Bond Duration
+            'AM' => 15,  // Bond End Date
+            'AN' => 18,  // Bond Amount
+            'AO' => 20,  // Score (L1) - Course
+            'AP' => 14,  // Score (L2)
+            'AQ' => 14,  // L2 Status
+            'AR' => 14,  // Score (L3)
+            'AS' => 14,  // L3 Status
+            'AT' => 22,  // Person in Charge (PIC)
+            'AU' => 14,  // Certificate
+            'AV' => 25,  // Total Engagement Time (LH)
         ];
     }
 
@@ -251,10 +254,11 @@ class AllRecordExport implements Responsable
             'xl/styles.xml',
             '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             . '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
-            . '<numFmts count="3">'
+            . '<numFmts count="4">'
             . '<numFmt numFmtId="164" formatCode="&quot;Rp&quot;#,##0"/>'
             . '<numFmt numFmtId="165" formatCode="yyyy-mm-dd"/>'
             . '<numFmt numFmtId="166" formatCode="hh:mm:ss"/>'
+            . '<numFmt numFmtId="167" formatCode="0.##&quot; h&quot;"/>'
             . '</numFmts>'
             . '<fonts count="3">'
             . '<font><sz val="10"/><name val="Calibri"/></font>'
@@ -273,7 +277,7 @@ class AllRecordExport implements Responsable
             . '<cellStyleXfs count="1">'
             . '<xf numFmtId="0" fontId="0" fillId="0" borderId="0"/>'
             . '</cellStyleXfs>'
-            . '<cellXfs count="12">'
+            . '<cellXfs count="14">'
             . '<xf numFmtId="49" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
             . '<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
             . '<xf numFmtId="49" fontId="2" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
@@ -286,6 +290,8 @@ class AllRecordExport implements Responsable
             . '<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
             . '<xf numFmtId="1" fontId="2" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
             . '<xf numFmtId="9" fontId="2" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<xf numFmtId="167" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<xf numFmtId="167" fontId="2" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
             . '</cellXfs>'
             . '</styleSheet>'
         );
@@ -340,8 +346,11 @@ class AllRecordExport implements Responsable
                     $durationFormatted = sprintf('%02d:%02d:%02d', $hours, $mins, $seconds);
                 }
 
-                // Learning Hours: Append "h" unit (e.g. 4 h, 0.3 h)
-                $lhVal = self::formatHours($row->learning_hours);
+                // Learning Hours: raw numeric float for SUM calculations
+                $lhNumeric = ($row->learning_hours !== null && $row->learning_hours !== '' && is_numeric($row->learning_hours))
+                    ? (float) $row->learning_hours
+                    : null;
+                $lhStyle = $isPlaylistRow ? '13' : '12';
 
                 // Progress & Status
                 $progressNum = (float) ($row->progress ?? 0);
@@ -418,29 +427,30 @@ class AllRecordExport implements Responsable
                     ['V', 'str', $row->instructor ?: '-', $textStyle],
                     ['W', 'str', $durationFormatted, $textStyle], // Course Duration
                     ['X', 'str', $durationFormatted, $textStyle], // Total Engagement Duration
-                    ['Y', 'str', $lhVal, $textStyle], // Learning Hours (with 'h')
-                    ['Z', 'pct', $progressDecimal, $pctStyle],
-                    ['AA', 'str', $progressStatus, $textStyle],
-                    ['AB', 'str', $startDateStr, $textStyle],
-                    ['AC', 'str', $endDateStr, $textStyle],
-                    ['AD', 'str', $startTimeStr, $textStyle],
-                    ['AE', 'str', $endTimeStr, $textStyle],
-                    ['AF', 'str', $recordMonthStr, $textStyle],
-                    ['AG', 'str', $row->requirement ?: 'Mandatory', $textStyle],
-                    ['AH', 'str', $attendanceStr, $textStyle],
-                    ['AI', 'str', $row->attendance_reason ?: '-', $textStyle],
-                    ['AJ', 'str', $row->bond_status ?: 'No', $textStyle],
-                    ['AK', 'str', !empty($row->bond_duration) ? $row->bond_duration . ' Months' : '-', $textStyle],
-                    ['AL', 'str', !empty($row->bond_end_date) ? date('Y-m-d', strtotime($row->bond_end_date)) : '-', $textStyle],
-                    ['AM', $hasBond ? 'curr' : 'str', $hasBond ? (float) $idr : '-', $hasBond ? '9' : $textStyle],
-                    ['AN', $scoreL1 !== null ? 'float' : 'str', $scoreL1 !== null ? $scoreL1 : '-', $scoreL1 !== null ? '5' : $textStyle],
-                    ['AO', $scoreL2 !== null ? 'int' : 'str', $scoreL2 !== null ? $scoreL2 : '-', $scoreL2 !== null ? $intStyle : $textStyle],
-                    ['AP', 'str', $row->l2_verbal ?: ($scoreL2 !== null ? ($scoreL2 >= 70 ? 'Passed' : 'Failed') : '-'), $textStyle],
-                    ['AQ', $scoreL3 !== null ? 'float' : 'str', $scoreL3 !== null ? $scoreL3 : '-', $scoreL3 !== null ? '5' : $textStyle],
-                    ['AR', 'str', $row->l3_verbal ?: '-', $textStyle],
-                    ['AS', 'str', $row->pic ?: '-', $textStyle],
-                    ['AT', 'str', $row->certificate ?: '-', $textStyle],
-                    ['AU', 'str', $lhVal, $textStyle], // Total Engagement Time (LH)
+                    ['Y', 'str', '-', $textStyle], // Total Recognized Duration
+                    ['Z', $lhNumeric !== null ? 'lh' : 'str', $lhNumeric !== null ? $lhNumeric : '-', $lhNumeric !== null ? $lhStyle : $textStyle], // Learning Hours
+                    ['AA', 'pct', $progressDecimal, $pctStyle],
+                    ['AB', 'str', $progressStatus, $textStyle],
+                    ['AC', $startDateStr !== '-' ? 'date' : 'str', $startDateStr, $startDateStr !== '-' ? '7' : $textStyle],
+                    ['AD', $endDateStr !== '-' ? 'date' : 'str', $endDateStr, $endDateStr !== '-' ? '7' : $textStyle],
+                    ['AE', $startTimeStr !== '-' ? 'time' : 'str', $startTimeStr, $startTimeStr !== '-' ? '8' : $textStyle],
+                    ['AF', $endTimeStr !== '-' ? 'time' : 'str', $endTimeStr, $endTimeStr !== '-' ? '8' : $textStyle],
+                    ['AG', 'str', $recordMonthStr, $textStyle],
+                    ['AH', 'str', $row->requirement ?: 'Mandatory', $textStyle],
+                    ['AI', 'str', $attendanceStr, $textStyle],
+                    ['AJ', 'str', $row->attendance_reason ?: '-', $textStyle],
+                    ['AK', 'str', $row->bond_status ?: 'No', $textStyle],
+                    ['AL', 'str', !empty($row->bond_duration) ? $row->bond_duration . ' Months' : '-', $textStyle],
+                    ['AM', !empty($row->bond_end_date) ? 'date' : 'str', !empty($row->bond_end_date) ? date('Y-m-d', strtotime($row->bond_end_date)) : '-', !empty($row->bond_end_date) ? '7' : $textStyle],
+                    ['AN', $hasBond ? 'curr' : 'str', $hasBond ? (float) $idr : '-', $hasBond ? '9' : $textStyle],
+                    ['AO', $scoreL1 !== null ? 'float' : 'str', $scoreL1 !== null ? $scoreL1 : '-', $scoreL1 !== null ? '5' : $textStyle],
+                    ['AP', $scoreL2 !== null ? 'int' : 'str', $scoreL2 !== null ? $scoreL2 : '-', $scoreL2 !== null ? $intStyle : $textStyle],
+                    ['AQ', 'str', $row->l2_verbal ?: ($scoreL2 !== null ? ($scoreL2 >= 70 ? 'Passed' : 'Failed') : '-'), $textStyle],
+                    ['AR', $scoreL3 !== null ? 'float' : 'str', $scoreL3 !== null ? $scoreL3 : '-', $scoreL3 !== null ? '5' : $textStyle],
+                    ['AS', 'str', $row->l3_verbal ?: '-', $textStyle],
+                    ['AT', 'str', $row->pic ?: '-', $textStyle],
+                    ['AU', 'str', $row->certificate ?: '-', $textStyle],
+                    ['AV', $lhNumeric !== null ? 'lh' : 'str', $lhNumeric !== null ? $lhNumeric : '-', $lhNumeric !== null ? $lhStyle : $textStyle], // Total Engagement Time (LH)
                 ];
 
                 $buffer .= $this->buildXmlRow($r, $cells);
@@ -484,6 +494,9 @@ class AllRecordExport implements Responsable
                 $xml .= "<c r=\"{$coord}\" t=\"inlineStr\" s=\"{$styleId}\"><is><t>-</t></is></c>";
             } elseif ($type === 'pct') {
                 $xml .= "<c r=\"{$coord}\" s=\"{$styleId}\"><v>{$val}</v></c>";
+            } elseif ($type === 'lh' || $type === 'hours') {
+                $lhVal = (float) $val;
+                $xml .= "<c r=\"{$coord}\" s=\"{$styleId}\"><v>{$lhVal}</v></c>";
             } elseif ($type === 'int') {
                 $intVal = (int) $val;
                 $xml .= "<c r=\"{$coord}\" s=\"{$styleId}\"><v>{$intVal}</v></c>";
