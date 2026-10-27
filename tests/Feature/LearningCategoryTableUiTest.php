@@ -2,10 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Models\Assesment;
+use App\Models\AssesmentResult;
+use App\Models\Classification;
 use App\Models\Content;
 use App\Models\ContentUser;
-use App\Models\Classification;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class LearningCategoryTableUiTest extends TestCase
@@ -27,11 +30,15 @@ class LearningCategoryTableUiTest extends TestCase
         $response = $this->actingAs($this->admin)->get('/manage/learning/category/basic-common-duties');
         $response->assertStatus(200);
         $response->assertSee('learning-table');
+        $response->assertSee('table-scroll-top-wrapper');
+        $response->assertSee('table-scroll-container');
+        $response->assertSee('table-entries-select');
         $response->assertSee('EMPLOYEE ID');
         $response->assertSee('COURSE TITLE');
         $response->assertSee('PROGRESS STATUS');
         $response->assertSee('DATE TIME');
         $response->assertSee('RECORD MONTH');
+        $response->assertSee('SCORE (L2)');
         $response->assertSee('TOTAL ENGAGEMENT TIME');
         $response->assertSee('learningDetailModal');
     }
@@ -80,6 +87,42 @@ class LearningCategoryTableUiTest extends TestCase
                 str_contains($row['progress_status'], 'Ongoing') ||
                 str_contains($row['progress_status'], 'Not Started')
             );
+
+            $this->assertStringContainsString('Start:', $row['date_time_merged']);
+            $this->assertStringContainsString('End:', $row['date_time_merged']);
+        }
+    }
+
+    /** @test */
+    public function it_resolves_score_l2_from_assessment_results_when_available()
+    {
+        // Find a ContentUser that has a matching final assessment result
+        $matched = DB::table('content_users as cu')
+            ->join('assesments as a', 'a.content_id', '=', 'cu.content_id')
+            ->join('assesment_results as ar', function ($j) {
+                $j->on('ar.assesment_id', '=', 'a.id')
+                  ->on('ar.user_id', '=', 'cu.user_id');
+            })
+            ->where('ar.final', 1)
+            ->where('ar.score', '>', 0)
+            ->select('cu.id as cu_id', 'cu.user_id', 'cu.content_id', 'ar.score')
+            ->first();
+
+        if ($matched) {
+            $service = new \App\Services\Learning\LearningDatatableService();
+            $resolvedScore = $service->resolveL2Score((int) $matched->user_id, 'content', (int) $matched->content_id, null);
+
+            $this->assertNotNull($resolvedScore);
+            $this->assertGreaterThan(0, $resolvedScore);
+
+            $res = (new \App\Http\Controllers\LearningManageController())->recordDetail('content', $matched->cu_id);
+            $json = json_decode($res->getContent(), true);
+
+            $this->assertEquals('success', $json['status']);
+            $this->assertEquals(number_format((float) $resolvedScore, 1), $json['data']['assessment']['score_l2']);
+            $this->assertContains($json['data']['assessment']['l2_status'], ['Pass', 'Fail', '-']);
+        } else {
+            $this->markTestSkipped('No matching assessment result for ContentUser found.');
         }
     }
 

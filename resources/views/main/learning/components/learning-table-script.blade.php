@@ -228,7 +228,7 @@
                 [10, 25, 50, 100]
             ],
             order: [[ {{ ($isAllRecord ?? false) ? 20 : 19 }}, 'desc' ]],
-            dom: '<"table-responsive"t>',
+            dom: 't',
             ajax: {
                 url: "{{ $datatableUrl ?? route('learning.manage.datatable') }}",
                 type: 'GET',
@@ -382,6 +382,9 @@
                         bootstrap.Tooltip.getOrCreateInstance(tooltipTriggerEl);
                     });
                 }
+
+                // Sync top scrollbar
+                syncTopScroll();
             }
         });
 
@@ -393,6 +396,37 @@
                 learningTable.page(page).draw('page');
             }
         });
+
+        // Top scrollbar synchronization (dual synchronized scrollbars)
+        const $topScroll = $('#table-scroll-top-wrapper');
+        const $tableScroll = $('#table-scroll-container');
+        const $topInner = $('#table-scroll-top-inner');
+
+        function syncTopScroll() {
+            const tableWidth = $('#learning-table').outerWidth();
+            $topInner.css('width', tableWidth + 'px');
+        }
+
+        let isSyncingTop = false;
+        let isSyncingBottom = false;
+
+        $topScroll.on('scroll', function() {
+            if (!isSyncingTop) {
+                isSyncingBottom = true;
+                $tableScroll.scrollLeft($(this).scrollLeft());
+            }
+            isSyncingTop = false;
+        });
+
+        $tableScroll.on('scroll', function() {
+            if (!isSyncingBottom) {
+                isSyncingTop = true;
+                $topScroll.scrollLeft($(this).scrollLeft());
+            }
+            isSyncingBottom = false;
+        });
+
+        $(window).on('resize', syncTopScroll);
 
         // Function to update active filter counter badge
         function updateActiveFilterBadge() {
@@ -808,8 +842,8 @@
                         $('#ld-record-requirement').text(rec.requirement || '-');
                         $('#ld-record-attendance').text(rec.attendance || '-');
                         $('#ld-record-attendance-reason').text(rec.attendance_reason || '-');
-                        $('#ld-record-start-date').text((rec.start_date || '-') + (rec.start_time && rec.start_time !== '-' ? ' ' + rec.start_time : ''));
-                        $('#ld-record-end-date').text((rec.end_date || '-') + (rec.end_time && rec.end_time !== '-' ? ' ' + rec.end_time : ''));
+                        $('#ld-record-start-date').text((rec.start_date || '-') + (rec.start_time && rec.start_time !== '-' ? ', ' + rec.start_time : ''));
+                        $('#ld-record-end-date').text((rec.end_date || '-') + (rec.end_time && rec.end_time !== '-' ? ', ' + rec.end_time : ''));
                         $('#ld-obligation-bond-status').text(ob.bond_status || '-');
                         $('#ld-obligation-bond-duration').text(ob.bond_duration || '-');
                         $('#ld-obligation-bond-end-date').text(ob.bond_end_date || '-');

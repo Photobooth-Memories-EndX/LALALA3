@@ -544,6 +544,24 @@ class LearningManageController extends Controller
                 ? (int) $record->duration_seconds
                 : DurationFormatter::toSeconds($content?->duration);
 
+            $assessmentResult = DB::table('assesment_results as ar')
+                ->join('assesments as a', 'a.id', '=', 'ar.assesment_id')
+                ->where('ar.user_id', $user?->id)
+                ->where('a.content_id', $content?->id)
+                ->where('ar.final', 1)
+                ->orderByDesc('ar.score')
+                ->orderByDesc('ar.id')
+                ->select('ar.score', 'ar.pass')
+                ->first();
+
+            $l2ScoreFormatted = ($assessmentResult && $assessmentResult->score !== null && is_numeric($assessmentResult->score))
+                ? number_format((float) $assessmentResult->score, 1)
+                : '-';
+
+            $l2StatusFormatted = $assessmentResult
+                ? ($assessmentResult->pass == 1 ? 'Pass' : ($assessmentResult->pass === 0 || $assessmentResult->pass === '0' ? 'Fail' : '-'))
+                : '-';
+
             return response()->json([
                 'status' => 'success',
                 'data' => [
@@ -616,8 +634,8 @@ class LearningManageController extends Controller
                     ],
                     'assessment' => [
                         'score_l1' => '-',
-                        'score_l2' => '-',
-                        'l2_status' => '-',
+                        'score_l2' => $l2ScoreFormatted,
+                        'l2_status' => $l2StatusFormatted,
                         'score_l3' => '-',
                         'l3_status' => '-',
                         'pic' => '-',
@@ -656,6 +674,41 @@ class LearningManageController extends Controller
         $durationSeconds = $record->duration_seconds !== null && (int) $record->duration_seconds > 0
             ? (int) $record->duration_seconds
             : DurationFormatter::toSeconds($content?->duration);
+
+        $assessmentResult = DB::table('assesment_results as ar')
+            ->join('assesments as a', 'a.id', '=', 'ar.assesment_id')
+            ->where('ar.user_id', $user?->id)
+            ->where(function ($q) use ($content, $trainingPlan) {
+                $matched = false;
+                if ($trainingPlan) {
+                    $q->where('a.trainingplan_id', $trainingPlan->id);
+                    $matched = true;
+                }
+                if ($content) {
+                    if ($matched) {
+                        $q->orWhere('a.content_id', $content->id);
+                    } else {
+                        $q->where('a.content_id', $content->id);
+                        $matched = true;
+                    }
+                }
+                if (!$matched) {
+                    $q->whereRaw('1 = 0');
+                }
+            })
+            ->where('ar.final', 1)
+            ->orderByDesc('ar.score')
+            ->orderByDesc('ar.id')
+            ->select('ar.score', 'ar.pass')
+            ->first();
+
+        $l2ScoreFormatted = ($assessmentResult && $assessmentResult->score !== null && is_numeric($assessmentResult->score))
+            ? number_format((float) $assessmentResult->score, 1)
+            : '-';
+
+        $l2StatusFormatted = $assessmentResult
+            ? ($assessmentResult->pass == 1 ? 'Pass' : ($assessmentResult->pass === 0 || $assessmentResult->pass === '0' ? 'Fail' : '-'))
+            : '-';
 
         return response()->json([
             'status' => 'success',

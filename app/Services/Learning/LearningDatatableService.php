@@ -3,6 +3,7 @@
 namespace App\Services\Learning;
 
 use App\Http\Controllers\LearningManageController;
+use App\Http\Controllers\Manage\Record\RecordOfflineController;
 use App\Models\ContentUser;
 use App\Models\PlaylistContentUser;
 use App\Support\DurationFormatter;
@@ -17,6 +18,58 @@ class LearningDatatableService
     public const PLAYLIST_CUTOFF = LearningManageController::PLAYLIST_CUTOFF;
 
     protected static ?bool $hasPcuStatus = null;
+
+    protected array $l2ScoreCache = [];
+
+    /**
+     * Resolve Score (L2) from assesments and assesment_results for online records.
+     */
+    public function resolveL2Score(int $userId, string $sourceType, ?int $contentId, ?int $trainingplanId): ?float
+    {
+        $cacheKey = "{$userId}_{$sourceType}_{$contentId}_{$trainingplanId}";
+        if (array_key_exists($cacheKey, $this->l2ScoreCache)) {
+            return $this->l2ScoreCache[$cacheKey];
+        }
+
+        $query = DB::table('assesment_results as ar')
+            ->join('assesments as a', 'a.id', '=', 'ar.assesment_id')
+            ->where('ar.user_id', $userId)
+            ->where('ar.final', 1);
+
+        if ($sourceType === 'playlist') {
+            $query->where(function ($q) use ($contentId, $trainingplanId) {
+                $matched = false;
+                if ($trainingplanId) {
+                    $q->where('a.trainingplan_id', $trainingplanId);
+                    $matched = true;
+                }
+                if ($contentId) {
+                    if ($matched) {
+                        $q->orWhere('a.content_id', $contentId);
+                    } else {
+                        $q->where('a.content_id', $contentId);
+                        $matched = true;
+                    }
+                }
+                if (!$matched) {
+                    $q->whereRaw('1 = 0');
+                }
+            });
+        } else {
+            if ($contentId) {
+                $query->where('a.content_id', $contentId);
+            } else {
+                $this->l2ScoreCache[$cacheKey] = null;
+                return null;
+            }
+        }
+
+        $score = $query->orderByDesc('ar.score')->orderByDesc('ar.id')->value('ar.score');
+
+        $this->l2ScoreCache[$cacheKey] = ($score !== null && is_numeric($score)) ? (float) $score : null;
+
+        return $this->l2ScoreCache[$cacheKey];
+    }
 
     /**
      * Check if playlist_content_users table has status column (cached per process).
@@ -671,14 +724,24 @@ class LearningDatatableService
             })
             ->addColumn('learning_date', fn ($row) => $row->created_at ? Carbon::parse($row->created_at)->format('d M Y') : '-')
             ->addColumn('date_time_merged', function ($row) {
-                $startStr = $row->created_at ? Carbon::parse($row->created_at)->format('d M Y, H:i') : '-';
-                $endStr = $row->completed_at ? Carbon::parse($row->completed_at)->format('d M Y, H:i') : ($row->finish == 1 && $row->updated_at ? Carbon::parse($row->updated_at)->format('d M Y, H:i') : '-');
-                return '<div class="text-nowrap small">
-                    <div><span class="text-muted">Start:</span> ' . e($startStr) . '</div>
-                    <div><span class="text-muted">End:</span> ' . e($endStr) . '</div>
-                </div>';
+                $startDate = $row->created_at ? Carbon::parse($row->created_at)->format('Y-m-d') : null;
+                $startTime = $row->created_at ? Carbon::parse($row->created_at)->format('H:i') : null;
+                $endDate = $row->completed_at ? Carbon::parse($row->completed_at)->format('Y-m-d') : ($row->finish == 1 && $row->updated_at ? Carbon::parse($row->updated_at)->format('Y-m-d') : null);
+                $endTime = $row->completed_at ? Carbon::parse($row->completed_at)->format('H:i') : ($row->finish == 1 && $row->updated_at ? Carbon::parse($row->updated_at)->format('H:i') : null);
+
+                return RecordOfflineController::renderMergedDateTime($startDate, $endDate, $startTime, $endTime);
             })
-            ->addColumn('record_month', fn ($row) => $row->created_at ? Carbon::parse($row->created_at)->format('F') : '-')
+            ->addColumn('record_month', function ($row) {
+                $d = $row->completed_at ?: ($row->finish == 1 ? $row->updated_at : $row->created_at);
+                if (!empty($d) && $d !== '-') {
+                    try {
+                        return Carbon::parse($d)->format('F');
+                    } catch (\Throwable $e) {
+                        return '-';
+                    }
+                }
+                return '-';
+            })
             ->addColumn('requirement', function ($row) {
                 $status = strtolower((string) ($row->status ?? 'non mandatory'));
                 return $status === 'mandatory' ? '<span class="badge bg-red-lt text-red">Mandatory</span>' : '<span class="badge bg-blue-lt text-blue">Non-Mandatory</span>';
@@ -692,7 +755,18 @@ class LearningDatatableService
             })
             ->addColumn('attendance_reason', fn () => '<span class="text-muted small">-</span>')
             ->addColumn('score_l1', fn () => '<span class="text-muted small">-</span>')
-            ->addColumn('score_l2', fn () => '<span class="text-muted small">-</span>')
+            ->addColumn('score_l2', function ($row) {
+                $score = $this->resolveL2Score(
+                    (int) $row->user_id,
+                    (string) ($row->source_type ?? 'content'),
+                    !empty($row->content_id) ? (int) $row->content_id : null,
+                    !empty($row->trainingplan_id) ? (int) $row->trainingplan_id : null
+                );
+                if ($score !== null) {
+                    return '<span class="fw-semibold">' . number_format($score, 1) . '</span>';
+                }
+                return '<span class="text-muted small">-</span>';
+            })
             ->addColumn('score_l3', fn () => '<span class="text-muted small">-</span>')
             ->addColumn('pic', fn () => '<span class="text-muted small">-</span>')
             ->addColumn('certificate', fn () => '<span class="text-muted small">-</span>')
