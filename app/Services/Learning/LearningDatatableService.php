@@ -872,7 +872,7 @@ class LearningDatatableService
             </button>
             <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                 <li>
-                    <a class="dropdown-item d-flex align-items-center gap-2" href="#" data-bs-toggle="modal" data-bs-target="#moreInformationModal" data-record-id="' . e($id) . '" data-record-source="online">
+                    <a class="dropdown-item d-flex align-items-center gap-2 btn-more-info" href="#" data-bs-toggle="modal" data-bs-target="#moreInformationModal" data-id="' . e($id) . '" data-record-id="' . e($id) . '" data-source="online" data-record-source="online">
                         <i class="ti ti-eye text-primary"></i> More Information
                     </a>
                 </li>

@@ -960,6 +960,53 @@
                 return new bootstrap.Tooltip(tooltipTriggerEl);
             });
         }
+
+        // Click event handler for .btn-more-info / More Information
+        $(document).on('click', '.btn-more-info', function (e) {
+            e.preventDefault();
+            const recordId = $(this).data('id') || $(this).data('record-id') || $(this).attr('data-id') || $(this).attr('data-record-id');
+            const source = ($(this).data('source') || $(this).data('record-source') || $(this).attr('data-source') || $(this).attr('data-record-source') || 'offline').toString().toLowerCase();
+            if (!recordId) return;
+
+            const modalEl = document.getElementById('moreInformationModal');
+            if (modalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                bootstrap.Modal.getOrCreateInstance(modalEl).show();
+            }
+
+            $('#more-info-loading').show();
+            $('#more-info-content').hide();
+
+            // Fetch the record detail via $.ajax() from /manage/record/detail/{id}
+            $.ajax({
+                url: '/manage/record/detail/' + encodeURIComponent(recordId) + (source ? '?source=' + encodeURIComponent(source) : ''),
+                type: 'GET',
+                dataType: 'json',
+                success: function (response) {
+                    $('#more-info-loading').hide();
+                    $('#more-info-content').show();
+                    if (window.populateMoreInformationModal) {
+                        window.populateMoreInformationModal(response);
+                    } else {
+                        const d = response.data || response;
+                        $('#modal-badge-source').text(d.source || 'NON KP OWL');
+                        $('#modal-course-title').text(d.course_title || '-');
+                        $('#modal-employee-id').text(d.employee_id || '-');
+                        $('#modal-employee-name').text(d.employee_name || '-');
+                        $('#modal-grade').text(d.grade || '-');
+                        $('#modal-job-position').text(d.job_position || '-');
+                        $('#modal-instructor').text(d.instructor || '-');
+                        $('#modal-bond-status').text(d.bond_status || 'No');
+                        $('#modal-bond-duration').text(d.bond_duration || '-');
+                        $('#modal-bond-end-date').text(d.bond_end_date || '-');
+                        $('#modal-bond-amount').text(d.bond_amount || '-');
+                    }
+                },
+                error: function () {
+                    $('#more-info-loading').hide();
+                    $('#more-info-content').show();
+                }
+            });
+        });
     });
 </script>
 @endsection

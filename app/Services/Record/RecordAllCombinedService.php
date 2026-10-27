@@ -1864,7 +1864,7 @@ class RecordAllCombinedService
                 if ($progress >= 100) {
                     return '<span class="badge bg-success-lt text-success fw-bold px-2 py-1">Finished</span>';
                 } elseif ($progress > 0) {
-                    return '<span class="badge bg-warning-lt text-warning fw-bold px-2 py-1">Ongoing (' . round($progress) . '%)</span>';
+                    return '<span class="badge bg-warning-lt text-warning fw-bold px-2 py-1">Ongoing</span>';
                 }
                 return '<span class="badge bg-secondary-lt fw-bold px-2 py-1">Not Started</span>';
             })
@@ -1936,7 +1936,7 @@ class RecordAllCombinedService
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                         <li>
-                            <a class="dropdown-item d-flex align-items-center gap-2" href="#" data-bs-toggle="modal" data-bs-target="#moreInformationModal" data-record-id="' . e($id) . '" data-record-source="' . e($source) . '">
+                            <a class="dropdown-item d-flex align-items-center gap-2 btn-more-info" href="#" data-bs-toggle="modal" data-bs-target="#moreInformationModal" data-id="' . e($id) . '" data-record-id="' . e($id) . '" data-source="' . e($source) . '" data-record-source="' . e($source) . '">
                                 <i class="ti ti-eye text-primary"></i> More Information
                             </a>
                         </li>
@@ -2300,7 +2300,7 @@ class RecordAllCombinedService
                 if ($progress >= 100) {
                     return '<span class="badge bg-success-lt text-success fw-bold px-2 py-1">Finished</span>';
                 } elseif ($progress > 0) {
-                    return '<span class="badge bg-warning-lt text-warning fw-bold px-2 py-1">Ongoing (' . round($progress) . '%)</span>';
+                    return '<span class="badge bg-warning-lt text-warning fw-bold px-2 py-1">Ongoing</span>';
                 }
                 return '<span class="badge bg-secondary-lt fw-bold px-2 py-1">Not Started</span>';
             })
@@ -2372,7 +2372,7 @@ class RecordAllCombinedService
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                         <li>
-                            <a class="dropdown-item d-flex align-items-center gap-2" href="#" data-bs-toggle="modal" data-bs-target="#moreInformationModal" data-record-id="' . e($id) . '" data-record-source="' . e($source) . '">
+                            <a class="dropdown-item d-flex align-items-center gap-2 btn-more-info" href="#" data-bs-toggle="modal" data-bs-target="#moreInformationModal" data-id="' . e($id) . '" data-record-id="' . e($id) . '" data-source="' . e($source) . '" data-record-source="' . e($source) . '">
                                 <i class="ti ti-eye text-primary"></i> More Information
                             </a>
                         </li>

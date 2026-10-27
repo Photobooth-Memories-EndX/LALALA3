@@ -231,13 +231,42 @@ class ManageRecordController extends Controller
     }
 
     /**
+     * Unified Detail API endpoint for More Information modal
+     */
+    public function getMoreInformationDetail($requestOrId, $idOrNull = null): JsonResponse
+    {
+        return $this->moreInformation($requestOrId, $idOrNull);
+    }
+
+    /**
      * Unified Detail endpoint returning More Information non-yellow attributes
      */
-    public function moreInformation(Request $request, $id): JsonResponse
+    public function moreInformation($requestOrId, $idOrNull = null): JsonResponse
     {
-        $source = strtolower(trim((string) $request->input('source', 'offline')));
+        if ($requestOrId instanceof Request) {
+            $request = $requestOrId;
+            $id = $idOrNull;
+        } else {
+            $id = $requestOrId;
+            $request = request();
+        }
 
-        if ($source === 'offline') {
+        $sourceParam = $request ? strtolower(trim((string) $request->input('source', ''))) : '';
+        $source = $sourceParam;
+
+        // Normalize composite IDs (e.g. 'offline:123', 'online:content:456', 'online:playlist:789')
+        if (is_string($id) && strpos($id, ':') !== false) {
+            $parts = explode(':', $id);
+            $id = end($parts);
+            if (in_array('offline', $parts, true)) {
+                $source = 'offline';
+            } elseif (in_array('online', $parts, true)) {
+                $source = 'online';
+            }
+        }
+
+        // 1. Try finding in offline_training_users
+        if ($source === '' || $source === 'offline' || $source === 'non kp owl' || $source === 'non-owl') {
             $record = DB::table('offline_training_users as otu')
                 ->leftJoin('offline_trainings as ot', 'otu.offline_training_id', '=', 'ot.id')
                 ->where('otu.id', $id)
@@ -252,6 +281,7 @@ class ManageRecordController extends Controller
                     'otu.company',
                     'otu.attendance',
                     'otu.attendance_reason',
+                    'otu.progress',
                     'otu.bond_status',
                     'otu.bond_duration',
                     'otu.bond_end_date',
@@ -261,6 +291,7 @@ class ManageRecordController extends Controller
                     'otu.l2_verbal',
                     'otu.l3_numerical',
                     'otu.l3_verbal',
+                    'otu.assessment_score',
                     'otu.pic',
                     'otu.certificate',
                     'ot.course_name as course_title',
@@ -273,67 +304,176 @@ class ManageRecordController extends Controller
                 ])
                 ->first();
 
+            // Fallback: if not matched on otu.id, check if $id is an offline_training_id
+            if (!$record) {
+                $record = DB::table('offline_training_users as otu')
+                    ->leftJoin('offline_trainings as ot', 'otu.offline_training_id', '=', 'ot.id')
+                    ->where('otu.offline_training_id', $id)
+                    ->select([
+                        'otu.id',
+                        'otu.employee_id',
+                        'otu.name as employee_name',
+                        'otu.grade',
+                        'otu.job_position',
+                        'otu.team',
+                        'otu.department',
+                        'otu.company',
+                        'otu.attendance',
+                        'otu.attendance_reason',
+                        'otu.progress',
+                        'otu.bond_status',
+                        'otu.bond_duration',
+                        'otu.bond_end_date',
+                        'otu.bond_amount_idr',
+                        'otu.l1_program',
+                        'otu.l2_numerical',
+                        'otu.l2_verbal',
+                        'otu.l3_numerical',
+                        'otu.l3_verbal',
+                        'otu.assessment_score',
+                        'otu.pic',
+                        'otu.certificate',
+                        'ot.course_name as course_title',
+                        'ot.sub_course_name as sub_course_title',
+                        'ot.type',
+                        'ot.category',
+                        'ot.level',
+                        'ot.batch',
+                        'ot.instructor',
+                    ])
+                    ->first();
+            }
+
             if ($record) {
-                $bondAmt = ($record->bond_amount_idr !== null && (float) $record->bond_amount_idr > 0)
+                $bondStatusRaw = strtolower(trim((string) $record->bond_status));
+                $hasBond = in_array($bondStatusRaw, ['yes', '1', 'true', 'ya'], true);
+                $bondStatus = $hasBond ? 'Yes' : 'No';
+
+                $bondAmt = ($hasBond && $record->bond_amount_idr !== null && (float) $record->bond_amount_idr > 0)
                     ? 'Rp ' . number_format((float) $record->bond_amount_idr, 0, ',', '.')
                     : '-';
 
-                return response()->json([
-                    'success' => true,
-                    'data'    => [
-                        'grade'              => $record->grade ?: '-',
-                        'job_position'        => $record->job_position ?: '-',
-                        'sub_course_title'   => $record->sub_course_title ?: '-',
-                        'level'              => $record->level ?: '-',
-                        'batch'              => $record->batch ?: '-',
-                        'instructor'         => $record->instructor ?: '-',
-                        'attendance_reason'  => $record->attendance_reason ?: '-',
-                        'bond_status'        => $record->bond_status ?: 'No',
-                        'bond_duration'      => !empty($record->bond_duration) ? $record->bond_duration . ' Months' : '-',
-                        'bond_end_date'      => $record->bond_end_date ? date('Y-m-d', strtotime($record->bond_end_date)) : '-',
-                        'bond_amount_idr'    => $bondAmt,
-                        'l2_status'          => $record->l2_verbal ?: '-',
-                        'l3_status'          => $record->l3_verbal ?: '-',
-                        'certificate_status' => !empty($record->certificate) ? 'Available' : 'Not Available',
-                    ],
-                ]);
+                $bondDuration = ($hasBond && !empty($record->bond_duration))
+                    ? (is_numeric($record->bond_duration) ? $record->bond_duration . ' Months' : $record->bond_duration)
+                    : '-';
+
+                $bondEndDate = ($hasBond && !empty($record->bond_end_date))
+                    ? date('Y-m-d', strtotime($record->bond_end_date))
+                    : '-';
+
+                $progress = (float) ($record->progress ?? 0);
+                if ($progress >= 100) {
+                    $progressStatus = 'Passed';
+                } elseif ($progress > 0) {
+                    $progressStatus = 'Ongoing';
+                } else {
+                    $progressStatus = 'Not Started';
+                }
+
+                // L2 Status
+                $l2 = trim((string) ($record->l2_verbal ?? ''));
+                if ($l2 === '') {
+                    $scoreL2 = $record->assessment_score ?? $record->l2_numerical;
+                    if (is_numeric($scoreL2)) {
+                        $l2 = ((float) $scoreL2 >= 70) ? 'Pass' : (((float) $scoreL2 > 0) ? 'Fail' : '-');
+                    } else {
+                        $l2 = '-';
+                    }
+                }
+
+                $l3 = trim((string) ($record->l3_verbal ?? ''));
+                if ($l3 === '') {
+                    if (is_numeric($record->l3_numerical)) {
+                        $l3 = ((float) $record->l3_numerical >= 70) ? 'Pass' : (((float) $record->l3_numerical > 0) ? 'Fail' : '-');
+                    } else {
+                        $l3 = '-';
+                    }
+                }
+
+                $cleanEmpId = trim((string) ($record->employee_id ?: '-'));
+                if ($cleanEmpId !== '-') {
+                    $cleanEmpId = preg_replace('/\s*[\/\-]\s*NIP.*$/i', '', $cleanEmpId);
+                }
+
+                $empName = trim((string) ($record->employee_name ?: '-'));
+                if ($empName !== '-') {
+                    $empName = strtoupper($empName);
+                }
+
+                $recordData = [
+                    'source'          => 'NON KP OWL',
+                    'course_title'    => $record->course_title ?: ($record->sub_course_title ?: 'Offline Training'),
+                    'employee_id'     => $cleanEmpId,
+                    'employee_name'   => $empName,
+                    'grade'           => $record->grade ?: '-',
+                    'job_position'    => $record->job_position ?: '-',
+                    'instructor'      => $record->instructor ?: '-',
+                    'progress_status' => $progressStatus,
+                    'l2_status'       => $l2,
+                    'l3_status'       => $l3,
+                    'bond_status'     => $bondStatus,
+                    'bond_duration'   => $bondDuration,
+                    'bond_end_date'   => $bondEndDate,
+                    'bond_amount'     => $bondAmt,
+                ];
+
+                return response()->json(array_merge($recordData, [
+                    'success'            => true,
+                    'data'               => $recordData,
+                    'source_type'        => 'NON KP OWL',
+                    'bond_amount_idr'    => $bondAmt,
+                    'sub_course_title'   => $record->sub_course_title ?: '-',
+                    'level'              => $record->level ?: '-',
+                    'batch'              => $record->batch ?: '-',
+                    'attendance_reason'  => $record->attendance_reason ?: '-',
+                    'certificate_status' => !empty($record->certificate) ? 'Available' : 'Not Available',
+                ]));
             }
 
             // Fallback: check offline_trainings directly by id
             $training = DB::table('offline_trainings')->where('id', $id)->first();
             if ($training) {
-                return response()->json([
-                    'success' => true,
-                    'data'    => [
-                        'grade'              => '-',
-                        'job_position'        => '-',
-                        'sub_course_title'   => $training->sub_course_name ?: '-',
-                        'level'              => $training->level ?: '-',
-                        'batch'              => $training->batch ?: '-',
-                        'instructor'         => $training->instructor ?: '-',
-                        'attendance_reason'  => '-',
-                        'bond_status'        => 'No',
-                        'bond_duration'      => '-',
-                        'bond_end_date'      => '-',
-                        'bond_amount_idr'    => '-',
-                        'l2_status'          => '-',
-                        'l3_status'          => '-',
-                        'certificate_status' => 'Not Available',
-                    ],
-                ]);
-            }
+                $recordData = [
+                    'source'          => 'NON KP OWL',
+                    'course_title'    => $training->course_name ?: ($training->title ?: 'Offline Training'),
+                    'employee_id'     => '-',
+                    'employee_name'   => '-',
+                    'grade'           => '-',
+                    'job_position'    => '-',
+                    'instructor'      => $training->instructor ?: '-',
+                    'progress_status' => 'Not Started',
+                    'l2_status'       => '-',
+                    'l3_status'       => '-',
+                    'bond_status'     => 'No',
+                    'bond_duration'   => '-',
+                    'bond_end_date'   => '-',
+                    'bond_amount'     => '-',
+                ];
 
-            return response()->json(['success' => false, 'message' => 'Record not found'], 404);
+                return response()->json(array_merge($recordData, [
+                    'success'            => true,
+                    'data'               => $recordData,
+                    'source_type'        => 'NON KP OWL',
+                    'bond_amount_idr'    => '-',
+                    'sub_course_title'   => $training->sub_course_name ?: '-',
+                    'level'              => $training->level ?: '-',
+                    'batch'              => $training->batch ?: '-',
+                    'attendance_reason'  => '-',
+                    'certificate_status' => 'Not Available',
+                ]));
+            }
         }
 
-        // Online record: check content_users first
+        // 2. Online record: check content_users
         $cu = DB::table('content_users as cu')
             ->join('users as u', 'cu.user_id', '=', 'u.id')
-            ->leftJoin('contents as c', 'cu.content_id', '=', 'c.id')
-            ->leftJoin('classifications as cl', 'c.classification_id', '=', 'cl.id')
+            ->leftJoin('content as c', 'cu.content_id', '=', 'c.id')
+            ->leftJoin('classification as cl', 'c.classification_id', '=', 'cl.id')
             ->where('cu.id', $id)
             ->select([
                 'cu.id',
+                'cu.progress',
+                'cu.finish',
                 'u.id_emp as employee_id',
                 'u.name as employee_name',
                 'u.team',
@@ -346,35 +486,59 @@ class ManageRecordController extends Controller
             ->first();
 
         if ($cu) {
-            return response()->json([
-                'success' => true,
-                'data'    => [
-                    'grade'              => '-',
-                    'job_position'        => '-',
-                    'sub_course_title'   => '-',
-                    'level'              => '-',
-                    'batch'              => '-',
-                    'instructor'         => $cu->instructor ?: '-',
-                    'attendance_reason'  => '-',
-                    'bond_status'        => 'No',
-                    'bond_duration'      => '-',
-                    'bond_end_date'      => '-',
-                    'bond_amount_idr'    => '-',
-                    'l2_status'          => '-',
-                    'l3_status'          => '-',
-                    'certificate_status' => 'Not Available',
-                ],
-            ]);
+            $progress = (float) ($cu->progress ?? 0);
+            $progressStatus = ($cu->finish == '1' || $progress >= 100) ? 'Passed' : (($progress > 0) ? 'Ongoing' : 'Not Started');
+
+            $cleanEmpId = trim((string) ($cu->employee_id ?: '-'));
+            if ($cleanEmpId !== '-') {
+                $cleanEmpId = preg_replace('/\s*[\/\-]\s*NIP.*$/i', '', $cleanEmpId);
+            }
+
+            $empName = trim((string) ($cu->employee_name ?: '-'));
+            if ($empName !== '-') {
+                $empName = strtoupper($empName);
+            }
+
+            $recordData = [
+                'source'          => 'KP OWL',
+                'course_title'    => $cu->course_title ?: 'Untitled Content',
+                'employee_id'     => $cleanEmpId,
+                'employee_name'   => $empName,
+                'grade'           => '-',
+                'job_position'    => '-',
+                'instructor'      => $cu->instructor ?: '-',
+                'progress_status' => $progressStatus,
+                'l2_status'       => '-',
+                'l3_status'       => '-',
+                'bond_status'     => 'No',
+                'bond_duration'   => '-',
+                'bond_end_date'   => '-',
+                'bond_amount'     => '-',
+            ];
+
+            return response()->json(array_merge($recordData, [
+                'success'            => true,
+                'data'               => $recordData,
+                'source_type'        => 'KP OWL',
+                'bond_amount_idr'    => '-',
+                'sub_course_title'   => '-',
+                'level'              => '-',
+                'batch'              => '-',
+                'attendance_reason'  => '-',
+                'certificate_status' => ($cu->finish == '1' || $progress >= 100) ? 'Available' : 'Not Available',
+            ]));
         }
 
-        // Check playlist_content_users
+        // 3. Check playlist_content_users
         $pcu = DB::table('playlist_content_users as pcu')
             ->join('users as u', 'pcu.user_id', '=', 'u.id')
-            ->leftJoin('contents as c', 'pcu.content_id', '=', 'c.id')
-            ->leftJoin('trainingplans as tp', 'pcu.trainingplan_id', '=', 'tp.id')
+            ->leftJoin('content as c', 'pcu.content_id', '=', 'c.id')
+            ->leftJoin('trainingplan as tp', 'pcu.trainingplan_id', '=', 'tp.id')
             ->where('pcu.id', $id)
             ->select([
                 'pcu.id',
+                'pcu.progress',
+                'pcu.finish',
                 'u.id_emp as employee_id',
                 'u.name as employee_name',
                 'u.team',
@@ -388,27 +552,66 @@ class ManageRecordController extends Controller
             ->first();
 
         if ($pcu) {
-            return response()->json([
-                'success' => true,
-                'data'    => [
-                    'grade'              => '-',
-                    'job_position'        => '-',
-                    'sub_course_title'   => $pcu->playlist_title ?: '-',
-                    'level'              => '-',
-                    'batch'              => '-',
-                    'instructor'         => $pcu->instructor ?: '-',
-                    'attendance_reason'  => '-',
-                    'bond_status'        => 'No',
-                    'bond_duration'      => '-',
-                    'bond_end_date'      => '-',
-                    'bond_amount_idr'    => '-',
-                    'l2_status'          => '-',
-                    'l3_status'          => '-',
-                    'certificate_status' => 'Not Available',
-                ],
-            ]);
+            $progress = (float) ($pcu->progress ?? 0);
+            $progressStatus = ($pcu->finish == '1' || $progress >= 100) ? 'Passed' : (($progress > 0) ? 'Ongoing' : 'Not Started');
+
+            $cleanEmpId = trim((string) ($pcu->employee_id ?: '-'));
+            if ($cleanEmpId !== '-') {
+                $cleanEmpId = preg_replace('/\s*[\/\-]\s*NIP.*$/i', '', $cleanEmpId);
+            }
+
+            $empName = trim((string) ($pcu->employee_name ?: '-'));
+            if ($empName !== '-') {
+                $empName = strtoupper($empName);
+            }
+
+            $recordData = [
+                'source'          => 'KP OWL',
+                'course_title'    => $pcu->playlist_title ?: ($pcu->course_title ?: 'Playlist'),
+                'employee_id'     => $cleanEmpId,
+                'employee_name'   => $empName,
+                'grade'           => '-',
+                'job_position'    => '-',
+                'instructor'      => $pcu->instructor ?: '-',
+                'progress_status' => $progressStatus,
+                'l2_status'       => '-',
+                'l3_status'       => '-',
+                'bond_status'     => 'No',
+                'bond_duration'   => '-',
+                'bond_end_date'   => '-',
+                'bond_amount'     => '-',
+            ];
+
+            return response()->json(array_merge($recordData, [
+                'success'            => true,
+                'data'               => $recordData,
+                'source_type'        => 'KP OWL',
+                'bond_amount_idr'    => '-',
+                'sub_course_title'   => $pcu->playlist_title ?: '-',
+                'level'              => '-',
+                'batch'              => '-',
+                'attendance_reason'  => '-',
+                'certificate_status' => ($pcu->finish == '1' || $progress >= 100) ? 'Available' : 'Not Available',
+            ]));
         }
 
-        return response()->json(['success' => false, 'message' => 'Online record not found'], 404);
+        return response()->json([
+            'success'         => false,
+            'message'         => 'Record not found',
+            'source'          => '-',
+            'course_title'    => '-',
+            'employee_id'     => '-',
+            'employee_name'   => '-',
+            'grade'           => '-',
+            'job_position'    => '-',
+            'instructor'      => '-',
+            'progress_status' => '-',
+            'l2_status'       => '-',
+            'l3_status'       => '-',
+            'bond_status'     => 'No',
+            'bond_duration'   => '-',
+            'bond_end_date'   => '-',
+            'bond_amount'     => '-',
+        ], 404);
     }
 }

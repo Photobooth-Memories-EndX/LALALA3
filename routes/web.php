@@ -585,6 +585,8 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
             Route::get('export/classification/offline/{classification?}', [\App\Http\Controllers\ManageRecordExportController::class, 'exportClassificationOffline'])->name('export.classification.offline');
             Route::get('export/classification/all/{classification?}', [\App\Http\Controllers\ManageRecordExportController::class, 'exportClassificationAll'])->name('export.classification.all');
             Route::get('{id}/edit', [\App\Http\Controllers\ManageRecordController::class, 'edit'])->name('edit');
+            Route::get('detail/{id}', [\App\Http\Controllers\ManageRecordController::class, 'getMoreInformationDetail'])->name('detail');
+            Route::get('{id}/detail', [\App\Http\Controllers\ManageRecordController::class, 'getMoreInformationDetail']);
             Route::get('{id}/more-info', [\App\Http\Controllers\ManageRecordController::class, 'moreInformation'])->name('more-info');
         });
     });
