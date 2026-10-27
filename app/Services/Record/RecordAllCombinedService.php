@@ -532,12 +532,7 @@ class RecordAllCombinedService
                     WHEN unified.source = 'offline' THEN ot.instructor
                     ELSE c.author
                 END as instructor"),
-                DB::raw("CASE
-                    WHEN unified.source = 'offline' THEN COALESCE(ot.duration_seconds, 0)
-                    WHEN c.duration IS NULL OR TRIM(c.duration) = '' THEN 0
-                    WHEN LENGTH(c.duration) - LENGTH(REPLACE(c.duration, ':', '')) = 2 THEN TIME_TO_SEC(c.duration)
-                    ELSE TIME_TO_SEC(CONCAT('00:', c.duration))
-                END as duration_seconds"),
+                DB::raw("COALESCE(unified.duration_seconds, 0) as duration_seconds"),
                 DB::raw("CASE
                     WHEN unified.source = 'offline' THEN ot.learning_hours
                     WHEN unified.source_type = 'playlist' THEN tp.learning_hours
@@ -545,10 +540,13 @@ class RecordAllCombinedService
                 END as training_hours"),
                 DB::raw("CASE
                     WHEN unified.source = 'offline' THEN DATE_FORMAT(ot.start_date, '%Y-%m-%d')
-                    ELSE NULL
+                    ELSE DATE_FORMAT(unified.created_at, '%Y-%m-%d')
                 END as start_date"),
                 DB::raw("DATE_FORMAT(unified.finish_date, '%Y-%m-%d') as finish_date"),
-                DB::raw("CASE WHEN unified.source = 'offline' THEN DATE_FORMAT(ot.end_date, '%Y-%m-%d') ELSE NULL END as end_date"),
+                DB::raw("CASE
+                    WHEN unified.source = 'offline' THEN DATE_FORMAT(ot.end_date, '%Y-%m-%d')
+                    ELSE DATE_FORMAT(unified.finish_date, '%Y-%m-%d')
+                END as end_date"),
                 DB::raw("CASE WHEN unified.source = 'offline' THEN ot.start_time ELSE NULL END as start_time"),
                 DB::raw("CASE WHEN unified.source = 'offline' THEN ot.end_time ELSE NULL END as end_time"),
                 DB::raw("CASE
@@ -589,6 +587,7 @@ class RecordAllCombinedService
     protected function buildContentQuery(array $filters): Builder
     {
         $q = DB::table('content_users as cu')
+            ->leftJoin('content as c', 'c.id', '=', 'cu.content_id')
             ->select([
                 'cu.id as source_id',
                 DB::raw("'online' as source"),
@@ -602,6 +601,11 @@ class RecordAllCombinedService
                 DB::raw("COALESCE(cu.learning_hours, 0) as learning_hours"),
                 'cu.created_at',
                 DB::raw("CASE WHEN cu.finish = '1' OR cu.progress >= 100 THEN cu.completed_at ELSE NULL END as finish_date"),
+                DB::raw("CASE
+                    WHEN c.duration IS NULL OR TRIM(c.duration) = '' THEN 0
+                    WHEN LENGTH(c.duration) - LENGTH(REPLACE(c.duration, ':', '')) = 2 THEN TIME_TO_SEC(c.duration)
+                    ELSE TIME_TO_SEC(CONCAT('00:', c.duration))
+                END as duration_seconds"),
             ]);
 
         $this->applyOnlineSubqueryFilters($q, $filters, 'cu');
@@ -610,27 +614,41 @@ class RecordAllCombinedService
     }
 
     /**
-     * Build Online Playlist subquery.
+     * Build Online Playlist subquery (grouped 1 row per user per playlist).
      */
     protected function buildPlaylistQuery(array $filters): Builder
     {
         $q = DB::table('playlist_content_users as pcu')
+            ->leftJoin('content as c', 'c.id', '=', 'pcu.content_id')
             ->select([
-                'pcu.id as source_id',
+                DB::raw('MIN(pcu.id) as source_id'),
                 DB::raw("'online' as source"),
                 DB::raw("'playlist' as source_type"),
                 'pcu.user_id',
-                'pcu.content_id',
+                DB::raw('MIN(pcu.content_id) as content_id'),
                 'pcu.trainingplan_id',
                 DB::raw('CAST(NULL AS UNSIGNED) as offline_training_user_id'),
-                'pcu.progress',
-                'pcu.finish',
-                DB::raw("COALESCE(pcu.learning_hour, 0) as learning_hours"),
-                'pcu.created_at',
-                DB::raw("CASE WHEN pcu.finish = '1' OR pcu.progress >= 100 THEN pcu.completed_at ELSE NULL END as finish_date"),
-            ]);
+                DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
+                DB::raw("CASE WHEN COUNT(pcu.id) > 0 AND SUM(CASE WHEN pcu.finish = '1' OR pcu.progress >= 100 THEN 1 ELSE 0 END) = COUNT(pcu.id) THEN '1' ELSE '0' END as finish"),
+                DB::raw("COALESCE(SUM(pcu.learning_hour), 0) as learning_hours"),
+                DB::raw("MIN(pcu.created_at) as created_at"),
+                DB::raw("MAX(CASE WHEN pcu.finish = '1' OR pcu.progress >= 100 THEN pcu.completed_at ELSE NULL END) as finish_date"),
+                DB::raw("SUM(
+                    CASE
+                        WHEN (pcu.progress > 0 OR pcu.finish = '1' OR pcu.learning_hour > 0 OR pcu.actual_watch_seconds > 0) THEN
+                            CASE
+                                WHEN pcu.duration_seconds > 0 THEN pcu.duration_seconds
+                                WHEN c.duration IS NULL OR TRIM(c.duration) = '' THEN 0
+                                WHEN LENGTH(c.duration) - LENGTH(REPLACE(c.duration, ':', '')) = 2 THEN TIME_TO_SEC(c.duration)
+                                ELSE TIME_TO_SEC(CONCAT('00:', c.duration))
+                            END
+                        ELSE 0
+                    END
+                ) as duration_seconds"),
+            ])
+            ->groupBy(['pcu.user_id', 'pcu.trainingplan_id']);
 
-        $this->applyOnlineSubqueryFilters($q, $filters, 'pcu');
+        $this->applyPlaylistSubqueryFilters($q, $filters);
 
         return $q;
     }
@@ -972,6 +990,234 @@ class RecordAllCombinedService
     }
 
     /**
+     * Apply pushdown filters to Playlist subquery (grouped by user & playlist).
+     */
+    protected function applyPlaylistSubqueryFilters(Builder $q, array $filters): void
+    {
+        // 1. Exact participant or employee filter
+        if (!empty($filters['exact_participant'])) {
+            $pUserId = $filters['exact_participant']['user_id'] ?? null;
+            $pEmpId = $filters['exact_participant']['employee_id'] ?? null;
+            $matchedUserIds = [];
+            if ($pUserId) {
+                $matchedUserIds[] = (int) $pUserId;
+            }
+            if (!empty($pEmpId)) {
+                $uIds = DB::table('users')->where('id_emp', $pEmpId)->pluck('id')->toArray();
+                $matchedUserIds = array_merge($matchedUserIds, $uIds);
+            }
+            $matchedUserIds = array_unique(array_filter($matchedUserIds));
+            $q->whereIn('pcu.user_id', !empty($matchedUserIds) ? $matchedUserIds : [-1]);
+        } else {
+            $employeeParam = $filters['employee_id'] ?? ($filters['employee'] ?? ($filters['employees'] ?? null));
+            if (is_array($employeeParam) && !empty($employeeParam)) {
+                $userIds = DB::table('users')
+                    ->where(function ($sub) use ($employeeParam) {
+                        $sub->whereIn('id_emp', $employeeParam)
+                            ->orWhereIn('name', $employeeParam);
+                    })
+                    ->pluck('id')
+                    ->toArray();
+                $q->whereIn('pcu.user_id', !empty($userIds) ? $userIds : [-1]);
+            } elseif (is_string($employeeParam) && trim($employeeParam) !== '' && trim($employeeParam) !== 'all') {
+                $employee = trim($employeeParam);
+                $userIds = DB::table('users')
+                    ->where('id_emp', 'like', "%{$employee}%")
+                    ->orWhere('name', 'like', "%{$employee}%")
+                    ->pluck('id')
+                    ->toArray();
+                $q->whereIn('pcu.user_id', !empty($userIds) ? $userIds : [-1]);
+            }
+        }
+
+        // 2. Playlist Title Filter
+        $rawTitle = $filters['learning_title'] ?? ($filters['title'] ?? '');
+        $title = is_string($rawTitle) ? trim($rawTitle) : '';
+        if (is_array($rawTitle)) {
+            $titleList = array_values(array_filter(array_map('trim', $rawTitle), fn($t) => $t !== '' && strtolower($t) !== 'all'));
+            if (!empty($titleList)) {
+                $tpIds = DB::table('trainingplan')->whereIn('title', $titleList)->pluck('id')->toArray();
+                $q->whereIn('pcu.trainingplan_id', !empty($tpIds) ? $tpIds : [-1]);
+            }
+        } elseif ($title !== '' && strtolower($title) !== 'all') {
+            $tpIds = DB::table('trainingplan')->where('title', 'like', "%{$title}%")->pluck('id')->toArray();
+            $q->whereIn('pcu.trainingplan_id', !empty($tpIds) ? $tpIds : [-1]);
+        }
+
+        // 3. Classification Filter
+        $classification = trim((string) ($filters['classification'] ?? 'all'));
+        if ($classification !== '' && $classification !== 'all') {
+            $categorySlug = $classification;
+            $classificationSlug = str_replace('-', ' ', strtolower($categorySlug));
+            $resolvedClass = RecordAllController::resolveClassification($categorySlug, false);
+            $resolvedName = $resolvedClass['name'] ?? $categorySlug;
+
+            if (strtolower($classification) === 'unclassified' || ($resolvedClass['is_unclassified'] ?? false)) {
+                $classContentIds = DB::table('content')
+                    ->leftJoin('classification', 'classification.id', '=', 'content.classification_id')
+                    ->where(function ($sub) {
+                        $sub->whereNull('classification.classification_name')
+                            ->orWhere('classification.classification_name', '');
+                    })
+                    ->pluck('content.id')
+                    ->toArray();
+            } else {
+                $classContentIds = DB::table('content')
+                    ->join('classification', 'classification.id', '=', 'content.classification_id')
+                    ->where(function ($qSub) use ($categorySlug, $classificationSlug, $resolvedName) {
+                        $qSub->where('classification.slug', $categorySlug)
+                          ->orWhere('classification.slug', Str::slug($categorySlug))
+                          ->orWhere('classification.classification_name', $resolvedName)
+                          ->orWhere('classification.classification_name', $categorySlug)
+                          ->orWhereRaw('LOWER(classification.classification_name) = ?', [strtolower($resolvedName)])
+                          ->orWhereRaw('LOWER(classification.classification_name) = ?', [$classificationSlug])
+                          ->orWhereRaw('LOWER(classification.classification_name) = ?', [strtolower($categorySlug)]);
+                    })
+                    ->pluck('content.id')
+                    ->toArray();
+            }
+            $q->whereIn('pcu.content_id', !empty($classContentIds) ? $classContentIds : [-1]);
+        }
+
+        // 4. Year Filter
+        $year = $filters['year'] ?? ($filters['years'] ?? 'all');
+        if (is_array($year) && !empty($year)) {
+            $yearInts = array_map('intval', array_filter($year, 'is_numeric'));
+            if (!empty($yearInts)) {
+                $q->where(function ($sub) use ($yearInts) {
+                    $sub->whereIn(DB::raw('YEAR(pcu.created_at)'), $yearInts)
+                        ->orWhereIn(DB::raw('YEAR(pcu.completed_at)'), $yearInts)
+                        ->orWhereIn(DB::raw('YEAR(pcu.updated_at)'), $yearInts);
+                });
+            }
+        } elseif (is_string($year) && $year !== '' && $year !== 'all' && is_numeric($year)) {
+            $q->where(function ($sub) use ($year) {
+                $sub->whereYear('pcu.created_at', (int) $year)
+                    ->orWhereYear('pcu.completed_at', (int) $year)
+                    ->orWhereYear('pcu.updated_at', (int) $year);
+            });
+        }
+
+        // 5. Department, Company, Division, Team Filters
+        $department = $filters['department'] ?? ($filters['departments'] ?? 'all');
+        if (is_array($department) && !empty($department)) {
+            $deptUserIds = DB::table('users')->whereIn('department', $department)->pluck('id')->toArray();
+            $q->whereIn('pcu.user_id', !empty($deptUserIds) ? $deptUserIds : [-1]);
+        } elseif (is_string($department) && filled($department) && $department !== 'all') {
+            $deptUserIds = DB::table('users')->where('department', trim($department))->pluck('id')->toArray();
+            $q->whereIn('pcu.user_id', !empty($deptUserIds) ? $deptUserIds : [-1]);
+        }
+
+        $company = $filters['company'] ?? ($filters['companies'] ?? 'all');
+        if (is_array($company) && !empty($company)) {
+            $compUserIds = DB::table('users')->whereIn('company_name', $company)->pluck('id')->toArray();
+            $q->whereIn('pcu.user_id', !empty($compUserIds) ? $compUserIds : [-1]);
+        } elseif (is_string($company) && filled($company) && $company !== 'all') {
+            $compUserIds = DB::table('users')->where('company_name', trim($company))->pluck('id')->toArray();
+            $q->whereIn('pcu.user_id', !empty($compUserIds) ? $compUserIds : [-1]);
+        }
+
+        $division = $filters['division'] ?? ($filters['divisions'] ?? 'all');
+        if (is_array($division) && !empty($division)) {
+            $divUserIds = DB::table('users')->whereIn('division', $division)->pluck('id')->toArray();
+            $q->whereIn('pcu.user_id', !empty($divUserIds) ? $divUserIds : [-1]);
+        } elseif (is_string($division) && filled($division) && $division !== 'all') {
+            $divUserIds = DB::table('users')->where('division', trim($division))->pluck('id')->toArray();
+            $q->whereIn('pcu.user_id', !empty($divUserIds) ? $divUserIds : [-1]);
+        }
+
+        $team = $filters['team'] ?? ($filters['teams'] ?? 'all');
+        if (is_array($team) && !empty($team)) {
+            $teamUserIds = DB::table('users')->whereIn('team', $team)->pluck('id')->toArray();
+            $q->whereIn('pcu.user_id', !empty($teamUserIds) ? $teamUserIds : [-1]);
+        } elseif (is_string($team) && filled($team) && $team !== 'all') {
+            $teamUserIds = DB::table('users')->where('team', 'like', '%' . trim($team) . '%')->pluck('id')->toArray();
+            $q->whereIn('pcu.user_id', !empty($teamUserIds) ? $teamUserIds : [-1]);
+        }
+
+        // 6. General Search
+        $employeeParam = $filters['employee_id'] ?? ($filters['employee'] ?? ($filters['employees'] ?? null));
+        $search = trim((string) (is_array($filters['search'] ?? null) ? ($filters['search']['value'] ?? '') : ($filters['search'] ?? '')));
+        if ($search !== '' && empty($employeeParam) && $title === '') {
+            $searchUserIds = DB::table('users')
+                ->where('name', 'like', "%{$search}%")
+                ->orWhere('id_emp', 'like', "%{$search}%")
+                ->pluck('id')
+                ->toArray();
+
+            $searchTpIds = DB::table('trainingplan')
+                ->where('title', 'like', "%{$search}%")
+                ->pluck('id')
+                ->toArray();
+
+            $q->where(function ($sub) use ($searchUserIds, $searchTpIds) {
+                $matched = false;
+                if (!empty($searchUserIds)) {
+                    $sub->whereIn('pcu.user_id', $searchUserIds);
+                    $matched = true;
+                }
+                if (!empty($searchTpIds)) {
+                    if ($matched) {
+                        $sub->orWhereIn('pcu.trainingplan_id', $searchTpIds);
+                    } else {
+                        $sub->whereIn('pcu.trainingplan_id', $searchTpIds);
+                        $matched = true;
+                    }
+                }
+                if (!$matched) {
+                    $sub->whereRaw('1 = 0');
+                }
+            });
+        }
+
+        // 7. Status Filter (Applied via HAVING on the aggregated playlist status)
+        $status = strtolower(trim((string) ($filters['status'] ?? 'all')));
+        if ($status !== '' && $status !== 'all') {
+            if ($status === 'finished' || $status === 'finish') {
+                $q->havingRaw("COUNT(pcu.id) > 0 AND SUM(CASE WHEN pcu.finish = '1' OR pcu.progress >= 100 THEN 1 ELSE 0 END) = COUNT(pcu.id)");
+            } elseif ($status === 'ongoing') {
+                $q->havingRaw("NOT (COUNT(pcu.id) > 0 AND SUM(CASE WHEN pcu.finish = '1' OR pcu.progress >= 100 THEN 1 ELSE 0 END) = COUNT(pcu.id)) AND (AVG(COALESCE(pcu.progress, 0)) > 0 OR SUM(CASE WHEN pcu.progress > 0 THEN 1 ELSE 0 END) > 0)");
+            } elseif ($status === 'not_started') {
+                $q->havingRaw("NOT (COUNT(pcu.id) > 0 AND SUM(CASE WHEN pcu.finish = '1' OR pcu.progress >= 100 THEN 1 ELSE 0 END) = COUNT(pcu.id)) AND AVG(COALESCE(pcu.progress, 0)) <= 0");
+            }
+        }
+
+        // 8. Progress Range Filter (Applied via HAVING on the aggregated playlist progress)
+        $progressRange = trim((string) ($filters['progress_range'] ?? 'all'));
+        if ($progressRange !== '' && $progressRange !== 'all') {
+            if ($progressRange === '0') {
+                $q->havingRaw("AVG(COALESCE(pcu.progress, 0)) <= 0");
+            } elseif ($progressRange === '1-25') {
+                $q->havingRaw("AVG(COALESCE(pcu.progress, 0)) >= 1 AND AVG(COALESCE(pcu.progress, 0)) <= 25");
+            } elseif ($progressRange === '26-50') {
+                $q->havingRaw("AVG(COALESCE(pcu.progress, 0)) >= 26 AND AVG(COALESCE(pcu.progress, 0)) <= 50");
+            } elseif ($progressRange === '51-75') {
+                $q->havingRaw("AVG(COALESCE(pcu.progress, 0)) >= 51 AND AVG(COALESCE(pcu.progress, 0)) <= 75");
+            } elseif ($progressRange === '76-99') {
+                $q->havingRaw("AVG(COALESCE(pcu.progress, 0)) >= 76 AND AVG(COALESCE(pcu.progress, 0)) <= 99");
+            } elseif ($progressRange === '100') {
+                $q->havingRaw("COUNT(pcu.id) > 0 AND SUM(CASE WHEN pcu.finish = '1' OR pcu.progress >= 100 THEN 1 ELSE 0 END) = COUNT(pcu.id)");
+            }
+        }
+
+        // 9. Learning Hours Range Filter (Applied via HAVING on SUM(pcu.learning_hour))
+        $hoursRange = trim((string) ($filters['learning_hours_range'] ?? ($filters['learning_hours'] ?? ($filters['hours_range'] ?? 'all'))));
+        if ($hoursRange !== '' && $hoursRange !== 'all') {
+            if ($hoursRange === 'lt05') {
+                $q->havingRaw("COALESCE(SUM(pcu.learning_hour), 0) < 0.5");
+            } elseif ($hoursRange === '05-1') {
+                $q->havingRaw("COALESCE(SUM(pcu.learning_hour), 0) >= 0.5 AND COALESCE(SUM(pcu.learning_hour), 0) < 1.0");
+            } elseif ($hoursRange === '1-2') {
+                $q->havingRaw("COALESCE(SUM(pcu.learning_hour), 0) >= 1.0 AND COALESCE(SUM(pcu.learning_hour), 0) < 2.0");
+            } elseif ($hoursRange === '2-4') {
+                $q->havingRaw("COALESCE(SUM(pcu.learning_hour), 0) >= 2.0 AND COALESCE(SUM(pcu.learning_hour), 0) < 4.0");
+            } elseif ($hoursRange === 'gte4') {
+                $q->havingRaw("COALESCE(SUM(pcu.learning_hour), 0) >= 4.0");
+            }
+        }
+    }
+
+    /**
      * Build Offline subquery from offline_training_users JOIN offline_trainings.
      */
     protected function buildOfflineQuery(array $filters): Builder
@@ -996,6 +1242,7 @@ class RecordAllCombinedService
                 DB::raw("COALESCE(otu.learning_hours, 0) as learning_hours"),
                 'otu.created_at',
                 DB::raw("CASE WHEN otu.progress >= 100 THEN ot.finish_date ELSE NULL END as finish_date"),
+                DB::raw("COALESCE(ot.duration_seconds, 0) as duration_seconds"),
             ]);
 
         // Status filter
