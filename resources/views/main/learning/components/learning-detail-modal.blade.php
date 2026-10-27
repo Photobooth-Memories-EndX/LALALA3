@@ -50,18 +50,74 @@
                         <div class="d-flex align-items-center gap-1">
                             <span class="badge bg-blue-lt" id="ld-content-type">-</span>
                             <span class="badge bg-azure-lt" id="ld-content-source">-</span>
+                            <span class="badge bg-green-lt" id="ld-content-delivery">Online</span>
                         </div>
                     </div>
-                    <h4 class="fw-bold text-dark mb-2 lh-sm" id="ld-content-title">-</h4>
+                    <h4 class="fw-bold text-dark mb-1 lh-sm" id="ld-content-title">-</h4>
+                    <div class="text-muted small mb-3" id="ld-content-sub-title-wrapper">
+                        Sub Course: <span class="fw-semibold text-secondary" id="ld-content-sub-title">-</span>
+                    </div>
+
                     <div class="row g-2 small">
                         <div class="col-sm-6">
-                            <div class="text-muted">Classification: <strong class="text-dark" id="ld-content-classification">-</strong></div>
+                            <div class="p-2 rounded-2 bg-white border d-flex justify-content-between">
+                                <span class="text-muted">Main Classification</span>
+                                <strong class="text-dark" id="ld-content-main-class">-</strong>
+                            </div>
                         </div>
                         <div class="col-sm-6">
-                            <div class="text-muted">Category Source: <strong class="text-dark" id="ld-content-category">-</strong></div>
+                            <div class="p-2 rounded-2 bg-white border d-flex justify-content-between">
+                                <span class="text-muted">Sub Classification</span>
+                                <strong class="text-dark" id="ld-content-sub-class">-</strong>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="p-2 rounded-2 bg-white border d-flex justify-content-between">
+                                <span class="text-muted">Category</span>
+                                <strong class="text-dark" id="ld-content-category">-</strong>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="p-2 rounded-2 bg-white border d-flex justify-content-between">
+                                <span class="text-muted">Sub Delivery Method</span>
+                                <strong class="text-dark" id="ld-content-sub-delivery">-</strong>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="p-2 rounded-2 bg-white border d-flex justify-content-between">
+                                <span class="text-muted">Level</span>
+                                <strong class="text-dark" id="ld-content-level">-</strong>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="p-2 rounded-2 bg-white border d-flex justify-content-between">
+                                <span class="text-muted">Batch</span>
+                                <strong class="text-dark" id="ld-content-batch">-</strong>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="p-2 rounded-2 bg-white border d-flex justify-content-between">
+                                <span class="text-muted">Provider Name</span>
+                                <strong class="text-dark" id="ld-content-provider">-</strong>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="p-2 rounded-2 bg-white border d-flex justify-content-between">
+                                <span class="text-muted">Venue</span>
+                                <strong class="text-dark" id="ld-content-venue">-</strong>
+                            </div>
+                        </div>
+                        <div class="col-sm-12">
+                            <div class="p-2 rounded-2 bg-white border d-flex justify-content-between">
+                                <span class="text-muted">Instructor</span>
+                                <strong class="text-dark" id="ld-content-instructor">-</strong>
+                            </div>
                         </div>
                         <div class="col-12" id="ld-playlist-container" style="display: none;">
-                            <div class="text-muted"><i class="ti ti-list-details me-1"></i>Playlist: <strong class="text-dark" id="ld-playlist-name">-</strong></div>
+                            <div class="p-2 rounded-2 bg-white border d-flex justify-content-between">
+                                <span class="text-muted"><i class="ti ti-list-details me-1"></i>Playlist</span>
+                                <strong class="text-dark" id="ld-playlist-name">-</strong>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -74,20 +130,26 @@
                     <div class="row g-2">
                         <div class="col-sm-6">
                             <div class="p-2 rounded-2 bg-white border owl-modal-subcard d-flex align-items-center justify-content-between">
-                                <span class="small text-muted">NIP / ID</span>
+                                <span class="small text-muted">Employee ID / NIP</span>
                                 <strong class="small text-dark font-monospace" id="ld-emp-id">-</strong>
                             </div>
                         </div>
                         <div class="col-sm-6">
                             <div class="p-2 rounded-2 bg-white border owl-modal-subcard d-flex align-items-center justify-content-between">
-                                <span class="small text-muted">Name</span>
+                                <span class="small text-muted">Employee Name</span>
                                 <strong class="small text-dark text-truncate ms-2" id="ld-emp-name">-</strong>
                             </div>
                         </div>
                         <div class="col-sm-6">
                             <div class="p-2 rounded-2 bg-white border owl-modal-subcard d-flex align-items-center justify-content-between">
-                                <span class="small text-muted">Department</span>
-                                <strong class="small text-dark text-truncate ms-2" id="ld-emp-dept">-</strong>
+                                <span class="small text-muted">Grade</span>
+                                <strong class="small text-dark text-truncate ms-2" id="ld-emp-grade">-</strong>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="p-2 rounded-2 bg-white border owl-modal-subcard d-flex align-items-center justify-content-between">
+                                <span class="small text-muted">Job Position</span>
+                                <strong class="small text-dark text-truncate ms-2" id="ld-emp-job-position">-</strong>
                             </div>
                         </div>
                         <div class="col-sm-6">
@@ -96,19 +158,31 @@
                                 <strong class="small text-dark text-truncate ms-2" id="ld-emp-team">-</strong>
                             </div>
                         </div>
+                        <div class="col-sm-6">
+                            <div class="p-2 rounded-2 bg-white border owl-modal-subcard d-flex align-items-center justify-content-between">
+                                <span class="small text-muted">Department</span>
+                                <strong class="small text-dark text-truncate ms-2" id="ld-emp-dept">-</strong>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="p-2 rounded-2 bg-white border owl-modal-subcard d-flex align-items-center justify-content-between">
+                                <span class="small text-muted">Company</span>
+                                <strong class="small text-dark text-truncate ms-2" id="ld-emp-company">-</strong>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- 3. Progress & Tracking Section -->
+                <!-- 3. Progress & Duration Tracking Section -->
                 <div class="border rounded-3 p-3 mb-3 bg-light owl-modal-card">
                     <span class="text-uppercase text-muted fw-bold small d-block mb-2" style="font-size: 0.72rem; letter-spacing: 0.05em;">
-                        <i class="ti ti-chart-bar me-1 text-primary"></i> Progress & Tracking Details
+                        <i class="ti ti-chart-bar me-1 text-primary"></i> Duration & Progress Tracking
                     </span>
 
                     <!-- Progress Bar & Finish Badge -->
                     <div class="p-2 rounded-2 bg-white border owl-modal-subcard mb-2">
                         <div class="d-flex align-items-center justify-content-between mb-1">
-                            <span class="small text-muted fw-semibold">Completion Progress</span>
+                            <span class="small text-muted fw-semibold">% Progress</span>
                             <div class="d-flex align-items-center gap-2">
                                 <span class="badge" id="ld-finish-badge">-</span>
                                 <strong class="small text-dark" id="ld-progress-text">0%</strong>
@@ -123,42 +197,61 @@
                     <div class="row g-2">
                         <div class="col-sm-4">
                             <div class="p-2 rounded-2 bg-white border owl-modal-subcard text-center">
+                                <div class="text-muted small lh-1 mb-1">Progress Status</div>
+                                <div class="fw-semibold text-dark small" id="ld-progress-status">-</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="p-2 rounded-2 bg-white border owl-modal-subcard text-center">
                                 <div class="text-muted small lh-1 mb-1">Learning Status</div>
                                 <div class="fw-semibold text-dark small" id="ld-learning-status">-</div>
                             </div>
                         </div>
                         <div class="col-sm-4">
                             <div class="p-2 rounded-2 bg-white border owl-modal-subcard text-center">
-                                <div class="text-muted small lh-1 mb-1">Status (Requirement)</div>
+                                <div class="text-muted small lh-1 mb-1">Requirement</div>
                                 <div class="fw-semibold text-dark small" id="ld-status">-</div>
-                            </div>
-                        </div>
-                        <div class="col-sm-4">
-                            <div class="p-2 rounded-2 bg-white border owl-modal-subcard text-center">
-                                <div class="text-muted small lh-1 mb-1">Learning Hours</div>
-                                <div class="h5 fw-bold text-primary mb-0 font-monospace" id="ld-learning-hours">0.0000 h</div>
                             </div>
                         </div>
 
                         <div class="col-sm-3">
                             <div class="p-2 rounded-2 bg-white border owl-modal-subcard text-center">
-                                <div class="text-muted small lh-1 mb-1">Duration</div>
+                                <div class="text-muted small lh-1 mb-1">Course Duration</div>
                                 <div class="fw-bold text-dark font-monospace small" id="ld-duration">00:00:00</div>
                             </div>
                         </div>
                         <div class="col-sm-3">
                             <div class="p-2 rounded-2 bg-white border owl-modal-subcard text-center">
+                                <div class="text-muted small lh-1 mb-1">Recognized Duration</div>
+                                <div class="fw-bold text-dark font-monospace small" id="ld-total-recognized-duration">-</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-3">
+                            <div class="p-2 rounded-2 bg-white border owl-modal-subcard text-center">
+                                <div class="text-muted small lh-1 mb-1">Learning Hours</div>
+                                <div class="h5 fw-bold text-primary mb-0 font-monospace" id="ld-learning-hours">0.0000 h</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-3">
+                            <div class="p-2 rounded-2 bg-white border owl-modal-subcard text-center">
+                                <div class="text-muted small lh-1 mb-1">Total Engagement Time</div>
+                                <div class="h5 fw-bold text-dark mb-0 font-monospace" id="ld-total-engagement-time">0.00 h</div>
+                            </div>
+                        </div>
+
+                        <div class="col-sm-4">
+                            <div class="p-2 rounded-2 bg-white border owl-modal-subcard text-center">
                                 <div class="text-muted small lh-1 mb-1">Current Time</div>
                                 <div class="fw-bold text-dark font-monospace small" id="ld-current-time">-</div>
                             </div>
                         </div>
-                        <div class="col-sm-3">
+                        <div class="col-sm-4">
                             <div class="p-2 rounded-2 bg-white border owl-modal-subcard text-center">
                                 <div class="text-muted small lh-1 mb-1">Actual Watch</div>
                                 <div class="fw-bold text-dark font-monospace small" id="ld-actual-watch">-</div>
                             </div>
                         </div>
-                        <div class="col-sm-3">
+                        <div class="col-sm-4">
                             <div class="p-2 rounded-2 bg-white border owl-modal-subcard text-center">
                                 <div class="text-muted small lh-1 mb-1">AFK Duration</div>
                                 <div class="fw-bold text-dark font-monospace small" id="ld-afk-duration">-</div>
@@ -167,7 +260,121 @@
                     </div>
                 </div>
 
-                <!-- 4. Timestamp Information Section -->
+                <!-- 4. Record Information & Obligations Section -->
+                <div class="border rounded-3 p-3 mb-3 bg-light owl-modal-card">
+                    <span class="text-uppercase text-muted fw-bold small d-block mb-2" style="font-size: 0.72rem; letter-spacing: 0.05em;">
+                        <i class="ti ti-calendar-event me-1 text-primary"></i> Record Information & Obligations
+                    </span>
+                    <div class="row g-2 small">
+                        <div class="col-sm-6">
+                            <div class="p-2 rounded-2 bg-white border d-flex justify-content-between">
+                                <span class="text-muted">Start Date & Time</span>
+                                <strong class="text-dark font-monospace" id="ld-record-start-date">-</strong>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="p-2 rounded-2 bg-white border d-flex justify-content-between">
+                                <span class="text-muted">End Date & Time</span>
+                                <strong class="text-dark font-monospace" id="ld-record-end-date">-</strong>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="p-2 rounded-2 bg-white border d-flex justify-content-between">
+                                <span class="text-muted">Record Month</span>
+                                <strong class="text-dark" id="ld-record-month">-</strong>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="p-2 rounded-2 bg-white border d-flex justify-content-between">
+                                <span class="text-muted">Attendance</span>
+                                <strong class="text-dark" id="ld-record-attendance">-</strong>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="p-2 rounded-2 bg-white border d-flex justify-content-between">
+                                <span class="text-muted">Attendance Reason</span>
+                                <strong class="text-dark" id="ld-record-attendance-reason">-</strong>
+                            </div>
+                        </div>
+                        <div class="col-sm-3">
+                            <div class="p-2 rounded-2 bg-white border text-center">
+                                <div class="text-muted extra-small mb-1">Bond Status</div>
+                                <strong class="text-dark" id="ld-obligation-bond-status">-</strong>
+                            </div>
+                        </div>
+                        <div class="col-sm-3">
+                            <div class="p-2 rounded-2 bg-white border text-center">
+                                <div class="text-muted extra-small mb-1">Bond Duration</div>
+                                <strong class="text-dark" id="ld-obligation-bond-duration">-</strong>
+                            </div>
+                        </div>
+                        <div class="col-sm-3">
+                            <div class="p-2 rounded-2 bg-white border text-center">
+                                <div class="text-muted extra-small mb-1">Bond End Date</div>
+                                <strong class="text-dark" id="ld-obligation-bond-end-date">-</strong>
+                            </div>
+                        </div>
+                        <div class="col-sm-3">
+                            <div class="p-2 rounded-2 bg-white border text-center">
+                                <div class="text-muted extra-small mb-1">Bond Amount</div>
+                                <strong class="text-dark" id="ld-obligation-bond-amount">-</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. Assessment & Certification Section -->
+                <div class="border rounded-3 p-3 mb-3 bg-light owl-modal-card">
+                    <span class="text-uppercase text-muted fw-bold small d-block mb-2" style="font-size: 0.72rem; letter-spacing: 0.05em;">
+                        <i class="ti ti-award me-1 text-primary"></i> Assessment & Certification
+                    </span>
+                    <div class="row g-2 small">
+                        <div class="col-sm-4">
+                            <div class="p-2 rounded-2 bg-white border text-center">
+                                <div class="text-muted extra-small mb-1">Score (L1) - Course</div>
+                                <strong class="text-dark font-monospace" id="ld-score-l1">-</strong>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="p-2 rounded-2 bg-white border text-center">
+                                <div class="text-muted extra-small mb-1">Score (L2)</div>
+                                <strong class="text-dark font-monospace" id="ld-score-l2">-</strong>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="p-2 rounded-2 bg-white border text-center">
+                                <div class="text-muted extra-small mb-1">L2 Status</div>
+                                <strong class="text-dark" id="ld-l2-status">-</strong>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="p-2 rounded-2 bg-white border text-center">
+                                <div class="text-muted extra-small mb-1">Score (L3)</div>
+                                <strong class="text-dark font-monospace" id="ld-score-l3">-</strong>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="p-2 rounded-2 bg-white border text-center">
+                                <div class="text-muted extra-small mb-1">L3 Status</div>
+                                <strong class="text-dark" id="ld-l3-status">-</strong>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="p-2 rounded-2 bg-white border text-center">
+                                <div class="text-muted extra-small mb-1">Person in Charge (PIC)</div>
+                                <strong class="text-dark" id="ld-pic">-</strong>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="p-2 rounded-2 bg-white border d-flex justify-content-between align-items-center">
+                                <span class="text-muted"><i class="ti ti-certificate me-1 text-warning"></i>Certificate</span>
+                                <strong class="text-dark" id="ld-certificate">-</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 6. Timestamp Information Section -->
                 <div class="border rounded-3 p-3 bg-light owl-modal-card">
                     <span class="text-uppercase text-muted fw-bold small d-block mb-2" style="font-size: 0.72rem; letter-spacing: 0.05em;">
                         <i class="ti ti-clock me-1 text-primary"></i> Timestamps & History
@@ -194,7 +401,6 @@
                     </div>
                 </div>
             </div>
-
             <!-- Modal Footer -->
             <div class="modal-footer px-4 py-2 bg-light border-top d-flex justify-content-end align-items-center">
                 <button type="button" class="btn btn-outline-secondary btn-sm px-4" data-bs-dismiss="modal">

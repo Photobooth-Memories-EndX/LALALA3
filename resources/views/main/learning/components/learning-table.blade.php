@@ -1,21 +1,44 @@
+@php
+    $isAllRecord = $isAllRecord ?? false;
+@endphp
 <div class="card border-0 shadow-sm">
     <div class="card-body p-0">
-        <div class="table-responsive">
+        <div class="table-responsive learning-table-responsive">
             <table id="learning-table" class="table table-vcenter table-striped card-table w-100">
                 <thead>
                     <tr>
-                        <th class="text-center" style="width: 50px;">NO</th>
-                        <th class="text-center">STATUS</th>
-                        <th class="text-center">ID</th>
-                        <th>EMPLOYEE</th>
-                        <th>LEARNING TITLE</th>
-                        <th class="text-center">TYPE</th>
-                        <th>CLASSIFICATION</th>
-                        <th class="text-center" style="min-width: 180px;">CATEGORY</th>
-                        <th class="text-center">DURATION</th>
-                        <th class="text-center">DATE</th>
-                        <th class="text-center">PROGRESS</th>
-                        <th class="text-center" style="width: 115px; min-width: 115px;">ACTION</th>
+                        <th class="text-center" style="min-width: 45px; width: 45px;">NO</th>
+                        @if ($isAllRecord)
+                        <th class="text-center" style="min-width: 90px;">SOURCE</th>
+                        @endif
+                        <th class="text-center" style="min-width: 90px;">EMPLOYEE ID</th>
+                        <th style="min-width: 180px;">EMPLOYEE NAME</th>
+                        <th style="min-width: 140px;">TEAM</th>
+                        <th style="min-width: 160px;">DEPARTMENT</th>
+                        <th style="min-width: 160px;">COMPANY</th>
+                        <th style="min-width: 220px;">COURSE TITLE</th>
+                        <th class="text-center" style="min-width: 100px;">TYPE</th>
+                        <th style="min-width: 150px;">CATEGORY</th>
+                        <th style="min-width: 160px;">MAIN CLASSIFICATION</th>
+                        <th style="min-width: 150px;">SUB CLASSIFICATION</th>
+                        <th class="text-center" style="min-width: 120px;">DELIVERY METHOD</th>
+                        <th style="min-width: 140px;">SUB DELIVERY METHOD</th>
+                        <th style="min-width: 150px;">PROVIDER NAME</th>
+                        <th style="min-width: 140px;">VENUE</th>
+                        <th class="text-center" style="min-width: 110px;">COURSE DURATION</th>
+                        <th class="text-center" style="min-width: 110px;">LEARNING HOURS</th>
+                        <th class="text-center" style="min-width: 120px;">% PROGRESS</th>
+                        <th class="text-center" style="min-width: 110px;">PROGRESS STATUS</th>
+                        <th style="min-width: 170px;">DATE TIME</th>
+                        <th class="text-center" style="min-width: 110px;">RECORD MONTH</th>
+                        <th class="text-center" style="min-width: 110px;">REQUIREMENT</th>
+                        <th class="text-center" style="min-width: 95px;">ATTENDANCE</th>
+                        <th class="text-center" style="min-width: 130px;">SCORE (L1) - COURSE</th>
+                        <th class="text-center" style="min-width: 105px;">SCORE (L2)</th>
+                        <th class="text-center" style="min-width: 105px;">SCORE (L3)</th>
+                        <th style="min-width: 140px;">PERSON IN CHARGE (PIC)</th>
+                        <th class="text-center" style="min-width: 140px;">{{ $isAllRecord ? 'TOTAL ENGAGEMENT TIME (LH)' : 'TOTAL ENGAGEMENT TIME' }}</th>
+                        <th class="text-center" style="min-width: 80px; width: 80px;">ACTION</th>
                     </tr>
                 </thead>
                 <tbody></tbody>

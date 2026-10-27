@@ -627,6 +627,8 @@ class LearningDatatableService
         return $dataTable
             ->addIndexColumn()
             ->setRowId(fn ($row) => $row->source_type . ':' . $row->source_id)
+            ->addColumn('source_badge', fn ($row) => '<span class="badge bg-blue-lt text-blue">KP OWL</span>')
+            ->addColumn('source', fn ($row) => '<span class="badge bg-blue-lt text-blue">KP OWL</span>')
             ->addColumn('status_badge', fn ($row) => $this->statusBadge($row))
             ->addColumn('id_emp', fn ($row) => $this->idEmpColumn($row))
             ->addColumn('employee_id', fn ($row) => $this->idEmpColumn($row))
@@ -696,19 +698,38 @@ class LearningDatatableService
             ->addColumn('certificate', fn () => '<span class="text-muted small">-</span>')
             ->addColumn('progress_bar', fn ($row) => $this->progressBar($row))
             ->addColumn('progress_percent', fn ($row) => $this->progressBar($row))
-            ->addColumn('progress_status', fn ($row) => $this->statusBadge($row))
+            ->addColumn('progress_status', fn ($row) => $this->progressStatusBadge($row))
             ->addColumn('action', fn ($row) => $this->actionColumn($row))
             ->orderColumn('status_badge', 'unified.status $1')
             ->orderColumn('id_emp', 'u.id_emp $1')
+            ->orderColumn('employee_id', 'u.id_emp $1')
             ->orderColumn('employee', 'u.name $1')
+            ->orderColumn('employee_name', 'u.name $1')
+            ->orderColumn('team', 'u.team $1')
+            ->orderColumn('department', 'u.department $1')
+            ->orderColumn('company', 'u.company_name $1')
             ->orderColumn('learning_title', 'c.title $1')
+            ->orderColumn('course_title', 'c.title $1')
             ->orderColumn('type_badge', 'c.type $1')
+            ->orderColumn('type', 'c.type $1')
             ->orderColumn('classification_name', 'cl.classification_name $1')
+            ->orderColumn('main_classification', 'cl.classification_name $1')
             ->orderColumn('category_badge', 'unified.category_source $1')
+            ->orderColumn('category', 'unified.category_source $1')
             ->orderColumn('duration', 'c.duration $1')
+            ->orderColumn('course_duration', 'c.duration $1')
+            ->orderColumn('learning_hours', 'unified.learning_hours $1')
+            ->orderColumn('total_engagement_time', 'unified.learning_hours $1')
             ->orderColumn('learning_date', 'unified.created_at $1')
+            ->orderColumn('date_time_merged', 'unified.created_at $1')
+            ->orderColumn('record_month', 'unified.created_at $1')
+            ->orderColumn('requirement', 'unified.status $1')
             ->orderColumn('progress_bar', 'unified.progress $1')
+            ->orderColumn('progress_percent', 'unified.progress $1')
+            ->orderColumn('progress_status', 'unified.finish $1')
             ->rawColumns([
+                'source_badge',
+                'source',
                 'status_badge',
                 'id_emp',
                 'employee_id',
@@ -745,6 +766,17 @@ class LearningDatatableService
                 'action',
             ])
             ->make(true);
+    }
+
+    private function progressStatusBadge($row): string
+    {
+        if ((int) ($row->finish ?? 0) === 1) {
+            return '<span class="badge bg-success-lt text-success">Finished</span>';
+        }
+        if ((float) ($row->progress ?? 0) > 0) {
+            return '<span class="badge bg-warning-lt text-warning">Ongoing</span>';
+        }
+        return '<span class="badge bg-secondary-lt text-secondary">Not Started</span>';
     }
 
     private function typeBadge($row): string
@@ -864,6 +896,7 @@ class LearningDatatableService
     private function actionColumn($row): string
     {
         $id = $row->source_id ?? '';
+        $sourceType = $row->source_type ?? 'content';
         $editUrl = route('manage.record.edit', $id);
 
         return '<div class="dropdown">
@@ -872,7 +905,7 @@ class LearningDatatableService
             </button>
             <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                 <li>
-                    <a class="dropdown-item d-flex align-items-center gap-2" href="#" data-bs-toggle="modal" data-bs-target="#moreInformationModal" data-record-id="' . e($id) . '" data-record-source="online">
+                    <a class="dropdown-item d-flex align-items-center gap-2 btn-view-learning-detail" href="javascript:void(0);" data-source-type="' . e($sourceType) . '" data-source-id="' . e($id) . '">
                         <i class="ti ti-eye text-primary"></i> More Information
                     </a>
                 </li>
