@@ -187,13 +187,21 @@
                                 <span class="badge bg-danger ms-1">{{ $trashCount }}</span>
                             @endif
                         </a>
-                        <button type="button"
-                                class="btn btn-primary rounded-3 px-3 d-inline-flex align-items-center gap-1.5"
-                                data-bs-toggle="modal"
-                                data-bs-target="#chooseContainerModal">
-                            <i class="ti ti-plus fs-2"></i>
-                            <span>Create New Task</span>
-                        </button>
+                        @if ($scope === 'non_kp')
+                            <a href="{{ route('manage.task.create', ['scope' => 'non_kp', 'parent_type' => 'offline_training']) }}"
+                               class="btn btn-primary rounded-3 px-3 d-inline-flex align-items-center gap-1.5">
+                                <i class="ti ti-plus fs-2"></i>
+                                <span>Create New Task</span>
+                            </a>
+                        @else
+                            <button type="button"
+                                    class="btn btn-primary rounded-3 px-3 d-inline-flex align-items-center gap-1.5"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#chooseContainerModal">
+                                <i class="ti ti-plus fs-2"></i>
+                                <span>Create New Task</span>
+                            </button>
+                        @endif
                     </div>
                 </div>
 
