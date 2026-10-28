@@ -583,11 +583,7 @@
                     </div>
                 </div>
 
-                {{-- Alert error --}}
-                <div id="modalErrorAlert" class="alert alert-danger mt-3 mb-0 rounded-3 d-flex align-items-center gap-2" style="display: none;">
-                    <i class="ti ti-alert-circle fs-2 flex-shrink-0"></i>
-                    <span id="modalErrorMessage"></span>
-                </div>
+
             </div>
 
             <div class="modal-footer border-top py-3 px-4 bg-light-subtle rounded-bottom-4 d-flex justify-content-between">
@@ -654,21 +650,27 @@ document.addEventListener('DOMContentLoaded', function () {
     var othersModeBtns = document.querySelectorAll('.others-mode-btn');
     var btnSubmit = document.getElementById('btnSubmitContainerModal');
     var btnSubmitText = document.getElementById('btnSubmitText');
-    var errorAlert = document.getElementById('modalErrorAlert');
-    var errorMessage = document.getElementById('modalErrorMessage');
-
     var currentOthersMode = 'new';
     var loadedCache = {};
 
-    function showError(msg) {
-        if (!errorAlert || !errorMessage) return;
-        errorMessage.textContent = msg;
-        errorAlert.style.display = 'flex';
+    function markInvalid(element) {
+        if (!element) return;
+        element.classList.add('is-invalid');
+        element.focus();
+        var clear = function () {
+            element.classList.remove('is-invalid');
+            element.removeEventListener('input', clear);
+            element.removeEventListener('change', clear);
+        };
+        element.addEventListener('input', clear);
+        element.addEventListener('change', clear);
     }
 
-    function hideError() {
-        if (!errorAlert) return;
-        errorAlert.style.display = 'none';
+    function clearAllInvalid() {
+        ['modal_playlist_id', 'modal_content_id', 'modal_offline_id', 'modal_others_existing_id', 'modal_others_title'].forEach(function (id) {
+            var el = document.getElementById(id);
+            if (el) el.classList.remove('is-invalid');
+        });
     }
 
     function updateActiveCards() {
@@ -759,13 +761,13 @@ document.addEventListener('DOMContentLoaded', function () {
     othersModeBtns.forEach(function (btn) {
         btn.addEventListener('click', function (e) {
             e.stopPropagation();
-            hideError();
+            clearAllInvalid();
             setOthersMode(btn.getAttribute('data-mode'));
         });
     });
 
     function onTypeChange() {
-        hideError();
+        clearAllInvalid();
         updateActiveCards();
 
         var checkedRadio = document.querySelector('input[name="modal_parent_type"]:checked');
@@ -798,51 +800,52 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     modalEl.addEventListener('show.bs.modal', function () {
-        hideError();
+        clearAllInvalid();
         onTypeChange();
     });
 
     if (btnSubmit) {
         btnSubmit.addEventListener('click', function () {
-            hideError();
+            clearAllInvalid();
             var checkedRadio = document.querySelector('input[name="modal_parent_type"]:checked');
             var type = checkedRadio ? checkedRadio.value : 'playlist';
 
             if (type === 'playlist') {
-                var pId = document.getElementById('modal_playlist_id').value;
-                if (!pId) {
-                    showError('Please select a Course / Playlist first.');
+                var pSelect = document.getElementById('modal_playlist_id');
+                if (!pSelect || !pSelect.value) {
+                    markInvalid(pSelect);
                     return;
                 }
-                window.location.href = "{{ url('manage/task/parent/playlist') }}/" + pId;
+                window.location.href = "{{ url('manage/task/parent/playlist') }}/" + pSelect.value;
             } else if (type === 'content') {
-                var cId = document.getElementById('modal_content_id').value;
-                if (!cId) {
-                    showError('Please select a Content / Material first.');
+                var cSelect = document.getElementById('modal_content_id');
+                if (!cSelect || !cSelect.value) {
+                    markInvalid(cSelect);
                     return;
                 }
-                window.location.href = "{{ url('manage/task/parent/content') }}/" + cId;
+                window.location.href = "{{ url('manage/task/parent/content') }}/" + cSelect.value;
             } else if (type === 'offline_training') {
-                var oId = document.getElementById('modal_offline_id').value;
-                if (!oId) {
-                    showError('Please select an Offline Training session first.');
+                var oSelect = document.getElementById('modal_offline_id');
+                if (!oSelect || !oSelect.value) {
+                    markInvalid(oSelect);
                     return;
                 }
-                window.location.href = "{{ url('manage/task/parent/offline_training') }}/" + oId;
+                window.location.href = "{{ url('manage/task/parent/offline_training') }}/" + oSelect.value;
             } else if (type === 'standalone') {
                 if (currentOthersMode === 'existing') {
-                    var exId = document.getElementById('modal_others_existing_id').value;
-                    if (!exId) {
-                        showError('Please select an existing Others container first.');
+                    var exSelect = document.getElementById('modal_others_existing_id');
+                    if (!exSelect || !exSelect.value) {
+                        markInvalid(exSelect);
                         return;
                     }
-                    window.location.href = "{{ url('manage/task/parent/standalone') }}/" + exId;
+                    window.location.href = "{{ url('manage/task/parent/standalone') }}/" + exSelect.value;
                     return;
                 }
 
-                var title = document.getElementById('modal_others_title').value.trim();
+                var titleInput = document.getElementById('modal_others_title');
+                var title = titleInput ? titleInput.value.trim() : '';
                 if (!title) {
-                    showError('Please enter a container / activity title.');
+                    markInvalid(titleInput);
                     return;
                 }
 
