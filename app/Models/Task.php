@@ -250,6 +250,9 @@ class Task extends Model
         if ($submission && ($submission->status === 'rejected' || $submission->resubmit_requested)) {
             return 'rejected';
         }
+        if ($submission && $submission->status === 'draft') {
+            return 'in_progress';
+        }
         if ($submission) {
             return 'submitted'; // menunggu koreksi admin (pending review)
         }

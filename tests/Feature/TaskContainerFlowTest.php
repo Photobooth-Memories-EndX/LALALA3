@@ -127,5 +127,56 @@ class TaskContainerFlowTest extends TestCase
         $this->assertEquals('standalone', $task->parent_type);
         $this->assertEquals($group->title, $task->parentName());
     }
+
+    public function test_save_as_draft_preserves_task_content_and_redirects_to_edit(): void
+    {
+        $group = TaskGroup::create([
+            'title'      => 'Activity Container ' . uniqid(),
+            'created_by' => $this->admin->id,
+        ]);
+
+        $taskTitle = 'Draft Action Plan ' . uniqid();
+        $response = $this->actingAs($this->admin)->post(route('manage.task.store'), [
+            'parent_type' => 'standalone',
+            'parent_id'   => $group->id,
+            'title'       => $taskTitle,
+            'description' => 'Detailed draft instructions here',
+            'type'        => 'action_plan',
+            'action'      => 'draft',
+            'fields'      => [
+                [
+                    'label'      => 'Evidence attachment',
+                    'type'       => 'file',
+                    'required'   => 1,
+                    'file_types' => 'document',
+                    'max_files'  => 1,
+                    'max_size_mb'=> 5,
+                ],
+            ],
+        ]);
+
+        $task = Task::where('title', $taskTitle)->first();
+        $this->assertNotNull($task);
+        $this->assertEquals('draft', $task->status);
+
+        // Redirects to edit page with data preserved, NOT to a blank create page
+        $response->assertRedirect(route('manage.task.edit', [
+            'task'        => $task->id,
+            'parent_type' => 'standalone',
+            'parent_id'   => $group->id,
+        ]));
+
+        $editPage = $this->actingAs($this->admin)->get(route('manage.task.edit', [
+            'task'        => $task->id,
+            'parent_type' => 'standalone',
+            'parent_id'   => $group->id,
+        ]));
+
+        $editPage->assertStatus(200);
+        $editPage->assertSee($taskTitle);
+        $editPage->assertSee('Evidence attachment');
+        $editPage->assertSee('Save as Draft');
+        $editPage->assertSee('Publish Task');
+    }
 }
 

@@ -680,18 +680,18 @@
     {{-- ======================================================== --}}
     <div class="card border-0 shadow-sm rounded-4 mb-4 p-3 bg-white">
         <div class="d-flex align-items-center justify-content-end flex-wrap gap-2">
-            <a href="{{ route('manage.task.index') }}" class="btn btn-outline-secondary rounded-3 px-3">Cancel</a>
+            <a href="{{ !empty($lockedParent) ? route('manage.task.parent', ['parentType' => $lockedParent['type'], 'parentId' => $lockedParent['id']]) : (isset($task) && !empty($task->parentRouteParams()) ? route('manage.task.parent', $task->parentRouteParams()) : route('manage.task.index')) }}" class="btn btn-outline-secondary rounded-3 px-3">Cancel</a>
 
             <button type="button" class="btn btn-outline-dark rounded-3 px-3" id="btnPreviewTask">
                 <i class="ti ti-eye me-1"></i> Preview
             </button>
 
-            @if (isset($task))
+            @if (isset($task) && $task->status !== 'draft')
                 <button type="submit" class="btn btn-primary rounded-3 px-4">
                     <i class="ti ti-device-floppy me-1"></i> Save Changes
                 </button>
             @else
-                <button type="submit" name="action" value="draft" class="btn btn-outline-secondary rounded-3 px-3" title="Save as draft and stay on this page to create another task">
+                <button type="submit" name="action" value="draft" class="btn btn-outline-secondary rounded-3 px-3" title="Save as draft and keep editing">
                     <i class="ti ti-device-floppy me-1"></i> Save as Draft
                 </button>
                 <button type="submit" name="action" value="draft_exit" class="btn btn-warning text-dark fw-semibold rounded-3 px-3 shadow-sm" title="Save as draft and return to task list">

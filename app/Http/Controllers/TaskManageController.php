@@ -372,9 +372,9 @@ class TaskManageController extends Controller
         $task = Task::create($taskData);
         $this->syncFields($task, $task->needsFields() ? ($validated['fields'] ?? []) : []);
 
-        // 'draft': save task and remain on create page
+        // 'draft': save task and remain on edit page so user does not lose their inputs
         if ($action === 'draft') {
-            $redirectParams = [];
+            $redirectParams = ['task' => $task->id];
             if (!empty($validated['parent_type'])) {
                 $redirectParams['parent_type'] = $validated['parent_type'];
                 if (!empty($validated['parent_id'])) {
@@ -386,8 +386,8 @@ class TaskManageController extends Controller
             }
 
             return redirect()
-                ->route('manage.task.create', $redirectParams)
-                ->with('success', 'Task "' . $task->title . '" saved as draft. You can continue creating another task.');
+                ->route('manage.task.edit', $redirectParams)
+                ->with('success', 'Task "' . $task->title . '" saved as draft.');
         }
 
         // 'draft_exit' or 'publish': redirect to parent task list
@@ -398,7 +398,7 @@ class TaskManageController extends Controller
                 : 'Task saved as draft.');
     }
 
-    public function edit(Task $task)
+    public function edit(Request $request, Task $task)
     {
         $task->load('fields');
         $trainingPlans = TrainingPlan::orderBy('title')->get();
@@ -409,7 +409,7 @@ class TaskManageController extends Controller
                 'id'       => $f->id,
                 'label'    => $f->label,
                 'type'     => $f->type,
-                'required' => $f->required,
+                'required' => (bool) $f->required,
                 'options'  => $f->options ?? [],
                 'correct'  => max(0, (int) array_search($f->correct_answer, $f->options ?? [])),
                 'file_types'  => $f->fileTypeGroups()[0] ?? '',
@@ -419,8 +419,17 @@ class TaskManageController extends Controller
             ])->all();
         }
 
-        // Edit keeps the placement picker (admin may move the task).
-        $lockedParent = null;
+        // Lock parent container info so Section 1 placement is hidden consistently
+        $lockedParent = $this->lockedParent($request);
+        if (! $lockedParent && $task->parent_type) {
+            $lockedParent = [
+                'type'  => $task->parent_type,
+                'id'    => (int) ($task->parentId() ?? 0),
+                'label' => Task::PARENT_TYPES[$task->parent_type] ?? 'Course',
+                'name'  => $task->parentName(),
+            ];
+        }
+
         $selType = old('parent_type', $task->parent_type);
         $selId   = old('parent_id', $task->parentId());
         $selectedParentName = ($selType && $selId)
@@ -457,7 +466,13 @@ class TaskManageController extends Controller
             $validated['survey_id'] = null;
         }
 
-        $taskData = collect($validated)->except(['fields', 'parent_type', 'parent_id'])->all();
+        $action = $request->input('action');
+        $taskData = collect($validated)->except(['action', 'fields', 'parent_type', 'parent_id'])->all();
+        if ($action === 'publish') {
+            $taskData['status'] = 'published';
+        } elseif ($action === 'draft' || $action === 'draft_exit') {
+            $taskData['status'] = 'draft';
+        }
         $this->applyPlacement($taskData, $validated['parent_type'], $validated['parent_id'] ?? null);
 
         $task->update($taskData);
@@ -470,9 +485,27 @@ class TaskManageController extends Controller
 
         $this->syncFields($task, $task->needsFields() ? ($validated['fields'] ?? []) : []);
 
+        // 'draft': remain on edit page so inputs stay intact
+        if ($action === 'draft') {
+            $redirectParams = ['task' => $task->id];
+            if (!empty($validated['parent_type'])) {
+                $redirectParams['parent_type'] = $validated['parent_type'];
+                if (!empty($validated['parent_id'])) {
+                    $redirectParams['parent_id'] = $validated['parent_id'];
+                }
+            }
+            if ($request->query('scope')) {
+                $redirectParams['scope'] = $request->query('scope');
+            }
+
+            return redirect()
+                ->route('manage.task.edit', $redirectParams)
+                ->with('success', 'Task "' . $task->title . '" draft saved.');
+        }
+
         return redirect()
             ->route('manage.task.parent', $task->parentRouteParams())
-            ->with('success', 'Task updated successfully.');
+            ->with('success', $task->status === 'published' ? 'Task published successfully.' : 'Task updated successfully.');
     }
 
     public function destroy(Task $task)
@@ -811,8 +844,8 @@ class TaskManageController extends Controller
             'attachment'       => ['nullable', 'file', 'max:5120'], // 5 MB
         ];
 
-        if ($request->route()?->getActionMethod() === 'store') {
-            $rules['action'] = ['required', 'in:draft,draft_exit,publish'];
+        if (in_array($request->route()?->getActionMethod(), ['store', 'update'], true)) {
+            $rules['action'] = ['nullable', 'in:draft,draft_exit,publish'];
         }
 
         if ($type === 'course_assignment') {
