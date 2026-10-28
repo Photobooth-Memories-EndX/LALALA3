@@ -101,35 +101,45 @@
             max-width: 740px;
         }
         .field-card {
-            border: none !important;
-            border-left: none !important;
-            background: transparent !important;
-            box-shadow: none !important;
-            padding: 0 !important;
-            margin-bottom: 2rem !important;
-            max-width: 820px;
+            border: 1px solid #dce2eb !important;
+            border-radius: 16px !important;
+            background: #ffffff !important;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+            padding: 1.5rem !important;
+            margin-bottom: 1.25rem !important;
+            max-width: 100% !important;
             transition: all 0.2s ease;
         }
-        .field-card:not(:last-child) {
-            border-bottom: 1px solid #f1f5f9 !important;
-            padding-bottom: 1.75rem !important;
+        .field-card:hover {
+            border-color: #cbd5e1 !important;
         }
-        .field-card:hover,
         .field-card:focus-within {
-            border: none !important;
-            border-left: none !important;
-            box-shadow: none !important;
-            background: transparent !important;
+            border-color: #94a3b8 !important;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
         }
         [data-bs-theme="dark"] .field-card,
         body.dark-mode .field-card,
         body.theme-dark .field-card {
-            background: transparent !important;
-            border: none !important;
-            box-shadow: none !important;
+            background: #1e293b !important;
+            border-color: rgba(255, 255, 255, 0.1) !important;
         }
-        [data-bs-theme="dark"] .field-card:not(:last-child) {
-            border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+        [data-bs-theme="dark"] .field-card .fileSettings,
+        [data-bs-theme="dark"] .field-card .optionsEditor,
+        [data-bs-theme="dark"] .field-card .previewScale,
+        [data-bs-theme="dark"] .field-card .previewRating,
+        [data-bs-theme="dark"] .field-card .previewShortAnswer,
+        [data-bs-theme="dark"] .field-card .previewParagraph {
+            background-color: #0f172a !important;
+            border-color: rgba(255, 255, 255, 0.08) !important;
+        }
+        .field-card .form-check-input:checked {
+            background-color: #0c4b81 !important;
+            border-color: #0c4b81 !important;
+        }
+        #btnAddField:hover {
+            background-color: #0c4b81 !important;
+            color: #ffffff !important;
+            border-color: #0c4b81 !important;
         }
 
         /* Google Forms style for Essay question in Section 4 */
@@ -610,13 +620,13 @@
     <div id="builderSection" class="card form-section-card" data-section="{{ $isLocked ? '3' : '4' }}">
         <div class="card-header bg-white py-3 px-4 d-flex align-items-center justify-content-between gap-3">
             <div class="d-flex align-items-center gap-3">
-                <span class="section-badge-num"><i class="ti ti-list-check" id="builderBadgeIcon"></i></span>
+                <span class="section-badge-num"><i class="ti {{ $currentType === 'action_plan' ? 'ti-forms' : ($currentType === 'essay' ? 'ti-writing' : ($currentType === 'file_submission' ? 'ti-cloud-upload' : 'ti-list-check')) }}" id="builderBadgeIcon"></i></span>
                 <div>
-                    <h3 class="card-title fw-bold text-dark mb-0" id="builderTitle">{{ $isLocked ? '3. ' : '4. ' }}Questions & Submission Form Builder</h3>
-                    <div class="text-muted small" id="builderHint"></div>
+                    <h3 class="card-title fw-bold text-dark mb-0" id="builderTitle">{{ $isLocked ? '3. ' : '4. ' }}{{ $currentType === 'action_plan' ? 'Action Plan Form Builder' : ($currentType === 'essay' ? 'Essay Question' : ($currentType === 'file_submission' ? 'File Submission Requirements' : 'Questions & Submission Form Builder')) }}</h3>
+                    <div class="text-muted small" id="builderHint">{{ $currentType === 'action_plan' ? 'Design action plan questions and prompts for learners using customizable Google Form question types.' : ($currentType === 'essay' ? 'Specify the essay question or reflection prompt for learners to answer.' : ($currentType === 'file_submission' ? 'Specify file submission requirements and guidelines for learners.' : '')) }}</div>
                 </div>
             </div>
-            <span class="badge bg-primary text-white fw-semibold px-2.5 py-1 rounded-pill section-active-indicator align-items-center gap-1 shadow-sm">
+            <span class="badge text-white fw-semibold px-3 py-1.5 rounded-pill section-active-indicator align-items-center gap-1.5 shadow-sm" style="background-color: #0c4b81;">
                 <i class="ti ti-pencil"></i> Active Section
             </span>
         </div>
@@ -624,8 +634,8 @@
             <div id="fieldsWrap"></div>
 
             <div id="addQuestionWrap" class="mt-3" style="display:none;">
-                <button type="button" class="btn btn-outline-primary rounded-3 px-3 d-inline-flex align-items-center gap-2" id="btnAddField">
-                    <i class="ti ti-plus"></i> Add Question
+                <button type="button" class="btn btn-outline-primary rounded-3 px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2" id="btnAddField" style="border-color: #0c4b81; color: #0c4b81;">
+                    <i class="ti ti-plus fs-3"></i> Add Question
                 </button>
             </div>
 
@@ -867,9 +877,9 @@
             var allowed = allowedTypes();
             if (allowed.length === 1) {
                 return '<input type="hidden" name="fields[' + i + '][type]" value="' + allowed[0] + '">' +
-                       '<span class="badge bg-blue-lt py-1.5 px-2.5 rounded-2">' + esc(FIELD_TYPES[allowed[0]]) + '</span>';
+                       '<span class="badge bg-primary-lt py-2 px-3 rounded-3 fw-semibold">' + esc(FIELD_TYPES[allowed[0]]) + '</span>';
             }
-            return '<select class="form-select field-type-select rounded-2" name="fields[' + i + '][type]">' +
+            return '<select class="form-select field-type-select rounded-3 border" style="font-size: 0.95rem; padding: 0.65rem 1rem; border-color: #dce2eb;" name="fields[' + i + '][type]">' +
                    typeOptions(selType) + '</select>';
         }
 
@@ -891,9 +901,9 @@
 
             row.innerHTML =
                 prefixHtml +
-                '<input type="text" class="form-control gform-opt-input flex-grow-1" name="fields[' + i + '][options][]" ' +
+                '<input type="text" class="form-control rounded-3 border bg-white flex-grow-1" style="font-size: 0.9rem; border-color: #dce2eb;" name="fields[' + i + '][options][]" ' +
                     'placeholder="Option ' + (idx + 1) + '" value="' + esc(value || '') + '">' +
-                '<button type="button" class="btn btn-sm btn-link text-muted p-1 btnRemoveOption" title="Remove option">' +
+                '<button type="button" class="btn btn-sm btn-ghost-danger p-1 btnRemoveOption" title="Remove option">' +
                     '<i class="ti ti-x fs-3"></i>' +
                 '</button>';
             listEl.appendChild(row);
@@ -969,32 +979,32 @@
         }
 
         function fileSettingsHTML(i, data) {
-            return '<div class="fileSettings mt-3 p-3 bg-light rounded-3" style="display:none">' +
+            return '<div class="fileSettings mt-3 p-3 rounded-3" style="background-color: #f8fafc; border: 1px solid #e2e8f0; display:none">' +
                 '<div class="row g-3">' +
-                    '<div class="col-12 col-md-4">' +
-                        '<label class="form-label small fw-semibold text-dark mb-1">Allowed file types</label>' +
-                        '<select class="form-select form-select-sm" name="fields[' + i + '][file_types]">' +
+                    '<div class="col-12 col-md-5">' +
+                        '<label class="form-label small fw-bold text-dark mb-1">Allowed file types</label>' +
+                        '<select class="form-select rounded-3 border bg-white" style="font-size: 0.9rem;" name="fields[' + i + '][file_types]">' +
                             fileTypeSelectHTML(i, data.file_types || '') +
                         '</select>' +
                     '</div>' +
-                    '<div class="col-6 col-md-4">' +
-                        '<label class="form-label small fw-semibold text-dark mb-1">Max number of files</label>' +
-                        '<select class="form-select form-select-sm" name="fields[' + i + '][max_files]">' +
+                    '<div class="col-6 col-md-3">' +
+                        '<label class="form-label small fw-bold text-dark mb-1">Max number of files</label>' +
+                        '<select class="form-select rounded-3 border bg-white" style="font-size: 0.9rem;" name="fields[' + i + '][max_files]">' +
                             selectOptionsHTML(MAX_FILES_OPTIONS, data.max_files || 1, '') +
                         '</select>' +
                     '</div>' +
                     '<div class="col-6 col-md-4">' +
-                        '<label class="form-label small fw-semibold text-dark mb-1">Max file size</label>' +
-                        '<select class="form-select form-select-sm" name="fields[' + i + '][max_size_mb]">' +
+                        '<label class="form-label small fw-bold text-dark mb-1">Max file size</label>' +
+                        '<select class="form-select rounded-3 border bg-white" style="font-size: 0.9rem;" name="fields[' + i + '][max_size_mb]">' +
                             selectOptionsHTML(MAX_SIZE_OPTIONS, data.max_size_mb || DEFAULT_MAX_SIZE_MB, ' MB') +
                         '</select>' +
                     '</div>' +
                 '</div>' +
-                '<div class="mt-2 pt-2 border-top">' +
-                    '<label class="form-check mb-0">' +
+                '<div class="mt-3">' +
+                    '<label class="form-check mb-0 d-inline-flex align-items-center gap-2 cursor-pointer">' +
                         '<input type="checkbox" class="form-check-input" name="fields[' + i + '][allow_link]" value="1"' +
                             (data.allow_link ? ' checked' : '') + '>' +
-                        '<span class="form-check-label small text-muted">Allow Google Drive / cloud link as an alternative to file upload</span>' +
+                        '<span class="form-check-label text-muted" style="font-size: 0.875rem;">Allow Google Drive / cloud link as an alternative to file upload</span>' +
                     '</label>' +
                 '</div>' +
             '</div>';
@@ -1011,58 +1021,84 @@
             var card = document.createElement('div');
             card.dataset.index = i;
             card.dataset.ftype = selType;
+            card.className = 'field-card';
 
             if (isEssay) {
-                card.className = 'field-card field-card-clean form-field-xl';
                 card.innerHTML =
                     '<input type="hidden" name="fields[' + i + '][id]" value="' + esc(data.id || '') + '">' +
                     '<input type="hidden" name="fields[' + i + '][type]" value="textarea">' +
                     '<input type="hidden" name="fields[' + i + '][required]" value="1">' +
                     '<div class="d-none typeCol"><input type="hidden" name="fields[' + i + '][type]" value="textarea"></div>' +
-                    '<div class="gform-essay-block">' +
-                        '<input type="text" class="form-control gform-question-input" id="field_label_' + i + '" name="fields[' + i + '][label]" ' +
-                            'placeholder="Question" value="' + esc(data.label || '') + '" maxlength="255" required>' +
-                        '<div class="gform-answer-preview mt-4">' +
-                            '<div class="gform-answer-text">Long-answer text</div>' +
-                            '<div class="gform-answer-line"></div>' +
+                    '<div class="d-flex align-items-center justify-content-between mb-3">' +
+                        '<div class="questionNumberBadge">' +
+                            '<span class="badge rounded-pill fw-semibold" style="background-color: #f0f7ff; color: #0c4b81; border: 1px solid #bfdbfe; padding: 0.35rem 1rem; font-size: 0.875rem;">' +
+                                'Essay Question' +
+                            '</span>' +
                         '</div>' +
+                        '<div>' +
+                            '<span class="badge bg-secondary-lt text-secondary px-2.5 py-1 rounded-pill fw-medium">Required</span>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="mb-3">' +
+                        '<input type="text" class="form-control rounded-3 border field-label-input" style="font-size: 0.95rem; padding: 0.65rem 1rem; border-color: #dce2eb;" id="field_label_' + i + '" name="fields[' + i + '][label]" ' +
+                            'placeholder="Enter essay question or prompt for learners..." value="' + esc(data.label || '') + '" maxlength="255" required>' +
+                    '</div>' +
+                    '<div class="p-3 rounded-3" style="background-color: #f8fafc; border: 1px solid #eef2f6;">' +
+                        '<div class="text-muted small mb-2"><i class="ti ti-notes me-1"></i> Learner answer area preview:</div>' +
+                        '<div class="form-control bg-white text-muted" style="min-height: 80px; font-style: italic; border-style: dashed;">Long-answer text</div>' +
                     '</div>' +
                     '<div class="optionsEditor mt-2" style="display:none"><div class="optionsList"></div><div class="optionsHint"></div></div>' +
                     '<div class="fileSettings mt-2" style="display:none"></div>';
             } else {
-                card.className = 'field-card form-field-xl';
                 card.innerHTML =
                     '<input type="hidden" name="fields[' + i + '][id]" value="' + esc(data.id || '') + '">' +
-                    '<div class="d-flex align-items-start gap-3 flex-wrap flex-md-nowrap mb-3">' +
+                    // Row 1: Question badge + Required toggle & Delete button
+                    '<div class="d-flex align-items-center justify-content-between mb-3">' +
+                        '<div class="questionNumberBadge">' +
+                            '<span class="badge rounded-pill fw-semibold" style="background-color: #f0f7ff; color: #0c4b81; border: 1px solid #bfdbfe; padding: 0.35rem 1rem; font-size: 0.875rem;">' +
+                                'Question #<span class="qNumText">1</span>' +
+                            '</span>' +
+                        '</div>' +
+                        '<div class="d-flex align-items-center gap-3">' +
+                            '<button type="button" class="btn btn-ghost-danger btn-sm p-1 rounded-2 btnRemoveField" title="Delete question" style="display:none;">' +
+                                '<i class="ti ti-trash fs-2"></i>' +
+                            '</button>' +
+                            '<label class="form-check form-switch mb-0 d-inline-flex align-items-center gap-2 cursor-pointer">' +
+                                '<input type="checkbox" class="form-check-input field-required-toggle" name="fields[' + i + '][required]" value="1"' +
+                                    (data.required !== false ? ' checked' : '') + ' style="cursor: pointer;">' +
+                                '<span class="form-check-label fw-semibold text-dark" style="font-size: 0.95rem;">Required</span>' +
+                            '</label>' +
+                        '</div>' +
+                    '</div>' +
+                    // Row 2: Question input + Type selector
+                    '<div class="d-flex align-items-center gap-3 flex-wrap flex-md-nowrap mb-3">' +
                         '<div class="flex-grow-1" style="min-width: 240px;">' +
-                            '<input type="text" class="form-control gform-question-input" name="fields[' + i + '][label]" ' +
+                            '<input type="text" class="form-control rounded-3 border field-label-input" style="font-size: 0.95rem; padding: 0.65rem 1rem; border-color: #dce2eb;" name="fields[' + i + '][label]" ' +
                                 'placeholder="Question" value="' + esc(data.label || '') + '" maxlength="255" required>' +
                         '</div>' +
-                        '<div class="typeCol" style="width: 220px; flex-shrink: 0;">' +
+                        '<div class="typeCol" style="width: 240px; flex-shrink: 0;">' +
                             typeColHTML(i, selType) +
                         '</div>' +
                     '</div>' +
-                    '<div class="previewShortAnswer mt-2" style="display:none;">' +
-                        '<div class="gform-answer-preview py-2">' +
-                            '<div class="gform-answer-text">Short-answer text</div>' +
-                            '<div class="gform-answer-line" style="max-width: 280px;"></div>' +
-                        '</div>' +
+                    // Row 3: Inner previews / settings
+                    '<div class="previewShortAnswer mt-3 p-3 rounded-3" style="background-color: #f8fafc; border: 1px solid #eef2f6; display:none;">' +
+                        '<div class="text-muted small mb-2"><i class="ti ti-typography me-1"></i> Short-answer preview:</div>' +
+                        '<div class="form-control bg-white text-muted" style="max-width: 320px; font-style: italic; border-style: dashed;">Short-answer text</div>' +
                     '</div>' +
-                    '<div class="previewParagraph mt-2" style="display:none;">' +
-                        '<div class="gform-answer-preview py-2">' +
-                            '<div class="gform-answer-text">Long-answer text</div>' +
-                            '<div class="gform-answer-line" style="max-width: 440px;"></div>' +
-                        '</div>' +
+                    '<div class="previewParagraph mt-3 p-3 rounded-3" style="background-color: #f8fafc; border: 1px solid #eef2f6; display:none;">' +
+                        '<div class="text-muted small mb-2"><i class="ti ti-notes me-1"></i> Paragraph preview:</div>' +
+                        '<div class="form-control bg-white text-muted" style="max-width: 500px; min-height: 70px; font-style: italic; border-style: dashed;">Long-answer text</div>' +
                     '</div>' +
-                    '<div class="optionsEditor mt-3" style="display:none;">' +
+                    '<div class="optionsEditor mt-3 p-3 rounded-3" style="background-color: #f8fafc; border: 1px solid #eef2f6; display:none;">' +
+                        '<div class="text-muted small fw-semibold mb-2"><i class="ti ti-list me-1"></i> Configure answer choices:</div>' +
                         '<div class="optionsList d-flex flex-column gap-2 mb-2"></div>' +
-                        '<button type="button" class="btn btn-sm btn-link text-primary text-decoration-none p-0 btnAddOption d-inline-flex align-items-center gap-1 fw-medium">' +
+                        '<button type="button" class="btn btn-sm btn-link text-primary text-decoration-none p-0 btnAddOption d-inline-flex align-items-center gap-1 fw-semibold mt-1">' +
                             '<i class="ti ti-plus"></i> Add option' +
                         '</button>' +
                         '<div class="form-hint mt-2 optionsHint text-muted small" style="display:none;"></div>' +
                     '</div>' +
                     fileSettingsHTML(i, data) +
-                    '<div class="previewScale mt-3 p-3 bg-light rounded-3" style="display:none;">' +
+                    '<div class="previewScale mt-3 p-3 rounded-3" style="background-color: #f8fafc; border: 1px solid #eef2f6; display:none;">' +
                         '<div class="text-muted small mb-2"><i class="ti ti-arrows-left-right me-1"></i> Scale preview (Learners will select a rating from 1 to 5):</div>' +
                         '<div class="d-flex align-items-center gap-3 flex-wrap">' +
                             '<span class="text-muted small fw-medium">1 (Lowest)</span>' +
@@ -1076,7 +1112,7 @@
                             '<span class="text-muted small fw-medium">5 (Highest)</span>' +
                         '</div>' +
                     '</div>' +
-                    '<div class="previewRating mt-3 p-3 bg-light rounded-3" style="display:none;">' +
+                    '<div class="previewRating mt-3 p-3 rounded-3" style="background-color: #f8fafc; border: 1px solid #eef2f6; display:none;">' +
                         '<div class="text-muted small mb-2"><i class="ti ti-star me-1"></i> Star rating preview (Learners will select 1 to 5 stars):</div>' +
                         '<div class="d-flex align-items-center gap-1 text-warning fs-2">' +
                             '<i class="ti ti-star-filled"></i>' +
@@ -1085,22 +1121,6 @@
                             '<i class="ti ti-star-filled"></i>' +
                             '<i class="ti ti-star-filled"></i>' +
                             '<span class="text-muted small ms-2 fs-6">5-star rating scale</span>' +
-                        '</div>' +
-                    '</div>' +
-                    '<div class="pt-3 mt-3 d-flex align-items-center justify-content-between flex-wrap gap-2">' +
-                        '<div class="text-muted small fw-semibold questionNumberBadge">' +
-                            '<span class="badge bg-light text-secondary border px-2.5 py-1 rounded-2">Question #<span class="qNumText">1</span></span>' +
-                        '</div>' +
-                        '<div class="d-flex align-items-center gap-3">' +
-                            '<button type="button" class="btn btn-outline-danger btn-sm rounded-2 btnRemoveField px-2.5 py-1" title="Delete question">' +
-                                '<i class="ti ti-trash me-1"></i> Delete' +
-                            '</button>' +
-                            '<div class="vr" style="height: 20px;"></div>' +
-                            '<label class="form-check form-switch mb-0 d-inline-flex align-items-center gap-2">' +
-                                '<input type="checkbox" class="form-check-input field-required-toggle" name="fields[' + i + '][required]" value="1"' +
-                                    (data.required !== false ? ' checked' : '') + '>' +
-                                '<span class="form-check-label small text-muted">Required</span>' +
-                            '</label>' +
                         '</div>' +
                     '</div>';
             }
@@ -1532,7 +1552,7 @@
             } else if (t === 'action_plan') {
                 if (builderTitleEl) builderTitleEl.textContent = builderPrefix + 'Action Plan Form Builder';
                 if (builderHint) builderHint.textContent = BUILDER_HINTS.action_plan;
-                if (builderBadgeIcon) builderBadgeIcon.className = 'ti ti-clipboard-list';
+                if (builderBadgeIcon) builderBadgeIcon.className = 'ti ti-forms';
             } else if (isFileSubmission) {
                 if (builderTitleEl) builderTitleEl.textContent = builderPrefix + 'File Submission Requirements';
                 if (builderHint) builderHint.textContent = BUILDER_HINTS.file_submission;
