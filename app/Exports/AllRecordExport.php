@@ -105,7 +105,7 @@ class AllRecordExport implements Responsable
             'L3 Status',
             'Person in Charge (PIC)',
             'Certificate',
-            'Total Engagement Time',
+            'TOTAL ENGAGEMENT DURATION',
         ];
     }
 
@@ -158,7 +158,7 @@ class AllRecordExport implements Responsable
             'AR' => 14,  // L3 Status
             'AS' => 22,  // Person in Charge (PIC)
             'AT' => 14,  // Certificate
-            'AU' => 25,  // Total Engagement Time
+            'AU' => 25,  // TOTAL ENGAGEMENT DURATION
         ];
     }
 
@@ -354,6 +354,16 @@ class AllRecordExport implements Responsable
                     $recognizedFormatted = sprintf('%02d:%02d:%02d', $rHours, $rMins, $rSeconds);
                 }
 
+                // Total Engagement Duration formatted as HH:MM:SS
+                $engSecs = (int) ($row->afk_duration_seconds ?? 0);
+                if ($engSecs <= 0 && $row->source === 'offline') {
+                    $engSecs = (int) round(((float) ($row->training_hours ?? ($row->learning_hours ?? 0))) * 3600);
+                }
+                $eh = floor($engSecs / 3600);
+                $em = floor(($engSecs % 3600) / 60);
+                $es = $engSecs % 60;
+                $totalEngagementDuration = sprintf('%02d:%02d:%02d', $eh, $em, $es);
+
                 // Learning Hours: raw numeric float for SUM calculations
                 $lhNumeric = ($row->learning_hours !== null && $row->learning_hours !== '' && is_numeric($row->learning_hours))
                     ? (float) $row->learning_hours
@@ -471,7 +481,7 @@ class AllRecordExport implements Responsable
                     ['AR', 'str', $row->l3_verbal ?: '-', $textStyle],
                     ['AS', 'str', $row->pic ?: '-', $textStyle],
                     ['AT', 'str', $row->certificate ?: '-', $textStyle],
-                    ['AU', $lhNumeric !== null ? 'lh' : 'str', $lhNumeric !== null ? $lhNumeric : '-', $lhNumeric !== null ? $lhStyle : $textStyle], // Total Engagement Time
+                    ['AU', 'str', $totalEngagementDuration, $textStyle], // TOTAL ENGAGEMENT DURATION
                 ];
 
                 $buffer .= $this->buildXmlRow($r, $cells);

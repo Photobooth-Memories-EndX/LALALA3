@@ -172,18 +172,6 @@
                         <p class="text-muted small mb-0">Participant records for classification
                             <strong>{{ $classificationName }}</strong>.</p>
                     </div>
-
-                    <!-- Length Menu / Entries Selector -->
-                    <div class="d-flex align-items-center gap-2">
-                        <label for="all-table-entries-select" class="text-muted small mb-0">Show</label>
-                        <select id="all-table-entries-select" class="form-select form-select-sm" style="width: 80px;">
-                            <option value="10">10</option>
-                            <option value="25" selected>25</option>
-                            <option value="50">50</option>
-                            <option value="100">100</option>
-                        </select>
-                        <span class="text-muted small">entries</span>
-                    </div>
                 </div>
 
                 <div class="card-body p-0">
@@ -226,7 +214,7 @@
                                     <th style="min-width: 90px;">Score (L2)</th>
                                     <th style="min-width: 90px;">Score (L3)</th>
                                     <th style="min-width: 130px;">Person In Charge (PIC)</th>
-                                    <th style="min-width: 130px;">Total Engagement Time (LH)</th>
+                                    <th style="min-width: 140px;">TOTAL ENGAGEMENT DURATION</th>
                                     <th class="text-end" style="width: 80px;">ACTION</th>
                                 </tr>
                             </thead>
@@ -240,8 +228,16 @@
                 <!-- Custom Pagination Footer Container -->
                 <div class="card-footer bg-white border-0 py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2"
                     id="all-table-footer">
-                    <div class="text-muted small" id="all-table-info">
-                        Showing 0 to 0 of 0 entries
+                    <div class="d-flex align-items-center gap-2">
+                        <select id="all-table-entries-select" class="form-select form-select-sm w-auto rounded-3">
+                            <option value="10">10 Entries</option>
+                            <option value="25" selected>25 Entries</option>
+                            <option value="50">50 Entries</option>
+                            <option value="100">100 Entries</option>
+                        </select>
+                        <div class="text-muted small" id="all-table-info">
+                            Showing 0 to 0 of 0 entries
+                        </div>
                     </div>
                     <div id="all-table-pagination"></div>
                 </div>
@@ -600,11 +596,14 @@
         }
 
         #all-classification-learning-table thead th {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background-color: #f8fafc;
             font-size: 0.72rem;
             letter-spacing: 0.03em;
             font-weight: 700;
             color: #64748b;
-            background-color: #f8fafc;
             border-bottom: 2px solid #e2e8f0;
             padding: 10px 12px;
             white-space: nowrap;
@@ -675,7 +674,7 @@
         #all-classification-learning-table thead th:nth-child(2),
         #all-classification-learning-table thead th:nth-child(3),
         #all-classification-learning-table thead th:nth-child(4) {
-            z-index: 4;
+            z-index: 12;
             background-color: #f8fafc;
         }
 
@@ -762,7 +761,12 @@
         [data-bs-theme="dark"] #all-classification-learning-table thead th:nth-child(2),
         [data-bs-theme="dark"] #all-classification-learning-table thead th:nth-child(3),
         [data-bs-theme="dark"] #all-classification-learning-table thead th:nth-child(4) {
+            z-index: 12;
             background-color: #1e293b !important;
+        }
+
+        #all-classification-learning-table_wrapper > .bottom {
+            display: none !important;
         }
 
         [data-bs-theme="dark"] #all-classification-learning-table tbody tr:hover td:nth-child(1),
@@ -1318,7 +1322,7 @@
                     [10, 25, 50, 100]
                 ],
                 order: [],
-                dom: 't',
+                dom: '<"top">rt<"bottom d-flex justify-content-between align-items-center mt-3"l ip><"clear">',
                 ajax: {
                     url: datatableUrl,
                     type: 'GET',
@@ -1535,8 +1539,8 @@
                         defaultContent: '-'
                     },
                     {
-                        data: 'total_engagement_time',
-                        name: 'total_engagement_time',
+                        data: 'total_engagement_duration',
+                        name: 'total_engagement_duration',
                         orderable: true,
                         defaultContent: '-'
                     },

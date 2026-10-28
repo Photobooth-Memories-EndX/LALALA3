@@ -121,7 +121,7 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
             'L3 Status',
             'Person in Charge (PIC)',
             'Certificate',
-            'Total Engagement Time',
+            'TOTAL ENGAGEMENT DURATION',
         ];
     }
 
@@ -174,7 +174,7 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
             'AR' => 14,  // L3 Status
             'AS' => 22,  // Person in Charge (PIC)
             'AT' => 14,  // Certificate
-            'AU' => 25,  // Total Engagement Time
+            'AU' => 25,  // TOTAL ENGAGEMENT DURATION
         ];
     }
 
@@ -195,7 +195,7 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
             'AN' => '0.##',
             'AO' => '0',
             'AQ' => '0.##',
-            'AU' => '0.##" h"',
+            'AU' => NumberFormat::FORMAT_TEXT,
         ];
     }
 
@@ -242,6 +242,16 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
                 $rSeconds = $rSecs % 60;
                 $recognizedFormatted = sprintf('%02d:%02d:%02d', $rHours, $rMins, $rSeconds);
             }
+
+            // Total Engagement Duration formatted as HH:MM:SS
+            $engSecs = (int) ($row->afk_duration_seconds ?? 0);
+            if ($engSecs <= 0 && $row->source === 'offline') {
+                $engSecs = (int) round(((float) ($row->training_hours ?? ($row->learning_hours ?? 0))) * 3600);
+            }
+            $eh = floor($engSecs / 3600);
+            $em = floor(($engSecs % 3600) / 60);
+            $es = $engSecs % 60;
+            $totalEngagementDuration = sprintf('%02d:%02d:%02d', $eh, $em, $es);
 
             // Learning Hours (raw numeric float for SUM calculations)
             $lhNumeric = ($row->learning_hours !== null && $row->learning_hours !== '' && is_numeric($row->learning_hours))
@@ -354,7 +364,7 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
                 $row->l3_verbal ?: '-',
                 $row->pic ?: '-',
                 $row->certificate ?: '-',
-                $lhNumeric, // Total Engagement Time
+                $totalEngagementDuration, // TOTAL ENGAGEMENT DURATION
             ]);
         }
 

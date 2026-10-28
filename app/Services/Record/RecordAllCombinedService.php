@@ -424,6 +424,7 @@ class RecordAllCombinedService
                     DB::raw("CAST(NULL AS CHAR) as instructor"),
                     DB::raw("0 as duration_seconds"),
                     DB::raw("0 as recognized_duration_seconds"),
+                    DB::raw("0 as afk_duration_seconds"),
                     DB::raw("CAST(NULL AS DECIMAL(10,2)) as training_hours"),
                     DB::raw("CAST(NULL AS CHAR) as start_date"),
                     DB::raw("CAST(NULL AS CHAR) as finish_date"),
@@ -535,6 +536,7 @@ class RecordAllCombinedService
                 END as instructor"),
                 DB::raw("COALESCE(unified.duration_seconds, 0) as duration_seconds"),
                 DB::raw("CASE WHEN unified.source = 'offline' THEN 0 ELSE COALESCE(unified.recognized_duration_seconds, 0) END as recognized_duration_seconds"),
+                DB::raw("COALESCE(unified.afk_duration_seconds, 0) as afk_duration_seconds"),
                 DB::raw("CASE
                     WHEN unified.source = 'offline' THEN ot.learning_hours
                     WHEN unified.source_type = 'playlist' THEN tp.learning_hours
@@ -645,6 +647,7 @@ class RecordAllCombinedService
                             ELSE 0
                         END
                 END as recognized_duration_seconds"),
+                DB::raw("COALESCE(cu.afk_duration_seconds, 0) as afk_duration_seconds"),
             ]);
 
         $this->applyOnlineSubqueryFilters($q, $filters, 'cu');
@@ -731,6 +734,7 @@ class RecordAllCombinedService
                         ELSE 0
                     END
                 ) as recognized_duration_seconds"),
+                DB::raw("SUM(COALESCE(pcu.afk_duration_seconds, 0)) as afk_duration_seconds"),
             ])
             ->groupBy(['pcu.user_id', 'pcu.trainingplan_id']);
 
@@ -1330,6 +1334,7 @@ class RecordAllCombinedService
                 DB::raw("CASE WHEN otu.progress >= 100 THEN ot.finish_date ELSE NULL END as finish_date"),
                 DB::raw("COALESCE(ot.duration_seconds, 0) as duration_seconds"),
                 DB::raw("0 as recognized_duration_seconds"),
+                DB::raw("ROUND(COALESCE(otu.learning_hours, ot.learning_hours, 0) * 3600) as afk_duration_seconds"),
             ]);
 
         // Status filter
@@ -1997,8 +2002,27 @@ class RecordAllCombinedService
             ->addColumn('pic', function ($row) {
                 return !empty($row->pic) ? htmlspecialchars($row->pic) : '<span class="text-muted small">-</span>';
             })
+            ->addColumn('total_engagement_duration', function ($row) {
+                $afkSeconds = (int) ($row->afk_duration_seconds ?? 0);
+                if ($afkSeconds <= 0 && ($row->source ?? '') === 'offline') {
+                    $hours = (float) ($row->training_hours ?? ($row->learning_hours ?? 0));
+                    $afkSeconds = (int) round($hours * 3600);
+                }
+                $h = floor($afkSeconds / 3600);
+                $m = floor(($afkSeconds % 3600) / 60);
+                $s = $afkSeconds % 60;
+                return sprintf('%02d:%02d:%02d', $h, $m, $s);
+            })
             ->addColumn('total_engagement_time', function ($row) {
-                return '<span class="fw-semibold">' . number_format((float) ($row->learning_hours ?? 0), 1) . 'h</span>';
+                $afkSeconds = (int) ($row->afk_duration_seconds ?? 0);
+                if ($afkSeconds <= 0 && ($row->source ?? '') === 'offline') {
+                    $hours = (float) ($row->training_hours ?? ($row->learning_hours ?? 0));
+                    $afkSeconds = (int) round($hours * 3600);
+                }
+                $h = floor($afkSeconds / 3600);
+                $m = floor(($afkSeconds % 3600) / 60);
+                $s = $afkSeconds % 60;
+                return sprintf('%02d:%02d:%02d', $h, $m, $s);
             })
             ->addColumn('action', function ($row) {
                 $source = $row->source ?? 'online';
@@ -2056,6 +2080,7 @@ class RecordAllCombinedService
                 'score_l3',
                 'learning_hours',
                 'pic',
+                'total_engagement_duration',
                 'total_engagement_time',
                 'action',
             ])
@@ -2444,8 +2469,27 @@ class RecordAllCombinedService
             ->addColumn('pic', function ($row) {
                 return !empty($row->pic) ? htmlspecialchars($row->pic) : '<span class="text-muted small">-</span>';
             })
+            ->addColumn('total_engagement_duration', function ($row) {
+                $afkSeconds = (int) ($row->afk_duration_seconds ?? 0);
+                if ($afkSeconds <= 0 && ($row->source ?? '') === 'offline') {
+                    $hours = (float) ($row->training_hours ?? ($row->learning_hours ?? 0));
+                    $afkSeconds = (int) round($hours * 3600);
+                }
+                $h = floor($afkSeconds / 3600);
+                $m = floor(($afkSeconds % 3600) / 60);
+                $s = $afkSeconds % 60;
+                return sprintf('%02d:%02d:%02d', $h, $m, $s);
+            })
             ->addColumn('total_engagement_time', function ($row) {
-                return '<span class="fw-semibold">' . number_format((float) ($row->learning_hours ?? 0), 1) . 'h</span>';
+                $afkSeconds = (int) ($row->afk_duration_seconds ?? 0);
+                if ($afkSeconds <= 0 && ($row->source ?? '') === 'offline') {
+                    $hours = (float) ($row->training_hours ?? ($row->learning_hours ?? 0));
+                    $afkSeconds = (int) round($hours * 3600);
+                }
+                $h = floor($afkSeconds / 3600);
+                $m = floor(($afkSeconds % 3600) / 60);
+                $s = $afkSeconds % 60;
+                return sprintf('%02d:%02d:%02d', $h, $m, $s);
             })
             ->addColumn('action', function ($row) {
                 $source = $row->source ?? 'online';
@@ -2503,6 +2547,7 @@ class RecordAllCombinedService
                 'score_l3',
                 'learning_hours',
                 'pic',
+                'total_engagement_duration',
                 'total_engagement_time',
                 'action',
             ])
