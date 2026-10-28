@@ -1360,6 +1360,7 @@
                     url: "{{ route('content.user.progress.update') }}",
                     csrf: "{{ csrf_token() }}",
                     contentId: {{ (int) $content->id }},
+                    officialDuration: {{ (int) ($content->duration_in_seconds ?? 0) }},
                     maxActualWatchSeconds: {{ $content->max_actual_watch_seconds !== null ? (int) $content->max_actual_watch_seconds : 'null' }},
                     initialActualWatchSeconds: {{ (int) ($content_user->actual_watch_seconds ?? 0) }},
                     heartbeatIntervalMs: 10000,
@@ -1391,8 +1392,14 @@
                 }
 
                 player.on('loadedmetadata', function() {
-                    if (player.duration) {
-                        progressTracker.send({ duration_seconds: player.duration }, true);
+                    var officialDuration = {{ (int) ($content->duration_in_seconds ?? 0) }};
+                    var playerDuration = (player && player.duration && isFinite(player.duration)) ? Math.round(player.duration) : 0;
+                    var durationToSend = playerDuration;
+                    if (officialDuration > 5 && (playerDuration <= 5 || !playerDuration)) {
+                        durationToSend = officialDuration;
+                    }
+                    if (durationToSend > 0) {
+                        progressTracker.send({ duration_seconds: durationToSend }, true);
                     }
                 });
             });

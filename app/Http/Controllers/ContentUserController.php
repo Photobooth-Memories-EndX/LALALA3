@@ -712,7 +712,22 @@ class ContentUserController extends Controller
                 }
             }
         } else {
-            $duration    = (float) ($validated['duration_seconds'] ?? $contentUser->duration_seconds ?? 0);
+            $officialDuration = (int) ($content->duration_in_seconds ?? 0);
+            if ($officialDuration <= 0 && !empty($content->duration)) {
+                $officialDuration = \App\Support\DurationFormatter::toSeconds($content->duration) ?? 0;
+            }
+
+            $clientDuration = (float) ($validated['duration_seconds'] ?? 0);
+            if ($officialDuration > 0) {
+                if ($clientDuration <= 5 && $officialDuration > 5) {
+                    $duration = (float) $officialDuration;
+                } else {
+                    $duration = $clientDuration > 0 ? $clientDuration : (float) $officialDuration;
+                }
+            } else {
+                $duration = $clientDuration > 0 ? $clientDuration : (float) ($contentUser->duration_seconds ?? 0);
+            }
+
             $currentTime = $validated['current_time'] ?? null;
 
             if ($duration > 0) {
@@ -810,7 +825,7 @@ class ContentUserController extends Controller
             $record->setRelation('content', $content);
 
             if ($validated['type'] === 'video') {
-                $recordDuration = (float) ($validated['duration_seconds'] ?? $record->duration_seconds ?? 0);
+                $recordDuration = $duration;
                 if ($recordDuration > 0) {
                     $record->duration_seconds = (int) round($recordDuration);
                 }

@@ -27,6 +27,7 @@
         this.heartbeatIntervalMs = options.heartbeatIntervalMs || 10000;
         this.onUpdate = options.onUpdate || function () {};
 
+        this.officialDuration = (typeof options.officialDuration === 'number') ? options.officialDuration : null;
         this.maxActualWatchSeconds = (typeof options.maxActualWatchSeconds === 'number') ? options.maxActualWatchSeconds : null;
         this.accumulatedWatchSeconds = (typeof options.accumulatedWatchSeconds === 'number')
             ? options.accumulatedWatchSeconds
@@ -74,14 +75,18 @@
     };
 
     VideoWatchTimeTracker.prototype._getDuration = function () {
-        if (!this.player) return 0;
-        if (typeof this.player.duration === 'number') {
-            return this.player.duration;
+        var duration = 0;
+        if (this.player) {
+            if (typeof this.player.duration === 'number' && isFinite(this.player.duration)) {
+                duration = this.player.duration;
+            } else if (this.player.media && typeof this.player.media.duration === 'number' && isFinite(this.player.media.duration)) {
+                duration = this.player.media.duration;
+            }
         }
-        if (this.player.media && typeof this.player.media.duration === 'number') {
-            return this.player.media.duration;
+        if (this.officialDuration && this.officialDuration > 5 && (duration <= 5 || !duration)) {
+            return this.officialDuration;
         }
-        return 0;
+        return duration || (this.officialDuration || 0);
     };
 
     /**

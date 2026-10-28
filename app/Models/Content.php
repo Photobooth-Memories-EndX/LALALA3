@@ -42,6 +42,14 @@ class Content extends Model
     ];
 
     /**
+     * Official content duration converted to total seconds.
+     */
+    public function getDurationInSecondsAttribute(): int
+    {
+        return \App\Support\DurationFormatter::toSeconds($this->duration) ?? 0;
+    }
+
+    /**
      * Alias accessor for learning_hours (singular).
      */
     public function getLearningHourAttribute(): ?float
