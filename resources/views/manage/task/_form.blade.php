@@ -453,15 +453,15 @@
     </div>
 
     {{-- ======================================================== --}}
-    {{-- SECTION 3: TIMELINE & SUPPORTING MATERIALS               --}}
+    {{-- SECTION 2/3: PERIOD & SUPPORTING MATERIALS               --}}
     {{-- ======================================================== --}}
     <div class="card form-section-card" data-section="{{ $isLocked ? '2' : '3' }}">
         <div class="card-header bg-white py-3 px-4 d-flex align-items-center justify-content-between gap-3">
             <div class="d-flex align-items-center gap-3">
                 <span class="section-badge-num"><i class="ti ti-calendar-time"></i></span>
                 <div>
-                    <h3 class="card-title fw-bold text-dark mb-0" id="section3Title">{{ $isLocked ? '2. ' : '3. ' }}{{ $currentType === 'file_submission' ? 'Timeline & Supporting Files' : 'Timeline' }}</h3>
-                    <div class="text-muted small" id="section3Subtitle">{{ $currentType === 'file_submission' ? 'Set the submission deadline and attach assignment templates or guidance materials (optional).' : 'Set the submission deadline for learners (optional).' }}</div>
+                    <h3 class="card-title fw-bold text-dark mb-0" id="section3Title">{{ $isLocked ? '2. ' : '3. ' }}{{ $currentType === 'file_submission' ? 'Period & Supporting Files' : 'Period' }}</h3>
+                    <div class="text-muted small" id="section3Subtitle">{{ $currentType === 'file_submission' ? 'Set the submission period / deadline and attach assignment templates or guidance materials (optional).' : 'Set the submission period / deadline for learners (optional).' }}</div>
                 </div>
             </div>
             <span class="badge bg-primary text-white fw-semibold px-2.5 py-1 rounded-pill section-active-indicator align-items-center gap-1 shadow-sm">
@@ -1533,7 +1533,7 @@
 
             var isLockedParent = {{ !empty($lockedParent) ? 'true' : 'false' }};
             var builderPrefix = isLockedParent ? '3. ' : '4. ';
-            var timelinePrefix = isLockedParent ? '2. ' : '3. ';
+            var periodPrefix = isLockedParent ? '2. ' : '3. ';
 
             var builderTitleEl = document.getElementById('builderTitle');
             var builderBadgeIcon = document.getElementById('builderBadgeIcon');
@@ -1555,7 +1555,7 @@
                 if (builderBadgeIcon) builderBadgeIcon.className = 'ti ti-list-check';
             }
 
-            // Timeline & Supporting Files (Section 2 when locked, Section 3 when unlocked)
+            // Period & Supporting Files (Section 2 when locked, Section 3 when unlocked)
             var attachmentWrapper = document.getElementById('attachmentWrapper');
             var attachmentInput   = document.getElementById('attachment');
             var section3Title     = document.getElementById('section3Title');
@@ -1571,12 +1571,12 @@
                 }
             }
             if (section3Title) {
-                section3Title.textContent = timelinePrefix + (isFileSubmission ? 'Timeline & Supporting Files' : 'Timeline');
+                section3Title.textContent = periodPrefix + (isFileSubmission ? 'Period & Supporting Files' : 'Period');
             }
             if (section3Subtitle) {
                 section3Subtitle.textContent = isFileSubmission
-                    ? 'Set the submission deadline and attach assignment templates or guidance materials (optional).'
-                    : 'Set the submission deadline for learners (optional).';
+                    ? 'Set the submission period / deadline and attach assignment templates or guidance materials (optional).'
+                    : 'Set the submission period / deadline for learners (optional).';
             }
 
             ensureValidActiveSection();
