@@ -55,6 +55,14 @@
 
                         </div>
 
+                        <div class="text-muted small mt-1">
+
+                            <i class="ti ti-briefcase me-1"></i>
+                            {{ $profile->jobposition ?: '-' }}
+                            • Grade {{ $profile->jobgrade ?: '-' }}
+
+                        </div>
+
                         {{-- PROGRESS --}}
                         <div class="mt-4">
 

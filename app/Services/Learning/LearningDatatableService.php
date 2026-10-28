@@ -105,6 +105,9 @@ class LearningDatatableService
                 'cu.status',
                 'cu.finish',
                 'cu.progress',
+                'cu.current_time',
+                'cu.actual_watch_seconds',
+                'cu.afk_duration_seconds',
                 'cu.created_at',
                 'cu.updated_at',
                 'cu.completed_at',
@@ -125,6 +128,9 @@ class LearningDatatableService
                 $pcuStatusSelect,
                 'pcu.finish',
                 'pcu.progress',
+                'pcu.current_time',
+                'pcu.actual_watch_seconds',
+                'pcu.afk_duration_seconds',
                 'pcu.created_at',
                 'pcu.updated_at',
                 'pcu.completed_at',
@@ -520,6 +526,9 @@ class LearningDatatableService
                 'unified.status',
                 'unified.finish',
                 'unified.progress',
+                'unified.current_time',
+                'unified.actual_watch_seconds',
+                'unified.afk_duration_seconds',
                 'unified.created_at',
                 'unified.updated_at',
                 'unified.completed_at',
@@ -528,6 +537,10 @@ class LearningDatatableService
                 'u.id_emp as user_id_emp',
                 'u.name as employee_name',
                 'u.name as user_name',
+                'u.jobgrade as user_jobgrade',
+                'u.jobposition as user_jobposition',
+                'u.jobgrade',
+                'u.jobposition',
                 'u.department as user_department',
                 'u.team as user_team',
                 'u.company_name as user_company',
@@ -690,6 +703,8 @@ class LearningDatatableService
             ->addColumn('team', fn ($row) => e($row->user_team ?: '-'))
             ->addColumn('department', fn ($row) => e($row->user_department ?: '-'))
             ->addColumn('company', fn ($row) => e($row->user_company ?: '-'))
+            ->addColumn('grade', fn ($row) => e($row->jobgrade ?? ($row->user_jobgrade ?: '-')))
+            ->addColumn('job_position', fn ($row) => e($row->jobposition ?? ($row->user_jobposition ?: '-')))
             ->addColumn('learning_title', fn ($row) => $this->learningTitleColumn($row))
             ->addColumn('course_title', fn ($row) => $this->learningTitleColumn($row))
             ->addColumn('sub_course_title', fn () => '<span class="text-muted small">-</span>')
@@ -708,6 +723,14 @@ class LearningDatatableService
             ->addColumn('venue', fn () => 'Online LMS')
             ->addColumn('duration', fn ($row) => e(DurationFormatter::format($row->content_duration ?? null)))
             ->addColumn('course_duration', fn ($row) => e(DurationFormatter::format($row->content_duration ?? null)))
+            ->addColumn('recognized_duration', function ($row) {
+                $sec = app(\App\Services\Learning\LearningRecordRecognizedDurationService::class)->resolveFromRow($row);
+                return '<span class="fw-semibold font-monospace">' . DurationFormatter::fromSeconds($sec) . '</span>';
+            })
+            ->addColumn('total_recognized_duration', function ($row) {
+                $sec = app(\App\Services\Learning\LearningRecordRecognizedDurationService::class)->resolveFromRow($row);
+                return '<span class="fw-semibold font-monospace">' . DurationFormatter::fromSeconds($sec) . '</span>';
+            })
             ->addColumn('total_engagement_duration', function ($row) {
                 $hours = (float) ($row->learning_hours ?? 0);
                 $fmt = ($hours == (int) $hours) ? (int) $hours . ' h' : rtrim(rtrim(number_format($hours, 2, '.', ''), '0'), '.') . ' h';
@@ -823,6 +846,8 @@ class LearningDatatableService
                 'batch',
                 'delivery_method',
                 'sub_delivery_method',
+                'recognized_duration',
+                'total_recognized_duration',
                 'total_engagement_duration',
                 'total_engagement_time',
                 'progress_bar',

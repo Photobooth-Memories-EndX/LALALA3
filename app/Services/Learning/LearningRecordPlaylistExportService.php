@@ -204,6 +204,8 @@ class LearningRecordPlaylistExportService
                     'classification'      => $content->classification?->classification_name ?? '-',
                     'duration'            => $durationFormatted,
                     'duration_seconds'    => $durationSeconds,
+                    'recognized_duration' => DurationFormatter::fromSeconds($moduleSec),
+                    'recognized_seconds'  => $moduleSec,
                     'learning_hour'       => $learningHourFormatted,
                     'learning_hour_value' => $childHoursVal,
                     'learning_hours'      => $childHoursVal,

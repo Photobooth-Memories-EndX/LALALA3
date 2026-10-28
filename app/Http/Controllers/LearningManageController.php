@@ -562,6 +562,11 @@ class LearningManageController extends Controller
                 ? ($assessmentResult->pass == 1 ? 'Pass' : ($assessmentResult->pass === 0 || $assessmentResult->pass === '0' ? 'Fail' : '-'))
                 : '-';
 
+            $recognizedService = app(\App\Services\Learning\LearningRecordRecognizedDurationService::class);
+            $recognizedSec = $recognizedService->resolveForContentUser($record);
+            $recognizedFormatted = $recognizedService->formatSeconds($recognizedSec);
+            $engagementFormatted = DurationFormatter::fromSeconds((int) ($afkSec ?? 0));
+
             return response()->json([
                 'status' => 'success',
                 'data' => [
@@ -573,8 +578,8 @@ class LearningManageController extends Controller
                         'department' => $user?->department ?? '-',
                         'team' => $user?->team ?? '-',
                         'company' => $user?->company_name ?? 'PT Krakatau Posco',
-                        'grade' => '-',
-                        'job_position' => '-',
+                        'grade' => $user?->jobgrade ?: '-',
+                        'job_position' => $user?->jobposition ?: '-',
                     ],
                     'learning' => [
                         'title' => $content?->title ?? '-',
@@ -605,14 +610,16 @@ class LearningManageController extends Controller
                         'current_time' => $currentTimeSec !== null ? DurationFormatter::fromSeconds($currentTimeSec) . " ({$currentTimeSec}s)" : '-',
                         'duration' => $durationFormatted,
                         'course_duration' => $durationFormatted,
-                        'total_recognized_duration' => '-',
+                        'recognized_duration' => $recognizedFormatted,
+                        'total_recognized_duration' => $recognizedFormatted,
                         'actual_watch_seconds' => $actualWatchSec !== null ? DurationFormatter::fromSeconds($actualWatchSec) . " ({$actualWatchSec}s)" : '-',
                         'afk_duration' => $afkSec !== null ? DurationFormatter::fromSeconds($afkSec) . " ({$afkSec}s)" : '-',
                         'learning_hours' => $record->learning_hours !== null ? number_format((float) $record->learning_hours, 4) . ' h' : '-',
-                        'total_engagement_time' => $record->learning_hours !== null ? number_format((float) $record->learning_hours, 2) . ' h' : '-',
+                        'total_engagement_time' => $engagementFormatted,
                         'raw_current_time' => $currentTimeSec ?? 0,
                         'raw_actual_watch_seconds' => $actualWatchSec ?? 0,
                         'raw_afk_duration_seconds' => $afkSec ?? 0,
+                        'raw_recognized_duration_seconds' => $recognizedSec,
                         'duration_seconds' => $durationSeconds ?? 0,
                         'is_finished' => $record->isFinished(),
                     ],
@@ -710,6 +717,11 @@ class LearningManageController extends Controller
             ? ($assessmentResult->pass == 1 ? 'Pass' : ($assessmentResult->pass === 0 || $assessmentResult->pass === '0' ? 'Fail' : '-'))
             : '-';
 
+        $recognizedService = app(\App\Services\Learning\LearningRecordRecognizedDurationService::class);
+        $recognizedSec = $recognizedService->resolveForPlaylistContentUser($record);
+        $recognizedFormatted = $recognizedService->formatSeconds($recognizedSec);
+        $engagementFormatted = DurationFormatter::fromSeconds((int) ($afkSec ?? 0));
+
         return response()->json([
             'status' => 'success',
             'data' => [
@@ -721,8 +733,8 @@ class LearningManageController extends Controller
                     'department' => $user?->department ?? '-',
                     'team' => $user?->team ?? '-',
                     'company' => $user?->company_name ?? 'PT Krakatau Posco',
-                    'grade' => '-',
-                    'job_position' => '-',
+                    'grade' => $user?->jobgrade ?: '-',
+                    'job_position' => $user?->jobposition ?: '-',
                 ],
                 'learning' => [
                     'title' => $content?->title ?? '-',
@@ -753,14 +765,16 @@ class LearningManageController extends Controller
                     'current_time' => $currentTimeSec !== null ? DurationFormatter::fromSeconds($currentTimeSec) . " ({$currentTimeSec}s)" : '-',
                     'duration' => $durationFormatted,
                     'course_duration' => $durationFormatted,
-                    'total_recognized_duration' => '-',
+                    'recognized_duration' => $recognizedFormatted,
+                    'total_recognized_duration' => $recognizedFormatted,
                     'actual_watch_seconds' => $actualWatchSec !== null ? DurationFormatter::fromSeconds($actualWatchSec) . " ({$actualWatchSec}s)" : '-',
                     'afk_duration' => $afkSec !== null ? DurationFormatter::fromSeconds($afkSec) . " ({$afkSec}s)" : '-',
                     'learning_hours' => $record->learning_hour !== null ? number_format((float) $record->learning_hour, 4) . ' h' : '-',
-                    'total_engagement_time' => $record->learning_hour !== null ? number_format((float) $record->learning_hour, 2) . ' h' : '-',
+                    'total_engagement_time' => $engagementFormatted,
                     'raw_current_time' => $currentTimeSec ?? 0,
                     'raw_actual_watch_seconds' => $actualWatchSec ?? 0,
                     'raw_afk_duration_seconds' => $afkSec ?? 0,
+                    'raw_recognized_duration_seconds' => $recognizedSec,
                     'duration_seconds' => $durationSeconds ?? 0,
                     'is_finished' => $record->isFinished(),
                 ],

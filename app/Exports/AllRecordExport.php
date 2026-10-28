@@ -346,6 +346,17 @@ class AllRecordExport implements Responsable
                     $durationFormatted = sprintf('%02d:%02d:%02d', $hours, $mins, $seconds);
                 }
 
+                $recognizedFormatted = '-';
+                $engagementFormatted = '-';
+                if ($row->source !== 'offline') {
+                    $recognizedService = app(\App\Services\Learning\LearningRecordRecognizedDurationService::class);
+                    $recSec = $recognizedService->resolveFromRow($row);
+                    $recognizedFormatted = $recognizedService->formatSeconds($recSec);
+
+                    $afkSec = (int) ($row->afk_duration_seconds ?? 0);
+                    $engagementFormatted = \App\Support\DurationFormatter::fromSeconds($afkSec);
+                }
+
                 // Learning Hours: raw numeric float for SUM calculations
                 $lhNumeric = ($row->learning_hours !== null && $row->learning_hours !== '' && is_numeric($row->learning_hours))
                     ? (float) $row->learning_hours
@@ -426,8 +437,8 @@ class AllRecordExport implements Responsable
                     ['U', 'str', $row->venue ?: ($row->source === 'offline' ? '-' : 'KP-OWL'), $textStyle],
                     ['V', 'str', $row->instructor ?: '-', $textStyle],
                     ['W', 'str', $durationFormatted, $textStyle], // Course Duration
-                    ['X', 'str', $durationFormatted, $textStyle], // Total Engagement Duration
-                    ['Y', 'str', '-', $textStyle], // Total Recognized Duration
+                    ['X', 'str', $engagementFormatted, $textStyle], // Total Engagement Duration
+                    ['Y', 'str', $recognizedFormatted, $textStyle], // Total Recognized Duration
                     ['Z', $lhNumeric !== null ? 'lh' : 'str', $lhNumeric !== null ? $lhNumeric : '-', $lhNumeric !== null ? $lhStyle : $textStyle], // Learning Hours
                     ['AA', 'pct', $progressDecimal, $pctStyle],
                     ['AB', 'str', $progressStatus, $textStyle],

@@ -277,6 +277,7 @@
                 { data: 'provider_name', orderable: false, searchable: false, className: 'text-start' },
                 { data: 'venue', orderable: false, searchable: false, className: 'text-start' },
                 { data: 'course_duration', name: 'c.duration', className: 'text-center' },
+                { data: 'recognized_duration', orderable: false, searchable: false, className: 'text-center' },
                 { data: 'learning_hours', name: 'unified.learning_hours', className: 'text-center' },
                 { data: 'progress_bar', name: 'unified.progress', className: 'text-center' },
                 { data: 'progress_status', name: 'unified.finish', className: 'text-center' },

@@ -223,7 +223,7 @@
                         <div class="col-sm-3">
                             <div class="p-2 rounded-2 bg-white border owl-modal-subcard text-center">
                                 <div class="text-muted small lh-1 mb-1">Recognized Duration</div>
-                                <div class="fw-bold text-dark font-monospace small" id="ld-total-recognized-duration">-</div>
+                                <div class="fw-bold text-dark font-monospace small" id="ld-total-recognized-duration">00:00:00</div>
                             </div>
                         </div>
                         <div class="col-sm-3">
@@ -235,7 +235,7 @@
                         <div class="col-sm-3">
                             <div class="p-2 rounded-2 bg-white border owl-modal-subcard text-center">
                                 <div class="text-muted small lh-1 mb-1">Total Engagement Time</div>
-                                <div class="h5 fw-bold text-dark mb-0 font-monospace" id="ld-total-engagement-time">0.00 h</div>
+                                <div class="fw-bold text-dark font-monospace small" id="ld-total-engagement-time">00:00:00</div>
                             </div>
                         </div>
 

@@ -35,6 +35,7 @@ class LearningExportService
             'Category',
             'Classification',
             'Duration',
+            'Recognized Duration',
             'Learning Hour',
             'Learning Progress',
             'Start Date',
@@ -46,7 +47,7 @@ class LearningExportService
     }
 
     /**
-     * Standardized column widths for columns A to Q.
+     * Standardized column widths for columns A to R.
      */
     public static function columnWidths(): array
     {
@@ -61,13 +62,14 @@ class LearningExportService
             'H' => 40,  // Category (widened for "Playlist: <Title>")
             'I' => 28,  // Classification
             'J' => 14,  // Duration
-            'K' => 16,  // Learning Hour
-            'L' => 18,  // Learning Progress
-            'M' => 18,  // Start Date
-            'N' => 18,  // Finish Date
-            'O' => 18,  // Assessment Score
-            'P' => 16,  // Certificate
-            'Q' => 16,  // Attendance
+            'K' => 16,  // Recognized Duration
+            'L' => 16,  // Learning Hour
+            'M' => 18,  // Learning Progress
+            'N' => 18,  // Start Date
+            'O' => 18,  // Finish Date
+            'P' => 18,  // Assessment Score
+            'Q' => 16,  // Certificate
+            'R' => 16,  // Attendance
         ];
     }
 
@@ -539,6 +541,12 @@ class LearningExportService
         $rawDuration = $row->content_duration ?? ($row->duration ?? ($row->content->duration ?? null));
         $durationFormatted = DurationFormatter::format($rawDuration, '-');
 
+        // Recognized Duration
+        $recognizedService = app(\App\Services\Learning\LearningRecordRecognizedDurationService::class);
+        $durationSeconds = DurationFormatter::toSeconds($rawDuration) ?? 0;
+        $recSec = $recognizedService->resolveFromRow($row, $durationSeconds);
+        $recognizedFormatted = $recognizedService->formatSeconds($recSec);
+
         // 7. Progress & Completion Resolver
         $progress = (int) ($row->progress ?? 0);
         $finish = (int) ($row->finish ?? 0);
@@ -651,6 +659,7 @@ class LearningExportService
             $category,
             $classification,
             $durationFormatted,
+            $recognizedFormatted,
             $learningHourFormatted,
             $progressStr,
             $startDate,

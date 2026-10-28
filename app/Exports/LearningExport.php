@@ -269,11 +269,11 @@ class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
                             $escaped = $this->escapeXml($val);
 
                             $styleIdx = match ($idx) {
-                                0, 6, 9, 11, 12, 13, 14, 15, 16 => 2,
+                                0, 6, 9, 10, 12, 13, 14, 15, 16, 17 => 2,
                                 1 => 6,
                                 2, 5, 7 => 4,
                                 3, 4, 8 => 3,
-                                10 => 5,
+                                11 => 5,
                                 default => 0,
                             };
 
@@ -303,11 +303,11 @@ class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
                         $escaped = $this->escapeXml($val);
 
                         $styleIdx = match ($idx) {
-                            0, 6, 9, 11, 12, 13, 14, 15, 16 => 2,
+                            0, 6, 9, 10, 12, 13, 14, 15, 16, 17 => 2,
                             1 => 6,
                             2, 5, 7 => 4,
                             3, 4, 8 => 3,
-                            10 => 5,
+                            11 => 5,
                             default => 0,
                         };
 

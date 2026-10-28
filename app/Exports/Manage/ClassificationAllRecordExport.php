@@ -235,6 +235,17 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
                 $durationFormatted = sprintf('%02d:%02d:%02d', $hours, $mins, $seconds);
             }
 
+            $recognizedFormatted = '-';
+            $engagementFormatted = '-';
+            if ($row->source !== 'offline') {
+                $recognizedService = app(\App\Services\Learning\LearningRecordRecognizedDurationService::class);
+                $recSec = $recognizedService->resolveFromRow($row);
+                $recognizedFormatted = $recognizedService->formatSeconds($recSec);
+
+                $afkSec = (int) ($row->afk_duration_seconds ?? 0);
+                $engagementFormatted = \App\Support\DurationFormatter::fromSeconds($afkSec);
+            }
+
             // Learning Hours (raw numeric float for SUM calculations)
             $lhNumeric = ($row->learning_hours !== null && $row->learning_hours !== '' && is_numeric($row->learning_hours))
                 ? (float) $row->learning_hours
@@ -309,8 +320,8 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
                 $row->venue ?: ($row->source === 'offline' ? '-' : 'KP-OWL'),
                 $row->instructor ?: '-',
                 $durationFormatted, // Course Duration
-                $durationFormatted, // Total Engagement Duration
-                '-', // Total Recognized Duration
+                $engagementFormatted, // Total Engagement Duration
+                $recognizedFormatted, // Total Recognized Duration
                 $lhNumeric, // Learning Hours
                 $progressDecimal, // numeric decimal for 0% format code
                 $progressStatus,

@@ -448,6 +448,9 @@ class RecordAllCombinedService
                     DB::raw("CAST(NULL AS DECIMAL(10,2)) as l3_numerical"),
                     DB::raw("CAST(NULL AS CHAR) as l3_verbal"),
                     DB::raw("CAST(NULL AS CHAR) as pic"),
+                    DB::raw("CAST(NULL AS DECIMAL(10,2)) as current_time"),
+                    DB::raw("CAST(NULL AS UNSIGNED) as actual_watch_seconds"),
+                    DB::raw("CAST(NULL AS UNSIGNED) as afk_duration_seconds"),
                     DB::raw("CAST(NULL AS DATETIME) as raw_finish_date"),
                     DB::raw("NOW() as record_date"),
                 ]);
@@ -487,8 +490,8 @@ class RecordAllCombinedService
                 END as row_id"),
                 DB::raw("COALESCE(otu.employee_id, u.id_emp, '') as employee_id"),
                 DB::raw("COALESCE(otu.name, u.name, '') as employee_name"),
-                DB::raw("CASE WHEN unified.source = 'offline' THEN otu.grade ELSE NULL END as grade"),
-                DB::raw("CASE WHEN unified.source = 'offline' THEN otu.job_position ELSE NULL END as job_position"),
+                DB::raw("CASE WHEN unified.source = 'offline' THEN otu.grade ELSE u.jobgrade END as grade"),
+                DB::raw("CASE WHEN unified.source = 'offline' THEN otu.job_position ELSE u.jobposition END as job_position"),
                 DB::raw("COALESCE(otu.team, u.team, '') as team"),
                 DB::raw("COALESCE(otu.department, u.department, '') as department"),
                 DB::raw("COALESCE(otu.company, u.company_name, '') as company"),
@@ -578,6 +581,9 @@ class RecordAllCombinedService
                 DB::raw("CASE WHEN unified.source = 'offline' THEN otu.l3_numerical ELSE NULL END as l3_numerical"),
                 DB::raw("CASE WHEN unified.source = 'offline' THEN otu.l3_verbal ELSE NULL END as l3_verbal"),
                 DB::raw("CASE WHEN unified.source = 'offline' THEN otu.pic ELSE NULL END as pic"),
+                'unified.current_time',
+                'unified.actual_watch_seconds',
+                'unified.afk_duration_seconds',
                 'unified.finish_date as raw_finish_date',
                 'unified.created_at as record_date',
             ]);
@@ -602,6 +608,9 @@ class RecordAllCombinedService
                 DB::raw("COALESCE(cu.learning_hours, 0) as learning_hours"),
                 'cu.created_at',
                 DB::raw("CASE WHEN cu.finish = '1' OR cu.progress >= 100 THEN cu.completed_at ELSE NULL END as finish_date"),
+                'cu.current_time',
+                'cu.actual_watch_seconds',
+                'cu.afk_duration_seconds',
             ]);
 
         $this->applyOnlineSubqueryFilters($q, $filters, 'cu');
@@ -628,6 +637,9 @@ class RecordAllCombinedService
                 DB::raw("COALESCE(pcu.learning_hour, 0) as learning_hours"),
                 'pcu.created_at',
                 DB::raw("CASE WHEN pcu.finish = '1' OR pcu.progress >= 100 THEN pcu.completed_at ELSE NULL END as finish_date"),
+                'pcu.current_time',
+                'pcu.actual_watch_seconds',
+                'pcu.afk_duration_seconds',
             ]);
 
         $this->applyOnlineSubqueryFilters($q, $filters, 'pcu');
@@ -996,6 +1008,9 @@ class RecordAllCombinedService
                 DB::raw("COALESCE(otu.learning_hours, 0) as learning_hours"),
                 'otu.created_at',
                 DB::raw("CASE WHEN otu.progress >= 100 THEN ot.finish_date ELSE NULL END as finish_date"),
+                DB::raw('CAST(NULL AS DECIMAL(10,2)) as current_time'),
+                DB::raw('CAST(NULL AS UNSIGNED) as actual_watch_seconds'),
+                DB::raw('CAST(NULL AS UNSIGNED) as afk_duration_seconds'),
             ]);
 
         // Status filter
@@ -1602,6 +1617,20 @@ class RecordAllCombinedService
                 $s = $sec % 60;
                 return sprintf('%02d:%02d:%02d', $h, $m, $s);
             })
+            ->addColumn('recognized_duration', function ($row) {
+                if (($row->source ?? '') === 'offline') {
+                    return '-';
+                }
+                $service = app(\App\Services\Learning\LearningRecordRecognizedDurationService::class);
+                $sec = $service->resolveFromRow($row);
+                return $service->formatSeconds($sec);
+            })
+            ->addColumn('grade', function ($row) {
+                return htmlspecialchars($row->grade ?: '-');
+            })
+            ->addColumn('job_position', function ($row) {
+                return htmlspecialchars($row->job_position ?: '-');
+            })
             ->addColumn('progress_percent', function ($row) {
                 $progress = max(0, min(100, round((float) ($row->progress ?? 0))));
                 $color = $progress >= 100 ? 'bg-success' : ($progress > 0 ? 'bg-warning' : 'bg-secondary');
@@ -2037,6 +2066,20 @@ class RecordAllCombinedService
                 $m = floor(($sec % 3600) / 60);
                 $s = $sec % 60;
                 return sprintf('%02d:%02d:%02d', $h, $m, $s);
+            })
+            ->addColumn('recognized_duration', function ($row) {
+                if (($row->source ?? '') === 'offline') {
+                    return '-';
+                }
+                $service = app(\App\Services\Learning\LearningRecordRecognizedDurationService::class);
+                $sec = $service->resolveFromRow($row);
+                return $service->formatSeconds($sec);
+            })
+            ->addColumn('grade', function ($row) {
+                return htmlspecialchars($row->grade ?: '-');
+            })
+            ->addColumn('job_position', function ($row) {
+                return htmlspecialchars($row->job_position ?: '-');
             })
             ->addColumn('progress_percent', function ($row) {
                 $progress = max(0, min(100, round((float) ($row->progress ?? 0))));

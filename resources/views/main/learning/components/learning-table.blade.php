@@ -52,6 +52,7 @@
                         <th style="min-width: 130px;">PROVIDER NAME</th>
                         <th style="min-width: 120px;">VENUE</th>
                         <th class="text-center" style="min-width: 110px;">COURSE DURATION</th>
+                        <th class="text-center" style="min-width: 130px;">RECOGNIZED DURATION</th>
                         <th class="text-center" style="min-width: 110px;">LEARNING HOURS</th>
                         <th class="text-center" style="min-width: 110px;">% PROGRESS</th>
                         <th class="text-center" style="min-width: 110px;">PROGRESS STATUS</th>
