@@ -38,7 +38,7 @@ class Task extends Model
         'course_assignment' => [],
         'survey'            => [],
         'essay'             => ['textarea'],
-        'action_plan'       => ['file', 'textarea'],
+        'action_plan'       => ['short_answer', 'textarea', 'choice', 'checkbox', 'dropdown', 'file', 'scale', 'rating'],
     ];
 
     /** Short explanation shown under the type dropdown in the admin form. */
@@ -47,7 +47,7 @@ class Task extends Model
         'course_assignment' => 'User opens a course (inside this LMS or an external link). An LMS course completes this task automatically at 100% progress.',
         'survey'            => 'Learners complete an existing survey form. Select the target survey from the dropdown below.',
         'essay'             => 'Written reflection. User answers in long text; admin scores manually.',
-        'action_plan'       => 'Google Form-style task: file uploads, short & long answers; admin reviews manually.',
+        'action_plan'       => 'Google Form-style task: short & long answers, multiple choice, checkboxes, files, ratings; admin reviews manually.',
     ];
 
     /**
@@ -59,11 +59,11 @@ class Task extends Model
         'playlist'         => 'Playlist',
         'content'          => 'Content',
         'offline_training' => 'Offline Training',
-        'standalone'       => 'Global Task',
+        'standalone'       => 'Others',
     ];
 
     protected $fillable = [
-        'training_plan_id', 'content_id', 'offline_training_id', 'parent_type',
+        'training_plan_id', 'content_id', 'offline_training_id', 'task_group_id', 'parent_type',
         'access_code',
         'title', 'description',
         'type', 'survey_id', 'deadline', 'attachment', 'created_by', 'status',
@@ -89,6 +89,11 @@ class Task extends Model
     public function offlineTraining(): BelongsTo
     {
         return $this->belongsTo(OfflineTraining::class);
+    }
+
+    public function taskGroup(): BelongsTo
+    {
+        return $this->belongsTo(TaskGroup::class);
     }
 
     public function creator(): BelongsTo
@@ -161,7 +166,7 @@ class Task extends Model
         return match ($this->parent_type) {
             'content'          => $this->content_id,
             'offline_training' => $this->offline_training_id,
-            'standalone'       => null,
+            'standalone'       => $this->task_group_id,
             default            => $this->training_plan_id,
         };
     }
@@ -172,7 +177,7 @@ class Task extends Model
         return match ($this->parent_type) {
             'content'          => $this->content?->title ?? '—',
             'offline_training' => $this->offlineTraining?->title ?? $this->offlineTraining?->course_name ?? ('Offline Training' . ($this->offline_training_id ? ' #' . $this->offline_training_id : '')),
-            'standalone'       => 'Global Task',
+            'standalone'       => $this->taskGroup?->title ?? 'Others',
             default            => $this->trainingPlan?->title ?? '—',
         };
     }
@@ -233,7 +238,7 @@ class Task extends Model
 
     /**
      * Status task dari sudut pandang user:
-     * completed | resubmit | submitted | overdue | not_started
+     * completed | rejected | submitted (pending review) | overdue | not_started
      */
     public function userStatusFor(User $user): string
     {
@@ -242,11 +247,11 @@ class Task extends Model
         if ($submission && $submission->status === 'completed') {
             return 'completed';
         }
-        if ($submission && $submission->resubmit_requested) {
-            return 'resubmit';
+        if ($submission && ($submission->status === 'rejected' || $submission->resubmit_requested)) {
+            return 'rejected';
         }
         if ($submission) {
-            return 'submitted'; // menunggu koreksi admin
+            return 'submitted'; // menunggu koreksi admin (pending review)
         }
         if ($this->isOverdueFor($user)) {
             return 'overdue';

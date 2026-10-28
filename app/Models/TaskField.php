@@ -17,9 +17,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class TaskField extends Model
 {
     public const TYPES = [
-        'file'     => 'File upload',
-        'textarea' => 'Answer',
-        'choice'   => 'Multiple choice',
+        'short_answer' => 'Short answer',
+        'textarea'     => 'Paragraph',
+        'choice'       => 'Multiple choice',
+        'checkbox'     => 'Checkboxes',
+        'dropdown'     => 'Dropdown',
+        'file'         => 'File upload',
+        'scale'        => 'Linear scale',
+        'rating'       => 'Rating',
     ];
 
     /**
@@ -80,6 +85,41 @@ class TaskField extends Model
     public function isChoice(): bool
     {
         return $this->type === 'choice';
+    }
+
+    public function isShortAnswer(): bool
+    {
+        return $this->type === 'short_answer';
+    }
+
+    public function isParagraph(): bool
+    {
+        return in_array($this->type, ['textarea', 'paragraph'], true);
+    }
+
+    public function isCheckbox(): bool
+    {
+        return $this->type === 'checkbox';
+    }
+
+    public function isDropdown(): bool
+    {
+        return $this->type === 'dropdown';
+    }
+
+    public function isScale(): bool
+    {
+        return $this->type === 'scale';
+    }
+
+    public function isRating(): bool
+    {
+        return $this->type === 'rating';
+    }
+
+    public function hasOptions(): bool
+    {
+        return in_array($this->type, ['choice', 'checkbox', 'dropdown'], true);
     }
 
     // ── File-upload settings (ala Google Form) ──────────────────────────

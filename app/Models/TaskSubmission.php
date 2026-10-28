@@ -113,7 +113,17 @@ class TaskSubmission extends Model
 
     public function isPending(): bool
     {
-        return $this->status === 'pending';
+        return $this->status === 'pending' && ! $this->resubmit_requested;
+    }
+
+    public function isRejected(): bool
+    {
+        return $this->status === 'rejected' || (bool) $this->resubmit_requested;
+    }
+
+    public function isCompletedAsRejected(): bool
+    {
+        return $this->status === 'rejected' && ! $this->resubmit_requested;
     }
 
     /** Admin menandai submission selesai (terkoreksi), sekaligus memberi nilai & feedback. */
@@ -124,6 +134,17 @@ class TaskSubmission extends Model
             'score'              => $score,
             'feedback'           => $feedback,
             'resubmit_requested' => false,
+        ]);
+    }
+
+    /** Admin menolak submission: request resubmit atau completed as rejected. */
+    public function markRejected(bool $requestResubmit = false, ?string $feedback = null, ?int $score = null): void
+    {
+        $this->update([
+            'status'             => 'rejected',
+            'score'              => $score,
+            'feedback'           => $feedback,
+            'resubmit_requested' => $requestResubmit,
         ]);
     }
 }
