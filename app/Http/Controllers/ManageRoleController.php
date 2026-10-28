@@ -2,9 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AssesmentResult;
+use App\Models\ContentUser;
+use App\Models\OfflineTrainingRegister;
 use App\Models\User;
+use App\Services\EmployeeSync\EmployeeUserSyncService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Throwable;
 
 class ManageRoleController extends Controller
 {
@@ -137,46 +143,173 @@ class ManageRoleController extends Controller
         return response()->json($users);
     }
 
-   public function update(Request $request, User $user)
-{
-    $request->validate([
-        'role'        => ['required', 'in:' . implode(',', self::ASSIGNABLE_ROLES)],
-        'division'    => ['nullable', 'string', 'max:255'],
-        'department'  => ['nullable', 'string', 'max:255'],
-        'team'        => ['nullable', 'string', 'max:255'],
-        'id_org_unit' => ['nullable', 'string'],
-    ], [
-        'role.in' => 'Role yang dipilih tidak valid.',
-    ]);
+    /**
+     * Tampilkan halaman View Detail user lengkap dengan seluruh informasi akun, organisasi, dan profil HR.
+     */
+    public function show(User $user)
+    {
+        $divisions = User::query()
+            ->whereNotNull('division')
+            ->whereRaw("TRIM(division) != ''")
+            ->selectRaw('TRIM(division) as division')
+            ->distinct()
+            ->orderBy('division')
+            ->pluck('division');
 
-    if ($user->id === Auth::id()) {
+        $departments = User::query()
+            ->whereNotNull('department')
+            ->whereRaw("TRIM(department) != ''")
+            ->selectRaw('TRIM(department) as department')
+            ->distinct()
+            ->orderBy('department')
+            ->pluck('department');
+
+        $teams = User::query()
+            ->whereNotNull('team')
+            ->whereRaw("TRIM(team) != ''")
+            ->selectRaw('TRIM(team) as team')
+            ->distinct()
+            ->orderBy('team')
+            ->pluck('team');
+
+        return view('main.manage-role.show', [
+            'user'            => $user,
+            'assignableRoles' => $this->assignableRoleLabels(),
+            'divisions'       => $divisions,
+            'departments'     => $departments,
+            'teams'           => $teams,
+        ]);
+    }
+
+    /**
+     * Update user role and organizational assignment.
+     */
+    public function update(Request $request, User $user)
+    {
+        $request->validate([
+            'role'        => ['required', 'in:' . implode(',', self::ASSIGNABLE_ROLES)],
+            'active'      => ['nullable', 'in:0,1'],
+            'division'    => ['nullable', 'string', 'max:255'],
+            'department'  => ['nullable', 'string', 'max:255'],
+            'team'        => ['nullable', 'string', 'max:255'],
+            'id_org_unit' => ['nullable', 'string', 'max:20'],
+        ], [
+            'role.in' => 'Role yang dipilih tidak valid.',
+        ]);
+
+        if ($user->id === Auth::id()) {
+            return redirect()->route('manage.role.index')
+                ->with('warning', 'Anda tidak dapat mengubah data akun Anda sendiri.');
+        }
+
+        if ($user->isSuperAdmin()) {
+            return redirect()->route('manage.role.index')
+                ->with('warning', 'Data Super Admin tidak dapat diubah melalui halaman ini.');
+        }
+
+        if (!empty($request->id_org_unit) && strlen($request->id_org_unit) > 20) {
+            return redirect()->back()
+                ->withInput()
+                ->with('warning', 'ID Org Unit terlalu panjang. Maksimal 20 karakter.');
+        }
+
+        $user->role = (int) $request->role;
+        if ($request->has('active')) {
+            $user->active = (int) $request->active;
+        }
+        $user->division    = $request->division;
+        $user->department  = $request->department;
+        $user->team        = $request->team;
+        $user->id_org_unit = $request->id_org_unit;
+
+        $user->save();
+
         return redirect()->route('manage.role.index')
-            ->with('warning', 'Anda tidak dapat mengubah data akun Anda sendiri.');
+            ->with('success', "Data {$user->name} berhasil diperbarui.");
     }
 
-    if ($user->isSuperAdmin()) {
+    /**
+     * Soft-delete akun user dengan validasi integritas relasi.
+     */
+    public function destroy(User $user)
+    {
+        if ($user->id === Auth::id()) {
+            return redirect()->route('manage.role.index')
+                ->with('warning', 'Anda tidak dapat menghapus akun Anda sendiri.');
+        }
+
+        if ($user->isSuperAdmin()) {
+            return redirect()->route('manage.role.index')
+                ->with('warning', 'Akun Super Admin tidak dapat dihapus.');
+        }
+
+        // Periksa apakah user memiliki data pembelajaran aktif
+        $hasLearningData = ContentUser::where('user_id', $user->id)->exists()
+            || AssesmentResult::where('user_id', $user->id)->exists()
+            || OfflineTrainingRegister::where('user_id', $user->id)->exists();
+
+        if ($hasLearningData) {
+            return redirect()->route('manage.role.index')
+                ->with('warning', "User {$user->name} ({$user->id_emp}) tidak dapat dihapus karena memiliki riwayat pembelajaran / assessment / training aktif.");
+        }
+
+        $userName = $user->name;
+        $empId = $user->id_emp ?: '-';
+        $user->delete();
+
         return redirect()->route('manage.role.index')
-            ->with('warning', 'Data Super Admin tidak dapat diubah melalui halaman ini.');
+            ->with('success', "User {$userName} (NIP: {$empId}) berhasil dihapus (soft-deleted).");
     }
 
-    // Sesuaikan angka 5 dengan panjang kolom database
-    if (!empty($request->id_org_unit) && strlen($request->id_org_unit) > 5) {
-        return redirect()->back()
-            ->withInput()
-            ->with('warning', 'ID Org Unit terlalu panjang. Maksimal 5 karakter.');
+    /**
+     * Jalankan simulasi sinkronisasi employee (Dry-Run 100% Zero-Write).
+     */
+    public function syncDryRun(Request $request)
+    {
+        $lockKey = 'owl:sync-employee-users:lock';
+        $lock = Cache::lock($lockKey, 300);
+
+        if (!$lock->get()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Proses sinkronisasi lain sedang berjalan. Silakan tunggu beberapa saat.',
+            ], 409);
+        }
+
+        try {
+            $syncService = new EmployeeUserSyncService();
+            $result = $syncService->sync([
+                'dry_run' => true,
+                'allow_create' => true,
+            ]);
+
+            return response()->json([
+                'success'                    => true,
+                'status'                     => strtoupper($result->status),
+                'mode'                       => 'DRY-RUN (Zero-Write Simulation)',
+                'duration'                   => $result->durationSeconds(),
+                'total_api'                  => $result->totalApi,
+                'total_owl'                  => $result->totalOwl,
+                'created_count'              => $result->createdCount,
+                'updated_count'              => $result->updatedCount,
+                'updated_active_count'       => $result->updatedActiveCount,
+                'updated_soft_deleted_count' => $result->updatedSoftDeletedCount,
+                'unchanged_count'            => $result->unchangedCount,
+                'skipped_count'              => $result->skippedCount,
+                'conflict_count'             => $result->conflictCount,
+                'conflicts'                  => array_slice($result->conflicts, 0, 5),
+                'created_sample'             => array_slice($result->createdDetails, 0, 5),
+                'message'                    => 'Simulasi sinkronisasi berhasil dijalankan tanpa mengubah data di database.',
+            ]);
+        } catch (Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menjalankan simulasi sinkronisasi: ' . $e->getMessage(),
+            ], 500);
+        } finally {
+            $lock->release();
+        }
     }
-
-    $user->role        = $request->role;
-    $user->division    = $request->division;
-    $user->department  = $request->department;
-    $user->team        = $request->team;
-    $user->id_org_unit = $request->id_org_unit;
-
-    $user->save();
-
-    return redirect()->route('manage.role.index')
-        ->with('success', "Data {$user->name} berhasil diperbarui.");
-}
 
     /**
      * Pasangan value => label untuk pilihan role yang boleh di-set.

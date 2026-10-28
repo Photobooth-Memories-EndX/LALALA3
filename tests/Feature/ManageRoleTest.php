@@ -211,5 +211,204 @@ class ManageRoleTest extends TestCase
 
         $response->assertSessionHasErrors('role');
     }
-}
 
+    public function test_super_admin_can_view_user_detail_page_with_all_hr_fields(): void
+    {
+        $hrUser = User::factory()->create([
+            'role' => User::ROLE_USER,
+            'name' => 'John Doe HR',
+            'email' => 'john.hr@krakatauposco.co.id',
+            'sap_code' => 'SAP-998877',
+            'id_emp' => '998877',
+            'team' => 'DevOps Team',
+            'department' => 'Digital Dept',
+            'division' => 'Technology Div',
+            'id_org_unit' => 'OU99',
+            'orgunit' => 'Digital Org Unit',
+            'id_division' => 'DV9',
+            'id_department' => 'DP8',
+            'id_team' => 'TM7',
+            'cell_phone' => '081299998888',
+            'sex' => 'M',
+            'id_job_position' => 'JP44',
+            'jobposition' => 'Senior DevOps Specialist',
+            'positionID' => '40009999',
+            'jobgrade' => 'JG06',
+            'id_job_clan' => 'JC02',
+            'job_clan' => 'Engineering Clan',
+            'id_job_family' => 'JF05',
+            'job_family' => 'Cloud Systems Family',
+            'appr1' => '00010001',
+            'appr2' => '00010002',
+            'resign' => 'N',
+            'flag' => 1,
+            'ssohash' => 'secret_sha1_hash_must_be_hidden_12345',
+        ]);
+
+        $response = $this->actingAs($this->superAdmin)
+            ->get(route('manage.role.show', $hrUser->id));
+
+        $response->assertOk();
+        $response->assertSee('John Doe HR');
+        $response->assertSee('998877');
+        $response->assertSee('081299998888');
+        $response->assertSee('Senior DevOps Specialist');
+        $response->assertSee('JG06');
+        $response->assertSee('Engineering Clan');
+        $response->assertSee('Cloud Systems Family');
+        $response->assertSee('00010001');
+        $response->assertSee('00010002');
+        $response->assertSee('A. Informasi Akun OWL');
+        $response->assertSee('B. Informasi Organisasi');
+        $response->assertSee('C. Informasi HR');
+
+        // Verify secret SSO token is strictly hidden from view
+        $response->assertDontSee('secret_sha1_hash_must_be_hidden_12345');
+        $response->assertSee('Terhubung (SSO Active)');
+    }
+
+    public function test_unauthorized_users_cannot_access_user_detail_page(): void
+    {
+        $admin = $this->createTestUser(User::ROLE_ADMIN);
+        $user = $this->createTestUser(User::ROLE_USER);
+
+        // Guest redirect
+        $this->get(route('manage.role.show', $this->targetUser->id))
+            ->assertRedirect(route('loginpage'));
+
+        // Admin forbidden
+        $this->actingAs($admin)
+            ->get(route('manage.role.show', $this->targetUser->id))
+            ->assertForbidden();
+
+        // User forbidden
+        $this->actingAs($user)
+            ->get(route('manage.role.show', $this->targetUser->id))
+            ->assertForbidden();
+    }
+
+    public function test_super_admin_can_soft_delete_user_without_historical_learning_data(): void
+    {
+        $userToDelete = $this->createTestUser(User::ROLE_USER);
+
+        $response = $this->actingAs($this->superAdmin)
+            ->delete(route('manage.role.destroy', $userToDelete->id));
+
+        $response->assertRedirect(route('manage.role.index'));
+        $response->assertSessionHas('success');
+
+        $this->assertTrue($userToDelete->fresh()->trashed());
+        $this->assertSoftDeleted('users', ['id' => $userToDelete->id]);
+    }
+
+    public function test_super_admin_cannot_delete_own_account(): void
+    {
+        $response = $this->actingAs($this->superAdmin)
+            ->delete(route('manage.role.destroy', $this->superAdmin->id));
+
+        $response->assertRedirect(route('manage.role.index'));
+        $response->assertSessionHas('warning', 'Anda tidak dapat menghapus akun Anda sendiri.');
+        $this->assertFalse($this->superAdmin->fresh()->trashed());
+    }
+
+    public function test_super_admin_cannot_delete_another_super_admin(): void
+    {
+        $otherSuperAdmin = $this->createTestUser(User::ROLE_SUPER_ADMIN);
+
+        $response = $this->actingAs($this->superAdmin)
+            ->delete(route('manage.role.destroy', $otherSuperAdmin->id));
+
+        $response->assertRedirect(route('manage.role.index'));
+        $response->assertSessionHas('warning', 'Akun Super Admin tidak dapat dihapus.');
+        $this->assertFalse($otherSuperAdmin->fresh()->trashed());
+    }
+
+    public function test_super_admin_cannot_delete_user_with_active_learning_history(): void
+    {
+        $userWithLearning = $this->createTestUser(User::ROLE_USER);
+
+        // Mock relation content user
+        \App\Models\ContentUser::create([
+            'user_id' => $userWithLearning->id,
+            'content_id' => 1,
+            'status' => 'mandatory',
+        ]);
+
+        $response = $this->actingAs($this->superAdmin)
+            ->delete(route('manage.role.destroy', $userWithLearning->id));
+
+        $response->assertRedirect(route('manage.role.index'));
+        $response->assertSessionHas('warning');
+        $this->assertFalse($userWithLearning->fresh()->trashed());
+    }
+
+    public function test_super_admin_can_trigger_synchronize_dry_run_simulation(): void
+    {
+        $response = $this->actingAs($this->superAdmin)
+            ->postJson(route('manage.role.sync'));
+
+        $response->assertOk();
+        $response->assertJson([
+            'success' => true,
+            'mode' => 'DRY-RUN (Zero-Write Simulation)',
+        ]);
+        $response->assertJsonStructure([
+            'success',
+            'status',
+            'mode',
+            'duration',
+            'total_api',
+            'total_owl',
+            'created_count',
+            'updated_count',
+            'updated_active_count',
+            'updated_soft_deleted_count',
+            'unchanged_count',
+            'conflict_count',
+            'message',
+        ]);
+    }
+
+    public function test_unauthorized_users_cannot_trigger_synchronize_dry_run(): void
+    {
+        $admin = $this->createTestUser(User::ROLE_ADMIN);
+        $user = $this->createTestUser(User::ROLE_USER);
+
+        // Guest redirect
+        $this->postJson(route('manage.role.sync'))
+            ->assertUnauthorized();
+
+        // Admin forbidden
+        $this->actingAs($admin)
+            ->postJson(route('manage.role.sync'))
+            ->assertForbidden();
+
+        // User forbidden
+        $this->actingAs($user)
+            ->postJson(route('manage.role.sync'))
+            ->assertForbidden();
+    }
+
+    public function test_update_user_can_modify_active_status_and_protects_credentials(): void
+    {
+        $oldPassword = $this->targetUser->password;
+        $oldSsoHash = $this->targetUser->ssohash;
+
+        $response = $this->actingAs($this->superAdmin)
+            ->put(route('manage.role.update', $this->targetUser->id), [
+                'role' => User::ROLE_USER,
+                'active' => 1,
+                'division' => 'New Division',
+                'department' => 'New Department',
+                'team' => 'New Team',
+            ]);
+
+        $response->assertRedirect(route('manage.role.index'));
+        $this->targetUser->refresh();
+
+        $this->assertEquals(1, (int) $this->targetUser->active);
+        $this->assertEquals('New Division', $this->targetUser->division);
+        $this->assertEquals($oldPassword, $this->targetUser->password);
+        $this->assertEquals($oldSsoHash, $this->targetUser->ssohash);
+    }
+}
