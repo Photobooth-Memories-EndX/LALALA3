@@ -27,8 +27,8 @@
                         <i class="ti ti-trash me-1"></i>Trash
                     </a>
                     {{-- Parent is auto-embedded: no need to pick it again in the form --}}
-                    <a href="{{ route('manage.task.create', ['parent_type' => $parentType, 'parent_id' => $parentId]) }}" class="btn btn-primary">
-                        <i class="ti ti-plus"></i> Create New Task
+                    <a href="{{ route('manage.task.create', ['parent_type' => $parentType, 'parent_id' => $parentId]) }}" class="btn btn-primary px-3 rounded-3 d-inline-flex align-items-center gap-1.5 shadow-sm">
+                        <i class="ti ti-plus fs-2"></i> Add Task
                     </a>
                 </div>
             </div>
@@ -66,10 +66,11 @@
                         <thead>
                             <tr>
                                 <th>Task</th>
+                                <th>Type</th>
                                 <th>Deadline</th>
                                 <th>Status</th>
                                 <th>Responses</th>
-                                <th class="w-1">Actions</th>
+                                <th class="w-1 text-end">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -96,6 +97,11 @@
                                             </div>
                                         @endif
                                     </td>
+                                    <td>
+                                        <span class="badge bg-primary-lt text-primary">
+                                            {{ $task->typeLabel() }}
+                                        </span>
+                                    </td>
                                     <td>{{ $task->deadline?->format('d M Y H:i') ?? '-' }}</td>
                                     <td>
                                         @if ($task->status === 'published')
@@ -105,25 +111,79 @@
                                         @endif
                                     </td>
                                     <td>
-                                        <span class="badge bg-info">{{ $task->pending_submissions_count }} pending</span>
-                                        <span class="badge bg-success">{{ $task->completed_submissions_count }} completed</span>
+                                        @php
+                                            $pendingCount = (int) ($task->pending_submissions_count ?? 0);
+                                            $completedCount = (int) ($task->completed_submissions_count ?? 0);
+                                            $totalCount = $pendingCount + $completedCount;
+                                        @endphp
+                                        <div class="d-flex flex-column gap-1 align-items-start">
+                                            @if ($pendingCount > 0)
+                                                <a href="{{ route('manage.task.submissions', ['task' => $task, 'status' => 'pending']) }}"
+                                                   class="text-decoration-none"
+                                                   title="{{ $pendingCount }} response(s) waiting for review">
+                                                    <span class="badge bg-warning text-dark fw-bold px-2 py-1 shadow-sm d-inline-flex align-items-center gap-1.5" style="font-size: 0.78rem;">
+                                                        <span class="status-dot status-dot-animated bg-red" style="width: 7px; height: 7px;"></span>
+                                                        <i class="ti ti-bell-ringing"></i>
+                                                        <span>{{ $pendingCount }} Need Review</span>
+                                                    </span>
+                                                </a>
+                                            @endif
+
+                                            @if ($completedCount > 0)
+                                                <a href="{{ route('manage.task.submissions', ['task' => $task, 'status' => 'completed']) }}"
+                                                   class="text-decoration-none"
+                                                   title="{{ $completedCount }} completed response(s)">
+                                                    <span class="badge bg-success-lt text-success fw-semibold px-2 py-0.5 d-inline-flex align-items-center gap-1" style="font-size: 0.75rem;">
+                                                        <i class="ti ti-check"></i>
+                                                        <span>{{ $completedCount }} Completed</span>
+                                                    </span>
+                                                </a>
+                                            @endif
+
+                                            @if ($totalCount === 0)
+                                                <span class="badge bg-secondary-lt text-muted px-2 py-0.5" style="font-size: 0.75rem;">
+                                                    0 responses
+                                                </span>
+                                            @endif
+                                        </div>
                                     </td>
                                     <td class="text-end">
-                                        <button type="button" class="btn btn-outline-secondary task-menu-btn" title="Actions"
+                                        <button type="button" class="btn btn-outline-secondary task-menu-btn position-relative" title="Actions"
                                                 data-submissions-url="{{ route('manage.task.submissions', $task) }}"
-                                                data-pending="{{ $task->pending_submissions_count }}"
+                                                data-pending="{{ $pendingCount }}"
+                                                data-completed="{{ $completedCount }}"
                                                 data-edit-url="{{ route('manage.task.edit', $task) }}"
                                                 data-publish-url="{{ $task->status === 'draft' ? route('manage.task.publish', $task) : '' }}"
                                                 data-qr-url="{{ $task->parent_type === 'standalone' ? route('manage.task.qr', $task->id) : '' }}"
                                                 data-delete-url="{{ route('manage.task.destroy', $task) }}">
                                             <i class="ti ti-dots"></i>
+                                            @if ($pendingCount > 0)
+                                                <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle" style="transform: translate(-40%, -40%) !important;">
+                                                    <span class="visually-hidden">New responses</span>
+                                                </span>
+                                            @endif
                                         </button>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="text-center text-muted py-4">
-                                        No tasks here yet.
+                                    <td colspan="6" class="text-center py-5">
+                                        <div class="empty py-4">
+                                            <div class="empty-icon text-muted mb-3">
+                                                <span class="avatar avatar-xl bg-primary-lt text-primary rounded-circle" style="width: 64px; height: 64px;">
+                                                    <i class="ti ti-clipboard-list" style="font-size: 2rem;"></i>
+                                                </span>
+                                            </div>
+                                            <h3 class="empty-title fw-bold text-dark mb-1">No Tasks in This Container Yet</h3>
+                                            <p class="empty-subtitle text-muted mb-3" style="max-width: 440px; margin: 0 auto; line-height: 1.5;">
+                                                Wadah <strong>{{ $parentName }}</strong> belum memiliki tugas. Klik tombol di bawah untuk membuat tugas pertama.
+                                            </p>
+                                            <div class="empty-action">
+                                                <a href="{{ route('manage.task.create', ['parent_type' => $parentType, 'parent_id' => $parentId]) }}" class="btn btn-primary px-3 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-1.5">
+                                                    <i class="ti ti-plus fs-2"></i> Add Task Now
+                                                </a>
+                                            </div>
+                                        </div>
                                     </td>
                                 </tr>
                             @endforelse
@@ -161,7 +221,7 @@
                     <div id="taskQrContent" class="d-none">
                         <div class="text-center mb-3">
                             <h4 class="fw-bold mb-1 text-dark" id="taskQrTaskTitle"></h4>
-                            <span class="badge bg-secondary-lt text-secondary">Global Task</span>
+                            <span class="badge bg-secondary-lt text-secondary">Others</span>
                         </div>
                         <div class="text-center mb-3">
                             <div class="p-3 bg-white border rounded d-inline-block shadow-sm" id="taskQrSvgContainer" style="line-height:0; max-width:260px;"></div>
@@ -316,7 +376,24 @@ function openQrModal(qrUrl) {
             if (openBtn) closeMenu();
             openBtn = btn;
             var h = '';
-            h += '<a class="dropdown-item" href="' + btn.dataset.submissionsUrl + '"><i class="ti ti-inbox me-2 text-primary"></i>Responses (' + btn.dataset.pending + ')</a>';
+            var pending = parseInt(btn.dataset.pending, 10) || 0;
+            var completed = parseInt(btn.dataset.completed, 10) || 0;
+            if (pending > 0) {
+                h += '<a class="dropdown-item d-flex align-items-center justify-content-between text-warning fw-bold" href="' + btn.dataset.submissionsUrl + '">' +
+                    '<span><i class="ti ti-inbox me-2 text-warning"></i>Responses</span>' +
+                    '<span class="badge bg-warning text-dark fw-bold ms-2">' + pending + ' need review</span>' +
+                    '</a>';
+            } else if (completed > 0) {
+                h += '<a class="dropdown-item d-flex align-items-center justify-content-between" href="' + btn.dataset.submissionsUrl + '">' +
+                    '<span><i class="ti ti-inbox me-2 text-primary"></i>Responses</span>' +
+                    '<span class="badge bg-success-lt text-success ms-2">' + completed + ' completed</span>' +
+                    '</a>';
+            } else {
+                h += '<a class="dropdown-item d-flex align-items-center justify-content-between text-muted" href="' + btn.dataset.submissionsUrl + '">' +
+                    '<span><i class="ti ti-inbox me-2 text-muted"></i>Responses</span>' +
+                    '<span class="badge bg-secondary-lt text-muted ms-2">0</span>' +
+                    '</a>';
+            }
             h += '<a class="dropdown-item" href="' + btn.dataset.editUrl + '"><i class="ti ti-edit me-2 text-info"></i>Edit</a>';
             if (btn.dataset.publishUrl) {
                 h += '<form action="' + btn.dataset.publishUrl + '" method="POST"><input type="hidden" name="_token" value="' + csrfToken + '"><button type="submit" class="dropdown-item"><i class="ti ti-send me-2 text-success"></i>Publish</button></form>';

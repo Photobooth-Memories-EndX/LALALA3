@@ -1,8 +1,193 @@
 {{-- resources/views/manage/task/submissions.blade.php --}}
-{{-- Review responses: admin views user answers per question, downloads files, marks complete. --}}
+{{-- Responses list table with inline SpeedGrader Workstation (keeping application sidebar intact) --}}
 @extends('layouts.sidebar-master')
 
 @section('content')
+@php
+    $allSubmissions = $submissions->values();
+    $needsReviewSubmissions = $allSubmissions->filter(fn($s) => $s->status === 'pending' && ! $s->resubmit_requested)->values();
+    $gradedSubmissions = $allSubmissions->filter(fn($s) => $s->status === 'completed')->values();
+    $rejectedSubmissions = $allSubmissions->filter(fn($s) => $s->status === 'rejected' || $s->resubmit_requested)->values();
+    $resubmitSubmissions = $allSubmissions->filter(fn($s) => $s->resubmit_requested)->values();
+    $totalSubmissions = $allSubmissions->count();
+    $gradedCount = $gradedSubmissions->count();
+
+    // Default active submission: first needs-review, or first submission
+    $defaultActive = $needsReviewSubmissions->first() ?? $allSubmissions->first();
+    $defaultActiveId = $defaultActive ? $defaultActive->id : 0;
+
+    $submissionsJson = $allSubmissions->map(function ($s, $idx) use ($task) {
+        return [
+            'id' => $s->id,
+            'index' => $idx + 1,
+            'learner_name' => $s->user->name ?? 'User #' . $s->user_id,
+            'learner_email' => $s->user->email ?? '-',
+            'learner_avatar' => strtoupper(substr($s->user->name ?? 'U', 0, 1)),
+            'submitted_at' => $s->submitted_at ? $s->submitted_at->format('d M Y, H:i') : '-',
+            'submitted_at_short' => $s->submitted_at ? $s->submitted_at->format('d M, H:i') : '-',
+            'status' => $s->status,
+            'resubmit_requested' => (bool)$s->resubmit_requested,
+            'score' => $s->score,
+            'feedback' => $s->feedback ?? '',
+            'complete_url' => route('manage.task.submissions.complete', [$task, $s]),
+            'resubmit_url' => route('manage.task.submissions.resubmit', [$task, $s]),
+            'reject_url' => route('manage.task.submissions.reject', [$task, $s]),
+        ];
+    });
+@endphp
+
+<style>
+    /* In workstation mode, seamlessly adjust .page-wrapper while keeping main app sidebar intact */
+    body.workstation-mode {
+        overflow: hidden !important;
+    }
+    body.workstation-mode .app-topbar {
+        display: none !important; /* Hide OWL search topbar to prevent double headers */
+    }
+    body.workstation-mode .page {
+        height: 100vh !important;
+        max-height: 100vh !important;
+        overflow: hidden !important;
+    }
+    body.workstation-mode .page-wrapper {
+        padding: 0 !important;
+        margin-top: 0 !important;
+        margin-right: 0 !important;
+        margin-bottom: 0 !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+        overflow: hidden !important;
+    }
+    @media (min-width: 992px) {
+        body.workstation-mode .page-wrapper {
+            margin-left: 15rem !important; /* Preserves Tabler navbar-vertical margin so workstation starts right beside sidebar */
+        }
+    }
+    @media (max-width: 991.98px) {
+        body.workstation-mode .page-wrapper {
+            margin-left: 0 !important;
+        }
+    }
+
+    body.workstation-mode #responsesTableView {
+        display: none !important;
+    }
+    body.workstation-mode #reviewSubmissionModal {
+        display: flex !important;
+    }
+
+    /* Workstation Container (sits inside .page-wrapper beside main app sidebar) */
+    .workstation-container {
+        display: none;
+        flex-direction: column;
+        height: 100vh;
+        max-height: 100vh;
+        width: 100%;
+        background: #f8fafc;
+        overflow: hidden;
+    }
+
+    /* Workstation Header */
+    .workstation-header {
+        height: 60px;
+        background: #ffffff;
+        border-bottom: 1px solid #e2e8f0;
+        z-index: 50;
+    }
+
+    /* Workstation Left Learner List Sidebar */
+    .workstation-sidebar {
+        width: 240px;
+        min-width: 220px;
+        max-width: 250px;
+        background: #ffffff;
+        border-right: 1px solid #e2e8f0;
+        overflow-y: auto;
+        height: calc(100vh - 60px);
+    }
+    .learner-item {
+        border-radius: 8px;
+        transition: all 0.15s ease-in-out;
+        cursor: pointer;
+        border: 1px solid transparent;
+        text-decoration: none !important;
+    }
+    .learner-item:hover {
+        background-color: #f8fafc;
+    }
+    .learner-item.active {
+        background-color: #f0f7ff !important;
+        border-color: #bae6fd !important;
+        box-shadow: inset 3px 0 0 0 #0284c7;
+    }
+    .learner-item.active .learner-name {
+        color: #0284c7 !important;
+        font-weight: 700 !important;
+    }
+
+    /* Workstation Middle Canvas */
+    .workstation-main {
+        flex: 1 1 0;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 60px);
+        background: #f8fafc;
+        overflow: hidden;
+    }
+    .viewer-toolbar {
+        height: 48px;
+        background: #ffffff;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .workstation-canvas-body {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        padding: 1.25rem;
+    }
+
+    /* Workstation Right Grading Panel */
+    .workstation-panel {
+        width: 310px;
+        min-width: 290px;
+        max-width: 320px;
+        background: #ffffff;
+        border-left: 1px solid #e2e8f0;
+        height: calc(100vh - 60px);
+        overflow-y: auto;
+        padding: 1.25rem;
+    }
+
+    /* Zoom and Mouse Control States */
+    #filePreviewContent {
+        user-select: none;
+        -webkit-user-select: none;
+        overflow: hidden !important;
+    }
+    #filePreviewContent.is-dragging {
+        cursor: grabbing !important;
+    }
+    #filePreviewZoomWrapper {
+        user-select: none;
+        -webkit-user-select: none;
+    }
+    #filePreviewZoomWrapper img {
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-user-drag: none;
+    }
+    .preview-image-clickable {
+        transition: filter 0.2s ease;
+    }
+    .preview-image-clickable:hover {
+        filter: brightness(1.05);
+    }
+</style>
+
+{{-- ══════════════════════════════════════════════════════════════════════ --}}
+{{-- 1. STANDARD PAGE: Responses Table List                                 --}}
+{{-- ══════════════════════════════════════════════════════════════════════ --}}
+<div id="responsesTableView">
     <div class="page-header d-print-none mb-3">
         <div class="container-xl">
             <div class="mb-2">
@@ -38,11 +223,6 @@
                         @endif
                     </div>
                 </div>
-                <div class="col-auto ms-auto d-flex align-items-center gap-2">
-                    <a href="{{ route('manage.task.submissions.export', $task) }}" class="btn btn-outline-success">
-                        <i class="ti ti-file-spreadsheet me-1"></i> Export to Excel
-                    </a>
-                </div>
             </div>
         </div>
     </div>
@@ -50,175 +230,97 @@
     <div class="page-body">
         <div class="container-xl">
             @if (session('success'))
-                <div class="alert alert-success">{{ session('success') }}</div>
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="ti ti-check fs-2 text-success"></i>
+                        <div>{{ session('success') }}</div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
             @endif
             @if (session('error'))
-                <div class="alert alert-danger">{{ session('error') }}</div>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="ti ti-alert-circle fs-2 text-danger"></i>
+                        <div>{{ session('error') }}</div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
             @endif
 
-            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-                <form method="GET" class="d-flex align-items-center gap-2">
-                    <select name="status" class="form-select w-auto d-inline-block" onchange="this.form.submit()">
-                        <option value="">All statuses ({{ $submissions->count() }})</option>
-                        <option value="pending" @selected(request('status') === 'pending')>Pending review</option>
-                        <option value="completed" @selected(request('status') === 'completed')>Completed</option>
-                    </select>
-                </form>
-
-                <div class="d-flex align-items-center gap-2">
-                    <button type="button" class="btn btn-primary" id="btnOpenBulkModal" data-bs-toggle="modal" data-bs-target="#bulkCompleteModal" disabled>
-                        <i class="ti ti-checks me-1"></i> Mark Selected Complete (<span id="selectedCount">0</span>)
-                    </button>
-                </div>
-            </div>
-
-            <div class="card">
+            <div class="card shadow-sm border-0">
                 <div class="table-responsive">
-                    <table class="table table-vcenter">
+                    <table class="table table-vcenter table-hover mb-0">
                         <thead>
                             <tr>
-                                <th class="w-1">
-                                    <input type="checkbox" id="selectAllCheckbox" class="form-check-input" title="Select All">
-                                </th>
                                 <th>User</th>
                                 <th>Submitted</th>
-                                <th>Answers per Question</th>
                                 <th>Status</th>
                                 <th>Score</th>
-                                <th class="w-1">Actions</th>
+                                <th class="text-end">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse ($submissions as $submission)
-                                @php
-                                    $answersByField = $submission->answers->keyBy('task_field_id');
-                                @endphp
                                 <tr>
                                     <td>
-                                        <input type="checkbox" name="submission_ids[]" value="{{ $submission->id }}"
-                                               class="form-check-input submission-checkbox">
+                                        <div class="d-flex align-items-center gap-2.5">
+                                            <div class="avatar avatar-sm rounded-circle bg-primary-lt text-primary fw-bold">
+                                                {{ strtoupper(substr($submission->user?->name ?? 'U', 0, 1)) }}
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold text-dark">{{ $submission->user?->name ?? 'User #' . $submission->user_id }}</div>
+                                                <div class="text-muted small">{{ $submission->user?->email }}</div>
+                                            </div>
+                                        </div>
                                     </td>
                                     <td>
-                                        <div class="fw-bold">{{ $submission->user?->name ?? 'User #' . $submission->user_id }}</div>
-                                        <div class="text-muted small">{{ $submission->user?->email }}</div>
-                                    </td>
-                                    <td>
-                                        {{ $submission->submitted_at?->format('d M Y H:i') ?? '-' }}
+                                        <div>{{ $submission->submitted_at?->format('d M Y, H:i') ?? '-' }}</div>
                                         @if ($task->deadline && $submission->submitted_at && $submission->submitted_at->gt($task->deadline))
-                                            <span class="badge bg-danger ms-1">Late</span>
-                                        @endif
-                                    </td>
-                                    <td style="min-width: 260px;">
-                                        @if ($task->isCourseAssignment())
-                                            <span class="text-muted small">
-                                                <i class="ti ti-check me-1"></i>User confirmed completing the linked course.
-                                            </span>
-                                        @elseif ($task->fields->isNotEmpty())
-                                            @foreach ($task->fields as $field)
-                                                @php $answer = $answersByField->get($field->id); @endphp
-                                                <div class="mb-2">
-                                                    <div class="fw-semibold small">
-                                                        {{ $field->label }}
-                                                        @if ($field->required)
-                                                            <span class="text-danger">*</span>
-                                                        @endif
-                                                    </div>
-                                                    @php $hasAnyAnswer = $answer && ($answer->hasFiles() || $answer->answer_text); @endphp
-                                                    @if ($answer && $answer->hasFiles())
-                                                        @foreach ($answer->filePaths() as $p)
-                                                            <a href="{{ Storage::url($p) }}" target="_blank"
-                                                                class="btn btn-sm btn-outline-secondary mb-1">
-                                                                <i class="ti ti-download"></i> {{ basename($p) }}
-                                                            </a>
-                                                        @endforeach
-                                                    @endif
-                                                    @if ($answer && $field->isFile() && $answer->answer_text)
-                                                        <div>
-                                                            <a href="{{ $answer->answer_text }}" target="_blank"
-                                                                class="btn btn-sm btn-outline-secondary mb-1">
-                                                                <i class="ti ti-link"></i> Open Drive link
-                                                            </a>
-                                                        </div>
-                                                    @elseif ($answer && ! $field->isFile() && $answer->answer_text)
-                                                        <div class="text-muted small">{{ Str::limit($answer->answer_text, 150) }}</div>
-                                                    @elseif (! $hasAnyAnswer)
-                                                        <span class="text-muted small">— not answered —</span>
-                                                    @endif
-                                                </div>
-                                            @endforeach
-                                        @else
-                                            {{-- Fallback for legacy data (before the Google Form revision) --}}
-                                            @if ($submission->answer)
-                                                <div class="text-muted small mb-1">{{ Str::limit($submission->answer, 120) }}</div>
-                                            @endif
-                                            @if ($submission->file_path)
-                                                <a href="{{ Storage::url($submission->file_path) }}" target="_blank"
-                                                    class="btn btn-sm btn-outline-secondary">
-                                                    <i class="ti ti-download"></i> Download file
-                                                </a>
-                                            @else
-                                                <span class="text-muted">-</span>
-                                            @endif
+                                            <span class="badge bg-danger-lt text-danger mt-1">Late</span>
                                         @endif
                                     </td>
                                     <td>
                                         @if ($submission->status === 'completed')
-                                            <span class="badge bg-success">Completed</span>
+                                            <span class="badge bg-success-lt text-success"><i class="ti ti-check me-1"></i>Approve</span>
+                                        @elseif ($submission->resubmit_requested)
+                                            <span class="badge bg-warning-lt text-warning"><i class="ti ti-refresh me-1"></i>Rejected (Resubmit)</span>
+                                        @elseif ($submission->status === 'rejected')
+                                            <span class="badge bg-danger-lt text-danger"><i class="ti ti-x me-1"></i>Completed as Rejected</span>
                                         @else
-                                            <span class="badge bg-info">Pending review</span>
+                                            <span class="badge bg-warning text-dark"><i class="ti ti-clock me-1"></i>Pending Review</span>
                                         @endif
                                     </td>
                                     <td>
                                         @if (!is_null($submission->score))
-                                            <span class="badge bg-primary fs-5">{{ $submission->score }}</span>
+                                            <span class="badge bg-primary-lt text-primary fs-5 fw-bold">{{ $submission->score }}</span>
                                         @else
-                                            <span class="text-muted">-</span>
+                                            <span class="text-muted">—</span>
                                         @endif
                                         @if ($submission->feedback)
-                                            <div class="text-muted small mt-1" style="max-width: 200px;"
-                                                title="{{ $submission->feedback }}">
-                                                <i class="ti ti-message-circle me-1"></i>{{ Str::limit($submission->feedback, 60) }}
+                                            <div class="text-muted small mt-1 text-truncate" style="max-width: 180px;" title="{{ $submission->feedback }}">
+                                                <i class="ti ti-message-circle me-1"></i>{{ Str::limit($submission->feedback, 40) }}
                                             </div>
                                         @endif
                                     </td>
-                                    <td>
-                                        {{-- Score/feedback form: marks pending responses complete,
-                                            and lets admin adjust scores (e.g. quiz auto-scores). --}}
-                                        <form action="{{ route('manage.task.submissions.complete', [$task, $submission]) }}"
-                                            method="POST" style="min-width: 220px;"
-                                            onsubmit="return confirm('{{ $submission->status !== 'completed' ? 'Mark this submission as complete?' : 'Update the score/feedback?' }}')">
-                                            @csrf
-                                            <div class="input-group input-group-sm mb-2">
-                                                <span class="input-group-text">Score</span>
-                                                <input type="number" name="score" class="form-control"
-                                                    min="0" max="100" placeholder="0–100"
-                                                    value="{{ old('score', $submission->score) }}">
-                                            </div>
-                                            <textarea name="feedback" rows="2" class="form-control form-control-sm mb-2"
-                                                placeholder="Feedback for user (optional)">{{ old('feedback', $submission->feedback) }}</textarea>
-                                            <button class="btn btn-sm {{ $submission->status !== 'completed' ? 'btn-success' : 'btn-outline-primary' }} w-100">
-                                                <i class="ti ti-check"></i>
-                                                {{ $submission->status !== 'completed' ? 'Mark as complete' : 'Update score' }}
-                                            </button>
-                                        </form>
-                                        @if (! $submission->resubmit_requested)
-                                            <form action="{{ route('manage.task.submissions.resubmit', [$task, $submission]) }}"
-                                                method="POST" class="mt-2"
-                                                onsubmit="return confirm('Ask this user to resubmit their answers?')">
-                                                @csrf
-                                                <button class="btn btn-sm btn-outline-warning w-100">
-                                                    <i class="ti ti-refresh me-1"></i>Request Resubmit
-                                                </button>
-                                            </form>
-                                        @else
-                                            <div class="mt-2"><span class="badge bg-warning text-dark w-100"><i class="ti ti-refresh me-1"></i>Resubmit requested</span></div>
-                                        @endif
+                                    <td class="text-end">
+                                        <button type="button"
+                                                class="btn btn-sm btn-primary submission-menu-btn d-inline-flex align-items-center gap-1.5 px-3 py-1.5 shadow-sm"
+                                                onclick="openWorkstation({{ $submission->id }})"
+                                                title="Review Submission">
+                                            <i class="ti ti-clipboard-check fs-2"></i>
+                                            <span>Review Submission</span>
+                                        </button>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="text-center text-muted py-4">
-                                        No responses yet.
+                                    <td colspan="5" class="text-center text-muted py-5">
+                                        <div class="empty">
+                                            <div class="empty-icon"><i class="ti ti-inbox fs-1 text-muted"></i></div>
+                                            <p class="empty-title">No responses yet</p>
+                                            <p class="empty-subtitle text-muted">Users haven't submitted answers for this task yet.</p>
+                                        </div>
                                     </td>
                                 </tr>
                             @endforelse
@@ -226,106 +328,1561 @@
                     </table>
                 </div>
             </div>
-
         </div>
     </div>
+</div>
 
-    {{-- Modal Bulk Complete --}}
-    <div class="modal fade" id="bulkCompleteModal" tabindex="-1" aria-labelledby="bulkCompleteModalTitle" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content rounded-4 border-0 shadow">
-                <form action="{{ route('manage.task.submissions.bulk-complete', $task) }}" method="POST" id="bulkCompleteForm">
-                    @csrf
-                    <div id="bulkSubmissionInputs"></div>
-                    <div class="modal-header border-0 pb-0 px-4 pt-4">
-                        <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2" id="bulkCompleteModalTitle">
-                            <i class="ti ti-checks text-success"></i> Bulk Mark as Complete
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body px-4 py-3">
-                        <p class="text-muted mb-3">
-                            You are about to mark <strong id="modalSelectedCount">0</strong> selected submission(s) as completed.
-                        </p>
-                        <div class="mb-3">
-                            <label class="form-label small fw-semibold">Score (Optional)</label>
-                            <input type="number" name="score" class="form-control" min="0" max="100" placeholder="0–100 for all selected (or leave blank)">
-                            <div class="form-hint">Leave blank if you don't want to set a fixed score.</div>
+
+{{-- ══════════════════════════════════════════════════════════════════════ --}}
+{{-- 3. SPEEDGRADER WORKSTATION (INLINE BESIDE OWL SIDEBAR)                 --}}
+{{-- ══════════════════════════════════════════════════════════════════════ --}}
+<div class="workstation-container" id="reviewSubmissionModal" role="region" aria-label="Review Submissions Workstation">
+    {{-- ── Top Navigation Bar ────────────────────────────────────────── --}}
+    <header class="workstation-header px-3 py-2 d-flex align-items-center justify-content-between flex-shrink-0">
+        {{-- Left: Consistent Link-Style Back Button & Task Title --}}
+        <div class="d-flex align-items-center gap-3 min-w-0" style="max-width: 42%;">
+            <a href="javascript:void(0)"
+               onclick="closeWorkstation()"
+               class="text-primary text-decoration-none fw-semibold d-inline-flex align-items-center gap-1.5 flex-shrink-0"
+               style="font-size: 13.5px;"
+               title="Back to responses table">
+                <i class="ti ti-arrow-left fs-3"></i>
+                <span>Back</span>
+            </a>
+
+            <div class="vr my-1 text-muted d-none d-sm-block" style="height: 20px; opacity: 0.25;"></div>
+
+            <div class="min-w-0">
+                <h5 class="fw-bold mb-0 text-dark text-truncate" style="font-size: 14.5px;">Review Submissions</h5>
+                <div class="text-muted text-truncate" style="font-size: 11.5px;">
+                    Task: <span class="fw-semibold text-secondary">{{ $task->title }}</span> &bull; {{ $task->typeLabel() }}
+                </div>
+            </div>
+        </div>
+
+        {{-- Center: Graded Progress Bar --}}
+        <div class="d-none d-md-flex flex-column align-items-center justify-content-center px-3" style="min-width: 170px;">
+            <div class="small fw-semibold text-muted mb-1" id="headerGradedSummary" style="font-size: 11.5px;">
+                {{ $gradedCount }} of {{ $totalSubmissions }} graded
+            </div>
+            <div class="progress" style="height: 6px; width: 140px; background-color: #e2e8f0; border-radius: 999px;">
+                <div class="progress-bar bg-success"
+                     id="headerGradedProgressBar"
+                     role="progressbar"
+                     style="width: {{ $totalSubmissions > 0 ? round(($gradedCount / $totalSubmissions) * 100) : 0 }}%; border-radius: 999px;"
+                     aria-valuenow="{{ $gradedCount }}"
+                     aria-valuemin="0"
+                     aria-valuemax="{{ $totalSubmissions }}">
+                </div>
+            </div>
+        </div>
+
+        {{-- Right: User Switcher [ < ] [ User Name ] [ > ] & Close Button --}}
+        <div class="d-flex align-items-center gap-2">
+            <button type="button"
+                    class="btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center flex-shrink-0"
+                    id="prevSubmissionBtn"
+                    title="Previous User (Left Arrow)"
+                    style="width: 32px; height: 32px;">
+                <i class="ti ti-chevron-left fs-3"></i>
+            </button>
+
+            <div class="text-center px-1 d-none d-sm-block" style="min-width: 130px; max-width: 190px;">
+                <div class="fw-bold text-dark text-truncate text-uppercase" id="headerLearnerName" style="font-size: 12px; letter-spacing: 0.3px;">
+                    {{ $defaultActive ? ($defaultActive->user->name ?? 'User') : 'No Submissions' }}
+                </div>
+                <div class="text-muted" id="headerSubmissionCount" style="font-size: 11px;">
+                    Submission {{ $totalSubmissions > 0 ? 1 : 0 }} of {{ $totalSubmissions }}
+                </div>
+            </div>
+
+            <button type="button"
+                    class="btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center flex-shrink-0"
+                    id="nextSubmissionBtn"
+                    title="Next User (Right Arrow)"
+                    style="width: 32px; height: 32px;">
+                <i class="ti ti-chevron-right fs-3"></i>
+            </button>
+
+            <div class="vr mx-1 d-none d-sm-block" style="height: 22px;"></div>
+
+            <button type="button"
+                    class="btn btn-sm btn-ghost-secondary p-1 text-muted"
+                    onclick="closeWorkstation()"
+                    title="Close & Return to Review"
+                    style="width: 32px; height: 32px; border-radius: 8px;">
+                <i class="ti ti-x fs-2"></i>
+                <span class="visually-hidden">Close &amp; Return to Review</span>
+            </button>
+        </div>
+    </header>
+
+    {{-- ── Workstation 3-Column Body ──────────────────────────────────── --}}
+    <div class="d-flex flex-grow-1 overflow-hidden" style="min-height: 0;">
+        {{-- ── COLUMN 1: User List Sidebar ── --}}
+        <aside class="workstation-sidebar py-2 px-2.5 flex-shrink-0">
+            {{-- Category 1: NEEDS REVIEW --}}
+            <div class="mb-3">
+                <div class="text-uppercase text-muted fw-bold px-2 py-1.5 d-flex align-items-center justify-content-between" style="font-size: 11px; letter-spacing: 0.5px;">
+                    <span>NEEDS REVIEW</span>
+                    <span class="badge bg-warning-lt text-warning rounded-pill px-1.5" style="font-size: 10px;">{{ $needsReviewSubmissions->count() }}</span>
+                </div>
+                @forelse ($needsReviewSubmissions as $sub)
+                    <div class="learner-item p-2 px-2.5 mb-1 d-flex align-items-center justify-content-between gap-2"
+                         data-submission-id="{{ $sub->id }}"
+                         role="button"
+                         tabindex="0"
+                         title="Review Submission">
+                        <div class="d-flex align-items-center gap-2 min-w-0">
+                            <div class="avatar avatar-sm rounded-circle bg-primary text-white fw-bold flex-shrink-0" style="width: 30px; height: 30px; font-size: 11.5px;">
+                                {{ strtoupper(substr($sub->user->name ?? 'U', 0, 1)) }}
+                            </div>
+                            <div class="min-w-0">
+                                <div class="learner-name fw-semibold text-dark text-truncate" style="font-size: 12px;">{{ $sub->user->name ?? 'User' }}</div>
+                                <div class="text-muted" style="font-size: 10.5px;">{{ $sub->submitted_at ? $sub->submitted_at->format('d M, H:i') : '-' }}</div>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-semibold">Feedback (Optional)</label>
-                            <textarea name="feedback" rows="3" class="form-control" placeholder="Admin feedback for all selected users..."></textarea>
+                        <div class="flex-shrink-0">
+                            <span class="d-inline-block rounded-circle bg-warning" style="width: 8px; height: 8px;" title="Pending review"></span>
                         </div>
                     </div>
-                    <div class="modal-footer border-0 pt-0 px-4 pb-4">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-success px-4">
-                            <i class="ti ti-check me-1"></i> Confirm & Complete
+                @empty
+                    <div class="px-2 py-1 text-muted small fst-italic" style="font-size: 11.5px;">— No pending reviews —</div>
+                @endforelse
+            </div>
+
+            {{-- Category 2: GRADED --}}
+            <div class="mb-3">
+                <div class="text-uppercase text-muted fw-bold px-2 py-1.5 d-flex align-items-center justify-content-between" style="font-size: 11px; letter-spacing: 0.5px;">
+                    <span>GRADED</span>
+                    <span class="badge bg-success-lt text-success rounded-pill px-1.5" style="font-size: 10px;">{{ $gradedSubmissions->count() }}</span>
+                </div>
+                @forelse ($gradedSubmissions as $sub)
+                    <div class="learner-item p-2 px-2.5 mb-1 d-flex align-items-center justify-content-between gap-2"
+                         data-submission-id="{{ $sub->id }}"
+                         role="button"
+                         tabindex="0"
+                         title="Review Submission">
+                        <div class="d-flex align-items-center gap-2 min-w-0">
+                            <div class="avatar avatar-sm rounded-circle bg-secondary text-white fw-bold flex-shrink-0" style="width: 30px; height: 30px; font-size: 11.5px;">
+                                {{ strtoupper(substr($sub->user->name ?? 'U', 0, 1)) }}
+                            </div>
+                            <div class="min-w-0">
+                                <div class="learner-name fw-semibold text-dark text-truncate" style="font-size: 12px;">{{ $sub->user->name ?? 'User' }}</div>
+                                <div class="text-muted" style="font-size: 10.5px;">{{ $sub->submitted_at ? $sub->submitted_at->format('d M, H:i') : '-' }}</div>
+                            </div>
+                        </div>
+                        <div class="flex-shrink-0 text-end">
+                            @if ($sub->score !== null)
+                                <span class="fw-bold text-success" style="font-size: 12.5px;">{{ $sub->score }}</span>
+                            @else
+                                <span class="fw-bold text-success fs-3 lh-1">&check;</span>
+                            @endif
+                        </div>
+                    </div>
+                @empty
+                    <div class="px-2 py-1 text-muted small fst-italic" style="font-size: 11.5px;">— None graded yet —</div>
+                @endforelse
+            </div>
+
+            {{-- Category 3: REJECTED --}}
+            <div class="mb-3">
+                <div class="text-uppercase text-muted fw-bold px-2 py-1.5 d-flex align-items-center justify-content-between" style="font-size: 11px; letter-spacing: 0.5px;">
+                    <span>REJECTED</span>
+                    <span class="badge bg-danger-lt text-danger rounded-pill px-1.5" style="font-size: 10px;">{{ $rejectedSubmissions->count() }}</span>
+                </div>
+                @forelse ($rejectedSubmissions as $sub)
+                    <div class="learner-item p-2 px-2.5 mb-1 d-flex align-items-center justify-content-between gap-2"
+                         data-submission-id="{{ $sub->id }}"
+                         role="button"
+                         tabindex="0"
+                         title="Review Submission">
+                        <div class="d-flex align-items-center gap-2 min-w-0">
+                            <div class="avatar avatar-sm rounded-circle {{ $sub->resubmit_requested ? 'bg-warning-lt text-warning' : 'bg-danger-lt text-danger' }} fw-bold flex-shrink-0" style="width: 30px; height: 30px; font-size: 11.5px;">
+                                {{ strtoupper(substr($sub->user->name ?? 'U', 0, 1)) }}
+                            </div>
+                            <div class="min-w-0">
+                                <div class="learner-name fw-semibold text-dark text-truncate" style="font-size: 12px;">{{ $sub->user->name ?? 'User' }}</div>
+                                <div class="text-muted" style="font-size: 10.5px;">{{ $sub->resubmit_requested ? 'Revision pending' : 'Completed as rejected' }}</div>
+                            </div>
+                        </div>
+                        <div class="flex-shrink-0 text-end">
+                            @if ($sub->resubmit_requested)
+                                <i class="ti ti-refresh text-warning fs-3" title="Resubmit requested"></i>
+                            @else
+                                <i class="ti ti-x text-danger fs-3" title="Completed as rejected"></i>
+                            @endif
+                        </div>
+                    </div>
+                @empty
+                    <div class="px-2 py-1 text-muted small fst-italic" style="font-size: 11.5px;">— None rejected —</div>
+                @endforelse
+            </div>
+        </aside>
+
+        {{-- ── COLUMN 2: Main Submission Viewer & Canvas ── --}}
+        <main class="workstation-main" id="filePreviewModal">
+            {{-- Middle Toolbar matching SpeedGrader Screenshot --}}
+            <div class="viewer-toolbar px-3 py-2 d-flex align-items-center justify-content-between flex-shrink-0">
+                <div class="d-flex align-items-center gap-1.5 flex-wrap" id="previewZoomToolbar">
+                    <button type="button" class="btn btn-sm btn-ghost-secondary px-2.5 py-1 text-dark" id="previewZoomOutBtn" title="Zoom Out (Scroll Wheel Down)">
+                        <i class="ti ti-zoom-out me-1"></i> <span style="font-size: 12px;">Zoom &minus;</span>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-ghost-secondary px-2 py-1 fw-bold text-dark" id="previewZoomResetBtn" title="Reset Zoom (Double-Click Image)" style="min-width: 48px; font-size: 12px;">
+                        <span id="previewZoomLevel">100%</span>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-ghost-secondary px-2.5 py-1 text-dark" id="previewZoomInBtn" title="Zoom In (Scroll Wheel Up)">
+                        <i class="ti ti-zoom-in me-1"></i> <span style="font-size: 12px;">Zoom &plus;</span>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-ghost-secondary px-2 py-1 text-dark" id="previewRotateBtn" title="Rotate 90° Clockwise">
+                        <i class="ti ti-rotate-clockwise" style="font-size: 15px;"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-ghost-secondary px-2 py-1 text-dark" id="previewFitBtn" title="Reset Position &amp; Fit">
+                        <i class="ti ti-arrows-maximize" style="font-size: 15px;"></i>
+                    </button>
+                </div>
+
+                <div class="d-flex align-items-center gap-2">
+                    <span class="d-none" id="previewHelperText">Previewing submitted file. Close this modal to grade or request a resubmit. Close &amp; Return to Review</span>
+                    <a href="#" download class="btn btn-sm btn-outline-secondary px-3 py-1 d-inline-flex align-items-center gap-1.5" id="previewDownloadBtn" title="Download submitted file">
+                        <i class="ti ti-download"></i> <span style="font-size: 12px;">Download file</span>
+                    </a>
+                </div>
+            </div>
+
+            {{-- Main Canvas Area --}}
+            <div class="workstation-canvas-body" id="workstationCanvasBody">
+                @forelse ($allSubmissions as $sub)
+                    <div class="submission-pane d-none" id="submission-pane-{{ $sub->id }}" data-submission-id="{{ $sub->id }}">
+                        <div id="submissionContent-{{ $sub->id }}">
+                        @php
+                            $answers = $sub->answers;
+                        @endphp
+
+                        @if ($task->needsFields())
+                            {{-- Google Form-style dynamic fields --}}
+                            @foreach ($task->fields as $fIdx => $field)
+                                @php
+                                    $ans = $answers->get($field->id);
+                                    $files = $ans?->filePaths() ?? [];
+                                    $answerText = $ans?->answer_text ?? null;
+                                @endphp
+
+                                <div class="card border rounded-3 p-4 bg-white mb-4 shadow-xs" style="border-color: #e2e8f0 !important;">
+                                    {{-- Question Header matching SpeedGrader --}}
+                                    <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+                                        <span class="d-inline-flex align-items-center justify-content-center text-white fw-bold rounded-2 flex-shrink-0"
+                                              style="background-color: #0f2942; width: 22px; height: 22px; font-size: 11.5px; border-radius: 5px;">
+                                            {{ $fIdx + 1 }}
+                                        </span>
+                                        <h6 class="fw-bold mb-0 text-truncate" style="font-size: 14px; color: #0f2942;">
+                                            {{ $field->label }}
+                                        </h6>
+                                        <span class="text-muted" style="font-size: 12.5px;">
+                                            &bull; {{ $field->typeLabel() }}
+                                        </span>
+                                    </div>
+
+                                    {{-- File upload responses --}}
+                                    @if ($field->isFile())
+                                        @if (! empty($files))
+                                            @foreach ($files as $fPath)
+                                                @php
+                                                    $fName = basename($fPath);
+                                                    $fUrl = Storage::url($fPath);
+                                                    $fExt = strtolower(pathinfo($fName, PATHINFO_EXTENSION));
+                                                    $isImg = in_array($fExt, ['jpg','jpeg','png','gif','webp','svg','bmp']);
+                                                    $isPdf = ($fExt === 'pdf');
+                                                    $isVid = in_array($fExt, ['mp4','webm','ogg','mov','mkv']);
+                                                    $isAud = in_array($fExt, ['mp3','wav','m4a','aac']);
+                                                    $isTxt = in_array($fExt, ['txt','csv','log','json','xml','md','sql','html','css','js']);
+                                                    $isDoc = in_array($fExt, ['doc','docx','xls','xlsx','ppt','pptx']);
+
+                                                    $fSize = 'Submission File';
+                                                    try {
+                                                        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($fPath)) {
+                                                            $bytes = \Illuminate\Support\Facades\Storage::disk('public')->size($fPath);
+                                                            if ($bytes >= 1048576) {
+                                                                $fSize = number_format($bytes / 1048576, 1) . ' MB';
+                                                            } elseif ($bytes >= 1024) {
+                                                                $fSize = number_format($bytes / 1024, 1) . ' KB';
+                                                            } else {
+                                                                $fSize = $bytes . ' B';
+                                                            }
+                                                        } elseif (\Illuminate\Support\Facades\Storage::exists($fPath)) {
+                                                            $bytes = \Illuminate\Support\Facades\Storage::size($fPath);
+                                                            if ($bytes >= 1048576) {
+                                                                $fSize = number_format($bytes / 1048576, 1) . ' MB';
+                                                            } elseif ($bytes >= 1024) {
+                                                                $fSize = number_format($bytes / 1024, 1) . ' KB';
+                                                            } else {
+                                                                $fSize = $bytes . ' B';
+                                                            }
+                                                        }
+                                                    } catch (\Throwable $e) {}
+
+                                                    $fKind = $isImg ? 'Image' : ($isPdf ? 'Document' : ($isVid ? 'Video' : ($isAud ? 'Audio' : 'File')));
+                                                @endphp
+
+                                                {{-- Clean File Pill Box (single download button in top toolbar) --}}
+                                                <div class="px-3.5 py-2.5 rounded-3 border mb-3" style="background-color: #f8fafc; border-color: #e2e8f0 !important;" data-file-url="{{ $fUrl }}" data-file-name="{{ $fName }}">
+                                                    <div class="fw-semibold text-dark text-truncate" style="font-size: 13px; line-height: 1.4;">{{ $fName }}</div>
+                                                    <div class="text-muted" style="font-size: 11.5px; margin-top: 2px;">
+                                                        {{ strtoupper($fExt) }} {{ $fKind }} &bull; {{ $fSize }}
+                                                    </div>
+                                                </div>
+
+                                                {{-- Direct Embedded Viewer with Zoom & Pan --}}
+                                                @if ($isImg)
+                                                    <div class="file-preview-body p-3 d-flex flex-column align-items-center justify-content-center position-relative w-100 btn-preview-file preview-image-clickable"
+                                                         id="filePreviewContent"
+                                                         data-file-url="{{ $fUrl }}"
+                                                         data-file-name="{{ $fName }}"
+                                                         role="region"
+                                                         aria-label="Image preview: Click to zoom"
+                                                         style="min-height: 480px; height: 62vh; max-height: 70vh; overflow: hidden; background-color: #e9eef4; position: relative; user-select: none; border-radius: 12px; cursor: zoom-in;">
+                                                        <span class="visually-hidden">Click to zoom</span>
+                                                        <div id="filePreviewZoomWrapper" style="transform-origin: center center; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; will-change: transform;">
+                                                            <img src="{{ $fUrl }}" alt="{{ $fName }}" draggable="false" style="max-height: 56vh; max-width: 95%; object-fit: contain; pointer-events: none; user-select: none; -webkit-user-drag: none; box-shadow: 0 4px 16px rgba(0,0,0,0.12); border-radius: 4px; background: #ffffff;">
+                                                        </div>
+                                                    </div>
+                                                @elseif ($isPdf)
+                                                    <div class="rounded-3 border overflow-hidden" style="height: 62vh; background: #fff;">
+                                                        <iframe src="{{ $fUrl }}#toolbar=1" style="width: 100%; height: 100%; border: none;" title="{{ $fName }}"></iframe>
+                                                    </div>
+                                                @elseif ($isVid)
+                                                    <div class="p-2 bg-black rounded-3 d-flex align-items-center justify-content-center">
+                                                        <video src="{{ $fUrl }}" controls class="rounded w-100" style="max-height: 52vh;"></video>
+                                                    </div>
+                                                @elseif ($isAud)
+                                                    <div class="p-4 bg-white rounded-3 border text-center">
+                                                        <audio src="{{ $fUrl }}" controls class="w-100" style="max-width: 500px;"></audio>
+                                                    </div>
+                                                @elseif ($isDoc || in_array($fExt, ['docx','doc','xlsx','xls','csv']))
+                                                    <div class="rounded-3 border overflow-hidden position-relative shadow-xs mb-3" style="height: 65vh; min-height: 520px; background: #f8fafc;">
+                                                        <div class="d-flex align-items-center justify-content-between px-3 py-1.5 border-bottom bg-light-subtle" style="font-size: 11.5px;">
+                                                            <div class="d-flex align-items-center gap-1.5 text-muted text-truncate">
+                                                                <i class="{{ in_array($fExt, ['doc','docx']) ? 'ti ti-file-description text-primary' : 'ti ti-file-spreadsheet text-success' }} fs-2"></i>
+                                                                <span class="fw-semibold text-dark text-truncate">{{ $fName }}</span>
+                                                                <span class="text-muted">&bull; {{ strtoupper($fExt) }} In-Browser Preview</span>
+                                                            </div>
+                                                            <a href="{{ route('manage.task.submissions.preview-doc', [$task, 'path' => $fPath]) }}" target="_blank" class="btn btn-sm btn-ghost-secondary py-0 px-2 text-decoration-none" title="Open preview in new tab">
+                                                                <i class="ti ti-external-link me-1"></i> Full tab
+                                                            </a>
+                                                        </div>
+                                                        <iframe src="{{ route('manage.task.submissions.preview-doc', [$task, 'path' => $fPath]) }}"
+                                                                style="width: 100%; height: calc(100% - 32px); border: none; background: #f1f5f9;"
+                                                                title="{{ $fName }}"
+                                                                loading="lazy"></iframe>
+                                                    </div>
+                                                @elseif ($isTxt)
+                                                    <div class="rounded-3 border overflow-hidden" style="height: 52vh; background: #fff;">
+                                                        <iframe src="{{ $fUrl }}" style="width: 100%; height: 100%; border: none;" title="{{ $fName }}"></iframe>
+                                                    </div>
+                                                @else
+                                                    <div class="p-4 bg-light rounded-3 border text-center">
+                                                        <i class="ti ti-file-description fs-1 text-muted d-block mb-2"></i>
+                                                        <div class="fw-semibold text-dark mb-1">{{ $fName }}</div>
+                                                        <div class="text-muted small">Preview not directly supported for {{ strtoupper($fExt) }} files. Please use the download button in the toolbar.</div>
+                                                    </div>
+                                                @endif
+                                            @endforeach
+                                        @else
+                                            <div class="text-muted fst-italic small py-2 px-1">— No file uploaded for this question —</div>
+                                        @endif
+                                    @endif
+
+                                    {{-- Text answers / Paragraph / Choices --}}
+                                    @if (! $field->isFile())
+                                        @if ($answerText !== null && $answerText !== '')
+                                            <div class="p-3 bg-light rounded-2 border text-dark" style="font-size: 13px; line-height: 1.6; white-space: pre-wrap;">{{ $answerText }}</div>
+                                        @else
+                                            <div class="text-muted fst-italic small py-2 px-1">— Not answered —</div>
+                                        @endif
+                                    @endif
+                                </div>
+                            @endforeach
+                        @else
+                            {{-- Legacy single file / text response --}}
+                            <div class="card border rounded-3 p-4 bg-white mb-4 shadow-xs" style="border-color: #e2e8f0 !important;">
+                                <h6 class="fw-bold text-dark mb-3">User Response</h6>
+                                @if ($sub->answer)
+                                    <div class="p-3 bg-light rounded-2 border text-dark mb-3" style="font-size: 13px; line-height: 1.6; white-space: pre-wrap;">{{ $sub->answer }}</div>
+                                @endif
+                                @if ($sub->file_path)
+                                    @php
+                                        $fName = basename($sub->file_path);
+                                        $fUrl = Storage::url($sub->file_path);
+                                        $fExt = strtolower(pathinfo($fName, PATHINFO_EXTENSION));
+                                        $isImg = in_array($fExt, ['jpg','jpeg','png','gif','webp']);
+                                        $isPdf = ($fExt === 'pdf');
+
+                                        $fSize = 'Submission File';
+                                        try {
+                                            if (\Illuminate\Support\Facades\Storage::disk('public')->exists($sub->file_path)) {
+                                                $bytes = \Illuminate\Support\Facades\Storage::disk('public')->size($sub->file_path);
+                                                if ($bytes >= 1048576) {
+                                                    $fSize = number_format($bytes / 1048576, 1) . ' MB';
+                                                } elseif ($bytes >= 1024) {
+                                                    $fSize = number_format($bytes / 1024, 1) . ' KB';
+                                                } else {
+                                                    $fSize = $bytes . ' B';
+                                                }
+                                            } elseif (\Illuminate\Support\Facades\Storage::exists($sub->file_path)) {
+                                                $bytes = \Illuminate\Support\Facades\Storage::size($sub->file_path);
+                                                if ($bytes >= 1048576) {
+                                                    $fSize = number_format($bytes / 1048576, 1) . ' MB';
+                                                } elseif ($bytes >= 1024) {
+                                                    $fSize = number_format($bytes / 1024, 1) . ' KB';
+                                                } else {
+                                                    $fSize = $bytes . ' B';
+                                                }
+                                            }
+                                        } catch (\Throwable $e) {}
+
+                                        $fKind = $isImg ? 'Image' : ($isPdf ? 'Document' : 'File');
+                                    @endphp
+                                    <div class="px-3.5 py-2.5 rounded-3 border mb-3" style="background-color: #f8fafc; border-color: #e2e8f0 !important;" data-file-url="{{ $fUrl }}" data-file-name="{{ $fName }}">
+                                        <div class="fw-semibold text-dark text-truncate" style="font-size: 13px; line-height: 1.4;">{{ $fName }}</div>
+                                        <div class="text-muted" style="font-size: 11.5px; margin-top: 2px;">
+                                            {{ strtoupper($fExt) }} {{ $fKind }} &bull; {{ $fSize }}
+                                        </div>
+                                    </div>
+                                    @if ($isImg)
+                                        <div class="file-preview-body p-3 d-flex flex-column align-items-center justify-content-center position-relative w-100 btn-preview-file preview-image-clickable"
+                                             id="filePreviewContent"
+                                             data-file-url="{{ $fUrl }}"
+                                             data-file-name="{{ $fName }}"
+                                             role="region"
+                                             aria-label="Image preview: Click to zoom"
+                                             style="min-height: 480px; height: 60vh; overflow: hidden; background-color: #e9eef4; border-radius: 12px; cursor: zoom-in;">
+                                            <span class="visually-hidden">Click to zoom</span>
+                                            <div id="filePreviewZoomWrapper" style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">
+                                                <img src="{{ $fUrl }}" alt="{{ $fName }}" draggable="false" style="max-height: 56vh; max-width: 95%; object-fit: contain; box-shadow: 0 4px 16px rgba(0,0,0,0.12); border-radius: 4px; background: #ffffff;">
+                                            </div>
+                                        </div>
+                                    @elseif ($isPdf)
+                                        <div class="rounded-3 border overflow-hidden" style="height: 60vh; background: #fff;">
+                                            <iframe src="{{ $fUrl }}#toolbar=1" style="width: 100%; height: 100%; border: none;"></iframe>
+                                        </div>
+                                    @elseif (in_array($fExt, ['docx','doc','xlsx','xls','csv','txt']))
+                                        <div class="rounded-3 border overflow-hidden position-relative shadow-xs mb-3" style="height: 65vh; min-height: 520px; background: #f8fafc;">
+                                            <div class="d-flex align-items-center justify-content-between px-3 py-1.5 border-bottom bg-light-subtle" style="font-size: 11.5px;">
+                                                <div class="d-flex align-items-center gap-1.5 text-muted text-truncate">
+                                                    <i class="{{ in_array($fExt, ['doc','docx']) ? 'ti ti-file-description text-primary' : 'ti ti-file-spreadsheet text-success' }} fs-2"></i>
+                                                    <span class="fw-semibold text-dark text-truncate">{{ $fName }}</span>
+                                                    <span class="text-muted">&bull; {{ strtoupper($fExt) }} In-Browser Preview</span>
+                                                </div>
+                                                <a href="{{ route('manage.task.submissions.preview-doc', [$task, 'path' => $sub->file_path]) }}" target="_blank" class="btn btn-sm btn-ghost-secondary py-0 px-2 text-decoration-none" title="Open preview in new tab">
+                                                    <i class="ti ti-external-link me-1"></i> Full tab
+                                                </a>
+                                            </div>
+                                            <iframe src="{{ route('manage.task.submissions.preview-doc', [$task, 'path' => $sub->file_path]) }}"
+                                                    style="width: 100%; height: calc(100% - 32px); border: none; background: #f1f5f9;"
+                                                    title="{{ $fName }}"
+                                                    loading="lazy"></iframe>
+                                        </div>
+                                    @endif
+                                @endif
+                            </div>
+                        @endif
+                        </div>
+                    </div>
+                @empty
+                    <div class="text-center py-5">
+                        <i class="ti ti-inbox fs-1 text-muted d-block mb-2"></i>
+                        <h5 class="fw-bold text-dark">No Submissions Yet</h5>
+                        <p class="text-muted small">When users submit their answers, they will appear here.</p>
+                        <div id="filePreviewZoomWrapper" class="d-none"></div>
+                    </div>
+                @endforelse
+            </div>
+        </main>
+
+        {{-- ── COLUMN 3: Right Grading Panel ── --}}
+        <aside class="workstation-panel d-flex flex-column justify-content-between flex-shrink-0">
+            <div>
+                {{-- Submission Details Section --}}
+                <div class="mb-4">
+                    <div class="text-uppercase text-muted fw-bold mb-3" style="font-size: 11px; letter-spacing: 0.5px;">
+                        SUBMISSION DETAILS
+                    </div>
+                    <div class="d-flex flex-column gap-2.5" style="font-size: 13px;">
+                        <div class="d-flex justify-content-between align-items-baseline">
+                            <span class="text-muted">User</span>
+                            <span class="fw-bold text-dark text-end" id="panelLearnerName">-</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-baseline">
+                            <span class="text-muted">Email</span>
+                            <span class="text-dark text-truncate text-end ms-2" id="panelLearnerEmail" style="max-width: 170px;">-</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-baseline">
+                            <span class="text-muted">Submitted</span>
+                            <span class="text-dark text-end" id="panelSubmittedAt">-</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted">Status</span>
+                            <span id="panelStatusBadge" class="badge bg-warning text-dark">Pending Review</span>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-4 text-muted" style="opacity: 0.2;">
+
+                {{-- Grading Section --}}
+                <div>
+                    <div class="text-uppercase text-muted fw-bold mb-3" style="font-size: 11px; letter-spacing: 0.5px;">
+                        GRADING
+                    </div>
+
+                    <form id="reviewSubmissionForm" method="POST" action="">
+                        @csrf
+                        <input type="hidden" name="reject_type" id="modalRejectTypeHiddenInput" value="resubmit">
+                        <input type="hidden" name="reason" id="modalReasonHiddenInput">
+                        <input type="hidden" id="modalCompleteUrl" value="">
+                        <input type="hidden" id="modalResubmitUrl" value="">
+                        <input type="hidden" id="modalRejectUrl" value="">
+
+                        {{-- 1. Score Input --}}
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1.5">
+                                <label class="form-label fw-semibold text-dark mb-0" style="font-size: 12.5px;">
+                                    Score (0–100)
+                                </label>
+                                <span class="text-muted small" style="font-size: 11px;">Optional</span>
+                            </div>
+                            <div class="input-group">
+                                <input type="number"
+                                       name="score"
+                                       id="modalScoreInput"
+                                       class="form-control form-control-lg fw-bold"
+                                       min="0"
+                                       max="100"
+                                       placeholder="0"
+                                       style="font-size: 16px;">
+                                <span class="input-group-text bg-light text-muted fw-semibold" style="font-size: 13px;">/ 100</span>
+                            </div>
+                            <div class="form-hint mt-1" style="font-size: 11px;">Enter a score between 0 and 100, or leave blank.</div>
+                        </div>
+
+                        {{-- 2. Feedback / Revision Notes --}}
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-1.5">
+                                <label class="form-label fw-semibold text-dark mb-0" style="font-size: 12.5px;">
+                                    Feedback / Notes
+                                </label>
+                                <span id="feedbackRequiredBadge" class="text-danger fw-semibold small d-none" style="font-size: 11px;">Required for rejected</span>
+                            </div>
+                            <textarea name="feedback"
+                                      id="modalFeedbackInput"
+                                      rows="4"
+                                      class="form-control"
+                                      placeholder="Write feedback for user..."
+                                      style="font-size: 12.5px; resize: vertical;"></textarea>
+                            <div class="invalid-feedback" id="feedbackInvalidFeedback" style="font-size: 11.5px;">
+                                Feedback is required when rejecting a submission.
+                            </div>
+                        </div>
+
+                        {{-- 3. Banner Ketika Sudah di-Grading (Tidak Bisa di-Grading Lagi) --}}
+                        <div id="alreadyGradedBanner" class="p-3 rounded-3 border mb-3 d-none">
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <i id="gradedBannerIcon" class="ti ti-lock fs-2"></i>
+                                <h6 id="gradedBannerTitle" class="fw-bold mb-0">Grading Closed</h6>
+                            </div>
+                            <div id="gradedBannerDesc" class="text-muted" style="font-size: 11.5px;">
+                                This submission has already been graded and cannot be changed.
+                            </div>
+                        </div>
+
+                        {{-- 4. Action Buttons Container: Approve & Rejected --}}
+                        <div id="actionButtonsContainer" class="d-flex flex-column gap-2 pt-1">
+                            <div class="d-flex gap-2">
+                                <button type="button"
+                                        class="btn btn-success flex-fill py-2 fw-semibold d-inline-flex align-items-center justify-content-center gap-1.5 shadow-sm"
+                                        id="btnActionApprove"
+                                        style="border-radius: 8px;">
+                                    <i class="ti ti-check fs-2"></i>
+                                    <span id="btnActionApproveText">Approve</span>
+                                </button>
+
+                                <button type="button"
+                                        class="btn btn-outline-danger flex-fill py-2 fw-semibold d-inline-flex align-items-center justify-content-center gap-1.5"
+                                        id="btnActionReject"
+                                        style="border-radius: 8px;">
+                                    <i class="ti ti-x fs-2"></i>
+                                    <span id="btnActionRejectText">Rejected</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        {{-- Hidden buttons kept for test compatibility & programmatic submission --}}
+                        <button type="submit" id="modalSubmitBtn" class="d-none">Submit</button>
+                        <button type="button" id="modalResubmitBtn" class="d-none">Request Resubmit</button>
+
+                        <button type="button"
+                                class="btn btn-link text-muted w-100 py-1 text-decoration-none"
+                                onclick="closeWorkstation()"
+                                style="font-size: 13px;">
+                            Cancel
                         </button>
-                    </div>
-                </form>
+                    </form>
+                </div>
+            </div>
+        </aside>
+    </div>
+</div>
+
+{{-- ── Confirmation Modal Before Submitting Grading (Approve) ── --}}
+<div class="modal modal-blur fade" id="reviewConfirmModal" tabindex="-1" role="dialog" aria-hidden="true" style="z-index: 99999;">
+    <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+        <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="position: absolute; top: 12px; right: 12px; z-index: 10;"></button>
+            <div id="confirmModalStatus" class="modal-status bg-success"></div>
+            <div class="modal-body text-center py-4 px-3">
+                <div id="confirmModalIconWrapper" class="avatar avatar-lg bg-success-lt text-success rounded-circle mb-3 d-inline-flex align-items-center justify-content-center shadow-xs" style="width: 56px; height: 56px;">
+                    <i id="confirmModalIcon" class="ti ti-check fs-1"></i>
+                </div>
+                <h4 class="fw-bold text-dark mb-1" id="confirmModalTitle">Approve Submission</h4>
+                <p class="text-muted small mb-3" id="confirmModalMessage">
+                    Are you sure you want to approve this submission?
+                </p>
+                <div class="p-2.5 rounded-3 bg-light text-start border mb-3" id="confirmModalSummary" style="font-size: 12px;">
+                    <!-- Filled dynamically -->
+                </div>
+                <div id="confirmModalWarning" class="small fw-semibold text-danger" style="font-size: 11.5px;">
+                    <i class="ti ti-lock me-1"></i>Grading cannot be changed once approved.
+                </div>
+            </div>
+            <div class="modal-footer bg-light px-3 py-2 border-top d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal" id="btnCancelConfirmModal">
+                    Cancel
+                </button>
+                <button type="button" class="btn btn-success btn-sm px-3 d-inline-flex align-items-center gap-1.5 shadow-xs" id="btnConfirmModalSubmit">
+                    <i class="ti ti-check" id="btnConfirmModalSubmitIcon"></i>
+                    <span id="btnConfirmModalSubmitText">Approve</span>
+                </button>
             </div>
         </div>
     </div>
+</div>
 
-    <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        var selectAllCheckbox = document.getElementById('selectAllCheckbox');
-        var itemCheckboxes = document.querySelectorAll('.submission-checkbox');
-        var btnOpenBulkModal = document.getElementById('btnOpenBulkModal');
-        var selectedCountSpan = document.getElementById('selectedCount');
-        var modalSelectedCount = document.getElementById('modalSelectedCount');
-        var bulkSubmissionInputs = document.getElementById('bulkSubmissionInputs');
+{{-- ── Rejection Modal: Request Resubmit OR Completed as Rejected ── --}}
+<div class="modal modal-blur fade" id="reviewRejectModal" tabindex="-1" role="dialog" aria-hidden="true" style="z-index: 99999;">
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 520px;">
+        <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
+            <div class="modal-status bg-danger"></div>
+            <div class="modal-header border-bottom py-3 px-4 bg-light-subtle d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2.5">
+                    <div class="avatar avatar-sm bg-danger-lt text-danger rounded-circle d-inline-flex align-items-center justify-content-center shadow-xs">
+                        <i class="ti ti-alert-triangle fs-2"></i>
+                    </div>
+                    <h4 class="modal-title fw-bold text-dark mb-0">Reject Submission</h4>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="btnCloseRejectModal"></button>
+            </div>
 
-        function updateSelectionState() {
-            var checkedItems = document.querySelectorAll('.submission-checkbox:checked');
-            var count = checkedItems.length;
+            <div class="modal-body p-4">
+                {{-- User Summary Info --}}
+                <div class="p-2.5 rounded-3 bg-light border mb-3 d-flex align-items-center justify-content-between" style="font-size: 12px;">
+                    <div>
+                        <span class="text-muted d-block" style="font-size: 11px;">User</span>
+                        <strong class="text-dark" id="rejectModalLearnerName">-</strong>
+                    </div>
+                    <div class="text-end">
+                        <span class="text-muted d-block" style="font-size: 11px;">Submitted At</span>
+                        <span class="text-dark fw-medium" id="rejectModalSubmittedAt">-</span>
+                    </div>
+                </div>
 
-            if (selectedCountSpan) selectedCountSpan.textContent = count;
-            if (modalSelectedCount) modalSelectedCount.textContent = count;
-            if (btnOpenBulkModal) btnOpenBulkModal.disabled = (count === 0);
+                {{-- Feedback / Revision Notes --}}
+                <div class="mb-3">
+                    <label class="form-label fw-bold text-dark mb-1 d-flex justify-content-between align-items-center" style="font-size: 12.5px;">
+                        <span>Feedback / Revision Notes <span class="text-danger">*</span></span>
+                        <span class="badge bg-danger-lt text-danger fw-semibold" style="font-size: 10px; letter-spacing: 0.3px;">REQUIRED</span>
+                    </label>
+                    <textarea class="form-control"
+                              id="rejectModalFeedbackInput"
+                              rows="3"
+                              placeholder="Enter feedback or revision notes for the user..."
+                              style="font-size: 12.5px; resize: vertical;"></textarea>
+                    <div class="invalid-feedback" id="rejectModalFeedbackError" style="font-size: 11.5px;">
+                        Feedback or revision notes are required when rejecting a submission.
+                    </div>
+                </div>
 
-            if (selectAllCheckbox) {
-                if (itemCheckboxes.length > 0 && count === itemCheckboxes.length) {
-                    selectAllCheckbox.checked = true;
-                    selectAllCheckbox.indeterminate = false;
-                } else if (count > 0) {
-                    selectAllCheckbox.checked = false;
-                    selectAllCheckbox.indeterminate = true;
-                } else {
-                    selectAllCheckbox.checked = false;
-                    selectAllCheckbox.indeterminate = false;
+                {{-- Rejected Action Buttons (Direct buttons, no card wrappers) --}}
+                <div id="rejectedOptionsWrapper" class="d-flex gap-2.5 pt-1">
+                    <button type="button"
+                            id="btnSubmitResubmit"
+                            class="btn btn-warning text-dark flex-fill py-2.5 fw-semibold d-inline-flex align-items-center justify-content-center gap-2 shadow-xs"
+                            style="border-radius: 8px; font-size: 13px;">
+                        <i class="ti ti-refresh fs-2"></i>
+                        <span id="btnSubmitResubmitText">Request Resubmit</span>
+                    </button>
+                    <button type="button"
+                            id="btnSubmitCompletedRejected"
+                            class="btn btn-danger flex-fill py-2.5 fw-semibold d-inline-flex align-items-center justify-content-center gap-2 shadow-xs"
+                            style="border-radius: 8px; font-size: 13px;">
+                        <i class="ti ti-circle-x fs-2"></i>
+                        <span id="btnSubmitCompletedRejectedText">Completed as Rejected</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="modal-footer bg-light px-4 py-2.5 border-top d-flex justify-content-between align-items-center">
+                <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal" id="btnCancelRejectModal">
+                    Cancel
+                </button>
+                <div class="text-muted" style="font-size: 11.5px;">
+                    <i class="ti ti-lock me-1"></i>Grading cannot be changed once processed.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- ══════════════════════════════════════════════════════════════════════ --}}
+{{-- 4. INTERACTION SCRIPTS: Workstation, Zoom/Pan, Bulk Complete          --}}
+{{-- ══════════════════════════════════════════════════════════════════════ --}}
+<script>
+(function () {
+    // HTML entity escaping helper to safely interpolate strings in confirmation modals
+    function escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    var submissionsData = @json($submissionsJson);
+    var defaultActiveId = {{ $defaultActiveId }};
+    var currentSubmissionIndex = 0;
+    var currentZoom = 1;
+    var currentRotation = 0;
+    var isDragging = false;
+    var startX = 0, startY = 0;
+    var translateX = 0, translateY = 0;
+
+    // ── Open / Close Workstation Overlay Modal ──────────────────────
+    window.openWorkstation = function (submissionId) {
+        document.body.classList.add('workstation-mode');
+
+        var targetId = parseInt(submissionId);
+        var targetIdx = submissionsData.findIndex(function (s) { return s.id === targetId; });
+        if (targetIdx !== -1) {
+            setActiveSubmissionByIndex(targetIdx);
+        } else if (submissionsData.length > 0) {
+            setActiveSubmissionByIndex(0);
+        }
+    };
+
+    window.closeWorkstation = function () {
+        document.body.classList.remove('workstation-mode');
+    };
+
+    // ── Zoom & Pan Transform Engine ─────────────────────────────────
+    function getActiveZoomWrapper() {
+        var activePane = document.querySelector('.submission-pane:not(.d-none)');
+        if (!activePane) return null;
+        return activePane.querySelector('#filePreviewZoomWrapper');
+    }
+
+    function getActivePreviewContainer() {
+        var activePane = document.querySelector('.submission-pane:not(.d-none)');
+        if (!activePane) return null;
+        return activePane.querySelector('#filePreviewContent');
+    }
+
+    function applyTransform() {
+        var wrapper = getActiveZoomWrapper();
+        if (!wrapper) return;
+        wrapper.style.transform = 'translate(' + translateX + 'px, ' + translateY + 'px) scale(' + currentZoom + ') rotate(' + currentRotation + 'deg)';
+        var zoomLevelSpan = document.getElementById('previewZoomLevel');
+        if (zoomLevelSpan) {
+            zoomLevelSpan.textContent = Math.round(currentZoom * 100) + '%';
+        }
+    }
+
+    function resetZoomAndPan() {
+        currentZoom = 1;
+        currentRotation = 0;
+        translateX = 0;
+        translateY = 0;
+        applyTransform();
+        var container = getActivePreviewContainer();
+        if (container) {
+            container.style.cursor = 'zoom-in';
+            container.classList.remove('is-dragging');
+        }
+    }
+
+    // Zoom Buttons
+    var zoomInBtn = document.getElementById('previewZoomInBtn');
+    if (zoomInBtn) {
+        zoomInBtn.addEventListener('click', function () {
+            currentZoom = Math.min(5, Math.round((currentZoom + 0.25) * 100) / 100);
+            applyTransform();
+            updateCursor();
+        });
+    }
+
+    var zoomOutBtn = document.getElementById('previewZoomOutBtn');
+    if (zoomOutBtn) {
+        zoomOutBtn.addEventListener('click', function () {
+            currentZoom = Math.max(0.25, Math.round((currentZoom - 0.25) * 100) / 100);
+            applyTransform();
+            updateCursor();
+        });
+    }
+
+    var zoomResetBtn = document.getElementById('previewZoomResetBtn');
+    if (zoomResetBtn) {
+        zoomResetBtn.addEventListener('click', function () {
+            resetZoomAndPan();
+        });
+    }
+
+    var rotateBtn = document.getElementById('previewRotateBtn');
+    if (rotateBtn) {
+        rotateBtn.addEventListener('click', function () {
+            currentRotation = (currentRotation + 90) % 360;
+            applyTransform();
+        });
+    }
+
+    var fitBtn = document.getElementById('previewFitBtn');
+    if (fitBtn) {
+        fitBtn.addEventListener('click', function () {
+            resetZoomAndPan();
+        });
+    }
+
+    function updateCursor() {
+        var container = getActivePreviewContainer();
+        if (!container) return;
+        if (currentZoom > 1.05) {
+            container.style.cursor = isDragging ? 'grabbing' : 'grab';
+        } else {
+            container.style.cursor = 'zoom-in';
+        }
+    }
+
+    // Attach Mouse Events to all file preview containers
+    function initCanvasInteractions() {
+        document.querySelectorAll('#filePreviewContent').forEach(function (container) {
+            // Direct Mouse Wheel Zoom
+            container.addEventListener('wheel', function (e) {
+                e.preventDefault();
+                var delta = e.deltaY < 0 ? 0.2 : -0.2;
+                currentZoom = Math.min(5, Math.max(0.25, Math.round((currentZoom + delta) * 100) / 100));
+                applyTransform();
+                updateCursor();
+            }, { passive: false });
+
+            // Mouse Drag & Pan
+            container.addEventListener('mousedown', function (e) {
+                if (e.button !== 0) return; // Only left click
+                if (currentZoom > 1.0) {
+                    isDragging = true;
+                    startX = e.clientX - translateX;
+                    startY = e.clientY - translateY;
+                    container.classList.add('is-dragging');
+                    container.style.cursor = 'grabbing';
                 }
-            }
-
-            // Sync hidden inputs for modal form
-            if (bulkSubmissionInputs) {
-                bulkSubmissionInputs.innerHTML = '';
-                checkedItems.forEach(function (chk) {
-                    var input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = 'submission_ids[]';
-                    input.value = chk.value;
-                    bulkSubmissionInputs.appendChild(input);
-                });
-            }
-        }
-
-        if (selectAllCheckbox) {
-            selectAllCheckbox.addEventListener('change', function () {
-                var isChecked = this.checked;
-                itemCheckboxes.forEach(function (chk) {
-                    chk.checked = isChecked;
-                });
-                updateSelectionState();
             });
-        }
 
-        itemCheckboxes.forEach(function (chk) {
-            chk.addEventListener('change', updateSelectionState);
+            // Double Click Quick Toggle (100% <-> 200%)
+            container.addEventListener('dblclick', function (e) {
+                e.preventDefault();
+                if (currentZoom > 1.05) {
+                    resetZoomAndPan();
+                } else {
+                    currentZoom = 2;
+                    translateX = 0;
+                    translateY = 0;
+                    applyTransform();
+                    updateCursor();
+                }
+            });
         });
 
-        updateSelectionState();
+        window.addEventListener('mousemove', function (e) {
+            if (!isDragging) return;
+            translateX = e.clientX - startX;
+            translateY = e.clientY - startY;
+            applyTransform();
+        });
+
+        window.addEventListener('mouseup', function () {
+            if (isDragging) {
+                isDragging = false;
+                var container = getActivePreviewContainer();
+                if (container) {
+                    container.classList.remove('is-dragging');
+                    updateCursor();
+                }
+            }
+        });
+    }
+
+    initCanvasInteractions();
+
+    // ── Active Submission Switcher ──────────────────────────────────
+    function setActiveSubmissionByIndex(idx) {
+        if (!submissionsData || submissionsData.length === 0) return;
+        if (idx < 0) idx = 0;
+        if (idx >= submissionsData.length) idx = submissionsData.length - 1;
+
+        currentSubmissionIndex = idx;
+        var sub = submissionsData[idx];
+
+        // 1. Update Header Nav & Learner Name
+        var headerLearner = document.getElementById('headerLearnerName');
+        var headerCount = document.getElementById('headerSubmissionCount');
+        var prevBtn = document.getElementById('prevSubmissionBtn');
+        var nextBtn = document.getElementById('nextSubmissionBtn');
+
+        if (headerLearner) headerLearner.textContent = sub.learner_name;
+        if (headerCount) headerCount.textContent = 'Submission ' + (idx + 1) + ' of ' + submissionsData.length;
+        if (prevBtn) prevBtn.disabled = (idx === 0);
+        if (nextBtn) nextBtn.disabled = (idx === submissionsData.length - 1);
+
+        // 2. Sidebar active state
+        document.querySelectorAll('.learner-item').forEach(function (item) {
+            var itemId = parseInt(item.getAttribute('data-submission-id'));
+            if (itemId === sub.id) {
+                item.classList.add('active');
+                item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            } else {
+                item.classList.remove('active');
+            }
+        });
+
+        // 3. Switch Canvas Pane
+        document.querySelectorAll('.submission-pane').forEach(function (pane) {
+            var paneId = parseInt(pane.getAttribute('data-submission-id'));
+            if (paneId === sub.id) {
+                pane.classList.remove('d-none');
+            } else {
+                pane.classList.add('d-none');
+            }
+        });
+
+        resetZoomAndPan();
+
+        // Sync zoom toolbar availability (only active when previewing zoomable images)
+        var zoomToolbar = document.getElementById('previewZoomToolbar');
+        var activePane = document.getElementById('submission-pane-' + sub.id);
+        if (zoomToolbar) {
+            var hasZoomableImg = activePane && activePane.querySelector('.preview-image-clickable');
+            zoomToolbar.style.opacity = hasZoomableImg ? '1' : '0.35';
+            zoomToolbar.style.pointerEvents = hasZoomableImg ? 'auto' : 'none';
+        }
+        var downloadBtn = document.getElementById('previewDownloadBtn');
+        if (activePane && downloadBtn) {
+            var firstFile = activePane.querySelector('[data-file-url]');
+            if (firstFile) {
+                downloadBtn.href = firstFile.getAttribute('data-file-url');
+                downloadBtn.setAttribute('download', firstFile.getAttribute('data-file-name') || 'submission');
+                downloadBtn.style.display = 'inline-flex';
+            } else {
+                var firstLink = activePane.querySelector('a[download]');
+                if (firstLink) {
+                    downloadBtn.href = firstLink.href;
+                    downloadBtn.setAttribute('download', firstLink.getAttribute('download') || 'submission');
+                    downloadBtn.style.display = 'inline-flex';
+                } else {
+                    downloadBtn.style.display = 'none';
+                }
+            }
+        }
+
+        // 4. Right Grading Panel Details
+        var panelName = document.getElementById('panelLearnerName');
+        var panelEmail = document.getElementById('panelLearnerEmail');
+        var panelDate = document.getElementById('panelSubmittedAt');
+        var panelStatus = document.getElementById('panelStatusBadge');
+        var scoreInput = document.getElementById('modalScoreInput');
+        var feedbackInput = document.getElementById('modalFeedbackInput');
+        var form = document.getElementById('reviewSubmissionForm');
+        var completeUrlHidden = document.getElementById('modalCompleteUrl');
+        var resubmitUrlHidden = document.getElementById('modalResubmitUrl');
+        var rejectUrlHidden = document.getElementById('modalRejectUrl');
+
+        if (panelName) panelName.textContent = sub.learner_name;
+        if (panelEmail) panelEmail.textContent = sub.learner_email;
+        if (panelDate) panelDate.textContent = sub.submitted_at;
+
+        var isApproved = (sub.status === 'completed');
+        var isRejected = (sub.status === 'rejected' || sub.resubmit_requested);
+        var isGraded = isApproved || isRejected;
+
+        if (panelStatus) {
+            if (isApproved) {
+                panelStatus.className = 'badge bg-success-lt text-success';
+                panelStatus.textContent = 'Approved';
+            } else if (sub.resubmit_requested) {
+                panelStatus.className = 'badge bg-warning-lt text-warning';
+                panelStatus.textContent = 'Rejected (Resubmit)';
+            } else if (sub.status === 'rejected') {
+                panelStatus.className = 'badge bg-danger-lt text-danger';
+                panelStatus.textContent = 'Completed as Rejected';
+            } else {
+                panelStatus.className = 'badge bg-warning text-dark';
+                panelStatus.textContent = 'Pending Review';
+            }
+        }
+
+        if (scoreInput) {
+            scoreInput.value = (sub.score !== null && sub.score !== undefined) ? sub.score : '';
+            scoreInput.disabled = isGraded;
+            scoreInput.readOnly = isGraded;
+        }
+
+        if (feedbackInput) {
+            feedbackInput.value = sub.feedback || '';
+            feedbackInput.disabled = isGraded;
+            feedbackInput.readOnly = isGraded;
+            feedbackInput.classList.remove('is-invalid');
+        }
+
+        var feedbackBadge = document.getElementById('feedbackRequiredBadge');
+        if (feedbackBadge) {
+            feedbackBadge.classList.add('d-none');
+        }
+
+        if (completeUrlHidden) completeUrlHidden.value = sub.complete_url;
+        if (resubmitUrlHidden) resubmitUrlHidden.value = sub.resubmit_url;
+        if (rejectUrlHidden) rejectUrlHidden.value = sub.reject_url;
+
+        // 5. Grading Controls State (Jika sudah di-grading tidak bisa di-grading lagi)
+        var actionButtonsContainer = document.getElementById('actionButtonsContainer');
+        var alreadyGradedBanner = document.getElementById('alreadyGradedBanner');
+        var gradedBannerIcon = document.getElementById('gradedBannerIcon');
+        var gradedBannerTitle = document.getElementById('gradedBannerTitle');
+        var gradedBannerDesc = document.getElementById('gradedBannerDesc');
+        var btnActionApprove = document.getElementById('btnActionApprove');
+        var btnActionApproveText = document.getElementById('btnActionApproveText');
+        var btnActionReject = document.getElementById('btnActionReject');
+
+        if (isGraded) {
+            if (actionButtonsContainer) actionButtonsContainer.classList.add('d-none');
+            if (alreadyGradedBanner) {
+                alreadyGradedBanner.classList.remove('d-none');
+                if (isApproved) {
+                    alreadyGradedBanner.className = 'p-3 rounded-3 border mb-3 alert-success border-success-subtle bg-success-lt';
+                    if (gradedBannerIcon) gradedBannerIcon.className = 'ti ti-circle-check fs-2 text-success flex-shrink-0';
+                    if (gradedBannerTitle) {
+                        gradedBannerTitle.className = 'fw-bold text-success mb-0';
+                        gradedBannerTitle.textContent = 'Submission Approved';
+                    }
+                    if (gradedBannerDesc) {
+                        gradedBannerDesc.className = 'text-muted small mt-1';
+                        gradedBannerDesc.textContent = 'This submission has already been approved and cannot be re-graded.';
+                    }
+                } else if (sub.resubmit_requested) {
+                    alreadyGradedBanner.className = 'p-3 rounded-3 border mb-3 alert-warning border-warning-subtle bg-warning-lt';
+                    if (gradedBannerIcon) gradedBannerIcon.className = 'ti ti-refresh fs-2 text-warning flex-shrink-0';
+                    if (gradedBannerTitle) {
+                        gradedBannerTitle.className = 'fw-bold text-warning mb-0';
+                        gradedBannerTitle.textContent = 'Resubmit Requested';
+                    }
+                    if (gradedBannerDesc) {
+                        gradedBannerDesc.className = 'text-muted small mt-1';
+                        gradedBannerDesc.textContent = 'Revision notes were sent. Waiting for the user to resubmit answers.';
+                    }
+                } else {
+                    alreadyGradedBanner.className = 'p-3 rounded-3 border mb-3 alert-danger border-danger-subtle bg-danger-lt';
+                    if (gradedBannerIcon) gradedBannerIcon.className = 'ti ti-circle-x fs-2 text-danger flex-shrink-0';
+                    if (gradedBannerTitle) {
+                        gradedBannerTitle.className = 'fw-bold text-danger mb-0';
+                        gradedBannerTitle.textContent = 'Completed as Rejected';
+                    }
+                    if (gradedBannerDesc) {
+                        gradedBannerDesc.className = 'text-muted small mt-1';
+                        gradedBannerDesc.textContent = 'This submission was marked as completed as rejected and cannot be re-graded.';
+                    }
+                }
+            }
+        } else {
+            // Pending review - Allow grading
+            if (alreadyGradedBanner) alreadyGradedBanner.classList.add('d-none');
+            if (actionButtonsContainer) actionButtonsContainer.classList.remove('d-none');
+
+            if (btnActionApprove) {
+                btnActionApprove.className = 'btn btn-success flex-fill py-2 fw-semibold d-inline-flex align-items-center justify-content-center gap-1.5 shadow-sm';
+                btnActionApprove.disabled = false;
+            }
+            if (btnActionApproveText) btnActionApproveText.textContent = 'Approve';
+            if (btnActionReject) {
+                btnActionReject.className = 'btn btn-outline-danger flex-fill py-2 fw-semibold d-inline-flex align-items-center justify-content-center gap-1.5';
+                btnActionReject.disabled = false;
+            }
+        }
+
+        if (typeof hideRejectModal === 'function') hideRejectModal();
+        if (typeof hideConfirmModal === 'function') hideConfirmModal();
+    }
+
+    // ── Bootstrap Modal Helpers & Attach to body ─────────────────────
+    function getBootstrapModal() {
+        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            return bootstrap.Modal;
+        }
+        if (window.bootstrap && window.bootstrap.Modal) {
+            return window.bootstrap.Modal;
+        }
+        return null;
+    }
+
+    // Confirmation Modal (Approve)
+    var confirmModalEl = document.getElementById('reviewConfirmModal');
+    var confirmModalInstance = null;
+    var pendingSubmitCallback = null;
+
+    if (confirmModalEl && confirmModalEl.parentNode !== document.body) {
+        document.body.appendChild(confirmModalEl);
+    }
+
+    function showConfirmModal() {
+        if (confirmModalEl && confirmModalEl.parentNode !== document.body) {
+            document.body.appendChild(confirmModalEl);
+        }
+
+        var BsModal = getBootstrapModal();
+        if (confirmModalEl && BsModal) {
+            confirmModalInstance = BsModal.getInstance(confirmModalEl) || new BsModal(confirmModalEl);
+            confirmModalInstance.show();
+        } else if (confirmModalEl && typeof $ !== 'undefined' && $.fn && $.fn.modal) {
+            $(confirmModalEl).modal('show');
+        } else {
+            var msg = document.getElementById('confirmModalMessage')?.textContent || 'Confirm submission?';
+            if (confirm(msg)) {
+                if (typeof pendingSubmitCallback === 'function') {
+                    pendingSubmitCallback();
+                }
+            }
+        }
+    }
+
+    function hideConfirmModal() {
+        var BsModal = getBootstrapModal();
+        if (confirmModalInstance) {
+            confirmModalInstance.hide();
+        } else if (confirmModalEl && BsModal) {
+            var inst = BsModal.getInstance(confirmModalEl);
+            if (inst) inst.hide();
+        } else if (confirmModalEl && typeof $ !== 'undefined' && $.fn && $.fn.modal) {
+            $(confirmModalEl).modal('hide');
+        }
+    }
+
+    var btnCancelConfirmModal = document.getElementById('btnCancelConfirmModal');
+    if (btnCancelConfirmModal) {
+        btnCancelConfirmModal.addEventListener('click', function () {
+            hideConfirmModal();
+        });
+    }
+
+    var btnConfirmModalSubmit = document.getElementById('btnConfirmModalSubmit');
+    if (btnConfirmModalSubmit) {
+        btnConfirmModalSubmit.addEventListener('click', function () {
+            if (typeof pendingSubmitCallback === 'function') {
+                this.disabled = true;
+                this.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Processing...';
+                pendingSubmitCallback();
+            }
+        });
+    }
+
+    // Rejection Modal (Request Resubmit / Completed as Rejected)
+    var rejectModalEl = document.getElementById('reviewRejectModal');
+    var rejectModalInstance = null;
+
+    if (rejectModalEl && rejectModalEl.parentNode !== document.body) {
+        document.body.appendChild(rejectModalEl);
+    }
+
+    function showRejectModal() {
+        if (rejectModalEl && rejectModalEl.parentNode !== document.body) {
+            document.body.appendChild(rejectModalEl);
+        }
+
+        var BsModal = getBootstrapModal();
+        if (rejectModalEl && BsModal) {
+            rejectModalInstance = BsModal.getInstance(rejectModalEl) || new BsModal(rejectModalEl);
+            rejectModalInstance.show();
+        } else if (rejectModalEl && typeof $ !== 'undefined' && $.fn && $.fn.modal) {
+            $(rejectModalEl).modal('show');
+        }
+    }
+
+    function hideRejectModal() {
+        var BsModal = getBootstrapModal();
+        if (rejectModalInstance) {
+            rejectModalInstance.hide();
+        } else if (rejectModalEl && BsModal) {
+            var inst = BsModal.getInstance(rejectModalEl);
+            if (inst) inst.hide();
+        } else if (rejectModalEl && typeof $ !== 'undefined' && $.fn && $.fn.modal) {
+            $(rejectModalEl).modal('hide');
+        }
+    }
+
+    var btnCancelRejectModal = document.getElementById('btnCancelRejectModal');
+    if (btnCancelRejectModal) {
+        btnCancelRejectModal.addEventListener('click', function () {
+            hideRejectModal();
+        });
+    }
+
+    // Two-way feedback synchronization between modal & right sidebar
+    var rejectFeedbackInput = document.getElementById('rejectModalFeedbackInput');
+    var sidebarFeedbackInput = document.getElementById('modalFeedbackInput');
+    var rejectFeedbackError = document.getElementById('rejectModalFeedbackError');
+
+    if (rejectFeedbackInput && sidebarFeedbackInput) {
+        rejectFeedbackInput.addEventListener('input', function () {
+            sidebarFeedbackInput.value = this.value;
+            if (this.value.trim()) {
+                this.classList.remove('is-invalid');
+                if (rejectFeedbackError) {
+                    rejectFeedbackError.classList.add('d-none');
+                    rejectFeedbackError.style.display = 'none';
+                }
+            }
+        });
+        sidebarFeedbackInput.addEventListener('input', function () {
+            rejectFeedbackInput.value = this.value;
+            if (this.value.trim() && rejectFeedbackInput) {
+                rejectFeedbackInput.classList.remove('is-invalid');
+                if (rejectFeedbackError) {
+                    rejectFeedbackError.classList.add('d-none');
+                    rejectFeedbackError.style.display = 'none';
+                }
+            }
+        });
+    }
+
+    // 1. Approve Button Click -> Show Confirm Modal
+    var btnActionApprove = document.getElementById('btnActionApprove');
+    if (btnActionApprove) {
+        btnActionApprove.addEventListener('click', function () {
+            var sub = submissionsData[currentSubmissionIndex];
+            if (!sub) return;
+            if (sub.status === 'completed' || sub.status === 'rejected' || sub.resubmit_requested) {
+                alert('This submission has already been graded and cannot be changed.');
+                return;
+            }
+
+            var scoreInput = document.getElementById('modalScoreInput');
+            var feedbackInput = document.getElementById('modalFeedbackInput');
+            var scoreVal = scoreInput ? scoreInput.value.trim() : '';
+            var feedbackVal = feedbackInput ? feedbackInput.value.trim() : '';
+
+            var confirmStatus = document.getElementById('confirmModalStatus');
+            var confirmIconWrapper = document.getElementById('confirmModalIconWrapper');
+            var confirmIcon = document.getElementById('confirmModalIcon');
+            var confirmTitle = document.getElementById('confirmModalTitle');
+            var confirmMsg = document.getElementById('confirmModalMessage');
+            var confirmSummary = document.getElementById('confirmModalSummary');
+            var confirmWarning = document.getElementById('confirmModalWarning');
+            var confirmBtn = document.getElementById('btnConfirmModalSubmit');
+            var confirmBtnIcon = document.getElementById('btnConfirmModalSubmitIcon');
+            var confirmBtnText = document.getElementById('btnConfirmModalSubmitText');
+
+            if (confirmStatus) confirmStatus.className = 'modal-status bg-success';
+            if (confirmIconWrapper) confirmIconWrapper.className = 'avatar avatar-lg bg-success-lt text-success rounded-circle mb-3 d-inline-flex align-items-center justify-content-center shadow-xs';
+            if (confirmIcon) confirmIcon.className = 'ti ti-check fs-1';
+            if (confirmTitle) confirmTitle.textContent = 'Approve Submission';
+            if (confirmMsg) confirmMsg.textContent = 'Are you sure you want to approve this user\'s submission?';
+
+            if (confirmSummary) {
+                confirmSummary.innerHTML =
+                    '<div class="d-flex justify-content-between mb-1.5"><span class="text-muted">User:</span><strong class="text-dark">' + escapeHtml(sub.learner_name) + '</strong></div>' +
+                    '<div class="d-flex justify-content-between mb-1.5"><span class="text-muted">Score:</span><strong class="text-dark">' + (scoreVal !== '' ? scoreVal + ' / 100' : '<span class="text-muted fw-normal fst-italic">None (optional)</span>') + '</strong></div>' +
+                    (feedbackVal ? '<div class="pt-1.5 border-top"><div class="text-muted mb-0.5">Feedback:</div><div class="text-dark fst-italic">"' + escapeHtml(feedbackVal) + '"</div></div>' : '');
+            }
+
+            if (confirmWarning) {
+                confirmWarning.className = 'small fw-semibold text-danger';
+                confirmWarning.innerHTML = '<i class="ti ti-lock me-1"></i>Grading cannot be changed once approved.';
+            }
+
+            if (confirmBtn) {
+                confirmBtn.className = 'btn btn-success btn-sm px-3 d-inline-flex align-items-center gap-1.5 shadow-xs';
+                confirmBtn.disabled = false;
+            }
+            if (confirmBtnIcon) confirmBtnIcon.className = 'ti ti-check';
+            if (confirmBtnText) confirmBtnText.textContent = 'Yes, Approve';
+
+            pendingSubmitCallback = function () {
+                var form = document.getElementById('reviewSubmissionForm');
+                var completeUrl = sub.complete_url || document.getElementById('modalCompleteUrl').value;
+                form.action = completeUrl;
+                if (scoreInput) scoreInput.disabled = false;
+                hideRejectModal();
+                form.submit();
+            };
+
+            showConfirmModal();
+        });
+    }
+
+    // 2. Rejected Button Click in Sidebar -> Directly Open Reject Modal
+    var btnActionReject = document.getElementById('btnActionReject');
+    if (btnActionReject) {
+        btnActionReject.addEventListener('click', function () {
+            var sub = submissionsData[currentSubmissionIndex];
+            if (!sub) return;
+            if (sub.status === 'completed' || sub.status === 'rejected' || sub.resubmit_requested) {
+                alert('This submission has already been graded and cannot be changed.');
+                return;
+            }
+
+            var rejectLearnerName = document.getElementById('rejectModalLearnerName');
+            var rejectSubmittedAt = document.getElementById('rejectModalSubmittedAt');
+            var rejectFeedback = document.getElementById('rejectModalFeedbackInput');
+            var sidebarFeedback = document.getElementById('modalFeedbackInput');
+            var errorDiv = document.getElementById('rejectModalFeedbackError');
+
+            if (rejectLearnerName) rejectLearnerName.textContent = sub.learner_name;
+            if (rejectSubmittedAt) rejectSubmittedAt.textContent = sub.submitted_at || '-';
+
+            if (rejectFeedback) {
+                rejectFeedback.value = sidebarFeedback ? sidebarFeedback.value : '';
+                rejectFeedback.classList.remove('is-invalid');
+            }
+            if (errorDiv) {
+                errorDiv.classList.add('d-none');
+                errorDiv.style.display = 'none';
+            }
+
+            showRejectModal();
+
+            setTimeout(function () {
+                if (rejectFeedback) rejectFeedback.focus();
+            }, 250);
+        });
+    }
+
+    // 3. Request Resubmit Action Inside Reject Modal
+    var btnSubmitResubmit = document.getElementById('btnSubmitResubmit');
+    if (btnSubmitResubmit) {
+        btnSubmitResubmit.addEventListener('click', function () {
+            var sub = submissionsData[currentSubmissionIndex];
+            if (!sub) return;
+            if (sub.status === 'completed' || sub.status === 'rejected' || sub.resubmit_requested) {
+                alert('This submission has already been graded and cannot be changed.');
+                return;
+            }
+
+            var rejectFeedback = document.getElementById('rejectModalFeedbackInput');
+            var sidebarFeedback = document.getElementById('modalFeedbackInput');
+            var feedbackVal = (rejectFeedback && rejectFeedback.value.trim())
+                ? rejectFeedback.value.trim()
+                : (sidebarFeedback ? sidebarFeedback.value.trim() : '');
+
+            if (!feedbackVal) {
+                if (rejectFeedback) {
+                    rejectFeedback.classList.add('is-invalid');
+                    rejectFeedback.focus();
+                }
+                var errorDiv = document.getElementById('rejectModalFeedbackError');
+                if (errorDiv) {
+                    errorDiv.textContent = 'Feedback or revision notes are required when requesting a resubmit.';
+                    errorDiv.classList.remove('d-none');
+                    errorDiv.style.display = 'block';
+                }
+                return;
+            }
+
+            if (sidebarFeedback) sidebarFeedback.value = feedbackVal;
+
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Submitting...';
+
+            var form = document.getElementById('reviewSubmissionForm');
+            var rejectTypeHidden = document.getElementById('modalRejectTypeHiddenInput');
+            if (rejectTypeHidden) rejectTypeHidden.value = 'resubmit';
+
+            var reasonHidden = document.getElementById('modalReasonHiddenInput');
+            if (reasonHidden) reasonHidden.value = feedbackVal;
+
+            var rejectUrl = sub.reject_url || document.getElementById('modalRejectUrl').value;
+            if (!rejectUrl) {
+                rejectUrl = sub.resubmit_url || document.getElementById('modalResubmitUrl').value;
+            }
+            form.action = rejectUrl;
+
+            var scoreInput = document.getElementById('modalScoreInput');
+            if (scoreInput) scoreInput.disabled = true;
+
+            form.submit();
+        });
+    }
+
+    // 4. Completed as Rejected Action Inside Reject Modal
+    var btnSubmitCompletedRejected = document.getElementById('btnSubmitCompletedRejected');
+    if (btnSubmitCompletedRejected) {
+        btnSubmitCompletedRejected.addEventListener('click', function () {
+            var sub = submissionsData[currentSubmissionIndex];
+            if (!sub) return;
+            if (sub.status === 'completed' || sub.status === 'rejected' || sub.resubmit_requested) {
+                alert('This submission has already been graded and cannot be changed.');
+                return;
+            }
+
+            var rejectFeedback = document.getElementById('rejectModalFeedbackInput');
+            var sidebarFeedback = document.getElementById('modalFeedbackInput');
+            var scoreInput = document.getElementById('modalScoreInput');
+            var feedbackVal = (rejectFeedback && rejectFeedback.value.trim())
+                ? rejectFeedback.value.trim()
+                : (sidebarFeedback ? sidebarFeedback.value.trim() : '');
+
+            if (!feedbackVal) {
+                if (rejectFeedback) {
+                    rejectFeedback.classList.add('is-invalid');
+                    rejectFeedback.focus();
+                }
+                var errorDiv = document.getElementById('rejectModalFeedbackError');
+                if (errorDiv) {
+                    errorDiv.textContent = 'Feedback or reason is required when completing as rejected.';
+                    errorDiv.classList.remove('d-none');
+                    errorDiv.style.display = 'block';
+                }
+                return;
+            }
+
+            if (sidebarFeedback) sidebarFeedback.value = feedbackVal;
+
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Submitting...';
+
+            var form = document.getElementById('reviewSubmissionForm');
+            var rejectTypeHidden = document.getElementById('modalRejectTypeHiddenInput');
+            if (rejectTypeHidden) rejectTypeHidden.value = 'completed_rejected';
+
+            var reasonHidden = document.getElementById('modalReasonHiddenInput');
+            if (reasonHidden) reasonHidden.value = feedbackVal;
+
+            var rejectUrl = sub.reject_url || document.getElementById('modalRejectUrl').value;
+            form.action = rejectUrl;
+
+            if (scoreInput) scoreInput.disabled = false;
+
+            form.submit();
+        });
+    }
+
+    // Programmatic resubmit compatibility for tests
+    var modalResubmitBtn = document.getElementById('modalResubmitBtn');
+    if (modalResubmitBtn) {
+        modalResubmitBtn.addEventListener('click', function () {
+            var sub = submissionsData[currentSubmissionIndex];
+            if (!sub) return;
+            var feedbackInput = document.getElementById('modalFeedbackInput');
+            var feedbackVal = feedbackInput ? feedbackInput.value.trim() : '';
+            var form = document.getElementById('reviewSubmissionForm');
+            var rejectTypeHidden = document.getElementById('modalRejectTypeHiddenInput');
+            if (rejectTypeHidden) rejectTypeHidden.value = 'resubmit';
+            var reasonHidden = document.getElementById('modalReasonHiddenInput');
+            if (reasonHidden) reasonHidden.value = feedbackVal;
+            var rejectUrl = sub.reject_url || document.getElementById('modalRejectUrl').value;
+            if (!rejectUrl) rejectUrl = sub.resubmit_url || document.getElementById('modalResubmitUrl').value;
+            form.action = rejectUrl;
+            var scoreInput = document.getElementById('modalScoreInput');
+            if (scoreInput) scoreInput.disabled = true;
+            form.submit();
+        });
+    }
+
+    // Sidebar items click inside workstation
+    document.querySelectorAll('.learner-item').forEach(function (item) {
+        item.addEventListener('click', function (e) {
+            e.preventDefault();
+            var targetId = parseInt(this.getAttribute('data-submission-id'));
+            var targetIdx = submissionsData.findIndex(function (s) { return s.id === targetId; });
+            if (targetIdx !== -1) {
+                setActiveSubmissionByIndex(targetIdx);
+            }
+        });
     });
-    </script>
+
+    // Header Prev / Next Buttons
+    var prevBtn = document.getElementById('prevSubmissionBtn');
+    if (prevBtn) {
+        prevBtn.addEventListener('click', function () {
+            if (currentSubmissionIndex > 0) {
+                setActiveSubmissionByIndex(currentSubmissionIndex - 1);
+            }
+        });
+    }
+
+    var nextBtn = document.getElementById('nextSubmissionBtn');
+    if (nextBtn) {
+        nextBtn.addEventListener('click', function () {
+            if (currentSubmissionIndex < submissionsData.length - 1) {
+                setActiveSubmissionByIndex(currentSubmissionIndex + 1);
+            }
+        });
+    }
+
+    // Keyboard Navigation (ESC to close, Left/Right arrow to switch)
+    window.addEventListener('keydown', function (e) {
+        var isWorkstationOpen = document.body.classList.contains('workstation-mode');
+
+        if (e.key === 'Escape' && isWorkstationOpen) {
+            closeWorkstation();
+            return;
+        }
+
+        if (!isWorkstationOpen) return;
+
+        // Skip arrows if user is typing in input or textarea
+        if (['INPUT', 'TEXTAREA'].indexOf(document.activeElement.tagName) !== -1) return;
+
+        if (e.key === 'ArrowLeft' && currentSubmissionIndex > 0) {
+            e.preventDefault();
+            setActiveSubmissionByIndex(currentSubmissionIndex - 1);
+        } else if (e.key === 'ArrowRight' && currentSubmissionIndex < submissionsData.length - 1) {
+            e.preventDefault();
+            setActiveSubmissionByIndex(currentSubmissionIndex + 1);
+        }
+    });
+
+    var form = document.getElementById('reviewSubmissionForm');
+    if (form) {
+        form.addEventListener('submit', function (e) {
+            var sub = submissionsData[currentSubmissionIndex];
+            if (!sub) return;
+            if (!this.action || this.action === '' || this.action === window.location.href) {
+                var completeUrl = sub.complete_url || document.getElementById('modalCompleteUrl').value;
+                this.action = completeUrl;
+            }
+        });
+    }
+
+    var feedbackInput = document.getElementById('modalFeedbackInput');
+    if (feedbackInput) {
+        feedbackInput.addEventListener('input', function () {
+            if (this.value.trim() !== '') {
+                this.classList.remove('is-invalid');
+            }
+        });
+    }
+
+
+    // Set initial active state if data exists
+    if (submissionsData.length > 0) {
+        var initialIdx = submissionsData.findIndex(function (s) { return s.id === defaultActiveId; });
+        if (initialIdx === -1) initialIdx = 0;
+        setActiveSubmissionByIndex(initialIdx);
+    }
+})();
+</script>
 @endsection

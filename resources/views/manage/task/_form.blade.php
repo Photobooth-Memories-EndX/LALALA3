@@ -99,7 +99,7 @@
         .form-field-xl {
             max-width: 740px;
         }
-        .field-card {
+        .field-card:not(.field-card-clean) {
             border: 1px solid #e2e8f0 !important;
             border-left: 4px solid transparent !important;
             border-radius: 12px !important;
@@ -108,16 +108,142 @@
             transition: all 0.2s ease;
             max-width: 820px;
         }
-        .field-card:hover {
+        .field-card:not(.field-card-clean):hover {
             border-color: #cbd5e1 !important;
             border-left-color: #cbd5e1 !important;
             box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
         }
-        .field-card:focus-within {
+        .field-card:not(.field-card-clean):focus-within {
             border-color: #cbd5e1 !important;
             border-left: 4px solid var(--tblr-primary, #206bc4) !important;
             box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
         }
+        .field-card.field-card-clean {
+            border: none !important;
+            border-left: none !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            border-radius: 0 !important;
+            max-width: 740px;
+        }
+        .field-card.field-card-clean:hover,
+        .field-card.field-card-clean:focus-within {
+            border: none !important;
+            border-left: none !important;
+            box-shadow: none !important;
+            background: transparent !important;
+        }
+        [data-bs-theme="dark"] .field-card.field-card-clean,
+        body.dark-mode .field-card.field-card-clean,
+        body.theme-dark .field-card.field-card-clean {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+
+        /* Google Forms style for Essay question in Section 4 */
+        .gform-essay-block {
+            max-width: 740px;
+        }
+        .gform-question-input {
+            background-color: #f8fafc !important;
+            border: none !important;
+            border-bottom: 1.5px solid #64748b !important;
+            border-radius: 4px 4px 0 0 !important;
+            padding: 13px 16px !important;
+            font-size: 1.05rem !important;
+            font-weight: 500 !important;
+            color: var(--tblr-body-color, #1e293b) !important;
+            width: 100% !important;
+            box-shadow: none !important;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+        .gform-question-input:focus {
+            background-color: #f1f5f9 !important;
+            border-bottom: 2px solid var(--tblr-primary, #206bc4) !important;
+            box-shadow: none !important;
+            outline: none !important;
+        }
+        .gform-question-input.is-invalid {
+            border-bottom: 2px solid var(--tblr-danger, #d63939) !important;
+            background-color: rgba(214, 57, 57, 0.04) !important;
+        }
+        .gform-question-input::placeholder {
+            color: #94a3b8;
+            font-weight: 400;
+        }
+        .gform-answer-preview {
+            padding: 4px 2px;
+        }
+        .gform-answer-text {
+            font-size: 0.95rem;
+            color: #64748b;
+            user-select: none;
+            margin-bottom: 6px;
+        }
+        .gform-answer-line {
+            border-bottom: 1.5px dotted #94a3b8;
+            max-width: 420px;
+            height: 1px;
+        }
+        [data-bs-theme="dark"] .gform-question-input,
+        body.dark-mode .gform-question-input,
+        body.theme-dark .gform-question-input {
+            background-color: rgba(255, 255, 255, 0.05) !important;
+            border-bottom-color: rgba(255, 255, 255, 0.25) !important;
+            color: #f8fafc !important;
+        }
+        [data-bs-theme="dark"] .gform-question-input:focus,
+        body.dark-mode .gform-question-input:focus,
+        body.theme-dark .gform-question-input:focus {
+            background-color: rgba(255, 255, 255, 0.08) !important;
+            border-bottom-color: var(--tblr-primary, #38bdf8) !important;
+        }
+        [data-bs-theme="dark"] .gform-answer-text,
+        body.dark-mode .gform-answer-text,
+        body.theme-dark .gform-answer-text {
+            color: #94a3b8;
+        }
+        [data-bs-theme="dark"] .gform-answer-line,
+        body.dark-mode .gform-answer-line,
+        body.theme-dark .gform-answer-line {
+            border-bottom-color: #64748b;
+        }
+
+        /* Google Forms options input style */
+        .gform-opt-input {
+            border: none !important;
+            border-bottom: 1.5px solid #cbd5e1 !important;
+            border-radius: 0 !important;
+            padding: 6px 4px !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            font-size: 0.95rem !important;
+            color: var(--tblr-body-color, #1e293b) !important;
+            transition: border-color 0.2s ease;
+        }
+        .gform-opt-input:focus {
+            border-bottom-color: var(--tblr-primary, #206bc4) !important;
+            outline: none !important;
+            box-shadow: none !important;
+        }
+        .gform-opt-input::placeholder {
+            color: #94a3b8;
+        }
+        [data-bs-theme="dark"] .gform-opt-input,
+        body.dark-mode .gform-opt-input,
+        body.theme-dark .gform-opt-input {
+            border-bottom-color: rgba(255, 255, 255, 0.2) !important;
+            color: #f8fafc !important;
+        }
+        [data-bs-theme="dark"] .gform-opt-input:focus,
+        body.dark-mode .gform-opt-input:focus,
+        body.theme-dark .gform-opt-input:focus {
+            border-bottom-color: var(--tblr-primary, #38bdf8) !important;
+        }
+
         [data-bs-theme="dark"] .form-section-card,
         body.dark-mode .form-section-card,
         body.theme-dark .form-section-card {
@@ -169,6 +295,34 @@
             border-color: rgba(255, 255, 255, 0.18) !important;
             border-left-color: var(--tblr-primary, #38bdf8) !important;
         }
+
+        /* Red highlight for unfilled required columns on submit */
+        .form-control.is-invalid,
+        .form-select.is-invalid,
+        .picker-btn-invalid {
+            border-color: #dc2626 !important;
+            background-color: #fef2f2 !important;
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15) !important;
+        }
+        .form-control.is-invalid:focus,
+        .form-select.is-invalid:focus,
+        .picker-btn-invalid:focus {
+            border-color: #b91c1c !important;
+            box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.25) !important;
+        }
+        [data-bs-theme="dark"] .form-control.is-invalid,
+        [data-bs-theme="dark"] .form-select.is-invalid,
+        [data-bs-theme="dark"] .picker-btn-invalid,
+        body.dark-mode .form-control.is-invalid,
+        body.dark-mode .form-select.is-invalid,
+        body.dark-mode .picker-btn-invalid,
+        body.theme-dark .form-control.is-invalid,
+        body.theme-dark .form-select.is-invalid,
+        body.theme-dark .picker-btn-invalid {
+            border-color: #ef4444 !important;
+            background-color: rgba(239, 68, 68, 0.12) !important;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25) !important;
+        }
     </style>
 
     {{-- ======================================================== --}}
@@ -211,7 +365,7 @@
                             </option>
                         @endforeach
                     </select>
-                    <div class="form-hint mt-1">Choose whether this task belongs to a Playlist, Content, Offline Training, or Global.</div>
+                    <div class="form-hint mt-1">Choose whether this task belongs to a Playlist, Content, Offline Training, or Others.</div>
                     @error('parent_type')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                 </div>
 
@@ -243,9 +397,9 @@
                     @error('parent_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                 </div>
 
-                {{-- Global Task helper notice when Standalone is chosen --}}
+                {{-- Others helper notice when Standalone is chosen --}}
                 <div id="standalonePlacementNotice" class="alert alert-info py-2 px-3 rounded-3 form-field-lg mb-0" style="{{ $currentParentType === 'standalone' ? '' : 'display:none' }}">
-                    <i class="ti ti-world me-1"></i> Global Task is open to all learners and not tied to a specific playlist or course. You can configure an optional access passcode at the bottom of the form.
+                    <i class="ti ti-world me-1"></i> Others is open to all learners and not tied to a specific playlist or course. You can configure an optional access passcode at the bottom of the form.
                 </div>
             @endif
         </div>
@@ -419,6 +573,7 @@
                         <div id="coursePanelList" class="overflow-auto" style="max-height:240px;" role="listbox"></div>
                     </div>
                 </div>
+                <div class="invalid-feedback" id="courseIdError" style="display:none">Please select the target course in LMS.</div>
                 @error('linked_training_plan_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
             </div>
 
@@ -474,9 +629,9 @@
     <div id="builderSection" class="card form-section-card" data-section="4">
         <div class="card-header bg-white py-3 px-4 d-flex align-items-center justify-content-between gap-3">
             <div class="d-flex align-items-center gap-3">
-                <span class="section-badge-num"><i class="ti ti-list-check"></i></span>
+                <span class="section-badge-num"><i class="ti ti-list-check" id="builderBadgeIcon"></i></span>
                 <div>
-                    <h3 class="card-title fw-bold text-dark mb-0">4. Questions & Submission Form Builder</h3>
+                    <h3 class="card-title fw-bold text-dark mb-0" id="builderTitle">4. Questions & Submission Form Builder</h3>
                     <div class="text-muted small" id="builderHint"></div>
                 </div>
             </div>
@@ -486,6 +641,12 @@
         </div>
         <div class="card-body p-4">
             <div id="fieldsWrap"></div>
+
+            <div id="addQuestionWrap" class="mt-3" style="display:none;">
+                <button type="button" class="btn btn-outline-primary rounded-3 px-3 d-inline-flex align-items-center gap-2" id="btnAddField">
+                    <i class="ti ti-plus"></i> Add Question
+                </button>
+            </div>
 
             @error('fields')
                 <div class="alert alert-danger mt-2">{{ $message }}</div>
@@ -502,7 +663,7 @@
                 <span class="section-badge-num"><i class="ti ti-key"></i></span>
                 <div>
                     <h3 class="card-title fw-bold text-dark mb-0">5. Access & Security (Optional)</h3>
-                    <div class="text-muted small">Configure an optional access passcode to unlock this Global Task.</div>
+                    <div class="text-muted small">Configure an optional access passcode to unlock this task.</div>
                 </div>
             </div>
             <span class="badge bg-primary text-white fw-semibold px-2.5 py-1 rounded-pill section-active-indicator align-items-center gap-1 shadow-sm">
@@ -527,34 +688,28 @@
     {{-- SECTION 6: ACTION BAR / FOOTER                           --}}
     {{-- ======================================================== --}}
     <div class="card border-0 shadow-sm rounded-4 mb-4 p-3 bg-white">
-        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-            <div class="text-muted small">
-                @if (isset($task))
-                    <i class="ti ti-info-circle me-1"></i>Edit Mode: Changes will be updated immediately for learners.
-                @else
-                    <i class="ti ti-info-circle me-1"></i>Choose <strong>Save as Draft</strong> to save privately, or <strong>Publish Task</strong> to make it accessible to learners immediately.
-                @endif
-            </div>
-            <div class="d-flex align-items-center gap-2">
-                <a href="{{ route('manage.task.index') }}" class="btn btn-outline-secondary rounded-3 px-3">Cancel</a>
+        <div class="d-flex align-items-center justify-content-end flex-wrap gap-2">
+            <a href="{{ route('manage.task.index') }}" class="btn btn-outline-secondary rounded-3 px-3">Cancel</a>
 
-                <button type="button" class="btn btn-outline-dark rounded-3 px-3" id="btnPreviewTask">
-                    <i class="ti ti-eye me-1"></i> Preview
+            <button type="button" class="btn btn-outline-dark rounded-3 px-3" id="btnPreviewTask">
+                <i class="ti ti-eye me-1"></i> Preview
+            </button>
+
+            @if (isset($task))
+                <button type="submit" class="btn btn-primary rounded-3 px-4">
+                    <i class="ti ti-device-floppy me-1"></i> Save Changes
                 </button>
-
-                @if (isset($task))
-                    <button type="submit" class="btn btn-primary rounded-3 px-4">
-                        <i class="ti ti-device-floppy me-1"></i> Save Changes
-                    </button>
-                @else
-                    <button type="submit" name="action" value="draft" class="btn btn-outline-primary rounded-3 px-3">
-                        <i class="ti ti-file me-1"></i> Save as Draft
-                    </button>
-                    <button type="submit" name="action" value="publish" class="btn btn-primary rounded-3 px-4">
-                        <i class="ti ti-send me-1"></i> Publish Task
-                    </button>
-                @endif
-            </div>
+            @else
+                <button type="submit" name="action" value="draft" class="btn btn-outline-secondary rounded-3 px-3" title="Save as draft and stay on this page to create another task">
+                    <i class="ti ti-device-floppy me-1"></i> Save as Draft
+                </button>
+                <button type="submit" name="action" value="draft_exit" class="btn btn-warning text-dark fw-semibold rounded-3 px-3 shadow-sm" title="Save as draft and return to task list">
+                    <i class="ti ti-file-export me-1"></i> Save as Draft & Exit
+                </button>
+                <button type="submit" name="action" value="publish" class="btn btn-primary rounded-3 px-4">
+                    <i class="ti ti-send me-1"></i> Publish Task
+                </button>
+            @endif
         </div>
     </div>
 </form>
@@ -565,30 +720,48 @@
 <div class="modal modal-blur fade" id="taskPreviewModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
         <div class="modal-content shadow-lg border-0 rounded-4 overflow-hidden">
-            <div class="modal-header bg-light py-3 px-4 border-bottom">
+            <div class="modal-header bg-light py-2.5 px-4 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
                 <div class="d-flex align-items-center gap-2">
-                    <span class="badge bg-primary text-white p-2 rounded-3"><i class="ti ti-eye fs-2"></i></span>
+                    <span class="badge bg-primary text-white p-1.5 rounded-3"><i class="ti ti-eye fs-2"></i></span>
                     <div>
                         <h4 class="modal-title fw-bold text-dark mb-0">Learner View Preview</h4>
-                        <div class="text-muted small">Simulation of how this task appears to learners</div>
                     </div>
                 </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-4 bg-light-subtle">
-                <div class="alert alert-info py-2 px-3 mb-3 d-flex align-items-center gap-2 rounded-3 small border-0 bg-info-lt">
-                    <i class="ti ti-device-laptop fs-2 text-info"></i>
-                    <div><strong>Learner View Simulation:</strong> This preview reflects your current inputs. Interactive inputs below are disabled in preview.</div>
-                </div>
+                <div class="d-flex align-items-center gap-2 ms-auto">
+                    {{-- Zoom Controls --}}
+                    <div class="btn-group btn-group-sm shadow-none border rounded-2 bg-white" role="group" id="taskPreviewZoomToolbar" aria-label="Zoom controls">
+                        <button type="button" class="btn btn-sm btn-ghost-secondary px-2 py-1" id="taskPreviewZoomOutBtn" title="Zoom Out (-)">
+                            <i class="ti ti-zoom-out" style="font-size: 14px;"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-ghost-secondary px-2 py-1 fw-bold text-dark" id="taskPreviewZoomResetBtn" title="Reset Zoom (100%)" style="min-width: 48px; font-size: 11.5px;">
+                            <span id="taskPreviewZoomLevel">100%</span>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-ghost-secondary px-2 py-1" id="taskPreviewZoomInBtn" title="Zoom In (+)">
+                            <i class="ti ti-zoom-in" style="font-size: 14px;"></i>
+                        </button>
+                    </div>
 
-                {{-- User View Card (Identical to Learner My Task Card) --}}
-                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+                    {{-- Clean & Aligned Close Button --}}
+                    <button type="button"
+                            class="btn btn-sm btn-icon btn-ghost-secondary rounded-circle ms-1"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"
+                            title="Close Preview"
+                            style="width: 32px; height: 32px; border: none; padding: 0; display: inline-flex; align-items: center; justify-content: center;">
+                        <i class="ti ti-x text-muted" style="font-size: 20px; font-weight: bold; line-height: 1;"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="modal-body p-4 bg-light-subtle overflow-auto">
+                <div id="taskPreviewZoomWrapper" style="transform-origin: top center; transition: transform 0.15s ease-out; width: 100%;">
+                    {{-- User View Card (Identical to Learner My Task Card) --}}
+                    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
                     {{-- Top Badges Row --}}
                     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
                         <div class="d-flex align-items-center gap-2 flex-wrap">
                             <span class="badge bg-primary-lt text-primary px-2 py-1 fs-6" id="prevTypeBadge">Task</span>
                             <span class="badge bg-secondary-lt text-secondary px-2 py-1 fs-6" id="prevPlacementBadge">
-                                <i class="ti ti-world me-1" id="prevPlacementIcon"></i><span id="prevPlacementText">Global Task</span>
+                                <i class="ti ti-world me-1" id="prevPlacementIcon"></i><span id="prevPlacementText">Others</span>
                             </span>
                         </div>
                         <span class="badge bg-secondary-lt text-secondary px-2 py-1 fs-6" id="prevStatusBadge">Not Started</span>
@@ -672,10 +845,10 @@
         var fieldIndex    = 0;
 
         var BUILDER_HINTS = {
-            file_submission: 'The user answers by uploading file(s). Just write what they need to submit.',
+            file_submission: 'Specify file submission requirements and guidelines for learners.',
             survey: 'Collect opinions — multiple choice or written answers, no scoring.',
-            essay: 'The user writes a reflection in long text; you score it manually.',
-            action_plan: 'File uploads and written answers. Reviewed manually.'
+            essay: 'Specify the essay question or reflection prompt for learners to answer.',
+            action_plan: 'Design action plan questions and prompts for learners using customizable Google Form question types.'
         };
 
         function esc(s) {
@@ -689,9 +862,20 @@
 
         function typeOptions(selected) {
             var html = '';
+            var labels = {
+                'short_answer': 'Short answer',
+                'textarea':     'Paragraph',
+                'choice':       'Multiple choice',
+                'checkbox':     'Checkboxes',
+                'dropdown':     'Dropdown',
+                'file':         'File upload',
+                'scale':        'Linear scale (1-5)',
+                'rating':       'Rating (1-5 stars)'
+            };
             allowedTypes().forEach(function (key) {
+                var lbl = labels[key] || FIELD_TYPES[key] || key;
                 html += '<option value="' + key + '"' + (key === selected ? ' selected' : '') + '>'
-                    + esc(FIELD_TYPES[key]) + '</option>';
+                    + esc(lbl) + '</option>';
             });
             return html;
         }
@@ -702,48 +886,86 @@
             var allowed = allowedTypes();
             if (allowed.length === 1) {
                 return '<input type="hidden" name="fields[' + i + '][type]" value="' + allowed[0] + '">' +
-                       '<span class="badge bg-blue-lt mt-2">' + esc(FIELD_TYPES[allowed[0]]) + '</span>';
+                       '<span class="badge bg-blue-lt py-1.5 px-2.5 rounded-2">' + esc(FIELD_TYPES[allowed[0]]) + '</span>';
             }
-            return '<select class="form-select field-type-select" name="fields[' + i + '][type]">' +
+            return '<select class="form-select field-type-select rounded-2" name="fields[' + i + '][type]">' +
                    typeOptions(selType) + '</select>';
         }
 
-        // ── Multiple-choice options editor ──────────────────────────────
-        function addOptionRow(listEl, i, value, isCorrect) {
+        // ── Options editor (Multiple choice, Checkboxes, Dropdown) ──────
+        function addOptionRow(listEl, i, value, ftype) {
+            ftype = ftype || 'choice';
             var idx = listEl.querySelectorAll('.option-row').length;
             var row = document.createElement('div');
-            row.className = 'input-group input-group-sm mb-1 option-row';
+            row.className = 'd-flex align-items-center gap-2 option-row';
+
+            var prefixHtml = '';
+            if (ftype === 'checkbox') {
+                prefixHtml = '<i class="ti ti-square text-muted fs-3 flex-shrink-0 option-prefix-icon"></i>';
+            } else if (ftype === 'dropdown') {
+                prefixHtml = '<span class="text-muted fw-bold small flex-shrink-0 option-prefix-num" style="width:20px;">' + (idx + 1) + '.</span>';
+            } else {
+                prefixHtml = '<i class="ti ti-circle text-muted fs-3 flex-shrink-0 option-prefix-icon"></i>';
+            }
+
             row.innerHTML =
-                '<span class="input-group-text correct-radio-wrap" title="Tick the correct answer">' +
-                    '<input type="radio" class="form-check-input mt-0 correct-radio" ' +
-                        'name="fields[' + i + '][correct]" value="' + idx + '"' +
-                        (isCorrect ? ' checked' : '') + '>' +
-                '</span>' +
-                '<input type="text" class="form-control" name="fields[' + i + '][options][]" ' +
+                prefixHtml +
+                '<input type="text" class="form-control gform-opt-input flex-grow-1" name="fields[' + i + '][options][]" ' +
                     'placeholder="Option ' + (idx + 1) + '" value="' + esc(value || '') + '">' +
-                '<button type="button" class="btn btn-outline-danger btnRemoveOption" title="Remove option">' +
-                    '<i class="ti ti-x"></i></button>';
+                '<button type="button" class="btn btn-sm btn-link text-muted p-1 btnRemoveOption" title="Remove option">' +
+                    '<i class="ti ti-x fs-3"></i>' +
+                '</button>';
             listEl.appendChild(row);
-            reindexOptions(listEl);
+            reindexOptions(listEl, ftype);
         }
 
-        // Keep radio values = option position (0..n-1); hide the tick column
-        // when this task type has no correct answer.
-        function reindexOptions(listEl) {
+        function reindexOptions(listEl, ftype) {
+            ftype = ftype || 'choice';
             var rows = listEl.querySelectorAll('.option-row');
             rows.forEach(function (row, pos) {
-                row.querySelector('.correct-radio').value = pos;
-                row.querySelector('input[type="text"]').placeholder = 'Option ' + (pos + 1);
-            });
-            listEl.querySelectorAll('.correct-radio-wrap').forEach(function (w) {
-                w.style.display = isQuiz() ? '' : 'none';
+                var input = row.querySelector('input[type="text"]');
+                if (input) input.placeholder = 'Option ' + (pos + 1);
+                var numSpan = row.querySelector('.option-prefix-num');
+                if (numSpan) numSpan.textContent = (pos + 1) + '.';
+                var icon = row.querySelector('.option-prefix-icon');
+                if (icon) {
+                    if (ftype === 'checkbox') {
+                        icon.className = 'ti ti-square text-muted fs-3 flex-shrink-0 option-prefix-icon';
+                    } else {
+                        icon.className = 'ti ti-circle text-muted fs-3 flex-shrink-0 option-prefix-icon';
+                    }
+                }
             });
         }
 
-        function toggleOptionsEditor(card) {
-            var show = card.dataset.ftype === 'choice';
-            card.querySelector('.optionsEditor').style.display = show ? '' : 'none';
-            if (show) reindexOptions(card.querySelector('.optionsList'));
+        function toggleQuestionTypeUI(card) {
+            var ftype = card.dataset.ftype;
+            var shortAns = card.querySelector('.previewShortAnswer');
+            var paragraph = card.querySelector('.previewParagraph');
+            var optEditor = card.querySelector('.optionsEditor');
+            var fileSet = card.querySelector('.fileSettings');
+            var scale = card.querySelector('.previewScale');
+            var rating = card.querySelector('.previewRating');
+
+            if (shortAns) shortAns.style.display = (ftype === 'short_answer') ? '' : 'none';
+            if (paragraph) paragraph.style.display = (ftype === 'textarea') ? '' : 'none';
+            if (fileSet) fileSet.style.display = (ftype === 'file') ? '' : 'none';
+            if (scale) scale.style.display = (ftype === 'scale') ? '' : 'none';
+            if (rating) rating.style.display = (ftype === 'rating') ? '' : 'none';
+
+            var isOpt = (ftype === 'choice' || ftype === 'checkbox' || ftype === 'dropdown');
+            if (optEditor) {
+                optEditor.style.display = isOpt ? '' : 'none';
+                if (isOpt) {
+                    var list = optEditor.querySelector('.optionsList');
+                    if (list && list.children.length === 0) {
+                        addOptionRow(list, card.dataset.index, '', ftype);
+                        addOptionRow(list, card.dataset.index, '', ftype);
+                    } else if (list) {
+                        reindexOptions(list, ftype);
+                    }
+                }
+            }
         }
 
         // ── File-upload settings (ala Google Form) ──────────────────────
@@ -766,90 +988,161 @@
         }
 
         function fileSettingsHTML(i, data) {
-            return '<div class="fileSettings mt-2" style="display:none">' +
-                '<div class="mb-2" style="max-width:280px">' +
-                    '<label class="form-label small mb-1">File type</label>' +
-                    '<select class="form-select form-select-sm" name="fields[' + i + '][file_types]">' +
-                        fileTypeSelectHTML(i, data.file_types || '') +
-                    '</select>' +
-                '</div>' +
-                '<div class="d-flex flex-wrap gap-3">' +
-                    '<div>' +
-                        '<label class="form-label small mb-1">Maximum number of files</label>' +
-                        '<select class="form-select form-select-sm" name="fields[' + i + '][max_files]" style="width:auto">' +
+            return '<div class="fileSettings mt-3 p-3 bg-light-subtle rounded-3 border" style="display:none">' +
+                '<div class="row g-3">' +
+                    '<div class="col-12 col-md-4">' +
+                        '<label class="form-label small fw-semibold text-dark mb-1">Allowed file types</label>' +
+                        '<select class="form-select form-select-sm" name="fields[' + i + '][file_types]">' +
+                            fileTypeSelectHTML(i, data.file_types || '') +
+                        '</select>' +
+                    '</div>' +
+                    '<div class="col-6 col-md-4">' +
+                        '<label class="form-label small fw-semibold text-dark mb-1">Max number of files</label>' +
+                        '<select class="form-select form-select-sm" name="fields[' + i + '][max_files]">' +
                             selectOptionsHTML(MAX_FILES_OPTIONS, data.max_files || 1, '') +
                         '</select>' +
                     '</div>' +
-                    '<div>' +
-                        '<label class="form-label small mb-1">Maximum file size</label>' +
-                        '<select class="form-select form-select-sm" name="fields[' + i + '][max_size_mb]" style="width:auto">' +
+                    '<div class="col-6 col-md-4">' +
+                        '<label class="form-label small fw-semibold text-dark mb-1">Max file size</label>' +
+                        '<select class="form-select form-select-sm" name="fields[' + i + '][max_size_mb]">' +
                             selectOptionsHTML(MAX_SIZE_OPTIONS, data.max_size_mb || DEFAULT_MAX_SIZE_MB, ' MB') +
                         '</select>' +
                     '</div>' +
                 '</div>' +
-                '<label class="form-check mt-2 mb-0">' +
-                    '<input type="checkbox" class="form-check-input" name="fields[' + i + '][allow_link]" value="1"' +
-                        (data.allow_link ? ' checked' : '') + '>' +
-                    '<span class="form-check-label">Allow Drive link as an alternative</span>' +
-                '</label>' +
+                '<div class="mt-2 pt-2 border-top">' +
+                    '<label class="form-check mb-0">' +
+                        '<input type="checkbox" class="form-check-input" name="fields[' + i + '][allow_link]" value="1"' +
+                            (data.allow_link ? ' checked' : '') + '>' +
+                        '<span class="form-check-label small text-muted">Allow Google Drive / cloud link as an alternative to file upload</span>' +
+                    '</label>' +
+                '</div>' +
             '</div>';
         }
 
-        function toggleFileSettings(card) {
-            var show = card.dataset.ftype === 'file';
-            card.querySelector('.fileSettings').style.display = show ? '' : 'none';
-        }
-
-        // ── One question card (compact single row) ──────────────────────
+        // ── One question card ───────────────────────────────────────────
         function addField(data) {
             data = data || {};
             var i = fieldIndex++;
             var allowed = allowedTypes();
             var selType = allowed.indexOf(data.type) !== -1 ? data.type : (allowed[0] || 'textarea');
+            var isEssay = (currentType() === 'essay');
 
             var card = document.createElement('div');
-            card.className = 'border rounded p-3 mb-2 field-card bg-white';
             card.dataset.index = i;
             card.dataset.ftype = selType;
-            card.innerHTML =
-                '<input type="hidden" name="fields[' + i + '][id]" value="' + esc(data.id || '') + '">' +
-                '<input type="hidden" name="fields[' + i + '][required]" value="1">' +
-                '<div class="d-flex gap-2 align-items-start">' +
-                    '<div class="flex-fill">' +
-                        '<input type="text" class="form-control" name="fields[' + i + '][label]" ' +
-                            'placeholder="Write the question" value="' + esc(data.label || '') + '" required>' +
+
+            if (isEssay) {
+                card.className = 'field-card field-card-clean form-field-xl';
+                card.innerHTML =
+                    '<input type="hidden" name="fields[' + i + '][id]" value="' + esc(data.id || '') + '">' +
+                    '<input type="hidden" name="fields[' + i + '][type]" value="textarea">' +
+                    '<input type="hidden" name="fields[' + i + '][required]" value="1">' +
+                    '<div class="d-none typeCol"><input type="hidden" name="fields[' + i + '][type]" value="textarea"></div>' +
+                    '<div class="gform-essay-block">' +
+                        '<input type="text" class="form-control gform-question-input" id="field_label_' + i + '" name="fields[' + i + '][label]" ' +
+                            'placeholder="Question" value="' + esc(data.label || '') + '" maxlength="255" required>' +
+                        '<div class="gform-answer-preview mt-4">' +
+                            '<div class="gform-answer-text">Long-answer text</div>' +
+                            '<div class="gform-answer-line"></div>' +
+                        '</div>' +
                     '</div>' +
-                    '<div class="typeCol" style="width:150px;flex-shrink:0">' + typeColHTML(i, selType) + '</div>' +
-                    '<button type="button" class="btn btn-outline-danger btn-sm btnRemoveField mt-1" title="Delete question">' +
-                        '<i class="ti ti-trash"></i>' +
-                    '</button>' +
-                '</div>' +
-                '<div class="optionsEditor mt-2" style="display:none">' +
-                    '<div class="optionsList"></div>' +
-                    '<button type="button" class="btn btn-sm btn-outline-secondary btnAddOption">' +
-                        '<i class="ti ti-plus"></i> Add option</button>' +
-                    '<div class="form-hint mt-1 optionsHint"></div>' +
-                '</div>' +
-                fileSettingsHTML(i, data);
+                    '<div class="optionsEditor mt-2" style="display:none"><div class="optionsList"></div><div class="optionsHint"></div></div>' +
+                    '<div class="fileSettings mt-2" style="display:none"></div>';
+            } else {
+                card.className = 'border rounded-3 p-4 mb-3 field-card bg-white';
+                card.innerHTML =
+                    '<input type="hidden" name="fields[' + i + '][id]" value="' + esc(data.id || '') + '">' +
+                    '<div class="d-flex align-items-start gap-3 flex-wrap flex-md-nowrap mb-3">' +
+                        '<div class="flex-grow-1" style="min-width: 240px;">' +
+                            '<input type="text" class="form-control gform-question-input" name="fields[' + i + '][label]" ' +
+                                'placeholder="Question" value="' + esc(data.label || '') + '" maxlength="255" required>' +
+                        '</div>' +
+                        '<div class="typeCol" style="width: 220px; flex-shrink: 0;">' +
+                            typeColHTML(i, selType) +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="previewShortAnswer mt-2" style="display:none;">' +
+                        '<div class="gform-answer-preview py-2">' +
+                            '<div class="gform-answer-text">Short-answer text</div>' +
+                            '<div class="gform-answer-line" style="max-width: 280px;"></div>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="previewParagraph mt-2" style="display:none;">' +
+                        '<div class="gform-answer-preview py-2">' +
+                            '<div class="gform-answer-text">Long-answer text</div>' +
+                            '<div class="gform-answer-line" style="max-width: 440px;"></div>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="optionsEditor mt-3" style="display:none;">' +
+                        '<div class="optionsList d-flex flex-column gap-2 mb-2"></div>' +
+                        '<button type="button" class="btn btn-sm btn-link text-primary text-decoration-none p-0 btnAddOption d-inline-flex align-items-center gap-1 fw-medium">' +
+                            '<i class="ti ti-plus"></i> Add option' +
+                        '</button>' +
+                        '<div class="form-hint mt-2 optionsHint text-muted small" style="display:none;"></div>' +
+                    '</div>' +
+                    fileSettingsHTML(i, data) +
+                    '<div class="previewScale mt-3 p-3 bg-light-subtle rounded-3 border" style="display:none;">' +
+                        '<div class="text-muted small mb-2"><i class="ti ti-arrows-left-right me-1"></i> Scale preview (Learners will select a rating from 1 to 5):</div>' +
+                        '<div class="d-flex align-items-center gap-3 flex-wrap">' +
+                            '<span class="text-muted small fw-medium">1 (Lowest)</span>' +
+                            '<div class="d-flex align-items-center gap-2">' +
+                                '<span class="badge bg-white text-dark border px-3 py-2 rounded-pill shadow-xs">1</span>' +
+                                '<span class="badge bg-white text-dark border px-3 py-2 rounded-pill shadow-xs">2</span>' +
+                                '<span class="badge bg-white text-dark border px-3 py-2 rounded-pill shadow-xs">3</span>' +
+                                '<span class="badge bg-white text-dark border px-3 py-2 rounded-pill shadow-xs">4</span>' +
+                                '<span class="badge bg-white text-dark border px-3 py-2 rounded-pill shadow-xs">5</span>' +
+                            '</div>' +
+                            '<span class="text-muted small fw-medium">5 (Highest)</span>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="previewRating mt-3 p-3 bg-light-subtle rounded-3 border" style="display:none;">' +
+                        '<div class="text-muted small mb-2"><i class="ti ti-star me-1"></i> Star rating preview (Learners will select 1 to 5 stars):</div>' +
+                        '<div class="d-flex align-items-center gap-1 text-warning fs-2">' +
+                            '<i class="ti ti-star-filled"></i>' +
+                            '<i class="ti ti-star-filled"></i>' +
+                            '<i class="ti ti-star-filled"></i>' +
+                            '<i class="ti ti-star-filled"></i>' +
+                            '<i class="ti ti-star-filled"></i>' +
+                            '<span class="text-muted small ms-2 fs-6">5-star rating scale</span>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="border-top pt-3 mt-4 d-flex align-items-center justify-content-between flex-wrap gap-2">' +
+                        '<div class="text-muted small fw-semibold questionNumberBadge">' +
+                            '<span class="badge bg-light text-secondary border px-2.5 py-1 rounded-2">Question #<span class="qNumText">1</span></span>' +
+                        '</div>' +
+                        '<div class="d-flex align-items-center gap-3">' +
+                            '<button type="button" class="btn btn-outline-danger btn-sm rounded-2 btnRemoveField px-2.5 py-1" title="Delete question">' +
+                                '<i class="ti ti-trash me-1"></i> Delete' +
+                            '</button>' +
+                            '<div class="vr" style="height: 20px;"></div>' +
+                            '<label class="form-check form-switch mb-0 d-inline-flex align-items-center gap-2">' +
+                                '<input type="checkbox" class="form-check-input field-required-toggle" name="fields[' + i + '][required]" value="1"' +
+                                    (data.required !== false ? ' checked' : '') + '>' +
+                                '<span class="form-check-label small text-muted">Required</span>' +
+                            '</label>' +
+                        '</div>' +
+                    '</div>';
+            }
             wrap.appendChild(card);
 
-            var list = card.querySelector('.optionsList');
-            var opts = (data.options && data.options.length) ? data.options : ['', ''];
-            opts.forEach(function (opt, idx) {
-                addOptionRow(list, i, opt, idx === (data.correct || 0));
-            });
-            card.querySelector('.optionsHint').textContent = isQuiz()
-                ? 'Tick the radio on the correct answer — scoring is automatic.'
-                : 'No correct answer in a survey — just collect the options.';
-
-            toggleOptionsEditor(card);
-            toggleFileSettings(card);
-            updateRemoveButtons();
+            if (!isEssay) {
+                var list = card.querySelector('.optionsList');
+                if (list) {
+                    var opts = (data.options && data.options.length) ? data.options : ['', ''];
+                    opts.forEach(function (opt) {
+                        addOptionRow(list, i, opt, selType);
+                    });
+                }
+                toggleQuestionTypeUI(card);
+            }
+            updateQuestionNumbers();
         }
 
-        function updateRemoveButtons() {
+        function updateQuestionNumbers() {
             var cards = wrap.querySelectorAll('.field-card');
-            cards.forEach(function (c) {
+            cards.forEach(function (c, idx) {
+                var numText = c.querySelector('.qNumText');
+                if (numText) numText.textContent = (idx + 1);
                 var btn = c.querySelector('.btnRemoveField');
                 if (btn) btn.style.display = (cards.length > 1) ? '' : 'none';
             });
@@ -871,24 +1164,25 @@
                     return;
                 }
                 rmField.closest('.field-card').remove();
-                updateRemoveButtons();
+                updateQuestionNumbers();
                 return;
             }
             var addOpt = e.target.closest('.btnAddOption');
             if (addOpt) {
                 var card = addOpt.closest('.field-card');
-                addOptionRow(card.querySelector('.optionsList'), card.dataset.index, '', false);
+                addOptionRow(card.querySelector('.optionsList'), card.dataset.index, '', card.dataset.ftype);
                 return;
             }
             var rmOpt = e.target.closest('.btnRemoveOption');
             if (rmOpt) {
                 var list = rmOpt.closest('.optionsList');
                 if (list.querySelectorAll('.option-row').length <= 2) {
-                    alert('Multiple choice needs at least 2 options.');
+                    alert('This question needs at least 2 options.');
                     return;
                 }
+                var card = rmOpt.closest('.field-card');
                 rmOpt.closest('.option-row').remove();
-                reindexOptions(list);
+                reindexOptions(list, card ? card.dataset.ftype : 'choice');
             }
         });
 
@@ -896,8 +1190,7 @@
             if (e.target.classList.contains('field-type-select')) {
                 var card = e.target.closest('.field-card');
                 card.dataset.ftype = e.target.value;
-                toggleOptionsEditor(card);
-                toggleFileSettings(card);
+                toggleQuestionTypeUI(card);
             }
         });
 
@@ -965,6 +1258,7 @@
             parentIdInput.value = id;
             parentPickerText.textContent = title;
             if (parentIdError) parentIdError.style.display = 'none';
+            if (parentPickerBtn) parentPickerBtn.classList.remove('is-invalid', 'picker-btn-invalid');
             closeParentPanel();
         }
 
@@ -1072,6 +1366,9 @@
                 b.addEventListener('click', function () {
                     linkedSelect.value = it.id;
                     linkedSelect.dispatchEvent(new Event('change'));
+                    if (coursePickerBtn) coursePickerBtn.classList.remove('is-invalid', 'picker-btn-invalid');
+                    var courseErr = document.getElementById('courseIdError');
+                    if (courseErr) courseErr.style.display = 'none';
                     closeCoursePanel();
                 });
                 coursePanelList.appendChild(b);
@@ -1123,15 +1420,88 @@
             }
             syncCoursePickerText();
         }
-        // Guard: don't submit without a picked parent (hidden inputs skip browser validation).
+        // Highlight unfilled required columns on submit and clear on input
         var taskFormEl = document.getElementById('taskForm');
-        if (taskFormEl && parentIdInput) {
+
+        function highlightInvalidFields() {
+            // Title
+            var titleEl = document.getElementById('title');
+            if (titleEl && !titleEl.value.trim()) {
+                titleEl.classList.add('is-invalid');
+            }
+            // Dynamic question prompts
+            if (wrap) {
+                wrap.querySelectorAll('.field-card input[name$="[label]"], .field-card textarea[name$="[label]"]').forEach(function (inp) {
+                    if (!inp.value.trim()) {
+                        inp.classList.add('is-invalid');
+                    }
+                });
+            }
+            // Placement picker
+            if (parentIdInput && !parentIdInput.value && currentPlacement !== 'standalone') {
+                if (parentPickerBtn) parentPickerBtn.classList.add('is-invalid', 'picker-btn-invalid');
+            }
+            // Course Assignment picker
+            if (currentType() === 'course_assignment') {
+                var linkTypeRadio = document.querySelector('input[name="link_type"]:checked');
+                var isLms = !linkTypeRadio || linkTypeRadio.value === 'lms';
+                if (isLms && (!linkedSelect || !linkedSelect.value)) {
+                    if (coursePickerBtn) coursePickerBtn.classList.add('is-invalid', 'picker-btn-invalid');
+                }
+            }
+        }
+
+        if (taskFormEl) {
+            // When admin clicks submit (Publish Task / Save as Draft / Save Changes), highlight empty fields in red
+            taskFormEl.querySelectorAll('button[type="submit"]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    highlightInvalidFields();
+                });
+            });
+
+            // Native invalid event (when browser checks required fields)
+            taskFormEl.addEventListener('invalid', function (e) {
+                if (e.target && e.target.classList) {
+                    e.target.classList.add('is-invalid');
+                }
+            }, true);
+
+            // Remove red highlight as soon as user types or changes value
+            taskFormEl.addEventListener('input', function (e) {
+                if (e.target && e.target.classList && e.target.classList.contains('is-invalid')) {
+                    e.target.classList.remove('is-invalid');
+                }
+            });
+            taskFormEl.addEventListener('change', function (e) {
+                if (e.target && e.target.classList && e.target.classList.contains('is-invalid')) {
+                    e.target.classList.remove('is-invalid');
+                }
+            });
+
+            // Guard: don't submit without a picked parent or course (hidden inputs skip browser validation)
             taskFormEl.addEventListener('submit', function (e) {
                 // Standalone tasks are not tied to any placement → no parent needed.
-                if (!parentIdInput.value && currentPlacement !== 'standalone') {
+                if (parentIdInput && !parentIdInput.value && currentPlacement !== 'standalone') {
                     e.preventDefault();
+                    if (parentPickerBtn) parentPickerBtn.classList.add('is-invalid', 'picker-btn-invalid');
                     if (parentIdError) parentIdError.style.display = '';
+                    parentPickerBtn.focus();
                     openParentPanel();
+                    return;
+                }
+
+                if (currentType() === 'course_assignment') {
+                    var linkTypeRadio = document.querySelector('input[name="link_type"]:checked');
+                    var isLms = !linkTypeRadio || linkTypeRadio.value === 'lms';
+                    if (isLms && (!linkedSelect || !linkedSelect.value)) {
+                        e.preventDefault();
+                        if (coursePickerBtn) coursePickerBtn.classList.add('is-invalid', 'picker-btn-invalid');
+                        var courseErr = document.getElementById('courseIdError');
+                        if (courseErr) courseErr.style.display = '';
+                        coursePickerBtn.focus();
+                        openCoursePanel();
+                        return;
+                    }
                 }
             });
         }
@@ -1156,12 +1526,37 @@
             var isLink   = (t === 'course_assignment');
             var isSurvey = (t === 'survey');
             var isFileSubmission = (t === 'file_submission');
+            var isEssay  = (t === 'essay');
             var hasBuilder = typeHasBuilder(t);
 
             linkSection.style.display       = isLink ? '' : 'none';
             if (surveySection) surveySection.style.display = isSurvey ? '' : 'none';
             builderSection.style.display    = hasBuilder ? '' : 'none';
-            builderHint.textContent = BUILDER_HINTS[t] || '';
+
+            var addQuestionWrap = document.getElementById('addQuestionWrap');
+            if (addQuestionWrap) {
+                addQuestionWrap.style.display = (hasBuilder && !isEssay) ? '' : 'none';
+            }
+
+            var builderTitleEl = document.getElementById('builderTitle');
+            var builderBadgeIcon = document.getElementById('builderBadgeIcon');
+            if (isEssay) {
+                if (builderTitleEl) builderTitleEl.textContent = '4. Essay Question';
+                if (builderHint) builderHint.textContent = 'Specify the essay question or reflection prompt for learners to answer.';
+                if (builderBadgeIcon) builderBadgeIcon.className = 'ti ti-writing';
+            } else if (t === 'action_plan') {
+                if (builderTitleEl) builderTitleEl.textContent = '4. Action Plan Form Builder';
+                if (builderHint) builderHint.textContent = BUILDER_HINTS.action_plan;
+                if (builderBadgeIcon) builderBadgeIcon.className = 'ti ti-clipboard-list';
+            } else if (isFileSubmission) {
+                if (builderTitleEl) builderTitleEl.textContent = '4. File Submission Requirements';
+                if (builderHint) builderHint.textContent = BUILDER_HINTS.file_submission;
+                if (builderBadgeIcon) builderBadgeIcon.className = 'ti ti-cloud-upload';
+            } else {
+                if (builderTitleEl) builderTitleEl.textContent = '4. Questions & Submission Form Builder';
+                if (builderHint) builderHint.textContent = BUILDER_HINTS[t] || '';
+                if (builderBadgeIcon) builderBadgeIcon.className = 'ti ti-list-check';
+            }
 
             // Section 3: Attachment / Task Template only visible for File Submission
             var attachmentWrapper = document.getElementById('attachmentWrapper');
@@ -1209,24 +1604,46 @@
                 el.disabled = false;
             });
 
+            var wasEssay = wrap.querySelector('.gform-essay-block') !== null;
+
+            if (isEssay !== wasEssay && wrap.querySelectorAll('.field-card').length > 0) {
+                // Re-render fields in the new format while preserving existing labels/data
+                var currentData = [];
+                wrap.querySelectorAll('.field-card').forEach(function(c) {
+                    var labelInp = c.querySelector('input[name$="[label]"], textarea[name$="[label]"]');
+                    var idInp = c.querySelector('input[name$="[id]"]');
+                    var reqInp = c.querySelector('input[name$="[required]"]');
+                    currentData.push({
+                        id: idInp ? idInp.value : '',
+                        label: labelInp ? labelInp.value : '',
+                        type: isEssay ? 'textarea' : (c.dataset.ftype || allowedTypes()[0]),
+                        required: reqInp ? reqInp.checked : true
+                    });
+                });
+                if (isEssay && currentData.length > 1) {
+                    currentData = [currentData[0]];
+                }
+                wrap.innerHTML = '';
+                fieldIndex = 0;
+                currentData.forEach(function(d) {
+                    addField(d);
+                });
+                return;
+            }
+
             // Rebuild each card's type column for the newly allowed set.
             var allowed = allowedTypes();
             wrap.querySelectorAll('.field-card').forEach(function (card) {
                 var cur = card.dataset.ftype;
                 var next = allowed.indexOf(cur) !== -1 ? cur : allowed[0];
                 card.dataset.ftype = next;
-                card.querySelector('.typeCol').innerHTML =
-                    typeColHTML(card.dataset.index, next);
-                toggleOptionsEditor(card);
-                toggleFileSettings(card);
+                var typeColEl = card.querySelector('.typeCol');
+                if (typeColEl) {
+                    typeColEl.innerHTML = typeColHTML(card.dataset.index, next);
+                }
+                toggleQuestionTypeUI(card);
             });
-            // refresh the per-editor hint (quiz vs survey wording)
-            wrap.querySelectorAll('.field-card').forEach(function (card) {
-                var hint = card.querySelector('.optionsHint');
-                if (hint) hint.textContent = isQuiz()
-                    ? 'Tick the radio on the correct answer — scoring is automatic.'
-                    : 'No correct answer in a survey — just collect the options.';
-            });
+            updateQuestionNumbers();
         }
         typeSelect.addEventListener('change', function () {
             refreshTypeUI();
@@ -1258,7 +1675,7 @@
             var prevPlacementText = document.getElementById('prevPlacementText');
             var prevPlacementIcon = document.getElementById('prevPlacementIcon');
             if (currentPlacement === 'standalone') {
-                if (prevPlacementText) prevPlacementText.textContent = 'Global Task';
+                if (prevPlacementText) prevPlacementText.textContent = 'Others';
                 if (prevPlacementIcon) prevPlacementIcon.className = 'ti ti-world me-1';
             } else {
                 var pickerText = parentPickerText ? parentPickerText.textContent.trim() : '';
@@ -1413,19 +1830,22 @@
                     html += '<div class="alert alert-warning">This task has no questions yet.</div>';
                 } else {
                     fieldCards.forEach(function (card, idx) {
-                        var labelInput = card.querySelector('input[name$="[label]"]');
+                        var labelInput = card.querySelector('input[name$="[label]"], textarea[name$="[label]"]');
                         var qTitle = (labelInput ? labelInput.value.trim() : '') || ('Question ' + (idx + 1));
                         var ftype = card.dataset.ftype;
-                        var typeLabel = FIELD_TYPES[ftype] || 'File upload';
+                        var typeLabel = FIELD_TYPES[ftype] || 'Question';
+                        var isRequired = true;
+                        var reqChk = card.querySelector('input[name$="[required]"]');
+                        if (reqChk) isRequired = reqChk.checked;
 
                         html += '<div class="mb-4 pb-3 border-bottom">' +
                             '<label class="form-label fw-semibold text-dark mb-2">' +
-                                esc(qTitle) + ' <span class="text-danger">*</span> ' +
+                                esc(qTitle) + (isRequired ? ' <span class="text-danger">*</span>' : '') + ' ' +
                                 '<span class="text-muted fw-normal small">(' + esc(typeLabel) + ')</span>' +
                             '</label>';
 
                         if (ftype === 'file') {
-                            var groupSel = card.querySelector('select[name$="[group]"]');
+                            var groupSel = card.querySelector('select[name$="[file_types]"]');
                             var groupKey = groupSel ? groupSel.value : '';
                             var groupInfo = FILE_TYPE_GROUPS[groupKey];
                             var maxFilesSel = card.querySelector('select[name$="[max_files]"]');
@@ -1435,7 +1855,7 @@
                             var allowLinkChk = card.querySelector('input[name$="[allow_link]"]');
                             var allowLink = allowLinkChk ? allowLinkChk.checked : false;
 
-                            var extDisplay = 'Semua format file';
+                            var extDisplay = 'All file formats';
                             var badgeHtml = '';
                             if (groupInfo && groupInfo.extensions && groupInfo.extensions.length) {
                                 extDisplay = groupInfo.extensions.join(', ').toUpperCase();
@@ -1461,13 +1881,13 @@
                                         '<i class="ti ti-cloud-upload fs-1"></i>' +
                                     '</div>' +
                                     '<div class="fw-semibold text-dark mb-1">' +
-                                        'Tarik &amp; lepas file ke sini, atau <span class="text-primary text-decoration-underline">pilih file</span>' +
+                                        'Drag &amp; drop files here, or <span class="text-primary text-decoration-underline">browse</span>' +
                                     '</div>' +
                                     '<div class="text-muted small" style="font-size: 11.5px;">' +
                                         'Format: <strong>' + esc(extDisplay) + '</strong>' + badgeHtml +
-                                        ' | Maksimal <strong>' + maxFiles + ' file</strong>, maks. <strong>' + maxSize + ' MB</strong> per file' +
+                                        ' | Maximum <strong>' + maxFiles + ' file' + (maxFiles > 1 ? 's' : '') + '</strong>, max. <strong>' + maxSize + ' MB</strong> per file' +
                                     '</div>' +
-                                    (allowLink ? '<div class="mt-2"><span class="badge bg-info-lt text-info d-inline-flex align-items-center"><i class="ti ti-link me-1"></i> Mendukung Link Drive</span></div>' : '') +
+                                    (allowLink ? '<div class="mt-2"><span class="badge bg-info-lt text-info d-inline-flex align-items-center"><i class="ti ti-link me-1"></i> Supports Drive Link</span></div>' : '') +
                                 '</div>' +
                             '</div>';
                         } else if (ftype === 'choice') {
@@ -1481,8 +1901,52 @@
                                 '</label>';
                             });
                             html += '</div>';
+                        } else if (ftype === 'checkbox') {
+                            var chkOpts = card.querySelectorAll('.option-row input[type="text"]');
+                            html += '<div class="d-flex flex-column gap-2 mt-2">';
+                            chkOpts.forEach(function (optInput, oIdx) {
+                                var optVal = optInput.value.trim() || ('Option ' + (oIdx + 1));
+                                html += '<label class="form-check mb-0">' +
+                                    '<input type="checkbox" class="form-check-input" disabled>' +
+                                    '<span class="form-check-label">' + esc(optVal) + '</span>' +
+                                '</label>';
+                            });
+                            html += '</div>';
+                        } else if (ftype === 'dropdown') {
+                            var dropOpts = card.querySelectorAll('.option-row input[type="text"]');
+                            html += '<select class="form-select" disabled style="background:#f8fafc; max-width:320px;">' +
+                                '<option>— Choose —</option>';
+                            dropOpts.forEach(function (optInput, oIdx) {
+                                var optVal = optInput.value.trim() || ('Option ' + (oIdx + 1));
+                                html += '<option>' + esc(optVal) + '</option>';
+                            });
+                            html += '</select>';
+                        } else if (ftype === 'short_answer') {
+                            html += '<input type="text" class="form-control" placeholder="Your answer" disabled style="background:#f8fafc; max-width:400px;">';
+                        } else if (ftype === 'scale') {
+                            html += '<div class="d-flex align-items-center gap-3 flex-wrap py-2">' +
+                                '<span class="text-muted small fw-medium">1 (Lowest)</span>' +
+                                '<div class="d-flex align-items-center gap-3">' +
+                                    [1, 2, 3, 4, 5].map(function (n) {
+                                        return '<label class="form-check form-check-inline text-center m-0">' +
+                                            '<div class="small fw-bold text-dark mb-1">' + n + '</div>' +
+                                            '<input type="radio" class="form-check-input m-0" disabled>' +
+                                        '</label>';
+                                    }).join('') +
+                                '</div>' +
+                                '<span class="text-muted small fw-medium">5 (Highest)</span>' +
+                            '</div>';
+                        } else if (ftype === 'rating') {
+                            html += '<div class="d-flex align-items-center gap-1 text-warning fs-1 py-1">' +
+                                '<i class="ti ti-star-filled"></i>' +
+                                '<i class="ti ti-star-filled"></i>' +
+                                '<i class="ti ti-star-filled"></i>' +
+                                '<i class="ti ti-star-filled"></i>' +
+                                '<i class="ti ti-star"></i>' +
+                                '<span class="text-muted small ms-2 fs-6">(Rating from 1 to 5 stars)</span>' +
+                            '</div>';
                         } else {
-                            html += '<textarea rows="3" class="form-control" placeholder="Tuliskan jawaban Anda di sini..." disabled style="background:#f8fafc;"></textarea>';
+                            html += '<textarea rows="3" class="form-control" placeholder="Write your answer here..." disabled style="background:#f8fafc;"></textarea>';
                         }
 
                         html += '</div>';
@@ -1499,9 +1963,42 @@
             }
         }
 
+        // ── Task Preview Zoom Controls ──
+        var taskPrevZoom = 1.0;
+        function applyTaskPrevZoom(z) {
+            taskPrevZoom = Math.max(0.5, Math.min(2.5, Math.round(z * 10) / 10));
+            var wrap = document.getElementById('taskPreviewZoomWrapper');
+            var lvl = document.getElementById('taskPreviewZoomLevel');
+            if (wrap) wrap.style.transform = 'scale(' + taskPrevZoom + ')';
+            if (lvl) lvl.textContent = Math.round(taskPrevZoom * 100) + '%';
+        }
+
+        var tZoomIn = document.getElementById('taskPreviewZoomInBtn');
+        if (tZoomIn) {
+            tZoomIn.addEventListener('click', function (e) {
+                e.preventDefault();
+                applyTaskPrevZoom(taskPrevZoom + 0.15);
+            });
+        }
+        var tZoomOut = document.getElementById('taskPreviewZoomOutBtn');
+        if (tZoomOut) {
+            tZoomOut.addEventListener('click', function (e) {
+                e.preventDefault();
+                applyTaskPrevZoom(taskPrevZoom - 0.15);
+            });
+        }
+        var tZoomReset = document.getElementById('taskPreviewZoomResetBtn');
+        if (tZoomReset) {
+            tZoomReset.addEventListener('click', function (e) {
+                e.preventDefault();
+                applyTaskPrevZoom(1.0);
+            });
+        }
+
         var btnPreview = document.getElementById('btnPreviewTask');
         if (btnPreview) {
             btnPreview.addEventListener('click', function () {
+                applyTaskPrevZoom(1.0);
                 renderTaskPreview();
                 var modalEl = document.getElementById('taskPreviewModal');
                 if (modalEl) {

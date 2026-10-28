@@ -35,137 +35,132 @@
 
             <x-alert type="success" />
 
-            {{-- ===== 4 KPI SUMMARY CARDS (DIRECTLY UNDER HERO) ===== --}}
-            <div class="row g-3 mb-4">
-                <!-- Card 1: Total Course -->
-                <div class="col-sm-6 col-lg-3">
-                    <div class="card border-0 shadow-sm p-3 rounded-3 bg-white stat-kpi-card h-100">
-                        <div class="d-flex align-items-center">
-                            <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
-                                 style="width: 44px; height: 44px; background-color: #0f4c81; color: #ffffff;">
-                                <i class="ti ti-stack-2 fs-2"></i>
-                            </div>
-                            <div>
-                                <div class="text-muted fw-semibold" style="font-size: 0.8rem; line-height: 1.2;">Total Course</div>
-                                <div class="fw-bold fs-3 text-dark mt-1" style="line-height: 1.1;">{{ number_format($stats['parents']) }}</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Card 2: Total Tasks -->
-                <div class="col-sm-6 col-lg-3">
-                    <div class="card border-0 shadow-sm p-3 rounded-3 bg-white stat-kpi-card h-100">
-                        <div class="d-flex align-items-center">
-                            <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
-                                 style="width: 44px; height: 44px; background-color: #f59e0b; color: #ffffff;">
-                                <i class="ti ti-progress fs-2"></i>
-                            </div>
-                            <div>
-                                <div class="text-muted fw-semibold" style="font-size: 0.8rem; line-height: 1.2;">Total Tasks</div>
-                                <div class="fw-bold fs-3 text-dark mt-1" style="line-height: 1.1;">{{ number_format($stats['tasks']) }}</div>
+            {{-- ===== 1. SUMMARY SECTION (UNIFIED KPI CONTAINER WITH DIVIDERS) ===== --}}
+            <div class="mb-4">
+                <div class="summary-kpi-bar">
+                    <div class="row g-0 align-items-center">
+                        <!-- Col 1: Total Course -->
+                        <div class="col-6 col-lg-3 summary-kpi-col">
+                            <div class="d-flex align-items-center">
+                                <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3 summary-kpi-icon" 
+                                     style="width: 44px; height: 44px; background-color: #0f4c81; color: #ffffff;">
+                                    <i class="ti ti-stack-2 fs-2"></i>
+                                </div>
+                                <div>
+                                    <div class="text-muted fw-semibold" style="font-size: 0.8rem; line-height: 1.2;">Total Course</div>
+                                    <div class="fw-bold fs-3 text-dark mt-1" style="line-height: 1.1;">{{ number_format($stats['parents']) }}</div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </div>
 
-                <!-- Card 3: Published -->
-                <div class="col-sm-6 col-lg-3">
-                    <div class="card border-0 shadow-sm p-3 rounded-3 bg-white stat-kpi-card h-100">
-                        <div class="d-flex align-items-center">
-                            <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
-                                 style="width: 44px; height: 44px; background-color: #38b000; color: #ffffff;">
-                                <i class="ti ti-circle-check fs-2"></i>
-                            </div>
-                            <div>
-                                <div class="text-muted fw-semibold" style="font-size: 0.8rem; line-height: 1.2;">Published</div>
-                                <div class="fw-bold fs-3 text-dark mt-1" style="line-height: 1.1;">{{ number_format($stats['published']) }}</div>
+                        <!-- Col 2: Total Tasks -->
+                        <div class="col-6 col-lg-3 summary-kpi-col">
+                            <div class="d-flex align-items-center">
+                                <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3 summary-kpi-icon" 
+                                     style="width: 44px; height: 44px; background-color: #f59e0b; color: #ffffff;">
+                                    <i class="ti ti-progress fs-2"></i>
+                                </div>
+                                <div>
+                                    <div class="text-muted fw-semibold" style="font-size: 0.8rem; line-height: 1.2;">Total Tasks</div>
+                                    <div class="fw-bold fs-3 text-dark mt-1" style="line-height: 1.1;">{{ number_format($stats['tasks']) }}</div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </div>
 
-                <!-- Card 4: Pending Review -->
-                <div class="col-sm-6 col-lg-3">
-                    <div class="card border-0 shadow-sm p-3 rounded-3 bg-white stat-kpi-card h-100">
-                        <div class="d-flex align-items-center">
-                            <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
-                                 style="width: 44px; height: 44px; background-color: #0284c7; color: #ffffff;">
-                                <i class="ti ti-clock fs-2"></i>
+                        <!-- Col 3: Published -->
+                        <div class="col-6 col-lg-3 summary-kpi-col">
+                            <div class="d-flex align-items-center">
+                                <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3 summary-kpi-icon" 
+                                     style="width: 44px; height: 44px; background-color: #38b000; color: #ffffff;">
+                                    <i class="ti ti-circle-check fs-2"></i>
+                                </div>
+                                <div>
+                                    <div class="text-muted fw-semibold" style="font-size: 0.8rem; line-height: 1.2;">Published</div>
+                                    <div class="fw-bold fs-3 text-dark mt-1" style="line-height: 1.1;">{{ number_format($stats['published']) }}</div>
+                                </div>
                             </div>
-                            <div>
-                                <div class="text-muted fw-semibold" style="font-size: 0.8rem; line-height: 1.2;">Pending Review</div>
-                                <div class="fw-bold fs-3 text-dark mt-1" style="line-height: 1.1;">{{ number_format($stats['pending']) }}</div>
+                        </div>
+
+                        <!-- Col 4: Pending Review -->
+                        <div class="col-6 col-lg-3 summary-kpi-col summary-kpi-col--last">
+                            <div class="d-flex align-items-center">
+                                <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3 summary-kpi-icon" 
+                                     style="width: 44px; height: 44px; background-color: {{ ($stats['pending'] ?? 0) > 0 ? '#f59e0b' : '#64748b' }}; color: #ffffff;">
+                                    <i class="ti {{ ($stats['pending'] ?? 0) > 0 ? 'ti-bell-ringing' : 'ti-clock' }} fs-2"></i>
+                                </div>
+                                <div>
+                                    <div class="text-muted fw-semibold" style="font-size: 0.8rem; line-height: 1.2;">Pending Review</div>
+                                    <div class="fw-bold fs-3 {{ ($stats['pending'] ?? 0) > 0 ? 'text-warning' : 'text-dark' }} mt-1" style="line-height: 1.1;">
+                                        {{ number_format($stats['pending'] ?? 0) }}
+                                        @if (($stats['pending'] ?? 0) > 0)
+                                            <span class="badge bg-danger rounded-pill ms-1" style="font-size: 0.65rem; vertical-align: middle;">Need Action</span>
+                                        @endif
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {{-- ===== SECTION HEADER: ACTIVE SCOPE INFO ===== --}}
-            <div class="card border-0 shadow-sm p-3 p-md-4 mb-4 rounded-3 bg-white record-section-header">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 record-section-icon"
-                         style="width: 54px; height: 54px; background-color: {{ $scope === 'kp' ? '#e0f2fe; color: #0284c7;' : '#fef3c7; color: #d97706;' }}; border-radius: 12px;">
-                        <i class="ti {{ $scope === 'kp' ? 'ti-device-laptop' : 'ti-map-pin' }} fs-1"></i>
-                    </div>
-                    <div>
-                        <h2 class="h3 fw-bold mb-1 text-dark">{{ $scope === 'kp' ? 'KP OWL' : 'NON KP OWL' }}</h2>
-                        <p class="text-muted small mb-0">
-                            {{ $scope === 'kp' ? 'Online Task Data — Tasks from playlists, contents & standalone in OWL LMS.' : 'Offline Training Tasks — Tasks from offline trainings in OWL LMS.' }}
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            {{-- ===== SCOPE NAVIGATION CARDS ===== --}}
-            <div class="row g-3 mb-4 record-navigation-row">
-                <!-- Card 1: KP OWL -->
-                <div class="col-12 col-sm-6 col-lg-3">
-                    <a href="{{ route('manage.task.index', ['scope' => 'kp', 'parent_type' => $type, 'search' => $search]) }}"
-                        class="card card-link text-decoration-none h-100 record-nav-card {{ $scope === 'kp' ? 'record-nav-card--active' : '' }}">
-                        <div class="card-body p-3 d-flex flex-column justify-content-between">
-                            <div>
+            {{-- ===== 2. TASK DATA SCOPE (COMPACT REFERENCE DESIGN) ===== --}}
+            <div class="mb-4">
+                <div class="row g-3 record-navigation-row">
+                    <!-- Scope Card 1: KP OWL -->
+                    <div class="col-12 col-sm-6 col-lg-4">
+                        <a href="{{ route('manage.task.index', ['scope' => 'kp', 'parent_type' => $type, 'search' => $search]) }}"
+                            class="card text-decoration-none h-100 scope-nav-card scope-nav-card--kp record-nav-card {{ $scope === 'kp' ? 'scope-nav-card--active scope-nav-card--kp-active record-nav-card--active' : 'scope-nav-card--inactive' }}">
+                            <div class="card-body p-3 d-flex flex-column justify-content-between">
                                 <div class="d-flex align-items-center justify-content-between mb-2">
-                                    <span class="avatar avatar-sm rounded-3 record-nav-icon"
-                                        style="background-color: #e0f2fe; color: #0284c7;">
+                                    <div class="scope-nav-icon scope-nav-icon--kp">
                                         <i class="ti ti-device-laptop"></i>
-                                    </span>
+                                    </div>
                                     @if ($scope === 'kp')
-                                        <span class="badge bg-primary text-white rounded-pill px-2.5 py-1"
-                                            style="font-size: 0.725rem; font-weight: 600;">ACTIVE</span>
+                                        <span class="scope-nav-badge-active">
+                                            ACTIVE
+                                        </span>
                                     @endif
                                 </div>
-                                <h3 class="card-title fw-bold mb-1" style="font-size: 1.05rem;">KP OWL</h3>
-                                <div class="record-nav-subtitle fw-semibold small mb-1" style="color: #0c5b9e;">Online Task Data</div>
+                                <div>
+                                    <h3 class="scope-nav-title mb-1">KP OWL</h3>
+                                    <div class="scope-nav-subtitle fw-semibold mb-1 text-blue-primary">
+                                        Online Task Data
+                                    </div>
+                                    <div class="scope-nav-desc">
+                                        Tasks from playlists, contents &amp; others
+                                    </div>
+                                </div>
                             </div>
-                            <p class="text-muted small mb-0 mt-2" style="font-size: 0.8rem; line-height: 1.35;">Tasks from playlists, contents &amp; standalone</p>
-                        </div>
-                    </a>
-                </div>
+                        </a>
+                    </div>
 
-                <!-- Card 2: Non KP OWL -->
-                <div class="col-12 col-sm-6 col-lg-3">
-                    <a href="{{ route('manage.task.index', ['scope' => 'non_kp', 'search' => $search]) }}"
-                        class="card card-link text-decoration-none h-100 record-nav-card {{ $scope === 'non_kp' ? 'record-nav-card--active' : '' }}">
-                        <div class="card-body p-3 d-flex flex-column justify-content-between">
-                            <div>
+                    <!-- Scope Card 2: Non KP OWL -->
+                    <div class="col-12 col-sm-6 col-lg-4">
+                        <a href="{{ route('manage.task.index', ['scope' => 'non_kp', 'search' => $search]) }}"
+                            class="card text-decoration-none h-100 scope-nav-card scope-nav-card--non-kp record-nav-card {{ $scope === 'non_kp' ? 'scope-nav-card--active scope-nav-card--non-kp-active record-nav-card--active' : 'scope-nav-card--inactive' }}">
+                            <div class="card-body p-3 d-flex flex-column justify-content-between">
                                 <div class="d-flex align-items-center justify-content-between mb-2">
-                                    <span class="avatar avatar-sm rounded-3 record-nav-icon"
-                                        style="background-color: #fef3c7; color: #d97706;">
+                                    <div class="scope-nav-icon scope-nav-icon--non-kp">
                                         <i class="ti ti-map-pin"></i>
-                                    </span>
+                                    </div>
                                     @if ($scope === 'non_kp')
-                                        <span class="badge bg-primary text-white rounded-pill px-2.5 py-1"
-                                            style="font-size: 0.725rem; font-weight: 600;">ACTIVE</span>
+                                        <span class="scope-nav-badge-active">
+                                            ACTIVE
+                                        </span>
                                     @endif
                                 </div>
-                                <h3 class="card-title fw-bold mb-1" style="font-size: 1.05rem;">Non KP OWL</h3>
-                                <div class="record-nav-subtitle fw-semibold small mb-1" style="color: #b45309;">Offline Training Tasks</div>
+                                <div>
+                                    <h3 class="scope-nav-title mb-1">Non KP OWL</h3>
+                                    <div class="scope-nav-subtitle fw-semibold mb-1 text-amber-primary">
+                                        Offline Training Tasks
+                                    </div>
+                                    <div class="scope-nav-desc">
+                                        Tasks from offline trainings
+                                    </div>
+                                </div>
                             </div>
-                            <p class="text-muted small mb-0 mt-2" style="font-size: 0.8rem; line-height: 1.35;">Tasks from offline trainings</p>
-                        </div>
-                    </a>
+                        </a>
+                    </div>
                 </div>
             </div>
 
@@ -180,7 +175,7 @@
                             @if ($scope === 'non_kp')
                                 Directory of offline training sessions containing assigned tasks.
                             @else
-                                Directory of courses, contents, and global tasks containing assigned tasks.
+                                Directory of courses, contents, and others containing assigned tasks.
                             @endif
                         </div>
                     </div>
@@ -192,62 +187,88 @@
                                 <span class="badge bg-danger ms-1">{{ $trashCount }}</span>
                             @endif
                         </a>
-                        <a href="{{ route('manage.task.create', array_filter(['scope' => $scope, 'parent_type' => $scope === 'non_kp' ? 'offline_training' : null])) }}"
-                           class="btn btn-primary rounded-3 px-3 d-inline-flex align-items-center gap-1.5">
+                        <button type="button"
+                                class="btn btn-primary rounded-3 px-3 d-inline-flex align-items-center gap-1.5"
+                                data-bs-toggle="modal"
+                                data-bs-target="#chooseContainerModal">
                             <i class="ti ti-plus fs-2"></i>
                             <span>Create New Task</span>
-                        </a>
+                        </button>
                     </div>
                 </div>
 
                 <div class="card-body border-top border-bottom py-3">
                     @if ($scope === 'kp')
-                        <div class="small text-muted mb-2">Quick Filter</div>
-                        <div class="d-flex flex-wrap gap-2 mb-3">
+                        <div class="d-flex align-items-center flex-wrap gap-2 mb-3 my-task-pills-row">
                             <a href="{{ route('manage.task.index', ['scope' => 'kp', 'parent_type' => 'all', 'search' => $search]) }}"
-                               class="btn {{ $type === 'all' ? 'btn-primary' : 'btn-outline-secondary' }} rounded-pill">
-                                <i class="ti ti-layout-grid me-1"></i>All
+                               class="my-task-category-pill {{ $type === 'all' ? 'active' : '' }}"
+                               title="Filter by All Tasks">
+                                All Tasks
                             </a>
                             <a href="{{ route('manage.task.index', ['scope' => 'kp', 'parent_type' => 'playlist', 'search' => $search]) }}"
-                               class="btn {{ $type === 'playlist' ? 'btn-primary' : 'btn-outline-secondary' }} rounded-pill">
-                                <i class="ti ti-list me-1"></i>Playlist
+                               class="my-task-category-pill {{ $type === 'playlist' ? 'active' : '' }}"
+                               title="Filter by Playlist">
+                                Playlist
                             </a>
                             <a href="{{ route('manage.task.index', ['scope' => 'kp', 'parent_type' => 'content', 'search' => $search]) }}"
-                               class="btn {{ $type === 'content' ? 'btn-primary' : 'btn-outline-secondary' }} rounded-pill">
-                                <i class="ti ti-file-text me-1"></i>Content
+                               class="my-task-category-pill {{ $type === 'content' ? 'active' : '' }}"
+                               title="Filter by Content">
+                                Content
                             </a>
                             <a href="{{ route('manage.task.index', ['scope' => 'kp', 'parent_type' => 'standalone', 'search' => $search]) }}"
-                               class="btn {{ $type === 'standalone' ? 'btn-primary' : 'btn-outline-secondary' }} rounded-pill">
-                                <i class="ti ti-world me-1"></i>Global Task
+                               class="my-task-category-pill {{ $type === 'standalone' ? 'active' : '' }}"
+                               title="Filter by Others">
+                                Others
                             </a>
                         </div>
+                        <hr class="my-3 my-task-divider">
                     @endif
-                    <form method="GET" action="{{ route('manage.task.index') }}">
+
+                    <form method="GET" action="{{ route('manage.task.index') }}" class="d-flex align-items-center flex-wrap gap-2 w-100 my-task-toolbar">
                         <input type="hidden" name="scope" value="{{ $scope }}">
                         @if ($scope === 'kp')
                             <input type="hidden" name="parent_type" value="{{ $type }}">
                         @endif
-                        <div class="d-flex gap-2">
-                            <div class="input-icon flex-fill">
-                                <span class="input-icon-addon">
-                                    <i class="ti ti-search"></i>
-                                </span>
-                                <input type="search"
-                                       name="search"
-                                       class="form-control rounded-3"
-                                       value="{{ $search }}"
-                                       placeholder="{{ $scope === 'kp' ? 'Search playlist / content...' : 'Search offline training...' }}"
-                                       autocomplete="off">
-                            </div>
-                            <button type="submit" class="btn btn-primary rounded-3 px-3" title="Search" aria-label="Search">
-                                <i class="ti ti-search"></i>
-                            </button>
-                            <a href="{{ route('manage.task.index', array_filter(['scope' => $scope, 'parent_type' => $scope === 'kp' ? $type : null])) }}"
-                               class="btn btn-outline-secondary rounded-3 px-3" title="Reset" aria-label="Reset">
-                                <i class="ti ti-rotate-clockwise"></i>
-                            </a>
+                        <div class="position-relative flex-grow-1 my-task-search-wrapper" style="min-width: 220px;">
+                            <span class="position-absolute top-50 start-0 translate-middle-y ps-3 text-muted pointer-events-none" style="z-index: 2;">
+                                <i class="ti ti-search" style="font-size: 15px;"></i>
+                            </span>
+                            <input type="text"
+                                   name="search"
+                                   id="adminTaskSearchInput"
+                                   class="form-control my-task-search-input"
+                                   placeholder="{{ $scope === 'kp' ? 'Search playlist / content...' : 'Search offline training...' }}"
+                                   value="{{ $search }}"
+                                   autocomplete="off">
+                            @if (!empty($search))
+                                <a href="{{ route('manage.task.index', array_filter(['scope' => $scope, 'parent_type' => $scope === 'kp' ? $type : null])) }}"
+                                   class="btn btn-link position-absolute top-50 end-0 translate-middle-y pe-2.5 text-muted text-decoration-none my-task-search-clear"
+                                   title="Clear search" style="z-index: 2;">
+                                    <i class="ti ti-x"></i>
+                                </a>
+                            @endif
                         </div>
+                        <button type="submit"
+                                class="btn btn-primary my-task-btn-square my-task-btn-search"
+                                title="Search">
+                            <i class="ti ti-search text-white fs-3"></i>
+                        </button>
+                        <a href="{{ route('manage.task.index', array_filter(['scope' => $scope, 'parent_type' => $scope === 'kp' ? $type : null])) }}"
+                           class="btn btn-white my-task-btn-square my-task-btn-reset"
+                           title="Reset filter">
+                            <i class="ti ti-refresh fs-3 text-secondary"></i>
+                        </a>
                     </form>
+                    @if (!empty($search))
+                        <div class="d-flex align-items-center flex-wrap gap-2 mt-2.5 pt-2.5 border-top">
+                            <span class="text-muted small" style="font-size: 11.5px;">Active Filter:</span>
+                            <span class="badge bg-light text-dark border px-2.5 py-1 rounded-pill d-inline-flex align-items-center gap-1 shadow-none" style="font-size: 11.5px;">
+                                <i class="ti ti-search text-muted"></i>
+                                <span>"{{ $search }}"</span>
+                                <a href="{{ route('manage.task.index', array_filter(['scope' => $scope, 'parent_type' => $scope === 'kp' ? $type : null])) }}" class="text-muted ms-1 text-decoration-none" title="Remove search filter"><i class="ti ti-x"></i></a>
+                            </span>
+                        </div>
+                    @endif
                 </div>
 
                 <div class="table-responsive">
@@ -272,7 +293,7 @@
                                     $name = $row->parent_type === 'offline_training'
                                         ? ($row->parent_name ?: ('Offline Training' . ($row->parent_id ? " #{$row->parent_id}" : '')))
                                         : ($row->parent_type === 'standalone'
-                                            ? 'Global Task'
+                                            ? 'Others'
                                             : ($row->parent_name ?? '—'));
                                     $badge = [
                                         'playlist' => 'bg-primary',
@@ -298,9 +319,15 @@
                                     <td class="text-center">{{ $row->draft }}</td>
                                     <td class="text-center">
                                         @if ($pending > 0)
-                                            <span class="badge bg-warning text-dark">{{ $pending }}</span>
+                                            <a href="{{ route('manage.task.parent', ['parentType' => $row->parent_type, 'parentId' => $row->parent_id ?? 0]) }}" class="text-decoration-none">
+                                                <span class="badge bg-warning text-dark fw-bold px-2 py-1 shadow-sm d-inline-flex align-items-center gap-1" style="font-size: 0.78rem;" title="{{ $pending }} response(s) waiting for review">
+                                                    <span class="status-dot status-dot-animated bg-red" style="width: 6px; height: 6px;"></span>
+                                                    <i class="ti ti-bell-ringing"></i>
+                                                    <span>{{ $pending }} Need Review</span>
+                                                </span>
+                                            </a>
                                         @else
-                                            <span class="text-muted">-</span>
+                                            <span class="badge bg-secondary-lt text-muted px-2 py-0.5" style="font-size: 0.75rem;">0</span>
                                         @endif
                                     </td>
                                     <td class="text-end">
@@ -336,6 +363,332 @@
         </div>
     </div>
 
+
+{{-- ======================================================== --}}
+{{-- MODAL: CHOOSE / CREATE TASK CONTAINER                    --}}
+{{-- ======================================================== --}}
+<div class="modal modal-blur fade" id="chooseContainerModal" tabindex="-1" aria-labelledby="chooseContainerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content shadow-lg rounded-4 border-0">
+            <div class="modal-header border-bottom py-3 px-4 bg-light-subtle rounded-top-4">
+                <div class="d-flex align-items-center gap-2.5">
+                    <div class="rounded-3 d-flex align-items-center justify-content-center bg-primary text-white shadow-sm" style="width: 40px; height: 40px;">
+                        <i class="ti ti-folder-plus fs-2"></i>
+                    </div>
+                    <div>
+                        <h4 class="modal-title fw-bold text-dark mb-0" id="chooseContainerModalLabel">Choose / Create Task Container</h4>
+                        <div class="text-muted small">Select the task placement container before building questions and details.</div>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body p-4">
+                {{-- Step 1: Category selection cards --}}
+                <label class="form-label fw-bold text-dark mb-2">1. Select Container Category:</label>
+                <div class="row g-3 mb-4" id="modalCategoryRow">
+                    @if ($scope === 'kp')
+                        <!-- Playlist -->
+                        <div class="col-12 col-md-4">
+                            <label class="card h-100 p-3 rounded-3 border container-type-card cursor-pointer position-relative active-type-card" style="transition: all 0.2s ease;">
+                                <input type="radio" name="modal_parent_type" value="playlist" class="form-check-input position-absolute top-0 end-0 m-3" checked>
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <span class="avatar avatar-sm bg-primary-lt text-primary rounded-2"><i class="ti ti-books fs-2"></i></span>
+                                    <span class="fw-bold text-dark">Playlist</span>
+                                </div>
+                                <div class="text-muted small" style="font-size: 11.5px; line-height: 1.35;">
+                                    Tasks integrated within a complete online course.
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- Content -->
+                        <div class="col-12 col-md-4">
+                            <label class="card h-100 p-3 rounded-3 border container-type-card cursor-pointer position-relative" style="transition: all 0.2s ease;">
+                                <input type="radio" name="modal_parent_type" value="content" class="form-check-input position-absolute top-0 end-0 m-3">
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <span class="avatar avatar-sm bg-info-lt text-info rounded-2"><i class="ti ti-file-text fs-2"></i></span>
+                                    <span class="fw-bold text-dark">Content</span>
+                                </div>
+                                <div class="text-muted small" style="font-size: 11.5px; line-height: 1.35;">
+                                    Tasks associated with a single learning content or video.
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- Others (Standalone) -->
+                        <div class="col-12 col-md-4">
+                            <label class="card h-100 p-3 rounded-3 border container-type-card cursor-pointer position-relative" style="transition: all 0.2s ease;">
+                                <input type="radio" name="modal_parent_type" value="standalone" class="form-check-input position-absolute top-0 end-0 m-3">
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <span class="avatar avatar-sm bg-secondary-lt text-secondary rounded-2"><i class="ti ti-world fs-2"></i></span>
+                                    <span class="fw-bold text-dark">Others</span>
+                                </div>
+                                <div class="text-muted small" style="font-size: 11.5px; line-height: 1.35;">
+                                    Standalone container (Onboarding, Competitions, Events).
+                                </div>
+                            </label>
+                        </div>
+                    @else
+                        <!-- Offline Training -->
+                        <div class="col-12">
+                            <label class="card h-100 p-3 rounded-3 border container-type-card cursor-pointer position-relative active-type-card" style="transition: all 0.2s ease;">
+                                <input type="radio" name="modal_parent_type" value="offline_training" class="form-check-input position-absolute top-0 end-0 m-3" checked>
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <span class="avatar avatar-sm bg-warning-lt text-warning rounded-2"><i class="ti ti-map-pin fs-2"></i></span>
+                                    <span class="fw-bold text-dark">Offline Training</span>
+                                </div>
+                                <div class="text-muted small" style="font-size: 11.5px; line-height: 1.35;">
+                                    Tasks for in-person training / in-class sessions.
+                                </div>
+                            </label>
+                        </div>
+                    @endif
+                </div>
+
+                <hr class="my-3 text-muted opacity-25">
+
+                {{-- Step 2: Dynamic input according to category --}}
+                <div id="modalStep2Container">
+                    <!-- Dropdown for Playlist -->
+                    <div id="modalPlaylistPicker" class="modal-picker-section">
+                        <label class="form-label fw-bold text-dark required" for="modal_playlist_id">2. Select Course / Playlist:</label>
+                        <select id="modal_playlist_id" class="form-select form-select-lg rounded-3" style="font-size: 0.95rem;">
+                            <option value="">— Loading courses... —</option>
+                        </select>
+                        <div class="form-hint mt-1.5"><i class="ti ti-info-circle me-1"></i>Choose the course where this task will be assigned.</div>
+                    </div>
+
+                    <!-- Dropdown for Content -->
+                    <div id="modalContentPicker" class="modal-picker-section" style="display: none;">
+                        <label class="form-label fw-bold text-dark required" for="modal_content_id">2. Select Content / Material:</label>
+                        <select id="modal_content_id" class="form-select form-select-lg rounded-3" style="font-size: 0.95rem;">
+                            <option value="">— Loading content... —</option>
+                        </select>
+                        <div class="form-hint mt-1.5"><i class="ti ti-info-circle me-1"></i>Choose the single material where this task will be placed.</div>
+                    </div>
+
+                    <!-- Dropdown for Offline Training -->
+                    <div id="modalOfflinePicker" class="modal-picker-section" style="display: none;">
+                        <label class="form-label fw-bold text-dark required" for="modal_offline_id">2. Select Offline Training Session:</label>
+                        <select id="modal_offline_id" class="form-select form-select-lg rounded-3" style="font-size: 0.95rem;">
+                            <option value="">— Loading offline training... —</option>
+                        </select>
+                        <div class="form-hint mt-1.5"><i class="ti ti-info-circle me-1"></i>Choose the assigned in-person training session.</div>
+                    </div>
+
+                    <!-- Input for Others -->
+                    <div id="modalOthersSection" class="modal-picker-section" style="display: none;">
+                        <label class="form-label fw-bold text-dark required" for="modal_others_title">2. Enter Container / Activity Title:</label>
+                        <input type="text" id="modal_others_title" class="form-control form-control-lg rounded-3" placeholder="e.g. Onboarding MT Batch 2026 / Leadership Workshop" autocomplete="off">
+                        <div class="form-hint mt-1.5"><i class="ti ti-info-circle me-1"></i>This container will hold your standalone tasks. Once created, you will be directed to add tasks to it.</div>
+                    </div>
+                </div>
+
+                {{-- Alert error --}}
+                <div id="modalErrorAlert" class="alert alert-danger mt-3 mb-0 rounded-3" style="display: none;">
+                    <i class="ti ti-alert-circle me-1"></i>
+                    <span id="modalErrorMessage"></span>
+                </div>
+            </div>
+
+            <div class="modal-footer border-top py-3 px-4 bg-light-subtle rounded-bottom-4 d-flex justify-content-between">
+                <button type="button" class="btn btn-outline-secondary rounded-3 px-3" data-bs-dismiss="modal">
+                    Cancel
+                </button>
+                <button type="button" id="btnSubmitContainerModal" class="btn btn-primary rounded-3 px-4 d-inline-flex align-items-center gap-1.5 fw-semibold shadow-sm">
+                    <span>Continue to Manage Tasks</span>
+                    <i class="ti ti-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .cursor-pointer {
+        cursor: pointer;
+    }
+    .container-type-card {
+        border-color: #e2e8f0 !important;
+        background-color: #ffffff;
+    }
+    .container-type-card:hover {
+        border-color: #94a3b8 !important;
+        background-color: #f8fafc;
+    }
+    .container-type-card.active-type-card {
+        border-color: var(--tblr-primary, #206bc4) !important;
+        background-color: rgba(32, 107, 196, 0.04) !important;
+        box-shadow: 0 4px 12px rgba(32, 107, 196, 0.12);
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var modalEl = document.getElementById('chooseContainerModal');
+    if (!modalEl) return;
+
+    var radios = document.querySelectorAll('input[name="modal_parent_type"]');
+    var playlistPicker = document.getElementById('modalPlaylistPicker');
+    var contentPicker = document.getElementById('modalContentPicker');
+    var offlinePicker = document.getElementById('modalOfflinePicker');
+    var othersSection = document.getElementById('modalOthersSection');
+    var btnSubmit = document.getElementById('btnSubmitContainerModal');
+    var errorAlert = document.getElementById('modalErrorAlert');
+    var errorMessage = document.getElementById('modalErrorMessage');
+
+    var loadedCache = {};
+
+    function showError(msg) {
+        if (!errorAlert || !errorMessage) return;
+        errorMessage.textContent = msg;
+        errorAlert.style.display = 'block';
+    }
+
+    function hideError() {
+        if (!errorAlert) return;
+        errorAlert.style.display = 'none';
+    }
+
+    function updateActiveCards() {
+        document.querySelectorAll('.container-type-card').forEach(function (card) {
+            var input = card.querySelector('input[type="radio"]');
+            if (input && input.checked) {
+                card.classList.add('active-type-card');
+            } else {
+                card.classList.remove('active-type-card');
+            }
+        });
+    }
+
+    function loadOptions(type, selectEl, placeholder) {
+        if (loadedCache[type]) {
+            renderOptions(loadedCache[type], selectEl, placeholder);
+            return;
+        }
+
+        selectEl.innerHTML = '<option value="">— Loading options... —</option>';
+        var url = "{{ url('manage/task/parents') }}/" + type;
+
+        fetch(url)
+            .then(function (res) { return res.json(); })
+            .then(function (items) {
+                loadedCache[type] = items;
+                renderOptions(items, selectEl, placeholder);
+            })
+            .catch(function () {
+                selectEl.innerHTML = '<option value="">Failed to load ' + type + ' list</option>';
+            });
+    }
+
+    function renderOptions(items, selectEl, placeholder) {
+        var html = '<option value="">' + placeholder + '</option>';
+        items.forEach(function (item) {
+            html += '<option value="' + item.id + '">' + (item.title || ('#' + item.id)) + '</option>';
+        });
+        selectEl.innerHTML = html;
+    }
+
+    function onTypeChange() {
+        hideError();
+        updateActiveCards();
+
+        var checkedRadio = document.querySelector('input[name="modal_parent_type"]:checked');
+        var val = checkedRadio ? checkedRadio.value : 'playlist';
+
+        if (playlistPicker) playlistPicker.style.display = (val === 'playlist') ? 'block' : 'none';
+        if (contentPicker) contentPicker.style.display = (val === 'content') ? 'block' : 'none';
+        if (offlinePicker) offlinePicker.style.display = (val === 'offline_training') ? 'block' : 'none';
+        if (othersSection) othersSection.style.display = (val === 'standalone') ? 'block' : 'none';
+
+        if (val === 'playlist') {
+            loadOptions('playlist', document.getElementById('modal_playlist_id'), '— Select Course / Playlist —');
+        } else if (val === 'content') {
+            loadOptions('content', document.getElementById('modal_content_id'), '— Select Content / Material —');
+        } else if (val === 'offline_training') {
+            loadOptions('offline_training', document.getElementById('modal_offline_id'), '— Select Offline Training Session —');
+        } else if (val === 'standalone') {
+            var titleInput = document.getElementById('modal_others_title');
+            if (titleInput) {
+                setTimeout(function () { titleInput.focus(); }, 100);
+            }
+        }
+    }
+
+    radios.forEach(function (r) {
+        r.addEventListener('change', onTypeChange);
+    });
+
+    modalEl.addEventListener('show.bs.modal', function () {
+        hideError();
+        onTypeChange();
+    });
+
+    if (btnSubmit) {
+        btnSubmit.addEventListener('click', function () {
+            hideError();
+            var checkedRadio = document.querySelector('input[name="modal_parent_type"]:checked');
+            var type = checkedRadio ? checkedRadio.value : 'playlist';
+
+            if (type === 'playlist') {
+                var pId = document.getElementById('modal_playlist_id').value;
+                if (!pId) {
+                    showError('Please select a Course / Playlist first.');
+                    return;
+                }
+                window.location.href = "{{ url('manage/task/parent/playlist') }}/" + pId;
+            } else if (type === 'content') {
+                var cId = document.getElementById('modal_content_id').value;
+                if (!cId) {
+                    showError('Please select a Content / Material first.');
+                    return;
+                }
+                window.location.href = "{{ url('manage/task/parent/content') }}/" + cId;
+            } else if (type === 'offline_training') {
+                var oId = document.getElementById('modal_offline_id').value;
+                if (!oId) {
+                    showError('Please select an Offline Training session first.');
+                    return;
+                }
+                window.location.href = "{{ url('manage/task/parent/offline_training') }}/" + oId;
+            } else if (type === 'standalone') {
+                var title = document.getElementById('modal_others_title').value.trim();
+                if (!title) {
+                    showError('Please enter a container / activity title for the Others category.');
+                    return;
+                }
+
+                btnSubmit.disabled = true;
+                btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Creating container...';
+
+                fetch("{{ route('manage.task.group.store') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({ title: title })
+                })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (data.redirect_url) {
+                        window.location.href = data.redirect_url;
+                    } else {
+                        window.location.reload();
+                    }
+                })
+                .catch(function () {
+                    btnSubmit.disabled = false;
+                    btnSubmit.innerHTML = '<span>Continue to Manage Tasks</span><i class="ti ti-arrow-right ms-1"></i>';
+                    showError('Failed to create task container. Please try again.');
+                });
+            }
+        });
+    }
+});
+</script>
 @endsection
 
 @section('style')
@@ -439,81 +792,394 @@
         background: #ffffff !important;
     }
 
-    .record-nav-card {
+    /* =========================================================
+       SECTION LABELS (SUMMARY & TASK DATA SCOPE)
+       ========================================================= */
+    .summary-section-label {
+        font-size: 0.72rem;
+        letter-spacing: 0.08em;
+        color: #8da2b5;
+    }
+
+    /* =========================================================
+       SUMMARY KPI BAR (Unified Light Container with Dividers)
+       ========================================================= */
+    .summary-kpi-bar {
+        background-color: #f0f4f9;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 14px 18px;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+    }
+
+    .summary-kpi-col {
+        padding: 8px 16px;
+        border-right: 1px solid #e2e8f0;
+    }
+
+    .summary-kpi-col--last {
+        border-right: none;
+    }
+
+    @media (max-width: 991.98px) {
+        .summary-kpi-col:nth-child(2) {
+            border-right: none;
+        }
+        .summary-kpi-col:nth-child(1),
+        .summary-kpi-col:nth-child(2) {
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 12px;
+            margin-bottom: 8px;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .summary-kpi-col {
+            border-right: none !important;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 10px;
+            margin-bottom: 8px;
+        }
+        .summary-kpi-col:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+            margin-bottom: 0;
+        }
+    }
+
+    .summary-kpi-icon {
+        border-radius: 12px !important;
+    }
+
+    /* =========================================================
+       TASK DATA SCOPE CARDS (Compact Matching Reference)
+       ========================================================= */
+    .scope-nav-card {
         border-radius: 14px !important;
-        border: 1px solid #e2e8f0 !important;
         background: #ffffff !important;
-        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03);
+        border: 1.5px solid #e2e8f0 !important;
+        max-width: 440px;
+        transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease !important;
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
     }
 
-    .record-nav-card:hover {
-        transform: translateY(-3px);
-        border-color: #93c5fd !important;
-        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+    /* Active State: Clean Card with Crisp Navy Border (Exact Match to Reference) */
+    .scope-nav-card--active,
+    .scope-nav-card--kp-active,
+    .scope-nav-card--non-kp-active {
+        background: #ffffff !important;
+        border: 2px solid #0c4b81 !important;
+        box-shadow: 0 4px 14px rgba(12, 75, 129, 0.08) !important;
     }
 
+    /* Inactive State Hover */
+    .scope-nav-card--inactive {
+        background: #ffffff !important;
+        border: 1.5px solid #e2e8f0 !important;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.02) !important;
+    }
+
+    .scope-nav-card--inactive:hover {
+        transform: translateY(-2px);
+        border-color: #cbd5e1 !important;
+        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06) !important;
+    }
+
+    /* Top Row: Icon Containers (Compact Squircle) */
+    .scope-nav-icon {
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+        border-radius: 9px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.15rem;
+        transition: all 0.2s ease;
+    }
+
+    .scope-nav-icon--kp {
+        background: #e9f2f9 !important;
+        color: #0c4b81 !important;
+    }
+
+    .scope-nav-icon--non-kp {
+        background: #fbf0dd !important;
+        color: #d97706 !important;
+    }
+
+    /* ACTIVE Pill Badge (Compact) */
+    .scope-nav-badge-active {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2.5px 11px;
+        border-radius: 999px;
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        background-color: #0c4b81 !important;
+        color: #ffffff !important;
+        line-height: 1.35;
+    }
+
+    /* Bottom Section: Typography */
+    .scope-nav-title {
+        color: #0f172a !important;
+        font-weight: 700;
+        font-size: 1rem;
+        letter-spacing: -0.01em;
+        line-height: 1.25;
+    }
+
+    .text-blue-primary {
+        color: #0c5b9e !important;
+        font-size: 0.8rem;
+    }
+
+    .text-amber-primary {
+        color: #d97706 !important;
+        font-size: 0.8rem;
+    }
+
+    .scope-nav-desc {
+        color: #64748b !important;
+        font-size: 0.775rem;
+        line-height: 1.35;
+    }
+
+    /* Legacy record-nav-card compatibility */
     .record-nav-card--active {
-        border: 2px solid #0c5b9e !important;
-        background: #f8fafc !important;
-        box-shadow: 0 6px 18px rgba(12, 91, 158, 0.12) !important;
+        border-color: #0c4b81 !important;
     }
 
-    .record-nav-icon {
-        width: 32px !important;
-        height: 32px !important;
-        min-width: 32px !important;
-        border-radius: 8px !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        flex-shrink: 0 !important;
+    /* Dark Mode Support */
+    [data-bs-theme="dark"] .summary-kpi-bar,
+    body.dark-mode .summary-kpi-bar,
+    body.theme-dark .summary-kpi-bar {
+        background-color: #1e293b !important;
+        border-color: rgba(255, 255, 255, 0.08) !important;
     }
 
-    .record-nav-icon i {
-        font-size: 16px !important;
-        line-height: 1 !important;
+    [data-bs-theme="dark"] .summary-kpi-col,
+    body.dark-mode .summary-kpi-col,
+    body.theme-dark .summary-kpi-col {
+        border-color: rgba(255, 255, 255, 0.08) !important;
     }
 
-    [data-bs-theme="dark"] .record-nav-card,
-    body.dark-mode .record-nav-card,
-    body.theme-dark .record-nav-card {
+    [data-bs-theme="dark"] .scope-nav-card,
+    body.dark-mode .scope-nav-card,
+    body.theme-dark .scope-nav-card {
         background: #1e293b !important;
-        border-color: rgba(255, 255, 255, 0.1) !important;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        border-color: rgba(255, 255, 255, 0.08) !important;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25) !important;
     }
 
-    [data-bs-theme="dark"] .record-nav-card:hover,
-    body.dark-mode .record-nav-card:hover,
-    body.theme-dark .record-nav-card:hover {
-        border-color: #3b82f6 !important;
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+    [data-bs-theme="dark"] .scope-nav-card--active,
+    body.dark-mode .scope-nav-card--active,
+    body.theme-dark .scope-nav-card--active {
+        background: #1e293b !important;
+        border-color: #38bdf8 !important;
+        box-shadow: 0 4px 18px rgba(56, 189, 248, 0.18) !important;
     }
 
-    [data-bs-theme="dark"] .record-nav-card--active,
-    body.dark-mode .record-nav-card--active,
-    body.theme-dark .record-nav-card--active {
-        border: 2px solid #38bdf8 !important;
-        background: rgba(14, 165, 233, 0.08) !important;
-        box-shadow: 0 6px 18px rgba(56, 189, 248, 0.18) !important;
+    [data-bs-theme="dark"] .scope-nav-badge-active,
+    body.dark-mode .scope-nav-badge-active,
+    body.theme-dark .scope-nav-badge-active {
+        background-color: #38bdf8 !important;
+        color: #0f172a !important;
     }
 
-    [data-bs-theme="dark"] .record-nav-card .card-title,
-    body.dark-mode .record-nav-card .card-title,
-    body.theme-dark .record-nav-card .card-title {
+    [data-bs-theme="dark"] .scope-nav-icon--kp,
+    body.dark-mode .scope-nav-icon--kp,
+    body.theme-dark .scope-nav-icon--kp {
+        background: rgba(56, 189, 248, 0.15) !important;
+        color: #38bdf8 !important;
+    }
+
+    [data-bs-theme="dark"] .scope-nav-icon--non-kp,
+    body.dark-mode .scope-nav-icon--non-kp,
+    body.theme-dark .scope-nav-icon--non-kp {
+        background: rgba(251, 191, 36, 0.15) !important;
+        color: #fbbf24 !important;
+    }
+
+    [data-bs-theme="dark"] .scope-nav-title,
+    body.dark-mode .scope-nav-title,
+    body.theme-dark .scope-nav-title {
         color: #f8fafc !important;
     }
 
-    [data-bs-theme="dark"] .record-nav-card .record-nav-subtitle,
-    body.dark-mode .record-nav-card .record-nav-subtitle,
-    body.theme-dark .record-nav-card .record-nav-subtitle {
-        color: #93c5fd !important;
+    [data-bs-theme="dark"] .scope-nav-desc,
+    body.dark-mode .scope-nav-desc,
+    body.theme-dark .scope-nav-desc {
+        color: #94a3b8 !important;
     }
 
-    [data-bs-theme="dark"] .record-nav-card .record-nav-icon,
-    body.dark-mode .record-nav-card .record-nav-icon,
-    body.theme-dark .record-nav-card .record-nav-icon {
-        filter: brightness(0.9);
+    /* =========================================================
+       QUICK FILTER (MATCHING USER MY-TASK DESIGN)
+       ========================================================= */
+    .my-task-pills-row {
+        margin-top: 0.25rem;
+    }
+
+    .my-task-category-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.45rem 1.25rem;
+        border-radius: 50rem;
+        font-size: 0.8125rem;
+        font-weight: 500;
+        line-height: 1.2;
+        text-decoration: none;
+        white-space: nowrap;
+        background-color: #f1f5f9;
+        color: #334155;
+        border: none;
+        transition: all 0.15s ease-in-out;
+    }
+
+    .my-task-category-pill:hover {
+        background-color: #e2e8f0;
+        color: #0f172a;
+        text-decoration: none;
+    }
+
+    /* Active State: Soft sky blue with bright blue text (1:1 with My Task reference) */
+    .my-task-category-pill.active {
+        background-color: #e0f2fe !important;
+        color: #0284c7 !important;
+        font-weight: 600;
+    }
+
+    /* Divider */
+    .my-task-divider {
+        border-top: 1px solid #e2e8f0;
+        opacity: 0.7;
+        margin: 1rem 0;
+    }
+
+    /* Search input */
+    .my-task-search-wrapper {
+        position: relative;
+    }
+
+    .my-task-search-input {
+        height: 38px;
+        border-radius: 8px !important;
+        padding-left: 2.25rem;
+        padding-right: 2rem;
+        font-size: 0.8125rem;
+        border: 1px solid #e2e8f0;
+        background-color: #ffffff;
+        color: #334155;
+        transition: all 0.15s ease-in-out;
+    }
+
+    .my-task-search-input:focus {
+        background-color: #ffffff;
+        border-color: #0284c7;
+        box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15);
+        color: #0f172a;
+    }
+
+    .my-task-search-input::placeholder {
+        color: #94a3b8;
+    }
+
+    .my-task-search-clear {
+        color: #94a3b8 !important;
+        padding: 0 8px;
+    }
+
+    .my-task-search-clear:hover {
+        color: #475569 !important;
+    }
+
+    /* Square Action Buttons (38px x 38px, rounded 8px) */
+    .my-task-btn-square {
+        width: 38px;
+        height: 38px;
+        min-width: 38px;
+        padding: 0;
+        border-radius: 8px !important;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        box-shadow: none !important;
+        transition: all 0.15s ease-in-out;
+    }
+
+    .my-task-btn-search {
+        background-color: #0054a6 !important;
+        border-color: #0054a6 !important;
+        color: #ffffff !important;
+    }
+
+    .my-task-btn-search:hover {
+        background-color: #004085 !important;
+        border-color: #004085 !important;
+    }
+
+    .my-task-btn-reset {
+        background-color: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        color: #64748b !important;
+    }
+
+    .my-task-btn-reset:hover {
+        background-color: #f8fafc !important;
+        border-color: #cbd5e1 !important;
+        color: #334155 !important;
+    }
+
+    /* Dark Mode Support for Quick Filter */
+    [data-bs-theme="dark"] .my-task-category-pill,
+    body.dark-mode .my-task-category-pill,
+    body.theme-dark .my-task-category-pill {
+        background-color: #334155 !important;
+        color: #cbd5e1 !important;
+    }
+
+    [data-bs-theme="dark"] .my-task-category-pill:hover,
+    body.dark-mode .my-task-category-pill:hover,
+    body.theme-dark .my-task-category-pill:hover {
+        background-color: #475569 !important;
+        color: #f8fafc !important;
+    }
+
+    [data-bs-theme="dark"] .my-task-category-pill.active,
+    body.dark-mode .my-task-category-pill.active,
+    body.theme-dark .my-task-category-pill.active {
+        background-color: rgba(56, 189, 248, 0.15) !important;
+        color: #38bdf8 !important;
+    }
+
+    [data-bs-theme="dark"] .my-task-divider,
+    body.dark-mode .my-task-divider,
+    body.theme-dark .my-task-divider {
+        border-color: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    [data-bs-theme="dark"] .my-task-search-input,
+    body.dark-mode .my-task-search-input,
+    body.theme-dark .my-task-search-input {
+        background-color: #1e293b !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+        color: #f8fafc !important;
+    }
+
+    [data-bs-theme="dark"] .my-task-btn-reset,
+    body.dark-mode .my-task-btn-reset,
+    body.theme-dark .my-task-btn-reset {
+        background-color: #1e293b !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+        color: #cbd5e1 !important;
     }
 </style>
 @endsection

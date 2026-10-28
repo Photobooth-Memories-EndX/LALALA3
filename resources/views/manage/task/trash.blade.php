@@ -60,19 +60,11 @@
                                     </td>
                                     <td class="text-muted text-nowrap">{{ $task->deleted_at?->format('d M Y H:i') }}</td>
                                     <td class="text-end">
-                                        <div class="d-inline-flex gap-1">
-                                            <form action="{{ route('manage.task.restore', $task->id) }}" method="POST" class="d-inline">
-                                                @csrf
-                                                <button class="btn btn-sm btn-outline-success">
-                                                    <i class="ti ti-restore me-1"></i>Restore
-                                                </button>
-                                            </form>
-                                            <form action="{{ route('manage.task.force-destroy', $task->id) }}" method="POST"
-                                                  class="d-inline" onsubmit="return confirm('Delete this task FOREVER? Questions, responses and files will be wiped and cannot be restored.')">
-                                                @csrf @method('DELETE')
-                                                <button class="btn btn-sm btn-outline-danger"><i class="ti ti-trash-x me-1"></i>Delete forever</button>
-                                            </form>
-                                        </div>
+                                        <button type="button" class="btn btn-outline-secondary trash-menu-btn" title="Actions" style="padding: 0.35rem 0.65rem;"
+                                                data-restore-url="{{ route('manage.task.restore', $task->id) }}"
+                                                data-delete-url="{{ route('manage.task.force-destroy', $task->id) }}">
+                                            <i class="ti ti-dots fs-2" style="font-size: 1.25rem; line-height: 1;"></i>
+                                        </button>
                                     </td>
                                 </tr>
                             @empty
@@ -86,10 +78,93 @@
                         </tbody>
                     </table>
                 </div>
+
+                {{-- Global trash actions menu (outside table to avoid clipping) --}}
+                <div id="trashActionsMenu" class="dropdown-menu shadow-lg border rounded-3 py-1" style="display:none; position:fixed; z-index:1080; min-width:180px;">
+                    <span class="dropdown-header text-uppercase small fw-bold text-muted px-3 py-2">ACTIONS</span>
+                    <div id="trashActionsItems"></div>
+                </div>
+
                 @if ($tasks->hasPages())
                     <div class="card-footer">{{ $tasks->links() }}</div>
                 @endif
             </div>
         </div>
     </div>
+
+    <script>
+    (function () {
+        var menu = document.getElementById('trashActionsMenu');
+        var items = document.getElementById('trashActionsItems');
+        var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        var csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '{{ csrf_token() }}';
+        var openBtn = null;
+
+        function closeMenu() {
+            if (!menu) return;
+            menu.style.display = 'none';
+            openBtn = null;
+            document.removeEventListener('click', outsideClick);
+        }
+
+        function outsideClick(e) {
+            if (openBtn && !menu.contains(e.target) && !openBtn.contains(e.target)) {
+                closeMenu();
+            }
+        }
+
+        document.querySelectorAll('.trash-menu-btn').forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                if (openBtn === btn) {
+                    closeMenu();
+                    return;
+                }
+                if (openBtn) closeMenu();
+                openBtn = btn;
+
+                var restoreUrl = btn.dataset.restoreUrl;
+                var deleteUrl = btn.dataset.deleteUrl;
+
+                var h = '';
+                h += '<form action="' + restoreUrl + '" method="POST" class="m-0">';
+                h += '<input type="hidden" name="_token" value="' + csrfToken + '">';
+                h += '<button type="submit" class="dropdown-item d-flex align-items-center py-2 px-3 text-success">';
+                h += '<i class="ti ti-restore me-2 text-success fs-3"></i><span>Restore</span>';
+                h += '</button>';
+                h += '</form>';
+
+                h += '<div class="dropdown-divider my-1"></div>';
+
+                h += '<form action="' + deleteUrl + '" method="POST" class="m-0" onsubmit="return confirm(\'Delete this task? Questions, responses and files will be wiped and cannot be restored.\')">';
+                h += '<input type="hidden" name="_token" value="' + csrfToken + '">';
+                h += '<input type="hidden" name="_method" value="DELETE">';
+                h += '<button type="submit" class="dropdown-item d-flex align-items-center text-danger py-2 px-3">';
+                h += '<i class="ti ti-trash me-2 text-danger fs-3"></i><span>Delete</span>';
+                h += '</button>';
+                h += '</form>';
+
+                items.innerHTML = h;
+
+                var r = btn.getBoundingClientRect();
+                menu.style.display = 'block';
+                var mw = menu.offsetWidth, mh = menu.offsetHeight;
+                var left = Math.min(r.right - mw, window.innerWidth - mw - 8);
+                var top = r.bottom + 4;
+                if (top + mh > window.innerHeight - 8) {
+                    top = Math.max(8, r.top - mh - 4);
+                }
+                menu.style.left = Math.max(8, left) + 'px';
+                menu.style.top = Math.max(8, top) + 'px';
+
+                setTimeout(function () {
+                    document.addEventListener('click', outsideClick);
+                }, 0);
+            });
+        });
+
+        window.addEventListener('resize', closeMenu);
+        window.addEventListener('scroll', closeMenu, true);
+    })();
+    </script>
 @endsection

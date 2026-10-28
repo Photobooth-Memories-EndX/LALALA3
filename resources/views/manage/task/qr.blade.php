@@ -30,7 +30,7 @@
                     <div class="card">
                         <div class="card-body text-center">
                             <h3 class="card-title mb-1">{{ $task->title }}</h3>
-                            <div class="text-muted small mb-3">Global task — share with specific users</div>
+                            <div class="text-muted small mb-3">Others — share with specific users</div>
 
                             @if ($qrSvg)
                                 <div class="mb-3 d-inline-block p-3 bg-white border rounded">
