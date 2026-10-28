@@ -82,7 +82,6 @@ class AllRecordExport implements Responsable
             'Venue',
             'Instructor',
             'Course Duration',
-            'Total Engagement Duration',
             'Total Recognized Duration',
             'Learning Hours',
             '% Progress',
@@ -106,7 +105,7 @@ class AllRecordExport implements Responsable
             'L3 Status',
             'Person in Charge (PIC)',
             'Certificate',
-            'Total Engagement Time (LH)',
+            'Total Engagement Time',
         ];
     }
 
@@ -136,31 +135,30 @@ class AllRecordExport implements Responsable
             'U'  => 20,  // Venue
             'V'  => 22,  // Instructor
             'W'  => 16,  // Course Duration
-            'X'  => 22,  // Total Engagement Duration
-            'Y'  => 22,  // Total Recognized Duration
-            'Z'  => 16,  // Learning Hours
-            'AA' => 14,  // % Progress
-            'AB' => 16,  // Progress Status
-            'AC' => 14,  // Start Date
-            'AD' => 14,  // End Date
-            'AE' => 14,  // Start Time
-            'AF' => 14,  // End Time
-            'AG' => 16,  // Record Month
-            'AH' => 15,  // Requirement
-            'AI' => 14,  // Attendance
-            'AJ' => 25,  // Attendance Reason
-            'AK' => 14,  // Bond Status
-            'AL' => 16,  // Bond Duration
-            'AM' => 15,  // Bond End Date
-            'AN' => 18,  // Bond Amount
-            'AO' => 20,  // Score (L1) - Course
-            'AP' => 14,  // Score (L2)
-            'AQ' => 14,  // L2 Status
-            'AR' => 14,  // Score (L3)
-            'AS' => 14,  // L3 Status
-            'AT' => 22,  // Person in Charge (PIC)
-            'AU' => 14,  // Certificate
-            'AV' => 25,  // Total Engagement Time (LH)
+            'X'  => 22,  // Total Recognized Duration
+            'Y'  => 16,  // Learning Hours
+            'Z'  => 14,  // % Progress
+            'AA' => 16,  // Progress Status
+            'AB' => 14,  // Start Date
+            'AC' => 14,  // End Date
+            'AD' => 14,  // Start Time
+            'AE' => 14,  // End Time
+            'AF' => 16,  // Record Month
+            'AG' => 15,  // Requirement
+            'AH' => 14,  // Attendance
+            'AI' => 25,  // Attendance Reason
+            'AJ' => 14,  // Bond Status
+            'AK' => 16,  // Bond Duration
+            'AL' => 15,  // Bond End Date
+            'AM' => 18,  // Bond Amount
+            'AN' => 20,  // Score (L1) - Course
+            'AO' => 14,  // Score (L2)
+            'AP' => 14,  // L2 Status
+            'AQ' => 14,  // Score (L3)
+            'AR' => 14,  // L3 Status
+            'AS' => 22,  // Person in Charge (PIC)
+            'AT' => 14,  // Certificate
+            'AU' => 25,  // Total Engagement Time
         ];
     }
 
@@ -426,31 +424,30 @@ class AllRecordExport implements Responsable
                     ['U', 'str', $row->venue ?: ($row->source === 'offline' ? '-' : 'KP-OWL'), $textStyle],
                     ['V', 'str', $row->instructor ?: '-', $textStyle],
                     ['W', 'str', $durationFormatted, $textStyle], // Course Duration
-                    ['X', 'str', $durationFormatted, $textStyle], // Total Engagement Duration
-                    ['Y', 'str', '-', $textStyle], // Total Recognized Duration
-                    ['Z', $lhNumeric !== null ? 'lh' : 'str', $lhNumeric !== null ? $lhNumeric : '-', $lhNumeric !== null ? $lhStyle : $textStyle], // Learning Hours
-                    ['AA', 'pct', $progressDecimal, $pctStyle],
-                    ['AB', 'str', $progressStatus, $textStyle],
-                    ['AC', $startDateStr !== '-' ? 'date' : 'str', $startDateStr, $startDateStr !== '-' ? '7' : $textStyle],
-                    ['AD', $endDateStr !== '-' ? 'date' : 'str', $endDateStr, $endDateStr !== '-' ? '7' : $textStyle],
-                    ['AE', $startTimeStr !== '-' ? 'time' : 'str', $startTimeStr, $startTimeStr !== '-' ? '8' : $textStyle],
-                    ['AF', $endTimeStr !== '-' ? 'time' : 'str', $endTimeStr, $endTimeStr !== '-' ? '8' : $textStyle],
-                    ['AG', 'str', $recordMonthStr, $textStyle],
-                    ['AH', 'str', $row->requirement ?: 'Mandatory', $textStyle],
-                    ['AI', 'str', $attendanceStr, $textStyle],
-                    ['AJ', 'str', $row->attendance_reason ?: '-', $textStyle],
-                    ['AK', 'str', $row->bond_status ?: 'No', $textStyle],
-                    ['AL', 'str', !empty($row->bond_duration) ? $row->bond_duration . ' Months' : '-', $textStyle],
-                    ['AM', !empty($row->bond_end_date) ? 'date' : 'str', !empty($row->bond_end_date) ? date('Y-m-d', strtotime($row->bond_end_date)) : '-', !empty($row->bond_end_date) ? '7' : $textStyle],
-                    ['AN', $hasBond ? 'curr' : 'str', $hasBond ? (float) $idr : '-', $hasBond ? '9' : $textStyle],
-                    ['AO', $scoreL1 !== null ? 'float' : 'str', $scoreL1 !== null ? $scoreL1 : '-', $scoreL1 !== null ? '5' : $textStyle],
-                    ['AP', $scoreL2 !== null ? 'int' : 'str', $scoreL2 !== null ? $scoreL2 : '-', $scoreL2 !== null ? $intStyle : $textStyle],
-                    ['AQ', 'str', $row->l2_verbal ?: ($scoreL2 !== null ? ($scoreL2 >= 70 ? 'Passed' : 'Failed') : '-'), $textStyle],
-                    ['AR', $scoreL3 !== null ? 'float' : 'str', $scoreL3 !== null ? $scoreL3 : '-', $scoreL3 !== null ? '5' : $textStyle],
-                    ['AS', 'str', $row->l3_verbal ?: '-', $textStyle],
-                    ['AT', 'str', $row->pic ?: '-', $textStyle],
-                    ['AU', 'str', $row->certificate ?: '-', $textStyle],
-                    ['AV', $lhNumeric !== null ? 'lh' : 'str', $lhNumeric !== null ? $lhNumeric : '-', $lhNumeric !== null ? $lhStyle : $textStyle], // Total Engagement Time (LH)
+                    ['X', 'str', '-', $textStyle], // Total Recognized Duration
+                    ['Y', $lhNumeric !== null ? 'lh' : 'str', $lhNumeric !== null ? $lhNumeric : '-', $lhNumeric !== null ? $lhStyle : $textStyle], // Learning Hours
+                    ['Z', 'pct', $progressDecimal, $pctStyle],
+                    ['AA', 'str', $progressStatus, $textStyle],
+                    ['AB', $startDateStr !== '-' ? 'date' : 'str', $startDateStr, $startDateStr !== '-' ? '7' : $textStyle],
+                    ['AC', $endDateStr !== '-' ? 'date' : 'str', $endDateStr, $endDateStr !== '-' ? '7' : $textStyle],
+                    ['AD', $startTimeStr !== '-' ? 'time' : 'str', $startTimeStr, $startTimeStr !== '-' ? '8' : $textStyle],
+                    ['AE', $endTimeStr !== '-' ? 'time' : 'str', $endTimeStr, $endTimeStr !== '-' ? '8' : $textStyle],
+                    ['AF', 'str', $recordMonthStr, $textStyle],
+                    ['AG', 'str', $row->requirement ?: 'Mandatory', $textStyle],
+                    ['AH', 'str', $attendanceStr, $textStyle],
+                    ['AI', 'str', $row->attendance_reason ?: '-', $textStyle],
+                    ['AJ', 'str', $row->bond_status ?: 'No', $textStyle],
+                    ['AK', 'str', !empty($row->bond_duration) ? $row->bond_duration . ' Months' : '-', $textStyle],
+                    ['AL', !empty($row->bond_end_date) ? 'date' : 'str', !empty($row->bond_end_date) ? date('Y-m-d', strtotime($row->bond_end_date)) : '-', !empty($row->bond_end_date) ? '7' : $textStyle],
+                    ['AM', $hasBond ? 'curr' : 'str', $hasBond ? (float) $idr : '-', $hasBond ? '9' : $textStyle],
+                    ['AN', $scoreL1 !== null ? 'float' : 'str', $scoreL1 !== null ? $scoreL1 : '-', $scoreL1 !== null ? '5' : $textStyle],
+                    ['AO', $scoreL2 !== null ? 'int' : 'str', $scoreL2 !== null ? $scoreL2 : '-', $scoreL2 !== null ? $intStyle : $textStyle],
+                    ['AP', 'str', $row->l2_verbal ?: ($scoreL2 !== null ? ($scoreL2 >= 70 ? 'Passed' : 'Failed') : '-'), $textStyle],
+                    ['AQ', $scoreL3 !== null ? 'float' : 'str', $scoreL3 !== null ? $scoreL3 : '-', $scoreL3 !== null ? '5' : $textStyle],
+                    ['AR', 'str', $row->l3_verbal ?: '-', $textStyle],
+                    ['AS', 'str', $row->pic ?: '-', $textStyle],
+                    ['AT', 'str', $row->certificate ?: '-', $textStyle],
+                    ['AU', $lhNumeric !== null ? 'lh' : 'str', $lhNumeric !== null ? $lhNumeric : '-', $lhNumeric !== null ? $lhStyle : $textStyle], // Total Engagement Time
                 ];
 
                 $buffer .= $this->buildXmlRow($r, $cells);

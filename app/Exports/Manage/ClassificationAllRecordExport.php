@@ -98,7 +98,6 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
             'Venue',
             'Instructor',
             'Course Duration',
-            'Total Engagement Duration',
             'Total Recognized Duration',
             'Learning Hours',
             '% Progress',
@@ -122,7 +121,7 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
             'L3 Status',
             'Person in Charge (PIC)',
             'Certificate',
-            'Total Engagement Time (LH)',
+            'Total Engagement Time',
         ];
     }
 
@@ -152,31 +151,30 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
             'U'  => 20,  // Venue
             'V'  => 22,  // Instructor
             'W'  => 16,  // Course Duration
-            'X'  => 22,  // Total Engagement Duration
-            'Y'  => 22,  // Total Recognized Duration
-            'Z'  => 16,  // Learning Hours
-            'AA' => 14,  // % Progress
-            'AB' => 16,  // Progress Status
-            'AC' => 14,  // Start Date
-            'AD' => 14,  // End Date
-            'AE' => 14,  // Start Time
-            'AF' => 14,  // End Time
-            'AG' => 16,  // Record Month
-            'AH' => 15,  // Requirement
-            'AI' => 14,  // Attendance
-            'AJ' => 25,  // Attendance Reason
-            'AK' => 14,  // Bond Status
-            'AL' => 16,  // Bond Duration
-            'AM' => 15,  // Bond End Date
-            'AN' => 18,  // Bond Amount
-            'AO' => 20,  // Score (L1) - Course
-            'AP' => 14,  // Score (L2)
-            'AQ' => 14,  // L2 Status
-            'AR' => 14,  // Score (L3)
-            'AS' => 14,  // L3 Status
-            'AT' => 22,  // Person in Charge (PIC)
-            'AU' => 14,  // Certificate
-            'AV' => 25,  // Total Engagement Time (LH)
+            'X'  => 22,  // Total Recognized Duration
+            'Y'  => 16,  // Learning Hours
+            'Z'  => 14,  // % Progress
+            'AA' => 16,  // Progress Status
+            'AB' => 14,  // Start Date
+            'AC' => 14,  // End Date
+            'AD' => 14,  // Start Time
+            'AE' => 14,  // End Time
+            'AF' => 16,  // Record Month
+            'AG' => 15,  // Requirement
+            'AH' => 14,  // Attendance
+            'AI' => 25,  // Attendance Reason
+            'AJ' => 14,  // Bond Status
+            'AK' => 16,  // Bond Duration
+            'AL' => 15,  // Bond End Date
+            'AM' => 18,  // Bond Amount
+            'AN' => 20,  // Score (L1) - Course
+            'AO' => 14,  // Score (L2)
+            'AP' => 14,  // L2 Status
+            'AQ' => 14,  // Score (L3)
+            'AR' => 14,  // L3 Status
+            'AS' => 22,  // Person in Charge (PIC)
+            'AT' => 14,  // Certificate
+            'AU' => 25,  // Total Engagement Time
         ];
     }
 
@@ -185,19 +183,19 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
         return [
             'A'  => '0',
             'C'  => NumberFormat::FORMAT_TEXT,
+            'X'  => '0.##" h"',
             'Y'  => '0.##" h"',
-            'Z'  => '0.##" h"',
-            'AA' => '0%',
+            'Z'  => '0%',
+            'AB' => 'yyyy-mm-dd',
             'AC' => 'yyyy-mm-dd',
-            'AD' => 'yyyy-mm-dd',
+            'AD' => 'hh:mm:ss',
             'AE' => 'hh:mm:ss',
-            'AF' => 'hh:mm:ss',
-            'AM' => 'yyyy-mm-dd',
-            'AN' => '"Rp"#,##0',
-            'AO' => '0.##',
-            'AP' => '0',
-            'AR' => '0.##',
-            'AV' => '0.##" h"',
+            'AL' => 'yyyy-mm-dd',
+            'AM' => '"Rp"#,##0',
+            'AN' => '0.##',
+            'AO' => '0',
+            'AQ' => '0.##',
+            'AU' => '0.##" h"',
         ];
     }
 
@@ -309,7 +307,6 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
                 $row->venue ?: ($row->source === 'offline' ? '-' : 'KP-OWL'),
                 $row->instructor ?: '-',
                 $durationFormatted, // Course Duration
-                $durationFormatted, // Total Engagement Duration
                 '-', // Total Recognized Duration
                 $lhNumeric, // Learning Hours
                 $progressDecimal, // numeric decimal for 0% format code
@@ -333,7 +330,7 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
                 $row->l3_verbal ?: '-',
                 $row->pic ?: '-',
                 $row->certificate ?: '-',
-                $lhNumeric, // Total Engagement Time (LH)
+                $lhNumeric, // Total Engagement Time
             ]);
         }
 
@@ -374,9 +371,9 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
                     ->setVertical(Alignment::VERTICAL_CENTER);
 
                 // Set format codes for SUM calculation
+                $sheet->getStyle('X2:X' . $highestRow)->getNumberFormat()->setFormatCode('0.##" h"');
                 $sheet->getStyle('Y2:Y' . $highestRow)->getNumberFormat()->setFormatCode('0.##" h"');
-                $sheet->getStyle('Z2:Z' . $highestRow)->getNumberFormat()->setFormatCode('0.##" h"');
-                $sheet->getStyle('AV2:AV' . $highestRow)->getNumberFormat()->setFormatCode('0.##" h"');
+                $sheet->getStyle('AU2:AU' . $highestRow)->getNumberFormat()->setFormatCode('0.##" h"');
             },
         ];
     }

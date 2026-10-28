@@ -841,7 +841,29 @@
                         data: 'attendance',
                         name: 'attendance',
                         orderable: true,
-                        defaultContent: '-'
+                        defaultContent: '-',
+                        render: function (data, type, row) {
+                            if (type === 'sort' || type === 'type') {
+                                const clean = (data || '').toString().replace(/<[^>]*>?/gm, '').trim().toLowerCase();
+                                return (clean === 'yes' || clean === 'present' || clean === '1' || clean === 'true' || clean === 'hadir') ? 'Yes' : 'No';
+                            }
+                            if (typeof data === 'string' && (data.includes('<span') || data.includes('<badge'))) {
+                                if (data.toLowerCase().includes('present') || data.toLowerCase().includes('hadir')) {
+                                    return '<span class="badge bg-success-lt text-success fw-bold px-2 py-1">Yes</span>';
+                                }
+                                if (data.toLowerCase().includes('absent') || data.includes('>-<') || data.toLowerCase().includes('tidak hadir') || data.toLowerCase().includes('not completed')) {
+                                    return '<span class="badge bg-danger-lt text-danger fw-bold px-2 py-1">No</span>';
+                                }
+                                return data;
+                            }
+                            const raw = String(data ?? '').toLowerCase().trim();
+                            const isYes = ['1', 'yes', 'true', 'present', 'hadir', 'completed', 'finished'].includes(raw)
+                                || (row && row.source === 'online' && parseFloat(row.progress || 0) >= 100);
+                            if (isYes) {
+                                return '<span class="badge bg-success-lt text-success fw-bold px-2 py-1">Yes</span>';
+                            }
+                            return '<span class="badge bg-danger-lt text-danger fw-bold px-2 py-1">No</span>';
+                        }
                     },
                     {
                         data: 'score_l1',
@@ -1123,14 +1145,17 @@
                                 null && d.assessment_score !== undefined ? parseFloat(d
                                     .assessment_score).toFixed(1) : '-');
 
-                            if (d.attendance === null || d.attendance === undefined) {
-                                $('#modal-detail-attendance').text('-');
-                            } else {
-                                $('#modal-detail-attendance').html(d.attendance ?
-                                    '<span class="badge bg-success-lt text-success">Present</span>' :
-                                    '<span class="badge bg-danger-lt text-danger">Absent</span>'
-                                );
+                            const progVal = parseFloat(d.progress ?? 0);
+                            const rawAtt = String(d.attendance ?? '').toLowerCase().trim();
+                            let isAttYes = ['1', 'yes', 'true', 'present', 'hadir', 'completed', 'finished'].includes(rawAtt);
+                            if (!isAttYes && (rawAtt === '' || d.attendance === null || d.attendance === undefined)) {
+                                isAttYes = (progVal >= 100 || !!d.finish_date);
                             }
+
+                            $('#modal-detail-attendance').html(isAttYes ?
+                                '<span class="badge bg-success-lt text-success fw-bold px-2 py-1">Yes</span>' :
+                                '<span class="badge bg-danger-lt text-danger fw-bold px-2 py-1">No</span>'
+                            );
 
                             if (d.attendance_reason) {
                                 $('#modal-detail-attendance-reason').text(d.attendance_reason);

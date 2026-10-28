@@ -1733,12 +1733,13 @@ class RecordAllCombinedService
             })
             ->addColumn('attendance_badge', function ($row) {
                 $val = (string) ($row->attendance ?? '');
-                $isYes = in_array(strtolower(trim($val)), ['1', 'yes', 'true', 'present'], true)
-                    || (($row->source ?? '') === 'online' && ((float) ($row->progress ?? 0) >= 100));
-                if ($isYes) {
-                    return '<span class="badge bg-success-lt text-success fw-bold" style="font-size: 0.725rem;">Yes</span>';
+                $attendance = in_array(strtolower(trim($val)), ['present', 'yes', '1', 'true', 'finished', 'completed', 'hadir'], true)
+                    || (($row->source ?? '') === 'online' && ((float) ($row->progress ?? 0) >= 100))
+                    ? 'Yes' : 'No';
+                if ($attendance === 'Yes') {
+                    return '<span class="badge bg-success-lt text-success fw-bold px-2 py-1">Yes</span>';
                 }
-                return '<span class="badge bg-danger-lt text-danger fw-bold" style="font-size: 0.725rem;">No</span>';
+                return '<span class="badge bg-danger-lt text-danger fw-bold px-2 py-1">No</span>';
             })
             ->addColumn('bond_end_date_formatted', function ($row) {
                 $d = $row->bond_end_date ?? null;
@@ -1891,12 +1892,13 @@ class RecordAllCombinedService
             })
             ->addColumn('attendance', function ($row) {
                 $val = (string) ($row->attendance ?? '');
-                $isYes = in_array(strtolower(trim($val)), ['1', 'yes', 'true', 'present'], true)
-                    || (($row->source ?? '') === 'online' && ((float) ($row->progress ?? 0) >= 100));
-                if ($isYes) {
-                    return '<span class="badge bg-success-lt text-success fw-bold px-2 py-1">Present</span>';
+                $attendance = in_array(strtolower(trim($val)), ['present', 'yes', '1', 'true', 'finished', 'completed', 'hadir'], true)
+                    || (($row->source ?? '') === 'online' && ((float) ($row->progress ?? 0) >= 100))
+                    ? 'Yes' : 'No';
+                if ($attendance === 'Yes') {
+                    return '<span class="badge bg-success-lt text-success fw-bold px-2 py-1">Yes</span>';
                 }
-                return '<span class="badge bg-secondary-lt fw-bold px-2 py-1">-</span>';
+                return '<span class="badge bg-danger-lt text-danger fw-bold px-2 py-1">No</span>';
             })
             ->addColumn('score_l1', function ($row) {
                 if (isset($row->assessment_score) && is_numeric($row->assessment_score)) {
@@ -2327,12 +2329,13 @@ class RecordAllCombinedService
             })
             ->addColumn('attendance', function ($row) {
                 $val = (string) ($row->attendance ?? '');
-                $isYes = in_array(strtolower(trim($val)), ['1', 'yes', 'true', 'present'], true)
-                    || (($row->source ?? '') === 'online' && ((float) ($row->progress ?? 0) >= 100));
-                if ($isYes) {
-                    return '<span class="badge bg-success-lt text-success fw-bold px-2 py-1">Present</span>';
+                $attendance = in_array(strtolower(trim($val)), ['present', 'yes', '1', 'true', 'finished', 'completed', 'hadir'], true)
+                    || (($row->source ?? '') === 'online' && ((float) ($row->progress ?? 0) >= 100))
+                    ? 'Yes' : 'No';
+                if ($attendance === 'Yes') {
+                    return '<span class="badge bg-success-lt text-success fw-bold px-2 py-1">Yes</span>';
                 }
-                return '<span class="badge bg-secondary-lt fw-bold px-2 py-1">-</span>';
+                return '<span class="badge bg-danger-lt text-danger fw-bold px-2 py-1">No</span>';
             })
             ->addColumn('score_l1', function ($row) {
                 if (isset($row->assessment_score) && is_numeric($row->assessment_score)) {
@@ -2421,6 +2424,18 @@ class RecordAllCombinedService
                 'action',
             ])
             ->make(true);
+    }
+
+    /**
+     * Normalize attendance attribute strictly to 'Yes' / 'No'.
+     */
+    public static function formatAttendance($attendance, $progress = 0, $source = 'offline'): string
+    {
+        $raw = strtolower(trim((string) ($attendance ?? '')));
+        $isYes = in_array($raw, ['present', 'yes', '1', 'true', 'finished', 'completed', 'hadir'], true)
+            || ($source === 'online' && ((float) ($progress ?? 0) >= 100));
+
+        return $isYes ? 'Yes' : 'No';
     }
 
     /**

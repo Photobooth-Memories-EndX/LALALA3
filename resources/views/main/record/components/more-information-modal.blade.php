@@ -305,6 +305,14 @@ window.populateMoreInformationModal = function(response) {
     $('#modal-bond-duration').text(d.bond_duration || '-');
     $('#modal-bond-end-date').text(d.bond_end_date || '-');
     $('#modal-bond-amount').text(d.bond_amount || d.bond_amount_idr || '-');
+
+    if ($('#modal-attendance').length || $('#modal-detail-attendance').length) {
+        const rawAtt = String(d.attendance ?? '').toLowerCase().trim();
+        const isAttYes = ['1', 'yes', 'true', 'present', 'hadir', 'completed', 'finished'].includes(rawAtt);
+        $('#modal-attendance, #modal-detail-attendance').html(isAttYes
+            ? '<span class="badge bg-success-lt text-success fw-bold px-2 py-1">Yes</span>'
+            : '<span class="badge bg-danger-lt text-danger fw-bold px-2 py-1">No</span>');
+    }
 };
 
 // Global click handler for .btn-more-info / More Information

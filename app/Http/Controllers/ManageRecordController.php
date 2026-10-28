@@ -400,6 +400,10 @@ class ManageRecordController extends Controller
                     $empName = strtoupper($empName);
                 }
 
+                $rawAtt = strtolower(trim((string) ($record->attendance ?? '')));
+                $attendance = in_array($rawAtt, ['present', 'yes', '1', 'true', 'finished', 'completed', 'hadir'], true)
+                    || ((float) ($record->progress ?? 0) >= 100) ? 'Yes' : 'No';
+
                 $recordData = [
                     'source'          => 'NON KP OWL',
                     'course_title'    => $record->course_title ?: ($record->sub_course_title ?: 'Offline Training'),
@@ -409,6 +413,7 @@ class ManageRecordController extends Controller
                     'job_position'    => $record->job_position ?: '-',
                     'instructor'      => $record->instructor ?: '-',
                     'progress_status' => $progressStatus,
+                    'attendance'      => $attendance,
                     'l2_status'       => $l2,
                     'l3_status'       => $l3,
                     'bond_status'     => $bondStatus,
@@ -425,6 +430,7 @@ class ManageRecordController extends Controller
                     'sub_course_title'   => $record->sub_course_title ?: '-',
                     'level'              => $record->level ?: '-',
                     'batch'              => $record->batch ?: '-',
+                    'attendance'         => $attendance,
                     'attendance_reason'  => $record->attendance_reason ?: '-',
                     'certificate_status' => !empty($record->certificate) ? 'Available' : 'Not Available',
                 ]));
@@ -442,6 +448,7 @@ class ManageRecordController extends Controller
                     'job_position'    => '-',
                     'instructor'      => $training->instructor ?: '-',
                     'progress_status' => 'Not Started',
+                    'attendance'      => 'No',
                     'l2_status'       => '-',
                     'l3_status'       => '-',
                     'bond_status'     => 'No',
@@ -458,6 +465,7 @@ class ManageRecordController extends Controller
                     'sub_course_title'   => $training->sub_course_name ?: '-',
                     'level'              => $training->level ?: '-',
                     'batch'              => $training->batch ?: '-',
+                    'attendance'         => 'No',
                     'attendance_reason'  => '-',
                     'certificate_status' => 'Not Available',
                 ]));
@@ -488,6 +496,7 @@ class ManageRecordController extends Controller
         if ($cu) {
             $progress = (float) ($cu->progress ?? 0);
             $progressStatus = ($cu->finish == '1' || $progress >= 100) ? 'Passed' : (($progress > 0) ? 'Ongoing' : 'Not Started');
+            $attendance = ($cu->finish == '1' || $progress >= 100) ? 'Yes' : 'No';
 
             $cleanEmpId = trim((string) ($cu->employee_id ?: '-'));
             if ($cleanEmpId !== '-') {
@@ -508,6 +517,7 @@ class ManageRecordController extends Controller
                 'job_position'    => '-',
                 'instructor'      => $cu->instructor ?: '-',
                 'progress_status' => $progressStatus,
+                'attendance'      => $attendance,
                 'l2_status'       => '-',
                 'l3_status'       => '-',
                 'bond_status'     => 'No',
@@ -524,6 +534,7 @@ class ManageRecordController extends Controller
                 'sub_course_title'   => '-',
                 'level'              => '-',
                 'batch'              => '-',
+                'attendance'         => $attendance,
                 'attendance_reason'  => '-',
                 'certificate_status' => ($cu->finish == '1' || $progress >= 100) ? 'Available' : 'Not Available',
             ]));
@@ -554,6 +565,7 @@ class ManageRecordController extends Controller
         if ($pcu) {
             $progress = (float) ($pcu->progress ?? 0);
             $progressStatus = ($pcu->finish == '1' || $progress >= 100) ? 'Passed' : (($progress > 0) ? 'Ongoing' : 'Not Started');
+            $attendance = ($pcu->finish == '1' || $progress >= 100) ? 'Yes' : 'No';
 
             $cleanEmpId = trim((string) ($pcu->employee_id ?: '-'));
             if ($cleanEmpId !== '-') {
@@ -574,6 +586,7 @@ class ManageRecordController extends Controller
                 'job_position'    => '-',
                 'instructor'      => $pcu->instructor ?: '-',
                 'progress_status' => $progressStatus,
+                'attendance'      => $attendance,
                 'l2_status'       => '-',
                 'l3_status'       => '-',
                 'bond_status'     => 'No',
@@ -590,6 +603,7 @@ class ManageRecordController extends Controller
                 'sub_course_title'   => $pcu->playlist_title ?: '-',
                 'level'              => '-',
                 'batch'              => '-',
+                'attendance'         => $attendance,
                 'attendance_reason'  => '-',
                 'certificate_status' => ($pcu->finish == '1' || $progress >= 100) ? 'Available' : 'Not Available',
             ]));
@@ -606,6 +620,7 @@ class ManageRecordController extends Controller
             'job_position'    => '-',
             'instructor'      => '-',
             'progress_status' => '-',
+            'attendance'      => '-',
             'l2_status'       => '-',
             'l3_status'       => '-',
             'bond_status'     => 'No',
