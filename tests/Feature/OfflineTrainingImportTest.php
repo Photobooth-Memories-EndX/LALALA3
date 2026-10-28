@@ -107,51 +107,51 @@ class OfflineTrainingImportTest extends TestCase
 
         $m = array_merge($defaults, $overrides);
 
-        return [
-            $m['no'],
-            $m['employee_id'],
-            $m['name'],
-            $m['grade'],
-            $m['job_position'],
-            $m['team'],
-            $m['department'],
-            $m['company'],
-            $m['course_name'],
-            $m['sub_course_name'],
-            $m['type'],
-            $m['category'],
-            $m['level'],
-            $m['batch'],
-            $m['main_classification'],
-            $m['sub_classification'],
-            $m['counted_corporate_kpi'],
-            $m['sub_corporate_kpi'],
-            $m['delivery_method'],
-            $m['sub_delivery_method'],
-            $m['provider'],
-            $m['sub_provider'],
-            $m['duration_seconds'],
-            $m['learning_hours'],
-            $m['progress'],
-            $m['start_date'],
-            $m['finish_date'],
-            $m['month'],
-            $m['provider_name'],
-            $m['venue'],
-            $m['instructor'],
-            $m['assessment_score'],
-            $m['certificate'],
-            $m['attendance'],
-            $m['attendance_reason'],
-            $m['bond_status'],
-            $m['bond_end_date'],
-            $m['bond_amount'],
-            $m['l1_program'],
-            $m['l2_numerical'],
-            $m['l2_verbal'],
-            $m['l3_numerical'],
-            $m['l3_verbal'],
-            $m['pic'],
+                return [
+            $m['employee_id'] ?? '100234',                                   // 1. Employee ID
+            $m['name'] ?? 'Budi Santoso',                                    // 2. Employee Name
+            $m['grade'] ?? '4A',                                             // 3. Grade
+            $m['job_position'] ?? 'Electrical Maintenance Engineer',         // 4. Job Position
+            $m['team'] ?? 'Rolling Mill 1',                                  // 5. Team
+            $m['department'] ?? 'Maintenance Department',                    // 6. Department
+            $m['company'] ?? 'TEST_CORP',                                    // 7. Company
+            $m['course_name'] ?? 'High Voltage Safety & Operation',          // 8. Course Title
+            $m['sub_course_name'] ?? 'Switchgear Module',                    // 9. Sub Course Title
+            $m['type'] ?? 'In-House',                                        // 10. Type
+            $m['category'] ?? 'TEST_CAT',                                    // 11. Category
+            $m['level'] ?? 'Intermediate',                                   // 12. Level
+            $m['batch'] ?? 'Batch 1',                                        // 13. Batch
+            $m['main_classification'] ?? 'Technical',                        // 14. Main Classification
+            $m['sub_classification'] ?? 'Plant Maintenance',                 // 15. Sub Classification
+            $m['delivery_method'] ?? 'Offline',                              // 16. Delivery Method
+            $m['sub_delivery_method'] ?? 'On-site',                          // 17. Sub Delivery Method
+            $m['provider_name'] ?? 'PT Schneider Indonesia',                 // 18. Provider Name
+            $m['venue'] ?? 'Auditorium Hall B',                              // 19. Venue
+            $m['instructor'] ?? 'Ir. Gunawan, M.T.',                         // 20. Instructor
+            $m['duration_seconds'] ?? '08:00:00',                            // 21. Course Duration
+            $m['learning_hours'] ?? 8.0,                                     // 22. Learning Hours
+            $m['progress'] ?? 100,                                           // 23. % Progress
+            $m['progress_status'] ?? 'Finished',                             // 24. Progress Status
+            $m['start_date'] ?? '2026-08-10',                                // 25. Start Date
+            $m['finish_date'] ?? ($m['end_date'] ?? '2026-08-10'),           // 26. End Date
+            $m['start_time'] ?? '08:00:00',                                  // 27. Start Time
+            $m['end_time'] ?? '17:00:00',                                    // 28. End Time
+            $m['month'] ?? 'August',                                         // 29. Record Month
+            $m['requirement'] ?? 'Mandatory',                                // 30. Requirement
+            $m['attendance'] ?? 'Yes',                                       // 31. Attendance
+            $m['attendance_reason'] ?? 'Present in all sessions',            // 32. Attendance Reason
+            $m['bond_status'] ?? 'No',                                       // 33. Bond Status
+            $m['bond_duration'] ?? '',                                       // 34. Bond Duration
+            $m['bond_end_date'] ?? '',                                       // 35. Bond End Date
+            $m['bond_amount'] ?? '',                                         // 36. Bond Amount
+            $m['l1_program'] ?? 'Very Good',                                 // 37. Score (L1) - Course
+            $m['l2_numerical'] ?? 88.0,                                      // 38. Score (L2)
+            $m['l2_verbal'] ?? 'Passed',                                     // 39. L2 Status
+            $m['l3_numerical'] ?? 90.0,                                      // 40. Score (L3)
+            $m['l3_verbal'] ?? 'Implemented successfully',                   // 41. L3 Status
+            $m['pic'] ?? 'HRDC Team',                                        // 42. Person in Charge (PIC)
+            $m['certificate'] ?? 'Yes',                                      // 43. Certificate
+            $m['total_engagement_time'] ?? 8.0,                              // 44. Total Engagement Time
         ];
     }
 

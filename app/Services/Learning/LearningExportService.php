@@ -670,16 +670,17 @@ class LearningExportService
             1 => [
                 'font' => [
                     'bold' => true,
-                    'color' => ['rgb' => '000000'],
+                    'color' => ['rgb' => 'FFFFFF'],
                     'size' => 11,
                 ],
                 'fill' => [
                     'fillType' => Fill::FILL_SOLID,
-                    'startColor' => ['rgb' => 'D9EAF7'],
+                    'startColor' => ['rgb' => '002B49'],
                 ],
                 'alignment' => [
                     'horizontal' => Alignment::HORIZONTAL_CENTER,
                     'vertical' => Alignment::VERTICAL_CENTER,
+                    'wrapText' => true,
                 ],
             ],
         ];
@@ -694,13 +695,34 @@ class LearningExportService
         $highestRow = max(1, $sheet->getHighestRow());
         $highestColumn = $sheet->getHighestColumn();
 
+        // 0. Set header row height to 28
+        $sheet->getRowDimension(1)->setRowHeight(28);
+
         // 1. Freeze top header row
         $sheet->freezePane('A2');
 
         // 2. Set AutoFilter on header row
         $sheet->setAutoFilter("A1:{$highestColumn}" . max(1, $highestRow));
 
-        // 3. Thin light border across all cells
+        // 3. Header styling (navy fill, bold white text, center, wrapText)
+        $sheet->getStyle("A1:{$highestColumn}1")->applyFromArray([
+            'font' => [
+                'bold' => true,
+                'color' => ['rgb' => 'FFFFFF'],
+                'size' => 11,
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '002B49'],
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
+                'wrapText' => true,
+            ],
+        ]);
+
+        // 4. Thin light border across all cells
         $sheet->getStyle("A1:{$highestColumn}{$highestRow}")->applyFromArray([
             'borders' => [
                 'allBorders' => [
