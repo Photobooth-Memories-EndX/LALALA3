@@ -776,4 +776,134 @@ class SyncEmployeeUsersTest extends TestCase
         $this->assertEquals('[REDACTED]', $updatedItem['changes']['ssohash']['from']);
         $this->assertEquals('[REDACTED]', $updatedItem['changes']['ssohash']['to']);
     }
+
+    /**
+     * Skenario 22: Semua 18 kolom profil HR baru tersimpan saat pembuatan user baru dan tersinkronisasi saat perubahan.
+     */
+    public function test_scenario_22_extended_hr_fields_are_provisioned_and_synchronized()
+    {
+        $newEmpId = 'H' . rand(100000, 999999);
+        $newEmail = 'hr_' . $newEmpId . '@krakatauposco.co.id';
+
+        $apiPayloadNew = [
+            [
+                'id_user' => 777,
+                'id_emp' => $newEmpId,
+                'id_ou' => 'OU55',
+                'name' => 'HR Test User',
+                'email' => $newEmail,
+                'team' => 'Automation Team',
+                'department' => 'HR Dept',
+                'division' => 'People Div',
+                'sap_code' => 'SAP8888',
+                'ssohash' => 'hash_test_123',
+                // 18 Extended HR Fields
+                'id_team' => 'TM01',
+                'id_department' => 'DP02',
+                'id_division' => 'DV03',
+                'cell_phone' => '081234567890',
+                'sex' => 'M',
+                'orgunit' => 'Digital Transformation Org',
+                'id_job_position' => 'POS10',
+                'jobposition' => 'Software Engineer',
+                'positionID' => '00050123',
+                'appr1' => '00010001',
+                'appr2' => '00010002',
+                'resign' => 'N',
+                'flag' => 1,
+                'jobgrade' => 'JG04',
+                'id_job_clan' => 'JC01',
+                'job_clan' => 'Engineering Clan',
+                'id_job_family' => 'JF02',
+                'job_family' => 'IT & Systems Family',
+            ]
+        ];
+
+        $service = new EmployeeUserSyncService();
+        $resultNew = $service->sync(['api_data' => $apiPayloadNew, 'dry_run' => false]);
+
+        $this->assertEquals(1, $resultNew->createdCount);
+
+        // Verify all 18 HR fields in database
+        $this->assertDatabaseHas('users', [
+            'id_emp' => $newEmpId,
+            'id_team' => 'TM01',
+            'id_department' => 'DP02',
+            'id_division' => 'DV03',
+            'cell_phone' => '081234567890',
+            'sex' => 'M',
+            'orgunit' => 'Digital Transformation Org',
+            'id_job_position' => 'POS10',
+            'jobposition' => 'Software Engineer',
+            'positionID' => '00050123',
+            'appr1' => '00010001',
+            'appr2' => '00010002',
+            'resign' => 'N',
+            'flag' => 1,
+            'jobgrade' => 'JG04',
+            'id_job_clan' => 'JC01',
+            'job_clan' => 'Engineering Clan',
+            'id_job_family' => 'JF02',
+            'job_family' => 'IT & Systems Family',
+        ]);
+
+        // Test update on existing user HR fields
+        $apiPayloadUpdate = [
+            [
+                'id_emp' => $newEmpId,
+                'name' => 'HR Test User',
+                'email' => $newEmail,
+                'team' => 'Automation Team',
+                'department' => 'HR Dept',
+                'division' => 'People Div',
+                'sap_code' => 'SAP8888',
+                'id_ou' => 'OU55',
+                'ssohash' => 'hash_test_123',
+                // Changes in HR fields
+                'id_team' => 'TM02',
+                'cell_phone' => '089876543210',
+                'jobposition' => 'Senior Lead Engineer',
+                'jobgrade' => 'JG05',
+                'flag' => 0,
+            ]
+        ];
+
+        $resultUpdate = $service->sync(['api_data' => $apiPayloadUpdate, 'dry_run' => false]);
+        $this->assertEquals(1, $resultUpdate->updatedCount);
+
+        $this->assertDatabaseHas('users', [
+            'id_emp' => $newEmpId,
+            'id_team' => 'TM02',
+            'cell_phone' => '089876543210',
+            'jobposition' => 'Senior Lead Engineer',
+            'jobgrade' => 'JG05',
+            'flag' => 0,
+            // Untouched extended fields remain intact
+            'job_clan' => 'Engineering Clan',
+            'job_family' => 'IT & Systems Family',
+            'appr1' => '00010001',
+        ]);
+
+        // Test safe non-destruction: Empty API string does not overwrite existing value
+        $apiPayloadEmptySafe = [
+            [
+                'id_emp' => $newEmpId,
+                'name' => 'HR Test User',
+                'email' => $newEmail,
+                'team' => 'Automation Team',
+                'department' => 'HR Dept',
+                'division' => 'People Div',
+                'sap_code' => 'SAP8888',
+                'id_ou' => 'OU55',
+                'ssohash' => 'hash_test_123',
+                'cell_phone' => '', // API sends empty string
+            ]
+        ];
+
+        $resultEmpty = $service->sync(['api_data' => $apiPayloadEmptySafe, 'dry_run' => false]);
+        $this->assertEquals(1, $resultEmpty->unchangedCount);
+
+        $createdUser = User::where('id_emp', $newEmpId)->first();
+        $this->assertEquals('089876543210', $createdUser->cell_phone);
+    }
 }

@@ -63,20 +63,38 @@ class EmployeeUserSyncService
 
         $result->totalApi = count($rawEmployees);
 
-        // 3. Preload all OWL users (including soft-deleted) into memory
+        // 3. Preload all OWL users (including soft-deleted) into memory with all HR columns
         $owlUsers = User::withTrashed()->get([
             'id',
             'company_name',
             'id_user',
             'id_emp',
             'id_org_unit',
+            'id_team',
+            'id_department',
+            'id_division',
             'name',
             'email',
+            'cell_phone',
+            'sex',
             'team',
             'department',
             'division',
+            'orgunit',
+            'id_job_position',
+            'jobposition',
+            'positionID',
+            'appr1',
+            'appr2',
             'sap_code',
             'ssohash',
+            'resign',
+            'flag',
+            'jobgrade',
+            'id_job_clan',
+            'job_clan',
+            'id_job_family',
+            'job_family',
             'role',
             'active',
             'deleted_at',
@@ -221,47 +239,79 @@ class EmployeeUserSyncService
             }
         }
 
-        // 3. Team
-        $apiTeam = trim((string) ($emp['team'] ?? ''));
-        if ($apiTeam !== '' && $apiTeam !== trim((string) $user->team)) {
-            $changes['team'] = ['from' => $user->team, 'to' => $apiTeam];
+        // 3. Organization fields
+        $orgFields = [
+            'team' => 'team',
+            'department' => 'department',
+            'division' => 'division',
+            'sap_code' => 'sap_code',
+        ];
+
+        foreach ($orgFields as $apiField => $dbCol) {
+            $apiVal = trim((string) ($emp[$apiField] ?? ''));
+            if ($apiVal !== '' && $apiVal !== trim((string) ($user->{$dbCol} ?? ''))) {
+                $changes[$dbCol] = ['from' => $user->{$dbCol}, 'to' => $apiVal];
+            }
         }
 
-        // 4. Department
-        $apiDept = trim((string) ($emp['department'] ?? ''));
-        if ($apiDept !== '' && $apiDept !== trim((string) $user->department)) {
-            $changes['department'] = ['from' => $user->department, 'to' => $apiDept];
-        }
-
-        // 5. Division
-        $apiDiv = trim((string) ($emp['division'] ?? ''));
-        if ($apiDiv !== '' && $apiDiv !== trim((string) $user->division)) {
-            $changes['division'] = ['from' => $user->division, 'to' => $apiDiv];
-        }
-
-        // 6. SAP Code
-        $apiSap = trim((string) ($emp['sap_code'] ?? ''));
-        if ($apiSap !== '' && $apiSap !== trim((string) $user->sap_code)) {
-            $changes['sap_code'] = ['from' => $user->sap_code, 'to' => $apiSap];
-        }
-
-        // 7. id_org_unit (mapped from API id_ou)
+        // 4. id_org_unit (mapped from API id_ou)
         $apiOu = trim((string) ($emp['id_ou'] ?? ''));
         if ($apiOu !== '' && $apiOu !== trim((string) $user->id_org_unit)) {
             $changes['id_org_unit'] = ['from' => $user->id_org_unit, 'to' => $apiOu];
         }
 
-        // 8. ssohash (if provided and different)
+        // 5. ssohash (if provided, non-empty, and different)
         $apiSsoHash = trim((string) ($emp['ssohash'] ?? ($emp['newhash'] ?? '')));
         if ($apiSsoHash !== '' && $apiSsoHash !== '-' && $apiSsoHash !== trim((string) $user->ssohash)) {
             $changes['ssohash'] = ['from' => $user->ssohash, 'to' => $apiSsoHash];
         }
 
-        // 9. id_user (only fill if OWL user had empty/0 id_user)
+        // 6. id_user (only fill if OWL user had empty/0 id_user)
         $apiIdUser = trim((string) ($emp['id_user'] ?? ''));
         $currentIdUser = trim((string) $user->id_user);
         if ($apiIdUser !== '' && ($currentIdUser === '' || $currentIdUser === '0') && $apiIdUser !== $currentIdUser) {
             $changes['id_user'] = ['from' => $user->id_user, 'to' => $apiIdUser];
+        }
+
+        // 7. Extended Employee Profile HR fields
+        $extendedFields = [
+            'id_team' => 'id_team',
+            'id_department' => 'id_department',
+            'id_division' => 'id_division',
+            'cell_phone' => 'cell_phone',
+            'sex' => 'sex',
+            'orgunit' => 'orgunit',
+            'id_job_position' => 'id_job_position',
+            'jobposition' => 'jobposition',
+            'positionID' => 'positionID',
+            'appr1' => 'appr1',
+            'appr2' => 'appr2',
+            'resign' => 'resign',
+            'jobgrade' => 'jobgrade',
+            'id_job_clan' => 'id_job_clan',
+            'job_clan' => 'job_clan',
+            'id_job_family' => 'id_job_family',
+            'job_family' => 'job_family',
+        ];
+
+        foreach ($extendedFields as $apiField => $dbCol) {
+            if (array_key_exists($apiField, $emp)) {
+                $apiVal = trim((string) ($emp[$apiField] ?? ''));
+                $dbVal = trim((string) ($user->{$dbCol} ?? ''));
+                // Only update if API has non-empty value and differs
+                if ($apiVal !== '' && $apiVal !== $dbVal) {
+                    $changes[$dbCol] = ['from' => $user->{$dbCol}, 'to' => $apiVal];
+                }
+            }
+        }
+
+        // 8. flag field (numeric)
+        if (array_key_exists('flag', $emp) && $emp['flag'] !== null && $emp['flag'] !== '') {
+            $apiFlag = (int) $emp['flag'];
+            $dbFlag = $user->flag !== null ? (int) $user->flag : null;
+            if ($dbFlag === null || $apiFlag !== $dbFlag) {
+                $changes['flag'] = ['from' => $user->flag, 'to' => $apiFlag];
+            }
         }
 
         // If no changes
@@ -348,6 +398,27 @@ class EmployeeUserSyncService
             $user->ssohash = isset($emp['ssohash']) && $emp['ssohash'] !== '' ? trim((string) $emp['ssohash']) : (isset($emp['newhash']) && $emp['newhash'] !== '' ? trim((string) $emp['newhash']) : '-');
             $user->role = User::ROLE_USER; // Default Role 1
             $user->active = 0; // Safe Inactive default
+
+            // Extended HR employee fields
+            $user->id_team = isset($emp['id_team']) && $emp['id_team'] !== '' ? trim((string) $emp['id_team']) : null;
+            $user->id_department = isset($emp['id_department']) && $emp['id_department'] !== '' ? trim((string) $emp['id_department']) : null;
+            $user->id_division = isset($emp['id_division']) && $emp['id_division'] !== '' ? trim((string) $emp['id_division']) : null;
+            $user->cell_phone = isset($emp['cell_phone']) && $emp['cell_phone'] !== '' ? trim((string) $emp['cell_phone']) : null;
+            $user->sex = isset($emp['sex']) && $emp['sex'] !== '' ? trim((string) $emp['sex']) : null;
+            $user->orgunit = isset($emp['orgunit']) && $emp['orgunit'] !== '' ? trim((string) $emp['orgunit']) : null;
+            $user->id_job_position = isset($emp['id_job_position']) && $emp['id_job_position'] !== '' ? trim((string) $emp['id_job_position']) : null;
+            $user->jobposition = isset($emp['jobposition']) && $emp['jobposition'] !== '' ? trim((string) $emp['jobposition']) : null;
+            $user->positionID = isset($emp['positionID']) && $emp['positionID'] !== '' ? trim((string) $emp['positionID']) : null;
+            $user->appr1 = isset($emp['appr1']) && $emp['appr1'] !== '' ? trim((string) $emp['appr1']) : null;
+            $user->appr2 = isset($emp['appr2']) && $emp['appr2'] !== '' ? trim((string) $emp['appr2']) : null;
+            $user->resign = isset($emp['resign']) && $emp['resign'] !== '' ? trim((string) $emp['resign']) : 'N';
+            $user->flag = isset($emp['flag']) && $emp['flag'] !== '' ? (int) $emp['flag'] : 1;
+            $user->jobgrade = isset($emp['jobgrade']) && $emp['jobgrade'] !== '' ? trim((string) $emp['jobgrade']) : null;
+            $user->id_job_clan = isset($emp['id_job_clan']) && $emp['id_job_clan'] !== '' ? trim((string) $emp['id_job_clan']) : null;
+            $user->job_clan = isset($emp['job_clan']) && $emp['job_clan'] !== '' ? trim((string) $emp['job_clan']) : null;
+            $user->id_job_family = isset($emp['id_job_family']) && $emp['id_job_family'] !== '' ? trim((string) $emp['id_job_family']) : null;
+            $user->job_family = isset($emp['job_family']) && $emp['job_family'] !== '' ? trim((string) $emp['job_family']) : null;
+
             $user->save();
 
             // Cache in memory for subsequent checks
