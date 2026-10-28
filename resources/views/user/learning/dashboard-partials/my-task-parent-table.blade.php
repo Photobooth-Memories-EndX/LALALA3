@@ -10,7 +10,6 @@
                     <th class="text-center">PROGRESS</th>
                     <th>DEADLINE</th>
                     <th>STATUS</th>
-                    <th class="text-end">ACTION</th>
                 </tr>
             </thead>
             <tbody id="parentTableAccordion">
@@ -26,7 +25,7 @@
                             data-bs-target="#collapseTasks-{{ $i }}"
                             role="button"
                             aria-expanded="false"
-                            style="cursor: pointer;"
+                            style="cursor: pointer; user-select: none;"
                             title="Click to view tasks below">
                             <div class="d-flex align-items-center justify-content-between gap-2">
                                 <div class="d-flex align-items-center gap-2">
@@ -97,21 +96,11 @@
                                 <span class="badge bg-primary-lt text-primary">In Progress</span>
                             @endif
                         </td>
-                        <td class="text-end">
-                            <button type="button"
-                                    class="btn btn-sm btn-icon btn-outline-secondary btn-task-collapse-toggle"
-                                    data-bs-toggle="collapse"
-                                    data-bs-target="#collapseTasks-{{ $i }}"
-                                    aria-expanded="false"
-                                    title="Show tasks below">
-                                <i class="ti ti-chevron-down transition-transform"></i>
-                            </button>
-                        </td>
                     </tr>
 
                     {{-- Collapsible Task List Sub-row --}}
                     <tr class="collapse bg-light-subtle task-collapse-row" id="collapseTasks-{{ $i }}">
-                        <td colspan="7" class="p-3">
+                        <td colspan="6" class="p-3">
                             <div class="card border rounded-3 p-3 bg-white shadow-none mb-0">
                                 <div class="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom">
                                     <span class="fw-bold text-dark small d-flex align-items-center gap-1">
@@ -307,13 +296,37 @@
                                                             </span>
                                                         </td>
                                                         <td class="text-end">
-                                                            <button type="button"
-                                                                    class="btn btn-sm {{ in_array($tStatus, ['completed', 'submitted']) ? 'btn-outline-secondary' : 'btn-primary' }} rounded-3"
-                                                                    data-bs-toggle="modal"
-                                                                    data-bs-target="#taskModal-{{ $task->id }}">
-                                                                <i class="ti {{ in_array($tStatus, ['completed', 'submitted']) ? 'ti-eye' : 'ti-pencil' }} me-1"></i>
-                                                                {{ in_array($tStatus, ['completed', 'submitted']) ? 'View' : 'Submit' }}
-                                                            </button>
+                                                            @if ($tStatus === 'rejected')
+                                                                @if ($tSubmission && $tSubmission->resubmit_requested)
+                                                                    <button type="button"
+                                                                            class="btn btn-sm btn-warning text-dark fw-semibold rounded-3 shadow-sm px-3"
+                                                                            data-bs-toggle="modal"
+                                                                            data-bs-target="#taskModal-{{ $task->id }}">
+                                                                        <i class="ti ti-refresh me-1"></i> Resubmit
+                                                                    </button>
+                                                                @else
+                                                                    <button type="button"
+                                                                            class="btn btn-sm btn-outline-secondary rounded-3 px-3"
+                                                                            data-bs-toggle="modal"
+                                                                            data-bs-target="#taskModal-{{ $task->id }}">
+                                                                        <i class="ti ti-eye me-1"></i> View
+                                                                    </button>
+                                                                @endif
+                                                            @elseif (in_array($tStatus, ['completed', 'submitted']))
+                                                                <button type="button"
+                                                                        class="btn btn-sm btn-outline-secondary rounded-3 px-3"
+                                                                        data-bs-toggle="modal"
+                                                                        data-bs-target="#taskModal-{{ $task->id }}">
+                                                                    <i class="ti ti-eye me-1"></i> View
+                                                                </button>
+                                                            @else
+                                                                <button type="button"
+                                                                        class="btn btn-sm btn-primary rounded-3 px-3"
+                                                                        data-bs-toggle="modal"
+                                                                        data-bs-target="#taskModal-{{ $task->id }}">
+                                                                    <i class="ti ti-pencil me-1"></i> Submit
+                                                                </button>
+                                                            @endif
                                                         </td>
                                                     </tr>
                                                 @endforeach

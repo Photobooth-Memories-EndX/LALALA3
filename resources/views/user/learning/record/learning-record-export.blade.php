@@ -10,13 +10,17 @@
 
 <div class="learning-record-shell">
     {{-- Quick Filter Card (Mode Switch) --}}
-    <div class="card border-0 shadow-sm rounded-4 mb-4 learning-record-card">
-        <div class="card-body p-4">
-            <div class="learning-filter-heading fast-filter-header mb-0">
-                <div class="fast-filter-header-copy">
-                    <h3 class="card-title fast-filter-title">Quick Filter</h3>
-                </div>
-                <x-learning.record-mode-switch mode="export" />
+    <div class="card border-0 shadow-sm rounded-4 mb-3 my-task-filter-card">
+        <div class="card-body p-3 p-md-4">
+            <div class="mb-3">
+                <h2 class="fw-bold mb-1 my-task-filter-title">Learning Record</h2>
+                <p class="text-muted small mb-0 my-task-filter-subtitle">Export your verified training records in Excel spreadsheet format (.xlsx).</p>
+            </div>
+            <div class="d-flex align-items-center flex-wrap gap-2 my-task-pills-row">
+                <button type="button" class="my-task-category-pill record-mode-btn" data-mode="online" title="KP OWL">KP OWL</button>
+                <button type="button" class="my-task-category-pill record-mode-btn" data-mode="offline" title="Non KP OWL">Non KP OWL</button>
+                <button type="button" class="my-task-category-pill record-mode-btn" data-mode="all" title="All Record">All Record</button>
+                <button type="button" class="my-task-category-pill record-mode-btn active" data-mode="export" title="Export Center">Export Center</button>
             </div>
         </div>
     </div>

@@ -22,7 +22,7 @@
                                 </span>
                             @elseif ($task->isStandalone())
                                 <span class="badge bg-secondary-lt text-secondary px-2.5 py-1 fs-6">
-                                    <i class="ti ti-world me-1"></i>Global Task
+                                    <i class="ti ti-world me-1"></i>Others
                                 </span>
                             @endif
                         </div>
@@ -172,7 +172,7 @@
                                         <div class="text-muted small mb-3">Finish the course (100% progress) — this task will be marked complete automatically.</div>
                                         <a href="{{ route('user.playlist.show', $targetPlan->slug) }}"
                                            class="btn btn-primary rounded-3 px-4">
-                                            <i class="ti ti-book-2 me-1"></i>Open Course
+                                            <i class="ti ti-book-2 me-1"></i>Open Course: {{ $targetPlan->title }}
                                         </a>
                                     </div>
                                 @else
@@ -183,36 +183,131 @@
                             @endif
                         </div>
                     @else
-                        @if ($submission && ! $submission->resubmit_requested)
-                            <div class="alert alert-warning d-flex flex-wrap align-items-center justify-content-between gap-2">
+                        {{-- ── 1. Rejected: Completed as Rejected (Final, closed without resubmission) ── --}}
+                        @if ($submission && $submission->status === 'rejected' && ! $submission->resubmit_requested)
+                            <div class="alert alert-danger border-start border-danger border-4 rounded-3 shadow-sm mb-3">
+                                <div class="d-flex align-items-start gap-3">
+                                    <span class="avatar bg-danger text-white rounded-circle me-1 mt-1 shadow-sm">
+                                        <i class="ti ti-circle-x fs-2"></i>
+                                    </span>
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-1">
+                                            <h4 class="alert-title fw-bold text-dark mb-0">
+                                                Submission Rejected
+                                            </h4>
+                                            <span class="badge bg-danger text-white">Completed as Rejected</span>
+                                        </div>
+                                        <div class="text-muted small mb-2">
+                                            The administrator reviewed your answers and marked this task as completed as rejected. This task is now closed.
+                                        </div>
+                                        @if (!is_null($submission->score))
+                                            <div class="mb-2">
+                                                <span class="badge bg-danger-lt text-danger fw-bold fs-6">Score: {{ $submission->score }} / 100</span>
+                                            </div>
+                                        @endif
+                                        @if ($submission->feedback)
+                                            <div class="p-3 bg-white rounded-3 border border-danger-subtle text-dark shadow-sm">
+                                                <div class="fw-semibold text-danger d-flex align-items-center mb-1">
+                                                    <i class="ti ti-message-dots me-1"></i> Admin Feedback:
+                                                </div>
+                                                <div class="ps-3 border-start border-3 border-danger text-dark">
+                                                    {{ $submission->feedback }}
+                                                </div>
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Summary of submitted answers --}}
+                            @if ($answersByField->isNotEmpty() && $task->fields->isNotEmpty())
+                                <div class="mt-3 p-3 bg-light rounded-3 border small">
+                                    <div class="fw-semibold text-dark mb-2">Your Submitted Answers:</div>
+                                    @foreach ($task->fields as $field)
+                                        @php $ans = $answersByField->get($field->id); @endphp
+                                        @if ($ans && ($ans->hasFiles() || $ans->answer_text))
+                                            <div class="mb-2">
+                                                <span class="fw-semibold text-dark">{{ $field->label }}:</span>
+                                                @if ($ans->hasFiles())
+                                                    @foreach ($ans->filePaths() as $p)
+                                                        <a href="{{ Storage::url($p) }}" target="_blank" class="ms-1">{{ basename($p) }}</a>{{ ! $loop->last ? ', ' : '' }}
+                                                    @endforeach
+                                                @endif
+                                                @if ($field->isFile() && $ans->answer_text)
+                                                    <div class="mt-1">
+                                                        <span class="fw-semibold text-muted">Drive link:</span>
+                                                        <a href="{{ $ans->answer_text }}" target="_blank">{{ Str::limit($ans->answer_text, 60) }}</a>
+                                                    </div>
+                                                @elseif (! $field->isFile() && $ans->answer_text)
+                                                    <span class="text-muted ms-1">{{ Str::limit($ans->answer_text, 100) }}</span>
+                                                @endif
+                                            </div>
+                                        @endif
+                                    @endforeach
+                                </div>
+                            @endif
+
+                        {{-- ── 2. Pending Review: Submitted and waiting for admin review ── --}}
+                        @elseif ($submission && ! $submission->resubmit_requested)
+                            <div class="alert alert-warning d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
                                 <div>
                                     <i class="ti ti-clock me-1"></i>
                                     Answers submitted {{ $submission->submitted_at?->format('d M Y H:i') }} — waiting for admin review.
                                 </div>
-                                <span class="badge bg-warning text-dark">Pending</span>
+                                <span class="badge bg-warning text-dark">Pending review</span>
                             </div>
-                        @endif
 
-                        @if (! $submission || $submission->resubmit_requested)
-                        @if ($submission && $submission->resubmit_requested)
-                            <div class="alert alert-warning border-start border-warning border-4 rounded-3 shadow-sm mb-3">
+                            {{-- Summary of submitted answers --}}
+                            @if ($answersByField->isNotEmpty() && $task->fields->isNotEmpty())
+                                <div class="mt-3 p-3 bg-light rounded-3 border small">
+                                    <div class="fw-semibold text-dark mb-2">Your Submitted Answers:</div>
+                                    @foreach ($task->fields as $field)
+                                        @php $ans = $answersByField->get($field->id); @endphp
+                                        @if ($ans && ($ans->hasFiles() || $ans->answer_text))
+                                            <div class="mb-2">
+                                                <span class="fw-semibold text-dark">{{ $field->label }}:</span>
+                                                @if ($ans->hasFiles())
+                                                    @foreach ($ans->filePaths() as $p)
+                                                        <a href="{{ Storage::url($p) }}" target="_blank" class="ms-1">{{ basename($p) }}</a>{{ ! $loop->last ? ', ' : '' }}
+                                                    @endforeach
+                                                @endif
+                                                @if ($field->isFile() && $ans->answer_text)
+                                                    <div class="mt-1">
+                                                        <span class="fw-semibold text-muted">Drive link:</span>
+                                                        <a href="{{ $ans->answer_text }}" target="_blank">{{ Str::limit($ans->answer_text, 60) }}</a>
+                                                    </div>
+                                                @elseif (! $field->isFile() && $ans->answer_text)
+                                                    <span class="text-muted ms-1">{{ Str::limit($ans->answer_text, 100) }}</span>
+                                                @endif
+                                            </div>
+                                        @endif
+                                    @endforeach
+                                </div>
+                            @endif
+
+                        {{-- ── 3. Rejected: Request Resubmit (Admin requests revised answers) ── --}}
+                        @elseif ($submission && $submission->resubmit_requested)
+                            <div class="alert alert-danger border-start border-danger border-4 rounded-3 shadow-sm mb-3">
                                 <div class="d-flex align-items-start gap-3">
-                                    <span class="avatar bg-warning text-dark rounded-circle me-1 mt-1 shadow-sm">
+                                    <span class="avatar bg-danger text-white rounded-circle me-1 mt-1 shadow-sm">
                                         <i class="ti ti-refresh fs-2"></i>
                                     </span>
                                     <div class="flex-grow-1">
-                                        <h4 class="alert-title fw-bold text-dark mb-1">
-                                            Task Revision Requested
-                                        </h4>
+                                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-1">
+                                            <h4 class="alert-title fw-bold text-dark mb-0">
+                                                Task Revision Requested
+                                            </h4>
+                                            <span class="badge bg-danger text-white">Rejected</span>
+                                        </div>
                                         <div class="text-muted small mb-2">
                                             The administrator reviewed your answers and requested revisions. Please check the feedback below and submit your revised answers.
                                         </div>
                                         @if ($submission->feedback)
-                                            <div class="p-3 bg-white bg-opacity-75 rounded-3 border border-warning-subtle text-dark shadow-sm">
-                                                <div class="fw-semibold text-warning d-flex align-items-center mb-1">
-                                                    <i class="ti ti-message-dots me-1"></i> Admin Feedback & Notes:
+                                            <div class="p-3 bg-white rounded-3 border border-danger-subtle text-dark shadow-sm">
+                                                <div class="fw-semibold text-danger d-flex align-items-center mb-1">
+                                                    <i class="ti ti-message-dots me-1"></i> Admin Feedback &amp; Notes:
                                                 </div>
-                                                <div class="ps-3 border-start border-3 border-warning text-dark">
+                                                <div class="ps-3 border-start border-3 border-danger text-dark">
                                                     {{ $submission->feedback }}
                                                 </div>
                                             </div>
@@ -221,6 +316,8 @@
                                 </div>
                             </div>
                         @endif
+
+                        @if (! $submission || $submission->resubmit_requested)
                         {{-- Dynamic answer form following the task fields --}}
                         <form action="{{ route('my-task.submit', $task) }}" method="POST" enctype="multipart/form-data" class="mt-2">
                             @csrf
@@ -301,19 +398,19 @@
                                                         <i class="ti ti-cloud-upload fs-1"></i>
                                                     </div>
                                                     <div class="fw-semibold text-dark mb-1">
-                                                        Tarik &amp; lepas file ke sini, atau <span class="text-primary text-decoration-underline">pilih file</span>
+                                                        Drag &amp; drop files here, or <span class="text-primary text-decoration-underline">browse</span>
                                                     </div>
                                                     <div class="text-muted small" style="font-size: 11.5px;">
-                                                        Format: <strong>{{ ! empty($field->allowedExtensions()) ? strtoupper(implode(', ', $field->allowedExtensions())) : 'Semua format file' }}</strong>
+                                                        Format: <strong>{{ ! empty($field->allowedExtensions()) ? strtoupper(implode(', ', $field->allowedExtensions())) : 'All file formats' }}</strong>
                                                         @if ($field->allowedTypesLabel())
                                                             <span class="badge bg-secondary-lt text-secondary ms-1">{{ $field->allowedTypesLabel() }}</span>
                                                         @endif
-                                                        | Maksimal <strong>{{ $field->maxFiles() }} file{{ $field->maxFiles() > 1 ? 's' : '' }}</strong>, maks. <strong>{{ $field->maxSizeMb() }} MB</strong> per file
+                                                        | Maximum <strong>{{ $field->maxFiles() }} file{{ $field->maxFiles() > 1 ? 's' : '' }}</strong>, max. <strong>{{ $field->maxSizeMb() }} MB</strong> per file
                                                     </div>
                                                     @if ($field->allow_link)
                                                         <div class="mt-2">
                                                             <span class="badge bg-info-lt text-info d-inline-flex align-items-center">
-                                                                <i class="ti ti-link me-1"></i> Mendukung Link Drive
+                                                                <i class="ti ti-link me-1"></i> Supports Drive Link
                                                             </span>
                                                         </div>
                                                     @endif
@@ -322,17 +419,17 @@
                                                 <!-- Dragover Overlay Indicator -->
                                                 <div class="dropzone-dragover-indicator d-none position-absolute top-0 start-0 w-100 h-100 rounded-3 d-flex flex-column align-items-center justify-content-center bg-primary-lt" style="pointer-events: none; z-index: 6;">
                                                     <i class="ti ti-download fs-1 text-primary mb-1 animate-bounce"></i>
-                                                    <span class="fw-bold text-primary">Lepaskan file di sini</span>
+                                                    <span class="fw-bold text-primary">Drop files here</span>
                                                 </div>
 
                                                 <!-- Selected Files State -->
                                                 <div class="dropzone-preview d-none text-start pt-1 position-relative" style="z-index: 6;">
                                                     <div class="d-flex align-items-center justify-content-between mb-2 pb-1 border-bottom">
                                                         <span class="fw-semibold small text-dark d-flex align-items-center gap-1">
-                                                            <i class="ti ti-circle-check text-success"></i> File Dipilih:
+                                                            <i class="ti ti-circle-check text-success"></i> Selected Files:
                                                         </span>
-                                                        <button type="button" class="btn btn-sm btn-ghost-danger py-0 px-2 rounded-2 dropzone-clear-btn" data-field-id="{{ $field->id }}" title="Hapus dan pilih ulang">
-                                                            <i class="ti ti-x me-1"></i> Ganti File
+                                                        <button type="button" class="btn btn-sm btn-ghost-danger py-0 px-2 rounded-2 dropzone-clear-btn" data-field-id="{{ $field->id }}" title="Remove and select again">
+                                                            <i class="ti ti-x me-1"></i> Change File
                                                         </button>
                                                     </div>
                                                     <div class="selected-files-list d-flex flex-column gap-1"></div>
@@ -373,6 +470,59 @@
                                                     <span class="form-check-label">{{ $opt }}</span>
                                                 </label>
                                             @endforeach
+                                        </div>
+                                    @elseif ($field->isCheckbox())
+                                        @php
+                                            $checkedOpts = (array) old($fieldKey, ! empty($ans->answer_text) ? explode(', ', $ans->answer_text) : []);
+                                        @endphp
+                                        <div class="d-flex flex-column gap-2 mt-2">
+                                            @foreach ($field->options ?? [] as $opt)
+                                                <label class="form-check mb-0">
+                                                    <input type="checkbox" class="form-check-input @error($fieldKey) is-invalid @enderror"
+                                                           name="fields[{{ $field->id }}][]" value="{{ $opt }}"
+                                                           {{ in_array($opt, $checkedOpts, true) ? 'checked' : '' }}>
+                                                    <span class="form-check-label">{{ $opt }}</span>
+                                                </label>
+                                            @endforeach
+                                        </div>
+                                    @elseif ($field->isDropdown())
+                                        <select name="fields[{{ $field->id }}]" class="form-select @error($fieldKey) is-invalid @enderror mt-2" {{ $field->required ? 'required' : '' }}>
+                                            <option value="">— Select an option —</option>
+                                            @foreach ($field->options ?? [] as $opt)
+                                                <option value="{{ $opt }}" {{ old($fieldKey, $ans->answer_text ?? null) === $opt ? 'selected' : '' }}>
+                                                    {{ $opt }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    @elseif ($field->isShortAnswer())
+                                        <input type="text" name="fields[{{ $field->id }}]"
+                                               class="form-control @error($fieldKey) is-invalid @enderror mt-1"
+                                               placeholder="Your answer"
+                                               value="{{ old($fieldKey, $ans->answer_text ?? '') }}"
+                                               {{ $field->required ? 'required' : '' }}>
+                                    @elseif ($field->isScale())
+                                        <div class="d-flex align-items-center gap-3 flex-wrap py-2 mt-1">
+                                            @for ($s = 1; $s <= 5; $s++)
+                                                <label class="form-check form-check-inline text-center mb-0 cursor-pointer">
+                                                    <input type="radio" class="form-check-input d-block mx-auto @error($fieldKey) is-invalid @enderror"
+                                                           name="fields[{{ $field->id }}]" value="{{ $s }}"
+                                                           {{ (string) old($fieldKey, $ans->answer_text ?? '') === (string) $s ? 'checked' : '' }}
+                                                           {{ $field->required ? 'required' : '' }}>
+                                                    <span class="form-check-label small mt-1 d-block fw-semibold">{{ $s }}</span>
+                                                </label>
+                                            @endfor
+                                        </div>
+                                    @elseif ($field->isRating())
+                                        <div class="d-flex align-items-center gap-2 py-2 mt-1">
+                                            @for ($r = 1; $r <= 5; $r++)
+                                                <label class="form-check form-check-inline mb-0 cursor-pointer">
+                                                    <input type="radio" class="form-check-input me-1 @error($fieldKey) is-invalid @enderror"
+                                                           name="fields[{{ $field->id }}]" value="{{ $r }}"
+                                                           {{ (string) old($fieldKey, $ans->answer_text ?? '') === (string) $r ? 'checked' : '' }}
+                                                           {{ $field->required ? 'required' : '' }}>
+                                                    <span class="form-check-label"><i class="ti ti-star-filled text-warning"></i> {{ $r }}</span>
+                                                </label>
+                                            @endfor
                                         </div>
                                     @else
                                         <textarea name="fields[{{ $field->id }}]" rows="3"
@@ -518,11 +668,11 @@
             var ext = (f.name || '').split('.').pop().toLowerCase();
 
             if (f.size > maxSizeBytes) {
-                errors.push('File "' + f.name + '" (' + formatBytes(f.size) + ') melebihi batas maksimal ' + maxSizeMb + ' MB.');
+                errors.push('File "' + f.name + '" (' + formatBytes(f.size) + ') exceeds the maximum size limit of ' + maxSizeMb + ' MB.');
             }
 
             if (allowedExts.length > 0 && allowedExts.indexOf(ext) === -1) {
-                errors.push('Format file "' + f.name + '" tidak diizinkan. Hanya format: ' + allowedExts.join(', ').toUpperCase());
+                errors.push('File format "' + f.name + '" is not allowed. Allowed formats: ' + allowedExts.join(', ').toUpperCase());
             }
 
             var icon = getFileIconClass(f.name);
@@ -535,7 +685,7 @@
                     '</div>' +
                 '</div>' +
                 '<span class="badge bg-success-lt text-success flex-shrink-0">' +
-                    '<i class="ti ti-check me-1"></i> Siap upload' +
+                    '<i class="ti ti-check me-1"></i> Ready to upload' +
                 '</span>' +
             '</div>';
         }
@@ -637,7 +787,7 @@
         }
     }, false);
 
-    // Click on "Ganti File" button
+    // Click on "Change File" button
     document.addEventListener('click', function (e) {
         var clearBtn = e.target.closest('.dropzone-clear-btn');
         if (clearBtn) {

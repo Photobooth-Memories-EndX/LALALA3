@@ -13,15 +13,17 @@
         'in_progress' => 'In Progress',
         'submitted'   => 'Pending review',
         'completed'   => 'Completed',
+        'rejected'    => 'Rejected',
         'overdue'     => 'Overdue',
-        'resubmit'    => 'Resubmit Requested',
+        'resubmit'    => 'Rejected',
     ];
     $statusBadges = [
         'in_progress' => 'bg-primary-lt text-primary',
-        'submitted'   => 'bg-info-lt text-info',
+        'submitted'   => 'bg-warning-lt text-warning',
         'completed'   => 'bg-success-lt text-success',
+        'rejected'    => 'bg-danger-lt text-danger',
         'overdue'     => 'bg-danger-lt text-danger',
-        'resubmit'    => 'bg-warning-lt text-warning fw-bold',
+        'resubmit'    => 'bg-danger-lt text-danger',
     ];
     // "Not started" is not a filter tab — display it as In Progress so the
     // status badge always matches one of the tabs.
@@ -37,7 +39,7 @@
         'playlist'         => 'Playlist',
         'content'          => 'Content',
         'offline_training' => 'Offline Training',
-        'standalone'       => 'Global Task',
+        'standalone'       => 'Others',
         'assessment'       => 'Assessment',
     ];
     // Drill-down navigation: parent list <-> one parent's tasks.
@@ -45,7 +47,6 @@
     $baseParams = array_filter([
         'learning_tab'   => 'my-task',
         'my_task_filter' => $filter === 'all' ? null : $filter,
-        'my_task_type'   => ($filterType ?? 'all') === 'all' ? null : $filterType,
         'my_task_status' => ($filterStatus ?? 'all') === 'all' ? null : $filterStatus,
         'my_task_year'   => ($filterYear ?? 'all') === 'all' ? null : $filterYear,
         'my_task_month'  => ($filterMonth ?? 'all') === 'all' ? null : $filterMonth,
@@ -68,7 +69,6 @@
     $tabUrl = fn ($key) => route('user.learning.dashboard', array_filter([
         'learning_tab'   => 'my-task',
         'my_task_filter' => $key === 'all' ? null : $key,
-        'my_task_type'   => ($filterType ?? 'all') === 'all' ? null : $filterType,
         'my_task_status' => ($filterStatus ?? 'all') === 'all' ? null : $filterStatus,
         'my_task_year'   => ($filterYear ?? 'all') === 'all' ? null : $filterYear,
         'my_task_month'  => ($filterMonth ?? 'all') === 'all' ? null : $filterMonth,
@@ -164,7 +164,6 @@
         <form method="GET" action="{{ route('user.learning.dashboard') }}" id="myTaskFilterForm" class="d-flex align-items-center flex-wrap gap-2 w-100 my-task-toolbar">
             <input type="hidden" name="learning_tab" value="my-task">
             <input type="hidden" name="my_task_filter" id="myTaskFilterInput" value="{{ $filter }}">
-            <input type="hidden" name="my_task_type" id="myTaskTypeInput" value="{{ $filterType }}">
             <input type="hidden" name="my_task_status" id="myTaskStatusInput" value="{{ $filterStatus }}">
             <input type="hidden" name="my_task_year" id="myTaskYearInput" value="{{ $filterYear }}">
             <input type="hidden" name="my_task_month" id="myTaskMonthInput" value="{{ $filterMonth }}">
@@ -172,26 +171,7 @@
                 <input type="hidden" name="my_task_parent" value="{{ $activeGroup['key'] }}">
             @endif
 
-            {{-- 1. Dropdown: Type --}}
-            <div class="dropdown">
-                <button type="button"
-                        class="btn my-task-dropdown-btn dropdown-toggle {{ $filterType !== 'all' ? 'active' : '' }}"
-                        data-bs-toggle="dropdown"
-                        data-bs-display="static"
-                        aria-expanded="false">
-                    Type: <span class="fw-semibold">{{ $typeOptions[$filterType] ?? 'All' }}</span>
-                </button>
-                <div class="dropdown-menu shadow-sm">
-                    @foreach ($typeOptions as $val => $lbl)
-                        <a href="#" class="dropdown-item my-task-dropdown-item {{ $filterType === $val ? 'active' : '' }}"
-                           data-param="my_task_type" data-value="{{ $val }}">
-                            {{ $lbl }}
-                        </a>
-                    @endforeach
-                </div>
-            </div>
-
-            {{-- 2. Dropdown: Status --}}
+            {{-- 1. Dropdown: Status --}}
             <div class="dropdown">
                 <button type="button"
                         class="btn my-task-dropdown-btn dropdown-toggle {{ $filterStatus !== 'all' ? 'active' : '' }}"
@@ -257,6 +237,9 @@
             </div>
 
             {{-- 5. Search input --}}
+            @php
+                $isAssessmentTab = in_array($filter, ['asesment', 'assessment'], true) || ($filterType ?? '') === 'assessment';
+            @endphp
             <div class="position-relative flex-grow-1 my-task-search-wrapper" style="min-width: 220px;">
                 <span class="position-absolute top-50 start-0 translate-middle-y ps-3 text-muted pointer-events-none" style="z-index: 2;">
                     <i class="ti ti-search" style="font-size: 15px;"></i>
@@ -265,7 +248,7 @@
                        name="my_task_q"
                        id="myTaskSearchInput"
                        class="form-control my-task-search-input"
-                       placeholder="Search tasks..."
+                       placeholder="{{ $isAssessmentTab ? 'Search assessment...' : 'Search tasks...' }}"
                        value="{{ $search ?? '' }}"
                        autocomplete="off">
                 @if (!empty($search))
@@ -278,7 +261,7 @@
             {{-- 6. Blue Search Button --}}
             <button type="submit"
                     class="btn btn-primary my-task-btn-square my-task-btn-search"
-                    title="Search tasks">
+                    title="{{ $isAssessmentTab ? 'Search assessment' : 'Search tasks' }}">
                 <i class="ti ti-search text-white fs-3"></i>
             </button>
 
@@ -292,7 +275,7 @@
 
         {{-- Active Filters indicator (if any filter or search active) --}}
         @php
-            $hasActiveFilters = !empty($search) || $filterType !== 'all' || $filterStatus !== 'all' || $filterYear !== 'all' || $filterMonth !== 'all';
+            $hasActiveFilters = !empty($search) || $filterStatus !== 'all' || $filterYear !== 'all' || $filterMonth !== 'all';
         @endphp
         @if ($hasActiveFilters)
             <div class="d-flex align-items-center flex-wrap gap-2 mt-2.5 pt-2.5 border-top">
@@ -302,11 +285,6 @@
                         <i class="ti ti-search text-muted"></i>
                         <span>"{{ $search }}"</span>
                         <a href="{{ $tabUrl($filter) }}" class="text-muted ms-1 text-decoration-none" title="Remove search filter"><i class="ti ti-x"></i></a>
-                    </span>
-                @endif
-                @if ($filterType !== 'all')
-                    <span class="badge bg-light text-dark border px-2.5 py-1 rounded-pill d-inline-flex align-items-center gap-1 shadow-none" style="font-size: 11.5px;">
-                        <span>Type: {{ $typeOptions[$filterType] ?? $filterType }}</span>
                     </span>
                 @endif
                 @if ($filterStatus !== 'all')
@@ -501,11 +479,44 @@
              data-bs-backdrop="static">
             <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
                 <div class="modal-content rounded-4 border-0 shadow-lg">
-                    <div class="modal-header bg-white py-2.5 px-4 border-bottom-0 d-flex align-items-center justify-content-end">
-                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <div class="modal-header bg-light py-2.5 px-4 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+                        <div class="d-flex align-items-center gap-2 min-w-0 me-auto">
+                            <span class="badge bg-purple-lt text-purple p-1.5 rounded-2">
+                                <i class="ti ti-clipboard-check fs-2"></i>
+                            </span>
+                            <div class="min-w-0">
+                                <h5 class="modal-title fw-bold text-dark mb-0 text-truncate" style="max-width: 380px;">{{ $task->title }}</h5>
+                                <div class="text-muted small" style="font-size: 11px;">Assessment View</div>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 flex-shrink-0 ms-auto">
+                            {{-- Zoom in / Zoom out toolbar --}}
+                            <div class="btn-group btn-group-sm shadow-none border rounded-2 bg-white" role="group" aria-label="Zoom controls">
+                                <button type="button" class="btn btn-sm btn-ghost-secondary px-2 py-1 btn-modal-zoom-out" data-target="taskModalZoom-{{ $task->id }}" title="Zoom Out (-)">
+                                    <i class="ti ti-zoom-out" style="font-size: 13px;"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-ghost-secondary px-2 py-1 fw-bold text-dark btn-modal-zoom-reset" data-target="taskModalZoom-{{ $task->id }}" title="Reset Zoom (100%)" style="min-width: 44px; font-size: 11px;">
+                                    <span id="zoomLevel-{{ $task->id }}">100%</span>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-ghost-secondary px-2 py-1 btn-modal-zoom-in" data-target="taskModalZoom-{{ $task->id }}" title="Zoom In (+)">
+                                    <i class="ti ti-zoom-in" style="font-size: 13px;"></i>
+                                </button>
+                            </div>
+
+                            {{-- Clean Close Button (Tombol Silang) --}}
+                            <button type="button"
+                                    class="btn btn-sm btn-icon btn-ghost-secondary rounded-circle ms-1"
+                                    data-bs-dismiss="modal"
+                                    aria-label="Close"
+                                    title="Close"
+                                    style="width: 32px; height: 32px; border: none; padding: 0; display: inline-flex; align-items: center; justify-content: center;">
+                                <i class="ti ti-x text-muted" style="font-size: 20px; font-weight: bold; line-height: 1;"></i>
+                            </button>
+                        </div>
                     </div>
-                    <div class="modal-body p-4 pt-1 bg-light-subtle">
-                        <div class="card border-0 shadow-sm rounded-4 mb-0">
+                    <div class="modal-body p-4 bg-light-subtle overflow-auto">
+                        <div id="taskModalZoom-{{ $task->id }}" class="task-modal-zoom-target" style="transform-origin: top center; transition: transform 0.15s ease-out; width: 100%;">
+                            <div class="card border-0 shadow-sm rounded-4 mb-0">
                             <div class="card-body p-4">
                                 {{-- Top Badges Row --}}
                                 <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
@@ -629,6 +640,7 @@
                     </div>
                 </div>
             </div>
+            </div>
         </div>
     @else
         {{-- Task Pop Up Modal --}}
@@ -640,11 +652,45 @@
              data-bs-backdrop="static">
             <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
                 <div class="modal-content rounded-4 border-0 shadow-lg">
-                    <div class="modal-header bg-white py-2.5 px-4 border-bottom-0 d-flex align-items-center justify-content-end">
-                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <div class="modal-header bg-light py-2.5 px-4 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+                        <div class="d-flex align-items-center gap-2 min-w-0 me-auto">
+                            <span class="badge bg-primary-lt text-primary p-1.5 rounded-2">
+                                <i class="ti ti-file-text fs-2"></i>
+                            </span>
+                            <div class="min-w-0">
+                                <h5 class="modal-title fw-bold text-dark mb-0 text-truncate" style="max-width: 380px;">{{ $task->title }}</h5>
+                                <div class="text-muted small" style="font-size: 11px;">{{ $task->typeLabel() }} View</div>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 flex-shrink-0 ms-auto">
+                            {{-- Zoom in / Zoom out toolbar --}}
+                            <div class="btn-group btn-group-sm shadow-none border rounded-2 bg-white" role="group" aria-label="Zoom controls">
+                                <button type="button" class="btn btn-sm btn-ghost-secondary px-2 py-1 btn-modal-zoom-out" data-target="taskModalZoom-{{ $task->id }}" title="Zoom Out (-)">
+                                    <i class="ti ti-zoom-out" style="font-size: 13px;"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-ghost-secondary px-2 py-1 fw-bold text-dark btn-modal-zoom-reset" data-target="taskModalZoom-{{ $task->id }}" title="Reset Zoom (100%)" style="min-width: 44px; font-size: 11px;">
+                                    <span id="zoomLevel-{{ $task->id }}">100%</span>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-ghost-secondary px-2 py-1 btn-modal-zoom-in" data-target="taskModalZoom-{{ $task->id }}" title="Zoom In (+)">
+                                    <i class="ti ti-zoom-in" style="font-size: 13px;"></i>
+                                </button>
+                            </div>
+
+                            {{-- Clean Close Button (Tombol Silang) --}}
+                            <button type="button"
+                                    class="btn btn-sm btn-icon btn-ghost-secondary rounded-circle ms-1"
+                                    data-bs-dismiss="modal"
+                                    aria-label="Close"
+                                    title="Close"
+                                    style="width: 32px; height: 32px; border: none; padding: 0; display: inline-flex; align-items: center; justify-content: center;">
+                                <i class="ti ti-x text-muted" style="font-size: 20px; font-weight: bold; line-height: 1;"></i>
+                            </button>
+                        </div>
                     </div>
-                    <div class="modal-body p-4 pt-1 bg-light-subtle">
-                        @include('user.learning.dashboard-partials.my-task-card', ['task' => $task, 'inModal' => true])
+                    <div class="modal-body p-4 bg-light-subtle overflow-auto">
+                        <div id="taskModalZoom-{{ $task->id }}" class="task-modal-zoom-target" style="transform-origin: top center; transition: transform 0.15s ease-out; width: 100%;">
+                            @include('user.learning.dashboard-partials.my-task-card', ['task' => $task, 'inModal' => true])
+                        </div>
                     </div>
                 </div>
             </div>
@@ -656,6 +702,41 @@
 
 <script>
 (function () {
+    // Delegated click handler for Task Modal Zoom In / Zoom Out / Reset
+    var modalZoomLevels = {};
+    document.addEventListener('click', function (e) {
+        var zoomInBtn = e.target.closest('.btn-modal-zoom-in');
+        var zoomOutBtn = e.target.closest('.btn-modal-zoom-out');
+        var zoomResetBtn = e.target.closest('.btn-modal-zoom-reset');
+
+        var btn = zoomInBtn || zoomOutBtn || zoomResetBtn;
+        if (!btn) return;
+        e.preventDefault();
+
+        var targetId = btn.getAttribute('data-target');
+        if (!targetId) return;
+
+        var targetEl = document.getElementById(targetId);
+        if (!targetEl) return;
+
+        var current = modalZoomLevels[targetId] || 1.0;
+        if (zoomInBtn) {
+            current = Math.min(2.5, Math.round((current + 0.15) * 100) / 100);
+        } else if (zoomOutBtn) {
+            current = Math.max(0.5, Math.round((current - 0.15) * 100) / 100);
+        } else if (zoomResetBtn) {
+            current = 1.0;
+        }
+
+        modalZoomLevels[targetId] = current;
+        targetEl.style.transform = 'scale(' + current + ')';
+
+        var levelBadge = document.querySelector('#' + targetId.replace('taskModalZoom-', 'zoomLevel-'));
+        if (levelBadge) {
+            levelBadge.textContent = Math.round(current * 100) + '%';
+        }
+    });
+
     // 1. If validation error occurred, reopen the modal for the active task
     @if ($errors->any() && old('active_task_id'))
         var errModalEl = document.getElementById('taskModal-{{ old('active_task_id') }}');

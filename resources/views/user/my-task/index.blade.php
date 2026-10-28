@@ -39,32 +39,32 @@
                 <div class="col-6 col-md-3">
                     <div class="card"><div class="card-body text-center">
                         <div class="h1 mb-0">{{ $summary['not_started'] }}</div>
-                        <div class="text-muted">Belum dikerjakan</div>
+                        <div class="text-muted">Not Started</div>
                     </div></div>
                 </div>
                 <div class="col-6 col-md-3">
                     <div class="card"><div class="card-body text-center">
                         <div class="h1 mb-0">{{ $summary['submitted'] }}</div>
-                        <div class="text-muted">Menunggu koreksi</div>
+                        <div class="text-muted">Under Review</div>
                     </div></div>
                 </div>
                 <div class="col-6 col-md-3">
                     <div class="card"><div class="card-body text-center">
                         <div class="h1 mb-0">{{ $summary['completed'] }}</div>
-                        <div class="text-muted">Selesai</div>
+                        <div class="text-muted">Completed</div>
                     </div></div>
                 </div>
                 <div class="col-6 col-md-3">
                     <div class="card"><div class="card-body text-center">
                         <div class="h1 mb-0 text-danger">{{ $summary['overdue'] }}</div>
-                        <div class="text-muted">Terlambat</div>
+                        <div class="text-muted">Overdue</div>
                     </div></div>
                 </div>
             </div>
 
             {{-- Filter --}}
             <div class="btn-list mb-3">
-                @foreach (['all' => 'Semua', 'not_started' => 'Belum dikerjakan', 'submitted' => 'Menunggu koreksi', 'completed' => 'Selesai', 'overdue' => 'Terlambat'] as $key => $label)
+                @foreach (['all' => 'All', 'not_started' => 'Not Started', 'submitted' => 'Under Review', 'completed' => 'Completed', 'overdue' => 'Overdue'] as $key => $label)
                     <a href="{{ route('my-task.index', ['status' => $key]) }}"
                         class="btn {{ $filter === $key ? 'btn-primary' : 'btn-outline-secondary' }} btn-sm">
                         {{ $label }}
@@ -72,18 +72,18 @@
                 @endforeach
             </div>
 
-            {{-- Daftar task --}}
+            {{-- Task List --}}
             <div class="row row-cards">
                 @forelse ($tasks as $task)
                     @php
                         $status = $task->userStatusFor(auth()->user());
                         $submission = $task->submissionFor(auth()->user());
                         $badges = [
-                            'not_started' => '<span class="badge bg-secondary">Belum dikerjakan</span>',
-                            'submitted'   => '<span class="badge bg-info">Menunggu koreksi</span>',
-                            'completed'   => '<span class="badge bg-success">Selesai</span>',
-                            'overdue'     => '<span class="badge bg-danger">Terlambat</span>',
-                            'resubmit'    => '<span class="badge bg-warning text-dark">Perlu Revisi</span>',
+                            'not_started' => '<span class="badge bg-secondary">Not Started</span>',
+                            'submitted'   => '<span class="badge bg-info">Under Review</span>',
+                            'completed'   => '<span class="badge bg-success">Completed</span>',
+                            'overdue'     => '<span class="badge bg-danger">Overdue</span>',
+                            'resubmit'    => '<span class="badge bg-warning text-dark">Revision Needed</span>',
                         ];
                     @endphp
                     <div class="col-12">
@@ -104,7 +104,7 @@
                                         @if ($task->attachment)
                                             <a href="{{ Storage::url($task->attachment) }}" target="_blank"
                                                 class="btn btn-sm btn-outline-secondary">
-                                                <i class="ti ti-download"></i> Unduh lampiran
+                                                <i class="ti ti-download"></i> Download attachment
                                             </a>
                                         @endif
                                     </div>
@@ -118,40 +118,40 @@
                                         <div class="d-flex flex-wrap gap-2 align-items-center">
                                             @if ($tp)
                                                 <a href="{{ route('user.playlist.show', $tp->slug) }}" class="btn btn-primary btn-sm">
-                                                    <i class="ti ti-book-2 me-1"></i> Buka Course: {{ $tp->title }}
+                                                    <i class="ti ti-book-2 me-1"></i> Open Course: {{ $tp->title }}
                                                 </a>
                                             @elseif ($task->external_url)
                                                 <a href="{{ $task->external_url }}" target="_blank" class="btn btn-primary btn-sm">
-                                                    <i class="ti ti-external-link me-1"></i> Buka External Course
+                                                    <i class="ti ti-external-link me-1"></i> Open External Course
                                                 </a>
                                             @endif
-                                            <span class="text-muted small">Selesaikan course (100% progress) — task ini akan selesai secara otomatis.</span>
+                                            <span class="text-muted small">Complete the course (100% progress) — this task will be completed automatically.</span>
                                         </div>
                                     @else
                                         <form action="{{ route('my-task.submit', $task) }}" method="POST"
                                             enctype="multipart/form-data" class="row g-2 align-items-end">
                                             @csrf
                                             <div class="col-md-5">
-                                                <label class="form-label">Jawaban (opsional)</label>
-                                                <textarea name="answer" rows="2" class="form-control" placeholder="Tulis jawaban / catatan...">{{ old('answer', $submission?->answer) }}</textarea>
+                                                <label class="form-label">Answer (optional)</label>
+                                                <textarea name="answer" rows="2" class="form-control" placeholder="Write answer / notes...">{{ old('answer', $submission?->answer) }}</textarea>
                                             </div>
                                             <div class="col-md-5">
-                                                <label class="form-label">Upload file jawaban</label>
+                                                <label class="form-label">Upload answer file</label>
                                                 <input type="file" name="file" class="form-control" required>
                                                 @if ($submission?->file_path)
-                                                    <div class="form-hint">Sudah ada file terkumpul — upload lagi untuk mengganti.</div>
+                                                    <div class="form-hint">A file has already been submitted — upload again to replace it.</div>
                                                 @endif
                                             </div>
                                             <div class="col-md-2">
                                                 <button type="submit" class="btn btn-primary w-100">
-                                                    <i class="ti ti-upload"></i> Kumpulkan
+                                                    <i class="ti ti-upload"></i> Submit
                                                 </button>
                                             </div>
                                         </form>
                                     @endif
                                 @else
                                     <div class="alert alert-success mt-3 mb-0">
-                                        <i class="ti ti-check"></i> {{ $task->isCourseAssignment() ? 'Course telah selesai (100%).' : 'Task selesai dikoreksi admin.' }}
+                                        <i class="ti ti-check"></i> {{ $task->isCourseAssignment() ? 'Course completed (100%).' : 'Task reviewed by admin.' }}
                                     </div>
                                 @endif
                             </div>
@@ -161,9 +161,9 @@
                     <div class="col-12">
                         <div class="alert alert-info">
                             @if ($filter === 'all')
-                                Belum ada task. Buka course yang kamu ikuti dulu — task akan muncul di sini setelah kamu mengklik course tersebut.
+                                No tasks available yet. Open the courses you are enrolled in first — tasks will appear here after you access the course.
                             @else
-                                Tidak ada task pada filter ini.
+                                No tasks found for this filter.
                             @endif
                         </div>
                     </div>

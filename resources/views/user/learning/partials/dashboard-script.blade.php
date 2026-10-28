@@ -46,16 +46,16 @@
         function recordSkeletonHtml(mode) {
             mode = mode || 'online';
 
-            var switchInsideHeaderHtml = '<div class="learning-filter-heading fast-filter-header">' +
-                '<div class="fast-filter-header-copy">' +
-                    '<h3 class="card-title fast-filter-title">Quick Filter</h3>' +
-                '</div>' +
-                '<div class="learning-mode-switch record-mode-switch" role="group" aria-label="Learning Record mode">' +
-                    '<button type="button" class="btn learning-mode-btn record-mode-btn ' + (mode === 'online' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="online" title="KP OWL" aria-label="KP OWL"><i class="ti ti-device-laptop"></i><span>KP OWL</span></button>' +
-                    '<button type="button" class="btn learning-mode-btn record-mode-btn ' + (mode === 'offline' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="offline" title="Non KP OWL" aria-label="Non KP OWL"><i class="ti ti-certificate"></i><span>Non KP OWL</span></button>' +
-                    '<button type="button" class="btn learning-mode-btn record-mode-btn ' + (mode === 'all' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="all" title="All Record" aria-label="All Record"><i class="ti ti-stack-2"></i><span>All Record</span></button>' +
-                '</div>' +
-            '</div>';
+            var switchInsideHeaderHtml = '<div class="mb-3">' +
+                '<h2 class="fw-bold mb-1 my-task-filter-title">Learning Record</h2>' +
+                '<p class="text-muted small mb-0 my-task-filter-subtitle">Track your completed learning history across KP OWL and Non KP OWL activities.</p>' +
+            '</div>' +
+            '<div class="d-flex align-items-center flex-wrap gap-2 mb-3 my-task-pills-row">' +
+                '<button type="button" class="my-task-category-pill record-mode-btn ' + (mode === 'online' ? 'active' : '') + '" data-mode="online">KP OWL</button>' +
+                '<button type="button" class="my-task-category-pill record-mode-btn ' + (mode === 'offline' ? 'active' : '') + '" data-mode="offline">Non KP OWL</button>' +
+                '<button type="button" class="my-task-category-pill record-mode-btn ' + (mode === 'all' ? 'active' : '') + '" data-mode="all">All Record</button>' +
+            '</div>' +
+            '<hr class="my-3 my-task-divider">';
 
             var tableRows = '';
             for (var i = 0; i < 5; i++) {
@@ -75,18 +75,20 @@
             }
 
             return '<div class="learning-record-shell">' +
-                '<div class="card border-0 shadow-sm rounded-4 mb-4 learning-record-card">' +
-                    '<div class="card-body p-4 border-bottom placeholder-glow">' +
+                '<div class="card border-0 shadow-sm rounded-4 mb-3 my-task-filter-card">' +
+                    '<div class="card-body p-3 p-md-4 placeholder-glow">' +
                         switchInsideHeaderHtml +
-                        '<div class="d-flex align-items-center flex-wrap gap-2 mt-3">' +
-                            '<span class="placeholder rounded-pill" style="width:110px;height:38px;"></span>' +
-                            '<span class="placeholder rounded-pill" style="width:140px;height:38px;"></span>' +
-                            '<span class="placeholder rounded-pill" style="width:90px;height:38px;"></span>' +
-                            '<span class="placeholder flex-grow-1 rounded-3" style="min-width:200px;height:38px;"></span>' +
-                            '<span class="placeholder rounded-3" style="width:38px;height:38px;"></span>' +
-                            '<span class="placeholder rounded-3" style="width:38px;height:38px;"></span>' +
+                        '<div class="d-flex align-items-center flex-wrap gap-2 w-100 my-task-toolbar">' +
+                            '<span class="placeholder rounded-2" style="width:110px;height:38px;"></span>' +
+                            '<span class="placeholder rounded-2" style="width:140px;height:38px;"></span>' +
+                            '<span class="placeholder rounded-2" style="width:90px;height:38px;"></span>' +
+                            '<span class="placeholder flex-grow-1 rounded-2" style="min-width:180px;height:38px;"></span>' +
+                            '<span class="placeholder rounded-2" style="width:38px;height:38px;"></span>' +
+                            '<span class="placeholder rounded-2" style="width:38px;height:38px;"></span>' +
                         '</div>' +
                     '</div>' +
+                '</div>' +
+                '<div class="card border-0 shadow-sm rounded-4 mb-4 learning-record-card">' +
                     '<div class="card-body p-0">' +
                         '<div class="table-responsive learning-record-scroll">' +
                             '<table class="table table-vcenter card-table mb-0 learning-record-table placeholder-glow">' +

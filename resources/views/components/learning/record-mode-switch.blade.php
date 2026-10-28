@@ -11,9 +11,9 @@
 @endphp
 
 {{-- Secondary navigation Learning Record — perpindahan mode via AJAX (dashboard-script.blade.php). --}}
-<div class="learning-mode-switch record-mode-switch" role="group" aria-label="Learning Record mode">
+<div class="d-flex align-items-center flex-wrap gap-2 my-task-pills-row" role="group" aria-label="Learning Record mode">
     <button type="button"
-            class="btn learning-mode-btn record-mode-btn {{ $currentMode === 'online' ? 'btn-primary active' : 'btn-outline-primary' }}"
+            class="my-task-category-pill record-mode-btn {{ $currentMode === 'online' ? 'active' : '' }}"
             data-mode="online"
             title="KP OWL"
             aria-label="KP OWL"
@@ -22,7 +22,7 @@
         <span>KP OWL</span>
     </button>
     <button type="button"
-            class="btn learning-mode-btn record-mode-btn {{ $currentMode === 'offline' ? 'btn-primary active' : 'btn-outline-primary' }}"
+            class="my-task-category-pill record-mode-btn {{ $currentMode === 'offline' ? 'active' : '' }}"
             data-mode="offline"
             title="Non KP OWL"
             aria-label="Non KP OWL"
@@ -31,7 +31,7 @@
         <span>Non KP OWL</span>
     </button>
     <button type="button"
-            class="btn learning-mode-btn record-mode-btn {{ $currentMode === 'all' ? 'btn-primary active' : 'btn-outline-primary' }}"
+            class="my-task-category-pill record-mode-btn {{ $currentMode === 'all' ? 'active' : '' }}"
             data-mode="all"
             title="All Record"
             aria-label="All Record"

@@ -533,12 +533,13 @@ body.dark-mode .course-preview-playlist-link:hover,
 }
 </style>
 
-        <div class="card border-0 shadow-sm rounded-4 learning-record-card">
-            <div class="card-body p-4 border-bottom">
-                <x-learning.record-filter :filter-options="$filterOptions" />
-            </div>
+<div class="card border-0 shadow-sm rounded-4 mb-3 my-task-filter-card learning-record-filter-card">
+    <div class="card-body p-3 p-md-4">
+        <x-learning.record-filter :filter-options="$filterOptions" />
     </div>
+</div>
 
+<div class="card border-0 shadow-sm rounded-4 learning-record-card">
     <div class="card-body p-0">
 
         <div class="table-responsive learning-record-scroll">
