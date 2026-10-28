@@ -26,9 +26,19 @@
                                 </span>
                             @endif
                         </div>
-                        <span class="badge {{ $statusBadges[$displayStatus($status)] }} px-2.5 py-1 fs-6">
-                            {{ $statusLabels[$displayStatus($status)] }}
-                        </span>
+                        @if ($submission && $submission->status === 'draft')
+                            <span class="badge bg-warning-lt text-warning px-2.5 py-1 fs-6">
+                                <i class="ti ti-file-pencil me-1"></i>Draft
+                            </span>
+                        @elseif ($submission && $submission->resubmit_requested)
+                            <span class="badge bg-danger text-white px-2.5 py-1 fs-6">
+                                <i class="ti ti-refresh me-1"></i>Resubmit
+                            </span>
+                        @else
+                            <span class="badge {{ $statusBadges[$displayStatus($status)] }} px-2.5 py-1 fs-6">
+                                {{ $statusLabels[$displayStatus($status)] }}
+                            </span>
+                        @endif
                     </div>
 
                     {{-- Title --}}
@@ -91,62 +101,7 @@
                         </div>
                     @endif
 
-                    @if ($status === 'completed')
-                        <div class="alert alert-success mb-0">
-                            <i class="ti ti-check me-1"></i>
-                            @if ($task->isCourseAssignment() && $task->link_type === 'lms')
-                                Course completed.
-                            @else
-                                Reviewed by admin.
-                            @endif
-                            @if ($submission && !is_null($submission->score))
-                                <span class="badge bg-success ms-2">Score: {{ $submission->score }}</span>
-                            @endif
-                        </div>
-                        {{-- Summary of submitted answers --}}
-                        @if ($answersByField->isNotEmpty() && $task->fields->isNotEmpty())
-                            <div class="mt-2 small">
-                                @foreach ($task->fields as $field)
-                                    @php $ans = $answersByField->get($field->id); @endphp
-                                    @if ($ans && ($ans->hasFiles() || $ans->answer_text))
-                                        <div class="mb-1">
-                                            <span class="fw-semibold">{{ $field->label }}:</span>
-                                            @if ($ans->hasFiles())
-                                                @foreach ($ans->filePaths() as $p)
-                                                    <a href="{{ Storage::url($p) }}" target="_blank">{{ basename($p) }}</a>{{ ! $loop->last ? ', ' : '' }}
-                                                @endforeach
-                                            @endif
-                                            @if ($field->isFile() && $ans->answer_text)
-                                                <div class="mt-1">
-                                                    <span class="fw-semibold">Drive link:</span>
-                                                    <a href="{{ $ans->answer_text }}" target="_blank">{{ Str::limit($ans->answer_text, 60) }}</a>
-                                                </div>
-                                            @elseif (! $field->isFile() && $ans->answer_text)
-                                                <span class="text-muted">{{ Str::limit($ans->answer_text, 100) }}</span>
-                                            @endif
-                                        </div>
-                                    @endif
-                                @endforeach
-                            </div>
-                        @elseif ($submission && $submission->file_path)
-                            {{-- Legacy submission (single file, before the question builder): show the uploaded file --}}
-                            <div class="mt-2 small">
-                                <span class="fw-semibold">Your submitted file:</span>
-                                <a href="{{ Storage::url($submission->file_path) }}" target="_blank">Download answer</a>
-                                @if ($submission->submitted_at)
-                                    <span class="text-muted">— submitted {{ $submission->submitted_at->format('d M Y H:i') }}</span>
-                                @endif
-                            </div>
-                        @elseif ($submission && ! $task->isCourseAssignment())
-                            <div class="mt-2 small text-muted">No answer file recorded for this submission.</div>
-                        @endif
-                        @if ($submission && $submission->feedback)
-                            <div class="alert alert-info mt-2 mb-0">
-                                <i class="ti ti-message-circle me-1"></i>
-                                <strong>Admin feedback:</strong><br>{{ $submission->feedback }}
-                            </div>
-                        @endif
-                          @elseif ($task->isCourseAssignment())
+                    @if ($task->isCourseAssignment())
                         <div class="mb-2">
                             <h5 class="fw-semibold text-dark mb-3 d-flex align-items-center gap-1">
                                 <i class="ti ti-book-2 text-primary"></i> Course Assignment
@@ -182,9 +137,46 @@
                                 @endif
                             @endif
                         </div>
-                    @else
-                        {{-- ── 1. Rejected: Completed as Rejected (Final, closed without resubmission) ── --}}
-                        @if ($submission && $submission->status === 'rejected' && ! $submission->resubmit_requested)
+                    @elseif ($submission && ! $submission->resubmit_requested && $submission->status !== 'draft')
+                        {{-- ══════════════════════════════════════════════════════════════════════════ --}}
+                        {{-- VIEW SUBMISSION (Submitted by learner: Completed, Pending, or Rejected) --}}
+                        {{-- ══════════════════════════════════════════════════════════════════════════ --}}
+                        @if ($status === 'completed' || $submission->status === 'completed')
+                            <div class="alert alert-success border-start border-success border-4 rounded-3 shadow-sm mb-3">
+                                <div class="d-flex align-items-start gap-3">
+                                    <span class="avatar bg-success text-white rounded-circle me-1 mt-1 shadow-sm">
+                                        <i class="ti ti-check fs-2"></i>
+                                    </span>
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-1">
+                                            <h4 class="alert-title fw-bold text-dark mb-0">Reviewed by admin</h4>
+                                            <span class="badge bg-success text-white">Completed</span>
+                                        </div>
+                                        <div class="text-muted small mb-2">
+                                            Your answers have been reviewed and approved by the administrator.
+                                            @if ($submission->submitted_at)
+                                                &middot; Submitted {{ $submission->submitted_at->format('d M Y H:i') }}
+                                            @endif
+                                        </div>
+                                        @if (!is_null($submission->score))
+                                            <div class="mb-2">
+                                                <span class="badge bg-success-lt text-success fw-bold fs-6">Score: {{ $submission->score }}</span>
+                                            </div>
+                                        @endif
+                                        @if ($submission->feedback)
+                                            <div class="p-3 bg-white rounded-3 border border-success-subtle text-dark shadow-sm mt-2">
+                                                <div class="fw-semibold text-success d-flex align-items-center mb-1">
+                                                    <i class="ti ti-message-dots me-1"></i> Admin Feedback:
+                                                </div>
+                                                <div class="ps-3 border-start border-3 border-success text-dark">
+                                                    {{ $submission->feedback }}
+                                                </div>
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        @elseif ($submission->status === 'rejected')
                             <div class="alert alert-danger border-start border-danger border-4 rounded-3 shadow-sm mb-3">
                                 <div class="d-flex align-items-start gap-3">
                                     <span class="avatar bg-danger text-white rounded-circle me-1 mt-1 shadow-sm">
@@ -199,6 +191,9 @@
                                         </div>
                                         <div class="text-muted small mb-2">
                                             The administrator reviewed your answers and marked this task as completed as rejected. This task is now closed.
+                                            @if ($submission->submitted_at)
+                                                &middot; Submitted {{ $submission->submitted_at->format('d M Y H:i') }}
+                                            @endif
                                         </div>
                                         @if (!is_null($submission->score))
                                             <div class="mb-2">
@@ -218,75 +213,193 @@
                                     </div>
                                 </div>
                             </div>
-
-                            {{-- Summary of submitted answers --}}
-                            @if ($answersByField->isNotEmpty() && $task->fields->isNotEmpty())
-                                <div class="mt-3 p-3 bg-light rounded-3 border small">
-                                    <div class="fw-semibold text-dark mb-2">Your Submitted Answers:</div>
-                                    @foreach ($task->fields as $field)
-                                        @php $ans = $answersByField->get($field->id); @endphp
-                                        @if ($ans && ($ans->hasFiles() || $ans->answer_text))
-                                            <div class="mb-2">
-                                                <span class="fw-semibold text-dark">{{ $field->label }}:</span>
-                                                @if ($ans->hasFiles())
-                                                    @foreach ($ans->filePaths() as $p)
-                                                        <a href="{{ Storage::url($p) }}" target="_blank" class="ms-1">{{ basename($p) }}</a>{{ ! $loop->last ? ', ' : '' }}
-                                                    @endforeach
-                                                @endif
-                                                @if ($field->isFile() && $ans->answer_text)
-                                                    <div class="mt-1">
-                                                        <span class="fw-semibold text-muted">Drive link:</span>
-                                                        <a href="{{ $ans->answer_text }}" target="_blank">{{ Str::limit($ans->answer_text, 60) }}</a>
-                                                    </div>
-                                                @elseif (! $field->isFile() && $ans->answer_text)
-                                                    <span class="text-muted ms-1">{{ Str::limit($ans->answer_text, 100) }}</span>
-                                                @endif
-                                            </div>
-                                        @endif
-                                    @endforeach
+                        @else
+                            {{-- Pending Review --}}
+                            <div class="alert alert-warning border-start border-warning border-4 rounded-3 shadow-sm mb-3">
+                                <div class="d-flex align-items-start gap-3">
+                                    <span class="avatar bg-warning text-dark rounded-circle me-1 mt-1 shadow-sm">
+                                        <i class="ti ti-clock fs-2"></i>
+                                    </span>
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-1">
+                                            <h4 class="alert-title fw-bold text-dark mb-0">Answers Submitted</h4>
+                                            <span class="badge bg-warning text-dark">Pending review</span>
+                                        </div>
+                                        <div class="text-muted small">
+                                            Answers submitted {{ $submission->submitted_at?->format('d M Y H:i') }} — waiting for admin review.
+                                        </div>
+                                    </div>
                                 </div>
-                            @endif
+                            </div>
+                        @endif
 
-                        {{-- ── 2. Pending Review: Submitted and waiting for admin review ── --}}
-                        @elseif ($submission && ! $submission->resubmit_requested)
-                            <div class="alert alert-warning d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-                                <div>
-                                    <i class="ti ti-clock me-1"></i>
-                                    Answers submitted {{ $submission->submitted_at?->format('d M Y H:i') }} — waiting for admin review.
-                                </div>
-                                <span class="badge bg-warning text-dark">Pending review</span>
+                        {{-- Full Submission Review: All Questions and Learner Answers --}}
+                        <div class="mt-4 pt-3 border-top">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <h5 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                                    <i class="ti ti-file-text text-primary"></i> Your Submitted Answers
+                                </h5>
+                                <span class="badge bg-light text-secondary border">
+                                    {{ $task->fields->count() }} {{ Str::plural('Question', $task->fields->count()) }}
+                                </span>
                             </div>
 
-                            {{-- Summary of submitted answers --}}
                             @if ($answersByField->isNotEmpty() && $task->fields->isNotEmpty())
-                                <div class="mt-3 p-3 bg-light rounded-3 border small">
-                                    <div class="fw-semibold text-dark mb-2">Your Submitted Answers:</div>
-                                    @foreach ($task->fields as $field)
-                                        @php $ans = $answersByField->get($field->id); @endphp
-                                        @if ($ans && ($ans->hasFiles() || $ans->answer_text))
-                                            <div class="mb-2">
-                                                <span class="fw-semibold text-dark">{{ $field->label }}:</span>
-                                                @if ($ans->hasFiles())
-                                                    @foreach ($ans->filePaths() as $p)
-                                                        <a href="{{ Storage::url($p) }}" target="_blank" class="ms-1">{{ basename($p) }}</a>{{ ! $loop->last ? ', ' : '' }}
-                                                    @endforeach
-                                                @endif
-                                                @if ($field->isFile() && $ans->answer_text)
-                                                    <div class="mt-1">
-                                                        <span class="fw-semibold text-muted">Drive link:</span>
-                                                        <a href="{{ $ans->answer_text }}" target="_blank">{{ Str::limit($ans->answer_text, 60) }}</a>
-                                                    </div>
-                                                @elseif (! $field->isFile() && $ans->answer_text)
-                                                    <span class="text-muted ms-1">{{ Str::limit($ans->answer_text, 100) }}</span>
+                                <div class="d-flex flex-column gap-3">
+                                    @foreach ($task->fields as $idx => $field)
+                                        @php
+                                            $ans = $answersByField->get($field->id);
+                                        @endphp
+                                        <div class="card border rounded-3 shadow-none bg-white">
+                                            <div class="card-header bg-light-subtle py-2.5 px-3 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <span class="badge bg-primary-lt text-primary fw-bold" style="font-size: 11px;">Q{{ $idx + 1 }}</span>
+                                                    <span class="fw-bold text-dark fs-6">{{ $field->label }}</span>
+                                                    @if ($field->required)
+                                                        <span class="text-danger" title="Required">*</span>
+                                                    @endif
+                                                </div>
+                                                <span class="badge bg-secondary-lt text-secondary small">{{ $field->typeLabel() }}</span>
+                                            </div>
+                                            <div class="card-body p-3">
+                                                @if ($field->isFile())
+                                                    @if ($ans && $ans->hasFiles())
+                                                        <div class="d-flex flex-column gap-2 mb-2">
+                                                            @foreach ($ans->filePaths() as $filePath)
+                                                                @php
+                                                                    $fileName = basename($filePath);
+                                                                    $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+                                                                    $iconClass = match($fileExt) {
+                                                                        'pdf' => 'ti ti-file-text text-danger',
+                                                                        'doc', 'docx' => 'ti ti-file-description text-primary',
+                                                                        'xls', 'xlsx', 'csv' => 'ti ti-file-spreadsheet text-success',
+                                                                        'zip', 'rar', '7z' => 'ti ti-file-zip text-warning',
+                                                                        'jpg', 'jpeg', 'png', 'webp' => 'ti ti-photo text-info',
+                                                                        'mp4', 'mov', 'avi' => 'ti ti-video text-purple',
+                                                                        default => 'ti ti-file text-secondary',
+                                                                    };
+                                                                @endphp
+                                                                <div class="p-2.5 rounded-3 border bg-light d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                                                    <div class="d-flex align-items-center gap-2 min-w-0">
+                                                                        <i class="{{ $iconClass }} fs-1"></i>
+                                                                        <div class="min-w-0">
+                                                                            <div class="fw-semibold text-dark text-truncate small" style="max-width: 350px;">{{ $fileName }}</div>
+                                                                            <div class="text-muted" style="font-size: 11px;">Uploaded file answer</div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <a href="{{ Storage::url($filePath) }}" target="_blank" class="btn btn-sm btn-outline-primary rounded-2 px-3">
+                                                                        <i class="ti ti-download me-1"></i> Download / View
+                                                                    </a>
+                                                                </div>
+                                                            @endforeach
+                                                        </div>
+                                                    @endif
+                                                    @if ($field->allow_link && $ans && $ans->answer_text)
+                                                        <div class="p-2.5 rounded-3 border bg-light d-flex align-items-center justify-content-between flex-wrap gap-2 {{ $ans && $ans->hasFiles() ? 'mt-2' : '' }}">
+                                                            <div class="d-flex align-items-center gap-2 min-w-0">
+                                                                <i class="ti ti-link text-info fs-1"></i>
+                                                                <div class="min-w-0">
+                                                                    <div class="fw-semibold text-dark small">Cloud / Google Drive Link</div>
+                                                                    <a href="{{ $ans->answer_text }}" target="_blank" class="text-primary text-truncate d-block small" style="max-width: 350px;">
+                                                                        {{ $ans->answer_text }}
+                                                                    </a>
+                                                                </div>
+                                                            </div>
+                                                            <a href="{{ $ans->answer_text }}" target="_blank" class="btn btn-sm btn-outline-primary rounded-2 px-3">
+                                                                <i class="ti ti-external-link me-1"></i> Open Link
+                                                            </a>
+                                                        </div>
+                                                    @endif
+                                                    @if (! $ans || (! $ans->hasFiles() && ! ($field->allow_link && $ans->answer_text)))
+                                                        <span class="text-muted fst-italic small">No file or link provided.</span>
+                                                    @endif
+                                                @elseif ($field->isCheckbox())
+                                                    @if ($ans && ! empty($ans->answer_text))
+                                                        @php $selected = array_map('trim', explode(',', $ans->answer_text)); @endphp
+                                                        <div class="d-flex flex-wrap gap-2">
+                                                            @foreach ($selected as $item)
+                                                                <span class="badge bg-primary-lt text-primary px-2.5 py-1.5 fs-6 border border-primary-subtle">
+                                                                    <i class="ti ti-check me-1 text-primary"></i> {{ $item }}
+                                                                </span>
+                                                            @endforeach
+                                                        </div>
+                                                    @else
+                                                        <span class="text-muted fst-italic small">No option selected.</span>
+                                                    @endif
+                                                @elseif ($field->isChoice() || $field->isDropdown())
+                                                    @if ($ans && ! empty($ans->answer_text))
+                                                        <span class="badge bg-primary-lt text-primary px-3 py-1.5 fs-6 border border-primary-subtle">
+                                                            <i class="ti ti-circle-check me-1"></i> {{ $ans->answer_text }}
+                                                        </span>
+                                                    @else
+                                                        <span class="text-muted fst-italic small">No option selected.</span>
+                                                    @endif
+                                                @elseif ($field->isScale())
+                                                    @if ($ans && ! empty($ans->answer_text))
+                                                        <div class="d-flex align-items-center gap-3">
+                                                            <span class="badge bg-azure-lt text-azure px-3 py-1.5 fs-5 fw-bold border border-azure-subtle">
+                                                                Scale: {{ $ans->answer_text }} / 5
+                                                            </span>
+                                                            <div class="d-flex align-items-center gap-1">
+                                                                @for ($s = 1; $s <= 5; $s++)
+                                                                    <span class="badge rounded-circle p-0 d-inline-flex align-items-center justify-content-center {{ (string)$s === (string)$ans->answer_text ? 'bg-primary text-white' : 'bg-light text-muted' }}" style="width: 26px; height: 26px; font-size: 12px;">
+                                                                        {{ $s }}
+                                                                    </span>
+                                                                @endfor
+                                                            </div>
+                                                        </div>
+                                                    @else
+                                                        <span class="text-muted fst-italic small">No rating given.</span>
+                                                    @endif
+                                                @elseif ($field->isRating())
+                                                    @if ($ans && ! empty($ans->answer_text))
+                                                        @php $rVal = (int) $ans->answer_text; @endphp
+                                                        <div class="d-flex align-items-center gap-2">
+                                                            <div class="d-flex align-items-center gap-1">
+                                                                @for ($r = 1; $r <= 5; $r++)
+                                                                    <i class="ti ti-star-filled {{ $r <= $rVal ? 'text-warning' : 'text-muted opacity-25' }} fs-2"></i>
+                                                                @endfor
+                                                            </div>
+                                                            <span class="fw-bold text-dark fs-6 ms-1">{{ $rVal }} / 5 Stars</span>
+                                                        </div>
+                                                    @else
+                                                        <span class="text-muted fst-italic small">No rating given.</span>
+                                                    @endif
+                                                @else
+                                                    @if ($ans && ! empty($ans->answer_text))
+                                                        <div class="p-3 rounded-3 bg-light border text-dark" style="white-space: pre-wrap; line-height: 1.6; font-size: 0.95rem;">{{ $ans->answer_text }}</div>
+                                                    @else
+                                                        <span class="text-muted fst-italic small">No answer entered.</span>
+                                                    @endif
                                                 @endif
                                             </div>
-                                        @endif
+                                        </div>
                                     @endforeach
                                 </div>
+                            @elseif ($submission && $submission->file_path)
+                                <div class="p-3 rounded-3 bg-light border d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                    <div class="d-flex align-items-center gap-2.5">
+                                        <i class="ti ti-file-check text-success fs-1"></i>
+                                        <div>
+                                            <div class="fw-semibold text-dark">Uploaded File Answer</div>
+                                            <div class="text-muted small">Submitted on {{ $submission->submitted_at?->format('d M Y H:i') }}</div>
+                                        </div>
+                                    </div>
+                                    <a href="{{ Storage::url($submission->file_path) }}" target="_blank" class="btn btn-outline-primary btn-sm rounded-2 px-3">
+                                        <i class="ti ti-download me-1"></i> Download Submitted File
+                                    </a>
+                                </div>
+                            @elseif ($submission && ! $task->isCourseAssignment())
+                                <div class="p-3 rounded-3 bg-light border text-muted small text-center">
+                                    No answer file recorded for this submission.
+                                </div>
                             @endif
-
-                        {{-- ── 3. Rejected: Request Resubmit (Admin requests revised answers) ── --}}
-                        @elseif ($submission && $submission->resubmit_requested)
+                        </div>
+                    @else
+                        {{-- ══════════════════════════════════════════════════════════════════════════ --}}
+                        {{-- ANSWER FORM (New Submission, Draft Mode, or Resubmit Requested)           --}}
+                        {{-- ══════════════════════════════════════════════════════════════════════════ --}}
+                        @if ($submission && $submission->resubmit_requested)
                             <div class="alert alert-danger border-start border-danger border-4 rounded-3 shadow-sm mb-3">
                                 <div class="d-flex align-items-start gap-3">
                                     <span class="avatar bg-danger text-white rounded-circle me-1 mt-1 shadow-sm">
@@ -312,18 +425,68 @@
                                                 </div>
                                             </div>
                                         @endif
+                                        @if ($answersByField->isNotEmpty())
+                                            <div class="mt-3">
+                                                <button class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1" type="button" data-bs-toggle="collapse" data-bs-target="#previousSubmissionCollapse-{{ $task->id }}">
+                                                    <i class="ti ti-history me-1"></i> View Your Previous Answers <i class="ti ti-chevron-down ms-1"></i>
+                                                </button>
+                                                <div class="collapse mt-2" id="previousSubmissionCollapse-{{ $task->id }}">
+                                                    <div class="card card-body bg-white border border-danger-subtle p-3">
+                                                        <div class="fw-bold text-dark small mb-2"><i class="ti ti-archive me-1"></i> Previous Answers Before Revision:</div>
+                                                        @foreach ($task->fields as $pIdx => $pField)
+                                                            @php $pAns = $answersByField->get($pField->id); @endphp
+                                                            <div class="mb-2 pb-2 {{ ! $loop->last ? 'border-bottom' : '' }}">
+                                                                <div class="fw-semibold small text-dark">Q{{ $pIdx + 1 }}. {{ $pField->label }}</div>
+                                                                <div class="small text-muted mt-1">
+                                                                    @if ($pAns && $pAns->hasFiles())
+                                                                        <div class="mb-1">
+                                                                            Files:
+                                                                            @foreach ($pAns->filePaths() as $fp)
+                                                                                <a href="{{ Storage::url($fp) }}" target="_blank" class="ms-1">{{ basename($fp) }}</a>{{ ! $loop->last ? ', ' : '' }}
+                                                                            @endforeach
+                                                                        </div>
+                                                                    @endif
+                                                                    @if ($pAns && $pAns->answer_text)
+                                                                        <div>{{ $pAns->answer_text }}</div>
+                                                                    @endif
+                                                                    @if (! $pAns || (! $pAns->hasFiles() && ! $pAns->answer_text))
+                                                                        <span class="fst-italic text-muted">No answer recorded</span>
+                                                                    @endif
+                                                                </div>
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        @elseif ($submission && $submission->status === 'draft')
+                            <div class="alert alert-warning border-start border-warning border-4 rounded-3 shadow-sm mb-3">
+                                <div class="d-flex align-items-center gap-3">
+                                    <span class="avatar bg-warning text-dark rounded-circle me-1 shadow-sm">
+                                        <i class="ti ti-device-floppy fs-2"></i>
+                                    </span>
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-1">
+                                            <h4 class="alert-title fw-bold text-dark mb-0">Answers Saved as Draft</h4>
+                                            <span class="badge bg-warning text-dark">Draft Mode</span>
+                                        </div>
+                                        <div class="text-muted small">
+                                            Your answers are currently saved as a draft and have not been submitted to the administrator. You can continue editing your answers below and click <strong>Submit Answers</strong> when you are ready.
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         @endif
 
-                        @if (! $submission || $submission->resubmit_requested)
                         {{-- Dynamic answer form following the task fields --}}
                         <form action="{{ route('my-task.submit', $task) }}" method="POST" enctype="multipart/form-data" class="mt-2">
                             @csrf
                             <input type="hidden" name="active_task_id" value="{{ $task->id }}">
                             <h5 class="fw-semibold text-dark mb-3 d-flex align-items-center gap-1">
-                                <i class="ti ti-pencil text-primary"></i> {{ $submission && $submission->resubmit_requested ? 'Resubmit Answers' : 'Learner Submission Form' }}
+                                <i class="ti ti-pencil text-primary"></i> {{ $submission && $submission->resubmit_requested ? 'Resubmit Answers' : ($submission && $submission->status === 'draft' ? 'Continue Draft Answers' : 'Learner Submission Form') }}
                             </h5>
 
                             @foreach ($task->fields as $field)
@@ -559,18 +722,19 @@
                                         Close
                                     </button>
                                 @endif
-                                <button type="submit" class="btn btn-primary rounded-3 px-4">
+                                <button type="submit" name="action" value="draft" formnovalidate class="btn btn-outline-primary rounded-3 px-3">
+                                    <i class="ti ti-device-floppy me-1"></i> Save as Draft
+                                </button>
+                                <button type="submit" name="action" value="submit" class="btn btn-primary rounded-3 px-4">
                                     <i class="ti ti-send me-1"></i> {{ $submission && $submission->resubmit_requested ? 'Resubmit Answers' : 'Submit Answers' }}
                                 </button>
                             </div>
                         </form>
+                    @endif {{-- status: course assignment / view submission / answer form --}}
 
-                        @endif {{-- show form only when not submitted yet or resubmit was requested --}}
-                    @endif {{-- status: completed / course assignment / answer form --}}
-
-                    @if (($inModal ?? false) && ($status === 'completed' || $task->isCourseAssignment() || ($submission && ! $submission->resubmit_requested)))
+                    @if (($inModal ?? false) && ($task->isCourseAssignment() || ($submission && ! $submission->resubmit_requested && $submission->status !== 'draft')))
                         <div class="d-flex align-items-center justify-content-end gap-2 mt-4 pt-3 border-top">
-                            <button type="button" class="btn btn-outline-secondary rounded-3 px-3" data-bs-dismiss="modal">
+                            <button type="button" class="btn btn-outline-secondary rounded-3 px-4" data-bs-dismiss="modal">
                                 Close
                             </button>
                         </div>

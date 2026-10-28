@@ -65,6 +65,11 @@ class MyTaskController extends Controller
                     fn ($t) => in_array($t->userStatusFor($user), ['overdue', 'not_started', 'resubmit'], true)
                 );
 
+                $resubmitCount = $groupTasks->filter(function ($t) use ($user) {
+                    $sub = $t->submissionFor($user);
+                    return (bool) ($sub && $sub->resubmit_requested);
+                })->count();
+
                 return [
                     'key'              => $key,
                     'parent_type'      => $first->parent_type,
@@ -75,6 +80,7 @@ class MyTaskController extends Controller
                     'total'            => $groupTasks->count(),
                     'completed'        => $statuses->filter(fn ($s) => $s === 'completed')->count(),
                     'has_overdue'      => $statuses->contains('overdue'),
+                    'resubmit_count'   => $resubmitCount,
                     'nearest_deadline' => $needsAction->map->deadline->filter()->min(),
                     'is_assessment'    => false,
                 ];
@@ -223,6 +229,38 @@ class MyTaskController extends Controller
             'others'   => $taskGroups->filter(fn ($g) => in_array($g['parent_type'], ['standalone', 'offline_training'], true) || !in_array($g['parent_type'], ['playlist', 'content'], true))->count(),
         ];
 
+        // Revision counts per quick filter category for notification badges on pills
+        $revisionCounts = [
+            'all'      => 0,
+            'playlist' => 0,
+            'content'  => 0,
+            'asesment' => 0,
+            'others'   => 0,
+        ];
+
+        foreach ($tasks as $task) {
+            $submission = $task->submissionFor($user);
+            if ($submission && $submission->resubmit_requested) {
+                $revisionCounts['all']++;
+                if ($task->parent_type === 'playlist') {
+                    $revisionCounts['playlist']++;
+                } elseif ($task->parent_type === 'content') {
+                    $revisionCounts['content']++;
+                } else {
+                    $revisionCounts['others']++;
+                }
+            }
+        }
+
+        foreach ($assessmentGroups as $ag) {
+            foreach ($ag['tasks'] as $at) {
+                if (($at->is_completed ?? false) && ! ($at->is_passed ?? false)) {
+                    $revisionCounts['asesment']++;
+                    $revisionCounts['all']++;
+                }
+            }
+        }
+
         // Filter groups by selected quick filter
         if ($filterType === 'assessment') {
             $groups = $assessmentGroups->values();
@@ -247,6 +285,7 @@ class MyTaskController extends Controller
         $groups = $groups
             ->sortBy(fn ($g) => [$g['nearest_deadline'] === null, $g['nearest_deadline']])
             ->sortByDesc('has_overdue')
+            ->sortByDesc(fn ($g) => ($g['resubmit_count'] ?? 0) > 0)
             ->values();
 
         // Drill-down: ?my_task_parent=... shows only that parent's tasks.
@@ -267,6 +306,7 @@ class MyTaskController extends Controller
             'search',
             'showRedeemCard',
             'categoryCounts',
+            'revisionCounts',
             'filterType',
             'filterStatus',
             'filterYear',
@@ -434,6 +474,7 @@ class MyTaskController extends Controller
                 'total'            => 1,
                 'completed'        => $isCompleted ? 1 : 0,
                 'has_overdue'      => $isExpired && ! $isCompleted,
+                'resubmit_count'   => ($isCompleted && ! $isPassed) ? 1 : 0,
                 'nearest_deadline' => $nearestDl,
                 'is_assessment'    => true,
                 'assessment'       => $assessment,
@@ -591,9 +632,12 @@ class MyTaskController extends Controller
             ->first();
         $existingAnswers = $existing ? $existing->answersByField() : collect();
 
+        $action = $request->input('action', 'submit');
+        $isDraft = $action === 'draft';
+
         // Tolak submit ganda: hanya boleh submit kalau belum pernah,
-        // atau kalau admin meminta resubmit.
-        if ($existing && ! $existing->resubmit_requested) {
+        // sedang draft, atau kalau admin meminta resubmit.
+        if ($existing && ! $existing->resubmit_requested && $existing->status !== 'draft') {
             $msg = $existing->status === 'rejected'
                 ? 'This task has been closed as rejected.'
                 : ($existing->status === 'completed'
@@ -614,13 +658,17 @@ class MyTaskController extends Controller
                     $rules["drive_links.{$field->id}"] = ['nullable', 'url', 'max:500'];
                 }
             } elseif ($field->isChoice()) {
-                $rules[$key] = [
-                    $field->required ? 'required' : 'nullable',
-                    'string', Rule::in($field->options ?? []),
+                $choiceRules = [
+                    (! $isDraft && $field->required) ? 'required' : 'nullable',
+                    'string',
                 ];
+                if (! empty($field->options)) {
+                    $choiceRules[] = Rule::in($field->options);
+                }
+                $rules[$key] = $choiceRules;
             } else {
                 $rules[$key] = [
-                    $field->required ? 'required' : 'nullable',
+                    (! $isDraft && $field->required) ? 'required' : 'nullable',
                     'string', 'max:10000',
                 ];
             }
@@ -631,7 +679,7 @@ class MyTaskController extends Controller
         ]);
 
         // File wajib (saat belum ada file tersimpan) + batas tipe file dicek manual.
-        $validator->after(function ($validator) use ($task, $existingAnswers, $request) {
+        $validator->after(function ($validator) use ($task, $existingAnswers, $request, $isDraft) {
             foreach ($task->fields as $field) {
                 if (! $field->isFile()) {
                     continue;
@@ -649,7 +697,7 @@ class MyTaskController extends Controller
                     && ($existingAnswer->hasFiles()
                         || ($field->allow_link && $existingAnswer->answer_text));
 
-                if ($field->required && ! $hasExisting && empty($files) && $link === '') {
+                if (! $isDraft && $field->required && ! $hasExisting && empty($files) && $link === '') {
                     $validator->errors()->add(
                         "fields.{$field->id}",
                         'Please upload a file or paste a Drive link.'
@@ -710,7 +758,11 @@ class MyTaskController extends Controller
                 $driveLink = $field->allow_link
                     ? trim($request->input("drive_links.{$field->id}") ?? '')
                     : '';
-                $answerText = $driveLink !== '' ? $driveLink : null;
+                if ($driveLink !== '') {
+                    $answerText = $driveLink;
+                } elseif ($existingAnswer && $existingAnswer->answer_text && empty($files)) {
+                    $answerText = $existingAnswer->answer_text;
+                }
             } else {
                 $rawVal = $inputFields[$field->id] ?? null;
                 $answerText = is_array($rawVal)
@@ -720,9 +772,21 @@ class MyTaskController extends Controller
 
             $newAnswers[$field->id] = [
                 'task_field_id' => (int) $field->id,
-                'answer_text'   => $answerText,
+                'answer_text'   => ($answerText !== '' && $answerText !== null) ? $answerText : null,
                 'file_path'     => $paths,
             ];
+        }
+
+        if ($isDraft) {
+            $submission->status             = 'draft';
+            $submission->resubmit_requested = false;
+            $submission->answers            = $newAnswers;
+            $submission->save();
+
+            return redirect()->route('user.learning.dashboard', [
+                'learning_tab'   => 'my-task',
+                'active_task_id' => $task->id,
+            ])->with('success', 'Task answers saved as draft. You can continue anytime before final submission.');
         }
 
         $submission->status             = 'pending';
@@ -731,7 +795,10 @@ class MyTaskController extends Controller
         $submission->answers            = $newAnswers;
         $submission->save();
 
-        return $dashboard->with('success', 'Answers submitted successfully. Waiting for admin review.');
+        return redirect()->route('user.learning.dashboard', [
+            'learning_tab'   => 'my-task',
+            'active_task_id' => $task->id,
+        ])->with('success', 'Answers submitted successfully. Waiting for admin review.');
     }
 
     /**

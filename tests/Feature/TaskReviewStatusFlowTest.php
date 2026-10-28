@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Task;
 use App\Models\TaskField;
+use App\Models\TaskPlaylistUnlock;
 use App\Models\TaskSubmission;
 use App\Models\TrainingPlan;
 use App\Models\User;
@@ -35,6 +36,8 @@ class TaskReviewStatusFlowTest extends TestCase
             'description' => 'Test Course Plan',
             'is_active'   => 1,
         ]);
+
+        view()->share('errors', new \Illuminate\Support\ViewErrorBag());
     }
 
     public function test_user_status_is_pending_review_when_submitted(): void
@@ -437,5 +440,349 @@ class TaskReviewStatusFlowTest extends TestCase
         $this->assertEquals('rejected', $submission->status);
         $this->assertFalse((bool)$submission->resubmit_requested);
         $this->assertEquals(20, $submission->score);
+    }
+
+    public function test_user_can_save_submission_as_draft(): void
+    {
+        TaskPlaylistUnlock::firstOrCreate([
+            'user_id'          => $this->learner->id,
+            'training_plan_id' => $this->plan->id,
+        ]);
+
+        $task = Task::create([
+            'parent_type'      => 'playlist',
+            'training_plan_id' => $this->plan->id,
+            'title'            => 'Task Draft Flow ' . uniqid(),
+            'type'             => 'open_ended',
+            'status'           => 'published',
+            'created_by'       => $this->admin->id,
+        ]);
+
+        $field1 = TaskField::create([
+            'task_id'  => $task->id,
+            'label'    => 'Required Question 1',
+            'type'     => 'text',
+            'required' => true,
+            'order'    => 1,
+        ]);
+
+        $field2 = TaskField::create([
+            'task_id'  => $task->id,
+            'label'    => 'Optional Question 2',
+            'type'     => 'paragraph',
+            'required' => false,
+            'order'    => 2,
+        ]);
+
+        // Saving as draft even though required field1 is empty
+        $response = $this->actingAs($this->learner)->post(
+            route('my-task.submit', $task),
+            [
+                'action' => 'draft',
+                'fields' => [
+                    $field1->id => '',
+                    $field2->id => 'Draft notes for field 2',
+                ],
+            ]
+        );
+
+        $response->assertRedirect(route('user.learning.dashboard', [
+            'learning_tab'   => 'my-task',
+            'active_task_id' => $task->id,
+        ]));
+        $response->assertSessionHas('success', 'Task answers saved as draft. You can continue anytime before final submission.');
+
+        $submission = TaskSubmission::where('task_id', $task->id)->where('user_id', $this->learner->id)->first();
+        $this->assertNotNull($submission);
+        $this->assertEquals('draft', $submission->status);
+        $this->assertTrue($submission->isDraft());
+        $this->assertEquals('in_progress', $task->userStatusFor($this->learner));
+
+        $answers = $submission->answersByField();
+        $this->assertEquals('Draft notes for field 2', $answers->get($field2->id)->answer_text);
+    }
+
+    public function test_user_can_submit_after_saving_draft(): void
+    {
+        TaskPlaylistUnlock::firstOrCreate([
+            'user_id'          => $this->learner->id,
+            'training_plan_id' => $this->plan->id,
+        ]);
+
+        $task = Task::create([
+            'parent_type'      => 'playlist',
+            'training_plan_id' => $this->plan->id,
+            'title'            => 'Task Final Submit Flow ' . uniqid(),
+            'type'             => 'open_ended',
+            'status'           => 'published',
+            'created_by'       => $this->admin->id,
+        ]);
+
+        $field = TaskField::create([
+            'task_id'  => $task->id,
+            'label'    => 'Final Exam Question',
+            'type'     => 'paragraph',
+            'required' => true,
+            'order'    => 1,
+        ]);
+
+        // Create draft first
+        TaskSubmission::create([
+            'task_id'            => $task->id,
+            'user_id'            => $this->learner->id,
+            'status'             => 'draft',
+            'resubmit_requested' => false,
+            'answers'            => [
+                $field->id => [
+                    'task_field_id' => $field->id,
+                    'answer_text'   => 'Initial draft answer',
+                    'file_path'     => [],
+                ],
+            ],
+        ]);
+
+        // Now submit as final
+        $response = $this->actingAs($this->learner)->post(
+            route('my-task.submit', $task),
+            [
+                'action' => 'submit',
+                'fields' => [
+                    $field->id => 'Final polished answer',
+                ],
+            ]
+        );
+
+        $response->assertRedirect(route('user.learning.dashboard', [
+            'learning_tab'   => 'my-task',
+            'active_task_id' => $task->id,
+        ]));
+        $response->assertSessionHas('success', 'Answers submitted successfully. Waiting for admin review.');
+
+        $submission = TaskSubmission::where('task_id', $task->id)->where('user_id', $this->learner->id)->first();
+        $this->assertEquals('pending', $submission->status);
+        $this->assertNotNull($submission->submitted_at);
+        $this->assertEquals('submitted', $task->userStatusFor($this->learner));
+
+        $answers = $submission->answersByField();
+        $this->assertEquals('Final polished answer', $answers->get($field->id)->answer_text);
+    }
+
+    public function test_user_task_card_renders_draft_status_and_prefilled_answers(): void
+    {
+        $task = Task::create([
+            'parent_type'      => 'playlist',
+            'training_plan_id' => $this->plan->id,
+            'title'            => 'Task Card Draft Render ' . uniqid(),
+            'type'             => 'open_ended',
+            'status'           => 'published',
+            'created_by'       => $this->admin->id,
+        ]);
+
+        $field = TaskField::create([
+            'task_id'  => $task->id,
+            'label'    => 'Draft Question Label',
+            'type'     => 'text',
+            'required' => true,
+            'order'    => 1,
+        ]);
+
+        TaskSubmission::create([
+            'task_id'            => $task->id,
+            'user_id'            => $this->learner->id,
+            'status'             => 'draft',
+            'resubmit_requested' => false,
+            'answers'            => [
+                $field->id => [
+                    'task_field_id' => $field->id,
+                    'answer_text'   => 'Saved Draft Answer 123',
+                    'file_path'     => [],
+                ],
+            ],
+        ]);
+
+        $this->actingAs($this->learner);
+        $html = view('user.learning.dashboard-partials.my-task-card', [
+            'task'          => $task,
+            'inModal'       => true,
+            'statusLabels'  => ['in_progress' => 'In Progress', 'completed' => 'Completed', 'submitted' => 'Pending review', 'rejected' => 'Rejected'],
+            'statusBadges'  => ['in_progress' => 'bg-primary-lt text-primary', 'completed' => 'bg-success-lt text-success', 'submitted' => 'bg-warning-lt text-warning', 'rejected' => 'bg-danger-lt text-danger'],
+            'displayStatus' => fn ($s) => $s,
+        ])->render();
+
+        $this->assertStringContainsString('Draft', $html);
+        $this->assertStringContainsString('Answers Saved as Draft', $html);
+        $this->assertStringContainsString('Continue Draft Answers', $html);
+        $this->assertStringContainsString('Save as Draft', $html);
+        $this->assertStringContainsString('Submit Answers', $html);
+        $this->assertStringContainsString('Saved Draft Answer 123', $html);
+    }
+
+    public function test_user_task_card_renders_full_submitted_answers_view(): void
+    {
+        $task = Task::create([
+            'parent_type'      => 'playlist',
+            'training_plan_id' => $this->plan->id,
+            'title'            => 'Task Card View Submissions ' . uniqid(),
+            'type'             => 'open_ended',
+            'status'           => 'published',
+            'created_by'       => $this->admin->id,
+        ]);
+
+        $field1 = TaskField::create([
+            'task_id'  => $task->id,
+            'label'    => 'Long Essay Prompt',
+            'type'     => 'paragraph',
+            'required' => true,
+            'order'    => 1,
+        ]);
+
+        $field2 = TaskField::create([
+            'task_id'  => $task->id,
+            'label'    => 'Self Evaluation Rating',
+            'type'     => 'rating',
+            'required' => true,
+            'order'    => 2,
+        ]);
+
+        TaskSubmission::create([
+            'task_id'            => $task->id,
+            'user_id'            => $this->learner->id,
+            'status'             => 'pending',
+            'resubmit_requested' => false,
+            'submitted_at'       => now(),
+            'answers'            => [
+                $field1->id => [
+                    'task_field_id' => $field1->id,
+                    'answer_text'   => 'This is a complete and detailed untruncated essay answer that should be displayed in full inside the submission review box.',
+                    'file_path'     => [],
+                ],
+                $field2->id => [
+                    'task_field_id' => $field2->id,
+                    'answer_text'   => '5',
+                    'file_path'     => [],
+                ],
+            ],
+        ]);
+
+        $this->actingAs($this->learner);
+        $html = view('user.learning.dashboard-partials.my-task-card', [
+            'task'          => $task,
+            'inModal'       => true,
+            'statusLabels'  => ['completed' => 'Completed', 'submitted' => 'Pending review', 'rejected' => 'Rejected'],
+            'statusBadges'  => ['completed' => 'bg-success-lt text-success', 'submitted' => 'bg-warning-lt text-warning', 'rejected' => 'bg-danger-lt text-danger'],
+            'displayStatus' => fn ($s) => $s,
+        ])->render();
+
+        $this->assertStringContainsString('Pending review', $html);
+        $this->assertStringContainsString('Your Submitted Answers', $html);
+        $this->assertStringContainsString('Long Essay Prompt', $html);
+        $this->assertStringContainsString('This is a complete and detailed untruncated essay answer that should be displayed in full inside the submission review box.', $html);
+        $this->assertStringContainsString('Self Evaluation Rating', $html);
+        $this->assertStringContainsString('5 / 5 Stars', $html);
+        $this->assertStringNotContainsString('Submit Answers', $html);
+    }
+
+    public function test_quick_filter_shows_revision_notification_and_banner_is_removed(): void
+    {
+        TaskPlaylistUnlock::firstOrCreate([
+            'user_id'          => $this->learner->id,
+            'training_plan_id' => $this->plan->id,
+        ]);
+
+        $task = Task::create([
+            'parent_type'      => 'playlist',
+            'training_plan_id' => $this->plan->id,
+            'title'            => 'Playlist Task Needing Revision ' . uniqid(),
+            'type'             => 'open_ended',
+            'status'           => 'published',
+            'created_by'       => $this->admin->id,
+        ]);
+
+        TaskSubmission::create([
+            'task_id'            => $task->id,
+            'user_id'            => $this->learner->id,
+            'status'             => 'rejected',
+            'resubmit_requested' => true,
+            'feedback'           => 'Need revision on question 1',
+            'submitted_at'       => now(),
+        ]);
+
+        $response = $this->actingAs($this->learner)->get(route('user.learning.dashboard.partial', ['tab' => 'my-task']));
+        $response->assertStatus(200);
+
+        // Warning banner should NOT be present
+        $response->assertDontSee('Require Revision', false);
+        $response->assertDontSee('View Revision Tasks', false);
+
+        // Quick filter pills should render notification badge for Playlist and All
+        $html = $response->getContent();
+        $this->assertStringContainsString('my-task-revision-badge', $html);
+        $this->assertStringContainsString('require revision', $html);
+    }
+
+    public function test_course_and_task_display_resubmit_indicators_when_revision_requested(): void
+    {
+        TaskPlaylistUnlock::firstOrCreate([
+            'user_id'          => $this->learner->id,
+            'training_plan_id' => $this->plan->id,
+        ]);
+
+        $task = Task::create([
+            'parent_type'      => 'playlist',
+            'training_plan_id' => $this->plan->id,
+            'title'            => 'Task Demanding Resubmission ' . uniqid(),
+            'type'             => 'open_ended',
+            'status'           => 'published',
+            'created_by'       => $this->admin->id,
+        ]);
+
+        TaskSubmission::create([
+            'task_id'            => $task->id,
+            'user_id'            => $this->learner->id,
+            'status'             => 'rejected',
+            'resubmit_requested' => true,
+            'feedback'           => 'Please revise question 2 with more details.',
+            'submitted_at'       => now(),
+        ]);
+
+        // 1. Check parent table view
+        $response = $this->actingAs($this->learner)->get(route('user.learning.dashboard.partial', ['tab' => 'my-task']));
+        $response->assertStatus(200);
+
+        $html = $response->getContent();
+
+        // Course level indicators
+        $this->assertStringContainsString($this->plan->title, $html);
+        $this->assertStringContainsString('Need Resubmit', $html);
+        $this->assertStringContainsString('<span class="badge bg-danger text-white"><i class="ti ti-refresh me-1"></i>Resubmit</span>', $html);
+
+        // Task level indicators
+        $this->assertStringContainsString($task->title, $html);
+        $this->assertStringContainsString('Need Resubmit', $html);
+
+        // 2. Check drilled-down parent view
+        $drillResponse = $this->actingAs($this->learner)->get(route('user.learning.dashboard.partial', [
+            'tab'            => 'my-task',
+            'my_task_parent' => 'playlist:' . $this->plan->id,
+        ]));
+        $drillResponse->assertStatus(200);
+        $drillHtml = $drillResponse->getContent();
+
+        $this->assertStringContainsString($this->plan->title, $drillHtml);
+        $this->assertStringContainsString('Need Resubmit', $drillHtml);
+        $this->assertStringContainsString('<span class="badge bg-danger text-white"><i class="ti ti-refresh me-1"></i>Resubmit</span>', $drillHtml);
+
+        // 3. Check task modal card
+        $cardHtml = view('user.learning.dashboard-partials.my-task-card', [
+            'task'          => $task,
+            'inModal'       => true,
+            'statusLabels'  => ['completed' => 'Completed', 'submitted' => 'Pending review', 'rejected' => 'Rejected'],
+            'statusBadges'  => ['completed' => 'bg-success-lt text-success', 'submitted' => 'bg-warning-lt text-warning', 'rejected' => 'bg-danger-lt text-danger'],
+            'displayStatus' => fn ($s) => $s,
+        ])->render();
+
+        $this->assertStringContainsString('Resubmit', $cardHtml);
+        $this->assertStringContainsString('Task Revision Requested', $cardHtml);
+        $this->assertStringContainsString('Admin Feedback', $cardHtml);
     }
 }

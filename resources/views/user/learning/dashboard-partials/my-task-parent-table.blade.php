@@ -36,6 +36,11 @@
                                         <div class="fw-bold text-dark course-title-text d-inline-flex align-items-center gap-1">
                                             <span>{{ $group['parent_name'] }}</span>
                                             <span class="badge {{ $isAssessmentGroup ? 'bg-purple' : 'bg-primary' }} text-white rounded-pill px-1.5 py-0.5 active-course-badge d-none ms-1" style="font-size: 10px; font-weight: 600; letter-spacing: 0.3px;">Active</span>
+                                            @if (($group['resubmit_count'] ?? 0) > 0)
+                                                <span class="badge bg-danger text-white rounded-pill px-2 py-0.5 ms-1" style="font-size: 10px; font-weight: 600; letter-spacing: 0.3px;" title="{{ $group['resubmit_count'] }} task(s) require resubmission">
+                                                    <i class="ti ti-refresh me-0.5"></i>Need Resubmit
+                                                </span>
+                                            @endif
                                             <i class="ti ti-chevron-down text-muted small ms-1 transition-transform"></i>
                                         </div>
                                         @if (!empty($group['course_name']))
@@ -85,6 +90,8 @@
                                 @else
                                     <span class="badge bg-danger-lt text-danger">Failed</span>
                                 @endif
+                            @elseif (($group['resubmit_count'] ?? 0) > 0)
+                                <span class="badge bg-danger text-white"><i class="ti ti-refresh me-1"></i>Resubmit</span>
                             @elseif (in_array($filter, ['submitted', 'completed', 'overdue'], true))
                                 {{-- Legacy task-status tab --}}
                                 <span class="badge {{ $statusBadges[$filter] ?? 'bg-secondary-lt text-secondary' }}">{{ $statusLabels[$filter] ?? $filter }}</span>
@@ -271,6 +278,11 @@
                                                         <td class="text-muted">{{ $tIdx + 1 }}</td>
                                                         <td>
                                                             <span class="fw-semibold text-dark">{{ $task->title }}</span>
+                                                            @if ($tSubmission && $tSubmission->resubmit_requested)
+                                                                <span class="badge bg-danger text-white rounded-pill px-2 py-0.5 ms-1" style="font-size: 10px; font-weight: 600;" title="Revision required">
+                                                                    <i class="ti ti-refresh me-0.5"></i>Need Resubmit
+                                                                </span>
+                                                            @endif
                                                             @if ($task->description)
                                                                 <div class="text-muted small" style="color: #000000;">{{ Str::limit($task->description, 60) }}</div>
                                                             @endif
@@ -291,9 +303,19 @@
                                                             @endif
                                                         </td>
                                                         <td>
-                                                            <span class="badge {{ $statusBadges[$displayStatus($tStatus)] ?? 'bg-secondary-lt text-secondary' }}">
-                                                                {{ $statusLabels[$displayStatus($tStatus)] ?? $displayStatus($tStatus) }}
-                                                            </span>
+                                                            @if ($tSubmission && $tSubmission->status === 'draft')
+                                                                <span class="badge bg-warning-lt text-warning">
+                                                                    <i class="ti ti-file-pencil me-1"></i>Draft
+                                                                </span>
+                                                            @elseif ($tSubmission && $tSubmission->resubmit_requested)
+                                                                <span class="badge bg-danger text-white">
+                                                                    <i class="ti ti-refresh me-1"></i>Resubmit
+                                                                </span>
+                                                            @else
+                                                                <span class="badge {{ $statusBadges[$displayStatus($tStatus)] ?? 'bg-secondary-lt text-secondary' }}">
+                                                                    {{ $statusLabels[$displayStatus($tStatus)] ?? $displayStatus($tStatus) }}
+                                                                </span>
+                                                            @endif
                                                         </td>
                                                         <td class="text-end">
                                                             @if ($tStatus === 'rejected')
@@ -312,6 +334,13 @@
                                                                         <i class="ti ti-eye me-1"></i> View
                                                                     </button>
                                                                 @endif
+                                                            @elseif ($tSubmission && $tSubmission->status === 'draft')
+                                                                <button type="button"
+                                                                        class="btn btn-sm btn-warning text-dark fw-semibold rounded-3 shadow-sm px-3"
+                                                                            data-bs-toggle="modal"
+                                                                            data-bs-target="#taskModal-{{ $task->id }}">
+                                                                    <i class="ti ti-pencil me-1"></i> Continue Draft
+                                                                </button>
                                                             @elseif (in_array($tStatus, ['completed', 'submitted']))
                                                                 <button type="button"
                                                                         class="btn btn-sm btn-outline-secondary rounded-3 px-3"

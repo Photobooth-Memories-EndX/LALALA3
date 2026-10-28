@@ -75,6 +75,7 @@
         'my_task_q'      => ($search ?? '') !== '' ? $search : null,
         'my_task_parent' => ($activeGroup ?? null) ? $activeGroup['key'] : null,
     ]));
+    $revisionCounts = $revisionCounts ?? [];
 @endphp
 
 {{-- Flash Alerts --}}
@@ -108,32 +109,6 @@
     </div>
 @endif
 
-{{-- Banner Notifikasi Tugas Perlu Revisi --}}
-@if (($summary['resubmit'] ?? 0) > 0)
-    <div class="alert alert-warning border-start border-warning border-4 rounded-4 shadow-sm mb-3">
-        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-            <div class="d-flex align-items-center gap-3">
-                <span class="avatar bg-warning text-dark rounded-circle shadow-sm">
-                    <i class="ti ti-refresh fs-2"></i>
-                </span>
-                <div>
-                    <h4 class="alert-title mb-1 fw-bold text-dark">
-                        {{ $summary['resubmit'] }} Task{{ ($summary['resubmit'] ?? 0) > 1 ? 's' : '' }} Require Revision
-                    </h4>
-                    <div class="text-muted small">
-                        The administrator reviewed your answers and requested revisions. Please open tasks marked <strong>Resubmit Requested</strong> to review notes and resubmit your answers.
-                    </div>
-                </div>
-            </div>
-            @if ($filter !== 'resubmit')
-                <a href="{{ $tabUrl('resubmit') }}" class="btn btn-warning text-dark fw-semibold px-3 py-2 rounded-pill shadow-sm">
-                    <i class="ti ti-eye me-1"></i> View Revision Tasks ({{ $summary['resubmit'] }})
-                </a>
-            @endif
-        </div>
-    </div>
-@endif
-
 {{-- Quick Filter Bar (Matching Reference Layout) --}}
 <div class="card border-0 shadow-sm rounded-4 mb-3 my-task-filter-card">
     <div class="card-body p-3 p-md-4">
@@ -148,11 +123,19 @@
             @foreach ($tabs as $key => $tab)
                 @php
                     $isActive = $filter === $key;
+                    $revCount = $revisionCounts[$key] ?? 0;
                 @endphp
                 <a href="{{ $tabUrl($key) }}"
-                   class="my-task-category-pill {{ $isActive ? 'active' : '' }}"
-                   title="Filter by {{ $tab['label'] }}">
-                    {{ $tab['label'] }}
+                   class="my-task-category-pill position-relative {{ $isActive ? 'active' : '' }}"
+                   title="Filter by {{ $tab['label'] }}{{ $revCount > 0 ? " ({$revCount} revision required)" : '' }}">
+                    <span>{{ $tab['label'] }}</span>
+                    @if ($revCount > 0)
+                        <span class="badge bg-danger text-white rounded-pill ms-1.5 px-1.5 py-0.5 d-inline-flex align-items-center justify-content-center my-task-revision-badge"
+                              style="font-size: 10px; font-weight: 700; line-height: 1; min-width: 18px; height: 18px;"
+                              title="{{ $revCount }} task{{ $revCount > 1 ? 's' : '' }} require revision">
+                            {{ $revCount }}
+                        </span>
+                    @endif
                 </a>
             @endforeach
         </div>
@@ -329,8 +312,10 @@
                     @else
                         <span class="fw-semibold">{{ $activeGroup['parent_name'] }}</span>
                     @endif
-                    @if ($activeGroup['has_overdue'])
-                        <span class="badge bg-danger-lt text-danger">Overdue</span>
+                    @if (($activeGroup['resubmit_count'] ?? 0) > 0)
+                        <span class="badge bg-danger text-white ms-2"><i class="ti ti-refresh me-1"></i>Resubmit</span>
+                    @elseif ($activeGroup['has_overdue'])
+                        <span class="badge bg-danger-lt text-danger ms-2">Overdue</span>
                     @endif
                 </div>
                 <span class="small text-muted">{{ $activeGroup['completed'] }}/{{ $activeGroup['total'] }} completed</span>
@@ -365,6 +350,11 @@
                             <td class="text-muted">{{ $i + 1 }}</td>
                             <td>
                                 <span class="fw-semibold">{{ $task->title }}</span>
+                                @if ($tSubmission && $tSubmission->resubmit_requested)
+                                    <span class="badge bg-danger text-white rounded-pill px-2 py-0.5 ms-1" style="font-size: 10px; font-weight: 600;" title="Revision required">
+                                        <i class="ti ti-refresh me-0.5"></i>Need Resubmit
+                                    </span>
+                                @endif
                                 @if ($task->description)
                                     <div class="text-dark small" style="color: #000000;">{{ Str::limit($task->description, 80) }}</div>
                                 @endif
@@ -403,16 +393,36 @@
                                     <span class="text-muted">-</span>
                                 @endif
                             </td>
-                            <td><span class="badge {{ $statusBadges[$displayStatus($tStatus)] }}">{{ $statusLabels[$displayStatus($tStatus)] }}</span></td>
+                            <td>
+                                @if ($tSubmission && $tSubmission->status === 'draft')
+                                    <span class="badge bg-warning-lt text-warning"><i class="ti ti-file-pencil me-1"></i>Draft</span>
+                                @elseif ($tSubmission && $tSubmission->resubmit_requested)
+                                    <span class="badge bg-danger text-white"><i class="ti ti-refresh me-1"></i>Resubmit</span>
+                                @else
+                                    <span class="badge {{ $statusBadges[$displayStatus($tStatus)] }}">{{ $statusLabels[$displayStatus($tStatus)] }}</span>
+                                @endif
+                            </td>
                             <td class="text-end">
-                                @if ($tStatus === 'resubmit')
+                                @if ($tStatus === 'resubmit' || ($tSubmission && $tSubmission->resubmit_requested))
                                     <button type="button" class="btn btn-sm btn-warning text-dark fw-semibold shadow-sm"
                                             data-bs-toggle="modal"
                                             data-bs-target="#taskModal-{{ $task->id }}">
-                                        <i class="ti ti-refresh me-1"></i> Revise
+                                        <i class="ti ti-refresh me-1"></i> Resubmit
+                                    </button>
+                                @elseif ($tSubmission && $tSubmission->status === 'draft')
+                                    <button type="button" class="btn btn-sm btn-warning text-dark fw-semibold shadow-sm"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#taskModal-{{ $task->id }}">
+                                        <i class="ti ti-pencil me-1"></i> Continue Draft
+                                    </button>
+                                @elseif ($tStatus === 'rejected')
+                                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-3 px-3"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#taskModal-{{ $task->id }}">
+                                        <i class="ti ti-eye me-1"></i> View
                                     </button>
                                 @else
-                                    <button type="button" class="btn btn-sm {{ in_array($tStatus, ['completed', 'submitted']) ? 'btn-white' : 'btn-success' }}"
+                                    <button type="button" class="btn btn-sm {{ in_array($tStatus, ['completed', 'submitted']) ? 'btn-white' : 'btn-primary' }}"
                                             data-bs-toggle="modal"
                                             data-bs-target="#taskModal-{{ $task->id }}">
                                         <i class="ti {{ in_array($tStatus, ['completed', 'submitted']) ? 'ti-eye' : 'ti-pencil' }} me-1"></i>
@@ -737,12 +747,15 @@
         }
     });
 
-    // 1. If validation error occurred, reopen the modal for the active task
-    @if ($errors->any() && old('active_task_id'))
-        var errModalEl = document.getElementById('taskModal-{{ old('active_task_id') }}');
-        if (errModalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+    // 1. If validation error occurred or active_task_id is set in request, reopen the modal for the active task
+    @php
+        $autoOpenTaskId = old('active_task_id', request('active_task_id', session('active_task_id')));
+    @endphp
+    @if ($autoOpenTaskId)
+        var autoOpenModalEl = document.getElementById('taskModal-{{ $autoOpenTaskId }}');
+        if (autoOpenModalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
             setTimeout(function () {
-                bootstrap.Modal.getOrCreateInstance(errModalEl).show();
+                bootstrap.Modal.getOrCreateInstance(autoOpenModalEl).show();
             }, 150);
         }
     @endif
@@ -978,6 +991,12 @@
     background-color: #e2e8f0;
     color: #0f172a;
     text-decoration: none;
+}
+
+.my-task-revision-badge {
+    box-shadow: 0 1px 3px rgba(220, 38, 38, 0.35);
+    font-family: inherit;
+    letter-spacing: -0.2px;
 }
 
 /* Active State: Soft sky blue with bright blue text (1:1 with reference) */

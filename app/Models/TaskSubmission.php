@@ -106,6 +106,11 @@ class TaskSubmission extends Model
 
     // ── Helper ───────────────────────────────────────────────────────────
 
+    public function isDraft(): bool
+    {
+        return $this->status === 'draft';
+    }
+
     public function isCompleted(): bool
     {
         return $this->status === 'completed';
