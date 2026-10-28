@@ -56,6 +56,15 @@
             </button>
         </div>
 
+        @if (\App\Services\EngagementTime\EngagementTimeService::isTargetPlaylistContent($playlist, $content))
+            @include('user.components.total-engagement-time', [
+                'targetType'      => 'playlist',
+                'targetId'        => $content->id,
+                'trainingPlanId'  => $playlist->id,
+                'initialDuration' => (int) ($content_user->afk_duration_seconds ?? 0),
+            ])
+        @endif
+
         @include('user.playlist.components.view-completion-requirements')
 
     </div>
