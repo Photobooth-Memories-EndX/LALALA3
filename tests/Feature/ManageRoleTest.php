@@ -342,7 +342,7 @@ class ManageRoleTest extends TestCase
         $this->assertFalse($userWithLearning->fresh()->trashed());
     }
 
-    public function test_super_admin_can_trigger_synchronize_dry_run_simulation(): void
+    public function test_super_admin_can_trigger_real_synchronize(): void
     {
         $response = $this->actingAs($this->superAdmin)
             ->postJson(route('manage.role.sync'));
@@ -350,12 +350,14 @@ class ManageRoleTest extends TestCase
         $response->assertOk();
         $response->assertJson([
             'success' => true,
-            'mode' => 'DRY-RUN (Zero-Write Simulation)',
+            'mode' => 'REAL (Synchronize Database)',
+            'is_dry_run' => false,
         ]);
         $response->assertJsonStructure([
             'success',
             'status',
             'mode',
+            'is_dry_run',
             'duration',
             'total_api',
             'total_owl',
@@ -369,24 +371,52 @@ class ManageRoleTest extends TestCase
         ]);
     }
 
-    public function test_unauthorized_users_cannot_trigger_synchronize_dry_run(): void
+    public function test_super_admin_can_trigger_synchronize_dry_run_simulation(): void
+    {
+        $response = $this->actingAs($this->superAdmin)
+            ->postJson(route('manage.role.sync.dry-run'));
+
+        $response->assertOk();
+        $response->assertJson([
+            'success' => true,
+            'mode' => 'DRY-RUN (Zero-Write Simulation)',
+            'is_dry_run' => true,
+        ]);
+        $response->assertJsonStructure([
+            'success',
+            'status',
+            'mode',
+            'is_dry_run',
+            'duration',
+            'total_api',
+            'total_owl',
+            'created_count',
+            'updated_count',
+            'updated_active_count',
+            'updated_soft_deleted_count',
+            'unchanged_count',
+            'conflict_count',
+            'message',
+        ]);
+    }
+
+    public function test_unauthorized_users_cannot_trigger_sync_endpoints(): void
     {
         $admin = $this->createTestUser(User::ROLE_ADMIN);
         $user = $this->createTestUser(User::ROLE_USER);
 
-        // Guest redirect
-        $this->postJson(route('manage.role.sync'))
-            ->assertUnauthorized();
+        // Guest unauthenticated redirects / fails
+        auth()->logout();
+        $this->post(route('manage.role.sync'))->assertRedirect(route('loginpage'));
+        $this->post(route('manage.role.sync.dry-run'))->assertRedirect(route('loginpage'));
 
-        // Admin forbidden
-        $this->actingAs($admin)
-            ->postJson(route('manage.role.sync'))
-            ->assertForbidden();
+        // Admin (Role 2) forbidden
+        $this->actingAs($admin)->postJson(route('manage.role.sync'))->assertForbidden();
+        $this->actingAs($admin)->postJson(route('manage.role.sync.dry-run'))->assertForbidden();
 
-        // User forbidden
-        $this->actingAs($user)
-            ->postJson(route('manage.role.sync'))
-            ->assertForbidden();
+        // User (Role 1) forbidden
+        $this->actingAs($user)->postJson(route('manage.role.sync'))->assertForbidden();
+        $this->actingAs($user)->postJson(route('manage.role.sync.dry-run'))->assertForbidden();
     }
 
     public function test_update_user_can_modify_active_status_and_protects_credentials(): void

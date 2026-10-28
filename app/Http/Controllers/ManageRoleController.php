@@ -262,6 +262,59 @@ class ManageRoleController extends Controller
     }
 
     /**
+     * Jalankan sinkronisasi employee NYATA (Write-Enabled ke Database OWL).
+     */
+    public function sync(Request $request)
+    {
+        @set_time_limit(300);
+
+        $lockKey = 'owl:sync-employee-users:lock';
+        $lock = Cache::lock($lockKey, 300);
+
+        if (!$lock->get()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Proses sinkronisasi lain sedang berjalan. Silakan tunggu beberapa saat.',
+            ], 409);
+        }
+
+        try {
+            $syncService = new EmployeeUserSyncService();
+            $result = $syncService->sync([
+                'dry_run' => false,
+                'allow_create' => true,
+            ]);
+
+            return response()->json([
+                'success'                    => true,
+                'status'                     => strtoupper($result->status),
+                'mode'                       => 'REAL (Synchronize Database)',
+                'is_dry_run'                 => false,
+                'duration'                   => $result->durationSeconds(),
+                'total_api'                  => $result->totalApi,
+                'total_owl'                  => $result->totalOwl,
+                'created_count'              => $result->createdCount,
+                'updated_count'              => $result->updatedCount,
+                'updated_active_count'       => $result->updatedActiveCount,
+                'updated_soft_deleted_count' => $result->updatedSoftDeletedCount,
+                'unchanged_count'            => $result->unchangedCount,
+                'skipped_count'              => $result->skippedCount,
+                'conflict_count'             => $result->conflictCount,
+                'conflicts'                  => array_slice($result->conflicts, 0, 5),
+                'created_sample'             => array_slice($result->createdDetails, 0, 5),
+                'message'                    => "Sinkronisasi berhasil! {$result->createdCount} user baru dibuat dan {$result->updatedCount} profil karyawan berhasil diperbarui ke database OWL.",
+            ]);
+        } catch (Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menjalankan sinkronisasi: ' . $e->getMessage(),
+            ], 500);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    /**
      * Jalankan simulasi sinkronisasi employee (Dry-Run 100% Zero-Write).
      */
     public function syncDryRun(Request $request)
@@ -287,6 +340,7 @@ class ManageRoleController extends Controller
                 'success'                    => true,
                 'status'                     => strtoupper($result->status),
                 'mode'                       => 'DRY-RUN (Zero-Write Simulation)',
+                'is_dry_run'                 => true,
                 'duration'                   => $result->durationSeconds(),
                 'total_api'                  => $result->totalApi,
                 'total_owl'                  => $result->totalOwl,

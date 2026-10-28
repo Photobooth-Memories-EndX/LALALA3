@@ -628,7 +628,8 @@ Route::group(['prefix' => 'manage/role', 'middleware' => ['auth', 'superadmin']]
     Route::get('/live-search', [ManageRoleController::class, 'liveSearch'])->name('manage.role.live-search');
     Route::get('/search-autocomplete', [ManageRoleController::class, 'liveSearch'])->name('manage.role.autocomplete');
     Route::get('/autocomplete', [ManageRoleController::class, 'liveSearch']);
-    Route::post('/sync-dry-run', [ManageRoleController::class, 'syncDryRun'])->name('manage.role.sync');
+    Route::post('/sync', [ManageRoleController::class, 'sync'])->name('manage.role.sync');
+    Route::post('/sync-dry-run', [ManageRoleController::class, 'syncDryRun'])->name('manage.role.sync.dry-run');
     Route::get('/{user}/show', [ManageRoleController::class, 'show'])->name('manage.role.show');
     Route::get('/{user}', [ManageRoleController::class, 'show']);
     Route::put('/{user}', [ManageRoleController::class, 'update'])->name('manage.role.update');

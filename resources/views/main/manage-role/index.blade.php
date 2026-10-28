@@ -68,13 +68,13 @@
                 @endif
             @endforeach
 
-            {{-- 1. Synchronize (Dry-Run Simulation) Modal --}}
+            {{-- 1. Synchronize (Real & Dry-Run) Modal --}}
             <div class="modal fade" id="syncSimulationModal" tabindex="-1" aria-labelledby="syncSimulationModalLabel" aria-hidden="true" data-bs-backdrop="static">
                 <div class="modal-dialog modal-dialog-centered modal-lg">
                     <div class="modal-content rounded-4 border-0 shadow">
                         <div class="modal-header border-bottom">
                             <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2" id="syncSimulationModalLabel">
-                                <i class="ti ti-refresh text-primary"></i> Sinkronisasi Karyawan (Dry-Run Simulation)
+                                <i class="ti ti-refresh text-primary"></i> Sinkronisasi Karyawan POSCO ke OWL
                             </h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="btnCloseSyncModal"></button>
                         </div>
@@ -82,49 +82,61 @@
                         <div class="modal-body py-4" id="syncModalBody">
                             <!-- State 1: Confirmation -->
                             <div id="syncConfirmationState">
-                                <div class="alert alert-info d-flex align-items-start gap-3 rounded-3 mb-3">
-                                    <i class="ti ti-info-circle fs-1 text-info flex-shrink-0 mt-1"></i>
+                                <div class="alert alert-primary d-flex align-items-start gap-3 rounded-3 mb-3">
+                                    <i class="ti ti-refresh fs-1 text-primary flex-shrink-0 mt-1"></i>
                                     <div>
-                                        <h5 class="fw-bold mb-1">Simulasi Sinkronisasi Data Karyawan (Zero-Write)</h5>
+                                        <h5 class="fw-bold mb-1">Sinkronisasi Data Karyawan POSCO ke Database OWL</h5>
                                         <p class="mb-1 small">
-                                            Proses ini akan membaca seluruh data kepegawaian dari <strong>API Gateway POSCO</strong> (<code>http://172.21.23.73</code>) dan menganalisis perbedaannya dengan tabel <code>users</code> OWL dalam mode <strong>simulasi (dry-run)</strong>.
+                                            Proses ini akan membaca data terbaru dari <strong>API Gateway POSCO</strong> (<code>http://172.21.23.73</code>), memperbarui profil organisasi dan 18 kolom data HR ke tabel <code>users</code> OWL, serta membuat akun bagi karyawan baru yang belum terdaftar.
                                         </p>
-                                        <p class="mb-0 small text-muted">
-                                            <i class="ti ti-shield-check text-success me-1"></i> <strong>Jaminan Zero-Write:</strong> Tidak ada baris database lokal yang akan dimodifikasi, dibuat, atau dihapus selama simulasi ini berjalan.
+                                        <p class="mb-0 small text-success fw-semibold">
+                                            <i class="ti ti-shield-check me-1"></i> <strong>Proteksi Kredensial:</strong> Password lokal, role sistem, status aktivasi LMS (<code>active</code>), dan token autentikasi SSO terlindungi dan tidak akan ditimpa.
                                         </p>
                                     </div>
                                 </div>
 
                                 <div class="card border rounded-3 p-3 bg-light">
-                                    <h6 class="fw-bold text-dark mb-2"><i class="ti ti-list-check me-1"></i> Parameter Analisis:</h6>
-                                    <ul class="mb-0 small text-muted ps-3">
-                                        <li>Pencocokan akun berbasis primary business key: <code>id_emp</code>.</li>
-                                        <li>Deteksi kandidat karyawan baru yang belum terdaftar di OWL.</li>
-                                        <li>Analisis pembaruan data profil organisasi & 18 atribut HR.</li>
-                                        <li>Pemisahan data user aktif vs akun <em>soft-deleted</em>.</li>
-                                        <li>Validasi dan proteksi duplikasi email & <code>id_emp</code>.</li>
-                                    </ul>
+                                    <h6 class="fw-bold text-dark mb-2"><i class="ti ti-settings-cog me-1"></i> Mode Operasi Tersedia:</h6>
+                                    <div class="row g-2">
+                                        <div class="col-sm-6">
+                                            <div class="border rounded-3 p-2 bg-white h-100">
+                                                <div class="fw-bold text-primary small mb-1"><i class="ti ti-database-export me-1"></i> Sinkronisasi Nyata (Live)</div>
+                                                <div class="text-muted extra-small">Menyimpan penambahan dan pembaruan data secara langsung ke tabel <code>users</code> database OWL.</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <div class="border rounded-3 p-2 bg-white h-100">
+                                                <div class="fw-bold text-secondary small mb-1"><i class="ti ti-eye me-1"></i> Uji Simulasi (Dry-Run)</div>
+                                                <div class="text-muted extra-small">Hanya menganalisis perkiraan data tanpa menyimpan perubahan apa pun (100% Zero-Write).</div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
                             <!-- State 2: Running / Loading -->
                             <div id="syncLoadingState" class="d-none text-center py-4">
                                 <div class="spinner-border text-primary mb-3" style="width: 3.5rem; height: 3.5rem;" role="status">
-                                    <span class="visually-hidden">Memproses simulasi...</span>
+                                    <span class="visually-hidden">Memproses...</span>
                                 </div>
-                                <h5 class="fw-bold text-dark mb-1">Menjalankan Simulasi Sinkronisasi...</h5>
-                                <p class="text-muted small mb-0">
-                                    Menghubungi API Gateway POSCO dan membandingkan 2.700+ data karyawan dengan database OWL. Harap tunggu beberapa detik...
+                                <h5 class="fw-bold text-dark mb-1" id="syncLoadingTitle">Menjalankan Sinkronisasi...</h5>
+                                <p class="text-muted small mb-0" id="syncLoadingSubtitle">
+                                    Menghubungi API Gateway POSCO dan memproses 2.700+ data karyawan. Harap tunggu beberapa detik...
                                 </p>
                             </div>
 
                             <!-- State 3: Results -->
                             <div id="syncResultState" class="d-none">
-                                <div class="alert alert-success d-flex align-items-center gap-2 py-2 px-3 mb-3 rounded-3">
-                                    <i class="ti ti-check-circle fs-2 text-success"></i>
-                                    <div class="fw-semibold small" id="syncResultSummary">
-                                        Simulasi sinkronisasi selesai dijalankan dalam mode Dry-Run.
+                                <div class="alert alert-success d-flex align-items-center justify-content-between py-2 px-3 mb-3 rounded-3" id="syncAlertBox">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="ti ti-check-circle fs-2 text-success"></i>
+                                        <div class="fw-semibold small" id="syncResultSummary">
+                                            Sinkronisasi berhasil diselesaikan!
+                                        </div>
                                     </div>
+                                    <button type="button" class="btn btn-sm btn-success d-none" id="btnReloadTable" onclick="window.location.reload()">
+                                        <i class="ti ti-refresh me-1"></i> Muat Ulang Halaman
+                                    </button>
                                 </div>
 
                                 <div class="table-responsive border rounded-3 mb-3">
@@ -136,7 +148,7 @@
                                             </tr>
                                             <tr>
                                                 <td class="text-muted fw-semibold">Mode Eksekusi</td>
-                                                <td><span class="badge bg-secondary-lt text-secondary" id="resMode">DRY-RUN (Simulasi Zero-Write)</span></td>
+                                                <td><span class="badge" id="resMode">REAL (Synchronize Database)</span></td>
                                             </tr>
                                             <tr>
                                                 <td class="text-muted fw-semibold">Durasi Pemrosesan</td>
@@ -151,19 +163,19 @@
                                                 <td class="fw-semibold text-dark" id="resTotalOwl">-</td>
                                             </tr>
                                             <tr class="table-info">
-                                                <td class="text-dark fw-semibold">Kandidat User Baru (Dapat Ditambahkan)</td>
+                                                <td class="text-dark fw-semibold">User Baru Berhasil Dibuat</td>
                                                 <td class="fw-bold text-primary" id="resCreatedCount">-</td>
                                             </tr>
                                             <tr class="table-warning">
-                                                <td class="text-dark fw-semibold">Total User Mengalami Pembaruan Profil</td>
+                                                <td class="text-dark fw-semibold">Profil User Berhasil Diperbarui</td>
                                                 <td class="fw-bold text-warning-emphasis" id="resUpdatedCount">-</td>
                                             </tr>
                                             <tr>
-                                                <td class="text-muted small ps-4">└ User Aktif yang Akan Diperbarui</td>
+                                                <td class="text-muted small ps-4">└ User Aktif yang Diperbarui</td>
                                                 <td class="small text-dark" id="resUpdatedActiveCount">-</td>
                                             </tr>
                                             <tr>
-                                                <td class="text-muted small ps-4">└ User Soft-Deleted yang Akan Diperbarui</td>
+                                                <td class="text-muted small ps-4">└ User Soft-Deleted yang Diperbarui</td>
                                                 <td class="small text-muted" id="resUpdatedSoftDeletedCount">-</td>
                                             </tr>
                                             <tr>
@@ -178,10 +190,10 @@
                                     </table>
                                 </div>
 
-                                <div class="alert alert-secondary py-2 px-3 small d-flex align-items-center gap-2 mb-0">
-                                    <i class="ti ti-lock text-muted fs-3"></i>
+                                <div class="alert alert-secondary py-2 px-3 small d-flex align-items-center gap-2 mb-0" id="syncFooterNote">
+                                    <i class="ti ti-database-check text-success fs-3"></i>
                                     <div>
-                                        <strong>100% Zero-Write Terbukti:</strong> Tidak ada perubahan yang disimpan ke tabel <code>users</code> atau log eksekusi.
+                                        <strong>Data Tersimpan Nyata:</strong> Seluruh 18 kolom atribut profil HR dan penugasan organisasi telah diperbarui ke tabel <code>users</code> OWL.
                                     </div>
                                 </div>
                             </div>
@@ -191,20 +203,25 @@
                                 <div class="alert alert-danger d-flex align-items-start gap-2 rounded-3 mb-0">
                                     <i class="ti ti-alert-triangle fs-2 text-danger flex-shrink-0 mt-1"></i>
                                     <div>
-                                        <h6 class="fw-bold mb-1">Gagal Menjalankan Simulasi Sinkronisasi</h6>
+                                        <h6 class="fw-bold mb-1">Gagal Menjalankan Sinkronisasi</h6>
                                         <p class="mb-0 small" id="syncErrorMessage">-</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="modal-footer border-top pt-3">
+                        <div class="modal-footer border-top pt-3 d-flex justify-content-between">
                             <button type="button" class="btn btn-outline-secondary px-3" data-bs-dismiss="modal" id="btnCancelSync">
                                 Tutup
                             </button>
-                            <button type="button" class="btn btn-primary px-4" id="btnStartSyncSimulation" style="background-color: #003b6d; border-color: #003b6d;">
-                                <i class="ti ti-player-play me-1"></i> Mulai Simulasi Sekarang
-                            </button>
+                            <div class="d-flex align-items-center gap-2" id="syncActionButtons">
+                                <button type="button" class="btn btn-outline-info px-3" id="btnStartDryRun">
+                                    <i class="ti ti-eye me-1"></i> Uji Simulasi (Dry-Run)
+                                </button>
+                                <button type="button" class="btn btn-primary px-4" id="btnStartRealSync" style="background-color: #003b6d; border-color: #003b6d;">
+                                    <i class="ti ti-refresh me-1"></i> Sinkronkan Sekarang
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -524,73 +541,117 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // 3. Synchronize (Dry-Run Simulation) Handler
-    const btnStartSync = document.getElementById('btnStartSyncSimulation');
+    // 3. Synchronize (Real & Dry-Run) Handler
+    const btnStartRealSync = document.getElementById('btnStartRealSync');
+    const btnStartDryRun = document.getElementById('btnStartDryRun');
     const syncConfState = document.getElementById('syncConfirmationState');
     const syncLoadingState = document.getElementById('syncLoadingState');
     const syncResultState = document.getElementById('syncResultState');
     const syncErrorState = document.getElementById('syncErrorState');
     const btnCancelSync = document.getElementById('btnCancelSync');
     const btnCloseSyncModal = document.getElementById('btnCloseSyncModal');
+    const btnReloadTable = document.getElementById('btnReloadTable');
+    const syncActionButtons = document.getElementById('syncActionButtons');
 
-    if (btnStartSync) {
-        btnStartSync.addEventListener('click', function () {
-            // Switch to loading state
-            syncConfState.classList.add('d-none');
-            syncResultState.classList.add('d-none');
-            syncErrorState.classList.add('d-none');
-            syncLoadingState.classList.remove('d-none');
+    function executeSyncProcess(endpoint, isDryRun) {
+        // Switch to loading state
+        syncConfState.classList.add('d-none');
+        syncResultState.classList.add('d-none');
+        syncErrorState.classList.add('d-none');
+        syncLoadingState.classList.remove('d-none');
 
-            btnStartSync.disabled = true;
-            btnCancelSync.disabled = true;
-            if (btnCloseSyncModal) btnCloseSyncModal.disabled = true;
+        const titleEl = document.getElementById('syncLoadingTitle');
+        const subtitleEl = document.getElementById('syncLoadingSubtitle');
+        if (titleEl) {
+            titleEl.textContent = isDryRun ? 'Menjalankan Simulasi Sinkronisasi (Dry-Run)...' : 'Menjalankan Sinkronisasi Nyata ke Database OWL...';
+        }
+        if (subtitleEl) {
+            subtitleEl.textContent = isDryRun 
+                ? 'Menganalisis perbandingan data API Gateway POSCO tanpa menyimpan (Zero-Write)...' 
+                : 'Mengambil data API Gateway POSCO dan memperbarui tabel users OWL. Harap tunggu...';
+        }
 
-            fetch('{{ route("manage.role.sync") }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'Accept': 'application/json'
-                }
-            })
-            .then(res => res.json().then(data => ({ status: res.status, ok: res.ok, body: data })))
-            .then(({ status, ok, body }) => {
-                syncLoadingState.classList.add('d-none');
-                btnCancelSync.disabled = false;
-                if (btnCloseSyncModal) btnCloseSyncModal.disabled = false;
+        if (btnStartRealSync) btnStartRealSync.disabled = true;
+        if (btnStartDryRun) btnStartDryRun.disabled = true;
+        if (btnCancelSync) btnCancelSync.disabled = true;
+        if (btnCloseSyncModal) btnCloseSyncModal.disabled = true;
 
-                if (ok && body.success) {
-                    syncResultState.classList.remove('d-none');
-                    document.getElementById('resStatus').textContent = body.status || 'SUCCESS';
-                    document.getElementById('resMode').textContent = body.mode || 'DRY-RUN (Simulasi Zero-Write)';
-                    document.getElementById('resDuration').textContent = (body.duration || '0') + ' detik';
-                    document.getElementById('resTotalApi').textContent = (body.total_api || 0).toLocaleString('id-ID') + ' entri';
-                    document.getElementById('resTotalOwl').textContent = (body.total_owl || 0).toLocaleString('id-ID') + ' user';
-                    document.getElementById('resCreatedCount').textContent = (body.created_count || 0).toLocaleString('id-ID') + ' user baru';
-                    document.getElementById('resUpdatedCount').textContent = (body.updated_count || 0).toLocaleString('id-ID') + ' user';
-                    document.getElementById('resUpdatedActiveCount').textContent = (body.updated_active_count || 0).toLocaleString('id-ID') + ' user aktif';
-                    document.getElementById('resUpdatedSoftDeletedCount').textContent = (body.updated_soft_deleted_count || 0).toLocaleString('id-ID') + ' user';
-                    document.getElementById('resUnchangedCount').textContent = (body.unchanged_count || 0).toLocaleString('id-ID') + ' user';
-                    document.getElementById('resConflictCount').textContent = (body.conflict_count || 0).toLocaleString('id-ID') + ' entri';
+        fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            }
+        })
+        .then(res => res.json().then(data => ({ status: res.status, ok: res.ok, body: data })))
+        .then(({ status, ok, body }) => {
+            syncLoadingState.classList.add('d-none');
+            if (btnCancelSync) btnCancelSync.disabled = false;
+            if (btnCloseSyncModal) btnCloseSyncModal.disabled = false;
+            if (btnStartRealSync) btnStartRealSync.disabled = false;
+            if (btnStartDryRun) btnStartDryRun.disabled = false;
 
-                    btnStartSync.innerHTML = '<i class="ti ti-refresh me-1"></i> Jalankan Ulang Simulasi';
-                    btnStartSync.disabled = false;
+            if (ok && body.success) {
+                syncResultState.classList.remove('d-none');
+                document.getElementById('resStatus').textContent = body.status || 'SUCCESS';
+                
+                const modeBadge = document.getElementById('resMode');
+                const footerNote = document.getElementById('syncFooterNote');
+                if (body.is_dry_run) {
+                    modeBadge.className = 'badge bg-secondary-lt text-secondary';
+                    modeBadge.textContent = 'DRY-RUN (Simulasi Zero-Write)';
+                    if (btnReloadTable) btnReloadTable.classList.add('d-none');
+                    if (footerNote) {
+                        footerNote.innerHTML = '<i class="ti ti-lock text-muted fs-3"></i><div><strong>100% Zero-Write Terbukti:</strong> Tidak ada perubahan yang disimpan ke tabel <code>users</code> atau log eksekusi.</div>';
+                    }
                 } else {
-                    syncErrorState.classList.remove('d-none');
-                    document.getElementById('syncErrorMessage').textContent = body.message || 'Terjadi kesalahan saat menjalankan simulasi.';
-                    btnStartSync.innerHTML = '<i class="ti ti-alert-triangle me-1"></i> Coba Lagi';
-                    btnStartSync.disabled = false;
+                    modeBadge.className = 'badge bg-success text-white';
+                    modeBadge.textContent = 'REAL (Tersimpan ke Database OWL)';
+                    if (btnReloadTable) btnReloadTable.classList.remove('d-none');
+                    if (footerNote) {
+                        footerNote.innerHTML = '<i class="ti ti-database-check text-success fs-3"></i><div><strong>Data Tersimpan Nyata:</strong> Seluruh data kepegawaian dan 18 kolom profil HR telah disimpan ke database OWL.</div>';
+                    }
                 }
-            })
-            .catch(err => {
-                syncLoadingState.classList.add('d-none');
+
+                document.getElementById('resDuration').textContent = (body.duration || '0') + ' detik';
+                document.getElementById('resTotalApi').textContent = (body.total_api || 0).toLocaleString('id-ID') + ' entri';
+                document.getElementById('resTotalOwl').textContent = (body.total_owl || 0).toLocaleString('id-ID') + ' user';
+                document.getElementById('resCreatedCount').textContent = (body.created_count || 0).toLocaleString('id-ID') + (body.is_dry_run ? ' kandidat baru' : ' user baru dibuat');
+                document.getElementById('resUpdatedCount').textContent = (body.updated_count || 0).toLocaleString('id-ID') + (body.is_dry_run ? ' rencana pembaruan' : ' user diperbarui');
+                document.getElementById('resUpdatedActiveCount').textContent = (body.updated_active_count || 0).toLocaleString('id-ID') + ' user aktif';
+                document.getElementById('resUpdatedSoftDeletedCount').textContent = (body.updated_soft_deleted_count || 0).toLocaleString('id-ID') + ' user';
+                document.getElementById('resUnchangedCount').textContent = (body.unchanged_count || 0).toLocaleString('id-ID') + ' user';
+                document.getElementById('resConflictCount').textContent = (body.conflict_count || 0).toLocaleString('id-ID') + ' entri';
+
+                document.getElementById('syncResultSummary').textContent = body.message || 'Sinkronisasi berhasil!';
+            } else {
                 syncErrorState.classList.remove('d-none');
-                document.getElementById('syncErrorMessage').textContent = 'Koneksi gagal atau terjadi error internal: ' + err.message;
-                btnCancelSync.disabled = false;
-                if (btnCloseSyncModal) btnCloseSyncModal.disabled = false;
-                btnStartSync.disabled = false;
-                btnStartSync.innerHTML = '<i class="ti ti-alert-triangle me-1"></i> Coba Lagi';
-            });
+                document.getElementById('syncErrorMessage').textContent = body.message || 'Terjadi kesalahan saat menjalankan sinkronisasi.';
+            }
+        })
+        .catch(err => {
+            syncLoadingState.classList.add('d-none');
+            syncErrorState.classList.remove('d-none');
+            document.getElementById('syncErrorMessage').textContent = 'Koneksi gagal atau terjadi error internal: ' + err.message;
+            if (btnCancelSync) btnCancelSync.disabled = false;
+            if (btnCloseSyncModal) btnCloseSyncModal.disabled = false;
+            if (btnStartRealSync) btnStartRealSync.disabled = false;
+            if (btnStartDryRun) btnStartDryRun.disabled = false;
+        });
+    }
+
+    if (btnStartRealSync) {
+        btnStartRealSync.addEventListener('click', function () {
+            if (confirm('Jalankan sinkronisasi nyata? Data karyawan dari API POSCO akan disimpan dan memperbarui tabel users OWL.')) {
+                executeSyncProcess('{{ route("manage.role.sync") }}', false);
+            }
+        });
+    }
+
+    if (btnStartDryRun) {
+        btnStartDryRun.addEventListener('click', function () {
+            executeSyncProcess('{{ route("manage.role.sync.dry-run") }}', true);
         });
     }
 });
