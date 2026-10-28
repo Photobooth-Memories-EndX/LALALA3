@@ -535,6 +535,7 @@ Route::get('{task}/qr', [TaskManageController::class, 'qr'])->name('qr');
 
             // AJAX: dropdown + search induk untuk form create/edit
             Route::get('parents/{type}', [TaskManageController::class, 'parentOptions'])->name('parents');
+            Route::post('group', [TaskManageController::class, 'storeGroup'])->name('group.store');
 
             // Daftar task milik satu induk
             Route::get('parent/{parentType}/{parentId}', [TaskManageController::class, 'parentTasks'])->name('parent');
@@ -550,9 +551,11 @@ Route::get('{task}/qr', [TaskManageController::class, 'qr'])->name('qr');
 
             // Review submission user
             Route::get('/{task}/submissions', [TaskManageController::class, 'submissions'])->name('submissions');
+            Route::get('/{task}/submissions/preview-document', [TaskManageController::class, 'previewDocument'])->name('submissions.preview-doc');
             Route::get('/{task}/submissions/export', [TaskManageController::class, 'exportSubmissions'])->name('submissions.export');
             Route::post('/{task}/submissions/bulk-complete', [TaskManageController::class, 'bulkComplete'])->name('submissions.bulk-complete');
             Route::post('/{task}/submissions/{submission}/resubmit', [TaskManageController::class, 'requestResubmit'])->name('submissions.resubmit');
+            Route::post('/{task}/submissions/{submission}/reject', [TaskManageController::class, 'rejectSubmission'])->name('submissions.reject');
 
             // Koreksi submission user -> tandai selesai
             Route::post('/{task}/submissions/{submission}/complete', [TaskManageController::class, 'completeSubmission'])

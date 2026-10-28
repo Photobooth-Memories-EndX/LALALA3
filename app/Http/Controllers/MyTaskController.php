@@ -94,7 +94,7 @@ class MyTaskController extends Controller
             'playlist'         => 'Playlist',
             'content'          => 'Content',
             'assessment'       => 'Assessment',
-            'standalone'       => 'Global Task',
+            'standalone'       => 'Others',
             'offline_training' => 'Offline Training',
         ];
 
@@ -103,8 +103,8 @@ class MyTaskController extends Controller
             'in_progress' => 'In Progress',
             'submitted'   => 'Pending Review',
             'completed'   => 'Completed',
+            'rejected'    => 'Rejected',
             'overdue'     => 'Overdue',
-            'resubmit'    => 'Resubmit Requested',
         ];
 
         $months = [
@@ -131,7 +131,8 @@ class MyTaskController extends Controller
                     'in_progress' => $g['completed'] < $g['total'],
                     'overdue'     => $g['has_overdue'],
                     'submitted'   => $g['tasks']->contains(fn ($t) => $t->userStatusFor($user) === 'submitted'),
-                    'resubmit'    => $g['tasks']->contains(fn ($t) => $t->userStatusFor($user) === 'resubmit'),
+                    'rejected'    => $g['tasks']->contains(fn ($t) => in_array($t->userStatusFor($user), ['rejected', 'resubmit'], true)),
+                    'resubmit'    => $g['tasks']->contains(fn ($t) => in_array($t->userStatusFor($user), ['rejected', 'resubmit'], true)),
                     default       => true,
                 };
             })->values();
@@ -207,8 +208,9 @@ class MyTaskController extends Controller
             'not_started' => $allTasksAndAssessments->filter(fn ($t) => in_array($t->userStatusFor($user), ['not_started', 'in_progress'], true) && $t->userStatusFor($user) !== 'completed')->count(),
             'submitted'   => $allTasksAndAssessments->filter(fn ($t) => $t->userStatusFor($user) === 'submitted')->count(),
             'completed'   => $allTasksAndAssessments->filter(fn ($t) => $t->userStatusFor($user) === 'completed')->count(),
+            'rejected'    => $allTasksAndAssessments->filter(fn ($t) => in_array($t->userStatusFor($user), ['rejected', 'resubmit'], true))->count(),
             'overdue'     => $allTasksAndAssessments->filter(fn ($t) => $t->userStatusFor($user) === 'overdue')->count(),
-            'resubmit'    => $allTasksAndAssessments->filter(fn ($t) => $t->userStatusFor($user) === 'resubmit')->count(),
+            'resubmit'    => $allTasksAndAssessments->filter(fn ($t) => in_array($t->userStatusFor($user), ['rejected', 'resubmit'], true))->count(),
         ];
 
         // Category counts for quick filter tabs: all, playlist, content, asesment, others
@@ -232,7 +234,8 @@ class MyTaskController extends Controller
                 'asesment'    => $assessmentGroups->values(),
                 'others'      => $taskGroups->filter(fn ($g) => in_array($g['parent_type'], ['standalone', 'offline_training'], true) || !in_array($g['parent_type'], ['playlist', 'content'], true))->values(),
                 // Backward-compatibility: if legacy status filters are passed
-                'resubmit'    => $allGroups->filter(fn ($g) => $g['tasks']->contains(fn ($t) => $t->userStatusFor($user) === 'resubmit'))->values(),
+                'rejected'    => $allGroups->filter(fn ($g) => $g['tasks']->contains(fn ($t) => in_array($t->userStatusFor($user), ['rejected', 'resubmit'], true)))->values(),
+                'resubmit'    => $allGroups->filter(fn ($g) => $g['tasks']->contains(fn ($t) => in_array($t->userStatusFor($user), ['rejected', 'resubmit'], true)))->values(),
                 'in_progress' => $allGroups->filter(fn ($g) => $g['completed'] < $g['total'])->values(),
                 'submitted'   => $allGroups->filter(fn ($g) => $g['tasks']->contains(fn ($t) => $t->userStatusFor($user) === 'submitted'))->values(),
                 'completed'   => $allGroups->filter(fn ($g) => $g['completed'] === $g['total'] && $g['total'] > 0)->values(),
@@ -591,7 +594,12 @@ class MyTaskController extends Controller
         // Tolak submit ganda: hanya boleh submit kalau belum pernah,
         // atau kalau admin meminta resubmit.
         if ($existing && ! $existing->resubmit_requested) {
-            return $dashboard->with('info', 'You have already submitted this task. Waiting for admin review.');
+            $msg = $existing->status === 'rejected'
+                ? 'This task has been closed as rejected.'
+                : ($existing->status === 'completed'
+                    ? 'You have already completed this task.'
+                    : 'You have already submitted this task. Waiting for admin review.');
+            return $dashboard->with('info', $msg);
         }
 
         // Validasi dinamis mengikuti field task.
@@ -704,7 +712,10 @@ class MyTaskController extends Controller
                     : '';
                 $answerText = $driveLink !== '' ? $driveLink : null;
             } else {
-                $answerText = $inputFields[$field->id] ?? null;
+                $rawVal = $inputFields[$field->id] ?? null;
+                $answerText = is_array($rawVal)
+                    ? implode(', ', array_filter(array_map('trim', $rawVal)))
+                    : ($rawVal !== null ? trim($rawVal) : null);
             }
 
             $newAnswers[$field->id] = [
@@ -741,7 +752,7 @@ class MyTaskController extends Controller
         // (Fetched up front so the main query needs no nested closures.)
         $redeemedIds = TaskCodeRedemption::where('user_id', $user->id)->pluck('task_id')->all();
 
-        return Task::with(['trainingPlan', 'linkedPlan', 'content', 'offlineTraining', 'fields' => fn ($q) => $q->ordered()])
+        return Task::with(['trainingPlan', 'linkedPlan', 'content', 'offlineTraining', 'taskGroup', 'fields' => fn ($q) => $q->ordered()])
             ->with([
                 'submissions' => fn ($q) => $q->where('user_id', $user->id),
             ])

@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Exports\TaskSubmissionsExport;
 use App\Models\Assesment;
+use App\Services\DocumentPreviewService;
 use App\Models\Content;
 use App\Models\OfflineTraining;
 use App\Models\Task;
+use App\Models\TaskGroup;
 use App\Models\TaskField;
 use App\Models\TaskSubmission;
 use App\Models\TrainingPlan;
@@ -58,18 +60,20 @@ class TaskManageController extends Controller
             ->leftJoin('trainingplan', 'trainingplan.id', '=', 'tasks.training_plan_id')
             ->leftJoin('content', 'content.id', '=', 'tasks.content_id')
             ->leftJoin('offline_trainings', 'offline_trainings.id', '=', 'tasks.offline_training_id')
+            ->leftJoin('task_groups', 'task_groups.id', '=', 'tasks.task_group_id')
             ->whereIn('tasks.parent_type', $allowedTypes)
             ->when($search !== '', fn ($q) => $q->where(function ($w) use ($search) {
                 $w->where('trainingplan.title', 'like', "%{$search}%")
                   ->orWhere('content.title', 'like', "%{$search}%")
                   ->orWhere('offline_trainings.title', 'like', "%{$search}%")
                   ->orWhere('offline_trainings.course_name', 'like', "%{$search}%")
+                  ->orWhere('task_groups.title', 'like', "%{$search}%")
                   ->orWhere('tasks.title', 'like', "%{$search}%");
             }))
-            ->selectRaw('tasks.parent_type, COALESCE(tasks.training_plan_id, tasks.content_id, tasks.offline_training_id) AS parent_id')
-            ->selectRaw('MAX(COALESCE(trainingplan.title, content.title, offline_trainings.title, offline_trainings.course_name)) AS parent_name')
+            ->selectRaw('tasks.parent_type, COALESCE(tasks.training_plan_id, tasks.content_id, tasks.offline_training_id, tasks.task_group_id, 0) AS parent_id')
+            ->selectRaw("MAX(COALESCE(trainingplan.title, content.title, offline_trainings.title, offline_trainings.course_name, task_groups.title, 'Others')) AS parent_name")
             ->selectRaw("COUNT(*) AS total, SUM(tasks.status = 'published') AS published, SUM(tasks.status = 'draft') AS draft")
-            ->groupBy('tasks.parent_type', 'tasks.training_plan_id', 'tasks.content_id', 'tasks.offline_training_id')
+            ->groupBy('tasks.parent_type', 'tasks.training_plan_id', 'tasks.content_id', 'tasks.offline_training_id', 'tasks.task_group_id')
             ->orderBy('parent_name');
 
         $parents = (clone $baseQuery)->paginate(10)->withQueryString();
@@ -98,11 +102,11 @@ class TaskManageController extends Controller
 
         // Pending submissions per parent (keyed "type:id").
         $pendingByParent = TaskSubmission::selectRaw(
-                "tasks.parent_type, COALESCE(tasks.training_plan_id, tasks.content_id, tasks.offline_training_id) AS parent_id, COUNT(*) AS cnt"
+                "tasks.parent_type, COALESCE(tasks.training_plan_id, tasks.content_id, tasks.offline_training_id, tasks.task_group_id, 0) AS parent_id, COUNT(*) AS cnt"
             )
             ->join('tasks', 'tasks.id', '=', 'task_submissions.task_id')
             ->where('task_submissions.status', 'pending')
-            ->groupBy('tasks.parent_type', 'tasks.training_plan_id', 'tasks.content_id', 'tasks.offline_training_id')
+            ->groupBy('tasks.parent_type', 'tasks.training_plan_id', 'tasks.content_id', 'tasks.offline_training_id', 'tasks.task_group_id')
             ->get()
             ->mapWithKeys(fn ($r) => ["{$r->parent_type}:{$r->parent_id}" => $r->cnt]);
 
@@ -212,18 +216,24 @@ class TaskManageController extends Controller
         abort_if(! in_array($parentType, ['offline_training', 'standalone'], true) && ! $parent, 404);
 
         $parentName = $parent?->title ?? $parent?->course_name
-            ?? ($parentType === 'standalone' ? 'Global Task'
+            ?? ($parentType === 'standalone' ? 'Others'
                 : ($parentType === 'offline_training' ? ('Offline Training' . ($parentId ? " #{$parentId}" : '')) : '—'));
 
         $parentColumn = $this->parentColumn($parentType);
 
-        $tasks = Task::with(['content', 'creator', 'offlineTraining'])
+        $tasks = Task::with(['content', 'creator', 'offlineTraining', 'taskGroup'])
             ->withCount([
                 'submissions as pending_submissions_count'   => fn ($q) => $q->where('status', 'pending'),
                 'submissions as completed_submissions_count' => fn ($q) => $q->where('status', 'completed'),
             ])
             ->where('parent_type', $parentType)
-            ->when($parentColumn, fn ($q) => $q->where($parentColumn, $parentId))
+            ->when($parentColumn, function ($q) use ($parentColumn, $parentId, $parentType) {
+                if ($parentType === 'standalone' && ($parentId === 0 || empty($parentId))) {
+                    $q->whereNull('task_group_id');
+                } else {
+                    $q->where($parentColumn, $parentId);
+                }
+            })
             ->when($request->search, fn ($q, $s) => $q->where('title', 'like', "%{$s}%"))
             ->when($request->status, fn ($q, $st) => $q->where('status', $st))
             ->orderByDesc('created_at')
@@ -260,6 +270,35 @@ class TaskManageController extends Controller
     }
 
     /**
+     * POST /manage/task/group — Create a new task container for the Others category.
+     */
+    public function storeGroup(Request $request)
+    {
+        $validated = $request->validate([
+            'title'       => 'required|string|max:255',
+            'description' => 'nullable|string|max:1000',
+        ]);
+
+        $group = TaskGroup::create([
+            'title'       => trim($validated['title']),
+            'description' => !empty($validated['description']) ? trim($validated['description']) : null,
+            'created_by'  => Auth::id(),
+        ]);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success'      => true,
+                'group'        => $group,
+                'redirect_url' => route('manage.task.parent', ['parentType' => 'standalone', 'parentId' => $group->id]),
+            ]);
+        }
+
+        return redirect()
+            ->route('manage.task.parent', ['parentType' => 'standalone', 'parentId' => $group->id])
+            ->with('success', 'Task container "' . $group->title . '" created successfully. You can now add tasks to it.');
+    }
+
+    /**
      * AJAX — searchable parent dropdown options for the placement picker.
      * GET /manage/task/parents/{type}?q=...
      */
@@ -273,6 +312,8 @@ class TaskManageController extends Controller
             'playlist' => TrainingPlan::when($q !== '', fn ($qq) => $qq->where('title', 'like', "%{$q}%"))
                 ->orderBy('title')->limit(50)->get(['id', 'title']),
             'content'  => Content::when($q !== '', fn ($qq) => $qq->where('title', 'like', "%{$q}%"))
+                ->orderBy('title')->limit(50)->get(['id', 'title']),
+            'standalone' => TaskGroup::when($q !== '', fn ($qq) => $qq->where('title', 'like', "%{$q}%"))
                 ->orderBy('title')->limit(50)->get(['id', 'title']),
             'offline_training' => OfflineTraining::when($q !== '', fn ($qq) => $qq->where(function ($w) use ($q) {
                     $w->where('title', 'like', "%{$q}%")
@@ -305,7 +346,8 @@ class TaskManageController extends Controller
 
         $taskData = collect($validated)->except(['action', 'fields', 'parent_type', 'parent_id'])->all();
         $taskData['created_by'] = Auth::id();
-        $taskData['status']     = ($validated['action'] === 'publish') ? 'published' : 'draft';
+        $action = $validated['action'] ?? $request->input('action', 'draft');
+        $taskData['status']     = ($action === 'publish') ? 'published' : 'draft';
 
         // Map the placement picker to the real columns (exactly one is set).
         $this->applyPlacement($taskData, $validated['parent_type'], $validated['parent_id'] ?? null);
@@ -330,6 +372,25 @@ class TaskManageController extends Controller
         $task = Task::create($taskData);
         $this->syncFields($task, $task->needsFields() ? ($validated['fields'] ?? []) : []);
 
+        // 'draft': save task and remain on create page
+        if ($action === 'draft') {
+            $redirectParams = [];
+            if (!empty($validated['parent_type'])) {
+                $redirectParams['parent_type'] = $validated['parent_type'];
+                if (!empty($validated['parent_id'])) {
+                    $redirectParams['parent_id'] = $validated['parent_id'];
+                }
+            }
+            if ($request->query('scope')) {
+                $redirectParams['scope'] = $request->query('scope');
+            }
+
+            return redirect()
+                ->route('manage.task.create', $redirectParams)
+                ->with('success', 'Task "' . $task->title . '" saved as draft. You can continue creating another task.');
+        }
+
+        // 'draft_exit' or 'publish': redirect to parent task list
         return redirect()
             ->route('manage.task.parent', $task->parentRouteParams())
             ->with('success', $taskData['status'] === 'published'
@@ -450,38 +511,131 @@ class TaskManageController extends Controller
             ->orderByDesc('submitted_at')
             ->get();
 
-        return view('manage.task.submissions', compact('task', 'submissions'));
+        $counts = [
+            'total'     => $task->submissions()->count(),
+            'pending'   => $task->submissions()->where('status', 'pending')->where('resubmit_requested', false)->count(),
+            'completed' => $task->submissions()->where('status', 'completed')->count(),
+            'rejected'  => $task->submissions()->where(fn ($q) => $q->where('status', 'rejected')->orWhere('resubmit_requested', true))->count(),
+        ];
+
+        return view('manage.task.submissions', compact('task', 'submissions', 'counts'));
+    }
+
+    /**
+     * GET /manage/task/{task}/submissions/preview-document
+     * Renders office documents (.docx, .xlsx, .xls, .csv, text) to clean standalone HTML
+     * for direct in-browser embedded preview without relying on external cloud viewers.
+     */
+    public function previewDocument(Request $request, Task $task, DocumentPreviewService $previewService)
+    {
+        $path = $request->query('path');
+
+        if (! $path || ! is_string($path)) {
+            abort(400, 'Document path is required.');
+        }
+
+        // Prevent directory traversal
+        if (str_contains($path, '..') || str_contains($path, "\0")) {
+            abort(403, 'Invalid document path.');
+        }
+
+        $html = $previewService->render($path);
+
+        return response($html, 200, [
+            'Content-Type' => 'text/html; charset=UTF-8',
+            'X-Frame-Options' => 'SAMEORIGIN',
+        ]);
     }
 
     /**
      * POST /manage/task/{task}/submissions/{submission}/complete
-     * Admin reviews & marks a user submission complete.
+     * Admin reviews & marks a user submission approved/complete.
      */
     public function completeSubmission(Request $request, Task $task, TaskSubmission $submission)
     {
         abort_if($submission->task_id !== $task->id, 404);
 
+        if ($submission->status === 'completed' || ($submission->status === 'rejected' && ! $submission->resubmit_requested)) {
+            return back()->with('error', 'This submission has already been graded and cannot be changed.');
+        }
+
         $validated = $request->validate([
-            'score' => 'nullable|integer|min:0|max:100',
+            'score'    => 'nullable|integer|min:0|max:100',
             'feedback' => 'nullable|string|max:2000',
         ]);
 
         $submission->markCompleted($validated['score'] ?? null, $validated['feedback'] ?? null);
 
-        return back()->with('success', 'Response marked as complete.');
+        return back()->with('success', 'Response approved and marked as complete.');
     }
 
     /**
-     * Ask the user to resubmit: sets the flag and reverts the response to
-     * pending so the user sees the resubmit form on their My Task page.
+     * POST /manage/task/{task}/submissions/{submission}/reject
+     * Admin rejects a user submission with 2 options:
+     * - 'resubmit': Request Resubmit (learner can revise and resubmit answers)
+     * - 'completed_rejected': Completed as Rejected (final rejection, task closed)
+     */
+    public function rejectSubmission(Request $request, Task $task, TaskSubmission $submission)
+    {
+        abort_if($submission->task_id !== $task->id, 404);
+
+        if ($submission->status === 'completed' || ($submission->status === 'rejected' && ! $submission->resubmit_requested)) {
+            return back()->with('error', 'This submission has already been graded and cannot be changed.');
+        }
+
+        $validated = $request->validate([
+            'reject_type' => 'required|in:resubmit,completed_rejected',
+            'score'       => 'nullable|integer|min:0|max:100',
+            'feedback'    => 'required|string|max:2000',
+        ]);
+
+        $isResubmit = ($validated['reject_type'] === 'resubmit');
+
+        $submission->update([
+            'status'             => 'rejected',
+            'resubmit_requested' => $isResubmit,
+            'score'              => $validated['score'] ?? null,
+            'feedback'           => trim($validated['feedback']),
+        ]);
+
+        $message = $isResubmit
+            ? 'Submission rejected with revision requested. The learner can now resubmit their answers.'
+            : 'Submission marked as completed as rejected.';
+
+        return back()->with('success', $message);
+    }
+
+    /**
+     * Ask the user to resubmit: sets the flag, saves revision reason/feedback,
+     * and reverts the response to pending so the user sees the resubmit form on their My Task page.
      */
     public function requestResubmit(Request $request, Task $task, TaskSubmission $submission)
     {
         abort_if($submission->task_id !== $task->id, 404);
 
-        $submission->update(['resubmit_requested' => true, 'status' => 'pending']);
+        if ($submission->status === 'completed' || ($submission->status === 'rejected' && ! $submission->resubmit_requested)) {
+            return back()->with('error', 'This submission has already been graded and cannot be changed.');
+        }
 
-        return back()->with('success', 'Resubmit requested. The user can now resubmit their answers.');
+        $validated = $request->validate([
+            'reason' => 'nullable|string|max:2000',
+            'feedback' => 'nullable|string|max:2000',
+        ]);
+
+        $reason = $validated['reason'] ?? $validated['feedback'] ?? null;
+
+        $updateData = [
+            'resubmit_requested' => true,
+            'status' => 'pending',
+        ];
+
+        if ($reason !== null && trim($reason) !== '') {
+            $updateData['feedback'] = trim($reason);
+        }
+
+        $submission->update($updateData);
+
+        return back()->with('success', 'Resubmit requested. The user can now resubmit their answers with your feedback.');
     }
 
     /**
@@ -532,7 +686,7 @@ class TaskManageController extends Controller
         return match ($parentType) {
             'content'          => 'content_id',
             'offline_training' => 'offline_training_id',
-            'standalone'       => null,
+            'standalone'       => 'task_group_id',
             default            => 'training_plan_id',
         };
     }
@@ -544,6 +698,7 @@ class TaskManageController extends Controller
             'playlist'         => TrainingPlan::find($parentId),
             'content'          => Content::find($parentId),
             'offline_training' => OfflineTraining::find($parentId),
+            'standalone'       => TaskGroup::find($parentId),
             default            => null,
         };
     }
@@ -561,6 +716,7 @@ class TaskManageController extends Controller
         $taskData['training_plan_id']    = $parentType === 'playlist' ? $parentId : null;
         $taskData['content_id']          = $parentType === 'content' ? $parentId : null;
         $taskData['offline_training_id'] = $parentType === 'offline_training' ? $parentId : null;
+        $taskData['task_group_id']       = $parentType === 'standalone' ? ($parentId ?: null) : null;
 
         if ($parentType === 'standalone') {
             $code = trim((string) ($taskData['access_code'] ?? ''));
@@ -584,11 +740,12 @@ class TaskManageController extends Controller
         }
 
         if ($type === 'standalone') {
+            $group = $id ? TaskGroup::find($id) : null;
             return [
                 'type'  => 'standalone',
-                'id'    => 0,
+                'id'    => $group ? (int) $group->id : 0,
                 'label' => Task::PARENT_TYPES['standalone'],
-                'name'  => 'Global Task',
+                'name'  => $group ? $group->title : 'Others',
             ];
         }
 
@@ -654,8 +811,8 @@ class TaskManageController extends Controller
             'attachment'       => ['nullable', 'file', 'max:5120'], // 5 MB
         ];
 
-        if ($request->route()->getActionMethod() === 'store') {
-            $rules['action'] = ['required', 'in:draft,publish'];
+        if ($request->route()?->getActionMethod() === 'store') {
+            $rules['action'] = ['required', 'in:draft,draft_exit,publish'];
         }
 
         if ($type === 'course_assignment') {
@@ -696,7 +853,7 @@ class TaskManageController extends Controller
                 return;
             }
             foreach (array_values($fields) as $i => $field) {
-                if (! is_array($field) || ($field['type'] ?? null) !== 'choice') {
+                if (! is_array($field) || ! in_array($field['type'] ?? null, ['choice', 'checkbox', 'dropdown'], true)) {
                     continue;
                 }
                 $options = array_values(array_filter(
@@ -706,7 +863,7 @@ class TaskManageController extends Controller
                 if (count($options) < 2) {
                     $validator->errors()->add(
                         "fields.{$i}.options",
-                        'Multiple choice needs at least 2 options.'
+                        'This question needs at least 2 options.'
                     );
                 }
             }
@@ -779,7 +936,7 @@ class TaskManageController extends Controller
                 $data['allow_link'] = ! empty($input['allow_link']);
             }
 
-            if ($input['type'] === 'choice') {
+            if (in_array($input['type'], ['choice', 'checkbox', 'dropdown'], true)) {
                 $options = array_values(array_filter(
                     array_map('trim', $input['options'] ?? []),
                     fn ($o) => $o !== ''
