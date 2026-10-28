@@ -301,6 +301,8 @@ class ManageRecordController extends Controller
                     'ot.level',
                     'ot.batch',
                     'ot.instructor',
+                    'ot.delivery_method',
+                    'ot.sub_delivery_method',
                 ])
                 ->first();
 
@@ -340,6 +342,8 @@ class ManageRecordController extends Controller
                         'ot.level',
                         'ot.batch',
                         'ot.instructor',
+                        'ot.delivery_method',
+                        'ot.sub_delivery_method',
                     ])
                     ->first();
             }
@@ -404,22 +408,33 @@ class ManageRecordController extends Controller
                 $attendance = in_array($rawAtt, ['present', 'yes', '1', 'true', 'finished', 'completed', 'hadir'], true)
                     || ((float) ($record->progress ?? 0) >= 100) ? 'Yes' : 'No';
 
+                $sub = $record->sub_delivery_method ?? $record->training_type ?? $record->type ?? null;
+                if (!$sub || $sub === '-' || strtolower(trim((string) $sub)) === 'offline') {
+                    $rawDeliv = trim((string) ($record->delivery_method ?? ''));
+                    if ($rawDeliv !== '' && strtolower($rawDeliv) !== 'offline') {
+                        $sub = $rawDeliv;
+                    }
+                }
+                $subDeliveryMethod = $sub ?: '-';
+
                 $recordData = [
-                    'source'          => 'NON KP OWL',
-                    'course_title'    => $record->course_title ?: ($record->sub_course_title ?: 'Offline Training'),
-                    'employee_id'     => $cleanEmpId,
-                    'employee_name'   => $empName,
-                    'grade'           => $record->grade ?: '-',
-                    'job_position'    => $record->job_position ?: '-',
-                    'instructor'      => $record->instructor ?: '-',
-                    'progress_status' => $progressStatus,
-                    'attendance'      => $attendance,
-                    'l2_status'       => $l2,
-                    'l3_status'       => $l3,
-                    'bond_status'     => $bondStatus,
-                    'bond_duration'   => $bondDuration,
-                    'bond_end_date'   => $bondEndDate,
-                    'bond_amount'     => $bondAmt,
+                    'source'              => 'NON KP OWL',
+                    'course_title'        => $record->course_title ?: ($record->sub_course_title ?: 'Offline Training'),
+                    'employee_id'         => $cleanEmpId,
+                    'employee_name'       => $empName,
+                    'grade'               => $record->grade ?: '-',
+                    'job_position'        => $record->job_position ?: '-',
+                    'delivery_method'     => 'Offline',
+                    'sub_delivery_method' => $subDeliveryMethod,
+                    'instructor'          => $record->instructor ?: '-',
+                    'progress_status'     => $progressStatus,
+                    'attendance'          => $attendance,
+                    'l2_status'           => $l2,
+                    'l3_status'           => $l3,
+                    'bond_status'         => $bondStatus,
+                    'bond_duration'       => $bondDuration,
+                    'bond_end_date'       => $bondEndDate,
+                    'bond_amount'         => $bondAmt,
                 ];
 
                 return response()->json(array_merge($recordData, [
@@ -439,22 +454,33 @@ class ManageRecordController extends Controller
             // Fallback: check offline_trainings directly by id
             $training = DB::table('offline_trainings')->where('id', $id)->first();
             if ($training) {
+                $sub = $training->sub_delivery_method ?? $training->training_type ?? $training->type ?? null;
+                if (!$sub || $sub === '-' || strtolower(trim((string) $sub)) === 'offline') {
+                    $rawDeliv = trim((string) ($training->delivery_method ?? ''));
+                    if ($rawDeliv !== '' && strtolower($rawDeliv) !== 'offline') {
+                        $sub = $rawDeliv;
+                    }
+                }
+                $subDeliveryMethod = $sub ?: '-';
+
                 $recordData = [
-                    'source'          => 'NON KP OWL',
-                    'course_title'    => $training->course_name ?: ($training->title ?: 'Offline Training'),
-                    'employee_id'     => '-',
-                    'employee_name'   => '-',
-                    'grade'           => '-',
-                    'job_position'    => '-',
-                    'instructor'      => $training->instructor ?: '-',
-                    'progress_status' => 'Not Started',
-                    'attendance'      => 'No',
-                    'l2_status'       => '-',
-                    'l3_status'       => '-',
-                    'bond_status'     => 'No',
-                    'bond_duration'   => '-',
-                    'bond_end_date'   => '-',
-                    'bond_amount'     => '-',
+                    'source'              => 'NON KP OWL',
+                    'course_title'        => $training->course_name ?: ($training->title ?: 'Offline Training'),
+                    'employee_id'         => '-',
+                    'employee_name'       => '-',
+                    'grade'               => '-',
+                    'job_position'        => '-',
+                    'delivery_method'     => 'Offline',
+                    'sub_delivery_method' => $subDeliveryMethod,
+                    'instructor'          => $training->instructor ?: '-',
+                    'progress_status'     => 'Not Started',
+                    'attendance'          => 'No',
+                    'l2_status'           => '-',
+                    'l3_status'           => '-',
+                    'bond_status'         => 'No',
+                    'bond_duration'       => '-',
+                    'bond_end_date'       => '-',
+                    'bond_amount'         => '-',
                 ];
 
                 return response()->json(array_merge($recordData, [
@@ -509,21 +535,23 @@ class ManageRecordController extends Controller
             }
 
             $recordData = [
-                'source'          => 'KP OWL',
-                'course_title'    => $cu->course_title ?: 'Untitled Content',
-                'employee_id'     => $cleanEmpId,
-                'employee_name'   => $empName,
-                'grade'           => '-',
-                'job_position'    => '-',
-                'instructor'      => $cu->instructor ?: '-',
-                'progress_status' => $progressStatus,
-                'attendance'      => $attendance,
-                'l2_status'       => '-',
-                'l3_status'       => '-',
-                'bond_status'     => 'No',
-                'bond_duration'   => '-',
-                'bond_end_date'   => '-',
-                'bond_amount'     => '-',
+                'source'              => 'KP OWL',
+                'course_title'        => $cu->course_title ?: 'Untitled Content',
+                'employee_id'         => $cleanEmpId,
+                'employee_name'       => $empName,
+                'grade'               => '-',
+                'job_position'        => '-',
+                'delivery_method'     => 'Online',
+                'sub_delivery_method' => 'Self-Paced / LMS',
+                'instructor'          => $cu->instructor ?: '-',
+                'progress_status'     => $progressStatus,
+                'attendance'          => $attendance,
+                'l2_status'           => '-',
+                'l3_status'           => '-',
+                'bond_status'         => 'No',
+                'bond_duration'       => '-',
+                'bond_end_date'       => '-',
+                'bond_amount'         => '-',
             ];
 
             return response()->json(array_merge($recordData, [
@@ -578,21 +606,23 @@ class ManageRecordController extends Controller
             }
 
             $recordData = [
-                'source'          => 'KP OWL',
-                'course_title'    => $pcu->playlist_title ?: ($pcu->course_title ?: 'Playlist'),
-                'employee_id'     => $cleanEmpId,
-                'employee_name'   => $empName,
-                'grade'           => '-',
-                'job_position'    => '-',
-                'instructor'      => $pcu->instructor ?: '-',
-                'progress_status' => $progressStatus,
-                'attendance'      => $attendance,
-                'l2_status'       => '-',
-                'l3_status'       => '-',
-                'bond_status'     => 'No',
-                'bond_duration'   => '-',
-                'bond_end_date'   => '-',
-                'bond_amount'     => '-',
+                'source'              => 'KP OWL',
+                'course_title'        => $pcu->playlist_title ?: ($pcu->course_title ?: 'Playlist'),
+                'employee_id'         => $cleanEmpId,
+                'employee_name'       => $empName,
+                'grade'               => '-',
+                'job_position'        => '-',
+                'delivery_method'     => 'Online',
+                'sub_delivery_method' => 'Playlist / Path',
+                'instructor'          => $pcu->instructor ?: '-',
+                'progress_status'     => $progressStatus,
+                'attendance'          => $attendance,
+                'l2_status'           => '-',
+                'l3_status'           => '-',
+                'bond_status'         => 'No',
+                'bond_duration'       => '-',
+                'bond_end_date'       => '-',
+                'bond_amount'         => '-',
             ];
 
             return response()->json(array_merge($recordData, [

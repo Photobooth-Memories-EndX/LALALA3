@@ -621,10 +621,17 @@ class RecordOfflineController extends Controller
                 return htmlspecialchars($row->sub_corporate_kpi ?: '-');
             })
             ->addColumn('delivery_method', function ($row) {
-                return htmlspecialchars(self::normalizeDeliveryMethod($row->delivery_method));
+                return 'Offline';
             })
             ->addColumn('sub_delivery_method', function ($row) {
-                return htmlspecialchars($row->sub_delivery_method ?: '-');
+                $sub = $row->sub_delivery_method ?? $row->training_type ?? $row->type ?? null;
+                if (!$sub || $sub === '-' || strtolower(trim((string) $sub)) === 'offline') {
+                    $rawDeliv = trim((string) ($row->delivery_method ?? ''));
+                    if ($rawDeliv !== '' && strtolower($rawDeliv) !== 'offline') {
+                        $sub = $rawDeliv;
+                    }
+                }
+                return htmlspecialchars($sub ?: '-');
             })
             ->addColumn('provider', function ($row) {
                 return htmlspecialchars($row->provider ?: '-');
@@ -1124,10 +1131,17 @@ class RecordOfflineController extends Controller
                 return htmlspecialchars($row->sub_corporate_kpi ?: '-');
             })
             ->addColumn('delivery_method', function ($row) {
-                return htmlspecialchars(self::normalizeDeliveryMethod($row->delivery_method));
+                return 'Offline';
             })
             ->addColumn('sub_delivery_method', function ($row) {
-                return htmlspecialchars($row->sub_delivery_method ?: '-');
+                $sub = $row->sub_delivery_method ?? $row->training_type ?? $row->type ?? null;
+                if (!$sub || $sub === '-' || strtolower(trim((string) $sub)) === 'offline') {
+                    $rawDeliv = trim((string) ($row->delivery_method ?? ''));
+                    if ($rawDeliv !== '' && strtolower($rawDeliv) !== 'offline') {
+                        $sub = $rawDeliv;
+                    }
+                }
+                return htmlspecialchars($sub ?: '-');
             })
             ->addColumn('provider', function ($row) {
                 return htmlspecialchars($row->provider ?: '-');
@@ -1626,10 +1640,17 @@ class RecordOfflineController extends Controller
                 return htmlspecialchars($row->sub_corporate_kpi ?: '-');
             })
             ->addColumn('delivery_method', function ($row) {
-                return htmlspecialchars(self::normalizeDeliveryMethod($row->delivery_method));
+                return 'Offline';
             })
             ->addColumn('sub_delivery_method', function ($row) {
-                return htmlspecialchars($row->sub_delivery_method ?: '-');
+                $sub = $row->sub_delivery_method ?? $row->training_type ?? $row->type ?? null;
+                if (!$sub || $sub === '-' || strtolower(trim((string) $sub)) === 'offline') {
+                    $rawDeliv = trim((string) ($row->delivery_method ?? ''));
+                    if ($rawDeliv !== '' && strtolower($rawDeliv) !== 'offline') {
+                        $sub = $rawDeliv;
+                    }
+                }
+                return htmlspecialchars($sub ?: '-');
             })
             ->addColumn('provider', function ($row) {
                 return htmlspecialchars($row->provider ?: '-');

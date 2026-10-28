@@ -262,10 +262,16 @@ class ClassificationOfflineRecordExport implements FromCollection, WithHeadings,
                 $attendanceStr = ($progressNum >= 100 || !empty($row->finish_date)) ? 'Yes' : 'No';
             }
 
-            // Delivery method alignment: strictly Online or Offline
-            $rawDeliv = strtolower(trim((string) ($row->delivery_method ?? '')));
-            $delivMethod = in_array($rawDeliv, ['online', 'e-learning', 'webinar', 'kp-owl', 'kp owl'], true) ? 'Online' : 'Offline';
-            $subDelivMethod = $row->sub_delivery_method ?: 'On-site';
+            // Delivery method alignment: strictly Offline for Non-KP OWL
+            $delivMethod = 'Offline';
+            $sub = $row->sub_delivery_method ?? $row->training_type ?? $row->type ?? null;
+            if (!$sub || $sub === '-' || strtolower(trim((string) $sub)) === 'offline') {
+                $rawDeliv = trim((string) ($row->delivery_method ?? ''));
+                if ($rawDeliv !== '' && strtolower($rawDeliv) !== 'offline') {
+                    $sub = $rawDeliv;
+                }
+            }
+            $subDelivMethod = $sub ?: '-';
 
             // Bond amount & duration
             $idr = $row->bond_amount_idr ?? ($row->bond_amount ?? null);

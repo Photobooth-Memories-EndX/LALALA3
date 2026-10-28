@@ -336,6 +336,24 @@ class AllParticipantExport implements FromQuery, WithHeadings, WithChunkReading,
                 $idr = $row->bond_amount_idr ?? $row->bond_amount ?? null;
                 $bondAmt = ($idr !== null && (float) $idr > 0) ? 'Rp ' . number_format((float) $idr, 0, ',', '.') : '-';
 
+                // Delivery method alignment
+                $sourceRaw = strtolower(trim((string) ($row->source ?? '')));
+                $isKpOwl = in_array($sourceRaw, ['online', 'kp owl', 'kp-owl', 'owl'], true);
+                $delivMethod = $isKpOwl ? 'Online' : 'Offline';
+
+                if ($isKpOwl) {
+                    $subDelivMethod = $row->sub_delivery_method ?: (($row->source_type ?? '') === 'playlist' ? 'Playlist / Path' : 'Self-Paced / LMS');
+                } else {
+                    $sub = $row->sub_delivery_method ?? $row->training_type ?? $row->type ?? null;
+                    if (!$sub || $sub === '-' || strtolower(trim((string) $sub)) === 'offline') {
+                        $rawDm = trim((string) ($row->delivery_method ?? ''));
+                        if ($rawDm !== '' && strtolower($rawDm) !== 'offline') {
+                            $sub = $rawDm;
+                        }
+                    }
+                    $subDelivMethod = $sub ?: '-';
+                }
+
                 $data = [
                     $row->source === 'offline' ? 'Non KP OWL' : 'KP OWL',
                     $row->employee_id ?: '',
@@ -356,8 +374,8 @@ class AllParticipantExport implements FromQuery, WithHeadings, WithChunkReading,
                     $row->sub_classification ?: '',
                     $kpiStr,
                     $row->sub_corporate_kpi ?: '',
-                    \App\Models\OfflineTraining::normalizeDeliveryMethod($row->delivery_method),
-                    $row->sub_delivery_method ?: '',
+                    $delivMethod,
+                    $subDelivMethod,
                     $row->provider ?: '',
                     $row->sub_provider ?: '',
                     $row->provider_name ?: '',

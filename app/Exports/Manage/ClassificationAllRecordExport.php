@@ -244,8 +244,22 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
             $progressStatus = ($progressNum >= 100 || ($row->status ?? '') === 'Finished') ? 'Finished' : (($progressNum > 0) ? 'Ongoing' : 'Not Started');
 
             // Delivery method alignment
-            $delivMethod = OfflineTraining::normalizeDeliveryMethod($row->delivery_method ?: ($row->source === 'offline' ? 'Offline' : 'Online'));
-            $subDelivMethod = $row->sub_delivery_method ?: ($row->source === 'offline' ? 'On-site' : 'E-learning');
+            $sourceRaw = strtolower(trim((string) ($row->source ?? '')));
+            $isKpOwl = in_array($sourceRaw, ['online', 'kp owl', 'kp-owl', 'owl'], true);
+            $delivMethod = $isKpOwl ? 'Online' : 'Offline';
+
+            if ($isKpOwl) {
+                $subDelivMethod = $row->sub_delivery_method ?: (($row->source_type ?? '') === 'playlist' ? 'Playlist / Path' : 'Self-Paced / LMS');
+            } else {
+                $sub = $row->sub_delivery_method ?? $row->training_type ?? $row->type ?? null;
+                if (!$sub || $sub === '-' || strtolower(trim((string) $sub)) === 'offline') {
+                    $rawDm = trim((string) ($row->delivery_method ?? ''));
+                    if ($rawDm !== '' && strtolower($rawDm) !== 'offline') {
+                        $sub = $rawDm;
+                    }
+                }
+                $subDelivMethod = $sub ?: '-';
+            }
 
             // Date & Time split
             $startDateStr = !empty($row->start_date) ? date('Y-m-d', strtotime($row->start_date)) : '-';

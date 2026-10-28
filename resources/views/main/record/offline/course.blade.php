@@ -1297,7 +1297,13 @@
                         const rawDeliv = (d.delivery_method || '').toLowerCase().trim();
                         const deliv = ['online', 'e-learning', 'webinar', 'kp-owl', 'kp owl'].includes(rawDeliv) ? 'Online' : 'Offline';
                         $('#modal-detail-delivery-method').text(deliv);
-                        $('#modal-detail-sub-delivery-method').text(d.sub_delivery_method || '-');
+                        let subDeliv = d.sub_delivery_method || d.training_type || d.type || '-';
+                        if (!subDeliv || subDeliv === '-' || subDeliv.toLowerCase() === 'offline') {
+                            if (rawDeliv && rawDeliv !== 'offline' && rawDeliv !== 'online') {
+                                subDeliv = d.delivery_method;
+                            }
+                        }
+                        $('#modal-detail-sub-delivery-method').text(subDeliv || '-');
                         $('#modal-detail-provider').text(d.provider || '-');
                         $('#modal-detail-sub-provider').text(d.sub_provider || '-');
                         $('#modal-detail-provider-name').text(d.provider_name || '-');

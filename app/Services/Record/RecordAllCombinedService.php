@@ -504,7 +504,7 @@ class RecordAllCombinedService
                 END as sub_course_name"),
                 DB::raw("COALESCE(c.slug, '') as learning_slug"),
                 DB::raw("CASE
-                    WHEN unified.source = 'offline' THEN '-'
+                    WHEN unified.source = 'offline' THEN ot.type
                     WHEN unified.source_type = 'playlist' THEN 'Playlist'
                     ELSE COALESCE(c.type, 'Document')
                 END as type"),
@@ -1785,44 +1785,20 @@ class RecordAllCombinedService
                 if ($row->source === 'online') {
                     return 'Online';
                 }
-                return htmlspecialchars($row->delivery_method ?: '-');
+                return 'Offline';
             })
             ->addColumn('sub_delivery_method', function ($row) {
                 if ($row->source === 'online') {
                     return ($row->source_type ?? '') === 'playlist' ? 'Playlist / Path' : 'Self-Paced / LMS';
                 }
-                return htmlspecialchars($row->sub_delivery_method ?: '-');
-            })
-            ->addColumn('provider_name', function ($row) {
-                if ($row->source === 'online') {
-                    return 'KP OWL';
+                $sub = $row->sub_delivery_method ?? $row->training_type ?? $row->type ?? null;
+                if (!$sub || $sub === '-' || strtolower(trim((string) $sub)) === 'offline') {
+                    $rawDeliv = trim((string) ($row->delivery_method ?? ''));
+                    if ($rawDeliv !== '' && strtolower($rawDeliv) !== 'offline') {
+                        $sub = $rawDeliv;
+                    }
                 }
-                return htmlspecialchars($row->provider_name ?: '-');
-            })
-            ->addColumn('venue', function ($row) {
-                if ($row->source === 'online') {
-                    return 'Online LMS';
-                }
-                return htmlspecialchars($row->venue ?: '-');
-            })
-            ->addColumn('learning_hours', function ($row) {
-                $hours = (float) ($row->training_hours ?? ($row->learning_hours ?? 0));
-                return '<span class="fw-semibold">' . number_format($hours, 1) . 'h</span>';
-            })
-            ->addColumn('sub_classification', function ($row) {
-                return htmlspecialchars($row->sub_classification ?: '-');
-            })
-            ->addColumn('delivery_method', function ($row) {
-                if ($row->source === 'online') {
-                    return 'Online';
-                }
-                return htmlspecialchars($row->delivery_method ?: '-');
-            })
-            ->addColumn('sub_delivery_method', function ($row) {
-                if ($row->source === 'online') {
-                    return ($row->source_type ?? '') === 'playlist' ? 'Playlist / Path' : 'Self-Paced / LMS';
-                }
-                return htmlspecialchars($row->sub_delivery_method ?: '-');
+                return htmlspecialchars($sub ?: '-');
             })
             ->addColumn('provider_name', function ($row) {
                 if ($row->source === 'online') {
