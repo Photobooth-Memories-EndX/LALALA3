@@ -13,13 +13,15 @@ use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use ZipStream\Option\Archive as ArchiveOptions;
 use ZipStream\ZipStream;
 
-class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkReading, WithStyles, WithColumnWidths, Responsable
+class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkReading, WithStyles, WithColumnWidths, WithEvents, Responsable
 {
     protected array $filters = [];
     protected string $type = '';
@@ -94,6 +96,15 @@ class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
     public function styles(Worksheet $sheet)
     {
         return \App\Services\Learning\LearningExportService::styles($sheet);
+    }
+
+    public function registerEvents(): array
+    {
+        return [
+            AfterSheet::class => function (AfterSheet $event) {
+                \App\Services\Learning\LearningExportService::afterSheetEvent($event);
+            },
+        ];
     }
 
     public function download(?string $fileName = null): BinaryFileResponse
@@ -180,12 +191,12 @@ class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
             . '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
             . '<fonts count="2">'
             . '<font><sz val="11"/><name val="Calibri"/></font>'
-            . '<font><b/><sz val="11"/><name val="Calibri"/></font>'
+            . '<font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>'
             . '</fonts>'
             . '<fills count="3">'
             . '<fill><patternFill patternType="none"/></fill>'
             . '<fill><patternFill patternType="gray125"/></fill>'
-            . '<fill><patternFill patternType="solid"><fgColor rgb="FFD9EAF7"/></patternFill></fill>'
+            . '<fill><patternFill patternType="solid"><fgColor rgb="FF002B49"/><bgColor rgb="FF002B49"/></patternFill></fill>'
             . '</fills>'
             . '<borders count="2">'
             . '<border><left/><right/><top/><bottom/><diagonal/></border>'
@@ -201,7 +212,7 @@ class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
             . '</cellStyleXfs>'
             . '<cellXfs count="7">'
             . '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0"><alignment vertical="center"/></xf>'
-            . '<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
             . '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0"><alignment horizontal="center" vertical="center"/></xf>'
             . '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0"><alignment horizontal="left" vertical="center"/></xf>'
             . '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0"><alignment horizontal="left" vertical="center" wrapText="1"/></xf>'
@@ -228,7 +239,7 @@ class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
 
         // Header row
         $headers = $this->headings();
-        fwrite($sfh, '<row r="1">' . "\n");
+        fwrite($sfh, '<row r="1" ht="28" customHeight="1">' . "\n");
         foreach ($headers as $i => $h) {
             $colLetter = Coordinate::stringFromColumnIndex($i + 1);
             $c = $colLetter . '1';

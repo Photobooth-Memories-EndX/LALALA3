@@ -12,6 +12,51 @@ use Illuminate\Support\Facades\Schema;
 
 class RecordOfflineQueryService
 {
+    protected static ?bool $hasBondDuration = null;
+    protected static ?bool $hasBondAmountIdr = null;
+    protected static ?bool $hasRequirement = null;
+
+    protected static function bondDurationSelect(): mixed
+    {
+        if (self::$hasBondDuration === null) {
+            self::$hasBondDuration = Schema::hasColumn('offline_training_users', 'bond_duration');
+        }
+        return self::$hasBondDuration ? 'otu.bond_duration' : DB::raw('NULL as bond_duration');
+    }
+
+    protected static function bondAmountSelect(): array
+    {
+        if (self::$hasBondAmountIdr === null) {
+            self::$hasBondAmountIdr = Schema::hasColumn('offline_training_users', 'bond_amount_idr');
+        }
+        if (self::$hasBondAmountIdr) {
+            return [
+                'otu.bond_amount_idr',
+                DB::raw('otu.bond_amount_idr as bond_amount'),
+            ];
+        }
+        return [
+            DB::raw('otu.bond_amount as bond_amount_idr'),
+            'otu.bond_amount',
+        ];
+    }
+
+    protected static function bondAmountColumn(): string
+    {
+        if (self::$hasBondAmountIdr === null) {
+            self::$hasBondAmountIdr = Schema::hasColumn('offline_training_users', 'bond_amount_idr');
+        }
+        return self::$hasBondAmountIdr ? 'otu.bond_amount_idr' : 'otu.bond_amount';
+    }
+
+    protected static function requirementSelect(): mixed
+    {
+        if (self::$hasRequirement === null) {
+            self::$hasRequirement = Schema::hasColumn('offline_trainings', 'requirement');
+        }
+        return self::$hasRequirement ? 'ot.requirement' : DB::raw("COALESCE(ot.status, 'Mandatory') as requirement");
+    }
+
     /**
      * Build shared query for Non KP OWL offline records with all Quick and More Filters applied.
      *
@@ -54,10 +99,9 @@ class RecordOfflineQueryService
                 'otu.attendance',
                 'otu.attendance_reason',
                 'otu.bond_status',
-                'otu.bond_duration',
-            'otu.bond_end_date',
-                'otu.bond_amount_idr',
-                DB::raw('otu.bond_amount_idr as bond_amount'),
+                self::bondDurationSelect(),
+                'otu.bond_end_date',
+                ...self::bondAmountSelect(),
                 'otu.l1_program',
                 'otu.l2_numerical',
                 'otu.l2_verbal',
@@ -69,7 +113,7 @@ class RecordOfflineQueryService
                 'ot.course_name',
                 'ot.sub_course_name',
                 DB::raw("COALESCE(ot.type, '-') as type"),
-                'ot.requirement',
+                self::requirementSelect(),
                 'ot.category',
                 'ot.level',
                 'ot.batch',
@@ -662,10 +706,9 @@ class RecordOfflineQueryService
             'otu.attendance',
             'otu.attendance_reason',
             'otu.bond_status',
-            'otu.bond_duration',
+            self::bondDurationSelect(),
             'otu.bond_end_date',
-            'otu.bond_amount_idr',
-            DB::raw('otu.bond_amount_idr as bond_amount'),
+            ...self::bondAmountSelect(),
             'otu.l1_program',
             'otu.l2_numerical',
             'otu.l2_verbal',
@@ -677,7 +720,7 @@ class RecordOfflineQueryService
             'ot.course_name',
             'ot.sub_course_name',
             DB::raw("COALESCE(ot.type, '-') as type"),
-            'ot.requirement',
+            self::requirementSelect(),
             'ot.category',
             'ot.level',
             'ot.batch',
@@ -1012,10 +1055,10 @@ class RecordOfflineQueryService
         $bondAmtMin = $filters['bond_amount_min'] ?? null;
         $bondAmtMax = $filters['bond_amount_max'] ?? null;
         if (filled($bondAmtMin) && is_numeric($bondAmtMin)) {
-            $query->where('otu.bond_amount_idr', '>=', (float) $bondAmtMin);
+            $query->where(self::bondAmountColumn(), '>=', (float) $bondAmtMin);
         }
         if (filled($bondAmtMax) && is_numeric($bondAmtMax)) {
-            $query->where('otu.bond_amount_idr', '<=', (float) $bondAmtMax);
+            $query->where(self::bondAmountColumn(), '<=', (float) $bondAmtMax);
         }
 
         // More Filter: Provider
@@ -1180,10 +1223,9 @@ class RecordOfflineQueryService
             'otu.attendance',
             'otu.attendance_reason',
             'otu.bond_status',
-            'otu.bond_duration',
+            self::bondDurationSelect(),
             'otu.bond_end_date',
-            'otu.bond_amount_idr',
-            DB::raw('otu.bond_amount_idr as bond_amount'),
+            ...self::bondAmountSelect(),
             'otu.l1_program',
             'otu.l2_numerical',
             'otu.l2_verbal',
@@ -1195,7 +1237,7 @@ class RecordOfflineQueryService
             'ot.course_name',
             'ot.sub_course_name',
             DB::raw("COALESCE(ot.type, '-') as type"),
-            'ot.requirement',
+            self::requirementSelect(),
             'ot.category',
             'ot.level',
             'ot.batch',
@@ -1425,10 +1467,10 @@ class RecordOfflineQueryService
         $bondAmtMin = $filters['bond_amount_min'] ?? null;
         $bondAmtMax = $filters['bond_amount_max'] ?? null;
         if (filled($bondAmtMin) && is_numeric($bondAmtMin)) {
-            $query->where('otu.bond_amount_idr', '>=', (float) $bondAmtMin);
+            $query->where(self::bondAmountColumn(), '>=', (float) $bondAmtMin);
         }
         if (filled($bondAmtMax) && is_numeric($bondAmtMax)) {
-            $query->where('otu.bond_amount_idr', '<=', (float) $bondAmtMax);
+            $query->where(self::bondAmountColumn(), '<=', (float) $bondAmtMax);
         }
 
         // 19. More Filter: L1 Program

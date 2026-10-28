@@ -593,9 +593,14 @@ class OfflineTrainingImportService
                 }
 
                 // Prepare participant records
+                static $otuColumns = null;
+                if ($otuColumns === null) {
+                    $otuColumns = array_flip(\Illuminate\Support\Facades\Schema::getColumnListing('offline_training_users'));
+                }
+
                 $participantInserts = [];
                 foreach ($participants as $p) {
-                    $participantInserts[] = [
+                    $pRow = [
                         'offline_training_id' => $training->id,
                         'user_id'             => $p['user_id'],
                         'employee_id'         => $p['employee_id'],
@@ -612,9 +617,8 @@ class OfflineTrainingImportService
                         'attendance'          => $p['attendance'],
                         'attendance_reason'   => $p['attendance_reason'],
                         'bond_status'         => $p['bond_status'],
-                        'bond_duration'       => $p['bond_duration'] ?? null,
                         'bond_end_date'       => $p['bond_end_date'],
-                        'bond_amount_idr'     => $p['bond_amount_idr'] ?? $p['bond_amount'] ?? null,
+                        'bond_amount'         => $p['bond_amount'] ?? ($p['bond_amount_idr'] ?? null),
                         'l1_program'          => $p['l1_program'],
                         'l2_numerical'        => $p['l2_numerical'],
                         'l2_verbal'           => $p['l2_verbal'],
@@ -624,6 +628,15 @@ class OfflineTrainingImportService
                         'created_at'          => $now,
                         'updated_at'          => $now,
                     ];
+
+                    if (isset($otuColumns['bond_duration'])) {
+                        $pRow['bond_duration'] = $p['bond_duration'] ?? null;
+                    }
+                    if (isset($otuColumns['bond_amount_idr'])) {
+                        $pRow['bond_amount_idr'] = $p['bond_amount_idr'] ?? ($p['bond_amount'] ?? null);
+                    }
+
+                    $participantInserts[] = $pRow;
                 }
 
                 // Chunk insert participants for high throughput
@@ -797,7 +810,7 @@ class OfflineTrainingImportService
             $val = $cell->getValue();
 
             // Handle date cell formatting from PhpSpreadsheet
-            if ($val !== null && in_array($key, ['start_date', 'finish_date', 'bond_end_date'], true)) {
+            if ($val !== null && in_array($key, ['start_date', 'finish_date', 'end_date', 'bond_end_date'], true)) {
                 if (is_numeric($val)) {
                     try {
                         $dt = ExcelDate::excelToDateTimeObject($val);
@@ -898,7 +911,13 @@ class OfflineTrainingImportService
             'duration_seconds'      => $this->normalizeDuration($raw['duration_seconds'] ?? null),
             'learning_hours'        => $this->normalizeLearningHours($raw['learning_hours'] ?? null),
             'start_date'            => $this->normalizeDate($raw['start_date'] ?? null),
-            'finish_date'           => $this->normalizeDate($raw['finish_date'] ?? null),
+            'finish_date'           => $this->normalizeDate($raw['finish_date'] ?? ($raw['end_date'] ?? null)),
+            'end_date'              => $this->normalizeDate($raw['end_date'] ?? ($raw['finish_date'] ?? null)),
+            'start_time'            => $this->normalizeTime($raw['start_time'] ?? null),
+            'end_time'              => $this->normalizeTime($raw['end_time'] ?? null),
+            'record_month'          => $this->normalizeString($raw['record_month'] ?? ($raw['month'] ?? null)),
+            'requirement'           => $this->normalizeString($raw['requirement'] ?? null),
+            'progress_status'       => $this->normalizeString($raw['progress_status'] ?? null),
 
             // Job Information
             'employee_id'           => $this->normalizeString($raw['employee_id'] ?? null),
@@ -925,7 +944,7 @@ class OfflineTrainingImportService
 
             // Kirkpatrick Evaluations
             'l1_program'            => $this->normalizeString($raw['l1_program'] ?? null),
-            'l2_numerical'          => $this->normalizeDecimal($raw['l2_numerical'] ?? null, 4),
+            'l2_numerical'          => $this->normalizeDecimal($raw['l2_numerical'] ?? ($raw['assessment_score'] ?? null), 4),
             'l2_verbal'             => $this->normalizeString($raw['l2_verbal'] ?? null),
             'l3_numerical'          => $this->normalizeDecimal($raw['l3_numerical'] ?? null, 4),
             'l3_verbal'             => $this->normalizeString($raw['l3_verbal'] ?? null),
@@ -998,18 +1017,21 @@ class OfflineTrainingImportService
             }
         }
 
-        $rawFinish = $raw['finish_date'] ?? null;
+        $rawFinish = $raw['finish_date'] ?? ($raw['end_date'] ?? null);
         if ($rawFinish !== null && trim((string) $rawFinish) !== '' && !in_array(trim((string) $rawFinish), ['-', 'N/A', 'n/a', 'NA'], true)) {
-            if ($row['finish_date'] === null) {
+            $checkFinish = $row['finish_date'] ?? ($row['end_date'] ?? null);
+            if ($checkFinish === null) {
                 $errors[] = "{$rowPrefix}Column: Finish Date | Value: '{$rawFinish}' | Expected: Valid date format (YYYY-MM-DD) | Status: INVALID VALUE";
             }
         }
 
-        if ($row['start_date'] && $row['finish_date']) {
-            if ($row['finish_date'] < $row['start_date']) {
-                $errors[] = "{$rowPrefix}Column: Finish Date | Value: '{$row['finish_date']}' | Expected: Finish date cannot be earlier than start date ({$row['start_date']}) | Status: INVALID VALUE";
+        $rowFinish = $row['finish_date'] ?? ($row['end_date'] ?? null);
+        if ($row['start_date'] && $rowFinish) {
+            if ($rowFinish < $row['start_date']) {
+                $errors[] = "{$rowPrefix}Column: Finish Date | Value: '{$rowFinish}' | Expected: Finish date cannot be earlier than start date ({$row['start_date']}) | Status: INVALID VALUE";
             }
         }
+
 
         // Bond validation
         $rawBondAmt = $raw['bond_amount'] ?? null;
@@ -1296,5 +1318,45 @@ class OfflineTrainingImportService
         if (!is_numeric($str)) return null;
 
         return round((float) $str, $decimals);
+    }
+    public function normalizeTime($value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        if ($value instanceof \DateTimeInterface) {
+            return $value->format('H:i:s');
+        }
+
+        $clean = $this->cleanNullableValue($value);
+        if ($clean === null) {
+            return null;
+        }
+
+        // Excel time fraction (e.g. 0.375)
+        if (is_numeric($clean) && (float)$clean >= 0 && (float)$clean < 1) {
+            $secs = (int) round((float)$clean * 86400);
+            $h = floor($secs / 3600);
+            $m = floor(($secs % 3600) / 60);
+            $s = $secs % 60;
+            return sprintf('%02d:%02d:%02d', $h, $m, $s);
+        }
+
+        // Time format: HH:mm or HH:mm:ss
+        if (preg_match('/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/', $clean, $m)) {
+            $h = (int) $m[1];
+            $min = (int) $m[2];
+            $s = isset($m[3]) ? (int) $m[3] : 0;
+            if ($h >= 0 && $h <= 23 && $min >= 0 && $min <= 59 && $s >= 0 && $s <= 59) {
+                return sprintf('%02d:%02d:%02d', $h, $min, $s);
+            }
+        }
+
+        try {
+            return Carbon::parse($clean)->format('H:i:s');
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 }

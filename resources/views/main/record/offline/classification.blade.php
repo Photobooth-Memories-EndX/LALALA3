@@ -375,6 +375,7 @@
 <!-- DELETE CONFIRMATION MODAL -->
 @include('main.record.components.offline-delete-modal')
 @include('main.record.components.more-information-modal')
+@include('main.record.components.offline-import-modal')
 
 @endsection
 
@@ -382,13 +383,61 @@
 <link rel="stylesheet" href="{{ asset('css/dataTables.bootstrap5.min.css') }}">
 
 <style>
+        /* IMPORT MODAL STYLING */
+    #offlineImportModal .modal-content {
+        border-radius: 16px;
+        overflow: hidden;
+    }
+    #offlineImportModal .bg-amber-subtle {
+        background-color: #fef3c7 !important;
+    }
+    #offlineImportModal .border-primary {
+        border-color: #d97706 !important;
+    }
+    [data-bs-theme="dark"] #offlineImportModal .modal-content,
+    body.dark-mode #offlineImportModal .modal-content,
+    body.theme-dark #offlineImportModal .modal-content {
+        background-color: #1e293b;
+        color: #f1f5f9;
+        border-color: #334155;
+    }
+    [data-bs-theme="dark"] #offlineImportModal .bg-light,
+    body.dark-mode #offlineImportModal .bg-light,
+    body.theme-dark #offlineImportModal .bg-light {
+        background-color: #0f172a !important;
+    }
+
     .manage-record-page {
         background: #fff;
     }
 
     [data-bs-theme="dark"] .manage-record-page,
     body.dark-mode .manage-record-page,
-    body.theme-dark .manage-record-page {
+    body.theme-dark     /* IMPORT MODAL STYLING */
+    #offlineImportModal .modal-content {
+        border-radius: 16px;
+        overflow: hidden;
+    }
+    #offlineImportModal .bg-amber-subtle {
+        background-color: #fef3c7 !important;
+    }
+    #offlineImportModal .border-primary {
+        border-color: #d97706 !important;
+    }
+    [data-bs-theme="dark"] #offlineImportModal .modal-content,
+    body.dark-mode #offlineImportModal .modal-content,
+    body.theme-dark #offlineImportModal .modal-content {
+        background-color: #1e293b;
+        color: #f1f5f9;
+        border-color: #334155;
+    }
+    [data-bs-theme="dark"] #offlineImportModal .bg-light,
+    body.dark-mode #offlineImportModal .bg-light,
+    body.theme-dark #offlineImportModal .bg-light {
+        background-color: #0f172a !important;
+    }
+
+    .manage-record-page {
         background: var(--tblr-body-bg, #111827);
     }
 
