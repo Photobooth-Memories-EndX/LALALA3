@@ -158,6 +158,47 @@ class LearningRecordLearningHourService
     }
 
     /**
+     * Calculate Total Recognized Duration in seconds for a ContentUser record.
+     * Formula: min(actual_watch_seconds, content_duration_seconds * 2)
+     */
+    public function calculateContentRecognizedSeconds(ContentUser $cu): int
+    {
+        $durationSeconds = (int) ($cu->duration_seconds ?? 0);
+        if ($durationSeconds <= 0 && $cu->content && !empty($cu->content->duration)) {
+            $durationSeconds = DurationFormatter::toSeconds($cu->content->duration) ?? 0;
+        }
+
+        $actualWatchSeconds = (int) ($cu->actual_watch_seconds ?? 0);
+        $currentTime = (int) ($cu->current_time ?? 0);
+        $progress = (int) ($cu->progress ?? 0);
+        $isFinished = ((string) $cu->finish === '1' || $progress >= 100);
+
+        if ($actualWatchSeconds > 0) {
+            $actualSeconds = $actualWatchSeconds;
+        } elseif ($currentTime > 0) {
+            $actualSeconds = $currentTime;
+        } elseif ($isFinished && $durationSeconds > 0) {
+            $actualSeconds = $durationSeconds;
+        } elseif ($progress > 0 && $durationSeconds > 0) {
+            $actualSeconds = (int) round(($progress / 100) * $durationSeconds);
+        } elseif ((float) ($cu->learning_hours ?? 0) > 0) {
+            $actualSeconds = (int) round((float) $cu->learning_hours * 3600);
+        } else {
+            $actualSeconds = 0;
+        }
+
+        if ($cu->content && $cu->content->max_actual_watch_seconds !== null) {
+            $actualSeconds = min($actualSeconds, (int) $cu->content->max_actual_watch_seconds);
+        }
+
+        if ($durationSeconds > 0) {
+            return min($actualSeconds, $durationSeconds * 2);
+        }
+
+        return $actualSeconds;
+    }
+
+    /**
      * Calculate actual consumed learning hours for completed playlists in batch (Zero N+1).
      *
      * Rules:
@@ -291,6 +332,142 @@ class LearningRecordLearningHourService
     public function calculatePlaylistSingle(int $userId, TrainingPlan $plan): float
     {
         return $this->calculatePlaylistsBatch($userId, collect([$plan]))->get($plan->id, 0.0);
+    }
+
+    /**
+     * Calculate Total Recognized Duration in seconds for completed playlists in batch (Zero N+1).
+     *
+     * @param int $userId
+     * @param Collection<int, TrainingPlan> $completedPlaylists
+     * @return Collection<int, int> Map of [trainingplan_id => recognized_seconds]
+     */
+    public function calculatePlaylistsRecognizedSecondsBatch(int $userId, Collection $completedPlaylists): Collection
+    {
+        $planIds = $completedPlaylists->pluck('id')->filter()->all();
+        if (empty($planIds)) {
+            return collect();
+        }
+
+        $userPcuMap = PlaylistContentUser::where('user_id', $userId)
+            ->whereIn('trainingplan_id', $planIds)
+            ->get()
+            ->groupBy('trainingplan_id');
+
+        $allContentIds = $completedPlaylists->flatMap(function (TrainingPlan $plan) {
+            if (!$plan->relationLoaded('trainingplandetail')) {
+                $plan->load(['trainingplandetail.content']);
+            }
+            return $plan->trainingplandetail->pluck('content_id');
+        })->unique()->filter()->values()->all();
+
+        $userCuMap = !empty($allContentIds)
+            ? ContentUser::where('user_id', $userId)
+                ->whereIn('content_id', $allContentIds)
+                ->get()
+                ->keyBy('content_id')
+            : collect();
+
+        $result = collect();
+
+        foreach ($completedPlaylists as $plan) {
+            if (!$plan->relationLoaded('trainingplandetail')) {
+                $plan->load(['trainingplandetail.content']);
+            }
+
+            $validDetails = $plan->trainingplandetail->filter(
+                fn ($d) => !empty($d->content) && $d->content->exists
+            );
+
+            $planPcus = $userPcuMap->get($plan->id, collect())->keyBy('content_id');
+            $consumedPlaylistRecognizedSeconds = 0;
+
+            foreach ($validDetails as $d) {
+                $cid = $d->content_id;
+                $pcu = $planPcus->get($cid);
+                $cu = $userCuMap->get($cid);
+                $moduleDuration = DurationFormatter::toSeconds($d->content?->duration ?? '') ?? 0;
+
+                if ($pcu) {
+                    $pcuDuration = (int) ($pcu->duration_seconds ?? 0);
+                    if ($pcuDuration <= 0) {
+                        $pcuDuration = $moduleDuration;
+                    }
+                    $pcuActualWatch = (int) ($pcu->actual_watch_seconds ?? 0);
+                    $pcuCurrentTime = (int) ($pcu->current_time ?? 0);
+                    $pcuProgress = (int) ($pcu->progress ?? 0);
+                    $pcuFinished = ((string) $pcu->finish === '1' || $pcuProgress >= 100);
+
+                    $moduleSec = 0;
+                    if ($pcuActualWatch > 0) {
+                        $moduleSec = $pcuActualWatch;
+                    } elseif ($pcuCurrentTime > 0) {
+                        $moduleSec = $pcuCurrentTime;
+                    } elseif ($pcuFinished && $pcuDuration > 0) {
+                        $moduleSec = $pcuDuration;
+                    } elseif ($pcuProgress > 0 && $pcuDuration > 0) {
+                        $moduleSec = (int) round(($pcuProgress / 100) * $pcuDuration);
+                    } elseif ((float) ($pcu->learning_hour ?? 0) > 0) {
+                        $moduleSec = (int) round((float) $pcu->learning_hour * 3600);
+                    }
+
+                    if ($d->content && $d->content->max_actual_watch_seconds !== null) {
+                        $moduleSec = min($moduleSec, $d->content->max_actual_watch_seconds);
+                    }
+
+                    $moduleRecognizedSec = ($pcuDuration > 0) ? min($moduleSec, $pcuDuration * 2) : $moduleSec;
+                    $consumedPlaylistRecognizedSeconds += $moduleRecognizedSec;
+                } elseif ($cu) {
+                    $cuDuration = (int) ($cu->duration_seconds ?? 0);
+                    if ($cuDuration <= 0) {
+                        $cuDuration = $moduleDuration;
+                    }
+                    $cuActualWatch = (int) ($cu->actual_watch_seconds ?? 0);
+                    $cuCurrentTime = (int) ($cu->current_time ?? 0);
+                    $cuProgress = (int) ($cu->progress ?? 0);
+                    $cuFinished = ((string) $cu->finish === '1' || $cuProgress >= 100);
+
+                    $moduleSec = 0;
+                    if ($cuActualWatch > 0) {
+                        $moduleSec = $cuActualWatch;
+                    } elseif ($cuCurrentTime > 0) {
+                        $moduleSec = $cuCurrentTime;
+                    } elseif ($cuFinished && $cuDuration > 0) {
+                        $moduleSec = $cuDuration;
+                    } elseif ($cuProgress > 0 && $cuDuration > 0) {
+                        $moduleSec = (int) round(($cuProgress / 100) * $cuDuration);
+                    } elseif ((float) ($cu->learning_hours ?? 0) > 0) {
+                        $moduleSec = (int) round((float) $cu->learning_hours * 3600);
+                    }
+
+                    if ($d->content && $d->content->max_actual_watch_seconds !== null) {
+                        $moduleSec = min($moduleSec, $d->content->max_actual_watch_seconds);
+                    }
+
+                    $moduleRecognizedSec = ($cuDuration > 0) ? min($moduleSec, $cuDuration * 2) : $moduleSec;
+                    $consumedPlaylistRecognizedSeconds += $moduleRecognizedSec;
+                }
+            }
+
+            $result->put($plan->id, $consumedPlaylistRecognizedSeconds);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Single playlist recognized duration fallback (in seconds).
+     */
+    public function calculatePlaylistRecognizedSecondsSingle(int $userId, TrainingPlan $plan): int
+    {
+        return (int) $this->calculatePlaylistsRecognizedSecondsBatch($userId, collect([$plan]))->get($plan->id, 0);
+    }
+
+    /**
+     * Format recognized duration seconds to HH:MM:SS.
+     */
+    public function formatRecognizedDuration(int $seconds): string
+    {
+        return DurationFormatter::fromSeconds($seconds);
     }
 
     /**

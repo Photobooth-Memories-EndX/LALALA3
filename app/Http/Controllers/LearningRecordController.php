@@ -208,6 +208,7 @@ class LearningRecordController extends Controller
             ->selectRaw('trainingplan_id, MIN(created_at) as min_created')
             ->pluck('min_created', 'trainingplan_id');
         $playlistActualHours = $this->recordLhService()->calculatePlaylistsBatch($userId, $completedPlaylists);
+        $playlistRecognizedSeconds = $this->recordLhService()->calculatePlaylistsRecognizedSecondsBatch($userId, $completedPlaylists);
 
         return $this->mergeLearningRecord(
             $this->buildContentRows($completedContents, $cert),
@@ -218,7 +219,8 @@ class LearningRecordController extends Controller
                 $completedContents,
                 $playlistContents,
                 $playlistStartDates,
-                $playlistActualHours
+                $playlistActualHours,
+                $playlistRecognizedSeconds
             )
         )->sortByDesc(fn (array $row) => (string) ($row['finish_date'] ?? ''))->values();
     }
@@ -368,6 +370,8 @@ class LearningRecordController extends Controller
             'type'           => fn (array $row) => mb_strtolower((string) ($row['type'] ?? '')),
             'classification' => fn (array $row) => mb_strtolower((string) ($row['classification'] ?? '')),
             'duration'       => fn (array $row) => (float) ($row['duration_sort'] ?? -1),
+            'recognized-duration' => fn (array $row) => (int) ($row['recognized_duration_seconds'] ?? 0),
+            'recognized_duration' => fn (array $row) => (int) ($row['recognized_duration_seconds'] ?? 0),
             'learning-hour'  => fn (array $row) => (float) ($row['learning_hour_bucket'] ?? -1),
             'progress'       => fn (array $row) => (float) ($row['progress'] ?? -1),
             'finish'         => fn (array $row) => (string) ($row['finish_date'] ?? ''),
@@ -695,6 +699,8 @@ class LearningRecordController extends Controller
                 : collect();
             $actualHours = $this->recordLhService()->calculateContent($cu);
             $formattedHours = $this->recordLhService()->formatHours($actualHours);
+            $recognizedSeconds = $this->recordLhService()->calculateContentRecognizedSeconds($cu);
+            $formattedRecognized = $this->recordLhService()->formatRecognizedDuration($recognizedSeconds);
 
             $isInactive = ($content->active !== 'Active') || !is_null($content->deleted_at);
             $isExpired  = !$isInactive && $content->isExpired();
@@ -741,6 +747,9 @@ class LearningRecordController extends Controller
                 'classification'  => optional(optional($content)->classification)->classification_name ?? '-',
                 'duration'        => DurationFormatter::formatForLearningRecord(optional($content)->duration),
                 'duration_sort'   => DurationFormatter::toSeconds(optional($content)->duration) ?? -1,
+                'recognized_duration' => $formattedRecognized,
+                'recognized_duration_seconds' => $recognizedSeconds,
+                'total_recognized_duration'   => $formattedRecognized,
                 'learning_hour'   => $formattedHours,
                 'learning_hour_bucket' => $actualHours,
                 'learning_hour_value'  => $actualHours,
@@ -859,12 +868,13 @@ class LearningRecordController extends Controller
         Collection $contentUsers,
         ?Collection $allPlaylistContents = null,
         ?Collection $playlistStartDates = null,
-        ?Collection $playlistActualHours = null
+        ?Collection $playlistActualHours = null,
+        ?Collection $playlistRecognizedSeconds = null
     ): Collection
     {
         $allPlaylistContents = $allPlaylistContents ?? $this->playlistContentsData($playlists);
 
-        return $playlists->map(function (TrainingPlan $plan) use ($cert, $firstContentSlugs, $contentUsers, $allPlaylistContents, $playlistStartDates, $playlistActualHours) {
+        return $playlists->map(function (TrainingPlan $plan) use ($cert, $firstContentSlugs, $contentUsers, $allPlaylistContents, $playlistStartDates, $playlistActualHours, $playlistRecognizedSeconds) {
             $setting     = $cert['byPlaylist']->get($plan->id);
             $eligibility = $setting ? ($cert['eligibility'][$setting->id] ?? null) : null;
             $eligible    = $eligibility?->eligible ?? false;
@@ -931,6 +941,9 @@ class LearningRecordController extends Controller
             $actualHours = $playlistActualHours?->get($plan->id)
                 ?? (float) $this->recordLhService()->calculatePlaylistSingle((int) Auth::id(), $plan);
             $formattedHours = $this->recordLhService()->formatHours($actualHours);
+            $recognizedSeconds = $playlistRecognizedSeconds?->get($plan->id)
+                ?? (int) $this->recordLhService()->calculatePlaylistRecognizedSecondsSingle((int) Auth::id(), $plan);
+            $formattedRecognized = $this->recordLhService()->formatRecognizedDuration($recognizedSeconds);
             $playlistRequirement = collect($playlistItems)->contains(fn ($it) => ($it['requirement'] ?? '') === 'Mandatory')
                 ? 'Mandatory'
                 : 'Non-Mandatory';
@@ -958,6 +971,9 @@ class LearningRecordController extends Controller
                 'classification'  => '-',
                 'duration'        => $this->formatDurationSeconds($durationSeconds),
                 'duration_sort'   => $durationSeconds,
+                'recognized_duration' => $formattedRecognized,
+                'recognized_duration_seconds' => $recognizedSeconds,
+                'total_recognized_duration'   => $formattedRecognized,
                 'learning_hour'   => $formattedHours,
                 'learning_hour_bucket' => $actualHours,
                 'learning_hour_value'  => $actualHours,

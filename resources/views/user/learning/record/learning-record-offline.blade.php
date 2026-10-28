@@ -629,7 +629,7 @@
                                 </th>
                                 <th class="text-muted text-center record-sortable" style="width: 7%" data-sort-key="duration" data-sort-type="duration">
                                     <span class="record-sort-header">
-                                        <span class="record-sort-label">Duration</span>
+                                        <span class="record-sort-label">Course Duration</span>
                                         <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
                                     </span>
                                 </th>

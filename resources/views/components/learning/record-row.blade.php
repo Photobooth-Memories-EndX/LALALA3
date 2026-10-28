@@ -40,6 +40,13 @@
         intdiv($durationSeconds % 3600, 60),
         $durationSeconds % 60
     );
+    $recognizedSeconds = max(0, (int) ($row['recognized_duration_seconds'] ?? 0));
+    $recognizedDisplay = $row['recognized_duration'] ?? sprintf(
+        '%02d:%02d:%02d',
+        intdiv($recognizedSeconds, 3600),
+        intdiv($recognizedSeconds % 3600, 60),
+        $recognizedSeconds % 60
+    );
     $lhVal = $row['learning_hours'] ?? $row['learning_hour_value'] ?? null;
     $learningHourDisplay = ($lhVal !== null && is_numeric($lhVal))
         ? number_format((float) $lhVal, 2) . ' h'
@@ -74,6 +81,7 @@
     data-sort-type="{{ mb_strtolower($rowType) }}"
     data-sort-classification="{{ mb_strtolower($rowClassification) }}"
     data-sort-duration="{{ $row['duration_sort'] ?? -1 }}"
+    data-sort-recognized-duration="{{ $recognizedSeconds }}"
     data-sort-learning-hour="{{ $row['learning_hour_bucket'] ?? 0 }}"
     data-sort-progress="{{ $progressValue }}"
     data-sort-finish="{{ $finishDateRaw }}"
@@ -173,6 +181,8 @@
     <td><x-learning.record-classification-badge :row="$row" /></td>
 
     <td class="learning-record-duration">{{ $durationDisplay }}</td>
+
+    <td class="learning-record-recognized-duration text-center text-nowrap">{{ $recognizedDisplay }}</td>
 
     <td class="learning-record-learning-hour">{{ $learningHourDisplay }}</td>
 

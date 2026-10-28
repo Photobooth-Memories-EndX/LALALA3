@@ -161,6 +161,9 @@ class LearningRecordPlaylistExportService
                 $childHoursVal = round($moduleSec / 3600, 4);
                 $durationFormatted = DurationFormatter::fromSeconds($durationSeconds);
 
+                $childRecognizedSec = ($durationSeconds > 0) ? min($moduleSec, $durationSeconds * 2) : $moduleSec;
+                $recognizedDurationFormatted = DurationFormatter::fromSeconds($childRecognizedSec);
+
                 $learningHourFormatted = $childHoursVal > 0 ? (number_format($childHoursVal, 2) . ' h') : '-';
                 $attendance = ($childProgress >= 100) ? 'Yes' : 'No';
 
@@ -204,6 +207,9 @@ class LearningRecordPlaylistExportService
                     'classification'      => $content->classification?->classification_name ?? '-',
                     'duration'            => $durationFormatted,
                     'duration_seconds'    => $durationSeconds,
+                    'recognized_duration' => $recognizedDurationFormatted,
+                    'recognized_duration_seconds' => $childRecognizedSec,
+                    'total_recognized_duration'   => $recognizedDurationFormatted,
                     'learning_hour'       => $learningHourFormatted,
                     'learning_hour_value' => $childHoursVal,
                     'learning_hours'      => $childHoursVal,

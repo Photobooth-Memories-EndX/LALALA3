@@ -802,7 +802,13 @@
                                 </th>
                                 <th class="text-muted text-center record-sortable" style="width: 7%" data-sort-key="duration" data-sort-type="duration">
                                     <span class="record-sort-header">
-                                        <span class="record-sort-label">Duration</span>
+                                        <span class="record-sort-label">Course Duration</span>
+                                        <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
+                                    </span>
+                                </th>
+                                <th class="text-muted text-center record-sortable" style="width: 8%" data-sort-key="recognized-duration" data-sort-type="duration">
+                                    <span class="record-sort-header">
+                                        <span class="record-sort-label">Total Recognized Duration</span>
                                         <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
                                     </span>
                                 </th>
@@ -856,6 +862,7 @@
                                 data-sort-category="{{ mb_strtolower((string) ($row['category'] ?? '-')) }}"
                                 data-sort-classification="{{ mb_strtolower((string) ($row['classification'] ?? '-')) }}"
                                 data-sort-duration="{{ $row['duration_sort'] ?? ($row['duration_seconds'] ?? -1) }}"
+                                data-sort-recognized-duration="{{ (int) ($row['recognized_duration_seconds'] ?? 0) }}"
                                 data-sort-learning-hour="{{ $row['learning_hour_value'] ?? 0 }}"
                                 data-sort-progress="{{ (int) ($row['progress'] ?? 0) }}"
                                 data-sort-finish="{{ $row['end_datetime'] ?? ($row['finish_date'] ?? '') }}"
@@ -932,6 +939,13 @@
                                     <x-learning.record-classification-badge :row="$row" />
                                 </td>
                                 <td class="text-center text-nowrap">{{ $row['duration'] }}</td>
+                                <td class="text-center text-nowrap">
+                                    @if (($row['source'] ?? '') === 'online')
+                                        {{ $row['recognized_duration'] ?? ($row['total_recognized_duration'] ?? '00:00:00') }}
+                                    @else
+                                        -
+                                    @endif
+                                </td>
                                 <td class="text-center text-nowrap fw-semibold text-primary">{{ number_format((float)($row['learning_hours'] ?? $row['learning_hour_value'] ?? $row['learning_hour'] ?? 0), 2) }} h</td>
                                 <td class="text-center">
                                     @if ($row['progress'] >= 100)

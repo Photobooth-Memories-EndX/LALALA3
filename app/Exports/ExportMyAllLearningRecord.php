@@ -118,6 +118,9 @@ class ExportMyAllLearningRecord implements FromArray, ShouldAutoSize, WithColumn
             $durationSeconds = max(0, (int) ($row['duration_seconds'] ?? $row['duration_sort'] ?? 0));
             $durationCell = $durationSeconds > 0 ? ($durationSeconds / 86400) : '-';
 
+            $recDurationSeconds = max(0, (int) ($row['recognized_duration_seconds'] ?? 0));
+            $recDurationCell = (!$isOffline && $recDurationSeconds > 0) ? ($recDurationSeconds / 86400) : '-';
+
             $lhValue = round((float) ($row['learning_hour_value'] ?? 0), 2);
 
             $rawProgress = $row['progress'] ?? ($isOffline ? 100 : 0);
@@ -209,24 +212,25 @@ $deliveryMethod = \App\Models\OfflineTraining::normalizeDeliveryMethod($row['del
                 $type,                                  // G: Type
                 $category,                              // H: Category
                 $mainClassification,                    // I: Main Classification
-                $durationCell,                          // J: Duration
-                $lhValue,                               // K: Learning Hours
-                $progressCell,                          // L: % Progress
-                $startDate,                             // M: Start Date
-                $endDate,                               // N: End Date
-                $startTime,                             // O: Start Time
-                $endTime,                               // P: End Time
-                $requirement ?: '-',                    // Q: Requirement
-                $deliveryMethod,                        // R: Delivery Method
-                $provider,                              // S: Provider
-                $providerName,                          // T: Provider Name
-                $venue,                                 // U: Venue
-                $scoreVal,                              // V: Assessment Score (L2)
-                $bondStatus,                            // W: Bond Status
-                $bondDuration,                          // X: Bond Duration
-                $bondEndDate,                           // Y: Bond End Date
-                $bondAmount,                            // Z: Bond Amount
-                $certificate,                           // AA: Certificate
+                $durationCell,                          // J: Course Duration
+                $recDurationCell,                       // K: Total Recognized Duration
+                $lhValue,                               // L: Learning Hours
+                $progressCell,                          // M: % Progress
+                $startDate,                             // N: Start Date
+                $endDate,                               // O: End Date
+                $startTime,                             // P: Start Time
+                $endTime,                               // Q: End Time
+                $requirement ?: '-',                    // R: Requirement
+                $deliveryMethod,                        // S: Delivery Method
+                $provider,                              // T: Provider
+                $providerName,                          // U: Provider Name
+                $venue,                                 // V: Venue
+                $scoreVal,                              // W: Assessment Score (L2)
+                $bondStatus,                            // X: Bond Status
+                $bondDuration,                          // Y: Bond Duration
+                $bondEndDate,                           // Z: Bond End Date
+                $bondAmount,                            // AA: Bond Amount
+                $certificate,                           // AB: Certificate
             ];
 
             foreach ($rowArr as $k => $v) {
@@ -245,6 +249,8 @@ $deliveryMethod = \App\Models\OfflineTraining::normalizeDeliveryMethod($row['del
                     foreach ($children as $child) {
                         $childDurSec = max(0, (int) ($child['duration_seconds'] ?? 0));
                         $childDurCell = $childDurSec > 0 ? ($childDurSec / 86400) : '-';
+                        $childRecDurSec = max(0, (int) ($child['recognized_duration_seconds'] ?? 0));
+                        $childRecDurCell = $childRecDurSec > 0 ? ($childRecDurSec / 86400) : '-';
                         $childProgInt = max(0, min(100, (int) ($child['progress'] ?? 0)));
                         $childScore = $this->formatCleanScore($child['score'] ?? null);
 
@@ -258,24 +264,25 @@ $deliveryMethod = \App\Models\OfflineTraining::normalizeDeliveryMethod($row['del
                             $child['type'] ?? '-',                                  // G: Type
                             'Content Playlist',                                     // H: Category (Dynamic Content Playlist)
                             $child['classification'] ?? '-',                        // I: Main Classification
-                            $childDurCell,                                          // J: Duration
-                            '-',                                                    // K: Learning Hours (Prevent double calculation in SUM)
-                            $childProgInt / 100,                                    // L: % Progress
-                            $this->toExcelDate($child['start_date'] ?? null),       // M: Start Date
-                            $this->toExcelDate($child['end_date'] ?? null),         // N: End Date
-                            $this->toExcelTime($child['start_time'] ?? null),       // O: Start Time
-                            $this->toExcelTime($child['end_time'] ?? null),         // P: End Time
-                            $child['requirement'] ?? 'Non-Mandatory',               // Q: Requirement
-                            'Online',                                               // R: Delivery Method
-                            'Internal',                                             // S: Provider
-                            'KP-OWL',                                               // T: Provider Name
-                            'KP-OWL',                                               // U: Venue
-                            $childScore,                                            // V: Assessment Score (L2)
-                            '-',                                                    // W: Bond Status
-                            '-',                                                    // X: Bond Duration
-                            '-',                                                    // Y: Bond End Date
-                            '-',                                                    // Z: Bond Amount
-                            '-',                                                    // AA: Certificate
+                            $childDurCell,                                          // J: Course Duration
+                            $childRecDurCell,                                       // K: Total Recognized Duration
+                            '-',                                                    // L: Learning Hours (Prevent double calculation in SUM)
+                            $childProgInt / 100,                                    // M: % Progress
+                            $this->toExcelDate($child['start_date'] ?? null),       // N: Start Date
+                            $this->toExcelDate($child['end_date'] ?? null),         // O: End Date
+                            $this->toExcelTime($child['start_time'] ?? null),       // P: Start Time
+                            $this->toExcelTime($child['end_time'] ?? null),         // Q: End Time
+                            $child['requirement'] ?? 'Non-Mandatory',               // R: Requirement
+                            'Online',                                               // S: Delivery Method
+                            'Internal',                                             // T: Provider
+                            'KP-OWL',                                               // U: Provider Name
+                            'KP-OWL',                                               // V: Venue
+                            $childScore,                                            // W: Assessment Score (L2)
+                            '-',                                                    // X: Bond Status
+                            '-',                                                    // Y: Bond Duration
+                            '-',                                                    // Z: Bond End Date
+                            '-',                                                    // AA: Bond Amount
+                            '-',                                                    // AB: Certificate
                         ];
 
                         foreach ($childRowArr as $k => $v) {
@@ -306,24 +313,25 @@ $deliveryMethod = \App\Models\OfflineTraining::normalizeDeliveryMethod($row['del
             'Type',                 // G
             'Category',             // H
             'Main Classification',  // I
-            'Duration',             // J
-            'Learning Hours',       // K
-            '% Progress',           // L
-            'Start Date',           // M
-            'End Date',             // N
-            'Start Time',           // O
-            'End Time',             // P
-            'Requirement',          // Q
-            'Delivery Method',      // R
-            'Provider',             // S
-            'Provider Name',        // T
-            'Venue',                // U
-            'Assessment Score (L2)',// V
-            'Bond Status',          // W
-            'Bond Duration',        // X
-            'Bond End Date',        // Y
-            'Bond Amount',          // Z
-            'Certificate',          // AA
+            'Course Duration',      // J
+            'Total Recognized Duration', // K
+            'Learning Hours',       // L
+            '% Progress',           // M
+            'Start Date',           // N
+            'End Date',             // O
+            'Start Time',           // P
+            'End Time',             // Q
+            'Requirement',          // R
+            'Delivery Method',      // S
+            'Provider',             // T
+            'Provider Name',        // U
+            'Venue',                // V
+            'Assessment Score (L2)',// W
+            'Bond Status',          // X
+            'Bond Duration',        // Y
+            'Bond End Date',        // Z
+            'Bond Amount',          // AA
+            'Certificate',          // AB
         ];
     }
 
@@ -339,24 +347,25 @@ $deliveryMethod = \App\Models\OfflineTraining::normalizeDeliveryMethod($row['del
             'G'  => NumberFormat::FORMAT_GENERAL,       // Type
             'H'  => NumberFormat::FORMAT_GENERAL,       // Category
             'I'  => NumberFormat::FORMAT_GENERAL,       // Main Classification
-            'J'  => 'hh:mm:ss',                         // Duration (Native Time)
-            'K'  => '0.00 "h"',                         // Learning Hours
-            'L'  => '0%',                               // % Progress
-            'M'  => 'yyyy-mm-dd',                       // Start Date
-            'N'  => 'yyyy-mm-dd',                       // End Date
-            'O'  => 'hh:mm:ss',                         // Start Time (Native Time)
-            'P'  => 'hh:mm:ss',                         // End Time (Native Time)
-            'Q'  => NumberFormat::FORMAT_GENERAL,       // Requirement
-            'R'  => NumberFormat::FORMAT_GENERAL,       // Delivery Method
-            'S'  => NumberFormat::FORMAT_GENERAL,       // Provider
-            'T'  => NumberFormat::FORMAT_GENERAL,       // Provider Name
-            'U'  => NumberFormat::FORMAT_GENERAL,       // Venue
-            'V'  => '0',                                // Assessment Score (L2)
-            'W'  => NumberFormat::FORMAT_GENERAL,       // Bond Status
-            'X'  => '0.##',                             // Bond Duration
-            'Y'  => 'yyyy-mm-dd',                       // Bond End Date
-            'Z'  => '"Rp "#,##0;;"Rp -"',               // Bond Amount
-            'AA' => NumberFormat::FORMAT_GENERAL,       // Certificate
+            'J'  => 'hh:mm:ss',                         // Course Duration (Native Time)
+            'K'  => 'hh:mm:ss',                         // Total Recognized Duration (Native Time)
+            'L'  => '0.00 "h"',                         // Learning Hours
+            'M'  => '0%',                               // % Progress
+            'N'  => 'yyyy-mm-dd',                       // Start Date
+            'O'  => 'yyyy-mm-dd',                       // End Date
+            'P'  => 'hh:mm:ss',                         // Start Time (Native Time)
+            'Q'  => 'hh:mm:ss',                         // End Time (Native Time)
+            'R'  => NumberFormat::FORMAT_GENERAL,       // Requirement
+            'S'  => NumberFormat::FORMAT_GENERAL,       // Delivery Method
+            'T'  => NumberFormat::FORMAT_GENERAL,       // Provider
+            'U'  => NumberFormat::FORMAT_GENERAL,       // Provider Name
+            'V'  => NumberFormat::FORMAT_GENERAL,       // Venue
+            'W'  => '0',                                // Assessment Score (L2)
+            'X'  => NumberFormat::FORMAT_GENERAL,       // Bond Status
+            'Y'  => '0.##',                             // Bond Duration
+            'Z'  => 'yyyy-mm-dd',                       // Bond End Date
+            'AA' => '"Rp "#,##0;;"Rp -"',               // Bond Amount
+            'AB' => NumberFormat::FORMAT_GENERAL,       // Certificate
         ];
     }
 
@@ -392,7 +401,7 @@ $deliveryMethod = \App\Models\OfflineTraining::normalizeDeliveryMethod($row['del
                     ->setVertical(Alignment::VERTICAL_CENTER);
 
                 if ($highestRow >= 2) {
-                    $sheet->getStyle('V2:V' . $highestRow)->getNumberFormat()->setFormatCode('0');
+                    $sheet->getStyle('W2:W' . $highestRow)->getNumberFormat()->setFormatCode('0');
                 }
 
                 // Highlight main Playlist items with light blue/gray fill (#EBF3FB) and bold text

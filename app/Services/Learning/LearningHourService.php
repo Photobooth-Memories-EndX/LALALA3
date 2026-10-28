@@ -54,6 +54,28 @@ class LearningHourService
         return (float) (ceil($seconds / self::BUCKET_SECONDS) * self::BUCKET_HOURS);
     }
 
+    /**
+     * Calculate Total Recognized Duration in seconds.
+     * Formula: min(actual_watch_seconds, content_duration_seconds * 2)
+     */
+    public function calculateRecognizedDuration(int $actualWatchSeconds, int $contentDurationSeconds): int
+    {
+        $actualWatchSeconds = max(0, $actualWatchSeconds);
+        if ($contentDurationSeconds > 0) {
+            return min($actualWatchSeconds, $contentDurationSeconds * 2);
+        }
+
+        return $actualWatchSeconds;
+    }
+
+    /**
+     * Format recognized duration seconds to HH:MM:SS.
+     */
+    public function formatRecognizedDuration(int $seconds): string
+    {
+        return \App\Support\DurationFormatter::fromSeconds($seconds);
+    }
+
     private function calculateTotal(Collection $durations): float
     {
         return (float) $durations->sum(

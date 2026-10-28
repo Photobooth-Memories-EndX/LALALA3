@@ -149,7 +149,7 @@ $deliveryMethod = \App\Models\OfflineTraining::normalizeDeliveryMethod($row['del
                 $type,                                              // F: Type
                 $category,                                          // G: Category
                 $mainClassification,                                // H: Main Classification
-                $durationCell,                                      // I: Duration
+                $durationCell,                                      // I: Course Duration
                 $lhValue,                                           // J: Learning Hour
                 $progressCell,                                      // K: % Progress
                 $startDate,                                         // L: Start Date
@@ -192,7 +192,7 @@ $deliveryMethod = \App\Models\OfflineTraining::normalizeDeliveryMethod($row['del
             'Type',                 // F
             'Category',             // G
             'Main Classification',  // H
-            'Duration',             // I
+            'Course Duration',      // I
             'Learning Hour',        // J
             '% Progress',           // K
             'Start Date',           // L
@@ -224,7 +224,7 @@ $deliveryMethod = \App\Models\OfflineTraining::normalizeDeliveryMethod($row['del
             'F'  => NumberFormat::FORMAT_GENERAL,       // Type
             'G'  => NumberFormat::FORMAT_GENERAL,       // Category
             'H'  => NumberFormat::FORMAT_GENERAL,       // Main Classification
-            'I'  => 'hh:mm:ss',                         // Duration (Native Time)
+            'I'  => 'hh:mm:ss',                         // Course Duration (Native Time)
             'J'  => '0.00 "h"',                         // Learning Hour
             'K'  => '0%',                               // % Progress
             'L'  => 'yyyy-mm-dd',                       // Start Date
