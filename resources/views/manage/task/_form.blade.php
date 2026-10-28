@@ -100,48 +100,36 @@
         .form-field-xl {
             max-width: 740px;
         }
-        .field-card:not(.field-card-clean) {
-            border: 1px solid #e2e8f0 !important;
-            border-left: 4px solid transparent !important;
-            border-radius: 12px !important;
-            background: #ffffff !important;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
-            transition: all 0.2s ease;
-            max-width: 820px;
-        }
-        .field-card:not(.field-card-clean):hover {
-            border-color: #cbd5e1 !important;
-            border-left-color: #cbd5e1 !important;
-            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
-        }
-        .field-card:not(.field-card-clean):focus-within {
-            border-color: #cbd5e1 !important;
-            border-left: 4px solid var(--tblr-primary, #206bc4) !important;
-            box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
-        }
-        .field-card.field-card-clean {
+        .field-card {
             border: none !important;
             border-left: none !important;
             background: transparent !important;
             box-shadow: none !important;
             padding: 0 !important;
-            margin: 0 !important;
-            border-radius: 0 !important;
-            max-width: 740px;
+            margin-bottom: 2rem !important;
+            max-width: 820px;
+            transition: all 0.2s ease;
         }
-        .field-card.field-card-clean:hover,
-        .field-card.field-card-clean:focus-within {
+        .field-card:not(:last-child) {
+            border-bottom: 1px solid #f1f5f9 !important;
+            padding-bottom: 1.75rem !important;
+        }
+        .field-card:hover,
+        .field-card:focus-within {
             border: none !important;
             border-left: none !important;
             box-shadow: none !important;
             background: transparent !important;
         }
-        [data-bs-theme="dark"] .field-card.field-card-clean,
-        body.dark-mode .field-card.field-card-clean,
-        body.theme-dark .field-card.field-card-clean {
+        [data-bs-theme="dark"] .field-card,
+        body.dark-mode .field-card,
+        body.theme-dark .field-card {
             background: transparent !important;
             border: none !important;
             box-shadow: none !important;
+        }
+        [data-bs-theme="dark"] .field-card:not(:last-child) {
+            border-bottom-color: rgba(255, 255, 255, 0.08) !important;
         }
 
         /* Google Forms style for Essay question in Section 4 */
@@ -981,7 +969,7 @@
         }
 
         function fileSettingsHTML(i, data) {
-            return '<div class="fileSettings mt-3 p-3 bg-light-subtle rounded-3 border" style="display:none">' +
+            return '<div class="fileSettings mt-3 p-3 bg-light rounded-3" style="display:none">' +
                 '<div class="row g-3">' +
                     '<div class="col-12 col-md-4">' +
                         '<label class="form-label small fw-semibold text-dark mb-1">Allowed file types</label>' +
@@ -1042,7 +1030,7 @@
                     '<div class="optionsEditor mt-2" style="display:none"><div class="optionsList"></div><div class="optionsHint"></div></div>' +
                     '<div class="fileSettings mt-2" style="display:none"></div>';
             } else {
-                card.className = 'border rounded-3 p-4 mb-3 field-card bg-white';
+                card.className = 'field-card form-field-xl';
                 card.innerHTML =
                     '<input type="hidden" name="fields[' + i + '][id]" value="' + esc(data.id || '') + '">' +
                     '<div class="d-flex align-items-start gap-3 flex-wrap flex-md-nowrap mb-3">' +
@@ -1074,7 +1062,7 @@
                         '<div class="form-hint mt-2 optionsHint text-muted small" style="display:none;"></div>' +
                     '</div>' +
                     fileSettingsHTML(i, data) +
-                    '<div class="previewScale mt-3 p-3 bg-light-subtle rounded-3 border" style="display:none;">' +
+                    '<div class="previewScale mt-3 p-3 bg-light rounded-3" style="display:none;">' +
                         '<div class="text-muted small mb-2"><i class="ti ti-arrows-left-right me-1"></i> Scale preview (Learners will select a rating from 1 to 5):</div>' +
                         '<div class="d-flex align-items-center gap-3 flex-wrap">' +
                             '<span class="text-muted small fw-medium">1 (Lowest)</span>' +
@@ -1088,7 +1076,7 @@
                             '<span class="text-muted small fw-medium">5 (Highest)</span>' +
                         '</div>' +
                     '</div>' +
-                    '<div class="previewRating mt-3 p-3 bg-light-subtle rounded-3 border" style="display:none;">' +
+                    '<div class="previewRating mt-3 p-3 bg-light rounded-3" style="display:none;">' +
                         '<div class="text-muted small mb-2"><i class="ti ti-star me-1"></i> Star rating preview (Learners will select 1 to 5 stars):</div>' +
                         '<div class="d-flex align-items-center gap-1 text-warning fs-2">' +
                             '<i class="ti ti-star-filled"></i>' +
@@ -1099,7 +1087,7 @@
                             '<span class="text-muted small ms-2 fs-6">5-star rating scale</span>' +
                         '</div>' +
                     '</div>' +
-                    '<div class="border-top pt-3 mt-4 d-flex align-items-center justify-content-between flex-wrap gap-2">' +
+                    '<div class="pt-3 mt-3 d-flex align-items-center justify-content-between flex-wrap gap-2">' +
                         '<div class="text-muted small fw-semibold questionNumberBadge">' +
                             '<span class="badge bg-light text-secondary border px-2.5 py-1 rounded-2">Question #<span class="qNumText">1</span></span>' +
                         '</div>' +
