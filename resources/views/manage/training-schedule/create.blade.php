@@ -38,13 +38,8 @@
                 <div class="row g-3">
                     <!-- Training Title Placed Here at the Top -->
                     <div class="col-md-6 mb-2">
-                        <div class="d-flex align-items-center justify-content-between mb-1">
-                            <label class="form-label fw-semibold text-dark mb-0">Training Title <span class="text-danger">*</span></label>
-                            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 btn-add-option-modal" style="font-size: 0.75rem; height: 22px; border-radius: 4px;" data-type="course_name" data-target="#select-training-title" data-title="Training Title" title="Add Training Title">
-                                <i class="ti ti-plus"></i>
-                            </button>
-                        </div>
-                        <select name="title" id="select-training-title" class="form-select rounded-3" required>
+                        <label class="form-label fw-semibold text-dark">Training Title <span class="text-danger">*</span></label>
+                        <select name="title" id="select-training-title" class="form-select rounded-3 w-100" data-option-type="course_name" data-option-title="Training Title" required>
                             <option value="">Select Training Title...</option>
                             @foreach ($options['title'] ?? [] as $titleOpt)
                                 <option value="{{ $titleOpt->value }}" {{ old('title') == $titleOpt->value ? 'selected' : '' }}>
@@ -54,19 +49,15 @@
                             @if (old('title') && !collect($options['title'] ?? [])->pluck('value')->contains(old('title')))
                                 <option value="{{ old('title') }}" selected>{{ old('title') }}</option>
                             @endif
+                            <option value="__add_new__" class="fw-bold text-primary">+ Add New...</option>
                         </select>
                         <div class="invalid-feedback">Please provide or select a valid training title.</div>
                     </div>
 
                     <!-- Sub Course Name -->
                     <div class="col-md-6 mb-2">
-                        <div class="d-flex align-items-center justify-content-between mb-1">
-                            <label class="form-label fw-semibold text-dark mb-0">Sub Course Name</label>
-                            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 btn-add-option-modal" style="font-size: 0.75rem; height: 22px; border-radius: 4px;" data-type="sub_course_name" data-target="#select-sub-course-name" data-title="Sub Course Name" title="Add Sub Course Name">
-                                <i class="ti ti-plus"></i>
-                            </button>
-                        </div>
-                        <select name="sub_course_name" id="select-sub-course-name" class="form-select rounded-3">
+                        <label class="form-label fw-semibold text-dark">Sub Course Name</label>
+                        <select name="sub_course_name" id="select-sub-course-name" class="form-select rounded-3 w-100" data-option-type="sub_course_name" data-option-title="Sub Course Name">
                             <option value="">Select Sub Course Name (Optional)...</option>
                             @foreach ($options['sub_course_name'] ?? [] as $subCourseOpt)
                                 <option value="{{ $subCourseOpt->value }}" {{ old('sub_course_name') == $subCourseOpt->value ? 'selected' : '' }}>
@@ -76,6 +67,7 @@
                             @if (old('sub_course_name') && !collect($options['sub_course_name'] ?? [])->pluck('value')->contains(old('sub_course_name')))
                                 <option value="{{ old('sub_course_name') }}" selected>{{ old('sub_course_name') }}</option>
                             @endif
+                            <option value="__add_new__" class="fw-bold text-primary">+ Add New...</option>
                         </select>
                     </div>
                     
@@ -134,92 +126,72 @@
                 <div class="row g-3">
                     <!-- Main Classification -->
                     <div class="col-md-4">
-                        <div class="d-flex align-items-center justify-content-between mb-1">
-                            <label class="form-label fw-semibold text-dark mb-0">Main Classification</label>
-                            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 btn-add-option-modal" style="font-size: 0.75rem; height: 22px; border-radius: 4px;" data-type="classification" data-target="#select-main-classification" data-title="Main Classification" title="Add Main Classification">
-                                <i class="ti ti-plus"></i>
-                            </button>
-                        </div>
-                        <select name="main_classification" id="select-main-classification" class="form-select rounded-3">
+                        <label class="form-label fw-semibold text-dark">Main Classification</label>
+                        <select name="main_classification" id="select-main-classification" class="form-select rounded-3 w-100" data-option-type="classification" data-option-title="Main Classification">
                             <option value="">Select Main Classification...</option>
                             @foreach ($classifications ?? [] as $cls)
                                 <option value="{{ $cls->classification_name }}" {{ old('main_classification') == $cls->classification_name ? 'selected' : '' }}>
                                     {{ $cls->classification_name }}
                                 </option>
                             @endforeach
+                            <option value="__add_new__" class="fw-bold text-primary">+ Add New...</option>
                         </select>
                     </div>
 
                     <!-- Sub Classification -->
                     <div class="col-md-4">
-                        <div class="d-flex align-items-center justify-content-between mb-1">
-                            <label class="form-label fw-semibold text-dark mb-0">Sub Classification</label>
-                            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 btn-add-option-modal" style="font-size: 0.75rem; height: 22px; border-radius: 4px;" data-type="sub_classification" data-target="#select-sub-classification" data-title="Sub Classification" title="Add Sub Classification">
-                                <i class="ti ti-plus"></i>
-                            </button>
-                        </div>
-                        <select name="sub_classification" id="select-sub-classification" class="form-select rounded-3">
+                        <label class="form-label fw-semibold text-dark">Sub Classification</label>
+                        <select name="sub_classification" id="select-sub-classification" class="form-select rounded-3 w-100" data-option-type="sub_classification" data-option-title="Sub Classification">
                             <option value="">Select Sub Classification...</option>
                             @foreach ($options['sub_classification'] ?? [] as $subOpt)
                                 <option value="{{ $subOpt->value }}" {{ old('sub_classification') == $subOpt->value ? 'selected' : '' }}>
                                     {{ $subOpt->value }}
                                 </option>
                             @endforeach
+                            <option value="__add_new__" class="fw-bold text-primary">+ Add New...</option>
                         </select>
                     </div>
 
                     <!-- Training Category -->
                     <div class="col-md-4">
-                        <div class="d-flex align-items-center justify-content-between mb-1">
-                            <label class="form-label fw-semibold text-dark mb-0">Training Category <span class="text-danger">*</span></label>
-                            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 btn-add-option-modal" style="font-size: 0.75rem; height: 22px; border-radius: 4px;" data-type="category" data-target="#select-category" data-title="Training Category" title="Add Training Category">
-                                <i class="ti ti-plus"></i>
-                            </button>
-                        </div>
-                        <select name="category" id="select-category" class="form-select rounded-3" required>
+                        <label class="form-label fw-semibold text-dark">Training Category <span class="text-danger">*</span></label>
+                        <select name="category" id="select-category" class="form-select rounded-3 w-100" data-option-type="category" data-option-title="Training Category" required>
                             <option value="">Select Category...</option>
                             @foreach ($options['category'] ?? [] as $catOpt)
                                 <option value="{{ $catOpt->value }}" {{ old('category') == $catOpt->value ? 'selected' : '' }}>
                                     {{ $catOpt->value }}
                                 </option>
                             @endforeach
+                            <option value="__add_new__" class="fw-bold text-primary">+ Add New...</option>
                         </select>
                         <div class="invalid-feedback">Please select a category.</div>
                     </div>
 
                     <!-- Training Type -->
                     <div class="col-md-4">
-                        <div class="d-flex align-items-center justify-content-between mb-1">
-                            <label class="form-label fw-semibold text-dark mb-0">Training Type</label>
-                            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 btn-add-option-modal" style="font-size: 0.75rem; height: 22px; border-radius: 4px;" data-type="type" data-target="#select-type" data-title="Training Type" title="Add Training Type">
-                                <i class="ti ti-plus"></i>
-                            </button>
-                        </div>
-                        <select name="type" id="select-type" class="form-select rounded-3">
+                        <label class="form-label fw-semibold text-dark">Training Type</label>
+                        <select name="type" id="select-type" class="form-select rounded-3 w-100" data-option-type="type" data-option-title="Training Type">
                             <option value="">Select Training Type...</option>
                             @foreach ($options['type'] ?? [] as $typeOpt)
                                 <option value="{{ $typeOpt->value }}" {{ old('type') == $typeOpt->value ? 'selected' : '' }}>
                                     {{ $typeOpt->value }}
                                 </option>
                             @endforeach
+                            <option value="__add_new__" class="fw-bold text-primary">+ Add New...</option>
                         </select>
                     </div>
 
                     <!-- Competency Level -->
                     <div class="col-md-4">
-                        <div class="d-flex align-items-center justify-content-between mb-1">
-                            <label class="form-label fw-semibold text-dark mb-0">Competency Level</label>
-                            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 btn-add-option-modal" style="font-size: 0.75rem; height: 22px; border-radius: 4px;" data-type="level" data-target="#select-level" data-title="Competency Level" title="Add Competency Level">
-                                <i class="ti ti-plus"></i>
-                            </button>
-                        </div>
-                        <select name="level" id="select-level" class="form-select rounded-3">
+                        <label class="form-label fw-semibold text-dark">Competency Level</label>
+                        <select name="level" id="select-level" class="form-select rounded-3 w-100" data-option-type="level" data-option-title="Competency Level">
                             <option value="">Select Level...</option>
                             @foreach ($options['level'] ?? [] as $lvlOpt)
                                 <option value="{{ $lvlOpt->value }}" {{ old('level') == $lvlOpt->value ? 'selected' : '' }}>
                                     {{ $lvlOpt->value }}
                                 </option>
                             @endforeach
+                            <option value="__add_new__" class="fw-bold text-primary">+ Add New...</option>
                         </select>
                     </div>
 
@@ -232,13 +204,8 @@
 
                     <!-- Instructor / Trainer -->
                     <div class="col-md-6">
-                        <div class="d-flex align-items-center justify-content-between mb-1">
-                            <label class="form-label fw-semibold text-dark mb-0">Instructor / Trainer <span class="text-danger">*</span></label>
-                            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 btn-add-option-modal" style="font-size: 0.75rem; height: 22px; border-radius: 4px;" data-type="instructor" data-target="#select-instructor" data-title="Instructor / Trainer" title="Add Instructor">
-                                <i class="ti ti-plus"></i>
-                            </button>
-                        </div>
-                        <select name="instructor" id="select-instructor" class="form-select rounded-3" required>
+                        <label class="form-label fw-semibold text-dark">Instructor / Trainer <span class="text-danger">*</span></label>
+                        <select name="instructor" id="select-instructor" class="form-select rounded-3 w-100" data-option-type="instructor" data-option-title="Instructor / Trainer" required>
                             <option value="">Select Instructor / Trainer...</option>
                             @foreach ($options['instructor'] ?? [] as $instOpt)
                                 <option value="{{ $instOpt->value }}" {{ old('instructor') == $instOpt->value ? 'selected' : '' }}>
@@ -248,19 +215,15 @@
                             @if (old('instructor') && !collect($options['instructor'] ?? [])->pluck('value')->contains(old('instructor')))
                                 <option value="{{ old('instructor') }}" selected>{{ old('instructor') }}</option>
                             @endif
+                            <option value="__add_new__" class="fw-bold text-primary">+ Add New...</option>
                         </select>
                         <div class="invalid-feedback">Please select or provide an instructor or trainer.</div>
                     </div>
 
                     <!-- Location / Venue -->
                     <div class="col-md-6">
-                        <div class="d-flex align-items-center justify-content-between mb-1">
-                            <label class="form-label fw-semibold text-dark mb-0">Location / Venue <span class="text-danger">*</span></label>
-                            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 btn-add-option-modal" style="font-size: 0.75rem; height: 22px; border-radius: 4px;" data-type="venue" data-target="#select-location" data-title="Location / Venue" title="Add Location / Venue">
-                                <i class="ti ti-plus"></i>
-                            </button>
-                        </div>
-                        <select name="location" id="select-location" class="form-select rounded-3" required>
+                        <label class="form-label fw-semibold text-dark">Location / Venue <span class="text-danger">*</span></label>
+                        <select name="location" id="select-location" class="form-select rounded-3 w-100" data-option-type="venue" data-option-title="Location / Venue" required>
                             <option value="">Select Location / Venue...</option>
                             @foreach ($options['location'] ?? [] as $locOpt)
                                 <option value="{{ $locOpt->value }}" {{ old('location') == $locOpt->value ? 'selected' : '' }}>
@@ -270,19 +233,15 @@
                             @if (old('location') && !collect($options['location'] ?? [])->pluck('value')->contains(old('location')))
                                 <option value="{{ old('location') }}" selected>{{ old('location') }}</option>
                             @endif
+                            <option value="__add_new__" class="fw-bold text-primary">+ Add New...</option>
                         </select>
                         <div class="invalid-feedback">Please select or provide a training location or venue.</div>
                     </div>
 
                     <!-- Target Employee -->
                     <div class="col-md-6">
-                        <div class="d-flex align-items-center justify-content-between mb-1">
-                            <label class="form-label fw-semibold text-dark mb-0">Target Employee <span class="text-danger">*</span></label>
-                            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 btn-add-option-modal" style="font-size: 0.75rem; height: 22px; border-radius: 4px;" data-type="target_employee" data-target="#select-target-employee" data-title="Target Employee" title="Add Target Employee">
-                                <i class="ti ti-plus"></i>
-                            </button>
-                        </div>
-                        <select name="target_employee" id="select-target-employee" class="form-select rounded-3" required>
+                        <label class="form-label fw-semibold text-dark">Target Employee <span class="text-danger">*</span></label>
+                        <select name="target_employee" id="select-target-employee" class="form-select rounded-3 w-100" data-option-type="target_employee" data-option-title="Target Employee" required>
                             <option value="">Select Target Employee...</option>
                             @foreach ($options['target_employee'] ?? [] as $tgtOpt)
                                 <option value="{{ $tgtOpt->value }}" {{ old('target_employee') == $tgtOpt->value ? 'selected' : '' }}>
@@ -292,19 +251,15 @@
                             @if (old('target_employee') && !collect($options['target_employee'] ?? [])->pluck('value')->contains(old('target_employee')))
                                 <option value="{{ old('target_employee') }}" selected>{{ old('target_employee') }}</option>
                             @endif
+                            <option value="__add_new__" class="fw-bold text-primary">+ Add New...</option>
                         </select>
                         <div class="invalid-feedback">Please select or specify the target employee or audience.</div>
                     </div>
 
                     <!-- Requirements -->
                     <div class="col-md-6">
-                        <div class="d-flex align-items-center justify-content-between mb-1">
-                            <label class="form-label fw-semibold text-dark mb-0">Requirements</label>
-                            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 btn-add-option-modal" style="font-size: 0.75rem; height: 22px; border-radius: 4px;" data-type="prerequisites" data-target="#select-prerequisites" data-title="Requirements" title="Add Requirements">
-                                <i class="ti ti-plus"></i>
-                            </button>
-                        </div>
-                        <select name="prerequisites" id="select-prerequisites" class="form-select rounded-3">
+                        <label class="form-label fw-semibold text-dark">Requirements</label>
+                        <select name="prerequisites" id="select-prerequisites" class="form-select rounded-3 w-100" data-option-type="prerequisites" data-option-title="Requirements">
                             <option value="">Select Requirements (Optional)...</option>
                             @foreach ($options['prerequisites'] ?? [] as $preOpt)
                                 <option value="{{ $preOpt->value }}" {{ old('prerequisites') == $preOpt->value ? 'selected' : '' }}>
@@ -314,6 +269,7 @@
                             @if (old('prerequisites') && !collect($options['prerequisites'] ?? [])->pluck('value')->contains(old('prerequisites')))
                                 <option value="{{ old('prerequisites') }}" selected>{{ old('prerequisites') }}</option>
                             @endif
+                            <option value="__add_new__" class="fw-bold text-primary">+ Add New...</option>
                         </select>
                     </div>
 
@@ -481,7 +437,7 @@ document.addEventListener('DOMContentLoaded', function () {
     window.allSubOptions = [];
     $('#select-sub-classification option').each(function () {
         const val = $(this).val();
-        if (val) {
+        if (val && val !== '__add_new__') {
             window.allSubOptions.push({
                 value: val,
                 text: $(this).text().trim()
@@ -502,20 +458,24 @@ document.addEventListener('DOMContentLoaded', function () {
 
         let foundCurrent = false;
         itemsToRender.forEach(item => {
+            if (item.value === '__add_new__') return;
             const isSel = (keepCurrentVal && item.value === currentVal);
             if (isSel) foundCurrent = true;
             $subSelect.append(new Option(item.text, item.value, false, isSel));
         });
 
-        if (keepCurrentVal && currentVal && !foundCurrent) {
+        if (keepCurrentVal && currentVal && currentVal !== '__add_new__' && !foundCurrent) {
             $subSelect.append(new Option(currentVal, currentVal, true, true));
         } else if (!keepCurrentVal) {
             $subSelect.val('');
         }
+
+        $subSelect.append('<option value="__add_new__" class="fw-bold text-primary">+ Add New...</option>');
     }
 
     $('#select-main-classification').on('change', function () {
         const mainVal = $(this).val();
+        if (mainVal === '__add_new__') return;
         updateSubClassificationDropdown(mainVal, false);
     });
 

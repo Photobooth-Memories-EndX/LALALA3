@@ -42,13 +42,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const modalEl = document.getElementById('modal-schedule-add-option');
     if (!modalEl) return;
 
-    // Open Modal from [+] button
-    $(document).on('click', '.btn-add-option-modal', function (e) {
-        e.preventDefault();
-        const type = $(this).data('type');
-        const title = $(this).data('title') || type;
-        const targetSelect = $(this).data('target');
-
+    // Open Modal function
+    window.openScheduleAddOptionModal = function (type, title, targetSelect) {
+        title = title || type;
         $('#modal-schedule-option-type').val(type);
         $('#modal-schedule-option-target').val(targetSelect || '');
         $('#modal-schedule-option-value').val('');
@@ -61,7 +57,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Context parent for Sub Classification
         if (type === 'sub_classification') {
             const currentMain = $('#select-main-classification').val();
-            if (currentMain) {
+            if (currentMain && currentMain !== '__add_new__') {
                 $('#modal-schedule-option-parent-display').val(currentMain);
                 $('#modal-schedule-option-parent-container').show();
             } else {
@@ -77,6 +73,51 @@ document.addEventListener('DOMContentLoaded', function () {
         setTimeout(function () {
             $('#modal-schedule-option-value').focus();
         }, 350);
+    };
+
+    // Open Modal from [+] button (backward compatibility)
+    $(document).on('click', '.btn-add-option-modal', function (e) {
+        e.preventDefault();
+        const type = $(this).data('type');
+        const title = $(this).data('title') || type;
+        const targetSelect = $(this).data('target');
+        window.openScheduleAddOptionModal(type, title, targetSelect);
+    });
+
+    // Track previous value on focus / mousedown to reset if __add_new__ is selected
+    $(document).on('focus mousedown', 'select', function () {
+        const val = $(this).val();
+        if (val !== '__add_new__') {
+            $(this).data('prev-val', val);
+        }
+    });
+
+    // Detect when '+ Add New...' option is selected inside any dropdown
+    $(document).on('change', 'select', function () {
+        const selectedVal = $(this).val();
+        if (selectedVal === '__add_new__') {
+            const $select = $(this);
+            const prevVal = $select.data('prev-val') || '';
+            const type = $select.data('option-type') || $select.attr('data-type');
+            let title = $select.data('option-title') || $select.attr('data-title');
+            if (!title) {
+                const $label = $select.closest('div').find('label').first();
+                title = $label.length ? $label.text().replace('*', '').trim() : 'Option';
+            }
+            const targetId = '#' + $select.attr('id');
+
+            // Reset select back to its previous selection or placeholder immediately
+            $select.val(prevVal);
+            if ($select.hasClass('select2-hidden-accessible')) {
+                $select.trigger('change.select2');
+            }
+
+            if (type && typeof window.openScheduleAddOptionModal === 'function') {
+                window.openScheduleAddOptionModal(type, title, targetId);
+            }
+        } else {
+            $(this).data('prev-val', selectedVal);
+        }
     });
 
     // Save Option via AJAX
@@ -132,9 +173,20 @@ document.addEventListener('DOMContentLoaded', function () {
                     });
 
                     if (!optExists) {
-                        $sel.append(new Option(optVal, optVal, true, true));
+                        const $addNewOpt = $sel.find('option[value="__add_new__"]');
+                        if ($addNewOpt.length) {
+                            $('<option></option>').val(optVal).text(optVal).insertBefore($addNewOpt);
+                        } else {
+                            $sel.append(new Option(optVal, optVal, true, true));
+                        }
+                        $sel.val(optVal);
                     } else {
                         $sel.val(optVal);
+                    }
+
+                    $sel.data('prev-val', optVal);
+                    if ($sel.hasClass('select2-hidden-accessible')) {
+                        $sel.trigger('change.select2');
                     }
 
                     // If it was Sub Classification, also register into JS memory cache and mapping
