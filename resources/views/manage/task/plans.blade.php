@@ -285,7 +285,7 @@
                             <tr>
                                 <th class="w-1">NO</th>
                                 <th>CATEGORY</th>
-                                <th>COURSE</th>
+                                <th>COURSE / CONTAINER</th>
                                 <th class="text-center">TOTAL TASK</th>
                                 <th class="text-center">PUBLISHED</th>
                                 <th class="text-center">DRAFT</th>
@@ -301,7 +301,7 @@
                                     $name = $row->parent_type === 'offline_training'
                                         ? ($row->parent_name ?: ('Offline Training' . ($row->parent_id ? " #{$row->parent_id}" : '')))
                                         : ($row->parent_type === 'standalone'
-                                            ? 'Others'
+                                            ? ($row->parent_name ?: 'Others')
                                             : ($row->parent_name ?? '—'));
                                     $badge = [
                                         'playlist' => 'bg-primary',
@@ -377,15 +377,15 @@
 {{-- ======================================================== --}}
 <div class="modal modal-blur fade" id="chooseContainerModal" tabindex="-1" aria-labelledby="chooseContainerModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
-        <div class="modal-content shadow-lg rounded-4 border-0">
-            <div class="modal-header border-bottom py-3 px-4 bg-light-subtle rounded-top-4">
-                <div class="d-flex align-items-center gap-2.5">
-                    <div class="rounded-3 d-flex align-items-center justify-content-center bg-primary text-white shadow-sm" style="width: 40px; height: 40px;">
-                        <i class="ti ti-folder-plus fs-2"></i>
+        <div class="modal-content shadow-lg rounded-4 border-0 overflow-hidden">
+            <div class="modal-header border-bottom py-3 px-4 bg-white rounded-top-4 d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-3 d-flex align-items-center justify-content-center bg-primary-lt text-primary flex-shrink-0" style="width: 44px; height: 44px;">
+                        <i class="ti ti-folder-plus fs-1"></i>
                     </div>
                     <div>
-                        <h4 class="modal-title fw-bold text-dark mb-0" id="chooseContainerModalLabel">Choose / Create Task Container</h4>
-                        <div class="text-muted small">Select the task placement container before building questions and details.</div>
+                        <h4 class="modal-title fw-bold text-dark mb-0" id="chooseContainerModalLabel" style="font-size: 1.15rem; line-height: 1.3;">Choose / Create Task Container</h4>
+                        <div class="text-muted small mt-0.5" style="font-size: 0.825rem;">Select or create the container where your tasks will be grouped.</div>
                     </div>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -393,63 +393,84 @@
 
             <div class="modal-body p-4">
                 {{-- Step 1: Category selection cards --}}
-                <label class="form-label fw-bold text-dark mb-2">1. Select Container Category:</label>
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <label class="form-label fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                        <span class="badge bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 20px; height: 20px; font-size: 11px;">1</span>
+                        <span>Select Container Category:</span>
+                    </label>
+                </div>
                 <div class="row g-3 mb-4" id="modalCategoryRow">
                     @if ($scope === 'kp')
                         <!-- Playlist -->
                         <div class="col-12 col-md-4">
-                            <label class="card h-100 p-3 rounded-3 border container-type-card cursor-pointer position-relative active-type-card" style="transition: all 0.2s ease;">
-                                <input type="radio" name="modal_parent_type" value="playlist" class="form-check-input position-absolute top-0 end-0 m-3" checked>
-                                <div class="d-flex align-items-center gap-2 mb-2">
-                                    <span class="avatar avatar-sm bg-primary-lt text-primary rounded-2"><i class="ti ti-books fs-2"></i></span>
-                                    <span class="fw-bold text-dark">Playlist</span>
+                            <div class="card h-100 container-type-card cursor-pointer p-3 active-type-card" data-category="playlist">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <span class="avatar avatar-sm bg-primary-lt text-primary rounded-2">
+                                        <i class="ti ti-books fs-2"></i>
+                                    </span>
+                                    <div class="form-check m-0 p-0">
+                                        <input type="radio" name="modal_parent_type" value="playlist" class="form-check-input m-0 cursor-pointer" checked>
+                                    </div>
                                 </div>
-                                <div class="text-muted small" style="font-size: 11.5px; line-height: 1.35;">
+                                <div class="fw-bold text-dark mb-1" style="font-size: 0.95rem;">Playlist</div>
+                                <div class="text-muted small" style="font-size: 0.775rem; line-height: 1.35;">
                                     Tasks integrated within a complete online course.
                                 </div>
-                            </label>
+                            </div>
                         </div>
 
                         <!-- Content -->
                         <div class="col-12 col-md-4">
-                            <label class="card h-100 p-3 rounded-3 border container-type-card cursor-pointer position-relative" style="transition: all 0.2s ease;">
-                                <input type="radio" name="modal_parent_type" value="content" class="form-check-input position-absolute top-0 end-0 m-3">
-                                <div class="d-flex align-items-center gap-2 mb-2">
-                                    <span class="avatar avatar-sm bg-info-lt text-info rounded-2"><i class="ti ti-file-text fs-2"></i></span>
-                                    <span class="fw-bold text-dark">Content</span>
+                            <div class="card h-100 container-type-card cursor-pointer p-3" data-category="content">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <span class="avatar avatar-sm bg-info-lt text-info rounded-2">
+                                        <i class="ti ti-file-text fs-2"></i>
+                                    </span>
+                                    <div class="form-check m-0 p-0">
+                                        <input type="radio" name="modal_parent_type" value="content" class="form-check-input m-0 cursor-pointer">
+                                    </div>
                                 </div>
-                                <div class="text-muted small" style="font-size: 11.5px; line-height: 1.35;">
-                                    Tasks associated with a single learning content or video.
+                                <div class="fw-bold text-dark mb-1" style="font-size: 0.95rem;">Content</div>
+                                <div class="text-muted small" style="font-size: 0.775rem; line-height: 1.35;">
+                                    Tasks associated with a single learning material / video.
                                 </div>
-                            </label>
+                            </div>
                         </div>
 
                         <!-- Others (Standalone) -->
                         <div class="col-12 col-md-4">
-                            <label class="card h-100 p-3 rounded-3 border container-type-card cursor-pointer position-relative" style="transition: all 0.2s ease;">
-                                <input type="radio" name="modal_parent_type" value="standalone" class="form-check-input position-absolute top-0 end-0 m-3">
-                                <div class="d-flex align-items-center gap-2 mb-2">
-                                    <span class="avatar avatar-sm bg-secondary-lt text-secondary rounded-2"><i class="ti ti-world fs-2"></i></span>
-                                    <span class="fw-bold text-dark">Others</span>
+                            <div class="card h-100 container-type-card cursor-pointer p-3" data-category="standalone">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <span class="avatar avatar-sm bg-purple-lt text-purple rounded-2">
+                                        <i class="ti ti-folders fs-2"></i>
+                                    </span>
+                                    <div class="form-check m-0 p-0">
+                                        <input type="radio" name="modal_parent_type" value="standalone" class="form-check-input m-0 cursor-pointer">
+                                    </div>
                                 </div>
-                                <div class="text-muted small" style="font-size: 11.5px; line-height: 1.35;">
-                                    Standalone container (Onboarding, Competitions, Events).
+                                <div class="fw-bold text-dark mb-1" style="font-size: 0.95rem;">Others</div>
+                                <div class="text-muted small" style="font-size: 0.775rem; line-height: 1.35;">
+                                    Standalone container (Onboarding, Workshops, Events).
                                 </div>
-                            </label>
+                            </div>
                         </div>
                     @else
                         <!-- Offline Training -->
                         <div class="col-12">
-                            <label class="card h-100 p-3 rounded-3 border container-type-card cursor-pointer position-relative active-type-card" style="transition: all 0.2s ease;">
-                                <input type="radio" name="modal_parent_type" value="offline_training" class="form-check-input position-absolute top-0 end-0 m-3" checked>
-                                <div class="d-flex align-items-center gap-2 mb-2">
-                                    <span class="avatar avatar-sm bg-warning-lt text-warning rounded-2"><i class="ti ti-map-pin fs-2"></i></span>
-                                    <span class="fw-bold text-dark">Offline Training</span>
+                            <div class="card h-100 container-type-card cursor-pointer p-3 active-type-card" data-category="offline_training">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <span class="avatar avatar-sm bg-warning-lt text-warning rounded-2">
+                                        <i class="ti ti-map-pin fs-2"></i>
+                                    </span>
+                                    <div class="form-check m-0 p-0">
+                                        <input type="radio" name="modal_parent_type" value="offline_training" class="form-check-input m-0 cursor-pointer" checked>
+                                    </div>
                                 </div>
-                                <div class="text-muted small" style="font-size: 11.5px; line-height: 1.35;">
-                                    Tasks for in-person training / in-class sessions.
+                                <div class="fw-bold text-dark mb-1" style="font-size: 0.95rem;">Offline Training</div>
+                                <div class="text-muted small" style="font-size: 0.775rem; line-height: 1.35;">
+                                    Tasks for in-person training / in-class training sessions.
                                 </div>
-                            </label>
+                            </div>
                         </div>
                     @endif
                 </div>
@@ -457,56 +478,125 @@
                 <hr class="my-3 text-muted opacity-25">
 
                 {{-- Step 2: Dynamic input according to category --}}
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <label class="form-label fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                        <span class="badge bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 20px; height: 20px; font-size: 11px;">2</span>
+                        <span id="modalStep2Label">Select Course / Playlist:</span>
+                        <span class="text-danger">*</span>
+                    </label>
+                </div>
+
                 <div id="modalStep2Container">
                     <!-- Dropdown for Playlist -->
                     <div id="modalPlaylistPicker" class="modal-picker-section">
-                        <label class="form-label fw-bold text-dark required" for="modal_playlist_id">2. Select Course / Playlist:</label>
-                        <select id="modal_playlist_id" class="form-select form-select-lg rounded-3" style="font-size: 0.95rem;">
-                            <option value="">— Loading courses... —</option>
-                        </select>
-                        <div class="form-hint mt-1.5"><i class="ti ti-info-circle me-1"></i>Choose the course where this task will be assigned.</div>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0 text-muted rounded-start-3 px-3">
+                                <i class="ti ti-books fs-2 text-primary"></i>
+                            </span>
+                            <select id="modal_playlist_id" class="form-select form-select-lg border-start-0 rounded-end-3" style="font-size: 0.95rem;">
+                                <option value="">— Loading courses... —</option>
+                            </select>
+                        </div>
+                        <div class="form-hint mt-2 text-muted d-flex align-items-center gap-1.5" style="font-size: 0.8rem;">
+                            <i class="ti ti-info-circle text-primary"></i>
+                            <span>Choose the course where this task will be assigned.</span>
+                        </div>
                     </div>
 
                     <!-- Dropdown for Content -->
                     <div id="modalContentPicker" class="modal-picker-section" style="display: none;">
-                        <label class="form-label fw-bold text-dark required" for="modal_content_id">2. Select Content / Material:</label>
-                        <select id="modal_content_id" class="form-select form-select-lg rounded-3" style="font-size: 0.95rem;">
-                            <option value="">— Loading content... —</option>
-                        </select>
-                        <div class="form-hint mt-1.5"><i class="ti ti-info-circle me-1"></i>Choose the single material where this task will be placed.</div>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0 text-muted rounded-start-3 px-3">
+                                <i class="ti ti-file-text fs-2 text-info"></i>
+                            </span>
+                            <select id="modal_content_id" class="form-select form-select-lg border-start-0 rounded-end-3" style="font-size: 0.95rem;">
+                                <option value="">— Loading content... —</option>
+                            </select>
+                        </div>
+                        <div class="form-hint mt-2 text-muted d-flex align-items-center gap-1.5" style="font-size: 0.8rem;">
+                            <i class="ti ti-info-circle text-info"></i>
+                            <span>Choose the single material where this task will be placed.</span>
+                        </div>
                     </div>
 
                     <!-- Dropdown for Offline Training -->
                     <div id="modalOfflinePicker" class="modal-picker-section" style="display: none;">
-                        <label class="form-label fw-bold text-dark required" for="modal_offline_id">2. Select Offline Training Session:</label>
-                        <select id="modal_offline_id" class="form-select form-select-lg rounded-3" style="font-size: 0.95rem;">
-                            <option value="">— Loading offline training... —</option>
-                        </select>
-                        <div class="form-hint mt-1.5"><i class="ti ti-info-circle me-1"></i>Choose the assigned in-person training session.</div>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0 text-muted rounded-start-3 px-3">
+                                <i class="ti ti-map-pin fs-2 text-warning"></i>
+                            </span>
+                            <select id="modal_offline_id" class="form-select form-select-lg border-start-0 rounded-end-3" style="font-size: 0.95rem;">
+                                <option value="">— Loading offline training... —</option>
+                            </select>
+                        </div>
+                        <div class="form-hint mt-2 text-muted d-flex align-items-center gap-1.5" style="font-size: 0.8rem;">
+                            <i class="ti ti-info-circle text-warning"></i>
+                            <span>Choose the assigned in-person training session.</span>
+                        </div>
                     </div>
 
-                    <!-- Input for Others -->
+                    <!-- Section for Others (Standalone) -->
                     <div id="modalOthersSection" class="modal-picker-section" style="display: none;">
-                        <label class="form-label fw-bold text-dark required" for="modal_others_title">2. Enter Container / Activity Title:</label>
-                        <input type="text" id="modal_others_title" class="form-control form-control-lg rounded-3" placeholder="e.g. Onboarding MT Batch 2026 / Leadership Workshop" autocomplete="off">
-                        <div class="form-hint mt-1.5"><i class="ti ti-info-circle me-1"></i>This container will hold your standalone tasks. Once created, you will be directed to add tasks to it.</div>
+                        <!-- Mode Selector: Create New vs Choose Existing -->
+                        <div class="d-flex align-items-center gap-1 p-1 bg-light rounded-3 mb-3 border others-mode-switcher" style="width: fit-content;">
+                            <button type="button" class="btn btn-sm btn-white text-dark shadow-sm fw-semibold rounded-2 px-3 py-1.5 others-mode-btn active" data-mode="new">
+                                <i class="ti ti-plus me-1 text-primary"></i> Create New Container
+                            </button>
+                            <button type="button" class="btn btn-sm btn-ghost-secondary text-muted fw-semibold rounded-2 px-3 py-1.5 others-mode-btn" data-mode="existing">
+                                <i class="ti ti-folders me-1"></i> Choose Existing Container
+                            </button>
+                        </div>
+
+                        <!-- Mode A: Create New Title Input -->
+                        <div id="othersModeNewWrap">
+                            <div class="input-group">
+                                <span class="input-group-text bg-white border-end-0 text-muted rounded-start-3 px-3">
+                                    <i class="ti ti-folder-plus fs-2 text-primary"></i>
+                                </span>
+                                <input type="text"
+                                       id="modal_others_title"
+                                       class="form-control form-control-lg border-start-0 rounded-end-3"
+                                       placeholder="e.g. Onboarding Batch 2026 / Safety Leadership Workshop"
+                                       autocomplete="off">
+                            </div>
+                            <div class="form-hint mt-2 text-muted d-flex align-items-center gap-1.5" style="font-size: 0.8rem;">
+                                <i class="ti ti-info-circle text-primary"></i>
+                                <span>Enter the title for this new container. Once created, you will be directed to add tasks to it.</span>
+                            </div>
+                        </div>
+
+                        <!-- Mode B: Choose Existing Dropdown -->
+                        <div id="othersModeExistingWrap" style="display: none;">
+                            <div class="input-group">
+                                <span class="input-group-text bg-white border-end-0 text-muted rounded-start-3 px-3">
+                                    <i class="ti ti-folders fs-2 text-purple"></i>
+                                </span>
+                                <select id="modal_others_existing_id" class="form-select form-select-lg border-start-0 rounded-end-3" style="font-size: 0.95rem;">
+                                    <option value="">— Loading containers... —</option>
+                                </select>
+                            </div>
+                            <div class="form-hint mt-2 text-muted d-flex align-items-center gap-1.5" style="font-size: 0.8rem;">
+                                <i class="ti ti-info-circle text-purple"></i>
+                                <span>Select an existing Others container to manage and add more tasks.</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 {{-- Alert error --}}
-                <div id="modalErrorAlert" class="alert alert-danger mt-3 mb-0 rounded-3" style="display: none;">
-                    <i class="ti ti-alert-circle me-1"></i>
+                <div id="modalErrorAlert" class="alert alert-danger mt-3 mb-0 rounded-3 d-flex align-items-center gap-2" style="display: none;">
+                    <i class="ti ti-alert-circle fs-2 flex-shrink-0"></i>
                     <span id="modalErrorMessage"></span>
                 </div>
             </div>
 
             <div class="modal-footer border-top py-3 px-4 bg-light-subtle rounded-bottom-4 d-flex justify-content-between">
-                <button type="button" class="btn btn-outline-secondary rounded-3 px-3" data-bs-dismiss="modal">
+                <button type="button" class="btn btn-outline-secondary rounded-3 px-3.5" data-bs-dismiss="modal">
                     Cancel
                 </button>
-                <button type="button" id="btnSubmitContainerModal" class="btn btn-primary rounded-3 px-4 d-inline-flex align-items-center gap-1.5 fw-semibold shadow-sm">
-                    <span>Continue to Manage Tasks</span>
-                    <i class="ti ti-arrow-right"></i>
+                <button type="button" id="btnSubmitContainerModal" class="btn btn-primary rounded-3 px-4 d-inline-flex align-items-center gap-2 fw-semibold shadow-sm">
+                    <span id="btnSubmitText">Continue to Manage Tasks</span>
+                    <i class="ti ti-arrow-right" id="btnSubmitIcon"></i>
                 </button>
             </div>
         </div>
@@ -518,17 +608,32 @@
         cursor: pointer;
     }
     .container-type-card {
-        border-color: #e2e8f0 !important;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 12px;
         background-color: #ffffff;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        user-select: none;
     }
     .container-type-card:hover {
-        border-color: #94a3b8 !important;
+        border-color: #cbd5e1;
         background-color: #f8fafc;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     }
     .container-type-card.active-type-card {
         border-color: var(--tblr-primary, #206bc4) !important;
         background-color: rgba(32, 107, 196, 0.04) !important;
-        box-shadow: 0 4px 12px rgba(32, 107, 196, 0.12);
+        box-shadow: 0 4px 14px rgba(32, 107, 196, 0.12);
+    }
+    .others-mode-btn.active {
+        background: #ffffff !important;
+        color: var(--tblr-primary, #206bc4) !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+    }
+    .input-group:focus-within .input-group-text,
+    .input-group:focus-within .form-control,
+    .input-group:focus-within .form-select {
+        border-color: var(--tblr-primary, #206bc4);
     }
 </style>
 
@@ -538,20 +643,27 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!modalEl) return;
 
     var radios = document.querySelectorAll('input[name="modal_parent_type"]');
+    var categoryCards = document.querySelectorAll('.container-type-card');
+    var step2Label = document.getElementById('modalStep2Label');
     var playlistPicker = document.getElementById('modalPlaylistPicker');
     var contentPicker = document.getElementById('modalContentPicker');
     var offlinePicker = document.getElementById('modalOfflinePicker');
     var othersSection = document.getElementById('modalOthersSection');
+    var othersModeNewWrap = document.getElementById('othersModeNewWrap');
+    var othersModeExistingWrap = document.getElementById('othersModeExistingWrap');
+    var othersModeBtns = document.querySelectorAll('.others-mode-btn');
     var btnSubmit = document.getElementById('btnSubmitContainerModal');
+    var btnSubmitText = document.getElementById('btnSubmitText');
     var errorAlert = document.getElementById('modalErrorAlert');
     var errorMessage = document.getElementById('modalErrorMessage');
 
+    var currentOthersMode = 'new';
     var loadedCache = {};
 
     function showError(msg) {
         if (!errorAlert || !errorMessage) return;
         errorMessage.textContent = msg;
-        errorAlert.style.display = 'block';
+        errorAlert.style.display = 'flex';
     }
 
     function hideError() {
@@ -560,7 +672,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function updateActiveCards() {
-        document.querySelectorAll('.container-type-card').forEach(function (card) {
+        categoryCards.forEach(function (card) {
             var input = card.querySelector('input[type="radio"]');
             if (input && input.checked) {
                 card.classList.add('active-type-card');
@@ -570,7 +682,18 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    categoryCards.forEach(function (card) {
+        card.addEventListener('click', function (e) {
+            var radio = card.querySelector('input[type="radio"]');
+            if (radio && !radio.checked) {
+                radio.checked = true;
+                onTypeChange();
+            }
+        });
+    });
+
     function loadOptions(type, selectEl, placeholder) {
+        if (!selectEl) return;
         if (loadedCache[type]) {
             renderOptions(loadedCache[type], selectEl, placeholder);
             return;
@@ -592,11 +715,54 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function renderOptions(items, selectEl, placeholder) {
         var html = '<option value="">' + placeholder + '</option>';
-        items.forEach(function (item) {
-            html += '<option value="' + item.id + '">' + (item.title || ('#' + item.id)) + '</option>';
-        });
+        if (Array.isArray(items) && items.length > 0) {
+            items.forEach(function (item) {
+                html += '<option value="' + item.id + '">' + (item.title || ('#' + item.id)) + '</option>';
+            });
+        } else {
+            html += '<option value="" disabled>No existing items found</option>';
+        }
         selectEl.innerHTML = html;
     }
+
+    function setOthersMode(mode) {
+        currentOthersMode = mode;
+        othersModeBtns.forEach(function (b) {
+            if (b.getAttribute('data-mode') === mode) {
+                b.classList.add('active');
+                b.classList.remove('btn-ghost-secondary', 'text-muted');
+                b.classList.add('btn-white', 'text-dark', 'shadow-sm');
+            } else {
+                b.classList.remove('active', 'btn-white', 'text-dark', 'shadow-sm');
+                b.classList.add('btn-ghost-secondary', 'text-muted');
+            }
+        });
+
+        if (mode === 'new') {
+            if (othersModeNewWrap) othersModeNewWrap.style.display = 'block';
+            if (othersModeExistingWrap) othersModeExistingWrap.style.display = 'none';
+            if (step2Label) step2Label.textContent = 'Enter Container / Activity Title:';
+            if (btnSubmitText) btnSubmitText.textContent = 'Create & Manage Tasks';
+            var titleInput = document.getElementById('modal_others_title');
+            if (titleInput) {
+                setTimeout(function () { titleInput.focus(); }, 100);
+            }
+        } else {
+            if (othersModeNewWrap) othersModeNewWrap.style.display = 'none';
+            if (othersModeExistingWrap) othersModeExistingWrap.style.display = 'block';
+            if (step2Label) step2Label.textContent = 'Select Existing Others Container:';
+            if (btnSubmitText) btnSubmitText.textContent = 'Continue to Manage Tasks';
+            loadOptions('standalone', document.getElementById('modal_others_existing_id'), '— Select Existing Others Container —');
+        }
+    }
+
+    othersModeBtns.forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            hideError();
+            setOthersMode(btn.getAttribute('data-mode'));
+        });
+    });
 
     function onTypeChange() {
         hideError();
@@ -611,16 +777,19 @@ document.addEventListener('DOMContentLoaded', function () {
         if (othersSection) othersSection.style.display = (val === 'standalone') ? 'block' : 'none';
 
         if (val === 'playlist') {
+            if (step2Label) step2Label.textContent = 'Select Course / Playlist:';
+            if (btnSubmitText) btnSubmitText.textContent = 'Continue to Manage Tasks';
             loadOptions('playlist', document.getElementById('modal_playlist_id'), '— Select Course / Playlist —');
         } else if (val === 'content') {
+            if (step2Label) step2Label.textContent = 'Select Content / Material:';
+            if (btnSubmitText) btnSubmitText.textContent = 'Continue to Manage Tasks';
             loadOptions('content', document.getElementById('modal_content_id'), '— Select Content / Material —');
         } else if (val === 'offline_training') {
+            if (step2Label) step2Label.textContent = 'Select Offline Training Session:';
+            if (btnSubmitText) btnSubmitText.textContent = 'Continue to Manage Tasks';
             loadOptions('offline_training', document.getElementById('modal_offline_id'), '— Select Offline Training Session —');
         } else if (val === 'standalone') {
-            var titleInput = document.getElementById('modal_others_title');
-            if (titleInput) {
-                setTimeout(function () { titleInput.focus(); }, 100);
-            }
+            setOthersMode(currentOthersMode);
         }
     }
 
@@ -661,14 +830,24 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
                 window.location.href = "{{ url('manage/task/parent/offline_training') }}/" + oId;
             } else if (type === 'standalone') {
+                if (currentOthersMode === 'existing') {
+                    var exId = document.getElementById('modal_others_existing_id').value;
+                    if (!exId) {
+                        showError('Please select an existing Others container first.');
+                        return;
+                    }
+                    window.location.href = "{{ url('manage/task/parent/standalone') }}/" + exId;
+                    return;
+                }
+
                 var title = document.getElementById('modal_others_title').value.trim();
                 if (!title) {
-                    showError('Please enter a container / activity title for the Others category.');
+                    showError('Please enter a container / activity title.');
                     return;
                 }
 
                 btnSubmit.disabled = true;
-                btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Creating container...';
+                btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-1.5" role="status"></span> Creating Container...';
 
                 fetch("{{ route('manage.task.group.store') }}", {
                     method: 'POST',
@@ -689,7 +868,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 })
                 .catch(function () {
                     btnSubmit.disabled = false;
-                    btnSubmit.innerHTML = '<span>Continue to Manage Tasks</span><i class="ti ti-arrow-right ms-1"></i>';
+                    btnSubmit.innerHTML = '<span>Create & Manage Tasks</span><i class="ti ti-arrow-right ms-1"></i>';
                     showError('Failed to create task container. Please try again.');
                 });
             }
