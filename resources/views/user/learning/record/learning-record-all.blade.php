@@ -164,17 +164,36 @@
         line-height: 1 !important;
     }
 
-    /* Table Horizontal Scroll */
+    /* Table Sticky Freeze Header & Scrollable Container */
+    .table-responsive.learning-record-scroll,
     .learning-record-scroll {
+        max-height: 70vh !important;
+        overflow-y: auto !important;
         overflow-x: auto !important;
-        overflow-y: visible !important;
-        max-height: none !important;
+        position: relative !important;
         -webkit-overflow-scrolling: touch;
         width: 100% !important;
     }
     .learning-record-table {
         min-width: 1280px !important;
         width: 100% !important;
+    }
+    .learning-record-table thead th,
+    #learningRecordAllTable thead th {
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 10 !important;
+        background-color: #f8fafc !important; /* Solid neutral background so rows pass underneath cleanly */
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); /* Subtle bottom border line when sticky */
+    }
+    [data-bs-theme="dark"] .learning-record-table thead th,
+    [data-bs-theme="dark"] #learningRecordAllTable thead th,
+    body.dark-mode .learning-record-table thead th,
+    body.dark-mode #learningRecordAllTable thead th,
+    body.theme-dark .learning-record-table thead th,
+    body.theme-dark #learningRecordAllTable thead th {
+        background-color: #1e293b !important;
+        color: #94a3b8 !important;
     }
     /* Training Title Column (Standardized 4-tier Layout for Online & Offline) */
     .learning-record-course-cell {

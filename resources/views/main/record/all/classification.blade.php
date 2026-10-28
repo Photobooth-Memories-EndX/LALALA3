@@ -180,8 +180,8 @@
                         <div class="table-scroll-top-inner" id="table-scroll-top-inner"></div>
                     </div>
 
-                    <!-- Primary Table Container with Horizontal Scrollbar -->
-                    <div class="table-scroll-container" id="table-scroll-container">
+                    <!-- Primary Table Container with Horizontal & Vertical Scrollbar -->
+                    <div class="table-responsive table-scroll-container" id="table-scroll-container">
                         <table class="table table-hover align-middle mb-0" id="all-classification-learning-table">
                             <thead class="bg-light text-muted small text-uppercase">
                                 <tr>
@@ -558,11 +558,19 @@
             background: #94a3b8;
         }
 
+        .table-responsive,
+        .table-scroll-container {
+            max-height: 70vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
         .table-scroll-container {
             width: 100%;
             max-width: 100%;
             overflow-x: auto;
-            overflow-y: visible;
+            overflow-y: auto;
+            max-height: 70vh;
             position: relative;
             -webkit-overflow-scrolling: touch;
             scrollbar-width: thin;
@@ -596,10 +604,11 @@
         }
 
         #all-classification-learning-table thead th {
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            background-color: #f8fafc;
+            position: sticky !important;
+            top: 0 !important;
+            z-index: 10 !important;
+            background-color: #f8fafc !important;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
             font-size: 0.72rem;
             letter-spacing: 0.03em;
             font-weight: 700;
@@ -674,8 +683,10 @@
         #all-classification-learning-table thead th:nth-child(2),
         #all-classification-learning-table thead th:nth-child(3),
         #all-classification-learning-table thead th:nth-child(4) {
-            z-index: 12;
-            background-color: #f8fafc;
+            position: sticky !important;
+            top: 0 !important;
+            z-index: 12 !important;
+            background-color: #f8fafc !important;
         }
 
         /* Hover row on sticky cells */
@@ -761,7 +772,9 @@
         [data-bs-theme="dark"] #all-classification-learning-table thead th:nth-child(2),
         [data-bs-theme="dark"] #all-classification-learning-table thead th:nth-child(3),
         [data-bs-theme="dark"] #all-classification-learning-table thead th:nth-child(4) {
-            z-index: 12;
+            position: sticky !important;
+            top: 0 !important;
+            z-index: 12 !important;
             background-color: #1e293b !important;
         }
 
@@ -1322,6 +1335,7 @@
                     [10, 25, 50, 100]
                 ],
                 order: [],
+                fixedHeader: true,
                 dom: '<"top">rt<"bottom d-flex justify-content-between align-items-center mt-3"l ip><"clear">',
                 ajax: {
                     url: datatableUrl,

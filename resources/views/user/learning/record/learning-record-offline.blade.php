@@ -94,17 +94,36 @@
         outline-offset: 2px;
         border-radius: 4px;
     }
-    /* Table Horizontal Scroll & Full Training Title Readability (Standardized with Online Reference) */
+    /* Table Sticky Freeze Header & Scrollable Container */
+    .table-responsive.learning-record-scroll,
     .learning-record-scroll {
+        max-height: 70vh !important;
+        overflow-y: auto !important;
         overflow-x: auto !important;
-        overflow-y: visible !important;
-        max-height: none !important;
+        position: relative !important;
         width: 100% !important;
         -webkit-overflow-scrolling: touch;
     }
     .learning-record-table {
         min-width: 1280px !important;
         width: 100% !important;
+    }
+    .learning-record-table thead th,
+    #learningRecordOfflineTable thead th {
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 10 !important;
+        background-color: #f8fafc !important; /* Solid neutral background so rows pass underneath cleanly */
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); /* Subtle bottom border line when sticky */
+    }
+    [data-bs-theme="dark"] .learning-record-table thead th,
+    [data-bs-theme="dark"] #learningRecordOfflineTable thead th,
+    body.dark-mode .learning-record-table thead th,
+    body.dark-mode #learningRecordOfflineTable thead th,
+    body.theme-dark .learning-record-table thead th,
+    body.theme-dark #learningRecordOfflineTable thead th {
+        background-color: #1e293b !important;
+        color: #94a3b8 !important;
     }
 
     /* Certificate Action Buttons (Standardized with Online Reference) */

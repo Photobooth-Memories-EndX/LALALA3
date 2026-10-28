@@ -70,6 +70,29 @@
         background: #fff;
     }
 
+    .table-responsive {
+        max-height: 70vh;
+        overflow-y: auto;
+        position: relative;
+    }
+    table thead th,
+    .manage-record-page table thead th {
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 10 !important;
+        background-color: #f8fafc !important; /* Solid neutral background so rows pass underneath cleanly */
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); /* Subtle bottom border line when sticky */
+    }
+    [data-bs-theme="dark"] table thead th,
+    [data-bs-theme="dark"] .manage-record-page table thead th,
+    body.dark-mode table thead th,
+    body.dark-mode .manage-record-page table thead th,
+    body.theme-dark table thead th,
+    body.theme-dark .manage-record-page table thead th {
+        background-color: #1e293b !important;
+        color: #94a3b8 !important;
+    }
+
     [data-bs-theme="dark"] .manage-record-page,
     body.dark-mode .manage-record-page,
     body.theme-dark .manage-record-page {

@@ -1,5 +1,20 @@
-<div class="table-responsive">
-    <table class="table table-vcenter table-hover align-middle mb-0">
+<div class="table-responsive" style="max-height: 70vh; overflow-y: auto; position: relative;">
+    <style>
+        .all-classification-summary-table thead th {
+            position: sticky !important;
+            top: 0 !important;
+            z-index: 10 !important;
+            background-color: #f8fafc !important;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+        [data-bs-theme="dark"] .all-classification-summary-table thead th,
+        body.dark-mode .all-classification-summary-table thead th,
+        body.theme-dark .all-classification-summary-table thead th {
+            background-color: #1e293b !important;
+            color: #94a3b8 !important;
+        }
+    </style>
+    <table class="table table-vcenter table-hover align-middle mb-0 all-classification-summary-table">
         <thead class="bg-light text-muted small text-uppercase">
             <tr>
                 <th style="width: 50px;">No</th>

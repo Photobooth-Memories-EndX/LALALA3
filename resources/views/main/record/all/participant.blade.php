@@ -460,11 +460,18 @@
             color: #f8fafc !important;
         }
 
+        .table-responsive {
+            max-height: 70vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
         #all-participant-learning-table thead th {
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            background-color: #f8fafc;
+            position: sticky !important;
+            top: 0 !important;
+            z-index: 10 !important;
+            background-color: #f8fafc !important;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
         }
 
         #all-participant-learning-table_wrapper > .bottom {
@@ -693,6 +700,8 @@
                     [10, 25, 50, 100],
                     [10, 25, 50, 100]
                 ],
+                order: [],
+                fixedHeader: true,
                 dom: '<"top">rt<"bottom d-flex justify-content-between align-items-center mt-3"l ip><"clear">',
                 ajax: {
                     url: datatableUrl,
