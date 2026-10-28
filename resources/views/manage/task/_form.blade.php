@@ -13,6 +13,7 @@
     $currentParentId = old('parent_id', isset($task) ? $task->parentId() : ($lockedParent['id'] ?? ''));
     $currentSurveyId = old('survey_id', $task->survey_id ?? '');
     $linkedCourse = old('linked_training_plan_id', $task->linked_training_plan_id ?? '');
+    $isLocked = !empty($lockedParent);
 @endphp
 <form method="POST"
       action="{{ isset($task) ? route('manage.task.update', $task) : route('manage.task.store') }}"
@@ -325,35 +326,27 @@
         }
     </style>
 
-    {{-- ======================================================== --}}
-    {{-- SECTION 1: TASK PLACEMENT                                --}}
-    {{-- ======================================================== --}}
-    <div class="card form-section-card is-active" data-section="1">
-        <div class="card-header bg-white py-3 px-4 d-flex align-items-center justify-content-between gap-3">
-            <div class="d-flex align-items-center gap-3">
-                <span class="section-badge-num"><i class="ti ti-map-pin"></i></span>
-                <div>
-                    <h3 class="card-title fw-bold text-dark mb-0">1. Task Placement</h3>
-                    <div class="text-muted small">Select where this task will be placed and assigned to learners.</div>
-                </div>
-            </div>
-            <span class="badge bg-primary text-white fw-semibold px-2.5 py-1 rounded-pill section-active-indicator align-items-center gap-1 shadow-sm">
-                <i class="ti ti-pencil"></i> Active Section
-            </span>
-        </div>
-        <div class="card-body p-4">
-            @if (!empty($lockedParent))
-                <div class="alert alert-info d-flex align-items-center mb-0 rounded-3 form-field-xl">
-                    <i class="ti ti-book-2 fs-2 me-2"></i>
+    @if ($isLocked)
+        <input type="hidden" name="parent_type" value="{{ $lockedParent['type'] }}">
+        <input type="hidden" name="parent_id" value="{{ $lockedParent['id'] }}">
+    @else
+        {{-- ======================================================== --}}
+        {{-- SECTION 1: TASK PLACEMENT (UNLOCKED ONLY)                 --}}
+        {{-- ======================================================== --}}
+        <div class="card form-section-card is-active" data-section="1">
+            <div class="card-header bg-white py-3 px-4 d-flex align-items-center justify-content-between gap-3">
+                <div class="d-flex align-items-center gap-3">
+                    <span class="section-badge-num"><i class="ti ti-map-pin"></i></span>
                     <div>
-                        This task will be automatically added to
-                        <strong>{{ $lockedParent['name'] }}</strong>
-                        ({{ $lockedParent['label'] }}).
+                        <h3 class="card-title fw-bold text-dark mb-0">1. Task Placement</h3>
+                        <div class="text-muted small">Select where this task will be placed and assigned to learners.</div>
                     </div>
                 </div>
-                <input type="hidden" name="parent_type" value="{{ $lockedParent['type'] }}">
-                <input type="hidden" name="parent_id" value="{{ $lockedParent['id'] }}">
-            @else
+                <span class="badge bg-primary text-white fw-semibold px-2.5 py-1 rounded-pill section-active-indicator align-items-center gap-1 shadow-sm">
+                    <i class="ti ti-pencil"></i> Active Section
+                </span>
+            </div>
+            <div class="card-body p-4">
                 {{-- Placement Category --}}
                 <div class="mb-3 form-field-md">
                     <label class="form-label required" for="parent_type">Placement Category</label>
@@ -401,19 +394,19 @@
                 <div id="standalonePlacementNotice" class="alert alert-info py-2 px-3 rounded-3 form-field-lg mb-0" style="{{ $currentParentType === 'standalone' ? '' : 'display:none' }}">
                     <i class="ti ti-world me-1"></i> Others is open to all learners and not tied to a specific playlist or course. You can configure an optional access passcode at the bottom of the form.
                 </div>
-            @endif
+            </div>
         </div>
-    </div>
+    @endif
 
     {{-- ======================================================== --}}
     {{-- SECTION 2: BASIC TASK INFORMATION                        --}}
     {{-- ======================================================== --}}
-    <div class="card form-section-card" data-section="2">
+    <div class="card form-section-card {{ $isLocked ? 'is-active' : '' }}" data-section="{{ $isLocked ? '1' : '2' }}">
         <div class="card-header bg-white py-3 px-4 d-flex align-items-center justify-content-between gap-3">
             <div class="d-flex align-items-center gap-3">
                 <span class="section-badge-num"><i class="ti ti-file-text"></i></span>
                 <div>
-                    <h3 class="card-title fw-bold text-dark mb-0">2. Basic Task Information</h3>
+                    <h3 class="card-title fw-bold text-dark mb-0">{{ $isLocked ? '1. ' : '2. ' }}Basic Task Information</h3>
                     <div class="text-muted small">Define the task type, title, and instructions for learners.</div>
                 </div>
             </div>
@@ -462,12 +455,12 @@
     {{-- ======================================================== --}}
     {{-- SECTION 3: TIMELINE & SUPPORTING MATERIALS               --}}
     {{-- ======================================================== --}}
-    <div class="card form-section-card" data-section="3">
+    <div class="card form-section-card" data-section="{{ $isLocked ? '2' : '3' }}">
         <div class="card-header bg-white py-3 px-4 d-flex align-items-center justify-content-between gap-3">
             <div class="d-flex align-items-center gap-3">
                 <span class="section-badge-num"><i class="ti ti-calendar-time"></i></span>
                 <div>
-                    <h3 class="card-title fw-bold text-dark mb-0" id="section3Title">{{ $currentType === 'file_submission' ? '3. Timeline & Supporting Files' : '3. Timeline' }}</h3>
+                    <h3 class="card-title fw-bold text-dark mb-0" id="section3Title">{{ $isLocked ? '2. ' : '3. ' }}{{ $currentType === 'file_submission' ? 'Timeline & Supporting Files' : 'Timeline' }}</h3>
                     <div class="text-muted small" id="section3Subtitle">{{ $currentType === 'file_submission' ? 'Set the submission deadline and attach assignment templates or guidance materials (optional).' : 'Set the submission deadline for learners (optional).' }}</div>
                 </div>
             </div>
@@ -514,12 +507,12 @@
     {{-- SECTION 4: SUBMISSION SETUP / QUESTIONS                  --}}
     {{-- ======================================================== --}}
     {{-- ── 4A: Course Link section (only for Course Assignment) ── --}}
-    <div id="linkSection" class="card form-section-card" data-section="4" style="display:none">
+    <div id="linkSection" class="card form-section-card" data-section="{{ $isLocked ? '3' : '4' }}" style="display:none">
         <div class="card-header bg-white py-3 px-4 d-flex align-items-center justify-content-between gap-3">
             <div class="d-flex align-items-center gap-3">
                 <span class="section-badge-num"><i class="ti ti-link"></i></span>
                 <div>
-                    <h3 class="card-title fw-bold text-dark mb-0">4. Target Course Assignment</h3>
+                    <h3 class="card-title fw-bold text-dark mb-0">{{ $isLocked ? '3. ' : '4. ' }}Target Course Assignment</h3>
                     <div class="text-muted small">Specify the LMS course or external course URL that learners must complete.</div>
                 </div>
             </div>
@@ -590,12 +583,12 @@
     </div>
 
     {{-- ── 4B: Target Survey section (only for Survey) ── --}}
-    <div id="surveySection" class="card form-section-card" data-section="4" style="display:none">
+    <div id="surveySection" class="card form-section-card" data-section="{{ $isLocked ? '3' : '4' }}" style="display:none">
         <div class="card-header bg-white py-3 px-4 d-flex align-items-center justify-content-between gap-3">
             <div class="d-flex align-items-center gap-3">
                 <span class="section-badge-num"><i class="ti ti-forms"></i></span>
                 <div>
-                    <h3 class="card-title fw-bold text-dark mb-0">4. Target Survey Assignment</h3>
+                    <h3 class="card-title fw-bold text-dark mb-0">{{ $isLocked ? '3. ' : '4. ' }}Target Survey Assignment</h3>
                     <div class="text-muted small">Select the survey form that learners must complete for this task.</div>
                 </div>
             </div>
@@ -626,12 +619,12 @@
     </div>
 
     {{-- ── 4C: Questions section (for types with question builder) ── --}}
-    <div id="builderSection" class="card form-section-card" data-section="4">
+    <div id="builderSection" class="card form-section-card" data-section="{{ $isLocked ? '3' : '4' }}">
         <div class="card-header bg-white py-3 px-4 d-flex align-items-center justify-content-between gap-3">
             <div class="d-flex align-items-center gap-3">
                 <span class="section-badge-num"><i class="ti ti-list-check" id="builderBadgeIcon"></i></span>
                 <div>
-                    <h3 class="card-title fw-bold text-dark mb-0" id="builderTitle">4. Questions & Submission Form Builder</h3>
+                    <h3 class="card-title fw-bold text-dark mb-0" id="builderTitle">{{ $isLocked ? '3. ' : '4. ' }}Questions & Submission Form Builder</h3>
                     <div class="text-muted small" id="builderHint"></div>
                 </div>
             </div>
@@ -657,12 +650,12 @@
     {{-- ======================================================== --}}
     {{-- ACCESS CODE SETTING (Only for Global Task / Standalone)   --}}
     {{-- ======================================================== --}}
-    <div id="accessCodeWrap" class="card form-section-card" data-section="5" style="{{ $currentParentType === 'standalone' ? '' : 'display:none' }}">
+    <div id="accessCodeWrap" class="card form-section-card" data-section="{{ $isLocked ? '4' : '5' }}" style="{{ $currentParentType === 'standalone' ? '' : 'display:none' }}">
         <div class="card-header bg-white py-3 px-4 d-flex align-items-center justify-content-between gap-3">
             <div class="d-flex align-items-center gap-3">
                 <span class="section-badge-num"><i class="ti ti-key"></i></span>
                 <div>
-                    <h3 class="card-title fw-bold text-dark mb-0">5. Access & Security (Optional)</h3>
+                    <h3 class="card-title fw-bold text-dark mb-0">{{ $isLocked ? '4. ' : '5. ' }}Access & Security (Optional)</h3>
                     <div class="text-muted small">Configure an optional access passcode to unlock this task.</div>
                 </div>
             </div>
@@ -1538,27 +1531,31 @@
                 addQuestionWrap.style.display = (hasBuilder && !isEssay) ? '' : 'none';
             }
 
+            var isLockedParent = {{ !empty($lockedParent) ? 'true' : 'false' }};
+            var builderPrefix = isLockedParent ? '3. ' : '4. ';
+            var timelinePrefix = isLockedParent ? '2. ' : '3. ';
+
             var builderTitleEl = document.getElementById('builderTitle');
             var builderBadgeIcon = document.getElementById('builderBadgeIcon');
             if (isEssay) {
-                if (builderTitleEl) builderTitleEl.textContent = '4. Essay Question';
+                if (builderTitleEl) builderTitleEl.textContent = builderPrefix + 'Essay Question';
                 if (builderHint) builderHint.textContent = 'Specify the essay question or reflection prompt for learners to answer.';
                 if (builderBadgeIcon) builderBadgeIcon.className = 'ti ti-writing';
             } else if (t === 'action_plan') {
-                if (builderTitleEl) builderTitleEl.textContent = '4. Action Plan Form Builder';
+                if (builderTitleEl) builderTitleEl.textContent = builderPrefix + 'Action Plan Form Builder';
                 if (builderHint) builderHint.textContent = BUILDER_HINTS.action_plan;
                 if (builderBadgeIcon) builderBadgeIcon.className = 'ti ti-clipboard-list';
             } else if (isFileSubmission) {
-                if (builderTitleEl) builderTitleEl.textContent = '4. File Submission Requirements';
+                if (builderTitleEl) builderTitleEl.textContent = builderPrefix + 'File Submission Requirements';
                 if (builderHint) builderHint.textContent = BUILDER_HINTS.file_submission;
                 if (builderBadgeIcon) builderBadgeIcon.className = 'ti ti-cloud-upload';
             } else {
-                if (builderTitleEl) builderTitleEl.textContent = '4. Questions & Submission Form Builder';
+                if (builderTitleEl) builderTitleEl.textContent = builderPrefix + 'Questions & Submission Form Builder';
                 if (builderHint) builderHint.textContent = BUILDER_HINTS[t] || '';
                 if (builderBadgeIcon) builderBadgeIcon.className = 'ti ti-list-check';
             }
 
-            // Section 3: Attachment / Task Template only visible for File Submission
+            // Timeline & Supporting Files (Section 2 when locked, Section 3 when unlocked)
             var attachmentWrapper = document.getElementById('attachmentWrapper');
             var attachmentInput   = document.getElementById('attachment');
             var section3Title     = document.getElementById('section3Title');
@@ -1574,7 +1571,7 @@
                 }
             }
             if (section3Title) {
-                section3Title.textContent = isFileSubmission ? '3. Timeline & Supporting Files' : '3. Timeline';
+                section3Title.textContent = timelinePrefix + (isFileSubmission ? 'Timeline & Supporting Files' : 'Timeline');
             }
             if (section3Subtitle) {
                 section3Subtitle.textContent = isFileSubmission

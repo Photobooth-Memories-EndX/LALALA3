@@ -85,7 +85,10 @@ class TaskContainerFlowTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee($group->title);
-        $response->assertSee('This task will be automatically added to');
+        $response->assertSee('name="parent_type" value="standalone"', false);
+        $response->assertSee('name="parent_id" value="' . $group->id . '"', false);
+        $response->assertSee('1. Basic Task Information');
+        $response->assertDontSee('Placement Category');
     }
 
     public function test_storing_task_in_others_container_assigns_task_group_id(): void
