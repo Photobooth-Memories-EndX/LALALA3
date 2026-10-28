@@ -61,7 +61,7 @@ class TaskManagementNonKpOwlTest extends TestCase
         $response->assertSee('id="parentPickerLabel">Select Playlist</label>', false);
         $response->assertSee('id="btnPreviewTask"', false);
         $response->assertSee('id="taskPreviewModal"', false);
-        $response->assertDontSee('id="btnAddField"', false);
+        $response->assertSee('id="btnAddField"', false);
     }
 
     public function test_parent_options_endpoint_returns_offline_trainings(): void
@@ -313,7 +313,7 @@ class TaskManagementNonKpOwlTest extends TestCase
             'type'        => 'survey',
             'title'       => 'Post-Training Feedback Survey',
             'description' => 'Please fill out this survey',
-            'action'      => 'draft',
+            'action'      => 'draft_exit',
             'survey_id'   => null,
         ];
 
