@@ -233,6 +233,16 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
                 $durationFormatted = sprintf('%02d:%02d:%02d', $hours, $mins, $seconds);
             }
 
+            // Recognized Duration formatted as HH:MM:SS
+            $recognizedFormatted = '-';
+            if ($row->source !== 'offline') {
+                $rSecs = (int) ($row->recognized_duration_seconds ?? 0);
+                $rHours = floor($rSecs / 3600);
+                $rMins = floor(($rSecs % 3600) / 60);
+                $rSeconds = $rSecs % 60;
+                $recognizedFormatted = sprintf('%02d:%02d:%02d', $rHours, $rMins, $rSeconds);
+            }
+
             // Learning Hours (raw numeric float for SUM calculations)
             $lhNumeric = ($row->learning_hours !== null && $row->learning_hours !== '' && is_numeric($row->learning_hours))
                 ? (float) $row->learning_hours
@@ -321,7 +331,7 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
                 $row->venue ?: ($row->source === 'offline' ? '-' : 'KP-OWL'),
                 $row->instructor ?: '-',
                 $durationFormatted, // Course Duration
-                '-', // Total Recognized Duration
+                $recognizedFormatted, // Total Recognized Duration
                 $lhNumeric, // Learning Hours
                 $progressDecimal, // numeric decimal for 0% format code
                 $progressStatus,

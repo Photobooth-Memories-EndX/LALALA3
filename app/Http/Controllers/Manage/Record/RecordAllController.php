@@ -209,6 +209,15 @@ class RecordAllController extends Controller
                         $durationFormatted = sprintf('%02d:%02d:%02d', $hours, $mins, $seconds);
                     }
 
+                    $recognizedFormatted = '-';
+                    if ($row->source !== 'offline') {
+                        $rSecs = (int) ($row->recognized_duration_seconds ?? 0);
+                        $rHours = floor($rSecs / 3600);
+                        $rMins = floor(($rSecs % 3600) / 60);
+                        $rSeconds = $rSecs % 60;
+                        $recognizedFormatted = sprintf('%02d:%02d:%02d', $rHours, $rMins, $rSeconds);
+                    }
+
                     // Attendance
                     $attendanceStr = '';
                     if ($row->attendance !== null) {
@@ -250,6 +259,7 @@ class RecordAllController extends Controller
                         $row->venue ?: '',
                         $row->instructor ?: '',
                         $durationFormatted,
+                        $recognizedFormatted,
                         $row->training_hours !== null ? number_format((float) $row->training_hours, 2) : '',
                         $row->start_date ? date('Y-m-d', strtotime($row->start_date)) : '',
                         $row->finish_date ? date('Y-m-d', strtotime($row->finish_date)) : '',
@@ -631,6 +641,15 @@ class RecordAllController extends Controller
                         $durationFormatted = sprintf('%02d:%02d:%02d', $hours, $mins, $seconds);
                     }
 
+                    $recognizedFormatted = '-';
+                    if ($row->source !== 'offline') {
+                        $rSecs = (int) ($row->recognized_duration_seconds ?? 0);
+                        $rHours = floor($rSecs / 3600);
+                        $rMins = floor(($rSecs % 3600) / 60);
+                        $rSeconds = $rSecs % 60;
+                        $recognizedFormatted = sprintf('%02d:%02d:%02d', $rHours, $rMins, $rSeconds);
+                    }
+
                     $attendanceStr = '';
                     if ($row->attendance !== null) {
                         $attendanceStr = (bool) $row->attendance ? 'Present' : 'Absent';
@@ -675,6 +694,7 @@ class RecordAllController extends Controller
                         $row->venue ?: '',
                         $row->instructor ?: '',
                         $durationFormatted,
+                        $recognizedFormatted,
                         $row->training_hours !== null ? number_format((float) $row->training_hours, 2) : '',
                         $row->start_date ? date('Y-m-d', strtotime($row->start_date)) : '',
                         $row->finish_date ? date('Y-m-d', strtotime($row->finish_date)) : '',

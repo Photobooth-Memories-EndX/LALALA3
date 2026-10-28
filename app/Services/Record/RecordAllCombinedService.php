@@ -423,6 +423,7 @@ class RecordAllCombinedService
                     DB::raw("CAST(NULL AS CHAR) as venue"),
                     DB::raw("CAST(NULL AS CHAR) as instructor"),
                     DB::raw("0 as duration_seconds"),
+                    DB::raw("0 as recognized_duration_seconds"),
                     DB::raw("CAST(NULL AS DECIMAL(10,2)) as training_hours"),
                     DB::raw("CAST(NULL AS CHAR) as start_date"),
                     DB::raw("CAST(NULL AS CHAR) as finish_date"),
@@ -533,6 +534,7 @@ class RecordAllCombinedService
                     ELSE c.author
                 END as instructor"),
                 DB::raw("COALESCE(unified.duration_seconds, 0) as duration_seconds"),
+                DB::raw("CASE WHEN unified.source = 'offline' THEN 0 ELSE COALESCE(unified.recognized_duration_seconds, 0) END as recognized_duration_seconds"),
                 DB::raw("CASE
                     WHEN unified.source = 'offline' THEN ot.learning_hours
                     WHEN unified.source_type = 'playlist' THEN tp.learning_hours
@@ -606,6 +608,43 @@ class RecordAllCombinedService
                     WHEN LENGTH(c.duration) - LENGTH(REPLACE(c.duration, ':', '')) = 2 THEN TIME_TO_SEC(c.duration)
                     ELSE TIME_TO_SEC(CONCAT('00:', c.duration))
                 END as duration_seconds"),
+                DB::raw("CASE
+                    WHEN (CASE
+                        WHEN c.duration IS NULL OR TRIM(c.duration) = '' THEN 0
+                        WHEN LENGTH(c.duration) - LENGTH(REPLACE(c.duration, ':', '')) = 2 THEN TIME_TO_SEC(c.duration)
+                        ELSE TIME_TO_SEC(CONCAT('00:', c.duration))
+                    END) > 0 THEN
+                        LEAST(
+                            CASE
+                                WHEN cu.actual_watch_seconds > 0 THEN cu.actual_watch_seconds
+                                WHEN cu.current_time > 0 THEN cu.current_time
+                                WHEN cu.finish = '1' OR cu.progress >= 100 THEN (CASE
+                                    WHEN c.duration IS NULL OR TRIM(c.duration) = '' THEN 0
+                                    WHEN LENGTH(c.duration) - LENGTH(REPLACE(c.duration, ':', '')) = 2 THEN TIME_TO_SEC(c.duration)
+                                    ELSE TIME_TO_SEC(CONCAT('00:', c.duration))
+                                END)
+                                WHEN cu.progress > 0 THEN ROUND((cu.progress / 100) * (CASE
+                                    WHEN c.duration IS NULL OR TRIM(c.duration) = '' THEN 0
+                                    WHEN LENGTH(c.duration) - LENGTH(REPLACE(c.duration, ':', '')) = 2 THEN TIME_TO_SEC(c.duration)
+                                    ELSE TIME_TO_SEC(CONCAT('00:', c.duration))
+                                END))
+                                WHEN cu.learning_hours > 0 THEN ROUND(cu.learning_hours * 3600)
+                                ELSE 0
+                            END,
+                            (CASE
+                                WHEN c.duration IS NULL OR TRIM(c.duration) = '' THEN 0
+                                WHEN LENGTH(c.duration) - LENGTH(REPLACE(c.duration, ':', '')) = 2 THEN TIME_TO_SEC(c.duration)
+                                ELSE TIME_TO_SEC(CONCAT('00:', c.duration))
+                            END) * 2
+                        )
+                    ELSE
+                        CASE
+                            WHEN cu.actual_watch_seconds > 0 THEN cu.actual_watch_seconds
+                            WHEN cu.current_time > 0 THEN cu.current_time
+                            WHEN cu.learning_hours > 0 THEN ROUND(cu.learning_hours * 3600)
+                            ELSE 0
+                        END
+                END as recognized_duration_seconds"),
             ]);
 
         $this->applyOnlineSubqueryFilters($q, $filters, 'cu');
@@ -645,6 +684,53 @@ class RecordAllCombinedService
                         ELSE 0
                     END
                 ) as duration_seconds"),
+                DB::raw("SUM(
+                    CASE
+                        WHEN (pcu.progress > 0 OR pcu.finish = '1' OR pcu.learning_hour > 0 OR pcu.actual_watch_seconds > 0) THEN
+                            CASE
+                                WHEN (CASE
+                                    WHEN pcu.duration_seconds > 0 THEN pcu.duration_seconds
+                                    WHEN c.duration IS NULL OR TRIM(c.duration) = '' THEN 0
+                                    WHEN LENGTH(c.duration) - LENGTH(REPLACE(c.duration, ':', '')) = 2 THEN TIME_TO_SEC(c.duration)
+                                    ELSE TIME_TO_SEC(CONCAT('00:', c.duration))
+                                END) > 0 THEN
+                                    LEAST(
+                                        CASE
+                                            WHEN pcu.actual_watch_seconds > 0 THEN pcu.actual_watch_seconds
+                                            WHEN pcu.current_time > 0 THEN pcu.current_time
+                                            WHEN pcu.finish = '1' OR pcu.progress >= 100 THEN (CASE
+                                                WHEN pcu.duration_seconds > 0 THEN pcu.duration_seconds
+                                                WHEN c.duration IS NULL OR TRIM(c.duration) = '' THEN 0
+                                                WHEN LENGTH(c.duration) - LENGTH(REPLACE(c.duration, ':', '')) = 2 THEN TIME_TO_SEC(c.duration)
+                                                ELSE TIME_TO_SEC(CONCAT('00:', c.duration))
+                                            END)
+                                            WHEN pcu.progress > 0 THEN ROUND((pcu.progress / 100) * (CASE
+                                                WHEN pcu.duration_seconds > 0 THEN pcu.duration_seconds
+                                                WHEN c.duration IS NULL OR TRIM(c.duration) = '' THEN 0
+                                                WHEN LENGTH(c.duration) - LENGTH(REPLACE(c.duration, ':', '')) = 2 THEN TIME_TO_SEC(c.duration)
+                                                ELSE TIME_TO_SEC(CONCAT('00:', c.duration))
+                                            END))
+                                            WHEN pcu.learning_hour > 0 THEN ROUND(pcu.learning_hour * 3600)
+                                            ELSE 0
+                                        END,
+                                        (CASE
+                                            WHEN pcu.duration_seconds > 0 THEN pcu.duration_seconds
+                                            WHEN c.duration IS NULL OR TRIM(c.duration) = '' THEN 0
+                                            WHEN LENGTH(c.duration) - LENGTH(REPLACE(c.duration, ':', '')) = 2 THEN TIME_TO_SEC(c.duration)
+                                            ELSE TIME_TO_SEC(CONCAT('00:', c.duration))
+                                        END) * 2
+                                    )
+                                ELSE
+                                    CASE
+                                        WHEN pcu.actual_watch_seconds > 0 THEN pcu.actual_watch_seconds
+                                        WHEN pcu.current_time > 0 THEN pcu.current_time
+                                        WHEN pcu.learning_hour > 0 THEN ROUND(pcu.learning_hour * 3600)
+                                        ELSE 0
+                                    END
+                            END
+                        ELSE 0
+                    END
+                ) as recognized_duration_seconds"),
             ])
             ->groupBy(['pcu.user_id', 'pcu.trainingplan_id']);
 
@@ -1243,6 +1329,7 @@ class RecordAllCombinedService
                 'otu.created_at',
                 DB::raw("CASE WHEN otu.progress >= 100 THEN ot.finish_date ELSE NULL END as finish_date"),
                 DB::raw("COALESCE(ot.duration_seconds, 0) as duration_seconds"),
+                DB::raw("0 as recognized_duration_seconds"),
             ]);
 
         // Status filter
@@ -1826,6 +1913,16 @@ class RecordAllCombinedService
                 $s = $sec % 60;
                 return sprintf('%02d:%02d:%02d', $h, $m, $s);
             })
+            ->addColumn('total_recognized_duration', function ($row) {
+                if ($row->source === 'offline') {
+                    return '-';
+                }
+                $sec = (int) ($row->recognized_duration_seconds ?? 0);
+                $h = floor($sec / 3600);
+                $m = floor(($sec % 3600) / 60);
+                $s = $sec % 60;
+                return sprintf('%02d:%02d:%02d', $h, $m, $s);
+            })
             ->addColumn('progress_percent', function ($row) {
                 $progress = max(0, min(100, round((float) ($row->progress ?? 0))));
                 $color = $progress >= 100 ? 'bg-success' : ($progress > 0 ? 'bg-warning' : 'bg-secondary');
@@ -2258,6 +2355,16 @@ class RecordAllCombinedService
                 if ($sec <= 0) {
                     return '-';
                 }
+                $h = floor($sec / 3600);
+                $m = floor(($sec % 3600) / 60);
+                $s = $sec % 60;
+                return sprintf('%02d:%02d:%02d', $h, $m, $s);
+            })
+            ->addColumn('total_recognized_duration', function ($row) {
+                if ($row->source === 'offline') {
+                    return '-';
+                }
+                $sec = (int) ($row->recognized_duration_seconds ?? 0);
                 $h = floor($sec / 3600);
                 $m = floor(($sec % 3600) / 60);
                 $s = $sec % 60;

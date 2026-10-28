@@ -321,6 +321,7 @@
                                     <th style="min-width: 130px;">Provider Name</th>
                                     <th style="min-width: 120px;">Venue</th>
                                     <th style="min-width: 110px;">Course Duration</th>
+                                    <th style="min-width: 130px;">Total Recognized Duration</th>
                                     <th style="min-width: 110px;">Learning Hours</th>
                                     <th style="min-width: 110px;">% Progress</th>
                                     <th style="min-width: 110px;">Progress Status</th>
@@ -801,6 +802,12 @@
                     {
                         data: 'course_duration',
                         name: 'duration_seconds',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    {
+                        data: 'total_recognized_duration',
+                        name: 'recognized_duration_seconds',
                         orderable: true,
                         defaultContent: '-'
                     },

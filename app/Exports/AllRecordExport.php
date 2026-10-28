@@ -344,6 +344,16 @@ class AllRecordExport implements Responsable
                     $durationFormatted = sprintf('%02d:%02d:%02d', $hours, $mins, $seconds);
                 }
 
+                // Recognized Duration formatted as HH:MM:SS
+                $recognizedFormatted = '-';
+                if ($row->source !== 'offline') {
+                    $rSecs = (int) ($row->recognized_duration_seconds ?? 0);
+                    $rHours = floor($rSecs / 3600);
+                    $rMins = floor(($rSecs % 3600) / 60);
+                    $rSeconds = $rSecs % 60;
+                    $recognizedFormatted = sprintf('%02d:%02d:%02d', $rHours, $rMins, $rSeconds);
+                }
+
                 // Learning Hours: raw numeric float for SUM calculations
                 $lhNumeric = ($row->learning_hours !== null && $row->learning_hours !== '' && is_numeric($row->learning_hours))
                     ? (float) $row->learning_hours
@@ -438,7 +448,7 @@ class AllRecordExport implements Responsable
                     ['U', 'str', $row->venue ?: ($row->source === 'offline' ? '-' : 'KP-OWL'), $textStyle],
                     ['V', 'str', $row->instructor ?: '-', $textStyle],
                     ['W', 'str', $durationFormatted, $textStyle], // Course Duration
-                    ['X', 'str', '-', $textStyle], // Total Recognized Duration
+                    ['X', 'str', $recognizedFormatted, $textStyle], // Total Recognized Duration
                     ['Y', $lhNumeric !== null ? 'lh' : 'str', $lhNumeric !== null ? $lhNumeric : '-', $lhNumeric !== null ? $lhStyle : $textStyle], // Learning Hours
                     ['Z', 'pct', $progressDecimal, $pctStyle],
                     ['AA', 'str', $progressStatus, $textStyle],
