@@ -68,7 +68,7 @@ class TaskContainerFlowTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee($group->title);
         $response->assertSee('Add Task');
-        $response->assertSee('No Tasks in This Container Yet');
+        $response->assertSee('No Tasks in This Course Yet');
     }
 
     public function test_task_create_page_locks_container_when_parent_params_provided(): void

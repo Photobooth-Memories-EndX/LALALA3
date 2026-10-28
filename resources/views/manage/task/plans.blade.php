@@ -285,7 +285,7 @@
                             <tr>
                                 <th class="w-1">NO</th>
                                 <th>CATEGORY</th>
-                                <th>COURSE / CONTAINER</th>
+                                <th>COURSE / ACTIVITY</th>
                                 <th class="text-center">TOTAL TASK</th>
                                 <th class="text-center">PUBLISHED</th>
                                 <th class="text-center">DRAFT</th>
@@ -384,8 +384,8 @@
                         <i class="ti ti-folder-plus fs-1"></i>
                     </div>
                     <div>
-                        <h4 class="modal-title fw-bold text-dark mb-0" id="chooseContainerModalLabel" style="font-size: 1.15rem; line-height: 1.3;">Choose / Create Task Container</h4>
-                        <div class="text-muted small mt-0.5" style="font-size: 0.825rem;">Select or create the container where your tasks will be grouped.</div>
+                        <h4 class="modal-title fw-bold text-dark mb-0" id="chooseContainerModalLabel" style="font-size: 1.15rem; line-height: 1.3;">Choose Course / Activity</h4>
+                        <div class="text-muted small mt-0.5" style="font-size: 0.825rem;">Select or create the course or activity where this task will be assigned.</div>
                     </div>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -396,7 +396,7 @@
                 <div class="d-flex align-items-center justify-content-between mb-2">
                     <label class="form-label fw-bold text-dark mb-0 d-flex align-items-center gap-2">
                         <span class="badge bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 20px; height: 20px; font-size: 11px;">1</span>
-                        <span>Select Container Category:</span>
+                        <span>Select Category:</span>
                     </label>
                 </div>
                 <div class="row g-3 mb-4" id="modalCategoryRow">
@@ -450,7 +450,7 @@
                                 </div>
                                 <div class="fw-bold text-dark mb-1" style="font-size: 0.95rem;">Others</div>
                                 <div class="text-muted small" style="font-size: 0.775rem; line-height: 1.35;">
-                                    Standalone container (Onboarding, Workshops, Events).
+                                    Standalone activities (Onboarding, Workshops, Events).
                                 </div>
                             </div>
                         </div>
@@ -540,10 +540,10 @@
                         <!-- Mode Selector: Create New vs Choose Existing -->
                         <div class="d-flex align-items-center gap-1 p-1 bg-light rounded-3 mb-3 border others-mode-switcher" style="width: fit-content;">
                             <button type="button" class="btn btn-sm btn-white text-dark shadow-sm fw-semibold rounded-2 px-3 py-1.5 others-mode-btn active" data-mode="new">
-                                <i class="ti ti-plus me-1 text-primary"></i> Create New Container
+                                <i class="ti ti-plus me-1 text-primary"></i> Create New Activity
                             </button>
                             <button type="button" class="btn btn-sm btn-ghost-secondary text-muted fw-semibold rounded-2 px-3 py-1.5 others-mode-btn" data-mode="existing">
-                                <i class="ti ti-folders me-1"></i> Choose Existing Container
+                                <i class="ti ti-folders me-1"></i> Choose Existing Activity
                             </button>
                         </div>
 
@@ -561,7 +561,7 @@
                             </div>
                             <div class="form-hint mt-2 text-muted d-flex align-items-center gap-1.5" style="font-size: 0.8rem;">
                                 <i class="ti ti-info-circle text-primary"></i>
-                                <span>Enter the title for this new container. Once created, you will be directed to add tasks to it.</span>
+                                <span>Enter the title for this new activity. You will be directed to add tasks to it.</span>
                             </div>
                         </div>
 
@@ -572,12 +572,12 @@
                                     <i class="ti ti-folders fs-2 text-purple"></i>
                                 </span>
                                 <select id="modal_others_existing_id" class="form-select form-select-lg border-start-0 rounded-end-3" style="font-size: 0.95rem;">
-                                    <option value="">— Loading containers... —</option>
+                                    <option value="">— Loading activities... —</option>
                                 </select>
                             </div>
                             <div class="form-hint mt-2 text-muted d-flex align-items-center gap-1.5" style="font-size: 0.8rem;">
                                 <i class="ti ti-info-circle text-purple"></i>
-                                <span>Select an existing Others container to manage and add more tasks.</span>
+                                <span>Select an existing activity to manage and add more tasks.</span>
                             </div>
                         </div>
                     </div>
@@ -743,7 +743,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (mode === 'new') {
             if (othersModeNewWrap) othersModeNewWrap.style.display = 'block';
             if (othersModeExistingWrap) othersModeExistingWrap.style.display = 'none';
-            if (step2Label) step2Label.textContent = 'Enter Container / Activity Title:';
+            if (step2Label) step2Label.textContent = 'Enter Activity Title:';
             if (btnSubmitText) btnSubmitText.textContent = 'Create & Manage Tasks';
             var titleInput = document.getElementById('modal_others_title');
             if (titleInput) {
@@ -752,9 +752,9 @@ document.addEventListener('DOMContentLoaded', function () {
         } else {
             if (othersModeNewWrap) othersModeNewWrap.style.display = 'none';
             if (othersModeExistingWrap) othersModeExistingWrap.style.display = 'block';
-            if (step2Label) step2Label.textContent = 'Select Existing Others Container:';
+            if (step2Label) step2Label.textContent = 'Select Existing Activity:';
             if (btnSubmitText) btnSubmitText.textContent = 'Continue to Manage Tasks';
-            loadOptions('standalone', document.getElementById('modal_others_existing_id'), '— Select Existing Others Container —');
+            loadOptions('standalone', document.getElementById('modal_others_existing_id'), '— Select Existing Activity —');
         }
     }
 
@@ -850,7 +850,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
 
                 btnSubmit.disabled = true;
-                btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-1.5" role="status"></span> Creating Container...';
+                btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-1.5" role="status"></span> Creating Activity...';
 
                 fetch("{{ route('manage.task.group.store') }}", {
                     method: 'POST',

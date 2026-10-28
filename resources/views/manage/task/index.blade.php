@@ -174,15 +174,10 @@
                                                     <i class="ti ti-clipboard-list" style="font-size: 2rem;"></i>
                                                 </span>
                                             </div>
-                                            <h3 class="empty-title fw-bold text-dark mb-1">No Tasks in This Container Yet</h3>
-                                            <p class="empty-subtitle text-muted mb-3" style="max-width: 440px; margin: 0 auto; line-height: 1.5;">
-                                                Wadah <strong>{{ $parentName }}</strong> belum memiliki tugas. Klik tombol di bawah untuk membuat tugas pertama.
+                                            <h3 class="empty-title fw-bold text-dark mb-1">No Tasks in This Course Yet</h3>
+                                            <p class="empty-subtitle text-muted mb-0" style="max-width: 460px; margin: 0 auto; line-height: 1.5;">
+                                                <strong>{{ $parentName }}</strong> does not have any tasks yet. Click the <strong>"+ Add Task"</strong> button in the top right to create one.
                                             </p>
-                                            <div class="empty-action">
-                                                <a href="{{ route('manage.task.create', ['parent_type' => $parentType, 'parent_id' => $parentId]) }}" class="btn btn-primary px-3 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-1.5">
-                                                    <i class="ti ti-plus fs-2"></i> Add Task Now
-                                                </a>
-                                            </div>
                                         </div>
                                     </td>
                                 </tr>
