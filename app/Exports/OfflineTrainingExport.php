@@ -88,7 +88,7 @@ class OfflineTrainingExport implements WithMultipleSheets, FromQuery, WithHeadin
         $this->rowNumber++;
 
         // Duration formatted as HH:MM:SS
-        $durationFormatted = '-';
+        $durationFormatted = '';
         if (!empty($row->duration_seconds)) {
             $secs = (int) $row->duration_seconds;
             $hours = floor($secs / 3600);
@@ -98,24 +98,24 @@ class OfflineTrainingExport implements WithMultipleSheets, FromQuery, WithHeadin
         }
 
         // Month derivation
-        $month = '-';
+        $month = '';
         $dateForMonth = $row->start_date ?: $row->finish_date;
         if (!empty($dateForMonth)) {
             try {
                 $month = Carbon::parse($dateForMonth)->format('F');
             } catch (\Throwable $e) {
-                $month = '-';
+                $month = '';
             }
         }
 
         // Attendance
-        $attendanceStr = '-';
+        $attendanceStr = '';
         if ($row->attendance !== null) {
             $attendanceStr = (bool) $row->attendance ? 'Yes' : 'No';
         }
 
         // Counted as Corporate KPI
-        $kpiStr = '-';
+        $kpiStr = '';
         if ($row->counted_corporate_kpi !== null) {
             if ((bool) $row->counted_corporate_kpi) {
                 $year = !empty($row->corporate_kpi_year) ? $row->corporate_kpi_year : (!empty($row->sub_corporate_kpi) && preg_match('/^\d{4}$/', (string)$row->sub_corporate_kpi) ? $row->sub_corporate_kpi : null);
@@ -125,50 +125,115 @@ class OfflineTrainingExport implements WithMultipleSheets, FromQuery, WithHeadin
             }
         }
 
+        // Dates & Times split
+        $startDateStr = !empty($row->start_date) ? (is_string($row->start_date) && strlen($row->start_date) >= 10 ? substr($row->start_date, 0, 10) : Carbon::parse($row->start_date)->format('Y-m-d')) : '-';
+        $endDateStr = !empty($row->end_date)
+            ? (is_string($row->end_date) && strlen($row->end_date) >= 10 ? substr($row->end_date, 0, 10) : Carbon::parse($row->end_date)->format('Y-m-d'))
+            : (!empty($row->finish_date) ? (is_string($row->finish_date) && strlen($row->finish_date) >= 10 ? substr($row->finish_date, 0, 10) : Carbon::parse($row->finish_date)->format('Y-m-d')) : '-');
+        $startTimeStr = !empty($row->start_time) ? Carbon::parse($row->start_time)->format('H:i:s') : '-';
+        $endTimeStr = !empty($row->end_time) ? Carbon::parse($row->end_time)->format('H:i:s') : '-';
+
+        $progressNum = (float) ($row->progress ?? 0);
+        $progressDecimal = round($progressNum / 100, 4);
+        $progressStatus = ($progressNum >= 100) ? 'Finished' : (($progressNum > 0) ? 'Ongoing' : 'Not Started');
+
+        $rawLh = $row->course_learning_hours ?? ($row->learning_hours ?? null);
+        $lHoursNumeric = ($rawLh !== null && $rawLh !== '' && is_numeric($rawLh))
+            ? (((float)$rawLh == (int)$rawLh) ? (int)$rawLh : round((float)$rawLh, 2))
+            : '-';
+
+        $totalEngVal = $row->learning_hours ?? ($row->course_learning_hours ?? null);
+        $totalEngNumeric = ($totalEngVal !== null && $totalEngVal !== '' && is_numeric($totalEngVal))
+            ? (((float)$totalEngVal == (int)$totalEngVal) ? (int)$totalEngVal : round((float)$totalEngVal, 2))
+            : '-';
+
+        $rawDeliv = strtolower(trim((string) ($row->delivery_method ?? '')));
+        $delivMethod = in_array($rawDeliv, ['online', 'e-learning', 'webinar', 'kp-owl', 'kp owl'], true) ? 'Online' : 'Offline';
+        $subDelivMethod = $row->sub_delivery_method ?: 'On-site';
+
+        $idr = $row->bond_amount_idr ?? ($row->bond_amount ?? null);
+        $hasBond = ($idr !== null && is_numeric($idr) && (float) $idr > 0);
+        $bondDurationMonths = null;
+        if (!empty($row->bond_duration)) {
+            $parsedDur = (int) preg_replace('/\D/', '', (string) $row->bond_duration);
+            if ($parsedDur > 0) {
+                $bondDurationMonths = $parsedDur;
+            }
+        }
+        $bondEndDateStr = !empty($row->bond_end_date)
+            ? (is_string($row->bond_end_date) && strlen($row->bond_end_date) >= 10 ? substr($row->bond_end_date, 0, 10) : Carbon::parse($row->bond_end_date)->format('Y-m-d'))
+            : '-';
+
+        $rawEmp = $row->employee_id ?: ($row->id_emp ?? '-');
+        $cleanEmpId = ($rawEmp !== '-') ? preg_replace('/\s*[\/\-]\s*NIP.*$/i', '', trim((string) $rawEmp)) : '-';
+
+        $scoreL1 = null;
+        if (isset($row->l1_program) && is_numeric($row->l1_program)) {
+            $val = (float) $row->l1_program;
+            $intVal = (int) round($val);
+            $scoreL1 = (abs($val - $intVal) < 0.0001) ? $intVal : round($val, 2);
+        }
+
+        $scoreL2 = null;
+        $rawScoreL2 = $row->assessment_score ?? ($row->l2_numerical ?? null);
+        if ($rawScoreL2 !== null && is_numeric($rawScoreL2)) {
+            $val = (float) $rawScoreL2;
+            $intVal = (int) round($val);
+            $scoreL2 = (abs($val - $intVal) < 0.0001) ? $intVal : round($val, 2);
+        }
+
+        $scoreL3 = null;
+        if (isset($row->l3_numerical) && is_numeric($row->l3_numerical)) {
+            $val = (float) $row->l3_numerical;
+            $intVal = (int) round($val);
+            $scoreL3 = (abs($val - $intVal) < 0.0001) ? $intVal : round($val, 2);
+        }
+
         return [
-            $this->rowNumber,                                                   // 1. No
-            $row->employee_id ?: '-',                                           // 2. ID
-            $row->participant_name ?: ($row->user_name ?: '-'),                 // 3. Name
-            $row->grade ?: '-',                                                 // 4. Grade
-            $row->job_position ?: '-',                                          // 5. Job Position
-            $row->team ?: '-',                                                  // 6. Team
-            $row->department ?: '-',                                            // 7. Department
-            $row->company ?: '-',                                               // 8. Company
-            $row->course_name ?: '-',                                           // 9. Course Name
-            $row->sub_course_name ?: '-',                                       // 10. Sub_Course Name
-            $row->type ?: '-',                                                  // 11. Type
-            $row->category ?: '-',                                              // 12. Category
-            $row->level ?: '-',                                                 // 13. Level
-            $row->batch ?: '-',                                                 // 14. Batch
-            $row->main_classification ?: '-',                                   // 15. Main Classification
-            $row->sub_classification ?: '-',                                    // 16. Sub Classification
-            $kpiStr,                                                            // 17. Counted as Corporate KPI
-            $row->sub_corporate_kpi ?: '-',                                     // 18. Sub Corporate KPI
-            \App\Models\OfflineTraining::normalizeDeliveryMethod($row->delivery_method), // 19. Delivery Method
-            $row->sub_delivery_method ?: '-',                                   // 20. Sub_Delivery Method
-            $row->provider ?: '-',                                              // 21. Provider
-            $row->sub_provider ?: '-',                                          // 22. Sub_Provider
-            $durationFormatted,                                                 // 23. Duration
-            $row->learning_hours !== null ? (float) $row->learning_hours : 0,   // 24. Learning (Hours)
-            $row->progress !== null ? (float) $row->progress : 0,               // 25. Progress
-            $row->start_date ?: '-',                                            // 26. Start Date
-            $row->finish_date ?: '-',                                           // 27. Finish Date
-            $month,                                                             // 28. Month
-            $row->provider_name ?: '-',                                         // 29. Provider Name
-            $row->venue ?: '-',                                                 // 30. Venue
-            $row->instructor ?: '-',                                            // 31. Instructor
-            is_numeric($row->assessment_score) ? (int) round((float) $row->assessment_score) : '-', // 32. Assessment Score
-            $row->certificate ?: '-',                                           // 33. Certificate
-            $row->attendance_reason ?: '-',                                     // 34. Reason
-            $row->bond_status ?: 'No',                                          // 35. Bond Status
-            $row->bond_end_date ?: '-',                                         // 36. Bond End Date
-            $row->bond_amount !== null ? (float) $row->bond_amount : '-',       // 37. Bond Amount
-            $row->l1_program ?: '-',                                            // 38. Program
-            $row->l2_numerical !== null ? (float) $row->l2_numerical : '-',     // 39. Numerical
-            $row->l2_verbal ?: '-',                                             // 40. Verbal
-            $row->l3_numerical !== null ? (float) $row->l3_numerical : '-',     // 41. Numerical
-            $row->l3_verbal ?: '-',                                             // 42. Verbal
-            $row->pic ?: '-',                                                   // 43. PIC
+            $cleanEmpId,                                                // 1. Employee ID
+            $row->participant_name ?: ($row->user_name ?: '-'),         // 2. Employee Name
+            $row->grade ?: '-',                                         // 3. Grade
+            $row->job_position ?: '-',                                  // 4. Job Position
+            $row->team ?: '-',                                          // 5. Team
+            $row->department ?: '-',                                    // 6. Department
+            $row->company ?: '-',                                       // 7. Company
+            $row->course_name ?: ($row->title ?: '-'),                  // 8. Course Title
+            $row->sub_course_name ?: '-',                               // 9. Sub Course Title
+            $row->type ?: '-',                                          // 10. Type
+            $row->category ?: '-',                                      // 11. Category
+            $row->level ?: '-',                                         // 12. Level
+            $row->batch ?: '-',                                         // 13. Batch
+            $row->main_classification ?: 'Unclassified',                // 14. Main Classification
+            $row->sub_classification ?: '-',                            // 15. Sub Classification
+            $delivMethod,                                               // 16. Delivery Method
+            $subDelivMethod,                                            // 17. Sub Delivery Method
+            $row->provider_name ?: ($row->provider ?: '-'),             // 18. Provider Name
+            $row->venue ?: '-',                                         // 19. Venue
+            $row->instructor ?: '-',                                    // 20. Instructor
+            $durationFormatted,                                         // 21. Course Duration
+            $lHoursNumeric,                                             // 22. Learning Hours
+            $progressDecimal,                                           // 23. % Progress
+            $progressStatus,                                            // 24. Progress Status
+            $startDateStr,                                              // 25. Start Date
+            $endDateStr,                                                // 26. End Date
+            $startTimeStr,                                              // 27. Start Time
+            $endTimeStr,                                                // 28. End Time
+            $month ?: '-',                                              // 29. Record Month
+            $row->requirement ?: ($row->status ?: 'Mandatory'),         // 30. Requirement
+            $attendanceStr ?: 'No',                                     // 31. Attendance
+            $row->attendance_reason ?: '-',                             // 32. Attendance Reason
+            $hasBond ? 'Yes' : ($row->bond_status ?: 'No'),             // 33. Bond Status
+            $bondDurationMonths !== null ? $bondDurationMonths : '-',   // 34. Bond Duration
+            $bondEndDateStr,                                            // 35. Bond End Date
+            $hasBond ? (float) $idr : '-',                              // 36. Bond Amount
+            $scoreL1 !== null ? $scoreL1 : '-',                         // 37. Score (L1) - Course
+            $scoreL2 !== null ? $scoreL2 : '-',                         // 38. Score (L2)
+            $row->l2_verbal ?: ($scoreL2 !== null ? ($scoreL2 >= 70 ? 'Passed' : 'Failed') : '-'), // 39. L2 Status
+            $scoreL3 !== null ? $scoreL3 : '-',                         // 40. Score (L3)
+            $row->l3_verbal ?: '-',                                     // 41. L3 Status
+            $row->pic ?: '-',                                           // 42. Person in Charge (PIC)
+            $row->certificate ?: '-',                                   // 43. Certificate
+            $totalEngNumeric,                                           // 44. Total Engagement Time
         ];
     }
 

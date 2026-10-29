@@ -57,14 +57,44 @@ class OfflineTrainingUser extends Model
         'l3_numerical'     => 'decimal:4',
     ];
 
+    protected static ?bool $hasBondDurationCol = null;
+    protected static ?bool $hasBondAmountIdrCol = null;
+
+    public function setBondDurationAttribute($val)
+    {
+        if (self::$hasBondDurationCol === null) {
+            self::$hasBondDurationCol = \Illuminate\Support\Facades\Schema::hasColumn($this->getTable(), 'bond_duration');
+        }
+        if (self::$hasBondDurationCol) {
+            $this->attributes['bond_duration'] = $val;
+        }
+    }
+
     public function setBondAmountAttribute($val)
     {
-        $this->attributes['bond_amount_idr'] = $val;
+        if (self::$hasBondAmountIdrCol === null) {
+            self::$hasBondAmountIdrCol = \Illuminate\Support\Facades\Schema::hasColumn($this->getTable(), 'bond_amount_idr');
+        }
+        if (self::$hasBondAmountIdrCol) {
+            $this->attributes['bond_amount_idr'] = $val;
+        } else {
+            $this->attributes['bond_amount'] = $val;
+        }
     }
 
     public function getBondAmountAttribute()
     {
-        return $this->bond_amount_idr;
+        return $this->attributes['bond_amount_idr'] ?? $this->attributes['bond_amount'] ?? null;
+    }
+
+    public function setBondAmountIdrAttribute($val)
+    {
+        $this->setBondAmountAttribute($val);
+    }
+
+    public function getBondAmountIdrAttribute()
+    {
+        return $this->getBondAmountAttribute();
     }
 
     public function training(): BelongsTo

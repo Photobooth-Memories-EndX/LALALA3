@@ -35,6 +35,7 @@ class LearningExportService
             'Category',
             'Classification',
             'Duration',
+            'Recognized Duration',
             'Learning Hour',
             'Learning Progress',
             'Start Date',
@@ -46,7 +47,7 @@ class LearningExportService
     }
 
     /**
-     * Standardized column widths for columns A to Q.
+     * Standardized column widths for columns A to R.
      */
     public static function columnWidths(): array
     {
@@ -61,13 +62,14 @@ class LearningExportService
             'H' => 40,  // Category (widened for "Playlist: <Title>")
             'I' => 28,  // Classification
             'J' => 14,  // Duration
-            'K' => 16,  // Learning Hour
-            'L' => 18,  // Learning Progress
-            'M' => 18,  // Start Date
-            'N' => 18,  // Finish Date
-            'O' => 18,  // Assessment Score
-            'P' => 16,  // Certificate
-            'Q' => 16,  // Attendance
+            'K' => 16,  // Recognized Duration
+            'L' => 16,  // Learning Hour
+            'M' => 18,  // Learning Progress
+            'N' => 18,  // Start Date
+            'O' => 18,  // Finish Date
+            'P' => 18,  // Assessment Score
+            'Q' => 16,  // Certificate
+            'R' => 16,  // Attendance
         ];
     }
 
@@ -539,6 +541,12 @@ class LearningExportService
         $rawDuration = $row->content_duration ?? ($row->duration ?? ($row->content->duration ?? null));
         $durationFormatted = DurationFormatter::format($rawDuration, '-');
 
+        // Recognized Duration
+        $recognizedService = app(\App\Services\Learning\LearningRecordRecognizedDurationService::class);
+        $durationSeconds = DurationFormatter::toSeconds($rawDuration) ?? 0;
+        $recSec = $recognizedService->resolveFromRow($row, $durationSeconds);
+        $recognizedFormatted = $recognizedService->formatSeconds($recSec);
+
         // 7. Progress & Completion Resolver
         $progress = (int) ($row->progress ?? 0);
         $finish = (int) ($row->finish ?? 0);
@@ -651,6 +659,7 @@ class LearningExportService
             $category,
             $classification,
             $durationFormatted,
+            $recognizedFormatted,
             $learningHourFormatted,
             $progressStr,
             $startDate,
@@ -670,16 +679,17 @@ class LearningExportService
             1 => [
                 'font' => [
                     'bold' => true,
-                    'color' => ['rgb' => '000000'],
+                    'color' => ['rgb' => 'FFFFFF'],
                     'size' => 11,
                 ],
                 'fill' => [
                     'fillType' => Fill::FILL_SOLID,
-                    'startColor' => ['rgb' => 'D9EAF7'],
+                    'startColor' => ['rgb' => '002B49'],
                 ],
                 'alignment' => [
                     'horizontal' => Alignment::HORIZONTAL_CENTER,
                     'vertical' => Alignment::VERTICAL_CENTER,
+                    'wrapText' => true,
                 ],
             ],
         ];
@@ -694,13 +704,34 @@ class LearningExportService
         $highestRow = max(1, $sheet->getHighestRow());
         $highestColumn = $sheet->getHighestColumn();
 
+        // 0. Set header row height to 28
+        $sheet->getRowDimension(1)->setRowHeight(28);
+
         // 1. Freeze top header row
         $sheet->freezePane('A2');
 
         // 2. Set AutoFilter on header row
         $sheet->setAutoFilter("A1:{$highestColumn}" . max(1, $highestRow));
 
-        // 3. Thin light border across all cells
+        // 3. Header styling (navy fill, bold white text, center, wrapText)
+        $sheet->getStyle("A1:{$highestColumn}1")->applyFromArray([
+            'font' => [
+                'bold' => true,
+                'color' => ['rgb' => 'FFFFFF'],
+                'size' => 11,
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '002B49'],
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
+                'wrapText' => true,
+            ],
+        ]);
+
+        // 4. Thin light border across all cells
         $sheet->getStyle("A1:{$highestColumn}{$highestRow}")->applyFromArray([
             'borders' => [
                 'allBorders' => [

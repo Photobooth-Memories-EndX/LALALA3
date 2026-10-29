@@ -82,6 +82,7 @@ class OnlineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wit
             'Venue',
             'Instructor',
             'Course Duration',
+            'Recognized Duration',
             'Learning Hours',
             '% Progress',
             'Progress Status',
@@ -150,12 +151,22 @@ class OnlineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wit
 
         $scoreL2Val = (isset($row->score_l2) && is_numeric($row->score_l2)) ? (int) round((float) $row->score_l2) : '-';
 
+        $recognizedService = app(\App\Services\Learning\LearningRecordRecognizedDurationService::class);
+        $recSec = $recognizedService->resolveFromRow($row);
+        $recognizedFormatted = $recognizedService->formatSeconds($recSec);
+
+        $gradeVal = $row->user_jobgrade ?: ($row->jobgrade ?? '-');
+        $jobPosVal = $row->user_jobposition ?: ($row->jobposition ?? '-');
+
+        $afkSec = (int) ($row->afk_duration_seconds ?? 0);
+        $afkFormatted = $afkSec > 0 ? DurationFormatter::fromSeconds($afkSec) : ($row->afk_duration_seconds !== null ? '00:00:00' : '-');
+
         return [
             $this->rowCount,
             $cleanEmpId,
             $row->employee_name ?: ($row->user_name ?? '-'),
-            '-', // Grade
-            '-', // Job Position
+            $gradeVal, // Grade
+            $jobPosVal, // Job Position
             $row->user_team ?: '-',
             $row->user_department ?: '-',
             $row->user_company ?: '-',
@@ -173,6 +184,7 @@ class OnlineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wit
             'KP-OWL',
             ($row->content_author ?? ($row->author ?? '-')) ?: '-',
             $durationFormatted,
+            $recognizedFormatted,
             $formattedLHours,
             $progressDecimal,
             $progressStatus,
@@ -195,7 +207,7 @@ class OnlineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wit
             '-', // L3 Status
             '-', // PIC
             '-', // Certificate
-            $formattedLHours, // Total Engagement Time
+            $afkFormatted, // Total Engagement Time
         ];
     }
 
@@ -224,29 +236,30 @@ class OnlineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wit
             'T'  => 20,  // Venue
             'U'  => 22,  // Instructor
             'V'  => 16,  // Course Duration
-            'W'  => 16,  // Learning Hours
-            'X'  => 14,  // % Progress
-            'Y'  => 16,  // Progress Status
-            'Z'  => 14,  // Start Date
-            'AA' => 14,  // End Date
-            'AB' => 14,  // Start Time
-            'AC' => 14,  // End Time
-            'AD' => 16,  // Record Month
-            'AE' => 15,  // Requirement
-            'AF' => 14,  // Attendance
-            'AG' => 25,  // Attendance Reason
-            'AH' => 14,  // Bond Status
-            'AI' => 16,  // Bond Duration
-            'AJ' => 15,  // Bond End Date
-            'AK' => 18,  // Bond Amount
-            'AL' => 20,  // Score (L1) - Course
-            'AM' => 14,  // Score (L2)
-            'AN' => 14,  // L2 Status
-            'AO' => 14,  // Score (L3)
-            'AP' => 14,  // L3 Status
-            'AQ' => 22,  // Person in Charge (PIC)
-            'AR' => 14,  // Certificate
-            'AS' => 22,  // Total Engagement Time
+            'W'  => 16,  // Recognized Duration
+            'X'  => 16,  // Learning Hours
+            'Y'  => 14,  // % Progress
+            'Z'  => 16,  // Progress Status
+            'AA' => 14,  // Start Date
+            'AB' => 14,  // End Date
+            'AC' => 14,  // Start Time
+            'AD' => 14,  // End Time
+            'AE' => 16,  // Record Month
+            'AF' => 15,  // Requirement
+            'AG' => 14,  // Attendance
+            'AH' => 25,  // Attendance Reason
+            'AI' => 14,  // Bond Status
+            'AJ' => 16,  // Bond Duration
+            'AK' => 15,  // Bond End Date
+            'AL' => 18,  // Bond Amount
+            'AM' => 20,  // Score (L1) - Course
+            'AN' => 14,  // Score (L2)
+            'AO' => 14,  // L2 Status
+            'AP' => 14,  // Score (L3)
+            'AQ' => 14,  // L3 Status
+            'AR' => 22,  // Person in Charge (PIC)
+            'AS' => 14,  // Certificate
+            'AT' => 22,  // Total Engagement Time
         ];
     }
 
@@ -525,13 +538,23 @@ class OnlineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wit
             $rawEmp = $row->id_emp ?: ($row->user_id_emp ?? '-');
             $cleanEmpId = ($rawEmp !== '-') ? preg_replace('/\s*[\/\-]\s*NIP.*$/i', '', trim((string) $rawEmp)) : '-';
 
-            // Row cell mapping (45 columns)
+            $recognizedService = app(\App\Services\Learning\LearningRecordRecognizedDurationService::class);
+            $recSec = $recognizedService->resolveFromRow($row);
+            $recognizedFormatted = $recognizedService->formatSeconds($recSec);
+
+            $gradeVal = $row->user_jobgrade ?: ($row->jobgrade ?? '-');
+            $jobPosVal = $row->user_jobposition ?: ($row->jobposition ?? '-');
+
+            $afkSec = (int) ($row->afk_duration_seconds ?? 0);
+            $afkFormatted = $afkSec > 0 ? DurationFormatter::fromSeconds($afkSec) : ($row->afk_duration_seconds !== null ? '00:00:00' : '-');
+
+            // Row cell mapping (46 columns)
             $cells = [
                 ['A', 'num', $rowCount, $textStyle],
                 ['B', 'str', $cleanEmpId, $textStyle],
                 ['C', 'str', $row->employee_name ?: ($row->user_name ?? '-'), $textStyle],
-                ['D', 'str', '-', $textStyle], // Grade
-                ['E', 'str', '-', $textStyle], // Job Position
+                ['D', 'str', $gradeVal, $textStyle], // Grade
+                ['E', 'str', $jobPosVal, $textStyle], // Job Position
                 ['F', 'str', $row->user_team ?: '-', $textStyle],
                 ['G', 'str', $row->user_department ?: '-', $textStyle],
                 ['H', 'str', $row->user_company ?: '-', $textStyle],
@@ -549,29 +572,30 @@ class OnlineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wit
                 ['T', 'str', 'KP-OWL', $textStyle],
                 ['U', 'str', ($row->content_author ?? ($row->author ?? '-')) ?: '-', $textStyle],
                 ['V', 'str', $durationFormatted, $textStyle],
-                ['W', $lhType, $lhVal, $lhActualStyle],
-                ['X', 'pct', $progressDecimal, $pctStyle],
-                ['Y', 'str', $progressStatus, $textStyle],
-                ['Z', 'str', $startDateStr, $textStyle],
-                ['AA', 'str', $endDateStr, $textStyle],
-                ['AB', 'str', $startTimeStr, $textStyle],
-                ['AC', 'str', $endTimeStr, $textStyle],
-                ['AD', 'str', $recordMonthStr, $textStyle],
-                ['AE', 'str', 'Mandatory', $textStyle],
-                ['AF', 'str', $attendanceStr, $textStyle],
-                ['AG', 'str', '-', $textStyle], // Attendance Reason
-                ['AH', 'str', 'No', $textStyle], // Bond Status
-                ['AI', 'str', '-', $textStyle], // Bond Duration
-                ['AJ', 'str', '-', $textStyle], // Bond End Date
-                ['AK', 'str', '-', $textStyle], // Bond Amount
-                ['AL', 'str', '-', $textStyle], // Score L1
-                ['AM', $scoreL2Type, $scoreL2Val, $scoreL2Style], // Score L2
-                ['AN', 'str', '-', $textStyle], // L2 Status
-                ['AO', 'str', '-', $textStyle], // Score L3
-                ['AP', 'str', '-', $textStyle], // L3 Status
-                ['AQ', 'str', '-', $textStyle], // PIC
-                ['AR', 'str', '-', $textStyle], // Certificate
-                ['AS', $lhType, $lhVal, $lhActualStyle], // Total Engagement Time
+                ['W', 'str', $recognizedFormatted, $textStyle], // Recognized Duration
+                ['X', $lhType, $lhVal, $lhActualStyle], // Learning Hours
+                ['Y', 'pct', $progressDecimal, $pctStyle],
+                ['Z', 'str', $progressStatus, $textStyle],
+                ['AA', 'str', $startDateStr, $textStyle],
+                ['AB', 'str', $endDateStr, $textStyle],
+                ['AC', 'str', $startTimeStr, $textStyle],
+                ['AD', 'str', $endTimeStr, $textStyle],
+                ['AE', 'str', $recordMonthStr, $textStyle],
+                ['AF', 'str', 'Mandatory', $textStyle],
+                ['AG', 'str', $attendanceStr, $textStyle],
+                ['AH', 'str', '-', $textStyle], // Attendance Reason
+                ['AI', 'str', 'No', $textStyle], // Bond Status
+                ['AJ', 'str', '-', $textStyle], // Bond Duration
+                ['AK', 'str', '-', $textStyle], // Bond End Date
+                ['AL', 'str', '-', $textStyle], // Bond Amount
+                ['AM', 'str', '-', $textStyle], // Score L1
+                ['AN', $scoreL2Type, $scoreL2Val, $scoreL2Style], // Score L2
+                ['AO', 'str', '-', $textStyle], // L2 Status
+                ['AP', 'str', '-', $textStyle], // Score L3
+                ['AQ', 'str', '-', $textStyle], // L3 Status
+                ['AR', 'str', '-', $textStyle], // PIC
+                ['AS', 'str', '-', $textStyle], // Certificate
+                ['AT', 'str', $afkFormatted, $textStyle], // Total Engagement Time
             ];
 
             $buffer .= $this->buildXmlRow($r, $cells);
@@ -591,8 +615,8 @@ class OnlineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wit
                             ['A', 'str', '-', '3'],
                             ['B', 'str', $cleanEmpId, '3'],
                             ['C', 'str', $row->employee_name ?: ($row->user_name ?? '-'), '3'],
-                            ['D', 'str', '-', '3'],
-                            ['E', 'str', '-', '3'],
+                            ['D', 'str', $gradeVal, '3'],
+                            ['E', 'str', $jobPosVal, '3'],
                             ['F', 'str', $row->user_team ?: '-', '3'],
                             ['G', 'str', $row->user_department ?: '-', '3'],
                             ['H', 'str', $row->user_company ?: '-', '3'],
@@ -610,8 +634,8 @@ class OnlineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wit
                             ['T', 'str', 'KP-OWL', '3'],
                             ['U', 'str', $child->author ?: '-', '3'],
                             ['V', 'str', $childDuration, '3'],
-                            ['W', 'str', '-', '3'], // '-' on child to prevent double counting
-                            ['X', 'str', '-', '3'],
+                            ['W', 'str', '-', '3'], // Recognized Duration on child
+                            ['X', 'str', '-', '3'], // Learning Hours on child to prevent double counting
                             ['Y', 'str', '-', '3'],
                             ['Z', 'str', '-', '3'],
                             ['AA', 'str', '-', '3'],
@@ -633,6 +657,7 @@ class OnlineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wit
                             ['AQ', 'str', '-', '3'],
                             ['AR', 'str', '-', '3'],
                             ['AS', 'str', '-', '3'],
+                            ['AT', 'str', '-', '3'],
                         ];
 
                         $buffer .= $this->buildXmlRow($cr, $childCells);

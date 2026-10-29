@@ -44,19 +44,33 @@
                     </div>
                 </div>
 
-                <!-- Action Buttons: + Add Training | Import Excel | Download Template | Export Non KP OWL -->
+                <!-- Action Buttons: Add Training Dropdown (Manual & Import) | Download Dropdown -->
                 <div class="d-flex align-items-center gap-2 flex-wrap">
-                    <a href="{{ route('manage.record.offline.create') }}" class="btn btn-primary rounded-3 px-3 d-inline-flex align-items-center gap-1.5"
-                       style="background-color: #d97706; border-color: #d97706;" id="btn-open-offline-add"
-                       data-bs-placement="top" title="Add Non KP OWL Training">
-                        <i class="ti ti-plus fs-2"></i>
-                        <span>Add Training</span>
-                    </a>
-                    <button type="button" class="btn btn-outline-primary rounded-3 px-3 d-inline-flex align-items-center gap-1.5"
-                            data-bs-toggle="modal" data-bs-target="#offlineImportModal" id="btn-open-offline-import">
-                        <i class="ti ti-file-spreadsheet fs-2"></i>
-                        <span>Import Excel</span>
-                    </button>
+                    <div class="dropdown">
+                        <button type="button" class="btn btn-primary dropdown-toggle rounded-3 px-3 d-inline-flex align-items-center gap-1.5"
+                                style="background-color: #d97706; border-color: #d97706;"
+                                data-bs-toggle="dropdown" data-toggle="dropdown" aria-expanded="false" id="btn-add-training-dropdown">
+                            <i class="ti ti-plus fs-2"></i>
+                            <span>Add Training</span>
+                        </button>
+                        <ul class="dropdown-menu shadow-sm border rounded-3 mt-1 py-1" aria-labelledby="btn-add-training-dropdown" style="min-width: 180px;">
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.record.offline.create') }}" id="btn-open-offline-add" title="Manual Training Record">
+                                    <i class="ti ti-pencil text-secondary fs-3"></i>
+                                    <span>Manual</span>
+                                </a>
+                            </li>
+                            <li>
+                                <button type="button" class="dropdown-item d-flex align-items-center gap-2 py-2 w-100 border-0 bg-transparent text-start"
+                                        data-bs-toggle="modal" data-bs-target="#offlineImportModal"
+                                        data-toggle="modal" data-target="#offlineImportModal"
+                                        id="btn-open-offline-import" title="Import Excel">
+                                    <i class="ti ti-file-spreadsheet text-success fs-3"></i>
+                                    <span>Import</span>
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
                     <div class="dropdown">
                         <button type="button" class="btn btn-outline-secondary dropdown-toggle rounded-3 px-3 d-inline-flex align-items-center gap-1.5"
                                 data-bs-toggle="dropdown" data-toggle="dropdown" aria-expanded="false" id="btn-download-dropdown">

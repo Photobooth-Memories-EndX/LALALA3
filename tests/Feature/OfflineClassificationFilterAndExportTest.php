@@ -561,15 +561,14 @@ class OfflineClassificationFilterAndExportTest extends TestCase
         $mapped = $export->map($firstRow);
         $this->assertCount(44, $mapped);
 
-        // Verify key mapped values
-        $this->assertEquals(1, $mapped[0]); // 1. No
-        $this->assertNotEmpty($mapped[1]); // 2. ID (employee_id)
-        $this->assertNotEmpty($mapped[2]); // 3. Name
-        $this->assertContains($mapped[10], ['In-House', 'Public']); // 11. Type
-        $this->assertEquals('Testing Classification', $mapped[14]); // 15. Main Classification
-        $this->assertStringContainsString(':', $mapped[22]); // 23. Duration (HH:MM:SS)
-        $this->assertIsNumeric($mapped[23]); // 24. Learning Hours
-        $this->assertIsNumeric($mapped[24]); // 25. Progress %
+        // Verify key mapped values (44 canonical columns starting with Employee ID at index 0)
+        $this->assertEquals('TESTEMP901', $mapped[0]); // 1. Employee ID
+        $this->assertNotEmpty($mapped[1]); // 2. Employee Name
+        $this->assertContains($mapped[9], ['In-House', 'Public']); // 10. Type
+        $this->assertEquals('Testing Classification', $mapped[13]); // 14. Main Classification
+        $this->assertStringContainsString(':', $mapped[20]); // 21. Course Duration (HH:MM:SS)
+        $this->assertIsNumeric($mapped[21]); // 22. Learning Hours
+        $this->assertIsNumeric($mapped[22]); // 23. % Progress
     }
 
     public function test_shared_query_service_guarantees_datatable_and_export_parity(): void

@@ -544,6 +544,29 @@ class LearningManageController extends Controller
                 ? (int) $record->duration_seconds
                 : DurationFormatter::toSeconds($content?->duration);
 
+            $assessmentResult = DB::table('assesment_results as ar')
+                ->join('assesments as a', 'a.id', '=', 'ar.assesment_id')
+                ->where('ar.user_id', $user?->id)
+                ->where('a.content_id', $content?->id)
+                ->where('ar.final', 1)
+                ->orderByDesc('ar.score')
+                ->orderByDesc('ar.id')
+                ->select('ar.score', 'ar.pass')
+                ->first();
+
+            $l2ScoreFormatted = ($assessmentResult && $assessmentResult->score !== null && is_numeric($assessmentResult->score))
+                ? number_format((float) $assessmentResult->score, 1)
+                : '-';
+
+            $l2StatusFormatted = $assessmentResult
+                ? ($assessmentResult->pass == 1 ? 'Pass' : ($assessmentResult->pass === 0 || $assessmentResult->pass === '0' ? 'Fail' : '-'))
+                : '-';
+
+            $recognizedService = app(\App\Services\Learning\LearningRecordRecognizedDurationService::class);
+            $recognizedSec = $recognizedService->resolveForContentUser($record);
+            $recognizedFormatted = $recognizedService->formatSeconds($recognizedSec);
+            $engagementFormatted = DurationFormatter::fromSeconds((int) ($afkSec ?? 0));
+
             return response()->json([
                 'status' => 'success',
                 'data' => [
@@ -554,13 +577,26 @@ class LearningManageController extends Controller
                         'name' => $user?->name ?? '-',
                         'department' => $user?->department ?? '-',
                         'team' => $user?->team ?? '-',
+                        'company' => $user?->company_name ?? 'PT Krakatau Posco',
+                        'grade' => $user?->jobgrade ?: '-',
+                        'job_position' => $user?->jobposition ?: '-',
                     ],
                     'learning' => [
                         'title' => $content?->title ?? '-',
+                        'sub_course_title' => '-',
                         'type' => $content?->type ?? '-',
                         'classification' => $classification?->classification_name ?? '-',
+                        'main_classification' => $classification?->classification_name ?? '-',
+                        'sub_classification' => '-',
                         'category' => 'All Content',
                         'source' => 'All Content',
+                        'level' => '-',
+                        'batch' => '-',
+                        'delivery_method' => 'Online',
+                        'sub_delivery_method' => 'Self-Paced / LMS',
+                        'provider_name' => 'KP OWL',
+                        'venue' => 'Online LMS',
+                        'instructor' => $content?->author ?: '-',
                         'playlist_name' => '-',
                     ],
                     'progress' => [
@@ -568,17 +604,49 @@ class LearningManageController extends Controller
                         'finish' => $record->isFinished() ? 'Finished' : 'In Progress',
                         'finish_badge' => $record->isFinished() ? 'success' : 'warning',
                         'learning_status' => $record->learning_status ? ucfirst(str_replace('_', ' ', $record->learning_status)) : '-',
+                        'progress_status' => $record->isFinished() ? 'Finished' : (($record->progress > 0) ? 'Ongoing' : 'Not Started'),
                         'status' => $record->status ? ucfirst($record->status) : '-',
+                        'requirement' => strtolower((string) ($record->status ?? 'non mandatory')) === 'mandatory' ? 'Mandatory' : 'Non-Mandatory',
                         'current_time' => $currentTimeSec !== null ? DurationFormatter::fromSeconds($currentTimeSec) . " ({$currentTimeSec}s)" : '-',
                         'duration' => $durationFormatted,
+                        'course_duration' => $durationFormatted,
+                        'recognized_duration' => $recognizedFormatted,
+                        'total_recognized_duration' => $recognizedFormatted,
                         'actual_watch_seconds' => $actualWatchSec !== null ? DurationFormatter::fromSeconds($actualWatchSec) . " ({$actualWatchSec}s)" : '-',
                         'afk_duration' => $afkSec !== null ? DurationFormatter::fromSeconds($afkSec) . " ({$afkSec}s)" : '-',
                         'learning_hours' => $record->learning_hours !== null ? number_format((float) $record->learning_hours, 4) . ' h' : '-',
+                        'total_engagement_time' => $engagementFormatted,
                         'raw_current_time' => $currentTimeSec ?? 0,
                         'raw_actual_watch_seconds' => $actualWatchSec ?? 0,
                         'raw_afk_duration_seconds' => $afkSec ?? 0,
+                        'raw_recognized_duration_seconds' => $recognizedSec,
                         'duration_seconds' => $durationSeconds ?? 0,
                         'is_finished' => $record->isFinished(),
+                    ],
+                    'record_info' => [
+                        'record_month' => $record->created_at ? $record->created_at->format('F') : '-',
+                        'requirement' => strtolower((string) ($record->status ?? 'non mandatory')) === 'mandatory' ? 'Mandatory' : 'Non-Mandatory',
+                        'attendance' => (((float) ($record->progress ?? 0) > 0 || $record->isFinished()) ? 'Yes' : 'No'),
+                        'attendance_reason' => '-',
+                        'start_date' => $record->created_at ? $record->created_at->format('d M Y') : '-',
+                        'end_date' => $record->completed_at ? $record->completed_at->format('d M Y') : ($record->finish == 1 && $record->updated_at ? $record->updated_at->format('d M Y') : '-'),
+                        'start_time' => $record->created_at ? $record->created_at->format('H:i') : '-',
+                        'end_time' => $record->completed_at ? $record->completed_at->format('H:i') : ($record->finish == 1 && $record->updated_at ? $record->updated_at->format('H:i') : '-'),
+                    ],
+                    'obligation' => [
+                        'bond_status' => 'No',
+                        'bond_duration' => '-',
+                        'bond_end_date' => '-',
+                        'bond_amount' => '-',
+                    ],
+                    'assessment' => [
+                        'score_l1' => '-',
+                        'score_l2' => $l2ScoreFormatted,
+                        'l2_status' => $l2StatusFormatted,
+                        'score_l3' => '-',
+                        'l3_status' => '-',
+                        'pic' => '-',
+                        'certificate' => '-',
                     ],
                     'timestamps' => [
                         'created_at' => $record->created_at ? $record->created_at->format('d M Y, H:i') : '-',
@@ -614,6 +682,46 @@ class LearningManageController extends Controller
             ? (int) $record->duration_seconds
             : DurationFormatter::toSeconds($content?->duration);
 
+        $assessmentResult = DB::table('assesment_results as ar')
+            ->join('assesments as a', 'a.id', '=', 'ar.assesment_id')
+            ->where('ar.user_id', $user?->id)
+            ->where(function ($q) use ($content, $trainingPlan) {
+                $matched = false;
+                if ($trainingPlan) {
+                    $q->where('a.trainingplan_id', $trainingPlan->id);
+                    $matched = true;
+                }
+                if ($content) {
+                    if ($matched) {
+                        $q->orWhere('a.content_id', $content->id);
+                    } else {
+                        $q->where('a.content_id', $content->id);
+                        $matched = true;
+                    }
+                }
+                if (!$matched) {
+                    $q->whereRaw('1 = 0');
+                }
+            })
+            ->where('ar.final', 1)
+            ->orderByDesc('ar.score')
+            ->orderByDesc('ar.id')
+            ->select('ar.score', 'ar.pass')
+            ->first();
+
+        $l2ScoreFormatted = ($assessmentResult && $assessmentResult->score !== null && is_numeric($assessmentResult->score))
+            ? number_format((float) $assessmentResult->score, 1)
+            : '-';
+
+        $l2StatusFormatted = $assessmentResult
+            ? ($assessmentResult->pass == 1 ? 'Pass' : ($assessmentResult->pass === 0 || $assessmentResult->pass === '0' ? 'Fail' : '-'))
+            : '-';
+
+        $recognizedService = app(\App\Services\Learning\LearningRecordRecognizedDurationService::class);
+        $recognizedSec = $recognizedService->resolveForPlaylistContentUser($record);
+        $recognizedFormatted = $recognizedService->formatSeconds($recognizedSec);
+        $engagementFormatted = DurationFormatter::fromSeconds((int) ($afkSec ?? 0));
+
         return response()->json([
             'status' => 'success',
             'data' => [
@@ -624,13 +732,26 @@ class LearningManageController extends Controller
                     'name' => $user?->name ?? '-',
                     'department' => $user?->department ?? '-',
                     'team' => $user?->team ?? '-',
+                    'company' => $user?->company_name ?? 'PT Krakatau Posco',
+                    'grade' => $user?->jobgrade ?: '-',
+                    'job_position' => $user?->jobposition ?: '-',
                 ],
                 'learning' => [
                     'title' => $content?->title ?? '-',
+                    'sub_course_title' => $trainingPlan?->title ?? '-',
                     'type' => $content?->type ?? '-',
                     'classification' => $classification?->classification_name ?? '-',
+                    'main_classification' => $classification?->classification_name ?? '-',
+                    'sub_classification' => '-',
                     'category' => 'Playlist',
                     'source' => 'Playlist',
+                    'level' => '-',
+                    'batch' => '-',
+                    'delivery_method' => 'Online',
+                    'sub_delivery_method' => 'Playlist / Path',
+                    'provider_name' => 'KP OWL',
+                    'venue' => 'Online LMS',
+                    'instructor' => $content?->author ?: '-',
                     'playlist_name' => $trainingPlan?->title ?? '-',
                 ],
                 'progress' => [
@@ -638,17 +759,49 @@ class LearningManageController extends Controller
                     'finish' => $record->isFinished() ? 'Finished' : 'In Progress',
                     'finish_badge' => $record->isFinished() ? 'success' : 'warning',
                     'learning_status' => $record->learning_status ? ucfirst(str_replace('_', ' ', $record->learning_status)) : '-',
+                    'progress_status' => $record->isFinished() ? 'Finished' : (($record->progress > 0) ? 'Ongoing' : 'Not Started'),
                     'status' => 'Playlist',
+                    'requirement' => 'Playlist',
                     'current_time' => $currentTimeSec !== null ? DurationFormatter::fromSeconds($currentTimeSec) . " ({$currentTimeSec}s)" : '-',
                     'duration' => $durationFormatted,
+                    'course_duration' => $durationFormatted,
+                    'recognized_duration' => $recognizedFormatted,
+                    'total_recognized_duration' => $recognizedFormatted,
                     'actual_watch_seconds' => $actualWatchSec !== null ? DurationFormatter::fromSeconds($actualWatchSec) . " ({$actualWatchSec}s)" : '-',
                     'afk_duration' => $afkSec !== null ? DurationFormatter::fromSeconds($afkSec) . " ({$afkSec}s)" : '-',
                     'learning_hours' => $record->learning_hour !== null ? number_format((float) $record->learning_hour, 4) . ' h' : '-',
+                    'total_engagement_time' => $engagementFormatted,
                     'raw_current_time' => $currentTimeSec ?? 0,
                     'raw_actual_watch_seconds' => $actualWatchSec ?? 0,
                     'raw_afk_duration_seconds' => $afkSec ?? 0,
+                    'raw_recognized_duration_seconds' => $recognizedSec,
                     'duration_seconds' => $durationSeconds ?? 0,
                     'is_finished' => $record->isFinished(),
+                ],
+                'record_info' => [
+                    'record_month' => $record->created_at ? $record->created_at->format('F') : '-',
+                    'requirement' => 'Playlist',
+                    'attendance' => (((float) ($record->progress ?? 0) > 0 || $record->isFinished()) ? 'Yes' : 'No'),
+                    'attendance_reason' => '-',
+                    'start_date' => $record->created_at ? $record->created_at->format('d M Y') : '-',
+                    'end_date' => $record->completed_at ? $record->completed_at->format('d M Y') : ($record->finish == 1 && $record->updated_at ? $record->updated_at->format('d M Y') : '-'),
+                    'start_time' => $record->created_at ? $record->created_at->format('H:i') : '-',
+                    'end_time' => $record->completed_at ? $record->completed_at->format('H:i') : ($record->finish == 1 && $record->updated_at ? $record->updated_at->format('H:i') : '-'),
+                ],
+                'obligation' => [
+                    'bond_status' => 'No',
+                    'bond_duration' => '-',
+                    'bond_end_date' => '-',
+                    'bond_amount' => '-',
+                ],
+                'assessment' => [
+                    'score_l1' => '-',
+                    'score_l2' => '-',
+                    'l2_status' => '-',
+                    'score_l3' => '-',
+                    'l3_status' => '-',
+                    'pic' => '-',
+                    'certificate' => '-',
                 ],
                 'timestamps' => [
                     'created_at' => $record->created_at ? $record->created_at->format('d M Y, H:i') : '-',
@@ -658,7 +811,6 @@ class LearningManageController extends Controller
             ],
         ]);
     }
-
     public function updateRecord(Request $request, string $type, $id)
     {
         if (!in_array($type, ['content', 'playlist'], true)) {

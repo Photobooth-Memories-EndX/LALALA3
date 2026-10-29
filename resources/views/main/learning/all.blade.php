@@ -15,31 +15,94 @@
 <link rel="stylesheet" href="{{ asset('css/dataTables.bootstrap5.min.css') }}">
 
 <style>
+    /* Table Scroll Containers & Dual Synchronized Scrollbars */
+    .table-scroll-top-wrapper {
+        overflow-x: auto;
+        overflow-y: hidden;
+        height: 12px;
+        width: 100%;
+        scrollbar-width: thin;
+        scrollbar-color: #cbd5e1 #f8fafc;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .table-scroll-top-wrapper::-webkit-scrollbar {
+        height: 8px;
+    }
+
+    .table-scroll-top-wrapper::-webkit-scrollbar-track {
+        background: #f8fafc;
+    }
+
+    .table-scroll-top-wrapper::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+    }
+
+    .table-scroll-top-wrapper::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+
+    .table-scroll-container {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: auto;
+        overflow-y: visible;
+        position: relative;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        scrollbar-color: #94a3b8 #f1f5f9;
+    }
+
+    .table-scroll-container::-webkit-scrollbar {
+        height: 10px;
+    }
+
+    .table-scroll-container::-webkit-scrollbar-track {
+        background: #f1f5f9;
+    }
+
+    .table-scroll-container::-webkit-scrollbar-thumb {
+        background: #94a3b8;
+        border-radius: 5px;
+    }
+
+    .table-scroll-container::-webkit-scrollbar-thumb:hover {
+        background: #64748b;
+    }
+
+    /* Ensure Table has Real Full Width */
     #learning-table {
-        font-size: 13px;
+        border-collapse: separate;
+        border-spacing: 0;
+        width: max-content !important;
+        min-width: 100%;
+        margin-bottom: 0;
     }
 
     #learning-table thead th {
-        background: #f8fafc;
-        color: #475569;
-        font-size: 12px;
-        text-transform: uppercase;
-        letter-spacing: .04em;
+        font-size: 0.72rem;
+        letter-spacing: 0.03em;
+        font-weight: 700;
+        color: #64748b;
+        background-color: #f8fafc;
+        border-bottom: 2px solid #e2e8f0;
+        padding: 10px 12px;
         white-space: nowrap;
-    }
-
-    [data-bs-theme="dark"] #learning-table thead th,
-    body.dark-mode #learning-table thead th,
-    body.theme-dark #learning-table thead th {
-        background: var(--tblr-bg-surface-secondary, #1a2942);
-        color: #94a3b8;
-        border-color: rgba(255, 255, 255, 0.1);
+        text-transform: uppercase;
     }
 
     #learning-table tbody td {
+        padding: 10px 12px;
+        font-size: 0.825rem;
         vertical-align: middle;
-        padding-top: 14px;
-        padding-bottom: 14px;
+        border-bottom: 1px solid #f1f5f9;
+        white-space: nowrap;
+        background-color: #ffffff;
+    }
+
+    #learning-table tbody tr:hover td {
+        background-color: #f8fafc;
     }
 
     #learning-table tbody td a.text-reset:hover {
@@ -50,6 +113,66 @@
     body.dark-mode #learning-table tbody td a.text-reset:hover,
     body.theme-dark #learning-table tbody td a.text-reset:hover {
         color: #60a5fa !important;
+    }
+
+    /* Dark Mode Overrides */
+    [data-bs-theme="dark"] .table-scroll-top-wrapper,
+    body.dark-mode .table-scroll-top-wrapper,
+    body.theme-dark .table-scroll-top-wrapper {
+        scrollbar-color: #475569 #1e293b;
+        border-color: rgba(255, 255, 255, 0.05);
+    }
+
+    [data-bs-theme="dark"] .table-scroll-top-wrapper::-webkit-scrollbar-track,
+    body.dark-mode .table-scroll-top-wrapper::-webkit-scrollbar-track,
+    body.theme-dark .table-scroll-top-wrapper::-webkit-scrollbar-track {
+        background: #1e293b;
+    }
+
+    [data-bs-theme="dark"] .table-scroll-top-wrapper::-webkit-scrollbar-thumb,
+    body.dark-mode .table-scroll-top-wrapper::-webkit-scrollbar-thumb,
+    body.theme-dark .table-scroll-top-wrapper::-webkit-scrollbar-thumb {
+        background: #475569;
+    }
+
+    [data-bs-theme="dark"] .table-scroll-container,
+    body.dark-mode .table-scroll-container,
+    body.theme-dark .table-scroll-container {
+        scrollbar-color: #64748b #1e293b;
+    }
+
+    [data-bs-theme="dark"] .table-scroll-container::-webkit-scrollbar-track,
+    body.dark-mode .table-scroll-container::-webkit-scrollbar-track,
+    body.theme-dark .table-scroll-container::-webkit-scrollbar-track {
+        background: #1e293b;
+    }
+
+    [data-bs-theme="dark"] .table-scroll-container::-webkit-scrollbar-thumb,
+    body.dark-mode .table-scroll-container::-webkit-scrollbar-thumb,
+    body.theme-dark .table-scroll-container::-webkit-scrollbar-thumb {
+        background: #64748b;
+    }
+
+    [data-bs-theme="dark"] #learning-table thead th,
+    body.dark-mode #learning-table thead th,
+    body.theme-dark #learning-table thead th {
+        background-color: #1e293b;
+        border-bottom-color: rgba(255, 255, 255, 0.1);
+        color: #94a3b8;
+    }
+
+    [data-bs-theme="dark"] #learning-table tbody td,
+    body.dark-mode #learning-table tbody td,
+    body.theme-dark #learning-table tbody td {
+        background-color: #111827;
+        border-bottom-color: rgba(255, 255, 255, 0.05);
+        color: #e2e8f0;
+    }
+
+    [data-bs-theme="dark"] #learning-table tbody tr:hover td,
+    body.dark-mode #learning-table tbody tr:hover td,
+    body.theme-dark #learning-table tbody tr:hover td {
+        background-color: #1f2937;
     }
 
     /* Category Column & Playlist Inline Styling */

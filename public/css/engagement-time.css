@@ -1,0 +1,162 @@
+/**
+ * OWL LMS - Total Engagement Time Component Styling
+ * Matches corporate OWL color palette (#055075, #002250)
+ */
+
+.total-engagement-card {
+    background: #ffffff;
+    border: 1px solid rgba(5, 80, 117, 0.1) !important;
+    border-radius: 16px !important;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.total-engagement-card:hover {
+    border-color: rgba(5, 80, 117, 0.2) !important;
+}
+
+.total-engagement-card .engagement-icon-wrapper {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    background: rgba(5, 80, 117, 0.08);
+    color: #055075;
+    font-size: 1.25rem;
+    transition: transform 0.2s ease;
+}
+
+.total-engagement-card .engagement-label {
+    color: #64748b;
+    font-size: 0.72rem;
+    letter-spacing: 0.5px;
+}
+
+.total-engagement-card .engagement-duration {
+    color: #002250;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 1.65rem;
+    letter-spacing: -0.5px;
+    line-height: 1.1;
+}
+
+.total-engagement-card .engagement-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 9px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    border-radius: 6px;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.total-engagement-card .engagement-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+    transition: background-color 0.2s ease;
+}
+
+/* Active State: subtle brand blue / teal */
+.total-engagement-card .engagement-badge.is-active {
+    background-color: #e0f2fe;
+    color: #0369a1;
+}
+
+.total-engagement-card .engagement-badge.is-active .engagement-dot {
+    background-color: #0284c7;
+}
+
+/* Paused State: subtle neutral gray */
+.total-engagement-card .engagement-badge.is-paused {
+    background-color: #f1f5f9;
+    color: #64748b;
+}
+
+.total-engagement-card .engagement-badge.is-paused .engagement-dot {
+    background-color: #94a3b8;
+}
+
+.total-engagement-card .engagement-hint-title {
+    font-size: 0.75rem;
+    color: #475569;
+}
+
+.total-engagement-card .engagement-hint-desc {
+    font-size: 0.7rem;
+    color: #94a3b8;
+}
+
+/* Dark Mode Support */
+[data-bs-theme="dark"] .total-engagement-card,
+body.dark-mode .total-engagement-card {
+    background: #1e293b;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-bs-theme="dark"] .total-engagement-card .engagement-icon-wrapper,
+body.dark-mode .total-engagement-card .engagement-icon-wrapper {
+    background: rgba(5, 80, 117, 0.35);
+    color: #38bdf8;
+}
+
+[data-bs-theme="dark"] .total-engagement-card .engagement-duration,
+body.dark-mode .total-engagement-card .engagement-duration {
+    color: #f8fafc;
+}
+
+[data-bs-theme="dark"] .total-engagement-card .engagement-label,
+body.dark-mode .total-engagement-card .engagement-label {
+    color: #94a3b8;
+}
+
+[data-bs-theme="dark"] .total-engagement-card .engagement-badge.is-active,
+body.dark-mode .total-engagement-card .engagement-badge.is-active {
+    background-color: rgba(2, 132, 199, 0.25);
+    color: #38bdf8;
+}
+
+[data-bs-theme="dark"] .total-engagement-card .engagement-badge.is-active .engagement-dot,
+body.dark-mode .total-engagement-card .engagement-badge.is-active .engagement-dot {
+    background-color: #38bdf8;
+}
+
+[data-bs-theme="dark"] .total-engagement-card .engagement-badge.is-paused,
+body.dark-mode .total-engagement-card .engagement-badge.is-paused {
+    background-color: #334155;
+    color: #94a3b8;
+}
+
+[data-bs-theme="dark"] .total-engagement-card .engagement-badge.is-paused .engagement-dot,
+body.dark-mode .total-engagement-card .engagement-badge.is-paused .engagement-dot {
+    background-color: #64748b;
+}
+
+[data-bs-theme="dark"] .total-engagement-card .engagement-hint-title,
+body.dark-mode .total-engagement-card .engagement-hint-title {
+    color: #cbd5e1;
+}
+
+[data-bs-theme="dark"] .total-engagement-card .engagement-hint-desc,
+body.dark-mode .total-engagement-card .engagement-hint-desc {
+    color: #64748b;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 575.98px) {
+    .total-engagement-card .card-body {
+        padding: 0.875rem !important;
+    }
+
+    .total-engagement-card .engagement-icon-wrapper {
+        width: 38px;
+        height: 38px;
+        min-width: 38px;
+        font-size: 1.1rem;
+    }
+
+    .total-engagement-card .engagement-duration {
+        font-size: 1.35rem;
+    }
+}

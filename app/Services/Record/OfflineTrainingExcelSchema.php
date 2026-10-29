@@ -16,664 +16,571 @@ class OfflineTrainingExcelSchema
     public const INSTRUCTIONS_SHEET_TITLE = 'Instructions';
 
     /**
-     * Parent category groups retained for reference, instructions, and legacy matching.
-     */
-    public static function groups(): array
-    {
-        return [
-            'job_information' => [
-                'title'     => 'JOB INFORMATION',
-                'start_col' => 'B',
-                'end_col'   => 'H',
-                'span'      => 7,
-                'color'     => 'E0E7FF', // Indigo 100
-            ],
-            'training_information' => [
-                'title'     => 'TRAINING INFORMATION',
-                'start_col' => 'I',
-                'end_col'   => 'AG',
-                'span'      => 25,
-                'color'     => 'F1F5F9', // Neutral Slate 100
-            ],
-            'attendance' => [
-                'title'     => 'ATTENDANCE',
-                'start_col' => 'AH',
-                'end_col'   => 'AH',
-                'span'      => 1,
-                'color'     => 'DCFCE7', // Emerald 100
-            ],
-            'obligation' => [
-                'title'     => 'OBLIGATION',
-                'start_col' => 'AI',
-                'end_col'   => 'AK',
-                'span'      => 3,
-                'color'     => 'FEE2E2', // Rose 100
-            ],
-            'l1' => [
-                'title'     => 'L1',
-                'start_col' => 'AL',
-                'end_col'   => 'AL',
-                'span'      => 1,
-                'color'     => 'F3E8FF', // Purple 100
-            ],
-            'l2' => [
-                'title'     => 'L2 (POST TEST)',
-                'start_col' => 'AM',
-                'end_col'   => 'AN',
-                'span'      => 2,
-                'color'     => 'EDE9FE', // Violet 100
-            ],
-            'l3' => [
-                'title'     => 'L3 (PROJECT)',
-                'start_col' => 'AO',
-                'end_col'   => 'AQ',
-                'span'      => 3,
-                'color'     => 'E0F2FE', // Sky 100
-            ],
-        ];
-    }
-
-    /**
-     * Complete canonical 43-column specification with column index, letter, internal key,
-     * required flag, expected data type, example, notes, and accepted aliases.
+     * Complete canonical 44-column specification matching Section 4 of audit specification.
      */
     public static function columns(): array
     {
         return [
-            // JOB INFORMATION (Cols 1-8 / A-H)
+            // JOB INFORMATION (Cols 1-7 / A-G)
             1 => [
-                'col_index' => 1,
+                'col_index'  => 1,
                 'col_letter' => 'A',
-                'header'   => 'No',
-                'group'    => null,
-                'key'      => null,
-                'required' => false,
-                'type'     => 'number',
-                'example'  => 1,
-                'note'     => 'Row number (optional)',
-                'aliases'  => ['no', 'number', 'nomor', '#', 'no.'],
+                'header'     => 'Employee ID',
+                'group'      => 'JOB INFORMATION',
+                'key'        => 'employee_id',
+                'required'   => true,
+                'type'       => 'string',
+                'example'    => '100234',
+                'note'       => 'Employee ID / NIP (Required for participant matching)',
+                'aliases'    => ['employee id', 'id', 'nip', 'nik', 'id emp', 'emp id', 'employee_id', 'no pegawai', 'employe id'],
             ],
             2 => [
-                'col_index' => 2,
+                'col_index'  => 2,
                 'col_letter' => 'B',
-                'header'   => 'ID',
-                'group'    => 'JOB INFORMATION',
-                'key'      => 'employee_id',
-                'required' => true,
-                'type'     => 'string',
-                'example'  => '100234',
-                'note'     => 'Employee ID / NIP (Required for participant matching)',
-                'aliases'  => ['id', 'employee id', 'nip', 'nik', 'id emp', 'emp id', 'employee_id', 'no pegawai', 'employe id'],
+                'header'     => 'Employee Name',
+                'group'      => 'JOB INFORMATION',
+                'key'        => 'name',
+                'required'   => true,
+                'type'       => 'string',
+                'example'    => 'Budi Santoso',
+                'note'       => 'Participant full name',
+                'aliases'    => ['employee name', 'name', 'nama', 'participant name', 'nama peserta', 'nama karyawan', 'peserta'],
             ],
             3 => [
-                'col_index' => 3,
+                'col_index'  => 3,
                 'col_letter' => 'C',
-                'header'   => 'Name',
-                'group'    => 'JOB INFORMATION',
-                'key'      => 'name',
-                'required' => true,
-                'type'     => 'string',
-                'example'  => 'Budi Santoso',
-                'note'     => 'Participant full name',
-                'aliases'  => ['name', 'nama', 'participant name', 'nama peserta', 'employee name', 'nama karyawan', 'peserta'],
+                'header'     => 'Grade',
+                'group'      => 'JOB INFORMATION',
+                'key'        => 'grade',
+                'required'   => false,
+                'type'       => 'string',
+                'example'    => '4A',
+                'note'       => 'Employee grade level',
+                'aliases'    => ['grade', 'golongan', 'level grade', 'employee grade', 'pangkat'],
             ],
             4 => [
-                'col_index' => 4,
+                'col_index'  => 4,
                 'col_letter' => 'D',
-                'header'   => 'Grade',
-                'group'    => 'JOB INFORMATION',
-                'key'      => 'grade',
-                'required' => false,
-                'type'     => 'string',
-                'example'  => '4A',
-                'note'     => 'Employee grade level',
-                'aliases'  => ['grade', 'golongan', 'level grade', 'employee grade', 'pangkat'],
+                'header'     => 'Job Position',
+                'group'      => 'JOB INFORMATION',
+                'key'        => 'job_position',
+                'required'   => false,
+                'type'       => 'string',
+                'example'    => 'Electrical Maintenance Engineer',
+                'note'       => 'Official job title',
+                'aliases'    => ['job position', 'position', 'jabatan', 'posisi', 'job_position', 'job title', 'job positon', 'jobposition'],
             ],
             5 => [
-                'col_index' => 5,
+                'col_index'  => 5,
                 'col_letter' => 'E',
-                'header'   => 'Job Position',
-                'group'    => 'JOB INFORMATION',
-                'key'      => 'job_position',
-                'required' => false,
-                'type'     => 'string',
-                'example'  => 'Electrical Maintenance Engineer',
-                'note'     => 'Official job title',
-                'aliases'  => ['job position', 'position', 'jabatan', 'posisi', 'job_position', 'job title', 'job positon', 'jobposition'],
+                'header'     => 'Team',
+                'group'      => 'JOB INFORMATION',
+                'key'        => 'team',
+                'required'   => false,
+                'type'       => 'string',
+                'example'    => 'Rolling Mill 1',
+                'note'       => 'Work unit or team',
+                'aliases'    => ['team', 'tim', 'unit', 'regu', 'seksi', 'work team'],
             ],
             6 => [
-                'col_index' => 6,
+                'col_index'  => 6,
                 'col_letter' => 'F',
-                'header'   => 'Team',
-                'group'    => 'JOB INFORMATION',
-                'key'      => 'team',
-                'required' => false,
-                'type'     => 'string',
-                'example'  => 'Rolling Mill 1',
-                'note'     => 'Work unit or team',
-                'aliases'  => ['team', 'tim', 'unit', 'regu', 'seksi', 'work team'],
+                'header'     => 'Department',
+                'group'      => 'JOB INFORMATION',
+                'key'        => 'department',
+                'required'   => false,
+                'type'       => 'string',
+                'example'    => 'Maintenance Department',
+                'note'       => 'Department division',
+                'aliases'    => ['department', 'dept', 'departemen', 'departement', 'divisi', 'department name'],
             ],
             7 => [
-                'col_index' => 7,
+                'col_index'  => 7,
                 'col_letter' => 'G',
-                'header'   => 'Department',
-                'group'    => 'JOB INFORMATION',
-                'key'      => 'department',
-                'required' => false,
-                'type'     => 'string',
-                'example'  => 'Maintenance Department',
-                'note'     => 'Department division',
-                'aliases'  => ['department', 'dept', 'departemen', 'departement', 'divisi', 'department name'],
-            ],
-            8 => [
-                'col_index' => 8,
-                'col_letter' => 'H',
-                'header'   => 'Company',
-                'group'    => 'JOB INFORMATION',
-                'key'      => 'company',
-                'required' => false,
-                'type'     => 'string',
-                'example'  => 'PT Krakatau Posco',
-                'note'     => 'Company legal entity',
-                'aliases'  => ['company', 'perusahaan', 'pt', 'entity', 'company name', 'legal entity'],
+                'header'     => 'Company',
+                'group'      => 'JOB INFORMATION',
+                'key'        => 'company',
+                'required'   => false,
+                'type'       => 'string',
+                'example'    => 'PT Krakatau Posco',
+                'note'       => 'Company legal entity',
+                'aliases'    => ['company', 'perusahaan', 'pt', 'entity', 'company name', 'legal entity'],
             ],
 
-            // TRAINING INFORMATION (Cols 9-33 / I-AG)
+            // TRAINING INFORMATION (Cols 8-24 / H-X)
+            8 => [
+                'col_index'  => 8,
+                'col_letter' => 'H',
+                'header'     => 'Course Title',
+                'group'      => 'TRAINING INFORMATION',
+                'key'        => 'course_name',
+                'required'   => true,
+                'type'       => 'string',
+                'example'    => 'High Voltage Safety & Operation',
+                'note'       => 'Primary course / training title',
+                'aliases'    => ['course title', 'course name', 'course', 'nama course', 'training name', 'nama training', 'judul training', 'training title', 'title'],
+            ],
             9 => [
-                'col_index' => 9,
+                'col_index'  => 9,
                 'col_letter' => 'I',
-                'header'   => 'Course Title',
-                'group'    => 'TRAINING INFORMATION',
-                'key'      => 'course_name',
-                'required' => true,
-                'type'     => 'string',
-                'example'  => 'High Voltage Safety & Operation',
-                'note'     => 'Primary course / training title',
-                'aliases'  => ['course title', 'course name', 'course', 'nama course', 'training name', 'nama training', 'judul training', 'training title'],
+                'header'     => 'Sub Course Title',
+                'group'      => 'TRAINING INFORMATION',
+                'key'        => 'sub_course_name',
+                'required'   => false,
+                'type'       => 'string',
+                'example'    => 'Switchgear Troubleshooting Module',
+                'note'       => 'Specific module or topic name',
+                'aliases'    => ['sub course title', 'sub_course name', 'sub course name', 'sub_course_name', 'sub course', 'nama sub course', 'sub training', 'topic', 'module', 'modul'],
             ],
             10 => [
-                'col_index' => 10,
+                'col_index'  => 10,
                 'col_letter' => 'J',
-                'header'   => 'Sub_Course Name',
-                'group'    => 'TRAINING INFORMATION',
-                'key'      => 'sub_course_name',
-                'required' => false,
-                'type'     => 'string',
-                'example'  => 'Switchgear Troubleshooting Module',
-                'note'     => 'Specific module or topic name',
-                'aliases'  => ['sub_course name', 'sub course name', 'sub_course_name', 'sub course', 'nama sub course', 'sub training', 'topic', 'module', 'modul'],
+                'header'     => 'Type',
+                'group'      => 'TRAINING INFORMATION',
+                'key'        => 'type',
+                'required'   => false,
+                'type'       => 'string',
+                'example'    => 'In-House',
+                'note'       => 'In-House, Public, Certification, Workshop, etc.',
+                'aliases'    => ['type', 'tipe', 'training type', 'tipe training', 'jenis training', 'tipe pelatihan'],
             ],
             11 => [
-                'col_index' => 11,
+                'col_index'  => 11,
                 'col_letter' => 'K',
-                'header'   => 'Type',
-                'group'    => 'TRAINING INFORMATION',
-                'key'      => 'type',
-                'required' => false,
-                'type'     => 'string',
-                'example'  => '-',
-                'note'     => 'In-House, Public, Certification, Workshop, etc.',
-                'aliases'  => ['type', 'tipe', 'training type', 'tipe training', 'jenis training', 'tipe pelatihan'],
+                'header'     => 'Category',
+                'group'      => 'TRAINING INFORMATION',
+                'key'        => 'category',
+                'required'   => false,
+                'type'       => 'string',
+                'example'    => 'Technical Competency',
+                'note'       => 'Training category classification',
+                'aliases'    => ['category', 'kategori', 'training category', 'kategori training', 'kategori pelatihan'],
             ],
             12 => [
-                'col_index' => 12,
+                'col_index'  => 12,
                 'col_letter' => 'L',
-                'header'   => 'Category',
-                'group'    => 'TRAINING INFORMATION',
-                'key'      => 'category',
-                'required' => false,
-                'type'     => 'string',
-                'example'  => 'Technical Competency',
-                'note'     => 'Training category classification',
-                'aliases'  => ['category', 'kategori', 'training category', 'kategori training', 'kategori pelatihan'],
+                'header'     => 'Level',
+                'group'      => 'TRAINING INFORMATION',
+                'key'        => 'level',
+                'required'   => false,
+                'type'       => 'string',
+                'example'    => 'Intermediate',
+                'note'       => 'Basic, Intermediate, Advanced',
+                'aliases'    => ['level', 'tingkat', 'level training', 'jenjang'],
             ],
             13 => [
-                'col_index' => 13,
+                'col_index'  => 13,
                 'col_letter' => 'M',
-                'header'   => 'Level',
-                'group'    => 'TRAINING INFORMATION',
-                'key'      => 'level',
-                'required' => false,
-                'type'     => 'string',
-                'example'  => 'Intermediate',
-                'note'     => 'Basic, Intermediate, Advanced',
-                'aliases'  => ['level', 'tingkat', 'level training', 'jenjang'],
+                'header'     => 'Batch',
+                'group'      => 'TRAINING INFORMATION',
+                'key'        => 'batch',
+                'required'   => false,
+                'type'       => 'string',
+                'example'    => 'Batch 1',
+                'note'       => 'Training batch or wave designation',
+                'aliases'    => ['batch', 'angkatan', 'gelombang', 'wave'],
             ],
             14 => [
-                'col_index' => 14,
+                'col_index'  => 14,
                 'col_letter' => 'N',
-                'header'   => 'Batch',
-                'group'    => 'TRAINING INFORMATION',
-                'key'      => 'batch',
-                'required' => false,
-                'type'     => 'string',
-                'example'  => 'Batch 1',
-                'note'     => 'Training batch or wave designation',
-                'aliases'  => ['batch', 'angkatan', 'gelombang', 'wave'],
+                'header'     => 'Main Classification',
+                'group'      => 'TRAINING INFORMATION',
+                'key'        => 'main_classification',
+                'required'   => false,
+                'type'       => 'string',
+                'example'    => 'Basic & Common Duties',
+                'note'       => 'Main classification grouping',
+                'aliases'    => ['main classification', 'klasifikasi utama', 'classification', 'klasifikasi', 'main category'],
             ],
             15 => [
-                'col_index' => 15,
+                'col_index'  => 15,
                 'col_letter' => 'O',
-                'header'   => 'Main Classification',
-                'group'    => 'TRAINING INFORMATION',
-                'key'      => 'main_classification',
-                'required' => false,
-                'type'     => 'string',
-                'example'  => 'Technical',
-                'note'     => 'Competency, Leadership, Technical, Quality & Safety',
-                'aliases'  => ['main classification', 'klasifikasi utama', 'classification', 'klasifikasi', 'main category'],
+                'header'     => 'Sub Classification',
+                'group'      => 'TRAINING INFORMATION',
+                'key'        => 'sub_classification',
+                'required'   => false,
+                'type'       => 'string',
+                'example'    => 'Plant Maintenance',
+                'note'       => 'Sub category classification',
+                'aliases'    => ['sub classification', 'sub klasifikasi', 'sub_classification'],
             ],
             16 => [
-                'col_index' => 16,
+                'col_index'  => 16,
                 'col_letter' => 'P',
-                'header'   => 'Sub Classification',
-                'group'    => 'TRAINING INFORMATION',
-                'key'      => 'sub_classification',
-                'required' => false,
-                'type'     => 'string',
-                'example'  => 'Plant Maintenance',
-                'note'     => 'Sub category classification',
-                'aliases'  => ['sub classification', 'sub klasifikasi', 'sub_classification'],
+                'header'     => 'Delivery Method',
+                'group'      => 'TRAINING INFORMATION',
+                'key'        => 'delivery_method',
+                'required'   => false,
+                'type'       => 'string',
+                'example'    => 'Offline',
+                'note'       => 'Offline / Online / Blended',
+                'aliases'    => ['delivery method', 'metode delivery', 'metode pembelajaran', 'method', 'metode training'],
             ],
             17 => [
-                'col_index' => 17,
+                'col_index'  => 17,
                 'col_letter' => 'Q',
-                'header'   => "Counted as '26 Corporate KPI (Yes/No)",
-                'group'    => 'TRAINING INFORMATION',
-                'key'      => 'counted_corporate_kpi',
-                'required' => false,
-                'type'     => 'boolean',
-                'example'  => 'Yes',
-                'note'     => 'Yes / No',
-                'aliases'  => [
-                    "counted as '24 corporate kpi (yes/no)",
-                    "counted as '25 corporate kpi (yes/no)",
-                    "counted as '26 corporate kpi (yes/no)",
-                    "counted as '27 corporate kpi (yes/no)",
-                    "counted as '28 corporate kpi (yes/no)",
-                    "counted as '29 corporate kpi (yes/no)",
-                    "counted as '30 corporate kpi (yes/no)",
-                    "counted as 2024 corporate kpi (yes/no)",
-                    "counted as 2025 corporate kpi (yes/no)",
-                    "counted as 2026 corporate kpi (yes/no)",
-                    "counted as 2027 corporate kpi (yes/no)",
-                    "counted as '24 corporate kpi",
-                    "counted as '25 corporate kpi",
-                    "counted as '26 corporate kpi",
-                    "counted as '27 corporate kpi",
-                    "counted as '28 corporate kpi",
-                    "counted as '29 corporate kpi",
-                    "counted as '30 corporate kpi",
-                    "counted as 2024 corporate kpi",
-                    "counted as 2025 corporate kpi",
-                    "counted as 2026 corporate kpi",
-                    "counted as 2027 corporate kpi",
-                    "counted corporate kpi",
-                    "corporate kpi",
-                    "counted to corporate kpi",
-                    "kpi corporate",
-                    "kpi perusahaan",
-                    "counted as corporate kpi",
-                    "counted as corporate kpi (yes/no)",
-                    "counted as 26 corporate kpi",
-                    "corporate kpi yes/no",
-                    "corporate kpi yes no",
-                    "kpi yes/no",
-                    "corporate kpi year",
-                    "kpi year",
-                ],
+                'header'     => 'Sub Delivery Method',
+                'group'      => 'TRAINING INFORMATION',
+                'key'        => 'sub_delivery_method',
+                'required'   => false,
+                'type'       => 'string',
+                'example'    => 'On-site',
+                'note'       => 'Sub delivery technique',
+                'aliases'    => ['sub delivery method', 'sub_delivery method', 'sub_delivery_method', 'sub metode delivery', 'sub method'],
             ],
             18 => [
-                'col_index' => 18,
+                'col_index'  => 18,
                 'col_letter' => 'R',
-                'header'   => "Sub '26 Corporate KPI",
-                'group'    => 'TRAINING INFORMATION',
-                'key'      => 'sub_corporate_kpi',
-                'required' => false,
-                'type'     => 'string',
-                'example'  => 'Safety Incident Reduction',
-                'note'     => 'KPI strategic program',
-                'aliases'  => [
-                    "sub '24 corporate kpi",
-                    "sub '25 corporate kpi",
-                    "sub '26 corporate kpi",
-                    "sub '27 corporate kpi",
-                    "sub '28 corporate kpi",
-                    "sub '29 corporate kpi",
-                    "sub '30 corporate kpi",
-                    "sub 2024 corporate kpi",
-                    "sub 2025 corporate kpi",
-                    "sub 2026 corporate kpi",
-                    "sub 2027 corporate kpi",
-                    "sub corporate kpi",
-                    "sub kpi",
-                    "sub kpi corporate",
-                    "sub 26 corporate kpi",
-                ],
+                'header'     => 'Provider Name',
+                'group'      => 'TRAINING INFORMATION',
+                'key'        => 'provider_name',
+                'required'   => false,
+                'type'       => 'string',
+                'example'    => 'PT Schneider Indonesia',
+                'note'       => 'Training provider / institution name',
+                'aliases'    => ['provider name', 'nama provider', 'lembaga training', 'vendor name', 'nama vendor', 'institution', 'institution name', 'provider', 'sub_provider', 'sub provider'],
             ],
             19 => [
-                'col_index' => 19,
+                'col_index'  => 19,
                 'col_letter' => 'S',
-                'header'   => 'Delivery Method',
-                'group'    => 'TRAINING INFORMATION',
-                'key'      => 'delivery_method',
-                'required' => false,
-                'type'     => 'string',
-                'example'  => 'Classroom',
-                'note'     => 'Classroom, Practical, Hybrid',
-                'aliases'  => ['delivery method', 'metode delivery', 'metode pembelajaran', 'method', 'metode training'],
+                'header'     => 'Venue',
+                'group'      => 'TRAINING INFORMATION',
+                'key'        => 'venue',
+                'required'   => false,
+                'type'       => 'string',
+                'example'    => 'Auditorium Hall B',
+                'note'       => 'Training venue / room / location',
+                'aliases'    => ['venue', 'lokasi', 'tempat training', 'location', 'ruangan', 'tempat'],
             ],
             20 => [
-                'col_index' => 20,
+                'col_index'  => 20,
                 'col_letter' => 'T',
-                'header'   => 'Sub_Delivery Method',
-                'group'    => 'TRAINING INFORMATION',
-                'key'      => 'sub_delivery_method',
-                'required' => false,
-                'type'     => 'string',
-                'example'  => 'Hands-on Lab',
-                'note'     => 'Sub delivery technique',
-                'aliases'  => ['sub_delivery method', 'sub delivery method', 'sub_delivery_method', 'sub metode delivery', 'sub method'],
+                'header'     => 'Instructor',
+                'group'      => 'TRAINING INFORMATION',
+                'key'        => 'instructor',
+                'required'   => false,
+                'type'       => 'string',
+                'example'    => 'Ir. Gunawan, M.T.',
+                'note'       => 'Trainer / instructor name',
+                'aliases'    => ['instructor', 'trainer', 'instruktur', 'pengajar', 'narasumber', 'facilitator'],
             ],
             21 => [
-                'col_index' => 21,
+                'col_index'  => 21,
                 'col_letter' => 'U',
-                'header'   => 'Provider',
-                'group'    => 'TRAINING INFORMATION',
-                'key'      => 'provider',
-                'required' => false,
-                'type'     => 'string',
-                'example'  => 'External',
-                'note'     => 'Internal / External',
-                'aliases'  => ['provider', 'penyelenggara', 'tipe provider', 'provider type'],
+                'header'     => 'Course Duration',
+                'group'      => 'TRAINING INFORMATION',
+                'key'        => 'duration_seconds',
+                'required'   => false,
+                'type'       => 'duration',
+                'example'    => '08:00:00',
+                'note'       => 'Format: HH:MM:SS',
+                'aliases'    => ['course duration', 'duration', 'durasi', 'training duration', 'durasi training', 'duration_seconds', 'duration (hh:mm:ss)'],
             ],
             22 => [
-                'col_index' => 22,
+                'col_index'  => 22,
                 'col_letter' => 'V',
-                'header'   => 'Sub_Provider',
-                'group'    => 'TRAINING INFORMATION',
-                'key'      => 'sub_provider',
-                'required' => false,
-                'type'     => 'string',
-                'example'  => 'Vendor',
-                'note'     => 'Vendor / University / Certified Center',
-                'aliases'  => ['sub_provider', 'sub provider', 'sub_provider', 'sub penyelenggara', 'sub provider type'],
+                'header'     => 'Learning Hours',
+                'group'      => 'TRAINING INFORMATION',
+                'key'        => 'learning_hours',
+                'required'   => false,
+                'type'       => 'number',
+                'example'    => 8.0,
+                'note'       => 'Credited learning hours (e.g. 8.0)',
+                'aliases'    => ['learning hours', 'learning (hours)', 'jam pelajaran', 'jp', 'hours', 'credited hours', 'jam training', 'learning hour'],
             ],
             23 => [
-                'col_index' => 23,
+                'col_index'  => 23,
                 'col_letter' => 'W',
-                'header'   => 'Duration',
-                'group'    => 'TRAINING INFORMATION',
-                'key'      => 'duration_seconds',
-                'required' => false,
-                'type'     => 'duration',
-                'example'  => '08:00:00',
-                'note'     => 'Format: HH:MM:SS (e.g. 08:00:00)',
-                'aliases'  => ['duration', 'durasi', 'training duration', 'durasi training', 'duration_seconds', 'duration (hh:mm:ss)'],
+                'header'     => '% Progress',
+                'group'      => 'TRAINING INFORMATION',
+                'key'        => 'progress',
+                'required'   => false,
+                'type'       => 'number',
+                'example'    => 100,
+                'note'       => '0 to 100 (%)',
+                'aliases'    => ['% progress', 'progress %', 'progress', 'kemajuan', 'persentase progress', 'progres'],
             ],
             24 => [
-                'col_index' => 24,
+                'col_index'  => 24,
                 'col_letter' => 'X',
-                'header'   => 'Learning (Hours)',
-                'group'    => 'TRAINING INFORMATION',
-                'key'      => 'learning_hours',
-                'required' => false,
-                'type'     => 'number',
-                'example'  => 8.0,
-                'note'     => 'Credited learning hours (e.g. 8.0)',
-                'aliases'  => ['learning (hours)', 'learning hours', 'jam pelajaran', 'jp', 'hours', 'credited hours', 'jam training', 'learning hour'],
+                'header'     => 'Progress Status',
+                'group'      => 'TRAINING INFORMATION',
+                'key'        => 'progress_status',
+                'required'   => false,
+                'type'       => 'string',
+                'example'    => 'Finished',
+                'note'       => 'Finished / Ongoing / Not Started (system derived)',
+                'aliases'    => ['progress status', 'status progress', 'status kemajuan'],
             ],
+
+            // SCHEDULE & TIME (Cols 25-28 / Y-AB)
             25 => [
-                'col_index' => 25,
+                'col_index'  => 25,
                 'col_letter' => 'Y',
-                'header'   => 'Progress',
-                'group'    => 'TRAINING INFORMATION',
-                'key'      => 'progress',
-                'required' => false,
-                'type'     => 'number',
-                'example'  => 100,
-                'note'     => '0 to 100 (%)',
-                'aliases'  => ['progress', 'kemajuan', 'persentase progress', 'progress %', 'progres'],
+                'header'     => 'Start Date',
+                'group'      => 'SCHEDULE & TIME',
+                'key'        => 'start_date',
+                'required'   => false,
+                'type'       => 'date',
+                'example'    => '2026-08-10',
+                'note'       => 'Format: YYYY-MM-DD',
+                'aliases'    => ['start date', 'tanggal mulai', 'tgl mulai', 'start_date', 'begin date', 'start'],
             ],
             26 => [
-                'col_index' => 26,
+                'col_index'  => 26,
                 'col_letter' => 'Z',
-                'header'   => 'Start Date',
-                'group'    => 'TRAINING INFORMATION',
-                'key'      => 'start_date',
-                'required' => false,
-                'type'     => 'date',
-                'example'  => '2026-08-10',
-                'note'     => 'Format: YYYY-MM-DD',
-                'aliases'  => ['start date', 'tanggal mulai', 'tgl mulai', 'start_date', 'begin date', 'start'],
+                'header'     => 'End Date',
+                'group'      => 'SCHEDULE & TIME',
+                'key'        => 'end_date',
+                'required'   => false,
+                'type'       => 'date',
+                'example'    => '2026-08-10',
+                'note'       => 'Format: YYYY-MM-DD',
+                'aliases'    => ['end date', 'finish date', 'tanggal selesai', 'tgl selesai', 'end_date', 'finish_date', 'completion date', 'finish', 'end'],
             ],
             27 => [
-                'col_index' => 27,
+                'col_index'  => 27,
                 'col_letter' => 'AA',
-                'header'   => 'Finish Date',
-                'group'    => 'TRAINING INFORMATION',
-                'key'      => 'finish_date',
-                'required' => false,
-                'type'     => 'date',
-                'example'  => '2026-08-10',
-                'note'     => 'Format: YYYY-MM-DD',
-                'aliases'  => ['finish date', 'end date', 'tanggal selesai', 'tgl selesai', 'finish_date', 'completion date', 'finish', 'end'],
+                'header'     => 'Start Time',
+                'group'      => 'SCHEDULE & TIME',
+                'key'        => 'start_time',
+                'required'   => false,
+                'type'       => 'string',
+                'example'    => '08:00:00',
+                'note'       => 'Format: HH:mm or HH:mm:ss',
+                'aliases'    => ['start time', 'jam mulai', 'waktu mulai', 'start_time', 'time start'],
             ],
             28 => [
-                'col_index' => 28,
+                'col_index'  => 28,
                 'col_letter' => 'AB',
-                'header'   => 'Month',
-                'group'    => 'TRAINING INFORMATION',
-                'key'      => null,
-                'required' => false,
-                'type'     => 'string',
-                'example'  => 'August',
-                'note'     => 'Excel display only (derived from date, not stored in DB)',
-                'aliases'  => ['month', 'bulan', 'periode bulan'],
+                'header'     => 'End Time',
+                'group'      => 'SCHEDULE & TIME',
+                'key'        => 'end_time',
+                'required'   => false,
+                'type'       => 'string',
+                'example'    => '17:00:00',
+                'note'       => 'Format: HH:mm or HH:mm:ss',
+                'aliases'    => ['end time', 'jam selesai', 'waktu selesai', 'end_time', 'finish time', 'time end'],
             ],
+
+            // ADMINISTRATION (Cols 29-30 / AC-AD)
             29 => [
-                'col_index' => 29,
+                'col_index'  => 29,
                 'col_letter' => 'AC',
-                'header'   => 'Provider Name',
-                'group'    => 'TRAINING INFORMATION',
-                'key'      => 'provider_name',
-                'required' => false,
-                'type'     => 'string',
-                'example'  => 'PT Schneider Indonesia',
-                'note'     => 'Training institution / vendor name',
-                'aliases'  => ['provider name', 'nama provider', 'lembaga training', 'vendor name', 'nama vendor', 'institution', 'institution name'],
+                'header'     => 'Record Month',
+                'group'      => 'ADMINISTRATION',
+                'key'        => 'month',
+                'required'   => false,
+                'type'       => 'string',
+                'example'    => 'August',
+                'note'       => 'Derived month name (e.g. August)',
+                'aliases'    => ['record month', 'month', 'bulan', 'periode bulan'],
             ],
             30 => [
-                'col_index' => 30,
+                'col_index'  => 30,
                 'col_letter' => 'AD',
-                'header'   => 'Venue',
-                'group'    => 'TRAINING INFORMATION',
-                'key'      => 'venue',
-                'required' => false,
-                'type'     => 'string',
-                'example'  => 'Auditorium Hall B',
-                'note'     => 'Training location / room',
-                'aliases'  => ['venue', 'lokasi', 'tempat training', 'location', 'ruangan', 'tempat'],
+                'header'     => 'Requirement',
+                'group'      => 'ADMINISTRATION',
+                'key'        => 'requirement',
+                'required'   => false,
+                'type'       => 'string',
+                'example'    => 'Mandatory',
+                'note'       => 'Mandatory / Elective',
+                'aliases'    => ['requirement', 'status', 'kebutuhan', 'sifat training', 'training requirement'],
             ],
+
+            // ATTENDANCE (Cols 31-32 / AE-AF)
             31 => [
-                'col_index' => 31,
+                'col_index'  => 31,
                 'col_letter' => 'AE',
-                'header'   => 'Instructor',
-                'group'    => 'TRAINING INFORMATION',
-                'key'      => 'instructor',
-                'required' => false,
-                'type'     => 'string',
-                'example'  => 'Ir. Gunawan, M.T.',
-                'note'     => 'Trainer / instructor name',
-                'aliases'  => ['instructor', 'trainer', 'instruktur', 'pengajar', 'narasumber', 'facilitator'],
+                'header'     => 'Attendance',
+                'group'      => 'ATTENDANCE',
+                'key'        => 'attendance',
+                'required'   => false,
+                'type'       => 'boolean',
+                'example'    => 'Yes',
+                'note'       => 'Yes / No',
+                'aliases'    => ['attendance', 'kehadiran', 'presensi', 'status kehadiran', 'hadir'],
             ],
             32 => [
-                'col_index' => 32,
+                'col_index'  => 32,
                 'col_letter' => 'AF',
-                'header'   => 'Assessment Score (L2)',
-                'group'    => 'TRAINING INFORMATION',
-                'key'      => 'assessment_score',
-                'required' => false,
-                'type'     => 'integer',
-                'example'  => 85,
-                'note'     => 'Evaluation score (0-100)',
-                'aliases'  => [
-                    'assessment score (l2)',
+                'header'     => 'Attendance Reason',
+                'group'      => 'ATTENDANCE',
+                'key'        => 'attendance_reason',
+                'required'   => false,
+                'type'       => 'string',
+                'example'    => 'Present in all sessions',
+                'note'       => 'Attendance justification if absent',
+                'aliases'    => ['attendance reason', 'reason', 'alasan', 'alasan ketidakhadiran', 'justification'],
+            ],
+
+            // OBLIGATION (Cols 33-36 / AG-AJ)
+            33 => [
+                'col_index'  => 33,
+                'col_letter' => 'AG',
+                'header'     => 'Bond Status',
+                'group'      => 'OBLIGATION',
+                'key'        => 'bond_status',
+                'required'   => false,
+                'type'       => 'string',
+                'example'    => 'No',
+                'note'       => 'Yes / No',
+                'aliases'    => ['bond status', 'status ikatan dinas', 'ikatan dinas', 'service bond', 'bond'],
+            ],
+            34 => [
+                'col_index'  => 34,
+                'col_letter' => 'AH',
+                'header'     => 'Bond Duration',
+                'group'      => 'OBLIGATION',
+                'key'        => 'bond_duration',
+                'required'   => false,
+                'type'       => 'number',
+                'example'    => 12,
+                'note'       => 'Bond duration in months (e.g. 12)',
+                'aliases'    => ['bond duration', 'durasi ikatan dinas', 'lama ikatan dinas', 'bond duration (months)'],
+            ],
+            35 => [
+                'col_index'  => 35,
+                'col_letter' => 'AI',
+                'header'     => 'Bond End Date',
+                'group'      => 'OBLIGATION',
+                'key'        => 'bond_end_date',
+                'required'   => false,
+                'type'       => 'date',
+                'example'    => '',
+                'note'       => 'Format: YYYY-MM-DD',
+                'aliases'    => ['bond end date', 'tanggal selesai ikatan', 'tgl berakhir ikatan dinas', 'bond completion date'],
+            ],
+            36 => [
+                'col_index'  => 36,
+                'col_letter' => 'AJ',
+                'header'     => 'Bond Amount',
+                'group'      => 'OBLIGATION',
+                'key'        => 'bond_amount',
+                'required'   => false,
+                'type'       => 'number',
+                'example'    => '',
+                'note'       => 'Service bond value (IDR)',
+                'aliases'    => ['bond amount', 'nilai ikatan dinas', 'biaya ikatan dinas', 'nominal ikatan dinas', 'bond cost', 'bond amount (idr)', 'bond amount idr', 'bond_amount_idr'],
+            ],
+
+            // L1 (Col 37 / AK)
+            37 => [
+                'col_index'  => 37,
+                'col_letter' => 'AK',
+                'header'     => 'Score (L1) - Course',
+                'group'      => 'L1',
+                'key'        => 'l1_program',
+                'required'   => false,
+                'type'       => 'string',
+                'example'    => 'Very Good',
+                'note'       => 'Reaction evaluation / rating',
+                'aliases'    => ['score (l1) - course', 'score (l1)', 'score l1', 'program', 'l1 program', 'l1', 'evaluasi l1', 'level 1', 'reaction evaluation'],
+            ],
+
+            // L2 (POST TEST) (Cols 38-39 / AL-AM)
+            38 => [
+                'col_index'  => 38,
+                'col_letter' => 'AL',
+                'header'     => 'Score (L2)',
+                'group'      => 'L2 (POST TEST)',
+                'key'        => 'assessment_score',
+                'required'   => false,
+                'type'       => 'number',
+                'example'    => 85,
+                'note'       => 'Post-test score (0-100)',
+                'aliases'    => [
                     'score (l2)',
                     'score l2',
+                    'assessment score (l2)',
+                    'numerical',
+                    'l2 numerical',
+                    'l2 post test numerical',
+                    'nilai post test',
+                    'post test score',
+                    'post test numerical',
+                    'l2 numeric',
                     'assessment score',
                     'post test score',
                     'nilai assessment',
-                    'evaluation score',
-                    'nilai evaluasi',
-                    'score post test',
-                    'assesment score',
-                    'assessment_score',
-                    'score evaluation',
-                    'score assessment',
                 ],
             ],
-            33 => [
-                'col_index' => 33,
-                'col_letter' => 'AG',
-                'header'   => 'Certificate',
-                'group'    => 'TRAINING INFORMATION',
-                'key'      => 'certificate',
-                'required' => false,
-                'type'     => 'string',
-                'example'  => 'Yes',
-                'note'     => 'Yes / No',
-                'aliases'  => ['certificate', 'sertifikat', 'ada sertifikat', 'certificate yes/no', 'status sertifikat'],
-            ],
-
-            // ATTENDANCE (Col 34 / AH)
-            34 => [
-                'col_index' => 34,
-                'col_letter' => 'AH',
-                'header'   => 'Reason',
-                'group'    => 'ATTENDANCE',
-                'key'      => 'attendance_reason',
-                'required' => false,
-                'type'     => 'string',
-                'example'  => 'Present in all sessions',
-                'note'     => 'Attendance justification if absent',
-                'aliases'  => ['reason', 'attendance reason', 'alasan', 'alasan ketidakhadiran', 'justification'],
-            ],
-
-            // OBLIGATION (Cols 35-37 / AI-AK)
-            35 => [
-                'col_index' => 35,
-                'col_letter' => 'AI',
-                'header'   => 'Bond Status',
-                'group'    => 'OBLIGATION',
-                'key'      => 'bond_status',
-                'required' => false,
-                'type'     => 'string',
-                'example'  => 'No',
-                'note'     => 'Yes / No',
-                'aliases'  => ['bond status', 'status ikatan dinas', 'ikatan dinas', 'service bond', 'bond'],
-            ],
-            36 => [
-                'col_index' => 36,
-                'col_letter' => 'AJ',
-                'header'   => 'Bond End Date',
-                'group'    => 'OBLIGATION',
-                'key'      => 'bond_end_date',
-                'required' => false,
-                'type'     => 'date',
-                'example'  => '',
-                'note'     => 'Format: YYYY-MM-DD',
-                'aliases'  => ['bond end date', 'tanggal selesai ikatan', 'tgl berakhir ikatan dinas', 'bond completion date'],
-            ],
-            37 => [
-                'col_index' => 37,
-                'col_letter' => 'AK',
-                'header'   => 'Bond Amount',
-                'group'    => 'OBLIGATION',
-                'key'      => 'bond_amount',
-                'required' => false,
-                'type'     => 'number',
-                'example'  => '',
-                'note'     => 'Service bond value (IDR)',
-                'aliases'  => ['bond amount', 'nilai ikatan dinas', 'biaya ikatan dinas', 'nominal ikatan dinas', 'bond cost', 'bond amount (idr)', 'bond amount idr', 'bond_amount_idr'],
-            ],
-
-            // L1 (Col 38 / AL)
-            38 => [
-                'col_index' => 38,
-                'col_letter' => 'AL',
-                'header'   => 'Program',
-                'group'    => 'L1',
-                'key'      => 'l1_program',
-                'required' => false,
-                'type'     => 'string',
-                'example'  => 'Very Good',
-                'note'     => 'Reaction evaluation / rating',
-                'aliases'  => ['program', 'l1 program', 'l1', 'evaluasi l1', 'level 1', 'reaction evaluation'],
-            ],
-
-            // L2 (POST TEST) (Cols 39-40 / AM-AN)
             39 => [
-                'col_index' => 39,
+                'col_index'  => 39,
                 'col_letter' => 'AM',
-                'header'   => 'Numerical',
-                'group'    => 'L2 (POST TEST)',
-                'key'      => 'l2_numerical',
-                'required' => false,
-                'type'     => 'number',
-                'example'  => 88.0,
-                'note'     => 'Post-test score (0-100)',
-                'aliases'  => ['numerical', 'l2 numerical', 'l2 post test numerical', 'nilai post test', 'post test score', 'post test numerical', 'l2 numeric'],
-            ],
-            40 => [
-                'col_index' => 40,
-                'col_letter' => 'AN',
-                'header'   => 'Verbal',
-                'group'    => 'L2 (POST TEST)',
-                'key'      => 'l2_verbal',
-                'required' => false,
-                'type'     => 'string',
-                'example'  => 'Passed',
-                'note'     => 'Post-test qualitative result',
-                'aliases'  => ['verbal', 'l2 verbal', 'l2 post test verbal', 'post test verbal', 'hasil post test', 'l2 result'],
+                'header'     => 'L2 Status',
+                'group'      => 'L2 (POST TEST)',
+                'key'        => 'l2_verbal',
+                'required'   => false,
+                'type'       => 'string',
+                'example'    => 'Passed',
+                'note'       => 'Post-test qualitative status (Passed / Failed)',
+                'aliases'    => ['l2 status', 'status l2', 'verbal', 'l2 verbal', 'l2 post test verbal', 'post test verbal', 'hasil post test', 'l2 result'],
             ],
 
-            // L3 (PROJECT) (Cols 41-43 / AO-AQ)
-            41 => [
-                'col_index' => 41,
-                'col_letter' => 'AO',
-                'header'   => 'Numerical',
-                'group'    => 'L3 (PROJECT)',
-                'key'      => 'l3_numerical',
-                'required' => false,
-                'type'     => 'number',
-                'example'  => 90.0,
-                'note'     => 'Project implementation score (0-100)',
-                'aliases'  => ['numerical', 'l3 numerical', 'l3 project numerical', 'nilai project', 'project score', 'project numerical', 'l3 numeric'],
+            // L3 (PROJECT) (Cols 40-41 / AN-AO)
+            40 => [
+                'col_index'  => 40,
+                'col_letter' => 'AN',
+                'header'     => 'Score (L3)',
+                'group'      => 'L3 (PROJECT)',
+                'key'        => 'l3_numerical',
+                'required'   => false,
+                'type'       => 'number',
+                'example'    => 90.0,
+                'note'       => 'Project implementation score (0-100)',
+                'aliases'    => ['score (l3)', 'score l3', 'numerical', 'l3 numerical', 'l3 project numerical', 'nilai project', 'project score', 'project numerical', 'l3 numeric'],
             ],
+            41 => [
+                'col_index'  => 41,
+                'col_letter' => 'AO',
+                'header'     => 'L3 Status',
+                'group'      => 'L3 (PROJECT)',
+                'key'        => 'l3_verbal',
+                'required'   => false,
+                'type'       => 'string',
+                'example'    => 'Implemented successfully',
+                'note'       => 'Behavior / project result evaluation',
+                'aliases'    => ['l3 status', 'status l3', 'verbal', 'l3 verbal', 'l3 project verbal', 'project verbal', 'hasil project', 'l3 result'],
+            ],
+
+            // CLOSING & VERIFICATION (Cols 42-44 / AP-AR)
             42 => [
-                'col_index' => 42,
+                'col_index'  => 42,
                 'col_letter' => 'AP',
-                'header'   => 'Verbal',
-                'group'    => 'L3 (PROJECT)',
-                'key'      => 'l3_verbal',
-                'required' => false,
-                'type'     => 'string',
-                'example'  => 'Implemented successfully in plant',
-                'note'     => 'Behavior / project result evaluation',
-                'aliases'  => ['verbal', 'l3 verbal', 'l3 project verbal', 'project verbal', 'hasil project', 'l3 result'],
+                'header'     => 'Person in Charge (PIC)',
+                'group'      => 'CLOSING & VERIFICATION',
+                'key'        => 'pic',
+                'required'   => false,
+                'type'       => 'string',
+                'example'    => 'HRDC Team',
+                'note'       => 'HR / Training administrator PIC',
+                'aliases'    => ['person in charge (pic)', 'person in charge', 'pic', 'admin pic', 'pic hrdc', 'penanggung jawab'],
             ],
             43 => [
-                'col_index' => 43,
+                'col_index'  => 43,
                 'col_letter' => 'AQ',
-                'header'   => 'PIC',
-                'group'    => 'L3 (PROJECT)',
-                'key'      => 'pic',
-                'required' => false,
-                'type'     => 'string',
-                'example'  => 'HRDC Team',
-                'note'     => 'HR / Training administrator PIC',
-                'aliases'  => ['pic', 'person in charge', 'admin pic', 'pic hrdc', 'penanggung jawab'],
+                'header'     => 'Certificate',
+                'group'      => 'CLOSING & VERIFICATION',
+                'key'        => 'certificate',
+                'required'   => false,
+                'type'       => 'string',
+                'example'    => 'Yes',
+                'note'       => 'Yes / No',
+                'aliases'    => ['certificate', 'sertifikat', 'ada sertifikat', 'certificate yes/no', 'status sertifikat'],
+            ],
+            44 => [
+                'col_index'  => 44,
+                'col_letter' => 'AR',
+                'header'     => 'Total Engagement Time',
+                'group'      => 'CLOSING & VERIFICATION',
+                'key'        => 'total_engagement_time',
+                'required'   => false,
+                'type'       => 'number',
+                'example'    => 8.0,
+                'note'       => 'Total recognized engagement time (hours)',
+                'aliases'    => ['total engagement time', 'total engagement time (lh)', 'engagement time', 'total hours', 'total durasi'],
             ],
         ];
     }
@@ -695,7 +602,7 @@ class OfflineTrainingExcelSchema
      */
     public static function totalColumns(): int
     {
-        return count(self::columns()); // Exactly 43
+        return count(self::columns()); // Exactly 44
     }
 
     /**
@@ -725,6 +632,94 @@ class OfflineTrainingExcelSchema
     /**
      * Grouped Row 1 headers array (43 elements), preserved for legacy format compatibility.
      */
+        /**
+     * Parent grouping specification for canonical 44 columns (A to AR).
+     */
+    public static function groups(): array
+    {
+        return [
+            'job_information' => [
+                'title'     => 'JOB INFORMATION',
+                'start_col' => 'A',
+                'end_col'   => 'G',
+                'fill'      => '002B49',
+                'color'     => 'FFFFFF',
+                'columns'   => [1, 2, 3, 4, 5, 6, 7],
+            ],
+            'training_information' => [
+                'title'     => 'TRAINING INFORMATION',
+                'start_col' => 'H',
+                'end_col'   => 'M',
+                'fill'      => '0C5B9E',
+                'color'     => 'FFFFFF',
+                'columns'   => [8, 9, 10, 11, 12, 13],
+            ],
+            'classification' => [
+                'title'     => 'CLASSIFICATION',
+                'start_col' => 'N',
+                'end_col'   => 'O',
+                'fill'      => '1B4D3E',
+                'color'     => 'FFFFFF',
+                'columns'   => [14, 15],
+            ],
+            'delivery' => [
+                'title'     => 'DELIVERY',
+                'start_col' => 'P',
+                'end_col'   => 'Q',
+                'fill'      => '3B82F6',
+                'color'     => 'FFFFFF',
+                'columns'   => [16, 17],
+            ],
+            'provider_instructor' => [
+                'title'     => 'PROVIDER & INSTRUCTOR',
+                'start_col' => 'R',
+                'end_col'   => 'T',
+                'fill'      => '475569',
+                'color'     => 'FFFFFF',
+                'columns'   => [18, 19, 20],
+            ],
+            'duration_hours' => [
+                'title'     => 'DURATION & LEARNING HOURS',
+                'start_col' => 'U',
+                'end_col'   => 'V',
+                'fill'      => '0284C7',
+                'color'     => 'FFFFFF',
+                'columns'   => [21, 22],
+            ],
+            'progress' => [
+                'title'     => 'PROGRESS',
+                'start_col' => 'W',
+                'end_col'   => 'X',
+                'fill'      => '16A34A',
+                'color'     => 'FFFFFF',
+                'columns'   => [23, 24],
+            ],
+            'schedule_requirement' => [
+                'title'     => 'SCHEDULE & REQUIREMENT',
+                'start_col' => 'Y',
+                'end_col'   => 'AD',
+                'fill'      => 'D97706',
+                'color'     => 'FFFFFF',
+                'columns'   => [25, 26, 27, 28, 29, 30],
+            ],
+            'attendance_bond' => [
+                'title'     => 'ATTENDANCE & BOND',
+                'start_col' => 'AE',
+                'end_col'   => 'AJ',
+                'fill'      => '7C3AED',
+                'color'     => 'FFFFFF',
+                'columns'   => [31, 32, 33, 34, 35, 36],
+            ],
+            'evaluation_completion' => [
+                'title'     => 'EVALUATION & COMPLETION',
+                'start_col' => 'AK',
+                'end_col'   => 'AR',
+                'fill'      => 'BE185D',
+                'color'     => 'FFFFFF',
+                'columns'   => [37, 38, 39, 40, 41, 42, 43, 44],
+            ],
+        ];
+    }
     public static function groupedRow1Headers(): array
     {
         $row1 = [];
@@ -750,49 +745,70 @@ class OfflineTrainingExcelSchema
     public static function columnWidths(): array
     {
         return [
-            'A'  => 6,   // No
-            'B'  => 14,  // Employee ID
-            'C'  => 25,  // Name
-            'D'  => 10,  // Grade
-            'E'  => 25,  // Job Position
-            'F'  => 20,  // Team
-            'G'  => 25,  // Department
-            'H'  => 20,  // Company
-            'I'  => 35,  // Course Name
-            'J'  => 25,  // Sub Course Name
-            'K'  => 15,  // Type
-            'L'  => 20,  // Category
-            'M'  => 15,  // Level
-            'N'  => 15,  // Batch
-            'O'  => 22,  // Main Classification
-            'P'  => 20,  // Sub Classification
-            'Q'  => 20,  // KPI
-            'R'  => 20,  // Sub KPI
-            'S'  => 16,  // Delivery Method
-            'T'  => 18,  // Sub Delivery Method
-            'U'  => 15,  // Provider
-            'V'  => 18,  // Sub Provider
-            'W'  => 14,  // Duration
-            'X'  => 16,  // Learning Hours
-            'Y'  => 12,  // Progress
-            'Z'  => 14,  // Start Date
-            'AA' => 14,  // Finish Date
-            'AB' => 14,  // Month
-            'AC' => 25,  // Provider Name
-            'AD' => 20,  // Venue
-            'AE' => 22,  // Instructor
-            'AF' => 20,  // Assessment Score (L2)
-            'AG' => 12,  // Certificate
-            'AH' => 22,  // Reason
-            'AI' => 12,  // Bond Status
-            'AJ' => 14,  // Bond End Date
-            'AK' => 16,  // Bond Amount
-            'AL' => 14,  // L1
-            'AM' => 12,  // L2 Numerical
-            'AN' => 15,  // L2 Verbal
-            'AO' => 12,  // L3 Numerical
-            'AP' => 25,  // L3 Verbal
-            'AQ' => 20,  // PIC
+            'A'  => 16,  // Employee ID
+            'B'  => 30,  // Employee Name
+            'C'  => 12,  // Grade
+            'D'  => 25,  // Job Position
+            'E'  => 20,  // Team
+            'F'  => 25,  // Department
+            'G'  => 25,  // Company
+            'H'  => 35,  // Course Title
+            'I'  => 25,  // Sub Course Title
+            'J'  => 15,  // Type
+            'K'  => 18,  // Category
+            'L'  => 12,  // Level
+            'M'  => 12,  // Batch
+            'N'  => 25,  // Main Classification
+            'O'  => 25,  // Sub Classification
+            'P'  => 18,  // Delivery Method
+            'Q'  => 20,  // Sub Delivery Method
+            'R'  => 25,  // Provider Name
+            'S'  => 20,  // Venue
+            'T'  => 22,  // Instructor
+            'U'  => 16,  // Course Duration
+            'V'  => 16,  // Learning Hours
+            'W'  => 14,  // % Progress
+            'X'  => 16,  // Progress Status
+            'Y'  => 14,  // Start Date
+            'Z'  => 14,  // End Date
+            'AA' => 14,  // Start Time
+            'AB' => 14,  // End Time
+            'AC' => 16,  // Record Month
+            'AD' => 15,  // Requirement
+            'AE' => 14,  // Attendance
+            'AF' => 25,  // Attendance Reason
+            'AG' => 14,  // Bond Status
+            'AH' => 16,  // Bond Duration
+            'AI' => 15,  // Bond End Date
+            'AJ' => 18,  // Bond Amount
+            'AK' => 20,  // Score (L1) - Course
+            'AL' => 14,  // Score (L2)
+            'AM' => 14,  // L2 Status
+            'AN' => 14,  // Score (L3)
+            'AO' => 14,  // L3 Status
+            'AP' => 22,  // Person in Charge (PIC)
+            'AQ' => 14,  // Certificate
+            'AR' => 25,  // Total Engagement Time
+        ];
+    }
+
+    public static function columnFormats(): array
+    {
+        return [
+            'A'  => \PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_TEXT,
+            'V'  => '0.##" h"',
+            'W'  => '0%',
+            'Y'  => 'yyyy-mm-dd',
+            'Z'  => 'yyyy-mm-dd',
+            'AA' => 'hh:mm:ss',
+            'AB' => 'hh:mm:ss',
+            'AH' => '0',
+            'AI' => 'yyyy-mm-dd',
+            'AJ' => '"Rp"#,##0',
+            'AK' => '0.##',
+            'AL' => '0',
+            'AN' => '0.##',
+            'AR' => '0.##" h"',
         ];
     }
 
@@ -919,6 +935,16 @@ class OfflineTrainingExcelSchema
     {
         $columns = self::columns();
         $expectedCount = count($columns);
+
+        // Auto-detect leading row-index / 'No' column
+        $hasLeadingNo = false;
+        $firstHeaderNorm = isset($foundHeaders[1]) ? self::normalizeHeaderString($foundHeaders[1]) : '';
+        $secondHeaderNorm = isset($foundHeaders[2]) ? self::normalizeHeaderString($foundHeaders[2]) : '';
+        $empIdAliases = array_map([self::class, 'normalizeHeaderString'], array_merge(['Employee ID'], $columns[1]['aliases'] ?? []));
+
+        if (in_array($firstHeaderNorm, ['no', 'nomor', '#', 'no.'], true) && in_array($secondHeaderNorm, $empIdAliases, true)) {
+            $hasLeadingNo = true;
+        }
         $detectedCount = count($foundHeaders);
 
         // Precompute normalized canonical headers and aliases for fast lookup
@@ -1049,7 +1075,7 @@ class OfflineTrainingExcelSchema
             }
 
             // 3. DISAMBIGUATION FOR L2 VS L3 DUPLICATE DISPLAY LABELS (Cols 40-43)
-            if ($pos === 40) {
+            if ($canonical['key'] === 'l2_numerical') {
                 // Expected: L2 Numerical
                 if ($normFound === 'numerical' || in_array($normFound, ['l2 numerical', 'l2 post test numerical', 'post test numerical', 'l2 numeric'])) {
                     $autoMatchedCount++;
@@ -1063,9 +1089,9 @@ class OfflineTrainingExcelSchema
                         'key'         => 'l2_numerical',
                         'message'     => 'Matched to L2 Numerical post-test score.',
                     ];
-                    $columnResults[40] = $res;
+                    $columnResults[$pos] = $res;
                     $autoMatchedList[] = $res;
-                    $mappedKeys['l2_numerical'][] = 40;
+                    $mappedKeys['l2_numerical'][] = $pos;
                     continue;
                 }
                 if (str_contains($normFound, 'l3') && (str_contains($normFound, 'numeric') || str_contains($normFound, 'numerical'))) {
@@ -1080,13 +1106,13 @@ class OfflineTrainingExcelSchema
                         'key'         => null,
                         'message'     => "Found '{$rawFound}' at column 40 which belongs to L3 Project, but column 40 is reserved for L2 Post Test.",
                     ];
-                    $columnResults[40] = $issue;
+                    $columnResults[$pos] = $issue;
                     $issues[] = $issue;
                     continue;
                 }
             }
 
-            if ($pos === 41) {
+            if ($canonical['key'] === 'l2_verbal') {
                 // Expected: L2 Verbal
                 if ($normFound === 'verbal' || in_array($normFound, ['l2 verbal', 'l2 post test verbal', 'post test verbal', 'l2 result'])) {
                     $autoMatchedCount++;
@@ -1100,9 +1126,9 @@ class OfflineTrainingExcelSchema
                         'key'         => 'l2_verbal',
                         'message'     => 'Matched to L2 Verbal post-test qualitative result.',
                     ];
-                    $columnResults[41] = $res;
+                    $columnResults[$pos] = $res;
                     $autoMatchedList[] = $res;
-                    $mappedKeys['l2_verbal'][] = 41;
+                    $mappedKeys['l2_verbal'][] = $pos;
                     continue;
                 }
                 if (str_contains($normFound, 'l3') && str_contains($normFound, 'verbal')) {
@@ -1117,13 +1143,13 @@ class OfflineTrainingExcelSchema
                         'key'         => null,
                         'message'     => "Found '{$rawFound}' at column 41 which belongs to L3 Project, but column 41 is reserved for L2 Post Test.",
                     ];
-                    $columnResults[41] = $issue;
+                    $columnResults[$pos] = $issue;
                     $issues[] = $issue;
                     continue;
                 }
             }
 
-            if ($pos === 42) {
+            if ($canonical['key'] === 'l3_numerical') {
                 // Expected: L3 Numerical
                 if ($normFound === 'numerical' || in_array($normFound, ['l3 numerical', 'l3 project numerical', 'project numerical', 'l3 numeric'])) {
                     $autoMatchedCount++;
@@ -1137,9 +1163,9 @@ class OfflineTrainingExcelSchema
                         'key'         => 'l3_numerical',
                         'message'     => 'Matched to L3 Numerical project score.',
                     ];
-                    $columnResults[42] = $res;
+                    $columnResults[$pos] = $res;
                     $autoMatchedList[] = $res;
-                    $mappedKeys['l3_numerical'][] = 42;
+                    $mappedKeys['l3_numerical'][] = $pos;
                     continue;
                 }
                 if (str_contains($normFound, 'l2') && (str_contains($normFound, 'numeric') || str_contains($normFound, 'numerical'))) {
@@ -1154,13 +1180,13 @@ class OfflineTrainingExcelSchema
                         'key'         => null,
                         'message'     => "Found '{$rawFound}' at column 42 which belongs to L2 Post Test, but column 42 is reserved for L3 Project.",
                     ];
-                    $columnResults[42] = $issue;
+                    $columnResults[$pos] = $issue;
                     $issues[] = $issue;
                     continue;
                 }
             }
 
-            if ($pos === 43) {
+            if ($canonical['key'] === 'l3_verbal') {
                 // Expected: L3 Verbal
                 if ($normFound === 'verbal' || in_array($normFound, ['l3 verbal', 'l3 project verbal', 'project verbal', 'l3 result'])) {
                     $autoMatchedCount++;
@@ -1174,9 +1200,9 @@ class OfflineTrainingExcelSchema
                         'key'         => 'l3_verbal',
                         'message'     => 'Matched to L3 Verbal project qualitative evaluation.',
                     ];
-                    $columnResults[43] = $res;
+                    $columnResults[$pos] = $res;
                     $autoMatchedList[] = $res;
-                    $mappedKeys['l3_verbal'][] = 43;
+                    $mappedKeys['l3_verbal'][] = $pos;
                     continue;
                 }
                 if (str_contains($normFound, 'l2') && str_contains($normFound, 'verbal')) {
@@ -1191,7 +1217,7 @@ class OfflineTrainingExcelSchema
                         'key'         => null,
                         'message'     => "Found '{$rawFound}' at column 43 which belongs to L2 Post Test, but column 43 is reserved for L3 Project.",
                     ];
-                    $columnResults[43] = $issue;
+                    $columnResults[$pos] = $issue;
                     $issues[] = $issue;
                     continue;
                 }

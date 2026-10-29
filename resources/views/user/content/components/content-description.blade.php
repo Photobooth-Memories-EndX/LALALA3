@@ -45,5 +45,13 @@
             <div class="text-dark lh-lg fs-5 content-overview-text">{!! $content->description !!}</div>
         </div>
 
+        @if (\App\Services\EngagementTime\EngagementTimeService::isTargetContent($content))
+            @include('user.components.total-engagement-time', [
+                'targetType'      => 'content',
+                'targetId'        => $content->id,
+                'initialDuration' => (int) ($content_user->afk_duration_seconds ?? 0),
+            ])
+        @endif
+
     </div>
 </div>

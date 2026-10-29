@@ -39,6 +39,24 @@ class User extends Authenticatable
         'sap_code',
         'role',
         'hero_background',
+        'id_team',
+        'id_department',
+        'id_division',
+        'cell_phone',
+        'sex',
+        'orgunit',
+        'id_job_position',
+        'jobposition',
+        'positionID',
+        'appr1',
+        'appr2',
+        'resign',
+        'flag',
+        'jobgrade',
+        'id_job_clan',
+        'job_clan',
+        'id_job_family',
+        'job_family',
     ];
 
     /**
@@ -59,6 +77,7 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'role' => 'integer',
+        'flag' => 'integer',
     ];
 
     public function getRoleUnderscoreAttribute()
@@ -104,19 +123,15 @@ class User extends Authenticatable
     {
         return $this->isApprover() || $this->isAdmin() || $this->isSuperAdmin();
     }
-public function canManageLms()
-{
-    return in_array((int) $this->role, [
-        self::ROLE_ADMIN,
-        self::ROLE_SUPER_ADMIN,
-        self::ROLE_SUBADMIN_DIVISION,
-    ], true);
-}
 
-//     public function canManageLms()
-// {
-//     return in_array((int) $this->role, [2, 3, 4], true);
-// }
+    public function canManageLms()
+    {
+        return in_array((int) $this->role, [
+            self::ROLE_ADMIN,
+            self::ROLE_SUPER_ADMIN,
+            self::ROLE_SUBADMIN_DIVISION,
+        ], true);
+    }
 
     public function canManageRole()
     {
@@ -263,4 +278,3 @@ public function canManageLms()
         return $this->hasMany(OfflineTrainingRegister::class, 'user_id');
     }
 }
-

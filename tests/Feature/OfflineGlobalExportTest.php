@@ -314,15 +314,15 @@ class OfflineGlobalExportTest extends TestCase
     }
 
     // =========================================================================
-    // 4. SCHEMA INTEGRITY & 43-COLUMN CANONICAL MAPPING
+    // 4. SCHEMA INTEGRITY & 44-COLUMN CANONICAL MAPPING
     // =========================================================================
 
-    public function test_export_uses_canonical_43_column_hrdc_schema(): void
+    public function test_export_uses_canonical_44_column_hrdc_schema(): void
     {
         $export = new OfflineTrainingExport(null, new Request());
 
         $headings = $export->headings();
-        $this->assertCount(43, $headings);
+        $this->assertCount(44, $headings);
         $this->assertEquals(OfflineTrainingExcelSchema::headers(), $headings);
     }
 
@@ -338,6 +338,14 @@ class OfflineGlobalExportTest extends TestCase
         }
     }
 
+    public function test_offline_record_export_uses_canonical_44_column_schema(): void
+    {
+        $export = new \App\Exports\OfflineRecordExport();
+        $headings = $export->headers();
+        $this->assertCount(44, $headings);
+        $this->assertEquals(OfflineTrainingExcelSchema::headers(), $headings);
+    }
+
     public function test_training_and_participant_values_map_correctly(): void
     {
         $data = $this->seedMultiClassificationData();
@@ -351,60 +359,70 @@ class OfflineGlobalExportTest extends TestCase
         $this->assertNotNull($andi);
         $mappedAndi = $export->map($andi);
 
-        $this->assertCount(43, $mappedAndi);
-        $this->assertEquals('EMPGLOBAL01', $mappedAndi[1]);                   // 2. ID
-        $this->assertEquals('ANDI WIJAYA', $mappedAndi[2]);                   // 3. Name
-        $this->assertEquals('3A', $mappedAndi[3]);                            // 4. Grade
-        $this->assertEquals('Staff Officer', $mappedAndi[4]);                 // 5. Job Position
-        $this->assertEquals('General Affairs', $mappedAndi[5]);               // 6. Team
-        $this->assertEquals('HR & GA', $mappedAndi[6]);                       // 7. Department
-        $this->assertEquals('PT Krakatau Posco', $mappedAndi[7]);             // 8. Company
-        $this->assertEquals('Corporate Core Values & Ethics', $mappedAndi[8]);// 9. Course Name
-        $this->assertEquals('Integrity in Daily Operations', $mappedAndi[9]); // 10. Sub Course
-        $this->assertEquals('In-House', $mappedAndi[10]);                     // 11. Type
-        $this->assertEquals('Core Values', $mappedAndi[11]);                  // 12. Category
-        $this->assertEquals('All', $mappedAndi[12]);                          // 13. Level
-        $this->assertEquals('Batch 1', $mappedAndi[13]);                      // 14. Batch
-        $this->assertEquals('Basic & Common Duties', $mappedAndi[14]);        // 15. Main Classification
-        $this->assertEquals('Ethics', $mappedAndi[15]);                       // 16. Sub Classification
-        $this->assertEquals('Yes', $mappedAndi[16]);                          // 17. Corporate KPI
-        $this->assertEquals('Offline', $mappedAndi[18]);                      // 19. Delivery Method
-        $this->assertEquals('Internal', $mappedAndi[20]);                     // 21. Provider
-        $this->assertEquals('04:00:00', $mappedAndi[22]);                     // 23. Duration
-        $this->assertEquals(4.0, $mappedAndi[23]);                            // 24. Learning Hours
-        $this->assertEquals(100.0, $mappedAndi[24]);                          // 25. Progress
-        $this->assertEquals('2026-01-10', $mappedAndi[25]);                   // 26. Start Date
-        $this->assertEquals('January', $mappedAndi[27]);                      // 28. Month
-        $this->assertEquals('Auditorium Hall A', $mappedAndi[29]);            // 30. Venue
-        $this->assertEquals('HRDC Internal Team', $mappedAndi[30]);           // 31. Instructor
-        $this->assertEquals(88.0, $mappedAndi[31]);                           // 32. Assessment Score
-        $this->assertEquals('CERT-BCD-01', $mappedAndi[32]);                  // 33. Certificate
-        $this->assertEquals('-', $mappedAndi[33]);                            // 34. Reason
-        $this->assertEquals('No', $mappedAndi[34]);                           // 35. Bond Status
-        $this->assertEquals('4.8 Very Good', $mappedAndi[37]);                // 38. L1 Program
-        $this->assertEquals(88.0, $mappedAndi[38]);                           // 39. L2 Numerical
-        $this->assertEquals('Passed', $mappedAndi[39]);                       // 40. L2 Verbal
-        $this->assertEquals(85.0, $mappedAndi[40]);                           // 41. L3 Numerical
-        $this->assertEquals('Applied', $mappedAndi[41]);                      // 42. L3 Verbal
-        $this->assertEquals('PIC GA', $mappedAndi[42]);                       // 43. PIC
+        $this->assertCount(44, $mappedAndi);
+        $this->assertEquals('EMPGLOBAL01', $mappedAndi[0]);                   // 1. Employee ID
+        $this->assertEquals('ANDI WIJAYA', $mappedAndi[1]);                   // 2. Employee Name
+        $this->assertEquals('3A', $mappedAndi[2]);                            // 3. Grade
+        $this->assertEquals('Staff Officer', $mappedAndi[3]);                 // 4. Job Position
+        $this->assertEquals('General Affairs', $mappedAndi[4]);               // 5. Team
+        $this->assertEquals('HR & GA', $mappedAndi[5]);                       // 6. Department
+        $this->assertEquals('PT Krakatau Posco', $mappedAndi[6]);             // 7. Company
+        $this->assertEquals('Corporate Core Values & Ethics', $mappedAndi[7]);// 8. Course Title
+        $this->assertEquals('Integrity in Daily Operations', $mappedAndi[8]); // 9. Sub Course Title
+        $this->assertEquals('In-House', $mappedAndi[9]);                      // 10. Type
+        $this->assertEquals('Core Values', $mappedAndi[10]);                  // 11. Category
+        $this->assertEquals('All', $mappedAndi[11]);                          // 12. Level
+        $this->assertEquals('Batch 1', $mappedAndi[12]);                      // 13. Batch
+        $this->assertEquals('Basic & Common Duties', $mappedAndi[13]);        // 14. Main Classification
+        $this->assertEquals('Ethics', $mappedAndi[14]);                       // 15. Sub Classification
+        $this->assertEquals('Offline', $mappedAndi[15]);                      // 16. Delivery Method
+        $this->assertEquals('On-site', $mappedAndi[16]);                      // 17. Sub Delivery Method
+        $this->assertEquals('Internal', $mappedAndi[17]);                     // 18. Provider Name
+        $this->assertEquals('Auditorium Hall A', $mappedAndi[18]);            // 19. Venue
+        $this->assertEquals('HRDC Internal Team', $mappedAndi[19]);           // 20. Instructor
+        $this->assertEquals('04:00:00', $mappedAndi[20]);                     // 21. Course Duration
+        $this->assertEquals(4, $mappedAndi[21]);                              // 22. Learning Hours
+        $this->assertEquals(1.0, $mappedAndi[22]);                            // 23. % Progress
+        $this->assertEquals('Finished', $mappedAndi[23]);                     // 24. Progress Status
+        $this->assertEquals('2026-01-10', $mappedAndi[24]);                   // 25. Start Date
+        $this->assertEquals('2026-01-10', $mappedAndi[25]);                   // 26. End Date
+        $this->assertEquals('08:00:00', $mappedAndi[26]);                            // 27. Start Time
+        $this->assertEquals('16:00:00', $mappedAndi[27]);                            // 28. End Time
+        $this->assertEquals('January', $mappedAndi[28]);                      // 29. Record Month
+        $this->assertEquals('Open Registration', $mappedAndi[29]);             // 30. Requirement
+        $this->assertEquals('Yes', $mappedAndi[30]);                          // 31. Attendance
+        $this->assertEquals('-', $mappedAndi[31]);                            // 32. Attendance Reason
+        $this->assertEquals('No', $mappedAndi[32]);                           // 33. Bond Status
+        $this->assertEquals('-', $mappedAndi[33]);                            // 34. Bond Duration
+        $this->assertEquals('-', $mappedAndi[34]);                            // 35. Bond End Date
+        $this->assertEquals('-', $mappedAndi[35]);                            // 36. Bond Amount
+        $this->assertEquals('-', $mappedAndi[36]);                            // 37. Score (L1) - Course
+        $this->assertEquals(88, $mappedAndi[37]);                             // 38. Score (L2)
+        $this->assertEquals('Passed', $mappedAndi[38]);                       // 39. L2 Status
+        $this->assertEquals(85, $mappedAndi[39]);                             // 40. Score (L3)
+        $this->assertEquals('Applied', $mappedAndi[40]);                      // 41. L3 Status
+        $this->assertEquals('PIC GA', $mappedAndi[41]);                       // 42. Person in Charge (PIC)
+        $this->assertEquals('CERT-BCD-01', $mappedAndi[42]);                  // 43. Certificate
+        $this->assertEquals(4, $mappedAndi[43]);                              // 44. Total Engagement Time
 
         // 2. Verify Bambang Hermanto (Bond Yes, Amount 15,000,000)
         $bambang = $rows->firstWhere('employee_id', 'EMPGLOBAL02');
         $this->assertNotNull($bambang);
         $mappedBambang = $export->map($bambang);
 
-        $this->assertEquals('Yes', $mappedBambang[34]);                       // 35. Bond Status
-        $this->assertEquals('2028-02-16', $mappedBambang[35]);                // 36. Bond End Date
-        $this->assertEquals(15000000.0, $mappedBambang[36]);                  // 37. Bond Amount
-        $this->assertEquals('Dale Carnegie Indo', $mappedBambang[28]);        // 29. Provider Name
+        $this->assertEquals('Dale Carnegie Indo', $mappedBambang[17]);        // 18. Provider Name
+        $this->assertEquals('Yes', $mappedBambang[32]);                       // 33. Bond Status
+        $this->assertEquals('2028-02-16', $mappedBambang[34]);                // 35. Bond End Date
+        $this->assertEquals(15000000.0, $mappedBambang[35]);                  // 36. Bond Amount
 
         // 3. Verify Citra Dewi (Absent with Reason, Progress 60%)
         $citra = $rows->firstWhere('employee_id', 'EMPGLOBAL03');
         $this->assertNotNull($citra);
         $mappedCitra = $export->map($citra);
 
-        $this->assertEquals(60.0, $mappedCitra[24]);                          // 25. Progress
-        $this->assertEquals('Plant emergency shift coverage', $mappedCitra[33]); // 34. Reason
+        $this->assertEquals(0.6, $mappedCitra[22]);                           // 23. % Progress
+        $this->assertEquals('No', $mappedCitra[30]);                          // 31. Attendance
+        $this->assertEquals('Plant emergency shift coverage', $mappedCitra[31]); // 32. Attendance Reason
     }
 
     // =========================================================================
@@ -473,7 +491,7 @@ class OfflineGlobalExportTest extends TestCase
         // Empty request on export
         $export = new OfflineTrainingExport(null, new Request());
         $this->assertNotNull($export->headings());
-        $this->assertCount(43, $export->headings());
+        $this->assertCount(44, $export->headings());
         $this->assertEquals(sprintf('non-kp-owl-all-records-%s.xlsx', now()->format('Y-m-d')), $export->getFileName());
     }
 }

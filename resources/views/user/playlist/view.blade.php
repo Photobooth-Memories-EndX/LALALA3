@@ -148,6 +148,9 @@
 
     @include('user.playlist.components.view-style')
     <link rel="stylesheet" href="{{ asset('css/playlist.css') }}">
+    @if (\App\Services\EngagementTime\EngagementTimeService::isTargetPlaylistContent($playlist, $content))
+        <link rel="stylesheet" href="{{ asset('css/engagement-time.css') }}">
+    @endif
 
     <style>
         .playlist-comment-modal .modal-dialog {
@@ -665,4 +668,7 @@
     @endif
 
     @include('user.playlist.components.view-player-script')
+    @if (\App\Services\EngagementTime\EngagementTimeService::isTargetPlaylistContent($playlist, $content))
+        <script src="{{ asset('js/engagement-time-tracker.js') }}"></script>
+    @endif
 @endsection

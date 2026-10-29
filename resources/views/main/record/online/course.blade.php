@@ -83,7 +83,7 @@
             <div class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
                 <div>
                     <h3 class="card-title fw-bold mb-0 text-dark">KP OWL Online Records</h3>
-                    <div class="text-muted small">Standardized 31-column learning record view for KP OWL.</div>
+                    <div class="text-muted small">Standardized 29-column learning record view for KP OWL.</div>
                 </div>
             </div>
             <div class="card-body p-0">
@@ -98,31 +98,28 @@
                                 <th style="min-width: 160px;">DEPARTMENT</th>
                                 <th style="min-width: 160px;">COMPANY</th>
                                 <th style="min-width: 220px;">COURSE TITLE</th>
-                                <th style="min-width: 180px;">SUB COURSE TITLE</th>
                                 <th class="text-center" style="min-width: 100px;">TYPE</th>
-                                <th style="min-width: 130px;">CATEGORY</th>
-                                <th class="text-center" style="min-width: 90px;">LEVEL</th>
-                                <th class="text-center" style="min-width: 90px;">BATCH</th>
-                                <th style="min-width: 150px;">MAIN CLASSIFICATION</th>
+                                <th style="min-width: 150px;">CATEGORY</th>
+                                <th style="min-width: 160px;">MAIN CLASSIFICATION</th>
                                 <th style="min-width: 150px;">SUB CLASSIFICATION</th>
                                 <th class="text-center" style="min-width: 120px;">DELIVERY METHOD</th>
                                 <th style="min-width: 140px;">SUB DELIVERY METHOD</th>
-                                <th style="min-width: 160px;">PROVIDER NAME</th>
+                                <th style="min-width: 150px;">PROVIDER NAME</th>
                                 <th style="min-width: 140px;">VENUE</th>
                                 <th class="text-center" style="min-width: 110px;">COURSE DURATION</th>
-                                <th class="text-center" style="min-width: 140px;">TOTAL ENGAGEMENT DURATION</th>
                                 <th class="text-center" style="min-width: 110px;">LEARNING HOURS</th>
-                                <th class="text-center" style="min-width: 110px;">% PROGRESS</th>
-                                <th class="text-center" style="min-width: 100px;">RECORD MONTH</th>
+                                <th class="text-center" style="min-width: 120px;">% PROGRESS</th>
+                                <th class="text-center" style="min-width: 110px;">PROGRESS STATUS</th>
+                                <th style="min-width: 170px;">DATE TIME</th>
+                                <th class="text-center" style="min-width: 110px;">RECORD MONTH</th>
                                 <th class="text-center" style="min-width: 110px;">REQUIREMENT</th>
-                                <th class="text-center" style="min-width: 105px;">ATTENDANCE</th>
-                                <th class="text-center" style="min-width: 120px;">ATTENDANCE REASON</th>
+                                <th class="text-center" style="min-width: 95px;">ATTENDANCE</th>
                                 <th class="text-center" style="min-width: 130px;">SCORE (L1) - COURSE</th>
                                 <th class="text-center" style="min-width: 105px;">SCORE (L2)</th>
                                 <th class="text-center" style="min-width: 105px;">SCORE (L3)</th>
                                 <th style="min-width: 140px;">PERSON IN CHARGE (PIC)</th>
-                                <th class="text-center" style="min-width: 110px;">CERTIFICATE</th>
-                                <th class="text-center" style="min-width: 60px; width: 60px;">ACTION</th>
+                                <th class="text-center" style="min-width: 140px;">TOTAL ENGAGEMENT TIME</th>
+                                <th class="text-center" style="min-width: 80px; width: 80px;">ACTION</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -221,6 +218,7 @@
             scrollX: true,
             pageLength: defaultEntries,
             lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+            order: [[19, 'desc']],
             dom: 't',
             ajax: {
                 url: datatableUrl,
@@ -239,11 +237,8 @@
                 { data: 'department', name: 'u.department', className: 'text-start' },
                 { data: 'company', name: 'u.company_name', className: 'text-start' },
                 { data: 'course_title', name: 'c.title', className: 'text-start' },
-                { data: 'sub_course_title', orderable: false, searchable: false, className: 'text-center' },
                 { data: 'type', name: 'c.type', className: 'text-center' },
                 { data: 'category', name: 'unified.category_source', className: 'text-start' },
-                { data: 'level', orderable: false, searchable: false, className: 'text-center' },
-                { data: 'batch', orderable: false, searchable: false, className: 'text-center' },
                 { data: 'main_classification', name: 'cl.classification_name', className: 'text-start' },
                 { data: 'sub_classification', orderable: false, searchable: false, className: 'text-center' },
                 { data: 'delivery_method', orderable: false, searchable: false, className: 'text-center' },
@@ -251,18 +246,18 @@
                 { data: 'provider_name', orderable: false, searchable: false, className: 'text-start' },
                 { data: 'venue', orderable: false, searchable: false, className: 'text-start' },
                 { data: 'course_duration', name: 'c.duration', className: 'text-center' },
-                { data: 'total_engagement_duration', orderable: false, searchable: false, className: 'text-center' },
                 { data: 'learning_hours', name: 'unified.learning_hours', className: 'text-center' },
-                { data: 'progress_percent', name: 'unified.progress', className: 'text-center' },
-                { data: 'record_month', name: 'unified.created_at', className: 'text-center', orderable: false },
+                { data: 'progress_bar', name: 'unified.progress', className: 'text-center' },
+                { data: 'progress_status', name: 'unified.finish', className: 'text-center' },
+                { data: 'date_time_merged', name: 'unified.created_at', className: 'text-start' },
+                { data: 'record_month', name: 'unified.created_at', className: 'text-center' },
                 { data: 'requirement', name: 'unified.status', className: 'text-center' },
                 { data: 'attendance', orderable: false, searchable: false, className: 'text-center' },
-                { data: 'attendance_reason', orderable: false, searchable: false, className: 'text-center' },
                 { data: 'score_l1', orderable: false, searchable: false, className: 'text-center' },
                 { data: 'score_l2', orderable: false, searchable: false, className: 'text-center' },
                 { data: 'score_l3', orderable: false, searchable: false, className: 'text-center' },
                 { data: 'pic', orderable: false, searchable: false, className: 'text-start' },
-                { data: 'certificate', orderable: false, searchable: false, className: 'text-center' },
+                { data: 'total_engagement_time', name: 'unified.learning_hours', className: 'text-center' },
                 { data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-center' }
             ],
             language: {

@@ -52,6 +52,7 @@ use App\Http\Controllers\MonitoringController;
 use App\Http\Controllers\ManageAccessPermissionController;
 use App\Http\Controllers\PlaylistDebugController;
 use App\Http\Controllers\PlaylistCertificateDebugController;
+use App\Http\Controllers\EngagementTimeController;
 use App\Http\Controllers\Manage\LearningHours\ContentUserLearningHourController;
 use App\Http\Controllers\Manage\LearningHours\PlaylistContentUserLearningHourController;
 use App\Http\Controllers\Manage\LearningHours\LearningHoursLandingController;
@@ -139,6 +140,9 @@ Route::middleware(['auth'])->group(function () {
 
     Route::post('/comment/{id}/like', [CommentController::class, 'toggleLike'])->name('comment.like');
     Route::delete('/comments/{id}', [CommentController::class, 'destroy'])->name('comments.destroy');
+
+    // Total Engagement Time Heartbeat (restricted to the 2 designated learning items)
+    Route::post('/engagement-time/heartbeat', [EngagementTimeController::class, 'heartbeat'])->name('engagement-time.heartbeat');
 });
 
 /*
@@ -630,7 +634,12 @@ Route::group(['prefix' => 'manage/role', 'middleware' => ['auth', 'superadmin']]
     Route::get('/live-search', [ManageRoleController::class, 'liveSearch'])->name('manage.role.live-search');
     Route::get('/search-autocomplete', [ManageRoleController::class, 'liveSearch'])->name('manage.role.autocomplete');
     Route::get('/autocomplete', [ManageRoleController::class, 'liveSearch']);
+    Route::post('/sync', [ManageRoleController::class, 'sync'])->name('manage.role.sync');
+    Route::post('/sync-dry-run', [ManageRoleController::class, 'syncDryRun'])->name('manage.role.sync.dry-run');
+    Route::get('/{user}/show', [ManageRoleController::class, 'show'])->name('manage.role.show');
+    Route::get('/{user}', [ManageRoleController::class, 'show']);
     Route::put('/{user}', [ManageRoleController::class, 'update'])->name('manage.role.update');
+    Route::delete('/{user}', [ManageRoleController::class, 'destroy'])->name('manage.role.destroy');
 });
 
 /*

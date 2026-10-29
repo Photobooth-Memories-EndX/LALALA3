@@ -227,8 +227,8 @@
                 [10, 25, 50, 100],
                 [10, 25, 50, 100]
             ],
-            order: [[9, 'desc']],
-            dom: '<"table-responsive"t>',
+            order: [[ {{ ($isAllRecord ?? false) ? 20 : 19 }}, 'desc' ]],
+            dom: 't',
             ajax: {
                 url: "{{ $datatableUrl ?? route('learning.manage.datatable') }}",
                 type: 'GET',
@@ -259,16 +259,37 @@
             },
             columns: [
                 { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false, className: 'text-center' },
-                { data: 'status_badge', name: 'unified.status', className: 'text-center' },
-                { data: 'id_emp', name: 'u.id_emp', className: 'text-center' },
-                { data: 'employee', name: 'u.name' },
-                { data: 'learning_title', name: 'c.title' },
-                { data: 'type_badge', name: 'c.type', className: 'text-center' },
-                { data: 'classification_name', name: 'cl.classification_name' },
-                { data: 'category_badge', name: 'unified.category_source', className: 'text-center' },
-                { data: 'duration', name: 'c.duration', className: 'text-center' },
-                { data: 'learning_date', name: 'unified.created_at', className: 'text-center' },
-                { data: 'progress_bar', name: 'unified.progress', orderable: false, searchable: false, className: 'text-center' },
+                @if ($isAllRecord ?? false)
+                { data: 'source_badge', name: 'source_badge', className: 'text-center' },
+                @endif
+                { data: 'employee_id', name: 'u.id_emp', className: 'text-center' },
+                { data: 'employee_name', name: 'u.name', className: 'text-start' },
+                { data: 'team', name: 'u.team', className: 'text-start' },
+                { data: 'department', name: 'u.department', className: 'text-start' },
+                { data: 'company', name: 'u.company_name', className: 'text-start' },
+                { data: 'course_title', name: 'c.title', className: 'text-start' },
+                { data: 'type', name: 'c.type', className: 'text-center' },
+                { data: 'category', name: 'unified.category_source', className: 'text-start' },
+                { data: 'main_classification', name: 'cl.classification_name', className: 'text-start' },
+                { data: 'sub_classification', orderable: false, searchable: false, className: 'text-center' },
+                { data: 'delivery_method', orderable: false, searchable: false, className: 'text-center' },
+                { data: 'sub_delivery_method', orderable: false, searchable: false, className: 'text-start' },
+                { data: 'provider_name', orderable: false, searchable: false, className: 'text-start' },
+                { data: 'venue', orderable: false, searchable: false, className: 'text-start' },
+                { data: 'course_duration', name: 'c.duration', className: 'text-center' },
+                { data: 'recognized_duration', orderable: false, searchable: false, className: 'text-center' },
+                { data: 'learning_hours', name: 'unified.learning_hours', className: 'text-center' },
+                { data: 'progress_bar', name: 'unified.progress', className: 'text-center' },
+                { data: 'progress_status', name: 'unified.finish', className: 'text-center' },
+                { data: 'date_time_merged', name: 'unified.created_at', className: 'text-start' },
+                { data: 'record_month', name: 'unified.created_at', className: 'text-center' },
+                { data: 'requirement', name: 'unified.status', className: 'text-center' },
+                { data: 'attendance', orderable: false, searchable: false, className: 'text-center' },
+                { data: 'score_l1', orderable: false, searchable: false, className: 'text-center' },
+                { data: 'score_l2', orderable: false, searchable: false, className: 'text-center' },
+                { data: 'score_l3', orderable: false, searchable: false, className: 'text-center' },
+                { data: 'pic', orderable: false, searchable: false, className: 'text-start' },
+                { data: 'total_engagement_time', name: 'unified.learning_hours', className: 'text-center' },
                 { data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-center' }
             ],
             language: {
@@ -362,6 +383,9 @@
                         bootstrap.Tooltip.getOrCreateInstance(tooltipTriggerEl);
                     });
                 }
+
+                // Sync top scrollbar
+                syncTopScroll();
             }
         });
 
@@ -373,6 +397,37 @@
                 learningTable.page(page).draw('page');
             }
         });
+
+        // Top scrollbar synchronization (dual synchronized scrollbars)
+        const $topScroll = $('#table-scroll-top-wrapper');
+        const $tableScroll = $('#table-scroll-container');
+        const $topInner = $('#table-scroll-top-inner');
+
+        function syncTopScroll() {
+            const tableWidth = $('#learning-table').outerWidth();
+            $topInner.css('width', tableWidth + 'px');
+        }
+
+        let isSyncingTop = false;
+        let isSyncingBottom = false;
+
+        $topScroll.on('scroll', function() {
+            if (!isSyncingTop) {
+                isSyncingBottom = true;
+                $tableScroll.scrollLeft($(this).scrollLeft());
+            }
+            isSyncingTop = false;
+        });
+
+        $tableScroll.on('scroll', function() {
+            if (!isSyncingBottom) {
+                isSyncingTop = true;
+                $topScroll.scrollLeft($(this).scrollLeft());
+            }
+            isSyncingBottom = false;
+        });
+
+        $(window).on('resize', syncTopScroll);
 
         // Function to update active filter counter badge
         function updateActiveFilterBadge() {
@@ -722,6 +777,9 @@
                         const emp = d.employee || {};
                         const lr = d.learning || {};
                         const pr = d.progress || {};
+                        const rec = d.record_info || {};
+                        const ob = d.obligation || {};
+                        const as = d.assessment || {};
                         const ts = d.timestamps || {};
 
                         // Employee Information
@@ -729,13 +787,26 @@
                         $('#ld-emp-name').text(emp.name || '-');
                         $('#ld-emp-dept').text(emp.department || '-');
                         $('#ld-emp-team').text(emp.team || '-');
+                        $('#ld-emp-company').text(emp.company || '-');
+                        $('#ld-emp-grade').text(emp.grade || '-');
+                        $('#ld-emp-job-position').text(emp.job_position || '-');
 
                         // Learning Information
                         $('#ld-content-title').text(lr.title || '-');
+                        $('#ld-content-sub-title').text(lr.sub_course_title || '-');
                         $('#ld-content-type').text(lr.type || '-');
                         $('#ld-content-classification').text(lr.classification || '-');
+                        $('#ld-content-main-class').text(lr.main_classification || lr.classification || '-');
+                        $('#ld-content-sub-class').text(lr.sub_classification || '-');
                         $('#ld-content-category').text(lr.category || '-');
                         $('#ld-content-source').text(lr.source || '-');
+                        $('#ld-content-level').text(lr.level || '-');
+                        $('#ld-content-batch').text(lr.batch || '-');
+                        $('#ld-content-delivery').text(lr.delivery_method || 'Online');
+                        $('#ld-content-sub-delivery').text(lr.sub_delivery_method || '-');
+                        $('#ld-content-provider').text(lr.provider_name || '-');
+                        $('#ld-content-venue').text(lr.venue || '-');
+                        $('#ld-content-instructor').text(lr.instructor || '-');
 
                         if (d.source_type === 'playlist' && lr.playlist_name && lr.playlist_name !== '-') {
                             $('#ld-playlist-name').text(lr.playlist_name);
@@ -749,19 +820,44 @@
                         $('#ld-progress-text').text(pct + '%');
                         $('#ld-progress-bar').css('width', pct + '%');
 
-                        const isFinished = pr.finish === 'Finished';
+                        const isFinished = pr.finish === 'Finished' || pr.is_finished === true;
                         $('#ld-finish-badge')
                             .text(pr.finish || '-')
                             .removeClass('bg-success-lt text-success bg-warning-lt text-warning')
                             .addClass(isFinished ? 'bg-success-lt text-success' : 'bg-warning-lt text-warning');
 
+                        $('#ld-progress-status').text(pr.progress_status || (isFinished ? 'Finished' : (pct > 0 ? 'Ongoing' : 'Not Started')));
                         $('#ld-learning-status').text(pr.learning_status || '-');
                         $('#ld-status').text(pr.status || '-');
                         $('#ld-learning-hours').text(pr.learning_hours || '-');
+                        $('#ld-total-engagement-time').text(pr.total_engagement_time || '-');
                         $('#ld-duration').text(pr.duration || '-');
+                        $('#ld-course-duration').text(pr.course_duration || pr.duration || '-');
+                        $('#ld-total-recognized-duration').text(pr.total_recognized_duration || '-');
                         $('#ld-current-time').text(pr.current_time || '-');
                         $('#ld-actual-watch').text(pr.actual_watch_seconds || '-');
                         $('#ld-afk-duration').text(pr.afk_duration || '-');
+
+                        // Record Information & Obligations
+                        $('#ld-record-month').text(rec.record_month || '-');
+                        $('#ld-record-requirement').text(rec.requirement || '-');
+                        $('#ld-record-attendance').text(rec.attendance || '-');
+                        $('#ld-record-attendance-reason').text(rec.attendance_reason || '-');
+                        $('#ld-record-start-date').text((rec.start_date || '-') + (rec.start_time && rec.start_time !== '-' ? ', ' + rec.start_time : ''));
+                        $('#ld-record-end-date').text((rec.end_date || '-') + (rec.end_time && rec.end_time !== '-' ? ', ' + rec.end_time : ''));
+                        $('#ld-obligation-bond-status').text(ob.bond_status || '-');
+                        $('#ld-obligation-bond-duration').text(ob.bond_duration || '-');
+                        $('#ld-obligation-bond-end-date').text(ob.bond_end_date || '-');
+                        $('#ld-obligation-bond-amount').text(ob.bond_amount || '-');
+
+                        // Assessment & Certification
+                        $('#ld-score-l1').text(as.score_l1 || '-');
+                        $('#ld-score-l2').text(as.score_l2 || '-');
+                        $('#ld-l2-status').text(as.l2_status || '-');
+                        $('#ld-score-l3').text(as.score_l3 || '-');
+                        $('#ld-l3-status').text(as.l3_status || '-');
+                        $('#ld-pic').text(as.pic || '-');
+                        $('#ld-certificate').text(as.certificate || '-');
 
                         // Timestamps
                         $('#ld-created-at').text(ts.created_at || '-');

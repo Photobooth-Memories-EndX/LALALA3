@@ -110,51 +110,51 @@ class OfflineTrainingSmartImportTest extends TestCase
 
         $merged = array_merge($defaults, $overrides);
 
-        return [
-            $merged['no'],
-            $merged['employee_id'],
-            $merged['name'],
-            $merged['grade'],
-            $merged['job_position'],
-            $merged['team'],
-            $merged['department'],
-            $merged['company'],
-            $merged['course_name'],
-            $merged['sub_course_name'],
-            $merged['type'],
-            $merged['category'],
-            $merged['level'],
-            $merged['batch'],
-            $merged['main_classification'],
-            $merged['sub_classification'],
-            $merged['counted_corporate_kpi'],
-            $merged['sub_corporate_kpi'],
-            $merged['delivery_method'],
-            $merged['sub_delivery_method'],
-            $merged['provider'],
-            $merged['sub_provider'],
-            $merged['duration_seconds'],
-            $merged['learning_hours'],
-            $merged['progress'],
-            $merged['start_date'],
-            $merged['finish_date'],
-            $merged['month'],
-            $merged['provider_name'],
-            $merged['venue'],
-            $merged['instructor'],
-            $merged['assessment_score'],
-            $merged['certificate'],
-            $merged['attendance'],
-            $merged['attendance_reason'],
-            $merged['bond_status'],
-            $merged['bond_end_date'],
-            $merged['bond_amount'],
-            $merged['l1_program'],
-            $merged['l2_numerical'],
-            $merged['l2_verbal'],
-            $merged['l3_numerical'],
-            $merged['l3_verbal'],
-            $merged['pic'],
+                return [
+            $merged['employee_id'] ?? '100234',                                   // 1. Employee ID
+            $merged['name'] ?? 'Budi Santoso',                                    // 2. Employee Name
+            $merged['grade'] ?? '4A',                                             // 3. Grade
+            $merged['job_position'] ?? 'Electrical Maintenance Engineer',         // 4. Job Position
+            $merged['team'] ?? 'Rolling Mill 1',                                  // 5. Team
+            $merged['department'] ?? 'Maintenance Department',                    // 6. Department
+            $merged['company'] ?? 'TEST_CORP',                                    // 7. Company
+            $merged['course_name'] ?? 'High Voltage Safety & Operation',          // 8. Course Title
+            $merged['sub_course_name'] ?? 'Switchgear Module',                    // 9. Sub Course Title
+            $merged['type'] ?? 'In-House',                                        // 10. Type
+            $merged['category'] ?? 'TEST_CAT',                                    // 11. Category
+            $merged['level'] ?? 'Intermediate',                                   // 12. Level
+            $merged['batch'] ?? 'Batch 1',                                        // 13. Batch
+            $merged['main_classification'] ?? 'Technical',                        // 14. Main Classification
+            $merged['sub_classification'] ?? 'Plant Maintenance',                 // 15. Sub Classification
+            $merged['delivery_method'] ?? 'Offline',                              // 16. Delivery Method
+            $merged['sub_delivery_method'] ?? 'On-site',                          // 17. Sub Delivery Method
+            $merged['provider_name'] ?? 'PT Schneider Indonesia',                 // 18. Provider Name
+            $merged['venue'] ?? 'Auditorium Hall B',                              // 19. Venue
+            $merged['instructor'] ?? 'Ir. Gunawan, M.T.',                         // 20. Instructor
+            $merged['duration_seconds'] ?? '08:00:00',                            // 21. Course Duration
+            $merged['learning_hours'] ?? 8.0,                                     // 22. Learning Hours
+            $merged['progress'] ?? 100,                                           // 23. % Progress
+            $merged['progress_status'] ?? 'Finished',                             // 24. Progress Status
+            $merged['start_date'] ?? '2026-08-10',                                // 25. Start Date
+            $merged['finish_date'] ?? ($merged['end_date'] ?? '2026-08-10'),     // 26. End Date
+            $merged['start_time'] ?? '08:00:00',                                  // 27. Start Time
+            $merged['end_time'] ?? '17:00:00',                                    // 28. End Time
+            $merged['month'] ?? 'August',                                         // 29. Record Month
+            $merged['requirement'] ?? 'Mandatory',                                // 30. Requirement
+            $merged['attendance'] ?? 'Yes',                                       // 31. Attendance
+            $merged['attendance_reason'] ?? 'Present in all sessions',            // 32. Attendance Reason
+            $merged['bond_status'] ?? 'No',                                       // 33. Bond Status
+            $merged['bond_duration'] ?? '',                                       // 34. Bond Duration
+            $merged['bond_end_date'] ?? '',                                       // 35. Bond End Date
+            $merged['bond_amount'] ?? '',                                         // 36. Bond Amount
+            $merged['l1_program'] ?? 'Very Good',                                 // 37. Score (L1) - Course
+            $merged['l2_numerical'] ?? ($merged['assessment_score'] ?? 88.0),     // 38. Score (L2)
+            $merged['l2_verbal'] ?? 'Passed with Distinction',                    // 39. L2 Status
+            $merged['l3_numerical'] ?? 92.5,                                      // 40. Score (L3)
+            $merged['l3_verbal'] ?? 'Exceeds Expectations',                       // 41. L3 Status
+            $merged['pic'] ?? 'Siti Rahma HRD',                                   // 42. Person in Charge (PIC)
+            $merged['certificate'] ?? 'Yes',                                      // 43. Certificate
+            $merged['total_engagement_time'] ?? 8.0,                              // 44. Total Engagement Time
         ];
     }
 
@@ -271,7 +271,7 @@ class OfflineTrainingSmartImportTest extends TestCase
     public function test_case_03_header_capitalization_auto_matches(): void
     {
         $headers = OfflineTrainingExcelSchema::headers();
-        $headers[4] = 'job position'; // Col 5 in 0-indexed is 4
+        $headers[3] = 'job position'; // Col 4 in 0-indexed is 3
 
         $row = $this->buildCanonicalTestRow();
         $file = $this->createSpreadsheetFile([$row], false, $headers);
@@ -284,8 +284,8 @@ class OfflineTrainingSmartImportTest extends TestCase
         $headerCheck = $response->json('header_check');
 
         $this->assertTrue($headerCheck['can_proceed']);
-        $this->assertEquals('AUTO_MATCHED', $headerCheck['columns'][5]['status']);
-        $this->assertEquals('Job Position', $headerCheck['columns'][5]['mapped_to']);
+        $this->assertEquals('AUTO_MATCHED', $headerCheck['columns'][4]['status']);
+        $this->assertEquals('Job Position', $headerCheck['columns'][4]['mapped_to']);
         $this->assertTrue($response->json('can_confirm'));
     }
 
@@ -295,7 +295,7 @@ class OfflineTrainingSmartImportTest extends TestCase
     public function test_case_04_header_underscore_auto_matches(): void
     {
         $headers = OfflineTrainingExcelSchema::headers();
-        $headers[4] = 'job_position';
+        $headers[3] = 'job_position';
 
         $row = $this->buildCanonicalTestRow();
         $file = $this->createSpreadsheetFile([$row], false, $headers);
@@ -308,8 +308,8 @@ class OfflineTrainingSmartImportTest extends TestCase
         $headerCheck = $response->json('header_check');
 
         $this->assertTrue($headerCheck['can_proceed']);
-        $this->assertEquals('AUTO_MATCHED', $headerCheck['columns'][5]['status']);
-        $this->assertEquals('Job Position', $headerCheck['columns'][5]['mapped_to']);
+        $this->assertEquals('AUTO_MATCHED', $headerCheck['columns'][4]['status']);
+        $this->assertEquals('Job Position', $headerCheck['columns'][4]['mapped_to']);
         $this->assertTrue($response->json('can_confirm'));
     }
 
@@ -319,7 +319,7 @@ class OfflineTrainingSmartImportTest extends TestCase
     public function test_case_05_safe_typo_job_position_auto_matches(): void
     {
         $headers = OfflineTrainingExcelSchema::headers();
-        $headers[4] = 'Job Positon'; // Typo: Positon
+        $headers[3] = 'Job Positon'; // Typo: Positon
 
         $row = $this->buildCanonicalTestRow();
         $file = $this->createSpreadsheetFile([$row], false, $headers);
@@ -332,8 +332,8 @@ class OfflineTrainingSmartImportTest extends TestCase
         $headerCheck = $response->json('header_check');
 
         $this->assertTrue($headerCheck['can_proceed']);
-        $this->assertEquals('AUTO_MATCHED', $headerCheck['columns'][5]['status']);
-        $this->assertEquals('Job Position', $headerCheck['columns'][5]['mapped_to']);
+        $this->assertEquals('AUTO_MATCHED', $headerCheck['columns'][4]['status']);
+        $this->assertEquals('Job Position', $headerCheck['columns'][4]['mapped_to']);
         $this->assertTrue($response->json('can_confirm'));
     }
 
@@ -343,7 +343,7 @@ class OfflineTrainingSmartImportTest extends TestCase
     public function test_case_06_safe_typo_assessment_score_auto_matches(): void
     {
         $headers = OfflineTrainingExcelSchema::headers();
-        $headers[31] = 'Assesment Score'; // Col 32 in 0-indexed is 31
+        $headers[37] = 'Score L2'; // Col 38 in 0-indexed is 37
 
         $row = $this->buildCanonicalTestRow();
         $file = $this->createSpreadsheetFile([$row], false, $headers);
@@ -356,8 +356,8 @@ class OfflineTrainingSmartImportTest extends TestCase
         $headerCheck = $response->json('header_check');
 
         $this->assertTrue($headerCheck['can_proceed']);
-        $this->assertEquals('AUTO_MATCHED', $headerCheck['columns'][32]['status']);
-        $this->assertEquals('Assessment Score', $headerCheck['columns'][32]['mapped_to']);
+        $this->assertEquals('AUTO_MATCHED', $headerCheck['columns'][38]['status']);
+        $this->assertEquals('Score (L2)', $headerCheck['columns'][38]['mapped_to']);
         $this->assertTrue($response->json('can_confirm'));
     }
 
@@ -367,7 +367,7 @@ class OfflineTrainingSmartImportTest extends TestCase
     public function test_case_07_wrong_semantic_header_blocks_confirm(): void
     {
         $headers = OfflineTrainingExcelSchema::headers();
-        $headers[4] = 'Provider'; // Column 5 replaced with Provider (wrong semantic header!)
+        $headers[3] = 'Provider'; // Column 4 replaced with Provider (wrong semantic header!)
 
         $row = $this->buildCanonicalTestRow();
         $file = $this->createSpreadsheetFile([$row], false, $headers);
@@ -380,7 +380,7 @@ class OfflineTrainingSmartImportTest extends TestCase
         $headerCheck = $response->json('header_check');
 
         $this->assertFalse($headerCheck['can_proceed']);
-        $this->assertEquals('INVALID', $headerCheck['columns'][5]['status']);
+        $this->assertEquals('INVALID', $headerCheck['columns'][4]['status']);
         $this->assertFalse($response->json('can_confirm'));
 
         $token = $response->json('data.token');
@@ -607,7 +607,8 @@ class OfflineTrainingSmartImportTest extends TestCase
     public function test_case_14_correct_headers_with_invalid_row_data_type(): void
     {
         $row = $this->buildCanonicalTestRow([
-            'assessment_score' => 'ABC', // Invalid numeric score!
+            'assessment_score' => 'ABC',
+            'l2_numerical'     => 'ABC', // Invalid numeric score!
         ]);
         $file = $this->createSpreadsheetFile([$row], false);
 
@@ -627,7 +628,7 @@ class OfflineTrainingSmartImportTest extends TestCase
         $this->assertEquals('invalid', $previewRow['status']);
 
         $errorMsg = $previewRow['messages'][0];
-        $this->assertStringContainsString('Column: Assessment Score', $errorMsg);
+        $this->assertTrue(str_contains($errorMsg, 'Assessment Score') || str_contains($errorMsg, 'Score (L2)'));
         $this->assertStringContainsString("Value: 'ABC'", $errorMsg);
         $this->assertStringContainsString('Expected: Numeric value', $errorMsg);
         $this->assertStringContainsString('Status: INVALID VALUE', $errorMsg);
@@ -654,9 +655,9 @@ class OfflineTrainingSmartImportTest extends TestCase
         $this->assertNotNull($sheet);
 
         // Verify single header row
-        $this->assertEquals('No', $sheet->getCell('A1')->getValue());
-        $this->assertEquals('ID', $sheet->getCell('B1')->getValue());
-        $this->assertEquals('PIC', $sheet->getCell('AR1')->getValue());
+        $this->assertEquals('Employee ID', $sheet->getCell('A1')->getValue());
+        $this->assertEquals('Employee Name', $sheet->getCell('B1')->getValue());
+        $this->assertEquals('Total Engagement Time', $sheet->getCell('AR1')->getValue());
 
         // Verify freeze pane is A2 (Row 1 frozen)
         $this->assertEquals('A2', $sheet->getFreezePane());

@@ -210,6 +210,10 @@ class RecordOnlineController extends Controller
             $progress = (int) ($record->progress ?? 0);
             $isFinished = $record->finish === '1' || $progress >= 100;
 
+            $recognizedService = app(\App\Services\Learning\LearningRecordRecognizedDurationService::class);
+            $contentDurationSec = (int) ($content?->duration ?? 0);
+            $recognizedSec = $recognizedService->resolveFromContentRecord($record, $contentDurationSec);
+
             return response()->json([
                 'success' => true,
                 'data' => [
@@ -219,6 +223,8 @@ class RecordOnlineController extends Controller
                         'id_emp'      => $user?->id_emp ?: '-',
                         'name'        => $user?->name ?: '-',
                         'email'       => $user?->email ?: '-',
+                        'grade'       => $user?->jobgrade ?: '-',
+                        'job_position' => $user?->jobposition ?: '-',
                         'department'  => $user?->department ?: '-',
                         'division'    => $user?->division ?: '-',
                         'team'        => $user?->team ?: '-',
@@ -242,6 +248,7 @@ class RecordOnlineController extends Controller
                         'tracked_duration'     => $durationFormatted,
                         'actual_watch'         => $actualWatchSec !== null ? DurationFormatter::fromSeconds($actualWatchSec) . " ({$actualWatchSec}s)" : '-',
                         'afk_duration'         => $afkSec !== null ? DurationFormatter::fromSeconds($afkSec) . " ({$afkSec}s)" : '-',
+                        'recognized_duration'  => $recognizedService->formatSeconds($recognizedSec),
                         'pages'                => $record->last_page ?? ($record->total_pages ?? null),
                         'credited_hours'       => number_format((float) ($record->learning_hours ?? 0), 2) . ' Hours',
                         'learning_status'      => $record->learning_status ? ucfirst(str_replace('_', ' ', $record->learning_status)) : 'Valid',
@@ -280,19 +287,25 @@ class RecordOnlineController extends Controller
         $progress = (int) ($record->progress ?? 0);
         $isFinished = $record->finish === '1' || $progress >= 100;
 
+        $recognizedService = app(\App\Services\Learning\LearningRecordRecognizedDurationService::class);
+        $contentDurationSec = (int) ($content?->duration ?? 0);
+        $recognizedSec = $recognizedService->resolveFromPlaylistContentRecord($record, $contentDurationSec);
+
         return response()->json([
             'success' => true,
             'data' => [
                 'source_type' => 'playlist',
                 'source_id'   => $record->id,
                 'employee'    => [
-                    'id_emp'      => $user?->id_emp ?: '-',
-                    'name'        => $user?->name ?: '-',
-                    'email'       => $user?->email ?: '-',
-                    'department'  => $user?->department ?: '-',
-                    'division'    => $user?->division ?: '-',
-                    'team'        => $user?->team ?: '-',
-                    'company'     => $user?->company_name ?: 'PT Krakatau Posco',
+                    'id_emp'       => $user?->id_emp ?: '-',
+                    'name'         => $user?->name ?: '-',
+                    'email'        => $user?->email ?: '-',
+                    'grade'        => $user?->jobgrade ?: '-',
+                    'job_position' => $user?->jobposition ?: '-',
+                    'department'   => $user?->department ?: '-',
+                    'division'     => $user?->division ?: '-',
+                    'team'         => $user?->team ?: '-',
+                    'company'      => $user?->company_name ?: 'PT Krakatau Posco',
                 ],
                 'learning'    => [
                     'title'          => $content?->title ?: ($trainingPlan?->title ?: '-'),
@@ -315,6 +328,7 @@ class RecordOnlineController extends Controller
                     'tracked_duration'     => $durationFormatted,
                     'actual_watch'         => $actualWatchSec !== null ? DurationFormatter::fromSeconds($actualWatchSec) . " ({$actualWatchSec}s)" : '-',
                     'afk_duration'         => $afkSec !== null ? DurationFormatter::fromSeconds($afkSec) . " ({$afkSec}s)" : '-',
+                    'recognized_duration'  => $recognizedService->formatSeconds($recognizedSec),
                     'pages'                => null,
                     'credited_hours'       => number_format((float) ($record->learning_hour ?? 0), 2) . ' Hours',
                     'learning_status'      => $record->learning_status ? ucfirst(str_replace('_', ' ', $record->learning_status)) : 'Valid',

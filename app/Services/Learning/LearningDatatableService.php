@@ -3,6 +3,7 @@
 namespace App\Services\Learning;
 
 use App\Http\Controllers\LearningManageController;
+use App\Http\Controllers\Manage\Record\RecordOfflineController;
 use App\Models\ContentUser;
 use App\Models\PlaylistContentUser;
 use App\Support\DurationFormatter;
@@ -17,6 +18,58 @@ class LearningDatatableService
     public const PLAYLIST_CUTOFF = LearningManageController::PLAYLIST_CUTOFF;
 
     protected static ?bool $hasPcuStatus = null;
+
+    protected array $l2ScoreCache = [];
+
+    /**
+     * Resolve Score (L2) from assesments and assesment_results for online records.
+     */
+    public function resolveL2Score(int $userId, string $sourceType, ?int $contentId, ?int $trainingplanId): ?float
+    {
+        $cacheKey = "{$userId}_{$sourceType}_{$contentId}_{$trainingplanId}";
+        if (array_key_exists($cacheKey, $this->l2ScoreCache)) {
+            return $this->l2ScoreCache[$cacheKey];
+        }
+
+        $query = DB::table('assesment_results as ar')
+            ->join('assesments as a', 'a.id', '=', 'ar.assesment_id')
+            ->where('ar.user_id', $userId)
+            ->where('ar.final', 1);
+
+        if ($sourceType === 'playlist') {
+            $query->where(function ($q) use ($contentId, $trainingplanId) {
+                $matched = false;
+                if ($trainingplanId) {
+                    $q->where('a.trainingplan_id', $trainingplanId);
+                    $matched = true;
+                }
+                if ($contentId) {
+                    if ($matched) {
+                        $q->orWhere('a.content_id', $contentId);
+                    } else {
+                        $q->where('a.content_id', $contentId);
+                        $matched = true;
+                    }
+                }
+                if (!$matched) {
+                    $q->whereRaw('1 = 0');
+                }
+            });
+        } else {
+            if ($contentId) {
+                $query->where('a.content_id', $contentId);
+            } else {
+                $this->l2ScoreCache[$cacheKey] = null;
+                return null;
+            }
+        }
+
+        $score = $query->orderByDesc('ar.score')->orderByDesc('ar.id')->value('ar.score');
+
+        $this->l2ScoreCache[$cacheKey] = ($score !== null && is_numeric($score)) ? (float) $score : null;
+
+        return $this->l2ScoreCache[$cacheKey];
+    }
 
     /**
      * Check if playlist_content_users table has status column (cached per process).
@@ -52,6 +105,9 @@ class LearningDatatableService
                 'cu.status',
                 'cu.finish',
                 'cu.progress',
+                'cu.current_time',
+                'cu.actual_watch_seconds',
+                'cu.afk_duration_seconds',
                 'cu.created_at',
                 'cu.updated_at',
                 'cu.completed_at',
@@ -72,6 +128,9 @@ class LearningDatatableService
                 $pcuStatusSelect,
                 'pcu.finish',
                 'pcu.progress',
+                'pcu.current_time',
+                'pcu.actual_watch_seconds',
+                'pcu.afk_duration_seconds',
                 'pcu.created_at',
                 'pcu.updated_at',
                 'pcu.completed_at',
@@ -467,6 +526,9 @@ class LearningDatatableService
                 'unified.status',
                 'unified.finish',
                 'unified.progress',
+                'unified.current_time',
+                'unified.actual_watch_seconds',
+                'unified.afk_duration_seconds',
                 'unified.created_at',
                 'unified.updated_at',
                 'unified.completed_at',
@@ -475,6 +537,10 @@ class LearningDatatableService
                 'u.id_emp as user_id_emp',
                 'u.name as employee_name',
                 'u.name as user_name',
+                'u.jobgrade as user_jobgrade',
+                'u.jobposition as user_jobposition',
+                'u.jobgrade',
+                'u.jobposition',
                 'u.department as user_department',
                 'u.team as user_team',
                 'u.company_name as user_company',
@@ -627,6 +693,8 @@ class LearningDatatableService
         return $dataTable
             ->addIndexColumn()
             ->setRowId(fn ($row) => $row->source_type . ':' . $row->source_id)
+            ->addColumn('source_badge', fn ($row) => '<span class="badge bg-blue-lt text-blue">KP OWL</span>')
+            ->addColumn('source', fn ($row) => '<span class="badge bg-blue-lt text-blue">KP OWL</span>')
             ->addColumn('status_badge', fn ($row) => $this->statusBadge($row))
             ->addColumn('id_emp', fn ($row) => $this->idEmpColumn($row))
             ->addColumn('employee_id', fn ($row) => $this->idEmpColumn($row))
@@ -635,6 +703,8 @@ class LearningDatatableService
             ->addColumn('team', fn ($row) => e($row->user_team ?: '-'))
             ->addColumn('department', fn ($row) => e($row->user_department ?: '-'))
             ->addColumn('company', fn ($row) => e($row->user_company ?: '-'))
+            ->addColumn('grade', fn ($row) => e($row->jobgrade ?? ($row->user_jobgrade ?: '-')))
+            ->addColumn('job_position', fn ($row) => e($row->jobposition ?? ($row->user_jobposition ?: '-')))
             ->addColumn('learning_title', fn ($row) => $this->learningTitleColumn($row))
             ->addColumn('course_title', fn ($row) => $this->learningTitleColumn($row))
             ->addColumn('sub_course_title', fn () => '<span class="text-muted small">-</span>')
@@ -653,6 +723,14 @@ class LearningDatatableService
             ->addColumn('venue', fn () => 'Online LMS')
             ->addColumn('duration', fn ($row) => e(DurationFormatter::format($row->content_duration ?? null)))
             ->addColumn('course_duration', fn ($row) => e(DurationFormatter::format($row->content_duration ?? null)))
+            ->addColumn('recognized_duration', function ($row) {
+                $sec = app(\App\Services\Learning\LearningRecordRecognizedDurationService::class)->resolveFromRow($row);
+                return '<span class="fw-semibold font-monospace">' . DurationFormatter::fromSeconds($sec) . '</span>';
+            })
+            ->addColumn('total_recognized_duration', function ($row) {
+                $sec = app(\App\Services\Learning\LearningRecordRecognizedDurationService::class)->resolveFromRow($row);
+                return '<span class="fw-semibold font-monospace">' . DurationFormatter::fromSeconds($sec) . '</span>';
+            })
             ->addColumn('total_engagement_duration', function ($row) {
                 $hours = (float) ($row->learning_hours ?? 0);
                 $fmt = ($hours == (int) $hours) ? (int) $hours . ' h' : rtrim(rtrim(number_format($hours, 2, '.', ''), '0'), '.') . ' h';
@@ -669,14 +747,24 @@ class LearningDatatableService
             })
             ->addColumn('learning_date', fn ($row) => $row->created_at ? Carbon::parse($row->created_at)->format('d M Y') : '-')
             ->addColumn('date_time_merged', function ($row) {
-                $startStr = $row->created_at ? Carbon::parse($row->created_at)->format('d M Y, H:i') : '-';
-                $endStr = $row->completed_at ? Carbon::parse($row->completed_at)->format('d M Y, H:i') : ($row->finish == 1 && $row->updated_at ? Carbon::parse($row->updated_at)->format('d M Y, H:i') : '-');
-                return '<div class="text-nowrap small">
-                    <div><span class="text-muted">Start:</span> ' . e($startStr) . '</div>
-                    <div><span class="text-muted">End:</span> ' . e($endStr) . '</div>
-                </div>';
+                $startDate = $row->created_at ? Carbon::parse($row->created_at)->format('Y-m-d') : null;
+                $startTime = $row->created_at ? Carbon::parse($row->created_at)->format('H:i') : null;
+                $endDate = $row->completed_at ? Carbon::parse($row->completed_at)->format('Y-m-d') : ($row->finish == 1 && $row->updated_at ? Carbon::parse($row->updated_at)->format('Y-m-d') : null);
+                $endTime = $row->completed_at ? Carbon::parse($row->completed_at)->format('H:i') : ($row->finish == 1 && $row->updated_at ? Carbon::parse($row->updated_at)->format('H:i') : null);
+
+                return RecordOfflineController::renderMergedDateTime($startDate, $endDate, $startTime, $endTime);
             })
-            ->addColumn('record_month', fn ($row) => $row->created_at ? Carbon::parse($row->created_at)->format('F') : '-')
+            ->addColumn('record_month', function ($row) {
+                $d = $row->completed_at ?: ($row->finish == 1 ? $row->updated_at : $row->created_at);
+                if (!empty($d) && $d !== '-') {
+                    try {
+                        return Carbon::parse($d)->format('F');
+                    } catch (\Throwable $e) {
+                        return '-';
+                    }
+                }
+                return '-';
+            })
             ->addColumn('requirement', function ($row) {
                 $status = strtolower((string) ($row->status ?? 'non mandatory'));
                 return $status === 'mandatory' ? '<span class="badge bg-red-lt text-red">Mandatory</span>' : '<span class="badge bg-blue-lt text-blue">Non-Mandatory</span>';
@@ -690,25 +778,55 @@ class LearningDatatableService
             })
             ->addColumn('attendance_reason', fn () => '<span class="text-muted small">-</span>')
             ->addColumn('score_l1', fn () => '<span class="text-muted small">-</span>')
-            ->addColumn('score_l2', fn () => '<span class="text-muted small">-</span>')
+            ->addColumn('score_l2', function ($row) {
+                $score = $this->resolveL2Score(
+                    (int) $row->user_id,
+                    (string) ($row->source_type ?? 'content'),
+                    !empty($row->content_id) ? (int) $row->content_id : null,
+                    !empty($row->trainingplan_id) ? (int) $row->trainingplan_id : null
+                );
+                if ($score !== null) {
+                    return '<span class="fw-semibold">' . number_format($score, 1) . '</span>';
+                }
+                return '<span class="text-muted small">-</span>';
+            })
             ->addColumn('score_l3', fn () => '<span class="text-muted small">-</span>')
             ->addColumn('pic', fn () => '<span class="text-muted small">-</span>')
             ->addColumn('certificate', fn () => '<span class="text-muted small">-</span>')
             ->addColumn('progress_bar', fn ($row) => $this->progressBar($row))
             ->addColumn('progress_percent', fn ($row) => $this->progressBar($row))
-            ->addColumn('progress_status', fn ($row) => $this->statusBadge($row))
+            ->addColumn('progress_status', fn ($row) => $this->progressStatusBadge($row))
             ->addColumn('action', fn ($row) => $this->actionColumn($row))
             ->orderColumn('status_badge', 'unified.status $1')
             ->orderColumn('id_emp', 'u.id_emp $1')
+            ->orderColumn('employee_id', 'u.id_emp $1')
             ->orderColumn('employee', 'u.name $1')
+            ->orderColumn('employee_name', 'u.name $1')
+            ->orderColumn('team', 'u.team $1')
+            ->orderColumn('department', 'u.department $1')
+            ->orderColumn('company', 'u.company_name $1')
             ->orderColumn('learning_title', 'c.title $1')
+            ->orderColumn('course_title', 'c.title $1')
             ->orderColumn('type_badge', 'c.type $1')
+            ->orderColumn('type', 'c.type $1')
             ->orderColumn('classification_name', 'cl.classification_name $1')
+            ->orderColumn('main_classification', 'cl.classification_name $1')
             ->orderColumn('category_badge', 'unified.category_source $1')
+            ->orderColumn('category', 'unified.category_source $1')
             ->orderColumn('duration', 'c.duration $1')
+            ->orderColumn('course_duration', 'c.duration $1')
+            ->orderColumn('learning_hours', 'unified.learning_hours $1')
+            ->orderColumn('total_engagement_time', 'unified.learning_hours $1')
             ->orderColumn('learning_date', 'unified.created_at $1')
+            ->orderColumn('date_time_merged', 'unified.created_at $1')
+            ->orderColumn('record_month', 'unified.created_at $1')
+            ->orderColumn('requirement', 'unified.status $1')
             ->orderColumn('progress_bar', 'unified.progress $1')
+            ->orderColumn('progress_percent', 'unified.progress $1')
+            ->orderColumn('progress_status', 'unified.finish $1')
             ->rawColumns([
+                'source_badge',
+                'source',
                 'status_badge',
                 'id_emp',
                 'employee_id',
@@ -728,6 +846,8 @@ class LearningDatatableService
                 'batch',
                 'delivery_method',
                 'sub_delivery_method',
+                'recognized_duration',
+                'total_recognized_duration',
                 'total_engagement_duration',
                 'total_engagement_time',
                 'progress_bar',
@@ -745,6 +865,17 @@ class LearningDatatableService
                 'action',
             ])
             ->make(true);
+    }
+
+    private function progressStatusBadge($row): string
+    {
+        if ((int) ($row->finish ?? 0) === 1) {
+            return '<span class="badge bg-success-lt text-success">Finished</span>';
+        }
+        if ((float) ($row->progress ?? 0) > 0) {
+            return '<span class="badge bg-warning-lt text-warning">Ongoing</span>';
+        }
+        return '<span class="badge bg-secondary-lt text-secondary">Not Started</span>';
     }
 
     private function typeBadge($row): string
@@ -864,6 +995,7 @@ class LearningDatatableService
     private function actionColumn($row): string
     {
         $id = $row->source_id ?? '';
+        $sourceType = $row->source_type ?? 'content';
         $editUrl = route('manage.record.edit', $id);
 
         return '<div class="dropdown">
@@ -872,7 +1004,7 @@ class LearningDatatableService
             </button>
             <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                 <li>
-                    <a class="dropdown-item d-flex align-items-center gap-2 btn-more-info" href="#" data-bs-toggle="modal" data-bs-target="#moreInformationModal" data-id="' . e($id) . '" data-record-id="' . e($id) . '" data-source="online" data-record-source="online">
+                    <a class="dropdown-item d-flex align-items-center gap-2 btn-view-learning-detail btn-more-info" href="javascript:void(0);" data-source-type="' . e($sourceType) . '" data-source-id="' . e($id) . '" data-id="' . e($id) . '" data-record-id="' . e($id) . '" data-source="online" data-record-source="online">
                         <i class="ti ti-eye text-primary"></i> More Information
                     </a>
                 </li>

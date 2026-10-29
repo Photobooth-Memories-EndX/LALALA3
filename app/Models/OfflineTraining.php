@@ -127,6 +127,25 @@ class OfflineTraining extends Model
         });
     }
 
+    protected static ?bool $hasRequirementCol = null;
+
+    public function setRequirementAttribute($val)
+    {
+        if (self::$hasRequirementCol === null) {
+            self::$hasRequirementCol = \Illuminate\Support\Facades\Schema::hasColumn($this->getTable(), 'requirement');
+        }
+        if (self::$hasRequirementCol) {
+            $this->attributes['requirement'] = $val;
+        } else {
+            $this->attributes['status'] = $val;
+        }
+    }
+
+    public function getRequirementAttribute()
+    {
+        return $this->attributes['requirement'] ?? $this->attributes['status'] ?? 'Mandatory';
+    }
+
     /**
      * Standardize Delivery Method into: "Offline", "Online", or "Blended".
      */

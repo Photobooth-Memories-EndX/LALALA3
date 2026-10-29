@@ -99,6 +99,7 @@ class ClassificationOnlineRecordExport implements FromCollection, WithHeadings, 
             'Venue',
             'Instructor',
             'Course Duration',
+            'Recognized Duration',
             'Learning Hours',
             '% Progress',
             'Progress Status',
@@ -150,29 +151,30 @@ class ClassificationOnlineRecordExport implements FromCollection, WithHeadings, 
             'T'  => 20,  // Venue
             'U'  => 22,  // Instructor
             'V'  => 16,  // Course Duration
-            'W'  => 16,  // Learning Hours
-            'X'  => 14,  // % Progress
-            'Y'  => 16,  // Progress Status
-            'Z'  => 14,  // Start Date
-            'AA' => 14,  // End Date
-            'AB' => 14,  // Start Time
-            'AC' => 14,  // End Time
-            'AD' => 16,  // Record Month
-            'AE' => 15,  // Requirement
-            'AF' => 14,  // Attendance
-            'AG' => 25,  // Attendance Reason
-            'AH' => 14,  // Bond Status
-            'AI' => 16,  // Bond Duration
-            'AJ' => 15,  // Bond End Date
-            'AK' => 18,  // Bond Amount
-            'AL' => 20,  // Score (L1) - Course
-            'AM' => 14,  // Score (L2)
-            'AN' => 14,  // L2 Status
-            'AO' => 14,  // Score (L3)
-            'AP' => 14,  // L3 Status
-            'AQ' => 22,  // Person in Charge (PIC)
-            'AR' => 14,  // Certificate
-            'AS' => 25,  // Total Engagement Time
+            'W'  => 16,  // Recognized Duration
+            'X'  => 16,  // Learning Hours
+            'Y'  => 14,  // % Progress
+            'Z'  => 16,  // Progress Status
+            'AA' => 14,  // Start Date
+            'AB' => 14,  // End Date
+            'AC' => 14,  // Start Time
+            'AD' => 14,  // End Time
+            'AE' => 16,  // Record Month
+            'AF' => 15,  // Requirement
+            'AG' => 14,  // Attendance
+            'AH' => 25,  // Attendance Reason
+            'AI' => 14,  // Bond Status
+            'AJ' => 16,  // Bond Duration
+            'AK' => 15,  // Bond End Date
+            'AL' => 18,  // Bond Amount
+            'AM' => 20,  // Score (L1) - Course
+            'AN' => 14,  // Score (L2)
+            'AO' => 14,  // L2 Status
+            'AP' => 14,  // Score (L3)
+            'AQ' => 14,  // L3 Status
+            'AR' => 22,  // Person in Charge (PIC)
+            'AS' => 14,  // Certificate
+            'AT' => 25,  // Total Engagement Time
         ];
     }
 
@@ -180,15 +182,15 @@ class ClassificationOnlineRecordExport implements FromCollection, WithHeadings, 
     {
         return [
             'B'  => NumberFormat::FORMAT_TEXT,
-            'W'  => 'General" h"',
-            'X'  => '0%',
-            'Z'  => 'yyyy-mm-dd',
+            'X'  => 'General" h"',
+            'Y'  => '0%',
             'AA' => 'yyyy-mm-dd',
-            'AB' => 'hh:mm:ss',
+            'AB' => 'yyyy-mm-dd',
             'AC' => 'hh:mm:ss',
-            'AK' => '"Rp"#,##0',
-            'AM' => '0',
-            'AS' => 'General" h"',
+            'AD' => 'hh:mm:ss',
+            'AL' => '"Rp"#,##0',
+            'AN' => '0',
+            'AT' => 'General" h"',
         ];
     }
 
@@ -273,12 +275,22 @@ class ClassificationOnlineRecordExport implements FromCollection, WithHeadings, 
             $courseTitle = $isPlaylist ? ($row->playlist_title ?: 'Playlist') : ($row->content_title ?: 'Untitled Content');
             $mainClass = $row->classification_name ?: 'Unclassified';
 
+            $recognizedService = app(\App\Services\Learning\LearningRecordRecognizedDurationService::class);
+            $recSec = $recognizedService->resolveFromRow($row);
+            $recognizedFormatted = $recognizedService->formatSeconds($recSec);
+
+            $gradeVal = $row->user_jobgrade ?: ($row->jobgrade ?? '-');
+            $jobPosVal = $row->user_jobposition ?: ($row->jobposition ?? '-');
+
+            $afkSec = (int) ($row->afk_duration_seconds ?? 0);
+            $afkFormatted = $afkSec > 0 ? DurationFormatter::fromSeconds($afkSec) : ($row->afk_duration_seconds !== null ? '00:00:00' : '-');
+
             $rows->push([
                 $rowCount,
                 $cleanEmpId,
                 $row->employee_name ?: ($row->user_name ?? '-'),
-                '-', // Grade
-                '-', // Job Position
+                $gradeVal, // Grade
+                $jobPosVal, // Job Position
                 $row->user_team ?: '-',
                 $row->user_department ?: '-',
                 $row->user_company ?: '-',
@@ -296,6 +308,7 @@ class ClassificationOnlineRecordExport implements FromCollection, WithHeadings, 
                 'KP-OWL',
                 ($row->content_author ?? ($row->author ?? '-')) ?: '-',
                 $durationFormatted,
+                $recognizedFormatted, // Recognized Duration
                 $lHoursNumeric,
                 $progressDecimal, // numeric decimal for 0% format code
                 $progressStatus,
@@ -318,7 +331,7 @@ class ClassificationOnlineRecordExport implements FromCollection, WithHeadings, 
                 '-', // L3 Status
                 '-', // PIC
                 '-', // Certificate
-                $lHoursNumeric, // Total Engagement Time
+                $afkFormatted, // Total Engagement Time
             ]);
 
             // Expand Child Contents for Playlist
@@ -333,8 +346,8 @@ class ClassificationOnlineRecordExport implements FromCollection, WithHeadings, 
                             '-',
                             $cleanEmpId,
                             $row->employee_name ?: ($row->user_name ?? '-'),
-                            '-',
-                            '-',
+                            $gradeVal,
+                            $jobPosVal,
                             $row->user_team ?: '-',
                             $row->user_department ?: '-',
                             $row->user_company ?: '-',
@@ -352,6 +365,7 @@ class ClassificationOnlineRecordExport implements FromCollection, WithHeadings, 
                             'KP-OWL',
                             $child->author ?: '-',
                             $childDuration,
+                            '-', // Recognized Duration on child
                             '-', // '-' on child to prevent double counting
                             '-',
                             '-',
@@ -423,12 +437,22 @@ class ClassificationOnlineRecordExport implements FromCollection, WithHeadings, 
 
         $scoreL2Val = (isset($row->score_l2) && is_numeric($row->score_l2)) ? (int) round((float) $row->score_l2) : '-';
 
+        $recognizedService = app(\App\Services\Learning\LearningRecordRecognizedDurationService::class);
+        $recSec = $recognizedService->resolveFromRow($row);
+        $recognizedFormatted = $recognizedService->formatSeconds($recSec);
+
+        $gradeVal = $row->user_jobgrade ?: ($row->jobgrade ?? '-');
+        $jobPosVal = $row->user_jobposition ?: ($row->jobposition ?? '-');
+
+        $afkSec = (int) ($row->afk_duration_seconds ?? 0);
+        $afkFormatted = $afkSec > 0 ? DurationFormatter::fromSeconds($afkSec) : ($row->afk_duration_seconds !== null ? '00:00:00' : '-');
+
         return [
             1,
             $cleanEmpId,
             $row->employee_name ?: ($row->user_name ?? '-'),
-            '-',
-            '-',
+            $gradeVal,
+            $jobPosVal,
             $row->user_team ?: '-',
             $row->user_department ?: '-',
             $row->user_company ?: '-',
@@ -446,6 +470,7 @@ class ClassificationOnlineRecordExport implements FromCollection, WithHeadings, 
             'KP-OWL',
             ($row->content_author ?? ($row->author ?? '-')) ?: '-',
             $durationFormatted,
+            $recognizedFormatted, // Recognized Duration
             $lHoursNumeric,
             $progressDecimal,
             $progressStatus,
@@ -468,7 +493,7 @@ class ClassificationOnlineRecordExport implements FromCollection, WithHeadings, 
             '-',
             '-',
             '-',
-            $lHoursNumeric,
+            $afkFormatted,
         ];
     }
 

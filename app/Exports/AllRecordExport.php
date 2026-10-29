@@ -347,7 +347,12 @@ class AllRecordExport implements Responsable
                 // Recognized Duration formatted as HH:MM:SS
                 $recognizedFormatted = '-';
                 if ($row->source !== 'offline') {
-                    $rSecs = (int) ($row->recognized_duration_seconds ?? 0);
+                    if (isset($row->recognized_duration_seconds)) {
+                        $rSecs = (int) $row->recognized_duration_seconds;
+                    } else {
+                        $recognizedService = app(\App\Services\Learning\LearningRecordRecognizedDurationService::class);
+                        $rSecs = $recognizedService->resolveFromRow($row);
+                    }
                     $rHours = floor($rSecs / 3600);
                     $rMins = floor(($rSecs % 3600) / 60);
                     $rSeconds = $rSecs % 60;
@@ -363,7 +368,6 @@ class AllRecordExport implements Responsable
                 $em = floor(($engSecs % 3600) / 60);
                 $es = $engSecs % 60;
                 $totalEngagementDuration = sprintf('%02d:%02d:%02d', $eh, $em, $es);
-
                 // Learning Hours: raw numeric float for SUM calculations
                 $lhNumeric = ($row->learning_hours !== null && $row->learning_hours !== '' && is_numeric($row->learning_hours))
                     ? (float) $row->learning_hours
@@ -482,6 +486,7 @@ class AllRecordExport implements Responsable
                     ['AS', 'str', $row->pic ?: '-', $textStyle],
                     ['AT', 'str', $row->certificate ?: '-', $textStyle],
                     ['AU', 'str', $totalEngagementDuration, $textStyle], // TOTAL ENGAGEMENT DURATION
+
                 ];
 
                 $buffer .= $this->buildXmlRow($r, $cells);

@@ -131,6 +131,10 @@
         @endif
     @endif
 
+    @if (\App\Services\EngagementTime\EngagementTimeService::isTargetContent($content))
+        <link rel="stylesheet" href="{{ asset('css/engagement-time.css') }}">
+    @endif
+
     <style>
         .content-detail-page {
             background: linear-gradient(180deg, #f8fbff 0%, #f3f7fc 100%);
@@ -1455,4 +1459,7 @@
             });
         });
     </script>
+    @if (\App\Services\EngagementTime\EngagementTimeService::isTargetContent($content))
+        <script src="{{ asset('js/engagement-time-tracker.js') }}"></script>
+    @endif
 @endsection

@@ -20,7 +20,7 @@
                     <th>Team</th>
                     <th>Organization Unit</th>
                     <th>Current Role</th>
-                    <th class="text-end" style="width: 120px;">Action</th>
+                    <th class="text-end" style="width: 140px;">Action</th>
                 </tr>
             </thead>
 
@@ -45,19 +45,52 @@
                         </td>
 
                         <td class="text-end">
-                            @if ($user->isSuperAdmin())
-                                <span class="text-muted small"><i class="ti ti-lock me-1"></i>Terkunci</span>
-                            @elseif ($user->id === auth()->id())
-                                <span class="text-muted small"><i class="ti ti-user-check me-1"></i>Akun Anda</span>
-                            @else
-                                <button type="button"
-                                        class="btn btn-sm btn-outline-primary"
-                                        style="color: #003b6d; border-color: #003b6d;"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#editUserModal{{ $user->id }}">
-                                    <i class="ti ti-edit me-1"></i> Edit
-                                </button>
-                            @endif
+                            <div class="btn-group btn-group-sm" role="group">
+                                {{-- 1. View Detail Action --}}
+                                <a href="{{ route('manage.role.show', $user->id) }}"
+                                   class="btn btn-outline-info"
+                                   title="View Detail (Profil Lengkap)">
+                                    <i class="ti ti-eye"></i>
+                                </a>
+
+                                {{-- 2. Edit Action --}}
+                                @if ($user->isSuperAdmin())
+                                    <button type="button" class="btn btn-outline-secondary" disabled title="Super Admin Terkunci">
+                                        <i class="ti ti-lock"></i>
+                                    </button>
+                                @elseif ($user->id === auth()->id())
+                                    <button type="button" class="btn btn-outline-secondary" disabled title="Akun Anda Sendiri">
+                                        <i class="ti ti-user-check"></i>
+                                    </button>
+                                @else
+                                    <button type="button"
+                                            class="btn btn-outline-primary"
+                                            style="color: #003b6d; border-color: #003b6d;"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#editUserModal{{ $user->id }}"
+                                            title="Edit Role & Organisasi">
+                                        <i class="ti ti-edit"></i>
+                                    </button>
+                                @endif
+
+                                {{-- 3. Delete Action --}}
+                                @if ($user->isSuperAdmin() || $user->id === auth()->id())
+                                    <button type="button" class="btn btn-outline-secondary" disabled title="Tidak dapat dihapus">
+                                        <i class="ti ti-trash-off"></i>
+                                    </button>
+                                @else
+                                    <button type="button"
+                                            class="btn btn-outline-danger"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#deleteUserModal"
+                                            data-action="{{ route('manage.role.destroy', $user->id) }}"
+                                            data-name="{{ $user->name }}"
+                                            data-emp="{{ $user->id_emp ?: '-' }}"
+                                            title="Hapus User">
+                                        <i class="ti ti-trash"></i>
+                                    </button>
+                                @endif
+                            </div>
                         </td>
                     </tr>
                 @empty
