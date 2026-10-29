@@ -2,8 +2,11 @@
 
 namespace App\Services\OfflineTraining;
 
+use App\Models\ImportBatch;
+use App\Models\ImportBatchRow;
 use App\Models\OfflineTraining;
 use App\Models\OfflineTrainingUser;
+use App\Services\ImportLog\ImportLogService;
 use App\Services\Record\PtkpExcelSchema;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
@@ -11,6 +14,7 @@ use Illuminate\Support\Facades\File;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use RuntimeException;
+use Throwable;
 
 class PtkpImportService
 {
@@ -19,13 +23,16 @@ class PtkpImportService
 
     protected PtkpValidationService $validationService;
     protected PtkpDatabaseWriter $databaseWriter;
+    protected ImportLogService $logService;
 
     public function __construct(
         PtkpValidationService $validationService,
-        PtkpDatabaseWriter $databaseWriter
+        PtkpDatabaseWriter $databaseWriter,
+        ImportLogService $logService
     ) {
         $this->validationService = $validationService;
         $this->databaseWriter = $databaseWriter;
+        $this->logService = $logService;
     }
 
     public function storeTemporaryFile(UploadedFile $file, int $userId): array
@@ -90,8 +97,49 @@ class PtkpImportService
     public function parseAndPreview(string $token, int $userId): array
     {
         $metadata = $this->getValidTemporaryMetadata($token, $userId);
-        $filePath = $metadata['temp_path'];
+        $reader = IOFactory::createReaderForFile($metadata['temp_path']);
+        $reader->setReadDataOnly(false);
+        $spreadsheet = $reader->load($metadata['temp_path']);
 
+        $worksheet = $spreadsheet->getSheetByName(PtkpExcelSchema::DATA_SHEET_TITLE)
+            ?: $spreadsheet->getSheet(0);
+
+        $evaluated = $this->parseAndEvaluateWorkbook($worksheet);
+
+        $metadata['stats'] = $evaluated['stats'];
+        $metadata['header_check'] = $evaluated['header_check'];
+        $metadata['can_confirm'] = $evaluated['can_confirm'];
+        Cache::put(self::CACHE_PREFIX . $token, $metadata, self::CACHE_TTL_SECONDS);
+
+        return [
+            'token'            => $token,
+            'filename'         => $metadata['original_filename'],
+            'format'           => $evaluated['format_info']['format'],
+            'header_check'     => $evaluated['header_check'],
+            'can_confirm'      => $evaluated['can_confirm'],
+            'stats'            => $evaluated['stats'],
+            'rows'             => $evaluated['parsed_rows'],
+            'total_rows'       => count($evaluated['parsed_rows']),
+            'importable_count' => $evaluated['stats']['importable_count'],
+        ];
+    }
+
+    public function executeImport(string $token, int $userId): array
+    {
+        $metadata = $this->getValidTemporaryMetadata($token, $userId);
+
+        $lockKey = "ptkp_import_lock_{$token}";
+        $lock = Cache::lock($lockKey, 60);
+        if (!$lock->get()) {
+            throw new RuntimeException('PTKP import execution is currently in progress. Please wait.');
+        }
+
+        if (!empty($metadata['executed_batch_uuid'])) {
+            $lock->release();
+            throw new RuntimeException('This import session has already been processed.');
+        }
+
+        $filePath = $metadata['temp_path'];
         $reader = IOFactory::createReaderForFile($filePath);
         $reader->setReadDataOnly(false);
         $spreadsheet = $reader->load($filePath);
@@ -99,6 +147,101 @@ class PtkpImportService
         $worksheet = $spreadsheet->getSheetByName(PtkpExcelSchema::DATA_SHEET_TITLE)
             ?: $spreadsheet->getSheet(0);
 
+        $evaluated = $this->parseAndEvaluateWorkbook($worksheet);
+
+        if (!$evaluated['header_check']['can_proceed']) {
+            $lock->release();
+            throw new \InvalidArgumentException('Import cannot proceed due to header validation errors.');
+        }
+
+        $batch = $this->logService->createBatch(
+            sourceType: ImportBatch::SOURCE_PTKP,
+            tempFilePath: $filePath,
+            originalFilename: $metadata['original_filename'],
+            userId: $userId
+        );
+
+        $metadata['executed_batch_uuid'] = $batch->batch_uuid;
+        Cache::put(self::CACHE_PREFIX . $token, $metadata, self::CACHE_TTL_SECONDS);
+
+        try {
+            $persistResult = $this->databaseWriter->persistTrainingsAndParticipants(
+                $evaluated['grouped_by_training'],
+                $evaluated['existing_trainings'],
+                $userId
+            );
+
+            $batchRows = [];
+            foreach ($evaluated['all_rows'] as $r) {
+                $rNum = $r['excel_row'];
+                $persisted = $persistResult['participant_map'][$rNum] ?? null;
+
+                $action = ImportBatchRow::ACTION_SKIPPED;
+                $tId = $r['matched_training_id'];
+                $pId = null;
+
+                if ($persisted) {
+                    $action = ImportBatchRow::ACTION_IMPORTED;
+                    $tId = $persisted['offline_training_id'];
+                    $pId = $persisted['offline_training_user_id'];
+                }
+
+                $batchRows[] = [
+                    'row_number'               => $rNum,
+                    'sheet_name'               => PtkpExcelSchema::DATA_SHEET_TITLE,
+                    'employee_id'              => $r['employee_id'],
+                    'employee_name'            => $r['name'],
+                    'course_name'              => $r['course_name'],
+                    'validation_status'        => $r['status'],
+                    'action'                   => $action,
+                    'offline_training_id'      => $tId,
+                    'offline_training_user_id' => $pId,
+                    'error_code'               => $r['error_code'],
+                    'messages'                 => $r['messages'],
+                    'row_data'                 => $r['sanitized_data'],
+                ];
+            }
+
+            $this->logService->insertBatchRows($batch, $batchRows);
+
+            $stats = $evaluated['stats'];
+            $this->logService->completeBatch($batch, [
+                'total_rows'        => count($evaluated['all_rows']),
+                'valid_rows'        => $stats['valid'],
+                'warning_rows'      => $stats['warning'] + $stats['invalid_company'],
+                'duplicate_rows'    => $stats['duplicate'],
+                'invalid_rows'      => $stats['invalid'],
+                'imported_rows'     => $persistResult['imported'],
+                'skipped_rows'      => $stats['duplicate'] + $stats['invalid'],
+                'failed_rows'       => 0,
+                'trainings_created' => $persistResult['trainings_created'],
+                'trainings_reused'  => $persistResult['trainings_reused'],
+            ]);
+        } catch (Throwable $e) {
+            $this->logService->failBatch($batch, $e, count($evaluated['all_rows']));
+            throw $e;
+        } finally {
+            $lock->release();
+        }
+
+        $this->cleanupTemporaryFile($token, $userId);
+
+        return [
+            'success'                  => true,
+            'batch_uuid'               => $batch->batch_uuid,
+            'total_rows_processed'     => count($evaluated['all_rows']),
+            'imported'                 => $persistResult['imported'],
+            'skipped_duplicates'       => $evaluated['stats']['duplicate'],
+            'skipped_invalid'          => $evaluated['stats']['invalid'],
+            'warnings_imported'        => $evaluated['stats']['warning'],
+            'invalid_company_imported' => $evaluated['stats']['invalid_company'],
+            'trainings_created'        => $persistResult['trainings_created'],
+            'trainings_reused'         => $persistResult['trainings_reused'],
+        ];
+    }
+
+    protected function parseAndEvaluateWorkbook(Worksheet $worksheet): array
+    {
         $formatInfo = PtkpExcelSchema::detectTemplateFormat($worksheet);
         $headerCheck = PtkpExcelSchema::analyzeHeaders(
             $formatInfo['found_headers'],
@@ -117,14 +260,11 @@ class PtkpImportService
             if ($this->isRowEntirelyBlank($rowValues)) {
                 continue;
             }
-
             $rawRows[] = ['excel_row' => $r, 'values' => $rowValues];
-
             $empId = trim((string) ($rowValues['employee_id'] ?? ''));
             if ($empId !== '') {
                 $uniqueEmployeeIds[$empId] = true;
             }
-
             $course = trim((string) ($rowValues['course_name'] ?? ''));
             if ($course !== '') {
                 $uniqueCourses[$course] = true;
@@ -146,13 +286,15 @@ class PtkpImportService
         ];
 
         $parsedRows = [];
+        $allRows = [];
+        $groupedByTraining = [];
         $seenInFileParticipants = [];
 
         foreach ($rawRows as $item) {
             $rNum = $item['excel_row'];
-            $vals = $item['values'];
+            $normalized = $this->validationService->normalizeRowData($item['values']);
+            $normalized['excel_row'] = $rNum;
 
-            $normalized = $this->validationService->normalizeRowData($vals);
             $matchResult = $this->validationService->matchUser($normalized['employee_id'], $userLookup);
             $user = $matchResult['user'];
 
@@ -169,12 +311,12 @@ class PtkpImportService
 
             $fp = $this->validationService->buildTrainingFingerprint($normalized);
             $isExistingTraining = isset($existingTrainings[$fp]);
-
-            $isDuplicate = false;
-            $duplicateReason = '';
             $partKey = $normalized['user_id']
                 ? ('uid:' . $normalized['user_id'])
                 : ('emp:' . strtolower($normalized['employee_id'] ?: ''));
+
+            $isDuplicate = false;
+            $duplicateReason = '';
 
             if (isset($seenInFileParticipants[$fp][$partKey])) {
                 $isDuplicate = true;
@@ -185,8 +327,7 @@ class PtkpImportService
 
             if (!$isDuplicate && $isExistingTraining) {
                 $tId = $existingTrainings[$fp]->id;
-                $dbKey = "{$tId}:{$partKey}";
-                if (isset($existingParticipantMap[$dbKey])) {
+                if (isset($existingParticipantMap["{$tId}:{$partKey}"])) {
                     $isDuplicate = true;
                     $duplicateReason = 'Participant already enrolled in existing training in database (skipped)';
                 }
@@ -221,194 +362,59 @@ class PtkpImportService
                     break;
             }
 
-            $parsedRows[] = [
-                'excel_row'        => $rNum,
-                'no'               => $normalized['row_no'] ?? ($rNum - $startDataRow + 1),
-                'status'           => $eval['status'],
-                'is_blocking'      => $eval['is_blocking'],
-                'company_mismatch' => $eval['company_mismatch'],
-                'messages'         => $eval['messages'],
-                'employee_id'      => $normalized['employee_id'],
-                'name'             => $normalized['name'],
-                'company'          => $normalized['company'],
-                'course_name'      => $normalized['course_name'],
-                'type'             => $normalized['type'],
-                'pic'              => $normalized['pic'],
-                'data'             => $normalized,
+            $rowRecord = [
+                'excel_row'           => $rNum,
+                'no'                  => $normalized['row_no'] ?? ($rNum - $startDataRow + 1),
+                'status'              => $eval['status'],
+                'is_blocking'         => $eval['is_blocking'],
+                'company_mismatch'    => $eval['company_mismatch'],
+                'messages'            => $eval['messages'],
+                'employee_id'         => $normalized['employee_id'],
+                'name'                => $normalized['name'],
+                'company'             => $normalized['company'],
+                'course_name'         => $normalized['course_name'],
+                'type'                => $normalized['type'],
+                'pic'                 => $normalized['pic'],
+                'data'                => $normalized,
+                'error_code'          => $isDuplicate ? 'DUPLICATE' : ($eval['is_blocking'] ? 'INVALID' : null),
+                'sanitized_data'      => [
+                    'employee_id'    => $normalized['employee_id'],
+                    'name'           => $normalized['name'],
+                    'course_name'    => $normalized['course_name'],
+                    'learning_hours' => $normalized['learning_hours'],
+                    'start_date'     => $normalized['start_date'],
+                    'finish_date'    => $normalized['finish_date'],
+                    'type'           => $normalized['type'],
+                    'venue'          => $normalized['venue'],
+                ],
+                'matched_training_id' => $isExistingTraining ? $existingTrainings[$fp]->id : null,
             ];
+
+            $parsedRows[] = $rowRecord;
+            $allRows[] = $rowRecord;
+
+            if ($eval['status'] !== PtkpValidationService::STATUS_INVALID && $eval['status'] !== PtkpValidationService::STATUS_DUPLICATE) {
+                if (!isset($groupedByTraining[$fp])) {
+                    $groupedByTraining[$fp] = [
+                        'training_data' => $normalized,
+                        'participants'  => [],
+                    ];
+                }
+                $groupedByTraining[$fp]['participants'][] = $normalized;
+            }
         }
 
         $canConfirm = $headerCheck['can_proceed'] && ($stats['importable_count'] > 0);
 
-        $metadata['stats'] = $stats;
-        $metadata['header_check'] = $headerCheck;
-        $metadata['can_confirm'] = $canConfirm;
-        Cache::put(self::CACHE_PREFIX . $token, $metadata, self::CACHE_TTL_SECONDS);
-
         return [
-            'token'            => $token,
-            'filename'         => $metadata['original_filename'],
-            'format'           => $formatInfo['format'],
-            'header_check'     => $headerCheck,
-            'can_confirm'      => $canConfirm,
-            'stats'            => $stats,
-            'rows'             => $parsedRows,
-            'total_rows'       => count($parsedRows),
-            'importable_count' => $stats['importable_count'],
-        ];
-    }
-
-    /**
-     * Execute full import inside database transactions.
-     */
-    public function executeImport(string $token, int $userId): array
-    {
-        $metadata = $this->getValidTemporaryMetadata($token, $userId);
-        $filePath = $metadata['temp_path'];
-
-        $reader = IOFactory::createReaderForFile($filePath);
-        $reader->setReadDataOnly(false);
-        $spreadsheet = $reader->load($filePath);
-
-        $worksheet = $spreadsheet->getSheetByName(PtkpExcelSchema::DATA_SHEET_TITLE)
-            ?: $spreadsheet->getSheet(0);
-
-        $formatInfo = PtkpExcelSchema::detectTemplateFormat($worksheet);
-        $headerCheck = PtkpExcelSchema::analyzeHeaders(
-            $formatInfo['found_headers'],
-            $formatInfo['format']
-        );
-
-        if (!$headerCheck['can_proceed']) {
-            throw new \InvalidArgumentException('Import cannot proceed due to header validation errors.');
-        }
-
-        $highestRow = $worksheet->getHighestDataRow();
-        $startDataRow = $formatInfo['data_start_row'];
-
-        $rawRows = [];
-        $uniqueEmployeeIds = [];
-        $uniqueCourses = [];
-
-        for ($r = $startDataRow; $r <= $highestRow; $r++) {
-            $rowValues = $this->readRowValues($worksheet, $r);
-            if ($this->isRowEntirelyBlank($rowValues)) {
-                continue;
-            }
-            $rawRows[] = ['excel_row' => $r, 'values' => $rowValues];
-            $empId = trim((string) ($rowValues['employee_id'] ?? ''));
-            if ($empId !== '') {
-                $uniqueEmployeeIds[$empId] = true;
-            }
-            $course = trim((string) ($rowValues['course_name'] ?? ''));
-            if ($course !== '') {
-                $uniqueCourses[$course] = true;
-            }
-        }
-
-        $userLookup = $this->validationService->batchLookupUsers(array_keys($uniqueEmployeeIds));
-        $existingTrainings = $this->lookupExistingTrainings(array_keys($uniqueCourses));
-        $existingParticipantMap = $this->lookupExistingParticipants(array_values($existingTrainings));
-
-        $skippedDuplicates = 0;
-        $skippedInvalid = 0;
-        $warningsImported = 0;
-        $invalidCompanyImported = 0;
-
-        $groupedByTraining = [];
-        $seenInFileParticipants = [];
-
-        foreach ($rawRows as $item) {
-            $normalized = $this->validationService->normalizeRowData($item['values']);
-            $matchResult = $this->validationService->matchUser($normalized['employee_id'], $userLookup);
-            $user = $matchResult['user'];
-
-            if ($user) {
-                $normalized['user_id'] = $user->id;
-                $normalized['name'] = $user->name;
-                $normalized['grade'] = $user->jobgrade;
-                $normalized['job_position'] = $user->jobposition;
-                $normalized['team'] = $user->team;
-                $normalized['department'] = $user->department;
-            } else {
-                $normalized['user_id'] = null;
-            }
-
-            $fp = $this->validationService->buildTrainingFingerprint($normalized);
-            $isExistingTraining = isset($existingTrainings[$fp]);
-            $partKey = $normalized['user_id']
-                ? ('uid:' . $normalized['user_id'])
-                : ('emp:' . strtolower($normalized['employee_id'] ?: ''));
-
-            $isDuplicate = false;
-            $duplicateReason = '';
-
-            if (isset($seenInFileParticipants[$fp][$partKey])) {
-                $isDuplicate = true;
-                $duplicateReason = 'Duplicate participant in file';
-            } else {
-                $seenInFileParticipants[$fp][$partKey] = true;
-            }
-
-            if (!$isDuplicate && $isExistingTraining) {
-                $tId = $existingTrainings[$fp]->id;
-                if (isset($existingParticipantMap["{$tId}:{$partKey}"])) {
-                    $isDuplicate = true;
-                    $duplicateReason = 'Duplicate participant in database';
-                }
-            }
-
-            $eval = $this->validationService->evaluateRowStatus(
-                $normalized,
-                $user,
-                ['is_duplicate' => $isDuplicate, 'duplicate_reason' => $duplicateReason],
-                $matchResult
-            );
-
-            if ($eval['status'] === PtkpValidationService::STATUS_INVALID) {
-                $skippedInvalid++;
-                continue;
-            }
-
-            if ($eval['status'] === PtkpValidationService::STATUS_DUPLICATE) {
-                $skippedDuplicates++;
-                continue;
-            }
-
-            if ($eval['status'] === PtkpValidationService::STATUS_WARNING) {
-                $warningsImported++;
-            } elseif ($eval['status'] === PtkpValidationService::STATUS_INVALID_COMPANY) {
-                $invalidCompanyImported++;
-            }
-
-            if (!isset($groupedByTraining[$fp])) {
-                $groupedByTraining[$fp] = [
-                    'training_data' => $normalized,
-                    'participants'  => [],
-                ];
-            }
-
-            $groupedByTraining[$fp]['participants'][] = $normalized;
-        }
-
-        $persistResult = $this->databaseWriter->persistTrainingsAndParticipants(
-            $groupedByTraining,
-            $existingTrainings,
-            $userId
-        );
-
-        $this->cleanupTemporaryFile($token, $userId);
-
-        return [
-            'success'                  => true,
-            'total_rows_processed'     => count($rawRows),
-            'imported'                 => $persistResult['imported'],
-            'skipped_duplicates'       => $skippedDuplicates,
-            'skipped_invalid'          => $skippedInvalid,
-            'warnings_imported'        => $warningsImported,
-            'invalid_company_imported' => $invalidCompanyImported,
-            'trainings_created'        => $persistResult['trainings_created'],
-            'trainings_reused'         => $persistResult['trainings_reused'],
+            'format_info'         => $formatInfo,
+            'header_check'        => $headerCheck,
+            'stats'               => $stats,
+            'parsed_rows'         => $parsedRows,
+            'all_rows'            => $allRows,
+            'grouped_by_training' => $groupedByTraining,
+            'existing_trainings'  => $existingTrainings,
+            'can_confirm'         => $canConfirm,
         ];
     }
 

@@ -17,7 +17,7 @@ class PtkpDatabaseWriter
      * @param array<string, array{training_data: array, participants: array}> $groupedByTraining
      * @param array<string, OfflineTraining> $existingTrainings
      * @param int $userId
-     * @return array{imported: int, trainings_created: int, trainings_reused: int}
+     * @return array{imported: int, trainings_created: int, trainings_reused: int, participant_map: array}
      */
     public function persistTrainingsAndParticipants(
         array $groupedByTraining,
@@ -27,6 +27,7 @@ class PtkpDatabaseWriter
         $trainingsCreated = 0;
         $trainingsReused = 0;
         $importedCount = 0;
+        $participantMap = [];
 
         DB::transaction(function () use (
             $groupedByTraining,
@@ -34,7 +35,8 @@ class PtkpDatabaseWriter
             $userId,
             &$trainingsCreated,
             &$trainingsReused,
-            &$importedCount
+            &$importedCount,
+            &$participantMap
         ) {
             $now = now();
 
@@ -80,9 +82,8 @@ class PtkpDatabaseWriter
                     }
                 }
 
-                $inserts = [];
                 foreach ($participants as $p) {
-                    $inserts[] = [
+                    $insertData = [
                         'offline_training_id' => $training->id,
                         'user_id'             => $p['user_id'],
                         'employee_id'         => $p['employee_id'],
@@ -111,11 +112,17 @@ class PtkpDatabaseWriter
                         'created_at'          => $now,
                         'updated_at'          => $now,
                     ];
-                }
 
-                foreach (array_chunk($inserts, 250) as $chunk) {
-                    OfflineTrainingUser::insert($chunk);
-                    $importedCount += count($chunk);
+                    $participantId = DB::table('offline_training_users')->insertGetId($insertData);
+                    $importedCount++;
+
+                    $rowNum = $p['excel_row'] ?? null;
+                    if ($rowNum !== null) {
+                        $participantMap[$rowNum] = [
+                            'offline_training_id'      => $training->id,
+                            'offline_training_user_id' => $participantId,
+                        ];
+                    }
                 }
             }
         });
@@ -124,6 +131,7 @@ class PtkpDatabaseWriter
             'imported'          => $importedCount,
             'trainings_created' => $trainingsCreated,
             'trainings_reused'  => $trainingsReused,
+            'participant_map'   => $participantMap,
         ];
     }
 }

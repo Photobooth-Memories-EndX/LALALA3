@@ -2,9 +2,12 @@
 
 namespace App\Services\Record;
 
+use App\Models\ImportBatch;
+use App\Models\ImportBatchRow;
 use App\Models\OfflineTraining;
 use App\Models\OfflineTrainingUser;
 use App\Models\User;
+use App\Services\ImportLog\ImportLogService;
 use Carbon\Carbon;
 use DateTimeInterface;
 use Illuminate\Http\UploadedFile;
@@ -367,12 +370,24 @@ class OfflineTrainingImportService
     }
 
     /**
-     * Execute full import inside database transactions.
+     * Execute full import inside database transactions with centralized audit logging.
      * Strictly blocked if template header analysis failed.
      */
     public function executeImport(string $token, int $userId): array
     {
         $metadata = $this->getValidTemporaryMetadata($token, $userId);
+
+        $lockKey = "offline_import_lock_{$token}";
+        $lock = Cache::lock($lockKey, 60);
+        if (!$lock->get()) {
+            throw new \RuntimeException('Non-PTKP import execution is currently in progress. Please wait.');
+        }
+
+        if (!empty($metadata['executed_batch_uuid'])) {
+            $lock->release();
+            throw new \RuntimeException('This import session has already been processed.');
+        }
+
         $filePath = $metadata['temp_path'];
 
         $reader = IOFactory::createReaderForFile($filePath);
@@ -383,6 +398,7 @@ class OfflineTrainingImportService
 
         $headerMapping = $this->resolveHeaderMapping($worksheet);
         if (!$headerMapping['can_proceed']) {
+            $lock->release();
             $issueMessages = array_column($headerMapping['header_check']['issues'], 'message');
             throw new \InvalidArgumentException('Import cannot proceed due to header validation errors: ' . implode('; ', $issueMessages));
         }
@@ -482,7 +498,8 @@ class OfflineTrainingImportService
             }
         }
 
-        $importedParticipants = 0;
+        $validRowsCount = 0;
+        $warningRowsCount = 0;
         $skippedDuplicates = 0;
         $invalidRows = 0;
         $createdTrainings = 0;
@@ -490,17 +507,15 @@ class OfflineTrainingImportService
 
         $groupedByTraining = [];
         $seenInFileParticipants = [];
+        $allEvaluatedRows = [];
 
         foreach ($rawRows as $item) {
             $rNum = $item['excel_row'];
             $vals = $item['values'];
             $normalized = $this->normalizeRowData($vals);
-            $validation = $this->validateRowData($normalized, $vals, $rNum);
+            $normalized['excel_row'] = $rNum;
 
-            if (!empty($validation['errors'])) {
-                $invalidRows++;
-                continue;
-            }
+            $validation = $this->validateRowData($normalized, $vals, $rNum);
 
             $employeeId = $normalized['employee_id'];
             $participantName = $normalized['name'];
@@ -511,20 +526,79 @@ class OfflineTrainingImportService
             $isExistingTraining = isset($existingTrainings[$fp]);
             $partKey = $normalized['user_id'] ? ('uid:' . $normalized['user_id']) : ('emp:' . strtolower($employeeId ?: ''));
 
+            $isDuplicate = false;
+            $duplicateReason = '';
+
             // Check duplicate in same file
             if (isset($seenInFileParticipants[$fp][$partKey])) {
-                $skippedDuplicates++;
-                continue;
+                $isDuplicate = true;
+                $duplicateReason = 'Duplicate participant for this training inside file (skipped)';
+            } else {
+                $seenInFileParticipants[$fp][$partKey] = true;
             }
-            $seenInFileParticipants[$fp][$partKey] = true;
 
             // Check duplicate in DB
-            if ($isExistingTraining) {
+            if (!$isDuplicate && $isExistingTraining) {
                 $dbKey = $existingTrainings[$fp]->id . ':' . $partKey;
                 if (isset($existingParticipantMap[$dbKey])) {
-                    $skippedDuplicates++;
-                    continue;
+                    $isDuplicate = true;
+                    $duplicateReason = 'Participant already enrolled in existing training in database (skipped)';
                 }
+            }
+
+            $messages = [];
+            $status = ImportBatchRow::STATUS_VALID;
+            $errorCode = null;
+
+            if (!empty($validation['errors'])) {
+                $status = ImportBatchRow::STATUS_INVALID;
+                $errorCode = 'INVALID';
+                $messages = array_merge($messages, $validation['errors']);
+                if (!empty($userMatch['warning'])) {
+                    $messages[] = $userMatch['warning'];
+                }
+                $invalidRows++;
+            } elseif ($isDuplicate) {
+                $status = ImportBatchRow::STATUS_DUPLICATE;
+                $errorCode = 'DUPLICATE';
+                $messages[] = $duplicateReason;
+                $skippedDuplicates++;
+            } elseif (!empty($validation['warnings']) || !empty($userMatch['warning'])) {
+                $status = ImportBatchRow::STATUS_WARNING;
+                if (!empty($userMatch['warning'])) {
+                    $messages[] = $userMatch['warning'];
+                }
+                $messages = array_merge($messages, $validation['warnings']);
+                $warningRowsCount++;
+            } else {
+                $validRowsCount++;
+            }
+
+            $rowRecord = [
+                'excel_row'           => $rNum,
+                'status'              => $status,
+                'messages'            => $messages,
+                'employee_id'         => $normalized['employee_id'],
+                'name'                => $normalized['name'],
+                'course_name'         => $normalized['course_name'],
+                'error_code'          => $errorCode,
+                'sanitized_data'      => [
+                    'employee_id'    => $normalized['employee_id'],
+                    'name'           => $normalized['name'],
+                    'course_name'    => $normalized['course_name'],
+                    'learning_hours' => $normalized['learning_hours'],
+                    'start_date'     => $normalized['start_date'],
+                    'finish_date'    => $normalized['finish_date'],
+                    'type'           => $normalized['type'],
+                    'venue'          => $normalized['venue'],
+                ],
+                'matched_training_id' => $isExistingTraining ? $existingTrainings[$fp]->id : null,
+            ];
+
+            $allEvaluatedRows[] = $rowRecord;
+
+            if ($status === ImportBatchRow::STATUS_INVALID || $status === ImportBatchRow::STATUS_DUPLICATE) {
+                continue;
             }
 
             if (!isset($groupedByTraining[$fp])) {
@@ -537,122 +611,195 @@ class OfflineTrainingImportService
             $groupedByTraining[$fp]['participants'][] = $normalized;
         }
 
-        // DB Transaction for persistence
-        DB::transaction(function () use (
-            $groupedByTraining,
-            &$existingTrainings,
-            $userId,
-            &$createdTrainings,
-            &$reusedTrainings,
-            &$importedParticipants
-        ) {
-            $now = now();
+        // 1. Create batch record with IMPORTING status and store original Excel file
+        $logService = app(ImportLogService::class);
+        $batch = $logService->createBatch(
+            sourceType: ImportBatch::SOURCE_NON_PTKP,
+            tempFilePath: $filePath,
+            originalFilename: $metadata['original_filename'],
+            userId: $userId
+        );
 
-            foreach ($groupedByTraining as $fp => $group) {
-                $tData = $group['training_data'];
-                $participants = $group['participants'];
+        $metadata['executed_batch_uuid'] = $batch->batch_uuid;
+        Cache::put(self::CACHE_PREFIX . $token, $metadata, self::CACHE_TTL_SECONDS);
 
-                // Get or create training
-                if (isset($existingTrainings[$fp])) {
-                    $training = $existingTrainings[$fp];
-                    $reusedTrainings++;
-                } else {
-                    $training = OfflineTraining::create([
-                        'course_name'           => $tData['course_name'],
-                        'sub_course_name'       => $tData['sub_course_name'],
-                        'type'                  => $tData['type'],
-                        'category'              => $tData['category'],
-                        'level'                 => $tData['level'],
-                        'batch'                 => $tData['batch'],
-                        'main_classification'   => $tData['main_classification'],
-                        'sub_classification'    => $tData['sub_classification'],
-                        'counted_corporate_kpi' => $tData['counted_corporate_kpi'],
-                        'sub_corporate_kpi'     => $tData['sub_corporate_kpi'],
-                        'corporate_kpi_year'    => $tData['corporate_kpi_year'] ?? (!empty($tData['start_date']) ? (int) substr((string) $tData['start_date'], 0, 4) : null),
-                        'delivery_method'       => $tData['delivery_method'],
-                        'sub_delivery_method'   => $tData['sub_delivery_method'],
-                        'provider'              => $tData['provider'],
-                        'sub_provider'          => $tData['sub_provider'],
-                        'provider_name'         => $tData['provider_name'],
-                        'venue'                 => $tData['venue'],
-                        'instructor'            => $tData['instructor'],
-                        'duration_seconds'      => $tData['duration_seconds'],
-                        'learning_hours'        => $tData['learning_hours'],
-                        'start_date'            => $tData['start_date'],
-                        'finish_date'           => $tData['finish_date'],
-                        'created_by'            => $userId,
-                    ]);
-                    $existingTrainings[$fp] = $training;
-                    $createdTrainings++;
+        $importedParticipants = 0;
+        $participantMap = [];
 
-                    // Auto-register legitimate options from import data
-                    app(OfflineOptionService::class)->ensureOptionsFromTraining($tData, 'import', $userId);
+        // 2. DB Transaction for persistence & logging
+        try {
+            DB::transaction(function () use (
+                $groupedByTraining,
+                &$existingTrainings,
+                $userId,
+                &$createdTrainings,
+                &$reusedTrainings,
+                &$importedParticipants,
+                &$participantMap
+            ) {
+                $now = now();
 
-                    // Auto-provision CertificateSetting for this Offline Training
-                    app(\App\Services\OfflineCertificate\OfflineCertificateLifecycleService::class)->onTrainingCreated($training);
-                }
+                foreach ($groupedByTraining as $fp => $group) {
+                    $tData = $group['training_data'];
+                    $participants = $group['participants'];
 
-                // Prepare participant records
-                static $otuColumns = null;
-                if ($otuColumns === null) {
-                    $otuColumns = array_flip(\Illuminate\Support\Facades\Schema::getColumnListing('offline_training_users'));
-                }
+                    // Get or create training
+                    if (isset($existingTrainings[$fp])) {
+                        $training = $existingTrainings[$fp];
+                        $reusedTrainings++;
+                    } else {
+                        $training = OfflineTraining::create([
+                            'course_name'           => $tData['course_name'],
+                            'sub_course_name'       => $tData['sub_course_name'],
+                            'type'                  => $tData['type'],
+                            'category'              => $tData['category'],
+                            'level'                 => $tData['level'],
+                            'batch'                 => $tData['batch'],
+                            'main_classification'   => $tData['main_classification'],
+                            'sub_classification'    => $tData['sub_classification'],
+                            'counted_corporate_kpi' => $tData['counted_corporate_kpi'],
+                            'sub_corporate_kpi'     => $tData['sub_corporate_kpi'],
+                            'corporate_kpi_year'    => $tData['corporate_kpi_year'] ?? (!empty($tData['start_date']) ? (int) substr((string) $tData['start_date'], 0, 4) : null),
+                            'delivery_method'       => $tData['delivery_method'],
+                            'sub_delivery_method'   => $tData['sub_delivery_method'],
+                            'provider'              => $tData['provider'],
+                            'sub_provider'          => $tData['sub_provider'],
+                            'provider_name'         => $tData['provider_name'],
+                            'venue'                 => $tData['venue'],
+                            'instructor'            => $tData['instructor'],
+                            'duration_seconds'      => $tData['duration_seconds'],
+                            'learning_hours'        => $tData['learning_hours'],
+                            'start_date'            => $tData['start_date'],
+                            'finish_date'           => $tData['finish_date'],
+                            'created_by'            => $userId,
+                        ]);
+                        $existingTrainings[$fp] = $training;
+                        $createdTrainings++;
 
-                $participantInserts = [];
-                foreach ($participants as $p) {
-                    $pRow = [
-                        'offline_training_id' => $training->id,
-                        'user_id'             => $p['user_id'],
-                        'employee_id'         => $p['employee_id'],
-                        'name'                => $p['name'],
-                        'grade'               => $p['grade'],
-                        'job_position'        => $p['job_position'],
-                        'team'                => $p['team'],
-                        'department'          => $p['department'],
-                        'company'             => $p['company'],
-                        'learning_hours'      => $p['learning_hours'],
-                        'progress'            => $p['progress'],
-                        'assessment_score'    => $p['assessment_score'],
-                        'certificate'         => $p['certificate'],
-                        'attendance'          => $p['attendance'],
-                        'attendance_reason'   => $p['attendance_reason'],
-                        'bond_status'         => $p['bond_status'],
-                        'bond_end_date'       => $p['bond_end_date'],
-                        'l1_program'          => $p['l1_program'],
-                        'l2_numerical'        => $p['l2_numerical'],
-                        'l2_verbal'           => $p['l2_verbal'],
-                        'l3_numerical'        => $p['l3_numerical'],
-                        'l3_verbal'           => $p['l3_verbal'],
-                        'pic'                 => $p['pic'],
-                        'created_at'          => $now,
-                        'updated_at'          => $now,
-                    ];
+                        // Auto-register legitimate options from import data
+                        app(OfflineOptionService::class)->ensureOptionsFromTraining($tData, 'import', $userId);
 
-                    if (isset($otuColumns['bond_duration'])) {
-                        $pRow['bond_duration'] = $p['bond_duration'] ?? null;
-                    }
-                    if (isset($otuColumns['bond_amount_idr'])) {
-                        $pRow['bond_amount_idr'] = $p['bond_amount_idr'] ?? ($p['bond_amount'] ?? null);
-                    } elseif (isset($otuColumns['bond_amount'])) {
-                        $pRow['bond_amount'] = $p['bond_amount'] ?? ($p['bond_amount_idr'] ?? null);
+                        // Auto-provision CertificateSetting for this Offline Training
+                        app(\App\Services\OfflineCertificate\OfflineCertificateLifecycleService::class)->onTrainingCreated($training);
                     }
 
-                    $participantInserts[] = $pRow;
+                    // Prepare participant records
+                    static $otuColumns = null;
+                    if ($otuColumns === null) {
+                        $otuColumns = array_flip(\Illuminate\Support\Facades\Schema::getColumnListing('offline_training_users'));
+                    }
+
+                    foreach ($participants as $p) {
+                        $pRow = [
+                            'offline_training_id' => $training->id,
+                            'user_id'             => $p['user_id'],
+                            'employee_id'         => $p['employee_id'],
+                            'name'                => $p['name'],
+                            'grade'               => $p['grade'],
+                            'job_position'        => $p['job_position'],
+                            'team'                => $p['team'],
+                            'department'          => $p['department'],
+                            'company'             => $p['company'],
+                            'learning_hours'      => $p['learning_hours'],
+                            'progress'            => $p['progress'],
+                            'assessment_score'    => $p['assessment_score'],
+                            'certificate'         => $p['certificate'],
+                            'attendance'          => $p['attendance'],
+                            'attendance_reason'   => $p['attendance_reason'],
+                            'bond_status'         => $p['bond_status'],
+                            'bond_end_date'       => $p['bond_end_date'],
+                            'l1_program'          => $p['l1_program'],
+                            'l2_numerical'        => $p['l2_numerical'],
+                            'l2_verbal'           => $p['l2_verbal'],
+                            'l3_numerical'        => $p['l3_numerical'],
+                            'l3_verbal'           => $p['l3_verbal'],
+                            'pic'                 => $p['pic'],
+                            'created_at'          => $now,
+                            'updated_at'          => $now,
+                        ];
+
+                        if (isset($otuColumns['bond_duration'])) {
+                            $pRow['bond_duration'] = $p['bond_duration'] ?? null;
+                        }
+                        if (isset($otuColumns['bond_amount_idr'])) {
+                            $pRow['bond_amount_idr'] = $p['bond_amount_idr'] ?? ($p['bond_amount'] ?? null);
+                        } elseif (isset($otuColumns['bond_amount'])) {
+                            $pRow['bond_amount'] = $p['bond_amount'] ?? ($p['bond_amount_idr'] ?? null);
+                        }
+
+                        $participantId = DB::table('offline_training_users')->insertGetId($pRow);
+                        $importedParticipants++;
+
+                        $rowNum = $p['excel_row'] ?? null;
+                        if ($rowNum !== null) {
+                            $participantMap[$rowNum] = [
+                                'offline_training_id'      => $training->id,
+                                'offline_training_user_id' => $participantId,
+                            ];
+                        }
+                    }
+                }
+            });
+
+            // Insert row logs
+            $batchRows = [];
+            foreach ($allEvaluatedRows as $r) {
+                $rNum = $r['excel_row'];
+                $persisted = $participantMap[$rNum] ?? null;
+
+                $action = ImportBatchRow::ACTION_SKIPPED;
+                $tId = $r['matched_training_id'];
+                $pId = null;
+
+                if ($persisted) {
+                    $action = ImportBatchRow::ACTION_IMPORTED;
+                    $tId = $persisted['offline_training_id'];
+                    $pId = $persisted['offline_training_user_id'];
                 }
 
-                // Chunk insert participants for high throughput
-                foreach (array_chunk($participantInserts, 250) as $chunk) {
-                    OfflineTrainingUser::insert($chunk);
-                    $importedParticipants += count($chunk);
-                }
+                $batchRows[] = [
+                    'row_number'               => $rNum,
+                    'sheet_name'               => OfflineTrainingExcelSchema::DATA_SHEET_TITLE,
+                    'employee_id'              => $r['employee_id'],
+                    'employee_name'            => $r['name'],
+                    'course_name'              => $r['course_name'],
+                    'validation_status'        => $r['status'],
+                    'action'                   => $action,
+                    'offline_training_id'      => $tId,
+                    'offline_training_user_id' => $pId,
+                    'error_code'               => $r['error_code'],
+                    'messages'                 => $r['messages'],
+                    'row_data'                 => $r['sanitized_data'],
+                ];
             }
-        });
+
+            $logService->insertBatchRows($batch, $batchRows);
+
+            $logService->completeBatch($batch, [
+                'total_rows'        => count($allEvaluatedRows),
+                'valid_rows'        => $validRowsCount,
+                'warning_rows'      => $warningRowsCount,
+                'duplicate_rows'    => $skippedDuplicates,
+                'invalid_rows'      => $invalidRows,
+                'imported_rows'     => $importedParticipants,
+                'skipped_rows'      => $skippedDuplicates + $invalidRows,
+                'failed_rows'       => 0,
+                'trainings_created' => $createdTrainings,
+                'trainings_reused'  => $reusedTrainings,
+            ]);
+        } catch (\Throwable $e) {
+            $logService->failBatch($batch, $e, count($allEvaluatedRows));
+            throw $e;
+        } finally {
+            $lock->release();
+        }
 
         // Cleanup temporary files
         $this->cleanupTemporaryFile($token, $userId);
 
         return [
             'success'             => true,
+            'batch_uuid'          => $batch->batch_uuid,
             'rows_processed'      => count($rawRows),
             'imported'            => $importedParticipants,
             'skipped_duplicates'  => $skippedDuplicates,
