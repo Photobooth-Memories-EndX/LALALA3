@@ -13,7 +13,7 @@
         <div class="mb-3">
             <a href="{{ route('manage.record.offline') }}" class="btn-back-ptkp d-inline-flex align-items-center gap-1.5 text-decoration-none fw-medium">
                 <i class="ti ti-arrow-left"></i>
-                <span>Back to Non KP OWL</span>
+                <span>Kembali ke Offline Record</span>
             </a>
         </div>
 
@@ -27,7 +27,7 @@
                     </div>
                     <div>
                         <h2 class="h3 fw-bold mb-1 text-dark">Import Data PTKP</h2>
-                        <p class="text-muted small mb-0">Upload and import PTKP offline training records with automatic employee identity synchronization.</p>
+                        <p class="text-muted small mb-0">Upload dan validasi data training offline PTKP sebelum diimpor ke sistem OWL dengan sinkronisasi identitas karyawan otomatis.</p>
                     </div>
                 </div>
                 <div>
@@ -36,6 +36,16 @@
                         <span>Download Template PTKP (.xlsx)</span>
                     </a>
                 </div>
+            </div>
+        </div>
+
+        <!-- 4-STAGE PROCESS INDICATOR -->
+        <div class="card border-0 shadow-sm p-3 mb-4 rounded-3 bg-white">
+            <div class="ptkp-steps">
+                <div class="ptkp-step-item active" id="ptkp-step-ind-1"><div class="ptkp-step-bubble">1</div><div class="ptkp-step-title">Upload Spreadsheet</div></div>
+                <div class="ptkp-step-item" id="ptkp-step-ind-2"><div class="ptkp-step-bubble">2</div><div class="ptkp-step-title">Validation Preview</div></div>
+                <div class="ptkp-step-item" id="ptkp-step-ind-3"><div class="ptkp-step-bubble">3</div><div class="ptkp-step-title">Review Data</div></div>
+                <div class="ptkp-step-item" id="ptkp-step-ind-4"><div class="ptkp-step-bubble">4</div><div class="ptkp-step-title">Import Records</div></div>
             </div>
         </div>
 
@@ -129,6 +139,19 @@
                         <div>
                             <strong class="d-block mb-1">Catatan Validasi Header:</strong>
                             <div id="ptkp-header-alert-body"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NO NEW RECORDS TO IMPORT ALERT BANNER -->
+                <div class="alert alert-warning border-0 rounded-3 mb-4 p-3" id="ptkp-no-new-records-alert" style="display: none; background-color: #fffbeb; color: #92400e;">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="avatar rounded-circle bg-warning text-white flex-shrink-0" style="width: 40px; height: 40px;">
+                            <i class="ti ti-alert-circle fs-2"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold mb-1">No New Records to Import</h5>
+                            <p class="mb-0 small" id="ptkp-no-new-records-desc">Semua record telah ditemukan di database. Tidak ada record baru yang akan diimpor.</p>
                         </div>
                     </div>
                 </div>
@@ -257,6 +280,7 @@
                                 <th style="width: 110px;">Type</th>
                                 <th style="width: 130px;">PIC</th>
                                 <th style="min-width: 200px;">Validation Details</th>
+                                <th style="width: 70px;" class="text-center">Action</th>
                             </tr>
                         </thead>
                         <tbody id="ptkp-preview-tbody">

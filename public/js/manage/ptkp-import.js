@@ -57,6 +57,15 @@
         $btnValidate.prop('disabled', false);
     }
 
+    function setStep(stepNumber) {
+        $('.ptkp-step-item').removeClass('active completed');
+        for (let i = 1; i <= 4; i++) {
+            const $item = $(`#ptkp-step-ind-${i}`);
+            if (i < stepNumber) $item.addClass('completed');
+            else if (i === stepNumber) $item.addClass('active');
+        }
+    }
+
     $btnValidate.on('click', function () {
         if (!selectedFile) return;
         const formData = new FormData();
@@ -65,6 +74,7 @@
 
         $uploadCard.hide();
         $loadingCard.show();
+        setStep(2);
         $('#ptkp-loading-title').text('Validating Spreadsheet...');
         $('#ptkp-loading-subtitle').text('Reading PTKP columns, verifying Employee IDs, and checking duplicates...');
 
@@ -82,12 +92,14 @@
                     renderPreviewStage(res);
                 } else {
                     $uploadCard.show();
+                    setStep(1);
                     $uploadError.text(res.message || 'Validation failed.').show();
                 }
             },
             error: function (xhr) {
                 $loadingCard.hide();
                 $uploadCard.show();
+                setStep(1);
                 $uploadError.text((xhr.responseJSON && xhr.responseJSON.message) || 'Failed to process file.').show();
             }
         });
@@ -95,6 +107,7 @@
 
     function renderPreviewStage(data) {
         $previewCard.show();
+        setStep(3);
         $('#ptkp-preview-filename').text(data.filename || selectedFile.name);
         const stats = data.stats || {};
 
@@ -123,8 +136,21 @@
         }
 
         const importable = data.importable_count || 0;
+        const total = (data.stats && data.stats.total_rows) || allRows.length;
+        const duplicates = (data.stats && data.stats.duplicate) || 0;
         $('#ptkp-btn-confirm-count').text(importable);
-        $('#ptkp-btn-confirm').prop('disabled', !(data.can_confirm && importable > 0));
+
+        if (total > 0 && importable === 0 && duplicates > 0) {
+            $('#ptkp-no-new-records-alert').show();
+            $('#ptkp-no-new-records-desc').text('Semua record telah ditemukan di database. Tidak ada record baru yang akan diimpor.');
+            $('#ptkp-btn-confirm').prop('disabled', true);
+        } else if (importable <= 0) {
+            $('#ptkp-no-new-records-alert').hide();
+            $('#ptkp-btn-confirm').prop('disabled', true);
+        } else {
+            $('#ptkp-no-new-records-alert').hide();
+            $('#ptkp-btn-confirm').prop('disabled', false);
+        }
 
         applyFilters();
     }
@@ -212,10 +238,10 @@
                         </td>
                         <td><span class="badge bg-light text-secondary border">${escapeHtml(row.type || '-')}</span></td>
                         <td><span class="text-muted small">${escapeHtml(row.pic || '-')}</span></td>
-                        <td>
-                            ${msgsHtml}
-                            <button type="button" class="btn btn-sm btn-link p-0 text-decoration-none btn-inspect-row mt-1" data-row-idx="${globalIndex}">
-                                Inspect <i class="ti ti-chevron-right"></i>
+                        <td>${msgsHtml}</td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-sm btn-ghost-primary rounded-circle btn-inspect-row" data-row-idx="${globalIndex}" title="Inspeksi Baris">
+                                <i class="ti ti-eye"></i>
                             </button>
                         </td>
                     </tr>
@@ -375,6 +401,7 @@
 
     function renderResultStage(res) {
         $resultCard.show();
+        setStep(4);
         $('#res-total-processed').text(res.total_rows_processed || 0);
         $('#res-imported-participants').text(res.imported || 0);
         $('#res-duplicates-skipped').text(res.skipped_duplicates || 0);
@@ -394,6 +421,7 @@
         $btnValidate.prop('disabled', true);
         $uploadError.hide().text('');
         $previewCard.hide(); $resultCard.hide(); $loadingCard.hide(); $uploadCard.show();
+        setStep(1);
     }
 
     function formatBytes(bytes) {
