@@ -235,7 +235,7 @@ class OfflineTrainingImportTest extends TestCase
         // Admin redirect to offline page with modal trigger
         $response = $this->actingAs($this->admin)->get('/manage/record/offline/import');
         $response->assertStatus(302);
-        $response->assertRedirect(route('manage.record.offline', ['open_import' => 1]));
+        $response->assertRedirect(route('manage.record.offline.import-non-ptkp'));
 
         // Legacy fallback view support
         $legacyResponse = $this->actingAs($this->admin)->get('/manage/record/offline/import?legacy=1');

@@ -34,7 +34,14 @@ class OfflineTrainingImportController extends Controller
             ]);
         }
 
-        return redirect()->route('manage.record.offline', ['open_import' => 1]);
+        if ($request->routeIs('manage.record.offline.import')) {
+            return redirect()->route('manage.record.offline.import-non-ptkp');
+        }
+
+        return view('main.record.offline-import-non-ptkp', [
+            'title'    => 'Import Data Non PTKP',
+            'subtitle' => 'Upload dan validasi data training offline Non PTKP sebelum diimpor ke sistem OWL.',
+        ]);
     }
 
     /**

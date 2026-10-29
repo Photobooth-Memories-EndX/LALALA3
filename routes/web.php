@@ -549,6 +549,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
             Route::get('offline/create', [RecordOfflineController::class, 'create'])->name('offline.create');
             Route::get('offline/search-employees', [RecordOfflineController::class, 'searchEmployees'])->name('offline.search-employees');
             Route::post('offline/store', [RecordOfflineController::class, 'store'])->name('offline.store');
+            Route::get('offline/import-non-ptkp', [OfflineTrainingImportController::class, 'index'])->name('offline.import-non-ptkp');
             Route::get('offline/import', [OfflineTrainingImportController::class, 'index'])->name('offline.import');
             Route::get('offline/import/template', [OfflineTrainingImportController::class, 'downloadTemplate'])->name('offline.import.template');
             Route::get('offline/template', [OfflineTrainingImportController::class, 'downloadTemplate'])->name('offline.template');

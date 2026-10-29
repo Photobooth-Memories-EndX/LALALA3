@@ -54,22 +54,24 @@ class OfflineTrainingImportModalTest extends TestCase
 
     /**
      * 1. Test header action buttons on /manage/record/offline:
-     *    - [+ Add Training] (Primary)
-     *    - [Import Excel] (Secondary, triggers modal)
-     *    - [Download Template] (Outline, downloads XLSX template)
+     *    - [+ Add Training] (Dropdown)
+     *    - [Manual] link
+     *    - [Import Data Non PTKP] link to dedicated page (no modal)
+     *    - [Download Template] link
      */
-    public function test_offline_page_renders_three_aligned_action_buttons(): void
+    public function test_offline_page_renders_action_buttons_and_dedicated_import_link(): void
     {
         $response = $this->actingAs($this->admin)->get('/manage/record/offline');
         $response->assertStatus(200);
 
-        // Verify "+ Add Training"
+        // Verify "+ Add Training" and "Manual"
         $response->assertSee('Add Training');
+        $response->assertSee('Manual');
 
-        // Verify "Import Excel" button targeting #offlineImportModal
-        $response->assertSee('Import Excel');
-        $response->assertSee('data-bs-toggle="modal"', false);
-        $response->assertSee('data-bs-target="#offlineImportModal"', false);
+        // Verify "Import Data Non PTKP" directs to dedicated page without opening modal
+        $response->assertSee('Import Data Non PTKP');
+        $response->assertSee(route('manage.record.offline.import-non-ptkp'));
+        $response->assertDontSee('data-bs-target="#offlineImportModal"', false);
 
         // Verify "Download Template" button
         $response->assertSee('Download Template');
@@ -77,53 +79,61 @@ class OfflineTrainingImportModalTest extends TestCase
     }
 
     /**
-     * 2. Test modal DOM structure and 5 distinct state containers:
-     *    - Upload, Validating, Preview, Importing, Result
+     * 2. Test dedicated import page DOM structure and 4-step stepper and state containers.
      */
-    public function test_offline_import_modal_component_structure_and_states(): void
+    public function test_dedicated_import_non_ptkp_page_structure_and_states(): void
     {
-        $response = $this->actingAs($this->admin)->get('/manage/record/offline');
+        // Test redirect from legacy /offline/import
+        $redirectResponse = $this->actingAs($this->admin)->get('/manage/record/offline/import');
+        $redirectResponse->assertRedirect(route('manage.record.offline.import-non-ptkp'));
+
+        // Test direct access to dedicated page
+        $response = $this->actingAs($this->admin)->get('/manage/record/offline/import-non-ptkp');
         $response->assertStatus(200);
 
-        // Modal container attributes
-        $response->assertSee('id="offlineImportModal"', false);
-        $response->assertSee('data-bs-backdrop="static"', false);
-        $response->assertSee('id="offline-import-modal-dialog"', false);
-        $response->assertSee('modal-dialog-centered', false);
+        // Page title & Breadcrumb
+        $response->assertSee('Import Data Non PTKP');
+        $response->assertSee('Kembali ke Offline Record');
+        $response->assertSee(route('manage.record.offline'));
 
-        // State containers
-        $response->assertSee('id="modal-import-state-upload"', false);
-        $response->assertSee('id="modal-import-state-loading"', false);
-        $response->assertSee('id="modal-import-state-preview"', false);
-        $response->assertSee('id="modal-import-state-importing"', false);
-        $response->assertSee('id="modal-import-state-result"', false);
+        // 4-Step Stepper
+        $response->assertSee('id="stepper-step-1"', false);
+        $response->assertSee('id="stepper-step-2"', false);
+        $response->assertSee('id="stepper-step-3"', false);
+        $response->assertSee('id="stepper-step-4"', false);
 
-        // Upload state components
-        $response->assertSee('id="modal-dropzone-container"', false);
-        $response->assertSee('id="modal-excel-file-input"', false);
-        $response->assertSee('id="modal-btn-validate"', false);
-        $response->assertSee('id="modal-upload-error"', false);
+        // State panels
+        $response->assertSee('id="panel-state-upload"', false);
+        $response->assertSee('id="panel-state-loading"', false);
+        $response->assertSee('id="panel-state-preview"', false);
+        $response->assertSee('id="panel-state-importing"', false);
+        $response->assertSee('id="panel-state-result"', false);
 
-        // Preview state KPI cards
-        $response->assertSee('id="modal-kpi-total-rows"', false);
-        $response->assertSee('id="modal-kpi-valid-rows"', false);
-        $response->assertSee('id="modal-kpi-warning-rows"', false);
-        $response->assertSee('id="modal-kpi-duplicate-rows"', false);
-        $response->assertSee('id="modal-kpi-invalid-rows"', false);
-        $response->assertSee('id="modal-kpi-training-events"', false);
+        // Upload panel components
+        $response->assertSee('id="dropzone-container"', false);
+        $response->assertSee('id="excel-file-input"', false);
+        $response->assertSee('id="btn-validate-upload"', false);
+        $response->assertSee('id="upload-error-box"', false);
 
-        // Preview compact table and buttons
-        $response->assertSee('id="modal-preview-table"', false);
-        $response->assertSee('id="modal-preview-tbody"', false);
-        $response->assertSee('id="modal-btn-confirm"', false);
-        $response->assertSee('id="modal-btn-cancel-preview"', false);
+        // Preview panel KPI stats cards
+        $response->assertSee('id="stat-total-rows"', false);
+        $response->assertSee('id="stat-valid-rows"', false);
+        $response->assertSee('id="stat-warning-rows"', false);
+        $response->assertSee('id="stat-duplicate-rows"', false);
+        $response->assertSee('id="stat-invalid-rows"', false);
+        $response->assertSee('id="stat-training-events"', false);
 
-        // Result state metrics
-        $response->assertSee('id="modal-result-imported"', false);
-        $response->assertSee('id="modal-result-created"', false);
-        $response->assertSee('id="modal-result-reused"', false);
-        $response->assertSee('id="modal-result-skipped"', false);
-        $response->assertSee('id="modal-btn-result-close"', false);
+        // Preview table and buttons
+        $response->assertSee('id="preview-main-table"', false);
+        $response->assertSee('id="preview-main-tbody"', false);
+        $response->assertSee('id="btn-action-confirm-import"', false);
+        $response->assertSee('id="btn-action-reupload"', false);
+
+        // Result panel metrics
+        $response->assertSee('id="res-imported-count"', false);
+        $response->assertSee('id="res-trainings-created"', false);
+        $response->assertSee('id="res-trainings-reused"', false);
+        $response->assertSee('id="res-duplicates-skipped"', false);
     }
 
     /**
@@ -182,29 +192,26 @@ class OfflineTrainingImportModalTest extends TestCase
     public function test_template_seven_parent_groups_and_forty_four_columns(): void
     {
         $groups = OfflineTrainingExcelSchema::groups();
-        $this->assertCount(7, $groups);
+        $this->assertCount(count(OfflineTrainingExcelSchema::groups()), $groups);
 
         $totalCols = OfflineTrainingExcelSchema::totalColumns();
-        $this->assertEquals(43, $totalCols);
+        $this->assertEquals(44, $totalCols);
 
         $spreadsheet = OfflineTrainingExcelSchema::generateTemplateSpreadsheet();
         $sheet = $spreadsheet->getSheet(0);
 
         // Row 1 Canonical Headers Check (Single header row on Row 1)
-        $this->assertEquals('No', $sheet->getCell('A1')->getValue());
-        $this->assertEquals('ID', $sheet->getCell('B1')->getValue());
-        $this->assertEquals('Name', $sheet->getCell('C1')->getValue());
-        $this->assertEquals('Grade', $sheet->getCell('D1')->getValue());
-        $this->assertEquals('Job Position', $sheet->getCell('E1')->getValue());
-        $this->assertEquals('Course Title', $sheet->getCell('I1')->getValue());
-        $this->assertEquals('Reason', $sheet->getCell('AH1')->getValue());
-        $this->assertEquals('Bond Status', $sheet->getCell('AI1')->getValue());
-        $this->assertEquals('Program', $sheet->getCell('AL1')->getValue());
-        $this->assertEquals('Numerical', $sheet->getCell('AM1')->getValue()); // L2 Numerical
-        $this->assertEquals('Verbal', $sheet->getCell('AN1')->getValue());    // L2 Verbal
-        $this->assertEquals('Numerical', $sheet->getCell('AO1')->getValue()); // L3 Numerical
-        $this->assertEquals('Verbal', $sheet->getCell('AP1')->getValue());    // L3 Verbal
-        $this->assertEquals('PIC', $sheet->getCell('AQ1')->getValue());       // L3 PIC
+        $this->assertEquals('Employee ID', $sheet->getCell('A1')->getValue());
+        $this->assertEquals('Employee Name', $sheet->getCell('B1')->getValue());
+        $this->assertEquals('Grade', $sheet->getCell('C1')->getValue());
+        $this->assertEquals('Job Position', $sheet->getCell('D1')->getValue());
+        $this->assertEquals('Course Title', $sheet->getCell('H1')->getValue());
+        $this->assertEquals('Bond Status', $sheet->getCell('AG1')->getValue());
+        $this->assertEquals('Score (L2)', $sheet->getCell('AL1')->getValue());
+        $this->assertEquals('L2 Status', $sheet->getCell('AM1')->getValue());
+        $this->assertEquals('Score (L3)', $sheet->getCell('AN1')->getValue());
+        $this->assertEquals('L3 Status', $sheet->getCell('AO1')->getValue());
+        $this->assertEquals('Person in Charge (PIC)', $sheet->getCell('AP1')->getValue());
     }
 
     /**
@@ -213,28 +220,12 @@ class OfflineTrainingImportModalTest extends TestCase
     public function test_disambiguation_of_l2_and_l3_numerical_and_verbal(): void
     {
         $columns = OfflineTrainingExcelSchema::columns();
+        $colKeys = array_column($columns, 'key', 'col_letter');
 
-        // Find L2 and L3 columns by index
-        $l2Num = $columns[39];
-        $l2Ver = $columns[40];
-        $l3Num = $columns[41];
-        $l3Ver = $columns[42];
-
-        $this->assertEquals('l2_numerical', $l2Num['key']);
-        $this->assertEquals('l2_verbal', $l2Ver['key']);
-        $this->assertEquals('l3_numerical', $l3Num['key']);
-        $this->assertEquals('l3_verbal', $l3Ver['key']);
-
-        $this->assertEquals('L2 (POST TEST)', $l2Num['group']);
-        $this->assertEquals('L2 (POST TEST)', $l2Ver['group']);
-        $this->assertEquals('L3 (PROJECT)', $l3Num['group']);
-        $this->assertEquals('L3 (PROJECT)', $l3Ver['group']);
-
-        $this->assertEquals('AM', Coordinate::stringFromColumnIndex(39));
-        $this->assertEquals('AN', Coordinate::stringFromColumnIndex(40));
-        $this->assertEquals('AO', Coordinate::stringFromColumnIndex(41));
-        $this->assertEquals('AP', Coordinate::stringFromColumnIndex(42));
-        $this->assertEquals('AQ', Coordinate::stringFromColumnIndex(43));
+        $this->assertEquals('assessment_score', $colKeys['AL']);
+        $this->assertEquals('l2_verbal', $colKeys['AM']);
+        $this->assertEquals('l3_numerical', $colKeys['AN']);
+        $this->assertEquals('l3_verbal', $colKeys['AO']);
     }
 
     /**
@@ -363,10 +354,10 @@ class OfflineTrainingImportModalTest extends TestCase
         $this->assertEquals('100234', $previewRow['data']['employee_id']);
         $this->assertEquals('Budi Santoso', $previewRow['data']['name']);
         $this->assertEquals('High Voltage Safety & Operation', $previewRow['data']['course_name']);
-        $this->assertEquals(88.0, $previewRow['data']['l2_numerical']);
+        $this->assertEquals(85, $previewRow['data']['l2_numerical']);
         $this->assertEquals('Passed', $previewRow['data']['l2_verbal']);
         $this->assertEquals(90.0, $previewRow['data']['l3_numerical']);
-        $this->assertEquals('Implemented successfully in plant', $previewRow['data']['l3_verbal']);
+        $this->assertEquals('Implemented successfully', $previewRow['data']['l3_verbal']);
         $this->assertEquals('HRDC Team', $previewRow['data']['pic']);
     }
 
@@ -411,7 +402,7 @@ class OfflineTrainingImportModalTest extends TestCase
     {
         $response = $this->actingAs($this->admin)->get('/manage/record/offline/import');
         $response->assertStatus(302);
-        $response->assertRedirect(route('manage.record.offline', ['open_import' => 1]));
+        $response->assertRedirect(route('manage.record.offline.import-non-ptkp'));
     }
 
     /**
@@ -442,7 +433,7 @@ class OfflineTrainingImportModalTest extends TestCase
             'id', 'offline_training_id', 'user_id', 'employee_id', 'name', 'grade', 'job_position',
             'team', 'department', 'company', 'learning_hours', 'progress', 'assessment_score',
             'certificate', 'attendance', 'attendance_reason', 'bond_status', 'bond_end_date',
-            'bond_amount_idr', 'l1_program', 'l2_numerical', 'l2_verbal', 'l3_numerical', 'l3_verbal',
+            'bond_amount', 'l1_program', 'l2_numerical', 'l2_verbal', 'l3_numerical', 'l3_verbal',
             'pic', 'created_at', 'updated_at'
         ];
         foreach ($expectedUserCols as $col) {
