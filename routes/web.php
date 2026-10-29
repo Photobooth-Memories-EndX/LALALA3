@@ -550,13 +550,13 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
             Route::get('offline/create', [RecordOfflineController::class, 'create'])->name('offline.create');
             Route::get('offline/search-employees', [RecordOfflineController::class, 'searchEmployees'])->name('offline.search-employees');
             Route::post('offline/store', [RecordOfflineController::class, 'store'])->name('offline.store');
+            Route::get('offline/import-non-ptkp', [OfflineTrainingImportController::class, 'index'])->name('offline.import-non-ptkp');
             Route::get('offline/import', [OfflineTrainingImportController::class, 'index'])->name('offline.import');
             Route::get('offline/import/template', [OfflineTrainingImportController::class, 'downloadTemplate'])->name('offline.import.template');
             Route::get('offline/template', [OfflineTrainingImportController::class, 'downloadTemplate'])->name('offline.template');
             Route::post('offline/import/preview', [OfflineTrainingImportController::class, 'preview'])->name('offline.import.preview');
             Route::post('offline/import/confirm', [OfflineTrainingImportController::class, 'confirm'])->name('offline.import.confirm');
             Route::post('offline/import/cancel', [OfflineTrainingImportController::class, 'cancel'])->name('offline.import.cancel');
-            Route::get('offline/import-non-ptkp', [OfflineTrainingImportController::class, 'indexNonPtkp'])->name('offline.import-non-ptkp');
             Route::get('offline/import-non-ptkp/template', [OfflineTrainingImportController::class, 'downloadTemplate'])->name('offline.import-non-ptkp.template');
             Route::post('offline/import-non-ptkp/preview', [OfflineTrainingImportController::class, 'preview'])->name('offline.import-non-ptkp.preview');
             Route::post('offline/import-non-ptkp/confirm', [OfflineTrainingImportController::class, 'confirm'])->name('offline.import-non-ptkp.confirm');
