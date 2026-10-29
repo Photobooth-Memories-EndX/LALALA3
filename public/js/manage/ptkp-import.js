@@ -142,7 +142,7 @@
 
         if (total > 0 && importable === 0 && duplicates > 0) {
             $('#ptkp-no-new-records-alert').show();
-            $('#ptkp-no-new-records-desc').text('Semua record telah ditemukan di database. Tidak ada record baru yang akan diimpor.');
+            $('#ptkp-no-new-records-desc').text('All records already exist in the database. No new records will be imported.');
             $('#ptkp-btn-confirm').prop('disabled', true);
         } else if (importable <= 0) {
             $('#ptkp-no-new-records-alert').hide();
@@ -240,7 +240,7 @@
                         <td><span class="text-muted small">${escapeHtml(row.pic || '-')}</span></td>
                         <td>${msgsHtml}</td>
                         <td class="text-center">
-                            <button type="button" class="btn btn-sm btn-ghost-primary rounded-circle btn-inspect-row" data-row-idx="${globalIndex}" title="Inspeksi Baris">
+                            <button type="button" class="btn btn-sm btn-ghost-primary rounded-circle btn-inspect-row" data-row-idx="${globalIndex}" title="Inspect Row">
                                 <i class="ti ti-eye"></i>
                             </button>
                         </td>

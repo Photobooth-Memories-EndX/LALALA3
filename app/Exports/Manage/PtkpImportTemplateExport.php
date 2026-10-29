@@ -101,22 +101,22 @@ class PtkpImportTemplateExport
 
     protected function buildInstructionsSheet(Worksheet $sheet): void
     {
-        $sheet->setCellValue('A1', 'PETUNJUK PENGISIAN TEMPLATE IMPORT DATA PTKP OWL (48 KOLOM)');
+        $sheet->setCellValue('A1', 'INSTRUCTIONS FOR FILLING OUT PTKP OWL IMPORT TEMPLATE (48 COLUMNS)');
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
         $sheet->getRowDimension(1)->setRowHeight(30);
 
         $instructions = [
-            ['1. Kolom "Status"', 'Status validasi sistem (opsional pada file upload). Hasil validasi otomatis dievaluasi oleh sistem OWL LMS.'],
-            ['2. Kolom "No"', 'Nomor urut preview saja. Bukan primary key database dan tidak disimpan ke tabel data.'],
-            ['3. Employee ID', 'Wajib diisi dengan NIP/Employee ID karyawan. Digunakan untuk pencocokan akun karyawan pada database OWL.'],
-            ['4. Lima Kolom Identitas', 'Employee Name, Grade, Job Position, Team, dan Department disinkronkan otomatis dari data aktual tabel users.'],
-            ['5. Course Title', 'Wajib diisi dengan judul pelatihan. Baris dengan Course Title kosong akan ditolak (INVALID).'],
-            ['6. Perbedaan Company (PTKP)', 'Jika Company di Excel berbeda dengan Company user di database, data tetap DAPAT DIIMPORT (status WARNING non-blocking).'],
-            ['7. Provider & Sub Provider', 'Kategori penyedia training (Internal / External, Vendor, dsb).'],
-            ['8. Kolom Sertifikat', 'Certificate Availability (Yes/No), Institution, Issued Date, dan Expired Date.'],
-            ['9. PIC', 'Person in Charge (PIC) berada di posisi kolom terakhir (kolom 48).'],
-            ['10. Format Tanggal & Waktu', 'Gunakan format YYYY-MM-DD untuk tanggal dan HH:mm atau HH:mm:ss untuk waktu.'],
-            ['11. Aturan Duplikat', 'Data dengan kombinasi event dan karyawan yang sama dalam file atau database akan dilewati secara otomatis.'],
+            ['1. "Status" Column', 'System validation status (optional on upload). Validation results are automatically evaluated by the OWL LMS system.'],
+            ['2. "No" Column', 'Preview sequence number only. Not a database primary key and not stored in data tables.'],
+            ['3. Employee ID', 'Mandatory employee NIP / ID. Used for matching employee accounts in the OWL LMS database.'],
+            ['4. Five Identity Columns', 'Employee Name, Grade, Job Position, Team, and Department are automatically synchronized from actual records in the users table.'],
+            ['5. Course Title', 'Mandatory training title. Rows with empty Course Title will be rejected (INVALID status).'],
+            ['6. Company Mismatch (PTKP)', 'If the Company in Excel differs from the user record in database, the record CAN STILL BE IMPORTED (non-blocking WARNING status).'],
+            ['7. Provider & Sub Provider', 'Training provider categories (Internal / External, Vendor, etc.).'],
+            ['8. Certificate Columns', 'Certificate Availability (Yes/No), Institution, Issued Date, and Expired Date.'],
+            ['9. Person in Charge (PIC)', 'Person in Charge (PIC) is located at the final column (column 48).'],
+            ['10. Date & Time Format', 'Use YYYY-MM-DD for dates and HH:mm or HH:mm:ss for times.'],
+            ['11. Duplicate Prevention', 'Records with identical participant and training combinations within the file or existing database records will be skipped automatically.'],
         ];
 
         $row = 3;

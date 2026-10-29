@@ -1,6 +1,6 @@
 @extends('layouts.sidebar-master')
 
-@section('title', 'Import Data PTKP — OWL LMS')
+@section('title', 'Import PTKP Data — OWL LMS')
 
 @section('style')
 <link rel="stylesheet" href="{{ asset('css/manage/ptkp-import.css') }}">
@@ -13,7 +13,7 @@
         <div class="mb-3">
             <a href="{{ route('manage.record.offline') }}" class="btn-back-ptkp d-inline-flex align-items-center gap-1.5 text-decoration-none fw-medium">
                 <i class="ti ti-arrow-left"></i>
-                <span>Kembali ke Offline Record</span>
+                <span>Back to Offline Records</span>
             </a>
         </div>
 
@@ -26,14 +26,14 @@
                         <i class="ti ti-file-spreadsheet fs-1"></i>
                     </div>
                     <div>
-                        <h2 class="h3 fw-bold mb-1 text-dark">Import Data PTKP</h2>
-                        <p class="text-muted small mb-0">Upload dan validasi data training offline PTKP sebelum diimpor ke sistem OWL dengan sinkronisasi identitas karyawan otomatis.</p>
+                        <h2 class="h3 fw-bold mb-1 text-dark">Import PTKP Data</h2>
+                        <p class="text-muted small mb-0">Upload and validate PTKP offline training records before importing into OWL LMS with automatic employee identity synchronization.</p>
                     </div>
                 </div>
                 <div>
                     <a href="{{ route('manage.record.offline.import-ptkp.template') }}" class="btn btn-outline-primary rounded-pill d-inline-flex align-items-center gap-2 px-3 py-2" id="btn-download-ptkp-template">
                         <i class="ti ti-download fs-2"></i>
-                        <span>Download Template PTKP (.xlsx)</span>
+                        <span>Download PTKP Template (.xlsx)</span>
                     </a>
                 </div>
             </div>
@@ -55,7 +55,7 @@
                 <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
                     <div class="d-flex align-items-center gap-2">
                         <span class="badge bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 26px; height: 26px; font-size: 0.8rem;">1</span>
-                        <h4 class="card-title fw-bold text-dark mb-0">Upload Spreadsheet PTKP</h4>
+                        <h4 class="card-title fw-bold text-dark mb-0">Upload PTKP Spreadsheet</h4>
                     </div>
                 </div>
 
@@ -78,18 +78,21 @@
                 <!-- Upload Error Alert -->
                 <div class="alert alert-danger border-0 rounded-3 small mb-3 py-2 px-3" id="ptkp-upload-error" style="display: none;"></div>
 
+                <!-- Detailed Status Guide on Initial Upload Page -->
+                @include('manage.record.offline.partials.ptkp-status-guide')
+
                 <!-- Guidelines Box -->
                 <div class="alert alert-info border-0 rounded-3 small mb-4" style="background-color: #f0f9ff; color: #0369a1;">
                     <div class="d-flex align-items-start gap-2">
                         <i class="ti ti-info-circle fs-3 flex-shrink-0 mt-0.5"></i>
                         <div>
-                            <strong class="d-block mb-1">Spreadsheet Guidelines & Aturan Bisnis PTKP:</strong>
+                            <strong class="d-block mb-1">Spreadsheet Guidelines & PTKP Business Rules:</strong>
                             <ul class="mb-0 ps-3">
-                                <li><strong>Struktur Template:</strong> Menggunakan template 49 kolom canonical PTKP yang mencakup kolom <em>No</em>, <em>Provider</em>, dan <em>Sub Provider</em>. Kolom <em>Total Engagement Time</em> dan <em>Certificate</em> lama dihilangkan.</li>
-                                <li><strong>Pencocokan Karyawan:</strong> <em>Employee ID</em> dicocokkan dengan data karyawan di tabel <code>users</code>. Jika tidak ditemukan atau ambigu, baris ditolak (status INVALID).</li>
-                                <li><strong>Sinkronisasi Identitas:</strong> Lima kolom (<em>Employee Name</em>, <em>Grade</em>, <em>Job Position</em>, <em>Team</em>, <em>Department</em>) secara otomatis diambil dari tabel <code>users</code>.</li>
-                                <li><strong>Perbedaan Company (PTKP):</strong> Ketidaksesuaian Company antara file dan user merupakan <strong>Warning non-blocking (INVALID COMPANY)</strong>. Data tetap dapat diimport.</li>
-                                <li><strong>Pencegahan Duplikat:</strong> Baris dengan peserta dan pelatihan yang sama di dalam file atau di database akan dilewati secara otomatis (status DUPLICATE).</li>
+                                <li><strong>Template Structure:</strong> Uses the canonical 48-column PTKP template with grouped headers. Obsolete columns have been removed.</li>
+                                <li><strong>Employee Matching:</strong> <em>Employee ID</em> is matched against user accounts in the <code>users</code> table. If missing, not found, or ambiguous, the row is rejected (INVALID).</li>
+                                <li><strong>Identity Synchronization:</strong> Five identity fields (<em>Employee Name</em>, <em>Grade</em>, <em>Job Position</em>, <em>Team</em>, <em>Department</em>) are automatically populated from the <code>users</code> table.</li>
+                                <li><strong>Company Mismatch (PTKP):</strong> Discrepancies between spreadsheet company and database user profile are treated as a <strong>non-blocking warning (INVALID COMPANY)</strong>. The record will still be imported.</li>
+                                <li><strong>Duplicate Prevention:</strong> Duplicate records within the file or already enrolled in the database will be skipped automatically (DUPLICATE).</li>
                             </ul>
                         </div>
                     </div>
@@ -110,7 +113,7 @@
             <div class="card-body">
                 <div class="spinner-border text-warning" style="width: 3.5rem; height: 3.5rem; color: #d97706 !important;" role="status"></div>
                 <h5 class="fw-bold text-dark mt-3 mb-1" id="ptkp-loading-title">Validating Spreadsheet...</h5>
-                <p class="text-muted small mb-0" id="ptkp-loading-subtitle">Reading 49 columns, verifying Employee IDs, and checking duplicates...</p>
+                <p class="text-muted small mb-0" id="ptkp-loading-subtitle">Reading 48 PTKP columns, verifying Employee IDs, and checking duplicates...</p>
             </div>
         </div>
 
@@ -120,7 +123,7 @@
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                     <div class="d-flex align-items-center gap-2">
                         <span class="badge bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 26px; height: 26px; font-size: 0.8rem;">2</span>
-                        <h4 class="card-title fw-bold text-dark mb-0">Review Import PTKP</h4>
+                        <h4 class="card-title fw-bold text-dark mb-0">PTKP Validation & Review</h4>
                         <span class="badge bg-light text-secondary border px-2.5 py-1.5 ms-2" id="ptkp-preview-filename">-</span>
                     </div>
                     <div>
@@ -137,7 +140,7 @@
                     <div class="d-flex align-items-start gap-2">
                         <i class="ti ti-alert-triangle fs-3 flex-shrink-0 mt-0.5"></i>
                         <div>
-                            <strong class="d-block mb-1">Catatan Validasi Header:</strong>
+                            <strong class="d-block mb-1">Header Validation Notes:</strong>
                             <div id="ptkp-header-alert-body"></div>
                         </div>
                     </div>
@@ -151,7 +154,7 @@
                         </div>
                         <div>
                             <h5 class="fw-bold mb-1">No New Records to Import</h5>
-                            <p class="mb-0 small" id="ptkp-no-new-records-desc">Semua record telah ditemukan di database. Tidak ada record baru yang akan diimpor.</p>
+                            <p class="mb-0 small" id="ptkp-no-new-records-desc">All records already exist in the database. No new records will be imported.</p>
                         </div>
                     </div>
                 </div>
@@ -172,8 +175,8 @@
                     </div>
                     <div class="col-6 col-md-2">
                         <div class="card border-0 shadow-none p-3 rounded-3 text-center h-100 ptkp-kpi-card ptkp-kpi-warning">
-                            <div class="small fw-semibold mb-1" style="color: #be123c;">WARNING</div>
-                            <div class="h3 fw-bold mb-0" style="color: #be123c;" id="ptkp-kpi-warning">0</div>
+                            <div class="small fw-semibold mb-1" style="color: #92400e;">WARNING</div>
+                            <div class="h3 fw-bold mb-0" style="color: #92400e;" id="ptkp-kpi-warning">0</div>
                         </div>
                     </div>
                     <div class="col-6 col-md-2">
@@ -192,35 +195,6 @@
                         <div class="card border-0 shadow-none p-3 rounded-3 text-center h-100 ptkp-kpi-card ptkp-kpi-invalid-company">
                             <div class="small fw-semibold mb-1" style="color: #c2410c;">INVALID COMPANY</div>
                             <div class="h3 fw-bold mb-0" style="color: #c2410c;" id="ptkp-kpi-invalid-company">0</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- STATUS LEGEND BOX -->
-                <div class="ptkp-legend-box p-3 mb-4">
-                    <div class="fw-bold small text-dark mb-2 text-uppercase" style="letter-spacing: 0.05em; font-size: 0.75rem;">
-                        <i class="ti ti-info-circle me-1 text-primary"></i> Keterangan Status Review Import
-                    </div>
-                    <div class="row g-2 small">
-                        <div class="col-md-4 d-flex align-items-center gap-2">
-                            <span class="ptkp-legend-indicator" style="background-color: #86efac;"></span>
-                            <div><strong>VALID:</strong> Data masuk ke sistem.</div>
-                        </div>
-                        <div class="col-md-4 d-flex align-items-center gap-2">
-                            <span class="ptkp-legend-indicator" style="background-color: #fda4af;"></span>
-                            <div><strong>WARNING:</strong> Data masuk ke sistem, ada peringatan.</div>
-                        </div>
-                        <div class="col-md-4 d-flex align-items-center gap-2">
-                            <span class="ptkp-legend-indicator" style="background-color: #fde047;"></span>
-                            <div><strong>DUPLICATE:</strong> Data tidak masuk (duplikat).</div>
-                        </div>
-                        <div class="col-md-4 d-flex align-items-center gap-2">
-                            <span class="ptkp-legend-indicator" style="background-color: #fca5a5;"></span>
-                            <div><strong>INVALID:</strong> Data tidak masuk (Employee ID / Course kosong).</div>
-                        </div>
-                        <div class="col-md-8 d-flex align-items-center gap-2">
-                            <span class="ptkp-legend-indicator" style="background-color: #fdba74;"></span>
-                            <div><strong>INVALID COMPANY:</strong> Company berbeda; untuk PTKP data <em>tetap dapat masuk</em> ke sistem.</div>
                         </div>
                     </div>
                 </div>
@@ -318,8 +292,8 @@
                 <div class="avatar avatar-xl rounded-circle mx-auto mb-3" style="background-color: #ecfdf5; color: #059669; width: 72px; height: 72px;">
                     <i class="ti ti-circle-check fs-1"></i>
                 </div>
-                <h3 class="fw-bold text-dark mb-1">Import PTKP Selesai Diproses</h3>
-                <p class="text-muted small mb-4">Hasil pemrosesan spreadsheet dan penyimpanan ke database offline training.</p>
+                <h3 class="fw-bold text-dark mb-1">PTKP Import Completed</h3>
+                <p class="text-muted small mb-4">Summary of spreadsheet processing and offline training record persistence.</p>
 
                 <!-- 8 Result Metrics -->
                 <div class="row g-3 justify-content-center mb-4 text-start" style="max-width: 900px; margin: 0 auto;">
@@ -331,43 +305,43 @@
                     </div>
                     <div class="col-sm-6 col-md-3">
                         <div class="card border-0 p-3 rounded-3 text-center" style="background-color: #ecfdf5;">
-                            <div class="small fw-semibold" style="color: #065f46;">Berhasil Diimport</div>
+                            <div class="small fw-semibold" style="color: #065f46;">Successfully Imported</div>
                             <div class="h3 fw-bold mb-0" style="color: #047857;" id="res-imported-participants">0</div>
                         </div>
                     </div>
                     <div class="col-sm-6 col-md-3">
                         <div class="card border-0 p-3 rounded-3 text-center" style="background-color: #fefce8;">
-                            <div class="small fw-semibold" style="color: #a16207;">Duplicate Dilewati</div>
+                            <div class="small fw-semibold" style="color: #a16207;">Duplicates Skipped</div>
                             <div class="h3 fw-bold mb-0" style="color: #a16207;" id="res-duplicates-skipped">0</div>
                         </div>
                     </div>
                     <div class="col-sm-6 col-md-3">
                         <div class="card border-0 p-3 rounded-3 text-center" style="background-color: #fef2f2;">
-                            <div class="small fw-semibold" style="color: #991b1b;">Invalid Dilewati</div>
+                            <div class="small fw-semibold" style="color: #991b1b;">Invalid Skipped</div>
                             <div class="h3 fw-bold mb-0" style="color: #dc2626;" id="res-invalid-skipped">0</div>
                         </div>
                     </div>
                     <div class="col-sm-6 col-md-3">
-                        <div class="card border-0 p-3 rounded-3 text-center" style="background-color: #fff1f2;">
-                            <div class="small fw-semibold" style="color: #be123c;">Warning Diimport</div>
-                            <div class="h3 fw-bold mb-0" style="color: #be123c;" id="res-warnings-imported">0</div>
+                        <div class="card border-0 p-3 rounded-3 text-center" style="background-color: #fffbeb;">
+                            <div class="small fw-semibold" style="color: #92400e;">Warnings Imported</div>
+                            <div class="h3 fw-bold mb-0" style="color: #92400e;" id="res-warnings-imported">0</div>
                         </div>
                     </div>
                     <div class="col-sm-6 col-md-3">
                         <div class="card border-0 p-3 rounded-3 text-center" style="background-color: #fff7ed;">
-                            <div class="small fw-semibold" style="color: #c2410c;">Invalid Company Diimport</div>
+                            <div class="small fw-semibold" style="color: #c2410c;">Invalid Company Imported</div>
                             <div class="h3 fw-bold mb-0" style="color: #c2410c;" id="res-invalid-company-imported">0</div>
                         </div>
                     </div>
                     <div class="col-sm-6 col-md-3">
                         <div class="card border-0 p-3 rounded-3 text-center" style="background-color: #f0fdfa;">
-                            <div class="small fw-semibold" style="color: #115e59;">Training Baru Dibuat</div>
+                            <div class="small fw-semibold" style="color: #115e59;">New Trainings Created</div>
                             <div class="h3 fw-bold mb-0" style="color: #0f766e;" id="res-trainings-created">0</div>
                         </div>
                     </div>
                     <div class="col-sm-6 col-md-3">
                         <div class="card border-0 p-3 rounded-3 text-center" style="background-color: #eff6ff;">
-                            <div class="small fw-semibold" style="color: #1e40af;">Training Direuse</div>
+                            <div class="small fw-semibold" style="color: #1e40af;">Trainings Reused</div>
                             <div class="h3 fw-bold mb-0" style="color: #2563eb;" id="res-trainings-reused">0</div>
                         </div>
                     </div>
@@ -375,14 +349,17 @@
 
                 <div class="d-flex align-items-center justify-content-center gap-3">
                     <button type="button" class="btn btn-outline-secondary rounded-pill px-4" id="ptkp-btn-import-another">
-                        <i class="ti ti-upload me-1"></i> Import Spreadsheet Lain
+                        <i class="ti ti-upload me-1"></i> Import Another Spreadsheet
                     </button>
                     <a href="{{ route('manage.record.offline') }}" class="btn btn-primary rounded-pill px-4" style="background-color: #d97706; border-color: #d97706;">
-                        <i class="ti ti-table me-1"></i> Lihat Data Non KP OWL
+                        <i class="ti ti-table me-1"></i> View Offline Records
                     </a>
                 </div>
             </div>
         </div>
+
+        <!-- REUSABLE FOOTER STATUS LEGEND (CONSISTENT ON ALL STEPS) -->
+        @include('manage.record.offline.partials.ptkp-status-legend')
     </div>
 </div>
 
@@ -396,7 +373,7 @@
                         <i class="ti ti-file-search fs-2"></i>
                     </span>
                     <div>
-                        <h5 class="modal-title fw-bold text-dark mb-0" id="ptkpInspectionModalLabel">Inspeksi Data Baris (Excel Row <span id="modal-inspect-row-num">-</span>)</h5>
+                        <h5 class="modal-title fw-bold text-dark mb-0" id="ptkpInspectionModalLabel">Row Data Inspection (Excel Row <span id="modal-inspect-row-num">-</span>)</h5>
                         <div class="text-muted extra-small" style="font-size: 0.75rem;">Status: <span id="modal-inspect-status"></span></div>
                     </div>
                 </div>

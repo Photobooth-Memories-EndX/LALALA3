@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PTKP IMPORT STYLES
+   PTKP IMPORT STYLES (Light & Dark Mode Supported)
    ========================================================================== */
 
 .ptkp-import-page {
@@ -105,9 +105,9 @@ body.theme-dark .ptkp-import-page {
     border: 1px solid #86efac;
 }
 .badge-ptkp-warning {
-    background-color: #ffe4e6 !important;
-    color: #be123c !important;
-    border: 1px solid #fda4af;
+    background-color: #fef3c7 !important;
+    color: #92400e !important;
+    border: 1px solid #fde68a;
 }
 .badge-ptkp-duplicate {
     background-color: #fef9c3 !important;
@@ -125,6 +125,33 @@ body.theme-dark .ptkp-import-page {
     border: 1px solid #fdba74;
 }
 
+/* Dark Mode Badges */
+[data-bs-theme="dark"] .badge-ptkp-valid, body.dark-mode .badge-ptkp-valid {
+    background-color: rgba(22, 163, 74, 0.2) !important;
+    color: #4ade80 !important;
+    border-color: rgba(74, 222, 128, 0.4);
+}
+[data-bs-theme="dark"] .badge-ptkp-warning, body.dark-mode .badge-ptkp-warning {
+    background-color: rgba(217, 119, 6, 0.2) !important;
+    color: #fbbf24 !important;
+    border-color: rgba(251, 191, 36, 0.4);
+}
+[data-bs-theme="dark"] .badge-ptkp-duplicate, body.dark-mode .badge-ptkp-duplicate {
+    background-color: rgba(234, 179, 8, 0.2) !important;
+    color: #fde047 !important;
+    border-color: rgba(253, 224, 71, 0.4);
+}
+[data-bs-theme="dark"] .badge-ptkp-invalid, body.dark-mode .badge-ptkp-invalid {
+    background-color: rgba(220, 38, 38, 0.2) !important;
+    color: #f87171 !important;
+    border-color: rgba(248, 113, 113, 0.4);
+}
+[data-bs-theme="dark"] .badge-ptkp-invalid-company, body.dark-mode .badge-ptkp-invalid-company {
+    background-color: rgba(234, 88, 12, 0.2) !important;
+    color: #fb923c !important;
+    border-color: rgba(251, 146, 60, 0.4);
+}
+
 /* KPI Summary Cards */
 .ptkp-kpi-card {
     border-radius: 12px;
@@ -133,39 +160,31 @@ body.theme-dark .ptkp-import-page {
 .ptkp-kpi-card:hover {
     transform: translateY(-2px);
 }
-.ptkp-kpi-valid {
-    background-color: #f0fdf4;
-    border: 1px solid #bbf7d0;
-}
-.ptkp-kpi-warning {
-    background-color: #fff1f2;
-    border: 1px solid #fecdd3;
-}
-.ptkp-kpi-duplicate {
-    background-color: #fefce8;
-    border: 1px solid #fef08a;
-}
-.ptkp-kpi-invalid {
-    background-color: #fef2f2;
-    border: 1px solid #fecaca;
-}
-.ptkp-kpi-invalid-company {
-    background-color: #fff7ed;
-    border: 1px solid #fed7aa;
-}
+.ptkp-kpi-valid { background-color: #f0fdf4; border: 1px solid #bbf7d0; }
+.ptkp-kpi-warning { background-color: #fffbeb; border: 1px solid #fef3c7; }
+.ptkp-kpi-duplicate { background-color: #fefce8; border: 1px solid #fef08a; }
+.ptkp-kpi-invalid { background-color: #fef2f2; border: 1px solid #fecaca; }
+.ptkp-kpi-invalid-company { background-color: #fff7ed; border: 1px solid #fed7aa; }
 
-/* Status Legend */
-.ptkp-legend-box {
+/* Status Guide Table & Footer Legend */
+.ptkp-guide-table th {
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+    background-color: #f8fafc;
+}
+.ptkp-guide-table td {
+    border-bottom: 1px solid #f1f5f9;
+}
+.ptkp-footer-legend-card {
     background-color: #f8fafc;
     border: 1px solid #e2e8f0;
-    border-radius: 12px;
 }
-.ptkp-legend-indicator {
-    width: 14px;
-    height: 14px;
-    border-radius: 4px;
-    display: inline-block;
-    flex-shrink: 0;
+[data-bs-theme="dark"] .ptkp-footer-legend-card,
+body.dark-mode .ptkp-footer-legend-card,
+[data-bs-theme="dark"] #ptkp-status-guide-card,
+body.dark-mode #ptkp-status-guide-card {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
 }
 
 /* Filter Tabs */
@@ -201,21 +220,11 @@ body.theme-dark .ptkp-import-page {
     letter-spacing: 0.04em;
     color: #475569;
 }
-.ptkp-table tr.row-valid {
-    background-color: #ffffff;
-}
-.ptkp-table tr.row-warning {
-    background-color: #fffafb;
-}
-.ptkp-table tr.row-duplicate {
-    background-color: #fffdf5;
-}
-.ptkp-table tr.row-invalid {
-    background-color: #fffbfb;
-}
-.ptkp-table tr.row-invalid-company {
-    background-color: #fffcf7;
-}
+.ptkp-table tr.row-valid { background-color: #ffffff; }
+.ptkp-table tr.row-warning { background-color: #fffdfa; }
+.ptkp-table tr.row-duplicate { background-color: #fffdf5; }
+.ptkp-table tr.row-invalid { background-color: #fffbfb; }
+.ptkp-table tr.row-invalid-company { background-color: #fffcf7; }
 
 /* Row messages */
 .ptkp-row-msg {

@@ -75,7 +75,12 @@ class PtkpImportTest extends TestCase
         $adminResponse = $this->actingAs($this->adminUser)
             ->get(route('manage.record.offline.import-ptkp'));
         $adminResponse->assertStatus(200);
-        $adminResponse->assertSee('Import Data PTKP');
+        $adminResponse->assertSee('Import PTKP Data');
+        $adminResponse->assertSee('Back to Offline Records');
+        $adminResponse->assertSee('Import Status Guide');
+        $adminResponse->assertSee('Import Status Legend');
+        $adminResponse->assertSee('The record will be imported into the system.');
+        $adminResponse->assertSee('INVALID COMPANY');
     }
 
     public function test_ptkp_template_has_exact_48_columns_and_proper_structure(): void
