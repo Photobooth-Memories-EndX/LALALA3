@@ -500,22 +500,9 @@
                             </div>
                         </div>
                         <div class="d-flex align-items-center gap-2 flex-shrink-0 ms-auto">
-                            {{-- Zoom in / Zoom out toolbar --}}
-                            <div class="btn-group btn-group-sm shadow-none border rounded-2 bg-white" role="group" aria-label="Zoom controls">
-                                <button type="button" class="btn btn-sm btn-ghost-secondary px-2 py-1 btn-modal-zoom-out" data-target="taskModalZoom-{{ $task->id }}" title="Zoom Out (-)">
-                                    <i class="ti ti-zoom-out" style="font-size: 13px;"></i>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-ghost-secondary px-2 py-1 fw-bold text-dark btn-modal-zoom-reset" data-target="taskModalZoom-{{ $task->id }}" title="Reset Zoom (100%)" style="min-width: 44px; font-size: 11px;">
-                                    <span id="zoomLevel-{{ $task->id }}">100%</span>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-ghost-secondary px-2 py-1 btn-modal-zoom-in" data-target="taskModalZoom-{{ $task->id }}" title="Zoom In (+)">
-                                    <i class="ti ti-zoom-in" style="font-size: 13px;"></i>
-                                </button>
-                            </div>
-
                             {{-- Clean Close Button (Tombol Silang) --}}
                             <button type="button"
-                                    class="btn btn-sm btn-icon btn-ghost-secondary rounded-circle ms-1"
+                                    class="btn btn-sm btn-icon btn-ghost-secondary rounded-circle"
                                     data-bs-dismiss="modal"
                                     aria-label="Close"
                                     title="Close"
@@ -525,8 +512,7 @@
                         </div>
                     </div>
                     <div class="modal-body p-4 bg-light-subtle overflow-auto">
-                        <div id="taskModalZoom-{{ $task->id }}" class="task-modal-zoom-target" style="transform-origin: top center; transition: transform 0.15s ease-out; width: 100%;">
-                            <div class="card border-0 shadow-sm rounded-4 mb-0">
+                        <div class="card border-0 shadow-sm rounded-4 mb-0">
                             <div class="card-body p-4">
                                 {{-- Top Badges Row --}}
                                 <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
@@ -650,7 +636,6 @@
                     </div>
                 </div>
             </div>
-            </div>
         </div>
     @else
         {{-- Task Pop Up Modal --}}
@@ -673,22 +658,9 @@
                             </div>
                         </div>
                         <div class="d-flex align-items-center gap-2 flex-shrink-0 ms-auto">
-                            {{-- Zoom in / Zoom out toolbar --}}
-                            <div class="btn-group btn-group-sm shadow-none border rounded-2 bg-white" role="group" aria-label="Zoom controls">
-                                <button type="button" class="btn btn-sm btn-ghost-secondary px-2 py-1 btn-modal-zoom-out" data-target="taskModalZoom-{{ $task->id }}" title="Zoom Out (-)">
-                                    <i class="ti ti-zoom-out" style="font-size: 13px;"></i>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-ghost-secondary px-2 py-1 fw-bold text-dark btn-modal-zoom-reset" data-target="taskModalZoom-{{ $task->id }}" title="Reset Zoom (100%)" style="min-width: 44px; font-size: 11px;">
-                                    <span id="zoomLevel-{{ $task->id }}">100%</span>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-ghost-secondary px-2 py-1 btn-modal-zoom-in" data-target="taskModalZoom-{{ $task->id }}" title="Zoom In (+)">
-                                    <i class="ti ti-zoom-in" style="font-size: 13px;"></i>
-                                </button>
-                            </div>
-
                             {{-- Clean Close Button (Tombol Silang) --}}
                             <button type="button"
-                                    class="btn btn-sm btn-icon btn-ghost-secondary rounded-circle ms-1"
+                                    class="btn btn-sm btn-icon btn-ghost-secondary rounded-circle"
                                     data-bs-dismiss="modal"
                                     aria-label="Close"
                                     title="Close"
@@ -698,9 +670,7 @@
                         </div>
                     </div>
                     <div class="modal-body p-4 bg-light-subtle overflow-auto">
-                        <div id="taskModalZoom-{{ $task->id }}" class="task-modal-zoom-target" style="transform-origin: top center; transition: transform 0.15s ease-out; width: 100%;">
-                            @include('user.learning.dashboard-partials.my-task-card', ['task' => $task, 'inModal' => true])
-                        </div>
+                        @include('user.learning.dashboard-partials.my-task-card', ['task' => $task, 'inModal' => true])
                     </div>
                 </div>
             </div>
@@ -712,41 +682,6 @@
 
 <script>
 (function () {
-    // Delegated click handler for Task Modal Zoom In / Zoom Out / Reset
-    var modalZoomLevels = {};
-    document.addEventListener('click', function (e) {
-        var zoomInBtn = e.target.closest('.btn-modal-zoom-in');
-        var zoomOutBtn = e.target.closest('.btn-modal-zoom-out');
-        var zoomResetBtn = e.target.closest('.btn-modal-zoom-reset');
-
-        var btn = zoomInBtn || zoomOutBtn || zoomResetBtn;
-        if (!btn) return;
-        e.preventDefault();
-
-        var targetId = btn.getAttribute('data-target');
-        if (!targetId) return;
-
-        var targetEl = document.getElementById(targetId);
-        if (!targetEl) return;
-
-        var current = modalZoomLevels[targetId] || 1.0;
-        if (zoomInBtn) {
-            current = Math.min(2.5, Math.round((current + 0.15) * 100) / 100);
-        } else if (zoomOutBtn) {
-            current = Math.max(0.5, Math.round((current - 0.15) * 100) / 100);
-        } else if (zoomResetBtn) {
-            current = 1.0;
-        }
-
-        modalZoomLevels[targetId] = current;
-        targetEl.style.transform = 'scale(' + current + ')';
-
-        var levelBadge = document.querySelector('#' + targetId.replace('taskModalZoom-', 'zoomLevel-'));
-        if (levelBadge) {
-            levelBadge.textContent = Math.round(current * 100) + '%';
-        }
-    });
-
     // 1. If validation error occurred or active_task_id is set in request, reopen the modal for the active task
     @php
         $autoOpenTaskId = old('active_task_id', request('active_task_id', session('active_task_id')));
