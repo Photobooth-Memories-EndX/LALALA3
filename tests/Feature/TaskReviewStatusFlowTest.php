@@ -354,6 +354,7 @@ class TaskReviewStatusFlowTest extends TestCase
         $this->assertStringContainsString('Final rejection due to plagiarized answer', $html);
         // Form should NOT be rendered
         $this->assertStringNotContainsString('Resubmit Answers', $html);
+        $this->assertStringNotContainsString('User Submission Form', $html);
         $this->assertStringNotContainsString('Learner Submission Form', $html);
     }
 
@@ -754,7 +755,7 @@ class TaskReviewStatusFlowTest extends TestCase
         // Course level indicators
         $this->assertStringContainsString($this->plan->title, $html);
         $this->assertStringContainsString('Need Resubmit', $html);
-        $this->assertStringContainsString('<span class="badge bg-danger text-white"><i class="ti ti-refresh me-1"></i>Resubmit</span>', $html);
+        $this->assertStringContainsString('<span class="badge bg-warning text-dark"><i class="ti ti-refresh me-1"></i>Resubmit</span>', $html);
 
         // Task level indicators
         $this->assertStringContainsString($task->title, $html);
@@ -770,7 +771,7 @@ class TaskReviewStatusFlowTest extends TestCase
 
         $this->assertStringContainsString($this->plan->title, $drillHtml);
         $this->assertStringContainsString('Need Resubmit', $drillHtml);
-        $this->assertStringContainsString('<span class="badge bg-danger text-white"><i class="ti ti-refresh me-1"></i>Resubmit</span>', $drillHtml);
+        $this->assertStringContainsString('<span class="badge bg-warning text-dark">Rejected</span>', $drillHtml);
 
         // 3. Check task modal card
         $cardHtml = view('user.learning.dashboard-partials.my-task-card', [
@@ -784,5 +785,95 @@ class TaskReviewStatusFlowTest extends TestCase
         $this->assertStringContainsString('Resubmit', $cardHtml);
         $this->assertStringContainsString('Task Revision Requested', $cardHtml);
         $this->assertStringContainsString('Admin Feedback', $cardHtml);
+        $this->assertStringContainsString('alert-warning', $cardHtml);
+    }
+
+    public function test_user_task_card_renders_danger_alert_when_resubmit_is_overdue(): void
+    {
+        $task = Task::create([
+            'parent_type'      => 'playlist',
+            'training_plan_id' => $this->plan->id,
+            'title'            => 'Task Resubmit Overdue ' . uniqid(),
+            'type'             => 'open_ended',
+            'status'           => 'published',
+            'deadline'         => now()->subDay(),
+            'created_by'       => $this->admin->id,
+        ]);
+
+        TaskSubmission::create([
+            'task_id'            => $task->id,
+            'user_id'            => $this->learner->id,
+            'status'             => 'rejected',
+            'resubmit_requested' => true,
+            'feedback'           => 'Please revise overdue task',
+            'submitted_at'       => now()->subDays(2),
+        ]);
+
+        $this->actingAs($this->learner);
+        $cardHtml = view('user.learning.dashboard-partials.my-task-card', [
+            'task'          => $task,
+            'inModal'       => true,
+            'statusLabels'  => ['completed' => 'Completed', 'submitted' => 'Pending review', 'rejected' => 'Rejected'],
+            'statusBadges'  => ['completed' => 'bg-success-lt text-success', 'submitted' => 'bg-warning-lt text-warning', 'rejected' => 'bg-danger-lt text-danger'],
+            'displayStatus' => fn ($s) => $s,
+        ])->render();
+
+        $this->assertStringContainsString('alert-danger', $cardHtml);
+        $this->assertStringContainsString('bg-danger', $cardHtml);
+        $this->assertStringContainsString('Overdue', $cardHtml);
+        $this->assertStringContainsString('Task Revision Requested', $cardHtml);
+    }
+
+    public function test_admin_submissions_view_renders_fullscreen_and_open_in_new_tab_for_file_submissions(): void
+    {
+        $task = Task::create([
+            'parent_type'      => 'playlist',
+            'training_plan_id' => $this->plan->id,
+            'title'            => 'Task File Review Workstation ' . uniqid(),
+            'type'             => 'open_ended',
+            'status'           => 'published',
+            'created_by'       => $this->admin->id,
+        ]);
+
+        $field = TaskField::create([
+            'task_id'  => $task->id,
+            'label'    => 'Upload Final Report',
+            'type'     => 'file_upload',
+            'required' => true,
+            'order'    => 1,
+        ]);
+
+        TaskSubmission::create([
+            'task_id'            => $task->id,
+            'user_id'            => $this->learner->id,
+            'status'             => 'pending',
+            'resubmit_requested' => false,
+            'submitted_at'       => now(),
+            'answers'            => [
+                $field->id => [
+                    'task_field_id' => $field->id,
+                    'answer_text'   => null,
+                    'file_path'     => ['task-submissions/' . $task->id . '/final_report.docx'],
+                ],
+            ],
+        ]);
+
+        $response = $this->actingAs($this->admin)->get(route('manage.task.submissions', $task));
+        $response->assertStatus(200);
+
+        $html = $response->getContent();
+
+        // 1. Fullscreen modal and button exist
+        $this->assertStringContainsString('id="fileFullscreenModal"', $html);
+        $this->assertStringContainsString('modal-fullscreen', $html);
+        $this->assertStringContainsString('btn-open-fullscreen', $html);
+        $this->assertStringContainsString('Fullscreen', $html);
+
+        // 2. Open in new tab exists and replaces old "Full tab"
+        $this->assertStringContainsString('Open in new tab', $html);
+        $this->assertStringNotContainsString('> Full tab<', $html);
+
+        // 3. Download button exists
+        $this->assertStringContainsString('Download', $html);
     }
 }

@@ -2,6 +2,8 @@
             $status     = $task->userStatusFor(auth()->user());
             $submission = $task->submissionFor(auth()->user());
             $answersByField = $submission ? $submission->answersByField() : collect();
+            $cdl        = $task->deadline;
+            $isOverdue  = $status === 'overdue' || ($cdl && $cdl->isPast() && $status !== 'completed');
         @endphp
 @if (! ($inModal ?? false))
         <div class="col-12">
@@ -27,12 +29,12 @@
                             @endif
                         </div>
                         @if ($submission && $submission->status === 'draft')
-                            <span class="badge bg-warning-lt text-warning px-2.5 py-1 fs-6">
-                                <i class="ti ti-file-pencil me-1"></i>Draft
+                            <span class="badge {{ $isOverdue ? 'bg-danger text-white' : 'bg-warning-lt text-warning' }} px-2.5 py-1 fs-6">
+                                <i class="ti {{ $isOverdue ? 'ti-alert-circle' : 'ti-file-pencil' }} me-1"></i>Draft
                             </span>
                         @elseif ($submission && $submission->resubmit_requested)
-                            <span class="badge bg-danger text-white px-2.5 py-1 fs-6">
-                                <i class="ti ti-refresh me-1"></i>Resubmit
+                            <span class="badge {{ $isOverdue ? 'bg-danger text-white' : 'bg-warning text-dark' }} px-2.5 py-1 fs-6">
+                                Rejected
                             </span>
                         @else
                             <span class="badge {{ $statusBadges[$displayStatus($status)] }} px-2.5 py-1 fs-6">
@@ -92,7 +94,7 @@
                                 <i class="ti ti-file-download text-primary fs-2"></i>
                                 <div>
                                     <div class="fw-semibold text-dark small">{{ basename($task->attachment) }}</div>
-                                    <div class="text-muted" style="font-size:11px;">Learners can download this attachment for guidance.</div>
+                                    <div class="text-muted" style="font-size:11px;">Users can download this attachment for guidance.</div>
                                 </div>
                                 <a href="{{ Storage::url($task->attachment) }}" target="_blank" class="btn btn-sm btn-outline-primary ms-2">
                                     <i class="ti ti-download me-1"></i> Download File
@@ -139,7 +141,7 @@
                         </div>
                     @elseif ($submission && ! $submission->resubmit_requested && $submission->status !== 'draft')
                         {{-- ══════════════════════════════════════════════════════════════════════════ --}}
-                        {{-- VIEW SUBMISSION (Submitted by learner: Completed, Pending, or Rejected) --}}
+                        {{-- VIEW SUBMISSION (Submitted by user: Completed, Pending, or Rejected) --}}
                         {{-- ══════════════════════════════════════════════════════════════════════════ --}}
                         @if ($status === 'completed' || $submission->status === 'completed')
                             <div class="alert alert-success border-start border-success border-4 rounded-3 shadow-sm mb-3">
@@ -233,7 +235,7 @@
                             </div>
                         @endif
 
-                        {{-- Full Submission Review: All Questions and Learner Answers --}}
+                        {{-- Full Submission Review: All Questions and User Answers --}}
                         <div class="mt-4 pt-3 border-top">
                             <div class="d-flex align-items-center justify-content-between mb-3">
                                 <h5 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
@@ -400,38 +402,50 @@
                         {{-- ANSWER FORM (New Submission, Draft Mode, or Resubmit Requested)           --}}
                         {{-- ══════════════════════════════════════════════════════════════════════════ --}}
                         @if ($submission && $submission->resubmit_requested)
-                            <div class="alert alert-danger border-start border-danger border-4 rounded-3 shadow-sm mb-3">
+                            <div class="alert {{ $isOverdue ? 'alert-danger border-start border-danger' : 'alert-warning border-start border-warning' }} border-4 rounded-3 shadow-sm mb-3">
                                 <div class="d-flex align-items-start gap-3">
-                                    <span class="avatar bg-danger text-white rounded-circle me-1 mt-1 shadow-sm">
-                                        <i class="ti ti-refresh fs-2"></i>
+                                    <span class="avatar {{ $isOverdue ? 'bg-danger text-white' : 'bg-warning text-dark' }} rounded-circle me-1 mt-1 shadow-sm">
+                                        <i class="ti {{ $isOverdue ? 'ti-alert-circle' : 'ti-refresh' }} fs-2"></i>
                                     </span>
                                     <div class="flex-grow-1">
                                         <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-1">
                                             <h4 class="alert-title fw-bold text-dark mb-0">
                                                 Task Revision Requested
                                             </h4>
-                                            <span class="badge bg-danger text-white">Rejected</span>
+                                            @if ($isOverdue)
+                                                <div class="d-flex align-items-center gap-1">
+                                                    <span class="badge bg-danger text-white"><i class="ti ti-alert-circle me-1"></i>Overdue</span>
+                                                    <span class="badge bg-danger text-white">Rejected</span>
+                                                </div>
+                                            @else
+                                                <span class="badge bg-warning text-dark">Rejected</span>
+                                            @endif
                                         </div>
                                         <div class="text-muted small mb-2">
                                             The administrator reviewed your answers and requested revisions. Please check the feedback below and submit your revised answers.
+                                            @if ($isOverdue)
+                                                <div class="text-danger fw-semibold mt-1">
+                                                    <i class="ti ti-alert-circle me-1"></i> Warning: This task has passed its deadline{{ $cdl ? ' (' . $cdl->format('d M Y H:i') . ')' : '' }}. Please submit your revision as soon as possible.
+                                                </div>
+                                            @endif
                                         </div>
                                         @if ($submission->feedback)
-                                            <div class="p-3 bg-white rounded-3 border border-danger-subtle text-dark shadow-sm">
-                                                <div class="fw-semibold text-danger d-flex align-items-center mb-1">
+                                            <div class="p-3 bg-white rounded-3 border {{ $isOverdue ? 'border-danger-subtle' : 'border-warning-subtle' }} text-dark shadow-sm">
+                                                <div class="fw-semibold {{ $isOverdue ? 'text-danger' : 'text-warning-emphasis' }} d-flex align-items-center mb-1">
                                                     <i class="ti ti-message-dots me-1"></i> Admin Feedback &amp; Notes:
                                                 </div>
-                                                <div class="ps-3 border-start border-3 border-danger text-dark">
+                                                <div class="ps-3 border-start border-3 {{ $isOverdue ? 'border-danger' : 'border-warning' }} text-dark">
                                                     {{ $submission->feedback }}
                                                 </div>
                                             </div>
                                         @endif
                                         @if ($answersByField->isNotEmpty())
                                             <div class="mt-3">
-                                                <button class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1" type="button" data-bs-toggle="collapse" data-bs-target="#previousSubmissionCollapse-{{ $task->id }}">
+                                                <button class="btn btn-sm {{ $isOverdue ? 'btn-outline-danger' : 'btn-outline-warning text-dark' }} d-inline-flex align-items-center gap-1" type="button" data-bs-toggle="collapse" data-bs-target="#previousSubmissionCollapse-{{ $task->id }}">
                                                     <i class="ti ti-history me-1"></i> View Your Previous Answers <i class="ti ti-chevron-down ms-1"></i>
                                                 </button>
                                                 <div class="collapse mt-2" id="previousSubmissionCollapse-{{ $task->id }}">
-                                                    <div class="card card-body bg-white border border-danger-subtle p-3">
+                                                    <div class="card card-body bg-white border {{ $isOverdue ? 'border-danger-subtle' : 'border-warning-subtle' }} p-3">
                                                         <div class="fw-bold text-dark small mb-2"><i class="ti ti-archive me-1"></i> Previous Answers Before Revision:</div>
                                                         @foreach ($task->fields as $pIdx => $pField)
                                                             @php $pAns = $answersByField->get($pField->id); @endphp
@@ -463,18 +477,46 @@
                                 </div>
                             </div>
                         @elseif ($submission && $submission->status === 'draft')
-                            <div class="alert alert-warning border-start border-warning border-4 rounded-3 shadow-sm mb-3">
+                            <div class="alert {{ $isOverdue ? 'alert-danger border-start border-danger' : 'alert-warning border-start border-warning' }} border-4 rounded-3 shadow-sm mb-3">
                                 <div class="d-flex align-items-center gap-3">
-                                    <span class="avatar bg-warning text-dark rounded-circle me-1 shadow-sm">
-                                        <i class="ti ti-device-floppy fs-2"></i>
+                                    <span class="avatar {{ $isOverdue ? 'bg-danger text-white' : 'bg-warning text-dark' }} rounded-circle me-1 shadow-sm">
+                                        <i class="ti {{ $isOverdue ? 'ti-alert-circle' : 'ti-device-floppy' }} fs-2"></i>
                                     </span>
                                     <div class="flex-grow-1">
                                         <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-1">
                                             <h4 class="alert-title fw-bold text-dark mb-0">Answers Saved as Draft</h4>
-                                            <span class="badge bg-warning text-dark">Draft Mode</span>
+                                            @if ($isOverdue)
+                                                <div class="d-flex align-items-center gap-1">
+                                                    <span class="badge bg-danger text-white"><i class="ti ti-alert-circle me-1"></i>Overdue</span>
+                                                    <span class="badge bg-danger-lt text-danger">Draft Mode</span>
+                                                </div>
+                                            @else
+                                                <span class="badge bg-warning text-dark">Draft Mode</span>
+                                            @endif
                                         </div>
                                         <div class="text-muted small">
-                                            Your answers are currently saved as a draft and have not been submitted to the administrator. You can continue editing your answers below and click <strong>Submit Answers</strong> when you are ready.
+                                            @if ($isOverdue)
+                                                <span class="text-danger fw-semibold"><i class="ti ti-alert-circle me-1"></i> This task has passed its deadline{{ $cdl ? ' (' . $cdl->format('d M Y H:i') . ')' : '' }}.</span> You have a saved draft from {{ $submission->updated_at?->format('d M Y H:i') ?? 'earlier' }}. You can continue editing your answers below and submit when you are ready.
+                                            @else
+                                                Your answers are currently saved as a draft and have not been submitted to the administrator. You can continue editing your answers below and click <strong>Submit Answers</strong> when you are ready.
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @elseif ($isOverdue)
+                            <div class="alert alert-danger border-start border-danger border-4 rounded-3 shadow-sm mb-3">
+                                <div class="d-flex align-items-center gap-3">
+                                    <span class="avatar bg-danger text-white rounded-circle me-1 shadow-sm">
+                                        <i class="ti ti-alert-circle fs-2"></i>
+                                    </span>
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-1">
+                                            <h4 class="alert-title fw-bold text-dark mb-0">Task is Overdue</h4>
+                                            <span class="badge bg-danger text-white"><i class="ti ti-alert-circle me-1"></i>Overdue</span>
+                                        </div>
+                                        <div class="text-muted small">
+                                            The deadline for this task was <strong>{{ $cdl?->format('d M Y H:i') }}</strong>. Please complete and submit your answers as soon as possible.
                                         </div>
                                     </div>
                                 </div>
@@ -486,7 +528,7 @@
                             @csrf
                             <input type="hidden" name="active_task_id" value="{{ $task->id }}">
                             <h5 class="fw-semibold text-dark mb-3 d-flex align-items-center gap-1">
-                                <i class="ti ti-pencil text-primary"></i> {{ $submission && $submission->resubmit_requested ? 'Resubmit Answers' : ($submission && $submission->status === 'draft' ? 'Continue Draft Answers' : 'Learner Submission Form') }}
+                                <i class="ti {{ $submission && $submission->resubmit_requested ? 'ti-refresh text-warning' : ($submission && $submission->status === 'draft' ? 'ti-pencil text-warning' : 'ti-pencil text-primary') }}"></i> {{ $submission && $submission->resubmit_requested ? 'Resubmit Answers' : ($submission && $submission->status === 'draft' ? 'Continue Draft Answers' : 'User Submission Form') }}
                             </h5>
 
                             @foreach ($task->fields as $field)
@@ -561,7 +603,7 @@
                                                         <i class="ti ti-cloud-upload fs-1"></i>
                                                     </div>
                                                     <div class="fw-semibold text-dark mb-1">
-                                                        Drag &amp; drop files here, or <span class="text-primary text-decoration-underline">browse</span>
+                                                        Drag &amp; drop {{ $field->maxFiles() > 1 ? 'files' : 'a file' }} here, or <span class="text-primary text-decoration-underline">browse</span>
                                                     </div>
                                                     <div class="text-muted small" style="font-size: 11.5px;">
                                                         Format: <strong>{{ ! empty($field->allowedExtensions()) ? strtoupper(implode(', ', $field->allowedExtensions())) : 'All file formats' }}</strong>
@@ -570,6 +612,11 @@
                                                         @endif
                                                         | Maximum <strong>{{ $field->maxFiles() }} file{{ $field->maxFiles() > 1 ? 's' : '' }}</strong>, max. <strong>{{ $field->maxSizeMb() }} MB</strong> per file
                                                     </div>
+                                                    @if ($field->maxFiles() > 1)
+                                                        <div class="text-muted small mt-1" style="font-size: 11px;">
+                                                            <i class="ti ti-info-circle me-1"></i>You can select multiple files at once or add them one by one.
+                                                        </div>
+                                                    @endif
                                                     @if ($field->allow_link)
                                                         <div class="mt-2">
                                                             <span class="badge bg-info-lt text-info d-inline-flex align-items-center">
@@ -582,20 +629,21 @@
                                                 <!-- Dragover Overlay Indicator -->
                                                 <div class="dropzone-dragover-indicator d-none position-absolute top-0 start-0 w-100 h-100 rounded-3 d-flex flex-column align-items-center justify-content-center bg-primary-lt" style="pointer-events: none; z-index: 6;">
                                                     <i class="ti ti-download fs-1 text-primary mb-1 animate-bounce"></i>
-                                                    <span class="fw-bold text-primary">Drop files here</span>
+                                                    <span class="fw-bold text-primary">{{ $field->maxFiles() > 1 ? 'Drop files here to add' : 'Drop file here' }}</span>
                                                 </div>
 
                                                 <!-- Selected Files State -->
                                                 <div class="dropzone-preview d-none text-start pt-1 position-relative" style="z-index: 6;">
                                                     <div class="d-flex align-items-center justify-content-between mb-2 pb-1 border-bottom">
-                                                        <span class="fw-semibold small text-dark d-flex align-items-center gap-1">
-                                                            <i class="ti ti-circle-check text-success"></i> Selected Files:
+                                                        <span class="fw-semibold small text-dark d-flex align-items-center gap-1 dropzone-title-indicator">
+                                                            <i class="ti ti-circle-check text-success"></i> {{ $field->maxFiles() > 1 ? 'Selected Files:' : 'Selected File:' }}
                                                         </span>
-                                                        <button type="button" class="btn btn-sm btn-ghost-danger py-0 px-2 rounded-2 dropzone-clear-btn" data-field-id="{{ $field->id }}" title="Remove and select again">
-                                                            <i class="ti ti-x me-1"></i> Change File
+                                                        <button type="button" class="btn btn-sm btn-link text-danger text-decoration-none p-0 dropzone-clear-all-btn d-none" style="font-size: 11.5px;">
+                                                            <i class="ti ti-trash me-1"></i>Clear all
                                                         </button>
                                                     </div>
                                                     <div class="selected-files-list d-flex flex-column gap-1"></div>
+                                                    <div class="dropzone-add-more-wrap mt-2"></div>
                                                 </div>
 
                                                 <!-- Inline Error message -->
@@ -725,8 +773,8 @@
                                 <button type="submit" name="action" value="draft" formnovalidate class="btn btn-outline-primary rounded-3 px-3">
                                     <i class="ti ti-device-floppy me-1"></i> Save as Draft
                                 </button>
-                                <button type="submit" name="action" value="submit" class="btn btn-primary rounded-3 px-4">
-                                    <i class="ti ti-send me-1"></i> {{ $submission && $submission->resubmit_requested ? 'Resubmit Answers' : 'Submit Answers' }}
+                                <button type="submit" name="action" value="submit" class="btn {{ $submission && $submission->resubmit_requested ? 'btn-warning text-dark fw-semibold' : 'btn-primary' }} rounded-3 px-4">
+                                    <i class="ti {{ $submission && $submission->resubmit_requested ? 'ti-refresh' : 'ti-send' }} me-1"></i> {{ $submission && $submission->resubmit_requested ? 'Resubmit Answers' : 'Submit Answers' }}
                                 </button>
                             </div>
                         </form>
@@ -753,7 +801,14 @@
     border-color: #cbd5e1 !important;
     transition: all 0.2s ease-in-out;
 }
-.task-dropzone:hover {
+.task-dropzone.has-files {
+    cursor: default !important;
+}
+.task-dropzone.has-files:hover {
+    border-color: #cbd5e1 !important;
+    background-color: transparent !important;
+}
+.task-dropzone:not(.has-files):hover {
     border-color: #206bc4 !important;
     background-color: #f8fafc !important;
 }
@@ -768,6 +823,9 @@
 @keyframes dropzoneBounce {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-5px); }
+}
+.dropzone-add-more-btn:hover {
+    background-color: rgba(32, 107, 196, 0.08) !important;
 }
 </style>
 <script>
@@ -797,46 +855,92 @@
         return 'ti ti-file text-secondary';
     }
 
-    function updateDropzonePreview(input) {
-        var dropzone = input.closest('.task-dropzone');
-        if (!dropzone) return;
+    function syncInputFiles(dz) {
+        var input = dz.querySelector('.task-file-input');
+        if (!input) return;
+        var dt = new DataTransfer();
+        var files = dz._selectedFiles || [];
+        for (var i = 0; i < files.length; i++) {
+            dt.items.add(files[i]);
+        }
+        input.files = dt.files;
+    }
 
-        var promptEl = dropzone.querySelector('.dropzone-prompt');
-        var previewEl = dropzone.querySelector('.dropzone-preview');
-        var listEl = dropzone.querySelector('.selected-files-list');
-        var errorEl = dropzone.querySelector('.dropzone-error-msg');
-        var maxSizeMb = parseFloat(dropzone.dataset.maxSizeMb || '10');
+    function renderDropzone(dz, exceededNotice) {
+        var promptEl = dz.querySelector('.dropzone-prompt');
+        var previewEl = dz.querySelector('.dropzone-preview');
+        var listEl = dz.querySelector('.selected-files-list');
+        var addMoreWrap = dz.querySelector('.dropzone-add-more-wrap');
+        var errorEl = dz.querySelector('.dropzone-error-msg');
+        var input = dz.querySelector('.task-file-input');
+        var titleIndicator = dz.querySelector('.dropzone-title-indicator');
+        var clearAllBtn = dz.querySelector('.dropzone-clear-all-btn');
+
+        var maxFiles = parseInt(dz.dataset.maxFiles || '1', 10);
+        var maxSizeMb = parseFloat(dz.dataset.maxSizeMb || '10');
         var maxSizeBytes = maxSizeMb * 1024 * 1024;
-        var allowedExtsStr = (dropzone.dataset.allowedExts || '').trim();
+        var allowedExtsStr = (dz.dataset.allowedExts || '').trim();
         var allowedExts = allowedExtsStr ? allowedExtsStr.split(',').map(function (s) { return s.trim().toLowerCase(); }).filter(Boolean) : [];
 
-        var files = input.files;
-        if (!files || files.length === 0) {
+        var files = dz._selectedFiles || [];
+
+        if (files.length === 0) {
             if (promptEl) promptEl.classList.remove('d-none');
             if (previewEl) previewEl.classList.add('d-none');
             if (listEl) listEl.innerHTML = '';
+            if (addMoreWrap) addMoreWrap.innerHTML = '';
             if (errorEl) {
                 errorEl.textContent = '';
                 errorEl.classList.add('d-none');
             }
-            dropzone.style.borderColor = '#cbd5e1';
-            input.setCustomValidity('');
+            if (input) {
+                input.value = '';
+                input.style.pointerEvents = 'auto';
+                input.setCustomValidity('');
+            }
+            dz.classList.remove('has-files');
+            dz.style.borderColor = '#cbd5e1';
             return;
         }
 
+        if (promptEl) promptEl.classList.add('d-none');
+        if (previewEl) previewEl.classList.remove('d-none');
+        if (input) input.style.pointerEvents = 'none';
+        dz.classList.add('has-files');
+
+        // Title Indicator and Clear All Button
+        if (titleIndicator) {
+            if (maxFiles > 1) {
+                titleIndicator.innerHTML = '<i class="ti ti-files text-primary"></i> Selected Files <span class="badge bg-primary-lt ms-1">' + files.length + ' / ' + maxFiles + '</span>';
+            } else {
+                titleIndicator.innerHTML = '<i class="ti ti-circle-check text-success"></i> Selected File:';
+            }
+        }
+        if (clearAllBtn) {
+            if (maxFiles > 1 && files.length > 0) {
+                clearAllBtn.classList.remove('d-none');
+            } else {
+                clearAllBtn.classList.add('d-none');
+            }
+        }
+
+        // Render file list
         var errors = [];
         var listHtml = '';
 
         for (var i = 0; i < files.length; i++) {
             var f = files[i];
             var ext = (f.name || '').split('.').pop().toLowerCase();
+            var fileHasError = false;
 
             if (f.size > maxSizeBytes) {
                 errors.push('File "' + f.name + '" (' + formatBytes(f.size) + ') exceeds the maximum size limit of ' + maxSizeMb + ' MB.');
+                fileHasError = true;
             }
 
             if (allowedExts.length > 0 && allowedExts.indexOf(ext) === -1) {
                 errors.push('File format "' + f.name + '" is not allowed. Allowed formats: ' + allowedExts.join(', ').toUpperCase());
+                fileHasError = true;
             }
 
             var icon = getFileIconClass(f.name);
@@ -844,33 +948,153 @@
                 '<div class="d-flex align-items-center gap-2 overflow-hidden me-2">' +
                     '<i class="' + icon + ' fs-2 flex-shrink-0"></i>' +
                     '<div class="text-truncate">' +
-                        '<div class="fw-semibold text-dark text-truncate" style="font-size:12px;">' + escapeHtml(f.name) + '</div>' +
+                        '<div class="fw-semibold text-dark text-truncate" style="font-size:12px;" title="' + escapeHtml(f.name) + '">' + escapeHtml(f.name) + '</div>' +
                         '<div class="text-muted" style="font-size:11px;">' + formatBytes(f.size) + '</div>' +
                     '</div>' +
                 '</div>' +
-                '<span class="badge bg-success-lt text-success flex-shrink-0">' +
+                '<div class="d-flex align-items-center gap-2 flex-shrink-0">';
+
+            if (!fileHasError) {
+                listHtml += '<span class="badge bg-success-lt text-success flex-shrink-0">' +
                     '<i class="ti ti-check me-1"></i> Ready to upload' +
-                '</span>' +
+                '</span>';
+            } else {
+                listHtml += '<span class="badge bg-danger-lt text-danger flex-shrink-0">' +
+                    '<i class="ti ti-alert-circle me-1"></i> Invalid' +
+                '</span>';
+            }
+
+            if (maxFiles === 1) {
+                listHtml += '<button type="button" class="btn btn-sm btn-ghost-danger py-0 px-2 rounded-2 dropzone-change-file-btn" data-field-id="' + (dz.dataset.fieldId || '') + '" title="Remove and select again">' +
+                        '<i class="ti ti-x me-1"></i> Change File' +
+                    '</button>';
+            } else {
+                listHtml += '<button type="button" class="btn btn-sm btn-ghost-danger py-0 px-2 rounded-2 dropzone-remove-file-btn" data-index="' + i + '" title="Remove this file">' +
+                        '<i class="ti ti-x me-1"></i> Remove' +
+                    '</button>';
+            }
+
+            listHtml += '</div>' +
             '</div>';
         }
 
         if (listEl) listEl.innerHTML = listHtml;
-        if (promptEl) promptEl.classList.add('d-none');
-        if (previewEl) previewEl.classList.remove('d-none');
 
+        // Render Add More section (only when maxFiles > 1)
+        if (addMoreWrap) {
+            if (maxFiles > 1) {
+                if (files.length < maxFiles) {
+                    addMoreWrap.innerHTML = '<button type="button" class="btn btn-outline-primary btn-sm w-100 py-2 d-flex align-items-center justify-content-center gap-1 dropzone-add-more-btn" style="border-style: dashed !important; font-weight: 500;">' +
+                        '<i class="ti ti-plus"></i> Add Another File <span class="text-muted fw-normal">(' + files.length + ' of ' + maxFiles + ' added)</span>' +
+                    '</button>';
+                } else {
+                    addMoreWrap.innerHTML = '<div class="text-center text-muted small py-1">' +
+                        '<i class="ti ti-check-double text-success me-1"></i> Maximum limit reached (' + maxFiles + ' of ' + maxFiles + ' files selected)' +
+                    '</div>';
+                }
+            } else {
+                addMoreWrap.innerHTML = '';
+            }
+        }
+
+        // Inline error handling
         if (errorEl) {
             if (errors.length > 0) {
                 errorEl.innerHTML = '<i class="ti ti-alert-triangle me-1"></i> ' + errors.join('<br>');
                 errorEl.classList.remove('d-none');
-                dropzone.style.borderColor = '#d63939';
-                input.setCustomValidity(errors[0]);
+                dz.style.borderColor = '#d63939';
+                if (input) input.setCustomValidity(errors[0]);
+            } else if (exceededNotice) {
+                errorEl.innerHTML = '<i class="ti ti-alert-triangle me-1"></i> ' + escapeHtml(exceededNotice);
+                errorEl.classList.remove('d-none');
+                dz.style.borderColor = '#2fb344';
+                if (input) input.setCustomValidity('');
             } else {
                 errorEl.textContent = '';
                 errorEl.classList.add('d-none');
-                dropzone.style.borderColor = '#2fb344';
-                input.setCustomValidity('');
+                dz.style.borderColor = '#2fb344';
+                if (input) input.setCustomValidity('');
             }
         }
+    }
+
+    function appendFilesToDropzone(dz, newFiles) {
+        if (!newFiles || newFiles.length === 0) return;
+        var maxFiles = parseInt(dz.dataset.maxFiles || '1', 10);
+
+        if (!dz._selectedFiles || maxFiles === 1) {
+            dz._selectedFiles = [];
+        }
+
+        var exceededNotice = null;
+        for (var i = 0; i < newFiles.length; i++) {
+            var f = newFiles[i];
+
+            // Prevent duplicate file selection
+            var isDuplicate = dz._selectedFiles.some(function (existing) {
+                return existing.name === f.name && existing.size === f.size && existing.lastModified === f.lastModified;
+            });
+            if (isDuplicate) continue;
+
+            if (dz._selectedFiles.length >= maxFiles) {
+                exceededNotice = 'Maximum ' + maxFiles + ' file' + (maxFiles > 1 ? 's' : '') + ' allowed. Additional files were not added.';
+                break;
+            }
+
+            dz._selectedFiles.push(f);
+        }
+
+        syncInputFiles(dz);
+        renderDropzone(dz, exceededNotice);
+    }
+
+    function removeFileFromDropzone(dz, index) {
+        if (!dz._selectedFiles) return;
+        dz._selectedFiles.splice(index, 1);
+        syncInputFiles(dz);
+        renderDropzone(dz);
+    }
+
+    function clearAllFilesFromDropzone(dz) {
+        dz._selectedFiles = [];
+        syncInputFiles(dz);
+        renderDropzone(dz);
+    }
+
+    function openFileBrowser(dz, isReplace) {
+        var maxFiles = parseInt(dz.dataset.maxFiles || '1', 10);
+        var input = dz.querySelector('.task-file-input');
+        var accept = input ? input.getAttribute('accept') : '';
+
+        var tempInput = document.createElement('input');
+        tempInput.type = 'file';
+        if (accept) tempInput.accept = accept;
+        if (maxFiles > 1 && !isReplace) {
+            tempInput.multiple = true;
+        }
+        tempInput.style.position = 'fixed';
+        tempInput.style.left = '-9999px';
+        document.body.appendChild(tempInput);
+
+        tempInput.addEventListener('change', function () {
+            if (tempInput.files && tempInput.files.length > 0) {
+                if (isReplace) {
+                    dz._selectedFiles = [];
+                }
+                appendFilesToDropzone(dz, tempInput.files);
+            }
+            if (tempInput.parentNode) {
+                tempInput.parentNode.removeChild(tempInput);
+            }
+        });
+
+        tempInput.addEventListener('cancel', function () {
+            if (tempInput.parentNode) {
+                tempInput.parentNode.removeChild(tempInput);
+            }
+        });
+
+        tempInput.click();
     }
 
     function syncFileChoice(radio) {
@@ -885,10 +1109,9 @@
             var linkInput = linkWrap.querySelector('input[name^="drive_links"]');
             if (linkInput) linkInput.value = '';
         } else if (!showFile && fileWrap) {
-            var fileInput = fileWrap.querySelector('input[type="file"]');
-            if (fileInput) {
-                fileInput.value = '';
-                updateDropzonePreview(fileInput);
+            var dz = fileWrap.querySelector('.task-dropzone');
+            if (dz) {
+                clearAllFilesFromDropzone(dz);
             }
         }
     }
@@ -898,7 +1121,10 @@
             syncFileChoice(e.target);
         }
         if (e.target && e.target.classList && e.target.classList.contains('task-file-input')) {
-            updateDropzonePreview(e.target);
+            var dz = e.target.closest('.task-dropzone');
+            if (dz && e.target.files && e.target.files.length > 0) {
+                appendFilesToDropzone(dz, e.target.files);
+            }
         }
     });
 
@@ -936,35 +1162,60 @@
 
             var files = e.dataTransfer ? e.dataTransfer.files : null;
             if (files && files.length > 0) {
-                var input = dz.querySelector('.task-file-input');
-                if (input) {
-                    var maxFiles = parseInt(dz.dataset.maxFiles || '1', 10);
-                    var dt = new DataTransfer();
-                    var count = Math.min(files.length, maxFiles);
-                    for (var i = 0; i < count; i++) {
-                        dt.items.add(files[i]);
-                    }
-                    input.files = dt.files;
-                    input.dispatchEvent(new Event('change', { bubbles: true }));
-                }
+                appendFilesToDropzone(dz, files);
             }
         }
     }, false);
 
-    // Click on "Change File" button
+    // Global click handlers for dropzone action buttons
     document.addEventListener('click', function (e) {
-        var clearBtn = e.target.closest('.dropzone-clear-btn');
-        if (clearBtn) {
+        // 1. Change File button (single-file or replace)
+        var changeBtn = e.target.closest('.dropzone-change-file-btn, .dropzone-clear-btn');
+        if (changeBtn) {
             e.preventDefault();
             e.stopPropagation();
-            var dz = clearBtn.closest('.task-dropzone');
+            var dz = changeBtn.closest('.task-dropzone');
             if (dz) {
-                var input = dz.querySelector('.task-file-input');
-                if (input) {
-                    input.value = '';
-                    updateDropzonePreview(input);
-                }
+                openFileBrowser(dz, true);
             }
+            return;
+        }
+
+        // 2. Remove single file (multi-file)
+        var removeBtn = e.target.closest('.dropzone-remove-file-btn');
+        if (removeBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            var dz = removeBtn.closest('.task-dropzone');
+            if (dz) {
+                var index = parseInt(removeBtn.getAttribute('data-index'), 10);
+                removeFileFromDropzone(dz, index);
+            }
+            return;
+        }
+
+        // 3. Clear all files
+        var clearAllBtn = e.target.closest('.dropzone-clear-all-btn');
+        if (clearAllBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            var dz = clearAllBtn.closest('.task-dropzone');
+            if (dz) {
+                clearAllFilesFromDropzone(dz);
+            }
+            return;
+        }
+
+        // 4. Add more files button
+        var addMoreBtn = e.target.closest('.dropzone-add-more-btn');
+        if (addMoreBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            var dz = addMoreBtn.closest('.task-dropzone');
+            if (dz) {
+                openFileBrowser(dz, false);
+            }
+            return;
         }
     });
 })();

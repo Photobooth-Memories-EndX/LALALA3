@@ -130,7 +130,7 @@
                    title="Filter by {{ $tab['label'] }}{{ $revCount > 0 ? " ({$revCount} revision required)" : '' }}">
                     <span>{{ $tab['label'] }}</span>
                     @if ($revCount > 0)
-                        <span class="badge bg-danger text-white rounded-pill ms-1.5 px-1.5 py-0.5 d-inline-flex align-items-center justify-content-center my-task-revision-badge"
+                        <span class="badge bg-warning text-dark rounded-pill ms-1.5 px-1.5 py-0.5 d-inline-flex align-items-center justify-content-center my-task-revision-badge"
                               style="font-size: 10px; font-weight: 700; line-height: 1; min-width: 18px; height: 18px;"
                               title="{{ $revCount }} task{{ $revCount > 1 ? 's' : '' }} require revision">
                             {{ $revCount }}
@@ -313,7 +313,7 @@
                         <span class="fw-semibold">{{ $activeGroup['parent_name'] }}</span>
                     @endif
                     @if (($activeGroup['resubmit_count'] ?? 0) > 0)
-                        <span class="badge bg-danger text-white ms-2"><i class="ti ti-refresh me-1"></i>Resubmit</span>
+                        <span class="badge bg-warning text-dark ms-2"><i class="ti ti-refresh me-1"></i>Resubmit</span>
                     @elseif ($activeGroup['has_overdue'])
                         <span class="badge bg-danger-lt text-danger ms-2">Overdue</span>
                     @endif
@@ -345,13 +345,15 @@
                         @php
                             $tStatus = $task->userStatusFor(auth()->user());
                             $tSubmission = $task->submissionFor(auth()->user());
+                            $tdl = $task->deadline;
+                            $tdlOverdue = $tStatus === 'overdue' || ($tdl && $tdl->isPast() && $tStatus !== 'completed');
                         @endphp
                         <tr>
                             <td class="text-muted">{{ $i + 1 }}</td>
                             <td>
                                 <span class="fw-semibold">{{ $task->title }}</span>
                                 @if ($tSubmission && $tSubmission->resubmit_requested)
-                                    <span class="badge bg-danger text-white rounded-pill px-2 py-0.5 ms-1" style="font-size: 10px; font-weight: 600;" title="Revision required">
+                                    <span class="badge {{ $tdlOverdue ? 'bg-danger text-white' : 'bg-warning text-dark' }} rounded-pill px-2 py-0.5 ms-1" style="font-size: 10px; font-weight: 600;" title="{{ $tdlOverdue ? 'Revision required (Overdue)' : 'Revision required' }}">
                                         <i class="ti ti-refresh me-0.5"></i>Need Resubmit
                                     </span>
                                 @endif
@@ -397,7 +399,7 @@
                                 @if ($tSubmission && $tSubmission->status === 'draft')
                                     <span class="badge bg-warning-lt text-warning"><i class="ti ti-file-pencil me-1"></i>Draft</span>
                                 @elseif ($tSubmission && $tSubmission->resubmit_requested)
-                                    <span class="badge bg-danger text-white"><i class="ti ti-refresh me-1"></i>Resubmit</span>
+                                    <span class="badge {{ $tdlOverdue ? 'bg-danger text-white' : 'bg-warning text-dark' }}">Rejected</span>
                                 @else
                                     <span class="badge {{ $statusBadges[$displayStatus($tStatus)] }}">{{ $statusLabels[$displayStatus($tStatus)] }}</span>
                                 @endif
@@ -929,7 +931,7 @@
 }
 
 .my-task-revision-badge {
-    box-shadow: 0 1px 3px rgba(220, 38, 38, 0.35);
+    box-shadow: 0 1px 3px rgba(245, 159, 0, 0.35);
     font-family: inherit;
     letter-spacing: -0.2px;
 }

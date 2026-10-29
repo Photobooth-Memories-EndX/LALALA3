@@ -37,7 +37,7 @@
                                             <span>{{ $group['parent_name'] }}</span>
                                             <span class="badge {{ $isAssessmentGroup ? 'bg-purple' : 'bg-primary' }} text-white rounded-pill px-1.5 py-0.5 active-course-badge d-none ms-1" style="font-size: 10px; font-weight: 600; letter-spacing: 0.3px;">Active</span>
                                             @if (($group['resubmit_count'] ?? 0) > 0)
-                                                <span class="badge bg-danger text-white rounded-pill px-2 py-0.5 ms-1" style="font-size: 10px; font-weight: 600; letter-spacing: 0.3px;" title="{{ $group['resubmit_count'] }} task(s) require resubmission">
+                                                <span class="badge bg-warning text-dark rounded-pill px-2 py-0.5 ms-1" style="font-size: 10px; font-weight: 600; letter-spacing: 0.3px;" title="{{ $group['resubmit_count'] }} task(s) require resubmission">
                                                     <i class="ti ti-refresh me-0.5"></i>Need Resubmit
                                                 </span>
                                             @endif
@@ -91,7 +91,7 @@
                                     <span class="badge bg-danger-lt text-danger">Failed</span>
                                 @endif
                             @elseif (($group['resubmit_count'] ?? 0) > 0)
-                                <span class="badge bg-danger text-white"><i class="ti ti-refresh me-1"></i>Resubmit</span>
+                                <span class="badge bg-warning text-dark"><i class="ti ti-refresh me-1"></i>Resubmit</span>
                             @elseif (in_array($filter, ['submitted', 'completed', 'overdue'], true))
                                 {{-- Legacy task-status tab --}}
                                 <span class="badge {{ $statusBadges[$filter] ?? 'bg-secondary-lt text-secondary' }}">{{ $statusLabels[$filter] ?? $filter }}</span>
@@ -273,13 +273,15 @@
                                                     @php
                                                         $tStatus = $task->userStatusFor(auth()->user());
                                                         $tSubmission = $task->submissionFor(auth()->user());
+                                                        $tdl = $task->deadline;
+                                                        $tdlOverdue = $tStatus === 'overdue' || ($tdl && $tdl->isPast() && $tStatus !== 'completed');
                                                     @endphp
                                                     <tr>
                                                         <td class="text-muted">{{ $tIdx + 1 }}</td>
                                                         <td>
                                                             <span class="fw-semibold text-dark">{{ $task->title }}</span>
                                                             @if ($tSubmission && $tSubmission->resubmit_requested)
-                                                                <span class="badge bg-danger text-white rounded-pill px-2 py-0.5 ms-1" style="font-size: 10px; font-weight: 600;" title="Revision required">
+                                                                <span class="badge {{ $tdlOverdue ? 'bg-danger text-white' : 'bg-warning text-dark' }} rounded-pill px-2 py-0.5 ms-1" style="font-size: 10px; font-weight: 600;" title="{{ $tdlOverdue ? 'Revision required (Overdue)' : 'Revision required' }}">
                                                                     <i class="ti ti-refresh me-0.5"></i>Need Resubmit
                                                                 </span>
                                                             @endif
@@ -308,8 +310,8 @@
                                                                     <i class="ti ti-file-pencil me-1"></i>Draft
                                                                 </span>
                                                             @elseif ($tSubmission && $tSubmission->resubmit_requested)
-                                                                <span class="badge bg-danger text-white">
-                                                                    <i class="ti ti-refresh me-1"></i>Resubmit
+                                                                <span class="badge {{ $tdlOverdue ? 'bg-danger text-white' : 'bg-warning text-dark' }}">
+                                                                    Rejected
                                                                 </span>
                                                             @else
                                                                 <span class="badge {{ $statusBadges[$displayStatus($tStatus)] ?? 'bg-secondary-lt text-secondary' }}">

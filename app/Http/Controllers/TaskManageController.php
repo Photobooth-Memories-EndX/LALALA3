@@ -605,7 +605,7 @@ class TaskManageController extends Controller
     /**
      * POST /manage/task/{task}/submissions/{submission}/reject
      * Admin rejects a user submission with 2 options:
-     * - 'resubmit': Request Resubmit (learner can revise and resubmit answers)
+     * - 'resubmit': Request Resubmit (user can revise and resubmit answers)
      * - 'completed_rejected': Completed as Rejected (final rejection, task closed)
      */
     public function rejectSubmission(Request $request, Task $task, TaskSubmission $submission)
@@ -632,7 +632,7 @@ class TaskManageController extends Controller
         ]);
 
         $message = $isResubmit
-            ? 'Submission rejected with revision requested. The learner can now resubmit their answers.'
+            ? 'Submission rejected with revision requested. The user can now resubmit their answers.'
             : 'Submission marked as completed as rejected.';
 
         return back()->with('success', $message);

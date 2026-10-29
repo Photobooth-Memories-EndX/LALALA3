@@ -335,7 +335,9 @@ class DocumentPreviewService
                         }
 
                         $tdStyles = ['padding: 8px 12px;', 'border: 1px solid #cbd5e1;', 'vertical-align: top;'];
-                        if ($shdColor) $tdStyles[] = "background-color: {$shdColor};";
+                        if ($shdColor) {
+                            $tdStyles[] = "background-color: {$shdColor};";
+                        }
                         $colSpanAttr = $colSpan > 1 ? " colspan=\"{$colSpan}\"" : '';
                         $cellsHtml .= '<td style="' . implode(' ', $tdStyles) . '"' . $colSpanAttr . '>' . $cellContent . '</td>';
                     }
@@ -344,7 +346,7 @@ class DocumentPreviewService
             }
         }
 
-        return '<div class="table-responsive my-3"><table class="table table-bordered table-sm docx-table">' . $rowsHtml . '</table></div>';
+        return '<div class="docx-table-wrapper my-3"><table class="table table-bordered table-sm docx-table mb-0">' . $rowsHtml . '</table></div>';
     }
 
     /**
@@ -459,26 +461,36 @@ HTML;
             --docx-paper: #ffffff;
             --docx-text: #1e293b;
         }
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+        html {
+            background-color: var(--docx-bg);
+            min-height: 100%;
+        }
         body {
             background-color: var(--docx-bg);
             margin: 0;
-            padding: 24px 16px;
+            padding: 32px 16px 48px;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             color: var(--docx-text);
-            display: flex;
-            justify-content: center;
+            min-height: 100%;
+            -webkit-text-size-adjust: 100%;
         }
         .docx-paper-sheet {
             background-color: var(--docx-paper);
             width: 100%;
-            max-width: 860px;
-            min-height: 92vh;
-            padding: 56px 64px;
+            max-width: 980px;
+            margin: 0 auto;
+            min-height: calc(100vh - 80px);
+            height: auto;
+            padding: 48px 56px;
             box-shadow: 0 4px 24px rgba(15, 23, 42, 0.12), 0 1px 3px rgba(15, 23, 42, 0.08);
-            border-radius: 6px;
+            border-radius: 8px;
             border: 1px solid #cbd5e1;
             font-size: 11pt;
             line-height: 1.6;
+            overflow: visible;
         }
         .docx-heading {
             font-weight: 700;
@@ -512,17 +524,33 @@ HTML;
         .docx-list-content {
             flex: 1;
         }
+        .docx-table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin: 20px 0;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            background-color: #ffffff;
+        }
         .docx-table {
             border-collapse: collapse;
             width: 100%;
-            margin: 16px 0;
-            border: 1px solid #cbd5e1;
+            margin: 0;
             font-size: 10.5pt;
+            background-color: #ffffff;
         }
         .docx-table th, .docx-table td {
             border: 1px solid #cbd5e1;
             padding: 8px 12px;
             vertical-align: top;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            background-color: inherit;
+        }
+        .docx-table td > :last-child,
+        .docx-table th > :last-child {
+            margin-bottom: 0;
         }
         .docx-img-wrap {
             text-align: center;
@@ -537,8 +565,12 @@ HTML;
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
         }
         @media (max-width: 768px) {
+            body {
+                padding: 16px 8px 32px;
+            }
             .docx-paper-sheet {
-                padding: 28px 24px;
+                padding: 24px 20px;
+                border-radius: 4px;
             }
         }
     </style>

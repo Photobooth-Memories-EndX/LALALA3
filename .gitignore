@@ -25,3 +25,5 @@ yarn-error.log
 
 .tmp-edge-profile/*
 !.tmp-edge-profile/.gitkeep
+# Codebase Memory MCP
+/.codebase-memory/

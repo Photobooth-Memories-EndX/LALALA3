@@ -337,7 +337,7 @@
                     <span class="section-badge-num"><i class="ti ti-map-pin"></i></span>
                     <div>
                         <h3 class="card-title fw-bold text-dark mb-0">1. Task Placement</h3>
-                        <div class="text-muted small">Select where this task will be placed and assigned to learners.</div>
+                        <div class="text-muted small">Select where this task will be placed and assigned to users.</div>
                     </div>
                 </div>
                 <span class="badge bg-primary text-white fw-semibold px-2.5 py-1 rounded-pill section-active-indicator align-items-center gap-1 shadow-sm">
@@ -390,7 +390,7 @@
 
                 {{-- Others helper notice when Standalone is chosen --}}
                 <div id="standalonePlacementNotice" class="alert alert-info py-2 px-3 rounded-3 form-field-lg mb-0" style="{{ $currentParentType === 'standalone' ? '' : 'display:none' }}">
-                    <i class="ti ti-world me-1"></i> Others is open to all learners and not tied to a specific playlist or course. You can configure an optional access passcode at the bottom of the form.
+                    <i class="ti ti-world me-1"></i> Others is open to all users and not tied to a specific playlist or course. You can configure an optional access passcode at the bottom of the form.
                 </div>
             </div>
         </div>
@@ -405,7 +405,7 @@
                 <span class="section-badge-num"><i class="ti ti-file-text"></i></span>
                 <div>
                     <h3 class="card-title fw-bold text-dark mb-0">{{ $isLocked ? '1. ' : '2. ' }}Basic Task Information</h3>
-                    <div class="text-muted small">Define the task type, title, and instructions for learners.</div>
+                    <div class="text-muted small">Define the task type, title, and instructions for users.</div>
                 </div>
             </div>
             <span class="badge bg-primary text-white fw-semibold px-2.5 py-1 rounded-pill section-active-indicator align-items-center gap-1 shadow-sm">
@@ -444,7 +444,7 @@
                 <textarea class="form-control @error('description') is-invalid @enderror"
                           id="description" name="description"
                           rows="3"
-                          placeholder="Provide clear guidelines, requirements, or submission instructions for learners...">{{ old('description', $task->description ?? '') }}</textarea>
+                          placeholder="Provide clear guidelines, requirements, or submission instructions for users...">{{ old('description', $task->description ?? '') }}</textarea>
                 @error('description')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
             </div>
         </div>
@@ -459,7 +459,7 @@
                 <span class="section-badge-num"><i class="ti ti-calendar-time"></i></span>
                 <div>
                     <h3 class="card-title fw-bold text-dark mb-0" id="section3Title">{{ $isLocked ? '2. ' : '3. ' }}{{ $currentType === 'file_submission' ? 'Period & Supporting Files' : 'Period' }}</h3>
-                    <div class="text-muted small" id="section3Subtitle">{{ $currentType === 'file_submission' ? 'Set the submission period / deadline and attach assignment templates or guidance materials (optional).' : 'Set the submission period / deadline for learners (optional).' }}</div>
+                    <div class="text-muted small" id="section3Subtitle">{{ $currentType === 'file_submission' ? 'Set the submission period / deadline and attach assignment templates or guidance materials (optional).' : 'Set the submission period / deadline for users (optional).' }}</div>
                 </div>
             </div>
             <span class="badge bg-primary text-white fw-semibold px-2.5 py-1 rounded-pill section-active-indicator align-items-center gap-1 shadow-sm">
@@ -494,7 +494,7 @@
                         <a href="{{ asset('storage/' . $task->attachment) }}" target="_blank" class="fw-semibold">View File</a>
                     </div>
                 @else
-                    <small class="text-muted d-block mt-1">PDF, DOCX, ZIP, XLSX up to 5 MB as a reference for learners.</small>
+                    <small class="text-muted d-block mt-1">PDF, DOCX, ZIP, XLSX up to 5 MB as a reference for users.</small>
                 @endif
                 @error('attachment')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
             </div>
@@ -511,7 +511,7 @@
                 <span class="section-badge-num"><i class="ti ti-link"></i></span>
                 <div>
                     <h3 class="card-title fw-bold text-dark mb-0">{{ $isLocked ? '3. ' : '4. ' }}Target Course Assignment</h3>
-                    <div class="text-muted small">Specify the LMS course or external course URL that learners must complete.</div>
+                    <div class="text-muted small">Specify the LMS course or external course URL that users must complete.</div>
                 </div>
             </div>
             <span class="badge bg-primary text-white fw-semibold px-2.5 py-1 rounded-pill section-active-indicator align-items-center gap-1 shadow-sm">
@@ -587,7 +587,7 @@
                 <span class="section-badge-num"><i class="ti ti-forms"></i></span>
                 <div>
                     <h3 class="card-title fw-bold text-dark mb-0">{{ $isLocked ? '3. ' : '4. ' }}Target Survey Assignment</h3>
-                    <div class="text-muted small">Select the survey form that learners must complete for this task.</div>
+                    <div class="text-muted small">Select the survey form that users must complete for this task.</div>
                 </div>
             </div>
             <span class="badge bg-primary text-white fw-semibold px-2.5 py-1 rounded-pill section-active-indicator align-items-center gap-1 shadow-sm">
@@ -623,7 +623,7 @@
                 <span class="section-badge-num"><i class="ti {{ $currentType === 'action_plan' ? 'ti-forms' : ($currentType === 'essay' ? 'ti-writing' : ($currentType === 'file_submission' ? 'ti-cloud-upload' : 'ti-list-check')) }}" id="builderBadgeIcon"></i></span>
                 <div>
                     <h3 class="card-title fw-bold text-dark mb-0" id="builderTitle">{{ $isLocked ? '3. ' : '4. ' }}{{ $currentType === 'action_plan' ? 'Action Plan Form Builder' : ($currentType === 'essay' ? 'Essay Question' : ($currentType === 'file_submission' ? 'File Submission Requirements' : 'Questions & Submission Form Builder')) }}</h3>
-                    <div class="text-muted small" id="builderHint">{{ $currentType === 'action_plan' ? 'Design action plan questions and prompts for learners using customizable Google Form question types.' : ($currentType === 'essay' ? 'Specify the essay question or reflection prompt for learners to answer.' : ($currentType === 'file_submission' ? 'Specify file submission requirements and guidelines for learners.' : '')) }}</div>
+                    <div class="text-muted small" id="builderHint">{{ $currentType === 'action_plan' ? 'Design action plan questions and prompts for users using customizable Google Form question types.' : ($currentType === 'essay' ? 'Specify the essay question or reflection prompt for users to answer.' : ($currentType === 'file_submission' ? 'Specify file submission requirements and guidelines for users.' : '')) }}</div>
                 </div>
             </div>
             <span class="badge text-white fw-semibold px-3 py-1.5 rounded-pill section-active-indicator align-items-center gap-1.5 shadow-sm" style="background-color: #0c4b81;">
@@ -669,7 +669,7 @@
                        value="{{ old('access_code', $task->access_code ?? '') }}"
                        maxlength="8" placeholder="e.g. TASK01"
                        autocomplete="off">
-                <small class="text-muted d-block mt-2">Optional (max 8 characters). If left blank, learners can access this task directly via secret link or QR code.</small>
+                <small class="text-muted d-block mt-2">Optional (max 8 characters). If left blank, users can access this task directly via secret link or QR code.</small>
                 @error('access_code')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
             </div>
         </div>
@@ -706,7 +706,7 @@
 </form>
 
 {{-- ======================================================== --}}
-{{-- MODAL: LEARNER TASK PREVIEW                              --}}
+{{-- MODAL: USER TASK PREVIEW                                 --}}
 {{-- ======================================================== --}}
 <div class="modal modal-blur fade" id="taskPreviewModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
@@ -715,7 +715,7 @@
                 <div class="d-flex align-items-center gap-2">
                     <span class="badge bg-primary text-white p-1.5 rounded-3"><i class="ti ti-eye fs-2"></i></span>
                     <div>
-                        <h4 class="modal-title fw-bold text-dark mb-0">Learner View Preview</h4>
+                        <h4 class="modal-title fw-bold text-dark mb-0">User View Preview</h4>
                     </div>
                 </div>
                 <div class="d-flex align-items-center gap-2 ms-auto">
@@ -745,7 +745,7 @@
             </div>
             <div class="modal-body p-4 bg-light-subtle overflow-auto">
                 <div id="taskPreviewZoomWrapper" style="transform-origin: top center; transition: transform 0.15s ease-out; width: 100%;">
-                    {{-- User View Card (Identical to Learner My Task Card) --}}
+                    {{-- User View Card (Identical to User My Task Card) --}}
                     <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
                     {{-- Top Badges Row --}}
                     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
@@ -787,7 +787,7 @@
                             <i class="ti ti-file-download text-primary fs-2"></i>
                             <div>
                                 <div class="fw-semibold text-dark small" id="prevAttachmentName">Reference file</div>
-                                <div class="text-muted" style="font-size:11px;">Learners can download this attachment for guidance.</div>
+                                <div class="text-muted" style="font-size:11px;">Users can download this attachment for guidance.</div>
                             </div>
                             <button type="button" class="btn btn-sm btn-outline-primary ms-2" disabled>
                                 <i class="ti ti-download me-1"></i> Download File
@@ -836,10 +836,10 @@
         var fieldIndex    = 0;
 
         var BUILDER_HINTS = {
-            file_submission: 'Specify file submission requirements and guidelines for learners.',
+            file_submission: 'Specify file submission requirements and guidelines for users.',
             survey: 'Collect opinions — multiple choice or written answers, no scoring.',
-            essay: 'Specify the essay question or reflection prompt for learners to answer.',
-            action_plan: 'Design action plan questions and prompts for learners using customizable Google Form question types.'
+            essay: 'Specify the essay question or reflection prompt for users to answer.',
+            action_plan: 'Design action plan questions and prompts for users using customizable Google Form question types.'
         };
 
         function esc(s) {
@@ -1041,10 +1041,10 @@
                     '</div>' +
                     '<div class="mb-3">' +
                         '<input type="text" class="form-control rounded-3 border field-label-input" style="font-size: 0.95rem; padding: 0.65rem 1rem; border-color: #dce2eb;" id="field_label_' + i + '" name="fields[' + i + '][label]" ' +
-                            'placeholder="Enter essay question or prompt for learners..." value="' + esc(data.label || '') + '" maxlength="255" required>' +
+                            'placeholder="Enter essay question or prompt for users..." value="' + esc(data.label || '') + '" maxlength="255" required>' +
                     '</div>' +
                     '<div class="p-3 rounded-3" style="background-color: #f8fafc; border: 1px solid #eef2f6;">' +
-                        '<div class="text-muted small mb-2"><i class="ti ti-notes me-1"></i> Learner answer area preview:</div>' +
+                        '<div class="text-muted small mb-2"><i class="ti ti-notes me-1"></i> User answer area preview:</div>' +
                         '<div class="form-control bg-white text-muted" style="min-height: 80px; font-style: italic; border-style: dashed;">Long-answer text</div>' +
                     '</div>' +
                     '<div class="optionsEditor mt-2" style="display:none"><div class="optionsList"></div><div class="optionsHint"></div></div>' +
@@ -1099,7 +1099,7 @@
                     '</div>' +
                     fileSettingsHTML(i, data) +
                     '<div class="previewScale mt-3 p-3 rounded-3" style="background-color: #f8fafc; border: 1px solid #eef2f6; display:none;">' +
-                        '<div class="text-muted small mb-2"><i class="ti ti-arrows-left-right me-1"></i> Scale preview (Learners will select a rating from 1 to 5):</div>' +
+                        '<div class="text-muted small mb-2"><i class="ti ti-arrows-left-right me-1"></i> Scale preview (Users will select a rating from 1 to 5):</div>' +
                         '<div class="d-flex align-items-center gap-3 flex-wrap">' +
                             '<span class="text-muted small fw-medium">1 (Lowest)</span>' +
                             '<div class="d-flex align-items-center gap-2">' +
@@ -1113,7 +1113,7 @@
                         '</div>' +
                     '</div>' +
                     '<div class="previewRating mt-3 p-3 rounded-3" style="background-color: #f8fafc; border: 1px solid #eef2f6; display:none;">' +
-                        '<div class="text-muted small mb-2"><i class="ti ti-star me-1"></i> Star rating preview (Learners will select 1 to 5 stars):</div>' +
+                        '<div class="text-muted small mb-2"><i class="ti ti-star me-1"></i> Star rating preview (Users will select 1 to 5 stars):</div>' +
                         '<div class="d-flex align-items-center gap-1 text-warning fs-2">' +
                             '<i class="ti ti-star-filled"></i>' +
                             '<i class="ti ti-star-filled"></i>' +
@@ -1547,7 +1547,7 @@
             var builderBadgeIcon = document.getElementById('builderBadgeIcon');
             if (isEssay) {
                 if (builderTitleEl) builderTitleEl.textContent = builderPrefix + 'Essay Question';
-                if (builderHint) builderHint.textContent = 'Specify the essay question or reflection prompt for learners to answer.';
+                if (builderHint) builderHint.textContent = 'Specify the essay question or reflection prompt for users to answer.';
                 if (builderBadgeIcon) builderBadgeIcon.className = 'ti ti-writing';
             } else if (t === 'action_plan') {
                 if (builderTitleEl) builderTitleEl.textContent = builderPrefix + 'Action Plan Form Builder';
@@ -1584,7 +1584,7 @@
             if (section3Subtitle) {
                 section3Subtitle.textContent = isFileSubmission
                     ? 'Set the submission period / deadline and attach assignment templates or guidance materials (optional).'
-                    : 'Set the submission period / deadline for learners (optional).';
+                    : 'Set the submission period / deadline for users (optional).';
             }
 
             ensureValidActiveSection();
@@ -1828,7 +1828,7 @@
             } else {
                 var fieldCards = wrap ? wrap.querySelectorAll('.field-card') : [];
                 var html = '<h5 class="fw-semibold text-dark mb-3 d-flex align-items-center gap-1">' +
-                    '<i class="ti ti-pencil text-primary"></i> Learner Submission Form' +
+                    '<i class="ti ti-pencil text-primary"></i> User Submission Form' +
                 '</h5>';
 
                 if (!fieldCards.length) {

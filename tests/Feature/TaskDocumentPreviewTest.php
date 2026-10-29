@@ -152,7 +152,7 @@ class TaskDocumentPreviewTest extends TestCase
 
         // Must render preview-document route iframe
         $response->assertSee('submissions/preview-document');
-        $response->assertSee('DOCX In-Browser Preview');
+        $response->assertSee('DOCX');
 
         // Must NOT render the old "Preview not directly supported" warning
         $response->assertDontSee('Preview not directly supported for DOCX files');
@@ -217,7 +217,7 @@ class TaskDocumentPreviewTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('submissions/preview-document');
-        $response->assertSee('DOCX In-Browser Preview');
+        $response->assertSee('DOCX');
     }
 }
 

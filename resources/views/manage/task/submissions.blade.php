@@ -135,11 +135,6 @@
         background: #f8fafc;
         overflow: hidden;
     }
-    .viewer-toolbar {
-        height: 48px;
-        background: #ffffff;
-        border-bottom: 1px solid #e2e8f0;
-    }
     .workstation-canvas-body {
         flex: 1 1 auto;
         overflow-y: auto;
@@ -340,7 +335,7 @@
     {{-- ── Top Navigation Bar ────────────────────────────────────────── --}}
     <header class="workstation-header px-3 py-2 d-flex align-items-center justify-content-between flex-shrink-0">
         {{-- Left: Consistent Link-Style Back Button & Task Title --}}
-        <div class="d-flex align-items-center gap-3 min-w-0" style="max-width: 42%;">
+        <div class="d-flex align-items-center gap-3 min-w-0" style="flex: 1 1 0; max-width: 32%;">
             <a href="javascript:void(0)"
                onclick="closeWorkstation()"
                class="text-primary text-decoration-none fw-semibold d-inline-flex align-items-center gap-1.5 flex-shrink-0"
@@ -360,51 +355,59 @@
             </div>
         </div>
 
-        {{-- Center: Graded Progress Bar --}}
-        <div class="d-none d-md-flex flex-column align-items-center justify-content-center px-3" style="min-width: 170px;">
-            <div class="small fw-semibold text-muted mb-1" id="headerGradedSummary" style="font-size: 11.5px;">
-                {{ $gradedCount }} of {{ $totalSubmissions }} graded
-            </div>
-            <div class="progress" style="height: 6px; width: 140px; background-color: #e2e8f0; border-radius: 999px;">
-                <div class="progress-bar bg-success"
-                     id="headerGradedProgressBar"
-                     role="progressbar"
-                     style="width: {{ $totalSubmissions > 0 ? round(($gradedCount / $totalSubmissions) * 100) : 0 }}%; border-radius: 999px;"
-                     aria-valuenow="{{ $gradedCount }}"
-                     aria-valuemin="0"
-                     aria-valuemax="{{ $totalSubmissions }}">
+        {{-- Center: Graded Progress Bar & User Switcher --}}
+        <div class="d-flex align-items-center justify-content-center gap-3 px-2 mx-auto flex-shrink-0">
+            {{-- Graded Progress Bar --}}
+            <div class="d-none d-md-flex flex-column align-items-center justify-content-center px-2" style="min-width: 140px;">
+                <div class="small fw-semibold text-muted mb-1" id="headerGradedSummary" style="font-size: 11.5px;">
+                    {{ $gradedCount }} of {{ $totalSubmissions }} graded
                 </div>
+                <div class="progress" style="height: 6px; width: 130px; background-color: #e2e8f0; border-radius: 999px;">
+                    <div class="progress-bar bg-success"
+                         id="headerGradedProgressBar"
+                         role="progressbar"
+                         style="width: {{ $totalSubmissions > 0 ? round(($gradedCount / $totalSubmissions) * 100) : 0 }}%; border-radius: 999px;"
+                         aria-valuenow="{{ $gradedCount }}"
+                         aria-valuemin="0"
+                         aria-valuemax="{{ $totalSubmissions }}">
+                    </div>
+                </div>
+            </div>
+
+            <div class="vr my-1 text-muted d-none d-md-block" style="height: 24px; opacity: 0.25;"></div>
+
+            {{-- User Switcher [ < ] [ User Name ] [ > ] --}}
+            <div class="d-flex align-items-center gap-2">
+                <button type="button"
+                        class="btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center flex-shrink-0"
+                        id="prevSubmissionBtn"
+                        title="Previous User (Left Arrow)"
+                        style="width: 32px; height: 32px;">
+                    <i class="ti ti-chevron-left fs-3"></i>
+                </button>
+
+                <div class="text-center px-1" style="min-width: 130px; max-width: 200px;">
+                    <div class="fw-bold text-dark text-truncate text-uppercase" id="headerLearnerName" style="font-size: 12px; letter-spacing: 0.3px;">
+                        {{ $defaultActive ? ($defaultActive->user->name ?? 'User') : 'No Submissions' }}
+                    </div>
+                    <div class="text-muted" id="headerSubmissionCount" style="font-size: 11px;">
+                        Submission {{ $totalSubmissions > 0 ? 1 : 0 }} of {{ $totalSubmissions }}
+                    </div>
+                </div>
+
+                <button type="button"
+                        class="btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center flex-shrink-0"
+                        id="nextSubmissionBtn"
+                        title="Next User (Right Arrow)"
+                        style="width: 32px; height: 32px;">
+                    <i class="ti ti-chevron-right fs-3"></i>
+                </button>
             </div>
         </div>
 
-        {{-- Right: User Switcher [ < ] [ User Name ] [ > ] & Close Button --}}
-        <div class="d-flex align-items-center gap-2">
-            <button type="button"
-                    class="btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center flex-shrink-0"
-                    id="prevSubmissionBtn"
-                    title="Previous User (Left Arrow)"
-                    style="width: 32px; height: 32px;">
-                <i class="ti ti-chevron-left fs-3"></i>
-            </button>
-
-            <div class="text-center px-1 d-none d-sm-block" style="min-width: 130px; max-width: 190px;">
-                <div class="fw-bold text-dark text-truncate text-uppercase" id="headerLearnerName" style="font-size: 12px; letter-spacing: 0.3px;">
-                    {{ $defaultActive ? ($defaultActive->user->name ?? 'User') : 'No Submissions' }}
-                </div>
-                <div class="text-muted" id="headerSubmissionCount" style="font-size: 11px;">
-                    Submission {{ $totalSubmissions > 0 ? 1 : 0 }} of {{ $totalSubmissions }}
-                </div>
-            </div>
-
-            <button type="button"
-                    class="btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center flex-shrink-0"
-                    id="nextSubmissionBtn"
-                    title="Next User (Right Arrow)"
-                    style="width: 32px; height: 32px;">
-                <i class="ti ti-chevron-right fs-3"></i>
-            </button>
-
-            <div class="vr mx-1 d-none d-sm-block" style="height: 22px;"></div>
+        {{-- Right: Close Button --}}
+        <div class="d-flex align-items-center justify-content-end gap-2" style="flex: 1 1 0; max-width: 32%;">
+            <div class="vr my-1 text-muted d-none d-sm-block" style="height: 20px; opacity: 0.25;"></div>
 
             <button type="button"
                     class="btn btn-sm btn-ghost-secondary p-1 text-muted"
@@ -522,34 +525,6 @@
 
         {{-- ── COLUMN 2: Main Submission Viewer & Canvas ── --}}
         <main class="workstation-main" id="filePreviewModal">
-            {{-- Middle Toolbar matching SpeedGrader Screenshot --}}
-            <div class="viewer-toolbar px-3 py-2 d-flex align-items-center justify-content-between flex-shrink-0">
-                <div class="d-flex align-items-center gap-1.5 flex-wrap" id="previewZoomToolbar">
-                    <button type="button" class="btn btn-sm btn-ghost-secondary px-2.5 py-1 text-dark" id="previewZoomOutBtn" title="Zoom Out (Scroll Wheel Down)">
-                        <i class="ti ti-zoom-out me-1"></i> <span style="font-size: 12px;">Zoom &minus;</span>
-                    </button>
-                    <button type="button" class="btn btn-sm btn-ghost-secondary px-2 py-1 fw-bold text-dark" id="previewZoomResetBtn" title="Reset Zoom (Double-Click Image)" style="min-width: 48px; font-size: 12px;">
-                        <span id="previewZoomLevel">100%</span>
-                    </button>
-                    <button type="button" class="btn btn-sm btn-ghost-secondary px-2.5 py-1 text-dark" id="previewZoomInBtn" title="Zoom In (Scroll Wheel Up)">
-                        <i class="ti ti-zoom-in me-1"></i> <span style="font-size: 12px;">Zoom &plus;</span>
-                    </button>
-                    <button type="button" class="btn btn-sm btn-ghost-secondary px-2 py-1 text-dark" id="previewRotateBtn" title="Rotate 90° Clockwise">
-                        <i class="ti ti-rotate-clockwise" style="font-size: 15px;"></i>
-                    </button>
-                    <button type="button" class="btn btn-sm btn-ghost-secondary px-2 py-1 text-dark" id="previewFitBtn" title="Reset Position &amp; Fit">
-                        <i class="ti ti-arrows-maximize" style="font-size: 15px;"></i>
-                    </button>
-                </div>
-
-                <div class="d-flex align-items-center gap-2">
-                    <span class="d-none" id="previewHelperText">Previewing submitted file. Close this modal to grade or request a resubmit. Close &amp; Return to Review</span>
-                    <a href="#" download class="btn btn-sm btn-outline-secondary px-3 py-1 d-inline-flex align-items-center gap-1.5" id="previewDownloadBtn" title="Download submitted file">
-                        <i class="ti ti-download"></i> <span style="font-size: 12px;">Download file</span>
-                    </a>
-                </div>
-            </div>
-
             {{-- Main Canvas Area --}}
             <div class="workstation-canvas-body" id="workstationCanvasBody">
                 @forelse ($allSubmissions as $sub)
@@ -588,8 +563,9 @@
                                         @if (! empty($files))
                                             @foreach ($files as $fPath)
                                                 @php
-                                                    $fName = basename($fPath);
-                                                    $fUrl = Storage::url($fPath);
+                                                    $fPathNorm = str_replace('\\', '/', $fPath);
+                                                    $fName = basename($fPathNorm);
+                                                    $fUrl = Storage::url($fPathNorm);
                                                     $fExt = strtolower(pathinfo($fName, PATHINFO_EXTENSION));
                                                     $isImg = in_array($fExt, ['jpg','jpeg','png','gif','webp','svg','bmp']);
                                                     $isPdf = ($fExt === 'pdf');
@@ -600,8 +576,8 @@
 
                                                     $fSize = 'Submission File';
                                                     try {
-                                                        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($fPath)) {
-                                                            $bytes = \Illuminate\Support\Facades\Storage::disk('public')->size($fPath);
+                                                        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($fPathNorm)) {
+                                                            $bytes = \Illuminate\Support\Facades\Storage::disk('public')->size($fPathNorm);
                                                             if ($bytes >= 1048576) {
                                                                 $fSize = number_format($bytes / 1048576, 1) . ' MB';
                                                             } elseif ($bytes >= 1024) {
@@ -609,8 +585,8 @@
                                                             } else {
                                                                 $fSize = $bytes . ' B';
                                                             }
-                                                        } elseif (\Illuminate\Support\Facades\Storage::exists($fPath)) {
-                                                            $bytes = \Illuminate\Support\Facades\Storage::size($fPath);
+                                                        } elseif (\Illuminate\Support\Facades\Storage::exists($fPathNorm)) {
+                                                            $bytes = \Illuminate\Support\Facades\Storage::size($fPathNorm);
                                                             if ($bytes >= 1048576) {
                                                                 $fSize = number_format($bytes / 1048576, 1) . ' MB';
                                                             } elseif ($bytes >= 1024) {
@@ -621,74 +597,167 @@
                                                         }
                                                     } catch (\Throwable $e) {}
 
-                                                    $fKind = $isImg ? 'Image' : ($isPdf ? 'Document' : ($isVid ? 'Video' : ($isAud ? 'Audio' : 'File')));
+                                                    $fKind = $isImg ? 'Image' : ($isPdf ? 'PDF Document' : ($isDoc ? 'Office Document' : ($isVid ? 'Video' : ($isAud ? 'Audio' : 'File'))));
+
+                                                    if ($isDoc || in_array($fExt, ['docx','doc','xlsx','xls','csv'])) {
+                                                        $previewUrl = route('manage.task.submissions.preview-doc', [$task, 'path' => $fPathNorm]);
+                                                        $tabUrl = $previewUrl;
+                                                        $iconClass = in_array($fExt, ['doc','docx']) ? 'ti-file-description' : 'ti-file-spreadsheet';
+                                                        $iconBg = in_array($fExt, ['doc','docx']) ? 'bg-primary-lt' : 'bg-success-lt';
+                                                        $iconColor = in_array($fExt, ['doc','docx']) ? 'text-primary' : 'text-success';
+                                                    } elseif ($isPdf) {
+                                                        $previewUrl = $fUrl;
+                                                        $tabUrl = $fUrl;
+                                                        $iconClass = 'ti-file-type-pdf';
+                                                        $iconBg = 'bg-danger-lt';
+                                                        $iconColor = 'text-danger';
+                                                    } elseif ($isImg) {
+                                                        $previewUrl = $fUrl;
+                                                        $tabUrl = $fUrl;
+                                                        $iconClass = 'ti-photo';
+                                                        $iconBg = 'bg-azure-lt';
+                                                        $iconColor = 'text-azure';
+                                                    } elseif ($isVid) {
+                                                        $previewUrl = $fUrl;
+                                                        $tabUrl = $fUrl;
+                                                        $iconClass = 'ti-video';
+                                                        $iconBg = 'bg-purple-lt';
+                                                        $iconColor = 'text-purple';
+                                                    } elseif ($isAud) {
+                                                        $previewUrl = $fUrl;
+                                                        $tabUrl = $fUrl;
+                                                        $iconClass = 'ti-music';
+                                                        $iconBg = 'bg-warning-lt';
+                                                        $iconColor = 'text-warning';
+                                                    } else {
+                                                        $previewUrl = $fUrl;
+                                                        $tabUrl = $fUrl;
+                                                        $iconClass = 'ti-file';
+                                                        $iconBg = 'bg-secondary-lt';
+                                                        $iconColor = 'text-secondary';
+                                                    }
                                                 @endphp
 
-                                                {{-- Clean File Pill Box (single download button in top toolbar) --}}
-                                                <div class="px-3.5 py-2.5 rounded-3 border mb-3" style="background-color: #f8fafc; border-color: #e2e8f0 !important;" data-file-url="{{ $fUrl }}" data-file-name="{{ $fName }}">
-                                                    <div class="fw-semibold text-dark text-truncate" style="font-size: 13px; line-height: 1.4;">{{ $fName }}</div>
-                                                    <div class="text-muted" style="font-size: 11.5px; margin-top: 2px;">
-                                                        {{ strtoupper($fExt) }} {{ $fKind }} &bull; {{ $fSize }}
-                                                    </div>
-                                                </div>
-
-                                                {{-- Direct Embedded Viewer with Zoom & Pan --}}
-                                                @if ($isImg)
-                                                    <div class="file-preview-body p-3 d-flex flex-column align-items-center justify-content-center position-relative w-100 btn-preview-file preview-image-clickable"
-                                                         id="filePreviewContent"
-                                                         data-file-url="{{ $fUrl }}"
-                                                         data-file-name="{{ $fName }}"
-                                                         role="region"
-                                                         aria-label="Image preview: Click to zoom"
-                                                         style="min-height: 480px; height: 62vh; max-height: 70vh; overflow: hidden; background-color: #e9eef4; position: relative; user-select: none; border-radius: 12px; cursor: zoom-in;">
-                                                        <span class="visually-hidden">Click to zoom</span>
-                                                        <div id="filePreviewZoomWrapper" style="transform-origin: center center; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; will-change: transform;">
-                                                            <img src="{{ $fUrl }}" alt="{{ $fName }}" draggable="false" style="max-height: 56vh; max-width: 95%; object-fit: contain; pointer-events: none; user-select: none; -webkit-user-drag: none; box-shadow: 0 4px 16px rgba(0,0,0,0.12); border-radius: 4px; background: #ffffff;">
-                                                        </div>
-                                                    </div>
-                                                @elseif ($isPdf)
-                                                    <div class="rounded-3 border overflow-hidden" style="height: 62vh; background: #fff;">
-                                                        <iframe src="{{ $fUrl }}#toolbar=1" style="width: 100%; height: 100%; border: none;" title="{{ $fName }}"></iframe>
-                                                    </div>
-                                                @elseif ($isVid)
-                                                    <div class="p-2 bg-black rounded-3 d-flex align-items-center justify-content-center">
-                                                        <video src="{{ $fUrl }}" controls class="rounded w-100" style="max-height: 52vh;"></video>
-                                                    </div>
-                                                @elseif ($isAud)
-                                                    <div class="p-4 bg-white rounded-3 border text-center">
-                                                        <audio src="{{ $fUrl }}" controls class="w-100" style="max-width: 500px;"></audio>
-                                                    </div>
-                                                @elseif ($isDoc || in_array($fExt, ['docx','doc','xlsx','xls','csv']))
-                                                    <div class="rounded-3 border overflow-hidden position-relative shadow-xs mb-3" style="height: 65vh; min-height: 520px; background: #f8fafc;">
-                                                        <div class="d-flex align-items-center justify-content-between px-3 py-1.5 border-bottom bg-light-subtle" style="font-size: 11.5px;">
-                                                            <div class="d-flex align-items-center gap-1.5 text-muted text-truncate">
-                                                                <i class="{{ in_array($fExt, ['doc','docx']) ? 'ti ti-file-description text-primary' : 'ti ti-file-spreadsheet text-success' }} fs-2"></i>
-                                                                <span class="fw-semibold text-dark text-truncate">{{ $fName }}</span>
-                                                                <span class="text-muted">&bull; {{ strtoupper($fExt) }} In-Browser Preview</span>
+                                                <div class="card border rounded-3 overflow-hidden shadow-xs mb-3 file-submission-card" style="border-color: #cbd5e1 !important;" data-file-url="{{ $fUrl }}" data-file-name="{{ $fName }}">
+                                                    {{-- Unified Card Header with Info & Action Buttons --}}
+                                                    <div class="card-header bg-white py-2 px-3 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                                        <div class="d-flex align-items-center gap-2 min-w-0">
+                                                            <span class="avatar avatar-xs rounded {{ $iconBg }} {{ $iconColor }}">
+                                                                <i class="ti {{ $iconClass }}"></i>
+                                                            </span>
+                                                            <div class="min-w-0">
+                                                                <div class="fw-bold text-dark text-truncate" style="font-size: 13px; max-width: 320px;" title="{{ $fName }}">{{ $fName }}</div>
+                                                                <div class="text-muted small" style="font-size: 11px;">
+                                                                    <span class="badge bg-secondary-lt text-secondary px-1.5 py-0.5 rounded">{{ strtoupper($fExt) }}</span>
+                                                                    <span class="mx-1">&bull;</span> {{ $fKind }} &bull; {{ $fSize }}
+                                                                </div>
                                                             </div>
-                                                            <a href="{{ route('manage.task.submissions.preview-doc', [$task, 'path' => $fPath]) }}" target="_blank" class="btn btn-sm btn-ghost-secondary py-0 px-2 text-decoration-none" title="Open preview in new tab">
-                                                                <i class="ti ti-external-link me-1"></i> Full tab
+                                                        </div>
+
+                                                        <div class="d-flex align-items-center gap-1.5 flex-shrink-0">
+                                                            {{-- Fullscreen Pop-up Button --}}
+                                                            <button type="button"
+                                                                    class="btn btn-sm btn-white text-dark shadow-xs border rounded-2 px-2.5 py-1 btn-open-fullscreen"
+                                                                    data-file-url="{{ $fUrl }}"
+                                                                    data-preview-url="{{ $previewUrl }}"
+                                                                    data-file-name="{{ $fName }}"
+                                                                    data-file-ext="{{ $fExt }}"
+                                                                    data-file-kind="{{ $fKind }}"
+                                                                    data-file-size="{{ $fSize }}"
+                                                                    title="View in Fullscreen Pop-up">
+                                                                <i class="ti ti-maximize me-1 text-primary"></i> <span style="font-size: 12px; font-weight: 500;">Fullscreen</span>
+                                                            </button>
+
+                                                            {{-- Open in New Tab Button --}}
+                                                            <a href="{{ $tabUrl }}"
+                                                               target="_blank"
+                                                               rel="noopener noreferrer"
+                                                               class="btn btn-sm btn-white text-dark shadow-xs border rounded-2 px-2.5 py-1 text-decoration-none"
+                                                               title="Open in new tab">
+                                                                <i class="ti ti-external-link me-1 text-muted"></i> <span style="font-size: 12px; font-weight: 500;">Open in new tab</span>
+                                                            </a>
+
+                                                            {{-- Download Button --}}
+                                                            <a href="{{ $fUrl }}"
+                                                               download="{{ $fName }}"
+                                                               class="btn btn-sm btn-white text-dark shadow-xs border rounded-2 px-2.5 py-1 text-decoration-none"
+                                                               title="Download file">
+                                                                <i class="ti ti-download me-1 text-muted"></i> <span style="font-size: 12px; font-weight: 500;">Download</span>
                                                             </a>
                                                         </div>
-                                                        <iframe src="{{ route('manage.task.submissions.preview-doc', [$task, 'path' => $fPath]) }}"
-                                                                style="width: 100%; height: calc(100% - 32px); border: none; background: #f1f5f9;"
-                                                                title="{{ $fName }}"
-                                                                loading="lazy"></iframe>
                                                     </div>
-                                                @elseif ($isTxt)
-                                                    <div class="rounded-3 border overflow-hidden" style="height: 52vh; background: #fff;">
-                                                        <iframe src="{{ $fUrl }}" style="width: 100%; height: 100%; border: none;" title="{{ $fName }}"></iframe>
+
+                                                    {{-- In-line Embedded Viewer Body --}}
+                                                    <div class="card-body p-0 bg-light-subtle position-relative">
+                                                        @if ($isImg)
+                                                            <div class="p-3 d-flex align-items-center justify-content-center text-center preview-img-container preview-image-clickable"
+                                                                 style="min-height: 400px; max-height: 62vh; background-color: #f1f5f9; overflow: hidden; cursor: pointer;"
+                                                                 onclick="openFullscreenModal('{{ $fUrl }}', '{{ $fUrl }}', '{{ addslashes($fName) }}', '{{ $fExt }}', '{{ $fKind }}', '{{ $fSize }}')"
+                                                                 title="Click to view full screen">
+                                                                <img src="{{ $fUrl }}" alt="{{ $fName }}" class="img-fluid rounded shadow-sm" style="max-height: 58vh; max-width: 95%; object-fit: contain; background: #ffffff;">
+                                                            </div>
+                                                        @elseif ($isPdf)
+                                                            <div style="height: 65vh; min-height: 500px; background: #fff;">
+                                                                <iframe src="{{ $fUrl }}#toolbar=1" style="width: 100%; height: 100%; border: none;" title="{{ $fName }}"></iframe>
+                                                            </div>
+                                                        @elseif ($isDoc || in_array($fExt, ['docx','doc','xlsx','xls','csv']))
+                                                            <div style="height: 65vh; min-height: 500px; background: #f8fafc;">
+                                                                <iframe src="{{ route('manage.task.submissions.preview-doc', [$task, 'path' => $fPathNorm]) }}"
+                                                                        style="width: 100%; height: 100%; border: none;"
+                                                                        title="{{ $fName }}"
+                                                                        loading="lazy"></iframe>
+                                                            </div>
+                                                        @elseif ($isVid)
+                                                            <div class="p-3 bg-black d-flex align-items-center justify-content-center">
+                                                                <video src="{{ $fUrl }}" controls class="rounded w-100" style="max-height: 58vh;"></video>
+                                                            </div>
+                                                        @elseif ($isAud)
+                                                            <div class="p-4 bg-white text-center">
+                                                                <audio src="{{ $fUrl }}" controls class="w-100" style="max-width: 500px;"></audio>
+                                                            </div>
+                                                        @elseif ($isTxt)
+                                                            <div style="height: 55vh; min-height: 420px; background: #fff;">
+                                                                <iframe src="{{ $fUrl }}" style="width: 100%; height: 100%; border: none;" title="{{ $fName }}"></iframe>
+                                                            </div>
+                                                        @else
+                                                            <div class="p-4 text-center">
+                                                                <i class="ti ti-file-description fs-1 text-muted d-block mb-2"></i>
+                                                                <div class="fw-semibold text-dark mb-1">{{ $fName }}</div>
+                                                                <div class="text-muted small mb-3">Direct preview not supported for {{ strtoupper($fExt) }} files.</div>
+                                                                <a href="{{ $fUrl }}" download="{{ $fName }}" class="btn btn-sm btn-primary">
+                                                                    <i class="ti ti-download me-1"></i> Download {{ $fName }}
+                                                                </a>
+                                                            </div>
+                                                        @endif
                                                     </div>
-                                                @else
-                                                    <div class="p-4 bg-light rounded-3 border text-center">
-                                                        <i class="ti ti-file-description fs-1 text-muted d-block mb-2"></i>
-                                                        <div class="fw-semibold text-dark mb-1">{{ $fName }}</div>
-                                                        <div class="text-muted small">Preview not directly supported for {{ strtoupper($fExt) }} files. Please use the download button in the toolbar.</div>
-                                                    </div>
-                                                @endif
+                                                </div>
                                             @endforeach
-                                        @else
-                                            <div class="text-muted fst-italic small py-2 px-1">— No file uploaded for this question —</div>
+                                        @endif
+
+                                        {{-- Google Drive / Cloud Link Response --}}
+                                        @if (! empty($answerText))
+                                            <div class="card border rounded-3 p-3 bg-white mb-3 shadow-xs" style="border-color: #cbd5e1 !important; border-left: 4px solid #206bc4 !important;">
+                                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                                    <div class="d-flex align-items-center gap-2.5 min-w-0">
+                                                        <span class="avatar avatar-sm rounded-circle bg-primary-lt text-primary">
+                                                            <i class="ti ti-brand-google-drive fs-2"></i>
+                                                        </span>
+                                                        <div class="min-w-0">
+                                                            <div class="fw-bold text-dark" style="font-size: 13px;">Cloud / Google Drive Submission Link</div>
+                                                            <a href="{{ $answerText }}" target="_blank" rel="noopener noreferrer" class="text-primary text-truncate d-block small" style="max-width: 450px;">
+                                                                {{ $answerText }}
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                    <div class="d-flex align-items-center gap-1.5 flex-shrink-0">
+                                                        <a href="{{ $answerText }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary rounded-2 px-3 py-1 text-decoration-none">
+                                                            <i class="ti ti-external-link me-1"></i> Open in new tab
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @elseif (empty($files))
+                                            <div class="text-muted fst-italic small py-2 px-1">— No file or link submitted for this question —</div>
                                         @endif
                                     @endif
 
@@ -711,16 +780,21 @@
                                 @endif
                                 @if ($sub->file_path)
                                     @php
-                                        $fName = basename($sub->file_path);
-                                        $fUrl = Storage::url($sub->file_path);
+                                        $fPathNorm = str_replace('\\', '/', $sub->file_path);
+                                        $fName = basename($fPathNorm);
+                                        $fUrl = Storage::url($fPathNorm);
                                         $fExt = strtolower(pathinfo($fName, PATHINFO_EXTENSION));
-                                        $isImg = in_array($fExt, ['jpg','jpeg','png','gif','webp']);
+                                        $isImg = in_array($fExt, ['jpg','jpeg','png','gif','webp','svg','bmp']);
                                         $isPdf = ($fExt === 'pdf');
+                                        $isVid = in_array($fExt, ['mp4','webm','ogg','mov','mkv']);
+                                        $isAud = in_array($fExt, ['mp3','wav','m4a','aac']);
+                                        $isTxt = in_array($fExt, ['txt','csv','log','json','xml','md','sql','html','css','js']);
+                                        $isDoc = in_array($fExt, ['doc','docx','xls','xlsx','ppt','pptx']);
 
                                         $fSize = 'Submission File';
                                         try {
-                                            if (\Illuminate\Support\Facades\Storage::disk('public')->exists($sub->file_path)) {
-                                                $bytes = \Illuminate\Support\Facades\Storage::disk('public')->size($sub->file_path);
+                                            if (\Illuminate\Support\Facades\Storage::disk('public')->exists($fPathNorm)) {
+                                                $bytes = \Illuminate\Support\Facades\Storage::disk('public')->size($fPathNorm);
                                                 if ($bytes >= 1048576) {
                                                     $fSize = number_format($bytes / 1048576, 1) . ' MB';
                                                 } elseif ($bytes >= 1024) {
@@ -728,8 +802,8 @@
                                                 } else {
                                                     $fSize = $bytes . ' B';
                                                 }
-                                            } elseif (\Illuminate\Support\Facades\Storage::exists($sub->file_path)) {
-                                                $bytes = \Illuminate\Support\Facades\Storage::size($sub->file_path);
+                                            } elseif (\Illuminate\Support\Facades\Storage::exists($fPathNorm)) {
+                                                $bytes = \Illuminate\Support\Facades\Storage::size($fPathNorm);
                                                 if ($bytes >= 1048576) {
                                                     $fSize = number_format($bytes / 1048576, 1) . ' MB';
                                                 } elseif ($bytes >= 1024) {
@@ -740,49 +814,140 @@
                                             }
                                         } catch (\Throwable $e) {}
 
-                                        $fKind = $isImg ? 'Image' : ($isPdf ? 'Document' : 'File');
+                                        $fKind = $isImg ? 'Image' : ($isPdf ? 'PDF Document' : ($isDoc ? 'Office Document' : ($isVid ? 'Video' : ($isAud ? 'Audio' : 'File'))));
+
+                                        if ($isDoc || in_array($fExt, ['docx','doc','xlsx','xls','csv'])) {
+                                            $previewUrl = route('manage.task.submissions.preview-doc', [$task, 'path' => $fPathNorm]);
+                                            $tabUrl = $previewUrl;
+                                            $iconClass = in_array($fExt, ['doc','docx']) ? 'ti-file-description' : 'ti-file-spreadsheet';
+                                            $iconBg = in_array($fExt, ['doc','docx']) ? 'bg-primary-lt' : 'bg-success-lt';
+                                            $iconColor = in_array($fExt, ['doc','docx']) ? 'text-primary' : 'text-success';
+                                        } elseif ($isPdf) {
+                                            $previewUrl = $fUrl;
+                                            $tabUrl = $fUrl;
+                                            $iconClass = 'ti-file-type-pdf';
+                                            $iconBg = 'bg-danger-lt';
+                                            $iconColor = 'text-danger';
+                                        } elseif ($isImg) {
+                                            $previewUrl = $fUrl;
+                                            $tabUrl = $fUrl;
+                                            $iconClass = 'ti-photo';
+                                            $iconBg = 'bg-azure-lt';
+                                            $iconColor = 'text-azure';
+                                        } elseif ($isVid) {
+                                            $previewUrl = $fUrl;
+                                            $tabUrl = $fUrl;
+                                            $iconClass = 'ti-video';
+                                            $iconBg = 'bg-purple-lt';
+                                            $iconColor = 'text-purple';
+                                        } elseif ($isAud) {
+                                            $previewUrl = $fUrl;
+                                            $tabUrl = $fUrl;
+                                            $iconClass = 'ti-music';
+                                            $iconBg = 'bg-warning-lt';
+                                            $iconColor = 'text-warning';
+                                        } else {
+                                            $previewUrl = $fUrl;
+                                            $tabUrl = $fUrl;
+                                            $iconClass = 'ti-file';
+                                            $iconBg = 'bg-secondary-lt';
+                                            $iconColor = 'text-secondary';
+                                        }
                                     @endphp
-                                    <div class="px-3.5 py-2.5 rounded-3 border mb-3" style="background-color: #f8fafc; border-color: #e2e8f0 !important;" data-file-url="{{ $fUrl }}" data-file-name="{{ $fName }}">
-                                        <div class="fw-semibold text-dark text-truncate" style="font-size: 13px; line-height: 1.4;">{{ $fName }}</div>
-                                        <div class="text-muted" style="font-size: 11.5px; margin-top: 2px;">
-                                            {{ strtoupper($fExt) }} {{ $fKind }} &bull; {{ $fSize }}
-                                        </div>
-                                    </div>
-                                    @if ($isImg)
-                                        <div class="file-preview-body p-3 d-flex flex-column align-items-center justify-content-center position-relative w-100 btn-preview-file preview-image-clickable"
-                                             id="filePreviewContent"
-                                             data-file-url="{{ $fUrl }}"
-                                             data-file-name="{{ $fName }}"
-                                             role="region"
-                                             aria-label="Image preview: Click to zoom"
-                                             style="min-height: 480px; height: 60vh; overflow: hidden; background-color: #e9eef4; border-radius: 12px; cursor: zoom-in;">
-                                            <span class="visually-hidden">Click to zoom</span>
-                                            <div id="filePreviewZoomWrapper" style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">
-                                                <img src="{{ $fUrl }}" alt="{{ $fName }}" draggable="false" style="max-height: 56vh; max-width: 95%; object-fit: contain; box-shadow: 0 4px 16px rgba(0,0,0,0.12); border-radius: 4px; background: #ffffff;">
-                                            </div>
-                                        </div>
-                                    @elseif ($isPdf)
-                                        <div class="rounded-3 border overflow-hidden" style="height: 60vh; background: #fff;">
-                                            <iframe src="{{ $fUrl }}#toolbar=1" style="width: 100%; height: 100%; border: none;"></iframe>
-                                        </div>
-                                    @elseif (in_array($fExt, ['docx','doc','xlsx','xls','csv','txt']))
-                                        <div class="rounded-3 border overflow-hidden position-relative shadow-xs mb-3" style="height: 65vh; min-height: 520px; background: #f8fafc;">
-                                            <div class="d-flex align-items-center justify-content-between px-3 py-1.5 border-bottom bg-light-subtle" style="font-size: 11.5px;">
-                                                <div class="d-flex align-items-center gap-1.5 text-muted text-truncate">
-                                                    <i class="{{ in_array($fExt, ['doc','docx']) ? 'ti ti-file-description text-primary' : 'ti ti-file-spreadsheet text-success' }} fs-2"></i>
-                                                    <span class="fw-semibold text-dark text-truncate">{{ $fName }}</span>
-                                                    <span class="text-muted">&bull; {{ strtoupper($fExt) }} In-Browser Preview</span>
+
+                                    <div class="card border rounded-3 overflow-hidden shadow-xs mb-3 file-submission-card" style="border-color: #cbd5e1 !important;" data-file-url="{{ $fUrl }}" data-file-name="{{ $fName }}">
+                                        {{-- Unified Card Header with Info & Action Buttons --}}
+                                        <div class="card-header bg-white py-2 px-3 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                            <div class="d-flex align-items-center gap-2 min-w-0">
+                                                <span class="avatar avatar-xs rounded {{ $iconBg }} {{ $iconColor }}">
+                                                    <i class="ti {{ $iconClass }}"></i>
+                                                </span>
+                                                <div class="min-w-0">
+                                                    <div class="fw-bold text-dark text-truncate" style="font-size: 13px; max-width: 320px;" title="{{ $fName }}">{{ $fName }}</div>
+                                                    <div class="text-muted small" style="font-size: 11px;">
+                                                        <span class="badge bg-secondary-lt text-secondary px-1.5 py-0.5 rounded">{{ strtoupper($fExt) }}</span>
+                                                        <span class="mx-1">&bull;</span> {{ $fKind }} &bull; {{ $fSize }}
+                                                    </div>
                                                 </div>
-                                                <a href="{{ route('manage.task.submissions.preview-doc', [$task, 'path' => $sub->file_path]) }}" target="_blank" class="btn btn-sm btn-ghost-secondary py-0 px-2 text-decoration-none" title="Open preview in new tab">
-                                                    <i class="ti ti-external-link me-1"></i> Full tab
+                                            </div>
+
+                                            <div class="d-flex align-items-center gap-1.5 flex-shrink-0">
+                                                {{-- Fullscreen Pop-up Button --}}
+                                                <button type="button"
+                                                        class="btn btn-sm btn-white text-dark shadow-xs border rounded-2 px-2.5 py-1 btn-open-fullscreen"
+                                                        data-file-url="{{ $fUrl }}"
+                                                        data-preview-url="{{ $previewUrl }}"
+                                                        data-file-name="{{ $fName }}"
+                                                        data-file-ext="{{ $fExt }}"
+                                                        data-file-kind="{{ $fKind }}"
+                                                        data-file-size="{{ $fSize }}"
+                                                        title="View in Fullscreen Pop-up">
+                                                    <i class="ti ti-maximize me-1 text-primary"></i> <span style="font-size: 12px; font-weight: 500;">Fullscreen</span>
+                                                </button>
+
+                                                {{-- Open in New Tab Button --}}
+                                                <a href="{{ $tabUrl }}"
+                                                   target="_blank"
+                                                   rel="noopener noreferrer"
+                                                   class="btn btn-sm btn-white text-dark shadow-xs border rounded-2 px-2.5 py-1 text-decoration-none"
+                                                   title="Open in new tab">
+                                                    <i class="ti ti-external-link me-1 text-muted"></i> <span style="font-size: 12px; font-weight: 500;">Open in new tab</span>
+                                                </a>
+
+                                                {{-- Download Button --}}
+                                                <a href="{{ $fUrl }}"
+                                                   download="{{ $fName }}"
+                                                   class="btn btn-sm btn-white text-dark shadow-xs border rounded-2 px-2.5 py-1 text-decoration-none"
+                                                   title="Download file">
+                                                    <i class="ti ti-download me-1 text-muted"></i> <span style="font-size: 12px; font-weight: 500;">Download</span>
                                                 </a>
                                             </div>
-                                            <iframe src="{{ route('manage.task.submissions.preview-doc', [$task, 'path' => $sub->file_path]) }}"
-                                                    style="width: 100%; height: calc(100% - 32px); border: none; background: #f1f5f9;"
-                                                    title="{{ $fName }}"
-                                                    loading="lazy"></iframe>
                                         </div>
-                                    @endif
+
+                                        {{-- In-line Embedded Viewer Body --}}
+                                        <div class="card-body p-0 bg-light-subtle position-relative">
+                                            @if ($isImg)
+                                                <div class="p-3 d-flex align-items-center justify-content-center text-center preview-img-container preview-image-clickable"
+                                                     style="min-height: 400px; max-height: 60vh; background-color: #f1f5f9; overflow: hidden; cursor: pointer;"
+                                                     onclick="openFullscreenModal('{{ $fUrl }}', '{{ $fUrl }}', '{{ addslashes($fName) }}', '{{ $fExt }}', '{{ $fKind }}', '{{ $fSize }}')"
+                                                     title="Click to view full screen">
+                                                    <img src="{{ $fUrl }}" alt="{{ $fName }}" class="img-fluid rounded shadow-sm" style="max-height: 56vh; max-width: 95%; object-fit: contain; background: #ffffff;">
+                                                </div>
+                                            @elseif ($isPdf)
+                                                <div style="height: 60vh; min-height: 480px; background: #fff;">
+                                                    <iframe src="{{ $fUrl }}#toolbar=1" style="width: 100%; height: 100%; border: none;" title="{{ $fName }}"></iframe>
+                                                </div>
+                                            @elseif ($isDoc || in_array($fExt, ['docx','doc','xlsx','xls','csv']))
+                                                <div style="height: 65vh; min-height: 500px; background: #f8fafc;">
+                                                    <iframe src="{{ route('manage.task.submissions.preview-doc', [$task, 'path' => $fPathNorm]) }}"
+                                                            style="width: 100%; height: 100%; border: none;"
+                                                            title="{{ $fName }}"
+                                                            loading="lazy"></iframe>
+                                                </div>
+                                            @elseif ($isVid)
+                                                <div class="p-3 bg-black d-flex align-items-center justify-content-center">
+                                                    <video src="{{ $fUrl }}" controls class="rounded w-100" style="max-height: 56vh;"></video>
+                                                </div>
+                                            @elseif ($isAud)
+                                                <div class="p-4 bg-white text-center">
+                                                    <audio src="{{ $fUrl }}" controls class="w-100" style="max-width: 500px;"></audio>
+                                                </div>
+                                            @elseif ($isTxt)
+                                                <div style="height: 50vh; min-height: 400px; background: #fff;">
+                                                    <iframe src="{{ $fUrl }}" style="width: 100%; height: 100%; border: none;" title="{{ $fName }}"></iframe>
+                                                </div>
+                                            @else
+                                                <div class="p-4 text-center">
+                                                    <i class="ti ti-file-description fs-1 text-muted d-block mb-2"></i>
+                                                    <div class="fw-semibold text-dark mb-1">{{ $fName }}</div>
+                                                    <div class="text-muted small mb-3">Direct preview not supported for {{ strtoupper($fExt) }} files.</div>
+                                                    <a href="{{ $fUrl }}" download="{{ $fName }}" class="btn btn-sm btn-primary">
+                                                        <i class="ti ti-download me-1"></i> Download {{ $fName }}
+                                                    </a>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
                                 @endif
                             </div>
                         @endif
@@ -930,6 +1095,42 @@
                 </div>
             </div>
         </aside>
+    </div>
+</div>
+
+{{-- ── Fullscreen Pop-up Modal for Submission File Preview ── --}}
+<div class="modal fade" id="fileFullscreenModal" tabindex="-1" role="dialog" aria-hidden="true" style="z-index: 100000;">
+    <div class="modal-dialog modal-fullscreen" role="document">
+        <div class="modal-content border-0 rounded-0 bg-dark text-white d-flex flex-column h-100">
+            {{-- Fullscreen Header Bar --}}
+            <div class="modal-header py-2.5 px-4 bg-dark border-bottom border-dark-subtle d-flex align-items-center justify-content-between flex-shrink-0" style="border-color: #334155 !important;">
+                <div class="d-flex align-items-center gap-2.5 min-w-0">
+                    <span class="avatar avatar-xs bg-primary text-white rounded" id="fsModalIconWrap">
+                        <i class="ti ti-file" id="fsModalIcon"></i>
+                    </span>
+                    <div class="min-w-0">
+                        <h5 class="modal-title fw-bold text-white text-truncate mb-0" id="fsModalTitle" style="font-size: 14px; max-width: 500px;">File Preview</h5>
+                        <div class="text-secondary small" style="font-size: 11px;" id="fsModalSubtitle">Document Preview</div>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                    <a href="#" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-light px-2.5 py-1 text-decoration-none" id="fsModalOpenTabBtn" title="Open in new tab">
+                        <i class="ti ti-external-link me-1"></i> Open in new tab
+                    </a>
+                    <a href="#" download class="btn btn-sm btn-outline-light px-2.5 py-1 text-decoration-none" id="fsModalDownloadBtn" title="Download file">
+                        <i class="ti ti-download me-1"></i> Download
+                    </a>
+                    <button type="button" class="btn btn-sm btn-icon btn-dark text-white rounded-circle ms-2" data-bs-dismiss="modal" aria-label="Close" title="Close Fullscreen (Esc)" style="width: 32px; height: 32px; border: 1px solid #475569;">
+                        <i class="ti ti-x fs-2"></i>
+                    </button>
+                </div>
+            </div>
+
+            {{-- Fullscreen Canvas Body --}}
+            <div class="modal-body p-0 d-flex align-items-center justify-content-center overflow-auto position-relative flex-grow-1" id="fsModalBody" style="background-color: #0b1120;">
+                {{-- Dynamically populated: <img>, <iframe>, or <video> --}}
+            </div>
+        </div>
     </div>
 </div>
 
@@ -1088,13 +1289,13 @@
     function getActiveZoomWrapper() {
         var activePane = document.querySelector('.submission-pane:not(.d-none)');
         if (!activePane) return null;
-        return activePane.querySelector('#filePreviewZoomWrapper');
+        return activePane.querySelector('.preview-img-container img') || activePane.querySelector('#filePreviewZoomWrapper');
     }
 
     function getActivePreviewContainer() {
         var activePane = document.querySelector('.submission-pane:not(.d-none)');
         if (!activePane) return null;
-        return activePane.querySelector('#filePreviewContent');
+        return activePane.querySelector('.preview-img-container') || activePane.querySelector('#filePreviewContent');
     }
 
     function applyTransform() {
@@ -1120,47 +1321,6 @@
         }
     }
 
-    // Zoom Buttons
-    var zoomInBtn = document.getElementById('previewZoomInBtn');
-    if (zoomInBtn) {
-        zoomInBtn.addEventListener('click', function () {
-            currentZoom = Math.min(5, Math.round((currentZoom + 0.25) * 100) / 100);
-            applyTransform();
-            updateCursor();
-        });
-    }
-
-    var zoomOutBtn = document.getElementById('previewZoomOutBtn');
-    if (zoomOutBtn) {
-        zoomOutBtn.addEventListener('click', function () {
-            currentZoom = Math.max(0.25, Math.round((currentZoom - 0.25) * 100) / 100);
-            applyTransform();
-            updateCursor();
-        });
-    }
-
-    var zoomResetBtn = document.getElementById('previewZoomResetBtn');
-    if (zoomResetBtn) {
-        zoomResetBtn.addEventListener('click', function () {
-            resetZoomAndPan();
-        });
-    }
-
-    var rotateBtn = document.getElementById('previewRotateBtn');
-    if (rotateBtn) {
-        rotateBtn.addEventListener('click', function () {
-            currentRotation = (currentRotation + 90) % 360;
-            applyTransform();
-        });
-    }
-
-    var fitBtn = document.getElementById('previewFitBtn');
-    if (fitBtn) {
-        fitBtn.addEventListener('click', function () {
-            resetZoomAndPan();
-        });
-    }
-
     function updateCursor() {
         var container = getActivePreviewContainer();
         if (!container) return;
@@ -1173,7 +1333,7 @@
 
     // Attach Mouse Events to all file preview containers
     function initCanvasInteractions() {
-        document.querySelectorAll('#filePreviewContent').forEach(function (container) {
+        document.querySelectorAll('.preview-img-container, #filePreviewContent').forEach(function (container) {
             // Direct Mouse Wheel Zoom
             container.addEventListener('wheel', function (e) {
                 e.preventDefault();
@@ -1231,6 +1391,119 @@
 
     initCanvasInteractions();
 
+    // ── Fullscreen Pop-up Modal Functionality ───────────────────────
+    window.openFullscreenModal = function (fileUrl, previewUrl, fileName, fileExt, fileKind, fileSize) {
+        var modalEl = document.getElementById('fileFullscreenModal');
+        if (!modalEl) return;
+
+        var titleEl = document.getElementById('fsModalTitle');
+        var subtitleEl = document.getElementById('fsModalSubtitle');
+        var openTabBtn = document.getElementById('fsModalOpenTabBtn');
+        var downloadBtn = document.getElementById('fsModalDownloadBtn');
+        var bodyEl = document.getElementById('fsModalBody');
+        var iconEl = document.getElementById('fsModalIcon');
+
+        if (titleEl) titleEl.textContent = fileName || 'File Preview';
+        if (subtitleEl) subtitleEl.textContent = (fileExt ? fileExt.toUpperCase() : '') + ' ' + (fileKind || 'File') + (fileSize ? ' • ' + fileSize : '');
+        if (openTabBtn) openTabBtn.href = previewUrl || fileUrl;
+        if (downloadBtn) {
+            downloadBtn.href = fileUrl;
+            downloadBtn.setAttribute('download', fileName || 'submission');
+        }
+
+        var ext = (fileExt || '').toLowerCase();
+        var isImg = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'].includes(ext);
+        var isPdf = (ext === 'pdf');
+        var isVid = ['mp4', 'webm', 'ogg', 'mov', 'mkv'].includes(ext);
+        var isAud = ['mp3', 'wav', 'm4a', 'aac'].includes(ext);
+        var isDoc = ['doc', 'docx', 'xls', 'xlsx', 'csv'].includes(ext);
+        var isTxt = ['txt', 'log', 'json', 'xml', 'sql', 'md'].includes(ext);
+
+        if (iconEl) {
+            iconEl.className = 'ti ' + (isImg ? 'ti-photo' : (isPdf ? 'ti-file-type-pdf' : (isDoc ? 'ti-file-description' : (isVid ? 'ti-video' : (isAud ? 'ti-music' : 'ti-file')))));
+        }
+
+        bodyEl.innerHTML = '';
+        if (isImg) {
+            bodyEl.className = 'modal-body p-0 d-flex align-items-center justify-content-center overflow-auto position-relative flex-grow-1';
+            bodyEl.style.height = 'calc(100vh - 54px)';
+            var img = document.createElement('img');
+            img.src = fileUrl;
+            img.alt = fileName;
+            img.className = 'img-fluid rounded shadow-lg';
+            img.style.maxHeight = '92vh';
+            img.style.maxWidth = '95vw';
+            img.style.objectFit = 'contain';
+            img.style.backgroundColor = '#1e293b';
+            bodyEl.appendChild(img);
+        } else if (isPdf || isDoc || isTxt) {
+            bodyEl.className = 'modal-body p-0 overflow-hidden position-relative flex-grow-1 d-flex flex-column';
+            bodyEl.style.height = 'calc(100vh - 54px)';
+            var iframe = document.createElement('iframe');
+            iframe.src = previewUrl || fileUrl;
+            iframe.style.width = '100%';
+            iframe.style.height = '100%';
+            iframe.style.border = 'none';
+            iframe.style.flex = '1 1 auto';
+            iframe.title = fileName;
+            bodyEl.appendChild(iframe);
+        } else if (isVid) {
+            bodyEl.className = 'modal-body p-0 d-flex align-items-center justify-content-center overflow-auto position-relative flex-grow-1';
+            bodyEl.style.height = 'calc(100vh - 54px)';
+            var video = document.createElement('video');
+            video.src = fileUrl;
+            video.controls = true;
+            video.autoplay = true;
+            video.style.maxWidth = '95vw';
+            video.style.maxHeight = '90vh';
+            bodyEl.appendChild(video);
+        } else if (isAud) {
+            bodyEl.className = 'modal-body p-0 d-flex align-items-center justify-content-center overflow-auto position-relative flex-grow-1';
+            bodyEl.style.height = 'calc(100vh - 54px)';
+            var audio = document.createElement('audio');
+            audio.src = fileUrl;
+            audio.controls = true;
+            audio.style.width = '80%';
+            audio.style.maxWidth = '600px';
+            bodyEl.appendChild(audio);
+        } else {
+            bodyEl.className = 'modal-body p-0 d-flex align-items-center justify-content-center overflow-auto position-relative flex-grow-1';
+            bodyEl.style.height = 'calc(100vh - 54px)';
+            bodyEl.innerHTML = '<div class="text-center p-5 text-white">' +
+                '<i class="ti ti-file fs-1 d-block mb-3"></i>' +
+                '<h4>' + escapeHtml(fileName || 'File') + '</h4>' +
+                '<p class="text-secondary">Fullscreen preview is not directly available for this format.</p>' +
+                '<a href="' + fileUrl + '" download="' + escapeHtml(fileName || 'file') + '" class="btn btn-primary mt-2"><i class="ti ti-download me-1"></i> Download File</a>' +
+                '</div>';
+        }
+
+        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        }
+    };
+
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('.btn-open-fullscreen');
+        if (btn) {
+            e.preventDefault();
+            var fileUrl = btn.getAttribute('data-file-url');
+            var previewUrl = btn.getAttribute('data-preview-url') || fileUrl;
+            var fileName = btn.getAttribute('data-file-name') || '';
+            var fileExt = btn.getAttribute('data-file-ext') || '';
+            var fileKind = btn.getAttribute('data-file-kind') || '';
+            var fileSize = btn.getAttribute('data-file-size') || '';
+            openFullscreenModal(fileUrl, previewUrl, fileName, fileExt, fileKind, fileSize);
+        }
+    });
+
+    var fsModalEl = document.getElementById('fileFullscreenModal');
+    if (fsModalEl) {
+        fsModalEl.addEventListener('hidden.bs.modal', function () {
+            var bodyEl = document.getElementById('fsModalBody');
+            if (bodyEl) bodyEl.innerHTML = '';
+        });
+    }
+
     // ── Active Submission Switcher ──────────────────────────────────
     function setActiveSubmissionByIndex(idx) {
         if (!submissionsData || submissionsData.length === 0) return;
@@ -1273,33 +1546,6 @@
         });
 
         resetZoomAndPan();
-
-        // Sync zoom toolbar availability (only active when previewing zoomable images)
-        var zoomToolbar = document.getElementById('previewZoomToolbar');
-        var activePane = document.getElementById('submission-pane-' + sub.id);
-        if (zoomToolbar) {
-            var hasZoomableImg = activePane && activePane.querySelector('.preview-image-clickable');
-            zoomToolbar.style.opacity = hasZoomableImg ? '1' : '0.35';
-            zoomToolbar.style.pointerEvents = hasZoomableImg ? 'auto' : 'none';
-        }
-        var downloadBtn = document.getElementById('previewDownloadBtn');
-        if (activePane && downloadBtn) {
-            var firstFile = activePane.querySelector('[data-file-url]');
-            if (firstFile) {
-                downloadBtn.href = firstFile.getAttribute('data-file-url');
-                downloadBtn.setAttribute('download', firstFile.getAttribute('data-file-name') || 'submission');
-                downloadBtn.style.display = 'inline-flex';
-            } else {
-                var firstLink = activePane.querySelector('a[download]');
-                if (firstLink) {
-                    downloadBtn.href = firstLink.href;
-                    downloadBtn.setAttribute('download', firstLink.getAttribute('download') || 'submission');
-                    downloadBtn.style.display = 'inline-flex';
-                } else {
-                    downloadBtn.style.display = 'none';
-                }
-            }
-        }
 
         // 4. Right Grading Panel Details
         var panelName = document.getElementById('panelLearnerName');

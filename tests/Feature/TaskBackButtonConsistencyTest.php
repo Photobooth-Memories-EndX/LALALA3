@@ -304,14 +304,13 @@ class TaskBackButtonConsistencyTest extends TestCase
             'created_by'       => $this->admin->id,
         ]);
 
-        // 1. Submissions page file preview modal
+        // 1. Submissions page review workstation has clean canvas (obsolete zoom toolbar removed)
         $subResponse = $this->actingAs($this->admin)->get(route('manage.task.submissions', $task));
         $subResponse->assertStatus(200);
-        $subResponse->assertSee('id="previewZoomToolbar"', false);
-        $subResponse->assertSee('id="previewZoomInBtn"', false);
-        $subResponse->assertSee('id="previewZoomOutBtn"', false);
-        $subResponse->assertSee('id="previewZoomResetBtn"', false);
-        $subResponse->assertSee('id="filePreviewZoomWrapper"', false);
+        $subResponse->assertDontSee('id="previewZoomToolbar"', false);
+        $subResponse->assertDontSee('id="previewZoomInBtn"', false);
+        $subResponse->assertDontSee('id="previewZoomOutBtn"', false);
+        $subResponse->assertDontSee('id="previewZoomResetBtn"', false);
 
         // 2. Task create/edit page preview modal
         $createResponse = $this->actingAs($this->admin)->get(route('manage.task.create'));
@@ -358,16 +357,17 @@ class TaskBackButtonConsistencyTest extends TestCase
         $response = $this->actingAs($this->admin)->get(route('manage.task.submissions', $task));
         $response->assertStatus(200);
 
-        // 1. Popup file preview modal has download button
+        // 1. File cards and fullscreen popup have download buttons
         $response->assertSee('id="filePreviewModal"', false);
-        $response->assertSee('id="previewDownloadBtn"', false);
+        $response->assertSee('id="fileFullscreenModal"', false);
+        $response->assertSee('id="fsModalDownloadBtn"', false);
+        $response->assertSee('download="test_project.pdf"', false);
 
         // 2. No "New Tab" button in the popup
         $response->assertDontSee('id="previewOpenTabBtn"', false);
         $response->assertDontSee('New Tab', false);
 
-        // 3. Modal footer is in English
-        $response->assertSee('Previewing submitted file. Close this modal to grade or request a resubmit.', false);
+        // 3. Workstation controls are in English
         $response->assertSee('Close &amp; Return to Review', false);
         $response->assertDontSee('Sedang melihat pratinjau file submission.', false);
         $response->assertDontSee('Tutup &amp; Kembali ke Review', false);
@@ -383,10 +383,8 @@ class TaskBackButtonConsistencyTest extends TestCase
         $this->assertStringContainsString('<img src="', $responseContent);
         $this->assertStringContainsString('screenshot.png', $responseContent);
         $this->assertStringContainsString('preview-image-clickable', $responseContent);
-        $this->assertStringContainsString('cursor: zoom-in', $responseContent);
-        $this->assertStringContainsString('Click to zoom', $responseContent);
-        // Preview button / zoom trigger exists
-        $this->assertStringContainsString('btn-preview-file', $responseContent);
+        $this->assertStringContainsString('btn-open-fullscreen', $responseContent);
+        $this->assertStringContainsString('Fullscreen', $responseContent);
     }
 }
 
