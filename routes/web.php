@@ -63,6 +63,7 @@ use App\Http\Controllers\Manage\Record\RecordAllController;
 use App\Http\Controllers\Manage\Record\RecordExportController;
 use App\Http\Controllers\Manage\Record\OfflineTrainingOptionController;
 use App\Http\Controllers\Manage\Record\OfflineTrainingImportController;
+use App\Http\Controllers\Manage\Record\Offline\PtkpImportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -555,6 +556,16 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
             Route::post('offline/import/preview', [OfflineTrainingImportController::class, 'preview'])->name('offline.import.preview');
             Route::post('offline/import/confirm', [OfflineTrainingImportController::class, 'confirm'])->name('offline.import.confirm');
             Route::post('offline/import/cancel', [OfflineTrainingImportController::class, 'cancel'])->name('offline.import.cancel');
+            Route::get('offline/import-non-ptkp', [OfflineTrainingImportController::class, 'indexNonPtkp'])->name('offline.import-non-ptkp');
+            Route::get('offline/import-non-ptkp/template', [OfflineTrainingImportController::class, 'downloadTemplate'])->name('offline.import-non-ptkp.template');
+            Route::post('offline/import-non-ptkp/preview', [OfflineTrainingImportController::class, 'preview'])->name('offline.import-non-ptkp.preview');
+            Route::post('offline/import-non-ptkp/confirm', [OfflineTrainingImportController::class, 'confirm'])->name('offline.import-non-ptkp.confirm');
+            Route::post('offline/import-non-ptkp/cancel', [OfflineTrainingImportController::class, 'cancel'])->name('offline.import-non-ptkp.cancel');
+            Route::get('offline/import-ptkp', [PtkpImportController::class, 'index'])->name('offline.import-ptkp');
+            Route::get('offline/import-ptkp/template', [PtkpImportController::class, 'downloadTemplate'])->name('offline.import-ptkp.template');
+            Route::post('offline/import-ptkp/preview', [PtkpImportController::class, 'preview'])->name('offline.import-ptkp.preview');
+            Route::post('offline/import-ptkp/confirm', [PtkpImportController::class, 'confirm'])->name('offline.import-ptkp.confirm');
+            Route::post('offline/import-ptkp/cancel', [PtkpImportController::class, 'cancel'])->name('offline.import-ptkp.cancel');
             Route::get('offline/export', [RecordOfflineController::class, 'export'])->name('offline.export');
             Route::get('offline/export/pdf', [RecordOfflineController::class, 'exportPdf'])->name('offline.export.pdf');
             Route::get('offline/export/csv', [RecordOfflineController::class, 'exportCsv'])->name('offline.export.csv');

@@ -330,6 +330,11 @@ class EmployeeUserSyncService
             }
             $user->save();
 
+            // Explicitly sync offline training records if any of the 5 identity fields changed
+            if (array_intersect_key($changes, array_flip(['name', 'jobgrade', 'jobposition', 'team', 'department', 'id_emp']))) {
+                app(\App\Services\OfflineTraining\EmployeeIdentitySyncService::class)->syncUserToOfflineRecords($user);
+            }
+
             // Update local memory map for email if changed
             if (isset($changes['email'])) {
                 unset($usersByEmail[$currentEmail]);

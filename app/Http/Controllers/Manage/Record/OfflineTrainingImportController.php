@@ -38,6 +38,17 @@ class OfflineTrainingImportController extends Controller
     }
 
     /**
+     * Display dedicated Non PTKP Import full-page view.
+     */
+    public function indexNonPtkp(Request $request)
+    {
+        return view('manage.record.offline.import-non-ptkp', [
+            'title'    => 'Import Data Non PTKP',
+            'subtitle' => 'Upload dan validasi data training offline sebelum diimpor ke sistem OWL.',
+        ]);
+    }
+
+    /**
      * Generate and download blank official Non KP OWL Excel import template.
      */
     public function downloadTemplate(Request $request): StreamedResponse

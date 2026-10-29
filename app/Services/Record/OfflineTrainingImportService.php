@@ -361,7 +361,7 @@ class OfflineTrainingImportService
             'importable_count' => $importableCount,
             'stats'            => $stats,
             'unknown_headers'  => $headerMapping['unknown_headers'],
-            'preview_rows'     => array_slice($parsedRows, 0, 100),
+            'preview_rows'     => $parsedRows,
             'total_preview'    => count($parsedRows),
         ];
     }

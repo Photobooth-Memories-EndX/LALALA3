@@ -53,7 +53,7 @@
                             <i class="ti ti-plus fs-2"></i>
                             <span>Add Training</span>
                         </button>
-                        <ul class="dropdown-menu shadow-sm border rounded-3 mt-1 py-1" aria-labelledby="btn-add-training-dropdown" style="min-width: 180px;">
+                        <ul class="dropdown-menu shadow-sm border rounded-3 mt-1 py-1" aria-labelledby="btn-add-training-dropdown" style="min-width: 210px;">
                             <li>
                                 <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.record.offline.create') }}" id="btn-open-offline-add" title="Manual Training Record">
                                     <i class="ti ti-pencil text-secondary fs-3"></i>
@@ -61,13 +61,16 @@
                                 </a>
                             </li>
                             <li>
-                                <button type="button" class="dropdown-item d-flex align-items-center gap-2 py-2 w-100 border-0 bg-transparent text-start"
-                                        data-bs-toggle="modal" data-bs-target="#offlineImportModal"
-                                        data-toggle="modal" data-target="#offlineImportModal"
-                                        id="btn-open-offline-import" title="Import Excel">
+                                <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.record.offline.import-ptkp') }}" id="btn-open-offline-import-ptkp" title="Import Data PTKP">
+                                    <i class="ti ti-file-upload text-primary fs-3"></i>
+                                    <span>Import Data PTKP</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.record.offline.import-non-ptkp') }}" id="btn-open-offline-import-non-ptkp" title="Import Data Non PTKP">
                                     <i class="ti ti-file-spreadsheet text-success fs-3"></i>
-                                    <span>Import</span>
-                                </button>
+                                    <span>Import Data Non PTKP</span>
+                                </a>
                             </li>
                         </ul>
                     </div>

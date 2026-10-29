@@ -1,0 +1,186 @@
+/* Non PTKP Offline Training Import Stylesheet */
+.non-ptkp-import-page {
+    background-color: var(--tblr-bg-surface, #f8fafc);
+    min-height: 100vh;
+}
+
+.btn-back-non-ptkp {
+    color: #0c5b9e;
+    transition: all 0.2s ease;
+}
+
+.btn-back-non-ptkp:hover {
+    color: #073a66;
+    transform: translateX(-2px);
+}
+
+/* 4-Stage Process Indicator */
+.non-ptkp-steps {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    margin-bottom: 24px;
+}
+
+.non-ptkp-steps::before {
+    content: '';
+    position: absolute;
+    top: 18px;
+    left: 40px;
+    right: 40px;
+    height: 3px;
+    background-color: #e2e8f0;
+    z-index: 1;
+}
+
+.non-ptkp-step-item {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    flex: 1;
+}
+
+.non-ptkp-step-bubble {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background-color: #fff;
+    border: 2px solid #cbd5e1;
+    color: #64748b;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.875rem;
+    margin-bottom: 6px;
+    transition: all 0.3s ease;
+}
+
+.non-ptkp-step-item.active .non-ptkp-step-bubble {
+    background-color: #d97706;
+    border-color: #d97706;
+    color: #fff;
+    box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.2);
+}
+
+.non-ptkp-step-item.completed .non-ptkp-step-bubble {
+    background-color: #10b981;
+    border-color: #10b981;
+    color: #fff;
+}
+
+.non-ptkp-step-title {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.non-ptkp-step-item.active .non-ptkp-step-title {
+    color: #d97706;
+}
+
+.non-ptkp-step-item.completed .non-ptkp-step-title {
+    color: #10b981;
+}
+
+/* Drag & Drop Zone */
+.non-ptkp-dropzone {
+    border: 2px dashed #cbd5e1 !important;
+    border-radius: 16px;
+    background-color: #f8fafc;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+.non-ptkp-dropzone:hover,
+.non-ptkp-dropzone.dragover {
+    border-color: #d97706 !important;
+    background-color: #fffbeb !important;
+    transform: scale(1.005);
+}
+
+/* Status Badges */
+.badge-status-valid {
+    background-color: #10b981 !important;
+    color: #ffffff !important;
+}
+
+.badge-status-warning {
+    background-color: #f59e0b !important;
+    color: #ffffff !important;
+}
+
+.badge-status-duplicate {
+    background-color: #8b5cf6 !important;
+    color: #ffffff !important;
+}
+
+.badge-status-invalid {
+    background-color: #ef4444 !important;
+    color: #ffffff !important;
+}
+
+/* KPI Summary Cards */
+.kpi-card {
+    border-radius: 12px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* Filter Tab Pills */
+.filter-tab-pill {
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    padding: 6px 16px;
+    border-radius: 9999px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #64748b;
+    transition: all 0.2s ease;
+}
+
+.filter-tab-pill:hover {
+    color: #1e293b;
+    background-color: #f1f5f9;
+}
+
+.filter-tab-pill.active {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Sticky Header Table */
+.non-ptkp-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background-color: #f8fafc;
+}
+
+/* Dark Mode Adjustments */
+body.dark-mode .non-ptkp-import-page,
+body.theme-dark .non-ptkp-import-page,
+[data-bs-theme="dark"] .non-ptkp-import-page {
+    background-color: #1e293b;
+    color: #f8fafc;
+}
+
+body.dark-mode .non-ptkp-dropzone,
+body.theme-dark .non-ptkp-dropzone,
+[data-bs-theme="dark"] .non-ptkp-dropzone {
+    background-color: #0f172a;
+    border-color: #334155 !important;
+}
+
+body.dark-mode .non-ptkp-dropzone:hover,
+body.theme-dark .non-ptkp-dropzone:hover,
+[data-bs-theme="dark"] .non-ptkp-dropzone:hover {
+    background-color: #1e293b !important;
+    border-color: #d97706 !important;
+}
