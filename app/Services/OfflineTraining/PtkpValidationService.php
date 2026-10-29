@@ -239,7 +239,8 @@ class PtkpValidationService
     {
         $normalized = [];
 
-        // Retain No
+        // Retain System status & No from input (Status is optional in spreadsheet, No is preview seq)
+        $normalized['status'] = isset($raw['status']) ? trim((string) $raw['status']) : null;
         $normalized['row_no'] = isset($raw['row_no']) ? (int) $raw['row_no'] : null;
 
         // Employee ID (Strict string preservation, never cast to int to preserve leading zero)
@@ -273,10 +274,8 @@ class PtkpValidationService
         $normalized['instructor'] = isset($raw['instructor']) ? trim((string) $raw['instructor']) : null;
 
         // Numbers & durations
-        $normalized['duration_seconds'] = $this->parseDurationToSeconds($raw['duration_seconds'] ?? null);
         $normalized['learning_hours'] = $this->parseNumeric($raw['learning_hours'] ?? null);
         $normalized['progress'] = $this->parseNumeric($raw['progress'] ?? null);
-        $normalized['progress_status'] = isset($raw['progress_status']) ? trim((string) $raw['progress_status']) : null;
 
         // Dates & times
         $normalized['start_date'] = $this->parseDate($raw['start_date'] ?? null);
@@ -286,6 +285,16 @@ class PtkpValidationService
         $normalized['end_time'] = $this->parseTime($raw['end_time'] ?? null);
         $normalized['month'] = isset($raw['month']) ? trim((string) $raw['month']) : null;
         $normalized['requirement'] = isset($raw['requirement']) ? trim((string) $raw['requirement']) : null;
+
+        // Derived duration in seconds from times if available
+        $normalized['duration_seconds'] = $this->parseDurationToSeconds($raw['duration_seconds'] ?? null);
+        if ($normalized['duration_seconds'] === null && !empty($normalized['start_time']) && !empty($normalized['end_time'])) {
+            $t1 = strtotime($normalized['start_time']);
+            $t2 = strtotime($normalized['end_time']);
+            if ($t1 !== false && $t2 !== false && $t2 > $t1) {
+                $normalized['duration_seconds'] = $t2 - $t1;
+            }
+        }
 
         // Attendance & obligations
         $normalized['attendance'] = $this->parseBoolean($raw['attendance'] ?? null);
@@ -304,15 +313,13 @@ class PtkpValidationService
         $normalized['l3_numerical'] = $this->parseNumeric($raw['l3_numerical'] ?? null);
         $normalized['l3_verbal'] = isset($raw['l3_verbal']) ? trim((string) $raw['l3_verbal']) : null;
 
-        // PIC & Certificate details
-        $normalized['pic'] = isset($raw['pic']) ? trim((string) $raw['pic']) : null;
+        // Certificate details & PIC
         $normalized['certificate_availability'] = isset($raw['certificate_availability']) ? trim((string) $raw['certificate_availability']) : null;
         $normalized['certificate_institution'] = isset($raw['certificate_institution']) ? trim((string) $raw['certificate_institution']) : null;
         $normalized['certificate_issued_date'] = $this->parseDate($raw['certificate_issued_date'] ?? null);
         $normalized['certificate_expired_date'] = $this->parseDate($raw['certificate_expired_date'] ?? null);
-
-        // Certificate flag for offline_training_users
         $normalized['certificate'] = $normalized['certificate_availability'] ?? null;
+        $normalized['pic'] = isset($raw['pic']) ? trim((string) $raw['pic']) : null;
 
         return $normalized;
     }

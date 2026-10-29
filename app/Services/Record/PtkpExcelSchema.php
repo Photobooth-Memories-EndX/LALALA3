@@ -12,7 +12,7 @@ class PtkpExcelSchema
     public const INSTRUCTIONS_SHEET_TITLE = 'Instructions';
 
     /**
-     * Canonical 49-column specification for PTKP Import.
+     * Canonical 48-column specification for PTKP Import.
      */
     public static function columns(): array
     {
@@ -20,7 +20,7 @@ class PtkpExcelSchema
     }
 
     /**
-     * Exact flat list of 49 canonical header strings.
+     * Exact flat list of 48 canonical header strings.
      */
     public static function headers(): array
     {
@@ -33,11 +33,11 @@ class PtkpExcelSchema
 
     public static function totalColumns(): int
     {
-        return count(self::columns()); // 49
+        return count(self::columns()); // 48
     }
 
     /**
-     * Parent grouping specification for canonical 49 columns (A to AW).
+     * Parent grouping specification for canonical 48 columns (A to AV).
      */
     public static function groups(): array
     {
@@ -45,123 +45,114 @@ class PtkpExcelSchema
             'general' => [
                 'title'     => 'GENERAL',
                 'start_col' => 'A',
-                'end_col'   => 'A',
+                'end_col'   => 'B',
                 'fill'      => '4B5563',
                 'color'     => 'FFFFFF',
-                'columns'   => [1],
+                'columns'   => [1, 2],
             ],
             'job_information' => [
                 'title'     => 'JOB INFORMATION',
-                'start_col' => 'B',
-                'end_col'   => 'H',
+                'start_col' => 'C',
+                'end_col'   => 'I',
                 'fill'      => '002B49',
                 'color'     => 'FFFFFF',
-                'columns'   => [2, 3, 4, 5, 6, 7, 8],
+                'columns'   => [3, 4, 5, 6, 7, 8, 9],
             ],
             'training_information' => [
                 'title'     => 'TRAINING INFORMATION',
-                'start_col' => 'I',
-                'end_col'   => 'N',
+                'start_col' => 'J',
+                'end_col'   => 'O',
                 'fill'      => '0C5B9E',
                 'color'     => 'FFFFFF',
-                'columns'   => [9, 10, 11, 12, 13, 14],
+                'columns'   => [10, 11, 12, 13, 14, 15],
             ],
             'classification' => [
                 'title'     => 'CLASSIFICATION',
-                'start_col' => 'O',
-                'end_col'   => 'P',
+                'start_col' => 'P',
+                'end_col'   => 'Q',
                 'fill'      => '1B4D3E',
                 'color'     => 'FFFFFF',
-                'columns'   => [15, 16],
+                'columns'   => [16, 17],
             ],
             'delivery' => [
                 'title'     => 'DELIVERY',
-                'start_col' => 'Q',
-                'end_col'   => 'R',
+                'start_col' => 'R',
+                'end_col'   => 'S',
                 'fill'      => '3B82F6',
                 'color'     => 'FFFFFF',
-                'columns'   => [17, 18],
+                'columns'   => [18, 19],
             ],
             'provider_instructor' => [
                 'title'     => 'PROVIDER & INSTRUCTOR',
-                'start_col' => 'S',
-                'end_col'   => 'W',
+                'start_col' => 'T',
+                'end_col'   => 'X',
                 'fill'      => '475569',
                 'color'     => 'FFFFFF',
-                'columns'   => [19, 20, 21, 22, 23],
+                'columns'   => [20, 21, 22, 23, 24],
             ],
-            'duration_hours' => [
-                'title'     => 'DURATION & LEARNING HOURS',
-                'start_col' => 'X',
-                'end_col'   => 'Y',
+            'learning_progress' => [
+                'title'     => 'LEARNING & PROGRESS',
+                'start_col' => 'Y',
+                'end_col'   => 'Z',
                 'fill'      => '0284C7',
                 'color'     => 'FFFFFF',
-                'columns'   => [24, 25],
-            ],
-            'progress' => [
-                'title'     => 'PROGRESS',
-                'start_col' => 'Z',
-                'end_col'   => 'AA',
-                'fill'      => '16A34A',
-                'color'     => 'FFFFFF',
-                'columns'   => [26, 27],
+                'columns'   => [25, 26],
             ],
             'schedule_requirement' => [
                 'title'     => 'SCHEDULE & REQUIREMENT',
-                'start_col' => 'AB',
-                'end_col'   => 'AG',
+                'start_col' => 'AA',
+                'end_col'   => 'AF',
                 'fill'      => 'D97706',
                 'color'     => 'FFFFFF',
-                'columns'   => [28, 29, 30, 31, 32, 33],
+                'columns'   => [27, 28, 29, 30, 31, 32],
             ],
             'attendance_bond' => [
                 'title'     => 'ATTENDANCE & BOND',
-                'start_col' => 'AH',
-                'end_col'   => 'AM',
+                'start_col' => 'AG',
+                'end_col'   => 'AL',
                 'fill'      => '7C3AED',
                 'color'     => 'FFFFFF',
-                'columns'   => [34, 35, 36, 37, 38, 39],
+                'columns'   => [33, 34, 35, 36, 37, 38],
             ],
             'evaluation_completion' => [
                 'title'     => 'EVALUATION & COMPLETION',
-                'start_col' => 'AN',
-                'end_col'   => 'AR',
+                'start_col' => 'AM',
+                'end_col'   => 'AQ',
                 'fill'      => 'BE185D',
                 'color'     => 'FFFFFF',
-                'columns'   => [40, 41, 42, 43, 44],
-            ],
-            'closing_verification' => [
-                'title'     => 'CLOSING & VERIFICATION',
-                'start_col' => 'AS',
-                'end_col'   => 'AS',
-                'fill'      => '059669',
-                'color'     => 'FFFFFF',
-                'columns'   => [45],
+                'columns'   => [39, 40, 41, 42, 43],
             ],
             'certificate_details' => [
                 'title'     => 'CERTIFICATE DETAILS',
-                'start_col' => 'AT',
-                'end_col'   => 'AW',
+                'start_col' => 'AR',
+                'end_col'   => 'AU',
                 'fill'      => '0D9488',
                 'color'     => 'FFFFFF',
-                'columns'   => [46, 47, 48, 49],
+                'columns'   => [44, 45, 46, 47],
+            ],
+            'closing_verification' => [
+                'title'     => 'CLOSING & VERIFICATION',
+                'start_col' => 'AV',
+                'end_col'   => 'AV',
+                'fill'      => '059669',
+                'color'     => 'FFFFFF',
+                'columns'   => [48],
             ],
         ];
     }
 
     /**
-     * Column widths matching the 49 columns.
+     * Column widths matching the 48 columns.
      */
     public static function columnWidths(): array
     {
         return [
-            'A' => 8,  'B' => 16, 'C' => 30, 'D' => 12, 'E' => 25, 'F' => 20, 'G' => 25, 'H' => 25,
-            'I' => 35, 'J' => 25, 'K' => 15, 'L' => 18, 'M' => 12, 'N' => 12, 'O' => 25, 'P' => 25,
-            'Q' => 18, 'R' => 20, 'S' => 18, 'T' => 18, 'U' => 25, 'V' => 20, 'W' => 22, 'X' => 16,
-            'Y' => 16, 'Z' => 14, 'AA' => 16, 'AB' => 14, 'AC' => 14, 'AD' => 14, 'AE' => 14, 'AF' => 16,
-            'AG' => 15, 'AH' => 14, 'AI' => 25, 'AJ' => 14, 'AK' => 16, 'AL' => 15, 'AM' => 18, 'AN' => 20,
-            'AO' => 14, 'AP' => 14, 'AQ' => 14, 'AR' => 14, 'AS' => 22, 'AT' => 22, 'AU' => 24, 'AV' => 22,
-            'AW' => 22,
+            'A' => 12, 'B' => 8,  'C' => 16, 'D' => 30, 'E' => 12, 'F' => 25, 'G' => 20, 'H' => 25,
+            'I' => 25, 'J' => 35, 'K' => 25, 'L' => 15, 'M' => 18, 'N' => 12, 'O' => 12, 'P' => 25,
+            'Q' => 25, 'R' => 18, 'S' => 20, 'T' => 18, 'U' => 18, 'V' => 25, 'W' => 20, 'X' => 22,
+            'Y' => 16, 'Z' => 14, 'AA' => 14, 'AB' => 14, 'AC' => 14, 'AD' => 14, 'AE' => 16, 'AF' => 15,
+            'AG' => 14, 'AH' => 25, 'AI' => 14, 'AJ' => 16, 'AK' => 15, 'AL' => 18, 'AM' => 20, 'AN' => 14,
+            'AO' => 14, 'AP' => 14, 'AQ' => 14, 'AR' => 22, 'AS' => 24, 'AT' => 22, 'AU' => 22, 'AV' => 24,
         ];
     }
 
@@ -205,16 +196,21 @@ class PtkpExcelSchema
         $row1Joined = mb_strtolower(implode(' ', $row1Cells), 'UTF-8');
         $r1Col1 = mb_strtolower($row1Cells[1] ?? '', 'UTF-8');
         $r1Col2 = mb_strtolower($row1Cells[2] ?? '', 'UTF-8');
+        $r1Col3 = mb_strtolower($row1Cells[3] ?? '', 'UTF-8');
+        $r2Col1 = mb_strtolower($row2Cells[1] ?? '', 'UTF-8');
         $r2Col2 = mb_strtolower($row2Cells[2] ?? '', 'UTF-8');
+        $r2Col3 = mb_strtolower($row2Cells[3] ?? '', 'UTF-8');
 
         $isLegacyTwoRow = (
-            str_contains($r1Col2, 'job information') ||
+            str_contains($r1Col3, 'job information') ||
             $r1Col1 === 'general' ||
+            str_contains($row1Joined, 'job information') ||
             str_contains($row1Joined, 'training information')
         ) && (
-            str_contains($r2Col2, 'employee') ||
-            str_contains($r2Col2, 'id') ||
-            str_contains($r2Col2, 'nip')
+            str_contains($r2Col3, 'employee') ||
+            str_contains($r2Col3, 'id') ||
+            str_contains($r2Col2, 'no') ||
+            str_contains($r2Col1, 'status')
         );
 
         if ($isLegacyTwoRow) {
@@ -263,12 +259,12 @@ class PtkpExcelSchema
     }
 
     /**
-     * Header analysis specifically for canonical 49 PTKP columns.
+     * Header analysis specifically for canonical 48 PTKP columns.
      */
     public static function analyzeHeaders(array $foundHeaders, string $format = 'single_row'): array
     {
         $columns = self::columns();
-        $expectedCount = count($columns); // 49
+        $expectedCount = count($columns); // 48
         $detectedCount = count($foundHeaders);
 
         $canonicalMap = [];

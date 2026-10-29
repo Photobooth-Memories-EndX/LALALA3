@@ -13,7 +13,7 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 class PtkpImportTemplateExport
 {
     /**
-     * Build the official PTKP import template workbook.
+     * Build the official PTKP import template workbook with exactly 48 canonical columns.
      */
     public function buildSpreadsheet(): Spreadsheet
     {
@@ -21,7 +21,7 @@ class PtkpImportTemplateExport
         $spreadsheet->getProperties()
             ->setCreator('OWL LMS')
             ->setTitle('PTKP Offline Training Import Template')
-            ->setDescription('Official Excel template for importing PTKP offline training records');
+            ->setDescription('Official Excel template for importing PTKP offline training records (48 columns)');
 
         // Sheet 1: Data sheet
         $sheet = $spreadsheet->getActiveSheet();
@@ -95,26 +95,28 @@ class PtkpImportTemplateExport
             $sheet->getColumnDimension($colLetter)->setWidth($width);
         }
 
-        // 5. Freeze panes at row 3 (header rows sticky)
-        $sheet->freezePane('C3');
+        // 5. Freeze panes at row 3, column D (Status, No, Employee ID sticky)
+        $sheet->freezePane('D3');
     }
 
     protected function buildInstructionsSheet(Worksheet $sheet): void
     {
-        $sheet->setCellValue('A1', 'PETUNJUK PENGISIAN TEMPLATE IMPORT DATA PTKP OWL');
+        $sheet->setCellValue('A1', 'PETUNJUK PENGISIAN TEMPLATE IMPORT DATA PTKP OWL (48 KOLOM)');
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
         $sheet->getRowDimension(1)->setRowHeight(30);
 
         $instructions = [
-            ['1. Kolom "No"', 'Nomor urut preview saja. Bukan identifier karyawan dan tidak disimpan ke database.'],
-            ['2. Employee ID', 'Wajib diisi dengan NIP/Employee ID karyawan. Digunakan untuk mencocokkan user di LMS OWL.'],
-            ['3. Lima Kolom Identitas', 'Employee Name, Grade, Job Position, Team, dan Department akan diambil otomatis dari tabel users. Nilai di Excel tidak akan menimpa data user.'],
-            ['4. Course Title', 'Wajib diisi dengan judul pelatihan. Baris dengan Course Title kosong akan ditandai INVALID.'],
-            ['5. Perbedaan Company (PTKP)', 'Jika Company di Excel berbeda dengan Company user di database, data tetap DAPAT DIIMPORT (status WARNING non-blocking).'],
-            ['6. Provider & Sub Provider', 'Dua kolom baru untuk kategori penyedia training (Internal/External, Vendor, dsb).'],
-            ['7. Kolom Dihapus', 'Kolom Total Engagement Time dan Certificate (lama) telah dihapus dari template PTKP.'],
-            ['8. Format Tanggal & Waktu', 'Gunakan format YYYY-MM-DD untuk tanggal dan HH:mm atau HH:mm:ss untuk waktu.'],
-            ['9. Aturan Duplikat', 'Data dengan kombinasi event dan karyawan yang sama dalam file atau database akan dilewati secara aman.'],
+            ['1. Kolom "Status"', 'Status validasi sistem (opsional pada file upload). Hasil validasi otomatis dievaluasi oleh sistem OWL LMS.'],
+            ['2. Kolom "No"', 'Nomor urut preview saja. Bukan primary key database dan tidak disimpan ke tabel data.'],
+            ['3. Employee ID', 'Wajib diisi dengan NIP/Employee ID karyawan. Digunakan untuk pencocokan akun karyawan pada database OWL.'],
+            ['4. Lima Kolom Identitas', 'Employee Name, Grade, Job Position, Team, dan Department disinkronkan otomatis dari data aktual tabel users.'],
+            ['5. Course Title', 'Wajib diisi dengan judul pelatihan. Baris dengan Course Title kosong akan ditolak (INVALID).'],
+            ['6. Perbedaan Company (PTKP)', 'Jika Company di Excel berbeda dengan Company user di database, data tetap DAPAT DIIMPORT (status WARNING non-blocking).'],
+            ['7. Provider & Sub Provider', 'Kategori penyedia training (Internal / External, Vendor, dsb).'],
+            ['8. Kolom Sertifikat', 'Certificate Availability (Yes/No), Institution, Issued Date, dan Expired Date.'],
+            ['9. PIC', 'Person in Charge (PIC) berada di posisi kolom terakhir (kolom 48).'],
+            ['10. Format Tanggal & Waktu', 'Gunakan format YYYY-MM-DD untuk tanggal dan HH:mm atau HH:mm:ss untuk waktu.'],
+            ['11. Aturan Duplikat', 'Data dengan kombinasi event dan karyawan yang sama dalam file atau database akan dilewati secara otomatis.'],
         ];
 
         $row = 3;

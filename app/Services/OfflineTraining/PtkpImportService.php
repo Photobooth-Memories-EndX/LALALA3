@@ -429,7 +429,7 @@ class PtkpImportService
     protected function isRowEntirelyBlank(array $rowValues): bool
     {
         foreach ($rowValues as $k => $v) {
-            if ($k === 'row_no') {
+            if ($k === 'row_no' || $k === 'status' || $k === 'validation_status') {
                 continue;
             }
             if ($v !== null && trim((string) $v) !== '') {

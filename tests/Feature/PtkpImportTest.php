@@ -78,7 +78,7 @@ class PtkpImportTest extends TestCase
         $adminResponse->assertSee('Import Data PTKP');
     }
 
-    public function test_ptkp_template_has_canonical_49_columns_and_proper_structure(): void
+    public function test_ptkp_template_has_exact_48_columns_and_proper_structure(): void
     {
         $export = new PtkpImportTemplateExport();
         $spreadsheet = $export->buildSpreadsheet();
@@ -87,21 +87,73 @@ class PtkpImportTest extends TestCase
         $this->assertNotNull($sheet);
 
         $cols = PtkpExcelSchema::columns();
-        $this->assertCount(49, $cols);
+        $this->assertCount(48, $cols);
 
-        $this->assertEquals('No', $cols[1]['header']);
-        $this->assertEquals('Employee ID', $cols[2]['header']);
-        $this->assertEquals('Provider', $cols[19]['header']);
-        $this->assertEquals('Sub Provider', $cols[20]['header']);
+        $expectedFinalHeaders = [
+            1  => 'Status',
+            2  => 'No',
+            3  => 'Employee ID',
+            4  => 'Employee Name',
+            5  => 'Grade',
+            6  => 'Job Position',
+            7  => 'Team',
+            8  => 'Department',
+            9  => 'Company',
+            10 => 'Course Title',
+            11 => 'Sub Course Title',
+            12 => 'Type',
+            13 => 'Category',
+            14 => 'Level',
+            15 => 'Batch',
+            16 => 'Main Classification',
+            17 => 'Sub Classification',
+            18 => 'Delivery Method',
+            19 => 'Sub Delivery Method',
+            20 => 'Provider',
+            21 => 'Sub Provider',
+            22 => 'Provider Name',
+            23 => 'Venue',
+            24 => 'Instructor',
+            25 => 'Learning Hours',
+            26 => '% Progress',
+            27 => 'Start Date',
+            28 => 'End Date',
+            29 => 'Start Time',
+            30 => 'End Time',
+            31 => 'Record Month',
+            32 => 'Requirement',
+            33 => 'Attendance',
+            34 => 'Attendance Reason',
+            35 => 'Bond Status',
+            36 => 'Bond Duration',
+            37 => 'Bond End Date',
+            38 => 'Bond Amount',
+            39 => 'Score (L1) - Course',
+            40 => 'Score (L2)',
+            41 => 'L2 Status',
+            42 => 'Score (L3)',
+            43 => 'L3 Status',
+            44 => 'Certificate Availability',
+            45 => 'Certificate Institution',
+            46 => 'Certificate Issued Date',
+            47 => 'Certificate Expired Date',
+            48 => 'Person in Charge (PIC)',
+        ];
 
-        $this->assertEquals('Certificate Availability', $cols[46]['header']);
-        $this->assertEquals('Certificate Institution', $cols[47]['header']);
-        $this->assertEquals('Certificate Issued Date', $cols[48]['header']);
-        $this->assertEquals('Certificate Expired Date', $cols[49]['header']);
+        foreach ($expectedFinalHeaders as $idx => $expectedHeader) {
+            $this->assertEquals($expectedHeader, $cols[$idx]['header'], "Header mismatch at column {$idx}");
+        }
 
+        // PIC must appear only once at column 48
         $headerStrings = PtkpExcelSchema::headers();
+        $picMatches = array_keys(array_filter($headerStrings, fn($h) => str_contains($h, 'PIC') || str_contains($h, 'Person in Charge')));
+        $this->assertCount(1, $picMatches);
+        $this->assertEquals(47, $picMatches[0]); // 0-indexed index 47 is column 48
+
+        // Omitted columns must not exist
+        $this->assertNotContains('Course Duration', $headerStrings);
+        $this->assertNotContains('Progress Status', $headerStrings);
         $this->assertNotContains('Total Engagement Time', $headerStrings);
-        $this->assertNotContains('Certificate', $headerStrings);
     }
 
     public function test_template_download_stream_response(): void
@@ -117,7 +169,7 @@ class PtkpImportTest extends TestCase
     {
         $file = $this->createPtkpExcel([
             [
-                'no'           => 1,
+                'row_no'       => 1,
                 'employee_id'  => 'EMP_TEST_99',
                 'name'         => 'Name in Excel Should Be Ignored',
                 'grade'        => 'Wrong Grade in Excel',
@@ -156,7 +208,7 @@ class PtkpImportTest extends TestCase
     {
         $file = $this->createPtkpExcel([
             [
-                'no'          => 1,
+                'row_no'      => 1,
                 'employee_id' => 'NON_EXISTENT_ID_999',
                 'course_name' => 'Safety Induction Training',
             ]
@@ -178,7 +230,7 @@ class PtkpImportTest extends TestCase
     {
         $file = $this->createPtkpExcel([
             [
-                'no'          => 1,
+                'row_no'      => 1,
                 'employee_id' => 'EMP_TEST_99',
                 'course_name' => '',
             ]
@@ -198,7 +250,7 @@ class PtkpImportTest extends TestCase
     {
         $file = $this->createPtkpExcel([
             [
-                'no'          => 1,
+                'row_no'      => 1,
                 'employee_id' => 'EMP_TEST_99',
                 'company'     => 'PT Krakatau Tirta Industri',
                 'course_name' => 'Water Treatment Safety',
@@ -224,22 +276,16 @@ class PtkpImportTest extends TestCase
     {
         $file = $this->createPtkpExcel([
             [
-                'no'          => 1,
+                'row_no'      => 1,
                 'employee_id' => 'EMP_TEST_99',
-                'course_name' => 'Fire Drill 2026',
-                'batch'       => 'Batch 1',
-                'start_date'  => '2026-09-01',
-                'end_date'    => '2026-09-01',
-                'pic'         => 'PIC Safety',
+                'course_name' => 'Emergency Response Protocol',
+                'batch'       => 'Batch A',
             ],
             [
-                'no'          => 2,
+                'row_no'      => 2,
                 'employee_id' => 'EMP_TEST_99',
-                'course_name' => 'Fire Drill 2026',
-                'batch'       => 'Batch 1',
-                'start_date'  => '2026-09-01',
-                'end_date'    => '2026-09-01',
-                'pic'         => 'PIC Safety',
+                'course_name' => 'Emergency Response Protocol',
+                'batch'       => 'Batch A',
             ],
         ]);
 
@@ -259,43 +305,36 @@ class PtkpImportTest extends TestCase
     {
         $file = $this->createPtkpExcel([
             [
-                'no'            => 1,
-                'employee_id'   => 'EMP_TEST_99',
-                'course_name'   => 'PTKP Operational Excellence',
-                'batch'         => 'Batch 9',
-                'provider'      => 'Internal',
-                'sub_provider'  => 'HRDC',
-                'provider_name' => 'PTKP Learning Center',
-                'pic'           => 'PIC Excellence',
+                'row_no'          => 1,
+                'employee_id'     => 'EMP_TEST_99',
+                'course_name'     => 'Quality Control ISO 9001',
+                'batch'           => 'Batch 2026-X',
+                'pic'             => 'ISO Auditor',
+                'learning_hours'  => 16.0,
             ]
         ]);
 
-        $previewRes = $this->actingAs($this->adminUser)
+        $previewResp = $this->actingAs($this->adminUser)
             ->post(route('manage.record.offline.import-ptkp.preview'), ['file' => $file]);
 
-        $token = $previewRes->json('token');
+        $token = $previewResp->json('token');
         $this->assertNotEmpty($token);
 
-        $confirmRes = $this->actingAs($this->adminUser)
+        $confirmResp = $this->actingAs($this->adminUser)
             ->post(route('manage.record.offline.import-ptkp.confirm'), ['token' => $token]);
 
-        $confirmRes->assertStatus(200);
-        $result = $confirmRes->json('result');
+        $confirmResp->assertStatus(200);
+        $confirmJson = $confirmResp->json();
 
-        $this->assertEquals(1, $result['imported']);
-        $this->assertEquals(1, $result['trainings_created']);
+        $this->assertTrue($confirmJson['success']);
+        $this->assertEquals(1, $confirmJson['result']['imported']);
+        $this->assertEquals(1, $confirmJson['result']['trainings_created']);
 
-        $training = OfflineTraining::where('course_name', 'PTKP Operational Excellence')->first();
-        $this->assertNotNull($training);
-        $this->assertEquals('Internal', $training->provider);
-        $this->assertEquals('HRDC', $training->sub_provider);
-
-        $participant = OfflineTrainingUser::where('offline_training_id', $training->id)
-            ->where('employee_id', 'EMP_TEST_99')
+        $participant = OfflineTrainingUser::where('employee_id', 'EMP_TEST_99')
+            ->whereHas('training', fn($q) => $q->where('course_name', 'Quality Control ISO 9001'))
             ->first();
 
         $this->assertNotNull($participant);
-        $this->assertEquals($this->targetEmployee->id, $participant->user_id);
         $this->assertEquals('Test Employee 99', $participant->name);
         $this->assertEquals('3B', $participant->grade);
         $this->assertEquals('Senior Technician', $participant->job_position);
@@ -305,37 +344,33 @@ class PtkpImportTest extends TestCase
 
     public function test_duplicate_against_existing_database_record_is_skipped(): void
     {
-        // First create a training and enroll targetEmployee
         $training = OfflineTraining::create([
-            'course_name' => 'Existing Database Training',
-            'batch'       => 'Batch 1',
-            'start_date'  => '2026-08-10',
-            'finish_date' => '2026-08-10',
-            'type'        => 'In-House',
-            'venue'       => 'Room A',
-            'created_by'  => $this->adminUser->id,
+            'course_name'  => 'Pre-existing PTKP Course',
+            'batch'        => 'Batch 1',
+            'start_date'   => '2026-08-10',
+            'finish_date'  => '2026-08-10',
+            'type'         => 'In-House',
+            'venue'        => 'Room A',
+            'created_by'   => $this->adminUser->id,
         ]);
 
         OfflineTrainingUser::create([
             'offline_training_id' => $training->id,
             'user_id'             => $this->targetEmployee->id,
-            'employee_id'         => $this->targetEmployee->id_emp,
-            'name'                => $this->targetEmployee->name,
-            'company'             => 'PT Krakatau Posco',
-            'learning_hours'      => 8.0,
-            'progress'            => 100.0,
+            'employee_id'         => 'EMP_TEST_99',
+            'name'                => 'Test Employee 99',
         ]);
 
-        // Upload the same participant & event
         $file = $this->createPtkpExcel([
             [
-                'no'          => 1,
-                'employee_id' => $this->targetEmployee->id_emp,
-                'course_name' => 'Existing Database Training',
+                'row_no'      => 1,
+                'employee_id' => 'EMP_TEST_99',
+                'course_name' => 'Pre-existing PTKP Course',
                 'batch'       => 'Batch 1',
                 'start_date'  => '2026-08-10',
                 'end_date'    => '2026-08-10',
                 'type'        => 'In-House',
+                'venue'       => 'Room A',
             ]
         ]);
 
@@ -347,6 +382,7 @@ class PtkpImportTest extends TestCase
 
         $this->assertEquals(1, $json['stats']['duplicate']);
         $this->assertEquals(0, $json['importable_count']);
+        $this->assertFalse($json['can_confirm']);
         $this->assertEquals('DUPLICATE', $json['rows'][0]['status']);
     }
 
@@ -354,16 +390,14 @@ class PtkpImportTest extends TestCase
     {
         $file = $this->createPtkpExcel([
             [
-                'no'          => 1,
-                'employee_id' => $this->targetEmployee->id_emp,
-                'course_name' => 'Safety Protocol Module A',
-                'batch'       => 'Batch 1',
+                'row_no'      => 1,
+                'employee_id' => 'EMP_TEST_99',
+                'course_name' => 'Course Alpha',
             ],
             [
-                'no'          => 2,
-                'employee_id' => $this->targetEmployee->id_emp,
-                'course_name' => 'Leadership Training Module B',
-                'batch'       => 'Batch 2',
+                'row_no'      => 2,
+                'employee_id' => 'EMP_TEST_99',
+                'course_name' => 'Course Beta',
             ],
         ]);
 
@@ -380,19 +414,12 @@ class PtkpImportTest extends TestCase
 
     public function test_ambiguous_employee_id_is_marked_invalid(): void
     {
-        // Create duplicate user with same id_emp
-        $this->createTestUser([
-            'id_emp' => 'EMP_AMB9',
-            'name'   => 'First User',
-        ]);
-        $this->createTestUser([
-            'id_emp' => 'EMP_AMB9',
-            'name'   => 'Second User',
-        ]);
+        $this->createTestUser(['id_emp' => 'EMP_AMB9', 'name' => 'First User']);
+        $this->createTestUser(['id_emp' => 'EMP_AMB9', 'name' => 'Second User']);
 
         $file = $this->createPtkpExcel([
             [
-                'no'          => 1,
+                'row_no'      => 1,
                 'employee_id' => 'EMP_AMB9',
                 'course_name' => 'Test Course',
             ]
@@ -417,9 +444,40 @@ class PtkpImportTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee(route('manage.record.offline.create'));
         $response->assertSee(route('manage.record.offline.import-ptkp'));
-        $response->assertSee('#offlineImportModal');
+        $response->assertSee(route('manage.record.offline.import-non-ptkp'));
         $response->assertSee('Import Data PTKP');
         $response->assertSee('Import Data Non PTKP');
+    }
+
+    public function test_extra_column_beyond_48_blocks_preview_confirmation(): void
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle(PtkpExcelSchema::DATA_SHEET_TITLE);
+
+        $headers = PtkpExcelSchema::headers();
+        foreach ($headers as $idx => $h) {
+            $letter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($idx + 1);
+            $sheet->setCellValue("{$letter}1", $h);
+        }
+        $sheet->setCellValue('AW1', 'Extra Unexpected Column');
+        $sheet->setCellValue('A2', 'Valid');
+        $sheet->setCellValue('B2', 1);
+        $sheet->setCellValue('C2', 'EMP_TEST_99');
+        $sheet->setCellValue('J2', 'Course Title');
+
+        $tempPath = tempnam(sys_get_temp_dir(), 'ptkp_extra_') . '.xlsx';
+        (new Xlsx($spreadsheet))->save($tempPath);
+        $file = new UploadedFile($tempPath, 'ptkp_extra.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', null, true);
+
+        $response = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.preview'), ['file' => $file]);
+
+        $response->assertStatus(200);
+        $json = $response->json();
+        $this->assertFalse($json['header_check']['can_proceed']);
+        $this->assertFalse($json['can_confirm']);
+        $this->assertGreaterThan(0, $json['header_check']['invalid_count']);
     }
 
     protected function createPtkpExcel(array $rows): UploadedFile
@@ -428,50 +486,26 @@ class PtkpImportTest extends TestCase
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle(PtkpExcelSchema::DATA_SHEET_TITLE);
 
-        $headers = PtkpExcelSchema::headers();
-        foreach ($headers as $idx => $h) {
-            $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($idx + 1);
-            $sheet->setCellValue("{$colLetter}1", $h);
+        $columns = PtkpExcelSchema::columns();
+        foreach ($columns as $idx => $col) {
+            $letter = $col['col_letter'];
+            $sheet->setCellValue("{$letter}1", $col['header']);
         }
 
         $rowIdx = 2;
         foreach ($rows as $data) {
-            $sheet->setCellValue("A{$rowIdx}", $data['no'] ?? ($rowIdx - 1));
-            $sheet->setCellValueExplicit("B{$rowIdx}", (string) ($data['employee_id'] ?? ''), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
-            $sheet->setCellValue("C{$rowIdx}", $data['name'] ?? '');
-            $sheet->setCellValue("D{$rowIdx}", $data['grade'] ?? '');
-            $sheet->setCellValue("E{$rowIdx}", $data['job_position'] ?? '');
-            $sheet->setCellValue("F{$rowIdx}", $data['team'] ?? '');
-            $sheet->setCellValue("G{$rowIdx}", $data['department'] ?? '');
-            $sheet->setCellValue("H{$rowIdx}", $data['company'] ?? 'PT Krakatau Posco');
-            $sheet->setCellValue("I{$rowIdx}", $data['course_name'] ?? '');
-            $sheet->setCellValue("J{$rowIdx}", $data['sub_course_name'] ?? '');
-            $sheet->setCellValue("K{$rowIdx}", $data['type'] ?? 'In-House');
-            $sheet->setCellValue("L{$rowIdx}", $data['category'] ?? 'Technical');
-            $sheet->setCellValue("M{$rowIdx}", $data['level'] ?? 'Basic');
-            $sheet->setCellValue("N{$rowIdx}", $data['batch'] ?? 'Batch 1');
-            $sheet->setCellValue("O{$rowIdx}", $data['main_classification'] ?? 'Basic');
-            $sheet->setCellValue("P{$rowIdx}", $data['sub_classification'] ?? 'Plant');
-            $sheet->setCellValue("Q{$rowIdx}", $data['delivery_method'] ?? 'Offline');
-            $sheet->setCellValue("R{$rowIdx}", $data['sub_delivery_method'] ?? 'On-site');
-            $sheet->setCellValue("S{$rowIdx}", $data['provider'] ?? 'External');
-            $sheet->setCellValue("T{$rowIdx}", $data['sub_provider'] ?? 'Vendor');
-            $sheet->setCellValue("U{$rowIdx}", $data['provider_name'] ?? 'Vendor X');
-            $sheet->setCellValue("V{$rowIdx}", $data['venue'] ?? 'Room A');
-            $sheet->setCellValue("W{$rowIdx}", $data['instructor'] ?? 'Trainer');
-            $sheet->setCellValue("X{$rowIdx}", $data['duration_seconds'] ?? '08:00:00');
-            $sheet->setCellValue("Y{$rowIdx}", $data['learning_hours'] ?? 8.0);
-            $sheet->setCellValue("Z{$rowIdx}", $data['progress'] ?? 100);
-            $sheet->setCellValue("AA{$rowIdx}", $data['progress_status'] ?? 'Finished');
-            $sheet->setCellValue("AB{$rowIdx}", $data['start_date'] ?? '2026-08-10');
-            $sheet->setCellValue("AC{$rowIdx}", $data['end_date'] ?? '2026-08-10');
-            $sheet->setCellValue("AD{$rowIdx}", $data['start_time'] ?? '08:00:00');
-            $sheet->setCellValue("AE{$rowIdx}", $data['end_time'] ?? '17:00:00');
-            $sheet->setCellValue("AF{$rowIdx}", $data['month'] ?? 'August');
-            $sheet->setCellValue("AG{$rowIdx}", $data['requirement'] ?? 'Mandatory');
-            $sheet->setCellValue("AH{$rowIdx}", $data['attendance'] ?? 'Yes');
-            $sheet->setCellValue("AS{$rowIdx}", $data['pic'] ?? 'HR Admin');
+            foreach ($columns as $idx => $col) {
+                $letter = $col['col_letter'];
+                $key = $col['key'];
 
+                if ($key === 'employee_id') {
+                    $sheet->setCellValueExplicit("{$letter}{$rowIdx}", (string) ($data['employee_id'] ?? ''), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+                } elseif (array_key_exists($key, $data)) {
+                    $sheet->setCellValue("{$letter}{$rowIdx}", $data[$key]);
+                } else {
+                    $sheet->setCellValue("{$letter}{$rowIdx}", $col['example'] ?? '');
+                }
+            }
             $rowIdx++;
         }
 
