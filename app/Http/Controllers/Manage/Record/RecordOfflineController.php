@@ -90,16 +90,20 @@ class RecordOfflineController extends Controller
     {
         $startStr = '-';
         if (!empty($startDate)) {
-            $startStr = date('d M Y', strtotime($startDate));
-            if (!empty($startTime)) {
-                $startStr .= ', ' . date('H:i', strtotime($startTime));
+            $timePart = !empty($startTime) ? date('H:i:s', strtotime($startTime)) : '00:00:00';
+            if (strlen(trim((string) $startDate)) > 10 && str_contains((string) $startDate, ':')) {
+                $startStr = date('d/m/y H:i:s', strtotime($startDate));
+            } else {
+                $startStr = date('d/m/y', strtotime($startDate)) . ' ' . $timePart;
             }
         }
         $endStr = '-';
         if (!empty($endDate)) {
-            $endStr = date('d M Y', strtotime($endDate));
-            if (!empty($endTime)) {
-                $endStr .= ', ' . date('H:i', strtotime($endTime));
+            $timePart = !empty($endTime) ? date('H:i:s', strtotime($endTime)) : '00:00:00';
+            if (strlen(trim((string) $endDate)) > 10 && str_contains((string) $endDate, ':')) {
+                $endStr = date('d/m/y H:i:s', strtotime($endDate));
+            } else {
+                $endStr = date('d/m/y', strtotime($endDate)) . ' ' . $timePart;
             }
         }
 
@@ -108,8 +112,8 @@ class RecordOfflineController extends Controller
         }
 
         return '<div class="text-nowrap small">
-            <div><span class="text-muted">Start:</span> ' . htmlspecialchars($startStr) . '</div>
-            <div><span class="text-muted">End:</span> ' . htmlspecialchars($endStr) . '</div>
+            <div><span class="text-muted">Start :</span> ' . htmlspecialchars($startStr) . '</div>
+            <div><span class="text-muted">End :</span> ' . htmlspecialchars($endStr) . '</div>
         </div>';
     }
 

@@ -192,7 +192,7 @@
                                     <th style="min-width: 130px;">Team</th>
                                     <th style="min-width: 140px;">Department</th>
                                     <th style="min-width: 130px;">Company</th>
-                                    <th style="min-width: 220px;">Course Title</th>
+                                    <th class="text-center" style="min-width: 220px; text-align: center;">Course Title</th>
                                     <th style="min-width: 100px;">Type</th>
                                     <th style="min-width: 110px;">Category</th>
                                     <th style="min-width: 140px;">Main Classification</th>

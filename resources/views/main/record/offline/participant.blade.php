@@ -279,7 +279,7 @@
                                     <th style="min-width: 140px;">TEAM</th>
                                     <th style="min-width: 160px;">DEPARTMENT</th>
                                     <th style="min-width: 160px;">COMPANY</th>
-                                    <th style="min-width: 220px;">COURSE TITLE</th>
+                                    <th class="text-center" style="min-width: 220px; text-align: center;">COURSE TITLE</th>
                                     <th class="text-center" style="min-width: 100px;">TYPE</th>
                                     <th style="min-width: 130px;">CATEGORY</th>
                                     <th style="min-width: 150px;">MAIN CLASSIFICATION</th>

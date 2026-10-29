@@ -176,9 +176,9 @@ class LearningRecordPlaylistExportService
                 $endTimeOnly = $finishDt ? Carbon::parse($finishDt)->format('H:i:s') : '-';
 
                 if ($startStr !== '' && $finishStr !== '') {
-                    $dateTimeKp = "Start: {$startStr}\nFinish: {$finishStr}";
+                    $dateTimeKp = "Start : {$startStr}\nEnd : {$finishStr}";
                 } elseif ($finishStr !== '') {
-                    $dateTimeKp = "Finish: {$finishStr}";
+                    $dateTimeKp = "End : {$finishStr}";
                 } elseif ($startStr !== '') {
                     $dateTimeKp = "Start: {$startStr}";
                 } else {

@@ -20,8 +20,22 @@
         $rawTotalHours = (float) str_replace(',', '', $rawTotalHours);
     }
 
+    $rawOnlineHours = data_get($stats, 'online_hours', data_get($stats, 'kp_owl_hours', 0));
+    if (is_string($rawOnlineHours)) {
+        $rawOnlineHours = (float) str_replace(',', '', $rawOnlineHours);
+    }
+
+    $rawOfflineHours = data_get($stats, 'offline_hours', data_get($stats, 'non_kp_owl_hours', 0));
+    if (is_string($rawOfflineHours)) {
+        $rawOfflineHours = (float) str_replace(',', '', $rawOfflineHours);
+    }
+
     $stats = [
         'total_hours'        => (float) ($rawTotalHours ?? 0),
+        'online_hours'       => (float) ($rawOnlineHours ?? 0),
+        'offline_hours'      => (float) ($rawOfflineHours ?? 0),
+        'kp_owl_hours'       => (float) ($rawOnlineHours ?? 0),
+        'non_kp_owl_hours'   => (float) ($rawOfflineHours ?? 0),
         'internal_count'     => (int) str_replace(',', '', (string) data_get($stats, 'internal_count', 0)),
         'external_count'     => (int) str_replace(',', '', (string) data_get($stats, 'external_count', 0)),
         'owl_completed'      => (int) str_replace(',', '', (string) data_get($stats, 'owl_completed', data_get($stats, 'content_completed', data_get($stats, 'courseCompleted', data_get($stats, '0.value', 0))))),
@@ -53,21 +67,21 @@
                     aria-label="Learning record statistics">
                     @if($recordMode === 'offline')
                         {{-- Non-KP OWL Header Cards --}}
-                        <x-shared.learning-stat-large label="TOTAL LEARNING HOURS" :value="number_format($stats['total_hours'], 2)" />
+                        <x-shared.learning-stat-large label="LEARNING HOUR NON KP OWL" :value="number_format($stats['total_hours'], 2)" />
                         <div class="d-flex flex-column gap-2">
                             <x-shared.learning-stat-small label="INTERNAL TRAINING" :value="$stats['internal_count']" />
                             <x-shared.learning-stat-small label="EXTERNAL TRAINING" :value="$stats['external_count']" />
                         </div>
                     @elseif($recordMode === 'all')
                         {{-- All Records Header Cards --}}
-                        <x-shared.learning-stat-large label="TOTAL LEARNING HOURS" :value="number_format($stats['total_hours'], 2)" />
+                        <x-shared.learning-stat-large label="LEARNING HOUR ALL RECORD" :value="number_format($stats['total_hours'], 2)" />
                         <div class="d-flex flex-column gap-2">
-                            <x-shared.learning-stat-small label="OWL COURSE COMPLETED" :value="$stats['owl_completed']" />
-                            <x-shared.learning-stat-small label="NON OWL COURSE COMPLETED" :value="$stats['non_owl_completed']" />
+                            <x-shared.learning-stat-small label="LEARNING HOUR OWL" :value="number_format($stats['online_hours'], 2)" />
+                            <x-shared.learning-stat-small label="LEARNING HOUR NON KP OWL" :value="number_format($stats['offline_hours'], 2)" />
                         </div>
                     @else
                         {{-- Default KP OWL Header Cards --}}
-                        <x-shared.learning-stat-large label="TOTAL LEARNING HOURS" :value="number_format($stats['total_hours'], 2)" />
+                        <x-shared.learning-stat-large label="LEARNING HOUR OWL" :value="number_format($stats['total_hours'], 2)" />
                         <div class="d-flex flex-column gap-2">
                             <x-shared.learning-stat-small label="COURSE COMPLETED" :value="$stats['content_completed']" />
                             <x-shared.learning-stat-small label="PLAYLIST COMPLETED" :value="$stats['playlist_completed']" />

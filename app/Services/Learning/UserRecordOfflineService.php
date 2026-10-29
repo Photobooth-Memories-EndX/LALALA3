@@ -22,6 +22,10 @@ class UserRecordOfflineService
      */
     public function queryForUser(int $userId, ?string $userEmpId): Builder
     {
+        if (empty($userEmpId)) {
+            $userEmpId = \App\Models\User::where('id', $userId)->value('id_emp');
+        }
+
         return OfflineTrainingUser::query()
             ->with(['training' => fn ($q) => $q->withTrashed()])
             ->where(function (Builder $q) use ($userId, $userEmpId) {

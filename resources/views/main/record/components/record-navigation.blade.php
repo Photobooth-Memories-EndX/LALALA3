@@ -1,5 +1,31 @@
 <div class="row g-3 mb-4 record-navigation-row">
-    <!-- Card 1: KP OWL -->
+    <!-- Card 1: All Record -->
+    <div class="col-12 col-sm-6 col-lg-3">
+        <a href="{{ route('manage.record.all') }}"
+            class="card card-link text-decoration-none h-100 record-nav-card {{ request()->routeIs('manage.record.all*') ? 'record-nav-card--active' : '' }}">
+            <div class="card-body p-3 d-flex flex-column justify-content-between">
+                <div>
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="avatar avatar-sm rounded-3 record-nav-icon"
+                            style="background-color: #ede9fe; color: #7c3aed;">
+                            <i class="ti ti-stack-2"></i>
+                        </span>
+                        @if (request()->routeIs('manage.record.all*'))
+                            <span class="badge bg-primary text-white rounded-pill px-2.5 py-1"
+                                style="font-size: 0.725rem; font-weight: 600;">ACTIVE</span>
+                        @endif
+                    </div>
+                    <h3 class="card-title fw-bold mb-1" style="font-size: 1.05rem;">All Record</h3>
+                    <div class="record-nav-subtitle fw-semibold small mb-1" style="color: #6d28d9;">Combined Learning
+                        Record</div>
+                </div>
+                <p class="text-muted small mb-0 mt-2" style="font-size: 0.8rem; line-height: 1.35;">Online & Offline
+                    Learning Records</p>
+            </div>
+        </a>
+    </div>
+
+    <!-- Card 2: KP OWL -->
     <div class="col-12 col-sm-6 col-lg-3">
         <a href="{{ route('manage.record.online') }}"
             class="card card-link text-decoration-none h-100 record-nav-card {{ request()->routeIs('manage.record.online*') ? 'record-nav-card--active' : '' }}">
@@ -25,7 +51,7 @@
         </a>
     </div>
 
-    <!-- Card 2: Non KP OWL -->
+    <!-- Card 3: Non KP OWL -->
     <div class="col-12 col-sm-6 col-lg-3">
         <a href="{{ route('manage.record.offline') }}"
             class="card card-link text-decoration-none h-100 record-nav-card {{ request()->routeIs('manage.record.offline*') ? 'record-nav-card--active' : '' }}">
@@ -47,32 +73,6 @@
                 </div>
                 <p class="text-muted small mb-0 mt-2" style="font-size: 0.8rem; line-height: 1.35;">Manual Training &
                     Excel Import</p>
-            </div>
-        </a>
-    </div>
-
-    <!-- Card 3:  -->
-    <div class="col-12 col-sm-6 col-lg-3">
-        <a href="{{ route('manage.record.all') }}"
-            class="card card-link text-decoration-none h-100 record-nav-card {{ request()->routeIs('manage.record.all*') ? 'record-nav-card--active' : '' }}">
-            <div class="card-body p-3 d-flex flex-column justify-content-between">
-                <div>
-                    <div class="d-flex align-items-center justify-content-between mb-2">
-                        <span class="avatar avatar-sm rounded-3 record-nav-icon"
-                            style="background-color: #ede9fe; color: #7c3aed;">
-                            <i class="ti ti-stack-2"></i>
-                        </span>
-                        @if (request()->routeIs('manage.record.all*'))
-                            <span class="badge bg-primary text-white rounded-pill px-2.5 py-1"
-                                style="font-size: 0.725rem; font-weight: 600;">ACTIVE</span>
-                        @endif
-                    </div>
-                    <h3 class="card-title fw-bold mb-1" style="font-size: 1.05rem;">All Record</h3>
-                    <div class="record-nav-subtitle fw-semibold small mb-1" style="color: #6d28d9;">Combined Learning
-                        Record</div>
-                </div>
-                <p class="text-muted small mb-0 mt-2" style="font-size: 0.8rem; line-height: 1.35;">Online & Offline
-                    Learning Records</p>
             </div>
         </a>
     </div>

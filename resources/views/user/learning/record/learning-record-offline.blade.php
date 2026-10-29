@@ -622,7 +622,7 @@
                                         <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
                                     </span>
                                 </th>
-                                <th class="text-muted record-sortable" style="width: 24%" data-sort-key="title" data-sort-type="text">
+                                <th class="text-muted text-center record-sortable" style="width: 24%" data-sort-key="title" data-sort-type="text">
                                     <span class="record-sort-header">
                                         <span class="record-sort-label">Course Title</span>
                                         <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
@@ -761,7 +761,7 @@
                                 <td class="text-muted small learning-record-datetime">
                                     <div class="text-xs text-muted">
                                         <div class="learning-record-date-row text-nowrap">Start : {{ $offStartDt !== '' ? \Carbon\Carbon::parse($offStartDt)->format('d/m/y H:i:s') : '-' }}</div>
-                                        <div class="learning-record-date-row text-nowrap">Finish : {{ $offEndDt !== '' ? \Carbon\Carbon::parse($offEndDt)->format('d/m/y H:i:s') : '-' }}</div>
+                                        <div class="learning-record-date-row text-nowrap">End : {{ $offEndDt !== '' ? \Carbon\Carbon::parse($offEndDt)->format('d/m/y H:i:s') : '-' }}</div>
                                     </div>
                                 </td>
                                 <td class="text-center">

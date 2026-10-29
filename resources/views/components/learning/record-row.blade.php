@@ -191,7 +191,7 @@
     <td class="text-muted small learning-record-datetime">
         <div class="text-xs text-muted">
             <div class="learning-record-date-row text-nowrap">Start : {{ $startDateDisplay }}</div>
-            <div class="learning-record-date-row text-nowrap">Finish : {{ $finishDateDisplay }}</div>
+            <div class="learning-record-date-row text-nowrap">End : {{ $finishDateDisplay }}</div>
         </div>
     </td>
 

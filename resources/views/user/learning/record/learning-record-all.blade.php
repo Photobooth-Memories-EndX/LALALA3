@@ -49,11 +49,7 @@
 <template data-learning-record-hero>
     <x-shared.hero-learning-record
         recordMode="all"
-        :stats="$recordStats ?? [
-            ['label' => 'Course Completed', 'value' => number_format($recordStats['courseCompleted'] ?? 0)],
-            ['label' => 'Playlist Completed', 'value' => number_format($recordStats['playlistCompleted'] ?? 0)],
-            ['label' => 'Learning Hours', 'value' => number_format($recordStats['totalLearningHours'] ?? 0, 2)],
-        ]"
+        :stats="$recordStats ?? []"
     />
 </template>
 
@@ -795,7 +791,13 @@
                                         <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
                                     </span>
                                 </th>
-                                <th class="text-muted record-sortable" style="width: 24%; min-width: 260px;" data-sort-key="title" data-sort-type="text">
+                                <th class="text-muted text-center record-sortable" style="width: 7%" data-sort-key="source" data-sort-type="text">
+                                    <span class="record-sort-header">
+                                        <span class="record-sort-label">Source</span>
+                                        <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
+                                    </span>
+                                </th>
+                                <th class="text-muted text-center record-sortable" style="width: 20%; min-width: 240px;" data-sort-key="title" data-sort-type="text">
                                     <span class="record-sort-header">
                                         <span class="record-sort-label">Course Title</span>
                                         <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
@@ -887,8 +889,16 @@
                                 data-sort-finish="{{ $row['end_datetime'] ?? ($row['finish_date'] ?? '') }}"
                                 data-sort-attendance="{{ $allSortAtt }}"
                                 data-sort-score="{{ $allSortScore }}"
-                                data-sort-certificate="{{ $allSortCert }}">
+                                data-sort-certificate="{{ $allSortCert }}"
+                                data-sort-source="{{ $row['source'] ?? 'online' }}">
                                 <td class="text-center text-muted record-row-index">{{ $loop->iteration }}</td>
+                                <td class="text-center">
+                                    @if (($row['source'] ?? '') === 'online')
+                                        <span class="badge bg-blue-100 text-blue-700 rounded-pill px-2.5 py-1" style="background-color: #dbeafe !important; color: #1d4ed8 !important; font-weight: 600; font-size: 0.75rem;">KP OWL</span>
+                                    @else
+                                        <span class="badge bg-amber-100 text-amber-700 rounded-pill px-2.5 py-1" style="background-color: #fef3c7 !important; color: #b45309 !important; font-weight: 600; font-size: 0.75rem;">Non KP OWL</span>
+                                    @endif
+                                </td>
                                 <td class="learning-record-course-cell">
                                     @php
                                         $isAllOnline = ($row['source'] ?? '') === 'online';
@@ -935,9 +945,6 @@
                                     </div>
                                     <div class="d-flex align-items-center gap-2 text-xs text-muted mt-1 flex-wrap">
                                         <span>Requirement: <span class="badge bg-light text-dark">{{ $allReqLabel }}</span></span>
-                                        <span class="badge {{ $allSourceBadgeClass }} record-source-badge">
-                                            {{ $allSourceLabel }}
-                                        </span>
                                     </div>
                                 </td>
                                 <td class="text-center">
@@ -982,7 +989,7 @@
                                 <td class="text-muted small learning-record-datetime">
                                     <div class="text-xs text-muted">
                                         <div class="learning-record-date-row text-nowrap">Start : {{ $allStartDt !== '' ? \Carbon\Carbon::parse($allStartDt)->format('d/m/y H:i:s') : '-' }}</div>
-                                        <div class="learning-record-date-row text-nowrap">Finish : {{ $allEndDt !== '' ? \Carbon\Carbon::parse($allEndDt)->format('d/m/y H:i:s') : '-' }}</div>
+                                        <div class="learning-record-date-row text-nowrap">End : {{ $allEndDt !== '' ? \Carbon\Carbon::parse($allEndDt)->format('d/m/y H:i:s') : '-' }}</div>
                                     </div>
                                 </td>
                                 <td class="text-center">

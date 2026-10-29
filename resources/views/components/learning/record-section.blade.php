@@ -570,7 +570,7 @@ body.dark-mode .course-preview-playlist-link:hover,
                     <tr>
                         @foreach ($columns as $column)
                             @if (isset($column['sort']))
-                                <th class="text-muted record-sortable"
+                                <th class="text-muted record-sortable {{ $column['label'] === 'Course Title' ? 'text-center' : '' }}"
                                     style="width: {{ $column['width'] }}"
                                     data-sort-key="{{ $column['sort'] }}"
                                     data-sort-type="{{ $column['type'] }}">
