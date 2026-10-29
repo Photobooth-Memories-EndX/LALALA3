@@ -3,7 +3,9 @@
 namespace App\Services\Learning;
 
 use App\Models\ContentUser;
+use App\Models\OfflineTrainingUser;
 use App\Models\PlaylistContentUser;
+use App\Services\LearningAnalyticsService;
 use Illuminate\Support\Collection;
 
 class LearningProgressResolver
@@ -82,5 +84,39 @@ class LearningProgressResolver
         }
 
         return $result;
+    }
+
+    /**
+     * Count Non-KP OWL ongoing training records for a user.
+     * Criteria: progress > 5.0 and progress < 100.0.
+     */
+    public function countNonKpOwlOngoing(int $userId, ?string $userEmpId = null): int
+    {
+        return OfflineTrainingUser::query()
+            ->where(function ($q) use ($userId, $userEmpId) {
+                $q->where('user_id', $userId);
+                if (!empty($userEmpId)) {
+                    $q->orWhere('employee_id', $userEmpId);
+                }
+            })
+            ->where('progress', '>', 5.0)
+            ->where('progress', '<', 100.0)
+            ->count();
+    }
+
+    /**
+     * Count KP OWL ongoing learning records for a user.
+     */
+    public function countKpOwlOngoing(int $userId): int
+    {
+        return (int) app(LearningAnalyticsService::class)->ongoingLearningCount($userId);
+    }
+
+    /**
+     * Count combined ongoing learning records across KP OWL and Non-KP OWL (> 5% progress).
+     */
+    public function countCombinedOngoing(int $userId, ?string $userEmpId = null): int
+    {
+        return $this->countKpOwlOngoing($userId) + $this->countNonKpOwlOngoing($userId, $userEmpId);
     }
 }

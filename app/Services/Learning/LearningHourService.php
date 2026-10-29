@@ -172,4 +172,20 @@ class LearningHourService
     {
         return $user instanceof User ? (int) $user->getKey() : $user;
     }
+
+    /**
+     * Canonical combined total learning hours (KP OWL Online + Non-KP OWL Offline).
+     */
+    public function getCombinedLearningHours(User|int $user, ?string $userEmpId = null): float
+    {
+        $userId = $this->userId($user);
+        if ($userEmpId === null && $user instanceof User) {
+            $userEmpId = $user->id_emp;
+        }
+
+        $kpOwlHours = (float) app(LearningRecordLearningHourService::class)->getOnlineLearningHours($userId);
+        $nonKpOwlHours = (float) app(UserRecordOfflineService::class)->getTotalLearningHours($userId, $userEmpId);
+
+        return round($kpOwlHours + $nonKpOwlHours, 2);
+    }
 }

@@ -416,13 +416,20 @@
                 box-shadow: 0 0 8px rgba(var(--kp-hero-completed-rgb), .5);
             }
 
+            .shared-hero-stat-dot.non-owl {
+                background: #10b981;
+                box-shadow: 0 0 8px rgba(16, 185, 129, .5);
+            }
+
             .shared-hero-stat-dot.ongoing {
                 background: #00a8ff;
                 box-shadow: 0 0 8px rgba(0, 168, 255, .5);
             }
 
             .shared-learning-hero .shared-hero-summary-row:has(.shared-hero-stat-dot.completed) .shared-hero-summary-label,
-            .shared-learning-hero .shared-hero-summary-row:has(.shared-hero-stat-dot.completed) .shared-hero-summary-value {
+            .shared-learning-hero .shared-hero-summary-row:has(.shared-hero-stat-dot.non-owl) .shared-hero-summary-label,
+            .shared-learning-hero .shared-hero-summary-row:has(.shared-hero-stat-dot.completed) .shared-hero-summary-value,
+            .shared-learning-hero .shared-hero-summary-row:has(.shared-hero-stat-dot.non-owl) .shared-hero-summary-value {
                 color: #ffffff;
             }
 

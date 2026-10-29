@@ -11,6 +11,8 @@ use App\Models\EventPhoto;
 use App\Models\TrainingPlan;
 use App\Services\LearningAnalyticsService;
 use App\Services\AssessmentAccessService;
+use App\Services\Learning\LearningProgressResolver;
+use App\Services\Learning\UserRecordOfflineService;
 use App\Support\DurationFormatter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
@@ -109,11 +111,32 @@ class HomeUserController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $completedCourse = $heroSummary['completedCourse'];
+        $userId = (int) auth()->id();
+        $userEmpId = auth()->user()?->id_emp;
 
-        $ongoingCourse = $heroSummary['ongoingCourse'];
+        // 1. Learning Hours: Combined KP OWL online watch hours + Non-KP OWL external training hours
+        $kpOwlLearningHours = (float) $analyticsService->userLearningHours($userId);
+        $nonKpOwlLearningHours = (float) app(UserRecordOfflineService::class)->getTotalLearningHours($userId, $userEmpId);
+        $totalLearningHours = round($kpOwlLearningHours + $nonKpOwlLearningHours, 2);
+        $learningHours = $totalLearningHours;
 
-        $totalCourse = $heroSummary['totalCourse'];
+        // 2. Completed Courses Breakdown
+        $owlCourseCompleted = (int) $analyticsService->completedLearningCount($userId);
+        $nonOwlCourseCompleted = (int) app(UserRecordOfflineService::class)->queryForUser($userId, $userEmpId)->count();
+        $completedCourse = $owlCourseCompleted + $nonOwlCourseCompleted;
+
+        // 3. Ongoing Courses Breakdown (> 5% and < 100%)
+        $progressResolver = app(LearningProgressResolver::class);
+        $kpOwlOngoingCount = (int) $progressResolver->countKpOwlOngoing($userId);
+        $nonKpOwlOngoingCount = (int) $progressResolver->countNonKpOwlOngoing($userId, $userEmpId);
+        $totalOngoing = $kpOwlOngoingCount + $nonKpOwlOngoingCount;
+        $ongoingCourse = $totalOngoing;
+
+        $totalCourse = $completedCourse + $totalOngoing;
+
+
+
+
 
         $progressPercent = $totalCourse > 0
             ? round(($completedCourse / $totalCourse) * 100)
@@ -190,7 +213,7 @@ class HomeUserController extends Controller
         $totalPlaylist = $playlist->count();
 
         // Learning Hours — reused from My Learning page (same calculation)
-        $learningHours = $heroSummary['learningHours'];
+        $learningHours = $totalLearningHours;
 
         // User MOOC Progress
         $userMoocProgress = ContentUser::with('content')
@@ -232,6 +255,14 @@ class HomeUserController extends Controller
                 'continuePeriod',
                 'continueProgressDetail',
                 'learningHours',
+                'owlCourseCompleted',
+                'nonOwlCourseCompleted',
+                'kpOwlOngoingCount',
+                'nonKpOwlOngoingCount',
+                'totalOngoing',
+                'kpOwlLearningHours',
+                'nonKpOwlLearningHours',
+                'totalLearningHours',
                 'userMoocProgress',
             )
         );
