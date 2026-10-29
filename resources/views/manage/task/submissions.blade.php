@@ -355,14 +355,14 @@
             </div>
         </div>
 
-        {{-- Center: Graded Progress Bar & User Switcher --}}
-        <div class="d-flex align-items-center justify-content-center gap-3 px-2 mx-auto flex-shrink-0">
-            {{-- Graded Progress Bar --}}
-            <div class="d-none d-md-flex flex-column align-items-center justify-content-center px-2" style="min-width: 140px;">
-                <div class="small fw-semibold text-muted mb-1" id="headerGradedSummary" style="font-size: 11.5px;">
+        {{-- Center: Graded Progress Bar & User Switcher Underneath --}}
+        <div class="d-flex flex-column align-items-center justify-content-center text-center mx-auto px-2 flex-shrink-0">
+            {{-- Top: Graded Progress Summary & Bar --}}
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="small fw-semibold text-muted" id="headerGradedSummary" style="font-size: 11px; line-height: 1;">
                     {{ $gradedCount }} of {{ $totalSubmissions }} graded
-                </div>
-                <div class="progress" style="height: 6px; width: 130px; background-color: #e2e8f0; border-radius: 999px;">
+                </span>
+                <div class="progress" style="height: 4px; width: 90px; background-color: #e2e8f0; border-radius: 999px;">
                     <div class="progress-bar bg-success"
                          id="headerGradedProgressBar"
                          role="progressbar"
@@ -374,23 +374,21 @@
                 </div>
             </div>
 
-            <div class="vr my-1 text-muted d-none d-md-block" style="height: 24px; opacity: 0.25;"></div>
-
-            {{-- User Switcher [ < ] [ User Name ] [ > ] --}}
-            <div class="d-flex align-items-center gap-2">
+            {{-- Bottom: User Switcher [ < ] [ User Name ] [ > ] --}}
+            <div class="d-flex align-items-center justify-content-center gap-1.5">
                 <button type="button"
                         class="btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center flex-shrink-0"
                         id="prevSubmissionBtn"
                         title="Previous User (Left Arrow)"
-                        style="width: 32px; height: 32px;">
-                    <i class="ti ti-chevron-left fs-3"></i>
+                        style="width: 22px; height: 22px;">
+                    <i class="ti ti-chevron-left" style="font-size: 13px;"></i>
                 </button>
 
-                <div class="text-center px-1" style="min-width: 130px; max-width: 200px;">
-                    <div class="fw-bold text-dark text-truncate text-uppercase" id="headerLearnerName" style="font-size: 12px; letter-spacing: 0.3px;">
+                <div class="text-center px-1" style="min-width: 120px; max-width: 220px;">
+                    <div class="fw-bold text-dark text-truncate text-uppercase" id="headerLearnerName" style="font-size: 11.5px; letter-spacing: 0.25px; line-height: 1.2;">
                         {{ $defaultActive ? ($defaultActive->user->name ?? 'User') : 'No Submissions' }}
                     </div>
-                    <div class="text-muted" id="headerSubmissionCount" style="font-size: 11px;">
+                    <div class="text-muted" id="headerSubmissionCount" style="font-size: 10px; line-height: 1;">
                         Submission {{ $totalSubmissions > 0 ? 1 : 0 }} of {{ $totalSubmissions }}
                     </div>
                 </div>
@@ -399,8 +397,8 @@
                         class="btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center flex-shrink-0"
                         id="nextSubmissionBtn"
                         title="Next User (Right Arrow)"
-                        style="width: 32px; height: 32px;">
-                    <i class="ti ti-chevron-right fs-3"></i>
+                        style="width: 22px; height: 22px;">
+                    <i class="ti ti-chevron-right" style="font-size: 13px;"></i>
                 </button>
             </div>
         </div>
