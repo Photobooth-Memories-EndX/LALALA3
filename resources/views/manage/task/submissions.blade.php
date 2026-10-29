@@ -89,10 +89,17 @@
 
     /* Workstation Header */
     .workstation-header {
-        height: 60px;
+        height: 52px;
         background: #ffffff;
         border-bottom: 1px solid #e2e8f0;
         z-index: 50;
+    }
+
+    /* Sub-header dedicated for Graded progress & User switcher */
+    .workstation-subbar {
+        background: #ffffff;
+        border-bottom: 1px solid #e2e8f0;
+        z-index: 45;
     }
 
     /* Workstation Left Learner List Sidebar */
@@ -103,7 +110,7 @@
         background: #ffffff;
         border-right: 1px solid #e2e8f0;
         overflow-y: auto;
-        height: calc(100vh - 60px);
+        height: 100%;
     }
     .learner-item {
         border-radius: 8px;
@@ -131,7 +138,7 @@
         min-width: 0;
         display: flex;
         flex-direction: column;
-        height: calc(100vh - 60px);
+        height: 100%;
         background: #f8fafc;
         overflow: hidden;
     }
@@ -148,7 +155,7 @@
         max-width: 320px;
         background: #ffffff;
         border-left: 1px solid #e2e8f0;
-        height: calc(100vh - 60px);
+        height: 100%;
         overflow-y: auto;
         padding: 1.25rem;
     }
@@ -333,9 +340,9 @@
 {{-- ══════════════════════════════════════════════════════════════════════ --}}
 <div class="workstation-container" id="reviewSubmissionModal" role="region" aria-label="Review Submissions Workstation">
     {{-- ── Top Navigation Bar ────────────────────────────────────────── --}}
-    <header class="workstation-header px-3 py-2 d-flex align-items-center justify-content-between flex-shrink-0">
+    <header class="workstation-header px-3 d-flex align-items-center justify-content-between flex-shrink-0">
         {{-- Left: Consistent Link-Style Back Button & Task Title --}}
-        <div class="d-flex align-items-center gap-3 min-w-0" style="flex: 1 1 0; max-width: 32%;">
+        <div class="d-flex align-items-center gap-3 min-w-0">
             <a href="javascript:void(0)"
                onclick="closeWorkstation()"
                class="text-primary text-decoration-none fw-semibold d-inline-flex align-items-center gap-1.5 flex-shrink-0"
@@ -355,14 +362,28 @@
             </div>
         </div>
 
-        {{-- Center: Graded Progress Bar & User Switcher Underneath --}}
-        <div class="d-flex flex-column align-items-center justify-content-center text-center mx-auto px-2 flex-shrink-0">
+        {{-- Right: Close Button --}}
+        <div class="d-flex align-items-center justify-content-end">
+            <button type="button"
+                    class="btn btn-sm btn-ghost-secondary p-1 text-muted d-flex align-items-center justify-content-center"
+                    onclick="closeWorkstation()"
+                    title="Close & Return to Review"
+                    style="width: 32px; height: 32px; border-radius: 8px;">
+                <i class="ti ti-x fs-2"></i>
+                <span class="visually-hidden">Close &amp; Return to Review</span>
+            </button>
+        </div>
+    </header>
+
+    {{-- ── Sub-Header: Dedicated Bar for Grade Status & User Switcher ── --}}
+    <div class="workstation-subbar px-3 py-2 d-flex align-items-center justify-content-center flex-shrink-0">
+        <div class="d-flex flex-column align-items-center justify-content-center text-center">
             {{-- Top: Graded Progress Summary & Bar --}}
             <div class="d-flex align-items-center gap-2 mb-1">
-                <span class="small fw-semibold text-muted" id="headerGradedSummary" style="font-size: 11px; line-height: 1;">
+                <span class="small fw-semibold text-muted" id="headerGradedSummary" style="font-size: 11.5px; line-height: 1;">
                     {{ $gradedCount }} of {{ $totalSubmissions }} graded
                 </span>
-                <div class="progress" style="height: 4px; width: 90px; background-color: #e2e8f0; border-radius: 999px;">
+                <div class="progress" style="height: 5px; width: 120px; background-color: #e2e8f0; border-radius: 999px;">
                     <div class="progress-bar bg-success"
                          id="headerGradedProgressBar"
                          role="progressbar"
@@ -374,21 +395,21 @@
                 </div>
             </div>
 
-            {{-- Bottom: User Switcher [ < ] [ User Name ] [ > ] --}}
-            <div class="d-flex align-items-center justify-content-center gap-1.5">
+            {{-- Bottom: User Switcher [ < ] [ User Name & Submission X of Y ] [ > ] --}}
+            <div class="d-flex align-items-center justify-content-center gap-2">
                 <button type="button"
                         class="btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center flex-shrink-0"
                         id="prevSubmissionBtn"
                         title="Previous User (Left Arrow)"
-                        style="width: 22px; height: 22px;">
-                    <i class="ti ti-chevron-left" style="font-size: 13px;"></i>
+                        style="width: 26px; height: 26px;">
+                    <i class="ti ti-chevron-left" style="font-size: 14px;"></i>
                 </button>
 
-                <div class="text-center px-1" style="min-width: 120px; max-width: 220px;">
-                    <div class="fw-bold text-dark text-truncate text-uppercase" id="headerLearnerName" style="font-size: 11.5px; letter-spacing: 0.25px; line-height: 1.2;">
+                <div class="text-center px-2" style="min-width: 140px; max-width: 320px;">
+                    <div class="fw-bold text-dark text-truncate text-uppercase" id="headerLearnerName" style="font-size: 13px; letter-spacing: 0.3px; line-height: 1.2;">
                         {{ $defaultActive ? ($defaultActive->user->name ?? 'User') : 'No Submissions' }}
                     </div>
-                    <div class="text-muted" id="headerSubmissionCount" style="font-size: 10px; line-height: 1;">
+                    <div class="text-muted" id="headerSubmissionCount" style="font-size: 10.5px; line-height: 1.1;">
                         Submission {{ $totalSubmissions > 0 ? 1 : 0 }} of {{ $totalSubmissions }}
                     </div>
                 </div>
@@ -397,26 +418,12 @@
                         class="btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center flex-shrink-0"
                         id="nextSubmissionBtn"
                         title="Next User (Right Arrow)"
-                        style="width: 22px; height: 22px;">
-                    <i class="ti ti-chevron-right" style="font-size: 13px;"></i>
+                        style="width: 26px; height: 26px;">
+                    <i class="ti ti-chevron-right" style="font-size: 14px;"></i>
                 </button>
             </div>
         </div>
-
-        {{-- Right: Close Button --}}
-        <div class="d-flex align-items-center justify-content-end gap-2" style="flex: 1 1 0; max-width: 32%;">
-            <div class="vr my-1 text-muted d-none d-sm-block" style="height: 20px; opacity: 0.25;"></div>
-
-            <button type="button"
-                    class="btn btn-sm btn-ghost-secondary p-1 text-muted"
-                    onclick="closeWorkstation()"
-                    title="Close & Return to Review"
-                    style="width: 32px; height: 32px; border-radius: 8px;">
-                <i class="ti ti-x fs-2"></i>
-                <span class="visually-hidden">Close &amp; Return to Review</span>
-            </button>
-        </div>
-    </header>
+    </div>
 
     {{-- ── Workstation 3-Column Body ──────────────────────────────────── --}}
     <div class="d-flex flex-grow-1 overflow-hidden" style="min-height: 0;">
