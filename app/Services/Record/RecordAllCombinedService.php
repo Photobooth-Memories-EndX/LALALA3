@@ -1862,7 +1862,13 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
                 return ($row->l3_numerical !== null && $row->l3_numerical !== '') ? number_format((float) $row->l3_numerical, 1) : '-';
             })
             ->addColumn('course_title', function ($row) {
-                return htmlspecialchars($row->learning_title ?: '-');
+                $title = htmlspecialchars($row->learning_title ?: '-');
+                $rawReq = $row->requirement ?? ($row->status ?? 'Non-Mandatory');
+                $req = !empty($rawReq) ? htmlspecialchars($rawReq) : 'Non-Mandatory';
+                return '<div class="d-flex flex-column align-items-center justify-content-center text-center w-100">'
+                    . '<span class="fw-bold text-dark text-center fs-6 mb-1">' . $title . '</span>'
+                    . '<small class="text-muted text-center fs-7">Requirement: <span class="fw-semibold">' . $req . '</span></small>'
+                    . '</div>';
             })
             ->addColumn('employee_id', function ($row) {
                 return htmlspecialchars($row->employee_id ?: '-');
@@ -2404,7 +2410,13 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
                 return ($d && $d !== '-') ? date('d M Y', strtotime($d)) : '-';
             })
             ->addColumn('course_title', function ($row) {
-                return htmlspecialchars($row->learning_title ?: '-');
+                $title = htmlspecialchars($row->learning_title ?: '-');
+                $rawReq = $row->requirement ?? ($row->status ?? 'Non-Mandatory');
+                $req = !empty($rawReq) ? htmlspecialchars($rawReq) : 'Non-Mandatory';
+                return '<div class="d-flex flex-column align-items-center justify-content-center text-center w-100">'
+                    . '<span class="fw-bold text-dark text-center fs-6 mb-1">' . $title . '</span>'
+                    . '<small class="text-muted text-center fs-7">Requirement: <span class="fw-semibold">' . $req . '</span></small>'
+                    . '</div>';
             })
             ->addColumn('main_classification', function ($row) {
                 return htmlspecialchars($row->classification ?: '-');

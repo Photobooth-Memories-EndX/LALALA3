@@ -67,24 +67,25 @@
                     aria-label="Learning record statistics">
                     @if($recordMode === 'offline')
                         {{-- Non-KP OWL Header Cards --}}
-                        <x-shared.learning-stat-large label="LEARNING HOUR NON KP OWL" :value="number_format($stats['total_hours'], 2)" />
+                        <x-shared.learning-stat-large label="LEARNING HOUR (NON KP OWL)" :value="number_format($stats['total_hours'], 2)" />
                         <div class="d-flex flex-column gap-2">
                             <x-shared.learning-stat-small label="INTERNAL TRAINING" :value="$stats['internal_count']" />
                             <x-shared.learning-stat-small label="EXTERNAL TRAINING" :value="$stats['external_count']" />
                         </div>
                     @elseif($recordMode === 'all')
                         {{-- All Records Header Cards --}}
-                        <x-shared.learning-stat-large label="LEARNING HOUR ALL RECORD" :value="number_format($stats['total_hours'], 2)" />
+                        <x-shared.learning-stat-large label="TOTAL LEARNING HOUR (All Record)" :value="number_format($stats['total_hours'], 2)" />
                         <div class="d-flex flex-column gap-2">
                             <x-shared.learning-stat-small label="LEARNING HOUR OWL" :value="number_format($stats['online_hours'], 2)" />
                             <x-shared.learning-stat-small label="LEARNING HOUR NON KP OWL" :value="number_format($stats['offline_hours'], 2)" />
                         </div>
                     @else
                         {{-- Default KP OWL Header Cards --}}
-                        <x-shared.learning-stat-large label="LEARNING HOUR OWL" :value="number_format($stats['total_hours'], 2)" />
+                        <x-shared.learning-stat-large label="LEARNING HOUR (KP OWL)" :value="number_format($stats['total_hours'], 2)" />
                         <div class="d-flex flex-column gap-2">
                             <x-shared.learning-stat-small label="COURSE COMPLETED" :value="$stats['content_completed']" />
                             <x-shared.learning-stat-small label="PLAYLIST COMPLETED" :value="$stats['playlist_completed']" />
+    
                         </div>
                     @endif
                 </div>

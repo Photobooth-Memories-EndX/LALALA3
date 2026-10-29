@@ -959,10 +959,16 @@ class LearningDatatableService
         }
 
         $titleLink = !empty($row->content_slug)
-            ? '<a href="' . route('learning.manage.content', $row->content_slug) . '" class="text-reset fw-semibold">' . e($row->content_title) . '</a>'
-            : '<span class="fw-semibold">' . e($row->content_title) . '</span>';
+            ? '<a href="' . route('learning.manage.content', $row->content_slug) . '" class="text-reset fw-bold text-center">' . e($row->content_title) . '</a>'
+            : '<span class="fw-bold text-center">' . e($row->content_title) . '</span>';
 
-        return '<div class="text-start">' . $titleLink . '</div>';
+        $rawReq = $row->requirement ?? ($row->content_requirement ?? ($row->subtitle ?? 'Non-Mandatory'));
+        $req = !empty($rawReq) ? htmlspecialchars($rawReq) : 'Non-Mandatory';
+
+        return '<div class="d-flex flex-column align-items-center justify-content-center text-center w-100">'
+            . '<span class="fw-bold text-dark text-center fs-6 mb-1">' . $titleLink . '</span>'
+            . '<small class="text-muted text-center fs-7">Requirement: <span class="fw-semibold">' . $req . '</span></small>'
+            . '</div>';
     }
 
     private function classificationColumn($row): string

@@ -214,7 +214,7 @@
         font-weight: 600;
         line-height: 1.4;
         color: inherit;
-        text-align: left;
+        text-align: center;
         white-space: normal !important;
         word-break: normal !important;
         overflow-wrap: break-word !important;
@@ -899,7 +899,7 @@
                                         <span class="badge bg-amber-100 text-amber-700 rounded-pill px-2.5 py-1" style="background-color: #fef3c7 !important; color: #b45309 !important; font-weight: 600; font-size: 0.75rem;">Non KP OWL</span>
                                     @endif
                                 </td>
-                                <td class="learning-record-course-cell">
+                                <td class="learning-record-course-cell text-center align-middle">
                                     @php
                                         $isAllOnline = ($row['source'] ?? '') === 'online';
                                         $allSourceLabel = $isAllOnline ? 'KP OWL' : 'Non-KP OWL';
@@ -908,43 +908,45 @@
                                         $isAllMand = !str_contains($allRawReq, 'non-mandatory') && !str_contains($allRawReq, 'non mandatory') && !str_contains($allRawReq, 'optional') && str_contains($allRawReq, 'mandatory');
                                         $allReqLabel = $isAllMand ? 'Mandatory' : 'Non-Mandatory';
                                     @endphp
-                                    <div class="fw-semibold text-dark">
-                                        @if ($row['source'] === 'offline')
-                                            <button type="button"
-                                                    class="record-offline-title-link btn-record-offline-detail text-start text-dark fw-semibold p-0 border-0 bg-transparent"
-                                                    data-record-id="{{ $row['id'] }}"
-                                                    title="Click to view details">
-                                                {{ $row['title'] }}
-                                            </button>
-                                            <script type="application/json" id="record-offline-data-{{ $row['id'] }}">@json($row)</script>
-                                        @else
-                                            @if (($row['can_open'] ?? true))
-                                                @if (!empty($row['slug']))
-                                                    <a href="{{ route('content.user.view', $row['slug']) }}" class="learning-record-link fw-semibold text-dark text-decoration-none">
-                                                        {{ $row['title'] }}
-                                                    </a>
-                                                @elseif (!empty($row['playlist_url']))
-                                                    <a href="{{ $row['playlist_url'] }}" class="learning-record-link fw-semibold text-dark text-decoration-none">
-                                                        {{ $row['title'] }}
-                                                    </a>
-                                                @else
-                                                    <span>{{ $row['title'] }}</span>
-                                                @endif
-                                            @else
-                                                <a href="javascript:void(0);"
-                                                   class="learning-record-link learning-record-blocked-trigger fw-semibold text-muted text-decoration-none"
-                                                   data-status="{{ $row['access_status'] ?? 'INACTIVE' }}"
-                                                   data-message="{{ $row['modal_message'] ?? 'This content is currently inactive.' }}"
-                                                   data-title="{{ $row['title'] }}"
-                                                   role="button">
+                                    <div class="d-flex flex-column align-items-center justify-content-center text-center w-100">
+                                        <span class="fw-bold text-dark text-center fs-6 mb-1">
+                                            @if ($row['source'] === 'offline')
+                                                <button type="button"
+                                                        class="record-offline-title-link btn-record-offline-detail text-center text-dark fw-bold p-0 border-0 bg-transparent"
+                                                        data-record-id="{{ $row['id'] }}"
+                                                        title="Click to view details">
                                                     {{ $row['title'] }}
-                                                </a>
+                                                </button>
+                                                <script type="application/json" id="record-offline-data-{{ $row['id'] }}">@json($row)</script>
+                                            @else
+                                                @if (($row['can_open'] ?? true))
+                                                    @if (!empty($row['slug']))
+                                                        <a href="{{ route('content.user.view', $row['slug']) }}" class="learning-record-link fw-bold text-dark text-decoration-none text-center">
+                                                            {{ $row['title'] }}
+                                                        </a>
+                                                    @elseif (!empty($row['playlist_url']))
+                                                        <a href="{{ $row['playlist_url'] }}" class="learning-record-link fw-bold text-dark text-decoration-none text-center">
+                                                            {{ $row['title'] }}
+                                                        </a>
+                                                    @else
+                                                        <span class="text-center">{{ $row['title'] }}</span>
+                                                    @endif
+                                                @else
+                                                    <a href="javascript:void(0);"
+                                                       class="learning-record-link learning-record-blocked-trigger fw-bold text-muted text-decoration-none text-center"
+                                                       data-status="{{ $row['access_status'] ?? 'INACTIVE' }}"
+                                                       data-message="{{ $row['modal_message'] ?? 'This content is currently inactive.' }}"
+                                                       data-title="{{ $row['title'] }}"
+                                                       role="button">
+                                                        {{ $row['title'] }}
+                                                    </a>
+                                                @endif
+                                                <script type="application/json" id="record-online-data-{{ $row['id'] }}">@json($row)</script>
                                             @endif
-                                            <script type="application/json" id="record-online-data-{{ $row['id'] }}">@json($row)</script>
-                                        @endif
-                                    </div>
-                                    <div class="d-flex align-items-center gap-2 text-xs text-muted mt-1 flex-wrap">
-                                        <span>Requirement: <span class="badge bg-light text-dark">{{ $allReqLabel }}</span></span>
+                                        </span>
+                                        <small class="text-muted text-center fs-7">
+                                            Requirement: <span class="fw-semibold">{{ $allReqLabel }}</span>
+                                        </small>
                                     </div>
                                 </td>
                                 <td class="text-center">

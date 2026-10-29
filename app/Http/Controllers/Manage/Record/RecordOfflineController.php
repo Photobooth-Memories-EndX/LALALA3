@@ -576,19 +576,25 @@ class RecordOfflineController extends Controller
             ->addColumn('course_name', function ($row) use ($classificationParam) {
                 $courseTitle = $row->course_name ?: '-';
                 $tId = $row->training_id ?? ($row->offline_training_id ?? null);
+                $escaped = htmlspecialchars($courseTitle);
                 if (!empty($tId)) {
                     $params = ['training' => $tId];
                     if ($classificationParam) {
                         $params['classification'] = $classificationParam;
                     }
                     $url = route('manage.record.offline.course', $params);
-                    return '<div class="fw-semibold text-truncate" style="max-width: 260px;" title="' . htmlspecialchars($courseTitle) . '">'
-                        . '<a href="' . htmlspecialchars($url) . '" class="text-primary text-decoration-none hover-underline course-link" title="View training details">'
-                        . htmlspecialchars($courseTitle) . '</a></div>';
+                    $titleLink = '<a href="' . htmlspecialchars($url) . '" class="text-primary text-decoration-none hover-underline course-link" title="View training details">' . $escaped . '</a>';
+                } else {
+                    $titleLink = $escaped;
                 }
 
-                return '<div class="fw-semibold text-dark text-truncate" style="max-width: 260px;" title="' . htmlspecialchars($courseTitle) . '">'
-                    . htmlspecialchars($courseTitle) . '</div>';
+                $rawReq = $row->requirement ?? ($row->status ?? 'Non-Mandatory');
+                $req = !empty($rawReq) ? htmlspecialchars($rawReq) : 'Non-Mandatory';
+
+                return '<div class="d-flex flex-column align-items-center justify-content-center text-center w-100">'
+                    . '<span class="fw-bold text-dark text-center fs-6 mb-1">' . $titleLink . '</span>'
+                    . '<small class="text-muted text-center fs-7">Requirement: <span class="fw-semibold">' . $req . '</span></small>'
+                    . '</div>';
             })
             ->addColumn('sub_course_name', function ($row) {
                 return !empty($row->sub_course_name)
@@ -1096,7 +1102,13 @@ class RecordOfflineController extends Controller
                 return htmlspecialchars($row->company ?: '-');
             })
             ->addColumn('course_name', function ($row) {
-                return '<div class="fw-semibold text-dark text-nowrap">' . htmlspecialchars($row->course_name ?: '-') . '</div>';
+                $title = htmlspecialchars($row->course_name ?: '-');
+                $rawReq = $row->requirement ?? ($row->status ?? 'Non-Mandatory');
+                $req = !empty($rawReq) ? htmlspecialchars($rawReq) : 'Non-Mandatory';
+                return '<div class="d-flex flex-column align-items-center justify-content-center text-center w-100">'
+                    . '<span class="fw-bold text-dark text-center fs-6 mb-1">' . $title . '</span>'
+                    . '<small class="text-muted text-center fs-7">Requirement: <span class="fw-semibold">' . $req . '</span></small>'
+                    . '</div>';
             })
             ->addColumn('sub_course_name', function ($row) {
                 return !empty($row->sub_course_name)
@@ -1591,19 +1603,25 @@ class RecordOfflineController extends Controller
             })
             ->addColumn('course_name', function ($row) use ($classificationSlug) {
                 $courseTitle = $row->course_name ?: '-';
+                $escaped = htmlspecialchars($courseTitle);
                 if (!empty($row->offline_training_id)) {
                     $params = ['training' => $row->offline_training_id];
                     if ($classificationSlug) {
                         $params['classification'] = $classificationSlug;
                     }
                     $url = route('manage.record.offline.course', $params);
-                    return '<div class="fw-semibold text-truncate" style="max-width: 260px;" title="' . htmlspecialchars($courseTitle) . '">'
-                        . '<a href="' . htmlspecialchars($url) . '" class="text-primary text-decoration-none hover-underline course-link">'
-                        . htmlspecialchars($courseTitle) . '</a></div>';
+                    $titleLink = '<a href="' . htmlspecialchars($url) . '" class="text-primary text-decoration-none hover-underline course-link">' . $escaped . '</a>';
+                } else {
+                    $titleLink = $escaped;
                 }
 
-                return '<div class="fw-semibold text-dark text-truncate" style="max-width: 260px;" title="' . htmlspecialchars($courseTitle) . '">'
-                    . htmlspecialchars($courseTitle) . '</div>';
+                $rawReq = $row->requirement ?? ($row->status ?? 'Non-Mandatory');
+                $req = !empty($rawReq) ? htmlspecialchars($rawReq) : 'Non-Mandatory';
+
+                return '<div class="d-flex flex-column align-items-center justify-content-center text-center w-100">'
+                    . '<span class="fw-bold text-dark text-center fs-6 mb-1">' . $titleLink . '</span>'
+                    . '<small class="text-muted text-center fs-7">Requirement: <span class="fw-semibold">' . $req . '</span></small>'
+                    . '</div>';
             })
             ->addColumn('sub_course_name', function ($row) {
                 return !empty($row->sub_course_name)

@@ -91,7 +91,7 @@
 
     <td class="text-muted record-row-index">{{ $index }}</td>
 
-    <td><x-learning.record-title-cell :row="$row" /></td>
+    <td class="text-center align-middle"><x-learning.record-title-cell :row="$row" /></td>
 
     <td class="learning-record-type text-center">
         <x-learning.record-type-badge :type="$row['type']" :url="(($row['can_open'] ?? true) ? ($row['playlist_url'] ?? null) : null)" />

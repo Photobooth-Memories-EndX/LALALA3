@@ -1406,7 +1406,24 @@
                         data: 'course_title',
                         name: 'learning_title',
                         orderable: true,
-                        defaultContent: '-'
+                        defaultContent: '-',
+                        className: 'text-center align-middle',
+                        render: function(data, type, row) {
+                            if (typeof data === 'string' && data.indexOf('d-flex flex-column') !== -1) {
+                                return data;
+                            }
+                            const courseTitle = data || row.course_title || row.learning_title || '-';
+                            let req = row.requirement || 'Non-Mandatory';
+                            if (typeof req === 'string' && req.indexOf('<') !== -1) {
+                                req = (req.toLowerCase().indexOf('mandatory') !== -1 && req.toLowerCase().indexOf('non-mandatory') === -1) ? 'Mandatory' : 'Non-Mandatory';
+                            }
+                            return `<div class="d-flex flex-column align-items-center justify-content-center text-center w-100">
+                                <span class="fw-bold text-dark text-center fs-6 mb-1">${courseTitle}</span>
+                                <small class="text-muted text-center fs-7">
+                                    Requirement: <span class="fw-semibold">${req || 'Non-Mandatory'}</span>
+                                </small>
+                            </div>`;
+                        }
                     },
                     {
                         data: 'type',

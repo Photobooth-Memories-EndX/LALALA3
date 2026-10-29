@@ -708,22 +708,24 @@
                                 data-sort-score="{{ $offSortScore }}"
                                 data-sort-certificate="{{ $offSortCert }}">
                                 <td class="text-center text-muted record-row-index">{{ $loop->iteration }}</td>
-                                <td class="learning-record-course-cell">
-                                    <div class="fw-semibold text-dark">
-                                        <button type="button"
-                                                class="record-offline-title-link btn-record-offline-detail text-start text-dark fw-semibold p-0 border-0 bg-transparent"
-                                                data-record-id="{{ $row['id'] }}"
-                                                title="Click to view details">
-                                            {{ $row['title'] }}
-                                        </button>
-                                    </div>
-                                    @php
-                                        $offReq = strtolower(trim((string) ($row['requirement'] ?? 'non-mandatory')));
-                                        $isOffMand = !str_contains($offReq, 'non-mandatory') && !str_contains($offReq, 'non mandatory') && !str_contains($offReq, 'optional') && str_contains($offReq, 'mandatory');
-                                        $offReqLabel = $isOffMand ? 'Mandatory' : 'Non-Mandatory';
-                                    @endphp
-                                    <div class="text-xs text-muted mt-1">
-                                        Requirement: <span class="badge bg-light text-dark">{{ $offReqLabel }}</span>
+                                <td class="learning-record-course-cell text-center align-middle">
+                                    <div class="d-flex flex-column align-items-center justify-content-center text-center w-100">
+                                        <span class="fw-bold text-dark text-center fs-6 mb-1">
+                                            <button type="button"
+                                                    class="record-offline-title-link btn-record-offline-detail text-center text-dark fw-bold p-0 border-0 bg-transparent"
+                                                    data-record-id="{{ $row['id'] }}"
+                                                    title="Click to view details">
+                                                {{ $row['title'] }}
+                                            </button>
+                                        </span>
+                                        @php
+                                            $offReq = strtolower(trim((string) ($row['requirement'] ?? 'non-mandatory')));
+                                            $isOffMand = !str_contains($offReq, 'non-mandatory') && !str_contains($offReq, 'non mandatory') && !str_contains($offReq, 'optional') && str_contains($offReq, 'mandatory');
+                                            $offReqLabel = $isOffMand ? 'Mandatory' : 'Non-Mandatory';
+                                        @endphp
+                                        <small class="text-muted text-center fs-7">
+                                            Requirement: <span class="fw-semibold">{{ $offReqLabel }}</span>
+                                        </small>
                                     </div>
                                     {{-- Hidden JSON storage for instant zero-N+1 modal population --}}
                                     <script type="application/json" id="record-offline-data-{{ $row['id'] }}">@json($row)</script>
