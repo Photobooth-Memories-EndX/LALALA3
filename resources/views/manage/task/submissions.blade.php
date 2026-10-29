@@ -95,13 +95,6 @@
         z-index: 50;
     }
 
-    /* Sub-header dedicated for Graded progress & User switcher */
-    .workstation-subbar {
-        background: #ffffff;
-        border-bottom: 1px solid #e2e8f0;
-        z-index: 45;
-    }
-
     /* Workstation Left Learner List Sidebar */
     .workstation-sidebar {
         width: 240px;
@@ -341,7 +334,7 @@
 <div class="workstation-container" id="reviewSubmissionModal" role="region" aria-label="Review Submissions Workstation">
     {{-- ── Top Navigation Bar ────────────────────────────────────────── --}}
     <header class="workstation-header px-3 d-flex align-items-center justify-content-between flex-shrink-0">
-        {{-- Left: Consistent Link-Style Back Button & Task Title --}}
+        {{-- Left: Consistent Link-Style Back Button & Title --}}
         <div class="d-flex align-items-center gap-3 min-w-0">
             <a href="javascript:void(0)"
                onclick="closeWorkstation()"
@@ -356,9 +349,6 @@
 
             <div class="min-w-0">
                 <h5 class="fw-bold mb-0 text-dark text-truncate" style="font-size: 14.5px;">Review Submissions</h5>
-                <div class="text-muted text-truncate" style="font-size: 11.5px;">
-                    Task: <span class="fw-semibold text-secondary">{{ $task->title }}</span> &bull; {{ $task->typeLabel() }}
-                </div>
             </div>
         </div>
 
@@ -374,56 +364,6 @@
             </button>
         </div>
     </header>
-
-    {{-- ── Sub-Header: Dedicated Bar for Grade Status & User Switcher ── --}}
-    <div class="workstation-subbar px-3 py-2 d-flex align-items-center justify-content-center flex-shrink-0">
-        <div class="d-flex flex-column align-items-center justify-content-center text-center">
-            {{-- Top: Graded Progress Summary & Bar --}}
-            <div class="d-flex align-items-center gap-2 mb-1">
-                <span class="small fw-semibold text-muted" id="headerGradedSummary" style="font-size: 11.5px; line-height: 1;">
-                    {{ $gradedCount }} of {{ $totalSubmissions }} graded
-                </span>
-                <div class="progress" style="height: 5px; width: 120px; background-color: #e2e8f0; border-radius: 999px;">
-                    <div class="progress-bar bg-success"
-                         id="headerGradedProgressBar"
-                         role="progressbar"
-                         style="width: {{ $totalSubmissions > 0 ? round(($gradedCount / $totalSubmissions) * 100) : 0 }}%; border-radius: 999px;"
-                         aria-valuenow="{{ $gradedCount }}"
-                         aria-valuemin="0"
-                         aria-valuemax="{{ $totalSubmissions }}">
-                    </div>
-                </div>
-            </div>
-
-            {{-- Bottom: User Switcher [ < ] [ User Name & Submission X of Y ] [ > ] --}}
-            <div class="d-flex align-items-center justify-content-center gap-2">
-                <button type="button"
-                        class="btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center flex-shrink-0"
-                        id="prevSubmissionBtn"
-                        title="Previous User (Left Arrow)"
-                        style="width: 26px; height: 26px;">
-                    <i class="ti ti-chevron-left" style="font-size: 14px;"></i>
-                </button>
-
-                <div class="text-center px-2" style="min-width: 140px; max-width: 320px;">
-                    <div class="fw-bold text-dark text-truncate text-uppercase" id="headerLearnerName" style="font-size: 13px; letter-spacing: 0.3px; line-height: 1.2;">
-                        {{ $defaultActive ? ($defaultActive->user->name ?? 'User') : 'No Submissions' }}
-                    </div>
-                    <div class="text-muted" id="headerSubmissionCount" style="font-size: 10.5px; line-height: 1.1;">
-                        Submission {{ $totalSubmissions > 0 ? 1 : 0 }} of {{ $totalSubmissions }}
-                    </div>
-                </div>
-
-                <button type="button"
-                        class="btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center flex-shrink-0"
-                        id="nextSubmissionBtn"
-                        title="Next User (Right Arrow)"
-                        style="width: 26px; height: 26px;">
-                    <i class="ti ti-chevron-right" style="font-size: 14px;"></i>
-                </button>
-            </div>
-        </div>
-    </div>
 
     {{-- ── Workstation 3-Column Body ──────────────────────────────────── --}}
     <div class="d-flex flex-grow-1 overflow-hidden" style="min-height: 0;">
@@ -532,6 +472,69 @@
         <main class="workstation-main" id="filePreviewModal">
             {{-- Main Canvas Area --}}
             <div class="workstation-canvas-body" id="workstationCanvasBody">
+                {{-- ── Canvas Header Card: Task Info, User Switcher & Graded Progress ── --}}
+                <div class="card border rounded-3 p-3 bg-white mb-3 shadow-xs" style="border-color: #e2e8f0 !important;">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                        {{-- Left: Task Title & Type --}}
+                        <div class="d-flex align-items-center gap-1.5" style="flex: 1 1 0; min-width: 150px;">
+                            <span class="text-secondary fw-semibold text-truncate" style="font-size: 13.5px;">{{ $task->title }}</span>
+                            <span class="text-muted">&bull;</span>
+                            <span class="fw-bold text-dark text-truncate" style="font-size: 13.5px;">{{ $task->typeLabel() }}</span>
+                        </div>
+
+                        {{-- Center: User Switcher [ < ] [ User Name ] [ > ] & Graded Progress Bar Underneath --}}
+                        <div class="d-flex flex-column align-items-center justify-content-center text-center mx-auto" style="flex: 2 1 0; min-width: 250px;">
+                            {{-- User Switcher --}}
+                            <div class="d-flex align-items-center justify-content-center gap-2 mb-1.5">
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center flex-shrink-0"
+                                        id="prevSubmissionBtn"
+                                        title="Previous User (Left Arrow)"
+                                        style="width: 28px; height: 28px;">
+                                    <i class="ti ti-chevron-left" style="font-size: 15px;"></i>
+                                </button>
+
+                                <div class="text-center px-2" style="min-width: 140px; max-width: 320px;">
+                                    <div class="fw-bold text-dark text-truncate text-uppercase" id="headerLearnerName" style="font-size: 14px; letter-spacing: 0.3px; line-height: 1.2;">
+                                        {{ $defaultActive ? ($defaultActive->user->name ?? 'User') : 'No Submissions' }}
+                                    </div>
+                                    <div class="text-muted" id="headerSubmissionCount" style="font-size: 11px; line-height: 1.2;">
+                                        Submission {{ $totalSubmissions > 0 ? 1 : 0 }} of {{ $totalSubmissions }}
+                                    </div>
+                                </div>
+
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center flex-shrink-0"
+                                        id="nextSubmissionBtn"
+                                        title="Next User (Right Arrow)"
+                                        style="width: 28px; height: 28px;">
+                                    <i class="ti ti-chevron-right" style="font-size: 15px;"></i>
+                                </button>
+                            </div>
+
+                            {{-- Graded Progress Bar Underneath --}}
+                            <div class="d-flex align-items-center justify-content-center gap-2">
+                                <span class="small fw-semibold text-muted" id="headerGradedSummary" style="font-size: 11.5px; line-height: 1;">
+                                    {{ $gradedCount }} of {{ $totalSubmissions }} graded
+                                </span>
+                                <div class="progress" style="height: 5px; width: 130px; background-color: #e2e8f0; border-radius: 999px;">
+                                    <div class="progress-bar bg-success"
+                                         id="headerGradedProgressBar"
+                                         role="progressbar"
+                                         style="width: {{ $totalSubmissions > 0 ? round(($gradedCount / $totalSubmissions) * 100) : 0 }}%; border-radius: 999px;"
+                                         aria-valuenow="{{ $gradedCount }}"
+                                         aria-valuemin="0"
+                                         aria-valuemax="{{ $totalSubmissions }}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Right: Balancer spacer to keep center perfectly centered --}}
+                        <div class="d-none d-md-block" style="flex: 1 1 0; min-width: 150px;"></div>
+                    </div>
+                </div>
+
                 @forelse ($allSubmissions as $sub)
                     <div class="submission-pane d-none" id="submission-pane-{{ $sub->id }}" data-submission-id="{{ $sub->id }}">
                         <div id="submissionContent-{{ $sub->id }}">
