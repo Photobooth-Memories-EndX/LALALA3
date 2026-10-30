@@ -1834,6 +1834,16 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
                 $cert = e($row->certificate);
                 return '<span class="badge bg-blue-lt text-primary fw-bold" style="font-size: 0.725rem;" title="' . $cert . '"><i class="ti ti-file-certificate me-1"></i> Available</span>';
             })
+            ->addColumn('certificate_availability', function ($row) {
+                $isAvailable = (!empty($row->certificate) && $row->certificate !== '-');
+                if (!$isAvailable && ($row->source ?? '') === 'online') {
+                    $isAvailable = (($row->status ?? '') === 'Finished' || (float)($row->progress ?? 0) >= 100);
+                }
+                if ($isAvailable) {
+                    return '<span class="badge bg-blue-lt text-primary fw-bold px-2 py-1" style="font-size: 0.725rem;"><i class="ti ti-file-certificate me-1"></i> Available</span>';
+                }
+                return '<span class="text-muted small">-</span>';
+            })
             ->addColumn('attendance_badge', function ($row) {
                 $val = (string) ($row->attendance ?? '');
                 $attendance = in_array(strtolower(trim($val)), ['present', 'yes', '1', 'true', 'finished', 'completed', 'hadir'], true)
@@ -1902,6 +1912,18 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
                     }
                 }
                 return htmlspecialchars($sub ?: '-');
+            })
+            ->addColumn('provider', function ($row) {
+                if ($row->source === 'online') {
+                    return '<span class="badge bg-blue-lt text-blue">Internal</span>';
+                }
+                return htmlspecialchars($row->provider ?: '-');
+            })
+            ->addColumn('sub_provider', function ($row) {
+                if ($row->source === 'online') {
+                    return '<span class="text-muted small">-</span>';
+                }
+                return htmlspecialchars($row->sub_provider ?: '-');
             })
             ->addColumn('provider_name', function ($row) {
                 if ($row->source === 'online') {
@@ -1983,8 +2005,18 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
             ->addColumn('date_time_merged', function ($row) {
                 return \App\Http\Controllers\Manage\Record\RecordOfflineController::renderMergedDateTime($row->start_date ?? null, $row->finish_date ?? ($row->end_date ?? null), $row->start_time ?? null, $row->end_time ?? null);
             })
+            ->addColumn('date_merged', function ($row) {
+                return \App\Http\Controllers\Manage\Record\RecordOfflineController::renderMergedDate($row->start_date ?? null, $row->finish_date ?? ($row->end_date ?? null));
+            })
+            ->addColumn('time_merged', function ($row) {
+                return \App\Http\Controllers\Manage\Record\RecordOfflineController::renderMergedTime($row->start_time ?? null, $row->end_time ?? null);
+            })
             ->addColumn('record_month', function ($row) {
-                $d = $row->finish_date ?: ($row->start_date ?: ($row->record_date ?? null));
+                if ($row->source === 'online') {
+                    $d = $row->finish_date ?? null;
+                } else {
+                    $d = $row->start_date ?: ($row->finish_date ?: ($row->record_date ?? null));
+                }
                 if (!empty($d) && $d !== '-') {
                     try {
                         return date('F', strtotime($d));
@@ -2472,8 +2504,18 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
             ->addColumn('date_time_merged', function ($row) {
                 return \App\Http\Controllers\Manage\Record\RecordOfflineController::renderMergedDateTime($row->start_date ?? null, $row->finish_date ?? ($row->end_date ?? null), $row->start_time ?? null, $row->end_time ?? null);
             })
+            ->addColumn('date_merged', function ($row) {
+                return \App\Http\Controllers\Manage\Record\RecordOfflineController::renderMergedDate($row->start_date ?? null, $row->finish_date ?? ($row->end_date ?? null));
+            })
+            ->addColumn('time_merged', function ($row) {
+                return \App\Http\Controllers\Manage\Record\RecordOfflineController::renderMergedTime($row->start_time ?? null, $row->end_time ?? null);
+            })
             ->addColumn('record_month', function ($row) {
-                $d = $row->finish_date ?: ($row->start_date ?: ($row->record_date ?? null));
+                if ($row->source === 'online') {
+                    $d = $row->finish_date ?? null;
+                } else {
+                    $d = $row->start_date ?: ($row->finish_date ?: ($row->record_date ?? null));
+                }
                 if (!empty($d) && $d !== '-') {
                     try {
                         return date('F', strtotime($d));

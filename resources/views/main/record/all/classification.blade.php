@@ -186,36 +186,38 @@
                             <thead class="bg-light text-muted small text-uppercase">
                                 <tr>
                                     <th style="width: 45px; text-align: center;">NO</th>
-                                    <th style="min-width: 95px;">Source</th>
-                                    <th style="min-width: 110px;">Employee ID</th>
-                                    <th style="min-width: 160px;">Employee Name</th>
-                                    <th style="min-width: 130px;">Team</th>
-                                    <th style="min-width: 140px;">Department</th>
-                                    <th style="min-width: 130px;">Company</th>
-                                    <th style="min-width: 220px;">Course Title</th>
-                                    <th style="min-width: 100px;">Type</th>
-                                    <th style="min-width: 110px;">Category</th>
-                                    <th style="min-width: 140px;">Main Classification</th>
-                                    <th style="min-width: 140px;">Sub Classification</th>
-                                    <th style="min-width: 120px;">Delivery Method</th>
-                                    <th style="min-width: 130px;">Sub Delivery Method</th>
-                                    <th style="min-width: 130px;">Provider Name</th>
-                                    <th style="min-width: 120px;">Venue</th>
-                                    <th style="min-width: 110px;">Course Duration</th>
-                                    <th style="min-width: 130px;">Total Recognized Duration</th>
-
-                                    <th style="min-width: 110px;">Learning Hours</th>
-                                    <th style="min-width: 110px;">% Progress</th>
-                                    <th style="min-width: 110px;">Progress Status</th>
-                                    <th style="min-width: 140px;">Date Time</th>
-                                    <th style="min-width: 110px;">Record Month</th>
-                                    <th style="min-width: 110px;">Requirement</th>
-                                    <th style="min-width: 100px;">Attendance</th>
-                                    <th style="min-width: 120px;">Score (L1) - Course</th>
-                                    <th style="min-width: 90px;">Score (L2)</th>
-                                    <th style="min-width: 90px;">Score (L3)</th>
-                                    <th style="min-width: 130px;">Person In Charge (PIC)</th>
-                                    <th style="min-width: 140px;">TOTAL ENGAGEMENT DURATION</th>
+                                    <th style="min-width: 95px;">SOURCE</th>
+                                    <th style="min-width: 110px;">EMPLOYEE ID</th>
+                                    <th style="min-width: 160px;">EMPLOYEE NAME</th>
+                                    <th style="min-width: 130px;">TEAM</th>
+                                    <th style="min-width: 140px;">DEPARTMENT</th>
+                                    <th style="min-width: 130px;">COMPANY</th>
+                                    <th style="min-width: 220px;">COURSE TITLE</th>
+                                    <th style="min-width: 100px;">TYPE</th>
+                                    <th style="min-width: 110px;">CATEGORY</th>
+                                    <th style="min-width: 140px;">MAIN CLASSIFICATION</th>
+                                    <th style="min-width: 140px;">SUB CLASSIFICATION</th>
+                                    <th style="min-width: 120px;">DELIVERY METHOD</th>
+                                    <th style="min-width: 130px;">SUB DELIVERY METHOD</th>
+                                    <th style="min-width: 110px;">PROVIDER</th>
+                                    <th style="min-width: 130px;">PROVIDER NAME</th>
+                                    <th style="min-width: 120px;">VENUE</th>
+                                    <th style="min-width: 110px;">COURSE DURATION</th>
+                                    <th style="min-width: 130px;">TOTAL RECOGNIZED DURATION</th>
+                                    <th style="min-width: 110px;">LEARNING HOURS</th>
+                                    <th style="min-width: 110px;">% PROGRESS</th>
+                                    <th style="min-width: 110px;">PROGRESS STATUS</th>
+                                    <th style="min-width: 140px;">DATE (START - END)</th>
+                                    <th style="min-width: 120px;">TIME (START - END)</th>
+                                    <th style="min-width: 110px;">RECORD MONTH</th>
+                                    <th style="min-width: 110px;">REQUIREMENT</th>
+                                    <th style="min-width: 100px;">ATTENDANCE</th>
+                                    <th style="min-width: 120px;">SCORE (L1) - COURSE</th>
+                                    <th style="min-width: 90px;">SCORE (L2)</th>
+                                    <th style="min-width: 90px;">SCORE (L3)</th>
+                                    <th style="min-width: 130px;">CERTIFICATE AVAILABILITY</th>
+                                    <th style="min-width: 130px;">PERSON IN CHARGE (PIC)</th>
+                                    <th style="min-width: 140px;">TOTAL ENGAGEMENT TIME (LH)</th>
                                     <th class="text-end" style="width: 80px;">ACTION</th>
                                 </tr>
                             </thead>
@@ -1445,6 +1447,12 @@
                         defaultContent: '-'
                     },
                     {
+                        data: 'provider',
+                        name: 'provider',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    {
                         data: 'provider_name',
                         name: 'provider_name',
                         orderable: true,
@@ -1486,9 +1494,16 @@
                         orderable: true
                     },
                     {
-                        data: 'date_time_merged',
+                        data: 'date_merged',
                         name: 'start_date',
-                        orderable: true
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    {
+                        data: 'time_merged',
+                        name: 'start_time',
+                        orderable: true,
+                        defaultContent: '-'
                     },
                     {
                         data: 'record_month',
@@ -1545,6 +1560,12 @@
                     {
                         data: 'score_l3',
                         name: 'score_l3',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    {
+                        data: 'certificate_availability',
+                        name: 'certificate',
                         orderable: true,
                         defaultContent: '-'
                     },

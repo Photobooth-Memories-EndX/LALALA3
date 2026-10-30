@@ -238,19 +238,23 @@
                                 <th style="min-width: 150px;">SUB CLASSIFICATION</th>
                                 <th class="text-center" style="min-width: 120px;">DELIVERY METHOD</th>
                                 <th style="min-width: 140px;">SUB DELIVERY METHOD</th>
+                                <th class="text-center" style="min-width: 110px;">PROVIDER</th>
                                 <th style="min-width: 160px;">PROVIDER NAME</th>
                                 <th style="min-width: 140px;">VENUE</th>
                                 <th class="text-center" style="min-width: 100px;">COURSE DURATION</th>
+                                <th class="text-center" style="min-width: 130px;">TOTAL RECOGNIZED DURATION</th>
                                 <th class="text-center" style="min-width: 110px;">LEARNING HOURS</th>
                                 <th class="text-center" style="min-width: 110px;">% PROGRESS</th>
                                 <th class="text-center" style="min-width: 110px;">PROGRESS STATUS</th>
-                                <th class="text-center" style="min-width: 140px;">DATE TIME</th>
+                                <th class="text-center" style="min-width: 140px;">DATE (START - END)</th>
+                                <th class="text-center" style="min-width: 120px;">TIME (START - END)</th>
                                 <th class="text-center" style="min-width: 100px;">RECORD MONTH</th>
                                 <th class="text-center" style="min-width: 110px;">REQUIREMENT</th>
                                 <th class="text-center" style="min-width: 105px;">ATTENDANCE</th>
                                 <th class="text-center" style="min-width: 120px;">SCORE (L1) - COURSE</th>
                                 <th class="text-center" style="min-width: 105px;">SCORE (L2)</th>
                                 <th class="text-center" style="min-width: 105px;">SCORE (L3)</th>
+                                <th class="text-center" style="min-width: 130px;">CERTIFICATE AVAILABILITY</th>
                                 <th style="min-width: 130px;">PERSON IN CHARGE (PIC)</th>
                                 <th class="text-center" style="min-width: 120px;">TOTAL ENGAGEMENT TIME (LH)</th>
                                 <th class="text-center" style="min-width: 60px; width: 60px;">ACTION</th>
@@ -1057,19 +1061,23 @@
                 { data: 'sub_classification', name: 'ot.sub_classification', className: 'text-start' },
                 { data: 'delivery_method', name: 'ot.delivery_method', className: 'text-center' },
                 { data: 'sub_delivery_method', name: 'ot.sub_delivery_method', className: 'text-start' },
+                { data: 'provider', name: 'ot.provider', className: 'text-center' },
                 { data: 'provider_name', name: 'ot.provider_name', className: 'text-start' },
                 { data: 'venue', name: 'ot.venue', className: 'text-start' },
                 { data: 'course_duration', name: 'ot.duration_seconds', className: 'text-center' },
+                { data: 'total_recognized_duration', name: 'total_recognized_duration', className: 'text-center', orderable: false },
                 { data: 'course_learning_hours', name: 'ot.learning_hours', className: 'text-center' },
                 { data: 'progress_percent', name: 'otu.progress', className: 'text-center' },
                 { data: 'progress_status', name: 'otu.progress', className: 'text-center' },
-                { data: 'date_time_merged', name: 'ot.start_date', className: 'text-center', orderable: false },
+                { data: 'date_merged', name: 'ot.start_date', className: 'text-center', orderable: false },
+                { data: 'time_merged', name: 'ot.start_time', className: 'text-center', orderable: false },
                 { data: 'record_month', name: 'ot.start_date', className: 'text-center', orderable: false },
                 { data: 'requirement', name: 'ot.requirement', className: 'text-center' },
                 { data: 'attendance_badge', name: 'otu.attendance', className: 'text-center' },
                 { data: 'score_l1', name: 'otu.assessment_score', className: 'text-center' },
                 { data: 'score_l2', name: 'otu.l2_numerical', className: 'text-center' },
                 { data: 'score_l3', name: 'otu.l3_numerical', className: 'text-center' },
+                { data: 'certificate_availability', name: 'otu.certificate', className: 'text-center' },
                 { data: 'pic', name: 'otu.pic', className: 'text-start' },
                 { data: 'total_engagement_time', name: 'otu.learning_hours', className: 'text-center' },
                 { data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-center' }

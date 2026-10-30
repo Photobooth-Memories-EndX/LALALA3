@@ -286,19 +286,23 @@
                                     <th style="min-width: 150px;">SUB CLASSIFICATION</th>
                                     <th class="text-center" style="min-width: 120px;">DELIVERY METHOD</th>
                                     <th style="min-width: 140px;">SUB DELIVERY METHOD</th>
+                                    <th class="text-center" style="min-width: 110px;">PROVIDER</th>
                                     <th style="min-width: 160px;">PROVIDER NAME</th>
                                     <th style="min-width: 140px;">VENUE</th>
                                     <th class="text-center" style="min-width: 100px;">COURSE DURATION</th>
+                                    <th class="text-center" style="min-width: 130px;">TOTAL RECOGNIZED DURATION</th>
                                     <th class="text-center" style="min-width: 110px;">LEARNING HOURS</th>
                                     <th class="text-center" style="min-width: 110px;">% PROGRESS</th>
                                     <th class="text-center" style="min-width: 110px;">PROGRESS STATUS</th>
-                                    <th class="text-center" style="min-width: 140px;">DATE TIME</th>
+                                    <th class="text-center" style="min-width: 140px;">DATE (START - END)</th>
+                                    <th class="text-center" style="min-width: 120px;">TIME (START - END)</th>
                                     <th class="text-center" style="min-width: 100px;">RECORD MONTH</th>
                                     <th class="text-center" style="min-width: 110px;">REQUIREMENT</th>
                                     <th class="text-center" style="min-width: 105px;">ATTENDANCE</th>
                                     <th class="text-center" style="min-width: 120px;">SCORE (L1) - COURSE</th>
                                     <th class="text-center" style="min-width: 105px;">SCORE (L2)</th>
                                     <th class="text-center" style="min-width: 105px;">SCORE (L3)</th>
+                                    <th class="text-center" style="min-width: 130px;">CERTIFICATE AVAILABILITY</th>
                                     <th style="min-width: 130px;">PERSON IN CHARGE (PIC)</th>
                                     <th class="text-center" style="min-width: 120px;">TOTAL ENGAGEMENT TIME (LH)</th>
                                     <th class="text-center" style="min-width: 60px; width: 60px;">ACTION</th>
@@ -1380,6 +1384,11 @@
                         className: 'text-start'
                     },
                     {
+                        data: 'provider',
+                        name: 'ot.provider',
+                        className: 'text-center'
+                    },
+                    {
                         data: 'provider_name',
                         name: 'ot.provider_name',
                         className: 'text-start'
@@ -1393,6 +1402,12 @@
                         data: 'course_duration',
                         name: 'ot.duration_seconds',
                         className: 'text-center'
+                    },
+                    {
+                        data: 'total_recognized_duration',
+                        name: 'total_recognized_duration',
+                        className: 'text-center',
+                        orderable: false
                     },
                     {
                         data: 'course_learning_hours',
@@ -1410,8 +1425,14 @@
                         className: 'text-center'
                     },
                     {
-                        data: 'date_time_merged',
+                        data: 'date_merged',
                         name: 'ot.start_date',
+                        className: 'text-center',
+                        orderable: false
+                    },
+                    {
+                        data: 'time_merged',
+                        name: 'ot.start_time',
                         className: 'text-center',
                         orderable: false
                     },
@@ -1444,6 +1465,11 @@
                     {
                         data: 'score_l3',
                         name: 'otu.l3_numerical',
+                        className: 'text-center'
+                    },
+                    {
+                        data: 'certificate_availability',
+                        name: 'otu.certificate',
                         className: 'text-center'
                     },
                     {

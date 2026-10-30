@@ -94,12 +94,15 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
             'Sub Classification',
             'Delivery Method',
             'Sub Delivery Method',
+            'Provider',
+            'Sub Provider',
             'Provider Name',
             'Venue',
             'Instructor',
             'Course Duration',
             'Total Recognized Duration',
             'Learning Hours',
+            'Total Engagement Time (LH)',
             '% Progress',
             'Progress Status',
             'Start Date',
@@ -119,9 +122,11 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
             'L2 Status',
             'Score (L3)',
             'L3 Status',
+            'Certificate Availability',
+            'Certificate Institution',
+            'Certificate Issued Date',
+            'Certificate Expired Date',
             'Person in Charge (PIC)',
-            'Certificate',
-            'TOTAL ENGAGEMENT DURATION',
         ];
     }
 
@@ -147,34 +152,39 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
             'Q'  => 25,  // Sub Classification
             'R'  => 18,  // Delivery Method
             'S'  => 20,  // Sub Delivery Method
-            'T'  => 25,  // Provider Name
-            'U'  => 20,  // Venue
-            'V'  => 22,  // Instructor
-            'W'  => 16,  // Course Duration
-            'X'  => 22,  // Total Recognized Duration
-            'Y'  => 16,  // Learning Hours
-            'Z'  => 14,  // % Progress
-            'AA' => 16,  // Progress Status
-            'AB' => 14,  // Start Date
-            'AC' => 14,  // End Date
-            'AD' => 14,  // Start Time
-            'AE' => 14,  // End Time
-            'AF' => 16,  // Record Month
-            'AG' => 15,  // Requirement
-            'AH' => 14,  // Attendance
-            'AI' => 25,  // Attendance Reason
-            'AJ' => 14,  // Bond Status
-            'AK' => 16,  // Bond Duration
-            'AL' => 15,  // Bond End Date
-            'AM' => 18,  // Bond Amount
-            'AN' => 20,  // Score (L1) - Course
-            'AO' => 14,  // Score (L2)
-            'AP' => 14,  // L2 Status
-            'AQ' => 14,  // Score (L3)
-            'AR' => 14,  // L3 Status
-            'AS' => 22,  // Person in Charge (PIC)
-            'AT' => 14,  // Certificate
-            'AU' => 25,  // TOTAL ENGAGEMENT DURATION
+            'T'  => 16,  // Provider
+            'U'  => 18,  // Sub Provider
+            'V'  => 25,  // Provider Name
+            'W'  => 20,  // Venue
+            'X'  => 22,  // Instructor
+            'Y'  => 16,  // Course Duration
+            'Z'  => 22,  // Total Recognized Duration
+            'AA' => 16,  // Learning Hours
+            'AB' => 24,  // Total Engagement Time (LH)
+            'AC' => 14,  // % Progress
+            'AD' => 16,  // Progress Status
+            'AE' => 14,  // Start Date
+            'AF' => 14,  // End Date
+            'AG' => 14,  // Start Time
+            'AH' => 14,  // End Time
+            'AI' => 16,  // Record Month
+            'AJ' => 15,  // Requirement
+            'AK' => 14,  // Attendance
+            'AL' => 25,  // Attendance Reason
+            'AM' => 14,  // Bond Status
+            'AN' => 16,  // Bond Duration
+            'AO' => 16,  // Bond End Date
+            'AP' => 18,  // Bond Amount
+            'AQ' => 20,  // Score (L1) - Course
+            'AR' => 15,  // Score (L2)
+            'AS' => 15,  // L2 Status
+            'AT' => 15,  // Score (L3)
+            'AU' => 15,  // L3 Status
+            'AV' => 22,  // Certificate Availability
+            'AW' => 25,  // Certificate Institution
+            'AX' => 20,  // Certificate Issued Date
+            'AY' => 20,  // Certificate Expired Date
+            'AZ' => 25,  // Person in Charge (PIC)
         ];
     }
 
@@ -183,19 +193,19 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
         return [
             'A'  => '0',
             'C'  => NumberFormat::FORMAT_TEXT,
-            'X'  => '0.##" h"',
-            'Y'  => '0.##" h"',
-            'Z'  => '0%',
-            'AB' => 'yyyy-mm-dd',
-            'AC' => 'yyyy-mm-dd',
-            'AD' => 'hh:mm:ss',
-            'AE' => 'hh:mm:ss',
-            'AL' => 'yyyy-mm-dd',
-            'AM' => '"Rp"#,##0',
-            'AN' => '0.##',
-            'AO' => '0',
+            'AA' => '0.##" h"',
+            'AB' => NumberFormat::FORMAT_TEXT,
+            'AC' => '0%',
+            'AE' => 'yyyy-mm-dd',
+            'AF' => 'yyyy-mm-dd',
+            'AG' => 'hh:mm:ss',
+            'AH' => 'hh:mm:ss',
+            'AO' => 'yyyy-mm-dd',
+            'AP' => '"Rp"#,##0',
             'AQ' => '0.##',
-            'AU' => NumberFormat::FORMAT_TEXT,
+            'AR' => '0',
+            'AT' => '0.##',
+            'AX' => 'yyyy-mm-dd',
         ];
     }
 
@@ -321,6 +331,57 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
             $rawEmp = $row->employee_id ?: '-';
             $cleanEmpId = ($rawEmp !== '-') ? preg_replace('/\s*[\/\-]\s*NIP.*$/i', '', trim((string) $rawEmp)) : '-';
 
+            // Certificate resolution
+            $hasCert = false;
+            $certInstitution = '-';
+            $certIssuedDate = '-';
+            $certExpiredDate = '-';
+
+            if ($row->source === 'offline') {
+                if (!empty($row->certificate) && $row->certificate !== '-') {
+                    $hasCert = true;
+                    $certInstitution = $row->certificate;
+                }
+                if (!empty($row->source_id)) {
+                    $dbCert = DB::table('certificates as c')
+                        ->leftJoin('certificate_settings as cs', 'cs.id', '=', 'c.certificate_setting_id')
+                        ->where('c.offline_training_user_id', $row->source_id)
+                        ->select(['cs.issuer_name', 'c.issued_at', 'c.expired_at'])
+                        ->first();
+                    if ($dbCert) {
+                        $hasCert = true;
+                        if ($dbCert->issuer_name) $certInstitution = $dbCert->issuer_name;
+                        if ($dbCert->issued_at) $certIssuedDate = date('Y-m-d', strtotime($dbCert->issued_at));
+                        if ($dbCert->expired_at) $certExpiredDate = date('Y-m-d', strtotime($dbCert->expired_at));
+                    }
+                }
+            } else {
+                $isFinishedOnline = ($progressNum >= 100 || ($row->status ?? '') === 'Finished' || ($row->finish ?? '') === '1');
+                if (!empty($row->source_id)) {
+                    $dbCert = DB::table('certificates as c')
+                        ->leftJoin('certificate_settings as cs', 'cs.id', '=', 'c.certificate_setting_id')
+                        ->where('c.content_user_id', $row->source_id)
+                        ->select(['cs.issuer_name', 'c.issued_at', 'c.expired_at'])
+                        ->first();
+                    if ($dbCert) {
+                        $hasCert = true;
+                        $certInstitution = $dbCert->issuer_name ?: 'PT Krakatau Posco';
+                        if ($dbCert->issued_at) $certIssuedDate = date('Y-m-d', strtotime($dbCert->issued_at));
+                        if ($dbCert->expired_at) $certExpiredDate = date('Y-m-d', strtotime($dbCert->expired_at));
+                    }
+                }
+                if (!$hasCert && $isFinishedOnline) {
+                    $hasCert = true;
+                    $certInstitution = 'PT Krakatau Posco';
+                    $certIssuedDate = $endDateStr !== '-' ? $endDateStr : ($startDateStr !== '-' ? $startDateStr : '-');
+                }
+            }
+
+            $certAvailability = $hasCert ? 'Available' : '-';
+            $finalRecordMonth = ($row->source === 'online')
+                ? ($endDateStr !== '-' ? date('F', strtotime($endDateStr)) : '-')
+                : $recordMonthStr;
+
             $rows->push([
                 $rowCount,
                 $row->source === 'offline' ? 'Non KP OWL' : 'KP OWL',
@@ -341,19 +402,22 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
                 $row->sub_classification ?: '-',
                 $delivMethod,
                 $subDelivMethod,
+                $row->source === 'online' ? 'Internal' : ($row->provider ?: '-'),
+                $row->source === 'online' ? '-' : ($row->sub_provider ?: '-'),
                 $row->provider_name ?: ($row->source === 'offline' ? '-' : 'KP-OWL'),
-                $row->venue ?: ($row->source === 'offline' ? '-' : 'KP-OWL'),
+                $row->venue ?: ($row->source === 'offline' ? '-' : 'Online LMS'),
                 $row->instructor ?: '-',
-                $durationFormatted, // Course Duration
-                $recognizedFormatted, // Total Recognized Duration
-                $lhNumeric, // Learning Hours
-                $progressDecimal, // numeric decimal for 0% format code
+                $durationFormatted,
+                $row->source === 'offline' ? '-' : $recognizedFormatted,
+                $lhNumeric,
+                $totalEngagementDuration,
+                $progressDecimal,
                 $progressStatus,
                 $startDateStr,
                 $endDateStr,
                 $startTimeStr,
                 $endTimeStr,
-                $recordMonthStr,
+                $finalRecordMonth,
                 $row->requirement ?: 'Mandatory',
                 $attendanceStr,
                 $row->attendance_reason ?: '-',
@@ -361,14 +425,16 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
                 !empty($row->bond_duration) ? $row->bond_duration . ' Months' : '-',
                 !empty($row->bond_end_date) ? date('Y-m-d', strtotime($row->bond_end_date)) : '-',
                 $hasBond ? (float) $idr : '-',
-                $scoreL1 !== null ? (float) $scoreL1 : '-',
-                $scoreL2 !== null ? (int) $scoreL2 : '-', // strictly pure integer
+                $scoreL1 !== null ? $scoreL1 : '-',
+                $scoreL2 !== null ? $scoreL2 : '-',
                 $row->l2_verbal ?: ($scoreL2 !== null ? ($scoreL2 >= 70 ? 'Passed' : 'Failed') : '-'),
-                $scoreL3 !== null ? (float) $scoreL3 : '-',
+                $scoreL3 !== null ? $scoreL3 : '-',
                 $row->l3_verbal ?: '-',
+                $certAvailability,
+                $certInstitution,
+                $certIssuedDate,
+                $certExpiredDate,
                 $row->pic ?: '-',
-                $row->certificate ?: '-',
-                $totalEngagementDuration, // TOTAL ENGAGEMENT DURATION
             ]);
         }
 
