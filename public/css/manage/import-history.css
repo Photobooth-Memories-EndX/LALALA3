@@ -69,18 +69,36 @@ body.theme-dark .content-stat-card {
     background-color: #ffffff;
     border: 1px solid rgba(0, 0, 0, 0.06);
 }
-.import-filter-card .form-label {
-    font-size: 0.78rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    color: #64748b;
-    margin-bottom: 0.35rem;
-}
 .import-filter-card .form-control,
 .import-filter-card .form-select {
-    font-size: 0.875rem;
-    min-height: 38px;
+    font-size: 0.85rem;
+    height: 36px;
     border-color: #dce1e7;
+    border-radius: 8px;
+}
+.import-filter-card .btn-icon {
+    width: 36px;
+    height: 36px;
+    padding: 0 !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+}
+
+/* --------------------------------------------------------------------------
+   More Filters Dropdown Panel & Active Indicator
+   -------------------------------------------------------------------------- */
+.more-filters-dropdown-panel {
+    background-color: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12) !important;
+}
+
+#more-filters-active-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
 }
 
 /* --------------------------------------------------------------------------
@@ -280,4 +298,35 @@ body.theme-dark .batch-stats-box {
 body.dark-mode .batch-stats-box .stats-lbl,
 body.theme-dark .batch-stats-box .stats-lbl {
     color: #94a3b8 !important;
+}
+
+[data-bs-theme="dark"] .more-filters-dropdown-panel,
+body.dark-mode .more-filters-dropdown-panel,
+body.theme-dark .more-filters-dropdown-panel {
+    background-color: var(--tblr-bg-surface, #1f2937) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    color: #f8fafc !important;
+}
+
+[data-bs-theme="dark"] .more-filters-dropdown-panel .text-dark,
+body.dark-mode .more-filters-dropdown-panel .text-dark,
+body.theme-dark .more-filters-dropdown-panel .text-dark {
+    color: #f8fafc !important;
+}
+
+[data-bs-theme="dark"] .more-filters-dropdown-panel .border-bottom,
+[data-bs-theme="dark"] .more-filters-dropdown-panel .border-top,
+body.dark-mode .more-filters-dropdown-panel .border-bottom,
+body.dark-mode .more-filters-dropdown-panel .border-top,
+body.theme-dark .more-filters-dropdown-panel .border-bottom,
+body.theme-dark .more-filters-dropdown-panel .border-top {
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-bs-theme="dark"] .more-filters-dropdown-panel .form-control,
+body.dark-mode .more-filters-dropdown-panel .form-control,
+body.theme-dark .more-filters-dropdown-panel .form-control {
+    background-color: var(--tblr-bg-surface-secondary, #111827) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    color: #f8fafc !important;
 }

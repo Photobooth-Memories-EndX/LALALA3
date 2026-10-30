@@ -130,12 +130,56 @@
      * Setup Filters & Summary Refresh
      */
     function initFilterEvents() {
+        function updateMoreFiltersBadge() {
+            const hasDates = Boolean($('#filter-date-start').val() || $('#filter-date-end').val());
+            $('#more-filters-active-dot').toggle(hasDates);
+        }
+
+        function closeMoreFiltersDropdown() {
+            const dropdownEl = document.getElementById('btn-more-filters');
+            if (dropdownEl && window.bootstrap && bootstrap.Dropdown) {
+                const instance = bootstrap.Dropdown.getInstance(dropdownEl);
+                if (instance) instance.hide();
+            }
+        }
+
+        // Initialize active badge state
+        updateMoreFiltersBadge();
+
+        // Main search button (applies all filters including dates)
         $('#btn-apply-filters').on('click', function (e) {
             e.preventDefault();
-            if (batchesTable) batchesTable.ajax.reload();
+            updateMoreFiltersBadge();
+            if (batchesTable) batchesTable.ajax.reload(null, true);
             refreshSummaryCards();
         });
 
+        // More Filters Panel: Apply Date Filters
+        $('#btn-apply-date-filters').on('click', function (e) {
+            e.preventDefault();
+            updateMoreFiltersBadge();
+            closeMoreFiltersDropdown();
+            if (batchesTable) batchesTable.ajax.reload(null, true);
+            refreshSummaryCards();
+        });
+
+        // More Filters Panel: Clear Date Filters (only dates, keeps source, status, user, search)
+        $('#btn-clear-date-filters').on('click', function (e) {
+            e.preventDefault();
+            $('#filter-date-start').val('');
+            $('#filter-date-end').val('');
+            updateMoreFiltersBadge();
+            if (batchesTable) batchesTable.ajax.reload(null, true);
+            refreshSummaryCards();
+        });
+
+        // More Filters Panel: Close Button
+        $('#btn-close-more-filters').on('click', function (e) {
+            e.preventDefault();
+            closeMoreFiltersDropdown();
+        });
+
+        // Main Reset button (resets ALL filters including dates)
         $('#btn-reset-filters').on('click', function (e) {
             e.preventDefault();
             $('#filter-source-type').val('');
@@ -144,17 +188,21 @@
             $('#filter-date-start').val('');
             $('#filter-date-end').val('');
             $('#filter-search').val('');
-            if (batchesTable) batchesTable.ajax.reload();
+            updateMoreFiltersBadge();
+            closeMoreFiltersDropdown();
+            if (batchesTable) batchesTable.ajax.reload(null, true);
             refreshSummaryCards();
         });
 
-        $('#filter-source-type, #filter-status, #filter-user, #filter-date-start, #filter-date-end').on('change', function () {
-            if (batchesTable) batchesTable.ajax.reload();
+        // Instant reload on dropdown changes
+        $('#filter-source-type, #filter-status, #filter-user').on('change', function () {
+            if (batchesTable) batchesTable.ajax.reload(null, true);
         });
 
+        // Enter key in search input
         $('#filter-search').on('keyup', function (e) {
             if (e.key === 'Enter' && batchesTable) {
-                batchesTable.ajax.reload();
+                batchesTable.ajax.reload(null, true);
             }
         });
     }

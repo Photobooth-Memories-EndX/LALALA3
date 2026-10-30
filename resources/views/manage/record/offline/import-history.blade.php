@@ -55,26 +55,27 @@
             {{-- Statistics Cards --}}
             @include('manage.record.offline.partials.history-summary-cards')
 
-            {{-- Quick Filter Card --}}
+            {{-- Quick Filter Card (Exact Content Management Single-Row Layout with More Filters) --}}
             <div class="card border-0 shadow-sm rounded-4 mb-4 import-filter-card">
-                <div class="card-body p-3 p-md-4">
+                <div class="card-body p-3">
                     <div class="text-secondary small fw-semibold mb-2" style="color: #6c757d !important; font-size: 0.85rem;">
                         Quick Filter
                     </div>
 
                     <form id="import-history-filter-form" onsubmit="return false;">
-                        <div class="row g-2 g-md-3 align-items-end">
-                            <div class="col-12 col-sm-6 col-md-4 col-lg-2">
-                                <label class="form-label small text-muted mb-1" for="filter-source-type">Source Type</label>
-                                <select class="form-select rounded-3" id="filter-source-type">
+                        <div class="row g-2 align-items-center">
+                            <!-- 1. Source Type (All Sources) -->
+                            <div class="col-6 col-md-auto">
+                                <select class="form-select rounded-3" id="filter-source-type" aria-label="Source Type" style="min-width: 125px;">
                                     <option value="">All Sources</option>
                                     <option value="PTKP">PTKP</option>
                                     <option value="NON_PTKP">Non-PTKP</option>
                                 </select>
                             </div>
-                            <div class="col-12 col-sm-6 col-md-4 col-lg-2">
-                                <label class="form-label small text-muted mb-1" for="filter-status">Status</label>
-                                <select class="form-select rounded-3" id="filter-status">
+
+                            <!-- 2. Status (All Statuses) -->
+                            <div class="col-6 col-md-auto">
+                                <select class="form-select rounded-3" id="filter-status" aria-label="Status" style="min-width: 125px;">
                                     <option value="">All Statuses</option>
                                     <option value="COMPLETED">Success</option>
                                     <option value="COMPLETED_WITH_WARNINGS">Warning</option>
@@ -82,36 +83,81 @@
                                     <option value="IMPORTING">Processing</option>
                                 </select>
                             </div>
-                            <div class="col-12 col-sm-6 col-md-4 col-lg-2">
-                                <label class="form-label small text-muted mb-1" for="filter-user">Imported By</label>
-                                <select class="form-select rounded-3" id="filter-user">
+
+                            <!-- 3. Imported By (All Users) -->
+                            <div class="col-6 col-md-auto">
+                                <select class="form-select rounded-3" id="filter-user" aria-label="Imported By" style="min-width: 130px; max-width: 165px;">
                                     <option value="">All Users</option>
                                     @foreach($users as $user)
                                         <option value="{{ $user->id }}">{{ $user->name ?? $user->email }}</option>
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-12 col-sm-6 col-md-4 col-lg-2">
-                                <label class="form-label small text-muted mb-1" for="filter-date-start">Date From</label>
-                                <input type="date" class="form-control rounded-3" id="filter-date-start">
-                            </div>
-                            <div class="col-12 col-sm-6 col-md-4 col-lg-2">
-                                <label class="form-label small text-muted mb-1" for="filter-date-end">Date To</label>
-                                <input type="date" class="form-control rounded-3" id="filter-date-end">
-                            </div>
-                            <div class="col-12 col-sm-6 col-md-4 col-lg-2">
-                                <label class="form-label small text-muted mb-1" for="filter-search">Search</label>
-                                <div class="input-icon">
-                                    <span class="input-icon-addon"><i class="ti ti-search"></i></span>
-                                    <input type="text" class="form-control rounded-3" id="filter-search" placeholder="Search filename / UUID..." autocomplete="off">
+
+                            <!-- 4. Search Bar (Search filename / UUID...) -->
+                            <div class="col-12 col-md">
+                                <div class="position-relative flex-grow-1">
+                                    <div class="input-icon">
+                                        <span class="input-icon-addon"><i class="ti ti-search"></i></span>
+                                        <input type="text" id="filter-search" class="form-control rounded-3" placeholder="Search filename / UUID..." autocomplete="off">
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-12 d-flex justify-content-end gap-2 mt-3 pt-1">
-                                <button type="button" class="btn btn-outline-secondary px-3 rounded-3 d-inline-flex align-items-center gap-1" id="btn-reset-filters" title="Reset Filters">
-                                    <i class="ti ti-refresh fs-3"></i><span>Reset</span>
+
+                            <!-- 5. Action Buttons (Search, More Filters & Reset) -->
+                            <div class="col-auto d-flex align-items-center gap-1 flex-shrink-0">
+                                <!-- Search Submit Button -->
+                                <button type="button" class="btn btn-primary btn-icon px-3" id="btn-apply-filters" title="Apply Filters" aria-label="Apply Filters">
+                                    <i class="ti ti-search fs-2"></i>
                                 </button>
-                                <button type="button" class="btn btn-primary px-3 rounded-3 d-inline-flex align-items-center gap-1" id="btn-apply-filters" title="Apply Filters">
-                                    <i class="ti ti-filter fs-3"></i><span>Apply Filters</span>
+
+                                <!-- More Filters Button with Anchored Dropdown Panel -->
+                                <div class="dropdown d-inline-block position-relative">
+                                    <button type="button" class="btn btn-outline-primary btn-icon px-3 position-relative" id="btn-more-filters" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" title="More Filters" aria-label="More Filters">
+                                        <i class="ti ti-adjustments-horizontal fs-2"></i>
+                                        <span id="more-filters-active-dot" class="position-absolute top-0 start-100 translate-middle p-1 bg-primary border border-light rounded-circle" style="display: none;">
+                                            <span class="visually-hidden">Active filter</span>
+                                        </span>
+                                    </button>
+
+                                    <!-- Anchored Dropdown Panel (Date Range Filters) -->
+                                    <div class="dropdown-menu dropdown-menu-end shadow-lg p-3 rounded-3 more-filters-dropdown-panel" aria-labelledby="btn-more-filters" style="width: 320px; z-index: 1050;">
+                                        <div class="d-flex align-items-center justify-content-between pb-2 mb-3 border-bottom">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <i class="ti ti-adjustments-horizontal text-primary fs-3"></i>
+                                                <span class="fw-bold text-dark fs-4">More Filters</span>
+                                            </div>
+                                            <button type="button" class="btn-close btn-sm" id="btn-close-more-filters" aria-label="Close"></button>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label small fw-semibold text-muted mb-1" for="filter-date-start">
+                                                <i class="ti ti-calendar me-1"></i>Date From
+                                            </label>
+                                            <input type="date" class="form-control rounded-3" id="filter-date-start" title="Date From" aria-label="Date From">
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label small fw-semibold text-muted mb-1" for="filter-date-end">
+                                                <i class="ti ti-calendar me-1"></i>Date To
+                                            </label>
+                                            <input type="date" class="form-control rounded-3" id="filter-date-end" title="Date To" aria-label="Date To">
+                                        </div>
+
+                                        <div class="d-flex align-items-center justify-content-between pt-2 border-top gap-2">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary rounded-3" id="btn-clear-date-filters" title="Clear Date Filters">
+                                                <i class="ti ti-x me-1"></i>Clear Dates
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-primary rounded-3 px-3" id="btn-apply-date-filters" title="Apply Date Filters">
+                                                <i class="ti ti-check me-1"></i>Apply
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Reset Button -->
+                                <button type="button" class="btn btn-outline-secondary btn-icon px-3" id="btn-reset-filters" title="Reset Filters" aria-label="Reset Filters">
+                                    <i class="ti ti-refresh fs-2"></i>
                                 </button>
                             </div>
                         </div>

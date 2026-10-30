@@ -581,4 +581,20 @@ class ImportHistoryTest extends TestCase
         $this->assertGreaterThanOrEqual(2, $json['recordsTotal']);
         $this->assertNotEmpty($json['data']);
     }
+
+    /** 25. View renders More Filters button and anchored dropdown panel */
+    public function test_import_history_view_includes_more_filters_button_and_panel(): void
+    {
+        $response = $this->actingAs($this->admin)
+            ->get(route('manage.record.offline.import-history.index'));
+
+        $response->assertStatus(200);
+        $response->assertSee('id="btn-more-filters"', false);
+        $response->assertSee('more-filters-dropdown-panel');
+        $response->assertSee('id="btn-apply-date-filters"', false);
+        $response->assertSee('id="btn-clear-date-filters"', false);
+        $response->assertSee('id="filter-date-start"', false);
+        $response->assertSee('id="filter-date-end"', false);
+        $response->assertSee('ti-adjustments-horizontal');
+    }
 }
