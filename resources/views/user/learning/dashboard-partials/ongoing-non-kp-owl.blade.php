@@ -154,10 +154,10 @@
                 <div class="fast-filter-header-copy mb-2">
                     <h3 class="card-title fast-filter-title mb-0">Quick Filter</h3>
                 </div>
-                <x-learning.ongoing-mode-switch mode="non-kp-owl" :show-download="true" />
+                <x-learning.ongoing-mode-switch mode="non-kp-owl" />
 
                 {{-- Filter Toolbar: Type, Classification, Year, Search Bar --}}
-                <div class="record-fast-filter-section ongoing-fast-filter-section pt-2 border-top">
+                <div class="record-fast-filter-section ongoing-fast-filter-section pt-0">
                     <div class="fast-filter-toolbar d-flex align-items-center flex-wrap gap-2">
                         <div class="learning-quick-dropdowns learning-fast-filter d-flex align-items-center flex-wrap gap-2">
                             {{-- Dropdown Type --}}

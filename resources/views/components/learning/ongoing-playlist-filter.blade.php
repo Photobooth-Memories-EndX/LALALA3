@@ -71,13 +71,10 @@
         <form action="{{ route('user.learning.dashboard') }}" method="GET" id="ongoingPlaylistFilterForm" class="ongoing-filter-shell">
             <input type="hidden" name="ongoing_mode" value="playlist">
 
-            <div class="ongoing-filter-heading fast-filter-header">
-                <div class="fast-filter-header-copy">
-                    <h3 class="card-title fast-filter-title">Quick Filter</h3>
-                    {{-- <p class="fast-filter-subtitle">Quickly filter your learning playlists.</p> --}}
-                </div>
-                <x-learning.ongoing-mode-switch mode="playlist" :show-download="false" />
+            <div class="fast-filter-header-copy mb-2">
+                <h3 class="card-title fast-filter-title mb-0">Quick Filter</h3>
             </div>
+            <x-learning.ongoing-mode-switch mode="playlist" />
 
             {{-- Playlist tidak memiliki filter Type; filter lainnya tersedia di toolbar dan modal. --}}
             <div class="ongoing-fast-filter-section">

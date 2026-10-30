@@ -1,7 +1,6 @@
 @props([
     // Mode aktif Learning On Going: 'content' | 'playlist' | 'mooc' | 'non-kp-owl'.
     'mode' => 'content',
-    'showDownload' => false,
 ])
 
 @php
@@ -12,16 +11,13 @@
     if (in_array($currentMode, ['ongoing-non-kp-owl', 'offline'], true)) {
         $currentMode = 'non-kp-owl';
     }
-
-    $isNonKpOwl = in_array($currentMode, ['non-kp-owl', 'ongoing-non-kp-owl', 'offline'], true);
-    // Download button is only allowed for Non KP OWL tab; Content, Playlist, and MOOC tabs do not show download button.
-    $canExport = (bool) ($showDownload && $isNonKpOwl);
 @endphp
 
 @once
 <style>
 .ongoing-filter-header-bar {
     width: 100% !important;
+    margin-bottom: 0.5rem !important; /* compact spacing (mb-2) */
 }
 .ongoing-mode-switch {
     display: inline-flex !important;
@@ -91,32 +87,11 @@ body.theme-dark .ongoing-mode-switch .ongoing-mode-btn.active {
     background-color: #2563eb !important;
     color: #ffffff !important;
 }
-.ongoing-download-button {
-    padding: 0.625rem !important;
-    width: 42px !important;
-    height: 42px !important;
-    min-width: 42px !important;
-    min-height: 42px !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    border-radius: 0.5rem !important;
-    background-color: #059669 !important; /* emerald-600 */
-    border-color: #059669 !important;
-    color: #ffffff !important;
-    transition: all 0.15s ease-in-out !important;
-}
-.ongoing-download-button:hover,
-.ongoing-download-button:focus {
-    background-color: #047857 !important; /* emerald-700 */
-    border-color: #047857 !important;
-    color: #ffffff !important;
-}
 </style>
 @endonce
 
-<div class="d-flex justify-content-between align-items-center w-100 mb-4 gap-3 flex-wrap ongoing-filter-header-bar">
-    <!-- Left Side: Quick Filter Buttons -->
+<div class="d-flex align-items-center w-100 mb-2 gap-3 flex-wrap ongoing-filter-header-bar">
+    <!-- Quick Filter Mode Buttons -->
     <div class="learning-mode-switch ongoing-mode-switch d-flex align-items-center gap-2 flex-wrap" role="group" aria-label="Learning On Going mode">
         <button type="button"
                 class="btn learning-mode-btn ongoing-mode-btn px-4 py-2.5 rounded-pill rounded-full font-medium text-sm d-inline-flex align-items-center gap-2 whitespace-nowrap text-nowrap transition-all border-0 {{ $currentMode === 'content' ? 'active bg-blue-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}"
@@ -155,11 +130,4 @@ body.theme-dark .ongoing-mode-switch .ongoing-mode-btn.active {
             <span>Non KP OWL</span>
         </button>
     </div>
-
-    <!-- Right Side: Download Action Button (Only for tabs that retain export like Non KP OWL) -->
-    @if ($canExport)
-        <div class="d-flex align-items-center ms-auto">
-            <x-learning.ongoing-export :mode="$currentMode" />
-        </div>
-    @endif
 </div>
