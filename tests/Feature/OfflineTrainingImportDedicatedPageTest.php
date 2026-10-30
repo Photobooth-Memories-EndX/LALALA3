@@ -116,11 +116,11 @@ class OfflineTrainingImportDedicatedPageTest extends TestCase
         $response->assertStatus(200);
 
         // Header & Breadcrumb
-        $response->assertSee('Import Data Non PTKP');
+        $response->assertSee('Import Non-PTKP Data');
         $response->assertSee('Manage Record');
         $response->assertSee('Offline Record');
-        $response->assertSee('Upload dan validasi data training offline Non PTKP sebelum diimpor ke sistem OWL.');
-        $response->assertSee('Kembali ke Offline Record');
+        $response->assertSee('Upload and validate Non-PTKP offline training records before importing into OWL LMS.');
+        $response->assertSee('Back to Offline Records');
         $response->assertSee(route('manage.record.offline'));
 
         // Stepper: 4 stages
@@ -144,7 +144,7 @@ class OfflineTrainingImportDedicatedPageTest extends TestCase
         $response->assertSee('id="preview-main-table"', false);
         $response->assertSee('id="btn-action-confirm-import"', false);
         $response->assertSee('id="btn-reupload-file"', false);
-        $response->assertSee('Perbandingan Data Sebelum Import');
+        $response->assertSee('Pre-Import Data Comparison');
     }
 
     /**

@@ -1,0 +1,214 @@
+/* ==========================================================================
+   Import History Page Styling — OWL LMS (Tabler UI & Dark Mode Compatible)
+   ========================================================================== */
+
+.import-history-page {
+    min-height: calc(100vh - 80px);
+}
+
+.import-history-hero-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+    background: #e0f2fe;
+    color: #0284c7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Summary Cards
+   -------------------------------------------------------------------------- */
+.import-summary-card {
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.import-summary-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.import-summary-card .summary-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+
+.import-summary-card .summary-number {
+    font-size: 1.75rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: #1e293b;
+}
+
+.import-summary-card .summary-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
+}
+
+/* --------------------------------------------------------------------------
+   Filter Card & Inputs
+   -------------------------------------------------------------------------- */
+.import-filter-card {
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+}
+
+.import-filter-card .form-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #64748b;
+    margin-bottom: 0.35rem;
+}
+
+/* --------------------------------------------------------------------------
+   Data Table Wrapper & Badges
+   -------------------------------------------------------------------------- */
+.import-table-card {
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+}
+
+.filename-truncate {
+    display: inline-block;
+    max-width: 220px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+}
+
+.table th {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+    background-color: #f8fafc;
+}
+
+.table td {
+    vertical-align: middle;
+    font-size: 0.85rem;
+}
+
+/* --------------------------------------------------------------------------
+   Detail Modal & Stats Grid
+   -------------------------------------------------------------------------- */
+#importDetailModal .modal-content {
+    border-radius: 16px;
+    border: none;
+    box-shadow: 0 20px 45px rgba(15, 23, 42, 0.2);
+}
+
+.batch-stats-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    text-align: center;
+}
+
+.batch-stats-box .stats-val {
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.batch-stats-box .stats-lbl {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #64748b;
+}
+
+/* Spin animation */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+.spin {
+    display: inline-block;
+    animation: spin 1s linear infinite;
+}
+
+/* --------------------------------------------------------------------------
+   Tabler Dark Mode Support
+   -------------------------------------------------------------------------- */
+[data-bs-theme="dark"] .import-summary-card,
+body.dark-mode .import-summary-card,
+body.theme-dark .import-summary-card,
+[data-bs-theme="dark"] .import-filter-card,
+body.dark-mode .import-filter-card,
+body.theme-dark .import-filter-card,
+[data-bs-theme="dark"] .import-table-card,
+body.dark-mode .import-table-card,
+body.theme-dark .import-table-card {
+    background: #1e293b !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-bs-theme="dark"] .import-summary-card .summary-number,
+body.dark-mode .import-summary-card .summary-number,
+body.theme-dark .import-summary-card .summary-number {
+    color: #f8fafc !important;
+}
+
+[data-bs-theme="dark"] .import-summary-card .summary-label,
+body.dark-mode .import-summary-card .summary-label,
+body.theme-dark .import-summary-card .summary-label,
+[data-bs-theme="dark"] .import-filter-card .form-label,
+body.dark-mode .import-filter-card .form-label,
+body.theme-dark .import-filter-card .form-label {
+    color: #94a3b8 !important;
+}
+
+[data-bs-theme="dark"] .table th,
+body.dark-mode .table th,
+body.theme-dark .table th {
+    background-color: #0f172a !important;
+    color: #94a3b8 !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-bs-theme="dark"] .table td,
+body.dark-mode .table td,
+body.theme-dark .table td {
+    color: #f1f5f9 !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-bs-theme="dark"] #importDetailModal .modal-content,
+body.dark-mode #importDetailModal .modal-content,
+body.theme-dark #importDetailModal .modal-content {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+}
+
+[data-bs-theme="dark"] .batch-stats-box,
+body.dark-mode .batch-stats-box,
+body.theme-dark .batch-stats-box {
+    background-color: #0f172a !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-bs-theme="dark"] .batch-stats-box .stats-lbl,
+body.dark-mode .batch-stats-box .stats-lbl,
+body.theme-dark .batch-stats-box .stats-lbl {
+    color: #94a3b8 !important;
+}

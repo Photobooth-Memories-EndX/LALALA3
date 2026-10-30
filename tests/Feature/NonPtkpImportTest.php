@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\ImportBatch;
+use App\Models\ImportBatchRow;
 use App\Models\OfflineTraining;
 use App\Models\OfflineTrainingUser;
 use App\Models\User;
@@ -34,12 +36,15 @@ class NonPtkpImportTest extends TestCase
         // Clean up any test records
         DB::table('offline_training_users')->where('company', 'TEST_NON_PTKP_CORP')->delete();
         DB::table('offline_trainings')->where('category', 'TEST_NON_PTKP_CAT')->delete();
+        DB::table('users')->where('email', 'like', 'nonptkp_%@example.com')->delete();
+        DB::table('users')->where('email', 'like', 'nonptkp_%@example.com')->delete();
     }
 
     protected function tearDown(): void
     {
         DB::table('offline_training_users')->where('company', 'TEST_NON_PTKP_CORP')->delete();
         DB::table('offline_trainings')->where('category', 'TEST_NON_PTKP_CAT')->delete();
+        DB::table('users')->where('email', 'like', 'nonptkp_%@example.com')->delete();
 
         foreach ($this->createdTempFiles as $path) {
             if (File::exists($path)) {
@@ -58,14 +63,14 @@ class NonPtkpImportTest extends TestCase
             'name'         => 'Non PTKP User ' . $seq,
             'email'        => "nonptkp_{$seq}@example.com",
             'password'     => bcrypt('secret'),
-            'id_emp'       => 'NPTKP_' . $seq,
-            'id_user'      => 'UID_NPTKP_' . $seq,
+            'id_emp'       => 'NP_' . $seq,
+            'id_user'      => 'U_' . $seq,
             'id_org_unit'  => 'OU_01',
             'team'         => 'Team Rolling',
             'department'   => 'Dept Rolling',
             'division'     => 'Division Production',
-            'sap_code'     => 'SAP_NPTKP_' . $seq,
-            'ssohash'      => 'HASH_NPTKP_' . $seq,
+            'sap_code'     => 'S_' . $seq,
+            'ssohash'      => 'H_' . $seq,
             'role'         => User::ROLE_USER,
             'company_name' => 'PT Krakatau Posco',
         ], $attrs));
@@ -176,9 +181,11 @@ class NonPtkpImportTest extends TestCase
 
         $adminResp = $this->actingAs($this->admin)->get('/manage/record/offline/import-non-ptkp');
         $adminResp->assertStatus(200);
-        $adminResp->assertSee('Import Data Non PTKP');
+        $adminResp->assertSee('Import Non-PTKP Data');
         $adminResp->assertSee('Upload Spreadsheet');
         $adminResp->assertSee('Validation Preview');
+        $adminResp->assertDontSee('Import Status Guide');
+        $adminResp->assertDontSee('Import Status Legend');
     }
 
     /**
@@ -404,5 +411,303 @@ class NonPtkpImportTest extends TestCase
 
         $manualResp = $this->actingAs($this->admin)->get(route('manage.record.offline.create'));
         $manualResp->assertStatus(200);
+    }
+
+    protected function createSpreadsheetWithHeaders(array $headers, array $rows): UploadedFile
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle(OfflineTrainingExcelSchema::DATA_SHEET_TITLE);
+
+        foreach ($headers as $idx => $hdr) {
+            $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($idx + 1);
+            $sheet->setCellValue($colLetter . '1', $hdr);
+        }
+
+        foreach ($rows as $rIdx => $vals) {
+            $rowNum = $rIdx + 2;
+            foreach ($vals as $cIdx => $v) {
+                $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($cIdx + 1);
+                $sheet->setCellValueExplicit($colLetter . $rowNum, $v, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            }
+        }
+
+        $tmpPath = tempnam(sys_get_temp_dir(), 'nptkp_alias_') . '.xlsx';
+        $writer = new Xlsx($spreadsheet);
+        $writer->save($tmpPath);
+        $this->createdTempFiles[] = $tmpPath;
+
+        return new UploadedFile($tmpPath, 'alias_test.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', null, true);
+    }
+
+    /**
+     * 10. Test header aliases are recognized and mapped correctly.
+     */
+    public function test_non_ptkp_header_aliases_recognized(): void
+    {
+        $headers = OfflineTrainingExcelSchema::headers();
+        $aliasMap = [
+            'ID'            => 'Employee No',
+            'Name'          => 'Full Name',
+            'Course Title'  => 'Training Title',
+            'Company'       => 'Company Name',
+            'Provider Name' => 'Provider',
+        ];
+
+        $aliasedHeaders = array_map(function ($h) use ($aliasMap) {
+            return $aliasMap[$h] ?? $h;
+        }, $headers);
+
+        $row = $this->buildNonPtkpRow([
+            'employee_id' => '100888',
+            'name'        => 'Alias Test User',
+            'course_name' => 'Alias Course Test',
+        ]);
+
+        $file = $this->createSpreadsheetWithHeaders($aliasedHeaders, [$row]);
+
+        $resp = $this->actingAs($this->admin)->post(route('manage.record.offline.import-non-ptkp.preview'), [
+            'file' => $file,
+        ]);
+
+        $resp->assertStatus(200);
+        $resp->assertJson(['success' => true]);
+        $this->assertTrue($resp->json('header_check.can_proceed'));
+        $this->assertSame(1, $resp->json('stats.valid'));
+        $this->assertSame('100888', $resp->json('preview_rows.0.data.employee_id'));
+        $this->assertSame('Alias Course Test', $resp->json('preview_rows.0.data.course_name'));
+    }
+
+    /**
+     * 11. Test leading zero on employee_id is preserved through preview and database.
+     */
+    public function test_non_ptkp_leading_zero_employee_id_preserved(): void
+    {
+        $row = $this->buildNonPtkpRow([
+            'employee_id' => '001234',
+            'name'        => 'Leading Zero Employee',
+            'course_name' => 'Leading Zero Course',
+        ]);
+
+        $file = $this->createSpreadsheet([$row]);
+
+        $previewResp = $this->actingAs($this->admin)->post(route('manage.record.offline.import-non-ptkp.preview'), [
+            'file' => $file,
+        ]);
+
+        $previewResp->assertStatus(200);
+        $token = $previewResp->json('token');
+        $this->assertSame('001234', $previewResp->json('preview_rows.0.data.employee_id'));
+
+        $confirmResp = $this->actingAs($this->admin)->post(route('manage.record.offline.import-non-ptkp.confirm'), [
+            'token' => $token,
+        ]);
+
+        $confirmResp->assertStatus(200);
+
+        $this->assertDatabaseHas('offline_training_users', [
+            'employee_id' => '001234',
+            'name'        => 'Leading Zero Employee',
+        ]);
+    }
+
+    /**
+     * 12. Test optional empty cells do not fail validation.
+     */
+    public function test_non_ptkp_optional_empty_cells_allowed(): void
+    {
+        $sparseRow = $this->buildNonPtkpRow([
+            'employee_id'            => '100444',
+            'name'                   => 'Sparse Participant',
+            'course_name'            => 'Sparse Course',
+            'grade'                  => '',
+            'job_position'           => '',
+            'team'                   => '',
+            'department'             => '',
+            'company'                => '',
+            'sub_course_name'        => '',
+            'type'                   => '',
+            'category'               => '',
+            'level'                  => '',
+            'batch'                  => '',
+            'main_classification'    => '',
+            'sub_classification'     => '',
+            'delivery_method'        => '',
+            'sub_delivery_method'    => '',
+            'provider_name'          => '',
+            'venue'                  => '',
+            'instructor'             => '',
+            'duration_seconds'       => '',
+            'learning_hours'         => '',
+            'progress'               => '',
+            'progress_status'        => '',
+            'start_date'             => '',
+            'end_date'               => '',
+            'start_time'             => '',
+            'end_time'               => '',
+            'month'                  => '',
+            'requirement'            => '',
+            'attendance'             => '',
+            'attendance_reason'      => '',
+            'bond_status'            => '',
+            'bond_duration'          => '',
+            'bond_end_date'          => '',
+            'bond_amount'            => '',
+            'l1_program'             => '',
+            'assessment_score'       => '',
+            'l2_verbal'              => '',
+            'l3_numerical'           => '',
+            'l3_verbal'              => '',
+            'pic'                    => '',
+            'certificate'            => '',
+            'total_engagement_time'  => '',
+        ]);
+
+        $file = $this->createSpreadsheet([$sparseRow]);
+
+        $previewResp = $this->actingAs($this->admin)->post(route('manage.record.offline.import-non-ptkp.preview'), [
+            'file' => $file,
+        ]);
+
+        $previewResp->assertStatus(200);
+        $previewResp->assertJson(['success' => true]);
+        $this->assertSame(0, $previewResp->json('stats.invalid'));
+        $this->assertGreaterThan(0, $previewResp->json('stats.valid'));
+        $this->assertNotSame('invalid', $previewResp->json('preview_rows.0.status'));
+    }
+
+    /**
+     * 13. Test duplicate detection skips safely without blocking valid records.
+     */
+    public function test_non_ptkp_duplicate_detection_skips_safely_without_blocking_valid(): void
+    {
+        $row1 = $this->buildNonPtkpRow([
+            'employee_id' => '100551',
+            'name'        => 'Participant One',
+            'course_name' => 'Deduplication Course',
+        ]);
+        $row2 = $this->buildNonPtkpRow([
+            'employee_id' => '100551',
+            'name'        => 'Participant One Duplicate',
+            'course_name' => 'Deduplication Course',
+        ]);
+        $row3 = $this->buildNonPtkpRow([
+            'employee_id' => '100552',
+            'name'        => 'Participant Two',
+            'course_name' => 'Deduplication Course',
+        ]);
+
+        $file = $this->createSpreadsheet([$row1, $row2, $row3]);
+
+        $previewResp = $this->actingAs($this->admin)->post(route('manage.record.offline.import-non-ptkp.preview'), [
+            'file' => $file,
+        ]);
+
+        $previewResp->assertStatus(200);
+        $this->assertSame(2, $previewResp->json('stats.valid'));
+        $this->assertSame(1, $previewResp->json('stats.duplicate'));
+        $this->assertSame(0, $previewResp->json('stats.invalid'));
+
+        $token = $previewResp->json('token');
+        $confirmResp = $this->actingAs($this->admin)->post(route('manage.record.offline.import-non-ptkp.confirm'), [
+            'token' => $token,
+        ]);
+
+        $confirmResp->assertStatus(200);
+        $this->assertSame(2, $confirmResp->json('result.imported'));
+        $this->assertSame(1, $confirmResp->json('result.skipped_duplicates'));
+    }
+
+    /**
+     * 14. Test non-LMS user produces WARNING status (not INVALID) and imports with null user_id.
+     */
+    public function test_non_ptkp_non_lms_user_imports_with_warning_and_null_user_id(): void
+    {
+        $nonLmsEmpId = 'EXT_USER_999999';
+        $this->assertDatabaseMissing('users', ['id_emp' => $nonLmsEmpId]);
+
+        $row = $this->buildNonPtkpRow([
+            'employee_id' => $nonLmsEmpId,
+            'name'        => 'External Non-LMS Participant',
+            'course_name' => 'External Contractor Safety',
+        ]);
+
+        $file = $this->createSpreadsheet([$row]);
+
+        $previewResp = $this->actingAs($this->admin)->post(route('manage.record.offline.import-non-ptkp.preview'), [
+            'file' => $file,
+        ]);
+
+        $previewResp->assertStatus(200);
+        $this->assertSame('warning', $previewResp->json('preview_rows.0.status'));
+        $this->assertSame(1, $previewResp->json('stats.valid'));
+        $this->assertSame(0, $previewResp->json('stats.invalid'));
+
+        $token = $previewResp->json('token');
+        $confirmResp = $this->actingAs($this->admin)->post(route('manage.record.offline.import-non-ptkp.confirm'), [
+            'token' => $token,
+        ]);
+
+        $confirmResp->assertStatus(200);
+        $this->assertSame(1, $confirmResp->json('result.imported'));
+
+        $this->assertDatabaseHas('offline_training_users', [
+            'employee_id' => $nonLmsEmpId,
+            'user_id'     => null,
+            'name'        => 'External Non-LMS Participant',
+        ]);
+    }
+
+    /**
+     * 15. Test audit log records correct batch status and imported/skipped rows.
+     */
+    public function test_non_ptkp_audit_log_records_correct_actions(): void
+    {
+        $this->createTestUser([
+            'id_emp' => '100661',
+            'name'   => 'Audit Log User 1',
+        ]);
+
+        $row1 = $this->buildNonPtkpRow([
+            'employee_id' => '100661',
+            'name'        => 'Audit Log User 1',
+            'course_name' => 'Audit Log Course',
+        ]);
+        $row2 = $this->buildNonPtkpRow([
+            'employee_id' => '100661',
+            'name'        => 'Audit Log User 1 Duplicate',
+            'course_name' => 'Audit Log Course',
+        ]);
+
+        $file = $this->createSpreadsheet([$row1, $row2]);
+
+        $previewResp = $this->actingAs($this->admin)->post(route('manage.record.offline.import-non-ptkp.preview'), [
+            'file' => $file,
+        ]);
+        $token = $previewResp->json('token');
+
+        $confirmResp = $this->actingAs($this->admin)->post(route('manage.record.offline.import-non-ptkp.confirm'), [
+            'token' => $token,
+        ]);
+        $confirmResp->assertStatus(200);
+
+        $batchUuid = $confirmResp->json('result.batch_uuid');
+        $this->assertNotEmpty($batchUuid);
+
+        $batch = ImportBatch::where('batch_uuid', $batchUuid)->first();
+        $this->assertNotNull($batch);
+        $this->assertSame(ImportBatch::SOURCE_NON_PTKP, $batch->source_type);
+        $this->assertSame(ImportBatch::STATUS_COMPLETED, $batch->status);
+        $this->assertSame(2, $batch->total_rows);
+        $this->assertSame(1, $batch->imported_rows);
+        $this->assertSame(1, $batch->skipped_rows);
+
+        $importedRow = $batch->rows()->where('action', ImportBatchRow::ACTION_IMPORTED)->first();
+        $this->assertNotNull($importedRow);
+        $this->assertSame('100661', $importedRow->employee_id);
+
+        $skippedRow = $batch->rows()->where('action', ImportBatchRow::ACTION_SKIPPED)->first();
+        $this->assertNotNull($skippedRow);
+        $this->assertSame('100661', $skippedRow->employee_id);
     }
 }

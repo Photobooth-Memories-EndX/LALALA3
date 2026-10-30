@@ -72,6 +72,13 @@
                                     <span>Import Data Non PTKP</span>
                                 </a>
                             </li>
+                            <li><hr class="dropdown-divider my-1"></li>
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.record.offline.import-history.index') }}" id="btn-open-offline-import-history" title="View Import History">
+                                    <i class="ti ti-history text-info fs-3"></i>
+                                    <span>Import History</span>
+                                </a>
+                            </li>
                         </ul>
                     </div>
                     <div class="dropdown">

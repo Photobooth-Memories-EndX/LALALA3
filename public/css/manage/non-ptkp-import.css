@@ -99,37 +99,95 @@
     transform: scale(1.005);
 }
 
-/* Status Badges */
+/* Status Badges - Consistent with PTKP */
+.badge-ptkp-valid,
 .badge-status-valid {
-    background-color: #10b981 !important;
-    color: #ffffff !important;
+    background-color: #dcfce7 !important;
+    color: #15803d !important;
+    border: 1px solid #bbf7d0;
+    font-weight: 700;
 }
 
+.badge-ptkp-warning,
 .badge-status-warning {
-    background-color: #f59e0b !important;
-    color: #ffffff !important;
+    background-color: #fef3c7 !important;
+    color: #b45309 !important;
+    border: 1px solid #fde68a;
+    font-weight: 700;
 }
 
+.badge-ptkp-duplicate,
 .badge-status-duplicate {
-    background-color: #8b5cf6 !important;
-    color: #ffffff !important;
+    background-color: #fef9c3 !important;
+    color: #a16207 !important;
+    border: 1px solid #fef08a;
+    font-weight: 700;
 }
 
+.badge-ptkp-invalid,
 .badge-status-invalid {
-    background-color: #ef4444 !important;
-    color: #ffffff !important;
+    background-color: #fee2e2 !important;
+    color: #b91c1c !important;
+    border: 1px solid #fecaca;
+    font-weight: 700;
+}
+
+.badge-ptkp-invalid-company,
+.badge-status-invalid-company {
+    background-color: #ffedd5 !important;
+    color: #c2410c !important;
+    border: 1px solid #fed7aa;
+    font-weight: 700;
+}
+
+/* Dark Mode Badges */
+[data-bs-theme="dark"] .badge-ptkp-valid, body.dark-mode .badge-ptkp-valid,
+[data-bs-theme="dark"] .badge-status-valid, body.dark-mode .badge-status-valid {
+    background-color: rgba(22, 163, 74, 0.2) !important;
+    color: #4ade80 !important;
+    border-color: rgba(74, 222, 128, 0.4);
+}
+[data-bs-theme="dark"] .badge-ptkp-warning, body.dark-mode .badge-ptkp-warning,
+[data-bs-theme="dark"] .badge-status-warning, body.dark-mode .badge-status-warning {
+    background-color: rgba(202, 138, 4, 0.2) !important;
+    color: #facc15 !important;
+    border-color: rgba(250, 204, 21, 0.4);
+}
+[data-bs-theme="dark"] .badge-ptkp-duplicate, body.dark-mode .badge-ptkp-duplicate,
+[data-bs-theme="dark"] .badge-status-duplicate, body.dark-mode .badge-status-duplicate {
+    background-color: rgba(234, 179, 8, 0.2) !important;
+    color: #fde047 !important;
+    border-color: rgba(253, 224, 71, 0.4);
+}
+[data-bs-theme="dark"] .badge-ptkp-invalid, body.dark-mode .badge-ptkp-invalid,
+[data-bs-theme="dark"] .badge-status-invalid, body.dark-mode .badge-status-invalid {
+    background-color: rgba(220, 38, 38, 0.2) !important;
+    color: #f87171 !important;
+    border-color: rgba(248, 113, 113, 0.4);
+}
+[data-bs-theme="dark"] .badge-ptkp-invalid-company, body.dark-mode .badge-ptkp-invalid-company,
+[data-bs-theme="dark"] .badge-status-invalid-company, body.dark-mode .badge-status-invalid-company {
+    background-color: rgba(234, 88, 12, 0.2) !important;
+    color: #fb923c !important;
+    border-color: rgba(251, 146, 60, 0.4);
 }
 
 /* KPI Summary Cards */
-.kpi-card {
+.kpi-card, .ptkp-kpi-card {
     border-radius: 12px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.15s ease-in-out;
 }
 
-.kpi-card:hover {
+.kpi-card:hover, .ptkp-kpi-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
+
+.ptkp-kpi-valid { background-color: #f0fdf4; border: 1px solid #bbf7d0; }
+.ptkp-kpi-warning { background-color: #fffbeb; border: 1px solid #fef3c7; }
+.ptkp-kpi-duplicate { background-color: #fefce8; border: 1px solid #fef08a; }
+.ptkp-kpi-invalid { background-color: #fef2f2; border: 1px solid #fecaca; }
+.ptkp-kpi-events { background-color: #f0fdfa; border: 1px solid #99f6e4; }
 
 /* Filter Tab Pills */
 .filter-tab-pill {

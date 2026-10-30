@@ -265,21 +265,28 @@ class OfflineTrainingImportService
             $isDuplicate = false;
             $duplicateReason = '';
 
-            $partKey = $normalized['user_id'] ? ('uid:' . $normalized['user_id']) : ('emp:' . strtolower($employeeId ?: ''));
+            $uidPartKey = $normalized['user_id'] ? ('uid:' . $normalized['user_id']) : null;
+            $empPartKey = !empty($employeeId) ? ('emp:' . strtolower($employeeId)) : null;
 
             // Duplicate in same file
-            if (isset($seenInFileParticipants[$fp][$partKey])) {
+            if (($uidPartKey && isset($seenInFileParticipants[$fp][$uidPartKey])) || ($empPartKey && isset($seenInFileParticipants[$fp][$empPartKey]))) {
                 $isDuplicate = true;
                 $duplicateReason = 'Duplicate participant for this training inside file (skipped)';
             } else {
-                $seenInFileParticipants[$fp][$partKey] = true;
+                if ($uidPartKey) {
+                    $seenInFileParticipants[$fp][$uidPartKey] = true;
+                }
+                if ($empPartKey) {
+                    $seenInFileParticipants[$fp][$empPartKey] = true;
+                }
             }
 
             // Duplicate in DB
             if (!$isDuplicate && $isExistingTraining) {
                 $existingTrainingId = $existingTrainings[$fp]->id;
-                $dbKey = $existingTrainingId . ':' . $partKey;
-                if (isset($existingParticipantMap[$dbKey])) {
+                $dbUidKey = $uidPartKey ? ($existingTrainingId . ':' . $uidPartKey) : null;
+                $dbEmpKey = $empPartKey ? ($existingTrainingId . ':' . $empPartKey) : null;
+                if (($dbUidKey && isset($existingParticipantMap[$dbUidKey])) || ($dbEmpKey && isset($existingParticipantMap[$dbEmpKey]))) {
                     $isDuplicate = true;
                     $duplicateReason = 'Participant already enrolled in existing training in database (skipped)';
                 }
@@ -314,7 +321,15 @@ class OfflineTrainingImportService
 
             $parsedRows[] = [
                 'excel_row'          => $rNum,
+                'no'                 => count($parsedRows) + 1,
                 'status'             => $rowStatus,
+                'status_label'       => strtoupper(str_replace('_', ' ', $rowStatus)),
+                'employee_id'        => $normalized['employee_id'],
+                'name'               => $normalized['name'],
+                'company'            => $normalized['company'],
+                'course_name'        => $normalized['course_name'],
+                'type'               => $normalized['type'],
+                'pic'                => $normalized['pic'],
                 'messages'           => $messages,
                 'is_duplicate'       => $isDuplicate,
                 'user_matched'       => (bool) $matchedUser,
@@ -957,6 +972,18 @@ class OfflineTrainingImportService
             $cell = $worksheet->getCell($colLetter . $row);
             $val = $cell->getValue();
 
+            // Handle employee_id leading zero preservation from formatted value
+            if ($key === 'employee_id' && $val !== null) {
+                try {
+                    $formatted = $cell->getFormattedValue();
+                    if (is_string($formatted) && str_starts_with($formatted, '0') && strlen($formatted) > strlen((string)$val)) {
+                        $val = $formatted;
+                    }
+                } catch (\Throwable $e) {
+                    // Ignore formatting errors
+                }
+            }
+
             // Handle date cell formatting from PhpSpreadsheet
             if ($val !== null && in_array($key, ['start_date', 'finish_date', 'end_date', 'bond_end_date'], true)) {
                 if (is_numeric($val)) {
@@ -1051,9 +1078,9 @@ class OfflineTrainingImportService
             'corporate_kpi_year'    => $kpiYear,
             'delivery_method'       => $this->normalizeString($raw['delivery_method'] ?? null),
             'sub_delivery_method'   => $this->normalizeString($raw['sub_delivery_method'] ?? null),
-            'provider'              => $this->normalizeString($raw['provider'] ?? null),
+            'provider'              => $this->normalizeString($raw['provider'] ?? ($raw['provider_name'] ?? null)),
             'sub_provider'          => $this->normalizeString($raw['sub_provider'] ?? null),
-            'provider_name'         => $this->normalizeString($raw['provider_name'] ?? null),
+            'provider_name'         => $this->normalizeString($raw['provider_name'] ?? ($raw['provider'] ?? null)),
             'venue'                 => $this->normalizeString($raw['venue'] ?? null),
             'instructor'            => $this->normalizeString($raw['instructor'] ?? null),
             'duration_seconds'      => $this->normalizeDuration($raw['duration_seconds'] ?? null),
@@ -1265,8 +1292,11 @@ class OfflineTrainingImportService
         if ($value === null) {
             return null;
         }
-        $str = trim((string) $value);
-        if ($str === '' || in_array($str, ['-', '--', '---', 'N/A', 'n/a', 'NA', 'None', 'null', 'NULL'], true)) {
+        $str = (string) $value;
+        $str = str_replace(["\xc2\xa0", "\u{00a0}", "\r\n", "\r", "\n"], ' ', $str);
+        $str = preg_replace('/\s+/', ' ', $str);
+        $str = trim($str);
+        if ($str === '' || in_array($str, ['-', '--', '---', 'N/A', 'n/a', 'NA', 'None', 'none', 'null', 'NULL'], true)) {
             return null;
         }
         return $str;

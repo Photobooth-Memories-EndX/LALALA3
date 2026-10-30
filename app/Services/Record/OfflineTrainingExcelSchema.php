@@ -32,7 +32,7 @@ class OfflineTrainingExcelSchema
                 'type'       => 'string',
                 'example'    => '100234',
                 'note'       => 'Employee ID / NIP (Required for participant matching)',
-                'aliases'    => ['employee id', 'id', 'nip', 'nik', 'id emp', 'emp id', 'employee_id', 'no pegawai', 'employe id'],
+                'aliases'    => ['employee id', 'id', 'nip', 'nik', 'id emp', 'emp id', 'employee_id', 'no pegawai', 'employe id', 'employee no', 'emp no', 'employee number', 'nomor pegawai', 'id employee', 'no. pegawai', 'nip / id', 'id/nip', 'nip/id'],
             ],
             2 => [
                 'col_index'  => 2,
@@ -44,7 +44,7 @@ class OfflineTrainingExcelSchema
                 'type'       => 'string',
                 'example'    => 'Budi Santoso',
                 'note'       => 'Participant full name',
-                'aliases'    => ['employee name', 'name', 'nama', 'participant name', 'nama peserta', 'nama karyawan', 'peserta'],
+                'aliases'    => ['employee name', 'name', 'nama', 'participant name', 'nama peserta', 'nama karyawan', 'peserta', 'full name', 'fullname', 'nama lengkap', 'employee_name', 'peserta training'],
             ],
             3 => [
                 'col_index'  => 3,
@@ -104,7 +104,7 @@ class OfflineTrainingExcelSchema
                 'type'       => 'string',
                 'example'    => 'PT Krakatau Posco',
                 'note'       => 'Company legal entity',
-                'aliases'    => ['company', 'perusahaan', 'pt', 'entity', 'company name', 'legal entity'],
+                'aliases'    => ['company', 'perusahaan', 'pt', 'entity', 'company name', 'legal entity', 'company_name', 'nama perusahaan', 'nama pt'],
             ],
 
             // TRAINING INFORMATION (Cols 8-24 / H-X)
@@ -118,7 +118,7 @@ class OfflineTrainingExcelSchema
                 'type'       => 'string',
                 'example'    => 'High Voltage Safety & Operation',
                 'note'       => 'Primary course / training title',
-                'aliases'    => ['course title', 'course name', 'course', 'nama course', 'training name', 'nama training', 'judul training', 'training title', 'title'],
+                'aliases'    => ['course title', 'course name', 'course', 'nama course', 'training name', 'nama training', 'judul training', 'training title', 'title', 'training', 'judul kursus', 'nama kursus', 'course_title', 'course_name'],
             ],
             9 => [
                 'col_index'  => 9,
@@ -238,7 +238,7 @@ class OfflineTrainingExcelSchema
                 'type'       => 'string',
                 'example'    => 'PT Schneider Indonesia',
                 'note'       => 'Training provider / institution name',
-                'aliases'    => ['provider name', 'nama provider', 'lembaga training', 'vendor name', 'nama vendor', 'institution', 'institution name', 'provider', 'sub_provider', 'sub provider'],
+                'aliases'    => ['provider name', 'nama provider', 'lembaga training', 'vendor name', 'nama vendor', 'institution', 'institution name', 'provider', 'sub_provider', 'sub provider', 'training provider', 'vendor'],
             ],
             19 => [
                 'col_index'  => 19,

@@ -77,9 +77,9 @@ class PtkpImportTest extends TestCase
         $adminResponse->assertStatus(200);
         $adminResponse->assertSee('Import PTKP Data');
         $adminResponse->assertSee('Back to Offline Records');
-        $adminResponse->assertSee('Import Status Guide');
-        $adminResponse->assertSee('Import Status Legend');
-        $adminResponse->assertSee('The record will be imported into the system.');
+        $adminResponse->assertDontSee('Import Status Guide');
+        $adminResponse->assertDontSee('Import Status Legend');
+        $adminResponse->assertDontSee('The record will be imported into the system.');
         $adminResponse->assertSee('INVALID COMPANY');
     }
 

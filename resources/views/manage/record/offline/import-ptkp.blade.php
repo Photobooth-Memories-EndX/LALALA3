@@ -31,6 +31,7 @@
                     </div>
                 </div>
                 <div>
+                    <a href="{{ route('manage.record.offline.import-history.index') }}" class="btn btn-outline-secondary rounded-pill d-inline-flex align-items-center gap-2 px-3 py-2 me-2" id="btn-ptkp-history"><i class="ti ti-history fs-2"></i><span>Import History</span></a>
                     <a href="{{ route('manage.record.offline.import-ptkp.template') }}" class="btn btn-outline-primary rounded-pill d-inline-flex align-items-center gap-2 px-3 py-2" id="btn-download-ptkp-template">
                         <i class="ti ti-download fs-2"></i>
                         <span>Download PTKP Template (.xlsx)</span>
@@ -77,9 +78,6 @@
 
                 <!-- Upload Error Alert -->
                 <div class="alert alert-danger border-0 rounded-3 small mb-3 py-2 px-3" id="ptkp-upload-error" style="display: none;"></div>
-
-                <!-- Detailed Status Guide on Initial Upload Page -->
-                @include('manage.record.offline.partials.ptkp-status-guide')
 
                 <!-- Guidelines Box -->
                 <div class="alert alert-info border-0 rounded-3 small mb-4" style="background-color: #f0f9ff; color: #0369a1;">
@@ -357,9 +355,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- REUSABLE FOOTER STATUS LEGEND (CONSISTENT ON ALL STEPS) -->
-        @include('manage.record.offline.partials.ptkp-status-legend')
     </div>
 </div>
 

@@ -39,8 +39,8 @@ class OfflineTrainingImportController extends Controller
         }
 
         return view('main.record.offline-import-non-ptkp', [
-            'title'    => 'Import Data Non PTKP',
-            'subtitle' => 'Upload dan validasi data training offline Non PTKP sebelum diimpor ke sistem OWL.',
+            'title'    => 'Import Non-PTKP Data',
+            'subtitle' => 'Upload and validate Non-PTKP offline training records before importing into OWL LMS.',
         ]);
     }
 
@@ -101,6 +101,7 @@ class OfflineTrainingImportController extends Controller
                 'token'        => $preview['token'] ?? null,
                 'stats'        => $preview['stats'] ?? null,
                 'rows'         => $preview['preview_rows'] ?? [],
+                'preview_rows' => $preview['preview_rows'] ?? [],
                 'header_check'     => $preview['header_check'] ?? null,
                 'can_confirm'      => $preview['can_confirm'] ?? false,
                 'preview_state'    => $preview['preview_state'] ?? null,

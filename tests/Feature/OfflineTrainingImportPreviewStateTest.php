@@ -108,6 +108,7 @@ class OfflineTrainingImportPreviewStateTest extends TestCase
             'learning_hours'        => 8.0,
             'progress'              => 100,
             'start_date'            => '2026-09-01',
+            'end_date'              => '2026-09-02',
             'finish_date'           => '2026-09-02',
             'venue'                 => 'Room 101',
             'attendance'            => 'Yes',

@@ -1,6 +1,6 @@
 @extends('layouts.sidebar-master')
 
-@section('title', 'Import Data Non PTKP — OWL LMS')
+@section('title', 'Import Non-PTKP Data — OWL LMS')
 
 @section('style')
 <link rel="stylesheet" href="{{ asset('css/manage/non-ptkp-import.css') }}">
@@ -13,7 +13,7 @@
         <div class="mb-3">
             <a href="{{ route('manage.record.offline') }}" class="btn-back-non-ptkp d-inline-flex align-items-center gap-1.5 text-decoration-none fw-medium">
                 <i class="ti ti-arrow-left"></i>
-                <span>Kembali ke Offline Record</span>
+                <span>Back to Offline Records</span>
             </a>
         </div>
 
@@ -26,14 +26,15 @@
                         <i class="ti ti-file-spreadsheet fs-1"></i>
                     </div>
                     <div>
-                        <h2 class="h3 fw-bold mb-1 text-dark">Import Data Non PTKP</h2>
-                        <p class="text-muted small mb-0">Upload dan validasi data training offline sebelum diimpor ke sistem OWL.</p>
+                        <h2 class="h3 fw-bold mb-1 text-dark">Import Non-PTKP Data</h2>
+                        <p class="text-muted small mb-0">Upload and validate Non-PTKP offline training records before importing into OWL LMS.</p>
                     </div>
                 </div>
                 <div>
+                    <a href="{{ route('manage.record.offline.import-history.index') }}" class="btn btn-outline-secondary rounded-pill d-inline-flex align-items-center gap-2 px-3 py-2 me-2" id="btn-non-ptkp-history"><i class="ti ti-history fs-2"></i><span>Import History</span></a>
                     <a href="{{ route('manage.record.offline.import-non-ptkp.template') }}" class="btn btn-outline-primary rounded-pill d-inline-flex align-items-center gap-2 px-3 py-2" id="btn-download-non-ptkp-template">
                         <i class="ti ti-download fs-2"></i>
-                        <span>Download Template Non PTKP (.xlsx)</span>
+                        <span>Download Non-PTKP Template (.xlsx)</span>
                     </a>
                 </div>
             </div>
@@ -55,7 +56,7 @@
                 <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
                     <div class="d-flex align-items-center gap-2">
                         <span class="badge bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 26px; height: 26px; font-size: 0.8rem;">1</span>
-                        <h4 class="card-title fw-bold text-dark mb-0">Upload Spreadsheet Non PTKP</h4>
+                        <h4 class="card-title fw-bold text-dark mb-0">Upload Non-PTKP Spreadsheet</h4>
                     </div>
                 </div>
 
@@ -83,12 +84,12 @@
                     <div class="d-flex align-items-start gap-2">
                         <i class="ti ti-info-circle fs-3 flex-shrink-0 mt-0.5"></i>
                         <div>
-                            <strong class="d-block mb-1">Spreadsheet Guidelines & Aturan Bisnis Non PTKP:</strong>
+                            <strong class="d-block mb-1">Non-PTKP OWL Spreadsheet Guidelines:</strong>
                             <ul class="mb-0 ps-3">
-                                <li><strong>Struktur Template:</strong> Menggunakan format template resmi 44 kolom canonical Non KP OWL. Mendukung 2 baris grouped header maupun single row header.</li>
-                                <li><strong>Training Event Grouping:</strong> Baris peserta dengan sesi pelatihan yang sama (Course Title, Batch, Tanggal, Type, Venue) otomatis dikelompokkan ke dalam satu event training.</li>
-                                <li><strong>Pencegahan Duplikat:</strong> Peserta yang sudah terdaftar pada sesi training yang sama (baik di dalam file maupun di database) akan dilewati secara aman (status DUPLICATE).</li>
-                                <li><strong>Preservasi Snapshot Karyawan:</strong> Data profil peserta (Nama, NIP, Grade, Position, Team, Department, Company) direkam sesuai data spreadsheet saat import.</li>
+                                <li><strong>Template Structure:</strong> Supports official canonical 44 columns as well as two-row grouped and single-row headers.</li>
+                                <li><strong>Training Event Grouping:</strong> Rows with matching course, batch, dates, type, and venue are automatically grouped into a single training event.</li>
+                                <li><strong>Duplicate Prevention:</strong> Participants already enrolled in the same training in database or earlier rows are safely skipped (DUPLICATE status).</li>
+                                <li><strong>Participant Snapshot Preservation:</strong> Participant profile data from the spreadsheet is safely preserved during import.</li>
                             </ul>
                         </div>
                     </div>
@@ -155,37 +156,37 @@
                 <!-- 6 KPI SUMMARY METRIC CARDS -->
                 <div class="row g-2 mb-4">
                     <div class="col-4 col-md-2">
-                        <div class="card border-0 shadow-none bg-light p-2.5 rounded-3 text-center h-100 kpi-card" title="Total baris data dari file spreadsheet">
+                        <div class="card border-0 shadow-none bg-light p-2.5 rounded-3 text-center h-100 kpi-card" title="Total spreadsheet rows read">
                             <div class="text-muted small fw-medium mb-0">Total</div>
                             <div class="h3 fw-bold text-dark mb-0" id="non-ptkp-kpi-total">0</div>
                         </div>
                     </div>
                     <div class="col-4 col-md-2">
-                        <div class="card border-0 shadow-none p-2.5 rounded-3 text-center h-100 kpi-card" style="background-color: #ecfdf5;" title="Record yang memenuhi syarat import">
+                        <div class="card border-0 shadow-none p-2.5 rounded-3 text-center h-100 kpi-card" style="background-color: #ecfdf5;" title="Valid records ready to import">
                             <div class="small fw-medium mb-0" style="color: #065f46;">Valid</div>
                             <div class="h3 fw-bold mb-0" style="color: #047857;" id="non-ptkp-kpi-valid">0</div>
                         </div>
                     </div>
                     <div class="col-4 col-md-2">
-                        <div class="card border-0 shadow-none p-2.5 rounded-3 text-center h-100 kpi-card" style="background-color: #fffbeb;" title="Record yang dapat diproses dengan peringatan non-fatal">
+                        <div class="card border-0 shadow-none p-2.5 rounded-3 text-center h-100 kpi-card" style="background-color: #fffbeb;" title="Valid records with nonfatal warnings">
                             <div class="small fw-medium mb-0" style="color: #92400e;">Warnings</div>
                             <div class="h3 fw-bold mb-0" style="color: #d97706;" id="non-ptkp-kpi-warning">0</div>
                         </div>
                     </div>
                     <div class="col-4 col-md-2">
-                        <div class="card border-0 shadow-none p-2.5 rounded-3 text-center h-100 kpi-card" style="background-color: #f5f3ff;" title="Record duplikat (dilewati secara aman)">
+                        <div class="card border-0 shadow-none p-2.5 rounded-3 text-center h-100 kpi-card" style="background-color: #f5f3ff;" title="Duplicate records (safely skipped)">
                             <div class="small fw-medium mb-0" style="color: #5b21b6;">Duplicates</div>
                             <div class="h3 fw-bold mb-0" style="color: #7c3aed;" id="non-ptkp-kpi-duplicate">0</div>
                         </div>
                     </div>
                     <div class="col-4 col-md-2">
-                        <div class="card border-0 shadow-none p-2.5 rounded-3 text-center h-100 kpi-card" style="background-color: #fef2f2;" title="Record dengan kesalahan validasi fatal (tidak dapat diimport)">
+                        <div class="card border-0 shadow-none p-2.5 rounded-3 text-center h-100 kpi-card" style="background-color: #fef2f2;" title="Records with fatal validation errors">
                             <div class="small fw-medium mb-0" style="color: #991b1b;">Invalid</div>
                             <div class="h3 fw-bold mb-0" style="color: #dc2626;" id="non-ptkp-kpi-invalid">0</div>
                         </div>
                     </div>
                     <div class="col-4 col-md-2">
-                        <div class="card border-0 shadow-none p-2.5 rounded-3 text-center h-100 kpi-card" style="background-color: #f0fdfa;" title="Jumlah event training yang teridentifikasi">
+                        <div class="card border-0 shadow-none p-2.5 rounded-3 text-center h-100 kpi-card" style="background-color: #f0fdfa;" title="Identified unique training sessions">
                             <div class="small fw-medium mb-0" style="color: #115e59;">Events</div>
                             <div class="h3 fw-bold mb-0" style="color: #0f766e;" id="non-ptkp-kpi-events">0</div>
                         </div>
@@ -200,14 +201,14 @@
                         </div>
                         <div>
                             <h5 class="fw-bold mb-1">No New Records to Import</h5>
-                            <p class="mb-0 small" id="non-ptkp-no-new-records-desc">Semua record telah ditemukan di database. Tidak ada record baru yang akan diimpor.</p>
+                            <p class="mb-0 small" id="non-ptkp-no-new-records-desc">All records already exist in the database. No new records will be imported.</p>
                         </div>
                     </div>
                 </div>
 
                 <!-- UNKNOWN HEADERS ALERT -->
                 <div class="alert alert-secondary border-0 rounded-3 small mb-3 py-2 px-3" id="non-ptkp-unknown-headers-alert" style="display: none;">
-                    <i class="ti ti-info-circle me-1"></i> Kolom tambahan tidak dikenal dilewati: <span id="non-ptkp-unknown-headers-list" class="fw-semibold"></span>
+                    <i class="ti ti-info-circle me-1"></i> Additional unrecognized columns skipped: <span id="non-ptkp-unknown-headers-list" class="fw-semibold"></span>
                 </div>
 
                 <!-- TABLE TOOLBAR: FILTER TABS & SEARCH -->
@@ -239,15 +240,15 @@
                     <table class="table table-sm table-hover table-vcenter align-middle mb-0 non-ptkp-table" id="non-ptkp-preview-table" style="font-size: 0.825rem;">
                         <thead class="table-light sticky-top">
                             <tr>
-                                <th style="width: 50px;" class="text-center">Row</th>
-                                <th style="width: 100px;">Status</th>
-                                <th>Participant / Employee</th>
-                                <th style="width: 110px;">Employee ID</th>
-                                <th>Course Name</th>
-                                <th style="width: 100px;">Batch</th>
-                                <th style="width: 70px;">Hours</th>
-                                <th style="width: 80px;">Progress</th>
-                                <th>Message</th>
+                                <th style="width: 50px;" class="text-center">No</th>
+                                <th style="width: 140px;">Status</th>
+                                <th style="width: 120px;">Employee ID</th>
+                                <th>Participant Name</th>
+                                <th>Company</th>
+                                <th>Course Title</th>
+                                <th style="width: 110px;">Type</th>
+                                <th style="width: 130px;">PIC</th>
+                                <th style="min-width: 200px;">Validation Details</th>
                                 <th style="width: 70px;" class="text-center">Action</th>
                             </tr>
                         </thead>

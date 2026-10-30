@@ -92,8 +92,8 @@ class OfflineTrainingImportModalTest extends TestCase
         $response->assertStatus(200);
 
         // Page title & Breadcrumb
-        $response->assertSee('Import Data Non PTKP');
-        $response->assertSee('Kembali ke Offline Record');
+        $response->assertSee('Import Non-PTKP Data');
+        $response->assertSee('Back to Offline Records');
         $response->assertSee(route('manage.record.offline'));
 
         // 4-Step Stepper

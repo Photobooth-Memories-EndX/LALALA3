@@ -13,7 +13,7 @@
                 <li class="breadcrumb-item">
                     <a href="{{ route('manage.record.offline') }}" class="text-decoration-none">Offline Record</a>
                 </li>
-                <li class="breadcrumb-item active" aria-current="page">Import Data Non PTKP</li>
+                <li class="breadcrumb-item active" aria-current="page">Import Non-PTKP Data</li>
             </ol>
         </nav>
 
@@ -21,7 +21,7 @@
         <div class="mb-3">
             <a href="{{ route('manage.record.offline') }}" class="btn-back d-inline-flex align-items-center gap-1.5 text-decoration-none fw-medium" id="btn-top-back">
                 <i class="ti ti-arrow-left fs-3"></i>
-                <span>Kembali ke Offline Record</span>
+                <span>Back to Offline Records</span>
             </a>
         </div>
 
@@ -34,8 +34,8 @@
                         <i class="ti ti-file-spreadsheet fs-1"></i>
                     </div>
                     <div>
-                        <h2 class="h3 fw-bold mb-1 text-dark">Import Data Non PTKP</h2>
-                        <p class="text-muted small mb-0">Upload dan validasi data training offline Non PTKP sebelum diimpor ke sistem OWL.</p>
+                        <h2 class="h3 fw-bold mb-1 text-dark">Import Non-PTKP Data</h2>
+                        <p class="text-muted small mb-0">Upload and validate Non-PTKP offline training records before importing into OWL LMS.</p>
                     </div>
                 </div>
                 <div class="d-flex align-items-center gap-2">
@@ -60,7 +60,7 @@
                             </div>
                             <div class="stepper-content">
                                 <div class="stepper-title">Upload Spreadsheet</div>
-                                <div class="stepper-desc text-muted">Pilih file .xlsx / .xls</div>
+                                <div class="stepper-desc text-muted">Select .xlsx / .xls file</div>
                             </div>
                         </div>
                     </div>
@@ -73,7 +73,7 @@
                             </div>
                             <div class="stepper-content">
                                 <div class="stepper-title">Validation Preview</div>
-                                <div class="stepper-desc text-muted">Validasi kolom & isi</div>
+                                <div class="stepper-desc text-muted">Validate columns & records</div>
                             </div>
                         </div>
                     </div>
@@ -86,7 +86,7 @@
                             </div>
                             <div class="stepper-content">
                                 <div class="stepper-title">Review Data</div>
-                                <div class="stepper-desc text-muted">Status & perbandingan</div>
+                                <div class="stepper-desc text-muted">Review status & details</div>
                             </div>
                         </div>
                     </div>
@@ -99,7 +99,7 @@
                             </div>
                             <div class="stepper-content">
                                 <div class="stepper-title">Import Records</div>
-                                <div class="stepper-desc text-muted">Simpan ke database</div>
+                                <div class="stepper-desc text-muted">Save to database</div>
                             </div>
                         </div>
                     </div>
@@ -117,7 +117,7 @@
                         <span class="badge bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 28px; font-size: 0.85rem; background-color: #d97706 !important;">1</span>
                         <h4 class="fw-bold text-dark mb-0">Upload Spreadsheet</h4>
                     </div>
-                    <span class="badge bg-light text-secondary border px-2.5 py-1">Format didukung: .xlsx, .xls</span>
+                    <span class="badge bg-light text-secondary border px-2.5 py-1">Supported formats: .xlsx, .xls</span>
                 </div>
 
                 <!-- Dropzone Upload Area -->
@@ -127,13 +127,13 @@
                         <div class="avatar avatar-lg rounded-circle mx-auto mb-3" style="background-color: #fef3c7; color: #d97706; width: 64px; height: 64px;">
                             <i class="ti ti-cloud-upload fs-1"></i>
                         </div>
-                        <h5 class="fw-bold text-dark mb-1">Pilih file Excel atau drag & drop file ke sini</h5>
-                        <p class="text-muted small mb-2">Mendukung format spreadsheet <strong>.xlsx</strong> dan <strong>.xls</strong> (Maksimal 20 MB)</p>
+                        <h5 class="fw-bold text-dark mb-1">Choose an Excel file or drag & drop here</h5>
+                        <p class="text-muted small mb-2">Supported formats: <strong>.xlsx, .xls</strong> (Max 20MB)</p>
                         
                         <div class="selected-file-pill d-none align-items-center gap-2 mx-auto mt-3 py-1.5 px-3 rounded-pill bg-white border shadow-sm" id="selected-file-box" style="max-width: 480px;">
                             <i class="ti ti-file-spreadsheet text-success fs-3"></i>
                             <span class="text-dark fw-semibold small text-truncate" id="selected-filename-text">No file selected</span>
-                            <button type="button" class="btn btn-sm btn-ghost-danger rounded-circle p-1 ms-auto" id="btn-clear-file" title="Hapus file terpilih">
+                            <button type="button" class="btn btn-sm btn-ghost-danger rounded-circle p-1 ms-auto" id="btn-clear-file" title="Remove file">
                                 <i class="ti ti-x"></i>
                             </button>
                         </div>
@@ -144,7 +144,7 @@
                 <div class="alert alert-danger border-0 rounded-3 small mb-4 py-2.5 px-3" id="upload-error-box" style="display: none;">
                     <div class="d-flex align-items-start gap-2">
                         <i class="ti ti-alert-triangle fs-3 flex-shrink-0 mt-0.5"></i>
-                        <div id="upload-error-message">Terjadi kesalahan validasi file.</div>
+                        <div id="upload-error-message">File validation error occurred.</div>
                     </div>
                 </div>
 
@@ -153,15 +153,15 @@
                     <div class="d-flex align-items-start gap-2.5">
                         <i class="ti ti-info-circle fs-2 flex-shrink-0 mt-0.5"></i>
                         <div class="w-100">
-                            <strong class="d-block mb-1.5 text-dark">Panduan Spreadsheet Non PTKP OWL:</strong>
+                            <strong class="d-block mb-1.5 text-dark">Non-PTKP OWL Spreadsheet Guidelines:</strong>
                             <ul class="mb-0 ps-3">
-                                <li>Gunakan template resmi Non PTKP OWL.</li>
-                                <li>Template <strong>single-header dengan 44 kolom kanonis</strong> tetap didukung sesuai validasi backend.</li>
-                                <li>Format legacy dengan <strong>dua baris header</strong> tetap didukung secara otomatis.</li>
-                                <li>Jangan mengganti atau menghapus header wajib: <code>Course Name</code> / <code>Course Title</code>, <code>ID</code>, dan <code>Name</code>.</li>
-                                <li>Satu baris merepresentasikan <strong>satu peserta training</strong>.</li>
-                                <li>Peserta dalam training yang sama akan <strong>dikelompokkan ke dalam satu event training</strong> secara otomatis berdasarkan course, batch, dates, type, dan venue.</li>
-                                <li>Record duplikat ditangani dengan mekanisme deduplikasi aman dan <strong>dilewati tanpa menimpa atau merusak data existing</strong> di database.</li>
+                                <li>Use the official OWL Non-PTKP template.</li>
+                                <li>Template with <strong>canonical 44 columns</strong> is supported in accordance with backend validation.</li>
+                                <li>Legacy format with <strong>two-row grouped headers</strong> is automatically supported.</li>
+                                <li>Do not rename or remove mandatory headers: <code>Course Name</code> / <code>Course Title</code>, <code>ID</code> / <code>Employee ID</code>, and <code>Name</code>.</li>
+                                <li>Each row represents <strong>one training participant</strong>.</li>
+                                <li>Participants in the same training session will be <strong>automatically grouped into a single training event</strong> based on course, batch, dates, type, and venue.</li>
+                                <li>Duplicate records are handled via safe deduplication and <strong>skipped without modifying existing database records</strong>.</li>
                             </ul>
                         </div>
                     </div>
@@ -170,7 +170,7 @@
                 <!-- Action Buttons: Cancel, Download Template, Validate & Preview -->
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2 border-top">
                     <a href="{{ route('manage.record.offline') }}" class="btn btn-outline-secondary rounded-3 px-4">
-                        <i class="ti ti-arrow-left me-1"></i> Kembali
+                        <i class="ti ti-arrow-left me-1"></i> Back
                     </a>
                     <div class="d-flex align-items-center gap-2">
                         <a href="{{ route('manage.record.offline.import.template') }}" class="btn btn-outline-primary rounded-3 px-3">
@@ -178,7 +178,7 @@
                         </a>
                         <button type="button" class="btn btn-primary rounded-3 px-4 d-inline-flex align-items-center gap-2" id="btn-validate-upload" style="background-color: #d97706; border-color: #d97706;" disabled>
                             <i class="ti ti-sparkles"></i>
-                            <span>Validate & Preview</span>
+                            <span>Validate & Preview Records</span>
                         </button>
                     </div>
                 </div>
@@ -207,12 +207,12 @@
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                     <div class="d-flex align-items-center gap-2.5 flex-wrap">
                         <span class="badge bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 28px; font-size: 0.85rem; background-color: #d97706 !important;">2</span>
-                        <h4 class="fw-bold text-dark mb-0">Validation Preview & Review Data</h4>
+                        <h4 class="fw-bold text-dark mb-0">Non-PTKP Validation & Review</h4>
                         <span class="badge bg-light text-secondary border px-2.5 py-1" id="preview-filename-badge">-</span>
                     </div>
                     <div class="d-flex align-items-center gap-2">
                         <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" id="btn-reupload-file">
-                            <i class="ti ti-arrow-left me-1"></i> Re-upload File
+                            <i class="ti ti-arrow-left me-1"></i> Cancel & Re-upload
                         </button>
                     </div>
                 </div>
@@ -251,47 +251,47 @@
                 <div class="row g-2 g-md-3 mb-4">
                     <!-- Total -->
                     <div class="col-4 col-md-2">
-                        <div class="card border-0 shadow-none bg-light p-3 rounded-3 text-center h-100 stat-box" title="Total baris data yang berhasil dibaca sesuai definisi backend">
-                            <div class="text-muted extra-small fw-medium mb-1">Total</div>
+                        <div class="card border-0 shadow-none bg-light p-3 rounded-3 text-center h-100 stat-box" title="Total spreadsheet rows read">
+                            <div class="text-muted extra-small fw-medium mb-1">Total Rows</div>
                             <div class="h3 fw-bold text-dark mb-0" id="stat-total-rows">0</div>
                             <div class="extra-small text-muted mt-1">records read</div>
                         </div>
                     </div>
                     <!-- Valid -->
                     <div class="col-4 col-md-2">
-                        <div class="card border-0 shadow-none p-3 rounded-3 text-center h-100 stat-box" style="background-color: #ecfdf5;" title="Record yang memenuhi aturan validasi dan dapat diimpor">
-                            <div class="extra-small fw-medium mb-1" style="color: #065f46;">Valid</div>
+                        <div class="card border-0 shadow-none p-3 rounded-3 text-center h-100 stat-box" style="background-color: #ecfdf5;" title="Valid records ready to import">
+                            <div class="extra-small fw-medium mb-1" style="color: #065f46;">VALID</div>
                             <div class="h3 fw-bold mb-0" style="color: #047857;" id="stat-valid-rows">0</div>
                             <div class="extra-small mt-1" style="color: #065f46;">ready to import</div>
                         </div>
                     </div>
                     <!-- Warnings -->
                     <div class="col-4 col-md-2">
-                        <div class="card border-0 shadow-none p-3 rounded-3 text-center h-100 stat-box" style="background-color: #fffbeb;" title="Record valid yang mempunyai peringatan nonfatal">
-                            <div class="extra-small fw-medium mb-1" style="color: #92400e;">Warnings</div>
+                        <div class="card border-0 shadow-none p-3 rounded-3 text-center h-100 stat-box" style="background-color: #fffbeb;" title="Valid records with nonfatal warnings">
+                            <div class="extra-small fw-medium mb-1" style="color: #92400e;">WARNING</div>
                             <div class="h3 fw-bold mb-0" style="color: #d97706;" id="stat-warning-rows">0</div>
                             <div class="extra-small mt-1" style="color: #92400e;">nonfatal issues</div>
                         </div>
                     </div>
                     <!-- Duplicates -->
                     <div class="col-4 col-md-2">
-                        <div class="card border-0 shadow-none p-3 rounded-3 text-center h-100 stat-box" style="background-color: #f5f3ff;" title="Record yang sudah ada atau terdeteksi sebagai duplikat">
-                            <div class="extra-small fw-medium mb-1" style="color: #5b21b6;">Duplicates</div>
+                        <div class="card border-0 shadow-none p-3 rounded-3 text-center h-100 stat-box" style="background-color: #f5f3ff;" title="Existing records or duplicates that will be skipped">
+                            <div class="extra-small fw-medium mb-1" style="color: #5b21b6;">DUPLICATE</div>
                             <div class="h3 fw-bold mb-0" style="color: #7c3aed;" id="stat-duplicate-rows">0</div>
                             <div class="extra-small mt-1" style="color: #5b21b6;">will be skipped</div>
                         </div>
                     </div>
                     <!-- Invalid -->
                     <div class="col-4 col-md-2">
-                        <div class="card border-0 shadow-none p-3 rounded-3 text-center h-100 stat-box" style="background-color: #fef2f2;" title="Record yang tidak memenuhi persyaratan import">
-                            <div class="extra-small fw-medium mb-1" style="color: #991b1b;">Invalid</div>
+                        <div class="card border-0 shadow-none p-3 rounded-3 text-center h-100 stat-box" style="background-color: #fef2f2;" title="Records with fatal validation errors">
+                            <div class="extra-small fw-medium mb-1" style="color: #991b1b;">INVALID</div>
                             <div class="h3 fw-bold mb-0" style="color: #dc2626;" id="stat-invalid-rows">0</div>
                             <div class="extra-small mt-1" style="color: #991b1b;">fatal errors</div>
                         </div>
                     </div>
                     <!-- Events -->
                     <div class="col-4 col-md-2">
-                        <div class="card border-0 shadow-none p-3 rounded-3 text-center h-100 stat-box" style="background-color: #f0fdfa;" title="Jumlah event training yang teridentifikasi">
+                        <div class="card border-0 shadow-none p-3 rounded-3 text-center h-100 stat-box" style="background-color: #f0fdfa;" title="Total unique training sessions identified">
                             <div class="extra-small fw-medium mb-1" style="color: #115e59;">Events</div>
                             <div class="h3 fw-bold mb-0" style="color: #0f766e;" id="stat-training-events">0</div>
                             <div class="extra-small mt-1" style="color: #115e59;">unique sessions</div>
@@ -308,53 +308,53 @@
                         <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
                             <div class="d-flex align-items-center gap-2">
                                 <i class="ti ti-scale text-primary fs-2"></i>
-                                <h5 class="fw-bold text-dark mb-0">Perbandingan Data Sebelum Import</h5>
+                                <h5 class="fw-bold text-dark mb-0">Pre-Import Data Comparison</h5>
                             </div>
-                            <span class="badge bg-secondary-lt small">Hasil Pemeriksaan Terhadap Database</span>
+                            <span class="badge bg-secondary-lt small">Database Verification Result</span>
                         </div>
 
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <div class="p-3 rounded-3 bg-white border h-100">
                                     <div class="d-flex align-items-center justify-content-between mb-2">
-                                        <span class="text-muted small fw-medium">Record Baru (Siap Diimpor)</span>
+                                        <span class="text-muted small fw-medium">New Records (Ready to Import)</span>
                                         <span class="badge bg-success-lt fw-bold fs-4" id="comp-new-records">0</span>
                                     </div>
-                                    <p class="text-muted extra-small mb-0">Peserta dan event training baru yang memenuhi seluruh aturan validasi dan akan disimpan ke database.</p>
+                                    <p class="text-muted extra-small mb-0">New participants and training events that meet all validation rules and will be saved to the database.</p>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="p-3 rounded-3 bg-white border h-100">
                                     <div class="d-flex align-items-center justify-content-between mb-2">
-                                        <span class="text-muted small fw-medium">Record Duplikat (Dilewati)</span>
+                                        <span class="text-muted small fw-medium">Duplicate Records (Skipped)</span>
                                         <span class="badge bg-purple-lt fw-bold fs-4" id="comp-duplicate-records">0</span>
                                     </div>
-                                    <p class="text-muted extra-small mb-0">Peserta sudah terdaftar pada training yang sama di database atau di baris sebelumnya dalam file. <em>Data existing di database tidak akan diubah.</em></p>
+                                    <p class="text-muted extra-small mb-0">Participants already enrolled in the same training in database or earlier rows in the file. <em>Existing database records will not be modified.</em></p>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="p-3 rounded-3 bg-white border h-100">
                                     <div class="d-flex align-items-center justify-content-between mb-2">
-                                        <span class="text-muted small fw-medium">Record dengan Peringatan (Warning)</span>
+                                        <span class="text-muted small fw-medium">Records with Warnings</span>
                                         <span class="badge bg-warning-lt fw-bold fs-4" id="comp-warning-records">0</span>
                                     </div>
-                                    <p class="text-muted extra-small mb-0">Record valid dan dapat diimpor, namun memiliki catatan (misal user belum memiliki akun LMS atau informasi tanggal opsional kosong).</p>
+                                    <p class="text-muted extra-small mb-0">Valid records ready to import, but with nonfatal notes (e.g. participant has no LMS account or optional dates are blank).</p>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="p-3 rounded-3 bg-white border h-100">
                                     <div class="d-flex align-items-center justify-content-between mb-2">
-                                        <span class="text-muted small fw-medium">Record Tidak Valid (Error)</span>
+                                        <span class="text-muted small fw-medium">Invalid Records (Errors)</span>
                                         <span class="badge bg-danger-lt fw-bold fs-4" id="comp-invalid-records">0</span>
                                     </div>
-                                    <p class="text-muted extra-small mb-0">Record yang melanggar ketentuan wajib atau format data. Harus diperbaiki pada spreadsheet sebelum proses import dapat dijalankan.</p>
+                                    <p class="text-muted extra-small mb-0">Records violating mandatory fields or invalid data formats. Must be corrected in spreadsheet before importing.</p>
                                 </div>
                             </div>
                         </div>
 
                         <div class="mt-3 pt-2 border-top d-flex align-items-center gap-2 extra-small text-muted">
                             <i class="ti ti-shield-check text-success fs-3 flex-shrink-0"></i>
-                            <span>Integritas database terjamin: Proses preview hanya membaca data dan tidak melakukan penulisan apa pun ke database.</span>
+                            <span>Database integrity guaranteed: Preview only reads data and performs zero writes to the database.</span>
                         </div>
                     </div>
                 </div>
@@ -381,11 +381,11 @@
 
                     <div class="d-flex align-items-center gap-2">
                         <div class="input-icon" style="min-width: 220px;">
-                            <input type="text" class="form-control form-control-sm rounded-pill" id="preview-search-input" placeholder="Cari peserta / course..." />
+                            <input type="text" class="form-control form-control-sm rounded-pill" id="preview-search-input" placeholder="Filter records (name, ID, course, PIC)..." />
                             <span class="input-icon-addon"><i class="ti ti-search"></i></span>
                         </div>
                         <span class="text-muted extra-small">
-                            Menampilkan <span id="preview-visible-count">0</span> dari <span id="preview-total-count">0</span> baris
+                            Showing <span id="preview-visible-count">0</span> of <span id="preview-total-count">0</span> records
                         </span>
                     </div>
                 </div>
@@ -395,16 +395,16 @@
                     <table class="table table-sm table-hover table-vcenter mb-0 align-middle" id="preview-main-table">
                         <thead class="table-light text-uppercase extra-small text-muted sticky-top" style="z-index: 2; font-size: 0.75rem; letter-spacing: 0.04em;">
                             <tr>
-                                <th style="width: 60px;" class="text-center">Row</th>
-                                <th style="width: 120px;">Status</th>
-                                <th style="min-width: 180px;">Employee</th>
-                                <th style="min-width: 110px;">Employee ID</th>
-                                <th style="min-width: 220px;">Course Name</th>
-                                <th style="width: 90px;">Batch</th>
-                                <th style="width: 80px;">Hours</th>
-                                <th style="width: 85px;">Progress</th>
-                                <th style="min-width: 200px;">Message</th>
-                                <th style="width: 60px;" class="text-end">Detail</th>
+                                <th style="width: 50px;" class="text-center">No</th>
+                                <th style="width: 140px;">Status</th>
+                                <th style="width: 120px;">Employee ID</th>
+                                <th>Participant Name</th>
+                                <th>Company</th>
+                                <th>Course Title</th>
+                                <th style="width: 110px;">Type</th>
+                                <th style="width: 130px;">PIC</th>
+                                <th style="min-width: 200px;">Validation Details</th>
+                                <th style="width: 70px;" class="text-center">Action</th>
                             </tr>
                         </thead>
                         <tbody id="preview-main-tbody">
@@ -416,7 +416,7 @@
                 <!-- PAGINATION CONTROLS -->
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4" id="preview-pagination-container" style="display: none;">
                     <div class="text-muted extra-small">
-                        Halaman <span id="page-current">1</span> dari <span id="page-total">1</span>
+                        Showing page <span id="page-current">1</span> of <span id="page-total">1</span>
                     </div>
                     <div class="btn-group btn-group-sm">
                         <button type="button" class="btn btn-outline-secondary" id="btn-page-prev" disabled>
@@ -432,20 +432,20 @@
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 pt-3 border-top">
                     <div>
                         <span class="text-muted small" id="preview-footer-summary-text">
-                            Silakan periksa hasil validasi sebelum melanjutkan proses import.
+                            Review validation results before confirming import.
                         </span>
                     </div>
 
                     <div class="d-flex align-items-center gap-2">
                         <button type="button" class="btn btn-outline-secondary rounded-3 px-3" id="btn-action-reupload">
-                            <i class="ti ti-upload me-1"></i> Re-upload File
+                            <i class="ti ti-arrow-left me-1"></i> Cancel & Re-upload
                         </button>
                         <a href="{{ route('manage.record.offline') }}" class="btn btn-outline-secondary rounded-3 px-3" id="btn-action-cancel">
                             Cancel
                         </a>
                         <button type="button" class="btn btn-primary rounded-3 px-4 d-inline-flex align-items-center gap-1.5" id="btn-action-confirm-import" style="background-color: #d97706; border-color: #d97706;">
                             <i class="ti ti-check fs-2"></i>
-                            <span id="btn-confirm-label">Import Valid Records</span>
+                            <span id="btn-confirm-label">Confirm & Import</span>
                         </button>
                     </div>
                 </div>
@@ -475,8 +475,8 @@
                 <div class="avatar avatar-xl rounded-circle mx-auto mb-3" style="background-color: #ecfdf5; color: #059669; width: 72px; height: 72px;">
                     <i class="ti ti-check fs-1"></i>
                 </div>
-                <h3 class="fw-bold text-dark mb-1">Import Data Non PTKP Selesai!</h3>
-                <p class="text-muted small mb-4">Data training offline Non PTKP telah diproses dan disimpan ke database secara aman.</p>
+                <h3 class="fw-bold text-dark mb-1">Non-PTKP Import Completed!</h3>
+                <p class="text-muted small mb-4">Summary of Non-PTKP offline training records processed and saved to database.</p>
 
                 <!-- 6 Metrics Result Grid -->
                 <div class="row g-3 justify-content-center mb-4 text-start" style="max-width: 880px; margin: 0 auto;">
@@ -488,7 +488,7 @@
                     </div>
                     <div class="col-6 col-sm-4 col-md-2">
                         <div class="card border-0 p-3 rounded-3 text-center h-100" style="background-color: #ecfdf5;">
-                            <div class="extra-small fw-semibold mb-1" style="color: #065f46;">Imported</div>
+                            <div class="extra-small fw-semibold mb-1" style="color: #065f46;">Successfully Imported</div>
                             <div class="h3 fw-bold mb-0" style="color: #047857;" id="res-imported-count">0</div>
                         </div>
                     </div>
@@ -520,10 +520,10 @@
 
                 <div class="d-flex align-items-center justify-content-center gap-3 pt-2">
                     <button type="button" class="btn btn-outline-secondary rounded-pill px-4" id="btn-import-another">
-                        <i class="ti ti-upload me-1"></i> Import Spreadsheet Lain
+                        <i class="ti ti-upload me-1"></i> Import Another Spreadsheet
                     </button>
                     <a href="{{ route('manage.record.offline') }}" class="btn btn-primary rounded-pill px-4" style="background-color: #d97706; border-color: #d97706;">
-                        <i class="ti ti-table me-1"></i> Kembali ke Offline Record
+                        <i class="ti ti-table me-1"></i> Back to Offline Records
                     </a>
                 </div>
             </div>
@@ -544,8 +544,8 @@
                         <i class="ti ti-file-search fs-2"></i>
                     </span>
                     <div>
-                        <h5 class="modal-title fw-bold text-dark mb-0" id="previewRowModalLabel">Detail Record Peserta</h5>
-                        <div class="text-muted extra-small">Excel Row #<span id="modal-detail-row-num">-</span> &bull; 44 Kolom Kanonis Non PTKP OWL</div>
+                        <h5 class="modal-title fw-bold text-dark mb-0" id="previewRowModalLabel">Participant Record Details</h5>
+                        <div class="text-muted extra-small">Excel Row #<span id="modal-detail-row-num">-</span> &bull; 44 Non-PTKP OWL Canonical Columns</div>
                     </div>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -727,7 +727,7 @@
             </div>
 
             <div class="modal-footer border-top py-2.5 px-4 bg-white rounded-bottom-4">
-                <button type="button" class="btn btn-secondary rounded-pill px-4 ms-auto" data-bs-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-secondary rounded-pill px-4 ms-auto" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
@@ -1188,7 +1188,7 @@ $(document).ready(function () {
 
         const ext = file.name.split('.').pop().toLowerCase();
         if (ext !== 'xlsx' && ext !== 'xls') {
-            $uploadErrorMsg.text('Format file tidak didukung. Harap pilih spreadsheet Excel (.xlsx atau .xls).');
+            $uploadErrorMsg.text('Unsupported file format. Please select an Excel spreadsheet (.xlsx or .xls).');
             $uploadErrorBox.show();
             resetFileInput();
             return;
@@ -1196,7 +1196,7 @@ $(document).ready(function () {
 
         const maxBytes = 20 * 1024 * 1024; // 20 MB
         if (file.size > maxBytes) {
-            $uploadErrorMsg.text('Ukuran file melebihi batas maksimal 20 MB.');
+            $uploadErrorMsg.text('File size exceeds the 20 MB limit.');
             $uploadErrorBox.show();
             resetFileInput();
             return;
@@ -1241,14 +1241,14 @@ $(document).ready(function () {
                     renderPreviewState(res);
                 } else {
                     switchPanel('upload');
-                    $uploadErrorMsg.text(res.message || 'Validasi spreadsheet gagal.');
+                    $uploadErrorMsg.text(res.message || 'Spreadsheet validation failed.');
                     $uploadErrorBox.show();
                     $btnValidate.prop('disabled', false);
                 }
             },
             error: function (xhr) {
                 switchPanel('upload');
-                let errMsg = 'Gagal memvalidasi spreadsheet. Pastikan file menggunakan format template Non PTKP OWL.';
+                let errMsg = 'Failed to validate spreadsheet. Please ensure the file uses the Non-PTKP OWL template format.';
                 if (xhr.responseJSON && xhr.responseJSON.message) {
                     errMsg = xhr.responseJSON.message;
                 }
@@ -1383,7 +1383,7 @@ $(document).ready(function () {
                         <div>
                             <span class="badge bg-danger text-white me-1">${escapeHtml(issue.status)}</span>
                             <strong>${escapeHtml(colLabel)}:</strong> ${escapeHtml(issue.message)}
-                            ${issue.expected ? `<div class="extra-small text-muted mt-0.5">Kolom yang diharapkan: <code>${escapeHtml(issue.expected)}</code></div>` : ''}
+                            ${issue.expected ? `<div class="extra-small text-muted mt-0.5">Expected header: <code>${escapeHtml(issue.expected)}</code></div>` : ''}
                         </div>
                     </div>
                 `);
@@ -1399,7 +1399,7 @@ $(document).ready(function () {
 
             $issuesContainer.append(`
                 <div class="alert alert-warning py-1.5 px-2 mb-1 rounded-2">
-                    <div class="fw-semibold text-warning-emphasis mb-1"><i class="ti ti-sparkles me-1"></i> Kolom Cocok Otomatis (${headerCheck.auto_matched_list.length}):</div>
+                    <div class="fw-semibold text-warning-emphasis mb-1"><i class="ti ti-sparkles me-1"></i> Auto-Matched Columns (${headerCheck.auto_matched_list.length}):</div>
                     <div>${matchedItems}</div>
                 </div>
             `);
@@ -1429,12 +1429,12 @@ $(document).ready(function () {
                     <i class="ti ti-alert-octagon fs-2 text-danger flex-shrink-0 mt-0.5"></i>
                     <div class="w-100">
                         <strong class="d-block text-danger fw-bold mb-0.5 fs-4">Header Correction Required</strong>
-                        <div class="text-secondary small">Struktur kolom spreadsheet tidak sesuai dengan format template resmi Non PTKP OWL. Silakan periksa kolom yang ditandai di atas dan upload ulang file yang sudah diperbaiki.</div>
+                        <div class="text-secondary small">Spreadsheet column structure does not match the official Non-PTKP OWL template format. Please review the highlighted issues above and re-upload the corrected file.</div>
                     </div>
                 </div>
             `);
             $btnConfirm.addClass('btn-danger disabled').html('<i class="ti ti-ban me-1"></i> Header Correction Required');
-            $footerSummary.html('<span class="text-danger fw-medium"><i class="ti ti-alert-circle me-1"></i>Import diblokir: Struktur kolom header harus diperbaiki terlebih dahulu.</span>');
+            $footerSummary.html('<span class="text-danger fw-medium"><i class="ti ti-alert-circle me-1"></i>Import blocked: Header column structure must be corrected first.</span>');
 
         } else if (previewState === 'DATA_ERROR') {
             $banner.show().html(`
@@ -1442,35 +1442,35 @@ $(document).ready(function () {
                     <i class="ti ti-alert-triangle fs-2 text-danger flex-shrink-0 mt-0.5"></i>
                     <div class="w-100">
                         <strong class="d-block text-danger fw-bold mb-0.5 fs-4">Data Correction Required</strong>
-                        <div class="small">Sebanyak <strong>${totalRows.toLocaleString()}</strong> record berhasil dibaca.</div>
-                        <div class="my-1.5 text-danger fw-semibold small">Sebanyak <strong>${invalidRows.toLocaleString()}</strong> record mengandung data tidak valid dan harus diperbaiki sebelum import dapat dilakukan.</div>
+                        <div class="small">A total of <strong>${totalRows.toLocaleString()}</strong> records were read.</div>
+                        <div class="my-1.5 text-danger fw-semibold small">A total of <strong>${invalidRows.toLocaleString()}</strong> records contain invalid data and must be corrected before the import can proceed.</div>
                         <div class="d-flex flex-wrap align-items-center gap-1.5 my-2">
-                            <span class="badge bg-secondary-lt"><i class="ti ti-file-spreadsheet me-1"></i>${totalRows.toLocaleString()} terbaca</span>
+                            <span class="badge bg-secondary-lt"><i class="ti ti-file-spreadsheet me-1"></i>${totalRows.toLocaleString()} read</span>
                             <span class="badge bg-danger-lt fw-bold"><i class="ti ti-alert-triangle me-1"></i>${invalidRows.toLocaleString()} invalid</span>
-                            <span class="badge bg-success-lt"><i class="ti ti-check me-1"></i>${validRows.toLocaleString()} siap</span>
-                            ${duplicateRows > 0 ? `<span class="badge bg-purple-lt"><i class="ti ti-copy-off me-1"></i>${duplicateRows.toLocaleString()} duplikat dilewati</span>` : ''}
+                            <span class="badge bg-success-lt"><i class="ti ti-check me-1"></i>${validRows.toLocaleString()} ready</span>
+                            ${duplicateRows > 0 ? `<span class="badge bg-purple-lt"><i class="ti ti-copy-off me-1"></i>${duplicateRows.toLocaleString()} duplicates skipped</span>` : ''}
                         </div>
                         <div class="extra-small text-muted pt-1 border-top border-danger-subtle">
-                            Perbaiki baris berwarna merah pada file Excel Anda lalu upload kembali.
+                            Correct the highlighted red rows in your Excel file and upload again.
                         </div>
                     </div>
                 </div>
             `);
-            $btnConfirm.addClass('btn-danger disabled').html('<i class="ti ti-alert-triangle me-1"></i> Perbaiki Record Invalid');
-            $footerSummary.html('<span class="text-danger fw-medium"><i class="ti ti-alert-circle me-1"></i>Import diblokir: ' + invalidRows.toLocaleString() + ' record invalid harus diperbaiki.</span>');
+            $btnConfirm.addClass('btn-danger disabled').html('<i class="ti ti-alert-triangle me-1"></i> Correct Invalid Records');
+            $footerSummary.html('<span class="text-danger fw-medium"><i class="ti ti-alert-circle me-1"></i>Import blocked: ' + invalidRows.toLocaleString() + ' invalid records must be corrected.</span>');
 
         } else if (previewState === 'EMPTY_FILE') {
             $banner.show().html(`
                 <div class="alert alert-warning border d-flex align-items-start gap-2.5 py-3 px-3 mb-0 rounded-3">
                     <i class="ti ti-alert-circle fs-2 text-warning flex-shrink-0 mt-0.5"></i>
                     <div class="w-100">
-                        <strong class="d-block text-warning fw-bold mb-0.5 fs-4">Tidak Ada Data Baris</strong>
-                        <div class="text-secondary small">File spreadsheet tidak memiliki baris data untuk diimpor. Silakan periksa kembali file Anda.</div>
+                        <strong class="d-block text-warning fw-bold mb-0.5 fs-4">No Data Rows Found</strong>
+                        <div class="text-secondary small">The spreadsheet file contains no participant rows to import. Please check your file.</div>
                     </div>
                 </div>
             `);
-            $btnConfirm.addClass('btn-secondary disabled').html('<i class="ti ti-ban me-1"></i> Tidak Ada Data');
-            $footerSummary.text('File spreadsheet tidak memiliki data untuk diimpor.');
+            $btnConfirm.addClass('btn-secondary disabled').html('<i class="ti ti-ban me-1"></i> No Data Found');
+            $footerSummary.text('The spreadsheet file contains no records to import.');
 
         } else if (previewState === 'NO_NEW_RECORDS') {
             // SCREENSHOT CASE: All rows are duplicates, valid = 0, invalid = 0
@@ -1479,15 +1479,15 @@ $(document).ready(function () {
                     <i class="ti ti-info-circle fs-2 text-secondary flex-shrink-0 mt-0.5"></i>
                     <div class="w-100">
                         <div class="fw-bold text-dark mb-0.5 fs-4">No New Records to Import</div>
-                        <div class="text-secondary small">Semua <strong>${totalRows.toLocaleString()}</strong> record berhasil dibaca, tetapi sudah tersedia di database. Tidak ada record baru yang akan diimpor.</div>
-                        <div class="my-1.5 text-dark fw-medium small"><strong>0 record akan diimpor dan ${duplicateRows.toLocaleString()} record duplikat akan dilewati.</strong></div>
+                        <div class="text-secondary small">All <strong>${totalRows.toLocaleString()}</strong> records were read successfully, but they already exist in the database. No new records will be imported.</div>
+                        <div class="my-1.5 text-dark fw-medium small"><strong>0 records will be imported and ${duplicateRows.toLocaleString()} duplicate records will be skipped.</strong></div>
                         <div class="d-flex flex-wrap align-items-center gap-1.5 my-2">
-                            <span class="badge bg-secondary-lt"><i class="ti ti-file-spreadsheet me-1"></i>${totalRows.toLocaleString()} terbaca</span>
-                            <span class="badge bg-secondary-lt text-muted"><i class="ti ti-ban me-1"></i>0 record baru</span>
-                            <span class="badge bg-purple-lt"><i class="ti ti-copy-off me-1"></i>${duplicateRows.toLocaleString()} duplikat dilewati</span>
+                            <span class="badge bg-secondary-lt"><i class="ti ti-file-spreadsheet me-1"></i>${totalRows.toLocaleString()} read</span>
+                            <span class="badge bg-secondary-lt text-muted"><i class="ti ti-ban me-1"></i>0 new records</span>
+                            <span class="badge bg-purple-lt"><i class="ti ti-copy-off me-1"></i>${duplicateRows.toLocaleString()} duplicates skipped</span>
                         </div>
                         <div class="extra-small text-muted pt-1 border-top border-secondary-subtle">
-                            <i class="ti ti-shield-check text-success me-1"></i>Data yang sudah ada di database tidak akan diubah atau ditimpa.
+                            <i class="ti ti-shield-check text-success me-1"></i>Existing database records will not be modified or overwritten.
                         </div>
                     </div>
                 </div>
@@ -1495,11 +1495,11 @@ $(document).ready(function () {
             $btnConfirm.addClass('btn-secondary disabled')
                        .css({ 'opacity': '0.7', 'cursor': 'not-allowed', 'background-color': '#6c757d', 'border-color': '#6c757d' })
                        .html('<i class="ti ti-copy-off me-1"></i> No New Records to Import');
-            $footerSummary.html('<span class="text-muted">' + totalRows.toLocaleString() + ' record terbaca &bull; 0 diimpor &bull; ' + duplicateRows.toLocaleString() + ' duplikat dilewati</span>');
+            $footerSummary.html('<span class="text-muted">' + totalRows.toLocaleString() + ' records read &bull; 0 imported &bull; ' + duplicateRows.toLocaleString() + ' duplicates skipped</span>');
 
         } else if (previewState === 'READY_WITH_DUPLICATES') {
             const warningInfo = (warningRows > 0)
-                ? `<div class="extra-small text-muted mt-1"><i class="ti ti-alert-circle text-warning me-1"></i><strong>${warningRows.toLocaleString()}</strong> record memiliki catatan nonfatal.</div>`
+                ? `<div class="extra-small text-muted mt-1"><i class="ti ti-alert-circle text-warning me-1"></i><strong>${warningRows.toLocaleString()}</strong> records have nonfatal notes.</div>`
                 : '';
 
             $banner.show().html(`
@@ -1507,16 +1507,16 @@ $(document).ready(function () {
                     <i class="ti ti-info-circle fs-2 text-info flex-shrink-0 mt-0.5"></i>
                     <div class="w-100">
                         <div class="fw-bold text-dark mb-0.5 fs-4">Ready to Import</div>
-                        <div class="small">Sebanyak <strong>${totalRows.toLocaleString()}</strong> record berhasil dibaca.</div>
-                        <div class="my-1.5 text-dark fw-medium small"><strong>${validRows.toLocaleString()} record akan diimpor dan ${duplicateRows.toLocaleString()} record duplikat akan dilewati secara otomatis.</strong></div>
+                        <div class="small">A total of <strong>${totalRows.toLocaleString()}</strong> records were read.</div>
+                        <div class="my-1.5 text-dark fw-medium small"><strong>${validRows.toLocaleString()} records will be imported and ${duplicateRows.toLocaleString()} duplicate records will be skipped automatically.</strong></div>
                         ${warningInfo}
                         <div class="d-flex flex-wrap align-items-center gap-1.5 my-2">
-                            <span class="badge bg-secondary-lt"><i class="ti ti-file-spreadsheet me-1"></i>${totalRows.toLocaleString()} terbaca</span>
-                            <span class="badge bg-success-lt fw-bold"><i class="ti ti-check me-1"></i>${validRows.toLocaleString()} record diimpor</span>
-                            <span class="badge bg-purple-lt"><i class="ti ti-copy-off me-1"></i>${duplicateRows.toLocaleString()} duplikat dilewati</span>
+                            <span class="badge bg-secondary-lt"><i class="ti ti-file-spreadsheet me-1"></i>${totalRows.toLocaleString()} read</span>
+                            <span class="badge bg-success-lt fw-bold"><i class="ti ti-check me-1"></i>${validRows.toLocaleString()} records to import</span>
+                            <span class="badge bg-purple-lt"><i class="ti ti-copy-off me-1"></i>${duplicateRows.toLocaleString()} duplicates skipped</span>
                         </div>
                         <div class="extra-small text-muted pt-1 border-top border-info-subtle">
-                            <i class="ti ti-shield-check text-success me-1"></i>Record duplikat existing akan tetap aman dan tidak mengalami perubahan.
+                            <i class="ti ti-shield-check text-success me-1"></i>Existing duplicate records will remain intact without changes.
                         </div>
                     </div>
                 </div>
@@ -1524,13 +1524,13 @@ $(document).ready(function () {
             $btnConfirm.prop('disabled', false)
                        .addClass('btn-primary')
                        .css({ 'background-color': '#d97706', 'border-color': '#d97706' })
-                       .html('<i class="ti ti-check me-1"></i> Import ' + validRows.toLocaleString() + ' Records');
-            $footerSummary.html('<span class="text-dark fw-medium">' + totalRows.toLocaleString() + ' terbaca &bull; <strong>' + validRows.toLocaleString() + ' siap diimpor</strong> &bull; ' + duplicateRows.toLocaleString() + ' duplikat dilewati</span>');
+                       .html('<i class="ti ti-check me-1"></i> Confirm & Import ' + validRows.toLocaleString() + ' Records');
+            $footerSummary.html('<span class="text-dark fw-medium">' + totalRows.toLocaleString() + ' read &bull; <strong>' + validRows.toLocaleString() + ' ready to import</strong> &bull; ' + duplicateRows.toLocaleString() + ' duplicates skipped</span>');
 
         } else {
             // READY (100% valid)
             const warningInfo = (warningRows > 0)
-                ? `<div class="extra-small text-muted mt-1"><i class="ti ti-alert-circle text-warning me-1"></i><strong>${warningRows.toLocaleString()}</strong> record memiliki catatan nonfatal.</div>`
+                ? `<div class="extra-small text-muted mt-1"><i class="ti ti-alert-circle text-warning me-1"></i><strong>${warningRows.toLocaleString()}</strong> records have nonfatal notes.</div>`
                 : '';
 
             $banner.show().html(`
@@ -1538,16 +1538,16 @@ $(document).ready(function () {
                     <i class="ti ti-circle-check fs-2 text-success flex-shrink-0 mt-0.5"></i>
                     <div class="w-100">
                         <div class="fw-bold text-dark mb-0.5 fs-4">Ready to Import</div>
-                        <div class="small">Seluruh <strong>${totalRows.toLocaleString()}</strong> record berhasil divalidasi dan siap diimpor ke sistem OWL.</div>
-                        <div class="my-1.5 text-dark fw-medium small"><strong>${validRows.toLocaleString()} record akan diimpor.</strong></div>
+                        <div class="small">All <strong>${totalRows.toLocaleString()}</strong> records passed validation and are ready to be imported into OWL LMS.</div>
+                        <div class="my-1.5 text-dark fw-medium small"><strong>${validRows.toLocaleString()} records will be imported.</strong></div>
                         ${warningInfo}
                         <div class="d-flex flex-wrap align-items-center gap-1.5 my-2">
-                            <span class="badge bg-secondary-lt"><i class="ti ti-file-spreadsheet me-1"></i>${totalRows.toLocaleString()} terbaca</span>
-                            <span class="badge bg-success-lt fw-bold"><i class="ti ti-check me-1"></i>${validRows.toLocaleString()} record siap</span>
-                            <span class="badge bg-secondary-lt text-muted"><i class="ti ti-copy-off me-1"></i>0 duplikat</span>
+                            <span class="badge bg-secondary-lt"><i class="ti ti-file-spreadsheet me-1"></i>${totalRows.toLocaleString()} read</span>
+                            <span class="badge bg-success-lt fw-bold"><i class="ti ti-check me-1"></i>${validRows.toLocaleString()} records ready</span>
+                            <span class="badge bg-secondary-lt text-muted"><i class="ti ti-copy-off me-1"></i>0 duplicates</span>
                         </div>
                         <div class="extra-small text-muted pt-1 border-top border-success-subtle">
-                            <i class="ti ti-shield-check text-success me-1"></i>Seluruh record valid dan siap disimpan ke Non PTKP OWL.
+                            <i class="ti ti-shield-check text-success me-1"></i>All records are valid and ready to be imported into OWL LMS.
                         </div>
                     </div>
                 </div>
@@ -1555,8 +1555,8 @@ $(document).ready(function () {
             $btnConfirm.prop('disabled', false)
                        .addClass('btn-primary')
                        .css({ 'background-color': '#d97706', 'border-color': '#d97706' })
-                       .html('<i class="ti ti-check me-1"></i> Import ' + validRows.toLocaleString() + ' Records');
-            $footerSummary.html('<span class="text-dark fw-medium">Seluruh ' + validRows.toLocaleString() + ' record valid dan siap diimpor</span>');
+                       .html('<i class="ti ti-check me-1"></i> Confirm & Import ' + validRows.toLocaleString() + ' Records');
+            $footerSummary.html('<span class="text-dark fw-medium">All ' + validRows.toLocaleString() + ' records are valid and ready to import</span>');
         }
     }
 
@@ -1595,7 +1595,7 @@ $(document).ready(function () {
         $('#preview-visible-count').text(filtered.length.toLocaleString());
 
         if (filtered.length === 0) {
-            $tbody.append('<tr><td colspan="10" class="text-center py-5 text-muted"><i class="ti ti-folder-off fs-1 d-block mb-2 text-secondary"></i>Tidak ada data record yang cocok dengan filter.</td></tr>');
+            $tbody.append('<tr><td colspan="10" class="text-center py-5 text-muted"><i class="ti ti-folder-off fs-1 d-block mb-2 text-secondary"></i>No records match the filter criteria.</td></tr>');
             $('#preview-pagination-container').hide();
             return;
         }
@@ -1624,60 +1624,61 @@ $(document).ready(function () {
             const d = row.data || {};
 
             // Status badge classes & labels
-            let badgeClass = 'badge-status-valid';
+            let badgeClass = 'badge-ptkp-valid';
             let badgeLabel = 'VALID';
-            let statusDot = '<span class="status-dot bg-success me-1"></span>';
+            let badgeIcon = 'ti-check';
 
             if (row.status === 'valid') {
-                badgeClass = 'badge-status-valid';
+                badgeClass = 'badge-ptkp-valid';
                 badgeLabel = 'VALID';
-                statusDot = '<span class="status-dot bg-success me-1"></span>';
+                badgeIcon = 'ti-check';
             } else if (row.status === 'warning') {
-                badgeClass = 'badge-status-warning';
+                badgeClass = 'badge-ptkp-warning';
                 badgeLabel = 'WARNING';
-                statusDot = '<span class="status-dot bg-warning me-1"></span>';
+                badgeIcon = 'ti-alert-triangle';
             } else if (row.status === 'duplicate') {
-                badgeClass = 'badge-status-duplicate';
+                badgeClass = 'badge-ptkp-duplicate';
                 badgeLabel = 'DUPLICATE';
-                statusDot = '<span class="status-dot bg-purple me-1"></span>';
+                badgeIcon = 'ti-copy';
             } else if (row.status === 'invalid') {
-                badgeClass = 'badge-status-invalid';
+                badgeClass = 'badge-ptkp-invalid';
                 badgeLabel = 'INVALID';
-                statusDot = '<span class="status-dot bg-danger me-1"></span>';
+                badgeIcon = 'ti-x';
             } else if (row.status === 'invalid_company') {
-                badgeClass = 'badge-status-invalid-company';
+                badgeClass = 'badge-ptkp-invalid-company';
                 badgeLabel = 'INVALID COMPANY';
-                statusDot = '<span class="status-dot bg-orange me-1"></span>';
+                badgeIcon = 'ti-building';
             }
 
             const userMatchIcon = row.user_matched
-                ? '<i class="ti ti-check text-success ms-1" title="User LMS cocok (ID: ' + escapeHtml(d.user_id || '') + ')"></i>'
-                : '<i class="ti ti-help text-muted ms-1" title="User akun LMS tidak ditemukan (user_id NULL)"></i>';
+                ? '<i class="ti ti-check text-success ms-1" title="LMS user matched (ID: ' + escapeHtml(d.user_id || '') + ')"></i>'
+                : '<i class="ti ti-help text-muted ms-1" title="LMS user account not found (user_id NULL)"></i>';
 
-            const msgText = (row.messages && row.messages.length > 0) ? row.messages.join('; ') : 'Record siap diimpor';
+            const msgText = (row.messages && row.messages.length > 0) ? row.messages.join('; ') : 'Ready to import';
             const msgClass = (row.status === 'invalid' || row.status === 'invalid_company')
                 ? 'text-danger fw-semibold'
                 : (row.status === 'duplicate' ? 'text-purple' : (row.status === 'warning' ? 'text-warning-emphasis' : 'text-muted'));
 
             const tr = [
                 '<tr>',
-                '<td class="text-center text-muted fw-bold small">' + escapeHtml(row.excel_row) + '</td>',
-                '<td><span class="badge ' + badgeClass + ' px-2 py-1 small fw-semibold">' + statusDot + badgeLabel + '</span></td>',
+                '<td class="text-center fw-medium text-muted">' + escapeHtml(row.excel_row || (startIdx + localIdx + 1)) + '</td>',
+                '<td><span class="badge ' + badgeClass + ' px-2 py-1"><i class="ti ' + badgeIcon + ' me-1"></i>' + badgeLabel + '</span></td>',
+                '<td class="fw-semibold font-monospace">' + escapeHtml(d.employee_id || '-') + '</td>',
                 '<td>',
                     '<div class="fw-semibold text-dark">' + escapeHtml(d.name || '-') + userMatchIcon + '</div>',
                     '<div class="text-muted extra-small">' + escapeHtml(d.job_position || d.department || '-') + '</div>',
                 '</td>',
-                '<td><code class="text-dark">' + escapeHtml(d.employee_id || '-') + '</code></td>',
+                '<td><span class="text-muted small">' + escapeHtml(d.company || '-') + '</span></td>',
                 '<td>',
                     '<div class="fw-medium text-dark">' + escapeHtml(d.course_name || '-') + '</div>',
-                    '<div class="text-muted extra-small">' + escapeHtml(d.type || '-') + (d.category ? ' &bull; ' + escapeHtml(d.category) : '') + '</div>',
+                    '<div class="text-muted extra-small" style="font-size: 0.72rem;">' + escapeHtml(d.batch || '') + (d.start_date ? ' &bull; ' + escapeHtml(d.start_date) : '') + '</div>',
                 '</td>',
-                '<td><span class="small">' + escapeHtml(d.batch || '-') + '</span></td>',
-                '<td><span class="small fw-semibold text-dark">' + (d.learning_hours || 0) + ' hrs</span></td>',
-                '<td><span class="small">' + (d.progress !== null && d.progress !== undefined ? d.progress + '%' : '-') + '</span></td>',
-                '<td><span class="extra-small ' + msgClass + '" title="' + escapeHtml(msgText) + '">' + escapeHtml(msgText) + '</span></td>',
-                '<td class="text-end">',
-                    '<button type="button" class="btn btn-sm btn-ghost-primary rounded-circle p-1 btn-inspect-row" data-index="' + globalIdx + '" title="Lihat detail baris">',
+                '<td><span class="badge bg-light text-secondary border">' + escapeHtml(d.type || '-') + '</span></td>',
+                '<td><span class="text-muted small">' + escapeHtml(d.pic || '-') + '</span></td>',
+
+                '<td>' + (row.messages && row.messages.length > 0 ? ('<div class="ptkp-row-msg ' + msgClass + '">' + escapeHtml(row.messages[0]) + (row.messages.length > 1 ? ' <span class="badge bg-light text-secondary border">+' + (row.messages.length - 1) + '</span>' : '') + '</div>') : '<span class="text-success small"><i class="ti ti-check me-1"></i>Ready to import</span>') + '</td>',
+                '<td class="text-center">',
+                    '<button type="button" class="btn btn-sm btn-ghost-primary rounded-circle p-1 btn-inspect-row" data-index="' + globalIdx + '" title="Inspect Row">',
                         '<i class="ti ti-eye fs-3"></i>',
                     '</button>',
                 '</td>',
@@ -1745,13 +1746,13 @@ $(document).ready(function () {
 
         const msgList = (row.messages && row.messages.length > 0)
             ? row.messages.map(function (m) { return '<li>' + escapeHtml(m) + '</li>'; }).join('')
-            : '<li>Record memenuhi ketentuan validasi import Non PTKP OWL.</li>';
+            : '<li>Record meets Non-PTKP OWL validation rules.</li>';
 
         $('#modal-detail-status-banner').html(`
             <div class="alert ${alertClass} py-2 px-3 mb-0 rounded-3 small">
                 <div class="d-flex align-items-center gap-2 mb-1">
                     <span class="badge bg-dark text-white text-uppercase">${escapeHtml(row.status)}</span>
-                    <strong>Status Baris #${row.excel_row}</strong>
+                    <strong>Row #${row.excel_row} Status</strong>
                 </div>
                 <ul class="mb-0 ps-3 extra-small">${msgList}</ul>
             </div>
@@ -1838,7 +1839,7 @@ $(document).ready(function () {
     $('#btn-action-confirm-import').on('click', function () {
         if (!importToken) return;
 
-        if (!confirm('Apakah Anda yakin ingin mengimpor record yang valid ke dalam database? Record duplikat akan dilewati secara aman.')) {
+        if (!confirm('Are you sure you want to import valid records into the database? Duplicate and invalid records will be skipped safely.')) {
             return;
         }
 
@@ -1875,13 +1876,13 @@ $(document).ready(function () {
                 } else {
                     switchPanel('preview');
                     $btn.prop('disabled', false);
-                    alert(res.message || 'Eksekusi import gagal.');
+                    alert(res.message || 'Import execution failed.');
                 }
             },
             error: function (xhr) {
                 switchPanel('preview');
                 $btn.prop('disabled', false);
-                let errMsg = 'Gagal mengeksekusi import ke database.';
+                let errMsg = 'Failed to execute import into database.';
                 if (xhr.responseJSON && xhr.responseJSON.message) {
                     errMsg = xhr.responseJSON.message;
                 }

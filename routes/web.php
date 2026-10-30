@@ -64,6 +64,7 @@ use App\Http\Controllers\Manage\Record\RecordExportController;
 use App\Http\Controllers\Manage\Record\OfflineTrainingOptionController;
 use App\Http\Controllers\Manage\Record\OfflineTrainingImportController;
 use App\Http\Controllers\Manage\Record\Offline\PtkpImportController;
+use App\Http\Controllers\Manage\Record\ImportHistoryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -566,6 +567,16 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
             Route::post('offline/import-ptkp/preview', [PtkpImportController::class, 'preview'])->name('offline.import-ptkp.preview');
             Route::post('offline/import-ptkp/confirm', [PtkpImportController::class, 'confirm'])->name('offline.import-ptkp.confirm');
             Route::post('offline/import-ptkp/cancel', [PtkpImportController::class, 'cancel'])->name('offline.import-ptkp.cancel');
+
+            // Offline Import History
+            Route::prefix('offline/import-history')->name('offline.import-history.')->group(function () {
+                Route::get('/', [ImportHistoryController::class, 'index'])->name('index');
+                Route::get('summary', [ImportHistoryController::class, 'summary'])->name('summary');
+                Route::get('datatable', [ImportHistoryController::class, 'datatable'])->name('datatable');
+                Route::get('{batch_uuid}/detail', [ImportHistoryController::class, 'detail'])->name('detail');
+                Route::get('{batch_uuid}/rows', [ImportHistoryController::class, 'rowsDatatable'])->name('rows');
+                Route::get('{batch_uuid}/download', [ImportHistoryController::class, 'download'])->name('download');
+            });
             Route::get('offline/export', [RecordOfflineController::class, 'export'])->name('offline.export');
             Route::get('offline/export/pdf', [RecordOfflineController::class, 'exportPdf'])->name('offline.export.pdf');
             Route::get('offline/export/csv', [RecordOfflineController::class, 'exportCsv'])->name('offline.export.csv');

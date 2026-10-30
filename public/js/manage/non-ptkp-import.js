@@ -261,44 +261,45 @@ $(document).ready(function () {
             const actualIndex = startIndex + idx;
             const d = row.data || {};
             const badgeMap = {
-                valid: { cls: 'badge-status-valid', lbl: 'VALID' },
-                warning: { cls: 'badge-status-warning', lbl: 'WARNING' },
-                duplicate: { cls: 'badge-status-duplicate', lbl: 'DUPLICATE' },
-                invalid: { cls: 'badge-status-invalid', lbl: 'INVALID' }
+                valid: { cls: 'badge-ptkp-valid', lbl: 'VALID', icon: 'ti-check' },
+                warning: { cls: 'badge-ptkp-warning', lbl: 'WARNING', icon: 'ti-alert-triangle' },
+                duplicate: { cls: 'badge-ptkp-duplicate', lbl: 'DUPLICATE', icon: 'ti-copy' },
+                invalid: { cls: 'badge-ptkp-invalid', lbl: 'INVALID', icon: 'ti-x' },
+                invalid_company: { cls: 'badge-ptkp-invalid-company', lbl: 'INVALID COMPANY', icon: 'ti-building' }
             };
-            const b = badgeMap[row.status] || { cls: 'badge-status-valid', lbl: 'VALID' };
+            const b = badgeMap[row.status] || { cls: 'badge-ptkp-valid', lbl: 'VALID', icon: 'ti-check' };
             const userMatchBadge = row.user_matched
                 ? '<span class="badge bg-success-lt ms-1" style="font-size: 0.65rem;" title="Matched with LMS user"><i class="ti ti-check"></i> Matched</span>'
                 : '<span class="badge bg-secondary-lt ms-1" style="font-size: 0.65rem;" title="Participant snapshot preserved (user_id = NULL)"><i class="ti ti-user-x"></i> Not in LMS</span>';
 
-            const msgHtml = (row.messages && row.messages.length > 0)
-                ? `<ul class="mb-0 ps-3 extra-small ${row.status === 'invalid' ? 'text-danger' : 'text-muted'}">${row.messages.map(m => `<li>${escapeHtml(m)}</li>`).join('')}</ul>`
-                : '<span class="text-muted extra-small">Ready to import</span>';
-
-            const dates = (d.start_date || '-') + (d.finish_date && d.finish_date !== d.start_date ? ' to ' + d.finish_date : '');
-            const hours = (d.learning_hours || 0) + ' hrs';
-            const progress = (d.progress !== null && typeof d.progress !== 'undefined') ? (d.progress + '%') : '-';
+            let msgsHtml = '';
+            if (row.messages && row.messages.length > 0) {
+                msgsHtml = '<div class="ptkp-row-msg ' + (row.status === 'invalid' ? 'text-danger' : 'text-muted') + '">' + escapeHtml(row.messages[0]);
+                if (row.messages.length > 1) {
+                    msgsHtml += ' <span class="badge bg-light text-secondary border">+' + (row.messages.length - 1) + '</span>';
+                }
+                msgsHtml += '</div>';
+            } else {
+                msgsHtml = '<span class="text-success small"><i class="ti ti-check me-1"></i>Ready to import</span>';
+            }
 
             $tbody.append(`
                 <tr>
                     <td class="text-center text-muted fw-semibold">${row.excel_row}</td>
-                    <td><span class="badge ${b.cls} px-2 py-1">${b.lbl}</span></td>
+                    <td><span class="badge ${b.cls} px-2 py-1"><i class="ti ${b.icon} me-1"></i>${b.lbl}</span></td>
+                    <td class="fw-semibold font-monospace">${escapeHtml(d.employee_id || '-')}</td>
                     <td>
                         <div class="fw-bold text-dark">${escapeHtml(d.name || '-')}${userMatchBadge}</div>
-                        <div class="text-muted extra-small">${escapeHtml(d.job_position || '-')} &bull; ${escapeHtml(d.department || '-')}</div>
+                        <div class="text-muted extra-small" style="font-size: 0.72rem;">${escapeHtml(d.job_position || d.department || '-')}</div>
                     </td>
-                    <td><span class="fw-semibold text-primary font-monospace">${escapeHtml(d.employee_id || '-')}</span></td>
+                    <td><span class="text-muted small">${escapeHtml(d.company || '-')}</span></td>
                     <td>
                         <div class="fw-semibold text-dark">${escapeHtml(d.course_name || '-')}</div>
-                        <div class="text-muted extra-small">${escapeHtml(d.type || '-')} &bull; ${escapeHtml(d.category || '-')}</div>
+                        <div class="text-muted extra-small" style="font-size: 0.72rem;">${escapeHtml(d.batch || '')}${d.start_date ? ' &bull; ' + escapeHtml(d.start_date) : ''}</div>
                     </td>
-                    <td>
-                        <div class="small text-dark">${escapeHtml(d.batch || 'No Batch')}</div>
-                        <div class="text-muted extra-small">${dates}</div>
-                    </td>
-                    <td><span class="fw-semibold text-dark">${hours}</span></td>
-                    <td><span class="badge bg-light text-dark border">${progress}</span></td>
-                    <td style="max-width: 280px;">${msgHtml}</td>
+                    <td><span class="badge bg-light text-secondary border">${escapeHtml(d.type || '-')}</span></td>
+                    <td><span class="text-muted small">${escapeHtml(d.pic || '-')}</span></td>
+                    <td>${msgsHtml}</td>
                     <td class="text-center">
                         <button type="button" class="btn btn-sm btn-ghost-primary rounded-circle btn-view-non-ptkp-row" data-index="${actualIndex}" title="Inspect Details">
                             <i class="ti ti-eye"></i>

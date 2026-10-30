@@ -166,27 +166,6 @@ body.theme-dark .ptkp-import-page {
 .ptkp-kpi-invalid { background-color: #fef2f2; border: 1px solid #fecaca; }
 .ptkp-kpi-invalid-company { background-color: #fff7ed; border: 1px solid #fed7aa; }
 
-/* Status Guide Table & Footer Legend */
-.ptkp-guide-table th {
-    font-size: 0.78rem;
-    letter-spacing: 0.04em;
-    background-color: #f8fafc;
-}
-.ptkp-guide-table td {
-    border-bottom: 1px solid #f1f5f9;
-}
-.ptkp-footer-legend-card {
-    background-color: #f8fafc;
-    border: 1px solid #e2e8f0;
-}
-[data-bs-theme="dark"] .ptkp-footer-legend-card,
-body.dark-mode .ptkp-footer-legend-card,
-[data-bs-theme="dark"] #ptkp-status-guide-card,
-body.dark-mode #ptkp-status-guide-card {
-    background-color: #1e293b !important;
-    border-color: #334155 !important;
-}
-
 /* Filter Tabs */
 .ptkp-filter-tab {
     cursor: pointer;
