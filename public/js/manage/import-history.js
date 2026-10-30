@@ -27,7 +27,7 @@
             responsive: true,
             pageLength: 10,
             lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
-            dom: '<"top">rt<"bottom d-flex flex-column flex-md-row justify-content-between align-items-center mt-3 gap-2"l ip><"clear">',
+            dom: '<"top">rt<"bottom d-flex flex-column flex-md-row justify-content-between align-items-center p-3 gap-2 border-top"i<"d-flex align-items-center gap-3"lp>><"clear">',
             searchDelay: 500,
             ajax: {
                 url: window.importHistoryConfig.routes.datatable,
@@ -49,23 +49,25 @@
                 {
                     data: 'batch_uuid',
                     name: 'batch_uuid',
+                    className: 'text-start font-monospace small',
                     render: function (data, type, row) {
                         const short = data ? data.substring(0, 8) + '...' : '-';
-                        return `<a href="javascript:void(0)" class="fw-bold text-decoration-none btn-batch-detail" data-uuid="${data}" title="Click to view detail (${data})">${short}</a>`;
+                        return `<a href="javascript:void(0)" class="fw-bold text-primary text-decoration-none btn-batch-detail" data-uuid="${data}" title="Click to view detail (${data})">${short}</a>`;
                     }
                 },
                 { data: 'source_badge', name: 'source_type', className: 'text-center' },
                 {
                     data: 'original_filename',
                     name: 'original_filename',
+                    className: 'text-start',
                     render: function (data) {
                         const safe = data ? $('<div>').text(data).html() : '-';
-                        return `<span class="filename-truncate" title="${safe}"><i class="ti ti-file-text text-muted me-1"></i>${safe}</span>`;
+                        return `<span class="filename-truncate fw-medium" title="${safe}"><i class="ti ti-file-text text-muted me-1"></i>${safe}</span>`;
                     }
                 },
-                { data: 'user_name', name: 'user_name' },
-                { data: 'started_at_formatted', name: 'started_at', className: 'text-nowrap small text-muted' },
-                { data: 'finished_at_formatted', name: 'finished_at', className: 'text-nowrap small text-muted' },
+                { data: 'user_name', name: 'user_name', className: 'text-start' },
+                { data: 'started_at_formatted', name: 'started_at', className: 'text-center text-nowrap small text-muted' },
+                { data: 'finished_at_formatted', name: 'finished_at', className: 'text-center text-nowrap small text-muted' },
                 { data: 'total_rows', name: 'total_rows', className: 'text-center fw-bold' },
                 {
                     data: 'imported_rows',
@@ -92,12 +94,34 @@
                     }
                 },
                 { data: 'status_badge', name: 'status', className: 'text-center' },
-                { data: 'actions', name: 'actions', orderable: false, searchable: false, className: 'text-center' }
+                { data: 'actions', name: 'actions', orderable: false, searchable: false, className: 'text-center text-nowrap' }
             ],
             order: [[5, 'desc']],
             language: {
-                emptyTable: '<div class="py-4 text-center text-muted"><i class="ti ti-inbox fs-1 d-block mb-2"></i>No import history records found.</div>',
-                processing: '<div class="spinner-border spinner-border-sm text-primary me-2"></div> Loading import records...'
+                info: 'Showing <span class="fw-semibold">_START_</span>–<span class="fw-semibold">_END_</span> of <span class="fw-semibold">_TOTAL_</span> batches',
+                infoEmpty: 'Showing 0 of 0 batches',
+                infoFiltered: '(filtered from _MAX_ total batches)',
+                lengthMenu: 'Show _MENU_',
+                paginate: {
+                    first: '<i class="ti ti-chevrons-left"></i>',
+                    last: '<i class="ti ti-chevrons-right"></i>',
+                    previous: '<i class="ti ti-chevron-left"></i>',
+                    next: '<i class="ti ti-chevron-right"></i>'
+                },
+                emptyTable: '<div class="py-5 text-center text-muted"><div class="empty-icon mb-2"><i class="ti ti-history" style="font-size: 2.5rem; opacity: .4;"></i></div><p class="empty-title fw-bold mb-1">No import history found</p><p class="empty-subtitle text-secondary small mb-0">Try adjusting your filters or import new files.</p></div>',
+                processing: '<div class="py-4 text-center"><div class="spinner-border spinner-border-sm text-primary me-2"></div><span class="text-muted">Loading import records...</span></div>'
+            },
+            drawCallback: function (settings) {
+                const api = this.api();
+                const info = api.page.info();
+                if (info && info.recordsTotal > 0) {
+                    const start = info.recordsDisplay > 0 ? info.start + 1 : 0;
+                    const end = info.end;
+                    const total = info.recordsDisplay;
+                    $('#import-batches-counter').text(`Showing ${start}–${end} of ${total} batch(es)`);
+                } else {
+                    $('#import-batches-counter').text('Showing 0 of 0 batches');
+                }
             }
         });
     }

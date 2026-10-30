@@ -68,19 +68,29 @@ class ImportHistoryQueryService
             ->select('import_batches.*');
 
         // Filter: source_type (PTKP or NON_PTKP)
-        if (!empty($filters['source_type']) && in_array(strtoupper($filters['source_type']), [ImportBatch::SOURCE_PTKP, ImportBatch::SOURCE_NON_PTKP], true)) {
-            $query->where('source_type', strtoupper($filters['source_type']));
+        if (!empty($filters['source_type'])) {
+            $rawSource = strtoupper(str_replace([' ', '-'], '_', trim($filters['source_type'])));
+            if (in_array($rawSource, [ImportBatch::SOURCE_PTKP, ImportBatch::SOURCE_NON_PTKP], true)) {
+                $query->where('source_type', $rawSource);
+            }
         }
 
-        // Filter: status
-        $validStatuses = [
-            ImportBatch::STATUS_COMPLETED,
-            ImportBatch::STATUS_COMPLETED_WITH_WARNINGS,
-            ImportBatch::STATUS_FAILED,
-            ImportBatch::STATUS_IMPORTING,
+        // Filter: status (supports aliases like SUCCESS, WARNING, COMPLETED, etc.)
+        $statusMap = [
+            'SUCCESS'                 => ImportBatch::STATUS_COMPLETED,
+            'COMPLETED'               => ImportBatch::STATUS_COMPLETED,
+            'WARNING'                 => ImportBatch::STATUS_COMPLETED_WITH_WARNINGS,
+            'WARNINGS'                => ImportBatch::STATUS_COMPLETED_WITH_WARNINGS,
+            'COMPLETED_WITH_WARNINGS' => ImportBatch::STATUS_COMPLETED_WITH_WARNINGS,
+            'FAILED'                  => ImportBatch::STATUS_FAILED,
+            'IMPORTING'               => ImportBatch::STATUS_IMPORTING,
+            'PROCESSING'              => ImportBatch::STATUS_IMPORTING,
         ];
-        if (!empty($filters['status']) && in_array(strtoupper($filters['status']), $validStatuses, true)) {
-            $query->where('status', strtoupper($filters['status']));
+        if (!empty($filters['status'])) {
+            $statusKey = strtoupper(trim($filters['status']));
+            if (isset($statusMap[$statusKey])) {
+                $query->where('status', $statusMap[$statusKey]);
+            }
         }
 
         // Filter: imported_by user ID
