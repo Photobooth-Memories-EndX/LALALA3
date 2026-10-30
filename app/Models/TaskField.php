@@ -53,6 +53,7 @@ class TaskField extends Model
         'task_id', 'label', 'type', 'required', 'sort_order',
         'options', 'correct_answer',
         'file_types', 'max_files', 'max_size_mb', 'allow_link',
+        'min_select', 'max_select',
     ];
 
     protected $casts = [
@@ -60,6 +61,8 @@ class TaskField extends Model
         'options'    => 'array',
         'file_types' => 'array',
         'allow_link' => 'boolean',
+        'min_select' => 'integer',
+        'max_select' => 'integer',
     ];
 
     public function task(): BelongsTo
@@ -177,6 +180,70 @@ class TaskField extends Model
     public function maxSizeKb(): int
     {
         return $this->maxSizeMb() * 1024;
+    }
+
+
+    // ── Checkbox selection limits ───────────────────────────────────────
+
+    public function maxSelect(): ?int
+    {
+        if (! empty($this->max_select)) {
+            return (int) $this->max_select;
+        }
+
+        return self::detectMaxSelect($this->label);
+    }
+
+    public function minSelect(): ?int
+    {
+        if (! empty($this->min_select)) {
+            return (int) $this->min_select;
+        }
+
+        return self::detectMinSelect($this->label);
+    }
+
+    public static function detectMaxSelect(?string $label): ?int
+    {
+        if (empty($label)) {
+            return null;
+        }
+
+        // e.g. "pilih 2-3 opsi", "2 sampai 3", "2 s/d 3", "2 to 3"
+        if (preg_match('/(\d+)\s*(?:-|–|—|sampai|s\/d|sd|to)\s*(\d+)/i', $label, $m)) {
+            return (int) $m[2];
+        }
+
+        // e.g. "maksimal 3", "maks 3", "max 3", "up to 3"
+        if (preg_match('/(?:maksimal|maks\.?|max\.?|up\s*to)\s*(\d+)/i', $label, $m)) {
+            return (int) $m[1];
+        }
+
+        // e.g. "pilih 3 opsi", "select 3 options"
+        if (preg_match('/(?:pilih|select|choose)\s*(\d+)\s*(?:opsi|pilihan|option|choice)/i', $label, $m)) {
+            return (int) $m[1];
+        }
+
+        return null;
+    }
+
+    public static function detectMinSelect(?string $label): ?int
+    {
+        if (empty($label)) {
+            return null;
+        }
+
+        // e.g. "pilih 2-3 opsi", "2 sampai 3", "2 s/d 3"
+        if (preg_match('/(\d+)\s*(?:-|–|—|sampai|s\/d|sd|to)\s*(\d+)/i', $label, $m)) {
+            return (int) $m[1];
+        }
+
+        // e.g. "minimal 2", "min 2", "at least 2"
+        if (preg_match('/(?:minimal|min\.?|at\s*least)\s*(\d+)/i', $label, $m)) {
+            return (int) $m[1];
+        }
+
+        return null;
     }
 
 }

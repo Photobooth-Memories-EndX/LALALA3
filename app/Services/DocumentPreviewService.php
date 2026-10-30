@@ -431,8 +431,13 @@ class DocumentPreviewService
     <title>{$fileName}</title>
     <link rel="stylesheet" href="/Tabler/dist/css/tabler.min.css">
     <style>
-        body { margin: 0; padding: 24px; background: #f8fafc; font-family: monospace; font-size: 13px; line-height: 1.6; }
-        pre { background: #ffffff; padding: 24px; border-radius: 8px; border: 1px solid #e2e8f0; white-space: pre-wrap; word-break: break-all; }
+        html { height: 100%; overflow-y: auto; }
+        body { margin: 0; padding: 16px; background: #f8fafc; font-family: monospace; font-size: 13px; line-height: 1.6; min-height: 100%; }
+        pre { background: #ffffff; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; white-space: pre-wrap; word-break: break-all; margin: 0; }
+        html::-webkit-scrollbar { width: 8px; }
+        html::-webkit-scrollbar-track { background: #f1f5f9; }
+        html::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        html::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
 <body>
@@ -457,7 +462,7 @@ HTML;
     <link rel="stylesheet" href="/Tabler/dist/css/tabler.min.css">
     <style>
         :root {
-            --docx-bg: #e2e8f0;
+            --docx-bg: #f8fafc;
             --docx-paper: #ffffff;
             --docx-text: #1e293b;
         }
@@ -466,12 +471,13 @@ HTML;
         }
         html {
             background-color: var(--docx-bg);
-            min-height: 100%;
+            height: 100%;
+            overflow-y: auto;
         }
         body {
             background-color: var(--docx-bg);
             margin: 0;
-            padding: 32px 16px 48px;
+            padding: 20px 16px 28px;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             color: var(--docx-text);
             min-height: 100%;
@@ -480,17 +486,31 @@ HTML;
         .docx-paper-sheet {
             background-color: var(--docx-paper);
             width: 100%;
-            max-width: 980px;
+            max-width: 960px;
             margin: 0 auto;
-            min-height: calc(100vh - 80px);
             height: auto;
-            padding: 48px 56px;
-            box-shadow: 0 4px 24px rgba(15, 23, 42, 0.12), 0 1px 3px rgba(15, 23, 42, 0.08);
+            min-height: auto;
+            padding: 32px 40px;
+            box-shadow: 0 2px 12px rgba(15, 23, 42, 0.08);
             border-radius: 8px;
             border: 1px solid #cbd5e1;
             font-size: 11pt;
             line-height: 1.6;
             overflow: visible;
+        }
+        /* Clean, proportional scrollbar matching document */
+        html::-webkit-scrollbar {
+            width: 8px;
+        }
+        html::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        html::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        html::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
         }
         .docx-heading {
             font-weight: 700;
@@ -597,10 +617,15 @@ HTML;
     <title>{$fileName}</title>
     <link rel="stylesheet" href="/Tabler/dist/css/tabler.min.css">
     <style>
-        body { margin: 0; padding: 20px; background: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        .sheet-wrapper { background: #ffffff; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow-x: auto; }
+        html { height: 100%; overflow-y: auto; }
+        body { margin: 0; padding: 16px; background: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; min-height: 100%; }
+        .sheet-wrapper { background: #ffffff; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow-x: auto; }
         table { border-collapse: collapse; width: 100%; font-size: 12px; }
         td, th { border: 1px solid #cbd5e1 !important; padding: 6px 10px; }
+        html::-webkit-scrollbar { width: 8px; }
+        html::-webkit-scrollbar-track { background: #f1f5f9; }
+        html::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        html::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
 <body>

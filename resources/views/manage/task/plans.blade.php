@@ -535,50 +535,21 @@
                         </div>
                     </div>
 
-                    <!-- Section for Others (Standalone) -->
+                                        <!-- Section for Others (Standalone) -->
                     <div id="modalOthersSection" class="modal-picker-section" style="display: none;">
-                        <!-- Mode Selector: Create New vs Choose Existing -->
-                        <div class="d-flex align-items-center gap-1 p-1 bg-light rounded-3 mb-3 border others-mode-switcher" style="width: fit-content;">
-                            <button type="button" class="btn btn-sm btn-white text-dark shadow-sm fw-semibold rounded-2 px-3 py-1.5 others-mode-btn active" data-mode="new">
-                                <i class="ti ti-plus me-1 text-primary"></i> Create New Activity
-                            </button>
-                            <button type="button" class="btn btn-sm btn-ghost-secondary text-muted fw-semibold rounded-2 px-3 py-1.5 others-mode-btn" data-mode="existing">
-                                <i class="ti ti-folders me-1"></i> Choose Existing Activity
-                            </button>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0 text-muted rounded-start-3 px-3">
+                                <i class="ti ti-folder-plus fs-2 text-primary"></i>
+                            </span>
+                            <input type="text"
+                                   id="modal_others_title"
+                                   class="form-control form-control-lg border-start-0 rounded-end-3"
+                                   placeholder="e.g. Onboarding Batch 2026 / Safety Leadership Workshop"
+                                   autocomplete="off">
                         </div>
-
-                        <!-- Mode A: Create New Title Input -->
-                        <div id="othersModeNewWrap">
-                            <div class="input-group">
-                                <span class="input-group-text bg-white border-end-0 text-muted rounded-start-3 px-3">
-                                    <i class="ti ti-folder-plus fs-2 text-primary"></i>
-                                </span>
-                                <input type="text"
-                                       id="modal_others_title"
-                                       class="form-control form-control-lg border-start-0 rounded-end-3"
-                                       placeholder="e.g. Onboarding Batch 2026 / Safety Leadership Workshop"
-                                       autocomplete="off">
-                            </div>
-                            <div class="form-hint mt-2 text-muted d-flex align-items-center gap-1.5" style="font-size: 0.8rem;">
-                                <i class="ti ti-info-circle text-primary"></i>
-                                <span>Enter the title for this new activity. You will be directed to add tasks to it.</span>
-                            </div>
-                        </div>
-
-                        <!-- Mode B: Choose Existing Dropdown -->
-                        <div id="othersModeExistingWrap" style="display: none;">
-                            <div class="input-group">
-                                <span class="input-group-text bg-white border-end-0 text-muted rounded-start-3 px-3">
-                                    <i class="ti ti-folders fs-2 text-purple"></i>
-                                </span>
-                                <select id="modal_others_existing_id" class="form-select form-select-lg border-start-0 rounded-end-3" style="font-size: 0.95rem;">
-                                    <option value="">— Loading activities... —</option>
-                                </select>
-                            </div>
-                            <div class="form-hint mt-2 text-muted d-flex align-items-center gap-1.5" style="font-size: 0.8rem;">
-                                <i class="ti ti-info-circle text-purple"></i>
-                                <span>Select an existing activity to manage and add more tasks.</span>
-                            </div>
+                        <div class="form-hint mt-2 text-muted d-flex align-items-center gap-1.5" style="font-size: 0.8rem;">
+                            <i class="ti ti-info-circle text-primary"></i>
+                            <span>Enter the title for this activity. You will be directed to add tasks to it.</span>
                         </div>
                     </div>
                 </div>
@@ -621,11 +592,7 @@
         background-color: rgba(32, 107, 196, 0.04) !important;
         box-shadow: 0 4px 14px rgba(32, 107, 196, 0.12);
     }
-    .others-mode-btn.active {
-        background: #ffffff !important;
-        color: var(--tblr-primary, #206bc4) !important;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
-    }
+    
     .input-group:focus-within .input-group-text,
     .input-group:focus-within .form-control,
     .input-group:focus-within .form-select {
@@ -644,13 +611,9 @@ document.addEventListener('DOMContentLoaded', function () {
     var playlistPicker = document.getElementById('modalPlaylistPicker');
     var contentPicker = document.getElementById('modalContentPicker');
     var offlinePicker = document.getElementById('modalOfflinePicker');
-    var othersSection = document.getElementById('modalOthersSection');
-    var othersModeNewWrap = document.getElementById('othersModeNewWrap');
-    var othersModeExistingWrap = document.getElementById('othersModeExistingWrap');
-    var othersModeBtns = document.querySelectorAll('.others-mode-btn');
+        var othersSection = document.getElementById('modalOthersSection');
     var btnSubmit = document.getElementById('btnSubmitContainerModal');
     var btnSubmitText = document.getElementById('btnSubmitText');
-    var currentOthersMode = 'new';
     var loadedCache = {};
 
     function markInvalid(element) {
@@ -667,7 +630,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function clearAllInvalid() {
-        ['modal_playlist_id', 'modal_content_id', 'modal_offline_id', 'modal_others_existing_id', 'modal_others_title'].forEach(function (id) {
+        ['modal_playlist_id', 'modal_content_id', 'modal_offline_id', 'modal_others_title'].forEach(function (id) {
             var el = document.getElementById(id);
             if (el) el.classList.remove('is-invalid');
         });
@@ -727,44 +690,7 @@ document.addEventListener('DOMContentLoaded', function () {
         selectEl.innerHTML = html;
     }
 
-    function setOthersMode(mode) {
-        currentOthersMode = mode;
-        othersModeBtns.forEach(function (b) {
-            if (b.getAttribute('data-mode') === mode) {
-                b.classList.add('active');
-                b.classList.remove('btn-ghost-secondary', 'text-muted');
-                b.classList.add('btn-white', 'text-dark', 'shadow-sm');
-            } else {
-                b.classList.remove('active', 'btn-white', 'text-dark', 'shadow-sm');
-                b.classList.add('btn-ghost-secondary', 'text-muted');
-            }
-        });
-
-        if (mode === 'new') {
-            if (othersModeNewWrap) othersModeNewWrap.style.display = 'block';
-            if (othersModeExistingWrap) othersModeExistingWrap.style.display = 'none';
-            if (step2Label) step2Label.textContent = 'Enter Activity Title:';
-            if (btnSubmitText) btnSubmitText.textContent = 'Create & Manage Tasks';
-            var titleInput = document.getElementById('modal_others_title');
-            if (titleInput) {
-                setTimeout(function () { titleInput.focus(); }, 100);
-            }
-        } else {
-            if (othersModeNewWrap) othersModeNewWrap.style.display = 'none';
-            if (othersModeExistingWrap) othersModeExistingWrap.style.display = 'block';
-            if (step2Label) step2Label.textContent = 'Select Existing Activity:';
-            if (btnSubmitText) btnSubmitText.textContent = 'Continue to Manage Tasks';
-            loadOptions('standalone', document.getElementById('modal_others_existing_id'), '— Select Existing Activity —');
-        }
-    }
-
-    othersModeBtns.forEach(function (btn) {
-        btn.addEventListener('click', function (e) {
-            e.stopPropagation();
-            clearAllInvalid();
-            setOthersMode(btn.getAttribute('data-mode'));
-        });
-    });
+    
 
     function onTypeChange() {
         clearAllInvalid();
@@ -790,8 +716,13 @@ document.addEventListener('DOMContentLoaded', function () {
             if (step2Label) step2Label.textContent = 'Select Offline Training Session:';
             if (btnSubmitText) btnSubmitText.textContent = 'Continue to Manage Tasks';
             loadOptions('offline_training', document.getElementById('modal_offline_id'), '— Select Offline Training Session —');
-        } else if (val === 'standalone') {
-            setOthersMode(currentOthersMode);
+                } else if (val === 'standalone') {
+            if (step2Label) step2Label.textContent = 'Enter Activity Title:';
+            if (btnSubmitText) btnSubmitText.textContent = 'Create & Manage Tasks';
+            var titleInput = document.getElementById('modal_others_title');
+            if (titleInput) {
+                setTimeout(function () { titleInput.focus(); }, 100);
+            }
         }
     }
 
@@ -831,17 +762,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     return;
                 }
                 window.location.href = "{{ url('manage/task/parent/offline_training') }}/" + oSelect.value;
-            } else if (type === 'standalone') {
-                if (currentOthersMode === 'existing') {
-                    var exSelect = document.getElementById('modal_others_existing_id');
-                    if (!exSelect || !exSelect.value) {
-                        markInvalid(exSelect);
-                        return;
-                    }
-                    window.location.href = "{{ url('manage/task/parent/standalone') }}/" + exSelect.value;
-                    return;
-                }
-
+                        } else if (type === 'standalone') {
                 var titleInput = document.getElementById('modal_others_title');
                 var title = titleInput ? titleInput.value.trim() : '';
                 if (!title) {

@@ -46,31 +46,44 @@
 <style>
     /* Review Submission Modal Dialog */
     #reviewSubmissionModal .modal-dialog {
-        max-width: 1250px;
-        margin-top: 1.5rem;
-        margin-bottom: 1.5rem;
+        max-width: 1280px;
+        margin-top: 1.25rem;
+        margin-bottom: 1.25rem;
     }
     #reviewSubmissionModal .modal-content {
-        max-height: calc(100vh - 3rem);
+        max-height: calc(100vh - 2.5rem);
         border-radius: 12px;
         overflow: hidden;
     }
     #reviewSubmissionModal .modal-body {
-        max-height: calc(100vh - 140px);
-        overflow: hidden;
+        max-height: calc(100vh - 120px);
+        overflow: hidden !important;
     }
+    /* Left task view canvas: no outer scrollbar */
     #reviewSubmissionModal .review-canvas-col {
-        max-height: calc(100vh - 140px);
+        max-height: calc(100vh - 120px);
         overflow-y: auto;
         background: #f8fafc;
-        padding: 1.5rem;
+        padding: 1.25rem;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
     }
+    #reviewSubmissionModal .review-canvas-col::-webkit-scrollbar {
+        display: none;
+    }
+    /* Right grading panel: fixed & pinned, no scrollbar, full height flex */
     #reviewSubmissionModal .review-panel-col {
-        max-height: calc(100vh - 140px);
+        height: calc(100vh - 120px);
+        max-height: calc(100vh - 120px);
         overflow-y: auto;
         background: #ffffff;
-        padding: 1.5rem;
+        padding: 1.25rem 1.5rem;
         border-left: 1px solid #e2e8f0;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    #reviewSubmissionModal .review-panel-col::-webkit-scrollbar {
+        display: none;
     }
 
     /* Zoom and Mouse Control States */
@@ -367,7 +380,7 @@
 {{-- 2. REVIEW SUBMISSION MODAL POPUP                                       --}}
 {{-- ══════════════════════════════════════════════════════════════════════ --}}
 <div class="modal fade" id="reviewSubmissionModal" tabindex="-1" aria-labelledby="reviewSubmissionModalLabel" aria-hidden="true" data-bs-backdrop="static">
-    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg">
             {{-- Modal Header: Clean, Spacious Title & User Switcher --}}
             <div class="modal-header border-bottom py-3 px-4 bg-white d-flex align-items-center justify-content-between flex-shrink-0" style="min-height: 70px;">
@@ -450,9 +463,9 @@
                                     $answerText = $ans?->answer_text ?? null;
                                 @endphp
 
-                                <div class="card border rounded-3 p-4 bg-white mb-4 shadow-xs" style="border-color: #e2e8f0 !important;">
+                                <div class="card border rounded-3 p-3.5 bg-white mb-3 shadow-xs task-question-card" style="border-color: #e2e8f0 !important;">
                                     {{-- Question Header matching SpeedGrader --}}
-                                    <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+                                    <div class="d-flex align-items-center gap-2 mb-2.5 flex-wrap">
                                         <span class="d-inline-flex align-items-center justify-content-center text-white fw-bold rounded-2 flex-shrink-0"
                                               style="background-color: #0f2942; width: 22px; height: 22px; font-size: 11.5px; border-radius: 5px;">
                                             {{ $fIdx + 1 }}
@@ -545,7 +558,7 @@
                                                     }
                                                 @endphp
 
-                                                <div class="card border rounded-3 overflow-hidden shadow-xs mb-3 file-submission-card" style="border-color: #cbd5e1 !important;" data-file-url="{{ $fUrl }}" data-file-name="{{ $fName }}">
+                                                <div class="card border rounded-3 overflow-hidden shadow-xs mb-0 file-submission-card" style="border-color: #cbd5e1 !important;" data-file-url="{{ $fUrl }}" data-file-name="{{ $fName }}">
                                                     {{-- Unified Card Header with Info & Action Buttons --}}
                                                     <div class="card-header bg-white py-2 px-3 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
                                                         <div class="d-flex align-items-center gap-2 min-w-0">
@@ -585,30 +598,31 @@
                                                     <div class="card-body p-0 bg-light-subtle position-relative">
                                                         @if ($isImg)
                                                             <div class="p-3 d-flex align-items-center justify-content-center text-center preview-img-container"
-                                                                 style="min-height: 400px; max-height: 62vh; background-color: #f1f5f9; overflow: hidden;">
-                                                                <img src="{{ $fUrl }}" alt="{{ $fName }}" class="img-fluid rounded shadow-sm" style="max-height: 58vh; max-width: 95%; object-fit: contain; background: #ffffff;">
+                                                                 style="min-height: 380px; max-height: calc(100vh - 290px); background-color: #f1f5f9; overflow: hidden;">
+                                                                <img src="{{ $fUrl }}" alt="{{ $fName }}" class="img-fluid rounded shadow-sm" style="max-height: calc(100vh - 310px); max-width: 95%; object-fit: contain; background: #ffffff;">
                                                             </div>
                                                         @elseif ($isPdf)
-                                                            <div style="height: 65vh; min-height: 500px; background: #fff;">
+                                                            <div style="height: calc(100vh - 290px); min-height: 420px; background: #fff;">
                                                                 <iframe src="{{ $fUrl }}#toolbar=1" style="width: 100%; height: 100%; border: none;" title="{{ $fName }}"></iframe>
                                                             </div>
                                                         @elseif ($isDoc || in_array($fExt, ['docx','doc','xlsx','xls','csv']))
-                                                            <div style="height: 65vh; min-height: 500px; background: #f8fafc;">
+                                                            <div class="doc-iframe-wrapper position-relative" style="height: calc(100vh - 290px); min-height: 420px; background: #f8fafc; border-radius: 6px; overflow: hidden;">
                                                                 <iframe src="{{ route('manage.task.submissions.preview-doc', [$task, 'path' => $fPathNorm]) }}"
-                                                                        style="width: 100%; height: 100%; border: none;"
+                                                                        class="doc-preview-iframe"
+                                                                        style="width: 100%; height: 100%; border: none; display: block;"
                                                                         title="{{ $fName }}"
                                                                         loading="lazy"></iframe>
                                                             </div>
                                                         @elseif ($isVid)
                                                             <div class="p-3 bg-black d-flex align-items-center justify-content-center">
-                                                                <video src="{{ $fUrl }}" controls class="rounded w-100" style="max-height: 58vh;"></video>
+                                                                <video src="{{ $fUrl }}" controls class="rounded w-100" style="max-height: calc(100vh - 290px);"></video>
                                                             </div>
                                                         @elseif ($isAud)
                                                             <div class="p-4 bg-white text-center">
                                                                 <audio src="{{ $fUrl }}" controls class="w-100" style="max-width: 500px;"></audio>
                                                             </div>
                                                         @elseif ($isTxt)
-                                                            <div style="height: 55vh; min-height: 420px; background: #fff;">
+                                                            <div style="height: calc(100vh - 290px); min-height: 420px; background: #fff;">
                                                                 <iframe src="{{ $fUrl }}" style="width: 100%; height: 100%; border: none;" title="{{ $fName }}"></iframe>
                                                             </div>
                                                         @else
@@ -653,9 +667,20 @@
                                         @endif
                                     @endif
 
-                                    {{-- Text answers / Paragraph / Choices --}}
+                                    {{-- Text answers / Paragraph / Choices / Rating --}}
                                     @if (! $field->isFile())
-                                        @if ($answerText !== null && $answerText !== '')
+                                        @if ($field->isRating())
+                                            @php $rVal = (int) $answerText; @endphp
+                                            @if ($rVal > 0)
+                                                <div class="d-flex align-items-center gap-1.5 py-1">
+                                                    @for ($r = 1; $r <= 5; $r++)
+                                                        <i class="ti {{ $r <= $rVal ? 'ti-star-filled text-warning' : 'ti-star text-muted opacity-30' }} fs-2" style="font-size: 1.5rem !important;"></i>
+                                                    @endfor
+                                                </div>
+                                            @else
+                                                <div class="text-muted fst-italic small py-2 px-1">— No rating given —</div>
+                                            @endif
+                                        @elseif ($answerText !== null && $answerText !== '')
                                             <div class="p-3 bg-light rounded-2 border text-dark" style="font-size: 13px; line-height: 1.6; white-space: pre-wrap;">{{ $answerText }}</div>
                                         @else
                                             <div class="text-muted fst-italic small py-2 px-1">— Not answered —</div>
@@ -747,7 +772,7 @@
                                         }
                                     @endphp
 
-                                    <div class="card border rounded-3 overflow-hidden shadow-xs mb-3 file-submission-card" style="border-color: #cbd5e1 !important;" data-file-url="{{ $fUrl }}" data-file-name="{{ $fName }}">
+                                    <div class="card border rounded-3 overflow-hidden shadow-xs mb-0 file-submission-card" style="border-color: #cbd5e1 !important;" data-file-url="{{ $fUrl }}" data-file-name="{{ $fName }}">
                                         {{-- Unified Card Header with Info & Action Buttons --}}
                                         <div class="card-header bg-white py-2 px-3 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
                                             <div class="d-flex align-items-center gap-2 min-w-0">
@@ -787,30 +812,31 @@
                                         <div class="card-body p-0 bg-light-subtle position-relative">
                                             @if ($isImg)
                                                 <div class="p-3 d-flex align-items-center justify-content-center text-center preview-img-container"
-                                                     style="min-height: 400px; max-height: 60vh; background-color: #f1f5f9; overflow: hidden;">
-                                                    <img src="{{ $fUrl }}" alt="{{ $fName }}" class="img-fluid rounded shadow-sm" style="max-height: 56vh; max-width: 95%; object-fit: contain; background: #ffffff;">
+                                                     style="min-height: 380px; max-height: calc(100vh - 250px); background-color: #f1f5f9; overflow: hidden;">
+                                                    <img src="{{ $fUrl }}" alt="{{ $fName }}" class="img-fluid rounded shadow-sm" style="max-height: calc(100vh - 270px); max-width: 95%; object-fit: contain; background: #ffffff;">
                                                 </div>
                                             @elseif ($isPdf)
-                                                <div style="height: 60vh; min-height: 480px; background: #fff;">
+                                                <div style="height: calc(100vh - 250px); min-height: 450px; background: #fff;">
                                                     <iframe src="{{ $fUrl }}#toolbar=1" style="width: 100%; height: 100%; border: none;" title="{{ $fName }}"></iframe>
                                                 </div>
                                             @elseif ($isDoc || in_array($fExt, ['docx','doc','xlsx','xls','csv']))
-                                                <div style="height: 65vh; min-height: 500px; background: #f8fafc;">
+                                                <div class="doc-iframe-wrapper position-relative" style="height: calc(100vh - 250px); min-height: 450px; background: #f8fafc; border-radius: 6px; overflow: hidden;">
                                                     <iframe src="{{ route('manage.task.submissions.preview-doc', [$task, 'path' => $fPathNorm]) }}"
-                                                            style="width: 100%; height: 100%; border: none;"
+                                                            class="doc-preview-iframe"
+                                                            style="width: 100%; height: 100%; border: none; display: block;"
                                                             title="{{ $fName }}"
                                                             loading="lazy"></iframe>
                                                 </div>
                                             @elseif ($isVid)
                                                 <div class="p-3 bg-black d-flex align-items-center justify-content-center">
-                                                    <video src="{{ $fUrl }}" controls class="rounded w-100" style="max-height: 56vh;"></video>
+                                                    <video src="{{ $fUrl }}" controls class="rounded w-100" style="max-height: calc(100vh - 250px);"></video>
                                                 </div>
                                             @elseif ($isAud)
                                                 <div class="p-4 bg-white text-center">
                                                     <audio src="{{ $fUrl }}" controls class="w-100" style="max-width: 500px;"></audio>
                                                 </div>
                                             @elseif ($isTxt)
-                                                <div style="height: 50vh; min-height: 400px; background: #fff;">
+                                                <div style="height: calc(100vh - 250px); min-height: 420px; background: #fff;">
                                                     <iframe src="{{ $fUrl }}" style="width: 100%; height: 100%; border: none;" title="{{ $fName }}"></iframe>
                                                 </div>
                                             @else
@@ -842,137 +868,215 @@
                     </div>
 
                     {{-- ── COLUMN 2: Right Grading Panel ── --}}
-                    <div class="col-lg-4 review-panel-col d-flex flex-column justify-content-between">
-                        <div>
-                {{-- Submission Details Section --}}
-                <div class="mb-4">
-                    <div class="text-uppercase text-muted fw-bold mb-3" style="font-size: 11px; letter-spacing: 0.5px;">
-                        SUBMISSION DETAILS
+                    <div class="col-lg-4 review-panel-col d-flex flex-column h-100">
+                        <div class="d-flex flex-column flex-grow-1 h-100">
+                            {{-- Top Pinned: Submission Details & Grading Title --}}
+                            <div class="flex-shrink-0">
+                                {{-- Submission Details Section --}}
+                                <div class="mb-3">
+                                    <div class="text-uppercase text-muted fw-bold mb-2" style="font-size: 11px; letter-spacing: 0.5px;">
+                                        SUBMISSION DETAILS
+                                    </div>
+                                    <div class="d-flex flex-column gap-2" style="font-size: 13px;">
+                                        <div class="d-flex justify-content-between align-items-baseline">
+                                            <span class="text-muted">User</span>
+                                            <span class="fw-bold text-dark text-end" id="panelLearnerName">-</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-baseline">
+                                            <span class="text-muted">Email</span>
+                                            <span class="text-dark text-truncate text-end ms-2" id="panelLearnerEmail" style="max-width: 170px;">-</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-baseline">
+                                            <span class="text-muted">Submitted</span>
+                                            <span class="text-dark text-end" id="panelSubmittedAt">-</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="text-muted">Status</span>
+                                            <span id="panelStatusBadge" class="badge bg-warning text-dark">Pending Review</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <hr class="my-3 text-muted" style="opacity: 0.2;">
+
+                                {{-- Grading Section Header --}}
+                                <div class="text-uppercase text-muted fw-bold mb-2.5" style="font-size: 11px; letter-spacing: 0.5px;">
+                                    GRADING
+                                </div>
+
+                                {{-- Banner Ketika Sudah di-Grading (Tidak Bisa di-Grading Lagi) --}}
+                                <div id="alreadyGradedBanner" class="p-3 rounded-3 border mb-3 d-none">
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <i id="gradedBannerIcon" class="ti ti-lock fs-2"></i>
+                                        <h6 id="gradedBannerTitle" class="fw-bold mb-0">Grading Closed</h6>
+                                    </div>
+                                    <div id="gradedBannerDesc" class="text-muted" style="font-size: 11.5px;">
+                                        This submission has already been graded and cannot be changed.
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Form with Full Height Flex Layout --}}
+                            <form id="reviewSubmissionForm" method="POST" action="" class="d-flex flex-column flex-grow-1 h-100">
+                                @csrf
+                                <input type="hidden" name="reject_type" id="modalRejectTypeHiddenInput" value="resubmit">
+                                <input type="hidden" name="reason" id="modalReasonHiddenInput">
+                                <input type="hidden" id="modalCompleteUrl" value="">
+                                <input type="hidden" id="modalResubmitUrl" value="">
+                                <input type="hidden" id="modalRejectUrl" value="">
+
+                                {{-- 1. Tombol Approve & Rejected di Atas --}}
+                                <div id="actionButtonsContainer" class="mb-3 flex-shrink-0">
+                                    <div class="d-flex gap-2">
+                                        <button type="button"
+                                                class="btn btn-outline-success flex-fill py-2 fw-semibold d-inline-flex align-items-center justify-content-center gap-1.5 shadow-xs"
+                                                id="btnActionApprove"
+                                                style="border-radius: 8px;">
+                                            <i class="ti ti-check fs-2"></i>
+                                            <span id="btnActionApproveText">Approve</span>
+                                        </button>
+
+                                        <button type="button"
+                                                class="btn btn-outline-danger flex-fill py-2 fw-semibold d-inline-flex align-items-center justify-content-center gap-1.5 shadow-xs"
+                                                id="btnActionReject"
+                                                style="border-radius: 8px;">
+                                            <i class="ti ti-x fs-2"></i>
+                                            <span id="btnActionRejectText">Rejected</span>
+                                        </button>
+                                    </div>
+                                    <div id="gradingDecisionHint" class="text-muted text-center mt-2 small" style="font-size: 11.5px;">
+                                        Click <strong class="text-success">Approve</strong> or <strong class="text-danger">Rejected</strong> above to grade.
+                                    </div>
+                                </div>
+
+                                {{-- 2. Section Approve: Kolom nilai di atas, tombol submit di bawah kanan panel --}}
+                                <div id="gradingApproveSection" class="d-none flex-column flex-grow-1 justify-content-between">
+                                    <div class="pt-1">
+                                        <div class="mb-3">
+                                            <div class="d-flex justify-content-between align-items-center mb-1.5">
+                                                <label class="form-label fw-semibold text-dark mb-0" style="font-size: 12.5px;">
+                                                    Score (0–100)
+                                                </label>
+                                                <span class="text-muted small" style="font-size: 11px;">Optional</span>
+                                            </div>
+                                            <div class="input-group">
+                                                <input type="number"
+                                                       id="modalScoreInputApprove"
+                                                       class="form-control form-control-lg fw-bold"
+                                                       min="0"
+                                                       max="100"
+                                                       placeholder="0"
+                                                       style="font-size: 16px;">
+                                                <span class="input-group-text bg-light text-muted fw-semibold" style="font-size: 13px;">/ 100</span>
+                                            </div>
+                                            <div class="form-hint mt-1" style="font-size: 11px;">Enter a score between 0 and 100, or leave blank.</div>
+                                        </div>
+                                    </div>
+
+                                    {{-- Tombol Submit di Bawah Kanan (Konsisten di Pojok Kanan Bawah) --}}
+                                    <div class="d-flex justify-content-end align-items-center gap-2 mt-auto pt-3 border-top">
+                                        <button type="button"
+                                                class="btn btn-outline-secondary btn-sm px-3 py-1.5"
+                                                data-bs-dismiss="modal"
+                                                style="font-size: 12.5px;">
+                                            Cancel
+                                        </button>
+                                        <button type="button"
+                                                class="btn btn-success btn-sm px-4 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-xs"
+                                                id="btnConfirmApproveAction"
+                                                style="border-radius: 8px; font-size: 12.5px;">
+                                            <i class="ti ti-check fs-2"></i>
+                                            <span id="btnConfirmApproveActionText">Submit</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {{-- 3. Section Rejected: Kolom nilai & feedback, tombol di bawah kanan panel --}}
+                                <div id="gradingRejectSection" class="d-none flex-column flex-grow-1 justify-content-between">
+                                    <div class="pt-1">
+                                        <div class="mb-2.5">
+                                            <div class="d-flex justify-content-between align-items-center mb-1.5">
+                                                <label class="form-label fw-semibold text-dark mb-0" style="font-size: 12.5px;">
+                                                    Score (0–100)
+                                                </label>
+                                                <span class="text-muted small" style="font-size: 11px;">Optional</span>
+                                            </div>
+                                            <div class="input-group">
+                                                <input type="number"
+                                                       id="modalScoreInputReject"
+                                                       class="form-control form-control-lg fw-bold"
+                                                       min="0"
+                                                       max="100"
+                                                       placeholder="0"
+                                                       style="font-size: 16px;">
+                                                <span class="input-group-text bg-light text-muted fw-semibold" style="font-size: 13px;">/ 100</span>
+                                            </div>
+                                            <div class="form-hint mt-1" style="font-size: 11px;">Optional score if completing as rejected.</div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <div class="d-flex justify-content-between align-items-center mb-1.5">
+                                                <label class="form-label fw-semibold text-dark mb-0" style="font-size: 12.5px;">
+                                                    Feedback / Notes <span class="text-danger">*</span>
+                                                </label>
+                                                <span class="badge bg-danger-lt text-danger" style="font-size: 10.5px;">Required</span>
+                                            </div>
+                                            <textarea name="feedback"
+                                                      id="modalFeedbackInput"
+                                                      rows="3"
+                                                      class="form-control"
+                                                      placeholder="Write feedback or revision notes for user..."
+                                                      style="font-size: 12.5px; resize: vertical;"></textarea>
+                                            <div class="invalid-feedback" id="feedbackInvalidFeedback" style="font-size: 11.5px;">
+                                                Feedback is required when rejecting a submission.
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {{-- Di Bawah Kanan: Cancel, Request Resubmit dan Completed as Rejected --}}
+                                    <div id="rejectedOptionsWrapper" class="d-flex justify-content-end align-items-center gap-2 mt-auto pt-3 border-top flex-wrap">
+                                        <button type="button"
+                                                class="btn btn-outline-secondary btn-sm px-3 py-1.5"
+                                                data-bs-dismiss="modal"
+                                                style="font-size: 12.5px;">
+                                            Cancel
+                                        </button>
+                                        <button type="button"
+                                                id="btnSubmitResubmit"
+                                                class="btn btn-warning text-dark btn-sm px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-xs"
+                                                style="border-radius: 8px; font-size: 12.5px;">
+                                            <i class="ti ti-refresh fs-2"></i>
+                                            <span id="btnSubmitResubmitText">Request Resubmit</span>
+                                        </button>
+                                        <button type="button"
+                                                id="btnSubmitCompletedRejected"
+                                                class="btn btn-danger btn-sm px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-xs"
+                                                style="border-radius: 8px; font-size: 12.5px;">
+                                            <i class="ti ti-circle-x fs-2"></i>
+                                            <span id="btnSubmitCompletedRejectedText">Completed as Rejected</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {{-- Hidden input keeping score synced for form / tests compatibility --}}
+                                <input type="hidden" name="score" id="modalScoreInput" value="">
+
+                                {{-- Hidden buttons kept for test compatibility & programmatic submission --}}
+                                <button type="submit" id="modalSubmitBtn" class="d-none">Submit</button>
+                                <button type="button" id="modalResubmitBtn" class="d-none">Request Resubmit</button>
+
+                                <div id="defaultCancelWrapper" class="d-flex justify-content-end mt-auto pt-3 border-top">
+                                    <button type="button"
+                                            class="btn btn-link text-muted py-1 text-decoration-none"
+                                            data-bs-dismiss="modal"
+                                            title="Close & Return to Review"
+                                            style="font-size: 13px;">
+                                        Cancel
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
-                    <div class="d-flex flex-column gap-2.5" style="font-size: 13px;">
-                        <div class="d-flex justify-content-between align-items-baseline">
-                            <span class="text-muted">User</span>
-                            <span class="fw-bold text-dark text-end" id="panelLearnerName">-</span>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-baseline">
-                            <span class="text-muted">Email</span>
-                            <span class="text-dark text-truncate text-end ms-2" id="panelLearnerEmail" style="max-width: 170px;">-</span>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-baseline">
-                            <span class="text-muted">Submitted</span>
-                            <span class="text-dark text-end" id="panelSubmittedAt">-</span>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="text-muted">Status</span>
-                            <span id="panelStatusBadge" class="badge bg-warning text-dark">Pending Review</span>
-                        </div>
-                    </div>
-                </div>
-
-                <hr class="my-4 text-muted" style="opacity: 0.2;">
-
-                {{-- Grading Section --}}
-                <div>
-                    <div class="text-uppercase text-muted fw-bold mb-3" style="font-size: 11px; letter-spacing: 0.5px;">
-                        GRADING
-                    </div>
-
-                    <form id="reviewSubmissionForm" method="POST" action="">
-                        @csrf
-                        <input type="hidden" name="reject_type" id="modalRejectTypeHiddenInput" value="resubmit">
-                        <input type="hidden" name="reason" id="modalReasonHiddenInput">
-                        <input type="hidden" id="modalCompleteUrl" value="">
-                        <input type="hidden" id="modalResubmitUrl" value="">
-                        <input type="hidden" id="modalRejectUrl" value="">
-
-                        {{-- 1. Score Input --}}
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between align-items-center mb-1.5">
-                                <label class="form-label fw-semibold text-dark mb-0" style="font-size: 12.5px;">
-                                    Score (0–100)
-                                </label>
-                                <span class="text-muted small" style="font-size: 11px;">Optional</span>
-                            </div>
-                            <div class="input-group">
-                                <input type="number"
-                                       name="score"
-                                       id="modalScoreInput"
-                                       class="form-control form-control-lg fw-bold"
-                                       min="0"
-                                       max="100"
-                                       placeholder="0"
-                                       style="font-size: 16px;">
-                                <span class="input-group-text bg-light text-muted fw-semibold" style="font-size: 13px;">/ 100</span>
-                            </div>
-                            <div class="form-hint mt-1" style="font-size: 11px;">Enter a score between 0 and 100, or leave blank.</div>
-                        </div>
-
-                        {{-- 2. Feedback / Revision Notes --}}
-                        <div class="mb-4">
-                            <div class="d-flex justify-content-between align-items-center mb-1.5">
-                                <label class="form-label fw-semibold text-dark mb-0" style="font-size: 12.5px;">
-                                    Feedback / Notes
-                                </label>
-                                <span id="feedbackRequiredBadge" class="text-danger fw-semibold small d-none" style="font-size: 11px;">Required for rejected</span>
-                            </div>
-                            <textarea name="feedback"
-                                      id="modalFeedbackInput"
-                                      rows="4"
-                                      class="form-control"
-                                      placeholder="Write feedback for user..."
-                                      style="font-size: 12.5px; resize: vertical;"></textarea>
-                            <div class="invalid-feedback" id="feedbackInvalidFeedback" style="font-size: 11.5px;">
-                                Feedback is required when rejecting a submission.
-                            </div>
-                        </div>
-
-                        {{-- 3. Banner Ketika Sudah di-Grading (Tidak Bisa di-Grading Lagi) --}}
-                        <div id="alreadyGradedBanner" class="p-3 rounded-3 border mb-3 d-none">
-                            <div class="d-flex align-items-center gap-2 mb-1">
-                                <i id="gradedBannerIcon" class="ti ti-lock fs-2"></i>
-                                <h6 id="gradedBannerTitle" class="fw-bold mb-0">Grading Closed</h6>
-                            </div>
-                            <div id="gradedBannerDesc" class="text-muted" style="font-size: 11.5px;">
-                                This submission has already been graded and cannot be changed.
-                            </div>
-                        </div>
-
-                        {{-- 4. Action Buttons Container: Approve & Rejected --}}
-                        <div id="actionButtonsContainer" class="d-flex flex-column gap-2 pt-1">
-                            <div class="d-flex gap-2">
-                                <button type="button"
-                                        class="btn btn-success flex-fill py-2 fw-semibold d-inline-flex align-items-center justify-content-center gap-1.5 shadow-sm"
-                                        id="btnActionApprove"
-                                        style="border-radius: 8px;">
-                                    <i class="ti ti-check fs-2"></i>
-                                    <span id="btnActionApproveText">Approve</span>
-                                </button>
-
-                                <button type="button"
-                                        class="btn btn-outline-danger flex-fill py-2 fw-semibold d-inline-flex align-items-center justify-content-center gap-1.5"
-                                        id="btnActionReject"
-                                        style="border-radius: 8px;">
-                                    <i class="ti ti-x fs-2"></i>
-                                    <span id="btnActionRejectText">Rejected</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        {{-- Hidden buttons kept for test compatibility & programmatic submission --}}
-                        <button type="submit" id="modalSubmitBtn" class="d-none">Submit</button>
-                        <button type="button" id="modalResubmitBtn" class="d-none">Request Resubmit</button>
-
-                        <button type="button"
-                                class="btn btn-link text-muted w-100 py-1 text-decoration-none mt-2"
-                                data-bs-dismiss="modal"
-                                title="Close & Return to Review"
-                                style="font-size: 13px;">
-                            <span class="visually-hidden">Close &amp; Return to Review</span>
-                            Cancel
-                        </button>
-                    </form>
-                </div>
-            </div>
         </div>
     </div>
 </div>
@@ -1094,20 +1198,20 @@
                 </div>
 
                 {{-- Rejected Action Buttons (Direct buttons, no card wrappers) --}}
-                <div id="rejectedOptionsWrapper" class="d-flex gap-2.5 pt-1">
+                <div id="rejectedOptionsWrapperModal" class="d-flex gap-2.5 pt-1">
                     <button type="button"
-                            id="btnSubmitResubmit"
+                            id="btnSubmitResubmitModal"
                             class="btn btn-warning text-dark flex-fill py-2.5 fw-semibold d-inline-flex align-items-center justify-content-center gap-2 shadow-xs"
                             style="border-radius: 8px; font-size: 13px;">
                         <i class="ti ti-refresh fs-2"></i>
-                        <span id="btnSubmitResubmitText">Request Resubmit</span>
+                        <span>Request Resubmit</span>
                     </button>
                     <button type="button"
-                            id="btnSubmitCompletedRejected"
+                            id="btnSubmitCompletedRejectedModal"
                             class="btn btn-danger flex-fill py-2.5 fw-semibold d-inline-flex align-items-center justify-content-center gap-2 shadow-xs"
                             style="border-radius: 8px; font-size: 13px;">
                         <i class="ti ti-circle-x fs-2"></i>
-                        <span id="btnSubmitCompletedRejectedText">Completed as Rejected</span>
+                        <span>Completed as Rejected</span>
                     </button>
                 </div>
             </div>
@@ -1516,6 +1620,20 @@
 
         if (isGraded) {
             if (actionButtonsContainer) actionButtonsContainer.classList.add('d-none');
+            var approveSecGraded = document.getElementById('gradingApproveSection');
+            var rejectSecGraded = document.getElementById('gradingRejectSection');
+            var decisionHintGraded = document.getElementById('gradingDecisionHint');
+            if (approveSecGraded) {
+                approveSecGraded.classList.add('d-none');
+                approveSecGraded.classList.remove('d-flex');
+            }
+            if (rejectSecGraded) {
+                rejectSecGraded.classList.add('d-none');
+                rejectSecGraded.classList.remove('d-flex');
+            }
+            if (decisionHintGraded) decisionHintGraded.classList.add('d-none');
+            var defaultCancelGraded = document.getElementById('defaultCancelWrapper');
+            if (defaultCancelGraded) defaultCancelGraded.classList.add('d-none');
             if (alreadyGradedBanner) {
                 alreadyGradedBanner.classList.remove('d-none');
                 if (isApproved) {
@@ -1558,15 +1676,41 @@
             if (alreadyGradedBanner) alreadyGradedBanner.classList.add('d-none');
             if (actionButtonsContainer) actionButtonsContainer.classList.remove('d-none');
 
+            var approveSec = document.getElementById('gradingApproveSection');
+            var rejectSec = document.getElementById('gradingRejectSection');
+            var decisionHint = document.getElementById('gradingDecisionHint');
+            if (approveSec) {
+                approveSec.classList.add('d-none');
+                approveSec.classList.remove('d-flex');
+            }
+            if (rejectSec) {
+                rejectSec.classList.add('d-none');
+                rejectSec.classList.remove('d-flex');
+            }
+            if (decisionHint) decisionHint.classList.remove('d-none');
+            var defaultCancelActive = document.getElementById('defaultCancelWrapper');
+            if (defaultCancelActive) defaultCancelActive.classList.remove('d-none');
+
+            var scoreApp = document.getElementById('modalScoreInputApprove');
+            var scoreRej = document.getElementById('modalScoreInputReject');
+            if (scoreApp) scoreApp.value = '';
+            if (scoreRej) scoreRej.value = '';
+            if (scoreInput) scoreInput.value = '';
+            if (feedbackInput) {
+                feedbackInput.value = '';
+                feedbackInput.classList.remove('is-invalid');
+            }
+
             if (btnActionApprove) {
-                btnActionApprove.className = 'btn btn-success flex-fill py-2 fw-semibold d-inline-flex align-items-center justify-content-center gap-1.5 shadow-sm';
+                btnActionApprove.className = 'btn btn-outline-success flex-fill py-2 fw-semibold d-inline-flex align-items-center justify-content-center gap-1.5 shadow-xs';
                 btnActionApprove.disabled = false;
             }
             if (btnActionApproveText) btnActionApproveText.textContent = 'Approve';
             if (btnActionReject) {
-                btnActionReject.className = 'btn btn-outline-danger flex-fill py-2 fw-semibold d-inline-flex align-items-center justify-content-center gap-1.5';
+                btnActionReject.className = 'btn btn-outline-danger flex-fill py-2 fw-semibold d-inline-flex align-items-center justify-content-center gap-1.5 shadow-xs';
                 btnActionReject.disabled = false;
             }
+            if (btnActionRejectText) btnActionRejectText.textContent = 'Rejected';
         }
 
         if (typeof hideRejectModal === 'function') hideRejectModal();
@@ -1713,10 +1857,133 @@
         });
     }
 
-    // 1. Approve Button Click -> Show Confirm Modal
+    // ── Score Inputs Synchronization ──
+    var scoreInputApprove = document.getElementById('modalScoreInputApprove');
+    var scoreInputReject = document.getElementById('modalScoreInputReject');
+    var scoreInputHidden = document.getElementById('modalScoreInput');
+
+    function syncScoreInputs(val) {
+        if (scoreInputHidden) scoreInputHidden.value = val;
+        if (scoreInputApprove && scoreInputApprove.value !== val) scoreInputApprove.value = val;
+        if (scoreInputReject && scoreInputReject.value !== val) scoreInputReject.value = val;
+    }
+
+    if (scoreInputApprove) {
+        scoreInputApprove.addEventListener('input', function () {
+            syncScoreInputs(this.value);
+        });
+    }
+    if (scoreInputReject) {
+        scoreInputReject.addEventListener('input', function () {
+            syncScoreInputs(this.value);
+        });
+    }
+
+    var sidebarFeedback = document.getElementById('modalFeedbackInput');
+    if (sidebarFeedback) {
+        sidebarFeedback.addEventListener('input', function () {
+            if (this.value.trim()) {
+                this.classList.remove('is-invalid');
+            }
+        });
+    }
+
+    // ── Toggle Modes: Approve vs Rejected at Top ──
+    window.selectApproveMode = function () {
+        var sub = submissionsData[currentSubmissionIndex];
+        if (!sub) return;
+        if (sub.status === 'completed' || sub.status === 'rejected' || sub.resubmit_requested) {
+            alert('This submission has already been graded and cannot be changed.');
+            return;
+        }
+
+        var btnActionApprove = document.getElementById('btnActionApprove');
+        var btnActionReject = document.getElementById('btnActionReject');
+        var approveSec = document.getElementById('gradingApproveSection');
+        var rejectSec = document.getElementById('gradingRejectSection');
+        var decisionHint = document.getElementById('gradingDecisionHint');
+
+        if (btnActionApprove) {
+            btnActionApprove.className = 'btn btn-success text-white flex-fill py-2 fw-semibold d-inline-flex align-items-center justify-content-center gap-1.5 shadow-sm';
+        }
+        if (btnActionReject) {
+            btnActionReject.className = 'btn btn-outline-danger flex-fill py-2 fw-semibold d-inline-flex align-items-center justify-content-center gap-1.5 shadow-xs';
+        }
+
+        if (approveSec) {
+            approveSec.classList.remove('d-none');
+            approveSec.classList.add('d-flex');
+        }
+        if (rejectSec) {
+            rejectSec.classList.add('d-none');
+            rejectSec.classList.remove('d-flex');
+        }
+        if (decisionHint) decisionHint.classList.add('d-none');
+        var defaultCancel = document.getElementById('defaultCancelWrapper');
+        if (defaultCancel) defaultCancel.classList.add('d-none');
+
+        if (scoreInputApprove) {
+            setTimeout(function () { scoreInputApprove.focus(); }, 120);
+        }
+    };
+
+    window.selectRejectMode = function () {
+        var sub = submissionsData[currentSubmissionIndex];
+        if (!sub) return;
+        if (sub.status === 'completed' || sub.status === 'rejected' || sub.resubmit_requested) {
+            alert('This submission has already been graded and cannot be changed.');
+            return;
+        }
+
+        var btnActionApprove = document.getElementById('btnActionApprove');
+        var btnActionReject = document.getElementById('btnActionReject');
+        var approveSec = document.getElementById('gradingApproveSection');
+        var rejectSec = document.getElementById('gradingRejectSection');
+        var decisionHint = document.getElementById('gradingDecisionHint');
+
+        if (btnActionReject) {
+            btnActionReject.className = 'btn btn-danger text-white flex-fill py-2 fw-semibold d-inline-flex align-items-center justify-content-center gap-1.5 shadow-sm';
+        }
+        if (btnActionApprove) {
+            btnActionApprove.className = 'btn btn-outline-success flex-fill py-2 fw-semibold d-inline-flex align-items-center justify-content-center gap-1.5 shadow-xs';
+        }
+
+        if (rejectSec) {
+            rejectSec.classList.remove('d-none');
+            rejectSec.classList.add('d-flex');
+        }
+        if (approveSec) {
+            approveSec.classList.add('d-none');
+            approveSec.classList.remove('d-flex');
+        }
+        if (decisionHint) decisionHint.classList.add('d-none');
+        var defaultCancel2 = document.getElementById('defaultCancelWrapper');
+        if (defaultCancel2) defaultCancel2.classList.add('d-none');
+
+        if (sidebarFeedback) {
+            setTimeout(function () { sidebarFeedback.focus(); }, 120);
+        }
+    };
+
+    // 1. Top Button Clicks: Approve & Rejected
     var btnActionApprove = document.getElementById('btnActionApprove');
     if (btnActionApprove) {
         btnActionApprove.addEventListener('click', function () {
+            selectApproveMode();
+        });
+    }
+
+    var btnActionReject = document.getElementById('btnActionReject');
+    if (btnActionReject) {
+        btnActionReject.addEventListener('click', function () {
+            selectRejectMode();
+        });
+    }
+
+    // 2. Confirm Approve Action (Inside Approve Section)
+    var btnConfirmApproveAction = document.getElementById('btnConfirmApproveAction');
+    if (btnConfirmApproveAction) {
+        btnConfirmApproveAction.addEventListener('click', function () {
             var sub = submissionsData[currentSubmissionIndex];
             if (!sub) return;
             if (sub.status === 'completed' || sub.status === 'rejected' || sub.resubmit_requested) {
@@ -1724,10 +1991,8 @@
                 return;
             }
 
-            var scoreInput = document.getElementById('modalScoreInput');
-            var feedbackInput = document.getElementById('modalFeedbackInput');
-            var scoreVal = scoreInput ? scoreInput.value.trim() : '';
-            var feedbackVal = feedbackInput ? feedbackInput.value.trim() : '';
+            var scoreApp = document.getElementById('modalScoreInputApprove');
+            var scoreVal = scoreApp ? scoreApp.value.trim() : '';
 
             var confirmStatus = document.getElementById('confirmModalStatus');
             var confirmIconWrapper = document.getElementById('confirmModalIconWrapper');
@@ -1749,8 +2014,7 @@
             if (confirmSummary) {
                 confirmSummary.innerHTML =
                     '<div class="d-flex justify-content-between mb-1.5"><span class="text-muted">User:</span><strong class="text-dark">' + escapeHtml(sub.learner_name) + '</strong></div>' +
-                    '<div class="d-flex justify-content-between mb-1.5"><span class="text-muted">Score:</span><strong class="text-dark">' + (scoreVal !== '' ? scoreVal + ' / 100' : '<span class="text-muted fw-normal fst-italic">None (optional)</span>') + '</strong></div>' +
-                    (feedbackVal ? '<div class="pt-1.5 border-top"><div class="text-muted mb-0.5">Feedback:</div><div class="text-dark fst-italic">"' + escapeHtml(feedbackVal) + '"</div></div>' : '');
+                    '<div class="d-flex justify-content-between mb-1.5"><span class="text-muted">Score:</span><strong class="text-dark">' + (scoreVal !== '' ? scoreVal + ' / 100' : '<span class="text-muted fw-normal fst-italic">None (optional)</span>') + '</strong></div>';
             }
 
             if (confirmWarning) {
@@ -1763,15 +2027,13 @@
                 confirmBtn.disabled = false;
             }
             if (confirmBtnIcon) confirmBtnIcon.className = 'ti ti-check';
-            if (confirmBtnText) confirmBtnText.textContent = 'Yes, Approve';
+            if (confirmBtnText) confirmBtnText.textContent = 'Submit';
 
             pendingSubmitCallback = function () {
                 var completeUrl = sub.complete_url || document.getElementById('modalCompleteUrl').value;
-                var scoreInput = document.getElementById('modalScoreInput');
-                var feedbackInput = document.getElementById('modalFeedbackInput');
                 var payload = {
-                    score: scoreInput ? scoreInput.value : '',
-                    feedback: feedbackInput ? feedbackInput.value : '',
+                    score: scoreVal,
+                    feedback: '',
                 };
 
                 var confirmBtn = document.getElementById('btnConfirmModalSubmit');
@@ -1784,7 +2046,7 @@
                     hideConfirmModal();
                     if (confirmBtn) {
                         confirmBtn.disabled = false;
-                        confirmBtn.innerHTML = '<i class="ti ti-check" id="btnConfirmModalSubmitIcon"></i> <span id="btnConfirmModalSubmitText">Yes, Approve</span>';
+                        confirmBtn.innerHTML = '<i class="ti ti-check" id="btnConfirmModalSubmitIcon"></i> <span id="btnConfirmModalSubmitText">Submit</span>';
                     }
                 });
             };
@@ -1793,44 +2055,7 @@
         });
     }
 
-    // 2. Rejected Button Click in Sidebar -> Directly Open Reject Modal
-    var btnActionReject = document.getElementById('btnActionReject');
-    if (btnActionReject) {
-        btnActionReject.addEventListener('click', function () {
-            var sub = submissionsData[currentSubmissionIndex];
-            if (!sub) return;
-            if (sub.status === 'completed' || sub.status === 'rejected' || sub.resubmit_requested) {
-                alert('This submission has already been graded and cannot be changed.');
-                return;
-            }
-
-            var rejectLearnerName = document.getElementById('rejectModalLearnerName');
-            var rejectSubmittedAt = document.getElementById('rejectModalSubmittedAt');
-            var rejectFeedback = document.getElementById('rejectModalFeedbackInput');
-            var sidebarFeedback = document.getElementById('modalFeedbackInput');
-            var errorDiv = document.getElementById('rejectModalFeedbackError');
-
-            if (rejectLearnerName) rejectLearnerName.textContent = sub.learner_name;
-            if (rejectSubmittedAt) rejectSubmittedAt.textContent = sub.submitted_at || '-';
-
-            if (rejectFeedback) {
-                rejectFeedback.value = sidebarFeedback ? sidebarFeedback.value : '';
-                rejectFeedback.classList.remove('is-invalid');
-            }
-            if (errorDiv) {
-                errorDiv.classList.add('d-none');
-                errorDiv.style.display = 'none';
-            }
-
-            showRejectModal();
-
-            setTimeout(function () {
-                if (rejectFeedback) rejectFeedback.focus();
-            }, 250);
-        });
-    }
-
-    // 3. Request Resubmit Action Inside Reject Modal
+    // 3. Request Resubmit Action (Inside Rejected Section)
     var btnSubmitResubmit = document.getElementById('btnSubmitResubmit');
     if (btnSubmitResubmit) {
         btnSubmitResubmit.addEventListener('click', function () {
@@ -1841,27 +2066,22 @@
                 return;
             }
 
-            var rejectFeedback = document.getElementById('rejectModalFeedbackInput');
-            var sidebarFeedback = document.getElementById('modalFeedbackInput');
-            var feedbackVal = (rejectFeedback && rejectFeedback.value.trim())
-                ? rejectFeedback.value.trim()
-                : (sidebarFeedback ? sidebarFeedback.value.trim() : '');
+            var feedbackInput = document.getElementById('modalFeedbackInput');
+            var feedbackVal = feedbackInput ? feedbackInput.value.trim() : '';
 
             if (!feedbackVal) {
-                if (rejectFeedback) {
-                    rejectFeedback.classList.add('is-invalid');
-                    rejectFeedback.focus();
+                if (feedbackInput) {
+                    feedbackInput.classList.add('is-invalid');
+                    feedbackInput.focus();
                 }
-                var errorDiv = document.getElementById('rejectModalFeedbackError');
+                var errorDiv = document.getElementById('feedbackInvalidFeedback');
                 if (errorDiv) {
                     errorDiv.textContent = 'Feedback or revision notes are required when requesting a resubmit.';
-                    errorDiv.classList.remove('d-none');
-                    errorDiv.style.display = 'block';
                 }
                 return;
             }
 
-            if (sidebarFeedback) sidebarFeedback.value = feedbackVal;
+            if (feedbackInput) feedbackInput.classList.remove('is-invalid');
 
             var btn = this;
             btn.disabled = true;
@@ -1879,14 +2099,13 @@
             };
 
             submitGradingAjax(rejectUrl, payload, function () {
-                hideRejectModal();
                 btn.disabled = false;
                 btn.innerHTML = '<i class="ti ti-refresh fs-2"></i> <span id="btnSubmitResubmitText">Request Resubmit</span>';
             });
         });
     }
 
-    // 4. Completed as Rejected Action Inside Reject Modal
+    // 4. Completed as Rejected Action (Inside Rejected Section)
     var btnSubmitCompletedRejected = document.getElementById('btnSubmitCompletedRejected');
     if (btnSubmitCompletedRejected) {
         btnSubmitCompletedRejected.addEventListener('click', function () {
@@ -1897,28 +2116,24 @@
                 return;
             }
 
-            var rejectFeedback = document.getElementById('rejectModalFeedbackInput');
-            var sidebarFeedback = document.getElementById('modalFeedbackInput');
-            var scoreInput = document.getElementById('modalScoreInput');
-            var feedbackVal = (rejectFeedback && rejectFeedback.value.trim())
-                ? rejectFeedback.value.trim()
-                : (sidebarFeedback ? sidebarFeedback.value.trim() : '');
+            var feedbackInput = document.getElementById('modalFeedbackInput');
+            var feedbackVal = feedbackInput ? feedbackInput.value.trim() : '';
+            var scoreInputRej = document.getElementById('modalScoreInputReject');
+            var scoreVal = scoreInputRej ? scoreInputRej.value.trim() : '';
 
             if (!feedbackVal) {
-                if (rejectFeedback) {
-                    rejectFeedback.classList.add('is-invalid');
-                    rejectFeedback.focus();
+                if (feedbackInput) {
+                    feedbackInput.classList.add('is-invalid');
+                    feedbackInput.focus();
                 }
-                var errorDiv = document.getElementById('rejectModalFeedbackError');
+                var errorDiv = document.getElementById('feedbackInvalidFeedback');
                 if (errorDiv) {
                     errorDiv.textContent = 'Feedback or reason is required when completing as rejected.';
-                    errorDiv.classList.remove('d-none');
-                    errorDiv.style.display = 'block';
                 }
                 return;
             }
 
-            if (sidebarFeedback) sidebarFeedback.value = feedbackVal;
+            if (feedbackInput) feedbackInput.classList.remove('is-invalid');
 
             var btn = this;
             btn.disabled = true;
@@ -1928,14 +2143,37 @@
             var payload = {
                 reject_type: 'completed_rejected',
                 feedback: feedbackVal,
-                score: scoreInput ? scoreInput.value : '',
+                score: scoreVal,
             };
 
             submitGradingAjax(rejectUrl, payload, function () {
-                hideRejectModal();
                 btn.disabled = false;
                 btn.innerHTML = '<i class="ti ti-circle-x fs-2"></i> <span id="btnSubmitCompletedRejectedText">Completed as Rejected</span>';
             });
+        });
+    }
+
+    // Also support fallback buttons in reviewRejectModal if invoked
+    var btnSubmitResubmitModal = document.getElementById('btnSubmitResubmitModal');
+    if (btnSubmitResubmitModal) {
+        btnSubmitResubmitModal.addEventListener('click', function () {
+            var rejectFeedback = document.getElementById('rejectModalFeedbackInput');
+            if (rejectFeedback && sidebarFeedback) {
+                sidebarFeedback.value = rejectFeedback.value;
+            }
+            if (btnSubmitResubmit) btnSubmitResubmit.click();
+            hideRejectModal();
+        });
+    }
+    var btnSubmitCompletedRejectedModal = document.getElementById('btnSubmitCompletedRejectedModal');
+    if (btnSubmitCompletedRejectedModal) {
+        btnSubmitCompletedRejectedModal.addEventListener('click', function () {
+            var rejectFeedback = document.getElementById('rejectModalFeedbackInput');
+            if (rejectFeedback && sidebarFeedback) {
+                sidebarFeedback.value = rejectFeedback.value;
+            }
+            if (btnSubmitCompletedRejected) btnSubmitCompletedRejected.click();
+            hideRejectModal();
         });
     }
 

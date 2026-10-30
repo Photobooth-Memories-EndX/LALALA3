@@ -498,7 +498,7 @@ class MyTaskController extends Controller
             ? ['type' => 'success', 'text' => 'Task unlocked: ' . $task->title]
             : ['type' => 'error', 'text' => 'Invalid code. Check the code and try again.']);
 
-        return back();
+        return redirect()->route('user.learning.dashboard', ['learning_tab' => 'my-task']);
     }
 
     /**
@@ -667,17 +667,70 @@ class MyTaskController extends Controller
                     $choiceRules[] = Rule::in($field->options);
                 }
                 $rules[$key] = $choiceRules;
+            } elseif ($field->isCheckbox()) {
+                $min = $field->minSelect() ?: ((! $isDraft && $field->required) ? 1 : null);
+                $max = $field->maxSelect();
+                $cbRules = [
+                    (! $isDraft && $field->required) ? 'required' : 'nullable',
+                    'array',
+                ];
+                if ($min && ! $isDraft) {
+                    $cbRules[] = 'min:' . $min;
+                }
+                if ($max) {
+                    $cbRules[] = 'max:' . $max;
+                }
+                $rules[$key] = $cbRules;
+                $rules[$key . '.*'] = ['string', 'max:255'];
+            } elseif ($field->isRating() || $field->isScale()) {
+                $rules[$key] = [
+                    (! $isDraft && $field->required) ? 'required' : 'nullable',
+                    'integer', 'min:1', 'max:5',
+                ];
+            } elseif ($field->isParagraph()) {
+                $pRules = [
+                    (! $isDraft && $field->required) ? 'required' : 'nullable',
+                    'string',
+                    'max:10000',
+                ];
+                if (! $isDraft) {
+                    $pRules[] = 'min:100';
+                }
+                $rules[$key] = $pRules;
             } else {
+                // Short answer (short_answer), dropdown, dll. Bebas berapa karakter (hanya max:10000).
                 $rules[$key] = [
                     (! $isDraft && $field->required) ? 'required' : 'nullable',
                     'string', 'max:10000',
                 ];
             }
         }
-        $validator = Validator::make($request->all(), $rules, [
-            'fields.*.max'   => 'Too many files for this question.',
+
+        $customMessages = [
+            'fields.*.max'   => 'Too many files or options selected.',
             'fields.*.*.max' => 'One of the files is too large.',
-        ]);
+        ];
+        foreach ($task->fields as $field) {
+            if ($field->isCheckbox()) {
+                $min = $field->minSelect() ?: ((! $isDraft && $field->required) ? 1 : null);
+                $max = $field->maxSelect();
+                if ($min && $max && $min === $max) {
+                    $customMessages["fields.{$field->id}.min"] = "Please select exactly {$max} options.";
+                    $customMessages["fields.{$field->id}.max"] = "Please select exactly {$max} options.";
+                } else {
+                    if ($min) {
+                        $customMessages["fields.{$field->id}.min"] = "Please select at least {$min} option" . ($min > 1 ? 's.' : '.');
+                    }
+                    if ($max) {
+                        $customMessages["fields.{$field->id}.max"] = "You can select at most {$max} option" . ($max > 1 ? 's.' : '.');
+                    }
+                }
+            } elseif ($field->isParagraph()) {
+                $customMessages["fields.{$field->id}.min"] = "The {$field->label} must be at least 100 characters.";
+            }
+        }
+
+        $validator = Validator::make($request->all(), $rules, $customMessages);
 
         // File wajib (saat belum ada file tersimpan) + batas tipe file dicek manual.
         $validator->after(function ($validator) use ($task, $existingAnswers, $request, $isDraft) {

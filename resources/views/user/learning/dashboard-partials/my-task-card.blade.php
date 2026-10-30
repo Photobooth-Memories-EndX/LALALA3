@@ -356,13 +356,11 @@
                                                 @elseif ($field->isRating())
                                                     @if ($ans && ! empty($ans->answer_text))
                                                         @php $rVal = (int) $ans->answer_text; @endphp
-                                                        <div class="d-flex align-items-center gap-2">
-                                                            <div class="d-flex align-items-center gap-1">
-                                                                @for ($r = 1; $r <= 5; $r++)
-                                                                    <i class="ti ti-star-filled {{ $r <= $rVal ? 'text-warning' : 'text-muted opacity-25' }} fs-2"></i>
-                                                                @endfor
-                                                            </div>
-                                                            <span class="fw-bold text-dark fs-6 ms-1">{{ $rVal }} / 5 Stars</span>
+                                                        <div class="d-flex align-items-center gap-1.5 py-1">
+                                                            @for ($r = 1; $r <= 5; $r++)
+                                                                <i class="ti {{ $r <= $rVal ? 'ti-star-filled text-warning' : 'ti-star text-muted opacity-30' }} fs-2" style="font-size: 1.6rem !important;"></i>
+                                                            @endfor
+                                                            <span class="visually-hidden">{{ $rVal }} / 5 Stars</span>
                                                         </div>
                                                     @else
                                                         <span class="text-muted fst-italic small">No rating given.</span>
@@ -524,27 +522,42 @@
                         @endif
 
                         {{-- Dynamic answer form following the task fields --}}
-                        <form action="{{ route('my-task.submit', $task) }}" method="POST" enctype="multipart/form-data" class="mt-2">
+                        <form action="{{ route('my-task.submit', $task) }}" method="POST" enctype="multipart/form-data" class="mt-2 task-submission-form">
                             @csrf
                             <input type="hidden" name="active_task_id" value="{{ $task->id }}">
                             <h5 class="fw-semibold text-dark mb-3 d-flex align-items-center gap-1">
                                 <i class="ti {{ $submission && $submission->resubmit_requested ? 'ti-refresh text-warning' : ($submission && $submission->status === 'draft' ? 'ti-pencil text-warning' : 'ti-pencil text-primary') }}"></i> {{ $submission && $submission->resubmit_requested ? 'Resubmit Answers' : ($submission && $submission->status === 'draft' ? 'Continue Draft Answers' : 'User Submission Form') }}
                             </h5>
 
-                            @foreach ($task->fields as $field)
+                            @foreach ($task->fields as $idx => $field)
                                 @php
                                     $ans = $answersByField->get($field->id);
                                     $fieldKey = 'fields.' . $field->id;
                                     $hasFile = $ans && $ans->hasFiles();
                                 @endphp
-                                <div class="mb-4 pb-3 border-bottom">
-                                    <label class="form-label fw-semibold text-dark mb-2">
-                                        {{ $field->label }}
-                                        @if ($field->required)
-                                            <span class="text-danger">*</span>
-                                        @endif
-                                        <span class="text-muted fw-normal small">({{ $field->typeLabel() }})</span>
-                                    </label>
+                                <div class="card border rounded-3 shadow-none bg-white mb-3 task-question-card" style="border-color: #e2e8f0 !important;">
+                                    <div class="card-header bg-light-subtle py-2 px-3 px-md-3.5 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="badge bg-primary text-white rounded-pill px-2.5 py-1 fw-bold" style="font-size: 11px;">
+                                                Question #{{ $idx + 1 }}
+                                            </span>
+                                            @if ($field->required)
+                                                <span class="badge bg-danger-lt text-danger fw-semibold" style="font-size: 11px;">Required</span>
+                                            @else
+                                                <span class="badge bg-secondary-lt text-muted fw-normal" style="font-size: 11px;">Optional</span>
+                                            @endif
+                                        </div>
+                                        <span class="badge bg-secondary-lt text-secondary fw-semibold small">
+                                            {{ $field->typeLabel() }}
+                                        </span>
+                                    </div>
+                                    <div class="card-body p-3 p-md-3.5">
+                                        <label class="form-label fw-bold text-dark mb-2 fs-5 d-block" style="line-height: 1.4;">
+                                            {{ $field->label }}
+                                            @if ($field->required)
+                                                <span class="text-danger">*</span>
+                                            @endif
+                                        </label>
 
                                     @if ($field->isFile())
                                         @php
@@ -685,16 +698,37 @@
                                     @elseif ($field->isCheckbox())
                                         @php
                                             $checkedOpts = (array) old($fieldKey, ! empty($ans->answer_text) ? explode(', ', $ans->answer_text) : []);
+                                            $maxSelect = $field->maxSelect();
+                                            $minSelect = $field->minSelect();
                                         @endphp
-                                        <div class="d-flex flex-column gap-2 mt-2">
+                                        <div class="checkbox-group d-flex flex-column gap-2 mt-2"
+                                             data-field-id="{{ $field->id }}"
+                                             @if ($maxSelect) data-max-select="{{ $maxSelect }}" @endif
+                                             @if ($minSelect) data-min-select="{{ $minSelect }}" @endif>
+                                            @if ($maxSelect)
+                                                <div class="text-muted small mb-1 d-flex align-items-center gap-1.5 flex-wrap" style="font-size: 12px;">
+                                                    <i class="ti ti-info-circle text-primary flex-shrink-0"></i>
+                                                    <span>Pilih maksimal <strong class="text-dark">{{ $maxSelect }}</strong> pilihan.</span>
+                                                    <span class="badge bg-secondary-lt text-secondary ms-auto selection-counter" style="font-size: 11px;">
+                                                        <span class="checked-count">{{ count($checkedOpts) }}</span> / {{ $maxSelect }} dipilih
+                                                    </span>
+                                                </div>
+                                            @endif
                                             @foreach ($field->options ?? [] as $opt)
-                                                <label class="form-check mb-0">
+                                                @php $isChecked = in_array($opt, $checkedOpts, true); @endphp
+                                                <label class="form-check mb-0 checkbox-option-label">
                                                     <input type="checkbox" class="form-check-input @error($fieldKey) is-invalid @enderror"
                                                            name="fields[{{ $field->id }}][]" value="{{ $opt }}"
-                                                           {{ in_array($opt, $checkedOpts, true) ? 'checked' : '' }}>
+                                                           {{ $isChecked ? 'checked' : '' }}>
                                                     <span class="form-check-label">{{ $opt }}</span>
                                                 </label>
                                             @endforeach
+                                            @if ($maxSelect)
+                                                <div class="checkbox-max-alert alert alert-warning py-1.5 px-2.5 small d-none mt-1 mb-0 align-items-center gap-1.5 rounded-2" style="font-size: 12px;">
+                                                    <i class="ti ti-alert-triangle flex-shrink-0 fs-3"></i>
+                                                    <span class="checkbox-max-msg">Maksimal {{ $maxSelect }} pilihan telah tercapai.</span>
+                                                </div>
+                                            @endif
                                         </div>
                                     @elseif ($field->isDropdown())
                                         <select name="fields[{{ $field->id }}]" class="form-select @error($fieldKey) is-invalid @enderror mt-2" {{ $field->required ? 'required' : '' }}>
@@ -724,22 +758,50 @@
                                             @endfor
                                         </div>
                                     @elseif ($field->isRating())
-                                        <div class="d-flex align-items-center gap-2 py-2 mt-1">
-                                            @for ($r = 1; $r <= 5; $r++)
-                                                <label class="form-check form-check-inline mb-0 cursor-pointer">
-                                                    <input type="radio" class="form-check-input me-1 @error($fieldKey) is-invalid @enderror"
-                                                           name="fields[{{ $field->id }}]" value="{{ $r }}"
-                                                           {{ (string) old($fieldKey, $ans->answer_text ?? '') === (string) $r ? 'checked' : '' }}
-                                                           {{ $field->required ? 'required' : '' }}>
-                                                    <span class="form-check-label"><i class="ti ti-star-filled text-warning"></i> {{ $r }}</span>
-                                                </label>
-                                            @endfor
+                                        @php
+                                            $currRating = (int) old($fieldKey, $ans->answer_text ?? 0);
+                                        @endphp
+                                        <div class="star-rating-container py-1" data-field-id="{{ $field->id }}">
+                                            <div class="star-rating-widget d-inline-flex align-items-center gap-1.5 p-1 rounded-2">
+                                                @for ($r = 1; $r <= 5; $r++)
+                                                    <label class="star-item cursor-pointer mb-0 position-relative p-1 d-flex align-items-center justify-content-center"
+                                                           data-val="{{ $r }}"
+                                                           style="cursor: pointer; user-select: none;"
+                                                           title="{{ $r }} Bintang">
+                                                        <input type="radio"
+                                                               class="visually-hidden star-radio @error($fieldKey) is-invalid @enderror"
+                                                               name="fields[{{ $field->id }}]"
+                                                               value="{{ $r }}"
+                                                               {{ $currRating === $r ? 'checked' : '' }}
+                                                               {{ $field->required ? 'required' : '' }}>
+                                                        <i class="ti {{ $r <= $currRating ? 'ti-star-filled text-warning' : 'ti-star text-muted opacity-50' }} star-icon"
+                                                           style="font-size: 2rem !important; transition: transform 0.15s ease, color 0.15s ease;"></i>
+                                                    </label>
+                                                @endfor
+                                            </div>
                                         </div>
                                     @else
-                                        <textarea name="fields[{{ $field->id }}]" rows="3"
-                                                  class="form-control @error($fieldKey) is-invalid @enderror"
-                                                  placeholder="Type your answer here..."
-                                                  {{ $field->required ? 'required' : '' }}>{{ old($fieldKey, $ans->answer_text ?? '') }}</textarea>
+                                        @php
+                                            $currText = (string) old($fieldKey, $ans->answer_text ?? '');
+                                            $currLen = mb_strlen($currText);
+                                        @endphp
+                                        <div class="paragraph-field-wrap position-relative" data-field-id="{{ $field->id }}" data-min-chars="100">
+                                            <textarea name="fields[{{ $field->id }}]" rows="4"
+                                                      class="form-control paragraph-textarea @error($fieldKey) is-invalid @enderror"
+                                                      placeholder="Type your answer here (minimum 100 characters)..."
+                                                      data-min-chars="100"
+                                                      minlength="100"
+                                                      {{ $field->required ? 'required' : '' }}>{{ $currText }}</textarea>
+                                            <div class="d-flex align-items-center justify-content-between mt-1 px-1">
+                                                <div class="text-muted small paragraph-min-hint d-flex align-items-center gap-1" style="font-size: 11.5px;">
+                                                    <i class="ti ti-info-circle text-primary"></i>
+                                                    <span>Minimum <strong>100</strong> karakter</span>
+                                                </div>
+                                                <div class="paragraph-char-counter small fw-semibold {{ $currLen >= 100 ? 'text-success' : ($currLen > 0 ? 'text-warning' : 'text-muted') }}" style="font-size: 11.5px;">
+                                                    <span class="char-count">{{ $currLen }}</span> / 100 karakter
+                                                </div>
+                                            </div>
+                                        </div>
                                     @endif
 
                                     @error($fieldKey)
@@ -757,6 +819,7 @@
                                     @foreach ($nestedErrs as $ne)
                                         <div class="invalid-feedback d-block">{{ $ne }}</div>
                                     @endforeach
+                                    </div>
                                 </div>
                             @endforeach
 
@@ -1216,6 +1279,219 @@
                 openFileBrowser(dz, false);
             }
             return;
+        }
+    });
+
+    // ── Checkbox Max Selection Enforcement ──
+    function updateCheckboxGroup(group) {
+        var maxAttr = group.getAttribute('data-max-select');
+        var max = maxAttr ? parseInt(maxAttr, 10) : 0;
+        var checkboxes = group.querySelectorAll('input[type="checkbox"]');
+        var checked = group.querySelectorAll('input[type="checkbox"]:checked');
+        var countEl = group.querySelector('.checked-count');
+        if (countEl) {
+            countEl.textContent = checked.length;
+        }
+
+        if (!max || isNaN(max)) return;
+
+        var atMax = checked.length >= max;
+        checkboxes.forEach(function (cb) {
+            var label = cb.closest('.checkbox-option-label');
+            if (!cb.checked) {
+                cb.disabled = atMax;
+                if (label) {
+                    if (atMax) {
+                        label.classList.add('text-muted');
+                        label.style.opacity = '0.55';
+                        label.style.cursor = 'not-allowed';
+                    } else {
+                        label.classList.remove('text-muted');
+                        label.style.opacity = '';
+                        label.style.cursor = '';
+                    }
+                }
+            } else {
+                cb.disabled = false;
+                if (label) {
+                    label.classList.remove('text-muted');
+                    label.style.opacity = '';
+                    label.style.cursor = '';
+                }
+            }
+        });
+    }
+
+    document.querySelectorAll('.checkbox-group[data-max-select]').forEach(function (group) {
+        updateCheckboxGroup(group);
+    });
+
+    document.addEventListener('change', function (e) {
+        var cb = e.target.closest('.checkbox-group[data-max-select] input[type="checkbox"]');
+        if (!cb) return;
+        var group = cb.closest('.checkbox-group');
+        if (!group) return;
+
+        var max = parseInt(group.getAttribute('data-max-select'), 10);
+        var checked = group.querySelectorAll('input[type="checkbox"]:checked');
+
+        if (max && checked.length > max) {
+            cb.checked = false;
+            var alertEl = group.querySelector('.checkbox-max-alert');
+            if (alertEl) {
+                alertEl.classList.remove('d-none');
+                alertEl.classList.add('d-flex');
+                clearTimeout(group._alertTimer);
+                group._alertTimer = setTimeout(function () {
+                    alertEl.classList.remove('d-flex');
+                    alertEl.classList.add('d-none');
+                }, 3000);
+            }
+        }
+
+        updateCheckboxGroup(group);
+    });
+
+    // ── Star Rating Interaction (No numbers, interactive stars) ──
+    function setWidgetVisual(widget, activeVal) {
+        var items = widget.querySelectorAll('.star-item');
+        items.forEach(function (item) {
+            var val = parseInt(item.getAttribute('data-val'), 10);
+            var icon = item.querySelector('.star-icon');
+            if (icon) {
+                if (val <= activeVal) {
+                    icon.className = 'ti ti-star-filled text-warning star-icon';
+                } else {
+                    icon.className = 'ti ti-star text-muted opacity-50 star-icon';
+                }
+            }
+        });
+    }
+
+    document.addEventListener('mouseover', function (e) {
+        var starItem = e.target.closest('.star-item');
+        if (!starItem) return;
+        var widget = starItem.closest('.star-rating-widget');
+        if (!widget) return;
+        var hoverVal = parseInt(starItem.getAttribute('data-val'), 10);
+
+        var items = widget.querySelectorAll('.star-item');
+        items.forEach(function (item) {
+            var val = parseInt(item.getAttribute('data-val'), 10);
+            var icon = item.querySelector('.star-icon');
+            if (icon) {
+                if (val <= hoverVal) {
+                    icon.className = 'ti ti-star-filled text-warning star-icon';
+                    icon.style.transform = (val === hoverVal) ? 'scale(1.22)' : 'scale(1.08)';
+                } else {
+                    icon.className = 'ti ti-star text-muted opacity-50 star-icon';
+                    icon.style.transform = 'scale(1)';
+                }
+            }
+        });
+    });
+
+    document.addEventListener('mouseout', function (e) {
+        var starItem = e.target.closest('.star-item');
+        if (!starItem) return;
+        var widget = starItem.closest('.star-rating-widget');
+        if (!widget) return;
+
+        var items = widget.querySelectorAll('.star-item');
+        items.forEach(function (item) {
+            var icon = item.querySelector('.star-icon');
+            if (icon) icon.style.transform = 'scale(1)';
+        });
+
+        var checked = widget.querySelector('.star-radio:checked');
+        var selectedVal = checked ? parseInt(checked.value, 10) : 0;
+        setWidgetVisual(widget, selectedVal);
+    });
+
+    document.addEventListener('click', function (e) {
+        var starItem = e.target.closest('.star-item');
+        if (!starItem) return;
+        var widget = starItem.closest('.star-rating-widget');
+        if (!widget) return;
+        var radio = starItem.querySelector('.star-radio');
+        if (!radio) return;
+
+        var clickedVal = parseInt(radio.value, 10);
+        radio.checked = true;
+        setWidgetVisual(widget, clickedVal);
+
+        var event = new Event('change', { bubbles: true });
+        radio.dispatchEvent(event);
+    });
+
+    // ── Paragraph Minimum 100 Characters Live Counter & Client Validation ──
+    document.addEventListener('input', function (e) {
+        var textarea = e.target.closest('.paragraph-textarea');
+        if (!textarea) return;
+        var wrap = textarea.closest('.paragraph-field-wrap');
+        if (!wrap) return;
+
+        var minChars = parseInt(textarea.getAttribute('data-min-chars') || '100', 10);
+        var len = (textarea.value || '').length;
+        var counter = wrap.querySelector('.paragraph-char-counter');
+        var countSpan = wrap.querySelector('.char-count');
+
+        if (countSpan) {
+            countSpan.textContent = len;
+        }
+
+        if (counter) {
+            if (len >= minChars) {
+                counter.className = 'paragraph-char-counter small fw-semibold text-success';
+            } else if (len > 0) {
+                counter.className = 'paragraph-char-counter small fw-semibold text-warning';
+            } else {
+                counter.className = 'paragraph-char-counter small fw-semibold text-muted';
+            }
+        }
+
+        if (len >= minChars || (!textarea.hasAttribute('required') && len === 0)) {
+            textarea.classList.remove('is-invalid');
+        }
+    });
+
+    var lastClickedTaskSubmitBtn = null;
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('button[type="submit"]');
+        if (btn) lastClickedTaskSubmitBtn = btn;
+    });
+
+    document.addEventListener('submit', function (e) {
+        var form = e.target.closest('.task-submission-form');
+        if (!form) return;
+        var isDraft = (e.submitter && e.submitter.value === 'draft') ||
+                      (lastClickedTaskSubmitBtn && lastClickedTaskSubmitBtn.value === 'draft');
+        if (isDraft) return;
+
+        var paras = form.querySelectorAll('.paragraph-textarea');
+        for (var i = 0; i < paras.length; i++) {
+            var p = paras[i];
+            var min = parseInt(p.getAttribute('data-min-chars') || '100', 10);
+            var val = (p.value || '').trim();
+            var isReq = p.hasAttribute('required');
+
+            if ((isReq && val.length < min) || (!isReq && val.length > 0 && val.length < min)) {
+                e.preventDefault();
+                p.classList.add('is-invalid');
+                p.focus();
+                var msg = 'Jawaban paragraph minimal ' + min + ' karakter (saat ini: ' + val.length + ' karakter).';
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Karakter Belum Cukup',
+                        text: msg,
+                        confirmButtonText: 'OK'
+                    });
+                } else {
+                    alert(msg);
+                }
+                return;
+            }
         }
     });
 })();

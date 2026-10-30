@@ -416,6 +416,8 @@ class TaskManageController extends Controller
                 'max_files'   => $f->maxFiles(),
                 'max_size_mb' => $f->maxSizeMb(),
                 'allow_link'  => (bool) $f->allow_link,
+                'min_select'  => $f->min_select,
+                'max_select'  => $f->max_select,
             ])->all();
         }
 
@@ -950,6 +952,8 @@ class TaskManageController extends Controller
             $rules['fields.*.max_files'] = ['nullable', 'integer', 'min:1', 'max:10'];
             $rules['fields.*.max_size_mb'] = ['nullable', 'integer', 'min:1', 'max:100'];
             $rules['fields.*.allow_link'] = ['nullable'];
+            $rules['fields.*.min_select'] = ['nullable', 'integer', 'min:1', 'max:50'];
+            $rules['fields.*.max_select'] = ['nullable', 'integer', 'min:1', 'max:50'];
         }
 
         $validator = Validator::make($request->all(), $rules, [
@@ -1002,6 +1006,8 @@ class TaskManageController extends Controller
             'max_files'   => (int) ($f['max_files'] ?? 1),
             'max_size_mb' => (int) ($f['max_size_mb'] ?? TaskField::DEFAULT_MAX_SIZE_MB),
             'allow_link'  => ! empty($f['allow_link']),
+            'min_select'  => ! empty($f['min_select']) ? (int) $f['min_select'] : null,
+            'max_select'  => ! empty($f['max_select']) ? (int) $f['max_select'] : null,
         ])->values()->all();
     }
 
@@ -1032,6 +1038,8 @@ class TaskManageController extends Controller
                 'max_files'      => 1,
                 'max_size_mb'    => null,
                 'allow_link'     => false,
+                'min_select'     => null,
+                'max_select'     => null,
             ];
 
             if ($input['type'] === 'file') {
@@ -1053,6 +1061,10 @@ class TaskManageController extends Controller
                     fn ($o) => $o !== ''
                 ));
                 $data['options'] = $options;
+                if ($input['type'] === 'checkbox') {
+                    $data['min_select'] = ! empty($input['min_select']) ? (int) $input['min_select'] : null;
+                    $data['max_select'] = ! empty($input['max_select']) ? (int) $input['max_select'] : null;
+                }
             }
 
             if ($field) {

@@ -543,12 +543,13 @@ class TaskReviewStatusFlowTest extends TestCase
         ]);
 
         // Now submit as final
+        $finalAnswer = str_repeat('Final polished answer with comprehensive explanation and thorough detail. ', 2);
         $response = $this->actingAs($this->learner)->post(
             route('my-task.submit', $task),
             [
                 'action' => 'submit',
                 'fields' => [
-                    $field->id => 'Final polished answer',
+                    $field->id => $finalAnswer,
                 ],
             ]
         );
@@ -565,7 +566,7 @@ class TaskReviewStatusFlowTest extends TestCase
         $this->assertEquals('submitted', $task->userStatusFor($this->learner));
 
         $answers = $submission->answersByField();
-        $this->assertEquals('Final polished answer', $answers->get($field->id)->answer_text);
+        $this->assertEquals(trim($finalAnswer), $answers->get($field->id)->answer_text);
     }
 
     public function test_user_task_card_renders_draft_status_and_prefilled_answers(): void

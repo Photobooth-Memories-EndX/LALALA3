@@ -884,23 +884,26 @@
         }
 
         // ── Options editor (Multiple choice, Checkboxes, Dropdown) ──────
+        function renderOptionPrefix(ftype, pos) {
+            if (ftype === 'checkbox') {
+                return '<i class="ti ti-square text-muted fs-3 option-prefix-icon"></i>';
+            } else if (ftype === 'dropdown') {
+                return '<span class="text-muted fw-bold small option-prefix-num">' + (pos + 1) + '.</span>';
+            } else {
+                return '<i class="ti ti-circle text-muted fs-3 option-prefix-icon"></i>';
+            }
+        }
+
         function addOptionRow(listEl, i, value, ftype) {
             ftype = ftype || 'choice';
             var idx = listEl.querySelectorAll('.option-row').length;
             var row = document.createElement('div');
             row.className = 'd-flex align-items-center gap-2 option-row';
 
-            var prefixHtml = '';
-            if (ftype === 'checkbox') {
-                prefixHtml = '<i class="ti ti-square text-muted fs-3 flex-shrink-0 option-prefix-icon"></i>';
-            } else if (ftype === 'dropdown') {
-                prefixHtml = '<span class="text-muted fw-bold small flex-shrink-0 option-prefix-num" style="width:20px;">' + (idx + 1) + '.</span>';
-            } else {
-                prefixHtml = '<i class="ti ti-circle text-muted fs-3 flex-shrink-0 option-prefix-icon"></i>';
-            }
-
             row.innerHTML =
-                prefixHtml +
+                '<div class="option-prefix-wrap flex-shrink-0 d-flex align-items-center justify-content-center" style="width: 20px;">' +
+                    renderOptionPrefix(ftype, idx) +
+                '</div>' +
                 '<input type="text" class="form-control rounded-3 border bg-white flex-grow-1" style="font-size: 0.9rem; border-color: #dce2eb;" name="fields[' + i + '][options][]" ' +
                     'placeholder="Option ' + (idx + 1) + '" value="' + esc(value || '') + '">' +
                 '<button type="button" class="btn btn-sm btn-ghost-danger p-1 btnRemoveOption" title="Remove option">' +
@@ -916,15 +919,19 @@
             rows.forEach(function (row, pos) {
                 var input = row.querySelector('input[type="text"]');
                 if (input) input.placeholder = 'Option ' + (pos + 1);
-                var numSpan = row.querySelector('.option-prefix-num');
-                if (numSpan) numSpan.textContent = (pos + 1) + '.';
-                var icon = row.querySelector('.option-prefix-icon');
-                if (icon) {
-                    if (ftype === 'checkbox') {
-                        icon.className = 'ti ti-square text-muted fs-3 flex-shrink-0 option-prefix-icon';
-                    } else {
-                        icon.className = 'ti ti-circle text-muted fs-3 flex-shrink-0 option-prefix-icon';
+
+                var prefixWrap = row.querySelector('.option-prefix-wrap');
+                if (!prefixWrap) {
+                    var oldPrefix = row.querySelector('.option-prefix-num, .option-prefix-icon');
+                    if (oldPrefix) {
+                        prefixWrap = document.createElement('div');
+                        prefixWrap.className = 'option-prefix-wrap flex-shrink-0 d-flex align-items-center justify-content-center';
+                        prefixWrap.style.width = '20px';
+                        oldPrefix.replaceWith(prefixWrap);
                     }
+                }
+                if (prefixWrap) {
+                    prefixWrap.innerHTML = renderOptionPrefix(ftype, pos);
                 }
             });
         }
@@ -956,6 +963,11 @@
                         reindexOptions(list, ftype);
                     }
                 }
+            }
+
+            var chkSettings = card.querySelector('.checkboxSettings');
+            if (chkSettings) {
+                chkSettings.style.display = (ftype === 'checkbox') ? '' : 'none';
             }
         }
 
@@ -1086,8 +1098,12 @@
                         '<div class="form-control bg-white text-muted" style="max-width: 320px; font-style: italic; border-style: dashed;">Short-answer text</div>' +
                     '</div>' +
                     '<div class="previewParagraph mt-3 p-3 rounded-3" style="background-color: #f8fafc; border: 1px solid #eef2f6; display:none;">' +
-                        '<div class="text-muted small mb-2"><i class="ti ti-notes me-1"></i> Paragraph preview:</div>' +
-                        '<div class="form-control bg-white text-muted" style="max-width: 500px; min-height: 70px; font-style: italic; border-style: dashed;">Long-answer text</div>' +
+                        '<div class="d-flex align-items-center justify-content-between mb-2">' +
+                            '<div class="text-muted small fw-semibold"><i class="ti ti-notes me-1"></i> Paragraph preview:</div>' +
+                            '<span class="badge bg-secondary-lt text-secondary" style="font-size: 11px;">Min. 100 characters</span>' +
+                        '</div>' +
+                        '<div class="form-control bg-white text-muted" style="max-width: 500px; min-height: 70px; font-style: italic; border-style: dashed;">Long-answer text (minimum 100 characters)</div>' +
+                        '<div class="text-muted small mt-1" style="font-size: 11.5px;"><i class="ti ti-info-circle me-1"></i>Learners must provide at least 100 characters when submitting this answer.</div>' +
                     '</div>' +
                     '<div class="optionsEditor mt-3 p-3 rounded-3" style="background-color: #f8fafc; border: 1px solid #eef2f6; display:none;">' +
                         '<div class="text-muted small fw-semibold mb-2"><i class="ti ti-list me-1"></i> Configure answer choices:</div>' +
@@ -1096,6 +1112,16 @@
                             '<i class="ti ti-plus"></i> Add option' +
                         '</button>' +
                         '<div class="form-hint mt-2 optionsHint text-muted small" style="display:none;"></div>' +
+                    '</div>' +
+                    '<div class="checkboxSettings mt-3 p-3 rounded-3" style="background-color: #f8fafc; border: 1px solid #eef2f6; display:none;">' +
+                        '<div class="row g-2 align-items-center">' +
+                            '<div class="col-sm-6 col-md-5">' +
+                                '<label class="form-label small fw-semibold text-dark mb-1 d-flex align-items-center gap-1">' +
+                                    '<i class="ti ti-adjustments text-primary"></i> Maximum choices' +
+                                '</label>' +
+                                '<input type="number" class="form-control form-control-sm" name="fields[' + i + '][max_select]" min="1" max="50" placeholder="e.g. 3" value="' + esc(data.max_select || '') + '">' +
+                            '</div>' +
+                        '</div>' +
                     '</div>' +
                     fileSettingsHTML(i, data) +
                     '<div class="previewScale mt-3 p-3 rounded-3" style="background-color: #f8fafc; border: 1px solid #eef2f6; display:none;">' +
@@ -1113,14 +1139,13 @@
                         '</div>' +
                     '</div>' +
                     '<div class="previewRating mt-3 p-3 rounded-3" style="background-color: #f8fafc; border: 1px solid #eef2f6; display:none;">' +
-                        '<div class="text-muted small mb-2"><i class="ti ti-star me-1"></i> Star rating preview (Users will select 1 to 5 stars):</div>' +
-                        '<div class="d-flex align-items-center gap-1 text-warning fs-2">' +
+                        '<div class="text-muted small mb-2"><i class="ti ti-star me-1"></i> Star rating preview:</div>' +
+                        '<div class="d-flex align-items-center gap-1.5 text-warning fs-2">' +
                             '<i class="ti ti-star-filled"></i>' +
                             '<i class="ti ti-star-filled"></i>' +
                             '<i class="ti ti-star-filled"></i>' +
                             '<i class="ti ti-star-filled"></i>' +
-                            '<i class="ti ti-star-filled"></i>' +
-                            '<span class="text-muted small ms-2 fs-6">5-star rating scale</span>' +
+                            '<i class="ti ti-star text-muted opacity-50"></i>' +
                         '</div>' +
                     '</div>';
             }
@@ -1843,11 +1868,18 @@
                         var reqChk = card.querySelector('input[name$="[required]"]');
                         if (reqChk) isRequired = reqChk.checked;
 
-                        html += '<div class="mb-4 pb-3 border-bottom">' +
-                            '<label class="form-label fw-semibold text-dark mb-2">' +
-                                esc(qTitle) + (isRequired ? ' <span class="text-danger">*</span>' : '') + ' ' +
-                                '<span class="text-muted fw-normal small">(' + esc(typeLabel) + ')</span>' +
-                            '</label>';
+                        html += '<div class="card border rounded-3 shadow-none bg-white mb-3" style="border-color: #e2e8f0 !important;">' +
+                            '<div class="card-header bg-light-subtle py-2 px-3 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">' +
+                                '<div class="d-flex align-items-center gap-2">' +
+                                    '<span class="badge bg-primary text-white rounded-pill px-2.5 py-1 fw-bold" style="font-size: 11px;">Question #' + (idx + 1) + '</span>' +
+                                    (isRequired ? '<span class="badge bg-danger-lt text-danger fw-semibold" style="font-size: 11px;">Required</span>' : '<span class="badge bg-secondary-lt text-muted fw-normal" style="font-size: 11px;">Optional</span>') +
+                                '</div>' +
+                                '<span class="badge bg-secondary-lt text-secondary fw-semibold small">' + esc(typeLabel) + '</span>' +
+                            '</div>' +
+                            '<div class="card-body p-3">' +
+                                '<label class="form-label fw-bold text-dark mb-2 fs-5 d-block" style="line-height: 1.4;">' +
+                                    esc(qTitle) + (isRequired ? ' <span class="text-danger">*</span>' : '') +
+                                '</label>';
 
                         if (ftype === 'file') {
                             var groupSel = card.querySelector('select[name$="[file_types]"]');
@@ -1908,6 +1940,20 @@
                             html += '</div>';
                         } else if (ftype === 'checkbox') {
                             var chkOpts = card.querySelectorAll('.option-row input[type="text"]');
+                            var maxInp = card.querySelector('input[name$="[max_select]"]');
+                            var maxVal = maxInp ? parseInt(maxInp.value, 10) : 0;
+                            if (!maxVal) {
+                                var mMatch = qTitle.match(/(?:maksimal|maks\.?|max\.?|up\s*to)\s*(\d+)/i) || qTitle.match(/(\d+)\s*(?:-|–|—|sampai|s\/d|sd|to)\s*(\d+)/i);
+                                if (mMatch) maxVal = parseInt(mMatch[2] || mMatch[1], 10);
+                            }
+
+                            if (maxVal) {
+                                html += '<div class="text-muted small mb-1 d-flex align-items-center gap-1.5" style="font-size: 12px;">' +
+                                    '<i class="ti ti-info-circle text-primary flex-shrink-0"></i>' +
+                                    '<span>Pilih maksimal <strong class="text-dark">' + maxVal + '</strong> pilihan.</span>' +
+                                '</div>';
+                            }
+
                             html += '<div class="d-flex flex-column gap-2 mt-2">';
                             chkOpts.forEach(function (optInput, oIdx) {
                                 var optVal = optInput.value.trim() || ('Option ' + (oIdx + 1));
@@ -1942,19 +1988,22 @@
                                 '<span class="text-muted small fw-medium">5 (Highest)</span>' +
                             '</div>';
                         } else if (ftype === 'rating') {
-                            html += '<div class="d-flex align-items-center gap-1 text-warning fs-1 py-1">' +
-                                '<i class="ti ti-star-filled"></i>' +
-                                '<i class="ti ti-star-filled"></i>' +
-                                '<i class="ti ti-star-filled"></i>' +
-                                '<i class="ti ti-star-filled"></i>' +
-                                '<i class="ti ti-star"></i>' +
-                                '<span class="text-muted small ms-2 fs-6">(Rating from 1 to 5 stars)</span>' +
+                            html += '<div class="d-flex align-items-center gap-1.5 text-warning fs-1 py-1">' +
+                                '<i class="ti ti-star-filled" style="font-size: 1.85rem !important;"></i>' +
+                                '<i class="ti ti-star-filled" style="font-size: 1.85rem !important;"></i>' +
+                                '<i class="ti ti-star-filled" style="font-size: 1.85rem !important;"></i>' +
+                                '<i class="ti ti-star-filled" style="font-size: 1.85rem !important;"></i>' +
+                                '<i class="ti ti-star text-muted opacity-50" style="font-size: 1.85rem !important;"></i>' +
                             '</div>';
                         } else {
-                            html += '<textarea rows="3" class="form-control" placeholder="Write your answer here..." disabled style="background:#f8fafc;"></textarea>';
+                            html += '<textarea rows="3" class="form-control" placeholder="Type your answer here (minimum 100 characters)..." disabled style="background:#f8fafc;"></textarea>' +
+                                    '<div class="d-flex align-items-center justify-content-between text-muted small mt-1" style="font-size: 11.5px;">' +
+                                        '<span><i class="ti ti-info-circle me-1"></i>Minimum 100 characters</span>' +
+                                        '<span>0 / 100 characters</span>' +
+                                    '</div>';
                         }
 
-                        html += '</div>';
+                        html += '</div></div>';
                     });
 
                     html += '<div class="d-flex align-items-center justify-content-end gap-2 mt-4 pt-3 border-top">' +
