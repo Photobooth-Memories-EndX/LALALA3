@@ -387,34 +387,32 @@
                     </div>
                 </div>
 
-                {{-- Center: User Switcher [ < ] [ USER NAME ] [ > ] --}}
-                <div class="d-flex align-items-center justify-content-center text-center px-2" style="flex: 1 1 0;">
-                    <div class="d-inline-flex align-items-center gap-2 bg-light px-3 py-1.5 rounded-pill border">
-                        <button type="button"
-                                class="btn btn-sm btn-white rounded-circle p-0 d-inline-flex align-items-center justify-content-center shadow-xs"
-                                id="prevSubmissionBtn"
-                                title="Previous User (Left Arrow)"
-                                style="width: 28px; height: 28px; border-color: #cbd5e1;">
-                            <i class="ti ti-chevron-left" style="font-size: 14px;"></i>
-                        </button>
+                {{-- Center: User Switcher [ < ] [ USER NAME ] [ > ] (No wrapping pill container) --}}
+                <div class="d-flex align-items-center justify-content-center gap-2 text-center px-2" style="flex: 1 1 0;">
+                    <button type="button"
+                            class="btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center flex-shrink-0"
+                            id="prevSubmissionBtn"
+                            title="Previous User (Left Arrow)"
+                            style="width: 28px; height: 28px; border-color: #cbd5e1; color: #64748b; background-color: #ffffff;">
+                        <i class="ti ti-chevron-left" style="font-size: 14px;"></i>
+                    </button>
 
-                        <div class="text-center px-2" style="min-width: 140px; max-width: 260px;">
-                            <div class="fw-bold text-dark text-truncate text-uppercase" id="headerLearnerName" style="font-size: 13.5px; letter-spacing: 0.3px; line-height: 1.2;">
-                                {{ $defaultActive ? ($defaultActive->user->name ?? 'User') : 'No Submissions' }}
-                            </div>
-                            <div class="text-muted" id="headerSubmissionCount" style="font-size: 11px; line-height: 1.1;">
-                                Submission {{ $totalSubmissions > 0 ? 1 : 0 }} of {{ $totalSubmissions }}
-                            </div>
+                    <div class="text-center px-2" style="min-width: 130px; max-width: 280px;">
+                        <div class="fw-bold text-dark text-truncate text-uppercase" id="headerLearnerName" style="font-size: 13.5px; letter-spacing: 0.3px; line-height: 1.25;">
+                            {{ $defaultActive ? ($defaultActive->user->name ?? 'User') : 'No Submissions' }}
                         </div>
-
-                        <button type="button"
-                                class="btn btn-sm btn-white rounded-circle p-0 d-inline-flex align-items-center justify-content-center shadow-xs"
-                                id="nextSubmissionBtn"
-                                title="Next User (Right Arrow)"
-                                style="width: 28px; height: 28px; border-color: #cbd5e1;">
-                            <i class="ti ti-chevron-right" style="font-size: 14px;"></i>
-                        </button>
+                        <div class="text-muted" id="headerSubmissionCount" style="font-size: 11px; line-height: 1.2; margin-top: 1px;">
+                            Submission {{ $totalSubmissions > 0 ? 1 : 0 }} of {{ $totalSubmissions }}
+                        </div>
                     </div>
+
+                    <button type="button"
+                            class="btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center flex-shrink-0"
+                            id="nextSubmissionBtn"
+                            title="Next User (Right Arrow)"
+                            style="width: 28px; height: 28px; border-color: #cbd5e1; color: #64748b; background-color: #ffffff;">
+                        <i class="ti ti-chevron-right" style="font-size: 14px;"></i>
+                    </button>
                 </div>
 
                 {{-- Right: Balancer spacer + Close Button --}}
