@@ -18,58 +18,38 @@
             @include('main.record.components.online-kpi-skeleton')
         </div>
 
-        <!-- SECTION HEADER: KP OWL -->
-        <div class="card border-0 shadow-sm p-3 p-md-4 mb-4 rounded-3 bg-white record-section-header">
-            <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 record-section-icon"
-                         style="width: 54px; height: 54px; background-color: #e0f2fe; color: #0284c7; border-radius: 12px;">
-                        <i class="ti ti-device-laptop fs-1"></i>
-                    </div>
-                    <div>
-                        <h2 class="h3 fw-bold mb-1 text-dark">KP OWL</h2>
-                        <p class="text-muted small mb-0">Online Learning Record — Monitor learning progress, status, and employee training completion in OWL LMS.</p>
-                    </div>
-                </div>
+        @include('main.record.components.record-navigation')
 
-                <!-- Action Buttons: Download Online Record -->
-                <div class="d-flex align-items-center gap-2 flex-wrap">
-                    <a href="{{ route('manage.record.online.course') }}" class="btn btn-primary rounded-3 px-3 d-inline-flex align-items-center gap-1.5" id="btn-view-online-records">
-                        <i class="ti ti-table fs-2"></i>
-                        <span>View Records</span>
-                    </a>
-                    <div class="dropdown">
-                        <button type="button" class="btn btn-outline-secondary dropdown-toggle rounded-3 px-3 d-inline-flex align-items-center gap-1.5"
-                                data-bs-toggle="dropdown" data-toggle="dropdown" aria-expanded="false" id="btn-download-dropdown">
-                            <i class="ti ti-download fs-2"></i>
-                            <span>Download</span>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border rounded-3 mt-1 py-1" aria-labelledby="btn-download-dropdown" style="min-width: 250px;">
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.record.online.export', request()->query()) }}" id="btn-export-online-xlsx">
-                                    <i class="ti ti-file-spreadsheet text-success fs-3"></i>
-                                    <span>Download Online Record (.xlsx)</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.record.online.export.pdf', request()->query()) }}" id="btn-export-online-pdf">
-                                    <i class="ti ti-file-type-pdf text-danger fs-3"></i>
-                                    <span>Download PDF (.pdf)</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.record.online.export.csv', request()->query()) }}" id="btn-export-online-csv">
-                                    <i class="ti ti-file-type-csv text-primary fs-3"></i>
-                                    <span>Download CSV (.csv)</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
+        <!-- Action Button: Download Dropdown -->
+        <div class="d-flex justify-content-end mb-4">
+            <div class="dropdown">
+                <button type="button" class="btn btn-outline-secondary dropdown-toggle rounded-3 px-3 d-inline-flex align-items-center gap-1.5"
+                        data-bs-toggle="dropdown" data-toggle="dropdown" aria-expanded="false" id="btn-download-dropdown">
+                    <i class="ti ti-download fs-2"></i>
+                    <span>Download</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm border rounded-3 mt-1 py-1" aria-labelledby="btn-download-dropdown" style="min-width: 250px;">
+                    <li>
+                        <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.record.online.export', request()->query()) }}" id="btn-export-online-xlsx">
+                            <i class="ti ti-file-spreadsheet text-success fs-3"></i>
+                            <span>Download Online Record (.xlsx)</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.record.online.export.pdf', request()->query()) }}" id="btn-export-online-pdf">
+                            <i class="ti ti-file-type-pdf text-danger fs-3"></i>
+                            <span>Download PDF (.pdf)</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.record.online.export.csv', request()->query()) }}" id="btn-export-online-csv">
+                            <i class="ti ti-file-type-csv text-primary fs-3"></i>
+                            <span>Download CSV (.csv)</span>
+                        </a>
+                    </li>
+                </ul>
             </div>
         </div>
-
-        @include('main.record.components.record-navigation')
 
         <!-- CLASSIFICATION SUMMARY (ASYNC SKELETON SHELL) -->
         <div class="card border-0 shadow-sm mb-4 classification-summary-card">
@@ -118,24 +98,6 @@
         color: #60a5fa !important;
     }
 
-    .record-section-header {
-        border-radius: 14px !important;
-        border: 1px solid #e2e8f0 !important;
-    }
-
-    [data-bs-theme="dark"] .record-section-header,
-    body.dark-mode .record-section-header,
-    body.theme-dark .record-section-header {
-        background-color: #1e293b !important;
-        border-color: rgba(255, 255, 255, 0.1) !important;
-    }
-
-    [data-bs-theme="dark"] .record-section-header .text-dark,
-    body.dark-mode .record-section-header .text-dark,
-    body.theme-dark .record-section-header .text-dark {
-        color: #f8fafc !important;
-    }
-
     [data-bs-theme="dark"] .stat-kpi-card,
     body.dark-mode .stat-kpi-card,
     body.theme-dark .stat-kpi-card {
@@ -167,6 +129,43 @@
     body.theme-dark .kpi-skeleton-row .stat-kpi-card {
         background-color: #1e293b !important;
         border-color: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    /* Download button & dropdown dark mode support */
+    [data-bs-theme="dark"] #btn-download-dropdown,
+    body.dark-mode #btn-download-dropdown,
+    body.theme-dark #btn-download-dropdown {
+        color: #cbd5e1 !important;
+        border-color: rgba(255, 255, 255, 0.2) !important;
+        background-color: transparent !important;
+    }
+
+    [data-bs-theme="dark"] #btn-download-dropdown:hover,
+    body.dark-mode #btn-download-dropdown:hover,
+    body.theme-dark #btn-download-dropdown:hover {
+        color: #ffffff !important;
+        background-color: rgba(255, 255, 255, 0.08) !important;
+        border-color: rgba(255, 255, 255, 0.3) !important;
+    }
+
+    [data-bs-theme="dark"] .manage-record-page .dropdown-menu,
+    body.dark-mode .manage-record-page .dropdown-menu,
+    body.theme-dark .manage-record-page .dropdown-menu {
+        background-color: #1e293b !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    [data-bs-theme="dark"] .manage-record-page .dropdown-item,
+    body.dark-mode .manage-record-page .dropdown-item,
+    body.theme-dark .manage-record-page .dropdown-item {
+        color: #f8fafc !important;
+    }
+
+    [data-bs-theme="dark"] .manage-record-page .dropdown-item:hover,
+    body.dark-mode .manage-record-page .dropdown-item:hover,
+    body.theme-dark .manage-record-page .dropdown-item:hover {
+        background-color: rgba(255, 255, 255, 0.08) !important;
+        color: #38bdf8 !important;
     }
 </style>
 @endsection
