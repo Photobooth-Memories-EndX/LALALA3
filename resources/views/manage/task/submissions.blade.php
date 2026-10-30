@@ -371,21 +371,18 @@
             {{-- Modal Header: Clean, Spacious Title & User Switcher --}}
             <div class="modal-header border-bottom py-3 px-4 bg-white d-flex align-items-center justify-content-between flex-shrink-0" style="min-height: 70px;">
                 {{-- Left: Task Information --}}
-                <div class="d-flex align-items-center gap-2.5 min-w-0" style="flex: 1 1 0; max-width: 40%;">
-                    <div class="avatar avatar-sm rounded-circle bg-primary-lt text-primary fw-bold flex-shrink-0" style="width: 36px; height: 36px;">
+                <div class="d-flex align-items-center gap-3 min-w-0" style="flex: 1 1 0; max-width: 42%;">
+                    <div class="avatar avatar-sm rounded-circle bg-primary-lt text-primary fw-bold flex-shrink-0" style="width: 38px; height: 38px;">
                         <i class="ti ti-clipboard-check fs-2"></i>
                     </div>
                     <div class="min-w-0">
-                        <div class="d-flex align-items-center gap-2 flex-wrap">
-                            <h5 class="modal-title fw-bold text-dark text-truncate mb-0" id="reviewSubmissionModalLabel" style="font-size: 15px;" title="{{ $task->title }}">
-                                {{ $task->title }}
-                            </h5>
-                            <span class="badge bg-primary-lt text-primary px-2 py-0.5 rounded-pill flex-shrink-0" style="font-size: 11px;">
-                                {{ $task->typeLabel() }}
-                            </span>
-                        </div>
-                        <div class="text-muted small text-truncate mt-0.5" style="font-size: 11.5px;">
+                        <h5 class="modal-title fw-bold text-dark text-truncate mb-0" id="reviewSubmissionModalLabel" style="font-size: 15px; line-height: 1.25;">
                             Review Submission
+                        </h5>
+                        <div class="text-muted text-truncate d-flex align-items-center gap-1.5 mt-1" style="font-size: 12px; line-height: 1.2;">
+                            <span class="text-secondary fw-semibold text-truncate" title="{{ $task->title }}" style="max-width: 240px;">{{ $task->title }}</span>
+                            <span class="text-muted">&bull;</span>
+                            <span class="badge bg-primary-lt text-primary px-1.5 py-0.5 rounded-pill flex-shrink-0" style="font-size: 10.5px; font-weight: 600;">{{ $task->typeLabel() }}</span>
                         </div>
                     </div>
                 </div>
