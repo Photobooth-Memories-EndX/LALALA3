@@ -42,16 +42,16 @@ class PtkpExcelSchema
     public static function groups(): array
     {
         return [
-            'general' => [
-                'title'     => 'GENERAL',
+            'status' => [
+                'title'     => 'STATUS',
                 'start_col' => 'A',
                 'end_col'   => 'B',
                 'fill'      => '4B5563',
                 'color'     => 'FFFFFF',
                 'columns'   => [1, 2],
             ],
-            'job_information' => [
-                'title'     => 'JOB INFORMATION',
+            'participant_profile' => [
+                'title'     => 'PARTICIPANT PROFILE',
                 'start_col' => 'C',
                 'end_col'   => 'I',
                 'fill'      => '002B49',
@@ -74,64 +74,64 @@ class PtkpExcelSchema
                 'color'     => 'FFFFFF',
                 'columns'   => [16, 17],
             ],
-            'delivery' => [
-                'title'     => 'DELIVERY',
+            'method_delivery' => [
+                'title'     => 'METHOD & DELIVERY',
                 'start_col' => 'R',
                 'end_col'   => 'S',
                 'fill'      => '3B82F6',
                 'color'     => 'FFFFFF',
                 'columns'   => [18, 19],
             ],
-            'provider_instructor' => [
-                'title'     => 'PROVIDER & INSTRUCTOR',
+            'organizer_logistics' => [
+                'title'     => 'ORGANIZER & LOGISTICS',
                 'start_col' => 'T',
                 'end_col'   => 'X',
                 'fill'      => '475569',
                 'color'     => 'FFFFFF',
                 'columns'   => [20, 21, 22, 23, 24],
             ],
-            'learning_progress' => [
-                'title'     => 'LEARNING & PROGRESS',
+            'progress_schedule' => [
+                'title'     => 'PROGRESS & SCHEDULE',
                 'start_col' => 'Y',
-                'end_col'   => 'Z',
+                'end_col'   => 'AE',
                 'fill'      => '0284C7',
                 'color'     => 'FFFFFF',
-                'columns'   => [25, 26],
+                'columns'   => [25, 26, 27, 28, 29, 30, 31],
             ],
-            'schedule_requirement' => [
-                'title'     => 'SCHEDULE & REQUIREMENT',
-                'start_col' => 'AA',
-                'end_col'   => 'AF',
+            'compliance' => [
+                'title'     => 'COMPLIANCE',
+                'start_col' => 'AF',
+                'end_col'   => 'AG',
                 'fill'      => 'D97706',
                 'color'     => 'FFFFFF',
-                'columns'   => [27, 28, 29, 30, 31, 32],
+                'columns'   => [32, 33],
             ],
-            'attendance_bond' => [
-                'title'     => 'ATTENDANCE & BOND',
-                'start_col' => 'AG',
+            'service_bond' => [
+                'title'     => 'SERVICE BOND',
+                'start_col' => 'AH',
                 'end_col'   => 'AL',
                 'fill'      => '7C3AED',
                 'color'     => 'FFFFFF',
-                'columns'   => [33, 34, 35, 36, 37, 38],
+                'columns'   => [34, 35, 36, 37, 38],
             ],
-            'evaluation_completion' => [
-                'title'     => 'EVALUATION & COMPLETION',
+            'evaluation' => [
+                'title'     => 'EVALUATION (L1-L3)',
                 'start_col' => 'AM',
                 'end_col'   => 'AQ',
                 'fill'      => 'BE185D',
                 'color'     => 'FFFFFF',
                 'columns'   => [39, 40, 41, 42, 43],
             ],
-            'certificate_details' => [
-                'title'     => 'CERTIFICATE DETAILS',
+            'certificate' => [
+                'title'     => 'CERTIFICATE',
                 'start_col' => 'AR',
                 'end_col'   => 'AU',
                 'fill'      => '0D9488',
                 'color'     => 'FFFFFF',
                 'columns'   => [44, 45, 46, 47],
             ],
-            'closing_verification' => [
-                'title'     => 'CLOSING & VERIFICATION',
+            'administration' => [
+                'title'     => 'ADMINISTRATION',
                 'start_col' => 'AV',
                 'end_col'   => 'AV',
                 'fill'      => '059669',
@@ -201,15 +201,31 @@ class PtkpExcelSchema
         $r2Col2 = mb_strtolower($row2Cells[2] ?? '', 'UTF-8');
         $r2Col3 = mb_strtolower($row2Cells[3] ?? '', 'UTF-8');
 
-        $isLegacyTwoRow = (
+        $row1HasCourseHeader = str_contains($row1Joined, 'course title') ||
+                               str_contains($row1Joined, 'course name') ||
+                               str_contains($row1Joined, 'nama course') ||
+                               str_contains($row1Joined, 'judul');
+
+        $row2Joined = mb_strtolower(implode(' ', $row2Cells), 'UTF-8');
+        $row2HasCourseHeader = str_contains($row2Joined, 'course title') ||
+                               str_contains($row2Joined, 'course name') ||
+                               str_contains($row2Joined, 'nama course') ||
+                               str_contains($row2Joined, 'judul');
+
+        $isLegacyTwoRow = !$row1HasCourseHeader && (
+            str_contains($r1Col3, 'participant profile') ||
             str_contains($r1Col3, 'job information') ||
+            $r1Col1 === 'status' ||
             $r1Col1 === 'general' ||
+            str_contains($row1Joined, 'participant profile') ||
             str_contains($row1Joined, 'job information') ||
-            str_contains($row1Joined, 'training information')
+            str_contains($row1Joined, 'training information') ||
+            str_contains($row1Joined, 'evaluation')
         ) && (
+            $row2HasCourseHeader ||
             str_contains($r2Col3, 'employee') ||
-            str_contains($r2Col3, 'id') ||
-            str_contains($r2Col2, 'no') ||
+            in_array($r2Col3, ['id', 'nip'], true) ||
+            in_array($r2Col2, ['no', 'no.', 'nomor'], true) ||
             str_contains($r2Col1, 'status')
         );
 

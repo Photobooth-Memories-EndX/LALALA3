@@ -60,7 +60,7 @@ class OfflineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wi
 
     public static function headers(): array
     {
-        return OfflineTrainingExcelSchema::headers();
+        return OfflineTrainingExcelSchema::legacyHeaders();
     }
 
     public function headings(): array
@@ -214,7 +214,7 @@ class OfflineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wi
 
     public static function columnWidths(): array
     {
-        return OfflineTrainingExcelSchema::columnWidths();
+        return OfflineTrainingExcelSchema::legacyColumnWidths();
     }
 
     public function query()

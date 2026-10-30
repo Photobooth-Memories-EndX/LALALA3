@@ -62,7 +62,7 @@ class OfflineClassificationCsvExport implements FromQuery, WithHeadings, WithMap
 
     public function headings(): array
     {
-        return OfflineTrainingExcelSchema::headers();
+        return OfflineTrainingExcelSchema::legacyHeaders();
     }
 
     /**

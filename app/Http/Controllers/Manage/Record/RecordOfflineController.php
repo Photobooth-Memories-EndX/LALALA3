@@ -193,8 +193,8 @@ class RecordOfflineController extends Controller
             'currentYear'         => $currentYear,
             'trainingTypes'       => self::TRAINING_TYPES,
             'mainClassifications' => $classifications->pluck('classification_name')->all(),
-            'schemaColumns'       => OfflineTrainingExcelSchema::columns(),
-            'schemaGroups'        => OfflineTrainingExcelSchema::groups(),
+            'schemaColumns'       => OfflineTrainingExcelSchema::legacyColumns(),
+            'schemaGroups'        => OfflineTrainingExcelSchema::legacyGroups(),
         ]);
     }
 

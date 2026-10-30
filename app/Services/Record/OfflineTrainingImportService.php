@@ -201,7 +201,7 @@ class OfflineTrainingImportService
         if (!empty($existingTrainings)) {
             $trainingIds = collect($existingTrainings)->pluck('id')->all();
             $dbParticipants = OfflineTrainingUser::whereIn('offline_training_id', $trainingIds)
-                ->select(['offline_training_id', 'user_id', 'employee_id'])
+                ->select(['offline_training_id', 'user_id', 'employee_id', 'name'])
                 ->get();
             foreach ($dbParticipants as $p) {
                 if ($p->user_id) {
@@ -209,6 +209,9 @@ class OfflineTrainingImportService
                 }
                 if ($p->employee_id) {
                     $existingParticipantMap[$p->offline_training_id . ':emp:' . strtolower(trim($p->employee_id))] = true;
+                }
+                if (!$p->user_id && !$p->employee_id && $p->name) {
+                    $existingParticipantMap[$p->offline_training_id . ':name:' . mb_strtolower(trim($p->name))] = true;
                 }
             }
         }
@@ -219,8 +222,10 @@ class OfflineTrainingImportService
             'total_rows'       => count($rawRows),
             'valid'            => 0,
             'warning'          => 0,
-            'invalid'          => 0,
             'duplicate'        => 0,
+            'invalid'          => 0,
+            'invalid_company'  => 0,
+            'importable_count' => 0,
             'new_trainings'    => 0,
             'reused_trainings' => 0,
             'unique_events'    => 0,
@@ -234,8 +239,6 @@ class OfflineTrainingImportService
             $vals = $item['values'];
 
             $normalized = $this->normalizeRowData($vals);
-            // Phase B: Row data validation with exact cell types & coordinates
-            $validation = $this->validateRowData($normalized, $vals, $rNum);
 
             // Participant / User lookup hierarchy
             $employeeId = $normalized['employee_id'];
@@ -244,6 +247,26 @@ class OfflineTrainingImportService
 
             $matchedUser = $userMatch['user'];
             $normalized['user_id'] = $userMatch['user_id'];
+            if ($matchedUser) {
+                if (empty($normalized['name'])) {
+                    $normalized['name'] = $matchedUser->name;
+                }
+                if (empty($normalized['grade']) && !empty($matchedUser->jobgrade)) {
+                    $normalized['grade'] = $matchedUser->jobgrade;
+                }
+                if (empty($normalized['job_position']) && !empty($matchedUser->jobposition)) {
+                    $normalized['job_position'] = $matchedUser->jobposition;
+                }
+                if (empty($normalized['team']) && !empty($matchedUser->team)) {
+                    $normalized['team'] = $matchedUser->team;
+                }
+                if (empty($normalized['department']) && !empty($matchedUser->department)) {
+                    $normalized['department'] = $matchedUser->department;
+                }
+            }
+
+            // Phase B: Row data validation with exact cell types & coordinates
+            $validation = $this->validateRowData($normalized, $vals, $rNum);
 
             // Training fingerprint
             $fp = $this->buildTrainingFingerprint($normalized);
@@ -267,9 +290,16 @@ class OfflineTrainingImportService
 
             $uidPartKey = $normalized['user_id'] ? ('uid:' . $normalized['user_id']) : null;
             $empPartKey = !empty($employeeId) ? ('emp:' . strtolower($employeeId)) : null;
+            $namePartKey = (!empty($normalized['name']) && !$uidPartKey && !$empPartKey)
+                ? ('name:' . mb_strtolower(trim(preg_replace('/\s+/', ' ', (string) $normalized['name']))))
+                : null;
 
             // Duplicate in same file
-            if (($uidPartKey && isset($seenInFileParticipants[$fp][$uidPartKey])) || ($empPartKey && isset($seenInFileParticipants[$fp][$empPartKey]))) {
+            if (
+                ($uidPartKey && isset($seenInFileParticipants[$fp][$uidPartKey])) ||
+                ($empPartKey && isset($seenInFileParticipants[$fp][$empPartKey])) ||
+                ($namePartKey && isset($seenInFileParticipants[$fp][$namePartKey]))
+            ) {
                 $isDuplicate = true;
                 $duplicateReason = 'Duplicate participant for this training inside file (skipped)';
             } else {
@@ -279,6 +309,9 @@ class OfflineTrainingImportService
                 if ($empPartKey) {
                     $seenInFileParticipants[$fp][$empPartKey] = true;
                 }
+                if ($namePartKey) {
+                    $seenInFileParticipants[$fp][$namePartKey] = true;
+                }
             }
 
             // Duplicate in DB
@@ -286,13 +319,23 @@ class OfflineTrainingImportService
                 $existingTrainingId = $existingTrainings[$fp]->id;
                 $dbUidKey = $uidPartKey ? ($existingTrainingId . ':' . $uidPartKey) : null;
                 $dbEmpKey = $empPartKey ? ($existingTrainingId . ':' . $empPartKey) : null;
-                if (($dbUidKey && isset($existingParticipantMap[$dbUidKey])) || ($dbEmpKey && isset($existingParticipantMap[$dbEmpKey]))) {
+                $dbNameKey = $namePartKey ? ($existingTrainingId . ':' . $namePartKey) : null;
+                if (
+                    ($dbUidKey && isset($existingParticipantMap[$dbUidKey])) ||
+                    ($dbEmpKey && isset($existingParticipantMap[$dbEmpKey])) ||
+                    ($dbNameKey && isset($existingParticipantMap[$dbNameKey]))
+                ) {
                     $isDuplicate = true;
                     $duplicateReason = 'Participant already enrolled in existing training in database (skipped)';
                 }
             }
 
-            // Status determination
+            // Non-PTKP Company Check: empty company triggers INVALID COMPANY (non-blocking, needs review)
+            // Any non-empty company is accepted in Non-PTKP
+            $isCompanyInvalid = empty(trim((string) ($normalized['company'] ?? '')));
+
+            // Status determination according to strict priority order:
+            // INVALID > DUPLICATE > INVALID COMPANY > WARNING > VALID
             $rowStatus = 'valid';
             $messages = [];
 
@@ -302,28 +345,58 @@ class OfflineTrainingImportService
                 if (!empty($userMatch['warning'])) {
                     $messages[] = $userMatch['warning'];
                 }
+                if ($isCompanyInvalid) {
+                    $messages[] = 'Company field is empty and needs review.';
+                }
                 $stats['invalid']++;
             } elseif ($isDuplicate) {
                 $rowStatus = 'duplicate';
                 $messages[] = $duplicateReason;
+                if ($isCompanyInvalid) {
+                    $messages[] = 'Company field is empty and needs review.';
+                }
+                if (!empty($userMatch['warning'])) {
+                    $messages[] = $userMatch['warning'];
+                }
                 $stats['duplicate']++;
+            } elseif ($isCompanyInvalid) {
+                $rowStatus = 'invalid_company';
+                $messages[] = 'Company field is empty and needs review.';
+                if (!empty($userMatch['warning'])) {
+                    $messages[] = $userMatch['warning'];
+                }
+                if (!empty($validation['warnings'])) {
+                    $messages = array_merge($messages, $validation['warnings']);
+                }
+                $stats['invalid_company']++;
+                $stats['importable_count']++;
             } elseif (!empty($validation['warnings']) || !empty($userMatch['warning'])) {
                 $rowStatus = 'warning';
                 if (!empty($userMatch['warning'])) {
                     $messages[] = $userMatch['warning'];
                 }
-                $messages = array_merge($messages, $validation['warnings']);
+                if (!empty($validation['warnings'])) {
+                    $messages = array_merge($messages, $validation['warnings']);
+                }
                 $stats['warning']++;
-                $stats['valid']++; // warnings are still importable
+                $stats['importable_count']++;
             } else {
+                $rowStatus = 'valid';
+                $messages[] = 'Row is valid and ready for import.';
                 $stats['valid']++;
+                $stats['importable_count']++;
             }
 
             $parsedRows[] = [
                 'excel_row'          => $rNum,
-                'no'                 => count($parsedRows) + 1,
+                'no'                 => $normalized['row_no'] ?? (count($parsedRows) + 1),
                 'status'             => $rowStatus,
-                'status_label'       => strtoupper(str_replace('_', ' ', $rowStatus)),
+                'status_label'       => match ($rowStatus) {
+                    'invalid_company' => 'INVALID COMPANY',
+                    default           => strtoupper($rowStatus),
+                },
+                'is_blocking'        => in_array($rowStatus, ['invalid', 'duplicate'], true),
+                'company_mismatch'   => $isCompanyInvalid,
                 'employee_id'        => $normalized['employee_id'],
                 'name'               => $normalized['name'],
                 'company'            => $normalized['company'],
@@ -348,7 +421,7 @@ class OfflineTrainingImportService
         Cache::put(self::CACHE_PREFIX . $token, $metadata, self::CACHE_TTL_SECONDS);
 
         $isHeaderValid = (bool) ($headerCheck['can_proceed'] ?? false);
-        $importableCount = (int) ($stats['valid'] ?? 0);
+        $importableCount = (int) ($stats['importable_count'] ?? ($stats['valid'] + $stats['warning'] + $stats['invalid_company']));
         $duplicateCount = (int) ($stats['duplicate'] ?? 0);
         $invalidCount = (int) ($stats['invalid'] ?? 0);
         $totalRows = (int) ($stats['total_rows'] ?? 0);
@@ -501,7 +574,7 @@ class OfflineTrainingImportService
         if (!empty($existingTrainings)) {
             $trainingIds = collect($existingTrainings)->pluck('id')->all();
             $dbParticipants = OfflineTrainingUser::whereIn('offline_training_id', $trainingIds)
-                ->select(['offline_training_id', 'user_id', 'employee_id'])
+                ->select(['offline_training_id', 'user_id', 'employee_id', 'name'])
                 ->get();
             foreach ($dbParticipants as $p) {
                 if ($p->user_id) {
@@ -510,11 +583,15 @@ class OfflineTrainingImportService
                 if ($p->employee_id) {
                     $existingParticipantMap[$p->offline_training_id . ':emp:' . strtolower(trim($p->employee_id))] = true;
                 }
+                if (!$p->user_id && !$p->employee_id && $p->name) {
+                    $existingParticipantMap[$p->offline_training_id . ':name:' . mb_strtolower(trim($p->name))] = true;
+                }
             }
         }
 
         $validRowsCount = 0;
         $warningRowsCount = 0;
+        $invalidCompanyRowsCount = 0;
         $skippedDuplicates = 0;
         $invalidRows = 0;
         $createdTrainings = 0;
@@ -530,36 +607,61 @@ class OfflineTrainingImportService
             $normalized = $this->normalizeRowData($vals);
             $normalized['excel_row'] = $rNum;
 
-            $validation = $this->validateRowData($normalized, $vals, $rNum);
-
             $employeeId = $normalized['employee_id'];
             $participantName = $normalized['name'];
             $userMatch = $this->matchParticipantUser($employeeId, $participantName, $userMapByNip, $usersMapByName);
             $normalized['user_id'] = $userMatch['user_id'];
+            if ($userMatch['user']) {
+                if (empty($normalized['name'])) {
+                    $normalized['name'] = $userMatch['user']->name;
+                }
+                if (empty($normalized['grade']) && !empty($userMatch['user']->jobgrade)) {
+                    $normalized['grade'] = $userMatch['user']->jobgrade;
+                }
+                if (empty($normalized['job_position']) && !empty($userMatch['user']->jobposition)) {
+                    $normalized['job_position'] = $userMatch['user']->jobposition;
+                }
+                if (empty($normalized['team']) && !empty($userMatch['user']->team)) {
+                    $normalized['team'] = $userMatch['user']->team;
+                }
+                if (empty($normalized['department']) && !empty($userMatch['user']->department)) {
+                    $normalized['department'] = $userMatch['user']->department;
+                }
+            }
+
+            $validation = $this->validateRowData($normalized, $vals, $rNum);
 
             $fp = $this->buildTrainingFingerprint($normalized);
             $isExistingTraining = isset($existingTrainings[$fp]);
-            $partKey = $normalized['user_id'] ? ('uid:' . $normalized['user_id']) : ('emp:' . strtolower($employeeId ?: ''));
+            $partKey = $normalized['user_id']
+                ? ('uid:' . $normalized['user_id'])
+                : (!empty($employeeId)
+                    ? ('emp:' . strtolower($employeeId))
+                    : (!empty($normalized['name']) ? ('name:' . mb_strtolower(trim(preg_replace('/\s+/', ' ', (string) $normalized['name'])))) : ''));
 
             $isDuplicate = false;
             $duplicateReason = '';
 
             // Check duplicate in same file
-            if (isset($seenInFileParticipants[$fp][$partKey])) {
+            if (!empty($partKey) && isset($seenInFileParticipants[$fp][$partKey])) {
                 $isDuplicate = true;
                 $duplicateReason = 'Duplicate participant for this training inside file (skipped)';
             } else {
-                $seenInFileParticipants[$fp][$partKey] = true;
+                if (!empty($partKey)) {
+                    $seenInFileParticipants[$fp][$partKey] = true;
+                }
             }
 
             // Check duplicate in DB
-            if (!$isDuplicate && $isExistingTraining) {
+            if (!$isDuplicate && $isExistingTraining && !empty($partKey)) {
                 $dbKey = $existingTrainings[$fp]->id . ':' . $partKey;
                 if (isset($existingParticipantMap[$dbKey])) {
                     $isDuplicate = true;
                     $duplicateReason = 'Participant already enrolled in existing training in database (skipped)';
                 }
             }
+
+            $isCompanyInvalid = empty(trim((string) ($normalized['company'] ?? '')));
 
             $messages = [];
             $status = ImportBatchRow::STATUS_VALID;
@@ -572,20 +674,42 @@ class OfflineTrainingImportService
                 if (!empty($userMatch['warning'])) {
                     $messages[] = $userMatch['warning'];
                 }
+                if ($isCompanyInvalid) {
+                    $messages[] = 'Company field is empty and needs review.';
+                }
                 $invalidRows++;
             } elseif ($isDuplicate) {
                 $status = ImportBatchRow::STATUS_DUPLICATE;
                 $errorCode = 'DUPLICATE';
                 $messages[] = $duplicateReason;
+                if ($isCompanyInvalid) {
+                    $messages[] = 'Company field is empty and needs review.';
+                }
+                if (!empty($userMatch['warning'])) {
+                    $messages[] = $userMatch['warning'];
+                }
                 $skippedDuplicates++;
+            } elseif ($isCompanyInvalid) {
+                $status = ImportBatchRow::STATUS_INVALID_COMPANY;
+                $messages[] = 'Company field is empty and needs review.';
+                if (!empty($userMatch['warning'])) {
+                    $messages[] = $userMatch['warning'];
+                }
+                if (!empty($validation['warnings'])) {
+                    $messages = array_merge($messages, $validation['warnings']);
+                }
+                $invalidCompanyRowsCount++;
             } elseif (!empty($validation['warnings']) || !empty($userMatch['warning'])) {
                 $status = ImportBatchRow::STATUS_WARNING;
                 if (!empty($userMatch['warning'])) {
                     $messages[] = $userMatch['warning'];
                 }
-                $messages = array_merge($messages, $validation['warnings']);
+                if (!empty($validation['warnings'])) {
+                    $messages = array_merge($messages, $validation['warnings']);
+                }
                 $warningRowsCount++;
             } else {
+                $status = ImportBatchRow::STATUS_VALID;
                 $validRowsCount++;
             }
 
@@ -597,16 +721,7 @@ class OfflineTrainingImportService
                 'name'                => $normalized['name'],
                 'course_name'         => $normalized['course_name'],
                 'error_code'          => $errorCode,
-                'sanitized_data'      => [
-                    'employee_id'    => $normalized['employee_id'],
-                    'name'           => $normalized['name'],
-                    'course_name'    => $normalized['course_name'],
-                    'learning_hours' => $normalized['learning_hours'],
-                    'start_date'     => $normalized['start_date'],
-                    'finish_date'    => $normalized['finish_date'],
-                    'type'           => $normalized['type'],
-                    'venue'          => $normalized['venue'],
-                ],
+                'sanitized_data'      => $normalized,
                 'matched_training_id' => $isExistingTraining ? $existingTrainings[$fp]->id : null,
             ];
 
@@ -793,7 +908,7 @@ class OfflineTrainingImportService
             $logService->completeBatch($batch, [
                 'total_rows'        => count($allEvaluatedRows),
                 'valid_rows'        => $validRowsCount,
-                'warning_rows'      => $warningRowsCount,
+                'warning_rows'      => $warningRowsCount + $invalidCompanyRowsCount,
                 'duplicate_rows'    => $skippedDuplicates,
                 'invalid_rows'      => $invalidRows,
                 'imported_rows'     => $importedParticipants,
@@ -813,14 +928,16 @@ class OfflineTrainingImportService
         $this->cleanupTemporaryFile($token, $userId);
 
         return [
-            'success'             => true,
-            'batch_uuid'          => $batch->batch_uuid,
-            'rows_processed'      => count($rawRows),
-            'imported'            => $importedParticipants,
-            'skipped_duplicates'  => $skippedDuplicates,
-            'invalid'             => $invalidRows,
-            'trainings_created'   => $createdTrainings,
-            'trainings_reused'    => $reusedTrainings,
+            'success'                  => true,
+            'batch_uuid'               => $batch->batch_uuid,
+            'rows_processed'           => count($rawRows),
+            'imported'                 => $importedParticipants,
+            'skipped_duplicates'       => $skippedDuplicates,
+            'invalid'                  => $invalidRows,
+            'warnings_imported'        => $warningRowsCount,
+            'invalid_company_imported' => $invalidCompanyRowsCount,
+            'trainings_created'        => $createdTrainings,
+            'trainings_reused'         => $reusedTrainings,
         ];
     }
 
@@ -985,7 +1102,7 @@ class OfflineTrainingImportService
             }
 
             // Handle date cell formatting from PhpSpreadsheet
-            if ($val !== null && in_array($key, ['start_date', 'finish_date', 'end_date', 'bond_end_date'], true)) {
+            if ($val !== null && in_array($key, ['start_date', 'finish_date', 'end_date', 'bond_end_date', 'certificate_issued_date', 'certificate_expired_date'], true)) {
                 if (is_numeric($val)) {
                     try {
                         $dt = ExcelDate::excelToDateTimeObject($val);
@@ -1013,7 +1130,10 @@ class OfflineTrainingImportService
      */
     protected function isRowEntirelyBlank(array $values): bool
     {
-        foreach ($values as $v) {
+        foreach ($values as $k => $v) {
+            if ($k === 'row_no' || $k === 'status' || $k === 'validation_status') {
+                continue;
+            }
             if ($v !== null && trim((string) $v) !== '') {
                 return false;
             }
@@ -1064,66 +1184,79 @@ class OfflineTrainingImportService
         }
 
         return [
-            // Training Information
-            'course_name'           => $this->normalizeString($raw['course_name'] ?? null),
-            'sub_course_name'       => $this->normalizeString($raw['sub_course_name'] ?? null),
-            'type'                  => $this->normalizeString($raw['type'] ?? null),
-            'category'              => $this->normalizeString($raw['category'] ?? null),
-            'level'                 => $this->normalizeString($raw['level'] ?? null),
-            'batch'                 => $this->normalizeString($raw['batch'] ?? null),
-            'main_classification'   => $this->normalizeString($raw['main_classification'] ?? null),
-            'sub_classification'    => $this->normalizeString($raw['sub_classification'] ?? null),
-            'counted_corporate_kpi' => $countedKpi,
-            'sub_corporate_kpi'     => $subKpi,
-            'corporate_kpi_year'    => $kpiYear,
-            'delivery_method'       => $this->normalizeString($raw['delivery_method'] ?? null),
-            'sub_delivery_method'   => $this->normalizeString($raw['sub_delivery_method'] ?? null),
-            'provider'              => $this->normalizeString($raw['provider'] ?? ($raw['provider_name'] ?? null)),
-            'sub_provider'          => $this->normalizeString($raw['sub_provider'] ?? null),
-            'provider_name'         => $this->normalizeString($raw['provider_name'] ?? ($raw['provider'] ?? null)),
-            'venue'                 => $this->normalizeString($raw['venue'] ?? null),
-            'instructor'            => $this->normalizeString($raw['instructor'] ?? null),
-            'duration_seconds'      => $this->normalizeDuration($raw['duration_seconds'] ?? null),
-            'learning_hours'        => $this->normalizeLearningHours($raw['learning_hours'] ?? null),
-            'start_date'            => $this->normalizeDate($raw['start_date'] ?? null),
-            'finish_date'           => $this->normalizeDate($raw['finish_date'] ?? ($raw['end_date'] ?? null)),
-            'end_date'              => $this->normalizeDate($raw['end_date'] ?? ($raw['finish_date'] ?? null)),
-            'start_time'            => $this->normalizeTime($raw['start_time'] ?? null),
-            'end_time'              => $this->normalizeTime($raw['end_time'] ?? null),
-            'record_month'          => $this->normalizeString($raw['record_month'] ?? ($raw['month'] ?? null)),
-            'requirement'           => $this->normalizeString($raw['requirement'] ?? null),
-            'progress_status'       => $this->normalizeString($raw['progress_status'] ?? null),
+            // Status & Seq
+            'status'                   => $this->normalizeString($raw['status'] ?? null),
+            'row_no'                   => isset($raw['row_no']) && is_numeric($raw['row_no']) ? (int) $raw['row_no'] : null,
 
-            // Job Information
-            'employee_id'           => $this->normalizeString($raw['employee_id'] ?? null),
-            'name'                  => $this->normalizeString($raw['name'] ?? null),
-            'grade'                 => $this->normalizeString($raw['grade'] ?? null),
-            'job_position'          => $this->normalizeString($raw['job_position'] ?? null),
-            'team'                  => $this->normalizeString($raw['team'] ?? null),
-            'department'            => $this->normalizeString($raw['department'] ?? null),
-            'company'               => $this->normalizeString($raw['company'] ?? null),
+            // Job / Participant Information
+            'employee_id'              => $this->normalizeString($raw['employee_id'] ?? null),
+            'name'                     => $this->normalizeString($raw['name'] ?? null),
+            'grade'                    => $this->normalizeString($raw['grade'] ?? null),
+            'job_position'             => $this->normalizeString($raw['job_position'] ?? null),
+            'team'                     => $this->normalizeString($raw['team'] ?? null),
+            'department'               => $this->normalizeString($raw['department'] ?? null),
+            'company'                  => $this->normalizeString($raw['company'] ?? null),
+
+            // Training Information
+            'course_name'              => $this->normalizeString($raw['course_name'] ?? null),
+            'sub_course_name'          => $this->normalizeString($raw['sub_course_name'] ?? null),
+            'type'                     => $this->normalizeString($raw['type'] ?? null),
+            'category'                 => $this->normalizeString($raw['category'] ?? null),
+            'level'                    => $this->normalizeString($raw['level'] ?? null),
+            'batch'                    => $this->normalizeString($raw['batch'] ?? null),
+            'main_classification'      => $this->normalizeString($raw['main_classification'] ?? null),
+            'sub_classification'       => $this->normalizeString($raw['sub_classification'] ?? null),
+            'counted_corporate_kpi'    => $countedKpi,
+            'sub_corporate_kpi'        => $subKpi,
+            'corporate_kpi_year'       => $kpiYear,
+            'delivery_method'          => $this->normalizeString($raw['delivery_method'] ?? null),
+            'sub_delivery_method'      => $this->normalizeString($raw['sub_delivery_method'] ?? null),
+            'provider'                 => $this->normalizeString($raw['provider'] ?? null),
+            'sub_provider'             => $this->normalizeString($raw['sub_provider'] ?? null),
+            'provider_name'            => $this->normalizeString($raw['provider_name'] ?? ($raw['provider'] ?? null)),
+            'venue'                    => $this->normalizeString($raw['venue'] ?? null),
+            'instructor'               => $this->normalizeString($raw['instructor'] ?? null),
+            'duration_seconds'         => $this->normalizeDuration($raw['duration_seconds'] ?? null),
+            'learning_hours'           => $this->normalizeLearningHours($raw['learning_hours'] ?? null),
+            'start_date'               => $this->normalizeDate($raw['start_date'] ?? null),
+            'finish_date'              => $this->normalizeDate($raw['finish_date'] ?? ($raw['end_date'] ?? null)),
+            'end_date'                 => $this->normalizeDate($raw['end_date'] ?? ($raw['finish_date'] ?? null)),
+            'start_time'               => $this->normalizeTime($raw['start_time'] ?? null),
+            'end_time'                 => $this->normalizeTime($raw['end_time'] ?? null),
+            'record_month'             => $this->normalizeString($raw['record_month'] ?? ($raw['month'] ?? null)),
+            'month'                    => $this->normalizeString($raw['month'] ?? ($raw['record_month'] ?? null)),
+            'requirement'              => $this->normalizeString($raw['requirement'] ?? null),
+            'progress_status'          => $this->normalizeString($raw['progress_status'] ?? null),
 
             // Participant Learning Record
-            'progress'              => $this->normalizeProgress($raw['progress'] ?? null),
-            'assessment_score'      => $this->normalizeAssessmentScore($raw['assessment_score'] ?? null),
-            'certificate'           => $this->normalizeString($raw['certificate'] ?? null),
-            'attendance'            => $this->normalizeBoolean($raw['attendance'] ?? null),
-            'attendance_reason'     => $this->normalizeString($raw['attendance_reason'] ?? null),
+            'progress'                 => $this->normalizeProgress($raw['progress'] ?? null),
+            'assessment_score'         => $this->normalizeAssessmentScore($raw['assessment_score'] ?? ($raw['l2_numerical'] ?? null)),
+            'certificate'              => $this->normalizeString($raw['certificate'] ?? ($raw['certificate_availability'] ?? null)),
+            'attendance'               => $this->normalizeBoolean($raw['attendance'] ?? null),
+            'attendance_reason'        => $this->normalizeString($raw['attendance_reason'] ?? null),
 
             // Obligation
-            'bond_status'           => $this->normalizeString($raw['bond_status'] ?? null),
-            'bond_duration'         => isset($raw['bond_duration']) && is_numeric($raw['bond_duration']) ? (int) $raw['bond_duration'] : null,
-            'bond_end_date'         => $this->normalizeDate($raw['bond_end_date'] ?? null),
-            'bond_amount_idr'       => $this->normalizeMoney($raw['bond_amount_idr'] ?? $raw['bond_amount'] ?? null),
-            'bond_amount'           => $this->normalizeMoney($raw['bond_amount_idr'] ?? $raw['bond_amount'] ?? null),
+            'bond_status'              => $this->normalizeString($raw['bond_status'] ?? null),
+            'bond_duration'            => isset($raw['bond_duration']) && is_numeric($raw['bond_duration']) ? (int) $raw['bond_duration'] : null,
+            'bond_end_date'            => $this->normalizeDate($raw['bond_end_date'] ?? null),
+            'bond_amount_idr'          => $this->normalizeMoney($raw['bond_amount_idr'] ?? $raw['bond_amount'] ?? null),
+            'bond_amount'              => $this->normalizeMoney($raw['bond_amount_idr'] ?? $raw['bond_amount'] ?? null),
 
             // Kirkpatrick Evaluations
-            'l1_program'            => $this->normalizeString($raw['l1_program'] ?? null),
-            'l2_numerical'          => $this->normalizeDecimal($raw['l2_numerical'] ?? ($raw['assessment_score'] ?? null), 4),
-            'l2_verbal'             => $this->normalizeString($raw['l2_verbal'] ?? null),
-            'l3_numerical'          => $this->normalizeDecimal($raw['l3_numerical'] ?? null, 4),
-            'l3_verbal'             => $this->normalizeString($raw['l3_verbal'] ?? null),
-            'pic'                   => $this->normalizeString($raw['pic'] ?? null),
+            'l1_program'               => $this->normalizeString($raw['l1_program'] ?? null),
+            'l2_numerical'             => $this->normalizeDecimal($raw['l2_numerical'] ?? ($raw['assessment_score'] ?? null), 4),
+            'l2_verbal'                => $this->normalizeString($raw['l2_verbal'] ?? null),
+            'l3_numerical'             => $this->normalizeDecimal($raw['l3_numerical'] ?? null, 4),
+            'l3_verbal'                => $this->normalizeString($raw['l3_verbal'] ?? null),
+
+            // Certificate Details
+            'certificate_availability' => $this->normalizeString($raw['certificate_availability'] ?? null),
+            'certificate_institution'  => $this->normalizeString($raw['certificate_institution'] ?? null),
+            'certificate_issued_date'  => $this->normalizeDate($raw['certificate_issued_date'] ?? null),
+            'certificate_expired_date' => $this->normalizeDate($raw['certificate_expired_date'] ?? null),
+
+            // PIC
+            'pic'                      => $this->normalizeString($raw['pic'] ?? null),
         ];
     }
 
@@ -1137,14 +1270,27 @@ class OfflineTrainingImportService
         $rowPrefix = $excelRow > 0 ? "Excel Row: {$excelRow} | " : "";
 
         // Required checks
-        if (!$row['course_name']) {
+        $hasCourseName = !empty(trim((string) ($row['course_name'] ?? '')));
+        $hasEmployeeId = !empty(trim((string) ($row['employee_id'] ?? '')));
+        $hasName       = !empty(trim((string) ($row['name'] ?? '')));
+
+        // Course Title is always mandatory to define a training event
+        if (!$hasCourseName) {
             $errors[] = "{$rowPrefix}Column: Course Name | Expected: Course Name is required | Status: INVALID VALUE";
         }
-        if (!$row['employee_id']) {
-            $errors[] = "{$rowPrefix}Column: ID | Expected: Employee ID (NIP) is required | Status: INVALID VALUE";
-        }
-        if (!$row['name']) {
-            $errors[] = "{$rowPrefix}Column: Name | Expected: Participant Name is required | Status: INVALID VALUE";
+
+        // Non-PTKP Participant Identity Rules:
+        // - Both Employee ID and Course Title empty -> INVALID (Course Name error + participant identity error)
+        // - Employee ID filled, Course Title empty -> INVALID (Course Name error)
+        // - Employee ID empty, Course Title filled -> NOT automatically INVALID:
+        //   Check whether participant identity can be retained (e.g. via Participant Name or LMS match).
+        //   If neither Employee ID nor Participant Name is provided, the participant cannot be identified -> INVALID.
+        if (!$hasEmployeeId && !$hasName) {
+            $errors[] = "{$rowPrefix}Column: Participant Identity | Expected: Employee ID (NIP) or Participant Name is required to identify participant | Status: INVALID VALUE";
+        } elseif (!$hasEmployeeId) {
+            $warnings[] = "{$rowPrefix}Column: ID | Warning: Employee ID (NIP) is empty. Participant identified by name.";
+        } elseif (!$hasName) {
+            $warnings[] = "{$rowPrefix}Column: Name | Warning: Participant Name is empty. Will attempt to resolve from Employee ID.";
         }
 
         // Assessment Score type & bounds validation

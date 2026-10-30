@@ -16,9 +16,28 @@ class OfflineTrainingExcelSchema
     public const INSTRUCTIONS_SHEET_TITLE = 'Instructions';
 
     /**
-     * Complete canonical 44-column specification matching Section 4 of audit specification.
+     * Canonical 48-column specification for PTKP/Non-PTKP Import.
      */
-    public static function columns(): array
+    public static function canonicalColumns(): array
+    {
+        return PtkpColumnDefinitions::all();
+    }
+
+    /**
+     * Complete column specification. Defaults to standardized 48 columns, or legacy 44 columns if requested.
+     */
+    public static function columns(?string $type = null): array
+    {
+        if ($type === 'legacy') {
+            return self::legacyColumns();
+        }
+        return self::canonicalColumns();
+    }
+
+    /**
+     * Complete legacy 44-column specification matching Section 4 of audit specification.
+     */
+    public static function legacyColumns(): array
     {
         return [
             // JOB INFORMATION (Cols 1-7 / A-G)
@@ -238,7 +257,7 @@ class OfflineTrainingExcelSchema
                 'type'       => 'string',
                 'example'    => 'PT Schneider Indonesia',
                 'note'       => 'Training provider / institution name',
-                'aliases'    => ['provider name', 'nama provider', 'lembaga training', 'vendor name', 'nama vendor', 'institution', 'institution name', 'provider', 'sub_provider', 'sub provider', 'training provider', 'vendor'],
+                'aliases'    => ['provider name', 'nama provider', 'lembaga training', 'vendor name', 'nama vendor', 'institution', 'institution name', 'provider', 'training provider', 'vendor', 'nama lembaga', 'penyelenggara'],
             ],
             19 => [
                 'col_index'  => 19,
@@ -586,23 +605,46 @@ class OfflineTrainingExcelSchema
     }
 
     /**
-     * Exact flat list of 43 canonical header strings for Row 1.
+     * Exact flat list of 48 canonical header strings.
      */
-    public static function headers(): array
+    public static function canonicalHeaders(): array
     {
         $headers = [];
-        foreach (self::columns() as $col) {
+        foreach (self::canonicalColumns() as $col) {
             $headers[] = $col['header'];
         }
         return $headers;
     }
 
     /**
+     * Exact flat list of 44 legacy header strings.
+     */
+    public static function legacyHeaders(): array
+    {
+        $headers = [];
+        foreach (self::legacyColumns() as $col) {
+            $headers[] = $col['header'];
+        }
+        return $headers;
+    }
+
+    /**
+     * Header list matching specified mode ('canonical' default 48, or 'legacy' 44).
+     */
+    public static function headers(?string $type = null): array
+    {
+        if ($type === 'legacy') {
+            return self::legacyHeaders();
+        }
+        return self::canonicalHeaders();
+    }
+
+    /**
      * Total number of supported template columns.
      */
-    public static function totalColumns(): int
+    public static function totalColumns(?string $type = null): int
     {
-        return count(self::columns()); // Exactly 44
+        return count(self::columns($type));
     }
 
     /**
@@ -632,10 +674,21 @@ class OfflineTrainingExcelSchema
     /**
      * Grouped Row 1 headers array (43 elements), preserved for legacy format compatibility.
      */
-        /**
-     * Parent grouping specification for canonical 44 columns (A to AR).
+    /**
+     * Parent grouping specification for standardized 48 columns (or legacy 44).
      */
-    public static function groups(): array
+    public static function groups(?string $type = null): array
+    {
+        if ($type === 'legacy') {
+            return self::legacyGroups();
+        }
+        return PtkpExcelSchema::groups();
+    }
+
+    /**
+     * Parent grouping specification for legacy 44 columns (A to AR).
+     */
+    public static function legacyGroups(): array
     {
         return [
             'job_information' => [
@@ -729,9 +782,7 @@ class OfflineTrainingExcelSchema
             $groupStartMap[$group['start_col']] = $group['title'];
         }
 
-        $row1[] = 'No';
-
-        for ($col = 2; $col <= count(self::columns()); $col++) {
+        for ($col = 1; $col <= count(self::columns()); $col++) {
             $colLetter = Coordinate::stringFromColumnIndex($col);
             $row1[] = $groupStartMap[$colLetter] ?? '';
         }
@@ -740,9 +791,20 @@ class OfflineTrainingExcelSchema
     }
 
     /**
-     * Canonical column widths matching template specifications.
+     * Column widths matching specified mode (canonical 48 or legacy 44).
      */
-    public static function columnWidths(): array
+    public static function columnWidths(?string $type = null): array
+    {
+        if ($type === 'legacy') {
+            return self::legacyColumnWidths();
+        }
+        return PtkpExcelSchema::columnWidths();
+    }
+
+    /**
+     * Canonical column widths matching legacy 44 template specifications.
+     */
+    public static function legacyColumnWidths(): array
     {
         return [
             'A'  => 16,  // Employee ID
@@ -792,7 +854,31 @@ class OfflineTrainingExcelSchema
         ];
     }
 
-    public static function columnFormats(): array
+    public static function columnFormats(?string $type = null): array
+    {
+        if ($type === 'legacy') {
+            return self::legacyColumnFormats();
+        }
+        return [
+            'A'  => \PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_TEXT,
+            'C'  => \PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_TEXT,
+            'Y'  => '0.##" h"',
+            'Z'  => '0%',
+            'AA' => 'yyyy-mm-dd',
+            'AB' => 'yyyy-mm-dd',
+            'AC' => 'hh:mm:ss',
+            'AD' => 'hh:mm:ss',
+            'AJ' => '0',
+            'AK' => 'yyyy-mm-dd',
+            'AL' => '"Rp"#,##0',
+            'AN' => '0',
+            'AP' => '0.##',
+            'AT' => 'yyyy-mm-dd',
+            'AU' => 'yyyy-mm-dd',
+        ];
+    }
+
+    public static function legacyColumnFormats(): array
     {
         return [
             'A'  => \PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_TEXT,
@@ -851,6 +937,40 @@ class OfflineTrainingExcelSchema
         return trim($h);
     }
 
+    public static function supplementalFields(): array
+    {
+        return [
+            'provider' => [
+                'header'   => 'Provider',
+                'key'      => 'provider',
+                'required' => false,
+                'aliases'  => ['provider', 'penyedia', 'tipe provider', 'provider type', 'jenis provider', 'training provider type'],
+            ],
+            'sub_provider' => [
+                'header'   => 'Sub Provider',
+                'key'      => 'sub_provider',
+                'required' => false,
+                'aliases'  => ['sub provider', 'sub_provider', 'sub penyedia', 'kategori provider', 'sub vendor'],
+            ],
+        ];
+    }
+
+    public static function matchSupplementalField(string $normHeader): ?array
+    {
+        foreach (self::supplementalFields() as $field) {
+            $normCanon = self::normalizeHeaderString($field['header']);
+            if ($normHeader === $normCanon) {
+                return $field;
+            }
+            foreach ($field['aliases'] as $alias) {
+                if ($normHeader === self::normalizeHeaderString($alias)) {
+                    return $field;
+                }
+            }
+        }
+        return null;
+    }
+
     /**
      * Automatically detect workbook format: New Single-Row vs Legacy Two-Row Grouped.
      */
@@ -870,16 +990,47 @@ class OfflineTrainingExcelSchema
             $row2Cells[$col] = $r2Val !== null ? trim((string) $r2Val) : '';
         }
 
-        // Check if Row 1 contains legacy HRDC grouping indicators
+        // Check if Row 1 contains grouping indicators (PTKP 48-col or legacy 44-col)
         $row1Joined = mb_strtolower(implode(' ', $row1Cells), 'UTF-8');
-        $isLegacyTwoRow = (
+        $r1Col1 = mb_strtolower($row1Cells[1] ?? '', 'UTF-8');
+        $r1Col3 = mb_strtolower($row1Cells[3] ?? '', 'UTF-8');
+        $r2Col1 = mb_strtolower($row2Cells[1] ?? '', 'UTF-8');
+        $r2Col2 = mb_strtolower($row2Cells[2] ?? '', 'UTF-8');
+        $r2Col3 = mb_strtolower($row2Cells[3] ?? '', 'UTF-8');
+
+        $row1HasCourseHeader = str_contains($row1Joined, 'course title') ||
+                               str_contains($row1Joined, 'course name') ||
+                               str_contains($row1Joined, 'nama course') ||
+                               str_contains($row1Joined, 'judul');
+
+        $row2Joined = mb_strtolower(implode(' ', $row2Cells), 'UTF-8');
+        $row2HasCourseHeader = str_contains($row2Joined, 'course title') ||
+                               str_contains($row2Joined, 'course name') ||
+                               str_contains($row2Joined, 'nama course') ||
+                               str_contains($row2Joined, 'judul');
+
+        $isTwoRow = !$row1HasCourseHeader && (
+            $r1Col1 === 'status' ||
+            $r1Col1 === 'general' ||
+            str_contains($r1Col3, 'participant profile') ||
+            str_contains($r1Col3, 'job information') ||
+            str_contains($row1Joined, 'participant profile') ||
             str_contains($row1Joined, 'job information') ||
             str_contains($row1Joined, 'training information') ||
+            str_contains($row1Joined, 'evaluation') ||
             (str_contains($row1Joined, 'l2') && str_contains($row1Joined, 'post test')) ||
             (str_contains($row1Joined, 'l3') && str_contains($row1Joined, 'project'))
+        ) && (
+            $row2HasCourseHeader ||
+            str_contains($r2Col1, 'status') ||
+            str_contains($r2Col1, 'employee') ||
+            in_array($r2Col1, ['id', 'nip'], true) ||
+            in_array($r2Col2, ['no', 'no.', 'nomor'], true) ||
+            str_contains($r2Col3, 'employee') ||
+            in_array($r2Col3, ['id', 'nip'], true)
         );
 
-        if ($isLegacyTwoRow) {
+        if ($isTwoRow) {
             // Trim trailing empty cells in Row 2
             $foundHeaders = [];
             $lastNonEmpty = 0;
@@ -933,17 +1084,29 @@ class OfflineTrainingExcelSchema
      */
     public static function analyzeHeaders(array $foundHeaders, string $format = 'single_row'): array
     {
-        $columns = self::columns();
-        $expectedCount = count($columns);
-
-        // Auto-detect leading row-index / 'No' column
-        $hasLeadingNo = false;
         $firstHeaderNorm = isset($foundHeaders[1]) ? self::normalizeHeaderString($foundHeaders[1]) : '';
         $secondHeaderNorm = isset($foundHeaders[2]) ? self::normalizeHeaderString($foundHeaders[2]) : '';
-        $empIdAliases = array_map([self::class, 'normalizeHeaderString'], array_merge(['Employee ID'], $columns[1]['aliases'] ?? []));
+        $thirdHeaderNorm = isset($foundHeaders[3]) ? self::normalizeHeaderString($foundHeaders[3]) : '';
 
-        if (in_array($firstHeaderNorm, ['no', 'nomor', '#', 'no.'], true) && in_array($secondHeaderNorm, $empIdAliases, true)) {
-            $hasLeadingNo = true;
+        $statusAliases = ['status', 'status validasi', 'system status', 'validation status', 'row status', 'stat'];
+        $isCanonical48 = in_array($firstHeaderNorm, $statusAliases, true);
+
+        if (!$isCanonical48 && in_array($secondHeaderNorm, ['no', 'no.', 'nomor', '#', 'row no'], true)) {
+            if (str_contains($thirdHeaderNorm, 'employee') || str_contains($thirdHeaderNorm, 'id') || str_contains($thirdHeaderNorm, 'nip')) {
+                $isCanonical48 = true;
+            }
+        }
+
+        $columns = $isCanonical48 ? self::canonicalColumns() : self::legacyColumns();
+        $expectedCount = count($columns);
+
+        // Auto-detect leading row-index / 'No' column for legacy files
+        $hasLeadingNo = false;
+        if (!$isCanonical48) {
+            $empIdAliases = array_map([self::class, 'normalizeHeaderString'], array_merge(['Employee ID'], self::legacyColumns()[1]['aliases'] ?? []));
+            if (in_array($firstHeaderNorm, ['no', 'nomor', '#', 'no.'], true) && in_array($secondHeaderNorm, $empIdAliases, true)) {
+                $hasLeadingNo = true;
+            }
         }
         $detectedCount = count($foundHeaders);
 
@@ -998,6 +1161,25 @@ class OfflineTrainingExcelSchema
             // Extra unexpected column beyond expected count
             if ($pos > $expectedCount) {
                 if ($rawFound !== '') {
+                    $suppField = self::matchSupplementalField($normFound);
+                    if ($suppField && empty($mappedKeys[$suppField['key']])) {
+                        $autoMatchedCount++;
+                        $res = [
+                            'col'         => $pos,
+                            'letter'      => $colLetter,
+                            'expected'    => $suppField['header'],
+                            'found'       => $rawFound,
+                            'status'      => 'AUTO_MATCHED',
+                            'mapped_to'   => $suppField['header'],
+                            'key'         => $suppField['key'],
+                            'message'     => "Matched recognized supplemental column '{$suppField['header']}'.",
+                        ];
+                        $columnResults[$pos] = $res;
+                        $autoMatchedList[] = $res;
+                        $mappedKeys[$suppField['key']][] = $pos;
+                        continue;
+                    }
+
                     $invalidCount++;
                     $issue = [
                         'col'         => $pos,
@@ -1074,13 +1256,13 @@ class OfflineTrainingExcelSchema
                 continue;
             }
 
-            // 3. DISAMBIGUATION FOR L2 VS L3 DUPLICATE DISPLAY LABELS (Cols 40-43)
+            // 3. DISAMBIGUATION FOR L2 VS L3 DUPLICATE DISPLAY LABELS
             if ($canonical['key'] === 'l2_numerical') {
                 // Expected: L2 Numerical
                 if ($normFound === 'numerical' || in_array($normFound, ['l2 numerical', 'l2 post test numerical', 'post test numerical', 'l2 numeric'])) {
                     $autoMatchedCount++;
                     $res = [
-                        'col'         => 40,
+                        'col'         => $pos,
                         'letter'      => $colLetter,
                         'expected'    => 'Numerical (L2)',
                         'found'       => $rawFound,
@@ -1097,14 +1279,14 @@ class OfflineTrainingExcelSchema
                 if (str_contains($normFound, 'l3') && (str_contains($normFound, 'numeric') || str_contains($normFound, 'numerical'))) {
                     $invalidCount++;
                     $issue = [
-                        'col'         => 40,
+                        'col'         => $pos,
                         'letter'      => $colLetter,
                         'expected'    => 'Numerical (L2 Post Test)',
                         'found'       => $rawFound,
                         'status'      => 'INVALID',
                         'mapped_to'   => null,
                         'key'         => null,
-                        'message'     => "Found '{$rawFound}' at column 40 which belongs to L3 Project, but column 40 is reserved for L2 Post Test.",
+                        'message'     => "Found '{$rawFound}' at column {$pos} which belongs to L3 Project, but column {$pos} is reserved for L2 Post Test.",
                     ];
                     $columnResults[$pos] = $issue;
                     $issues[] = $issue;
@@ -1117,7 +1299,7 @@ class OfflineTrainingExcelSchema
                 if ($normFound === 'verbal' || in_array($normFound, ['l2 verbal', 'l2 post test verbal', 'post test verbal', 'l2 result'])) {
                     $autoMatchedCount++;
                     $res = [
-                        'col'         => 41,
+                        'col'         => $pos,
                         'letter'      => $colLetter,
                         'expected'    => 'Verbal (L2)',
                         'found'       => $rawFound,
@@ -1134,14 +1316,14 @@ class OfflineTrainingExcelSchema
                 if (str_contains($normFound, 'l3') && str_contains($normFound, 'verbal')) {
                     $invalidCount++;
                     $issue = [
-                        'col'         => 41,
+                        'col'         => $pos,
                         'letter'      => $colLetter,
                         'expected'    => 'Verbal (L2 Post Test)',
                         'found'       => $rawFound,
                         'status'      => 'INVALID',
                         'mapped_to'   => null,
                         'key'         => null,
-                        'message'     => "Found '{$rawFound}' at column 41 which belongs to L3 Project, but column 41 is reserved for L2 Post Test.",
+                        'message'     => "Found '{$rawFound}' at column {$pos} which belongs to L3 Project, but column {$pos} is reserved for L2 Post Test.",
                     ];
                     $columnResults[$pos] = $issue;
                     $issues[] = $issue;
@@ -1154,7 +1336,7 @@ class OfflineTrainingExcelSchema
                 if ($normFound === 'numerical' || in_array($normFound, ['l3 numerical', 'l3 project numerical', 'project numerical', 'l3 numeric'])) {
                     $autoMatchedCount++;
                     $res = [
-                        'col'         => 42,
+                        'col'         => $pos,
                         'letter'      => $colLetter,
                         'expected'    => 'Numerical (L3)',
                         'found'       => $rawFound,
@@ -1171,14 +1353,14 @@ class OfflineTrainingExcelSchema
                 if (str_contains($normFound, 'l2') && (str_contains($normFound, 'numeric') || str_contains($normFound, 'numerical'))) {
                     $invalidCount++;
                     $issue = [
-                        'col'         => 42,
+                        'col'         => $pos,
                         'letter'      => $colLetter,
                         'expected'    => 'Numerical (L3 Project)',
                         'found'       => $rawFound,
                         'status'      => 'INVALID',
                         'mapped_to'   => null,
                         'key'         => null,
-                        'message'     => "Found '{$rawFound}' at column 42 which belongs to L2 Post Test, but column 42 is reserved for L3 Project.",
+                        'message'     => "Found '{$rawFound}' at column {$pos} which belongs to L2 Post Test, but column {$pos} is reserved for L3 Project.",
                     ];
                     $columnResults[$pos] = $issue;
                     $issues[] = $issue;
@@ -1191,7 +1373,7 @@ class OfflineTrainingExcelSchema
                 if ($normFound === 'verbal' || in_array($normFound, ['l3 verbal', 'l3 project verbal', 'project verbal', 'l3 result'])) {
                     $autoMatchedCount++;
                     $res = [
-                        'col'         => 43,
+                        'col'         => $pos,
                         'letter'      => $colLetter,
                         'expected'    => 'Verbal (L3)',
                         'found'       => $rawFound,
@@ -1208,14 +1390,14 @@ class OfflineTrainingExcelSchema
                 if (str_contains($normFound, 'l2') && str_contains($normFound, 'verbal')) {
                     $invalidCount++;
                     $issue = [
-                        'col'         => 43,
+                        'col'         => $pos,
                         'letter'      => $colLetter,
                         'expected'    => 'Verbal (L3 Project)',
                         'found'       => $rawFound,
                         'status'      => 'INVALID',
                         'mapped_to'   => null,
                         'key'         => null,
-                        'message'     => "Found '{$rawFound}' at column 43 which belongs to L2 Post Test, but column 43 is reserved for L3 Project.",
+                        'message'     => "Found '{$rawFound}' at column {$pos} which belongs to L2 Post Test, but column {$pos} is reserved for L3 Project.",
                     ];
                     $columnResults[$pos] = $issue;
                     $issues[] = $issue;
@@ -1406,6 +1588,7 @@ class OfflineTrainingExcelSchema
                 continue;
             }
 
+
             // 8. UNKNOWN / INVALID HEADER
             $invalidCount++;
             $issue = [
@@ -1512,13 +1695,11 @@ class OfflineTrainingExcelSchema
     }
 
     /**
-     * Apply single canonical 43-column header styles on Row 1.
-     * Bold, legible slate color, subtle fill (light red tint for required), thin borders,
-     * wrapText, row height 32, and freeze pane A2 (Row 1 frozen).
+     * Apply legacy single 44-column header styles on Row 1.
      */
-    public static function applyDataSheetHeaderStyles(Worksheet $sheet): void
+    public static function applyLegacyDataSheetHeaderStyles(Worksheet $sheet): void
     {
-        $columns = self::columns();
+        $columns = self::legacyColumns();
         foreach ($columns as $idx => $col) {
             $colLetter = Coordinate::stringFromColumnIndex($idx);
             $sheet->setCellValue($colLetter . '1', $col['header']);
@@ -1528,7 +1709,7 @@ class OfflineTrainingExcelSchema
                 'font' => [
                     'bold'  => true,
                     'size'  => 10,
-                    'color' => ['rgb' => $isReq ? 'B91C1C' : '1E293B'], // Red for required, slate for optional
+                    'color' => ['rgb' => $isReq ? 'B91C1C' : '1E293B'],
                 ],
                 'alignment' => [
                     'horizontal' => Alignment::HORIZONTAL_CENTER,
@@ -1548,65 +1729,117 @@ class OfflineTrainingExcelSchema
             ]);
         }
 
-        // Header Row 1 Height
         $sheet->getRowDimension(1)->setRowHeight(32);
-
-        // Freeze top 1 header row (data starts on Row 2)
         $sheet->freezePane('A2');
     }
 
     /**
-     * Populate the Instructions worksheet with updated guidelines for Single Header Row.
+     * Apply canonical 48-column 2-row grouped header styles on Row 1 & Row 2.
      */
-    public static function populateInstructionsSheet(Worksheet $instructionSheet): void
+    public static function applyDataSheetHeaderStyles(Worksheet $sheet): void
     {
-        $instructionSheet->setCellValue('A1', 'KP OWL LMS — Non KP OWL Offline Training Import Guidelines');
-        $instructionSheet->getStyle('A1')->getFont()->setBold(true)->setSize(14)->getColor()->setRGB('0F172A');
-        $instructionSheet->getRowDimension(1)->setRowHeight(26);
+        $columns = self::canonicalColumns();
+        $groups = self::groups();
 
-        $guidelines = [
-            ['Section', 'Guideline & Rule', 'Details / Examples'],
-            ['1. Header Integrity', 'Do NOT rename, delete, or rearrange columns', 'The importer verifies the 43-column structure. Required headers are in Row 1. Data begins on Row 2.'],
-            ['2. Participant Records', 'One row represents one participant record', 'Each participant attending an offline training program must be on their own separate row.'],
-            ['3. Event Grouping', 'Multiple attendees belonging to the same training are grouped', 'If Course Name, Batch, Type, Venue, Start Date, and Finish Date match, they will be unified into one training event with multiple participants.'],
-            ['4. Employee Matching', 'Column B (ID) matches Employee ID / NIP', 'Provide valid employee ID. LMS will automatically link participant to existing user accounts when found.'],
-            ['5. Progress & Hours', 'Progress uses numbers (0–100), Hours uses decimals', 'Example: Progress = 100, Learning (Hours) = 8.0 or 16.5.'],
-            ['6. Date Format', 'Dates must be formatted as YYYY-MM-DD or Excel dates', 'Example: 2026-08-10. Finish Date cannot be earlier than Start Date.'],
-            ['7. Duration Format', 'Duration should be formatted as HH:MM:SS or seconds', 'Example: 08:00:00 for an 8-hour session.'],
-            ['8. Boolean Fields', 'Corporate KPI, Certificate use Yes / No', 'Accepted values: Yes, Y, Ya, No, N.'],
-            ['9. Post Test & Projects', 'L2 and L3 evaluations are tracked per participant', 'L2 Numerical (e.g. 85), L2 Verbal (Passed), L3 Numerical (e.g. 90), L3 Verbal (Applied in Dept).'],
-            ['10. Safe Deduplication', 'Duplicate participants are skipped safely', 'If the same employee is already recorded for the same training session, the row is safely skipped without corrupting database state.'],
-        ];
+        // 1. Row 1: Merged Group Headers
+        foreach ($groups as $group) {
+            $startCol = $group['start_col'];
+            $endCol = $group['end_col'];
+            $title = $group['title'];
+            $fill = $group['fill'];
+            $color = $group['color'];
 
-        $startRow = 3;
-        foreach ($guidelines as $rIdx => $row) {
-            $currRow = $startRow + $rIdx;
-            $instructionSheet->setCellValue('A' . $currRow, $row[0]);
-            $instructionSheet->setCellValue('B' . $currRow, $row[1]);
-            $instructionSheet->setCellValue('C' . $currRow, $row[2]);
-
-            if ($rIdx === 0) {
-                $instructionSheet->getStyle("A{$currRow}:C{$currRow}")->applyFromArray([
-                    'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'D97706']],
-                    'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
-                ]);
-                $instructionSheet->getRowDimension($currRow)->setRowHeight(24);
-            } else {
-                $instructionSheet->getStyle("A{$currRow}:C{$currRow}")->applyFromArray([
-                    'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'E2E8F0']]],
-                    'alignment' => ['vertical' => Alignment::VERTICAL_TOP, 'wrapText' => true],
-                ]);
+            $range = $startCol === $endCol ? "{$startCol}1" : "{$startCol}1:{$endCol}1";
+            if ($startCol !== $endCol) {
+                $sheet->mergeCells($range);
             }
+            $sheet->setCellValue("{$startCol}1", $title);
+            $sheet->getStyle($range)->applyFromArray([
+                'font' => ['bold' => true, 'color' => ['rgb' => $color], 'size' => 10],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $fill]],
+            ]);
+        }
+        $sheet->getRowDimension(1)->setRowHeight(24);
+
+        // 2. Row 2: Column Headers
+        foreach ($columns as $idx => $col) {
+            $letter = Coordinate::stringFromColumnIndex($idx);
+            $sheet->setCellValue("{$letter}2", $col['header']);
+            $sheet->getStyle("{$letter}2")->applyFromArray([
+                'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 10],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '1E293B']],
+                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '475569']]],
+            ]);
+        }
+        $sheet->getRowDimension(2)->setRowHeight(28);
+
+        // 3. Row 3: Example Data Row
+        foreach ($columns as $idx => $col) {
+            $letter = Coordinate::stringFromColumnIndex($idx);
+            $sheet->setCellValueExplicit("{$letter}3", (string) ($col['example'] ?? ''), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            $sheet->getStyle("{$letter}3")->applyFromArray([
+                'font' => ['color' => ['rgb' => '334155'], 'size' => 9],
+                'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
+                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'CBD5E1']]],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F8FAFC']],
+            ]);
+        }
+        $sheet->getRowDimension(3)->setRowHeight(20);
+
+        // 4. Set column widths
+        foreach (self::columnWidths() as $colLetter => $width) {
+            $sheet->getColumnDimension($colLetter)->setWidth($width);
         }
 
-        $instructionSheet->getColumnDimension('A')->setWidth(24);
-        $instructionSheet->getColumnDimension('B')->setWidth(40);
-        $instructionSheet->getColumnDimension('C')->setWidth(65);
+        // 5. Freeze panes at row 3, column D (Status, No, Employee ID sticky)
+        $sheet->freezePane('D3');
     }
 
     /**
-     * Generate PhpSpreadsheet instance containing clean blank single-header template + instructions.
+     * Populate the Instructions worksheet with guidelines for standardized 48-column Non-PTKP import.
+     */
+    public static function populateInstructionsSheet(Worksheet $instructionSheet): void
+    {
+        $instructionSheet->setCellValue('A1', 'KP OWL LMS - Non KP OWL Offline Training Import Guidelines (48 Columns)');
+        $instructionSheet->getStyle('A1')->getFont()->setBold(true)->setSize(14)->getColor()->setRGB('0F172A');
+        $instructionSheet->getRowDimension(1)->setRowHeight(30);
+
+        $instructions = [
+            ['1. "Status" Column', 'System validation status (optional on upload). Validation results are automatically evaluated by the OWL LMS system.'],
+            ['2. "No" Column', 'Preview sequence number only. Not a database primary key and not stored in data tables.'],
+            ['3. Employee ID', 'Mandatory employee ID / NIP. LMS user accounts are linked automatically; external participants without LMS accounts are preserved as WARNING.'],
+            ['4. Participant Records', 'Employee Name, Grade, Job Position, Team, and Department are synchronized with LMS users when available. Each row represents a single participant record.'],
+            ['5. Course Title', 'Mandatory training title. Rows with empty Course Title will be rejected (INVALID status).'],
+            ['6. Company Information', 'Any non-empty company is accepted. Empty company triggers non-blocking review (INVALID COMPANY status).'],
+            ['7. Provider & Sub Provider', 'Training provider categories (Internal / External, Vendor, etc.) and provider name.'],
+            ['8. Certificate Columns', 'Certificate Availability (Yes/No), Institution, Issued Date, and Expired Date.'],
+            ['9. Person in Charge (PIC)', 'Person in Charge (PIC) is located at the final column (column 48).'],
+            ['10. Date & Time Format', 'Use YYYY-MM-DD for dates and HH:mm or HH:mm:ss for times.'],
+            ['11. Duplicate Prevention', 'Records with identical participant and training combinations within the file or existing database records will be skipped automatically (DUPLICATE status).'],
+            ['12. Header Integrity', 'Do not modify, remove, or rearrange column headers to maintain mapping integrity.'],
+            ['13. Event Grouping', 'Participants in the same course, batch, dates, type, and venue are grouped into a single training session automatically.'],
+        ];
+
+        $row = 3;
+        foreach ($instructions as $inst) {
+            $instructionSheet->setCellValue("A{$row}", $inst[0]);
+            $instructionSheet->setCellValue("B{$row}", $inst[1]);
+            $instructionSheet->getStyle("A{$row}")->getFont()->setBold(true);
+            $instructionSheet->getStyle("A{$row}:B{$row}")->applyFromArray([
+                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'E2E8F0']]],
+                'alignment' => ['vertical' => Alignment::VERTICAL_TOP, 'wrapText' => true],
+            ]);
+            $row++;
+        }
+
+        $instructionSheet->getColumnDimension('A')->setWidth(30);
+        $instructionSheet->getColumnDimension('B')->setWidth(90);
+    }
+
+    /**
+     * Generate PhpSpreadsheet instance containing standardized 48-column 2-row template + instructions.
      */
     public static function generateTemplateSpreadsheet(): Spreadsheet
     {
@@ -1616,19 +1849,15 @@ class OfflineTrainingExcelSchema
             ->setLastModifiedBy('KP OWL LMS')
             ->setTitle('Non KP OWL Offline Training Import Template')
             ->setSubject('Non KP OWL Training Records Template')
-            ->setDescription('Official Excel template for uploading offline training records into KP OWL LMS.');
+            ->setDescription('Official Excel template for uploading Non-PTKP offline training records into KP OWL LMS (48 columns).');
 
         // ----------------------------------------------------
-        // SHEET 1: Non KP OWL Import (Single Header Row)
+        // SHEET 1: Non KP OWL Import (48 Columns with 2-Row Grouped Headers)
         // ----------------------------------------------------
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle(self::DATA_SHEET_TITLE);
 
         self::applyDataSheetHeaderStyles($sheet);
-
-        foreach (self::columnWidths() as $colLetter => $width) {
-            $sheet->getColumnDimension($colLetter)->setWidth($width);
-        }
 
         // ----------------------------------------------------
         // SHEET 2: Instructions

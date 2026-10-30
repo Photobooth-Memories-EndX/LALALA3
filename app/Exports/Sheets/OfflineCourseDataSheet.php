@@ -44,7 +44,7 @@ class OfflineCourseDataSheet implements FromQuery, WithHeadings, WithMapping, Wi
     public function headings(): array
     {
         return [
-            OfflineTrainingExcelSchema::headers(),
+            OfflineTrainingExcelSchema::legacyHeaders(),
         ];
     }
 
@@ -155,14 +155,14 @@ class OfflineCourseDataSheet implements FromQuery, WithHeadings, WithMapping, Wi
 
     public function columnWidths(): array
     {
-        return OfflineTrainingExcelSchema::columnWidths();
+        return OfflineTrainingExcelSchema::legacyColumnWidths();
     }
 
     public function registerEvents(): array
     {
         return [
             AfterSheet::class => function (AfterSheet $event) {
-                OfflineTrainingExcelSchema::applyDataSheetHeaderStyles($event->sheet->getDelegate());
+                OfflineTrainingExcelSchema::applyLegacyDataSheetHeaderStyles($event->sheet->getDelegate());
             },
         ];
     }

@@ -25,13 +25,16 @@ class OfflineTrainingImportModalTest extends TestCase
 
         $this->admin = User::where('role', '2')->first() ?? User::first();
         $this->regularUser = User::where('role', '1')->first();
+
+        DB::table('offline_training_users')->where('company', 'PT Krakatau Posco Test')->orWhere('employee_id', '100234')->delete();
+        DB::table('offline_trainings')->where('category', 'Technical Competency Test')->orWhere('course_name', 'High Voltage Safety & Operation')->delete();
     }
 
     protected function tearDown(): void
     {
         // Clean up any test database records
-        DB::table('offline_training_users')->where('company', 'PT Krakatau Posco Test')->delete();
-        DB::table('offline_trainings')->where('category', 'Technical Competency Test')->delete();
+        DB::table('offline_training_users')->where('company', 'PT Krakatau Posco Test')->orWhere('employee_id', '100234')->delete();
+        DB::table('offline_trainings')->where('category', 'Technical Competency Test')->orWhere('course_name', 'High Voltage Safety & Operation')->delete();
 
         // Clean up temp files
         foreach ($this->createdTempFiles as $path) {
@@ -181,37 +184,45 @@ class OfflineTrainingImportModalTest extends TestCase
         $this->assertEquals('Instructions', $spreadsheet->getSheet(1)->getTitle());
         $this->assertEquals(0, $spreadsheet->getActiveSheetIndex());
 
-        // Verify freeze pane at A2 (first header row frozen, data starts on Row 2)
+        // Verify freeze pane at D3 (freeze header rows 1 & 2, and identity columns A-C)
         $sheet = $spreadsheet->getSheet(0);
-        $this->assertEquals('A2', $sheet->getFreezePane());
+        $this->assertEquals('D3', $sheet->getFreezePane());
     }
 
     /**
-     * 6. Test template has single header row on Row 1 containing exactly 43 canonical columns.
+     * 6. Test template has 12 merged parent groups and 48 canonical columns.
      */
     public function test_template_seven_parent_groups_and_forty_four_columns(): void
     {
         $groups = OfflineTrainingExcelSchema::groups();
-        $this->assertCount(count(OfflineTrainingExcelSchema::groups()), $groups);
+        $this->assertCount(12, $groups);
 
         $totalCols = OfflineTrainingExcelSchema::totalColumns();
-        $this->assertEquals(44, $totalCols);
+        $this->assertEquals(48, $totalCols);
 
         $spreadsheet = OfflineTrainingExcelSchema::generateTemplateSpreadsheet();
         $sheet = $spreadsheet->getSheet(0);
 
-        // Row 1 Canonical Headers Check (Single header row on Row 1)
-        $this->assertEquals('Employee ID', $sheet->getCell('A1')->getValue());
-        $this->assertEquals('Employee Name', $sheet->getCell('B1')->getValue());
-        $this->assertEquals('Grade', $sheet->getCell('C1')->getValue());
-        $this->assertEquals('Job Position', $sheet->getCell('D1')->getValue());
-        $this->assertEquals('Course Title', $sheet->getCell('H1')->getValue());
-        $this->assertEquals('Bond Status', $sheet->getCell('AG1')->getValue());
-        $this->assertEquals('Score (L2)', $sheet->getCell('AL1')->getValue());
-        $this->assertEquals('L2 Status', $sheet->getCell('AM1')->getValue());
-        $this->assertEquals('Score (L3)', $sheet->getCell('AN1')->getValue());
-        $this->assertEquals('L3 Status', $sheet->getCell('AO1')->getValue());
-        $this->assertEquals('Person in Charge (PIC)', $sheet->getCell('AP1')->getValue());
+        // Row 2 Canonical Headers Check (48 columns: Status, No, Employee ID, ...)
+        $this->assertEquals('Status', $sheet->getCell('A2')->getValue());
+        $this->assertEquals('No', $sheet->getCell('B2')->getValue());
+        $this->assertEquals('Employee ID', $sheet->getCell('C2')->getValue());
+        $this->assertEquals('Employee Name', $sheet->getCell('D2')->getValue());
+        $this->assertEquals('Grade', $sheet->getCell('E2')->getValue());
+        $this->assertEquals('Job Position', $sheet->getCell('F2')->getValue());
+        $this->assertEquals('Course Title', $sheet->getCell('J2')->getValue());
+        $this->assertEquals('Provider', $sheet->getCell('T2')->getValue());
+        $this->assertEquals('Sub Provider', $sheet->getCell('U2')->getValue());
+        $this->assertEquals('Bond Status', $sheet->getCell('AI2')->getValue());
+        $this->assertEquals('Score (L2)', $sheet->getCell('AN2')->getValue());
+        $this->assertEquals('L2 Status', $sheet->getCell('AO2')->getValue());
+        $this->assertEquals('Score (L3)', $sheet->getCell('AP2')->getValue());
+        $this->assertEquals('L3 Status', $sheet->getCell('AQ2')->getValue());
+        $this->assertEquals('Certificate Availability', $sheet->getCell('AR2')->getValue());
+        $this->assertEquals('Certificate Institution', $sheet->getCell('AS2')->getValue());
+        $this->assertEquals('Certificate Issued Date', $sheet->getCell('AT2')->getValue());
+        $this->assertEquals('Certificate Expired Date', $sheet->getCell('AU2')->getValue());
+        $this->assertEquals('Person in Charge (PIC)', $sheet->getCell('AV2')->getValue());
     }
 
     /**
@@ -222,10 +233,10 @@ class OfflineTrainingImportModalTest extends TestCase
         $columns = OfflineTrainingExcelSchema::columns();
         $colKeys = array_column($columns, 'key', 'col_letter');
 
-        $this->assertEquals('assessment_score', $colKeys['AL']);
-        $this->assertEquals('l2_verbal', $colKeys['AM']);
-        $this->assertEquals('l3_numerical', $colKeys['AN']);
-        $this->assertEquals('l3_verbal', $colKeys['AO']);
+        $this->assertEquals('assessment_score', $colKeys['AN']);
+        $this->assertEquals('l2_verbal', $colKeys['AO']);
+        $this->assertEquals('l3_numerical', $colKeys['AP']);
+        $this->assertEquals('l3_verbal', $colKeys['AQ']);
     }
 
     /**
@@ -344,14 +355,14 @@ class OfflineTrainingImportModalTest extends TestCase
         $data = $response->json('data');
         $this->assertNotEmpty($data['token']);
         $this->assertEquals(1, $data['stats']['total_rows']);
-        $this->assertEquals(1, $data['stats']['valid']);
+        $this->assertEquals(1, $data['importable_count']);
         $this->assertEquals(0, $data['stats']['invalid']);
         $this->assertEmpty($data['unknown_headers'], 'Template child headers must produce 0 unknown headers.');
 
         // Verify mapped data row
         $previewRow = $data['preview_rows'][0];
         $this->assertContains($previewRow['status'], ['valid', 'warning']);
-        $this->assertEquals('100234', $previewRow['data']['employee_id']);
+        $this->assertEquals('104921', $previewRow['data']['employee_id']);
         $this->assertEquals('Budi Santoso', $previewRow['data']['name']);
         $this->assertEquals('High Voltage Safety & Operation', $previewRow['data']['course_name']);
         $this->assertEquals(85, $previewRow['data']['l2_numerical']);

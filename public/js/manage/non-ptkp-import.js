@@ -129,7 +129,14 @@ $(document).ready(function () {
         const stats = data.stats || {};
 
         $('#non-ptkp-preview-filename').text(data.filename || 'Spreadsheet');
-        const kpiMap = { total: stats.total_rows, valid: stats.valid, warning: stats.warning, duplicate: stats.duplicate, invalid: stats.invalid };
+        const kpiMap = {
+            total: stats.total_rows,
+            valid: stats.valid,
+            warning: stats.warning,
+            duplicate: stats.duplicate,
+            invalid: stats.invalid,
+            invalid_company: stats.invalid_company
+        };
         Object.keys(kpiMap).forEach(k => {
             $(`#non-ptkp-kpi-${k}`).text(Number(kpiMap[k] || 0).toLocaleString());
             $(`#count-${k}`).text(Number(kpiMap[k] || 0).toLocaleString());
@@ -143,7 +150,7 @@ $(document).ready(function () {
         if (headerCheck && typeof headerCheck.can_proceed !== 'undefined') {
             $('#non-ptkp-header-check-card').show();
             const formatName = data.format === '2_ROW_GROUPED' ? '2-Row Grouped Headers' : 'Single-Row Canonical Headers';
-            $('#non-ptkp-header-check-subtitle').text(`${formatName} • 44 Canonical Columns`);
+            $('#non-ptkp-header-check-subtitle').text(`${formatName} • 48 Canonical Columns`);
             $('#non-ptkp-badge-header-valid').toggle(!!headerCheck.can_proceed);
             $('#non-ptkp-badge-header-invalid').toggle(!headerCheck.can_proceed);
         } else {
@@ -158,7 +165,7 @@ $(document).ready(function () {
         }
 
         // Importability check & "No New Records to Import" condition
-        const importableCount = Number(data.importable_count || stats.valid || 0);
+        const importableCount = Number(data.importable_count || (Number(stats.valid || 0) + Number(stats.warning || 0) + Number(stats.invalid_company || 0)));
         const duplicateCount = Number(stats.duplicate || 0);
         const totalRows = Number(stats.total_rows || allRowsData.length);
         $('#non-ptkp-import-btn-count').text(importableCount.toLocaleString());
@@ -166,7 +173,7 @@ $(document).ready(function () {
         if (totalRows > 0 && importableCount === 0 && duplicateCount > 0) {
             $('#non-ptkp-no-new-records-alert').show();
             $('#non-ptkp-no-new-records-desc').text(
-                'Semua record telah ditemukan di database. Tidak ada record baru yang akan diimpor.'
+                'All records already exist in the database. No new records will be imported.'
             );
             $btnConfirm.prop('disabled', true).addClass('disabled');
             $('#non-ptkp-summary-action-text').text('No new records eligible for import.');
@@ -373,7 +380,8 @@ $(document).ready(function () {
             'insp-t-hours': d.learning_hours || '0',
             'insp-t-duration': d.duration_seconds ? `${d.duration_seconds} s` : '-',
             'insp-t-main-class': d.main_classification, 'insp-t-sub-class': d.sub_classification,
-            'insp-t-delivery': d.delivery_method, 'insp-t-provider': d.provider_name || d.provider,
+            'insp-t-delivery': d.delivery_method, 'insp-t-provider': d.provider ? (d.sub_provider ? `${d.provider} (${d.sub_provider})` : d.provider) : (d.provider_name || '-'),
+            'insp-t-sub-provider': d.sub_provider || '-', 'insp-t-provider-name': d.provider_name || '-',
             'insp-o-progress': (d.progress !== null && typeof d.progress !== 'undefined') ? `${d.progress}%` : '-',
             'insp-o-progress-status': d.progress_status,
             'insp-o-attendance': d.attendance ? 'Present' : (d.attendance === false ? 'Absent' : '-'),
@@ -384,7 +392,12 @@ $(document).ready(function () {
             'insp-e-l1': d.l1_program,
             'insp-e-l2': (d.l2_numerical !== null ? d.l2_numerical : '-') + (d.l2_verbal ? ` (${d.l2_verbal})` : ''),
             'insp-e-l3': (d.l3_numerical !== null ? d.l3_numerical : '-') + (d.l3_verbal ? ` (${d.l3_verbal})` : ''),
-            'insp-e-pic': d.pic, 'insp-e-cert': d.certificate, 'insp-e-engagement': d.total_engagement_time
+            'insp-e-pic': d.pic, 'insp-e-cert': d.certificate || d.certificate_availability || '-',
+            'insp-e-cert-avail': d.certificate_availability || '-',
+            'insp-e-cert-inst': d.certificate_institution || '-',
+            'insp-e-cert-issued': d.certificate_issued_date || '-',
+            'insp-e-cert-expired': d.certificate_expired_date || '-',
+            'insp-e-engagement': d.total_engagement_time
         };
         Object.keys(fieldMap).forEach(k => $(`#${k}`).text(fieldMap[k] || '-'));
 

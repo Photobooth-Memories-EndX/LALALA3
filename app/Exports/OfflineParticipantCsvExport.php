@@ -62,7 +62,7 @@ class OfflineParticipantCsvExport implements FromQuery, WithHeadings, WithMappin
 
     public function headings(): array
     {
-        return OfflineTrainingExcelSchema::headers();
+        return OfflineTrainingExcelSchema::legacyHeaders();
     }
 
     public function map($row): array

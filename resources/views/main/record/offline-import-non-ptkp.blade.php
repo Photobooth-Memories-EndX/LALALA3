@@ -247,10 +247,10 @@
                     </div>
                 </div>
 
-                <!-- 2. 6 STATISTIK RINGKASAN HASIL VALIDASI -->
+                <!-- 2. 7 STATISTIK RINGKASAN HASIL VALIDASI -->
                 <div class="row g-2 g-md-3 mb-4">
                     <!-- Total -->
-                    <div class="col-4 col-md-2">
+                    <div class="col-6 col-md-3 col-lg">
                         <div class="card border-0 shadow-none bg-light p-3 rounded-3 text-center h-100 stat-box" title="Total spreadsheet rows read">
                             <div class="text-muted extra-small fw-medium mb-1">Total Rows</div>
                             <div class="h3 fw-bold text-dark mb-0" id="stat-total-rows">0</div>
@@ -258,7 +258,7 @@
                         </div>
                     </div>
                     <!-- Valid -->
-                    <div class="col-4 col-md-2">
+                    <div class="col-6 col-md-3 col-lg">
                         <div class="card border-0 shadow-none p-3 rounded-3 text-center h-100 stat-box" style="background-color: #ecfdf5;" title="Valid records ready to import">
                             <div class="extra-small fw-medium mb-1" style="color: #065f46;">VALID</div>
                             <div class="h3 fw-bold mb-0" style="color: #047857;" id="stat-valid-rows">0</div>
@@ -266,7 +266,7 @@
                         </div>
                     </div>
                     <!-- Warnings -->
-                    <div class="col-4 col-md-2">
+                    <div class="col-6 col-md-3 col-lg">
                         <div class="card border-0 shadow-none p-3 rounded-3 text-center h-100 stat-box" style="background-color: #fffbeb;" title="Valid records with nonfatal warnings">
                             <div class="extra-small fw-medium mb-1" style="color: #92400e;">WARNING</div>
                             <div class="h3 fw-bold mb-0" style="color: #d97706;" id="stat-warning-rows">0</div>
@@ -274,7 +274,7 @@
                         </div>
                     </div>
                     <!-- Duplicates -->
-                    <div class="col-4 col-md-2">
+                    <div class="col-6 col-md-3 col-lg">
                         <div class="card border-0 shadow-none p-3 rounded-3 text-center h-100 stat-box" style="background-color: #f5f3ff;" title="Existing records or duplicates that will be skipped">
                             <div class="extra-small fw-medium mb-1" style="color: #5b21b6;">DUPLICATE</div>
                             <div class="h3 fw-bold mb-0" style="color: #7c3aed;" id="stat-duplicate-rows">0</div>
@@ -282,15 +282,23 @@
                         </div>
                     </div>
                     <!-- Invalid -->
-                    <div class="col-4 col-md-2">
+                    <div class="col-6 col-md-3 col-lg">
                         <div class="card border-0 shadow-none p-3 rounded-3 text-center h-100 stat-box" style="background-color: #fef2f2;" title="Records with fatal validation errors">
                             <div class="extra-small fw-medium mb-1" style="color: #991b1b;">INVALID</div>
                             <div class="h3 fw-bold mb-0" style="color: #dc2626;" id="stat-invalid-rows">0</div>
                             <div class="extra-small mt-1" style="color: #991b1b;">fatal errors</div>
                         </div>
                     </div>
+                    <!-- Invalid Company -->
+                    <div class="col-6 col-md-3 col-lg">
+                        <div class="card border-0 shadow-none p-3 rounded-3 text-center h-100 stat-box" style="background-color: #fff7ed;" title="Records with empty company (will be imported; needs review)">
+                            <div class="extra-small fw-medium mb-1" style="color: #c2410c;">INVALID COMPANY</div>
+                            <div class="h3 fw-bold mb-0" style="color: #ea580c;" id="stat-invalid-company-rows">0</div>
+                            <div class="extra-small mt-1" style="color: #c2410c;">needs review</div>
+                        </div>
+                    </div>
                     <!-- Events -->
-                    <div class="col-4 col-md-2">
+                    <div class="col-6 col-md-3 col-lg">
                         <div class="card border-0 shadow-none p-3 rounded-3 text-center h-100 stat-box" style="background-color: #f0fdfa;" title="Total unique training sessions identified">
                             <div class="extra-small fw-medium mb-1" style="color: #115e59;">Events</div>
                             <div class="h3 fw-bold mb-0" style="color: #0f766e;" id="stat-training-events">0</div>
@@ -376,6 +384,9 @@
                         </button>
                         <button type="button" class="btn btn-sm btn-ghost-secondary rounded-pill px-3 filter-tab-btn" data-filter="invalid">
                             <span class="status-dot bg-danger d-inline-block me-1"></span> Invalid (<span id="filter-count-invalid">0</span>)
+                        </button>
+                        <button type="button" class="btn btn-sm btn-ghost-secondary rounded-pill px-3 filter-tab-btn" data-filter="invalid_company">
+                            <span class="status-dot bg-orange d-inline-block me-1"></span> Invalid Company (<span id="filter-count-invalid-company">0</span>)
                         </button>
                     </div>
 

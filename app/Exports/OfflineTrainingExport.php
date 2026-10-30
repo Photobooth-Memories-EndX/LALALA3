@@ -80,7 +80,7 @@ class OfflineTrainingExport implements WithMultipleSheets, FromQuery, WithHeadin
 
     public function headings(): array
     {
-        return OfflineTrainingExcelSchema::headers();
+        return OfflineTrainingExcelSchema::legacyHeaders();
     }
 
     public function map($row): array
@@ -244,7 +244,7 @@ class OfflineTrainingExport implements WithMultipleSheets, FromQuery, WithHeadin
 
     public function columnWidths(): array
     {
-        return OfflineTrainingExcelSchema::columnWidths();
+        return OfflineTrainingExcelSchema::legacyColumnWidths();
     }
 
     public function styles(Worksheet $sheet)

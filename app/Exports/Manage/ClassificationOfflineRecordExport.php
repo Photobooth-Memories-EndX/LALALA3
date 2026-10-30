@@ -79,17 +79,17 @@ class ClassificationOfflineRecordExport implements FromCollection, WithHeadings,
 
     public function headings(): array
     {
-        return OfflineTrainingExcelSchema::headers();
+        return OfflineTrainingExcelSchema::legacyHeaders();
     }
 
     public function columnWidths(): array
     {
-        return OfflineTrainingExcelSchema::columnWidths();
+        return OfflineTrainingExcelSchema::legacyColumnWidths();
     }
 
     public function columnFormats(): array
     {
-        return OfflineTrainingExcelSchema::columnFormats();
+        return OfflineTrainingExcelSchema::legacyColumnFormats();
     }
 
     public function query()

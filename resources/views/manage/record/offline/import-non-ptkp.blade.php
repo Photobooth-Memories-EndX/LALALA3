@@ -153,39 +153,45 @@
                     </div>
                 </div>
 
-                <!-- 6 KPI SUMMARY METRIC CARDS -->
+                <!-- 7 KPI SUMMARY METRIC CARDS -->
                 <div class="row g-2 mb-4">
-                    <div class="col-4 col-md-2">
+                    <div class="col-6 col-md-3 col-lg">
                         <div class="card border-0 shadow-none bg-light p-2.5 rounded-3 text-center h-100 kpi-card" title="Total spreadsheet rows read">
                             <div class="text-muted small fw-medium mb-0">Total</div>
                             <div class="h3 fw-bold text-dark mb-0" id="non-ptkp-kpi-total">0</div>
                         </div>
                     </div>
-                    <div class="col-4 col-md-2">
+                    <div class="col-6 col-md-3 col-lg">
                         <div class="card border-0 shadow-none p-2.5 rounded-3 text-center h-100 kpi-card" style="background-color: #ecfdf5;" title="Valid records ready to import">
                             <div class="small fw-medium mb-0" style="color: #065f46;">Valid</div>
                             <div class="h3 fw-bold mb-0" style="color: #047857;" id="non-ptkp-kpi-valid">0</div>
                         </div>
                     </div>
-                    <div class="col-4 col-md-2">
+                    <div class="col-6 col-md-3 col-lg">
                         <div class="card border-0 shadow-none p-2.5 rounded-3 text-center h-100 kpi-card" style="background-color: #fffbeb;" title="Valid records with nonfatal warnings">
                             <div class="small fw-medium mb-0" style="color: #92400e;">Warnings</div>
                             <div class="h3 fw-bold mb-0" style="color: #d97706;" id="non-ptkp-kpi-warning">0</div>
                         </div>
                     </div>
-                    <div class="col-4 col-md-2">
+                    <div class="col-6 col-md-3 col-lg">
                         <div class="card border-0 shadow-none p-2.5 rounded-3 text-center h-100 kpi-card" style="background-color: #f5f3ff;" title="Duplicate records (safely skipped)">
                             <div class="small fw-medium mb-0" style="color: #5b21b6;">Duplicates</div>
                             <div class="h3 fw-bold mb-0" style="color: #7c3aed;" id="non-ptkp-kpi-duplicate">0</div>
                         </div>
                     </div>
-                    <div class="col-4 col-md-2">
+                    <div class="col-6 col-md-3 col-lg">
                         <div class="card border-0 shadow-none p-2.5 rounded-3 text-center h-100 kpi-card" style="background-color: #fef2f2;" title="Records with fatal validation errors">
                             <div class="small fw-medium mb-0" style="color: #991b1b;">Invalid</div>
                             <div class="h3 fw-bold mb-0" style="color: #dc2626;" id="non-ptkp-kpi-invalid">0</div>
                         </div>
                     </div>
-                    <div class="col-4 col-md-2">
+                    <div class="col-6 col-md-3 col-lg">
+                        <div class="card border-0 shadow-none p-2.5 rounded-3 text-center h-100 kpi-card" style="background-color: #fff7ed;" title="Records with empty company (will be imported; needs review)">
+                            <div class="small fw-medium mb-0" style="color: #c2410c;">Invalid Company</div>
+                            <div class="h3 fw-bold mb-0" style="color: #ea580c;" id="non-ptkp-kpi-invalid_company">0</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3 col-lg">
                         <div class="card border-0 shadow-none p-2.5 rounded-3 text-center h-100 kpi-card" style="background-color: #f0fdfa;" title="Identified unique training sessions">
                             <div class="small fw-medium mb-0" style="color: #115e59;">Events</div>
                             <div class="h3 fw-bold mb-0" style="color: #0f766e;" id="non-ptkp-kpi-events">0</div>
@@ -219,6 +225,7 @@
                         <button type="button" class="filter-tab-pill" data-filter="warning">Warnings (<span id="count-warning">0</span>)</button>
                         <button type="button" class="filter-tab-pill" data-filter="duplicate">Duplicates (<span id="count-duplicate">0</span>)</button>
                         <button type="button" class="filter-tab-pill" data-filter="invalid">Invalid (<span id="count-invalid">0</span>)</button>
+                        <button type="button" class="filter-tab-pill" data-filter="invalid_company">Invalid Company (<span id="count-invalid_company">0</span>)</button>
                     </div>
 
                     <div class="d-flex align-items-center gap-2 ms-auto flex-wrap">
