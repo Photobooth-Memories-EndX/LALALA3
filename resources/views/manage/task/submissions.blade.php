@@ -280,6 +280,7 @@
                                     }
                                 @endphp
                                 <tr class="submission-table-row"
+                                    data-submission-id="{{ $submission->id }}"
                                     data-status="{{ $rowStatus }}"
                                     data-user-name="{{ strtolower($submission->user?->name ?? '') }}"
                                     data-user-email="{{ strtolower($submission->user?->email ?? '') }}">
@@ -300,7 +301,7 @@
                                             <span class="badge bg-danger-lt text-danger mt-1">Late</span>
                                         @endif
                                     </td>
-                                    <td>
+                                    <td class="submission-row-status">
                                         @if ($submission->status === 'completed')
                                             <span class="badge bg-success-lt text-success"><i class="ti ti-check me-1"></i>Approve</span>
                                         @elseif ($submission->resubmit_requested)
@@ -311,7 +312,7 @@
                                             <span class="badge bg-warning text-dark"><i class="ti ti-clock me-1"></i>Pending Review</span>
                                         @endif
                                     </td>
-                                    <td>
+                                    <td class="submission-row-score">
                                         @if (!is_null($submission->score))
                                             <span class="badge bg-primary-lt text-primary fs-5 fw-bold">{{ $submission->score }}</span>
                                         @else
@@ -424,7 +425,11 @@
             </div>
 
             {{-- Modal Body: 2-Column Review (Left: Canvas/Answers, Right: Grading Form) --}}
-            <div class="modal-body p-0">
+            <div class="modal-body p-0 position-relative">
+                {{-- Floating Toast Notification for Auto-Advance --}}
+                <div id="gradingToast" class="alert alert-success border-0 shadow-lg position-absolute d-none" style="top: 16px; left: 50%; transform: translateX(-50%); z-index: 1050; padding: 8px 18px; border-radius: 50px; font-size: 13px; font-weight: 500;">
+                    <i class="ti ti-circle-check me-1 fs-2 align-middle"></i> <span id="gradingToastText">Saved!</span>
+                </div>
                 <div class="row g-0 h-100">
                     {{-- ── COLUMN 1: Main Submission Viewer & Canvas ── --}}
                     <div class="col-lg-8 review-canvas-col" id="filePreviewModal">
@@ -1761,12 +1766,27 @@
             if (confirmBtnText) confirmBtnText.textContent = 'Yes, Approve';
 
             pendingSubmitCallback = function () {
-                var form = document.getElementById('reviewSubmissionForm');
                 var completeUrl = sub.complete_url || document.getElementById('modalCompleteUrl').value;
-                form.action = completeUrl;
-                if (scoreInput) scoreInput.disabled = false;
-                hideRejectModal();
-                form.submit();
+                var scoreInput = document.getElementById('modalScoreInput');
+                var feedbackInput = document.getElementById('modalFeedbackInput');
+                var payload = {
+                    score: scoreInput ? scoreInput.value : '',
+                    feedback: feedbackInput ? feedbackInput.value : '',
+                };
+
+                var confirmBtn = document.getElementById('btnConfirmModalSubmit');
+                if (confirmBtn) {
+                    confirmBtn.disabled = true;
+                    confirmBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Approving...';
+                }
+
+                submitGradingAjax(completeUrl, payload, function () {
+                    hideConfirmModal();
+                    if (confirmBtn) {
+                        confirmBtn.disabled = false;
+                        confirmBtn.innerHTML = '<i class="ti ti-check" id="btnConfirmModalSubmitIcon"></i> <span id="btnConfirmModalSubmitText">Yes, Approve</span>';
+                    }
+                });
             };
 
             showConfirmModal();
@@ -1843,26 +1863,26 @@
 
             if (sidebarFeedback) sidebarFeedback.value = feedbackVal;
 
-            this.disabled = true;
-            this.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Submitting...';
-
-            var form = document.getElementById('reviewSubmissionForm');
-            var rejectTypeHidden = document.getElementById('modalRejectTypeHiddenInput');
-            if (rejectTypeHidden) rejectTypeHidden.value = 'resubmit';
-
-            var reasonHidden = document.getElementById('modalReasonHiddenInput');
-            if (reasonHidden) reasonHidden.value = feedbackVal;
+            var btn = this;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Submitting...';
 
             var rejectUrl = sub.reject_url || document.getElementById('modalRejectUrl').value;
             if (!rejectUrl) {
                 rejectUrl = sub.resubmit_url || document.getElementById('modalResubmitUrl').value;
             }
-            form.action = rejectUrl;
 
-            var scoreInput = document.getElementById('modalScoreInput');
-            if (scoreInput) scoreInput.disabled = true;
+            var payload = {
+                reject_type: 'resubmit',
+                feedback: feedbackVal,
+                reason: feedbackVal,
+            };
 
-            form.submit();
+            submitGradingAjax(rejectUrl, payload, function () {
+                hideRejectModal();
+                btn.disabled = false;
+                btn.innerHTML = '<i class="ti ti-refresh fs-2"></i> <span id="btnSubmitResubmitText">Request Resubmit</span>';
+            });
         });
     }
 
@@ -1900,22 +1920,22 @@
 
             if (sidebarFeedback) sidebarFeedback.value = feedbackVal;
 
-            this.disabled = true;
-            this.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Submitting...';
-
-            var form = document.getElementById('reviewSubmissionForm');
-            var rejectTypeHidden = document.getElementById('modalRejectTypeHiddenInput');
-            if (rejectTypeHidden) rejectTypeHidden.value = 'completed_rejected';
-
-            var reasonHidden = document.getElementById('modalReasonHiddenInput');
-            if (reasonHidden) reasonHidden.value = feedbackVal;
+            var btn = this;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Submitting...';
 
             var rejectUrl = sub.reject_url || document.getElementById('modalRejectUrl').value;
-            form.action = rejectUrl;
+            var payload = {
+                reject_type: 'completed_rejected',
+                feedback: feedbackVal,
+                score: scoreInput ? scoreInput.value : '',
+            };
 
-            if (scoreInput) scoreInput.disabled = false;
-
-            form.submit();
+            submitGradingAjax(rejectUrl, payload, function () {
+                hideRejectModal();
+                btn.disabled = false;
+                btn.innerHTML = '<i class="ti ti-circle-x fs-2"></i> <span id="btnSubmitCompletedRejectedText">Completed as Rejected</span>';
+            });
         });
     }
 
@@ -2013,6 +2033,160 @@
     }
 
 
+    // ── AJAX Grading & Auto-Advance Engine ──────────────────────────
+    function submitGradingAjax(actionUrl, payload, onFinish) {
+        var csrfToken = document.querySelector('meta[name="csrf-token"]')
+            ? document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            : (document.querySelector('input[name="_token"]') ? document.querySelector('input[name="_token"]').value : '');
+
+        var formData = new FormData();
+        formData.append('_token', csrfToken);
+        for (var key in payload) {
+            if (payload.hasOwnProperty(key) && payload[key] !== null && payload[key] !== undefined) {
+                formData.append(key, payload[key]);
+            }
+        }
+
+        fetch(actionUrl, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+            }
+        })
+        .then(function (res) {
+            return res.json().then(function (data) {
+                return { status: res.status, ok: res.ok, data: data };
+            });
+        })
+        .then(function (result) {
+            if (!result.ok || !result.data.success) {
+                var errMsg = (result.data && result.data.message) ? result.data.message : 'Failed to submit grading.';
+                alert(errMsg);
+                if (onFinish) onFinish(false);
+                return;
+            }
+
+            var resData = result.data;
+            var sub = submissionsData[currentSubmissionIndex];
+            if (sub && resData.submission) {
+                var prevStatus = sub.status;
+                var prevResubmit = sub.resubmit_requested;
+
+                sub.status = resData.submission.status;
+                sub.resubmit_requested = Boolean(resData.submission.resubmit_requested);
+                sub.score = resData.submission.score;
+                sub.feedback = resData.submission.feedback || '';
+
+                // 1. Update the table row in #submissionsTable
+                var row = document.querySelector('.submission-table-row[data-submission-id="' + sub.id + '"]');
+                if (row) {
+                    var newRowStatus = 'need_review';
+                    if (sub.status === 'completed') {
+                        newRowStatus = 'approve';
+                    } else if (sub.status === 'rejected' || sub.resubmit_requested) {
+                        newRowStatus = 'rejected';
+                    }
+                    row.setAttribute('data-status', newRowStatus);
+
+                    var statusTd = row.querySelector('.submission-row-status');
+                    if (statusTd) {
+                        if (sub.status === 'completed') {
+                            statusTd.innerHTML = '<span class="badge bg-success-lt text-success"><i class="ti ti-check me-1"></i>Approve</span>';
+                        } else if (sub.resubmit_requested) {
+                            statusTd.innerHTML = '<span class="badge bg-warning-lt text-warning"><i class="ti ti-refresh me-1"></i>Rejected (Resubmit)</span>';
+                        } else if (sub.status === 'rejected') {
+                            statusTd.innerHTML = '<span class="badge bg-danger-lt text-danger"><i class="ti ti-x me-1"></i>Completed as Rejected</span>';
+                        }
+                    }
+
+                    var scoreTd = row.querySelector('.submission-row-score');
+                    if (scoreTd) {
+                        if (sub.score !== null && sub.score !== undefined && sub.score !== '') {
+                            scoreTd.innerHTML = '<span class="badge bg-primary-lt text-primary fs-5 fw-bold">' + sub.score + '</span>';
+                        } else {
+                            scoreTd.innerHTML = '<span class="text-muted">—</span>';
+                        }
+                    }
+                }
+
+                // 2. Update pill badges
+                updatePillBadges(prevStatus, prevResubmit, sub.status, sub.resubmit_requested);
+
+                // 3. Re-render active submission view to show graded status
+                setActiveSubmissionByIndex(currentSubmissionIndex);
+
+                // 4. Auto-advance to next student needing review!
+                var nextPendingIdx = findNextPendingSubmissionIndex(currentSubmissionIndex);
+                if (nextPendingIdx !== -1) {
+                    showAutoAdvanceToast('Evaluated ' + sub.learner_name + '! Advancing to next user...');
+                    setTimeout(function () {
+                        setActiveSubmissionByIndex(nextPendingIdx);
+                    }, 600);
+                } else {
+                    showAutoAdvanceToast('All submissions evaluated! 🎉');
+                }
+            }
+
+            if (onFinish) onFinish(true);
+        })
+        .catch(function (err) {
+            console.error('AJAX grading failed, falling back:', err);
+            // Fallback: standard form submit
+            var form = document.getElementById('reviewSubmissionForm');
+            if (form) {
+                form.action = actionUrl;
+                form.submit();
+            }
+        });
+    }
+
+    function findNextPendingSubmissionIndex(startIdx) {
+        if (!submissionsData || submissionsData.length === 0) return -1;
+        for (var i = startIdx + 1; i < submissionsData.length; i++) {
+            if (submissionsData[i].status === 'pending' && !submissionsData[i].resubmit_requested) {
+                return i;
+            }
+        }
+        for (var j = 0; j < startIdx; j++) {
+            if (submissionsData[j].status === 'pending' && !submissionsData[j].resubmit_requested) {
+                return j;
+            }
+        }
+        return -1;
+    }
+
+    function updatePillBadges(prevStatus, prevResubmit, newStatus, newResubmit) {
+        var prevCat = (prevStatus === 'pending' && !prevResubmit) ? 'need_review' : (prevStatus === 'completed' ? 'approve' : 'rejected');
+        var newCat = (newStatus === 'pending' && !newResubmit) ? 'need_review' : (newStatus === 'completed' ? 'approve' : 'rejected');
+
+        if (prevCat === newCat) return;
+
+        var pillPrev = document.querySelector('#submissionQuickFilters [data-filter="' + prevCat + '"] .badge');
+        var pillNew = document.querySelector('#submissionQuickFilters [data-filter="' + newCat + '"] .badge');
+
+        if (pillPrev) {
+            var c1 = parseInt(pillPrev.textContent) || 0;
+            pillPrev.textContent = Math.max(0, c1 - 1);
+        }
+        if (pillNew) {
+            var c2 = parseInt(pillNew.textContent) || 0;
+            pillNew.textContent = c2 + 1;
+        }
+    }
+
+    function showAutoAdvanceToast(msg) {
+        var toastEl = document.getElementById('gradingToast');
+        var toastText = document.getElementById('gradingToastText');
+        if (!toastEl || !toastText) return;
+        toastText.textContent = msg;
+        toastEl.classList.remove('d-none');
+        setTimeout(function () {
+            toastEl.classList.add('d-none');
+        }, 2500);
+    }
+
     // ── Table Quick Filter (All, Need Review, Approve, Rejected) + Search ──
     var currentFilterStatus = '{{ $activeFilter }}';
     var filterPills = document.querySelectorAll('#submissionQuickFilters .my-task-category-pill');
@@ -2051,9 +2225,25 @@
 
     filterPills.forEach(function (pill) {
         pill.addEventListener('click', function () {
+            var targetFilter = this.getAttribute('data-filter') || 'all';
+
+            // If page was loaded with a server query param that filtered the rows,
+            // navigate to the filtered URL so server supplies the requested rows.
+            var hasServerFilter = '{{ request('status') }}' !== '' && '{{ request('status') }}' !== 'all';
+            if (hasServerFilter && targetFilter !== '{{ $activeFilter }}') {
+                var navUrl = new URL(window.location);
+                if (targetFilter === 'all') {
+                    navUrl.searchParams.delete('status');
+                } else {
+                    navUrl.searchParams.set('status', targetFilter);
+                }
+                window.location.href = navUrl.toString();
+                return;
+            }
+
             filterPills.forEach(function (p) { p.classList.remove('active'); });
             this.classList.add('active');
-            currentFilterStatus = this.getAttribute('data-filter') || 'all';
+            currentFilterStatus = targetFilter;
 
             if (window.history && window.history.replaceState) {
                 var url = new URL(window.location);

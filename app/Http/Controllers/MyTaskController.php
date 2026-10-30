@@ -63,6 +63,7 @@ class MyTaskController extends Controller
 
                 $needsAction = $groupTasks->filter(
                     fn ($t) => in_array($t->userStatusFor($user), ['overdue', 'not_started', 'resubmit'], true)
+                        || (bool) ($t->submissionFor($user)?->resubmit_requested)
                 );
 
                 $resubmitCount = $groupTasks->filter(function ($t) use ($user) {

@@ -599,6 +599,12 @@ class TaskManageController extends Controller
         abort_if($submission->task_id !== $task->id, 404);
 
         if ($submission->status === 'completed' || ($submission->status === 'rejected' && ! $submission->resubmit_requested)) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This submission has already been graded and cannot be changed.',
+                ], 422);
+            }
             return back()->with('error', 'This submission has already been graded and cannot be changed.');
         }
 
@@ -608,6 +614,23 @@ class TaskManageController extends Controller
         ]);
 
         $submission->markCompleted($validated['score'] ?? null, $validated['feedback'] ?? null);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success'    => true,
+                'message'    => 'Response approved and marked as complete.',
+                'status'     => 'completed',
+                'score'      => $submission->score,
+                'feedback'   => $submission->feedback,
+                'submission' => [
+                    'id'                 => $submission->id,
+                    'status'             => 'completed',
+                    'score'              => $submission->score,
+                    'feedback'           => $submission->feedback,
+                    'resubmit_requested' => false,
+                ],
+            ]);
+        }
 
         return back()->with('success', 'Response approved and marked as complete.');
     }
@@ -623,6 +646,12 @@ class TaskManageController extends Controller
         abort_if($submission->task_id !== $task->id, 404);
 
         if ($submission->status === 'completed' || ($submission->status === 'rejected' && ! $submission->resubmit_requested)) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This submission has already been graded and cannot be changed.',
+                ], 422);
+            }
             return back()->with('error', 'This submission has already been graded and cannot be changed.');
         }
 
@@ -645,6 +674,24 @@ class TaskManageController extends Controller
             ? 'Submission rejected with revision requested. The user can now resubmit their answers.'
             : 'Submission marked as completed as rejected.';
 
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success'            => true,
+                'message'            => $message,
+                'status'             => 'rejected',
+                'resubmit_requested' => $isResubmit,
+                'score'              => $submission->score,
+                'feedback'           => $submission->feedback,
+                'submission'         => [
+                    'id'                 => $submission->id,
+                    'status'             => 'rejected',
+                    'resubmit_requested' => $isResubmit,
+                    'score'              => $submission->score,
+                    'feedback'           => $submission->feedback,
+                ],
+            ]);
+        }
+
         return back()->with('success', $message);
     }
 
@@ -657,6 +704,12 @@ class TaskManageController extends Controller
         abort_if($submission->task_id !== $task->id, 404);
 
         if ($submission->status === 'completed' || ($submission->status === 'rejected' && ! $submission->resubmit_requested)) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This submission has already been graded and cannot be changed.',
+                ], 422);
+            }
             return back()->with('error', 'This submission has already been graded and cannot be changed.');
         }
 
@@ -677,6 +730,21 @@ class TaskManageController extends Controller
         }
 
         $submission->update($updateData);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success'            => true,
+                'message'            => 'Resubmit requested. The user can now resubmit their answers with your feedback.',
+                'status'             => 'pending',
+                'resubmit_requested' => true,
+                'submission'         => [
+                    'id'                 => $submission->id,
+                    'status'             => 'pending',
+                    'resubmit_requested' => true,
+                    'feedback'           => $submission->feedback,
+                ],
+            ]);
+        }
 
         return back()->with('success', 'Resubmit requested. The user can now resubmit their answers with your feedback.');
     }
