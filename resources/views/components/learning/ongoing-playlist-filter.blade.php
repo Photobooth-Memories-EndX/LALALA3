@@ -76,7 +76,7 @@
                     <h3 class="card-title fast-filter-title">Quick Filter</h3>
                     {{-- <p class="fast-filter-subtitle">Quickly filter your learning playlists.</p> --}}
                 </div>
-                <x-learning.ongoing-mode-switch mode="playlist" />
+                <x-learning.ongoing-mode-switch mode="playlist" :show-download="false" />
             </div>
 
             {{-- Playlist tidak memiliki filter Type; filter lainnya tersedia di toolbar dan modal. --}}
@@ -190,8 +190,6 @@
                            aria-label="Reset Filter">
                             <i class="ti ti-refresh" aria-hidden="true"></i>
                         </a>
-
-                        <x-learning.ongoing-export mode="playlist" />
                     </div>
 
                 </div>

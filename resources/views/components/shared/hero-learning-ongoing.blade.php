@@ -13,6 +13,7 @@
     $modeLabel = match ($mode) {
         'playlist' => 'Playlist',
         'mooc'     => 'MOOC',
+        'non-kp-owl', 'ongoing-non-kp-owl', 'offline' => 'Non KP OWL',
         default    => 'Content',
     };
 

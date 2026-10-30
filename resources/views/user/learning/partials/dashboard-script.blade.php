@@ -429,7 +429,7 @@
                 }
             });
 
-            _ongoingMode = (mode === 'playlist' || mode === 'mooc') ? mode : null;
+            _ongoingMode = (['playlist', 'mooc', 'non-kp-owl', 'ongoing-non-kp-owl'].indexOf(mode) !== -1) ? mode : null;
 
             if (_ongoingMode) {
                 params.set('ongoing_mode', _ongoingMode);
@@ -440,6 +440,67 @@
 
             _activeTab = null; // paksa loadLearningTab memuat ulang partial ongoing
             loadLearningTab('ongoing');
+        });
+
+        // ── Filter dropdowns & search for Ongoing Non KP OWL ─────────────────────────
+        $(document).on('click', '.ongoing-offline-filter-item', function (e) {
+            e.preventDefault();
+            var param = String($(this).data('param'));
+            var value = String($(this).data('value'));
+            var params = new URLSearchParams(window.location.search);
+
+            if (value === 'all' || value === '') {
+                params.delete(param);
+            } else {
+                params.set(param, value);
+            }
+
+            params.set('learning_tab', 'ongoing');
+            params.set('ongoing_mode', 'non-kp-owl');
+
+            var qs = params.toString();
+            history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+
+            _activeTab = null;
+            loadLearningTab('ongoing');
+        });
+
+        $(document).on('click', '#ongoingOfflineApplyBtn', function () {
+            var q = $('#ongoingOfflineSearch').val() || '';
+            var params = new URLSearchParams(window.location.search);
+            if (q.trim()) {
+                params.set('ongoing_search', q.trim());
+            } else {
+                params.delete('ongoing_search');
+            }
+            params.set('learning_tab', 'ongoing');
+            params.set('ongoing_mode', 'non-kp-owl');
+            var qs = params.toString();
+            history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+            _activeTab = null;
+            loadLearningTab('ongoing');
+        });
+
+        $(document).on('click', '#ongoingOfflineResetBtn', function () {
+            var params = new URLSearchParams(window.location.search);
+            Array.from(params.keys()).forEach(function (key) {
+                if (key.indexOf('ongoing_filter_') === 0 || key === 'ongoing_search') {
+                    params.delete(key);
+                }
+            });
+            params.set('learning_tab', 'ongoing');
+            params.set('ongoing_mode', 'non-kp-owl');
+            var qs = params.toString();
+            history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+            _activeTab = null;
+            loadLearningTab('ongoing');
+        });
+
+        $(document).on('keydown', '#ongoingOfflineSearch', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                $('#ongoingOfflineApplyBtn').trigger('click');
+            }
         });
 
         // ── Mode switch Learning Record: Online | Offline | All ───────────────────────
@@ -1001,7 +1062,7 @@
         window.addEventListener('popstate', function () {
             var params = new URLSearchParams(window.location.search);
             var om = params.get('ongoing_mode');
-            _ongoingMode = (om === 'playlist' || om === 'mooc') ? om : null;
+            _ongoingMode = (['playlist', 'mooc', 'non-kp-owl', 'ongoing-non-kp-owl'].indexOf(om) !== -1) ? om : null;
             var rm = params.get('record_mode');
             _recordMode = ['online', 'offline', 'all'].indexOf(String(rm).toLowerCase()) !== -1
                 ? String(rm).toLowerCase()
@@ -1014,8 +1075,10 @@
             // Restore the tab that initiated a full-page GET filter request.
             var initialParams = new URLSearchParams(window.location.search);
             var initialOngoingMode = initialParams.get('ongoing_mode');
-            if (initialOngoingMode === 'playlist' || initialOngoingMode === 'mooc') {
+            if (['playlist', 'mooc', 'non-kp-owl', 'ongoing-non-kp-owl'].indexOf(initialOngoingMode) !== -1) {
                 _ongoingMode = initialOngoingMode;
+            } else if (initialParams.get('record_mode') === 'ongoing-non-kp-owl') {
+                _ongoingMode = 'non-kp-owl';
             }
             var initialRecordMode = initialParams.get('record_mode');
             if (initialRecordMode && initialRecordMode.toLowerCase() === 'export') {

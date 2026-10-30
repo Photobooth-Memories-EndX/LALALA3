@@ -332,11 +332,15 @@
 }
 
 .ongoing-mode-switch .ongoing-mode-btn {
-    width: 104px;
-    min-width: 104px;
-    flex: 0 1 104px;
-    gap: 7px;
-    padding: 0 14px;
+    width: auto !important;
+    min-width: auto !important;
+    flex: 0 0 auto !important;
+    gap: 0.5rem !important;
+    padding: 0.625rem 1rem !important;
+    border-radius: 9999px !important;
+    font-weight: 500 !important;
+    font-size: 0.875rem !important;
+    white-space: nowrap !important;
 }
 
 .ongoing-filter-actions .ongoing-filter-action-btn,

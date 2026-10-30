@@ -273,6 +273,58 @@ class LearningOngoingController extends Controller
     }
 
     /**
+     * Mode Non KP OWL — HTML fragment Non KP OWL (Offline Training) Learning On Going.
+     */
+    public function nonKpOwl()
+    {
+        $userId = (int) Auth::id();
+        $userEmpId = Auth::user()?->id_emp;
+        $resolver = app(\App\Services\Learning\LearningProgressResolver::class);
+        $offlineService = app(\App\Services\Learning\UserRecordOfflineService::class);
+
+        $rawTrainings = $resolver->getOngoingNonKpOwl($userId, $userEmpId);
+        $ongoingNonKpOwl = $rawTrainings->map(fn ($otu) => $offlineService->normalizeRow($otu));
+
+        $filterOptions = $offlineService->getFilterOptions($userId, $userEmpId);
+
+        $search = trim((string) request('ongoing_search', request('record_search', request('search', request('q', '')))));
+        $filterType = request('ongoing_filter_type', request('record_filter_type', request('type', 'all')));
+        $filterClassification = request('ongoing_filter_classification', request('record_filter_classification', request('classification', 'all')));
+        $filterYear = request('ongoing_filter_year', request('record_filter_year', request('year', 'all')));
+
+        if ($filterType !== 'all' && $filterType !== '') {
+            $ongoingNonKpOwl = $ongoingNonKpOwl->filter(function ($row) use ($filterType) {
+                return strcasecmp((string)($row['type'] ?? ''), (string)$filterType) === 0;
+            });
+        }
+        if ($filterClassification !== 'all' && $filterClassification !== '') {
+            $ongoingNonKpOwl = $ongoingNonKpOwl->filter(function ($row) use ($filterClassification) {
+                return strcasecmp((string)($row['classification'] ?? ($row['main_classification'] ?? '')), (string)$filterClassification) === 0;
+            });
+        }
+        if ($filterYear !== 'all' && $filterYear !== '') {
+            $ongoingNonKpOwl = $ongoingNonKpOwl->filter(function ($row) use ($filterYear) {
+                $y1 = !empty($row['start_date']) ? substr($row['start_date'], 0, 4) : '';
+                $y2 = !empty($row['finish_date']) ? substr($row['finish_date'], 0, 4) : '';
+                return $y1 === (string)$filterYear || $y2 === (string)$filterYear;
+            });
+        }
+        if ($search !== '') {
+            $ongoingNonKpOwl = $ongoingNonKpOwl->filter(function ($row) use ($search) {
+                $q = mb_strtolower($search);
+                $title = mb_strtolower((string)($row['title'] ?? ''));
+                $batch = mb_strtolower((string)($row['batch'] ?? ''));
+                $provider = mb_strtolower((string)($row['provider'] ?? ($row['provider_name'] ?? '')));
+                $sub = mb_strtolower((string)($row['subtitle'] ?? ''));
+                return str_contains($title, $q) || str_contains($batch, $q) || str_contains($provider, $q) || str_contains($sub, $q);
+            });
+        }
+        $ongoingNonKpOwl = $ongoingNonKpOwl->values();
+
+        return view('user.learning.dashboard-partials.ongoing-non-kp-owl', compact('ongoingNonKpOwl', 'filterOptions'));
+    }
+
+    /**
      * Filter mode Content — search, type (Video/Document), quick status,
      * year/month, serta seluruh filter modal All Filters. Tanpa unsur playlist.
      *

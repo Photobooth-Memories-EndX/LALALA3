@@ -164,7 +164,7 @@
                     <h3 class="card-title fast-filter-title">Quick Filter</h3>
                     {{-- <p class="fast-filter-subtitle">Quickly filter your learning content.</p> --}}
                 </div>
-                <x-learning.ongoing-mode-switch mode="content" />
+                <x-learning.ongoing-mode-switch mode="content" :show-download="false" />
             </div>
 
             {{-- ── Quick dropdown filters (Type / Status / Year / Month) ──────────────
@@ -320,8 +320,6 @@
                    aria-label="Reset Filter">
                     <i class="ti ti-refresh" aria-hidden="true"></i>
                 </a>
-
-                <x-learning.ongoing-export mode="{{ request('ongoing_mode') === 'mooc' ? 'mooc' : 'content' }}" />
             </div>
 
             </div>

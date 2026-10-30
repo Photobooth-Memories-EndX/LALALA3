@@ -30,7 +30,7 @@
                  aria-hidden="{{ $initialLearningTab === 'ongoing' ? 'false' : 'true' }}">
                 <x-shared.hero-learning-ongoing
                     :mode="request('ongoing_mode', 'content')"
-                    :count="0"
+                    :count="in_array(request('ongoing_mode'), ['non-kp-owl', 'ongoing-non-kp-owl', 'offline'], true) ? count($ongoingNonKpOwl ?? []) : 0"
                 />
             </div>
 
@@ -69,18 +69,25 @@
         <x-learning.tab-navigation :active="$initialLearningTab" />
 
         <div id="learning-tab-content">
-            <div class="card border-0 shadow-sm rounded-4 p-4">
-                <div class="placeholder-glow">
-                    <span class="placeholder col-6 mb-3 rounded-3" style="height:20px"></span>
-                    <span class="placeholder col-12 mb-2 rounded-3" style="height:14px"></span>
-                    <span class="placeholder col-10 mb-4 rounded-3" style="height:14px"></span>
-                    <div class="row g-3">
-                        <div class="col-md-4"><span class="placeholder col-12 rounded-4" style="height:200px"></span></div>
-                        <div class="col-md-4"><span class="placeholder col-12 rounded-4" style="height:200px"></span></div>
-                        <div class="col-md-4"><span class="placeholder col-12 rounded-4" style="height:200px"></span></div>
+            @if (request('record_mode') === 'ongoing-non-kp-owl' || in_array(request('ongoing_mode'), ['non-kp-owl', 'ongoing-non-kp-owl', 'offline'], true))
+                @include('user.learning.dashboard-partials.ongoing-non-kp-owl', [
+                    'ongoingNonKpOwl' => $ongoingNonKpOwl ?? collect(),
+                    'filterOptions'   => $filterOptions ?? [],
+                ])
+            @else
+                <div class="card border-0 shadow-sm rounded-4 p-4">
+                    <div class="placeholder-glow">
+                        <span class="placeholder col-6 mb-3 rounded-3" style="height:20px"></span>
+                        <span class="placeholder col-12 mb-2 rounded-3" style="height:14px"></span>
+                        <span class="placeholder col-10 mb-4 rounded-3" style="height:14px"></span>
+                        <div class="row g-3">
+                            <div class="col-md-4"><span class="placeholder col-12 rounded-4" style="height:200px"></span></div>
+                            <div class="col-md-4"><span class="placeholder col-12 rounded-4" style="height:200px"></span></div>
+                            <div class="col-md-4"><span class="placeholder col-12 rounded-4" style="height:200px"></span></div>
+                        </div>
                     </div>
                 </div>
-            </div>
+            @endif
         </div>
 
     </div>

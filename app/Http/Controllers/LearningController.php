@@ -86,6 +86,12 @@ class LearningController extends Controller
 
         $averageProgress = (int) round(ContentUser::where('user_id', $userId)->avg('progress') ?? 0);
 
+        $resolver = app(\App\Services\Learning\LearningProgressResolver::class);
+        $offlineService = app(\App\Services\Learning\UserRecordOfflineService::class);
+        $rawTrainings = $resolver->getOngoingNonKpOwl((int) $userId, $user?->id_emp);
+        $ongoingNonKpOwl = $rawTrainings->map(fn ($otu) => $offlineService->normalizeRow($otu));
+        $filterOptions = $offlineService->getFilterOptions((int) $userId, $user?->id_emp);
+
         return view('user.learning.dashboard', compact(
             'user',
             'learningHours',
@@ -97,7 +103,9 @@ class LearningController extends Controller
             'certificateStats',
             'recordMode',
             'recordStats',
-            'averageProgress'
+            'averageProgress',
+            'ongoingNonKpOwl',
+            'filterOptions'
         ));
     }
 
@@ -109,15 +117,17 @@ class LearningController extends Controller
     public function dashboardPartial(string $tab, CertificateEligibilityService $eligibilityService)
     {
         return match ($tab) {
-            // Tab ongoing: Content (default), Playlist, dan placeholder MOOC.
+            // Tab ongoing: Content (default), Playlist, MOOC, dan Non KP OWL.
             'ongoing' => match (request('ongoing_mode')) {
                 'playlist' => app(LearningOngoingController::class)->playlist(),
                 'mooc'     => app(LearningOngoingController::class)->mooc(),
+                'non-kp-owl', 'ongoing-non-kp-owl', 'offline' => app(LearningOngoingController::class)->nonKpOwl(),
                 default    => strtolower((string) request('type')) === 'playlist'
                     ? app(LearningOngoingController::class)->playlist()
                     : app(LearningOngoingController::class)->content(),
             },
             'record'      => match (strtolower(trim((string) request('record_mode', 'online')))) {
+                'ongoing-non-kp-owl' => app(LearningOngoingController::class)->nonKpOwl(),
                 'offline' => app(\App\Http\Controllers\User\Record\LearningRecordOfflineController::class)->partial(),
                 'all'     => app(\App\Http\Controllers\User\Record\LearningRecordAllController::class)->partial($eligibilityService),
                 default   => app(\App\Http\Controllers\User\Record\LearningRecordOnlineController::class)->partial($eligibilityService),
