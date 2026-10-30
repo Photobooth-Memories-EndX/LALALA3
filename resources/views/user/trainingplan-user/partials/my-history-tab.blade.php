@@ -1,4 +1,4 @@
-@php
+<!-- @php
     $myHistory = $myHistory ?? collect();
     if ($myHistory->isEmpty() && \Illuminate\Support\Facades\Auth::check()) {
         $userId = \Illuminate\Support\Facades\Auth::id();
@@ -184,4 +184,4 @@
             </tbody>
         </table>
     </div>
-</div>
+</div> -->

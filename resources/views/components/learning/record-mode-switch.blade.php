@@ -13,7 +13,15 @@
 
 @once
 <style>
-.record-mode-switch .record-mode-btn {
+.record-mode-switch .record-mode-btn,
+.quick-filter-btn,
+.quick-filter-btn:hover,
+.quick-filter-btn:focus,
+.quick-filter-btn:active,
+.quick-filter-btn:disabled,
+.quick-filter-btn.loading,
+.quick-filter-btn.disabled,
+.quick-filter-skeleton {
     border-radius: 9999px !important;
     border: 0 !important;
     background-color: #f1f5f9 !important;
@@ -28,25 +36,33 @@
     box-shadow: none !important;
     white-space: nowrap !important;
 }
-.record-mode-switch .record-mode-btn:hover {
+.record-mode-switch .record-mode-btn:hover,
+.quick-filter-btn:hover {
     background-color: #e2e8f0 !important;
     color: #1e293b !important;
 }
 .record-mode-switch .record-mode-btn.active,
-.record-mode-switch .record-mode-btn.btn-primary {
+.record-mode-switch .record-mode-btn.btn-primary,
+.quick-filter-btn.active {
     background-color: #2563eb !important;
     color: #ffffff !important;
     box-shadow: 0 3px 10px rgba(37, 99, 235, 0.25) !important;
 }
 [data-bs-theme="dark"] .record-mode-switch .record-mode-btn,
+[data-bs-theme="dark"] .quick-filter-btn,
 body.dark-mode .record-mode-switch .record-mode-btn,
-body.theme-dark .record-mode-switch .record-mode-btn {
+body.dark-mode .quick-filter-btn,
+body.theme-dark .record-mode-switch .record-mode-btn,
+body.theme-dark .quick-filter-btn {
     background-color: #1e293b !important;
     color: #94a3b8 !important;
 }
 [data-bs-theme="dark"] .record-mode-switch .record-mode-btn.active,
+[data-bs-theme="dark"] .quick-filter-btn.active,
 body.dark-mode .record-mode-switch .record-mode-btn.active,
-body.theme-dark .record-mode-switch .record-mode-btn.active {
+body.dark-mode .quick-filter-btn.active,
+body.theme-dark .record-mode-switch .record-mode-btn.active,
+body.theme-dark .quick-filter-btn.active {
     background-color: #2563eb !important;
     color: #ffffff !important;
 }
@@ -58,7 +74,7 @@ body.theme-dark .record-mode-switch .record-mode-btn.active {
     <!-- Left Side: Quick Filter Tabs (Sequence: All Record -> KP OWL -> Non KP OWL) -->
     <div class="learning-mode-switch record-mode-switch d-flex align-items-center gap-2" role="group" aria-label="Learning Record mode">
         <button type="button"
-                class="btn learning-mode-btn record-mode-btn rounded-pill px-4 py-2 border-0 {{ $currentMode === 'all' ? 'active' : '' }}"
+                class="btn learning-mode-btn record-mode-btn quick-filter-btn rounded-pill rounded-full px-4 py-2 border-0 {{ $currentMode === 'all' ? 'active' : '' }}"
                 data-mode="all"
                 title="All Record"
                 aria-label="All Record"
@@ -67,7 +83,7 @@ body.theme-dark .record-mode-switch .record-mode-btn.active {
             <span>All Record</span>
         </button>
         <button type="button"
-                class="btn learning-mode-btn record-mode-btn rounded-pill px-4 py-2 border-0 {{ $currentMode === 'online' ? 'active' : '' }}"
+                class="btn learning-mode-btn record-mode-btn quick-filter-btn rounded-pill rounded-full px-4 py-2 border-0 {{ $currentMode === 'online' ? 'active' : '' }}"
                 data-mode="online"
                 title="KP OWL"
                 aria-label="KP OWL"
@@ -76,7 +92,7 @@ body.theme-dark .record-mode-switch .record-mode-btn.active {
             <span>KP OWL</span>
         </button>
         <button type="button"
-                class="btn learning-mode-btn record-mode-btn rounded-pill px-4 py-2 border-0 {{ $currentMode === 'offline' ? 'active' : '' }}"
+                class="btn learning-mode-btn record-mode-btn quick-filter-btn rounded-pill rounded-full px-4 py-2 border-0 {{ $currentMode === 'offline' ? 'active' : '' }}"
                 data-mode="offline"
                 title="Non KP OWL"
                 aria-label="Non KP OWL"

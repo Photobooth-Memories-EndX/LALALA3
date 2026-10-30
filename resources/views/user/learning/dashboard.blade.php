@@ -10,6 +10,30 @@
 
 @endphp
 
+<style>
+    /* Force rounded pill styling on all Quick Filter tab states in Learning Record */
+    .quick-filter-btn,
+    .quick-filter-btn:hover,
+    .quick-filter-btn:focus,
+    .quick-filter-btn:active,
+    .quick-filter-btn:disabled,
+    .quick-filter-btn.loading,
+    .quick-filter-btn.disabled,
+    .quick-filter-skeleton,
+    .record-mode-switch .record-mode-btn,
+    .record-mode-switch .record-mode-btn:hover,
+    .record-mode-switch .record-mode-btn:focus,
+    .record-mode-switch .record-mode-btn:active,
+    .record-mode-switch .record-mode-btn:disabled,
+    .record-mode-switch .record-mode-btn.loading,
+    .record-mode-switch .record-mode-btn.disabled,
+    .record-mode-switch-wrapper .record-mode-btn,
+    .learning-mode-switch .record-mode-btn {
+        border-radius: 9999px !important; /* Force fully rounded pill shape at all times */
+        transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+</style>
+
 <div class="page-body owl-unified-theme-page learning-dashboard-page">
     <div class="container-xl">
 

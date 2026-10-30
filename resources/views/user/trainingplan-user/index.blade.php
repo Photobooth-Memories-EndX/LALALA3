@@ -409,12 +409,12 @@
                         <span>Available Training</span>
                     </button>
                 </li>
-                <li class="nav-item" role="presentation">
+                <!-- <li class="nav-item" role="presentation">
                     <button class="nav-link {{ $isHistoryActive ? 'active' : '' }}" id="tab-history-btn" data-bs-toggle="pill" data-bs-target="#tab-history" type="button" role="tab" aria-controls="tab-history" aria-selected="{{ $isHistoryActive ? 'true' : 'false' }}">
                         <i class="ti ti-history"></i>
                         <span>My History</span>
                     </button>
-                </li>
+                </li> -->
             </ul>
         </div>
 

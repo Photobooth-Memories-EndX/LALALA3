@@ -49,10 +49,9 @@
                 '</div>' +
                 '<div class="d-flex align-items-center justify-content-between gap-2 w-100 mt-3 mb-0 quick-filter-row record-mode-switch-wrapper">' +
                     '<div class="learning-mode-switch record-mode-switch d-flex align-items-center gap-2" role="group" aria-label="Learning Record mode">' +
-                        '<button type="button" class="btn learning-mode-btn record-mode-btn rounded-pill px-4 py-2 border-0 ' + (mode === 'all' ? 'active' : '') + '" data-mode="all" title="All Record" aria-label="All Record"><i class="ti ti-stack-2"></i><span>All Record</span></button>' +
-                        '<button type="button" class="btn learning-mode-btn record-mode-btn rounded-pill px-4 py-2 border-0 ' + (mode === 'online' ? 'active' : '') + '" data-mode="online" title="KP OWL" aria-label="KP OWL"><i class="ti ti-device-laptop"></i><span>KP OWL</span></button>' +
-                        '<button type="button" class="btn learning-mode-btn record-mode-btn rounded-pill px-4 py-2 border-0 ' + (mode === 'offline' ? 'active' : '') + '" data-mode="offline" title="Non KP OWL" aria-label="Non KP OWL"><i class="ti ti-certificate"></i><span>Non KP OWL</span></button>' +
-
+                        '<button type="button" class="btn learning-mode-btn record-mode-btn quick-filter-btn rounded-pill rounded-full px-4 py-2 border-0 ' + (mode === 'all' ? 'active' : '') + '" data-mode="all" title="All Record" aria-label="All Record" style="border-radius: 9999px !important;"><i class="ti ti-stack-2"></i><span>All Record</span></button>' +
+                        '<button type="button" class="btn learning-mode-btn record-mode-btn quick-filter-btn rounded-pill rounded-full px-4 py-2 border-0 ' + (mode === 'online' ? 'active' : '') + '" data-mode="online" title="KP OWL" aria-label="KP OWL" style="border-radius: 9999px !important;"><i class="ti ti-device-laptop"></i><span>KP OWL</span></button>' +
+                        '<button type="button" class="btn learning-mode-btn record-mode-btn quick-filter-btn rounded-pill rounded-full px-4 py-2 border-0 ' + (mode === 'offline' ? 'active' : '') + '" data-mode="offline" title="Non KP OWL" aria-label="Non KP OWL" style="border-radius: 9999px !important;"><i class="ti ti-certificate"></i><span>Non KP OWL</span></button>' +
                     '</div>' +
                     '<span class="placeholder rounded-3 ms-auto" style="width:118px;height:40px;"></span>' +
                 '</div>' +
@@ -81,9 +80,9 @@
                     '<div class="card-body p-4 border-bottom placeholder-glow">' +
                         switchInsideHeaderHtml +
                         '<div class="d-flex align-items-center flex-wrap gap-2 mt-3">' +
-                            '<span class="placeholder rounded-pill" style="width:110px;height:38px;"></span>' +
-                            '<span class="placeholder rounded-pill" style="width:140px;height:38px;"></span>' +
-                            '<span class="placeholder rounded-pill" style="width:90px;height:38px;"></span>' +
+                            '<span class="placeholder rounded-pill quick-filter-skeleton" style="width:110px;height:38px;border-radius:9999px !important;"></span>' +
+                            '<span class="placeholder rounded-pill quick-filter-skeleton" style="width:140px;height:38px;border-radius:9999px !important;"></span>' +
+                            '<span class="placeholder rounded-pill quick-filter-skeleton" style="width:90px;height:38px;border-radius:9999px !important;"></span>' +
                             '<span class="placeholder flex-grow-1 rounded-3" style="min-width:200px;height:38px;"></span>' +
                             '<span class="placeholder rounded-3" style="width:38px;height:38px;"></span>' +
                             '<span class="placeholder rounded-3" style="width:38px;height:38px;"></span>' +
