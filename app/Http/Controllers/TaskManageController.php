@@ -540,7 +540,17 @@ class TaskManageController extends Controller
 
         $submissions = $task->submissions()
             ->with('user')
-            ->when($request->status, fn ($q, $st) => $q->where('status', $st))
+            ->when($request->status, function ($q, $st) {
+                if ($st === 'need_review' || $st === 'pending') {
+                    $q->where('status', 'pending')->where('resubmit_requested', false);
+                } elseif ($st === 'approve' || $st === 'completed') {
+                    $q->where('status', 'completed');
+                } elseif ($st === 'rejected') {
+                    $q->where(fn ($sub) => $sub->where('status', 'rejected')->orWhere('resubmit_requested', true));
+                } elseif ($st !== 'all') {
+                    $q->where('status', $st);
+                }
+            })
             ->orderByDesc('submitted_at')
             ->get();
 

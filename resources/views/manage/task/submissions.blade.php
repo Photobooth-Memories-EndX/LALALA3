@@ -12,6 +12,13 @@
     $totalSubmissions = $allSubmissions->count();
     $gradedCount = $gradedSubmissions->count();
 
+    $activeFilter = request('status', 'all');
+    if ($activeFilter === 'pending') {
+        $activeFilter = 'need_review';
+    } elseif ($activeFilter === 'completed') {
+        $activeFilter = 'approve';
+    }
+
     // Default active submission: first needs-review, or first submission
     $defaultActive = $needsReviewSubmissions->first() ?? $allSubmissions->first();
     $defaultActiveId = $defaultActive ? $defaultActive->id : 0;
@@ -90,6 +97,53 @@
     .preview-image-clickable:hover {
         filter: brightness(1.05);
     }
+
+    /* Quick Filter Pills */
+    .my-task-pills-row {
+        margin-top: 0.15rem;
+    }
+    .my-task-category-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.4rem 1.15rem;
+        border-radius: 50rem;
+        font-size: 0.8125rem;
+        font-weight: 500;
+        line-height: 1.2;
+        text-decoration: none;
+        white-space: nowrap;
+        background-color: #f1f5f9;
+        color: #334155;
+        border: none;
+        cursor: pointer;
+        transition: all 0.15s ease-in-out;
+    }
+    .my-task-category-pill:hover {
+        background-color: #e2e8f0;
+        color: #0f172a;
+        text-decoration: none;
+    }
+    .my-task-category-pill.active {
+        background-color: #e0f2fe !important;
+        color: #0284c7 !important;
+        font-weight: 600;
+    }
+    [data-bs-theme="dark"] .my-task-category-pill,
+    body.dark-mode .my-task-category-pill {
+        background-color: #334155;
+        color: #cbd5e1;
+    }
+    [data-bs-theme="dark"] .my-task-category-pill:hover,
+    body.dark-mode .my-task-category-pill:hover {
+        background-color: #475569;
+        color: #ffffff;
+    }
+    [data-bs-theme="dark"] .my-task-category-pill.active,
+    body.dark-mode .my-task-category-pill.active {
+        background-color: rgba(2, 132, 199, 0.25) !important;
+        color: #38bdf8 !important;
+    }
 </style>
 
 {{-- ══════════════════════════════════════════════════════════════════════ --}}
@@ -157,8 +211,55 @@
             @endif
 
             <div class="card shadow-sm border-0">
+                <div class="card-body border-bottom py-3">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                        {{-- Quick Filters: All, Need Review, Approve, Rejected --}}
+                        <div class="d-flex align-items-center flex-wrap gap-2 my-task-pills-row" id="submissionQuickFilters">
+                            <button type="button"
+                                    class="my-task-category-pill {{ $activeFilter === 'all' ? 'active' : '' }}"
+                                    data-filter="all"
+                                    title="Filter by All Submissions">
+                                All
+                                <span class="badge bg-secondary-lt ms-1.5 rounded-pill">{{ $counts['total'] ?? $totalSubmissions }}</span>
+                            </button>
+                            <button type="button"
+                                    class="my-task-category-pill {{ $activeFilter === 'need_review' ? 'active' : '' }}"
+                                    data-filter="need_review"
+                                    title="Filter by Need Review">
+                                Need Review
+                                <span class="badge bg-warning-lt ms-1.5 rounded-pill">{{ $counts['pending'] ?? $needsReviewSubmissions->count() }}</span>
+                            </button>
+                            <button type="button"
+                                    class="my-task-category-pill {{ $activeFilter === 'approve' ? 'active' : '' }}"
+                                    data-filter="approve"
+                                    title="Filter by Approve">
+                                Approve
+                                <span class="badge bg-success-lt ms-1.5 rounded-pill">{{ $counts['completed'] ?? $gradedSubmissions->count() }}</span>
+                            </button>
+                            <button type="button"
+                                    class="my-task-category-pill {{ $activeFilter === 'rejected' ? 'active' : '' }}"
+                                    data-filter="rejected"
+                                    title="Filter by Rejected">
+                                Rejected
+                                <span class="badge bg-danger-lt ms-1.5 rounded-pill">{{ $counts['rejected'] ?? $rejectedSubmissions->count() }}</span>
+                            </button>
+                        </div>
+
+                        {{-- Search Filter Input --}}
+                        <div class="position-relative" style="min-width: 220px;">
+                            <span class="position-absolute top-50 start-0 translate-middle-y ps-2.5 text-muted pointer-events-none" style="z-index: 2;">
+                                <i class="ti ti-search" style="font-size: 14px;"></i>
+                            </span>
+                            <input type="text"
+                                   id="responsesSearchInput"
+                                   class="form-control form-control-sm ps-4 rounded-pill"
+                                   placeholder="Search user..."
+                                   style="font-size: 12.5px;">
+                        </div>
+                    </div>
+                </div>
                 <div class="table-responsive">
-                    <table class="table table-vcenter table-hover mb-0">
+                    <table class="table table-vcenter table-hover mb-0" id="submissionsTable">
                         <thead>
                             <tr>
                                 <th>User</th>
@@ -170,7 +271,18 @@
                         </thead>
                         <tbody>
                             @forelse ($submissions as $submission)
-                                <tr>
+                                @php
+                                    $rowStatus = 'need_review';
+                                    if ($submission->status === 'completed') {
+                                        $rowStatus = 'approve';
+                                    } elseif ($submission->status === 'rejected' || $submission->resubmit_requested) {
+                                        $rowStatus = 'rejected';
+                                    }
+                                @endphp
+                                <tr class="submission-table-row"
+                                    data-status="{{ $rowStatus }}"
+                                    data-user-name="{{ strtolower($submission->user?->name ?? '') }}"
+                                    data-user-email="{{ strtolower($submission->user?->email ?? '') }}">
                                     <td>
                                         <div class="d-flex align-items-center gap-2.5">
                                             <div class="avatar avatar-sm rounded-circle bg-primary-lt text-primary fw-bold">
@@ -232,6 +344,15 @@
                                     </td>
                                 </tr>
                             @endforelse
+                            <tr id="noFilteredSubmissionsRow" class="d-none">
+                                <td colspan="5" class="text-center text-muted py-5">
+                                    <div class="empty">
+                                        <div class="empty-icon"><i class="ti ti-filter-off fs-1 text-muted"></i></div>
+                                        <p class="empty-title">No submissions found</p>
+                                        <p class="empty-subtitle text-muted">No submissions match the selected filter.</p>
+                                    </div>
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -1931,6 +2052,72 @@
         });
     }
 
+
+    // ── Table Quick Filter (All, Need Review, Approve, Rejected) + Search ──
+    var currentFilterStatus = '{{ $activeFilter }}';
+    var filterPills = document.querySelectorAll('#submissionQuickFilters .my-task-category-pill');
+    var tableRows = document.querySelectorAll('.submission-table-row');
+    var noFilteredRow = document.getElementById('noFilteredSubmissionsRow');
+    var searchInput = document.getElementById('responsesSearchInput');
+
+    function applyTableFilter() {
+        var query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+        var visibleCount = 0;
+
+        tableRows.forEach(function (row) {
+            var rowStatus = row.getAttribute('data-status');
+            var userName = row.getAttribute('data-user-name') || '';
+            var userEmail = row.getAttribute('data-user-email') || '';
+
+            var matchesStatus = (currentFilterStatus === 'all' || rowStatus === currentFilterStatus);
+            var matchesSearch = (!query || userName.indexOf(query) !== -1 || userEmail.indexOf(query) !== -1);
+
+            if (matchesStatus && matchesSearch) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        if (noFilteredRow) {
+            if (visibleCount === 0 && tableRows.length > 0) {
+                noFilteredRow.classList.remove('d-none');
+            } else {
+                noFilteredRow.classList.add('d-none');
+            }
+        }
+    }
+
+    filterPills.forEach(function (pill) {
+        pill.addEventListener('click', function () {
+            filterPills.forEach(function (p) { p.classList.remove('active'); });
+            this.classList.add('active');
+            currentFilterStatus = this.getAttribute('data-filter') || 'all';
+
+            if (window.history && window.history.replaceState) {
+                var url = new URL(window.location);
+                if (currentFilterStatus === 'all') {
+                    url.searchParams.delete('status');
+                } else {
+                    url.searchParams.set('status', currentFilterStatus);
+                }
+                window.history.replaceState({}, '', url);
+            }
+
+            applyTableFilter();
+        });
+    });
+
+    if (searchInput) {
+        searchInput.addEventListener('input', function () {
+            applyTableFilter();
+        });
+    }
+
+    if (currentFilterStatus !== 'all') {
+        applyTableFilter();
+    }
 
     // Set initial active state if data exists
     if (submissionsData.length > 0) {

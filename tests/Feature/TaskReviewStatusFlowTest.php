@@ -876,4 +876,87 @@ class TaskReviewStatusFlowTest extends TestCase
         // 3. Download button exists
         $this->assertStringContainsString('Download', $html);
     }
+
+    public function test_submissions_responses_table_renders_quick_filters_all_need_review_approve_rejected(): void
+    {
+        $task = Task::create([
+            'parent_type'      => 'playlist',
+            'training_plan_id' => $this->plan->id,
+            'title'            => 'Submissions Quick Filter Test ' . uniqid(),
+            'type'             => 'open_ended',
+            'status'           => 'published',
+            'created_by'       => $this->admin->id,
+        ]);
+
+        // 1. Pending (Need Review)
+        TaskSubmission::create([
+            'task_id'            => $task->id,
+            'user_id'            => $this->learner->id,
+            'status'             => 'pending',
+            'resubmit_requested' => false,
+            'submitted_at'       => now(),
+        ]);
+
+        // 2. Completed (Approve)
+        $existingUsers = User::where('role', User::ROLE_USER)->where('id', '!=', $this->learner->id)->take(2)->get();
+        $user2 = $existingUsers[0] ?? User::create([
+            'name'     => 'User Two ' . uniqid(),
+            'email'    => 'user2_' . uniqid() . '@example.com',
+            'password' => bcrypt('password'),
+            'role'     => User::ROLE_USER,
+            'team'     => 'Default Team',
+        ]);
+        TaskSubmission::create([
+            'task_id'            => $task->id,
+            'user_id'            => $user2->id,
+            'status'             => 'completed',
+            'score'              => 90,
+            'resubmit_requested' => false,
+            'submitted_at'       => now(),
+        ]);
+
+        // 3. Resubmit (Rejected)
+        $user3 = $existingUsers[1] ?? User::create([
+            'name'     => 'User Three ' . uniqid(),
+            'email'    => 'user3_' . uniqid() . '@example.com',
+            'password' => bcrypt('password'),
+            'role'     => User::ROLE_USER,
+            'team'     => 'Default Team',
+        ]);
+        TaskSubmission::create([
+            'task_id'            => $task->id,
+            'user_id'            => $user3->id,
+            'status'             => 'pending',
+            'resubmit_requested' => true,
+            'submitted_at'       => now(),
+        ]);
+
+        $response = $this->actingAs($this->admin)->get(route('manage.task.submissions', $task));
+        $response->assertStatus(200);
+
+        $html = $response->getContent();
+
+        // Check quick filter container & pills
+        $this->assertStringContainsString('id="submissionQuickFilters"', $html);
+        $this->assertStringContainsString('data-filter="all"', $html);
+        $this->assertStringContainsString('All', $html);
+        $this->assertStringContainsString('data-filter="need_review"', $html);
+        $this->assertStringContainsString('Need Review', $html);
+        $this->assertStringContainsString('data-filter="approve"', $html);
+        $this->assertStringContainsString('Approve', $html);
+        $this->assertStringContainsString('data-filter="rejected"', $html);
+        $this->assertStringContainsString('Rejected', $html);
+
+        // Check rows data-status
+        $this->assertStringContainsString('data-status="need_review"', $html);
+        $this->assertStringContainsString('data-status="approve"', $html);
+        $this->assertStringContainsString('data-status="rejected"', $html);
+
+        // Server-side filtering check
+        $needReviewResponse = $this->actingAs($this->admin)->get(route('manage.task.submissions', ['task' => $task, 'status' => 'need_review']));
+        $needReviewResponse->assertStatus(200);
+        $needReviewHtml = $needReviewResponse->getContent();
+        $this->assertStringContainsString('data-status="need_review"', $needReviewHtml);
+        $this->assertStringNotContainsString('data-status="approve"', $needReviewHtml);
+    }
 }
