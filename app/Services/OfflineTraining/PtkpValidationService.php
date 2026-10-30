@@ -29,7 +29,14 @@ class PtkpValidationService
         foreach ($employeeIds as $id) {
             $trimmed = trim((string) $id);
             if ($trimmed !== '') {
-                $normalizedIds[strtolower($trimmed)] = $trimmed;
+                $key = strtolower($trimmed);
+                $normalizedIds[$key] = $trimmed;
+
+                // For purely numeric IDs with < 6 digits, also query 6-digit zero-padded variant
+                if (ctype_digit($trimmed) && strlen($trimmed) < 6) {
+                    $padded = str_pad($trimmed, 6, '0', STR_PAD_LEFT);
+                    $normalizedIds[strtolower($padded)] = $padded;
+                }
             }
         }
 
@@ -47,6 +54,17 @@ class PtkpValidationService
                 $lookup[$key] = collect();
             }
             $lookup[$key]->push($user);
+
+            // Also map unpadded variant if numeric and has leading zeros
+            if (ctype_digit($key)) {
+                $unpadded = ltrim($key, '0');
+                if ($unpadded !== '' && $unpadded !== $key) {
+                    if (!isset($lookup[$unpadded])) {
+                        $lookup[$unpadded] = collect();
+                    }
+                    $lookup[$unpadded]->push($user);
+                }
+            }
         }
 
         return $lookup;
@@ -174,10 +192,28 @@ class PtkpValidationService
             }
         }
 
-        // 4. Other non-blocking validations
+        // 4. Date and Time Format Validations
+        if (!empty($normalized['start_time_invalid'])) {
+            $errors[] = "Invalid Start Time format: '{$normalized['raw_start_time']}'. Expected HH:mm or HH:mm:ss.";
+        }
+        if (!empty($normalized['end_time_invalid'])) {
+            $errors[] = "Invalid End Time format: '{$normalized['raw_end_time']}'. Expected HH:mm or HH:mm:ss.";
+        }
+        if (!empty($normalized['start_date_invalid'])) {
+            $errors[] = "Invalid Start Date format: '{$normalized['raw_start_date']}'. Expected YYYY-MM-DD.";
+        }
+        if (!empty($normalized['end_date_invalid'])) {
+            $errors[] = "Invalid End Date format: '{$normalized['raw_end_date']}'. Expected YYYY-MM-DD.";
+        }
+
+        // 5. Date & Time sequence validations
         if (!empty($normalized['start_date']) && !empty($normalized['finish_date'])) {
             if ($normalized['start_date'] > $normalized['finish_date']) {
                 $warnings[] = "Start Date ({$normalized['start_date']}) is after End Date ({$normalized['finish_date']}).";
+            } elseif ($normalized['start_date'] === $normalized['finish_date'] && !empty($normalized['start_time']) && !empty($normalized['end_time'])) {
+                if ($normalized['start_time'] > $normalized['end_time']) {
+                    $warnings[] = "Start Time ({$normalized['start_time']}) is after End Time ({$normalized['end_time']}).";
+                }
             }
         }
 
@@ -278,15 +314,54 @@ class PtkpValidationService
         $normalized['progress'] = $this->parseNumeric($raw['progress'] ?? null);
 
         // Dates & times
-        $normalized['start_date'] = $this->parseDate($raw['start_date'] ?? null);
-        $normalized['end_date'] = $this->parseDate($raw['end_date'] ?? null);
-        $normalized['finish_date'] = $normalized['end_date'] ?? $normalized['start_date'];
-        $normalized['start_time'] = $this->parseTime($raw['start_time'] ?? null);
-        $normalized['end_time'] = $this->parseTime($raw['end_time'] ?? null);
-        $normalized['month'] = isset($raw['month']) ? trim((string) $raw['month']) : null;
-        $normalized['requirement'] = isset($raw['requirement']) ? trim((string) $raw['requirement']) : null;
+        $rawStartDate = $raw['start_date'] ?? null;
+        $normalized['start_date'] = $this->parseDate($rawStartDate);
+        $normalized['start_date_invalid'] = false;
+        if ($rawStartDate !== null && trim((string) $rawStartDate) !== '' && !in_array(strtolower(trim((string) $rawStartDate)), ['-', '--', 'n/a', 'na', 'none', 'null', 'tba'], true)) {
+            if ($normalized['start_date'] === null) {
+                $normalized['start_date_invalid'] = true;
+                $normalized['raw_start_date'] = trim((string) $rawStartDate);
+            }
+        }
 
-        // Derived duration in seconds from times if available
+        $rawEndDate = $raw['end_date'] ?? null;
+        $normalized['end_date'] = $this->parseDate($rawEndDate);
+        $normalized['end_date_invalid'] = false;
+        if ($rawEndDate !== null && trim((string) $rawEndDate) !== '' && !in_array(strtolower(trim((string) $rawEndDate)), ['-', '--', 'n/a', 'na', 'none', 'null', 'tba'], true)) {
+            if ($normalized['end_date'] === null) {
+                $normalized['end_date_invalid'] = true;
+                $normalized['raw_end_date'] = trim((string) $rawEndDate);
+            }
+        }
+        $normalized['finish_date'] = $normalized['end_date'] ?? $normalized['start_date'];
+
+        $rawStartTime = $raw['start_time'] ?? null;
+        $normalized['start_time'] = $this->parseTime($rawStartTime);
+        $normalized['start_time_invalid'] = false;
+        if ($rawStartTime !== null && trim((string) $rawStartTime) !== '' && !in_array(strtolower(trim((string) $rawStartTime)), ['-', '--', 'n/a', 'na', 'none', 'null', 'tba', 'belum ada'], true)) {
+            if ($normalized['start_time'] === null) {
+                $normalized['start_time_invalid'] = true;
+                $normalized['raw_start_time'] = trim((string) $rawStartTime);
+            }
+        }
+
+        $rawEndTime = $raw['end_time'] ?? null;
+        $normalized['end_time'] = $this->parseTime($rawEndTime);
+        $normalized['end_time_invalid'] = false;
+        if ($rawEndTime !== null && trim((string) $rawEndTime) !== '' && !in_array(strtolower(trim((string) $rawEndTime)), ['-', '--', 'n/a', 'na', 'none', 'null', 'tba', 'belum ada'], true)) {
+            if ($normalized['end_time'] === null) {
+                $normalized['end_time_invalid'] = true;
+                $normalized['raw_end_time'] = trim((string) $rawEndTime);
+            }
+        }
+
+        $normalized['month'] = isset($raw['month']) ? trim((string) $raw['month']) : null;
+
+        // Requirement (Mandatory / Non Mandatory)
+        $rawReq = strtolower(trim((string) ($raw['requirement'] ?? '')));
+        $normalized['requirement'] = ($rawReq === 'mandatory') ? 'mandatory' : 'non mandatory';
+
+        // Derived duration in seconds from times or learning hours if available
         $normalized['duration_seconds'] = $this->parseDurationToSeconds($raw['duration_seconds'] ?? null);
         if ($normalized['duration_seconds'] === null && !empty($normalized['start_time']) && !empty($normalized['end_time'])) {
             $t1 = strtotime($normalized['start_time']);
@@ -294,6 +369,9 @@ class PtkpValidationService
             if ($t1 !== false && $t2 !== false && $t2 > $t1) {
                 $normalized['duration_seconds'] = $t2 - $t1;
             }
+        }
+        if ($normalized['duration_seconds'] === null && !empty($normalized['learning_hours']) && $normalized['learning_hours'] > 0) {
+            $normalized['duration_seconds'] = (int) round($normalized['learning_hours'] * 3600);
         }
 
         // Attendance & obligations
@@ -334,12 +412,12 @@ class PtkpValidationService
             try {
                 return Carbon::instance(ExcelDate::excelToDateTimeObject((float) $value))->format('Y-m-d');
             } catch (Throwable $e) {
-                // fall through
+                return null;
             }
         }
 
         $str = trim((string) $value);
-        if ($str === '' || $str === '-') {
+        if ($str === '' || in_array(strtolower($str), ['-', '--', 'n/a', 'na', 'none', 'null', 'tba'], true)) {
             return null;
         }
 
@@ -356,27 +434,49 @@ class PtkpValidationService
             return null;
         }
 
-        if (is_numeric($value) && (float) $value < 1.0) {
-            try {
-                $seconds = round((float) $value * 86400);
-                $h = floor($seconds / 3600);
+        // 1. Numeric Excel time serial or datetime float
+        if (is_numeric($value)) {
+            $num = (float) $value;
+            if ($num >= 0.0 && $num < 1.0) {
+                $seconds = (int) round($num * 86400);
+                $h = floor($seconds / 3600) % 24;
                 $m = floor(($seconds % 3600) / 60);
                 $s = $seconds % 60;
                 return sprintf('%02d:%02d:%02d', $h, $m, $s);
-            } catch (Throwable $e) {
-                // fall through
             }
+            if ($num >= 1.0) {
+                try {
+                    return ExcelDate::excelToDateTimeObject($num)->format('H:i:s');
+                } catch (Throwable $e) {
+                    return null;
+                }
+            }
+            return null;
         }
 
         $str = trim((string) $value);
+        if ($str === '' || in_array(strtolower($str), ['-', '--', 'n/a', 'na', 'none', 'null', 'tba', 'belum ada'], true)) {
+            return null;
+        }
+
+        // 2. Direct HH:mm or HH:mm:ss regex
         if (preg_match('/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/', $str, $matches)) {
             $h = (int) $matches[1];
             $m = (int) $matches[2];
             $s = isset($matches[3]) ? (int) $matches[3] : 0;
-            return sprintf('%02d:%02d:%02d', $h, $m, $s);
+            if ($h >= 0 && $h <= 23 && $m >= 0 && $m <= 59 && $s >= 0 && $s <= 59) {
+                return sprintf('%02d:%02d:%02d', $h, $m, $s);
+            }
+            return null;
         }
 
-        return $str !== '' && $str !== '-' ? $str : null;
+        // 3. Carbon parse for AM/PM formats (e.g. '8:30 AM', '5:00 PM') or full datetime strings
+        try {
+            $dt = Carbon::parse($str);
+            return $dt->format('H:i:s');
+        } catch (Throwable $e) {
+            return null;
+        }
     }
 
     public function parseDurationToSeconds($value): ?int

@@ -275,7 +275,7 @@ class PtkpExcelSchema
     }
 
     /**
-     * Header analysis specifically for canonical 48 PTKP columns.
+     * Header analysis specifically for canonical 48 PTKP columns with resilient mapping.
      */
     public static function analyzeHeaders(array $foundHeaders, string $format = 'single_row'): array
     {
@@ -284,16 +284,25 @@ class PtkpExcelSchema
         $detectedCount = count($foundHeaders);
 
         $canonicalMap = [];
+        $aliasToKeyMap = [];
         foreach ($columns as $idx => $col) {
+            $normH = self::normalizeHeaderString($col['header']);
             $canonicalMap[$idx] = [
                 'col'         => $idx,
                 'letter'      => Coordinate::stringFromColumnIndex($idx),
                 'header'      => $col['header'],
-                'norm_header' => self::normalizeHeaderString($col['header']),
+                'norm_header' => $normH,
                 'key'         => $col['key'],
                 'required'    => $col['required'],
                 'aliases'     => array_map([self::class, 'normalizeHeaderString'], $col['aliases'] ?? []),
             ];
+
+            $aliasToKeyMap[$normH] = $col;
+            foreach ($canonicalMap[$idx]['aliases'] as $alias) {
+                if ($alias !== '') {
+                    $aliasToKeyMap[$alias] = $col;
+                }
+            }
         }
 
         $columnResults = [];
@@ -303,9 +312,12 @@ class PtkpExcelSchema
         $warningCount = 0;
         $invalidCount = 0;
         $missingCount = 0;
+        $duplicateCount = 0;
+        $mappedKeys = [];
 
         $maxCol = max($expectedCount, $detectedCount);
 
+        // Pass 1: Try exact, alias, or repositioned match
         for ($pos = 1; $pos <= $maxCol; $pos++) {
             $colLetter = Coordinate::stringFromColumnIndex($pos);
             $rawFound = isset($foundHeaders[$pos]) ? trim((string) $foundHeaders[$pos]) : '';
@@ -348,33 +360,69 @@ class PtkpExcelSchema
                 continue;
             }
 
+            $targetKey = null;
+            $targetHeader = null;
+            $matchStatus = null;
+            $matchMsg = null;
+
+            // Direct positional match (Exact)
             if (mb_strtolower($rawFound, 'UTF-8') === mb_strtolower($canonical['header'], 'UTF-8')) {
-                $validCount++;
-                $columnResults[$pos] = [
-                    'col'       => $pos,
-                    'letter'    => $colLetter,
-                    'expected'  => $canonical['header'],
-                    'found'     => $rawFound,
-                    'status'    => 'VALID',
-                    'mapped_to' => $canonical['header'],
-                    'key'       => $canonical['key'],
-                    'message'   => 'Exact canonical match.',
-                ];
-                continue;
+                $targetKey = $canonical['key'];
+                $targetHeader = $canonical['header'];
+                $matchStatus = 'VALID';
+                $matchMsg = 'Exact canonical match.';
+            } elseif ($normFound === $canonical['norm_header'] || in_array($normFound, $canonical['aliases'], true)) {
+                // Direct positional match (Normalized or Alias)
+                $targetKey = $canonical['key'];
+                $targetHeader = $canonical['header'];
+                $matchStatus = 'AUTO_MATCHED';
+                $matchMsg = "Matched via alias / normalization ('{$rawFound}' -> '{$canonical['header']}').";
+            } elseif (isset($aliasToKeyMap[$normFound])) {
+                // Repositioned column matched by header or alias
+                $matchedOther = $aliasToKeyMap[$normFound];
+                $targetKey = $matchedOther['key'];
+                $targetHeader = $matchedOther['header'];
+                $matchStatus = 'AUTO_MATCHED';
+                $matchMsg = "Repositioned column matched by header ('{$rawFound}' -> '{$matchedOther['header']}').";
             }
 
-            if ($normFound === $canonical['norm_header'] || in_array($normFound, $canonical['aliases'], true)) {
-                $autoMatchedCount++;
+            if ($targetKey !== null) {
+                // Duplicate guard: check if this key was already claimed by an earlier column
+                if (isset($mappedKeys[$targetKey])) {
+                    $duplicateCount++;
+                    $prevCol = $mappedKeys[$targetKey];
+                    $issue = [
+                        'col'       => $pos,
+                        'letter'    => $colLetter,
+                        'expected'  => $canonical['header'],
+                        'found'     => $rawFound,
+                        'status'    => 'DUPLICATE',
+                        'mapped_to' => $targetHeader,
+                        'key'       => $targetKey,
+                        'message'   => "Duplicate column header: '{$rawFound}' at column {$colLetter} duplicates column {$prevCol} (field '{$targetKey}').",
+                    ];
+                    $columnResults[$pos] = $issue;
+                    $issues[] = $issue;
+                    continue;
+                }
+
+                if ($matchStatus === 'VALID') {
+                    $validCount++;
+                } else {
+                    $autoMatchedCount++;
+                }
+
                 $columnResults[$pos] = [
                     'col'       => $pos,
                     'letter'    => $colLetter,
                     'expected'  => $canonical['header'],
                     'found'     => $rawFound,
-                    'status'    => 'AUTO_MATCHED',
-                    'mapped_to' => $canonical['header'],
-                    'key'       => $canonical['key'],
-                    'message'   => "Matched via alias / normalization ('{$rawFound}' -> '{$canonical['header']}').",
+                    'status'    => $matchStatus,
+                    'mapped_to' => $targetHeader,
+                    'key'       => $targetKey,
+                    'message'   => $matchMsg,
                 ];
+                $mappedKeys[$targetKey] = $colLetter;
                 continue;
             }
 
@@ -393,7 +441,33 @@ class PtkpExcelSchema
             $issues[] = $issue;
         }
 
-        $canProceed = ($invalidCount === 0 && $missingCount === 0);
+        // Pass 2: Check if any mandatory canonical columns were never mapped
+        foreach ($columns as $idx => $col) {
+            $key = $col['key'];
+            if (!isset($mappedKeys[$key]) && $col['required']) {
+                $missingCount++;
+                $issues[] = [
+                    'col'       => $idx,
+                    'letter'    => Coordinate::stringFromColumnIndex($idx),
+                    'expected'  => $col['header'],
+                    'found'     => null,
+                    'status'    => 'MISSING',
+                    'mapped_to' => null,
+                    'key'       => $key,
+                    'message'   => "Mandatory column '{$col['header']}' is missing from the uploaded file.",
+                ];
+            }
+        }
+
+        // Build column positions mapping (key => column letter)
+        $columnPositions = [];
+        foreach ($columns as $idx => $col) {
+            $key = $col['key'];
+            $colLetter = $mappedKeys[$key] ?? Coordinate::stringFromColumnIndex($idx);
+            $columnPositions[$key] = $colLetter;
+        }
+
+        $canProceed = ($invalidCount === 0 && $missingCount === 0 && $duplicateCount === 0);
 
         return [
             'can_proceed'        => $canProceed,
@@ -404,8 +478,11 @@ class PtkpExcelSchema
             'warning_count'      => $warningCount,
             'invalid_count'      => $invalidCount,
             'missing_count'      => $missingCount,
+            'duplicate_count'    => $duplicateCount,
             'columns'            => $columnResults,
             'issues'             => $issues,
+            'column_positions'   => $columnPositions,
+            'column_keys'        => array_keys($columnPositions),
         ];
     }
 }

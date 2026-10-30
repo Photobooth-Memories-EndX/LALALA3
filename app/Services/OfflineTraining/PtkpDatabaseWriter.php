@@ -48,6 +48,13 @@ class PtkpDatabaseWriter
                     $training = $existingTrainings[$fp];
                     $trainingsReused++;
                 } else {
+                    $startTime = !empty($tData['start_time']) ? $tData['start_time'] : '08:00:00';
+                    $endTime = !empty($tData['end_time']) ? $tData['end_time'] : '16:00:00';
+                    $durationSec = $tData['duration_seconds'] ?? (!empty($tData['learning_hours']) ? (int) round($tData['learning_hours'] * 3600) : null);
+                    $requirement = !empty($tData['requirement']) ? $tData['requirement'] : 'non mandatory';
+
+                    $this->validateTrainingBeforeInsert($tData, $startTime, $endTime);
+
                     $training = OfflineTraining::create([
                         'course_name'         => $tData['course_name'],
                         'sub_course_name'     => $tData['sub_course_name'],
@@ -64,16 +71,28 @@ class PtkpDatabaseWriter
                         'provider_name'       => $tData['provider_name'],
                         'venue'               => $tData['venue'],
                         'instructor'          => $tData['instructor'],
-                        'duration_seconds'    => $tData['duration_seconds'],
+                        'duration_seconds'    => $durationSec,
                         'learning_hours'      => $tData['learning_hours'],
                         'start_date'          => $tData['start_date'],
                         'finish_date'         => $tData['finish_date'],
-                        'start_time'          => $tData['start_time'],
-                        'end_time'            => $tData['end_time'],
+                        'start_time'          => $startTime,
+                        'end_time'            => $endTime,
+                        'requirement'         => $requirement,
                         'created_by'          => $userId,
                     ]);
                     $existingTrainings[$fp] = $training;
                     $trainingsCreated++;
+
+                    Log::info('PtkpDatabaseWriter: Created OfflineTraining', [
+                        'offline_training_id' => $training->id,
+                        'course_name'         => $training->course_name,
+                        'start_date'          => $training->start_date ? $training->start_date->format('Y-m-d') : null,
+                        'finish_date'         => $training->finish_date ? $training->finish_date->format('Y-m-d') : null,
+                        'start_time'          => $startTime,
+                        'end_time'            => $endTime,
+                        'duration_seconds'    => $durationSec,
+                        'learning_hours'      => $tData['learning_hours'],
+                    ]);
 
                     try {
                         app(OfflineOptionService::class)->ensureOptionsFromTraining($tData, 'import_ptkp', $userId);
@@ -83,6 +102,8 @@ class PtkpDatabaseWriter
                 }
 
                 foreach ($participants as $p) {
+                    $this->validateParticipantBeforeInsert($p, $training->id);
+
                     $insertData = [
                         'offline_training_id' => $training->id,
                         'user_id'             => $p['user_id'],
@@ -133,5 +154,44 @@ class PtkpDatabaseWriter
             'trainings_reused'  => $trainingsReused,
             'participant_map'   => $participantMap,
         ];
+    }
+
+    /**
+     * Final schema validation for OfflineTraining attributes before INSERT.
+     *
+     * @throws \InvalidArgumentException
+     */
+    protected function validateTrainingBeforeInsert(array $tData, string $startTime, string $endTime): void
+    {
+        $courseName = trim((string) ($tData['course_name'] ?? ''));
+        if ($courseName === '') {
+            throw new \InvalidArgumentException('Pre-insert validation failed: Course Title cannot be empty.');
+        }
+
+        if (!preg_match('/^([01]\d|2[0-3]):[0-5]\d:[0-5]\d$/', $startTime)) {
+            throw new \InvalidArgumentException("Pre-insert validation failed: Invalid start_time '{$startTime}'. Expected HH:mm:ss format.");
+        }
+
+        if (!preg_match('/^([01]\d|2[0-3]):[0-5]\d:[0-5]\d$/', $endTime)) {
+            throw new \InvalidArgumentException("Pre-insert validation failed: Invalid end_time '{$endTime}'. Expected HH:mm:ss format.");
+        }
+    }
+
+    /**
+     * Final schema validation for participant attributes before INSERT.
+     *
+     * @throws \InvalidArgumentException
+     */
+    protected function validateParticipantBeforeInsert(array $p, int $trainingId): void
+    {
+        if ($trainingId <= 0) {
+            throw new \InvalidArgumentException('Pre-insert validation failed: Invalid offline_training_id.');
+        }
+
+        $empId = trim((string) ($p['employee_id'] ?? ''));
+        if ($empId === '') {
+            $row = $p['excel_row'] ?? 'unknown';
+            throw new \InvalidArgumentException("Pre-insert validation failed: Employee ID is missing at Excel row {$row}.");
+        }
     }
 }

@@ -117,6 +117,14 @@ class OfflineTraining extends Model
                 $model->registration_close_time = '23:59:00';
             }
 
+            // Start Time and End Time fallbacks matching NOT NULL database schema defaults
+            if (blank($model->start_time)) {
+                $model->start_time = '08:00:00';
+            }
+            if (blank($model->end_time)) {
+                $model->end_time = '16:00:00';
+            }
+
             // Batch <-> Training Code
             if (blank($model->batch) && filled($model->training_code)) {
                 $model->batch = $model->training_code;

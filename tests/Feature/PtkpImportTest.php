@@ -485,6 +485,372 @@ class PtkpImportTest extends TestCase
         $this->assertGreaterThan(0, $json['header_check']['invalid_count']);
     }
 
+    public function test_start_time_normalization_and_validation_scenarios(): void
+    {
+        $file = $this->createPtkpExcel([
+            [
+                'row_no'      => 1,
+                'employee_id' => 'EMP_TEST_99',
+                'course_name' => 'Time Format Test 1',
+                'start_time'  => '08:00',
+                'end_time'    => '17:00',
+            ],
+            [
+                'row_no'      => 2,
+                'employee_id' => 'EMP_TEST_99',
+                'course_name' => 'Time Format Test 2',
+                'start_time'  => ' 08:30 ',
+                'end_time'    => ' 16:45 ',
+            ],
+            [
+                'row_no'      => 3,
+                'employee_id' => 'EMP_TEST_99',
+                'course_name' => 'Time Format Test 3',
+                'start_time'  => 0.3333333333333333, // Excel time serial 08:00
+                'end_time'    => 0.7083333333333334, // Excel time serial 17:00
+            ],
+            [
+                'row_no'      => 4,
+                'employee_id' => 'EMP_TEST_99',
+                'course_name' => 'Time Format Test 4',
+                'start_time'  => 'invalid_time_string',
+                'end_time'    => '17:00:00',
+            ],
+        ]);
+
+        $response = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.preview'), ['file' => $file]);
+
+        $response->assertStatus(200);
+        $json = $response->json();
+
+        // Rows 0, 1, 2 should be VALID / importable
+        $this->assertEquals('VALID', $json['rows'][0]['status']);
+        $this->assertEquals('08:00:00', $json['rows'][0]['data']['start_time']);
+        $this->assertEquals('17:00:00', $json['rows'][0]['data']['end_time']);
+
+        $this->assertEquals('VALID', $json['rows'][1]['status']);
+        $this->assertEquals('08:30:00', $json['rows'][1]['data']['start_time']);
+        $this->assertEquals('16:45:00', $json['rows'][1]['data']['end_time']);
+
+        $this->assertEquals('VALID', $json['rows'][2]['status']);
+        $this->assertEquals('08:00:00', $json['rows'][2]['data']['start_time']);
+        $this->assertEquals('17:00:00', $json['rows'][2]['data']['end_time']);
+
+        // Row 3 has invalid start_time -> must be marked INVALID
+        $this->assertEquals('INVALID', $json['rows'][3]['status']);
+        $this->assertTrue($json['rows'][3]['is_blocking']);
+        $this->assertStringContainsString('Invalid Start Time format', implode(' ', $json['rows'][3]['messages']));
+    }
+
+    public function test_start_time_empty_falls_back_to_schema_default_without_null_insert_error(): void
+    {
+        $file = $this->createPtkpExcel([
+            [
+                'row_no'         => 1,
+                'employee_id'    => 'EMP_TEST_99',
+                'course_name'    => 'Course With Empty Time Fields',
+                'start_time'     => '',
+                'end_time'       => '',
+                'learning_hours' => 8.0,
+            ]
+        ]);
+
+        $previewResp = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.preview'), ['file' => $file]);
+
+        $previewResp->assertStatus(200);
+        $token = $previewResp->json('token');
+        $this->assertNotEmpty($token);
+
+        // Confirm import: should succeed without SQLSTATE 23000
+        $confirmResp = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.confirm'), ['token' => $token]);
+
+        $confirmResp->assertStatus(200);
+        $this->assertTrue($confirmResp->json('success'));
+        $this->assertEquals(1, $confirmResp->json('result.imported'));
+
+        // Check persisted training record in database
+        $training = OfflineTraining::where('course_name', 'Course With Empty Time Fields')->first();
+        $this->assertNotNull($training);
+        $this->assertNotNull($training->start_time);
+        $this->assertNotNull($training->end_time);
+        $this->assertEquals('08:00:00', $training->start_time);
+        $this->assertEquals('16:00:00', $training->end_time);
+        $this->assertEquals(28800, $training->duration_seconds); // Derived from learning_hours 8.0 * 3600
+    }
+
+    public function test_header_reordered_is_mapped_correctly_by_header_name(): void
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle(PtkpExcelSchema::DATA_SHEET_TITLE);
+
+        $columns = PtkpExcelSchema::columns();
+
+        // Swap Column 29 (Start Time) and Column 30 (End Time) in the header
+        foreach ($columns as $idx => $col) {
+            $letter = $col['col_letter'];
+            if ($idx === 29) {
+                $sheet->setCellValue("{$letter}1", 'End Time');
+            } elseif ($idx === 30) {
+                $sheet->setCellValue("{$letter}1", 'Start Time');
+            } else {
+                $sheet->setCellValue("{$letter}1", $col['header']);
+            }
+        }
+
+        // Set row values: in swapped column AC (labeled End Time), put 17:00. In AD (labeled Start Time), put 08:00.
+        foreach ($columns as $idx => $col) {
+            $letter = $col['col_letter'];
+            if ($idx === 29) {
+                $sheet->setCellValue("{$letter}2", '17:00:00');
+            } elseif ($idx === 30) {
+                $sheet->setCellValue("{$letter}2", '08:00:00');
+            } elseif ($col['key'] === 'employee_id') {
+                $sheet->setCellValueExplicit("{$letter}2", 'EMP_TEST_99', \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            } elseif ($col['key'] === 'course_name') {
+                $sheet->setCellValue("{$letter}2", 'Swapped Column Test Course');
+            } else {
+                $sheet->setCellValue("{$letter}2", $col['example'] ?? '');
+            }
+        }
+
+        $tempPath = tempnam(sys_get_temp_dir(), 'ptkp_swapped_') . '.xlsx';
+        (new Xlsx($spreadsheet))->save($tempPath);
+        $file = new UploadedFile($tempPath, 'ptkp_swapped.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', null, true);
+
+        $response = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.preview'), ['file' => $file]);
+
+        $response->assertStatus(200);
+        $json = $response->json();
+        $this->assertTrue($json['header_check']['can_proceed']);
+        $this->assertEquals('VALID', $json['rows'][0]['status']);
+
+        // Verify that start_time got '08:00:00' and end_time got '17:00:00' despite column swapping!
+        $this->assertEquals('08:00:00', $json['rows'][0]['data']['start_time']);
+        $this->assertEquals('17:00:00', $json['rows'][0]['data']['end_time']);
+    }
+
+    public function test_partial_import_saves_valid_rows_and_skips_invalid(): void
+    {
+        $file = $this->createPtkpExcel([
+            [
+                'row_no'      => 1,
+                'employee_id' => 'EMP_TEST_99',
+                'course_name' => 'Partial Import Course Valid',
+                'start_time'  => '09:00:00',
+                'end_time'    => '15:00:00',
+            ],
+            [
+                'row_no'      => 2,
+                'employee_id' => 'EMP_NONEXISTENT_99999',
+                'course_name' => 'Partial Import Course Valid',
+            ],
+            [
+                'row_no'      => 3,
+                'employee_id' => 'EMP_TEST_99',
+                'course_name' => '', // Empty Course Title -> INVALID
+            ],
+        ]);
+
+        $previewResp = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.preview'), ['file' => $file]);
+
+        $previewResp->assertStatus(200);
+        $json = $previewResp->json();
+
+        $this->assertEquals(1, $json['stats']['valid']);
+        $this->assertEquals(2, $json['stats']['invalid']);
+        $this->assertEquals(1, $json['importable_count']);
+        $this->assertTrue($json['can_confirm']);
+
+        $token = $json['token'];
+        $confirmResp = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.confirm'), ['token' => $token]);
+
+        $confirmResp->assertStatus(200);
+        $confirmJson = $confirmResp->json();
+        $this->assertTrue($confirmJson['success']);
+        $this->assertEquals(1, $confirmJson['result']['imported']);
+        $this->assertEquals(2, $confirmJson['result']['skipped_invalid']);
+
+        // Verify valid record is in DB
+        $validUser = OfflineTrainingUser::where('employee_id', 'EMP_TEST_99')
+            ->whereHas('training', fn($q) => $q->where('course_name', 'Partial Import Course Valid'))
+            ->first();
+        $this->assertNotNull($validUser);
+
+        // Verify nonexistent employee was NOT saved
+        $invalidUser = OfflineTrainingUser::where('employee_id', 'EMP_NONEXISTENT_99999')->first();
+        $this->assertNull($invalidUser);
+    }
+
+    public function test_duplicate_header_blocks_import_and_reports_issue(): void
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle(PtkpExcelSchema::DATA_SHEET_TITLE);
+
+        $columns = PtkpExcelSchema::columns();
+        foreach ($columns as $idx => $col) {
+            $letter = $col['col_letter'];
+            // Duplicate 'Employee ID' in column D (which should be Employee Name)
+            if ($col['key'] === 'name') {
+                $sheet->setCellValue("{$letter}1", 'Employee ID');
+            } else {
+                $sheet->setCellValue("{$letter}1", $col['header']);
+            }
+            $sheet->setCellValue("{$letter}2", $col['example'] ?? '');
+        }
+
+        $tempPath = tempnam(sys_get_temp_dir(), 'ptkp_dup_header_') . '.xlsx';
+        (new Xlsx($spreadsheet))->save($tempPath);
+        $file = new UploadedFile($tempPath, 'dup_header.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', null, true);
+
+        $response = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.preview'), ['file' => $file]);
+
+        $response->assertStatus(200);
+        $json = $response->json();
+        $this->assertFalse($json['header_check']['can_proceed']);
+        $this->assertGreaterThan(0, $json['header_check']['duplicate_count']);
+    }
+
+    public function test_blank_rows_in_middle_are_skipped_and_data_afterwards_is_preserved(): void
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle(PtkpExcelSchema::DATA_SHEET_TITLE);
+
+        $columns = PtkpExcelSchema::columns();
+        foreach ($columns as $idx => $col) {
+            $sheet->setCellValue("{$col['col_letter']}1", $col['header']);
+        }
+
+        // Row 2: First valid participant
+        foreach ($columns as $col) {
+            $val = $col['example'] ?? '';
+            if ($col['key'] === 'employee_id') $val = 'EMP_TEST_99';
+            if ($col['key'] === 'course_name') $val = 'Section One Course';
+            $sheet->setCellValue("{$col['col_letter']}2", $val);
+        }
+
+        // Rows 3 to 202: 200 blank rows in the middle!
+
+        // Row 203: Second valid participant after 200 blank rows
+        foreach ($columns as $col) {
+            $val = $col['example'] ?? '';
+            if ($col['key'] === 'employee_id') $val = 'EMP_TEST_99';
+            if ($col['key'] === 'course_name') $val = 'Section Two Course';
+            $sheet->setCellValue("{$col['col_letter']}203", $val);
+        }
+
+        $tempPath = tempnam(sys_get_temp_dir(), 'ptkp_middle_blank_') . '.xlsx';
+        (new Xlsx($spreadsheet))->save($tempPath);
+        $file = new UploadedFile($tempPath, 'middle_blank.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', null, true);
+
+        $response = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.preview'), ['file' => $file]);
+
+        $response->assertStatus(200);
+        $json = $response->json();
+
+        // Both rows (row 2 and row 203) must be parsed without losing data!
+        $this->assertEquals(2, $json['stats']['total_rows']);
+        $this->assertEquals(2, $json['importable_count']);
+        $this->assertEquals('Section One Course', $json['rows'][0]['course_name']);
+        $this->assertEquals('Section Two Course', $json['rows'][1]['course_name']);
+    }
+
+    public function test_extreme_gap_of_500_blank_rows_with_max_row_formatting_preserves_all_data(): void
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle(PtkpExcelSchema::DATA_SHEET_TITLE);
+
+        $columns = PtkpExcelSchema::columns();
+        foreach ($columns as $idx => $col) {
+            $sheet->setCellValue("{$col['col_letter']}1", $col['header']);
+        }
+
+        // Row 2: First valid participant
+        foreach ($columns as $col) {
+            $val = $col['example'] ?? '';
+            if ($col['key'] === 'employee_id') $val = 'EMP_TEST_99';
+            if ($col['key'] === 'course_name') $val = 'Course Before 500 Blank Rows';
+            $sheet->setCellValue("{$col['col_letter']}2", $val);
+        }
+
+        // Rows 3 to 502: 500 blank rows in the middle
+
+        // Row 503: Second valid participant after 500 blank rows
+        foreach ($columns as $col) {
+            $val = $col['example'] ?? '';
+            if ($col['key'] === 'employee_id') $val = 'EMP_TEST_99';
+            if ($col['key'] === 'course_name') $val = 'Course After 500 Blank Rows';
+            $sheet->setCellValue("{$col['col_letter']}503", $val);
+        }
+
+        // Simulate empty cell with formatting at row 100,000
+        $sheet->setCellValue('R100000', '');
+
+        $tempPath = tempnam(sys_get_temp_dir(), 'ptkp_extreme_gap_') . '.xlsx';
+        (new Xlsx($spreadsheet))->save($tempPath);
+        $file = new UploadedFile($tempPath, 'extreme_gap.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', null, true);
+
+        $response = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.preview'), ['file' => $file]);
+
+        $response->assertStatus(200);
+        $json = $response->json();
+
+        $this->assertEquals(2, $json['stats']['total_rows']);
+        $this->assertEquals(2, $json['importable_count']);
+        $this->assertEquals('Course Before 500 Blank Rows', $json['rows'][0]['course_name']);
+        $this->assertEquals('Course After 500 Blank Rows', $json['rows'][1]['course_name']);
+    }
+
+    public function test_numeric_nip_without_leading_zeros_is_normalized_to_canonical_6_digit_id(): void
+    {
+        // Create user with unique 6-digit NIP starting with zeros using test helper
+        $user = $this->createTestUser([
+            'id_emp'       => '000888',
+            'name'         => 'Test Unpadded Employee',
+            'company_name' => 'PT Krakatau Posco',
+        ]);
+
+        $file = $this->createPtkpExcel([
+            [
+                'row_no'      => 1,
+                'employee_id' => '888', // Unpadded 3-digit numeric NIP in Excel
+                'course_name' => 'Zero Padding Normalization Test Course',
+            ],
+            [
+                'row_no'      => 2,
+                'employee_id' => 'KP 061', // Non-numeric intern code -> must remain INVALID
+                'course_name' => 'Zero Padding Normalization Test Course',
+            ],
+        ]);
+
+        $response = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.preview'), ['file' => $file]);
+
+        $response->assertStatus(200);
+        $json = $response->json();
+
+        // Row 1 (888) should be matched to user 000888
+        $this->assertNotEquals('INVALID', $json['rows'][0]['status']);
+        $this->assertEquals('000888', $json['rows'][0]['data']['employee_id']);
+        $this->assertEquals('Test Unpadded Employee', $json['rows'][0]['name']);
+
+        // Row 2 (KP 061) should remain INVALID
+        $this->assertEquals('INVALID', $json['rows'][1]['status']);
+        $this->assertEquals('KP 061', $json['rows'][1]['data']['employee_id']);
+    }
+
     protected function createPtkpExcel(array $rows): UploadedFile
     {
         $spreadsheet = new Spreadsheet();

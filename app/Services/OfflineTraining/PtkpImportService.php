@@ -11,6 +11,7 @@ use App\Services\Record\PtkpExcelSchema;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use RuntimeException;
@@ -106,6 +107,12 @@ class PtkpImportService
 
         $evaluated = $this->parseAndEvaluateWorkbook($worksheet);
 
+        $spreadsheet->disconnectWorksheets();
+        unset($spreadsheet, $worksheet);
+        if (function_exists('gc_collect_cycles')) {
+            gc_collect_cycles();
+        }
+
         $metadata['stats'] = $evaluated['stats'];
         $metadata['header_check'] = $evaluated['header_check'];
         $metadata['can_confirm'] = $evaluated['can_confirm'];
@@ -149,6 +156,12 @@ class PtkpImportService
 
         $evaluated = $this->parseAndEvaluateWorkbook($worksheet);
 
+        $spreadsheet->disconnectWorksheets();
+        unset($spreadsheet, $worksheet);
+        if (function_exists('gc_collect_cycles')) {
+            gc_collect_cycles();
+        }
+
         if (!$evaluated['header_check']['can_proceed']) {
             $lock->release();
             throw new \InvalidArgumentException('Import cannot proceed due to header validation errors.');
@@ -163,6 +176,14 @@ class PtkpImportService
 
         $metadata['executed_batch_uuid'] = $batch->batch_uuid;
         Cache::put(self::CACHE_PREFIX . $token, $metadata, self::CACHE_TTL_SECONDS);
+
+        Log::info('Executing PTKP import batch', [
+            'batch_uuid'        => $batch->batch_uuid,
+            'filename'          => $metadata['original_filename'],
+            'total_rows'        => count($evaluated['all_rows']),
+            'grouped_trainings' => count($evaluated['grouped_by_training']),
+            'user_id'           => $userId,
+        ]);
 
         try {
             $persistResult = $this->databaseWriter->persistTrainingsAndParticipants(
@@ -247,16 +268,16 @@ class PtkpImportService
             $formatInfo['found_headers'],
             $formatInfo['format']
         );
-
-        $highestRow = $worksheet->getHighestDataRow();
+        $columnPositions = $headerCheck['column_positions'] ?? [];
         $startDataRow = $formatInfo['data_start_row'];
+        $highestRow = $this->findTrueLastDataRow($worksheet, $startDataRow, $columnPositions);
 
         $rawRows = [];
         $uniqueEmployeeIds = [];
         $uniqueCourses = [];
 
         for ($r = $startDataRow; $r <= $highestRow; $r++) {
-            $rowValues = $this->readRowValues($worksheet, $r);
+            $rowValues = $this->readRowValues($worksheet, $r, $columnPositions);
             if ($this->isRowEntirelyBlank($rowValues)) {
                 continue;
             }
@@ -270,6 +291,17 @@ class PtkpImportService
                 $uniqueCourses[$course] = true;
             }
         }
+
+        Log::info('PTKP Import workbook parsed', [
+            'sheet'             => $worksheet->getTitle(),
+            'format'            => $formatInfo['format'],
+            'data_start_row'    => $startDataRow,
+            'highest_data_row'  => $highestRow,
+            'effective_rows'    => count($rawRows),
+            'unique_employees'  => count($uniqueEmployeeIds),
+            'unique_courses'    => count($uniqueCourses),
+            'header_can_proceed'=> $headerCheck['can_proceed'],
+        ]);
 
         $userLookup = $this->validationService->batchLookupUsers(array_keys($uniqueEmployeeIds));
         $existingTrainings = $this->lookupExistingTrainings(array_keys($uniqueCourses));
@@ -300,6 +332,7 @@ class PtkpImportService
 
             if ($user) {
                 $normalized['user_id'] = $user->id;
+                $normalized['employee_id'] = $user->id_emp;
                 $normalized['name'] = $user->name;
                 $normalized['grade'] = $user->jobgrade;
                 $normalized['job_position'] = $user->jobposition;
@@ -418,15 +451,61 @@ class PtkpImportService
         ];
     }
 
-    protected function readRowValues(Worksheet $worksheet, int $row): array
+    protected function readRowValues(Worksheet $worksheet, int $row, array $columnPositions = []): array
     {
         $columns = PtkpExcelSchema::columns();
         $values = [];
 
         foreach ($columns as $idx => $col) {
-            $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($idx);
-            $val = $worksheet->getCell("{$colLetter}{$row}")->getValue();
-            $values[$col['key']] = $val !== null ? trim((string) $val) : null;
+            $key = $col['key'];
+            $colLetter = $columnPositions[$key] ?? \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($idx);
+            $cell = $worksheet->getCell("{$colLetter}{$row}");
+            $val = $cell->getValue();
+
+            // 1. Employee ID leading zero preservation from formatted value
+            if ($key === 'employee_id' && $val !== null) {
+                try {
+                    $formatted = $cell->getFormattedValue();
+                    if (is_string($formatted) && str_starts_with($formatted, '0') && strlen($formatted) > strlen((string) $val)) {
+                        $val = $formatted;
+                    }
+                } catch (\Throwable $e) {
+                    // Ignore formatting exceptions
+                }
+            }
+
+            // 2. Convert Excel date serial numbers to Y-m-d format
+            if ($val !== null && in_array($key, ['start_date', 'finish_date', 'end_date', 'bond_end_date', 'certificate_issued_date', 'certificate_expired_date'], true)) {
+                if (is_numeric($val) && (float) $val >= 1.0) {
+                    try {
+                        $val = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject((float) $val)->format('Y-m-d');
+                    } catch (\Throwable $e) {
+                        // Keep raw value for normalizer to process/flag
+                    }
+                }
+            }
+
+            // 3. Convert Excel time serial numbers or datetime serials to HH:mm:ss format
+            if ($val !== null && in_array($key, ['start_time', 'end_time'], true)) {
+                if (is_numeric($val)) {
+                    $num = (float) $val;
+                    if ($num >= 0.0 && $num < 1.0) {
+                        $seconds = (int) round($num * 86400);
+                        $h = floor($seconds / 3600) % 24;
+                        $m = floor(($seconds % 3600) / 60);
+                        $s = $seconds % 60;
+                        $val = sprintf('%02d:%02d:%02d', $h, $m, $s);
+                    } elseif ($num >= 1.0) {
+                        try {
+                            $val = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($num)->format('H:i:s');
+                        } catch (\Throwable $e) {
+                            // Keep raw value for normalizer to process/flag
+                        }
+                    }
+                }
+            }
+
+            $values[$key] = $val !== null ? trim((string) $val) : null;
         }
 
         return $values;
@@ -443,6 +522,38 @@ class PtkpImportService
             }
         }
         return true;
+    }
+
+    /**
+     * Efficiently determine the true last non-empty data row in the worksheet,
+     * ignoring any trailing formatted or empty styled cells up to Excel maximum row.
+     */
+    protected function findTrueLastDataRow(Worksheet $worksheet, int $startDataRow, array $columnPositions): int
+    {
+        $coords = $worksheet->getCellCollection()->getCoordinates();
+        if (empty($coords)) {
+            return 0;
+        }
+
+        $rowNumbers = [];
+        foreach ($coords as $coord) {
+            sscanf($coord, '%[A-Z]%d', $col, $row);
+            $rowNumbers[$row] = true;
+        }
+        unset($coords);
+        krsort($rowNumbers);
+
+        foreach ($rowNumbers as $r => $flag) {
+            if ($r < $startDataRow) {
+                break;
+            }
+            $rowValues = $this->readRowValues($worksheet, $r, $columnPositions);
+            if (!$this->isRowEntirelyBlank($rowValues)) {
+                return $r;
+            }
+        }
+
+        return 0;
     }
 
     protected function lookupExistingTrainings(array $courses): array
