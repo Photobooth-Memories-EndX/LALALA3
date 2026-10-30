@@ -91,7 +91,7 @@
 
     <td class="text-muted record-row-index">{{ $index }}</td>
 
-    <td><x-learning.record-title-cell :row="$row" /></td>
+    <td class="text-center align-middle"><x-learning.record-title-cell :row="$row" /></td>
 
     <td class="learning-record-type text-center">
         <x-learning.record-type-badge :type="$row['type']" :url="(($row['can_open'] ?? true) ? ($row['playlist_url'] ?? null) : null)" />
@@ -191,7 +191,7 @@
     <td class="text-muted small learning-record-datetime">
         <div class="text-xs text-muted">
             <div class="learning-record-date-row text-nowrap">Start : {{ $startDateDisplay }}</div>
-            <div class="learning-record-date-row text-nowrap">Finish : {{ $finishDateDisplay }}</div>
+            <div class="learning-record-date-row text-nowrap">End : {{ $finishDateDisplay }}</div>
         </div>
     </td>
 

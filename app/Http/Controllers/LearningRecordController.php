@@ -160,6 +160,10 @@ class LearningRecordController extends Controller
             return [
                 'record_mode'        => 'all',
                 'total_hours'        => $totalHours,
+                'online_hours'       => round($onlineHours, 2),
+                'offline_hours'      => round($offlineHours, 2),
+                'kp_owl_hours'       => round($onlineHours, 2),
+                'non_kp_owl_hours'   => round($offlineHours, 2),
                 'owl_completed'      => $owlCompleted,
                 'non_owl_completed'  => $nonOwlCompleted,
                 'totalLearningHours' => $totalHours,

@@ -170,7 +170,7 @@
                                 <th style="min-width: 140px;">TEAM</th>
                                 <th style="min-width: 160px;">DEPARTMENT</th>
                                 <th style="min-width: 160px;">COMPANY</th>
-                                <th style="min-width: 220px;">COURSE TITLE</th>
+                                <th class="text-center" style="min-width: 220px; text-align: center;">COURSE TITLE</th>
                                 <th class="text-center" style="min-width: 100px;">TYPE</th>
                                 <th style="min-width: 130px;">CATEGORY</th>
                                 <th style="min-width: 150px;">MAIN CLASSIFICATION</th>
@@ -828,7 +828,27 @@
                 { data: 'team', name: 'otu.team', className: 'text-start' },
                 { data: 'department', name: 'otu.department', className: 'text-start' },
                 { data: 'company', name: 'otu.company', className: 'text-start' },
-                { data: 'course_name', name: 'ot.course_name', className: 'text-start' },
+                                {
+                    data: 'course_name',
+                    name: 'ot.course_name',
+                    className: 'text-center align-middle',
+                    render: function(data, type, row) {
+                        if (typeof data === 'string' && data.indexOf('d-flex flex-column') !== -1) {
+                            return data;
+                        }
+                        const courseTitle = data || row.course_name || '-';
+                        let req = row.requirement || 'Non-Mandatory';
+                        if (typeof req === 'string' && req.indexOf('<') !== -1) {
+                            req = (req.toLowerCase().indexOf('mandatory') !== -1 && req.toLowerCase().indexOf('non-mandatory') === -1) ? 'Mandatory' : 'Non-Mandatory';
+                        }
+                        return `<div class="d-flex flex-column align-items-center justify-content-center text-center w-100">
+                            <span class="fw-bold text-dark text-center fs-6 mb-1">${courseTitle}</span>
+                            <small class="text-muted text-center fs-7">
+                                Requirement: <span class="fw-semibold">${req || 'Non-Mandatory'}</span>
+                            </small>
+                        </div>`;
+                    }
+                },
                 { data: 'type_badge', name: 'ot.type', className: 'text-center' },
                 { data: 'category', name: 'ot.category', className: 'text-start' },
                 { data: 'main_classification', name: 'ot.main_classification', className: 'text-start' },

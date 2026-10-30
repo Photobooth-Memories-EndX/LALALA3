@@ -10,7 +10,7 @@
         </a>
 
         <!-- Title Header Card -->
-        <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
+        <div class="card border border-slate-200 rounded-2xl p-4 p-md-5 mb-4 bg-white shadow-sm">
             <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                 <div>
                     <h3 class="fw-bold text-dark mb-1">Edit Training Schedule</h3>
@@ -40,11 +40,14 @@
             @method('PUT')
 
             <!-- 1. COURSE OVERVIEW & OBJECTIVES (WITH TITLE FIELD AT TOP) -->
-            <div class="card border-0 shadow-sm rounded-4 p-4 w-100">
-                <h4 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2" style="font-size: 1.25rem;">
-                    <i class="ti ti-file-text text-primary fs-2"></i>
-                    <span>Course Overview & Objectives</span>
-                </h4>
+            <div class="card form-section-card border border-slate-200 rounded-2xl p-6 bg-white shadow-sm transition-all duration-200 w-100 position-relative">
+                <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                    <h4 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2" style="font-size: 1.25rem;">
+                        <i class="ti ti-file-text text-primary fs-2"></i>
+                        <span>Course Overview & Objectives</span>
+                    </h4>
+                    <span class="badge bg-blue-600 text-white rounded-pill px-3 py-1 fs-7 active-section-badge"><i class="bi bi-pencil ti ti-pencil me-1"></i> Active Section</span>
+                </div>
                 <div class="row g-3">
                     <!-- Training Title Placed Here at the Top -->
                     <div class="col-md-6 mb-2">
@@ -118,15 +121,18 @@
                     ];
                 }
             @endphp
-            <div class="card border-0 shadow-sm rounded-4 p-4 w-100">
+            <div class="card form-section-card border border-slate-200 rounded-2xl p-6 bg-white shadow-sm transition-all duration-200 w-100 position-relative">
                 <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
                     <h4 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2" style="font-size: 1.25rem;">
                         <i class="ti ti-list-check text-primary fs-2"></i>
                         <span>Training Syllabus & Learning Modules</span>
                     </h4>
-                    <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3" id="btn-add-syllabus">
-                        <i class="ti ti-plus me-1"></i> Add Syllabus Point
-                    </button>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-blue-600 text-white rounded-pill px-3 py-1 fs-7 active-section-badge"><i class="bi bi-pencil ti ti-pencil me-1"></i> Active Section</span>
+                        <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3" id="btn-add-syllabus">
+                            <i class="ti ti-plus me-1"></i> Add Syllabus Point
+                        </button>
+                    </div>
                 </div>
                 <div id="syllabus-container" class="d-flex flex-column gap-2">
                     @foreach ($syllabusList as $idx => $sItem)
@@ -136,16 +142,16 @@
                             $sDesc = is_array($sItem) ? ($sItem['description'] ?? $sItem['desc'] ?? '') : '';
                         @endphp
                         <div class="row g-2 align-items-center syllabus-row">
-                            <div class="col-md-2 col-12">
-                                <input type="text" class="form-control rounded-3 text-center bg-light fw-bold syllabus-point-badge" value="Point {{ $pointNum }}" readonly>
+                            <div class="col-auto" style="width: 50px;">
+                                <input type="text" class="form-control rounded-3 text-center bg-light fw-bold syllabus-point-badge px-1" value="{{ $pointNum }}" readonly>
                             </div>
-                            <div class="col-md-4 col-12">
+                            <div class="col-md-5 col-12">
                                 <input type="text" name="syllabus_title[]" class="form-control rounded-3" placeholder="Topic / Module Title" value="{{ $sTopic }}">
                             </div>
-                            <div class="col-md-5 col-10">
+                            <div class="col-md-5 col-10 flex-grow-1">
                                 <input type="text" name="syllabus_desc[]" class="form-control rounded-3" placeholder="Highlights / Key Points Covered" value="{{ $sDesc }}">
                             </div>
-                            <div class="col-md-1 col-2 text-center">
+                            <div class="col-auto text-center">
                                 <button type="button" class="btn btn-outline-danger btn-sm rounded-circle btn-remove-syllabus" title="Remove point" {{ count($syllabusList) === 1 ? 'disabled' : '' }}>
                                     <i class="ti ti-trash"></i>
                                 </button>
@@ -156,11 +162,14 @@
             </div>
 
             <!-- 3. BASIC INFORMATION & CAPACITY -->
-            <div class="card border-0 shadow-sm rounded-4 p-4 w-100">
-                <h4 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2" style="font-size: 1.25rem;">
-                    <i class="ti ti-info-circle text-primary fs-2"></i>
-                    <span>Classification, Basic Information & Capacity</span>
-                </h4>
+            <div class="card form-section-card border border-slate-200 rounded-2xl p-6 bg-white shadow-sm transition-all duration-200 w-100 position-relative">
+                <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                    <h4 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2" style="font-size: 1.25rem;">
+                        <i class="ti ti-info-circle text-primary fs-2"></i>
+                        <span>Classification, Basic Information & Capacity</span>
+                    </h4>
+                    <span class="badge bg-blue-600 text-white rounded-pill px-3 py-1 fs-7 active-section-badge"><i class="bi bi-pencil ti ti-pencil me-1"></i> Active Section</span>
+                </div>
                 <div class="row g-3">
                     <!-- Main Classification -->
                     <div class="col-md-4">
@@ -358,11 +367,14 @@
             </div>
 
             <!-- 4. SCHEDULE TIMING & DATES -->
-            <div class="card border-0 shadow-sm rounded-4 p-4 w-100">
-                <h4 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2" style="font-size: 1.25rem;">
-                    <i class="ti ti-calendar-event text-primary fs-2"></i>
-                    <span>Schedule Timing & Dates</span>
-                </h4>
+            <div class="card form-section-card border border-slate-200 rounded-2xl p-6 bg-white shadow-sm transition-all duration-200 w-100 position-relative">
+                <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                    <h4 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2" style="font-size: 1.25rem;">
+                        <i class="ti ti-calendar-event text-primary fs-2"></i>
+                        <span>Schedule Timing & Dates</span>
+                    </h4>
+                    <span class="badge bg-blue-600 text-white rounded-pill px-3 py-1 fs-7 active-section-badge"><i class="bi bi-pencil ti ti-pencil me-1"></i> Active Section</span>
+                </div>
                 <div class="row g-3">
                     <!-- Row 1: Dates -->
                     <div class="col-md-6">
@@ -422,6 +434,42 @@
 
 @section('style')
 <style>
+        .form-section-card {
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 1rem !important; /* rounded-2xl */
+        padding: 1.5rem !important; /* p-6 */
+        background-color: #ffffff !important;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03) !important;
+        transition: all 0.2s ease-in-out !important;
+        position: relative;
+    }
+
+    .form-section-card:focus-within,
+    .form-section-card.is-active-section {
+        border: 2px solid #2563eb !important;
+        box-shadow: 0 0 15px rgba(37, 99, 235, 0.2) !important;
+    }
+
+    .form-section-card .active-section-badge {
+        display: none !important;
+        background-color: #2563eb !important;
+        color: #ffffff !important;
+        font-weight: 600;
+        box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+    }
+
+    .form-section-card:focus-within .active-section-badge,
+    .form-section-card.is-active-section .active-section-badge {
+        display: inline-flex !important;
+        align-items: center;
+        animation: activeSectionFade 0.2s ease-in-out;
+    }
+
+    @keyframes activeSectionFade {
+        from { opacity: 0; transform: translateY(-2px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
     .btn-remove-syllabus {
         width: 34px;
         height: 34px;
@@ -436,6 +484,19 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+        // Active section highlight tracking on focusin / click
+    const sectionCards = document.querySelectorAll('.form-section-card');
+    sectionCards.forEach(card => {
+        card.addEventListener('focusin', function () {
+            sectionCards.forEach(c => c.classList.remove('is-active-section'));
+            card.classList.add('is-active-section');
+        });
+    });
+    document.addEventListener('click', function (e) {
+        if (!e.target.closest('.form-section-card')) {
+            sectionCards.forEach(c => c.classList.remove('is-active-section'));
+        }
+    });
     const form = document.getElementById('editTrainingForm');
     const btnAddSyllabus = document.getElementById('btn-add-syllabus');
     const syllabusContainer = document.getElementById('syllabus-container');
@@ -447,7 +508,7 @@ document.addEventListener('DOMContentLoaded', function () {
         rows.forEach((row, idx) => {
             const badge = row.querySelector('.syllabus-point-badge');
             if (badge) {
-                badge.value = `Point ${idx + 1}`;
+                badge.value = `${idx + 1}`;
             }
             const delBtn = row.querySelector('.btn-remove-syllabus');
             if (delBtn) {
@@ -464,16 +525,16 @@ document.addEventListener('DOMContentLoaded', function () {
             const newRow = document.createElement('div');
             newRow.className = 'row g-2 align-items-center syllabus-row';
             newRow.innerHTML = `
-                <div class="col-md-2 col-12">
-                    <input type="text" class="form-control rounded-3 text-center bg-light fw-bold syllabus-point-badge" value="Point ${newIndex}" readonly>
+                <div class="col-auto" style="width: 50px;">
+                    <input type="text" class="form-control rounded-3 text-center bg-light fw-bold syllabus-point-badge px-1" value="${newIndex}" readonly>
                 </div>
-                <div class="col-md-4 col-12">
+                <div class="col-md-5 col-12">
                     <input type="text" name="syllabus_title[]" class="form-control rounded-3" placeholder="Topic / Module Title">
                 </div>
-                <div class="col-md-5 col-10">
+                <div class="col-md-5 col-10 flex-grow-1">
                     <input type="text" name="syllabus_desc[]" class="form-control rounded-3" placeholder="Highlights / Key Points Covered">
                 </div>
-                <div class="col-md-1 col-2 text-center">
+                <div class="col-auto text-center">
                     <button type="button" class="btn btn-outline-danger btn-sm rounded-circle btn-remove-syllabus" title="Remove point">
                         <i class="ti ti-trash"></i>
                     </button>

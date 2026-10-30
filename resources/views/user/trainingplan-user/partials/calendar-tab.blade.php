@@ -197,24 +197,24 @@
                     </table>
                 </div>
 
-                {{-- Legend --}}
-                <div class="d-flex flex-wrap align-items-center gap-3 mt-3 pt-2 text-muted small">
-                    <span class="d-inline-flex align-items-center gap-2">
-                        <span class="badge bg-success-light text-success border border-success-subtle px-2 py-0-5 rounded-pill fw-semibold">Open</span>
-                        <span>Open Registration</span>
-                    </span>
-                    <span class="d-inline-flex align-items-center gap-2">
-                        <span class="badge bg-secondary-light text-secondary border border-secondary-subtle px-2 py-0-5 rounded-pill fw-semibold">Closed</span>
-                        <span>Registration Closed</span>
-                    </span>
-                    <span class="d-inline-flex align-items-center gap-2">
-                        <span class="badge bg-warning-light text-warning border border-warning-subtle px-2 py-0-5 rounded-pill fw-semibold">Running</span>
-                        <span>Running / Today's Session</span>
-                    </span>
-                    <span class="d-inline-flex align-items-center gap-2">
-                        <span class="badge bg-dark-light text-dark rounded-pill px-2 py-0-5 fw-semibold cal-status-badge-ended" style="background-color: #475569; color: #ffffff; border: 1px solid #334155;">Ended</span>
-                        <span>Past Training Session</span>
-                    </span>
+                {{-- Legend Footer Container --}}
+                <div class="d-flex align-items-center justify-content-start flex-wrap gap-4 p-3 bg-slate-50/50 rounded-b-2xl border-t border-slate-100 mt-3" style="background-color: rgba(248, 250, 252, 0.6); border-top: 1px solid #f1f5f9; border-bottom-left-radius: 1rem; border-bottom-right-radius: 1rem;">
+                    <div class="d-inline-flex align-items-center">
+                        <span class="d-inline-block rounded-circle bg-emerald-100 border border-emerald-300" style="width: 12px; height: 12px; background-color: #d1fae5; border: 1px solid #6ee7b7;"></span>
+                        <span class="text-slate-600 fs-7 fw-medium ms-1.5" style="color: #475569;">Open Registration</span>
+                    </div>
+                    <div class="d-inline-flex align-items-center">
+                        <span class="d-inline-block rounded-circle bg-sky-100 border border-sky-300" style="width: 12px; height: 12px; background-color: #e0f2fe; border: 1px solid #7dd3fc;"></span>
+                        <span class="text-slate-600 fs-7 fw-medium ms-1.5" style="color: #475569;">Registration Closed</span>
+                    </div>
+                    <div class="d-inline-flex align-items-center">
+                        <span class="d-inline-block rounded-circle bg-amber-200 border border-amber-400" style="width: 12px; height: 12px; background-color: #fde68a; border: 1px solid #fbbf24;"></span>
+                        <span class="text-slate-600 fs-7 fw-medium ms-1.5" style="color: #475569;">Running / Today's Session</span>
+                    </div>
+                    <div class="d-inline-flex align-items-center">
+                        <span class="d-inline-block rounded-circle bg-slate-800 border border-slate-900" style="width: 12px; height: 12px; background-color: #1e293b; border: 1px solid #0f172a;"></span>
+                        <span class="text-slate-600 fs-7 fw-medium ms-1.5" style="color: #475569;">Past Training Session</span>
+                    </div>
                 </div>
             </div>
         </div>

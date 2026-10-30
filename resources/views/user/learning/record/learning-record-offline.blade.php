@@ -46,6 +46,28 @@
     />
 </template>
 <style>
+    /* Force rounded pill styling on all Quick Filter tab states in Learning Record */
+    .quick-filter-btn,
+    .quick-filter-btn:hover,
+    .quick-filter-btn:focus,
+    .quick-filter-btn:active,
+    .quick-filter-btn:disabled,
+    .quick-filter-btn.loading,
+    .quick-filter-btn.disabled,
+    .quick-filter-skeleton,
+    .record-mode-switch .record-mode-btn,
+    .record-mode-switch .record-mode-btn:hover,
+    .record-mode-switch .record-mode-btn:focus,
+    .record-mode-switch .record-mode-btn:active,
+    .record-mode-switch .record-mode-btn:disabled,
+    .record-mode-switch .record-mode-btn.loading,
+    .record-mode-switch .record-mode-btn.disabled,
+    .record-mode-switch-wrapper .record-mode-btn,
+    .learning-mode-switch .record-mode-btn {
+        border-radius: 9999px !important; /* Force fully rounded pill shape at all times */
+        transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+
     .record-offline-title-link {
         display: inline-block;
         background: transparent;
@@ -622,7 +644,7 @@
                                         <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
                                     </span>
                                 </th>
-                                <th class="text-muted record-sortable" style="width: 24%" data-sort-key="title" data-sort-type="text">
+                                <th class="text-muted text-center record-sortable" style="width: 24%" data-sort-key="title" data-sort-type="text">
                                     <span class="record-sort-header">
                                         <span class="record-sort-label">Course Title</span>
                                         <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
@@ -708,22 +730,24 @@
                                 data-sort-score="{{ $offSortScore }}"
                                 data-sort-certificate="{{ $offSortCert }}">
                                 <td class="text-center text-muted record-row-index">{{ $loop->iteration }}</td>
-                                <td class="learning-record-course-cell">
-                                    <div class="fw-semibold text-dark">
-                                        <button type="button"
-                                                class="record-offline-title-link btn-record-offline-detail text-start text-dark fw-semibold p-0 border-0 bg-transparent"
-                                                data-record-id="{{ $row['id'] }}"
-                                                title="Click to view details">
-                                            {{ $row['title'] }}
-                                        </button>
-                                    </div>
-                                    @php
-                                        $offReq = strtolower(trim((string) ($row['requirement'] ?? 'non-mandatory')));
-                                        $isOffMand = !str_contains($offReq, 'non-mandatory') && !str_contains($offReq, 'non mandatory') && !str_contains($offReq, 'optional') && str_contains($offReq, 'mandatory');
-                                        $offReqLabel = $isOffMand ? 'Mandatory' : 'Non-Mandatory';
-                                    @endphp
-                                    <div class="text-xs text-muted mt-1">
-                                        Requirement: <span class="badge bg-light text-dark">{{ $offReqLabel }}</span>
+                                <td class="learning-record-course-cell text-center align-middle">
+                                    <div class="d-flex flex-column align-items-center justify-content-center text-center w-100">
+                                        <span class="fw-bold text-dark text-center fs-6 mb-1">
+                                            <button type="button"
+                                                    class="record-offline-title-link btn-record-offline-detail text-center text-dark fw-bold p-0 border-0 bg-transparent"
+                                                    data-record-id="{{ $row['id'] }}"
+                                                    title="Click to view details">
+                                                {{ $row['title'] }}
+                                            </button>
+                                        </span>
+                                        @php
+                                            $offReq = strtolower(trim((string) ($row['requirement'] ?? 'non-mandatory')));
+                                            $isOffMand = !str_contains($offReq, 'non-mandatory') && !str_contains($offReq, 'non mandatory') && !str_contains($offReq, 'optional') && str_contains($offReq, 'mandatory');
+                                            $offReqLabel = $isOffMand ? 'Mandatory' : 'Non-Mandatory';
+                                        @endphp
+                                        <small class="text-muted text-center fs-7">
+                                            Requirement: <span class="fw-semibold">{{ $offReqLabel }}</span>
+                                        </small>
                                     </div>
                                     {{-- Hidden JSON storage for instant zero-N+1 modal population --}}
                                     <script type="application/json" id="record-offline-data-{{ $row['id'] }}">@json($row)</script>
@@ -761,7 +785,7 @@
                                 <td class="text-muted small learning-record-datetime">
                                     <div class="text-xs text-muted">
                                         <div class="learning-record-date-row text-nowrap">Start : {{ $offStartDt !== '' ? \Carbon\Carbon::parse($offStartDt)->format('d/m/y H:i:s') : '-' }}</div>
-                                        <div class="learning-record-date-row text-nowrap">Finish : {{ $offEndDt !== '' ? \Carbon\Carbon::parse($offEndDt)->format('d/m/y H:i:s') : '-' }}</div>
+                                        <div class="learning-record-date-row text-nowrap">End : {{ $offEndDt !== '' ? \Carbon\Carbon::parse($offEndDt)->format('d/m/y H:i:s') : '-' }}</div>
                                     </div>
                                 </td>
                                 <td class="text-center">

@@ -186,13 +186,13 @@
                             <thead class="bg-light text-muted small text-uppercase">
                                 <tr>
                                     <th style="width: 45px; text-align: center;">NO</th>
-                                    <th style="min-width: 95px;">SOURCE</th>
+                                    <th class="text-center align-middle whitespace-nowrap px-3" style="width: 1%;">SOURCE</th>
                                     <th style="min-width: 110px;">EMPLOYEE ID</th>
                                     <th style="min-width: 160px;">EMPLOYEE NAME</th>
                                     <th style="min-width: 130px;">TEAM</th>
                                     <th style="min-width: 140px;">DEPARTMENT</th>
                                     <th style="min-width: 130px;">COMPANY</th>
-                                    <th style="min-width: 220px;">COURSE TITLE</th>
+                                    <th class="text-center" style="min-width: 220px; text-align: center;">COURSE TITLE</th>
                                     <th style="min-width: 100px;">TYPE</th>
                                     <th style="min-width: 110px;">CATEGORY</th>
                                     <th style="min-width: 140px;">MAIN CLASSIFICATION</th>
@@ -1372,7 +1372,9 @@
                     {
                         data: 'source_badge',
                         name: 'source',
-                        orderable: true
+                        orderable: true,
+                        width: '1%',
+                        className: 'text-center align-middle whitespace-nowrap px-3'
                     },
                     {
                         data: 'employee_id',
@@ -1408,7 +1410,24 @@
                         data: 'course_title',
                         name: 'learning_title',
                         orderable: true,
-                        defaultContent: '-'
+                        defaultContent: '-',
+                        className: 'text-center align-middle',
+                        render: function(data, type, row) {
+                            if (typeof data === 'string' && data.indexOf('d-flex flex-column') !== -1) {
+                                return data;
+                            }
+                            const courseTitle = data || row.course_title || row.learning_title || '-';
+                            let req = row.requirement || 'Non-Mandatory';
+                            if (typeof req === 'string' && req.indexOf('<') !== -1) {
+                                req = (req.toLowerCase().indexOf('mandatory') !== -1 && req.toLowerCase().indexOf('non-mandatory') === -1) ? 'Mandatory' : 'Non-Mandatory';
+                            }
+                            return `<div class="d-flex flex-column align-items-center justify-content-center text-center w-100">
+                                <span class="fw-bold text-dark text-center fs-6 mb-1">${courseTitle}</span>
+                                <small class="text-muted text-center fs-7">
+                                    Requirement: <span class="fw-semibold">${req || 'Non-Mandatory'}</span>
+                                </small>
+                            </div>`;
+                        }
                     },
                     {
                         data: 'type',

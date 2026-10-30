@@ -49,15 +49,33 @@
 <template data-learning-record-hero>
     <x-shared.hero-learning-record
         recordMode="all"
-        :stats="$recordStats ?? [
-            ['label' => 'Course Completed', 'value' => number_format($recordStats['courseCompleted'] ?? 0)],
-            ['label' => 'Playlist Completed', 'value' => number_format($recordStats['playlistCompleted'] ?? 0)],
-            ['label' => 'Learning Hours', 'value' => number_format($recordStats['totalLearningHours'] ?? 0, 2)],
-        ]"
+        :stats="$recordStats ?? []"
     />
 </template>
 
 <style>
+    /* Force rounded pill styling on all Quick Filter tab states in Learning Record */
+    .quick-filter-btn,
+    .quick-filter-btn:hover,
+    .quick-filter-btn:focus,
+    .quick-filter-btn:active,
+    .quick-filter-btn:disabled,
+    .quick-filter-btn.loading,
+    .quick-filter-btn.disabled,
+    .quick-filter-skeleton,
+    .record-mode-switch .record-mode-btn,
+    .record-mode-switch .record-mode-btn:hover,
+    .record-mode-switch .record-mode-btn:focus,
+    .record-mode-switch .record-mode-btn:active,
+    .record-mode-switch .record-mode-btn:disabled,
+    .record-mode-switch .record-mode-btn.loading,
+    .record-mode-switch .record-mode-btn.disabled,
+    .record-mode-switch-wrapper .record-mode-btn,
+    .learning-mode-switch .record-mode-btn {
+        border-radius: 9999px !important; /* Force fully rounded pill shape at all times */
+        transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+
     button.attendance-detail-trigger {
         border: 0;
         cursor: pointer;
@@ -218,7 +236,7 @@
         font-weight: 600;
         line-height: 1.4;
         color: inherit;
-        text-align: left;
+        text-align: center;
         white-space: normal !important;
         word-break: normal !important;
         overflow-wrap: break-word !important;
@@ -795,7 +813,13 @@
                                         <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
                                     </span>
                                 </th>
-                                <th class="text-muted record-sortable" style="width: 24%; min-width: 260px;" data-sort-key="title" data-sort-type="text">
+                                <th class="text-muted text-center align-middle whitespace-nowrap px-3 record-sortable" style="width: 1%; white-space: nowrap;" data-sort-key="source" data-sort-type="text">
+                                    <span class="record-sort-header">
+                                        <span class="record-sort-label">Source</span>
+                                        <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
+                                    </span>
+                                </th>
+                                <th class="text-muted text-center record-sortable" style="width: 20%; min-width: 240px;" data-sort-key="title" data-sort-type="text">
                                     <span class="record-sort-header">
                                         <span class="record-sort-label">Course Title</span>
                                         <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
@@ -887,9 +911,17 @@
                                 data-sort-finish="{{ $row['end_datetime'] ?? ($row['finish_date'] ?? '') }}"
                                 data-sort-attendance="{{ $allSortAtt }}"
                                 data-sort-score="{{ $allSortScore }}"
-                                data-sort-certificate="{{ $allSortCert }}">
+                                data-sort-certificate="{{ $allSortCert }}"
+                                data-sort-source="{{ $row['source'] ?? 'online' }}">
                                 <td class="text-center text-muted record-row-index">{{ $loop->iteration }}</td>
-                                <td class="learning-record-course-cell">
+                                <td class="text-center align-middle whitespace-nowrap px-3" style="width: 1%; white-space: nowrap;">
+                                    @if (($row['source'] ?? '') === 'online')
+                                        <span class="badge bg-blue-100 text-blue-700 rounded-pill px-2.5 py-1" style="background-color: #dbeafe !important; color: #1d4ed8 !important; font-weight: 600; font-size: 0.75rem;">KP OWL</span>
+                                    @else
+                                        <span class="badge bg-amber-100 text-amber-700 rounded-pill px-2.5 py-1" style="background-color: #fef3c7 !important; color: #b45309 !important; font-weight: 600; font-size: 0.75rem;">Non KP OWL</span>
+                                    @endif
+                                </td>
+                                <td class="learning-record-course-cell text-center align-middle">
                                     @php
                                         $isAllOnline = ($row['source'] ?? '') === 'online';
                                         $allSourceLabel = $isAllOnline ? 'KP OWL' : 'Non-KP OWL';
@@ -898,46 +930,45 @@
                                         $isAllMand = !str_contains($allRawReq, 'non-mandatory') && !str_contains($allRawReq, 'non mandatory') && !str_contains($allRawReq, 'optional') && str_contains($allRawReq, 'mandatory');
                                         $allReqLabel = $isAllMand ? 'Mandatory' : 'Non-Mandatory';
                                     @endphp
-                                    <div class="fw-semibold text-dark">
-                                        @if ($row['source'] === 'offline')
-                                            <button type="button"
-                                                    class="record-offline-title-link btn-record-offline-detail text-start text-dark fw-semibold p-0 border-0 bg-transparent"
-                                                    data-record-id="{{ $row['id'] }}"
-                                                    title="Click to view details">
-                                                {{ $row['title'] }}
-                                            </button>
-                                            <script type="application/json" id="record-offline-data-{{ $row['id'] }}">@json($row)</script>
-                                        @else
-                                            @if (($row['can_open'] ?? true))
-                                                @if (!empty($row['slug']))
-                                                    <a href="{{ route('content.user.view', $row['slug']) }}" class="learning-record-link fw-semibold text-dark text-decoration-none">
-                                                        {{ $row['title'] }}
-                                                    </a>
-                                                @elseif (!empty($row['playlist_url']))
-                                                    <a href="{{ $row['playlist_url'] }}" class="learning-record-link fw-semibold text-dark text-decoration-none">
-                                                        {{ $row['title'] }}
-                                                    </a>
-                                                @else
-                                                    <span>{{ $row['title'] }}</span>
-                                                @endif
-                                            @else
-                                                <a href="javascript:void(0);"
-                                                   class="learning-record-link learning-record-blocked-trigger fw-semibold text-muted text-decoration-none"
-                                                   data-status="{{ $row['access_status'] ?? 'INACTIVE' }}"
-                                                   data-message="{{ $row['modal_message'] ?? 'This content is currently inactive.' }}"
-                                                   data-title="{{ $row['title'] }}"
-                                                   role="button">
+                                    <div class="d-flex flex-column align-items-center justify-content-center text-center w-100">
+                                        <span class="fw-bold text-dark text-center fs-6 mb-1">
+                                            @if ($row['source'] === 'offline')
+                                                <button type="button"
+                                                        class="record-offline-title-link btn-record-offline-detail text-center text-dark fw-bold p-0 border-0 bg-transparent"
+                                                        data-record-id="{{ $row['id'] }}"
+                                                        title="Click to view details">
                                                     {{ $row['title'] }}
-                                                </a>
+                                                </button>
+                                                <script type="application/json" id="record-offline-data-{{ $row['id'] }}">@json($row)</script>
+                                            @else
+                                                @if (($row['can_open'] ?? true))
+                                                    @if (!empty($row['slug']))
+                                                        <a href="{{ route('content.user.view', $row['slug']) }}" class="learning-record-link fw-bold text-dark text-decoration-none text-center">
+                                                            {{ $row['title'] }}
+                                                        </a>
+                                                    @elseif (!empty($row['playlist_url']))
+                                                        <a href="{{ $row['playlist_url'] }}" class="learning-record-link fw-bold text-dark text-decoration-none text-center">
+                                                            {{ $row['title'] }}
+                                                        </a>
+                                                    @else
+                                                        <span class="text-center">{{ $row['title'] }}</span>
+                                                    @endif
+                                                @else
+                                                    <a href="javascript:void(0);"
+                                                       class="learning-record-link learning-record-blocked-trigger fw-bold text-muted text-decoration-none text-center"
+                                                       data-status="{{ $row['access_status'] ?? 'INACTIVE' }}"
+                                                       data-message="{{ $row['modal_message'] ?? 'This content is currently inactive.' }}"
+                                                       data-title="{{ $row['title'] }}"
+                                                       role="button">
+                                                        {{ $row['title'] }}
+                                                    </a>
+                                                @endif
+                                                <script type="application/json" id="record-online-data-{{ $row['id'] }}">@json($row)</script>
                                             @endif
-                                            <script type="application/json" id="record-online-data-{{ $row['id'] }}">@json($row)</script>
-                                        @endif
-                                    </div>
-                                    <div class="d-flex align-items-center gap-2 text-xs text-muted mt-1 flex-wrap">
-                                        <span>Requirement: <span class="badge bg-light text-dark">{{ $allReqLabel }}</span></span>
-                                        <span class="badge {{ $allSourceBadgeClass }} record-source-badge">
-                                            {{ $allSourceLabel }}
                                         </span>
+                                        <small class="text-muted text-center fs-7">
+                                            Requirement: <span class="fw-semibold">{{ $allReqLabel }}</span>
+                                        </small>
                                     </div>
                                 </td>
                                 <td class="text-center">
@@ -982,7 +1013,7 @@
                                 <td class="text-muted small learning-record-datetime">
                                     <div class="text-xs text-muted">
                                         <div class="learning-record-date-row text-nowrap">Start : {{ $allStartDt !== '' ? \Carbon\Carbon::parse($allStartDt)->format('d/m/y H:i:s') : '-' }}</div>
-                                        <div class="learning-record-date-row text-nowrap">Finish : {{ $allEndDt !== '' ? \Carbon\Carbon::parse($allEndDt)->format('d/m/y H:i:s') : '-' }}</div>
+                                        <div class="learning-record-date-row text-nowrap">End : {{ $allEndDt !== '' ? \Carbon\Carbon::parse($allEndDt)->format('d/m/y H:i:s') : '-' }}</div>
                                     </div>
                                 </td>
                                 <td class="text-center">

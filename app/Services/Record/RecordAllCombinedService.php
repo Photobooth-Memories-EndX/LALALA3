@@ -1368,21 +1368,22 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
             $pUserId = $filters['exact_participant']['user_id'] ?? null;
             $pEmpId = $filters['exact_participant']['employee_id'] ?? null;
             $pName = $filters['exact_participant']['name'] ?? null;
+
+            if ($pUserId && empty($pEmpId)) {
+                $pEmpId = DB::table('users')->where('id', $pUserId)->value('id_emp');
+            } elseif ($pEmpId && empty($pUserId)) {
+                $pUserId = DB::table('users')->where('id_emp', $pEmpId)->value('id');
+            }
+
             $q->where(function ($sub) use ($pUserId, $pEmpId, $pName) {
-                $matched = false;
-                if (!empty($pEmpId)) {
+                if (!empty($pUserId) && !empty($pEmpId)) {
+                    $sub->where('otu.user_id', (int) $pUserId)
+                        ->orWhere('otu.employee_id', $pEmpId);
+                } elseif (!empty($pEmpId)) {
                     $sub->where('otu.employee_id', $pEmpId);
-                    $matched = true;
-                }
-                if (!empty($pUserId)) {
-                    if ($matched) {
-                        $sub->orWhere('otu.user_id', (int) $pUserId);
-                    } else {
-                        $sub->where('otu.user_id', (int) $pUserId);
-                        $matched = true;
-                    }
-                }
-                if (!$matched && !empty($pName)) {
+                } elseif (!empty($pUserId)) {
+                    $sub->where('otu.user_id', (int) $pUserId);
+                } elseif (!empty($pName)) {
                     $sub->where('otu.name', $pName);
                 }
             });
@@ -1687,9 +1688,9 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
             ->setRowId('row_id')
             ->addColumn('source_badge', function ($row) {
                 if ($row->source === 'online') {
-                    return '<span class="badge" style="background-color: #e0f2fe; color: #0284c7; font-weight: 600; font-size: 0.725rem; border-radius: 6px; padding: 3px 8px;">KP OWL</span>';
+                    return '<span class="badge bg-blue-100 text-blue-700 rounded-pill px-2.5 py-1" style="background-color: #dbeafe !important; color: #1d4ed8 !important; font-weight: 600; font-size: 0.75rem;">KP OWL</span>';
                 }
-                return '<span class="badge" style="background-color: #fef3c7; color: #d97706; font-weight: 600; font-size: 0.725rem; border-radius: 6px; padding: 3px 8px;">Non KP OWL</span>';
+                return '<span class="badge bg-amber-100 text-amber-700 rounded-pill px-2.5 py-1" style="background-color: #fef3c7 !important; color: #b45309 !important; font-weight: 600; font-size: 0.75rem;">Non KP OWL</span>';
             })
             ->addColumn('status_badge', function ($row) {
                 $st = $row->status ?? 'Not Started';
@@ -1871,7 +1872,13 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
                 return ($row->l3_numerical !== null && $row->l3_numerical !== '') ? number_format((float) $row->l3_numerical, 1) : '-';
             })
             ->addColumn('course_title', function ($row) {
-                return htmlspecialchars($row->learning_title ?: '-');
+                $title = htmlspecialchars($row->learning_title ?: '-');
+                $rawReq = $row->requirement ?? ($row->status ?? 'Non-Mandatory');
+                $req = !empty($rawReq) ? htmlspecialchars($rawReq) : 'Non-Mandatory';
+                return '<div class="d-flex flex-column align-items-center justify-content-center text-center w-100">'
+                    . '<span class="fw-bold text-dark text-center fs-6 mb-1">' . $title . '</span>'
+                    . '<small class="text-muted text-center fs-7">Requirement: <span class="fw-semibold">' . $req . '</span></small>'
+                    . '</div>';
             })
             ->addColumn('employee_id', function ($row) {
                 return htmlspecialchars($row->employee_id ?: '-');
@@ -2349,9 +2356,9 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
             ->setRowId('row_id')
             ->addColumn('source_badge', function ($row) {
                 if ($row->source === 'online') {
-                    return '<span class="badge" style="background-color: #e0f2fe; color: #0284c7; font-weight: 600; font-size: 0.725rem; border-radius: 6px; padding: 3px 8px;">KP OWL</span>';
+                    return '<span class="badge bg-blue-100 text-blue-700 rounded-pill px-2.5 py-1" style="background-color: #dbeafe !important; color: #1d4ed8 !important; font-weight: 600; font-size: 0.75rem;">KP OWL</span>';
                 }
-                return '<span class="badge" style="background-color: #fef3c7; color: #d97706; font-weight: 600; font-size: 0.725rem; border-radius: 6px; padding: 3px 8px;">Non KP OWL</span>';
+                return '<span class="badge bg-amber-100 text-amber-700 rounded-pill px-2.5 py-1" style="background-color: #fef3c7 !important; color: #b45309 !important; font-weight: 600; font-size: 0.75rem;">Non KP OWL</span>';
             })
             ->addColumn('status_badge', function ($row) {
                 $st = $row->status ?? 'Not Started';
@@ -2435,7 +2442,13 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
                 return ($d && $d !== '-') ? date('d M Y', strtotime($d)) : '-';
             })
             ->addColumn('course_title', function ($row) {
-                return htmlspecialchars($row->learning_title ?: '-');
+                $title = htmlspecialchars($row->learning_title ?: '-');
+                $rawReq = $row->requirement ?? ($row->status ?? 'Non-Mandatory');
+                $req = !empty($rawReq) ? htmlspecialchars($rawReq) : 'Non-Mandatory';
+                return '<div class="d-flex flex-column align-items-center justify-content-center text-center w-100">'
+                    . '<span class="fw-bold text-dark text-center fs-6 mb-1">' . $title . '</span>'
+                    . '<small class="text-muted text-center fs-7">Requirement: <span class="fw-semibold">' . $req . '</span></small>'
+                    . '</div>';
             })
             ->addColumn('main_classification', function ($row) {
                 return htmlspecialchars($row->classification ?: '-');

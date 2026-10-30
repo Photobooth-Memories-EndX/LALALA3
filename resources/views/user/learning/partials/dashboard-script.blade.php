@@ -49,9 +49,9 @@
                 '</div>' +
                 '<div class="d-flex align-items-center justify-content-between gap-2 w-100 mt-3 mb-0 quick-filter-row record-mode-switch-wrapper">' +
                     '<div class="learning-mode-switch record-mode-switch d-flex align-items-center gap-2" role="group" aria-label="Learning Record mode">' +
-                        '<button type="button" class="btn learning-mode-btn record-mode-btn ' + (mode === 'online' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="online" title="KP OWL" aria-label="KP OWL"><i class="ti ti-device-laptop"></i><span>KP OWL</span></button>' +
-                        '<button type="button" class="btn learning-mode-btn record-mode-btn ' + (mode === 'offline' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="offline" title="Non KP OWL" aria-label="Non KP OWL"><i class="ti ti-certificate"></i><span>Non KP OWL</span></button>' +
-                        '<button type="button" class="btn learning-mode-btn record-mode-btn ' + (mode === 'all' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="all" title="All Record" aria-label="All Record"><i class="ti ti-stack-2"></i><span>All Record</span></button>' +
+                        '<button type="button" class="btn learning-mode-btn record-mode-btn quick-filter-btn rounded-pill rounded-full px-4 py-2 border-0 ' + (mode === 'all' ? 'active' : '') + '" data-mode="all" title="All Record" aria-label="All Record" style="border-radius: 9999px !important;"><i class="ti ti-stack-2"></i><span>All Record</span></button>' +
+                        '<button type="button" class="btn learning-mode-btn record-mode-btn quick-filter-btn rounded-pill rounded-full px-4 py-2 border-0 ' + (mode === 'online' ? 'active' : '') + '" data-mode="online" title="KP OWL" aria-label="KP OWL" style="border-radius: 9999px !important;"><i class="ti ti-device-laptop"></i><span>KP OWL</span></button>' +
+                        '<button type="button" class="btn learning-mode-btn record-mode-btn quick-filter-btn rounded-pill rounded-full px-4 py-2 border-0 ' + (mode === 'offline' ? 'active' : '') + '" data-mode="offline" title="Non KP OWL" aria-label="Non KP OWL" style="border-radius: 9999px !important;"><i class="ti ti-certificate"></i><span>Non KP OWL</span></button>' +
                     '</div>' +
                     '<span class="placeholder rounded-3 ms-auto" style="width:118px;height:40px;"></span>' +
                 '</div>' +
@@ -80,9 +80,9 @@
                     '<div class="card-body p-4 border-bottom placeholder-glow">' +
                         switchInsideHeaderHtml +
                         '<div class="d-flex align-items-center flex-wrap gap-2 mt-3">' +
-                            '<span class="placeholder rounded-pill" style="width:110px;height:38px;"></span>' +
-                            '<span class="placeholder rounded-pill" style="width:140px;height:38px;"></span>' +
-                            '<span class="placeholder rounded-pill" style="width:90px;height:38px;"></span>' +
+                            '<span class="placeholder rounded-pill quick-filter-skeleton" style="width:110px;height:38px;border-radius:9999px !important;"></span>' +
+                            '<span class="placeholder rounded-pill quick-filter-skeleton" style="width:140px;height:38px;border-radius:9999px !important;"></span>' +
+                            '<span class="placeholder rounded-pill quick-filter-skeleton" style="width:90px;height:38px;border-radius:9999px !important;"></span>' +
                             '<span class="placeholder flex-grow-1 rounded-3" style="min-width:200px;height:38px;"></span>' +
                             '<span class="placeholder rounded-3" style="width:38px;height:38px;"></span>' +
                             '<span class="placeholder rounded-3" style="width:38px;height:38px;"></span>' +
@@ -428,7 +428,7 @@
                 }
             });
 
-            _ongoingMode = (mode === 'playlist' || mode === 'mooc') ? mode : null;
+            _ongoingMode = (['playlist', 'mooc', 'non-kp-owl', 'ongoing-non-kp-owl'].indexOf(mode) !== -1) ? mode : null;
 
             if (_ongoingMode) {
                 params.set('ongoing_mode', _ongoingMode);
@@ -439,6 +439,67 @@
 
             _activeTab = null; // paksa loadLearningTab memuat ulang partial ongoing
             loadLearningTab('ongoing');
+        });
+
+        // ── Filter dropdowns & search for Ongoing Non KP OWL ─────────────────────────
+        $(document).on('click', '.ongoing-offline-filter-item', function (e) {
+            e.preventDefault();
+            var param = String($(this).data('param'));
+            var value = String($(this).data('value'));
+            var params = new URLSearchParams(window.location.search);
+
+            if (value === 'all' || value === '') {
+                params.delete(param);
+            } else {
+                params.set(param, value);
+            }
+
+            params.set('learning_tab', 'ongoing');
+            params.set('ongoing_mode', 'non-kp-owl');
+
+            var qs = params.toString();
+            history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+
+            _activeTab = null;
+            loadLearningTab('ongoing');
+        });
+
+        $(document).on('click', '#ongoingOfflineApplyBtn', function () {
+            var q = $('#ongoingOfflineSearch').val() || '';
+            var params = new URLSearchParams(window.location.search);
+            if (q.trim()) {
+                params.set('ongoing_search', q.trim());
+            } else {
+                params.delete('ongoing_search');
+            }
+            params.set('learning_tab', 'ongoing');
+            params.set('ongoing_mode', 'non-kp-owl');
+            var qs = params.toString();
+            history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+            _activeTab = null;
+            loadLearningTab('ongoing');
+        });
+
+        $(document).on('click', '#ongoingOfflineResetBtn', function () {
+            var params = new URLSearchParams(window.location.search);
+            Array.from(params.keys()).forEach(function (key) {
+                if (key.indexOf('ongoing_filter_') === 0 || key === 'ongoing_search') {
+                    params.delete(key);
+                }
+            });
+            params.set('learning_tab', 'ongoing');
+            params.set('ongoing_mode', 'non-kp-owl');
+            var qs = params.toString();
+            history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+            _activeTab = null;
+            loadLearningTab('ongoing');
+        });
+
+        $(document).on('keydown', '#ongoingOfflineSearch', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                $('#ongoingOfflineApplyBtn').trigger('click');
+            }
         });
 
         // ── Mode switch Learning Record: Online | Offline | All ───────────────────────
@@ -1000,7 +1061,7 @@
         window.addEventListener('popstate', function () {
             var params = new URLSearchParams(window.location.search);
             var om = params.get('ongoing_mode');
-            _ongoingMode = (om === 'playlist' || om === 'mooc') ? om : null;
+            _ongoingMode = (['playlist', 'mooc', 'non-kp-owl', 'ongoing-non-kp-owl'].indexOf(om) !== -1) ? om : null;
             var rm = params.get('record_mode');
             _recordMode = ['online', 'offline', 'all'].indexOf(String(rm).toLowerCase()) !== -1
                 ? String(rm).toLowerCase()
@@ -1013,8 +1074,10 @@
             // Restore the tab that initiated a full-page GET filter request.
             var initialParams = new URLSearchParams(window.location.search);
             var initialOngoingMode = initialParams.get('ongoing_mode');
-            if (initialOngoingMode === 'playlist' || initialOngoingMode === 'mooc') {
+            if (['playlist', 'mooc', 'non-kp-owl', 'ongoing-non-kp-owl'].indexOf(initialOngoingMode) !== -1) {
                 _ongoingMode = initialOngoingMode;
+            } else if (initialParams.get('record_mode') === 'ongoing-non-kp-owl') {
+                _ongoingMode = 'non-kp-owl';
             }
             var initialRecordMode = initialParams.get('record_mode');
             if (initialRecordMode && initialRecordMode.toLowerCase() === 'export') {

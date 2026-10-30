@@ -332,11 +332,15 @@
 }
 
 .ongoing-mode-switch .ongoing-mode-btn {
-    width: 104px;
-    min-width: 104px;
-    flex: 0 1 104px;
-    gap: 7px;
-    padding: 0 14px;
+    width: auto !important;
+    min-width: auto !important;
+    flex: 0 0 auto !important;
+    gap: 0.5rem !important;
+    padding: 0.625rem 1rem !important;
+    border-radius: 9999px !important;
+    font-weight: 500 !important;
+    font-size: 0.875rem !important;
+    white-space: nowrap !important;
 }
 
 .ongoing-filter-actions .ongoing-filter-action-btn,
@@ -623,4 +627,24 @@ body.dark-mode .ongoing-filter-shell .ongoing-quick-dropdowns .dropdown-item:foc
 [data-bs-theme="dark"] .ongoing-filter-actions .ongoing-filter-count,
 body.dark-mode .ongoing-filter-actions .ongoing-filter-count {
     border-color: #152235;
+}
+
+
+/* Quick Filter Tab Button Pill Shapes */
+.quick-filter-btn,
+.quick-filter-btn:disabled,
+.quick-filter-btn.loading,
+.quick-filter-btn.disabled,
+.quick-filter-skeleton,
+.record-mode-switch .record-mode-btn,
+.record-mode-switch .record-mode-btn:hover,
+.record-mode-switch .record-mode-btn:focus,
+.record-mode-switch .record-mode-btn:active,
+.record-mode-switch .record-mode-btn:disabled,
+.record-mode-switch .record-mode-btn.loading,
+.record-mode-switch .record-mode-btn.disabled,
+.record-mode-switch-wrapper .record-mode-btn,
+.learning-mode-switch .record-mode-btn {
+    border-radius: 9999px !important; /* Force fully rounded pill shape at all times */
+    transition: background-color 0.2s ease, border-color 0.2s ease;
 }
