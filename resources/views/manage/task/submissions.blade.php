@@ -37,120 +37,33 @@
 @endphp
 
 <style>
-    /* In workstation mode, seamlessly adjust .page-wrapper while keeping main app sidebar intact */
-    body.workstation-mode {
-        overflow: hidden !important;
+    /* Review Submission Modal Dialog */
+    #reviewSubmissionModal .modal-dialog {
+        max-width: 1250px;
+        margin-top: 1.5rem;
+        margin-bottom: 1.5rem;
     }
-    body.workstation-mode .app-topbar {
-        display: none !important; /* Hide OWL search topbar to prevent double headers */
-    }
-    body.workstation-mode .page {
-        height: 100vh !important;
-        max-height: 100vh !important;
-        overflow: hidden !important;
-    }
-    body.workstation-mode .page-wrapper {
-        padding: 0 !important;
-        margin-top: 0 !important;
-        margin-right: 0 !important;
-        margin-bottom: 0 !important;
-        height: 100vh !important;
-        max-height: 100vh !important;
-        overflow: hidden !important;
-    }
-    @media (min-width: 992px) {
-        body.workstation-mode .page-wrapper {
-            margin-left: 15rem !important; /* Preserves Tabler navbar-vertical margin so workstation starts right beside sidebar */
-        }
-    }
-    @media (max-width: 991.98px) {
-        body.workstation-mode .page-wrapper {
-            margin-left: 0 !important;
-        }
-    }
-
-    body.workstation-mode #responsesTableView {
-        display: none !important;
-    }
-    body.workstation-mode #reviewSubmissionModal {
-        display: flex !important;
-    }
-
-    /* Workstation Container (sits inside .page-wrapper beside main app sidebar) */
-    .workstation-container {
-        display: none;
-        flex-direction: column;
-        height: 100vh;
-        max-height: 100vh;
-        width: 100%;
-        background: #f8fafc;
+    #reviewSubmissionModal .modal-content {
+        max-height: calc(100vh - 3rem);
+        border-radius: 12px;
         overflow: hidden;
     }
-
-    /* Workstation Header */
-    .workstation-header {
-        height: 52px;
-        background: #ffffff;
-        border-bottom: 1px solid #e2e8f0;
-        z-index: 50;
-    }
-
-    /* Workstation Left Learner List Sidebar */
-    .workstation-sidebar {
-        width: 240px;
-        min-width: 220px;
-        max-width: 250px;
-        background: #ffffff;
-        border-right: 1px solid #e2e8f0;
-        overflow-y: auto;
-        height: 100%;
-    }
-    .learner-item {
-        border-radius: 8px;
-        transition: all 0.15s ease-in-out;
-        cursor: pointer;
-        border: 1px solid transparent;
-        text-decoration: none !important;
-    }
-    .learner-item:hover {
-        background-color: #f8fafc;
-    }
-    .learner-item.active {
-        background-color: #f0f7ff !important;
-        border-color: #bae6fd !important;
-        box-shadow: inset 3px 0 0 0 #0284c7;
-    }
-    .learner-item.active .learner-name {
-        color: #0284c7 !important;
-        font-weight: 700 !important;
-    }
-
-    /* Workstation Middle Canvas */
-    .workstation-main {
-        flex: 1 1 0;
-        min-width: 0;
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-        background: #f8fafc;
+    #reviewSubmissionModal .modal-body {
+        max-height: calc(100vh - 140px);
         overflow: hidden;
     }
-    .workstation-canvas-body {
-        flex: 1 1 auto;
+    #reviewSubmissionModal .review-canvas-col {
+        max-height: calc(100vh - 140px);
         overflow-y: auto;
-        padding: 1.25rem;
+        background: #f8fafc;
+        padding: 1.5rem;
     }
-
-    /* Workstation Right Grading Panel */
-    .workstation-panel {
-        width: 310px;
-        min-width: 290px;
-        max-width: 320px;
+    #reviewSubmissionModal .review-panel-col {
+        max-height: calc(100vh - 140px);
+        overflow-y: auto;
         background: #ffffff;
+        padding: 1.5rem;
         border-left: 1px solid #e2e8f0;
-        height: 100%;
-        overflow-y: auto;
-        padding: 1.25rem;
     }
 
     /* Zoom and Mouse Control States */
@@ -178,16 +91,6 @@
         filter: brightness(1.05);
     }
 </style>
-
-@php
-    $startInTableView = request('view') === 'table';
-@endphp
-
-@if (!$startInTableView)
-<script>
-    document.body.classList.add('workstation-mode');
-</script>
-@endif
 
 {{-- ══════════════════════════════════════════════════════════════════════ --}}
 {{-- 1. STANDARD PAGE: Responses Table List                                 --}}
@@ -227,14 +130,6 @@
                             <span class="ms-2">· {{ $task->fields->count() }} questions</span>
                         @endif
                     </div>
-                </div>
-                <div class="col-auto ms-auto d-print-none">
-                    <button type="button"
-                            class="btn btn-primary d-inline-flex align-items-center gap-1.5 shadow-sm px-3"
-                            onclick="showWorkstationView()">
-                        <i class="ti ti-layout-dashboard fs-2"></i>
-                        <span>Review Workstation</span>
-                    </button>
                 </div>
             </div>
         </div>
@@ -347,221 +242,82 @@
 
 
 {{-- ══════════════════════════════════════════════════════════════════════ --}}
-{{-- 3. SPEEDGRADER WORKSTATION (INLINE BESIDE OWL SIDEBAR)                 --}}
+{{-- 2. REVIEW SUBMISSION MODAL POPUP                                       --}}
 {{-- ══════════════════════════════════════════════════════════════════════ --}}
-<div class="workstation-container" id="reviewSubmissionModal" role="region" aria-label="Review Submissions Workstation">
-    {{-- ── Top Navigation Bar ────────────────────────────────────────── --}}
-    <header class="workstation-header px-3 d-flex align-items-center justify-content-between flex-shrink-0">
-        {{-- Left: Consistent Link-Style Back Button & Title --}}
-        <div class="d-flex align-items-center gap-3 min-w-0">
-            <a href="{{ route('manage.task.parent', $task->parentRouteParams()) }}"
-               class="text-primary text-decoration-none fw-semibold d-inline-flex align-items-center gap-1.5 flex-shrink-0"
-               style="font-size: 13.5px;"
-               title="Back to task list">
-                <i class="ti ti-arrow-left fs-3"></i>
-                <span>Back</span>
-            </a>
-
-            <div class="vr my-1 text-muted d-none d-sm-block" style="height: 20px; opacity: 0.25;"></div>
-
-            <div class="min-w-0">
-                <h5 class="fw-bold mb-0 text-dark text-truncate" style="font-size: 14.5px;">Review Submissions</h5>
-            </div>
-        </div>
-
-        {{-- Right: Switch to Table View Button & Close Button --}}
-        <div class="d-flex align-items-center justify-content-end gap-2">
-            <button type="button"
-                    class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1.5 px-2.5 py-1 text-muted"
-                    onclick="showTableView()"
-                    title="Switch to Table View"
-                    style="font-size: 13px; border-radius: 6px;">
-                <i class="ti ti-table fs-3"></i>
-                <span>Table View</span>
-            </button>
-
-            <div class="vr my-1 text-muted d-none d-sm-block" style="height: 20px; opacity: 0.25;"></div>
-
-            <a href="{{ route('manage.task.parent', $task->parentRouteParams()) }}"
-               class="btn btn-sm btn-ghost-secondary p-1 text-muted d-flex align-items-center justify-content-center"
-               title="Close & Return to Review"
-               style="width: 32px; height: 32px; border-radius: 8px;">
-                <i class="ti ti-x fs-2"></i>
-                <span class="visually-hidden">Close &amp; Return to Review</span>
-            </a>
-        </div>
-    </header>
-
-    {{-- ── Workstation 3-Column Body ──────────────────────────────────── --}}
-    <div class="d-flex flex-grow-1 overflow-hidden" style="min-height: 0;">
-        {{-- ── COLUMN 1: User List Sidebar ── --}}
-        <aside class="workstation-sidebar py-2 px-2.5 flex-shrink-0">
-            {{-- Category 1: NEEDS REVIEW --}}
-            <div class="mb-3">
-                <div class="text-uppercase text-muted fw-bold px-2 py-1.5 d-flex align-items-center justify-content-between" style="font-size: 11px; letter-spacing: 0.5px;">
-                    <span>NEEDS REVIEW</span>
-                    <span class="badge bg-warning-lt text-warning rounded-pill px-1.5" style="font-size: 10px;">{{ $needsReviewSubmissions->count() }}</span>
+<div class="modal fade" id="reviewSubmissionModal" tabindex="-1" aria-labelledby="reviewSubmissionModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg">
+            {{-- Modal Header: Exact Card Header Layout (Image 3) --}}
+            <div class="modal-header border-bottom py-2.5 px-4 bg-white d-flex align-items-center justify-content-between flex-shrink-0" style="min-height: 64px;">
+                {{-- Left: Task Title & Type --}}
+                <div class="d-flex align-items-center gap-1.5 min-w-0" style="flex: 1 1 0; min-width: 140px;">
+                    <span class="text-secondary fw-semibold text-truncate" style="font-size: 13.5px;">{{ $task->title }}</span>
+                    <span class="text-muted">&bull;</span>
+                    <span class="fw-bold text-dark text-truncate" style="font-size: 13.5px;">{{ $task->typeLabel() }}</span>
                 </div>
-                @forelse ($needsReviewSubmissions as $sub)
-                    <div class="learner-item p-2 px-2.5 mb-1 d-flex align-items-center justify-content-between gap-2"
-                         data-submission-id="{{ $sub->id }}"
-                         role="button"
-                         tabindex="0"
-                         title="Review Submission">
-                        <div class="d-flex align-items-center gap-2 min-w-0">
-                            <div class="avatar avatar-sm rounded-circle bg-primary text-white fw-bold flex-shrink-0" style="width: 30px; height: 30px; font-size: 11.5px;">
-                                {{ strtoupper(substr($sub->user->name ?? 'U', 0, 1)) }}
+
+                {{-- Center: User Switcher [ < ] [ User Name ] [ > ] & Graded Progress Bar Underneath (Image 3) --}}
+                <div class="d-flex flex-column align-items-center justify-content-center text-center mx-auto" style="flex: 2 1 0; min-width: 250px;">
+                    {{-- User Switcher --}}
+                    <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
+                        <button type="button"
+                                class="btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center flex-shrink-0"
+                                id="prevSubmissionBtn"
+                                title="Previous User (Left Arrow)"
+                                style="width: 28px; height: 28px;">
+                            <i class="ti ti-chevron-left" style="font-size: 15px;"></i>
+                        </button>
+
+                        <div class="text-center px-2" style="min-width: 140px; max-width: 320px;">
+                            <div class="fw-bold text-dark text-truncate text-uppercase" id="headerLearnerName" style="font-size: 14px; letter-spacing: 0.3px; line-height: 1.2;">
+                                {{ $defaultActive ? ($defaultActive->user->name ?? 'User') : 'No Submissions' }}
                             </div>
-                            <div class="min-w-0">
-                                <div class="learner-name fw-semibold text-dark text-truncate" style="font-size: 12px;">{{ $sub->user->name ?? 'User' }}</div>
-                                <div class="text-muted" style="font-size: 10.5px;">{{ $sub->submitted_at ? $sub->submitted_at->format('d M, H:i') : '-' }}</div>
+                            <div class="text-muted" id="headerSubmissionCount" style="font-size: 11px; line-height: 1.2;">
+                                Submission {{ $totalSubmissions > 0 ? 1 : 0 }} of {{ $totalSubmissions }}
                             </div>
                         </div>
-                        <div class="flex-shrink-0">
-                            <span class="d-inline-block rounded-circle bg-warning" style="width: 8px; height: 8px;" title="Pending review"></span>
-                        </div>
+
+                        <button type="button"
+                                class="btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center flex-shrink-0"
+                                id="nextSubmissionBtn"
+                                title="Next User (Right Arrow)"
+                                style="width: 28px; height: 28px;">
+                            <i class="ti ti-chevron-right" style="font-size: 15px;"></i>
+                        </button>
                     </div>
-                @empty
-                    <div class="px-2 py-1 text-muted small fst-italic" style="font-size: 11.5px;">— No pending reviews —</div>
-                @endforelse
-            </div>
 
-            {{-- Category 2: GRADED --}}
-            <div class="mb-3">
-                <div class="text-uppercase text-muted fw-bold px-2 py-1.5 d-flex align-items-center justify-content-between" style="font-size: 11px; letter-spacing: 0.5px;">
-                    <span>GRADED</span>
-                    <span class="badge bg-success-lt text-success rounded-pill px-1.5" style="font-size: 10px;">{{ $gradedSubmissions->count() }}</span>
-                </div>
-                @forelse ($gradedSubmissions as $sub)
-                    <div class="learner-item p-2 px-2.5 mb-1 d-flex align-items-center justify-content-between gap-2"
-                         data-submission-id="{{ $sub->id }}"
-                         role="button"
-                         tabindex="0"
-                         title="Review Submission">
-                        <div class="d-flex align-items-center gap-2 min-w-0">
-                            <div class="avatar avatar-sm rounded-circle bg-secondary text-white fw-bold flex-shrink-0" style="width: 30px; height: 30px; font-size: 11.5px;">
-                                {{ strtoupper(substr($sub->user->name ?? 'U', 0, 1)) }}
-                            </div>
-                            <div class="min-w-0">
-                                <div class="learner-name fw-semibold text-dark text-truncate" style="font-size: 12px;">{{ $sub->user->name ?? 'User' }}</div>
-                                <div class="text-muted" style="font-size: 10.5px;">{{ $sub->submitted_at ? $sub->submitted_at->format('d M, H:i') : '-' }}</div>
+                    {{-- Graded Progress Bar Underneath --}}
+                    <div class="d-flex align-items-center justify-content-center gap-2">
+                        <span class="small fw-semibold text-muted" id="headerGradedSummary" style="font-size: 11.5px; line-height: 1;">
+                            {{ $gradedCount }} of {{ $totalSubmissions }} graded
+                        </span>
+                        <div class="progress" style="height: 5px; width: 130px; background-color: #e2e8f0; border-radius: 999px;">
+                            <div class="progress-bar bg-success"
+                                 id="headerGradedProgressBar"
+                                 role="progressbar"
+                                 style="width: {{ $totalSubmissions > 0 ? round(($gradedCount / $totalSubmissions) * 100) : 0 }}%; border-radius: 999px;"
+                                 aria-valuenow="{{ $gradedCount }}"
+                                 aria-valuemin="0"
+                                 aria-valuemax="{{ $totalSubmissions }}">
                             </div>
                         </div>
-                        <div class="flex-shrink-0 text-end">
-                            @if ($sub->score !== null)
-                                <span class="fw-bold text-success" style="font-size: 12.5px;">{{ $sub->score }}</span>
-                            @else
-                                <span class="fw-bold text-success fs-3 lh-1">&check;</span>
-                            @endif
-                        </div>
-                    </div>
-                @empty
-                    <div class="px-2 py-1 text-muted small fst-italic" style="font-size: 11.5px;">— None graded yet —</div>
-                @endforelse
-            </div>
-
-            {{-- Category 3: REJECTED --}}
-            <div class="mb-3">
-                <div class="text-uppercase text-muted fw-bold px-2 py-1.5 d-flex align-items-center justify-content-between" style="font-size: 11px; letter-spacing: 0.5px;">
-                    <span>REJECTED</span>
-                    <span class="badge bg-danger-lt text-danger rounded-pill px-1.5" style="font-size: 10px;">{{ $rejectedSubmissions->count() }}</span>
-                </div>
-                @forelse ($rejectedSubmissions as $sub)
-                    <div class="learner-item p-2 px-2.5 mb-1 d-flex align-items-center justify-content-between gap-2"
-                         data-submission-id="{{ $sub->id }}"
-                         role="button"
-                         tabindex="0"
-                         title="Review Submission">
-                        <div class="d-flex align-items-center gap-2 min-w-0">
-                            <div class="avatar avatar-sm rounded-circle {{ $sub->resubmit_requested ? 'bg-warning-lt text-warning' : 'bg-danger-lt text-danger' }} fw-bold flex-shrink-0" style="width: 30px; height: 30px; font-size: 11.5px;">
-                                {{ strtoupper(substr($sub->user->name ?? 'U', 0, 1)) }}
-                            </div>
-                            <div class="min-w-0">
-                                <div class="learner-name fw-semibold text-dark text-truncate" style="font-size: 12px;">{{ $sub->user->name ?? 'User' }}</div>
-                                <div class="text-muted" style="font-size: 10.5px;">{{ $sub->resubmit_requested ? 'Revision pending' : 'Completed as rejected' }}</div>
-                            </div>
-                        </div>
-                        <div class="flex-shrink-0 text-end">
-                            @if ($sub->resubmit_requested)
-                                <i class="ti ti-refresh text-warning fs-3" title="Resubmit requested"></i>
-                            @else
-                                <i class="ti ti-x text-danger fs-3" title="Completed as rejected"></i>
-                            @endif
-                        </div>
-                    </div>
-                @empty
-                    <div class="px-2 py-1 text-muted small fst-italic" style="font-size: 11.5px;">— None rejected —</div>
-                @endforelse
-            </div>
-        </aside>
-
-        {{-- ── COLUMN 2: Main Submission Viewer & Canvas ── --}}
-        <main class="workstation-main" id="filePreviewModal">
-            {{-- Main Canvas Area --}}
-            <div class="workstation-canvas-body" id="workstationCanvasBody">
-                {{-- ── Canvas Header Card: Task Info, User Switcher & Graded Progress ── --}}
-                <div class="card border rounded-3 p-3 bg-white mb-3 shadow-xs" style="border-color: #e2e8f0 !important;">
-                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                        {{-- Left: Task Title & Type --}}
-                        <div class="d-flex align-items-center gap-1.5" style="flex: 1 1 0; min-width: 150px;">
-                            <span class="text-secondary fw-semibold text-truncate" style="font-size: 13.5px;">{{ $task->title }}</span>
-                            <span class="text-muted">&bull;</span>
-                            <span class="fw-bold text-dark text-truncate" style="font-size: 13.5px;">{{ $task->typeLabel() }}</span>
-                        </div>
-
-                        {{-- Center: User Switcher [ < ] [ User Name ] [ > ] & Graded Progress Bar Underneath --}}
-                        <div class="d-flex flex-column align-items-center justify-content-center text-center mx-auto" style="flex: 2 1 0; min-width: 250px;">
-                            {{-- User Switcher --}}
-                            <div class="d-flex align-items-center justify-content-center gap-2 mb-1.5">
-                                <button type="button"
-                                        class="btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center flex-shrink-0"
-                                        id="prevSubmissionBtn"
-                                        title="Previous User (Left Arrow)"
-                                        style="width: 28px; height: 28px;">
-                                    <i class="ti ti-chevron-left" style="font-size: 15px;"></i>
-                                </button>
-
-                                <div class="text-center px-2" style="min-width: 140px; max-width: 320px;">
-                                    <div class="fw-bold text-dark text-truncate text-uppercase" id="headerLearnerName" style="font-size: 14px; letter-spacing: 0.3px; line-height: 1.2;">
-                                        {{ $defaultActive ? ($defaultActive->user->name ?? 'User') : 'No Submissions' }}
-                                    </div>
-                                    <div class="text-muted" id="headerSubmissionCount" style="font-size: 11px; line-height: 1.2;">
-                                        Submission {{ $totalSubmissions > 0 ? 1 : 0 }} of {{ $totalSubmissions }}
-                                    </div>
-                                </div>
-
-                                <button type="button"
-                                        class="btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center flex-shrink-0"
-                                        id="nextSubmissionBtn"
-                                        title="Next User (Right Arrow)"
-                                        style="width: 28px; height: 28px;">
-                                    <i class="ti ti-chevron-right" style="font-size: 15px;"></i>
-                                </button>
-                            </div>
-
-                            {{-- Graded Progress Bar Underneath --}}
-                            <div class="d-flex align-items-center justify-content-center gap-2">
-                                <span class="small fw-semibold text-muted" id="headerGradedSummary" style="font-size: 11.5px; line-height: 1;">
-                                    {{ $gradedCount }} of {{ $totalSubmissions }} graded
-                                </span>
-                                <div class="progress" style="height: 5px; width: 130px; background-color: #e2e8f0; border-radius: 999px;">
-                                    <div class="progress-bar bg-success"
-                                         id="headerGradedProgressBar"
-                                         role="progressbar"
-                                         style="width: {{ $totalSubmissions > 0 ? round(($gradedCount / $totalSubmissions) * 100) : 0 }}%; border-radius: 999px;"
-                                         aria-valuenow="{{ $gradedCount }}"
-                                         aria-valuemin="0"
-                                         aria-valuemax="{{ $totalSubmissions }}">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- Right: Balancer spacer to keep center perfectly centered --}}
-                        <div class="d-none d-md-block" style="flex: 1 1 0; min-width: 150px;"></div>
                     </div>
                 </div>
 
+                {{-- Right: Balancer spacer + Close Button --}}
+                <div class="d-flex align-items-center justify-content-end gap-2" style="flex: 1 1 0; min-width: 140px;">
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" title="Close & Return to Review">
+                        <span class="visually-hidden">Close &amp; Return to Review</span>
+                    </button>
+                </div>
+            </div>
+
+            {{-- Modal Body: 2-Column Review (Left: Canvas/Answers, Right: Grading Form) --}}
+            <div class="modal-body p-0">
+                <div class="row g-0 h-100">
+                    {{-- ── COLUMN 1: Main Submission Viewer & Canvas ── --}}
+                    <div class="col-lg-8 review-canvas-col" id="filePreviewModal">
+                        <div id="workstationCanvasBody">
                 @forelse ($allSubmissions as $sub)
                     <div class="submission-pane d-none" id="submission-pane-{{ $sub->id }}" data-submission-id="{{ $sub->id }}">
                         <div id="submissionContent-{{ $sub->id }}">
@@ -996,12 +752,12 @@
                         <div id="filePreviewZoomWrapper" class="d-none"></div>
                     </div>
                 @endforelse
-            </div>
-        </main>
+                        </div>
+                    </div>
 
-        {{-- ── COLUMN 3: Right Grading Panel ── --}}
-        <aside class="workstation-panel d-flex flex-column justify-content-between flex-shrink-0">
-            <div>
+                    {{-- ── COLUMN 2: Right Grading Panel ── --}}
+                    <div class="col-lg-4 review-panel-col d-flex flex-column justify-content-between">
+                        <div>
                 {{-- Submission Details Section --}}
                 <div class="mb-4">
                     <div class="text-uppercase text-muted fw-bold mb-3" style="font-size: 11px; letter-spacing: 0.5px;">
@@ -1121,16 +877,20 @@
                         <button type="button" id="modalResubmitBtn" class="d-none">Request Resubmit</button>
 
                         <button type="button"
-                                class="btn btn-link text-muted w-100 py-1 text-decoration-none"
-                                onclick="closeWorkstation()"
+                                class="btn btn-link text-muted w-100 py-1 text-decoration-none mt-2"
+                                data-bs-dismiss="modal"
+                                title="Close & Return to Review"
                                 style="font-size: 13px;">
+                            <span class="visually-hidden">Close &amp; Return to Review</span>
                             Cancel
                         </button>
                     </form>
                 </div>
             </div>
-        </aside>
+        </div>
     </div>
+</div>
+</div>
 </div>
 
 {{-- ── Fullscreen Pop-up Modal for Submission File Preview ── --}}
@@ -1303,18 +1063,8 @@
     var startX = 0, startY = 0;
     var translateX = 0, translateY = 0;
 
-    // ── Open / Switch Views (Option B: Default Workstation with Table Switch) ──
-    window.showTableView = function () {
-        document.body.classList.remove('workstation-mode');
-        if (window.history && window.history.replaceState) {
-            var url = new URL(window.location);
-            url.searchParams.set('view', 'table');
-            window.history.replaceState({}, '', url);
-        }
-    };
-
-    window.showWorkstationView = function (submissionId) {
-        document.body.classList.add('workstation-mode');
+    // ── Open / Switch Views (Table View with Review Modal Popup) ──
+    window.openWorkstation = function (submissionId) {
         if (submissionId !== undefined && submissionId !== null) {
             var targetId = parseInt(submissionId);
             var targetIdx = submissionsData.findIndex(function (s) { return s.id === targetId; });
@@ -1326,19 +1076,26 @@
                 setActiveSubmissionByIndex(0);
             }
         }
-        if (window.history && window.history.replaceState) {
-            var url = new URL(window.location);
-            url.searchParams.delete('view');
-            window.history.replaceState({}, '', url);
+        var modalEl = document.getElementById('reviewSubmissionModal');
+        if (modalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            bootstrap.Modal.getOrCreateInstance(modalEl).show();
         }
     };
 
-    window.openWorkstation = function (submissionId) {
-        window.showWorkstationView(submissionId);
+    window.closeWorkstation = function () {
+        var modalEl = document.getElementById('reviewSubmissionModal');
+        if (modalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            var instance = bootstrap.Modal.getInstance(modalEl);
+            if (instance) instance.hide();
+        }
     };
 
-    window.closeWorkstation = function () {
-        window.showTableView();
+    window.showWorkstationView = function (submissionId) {
+        window.openWorkstation(submissionId);
+    };
+
+    window.showTableView = function () {
+        window.closeWorkstation();
     };
 
     // ── Zoom & Pan Transform Engine ─────────────────────────────────
@@ -2134,16 +1891,12 @@
         });
     }
 
-    // Keyboard Navigation (ESC to close, Left/Right arrow to switch)
+    // Keyboard Navigation (ESC to close, Left/Right arrow to switch in modal)
     window.addEventListener('keydown', function (e) {
-        var isWorkstationOpen = document.body.classList.contains('workstation-mode');
+        var modalEl = document.getElementById('reviewSubmissionModal');
+        var isModalOpen = modalEl && modalEl.classList.contains('show');
 
-        if (e.key === 'Escape' && isWorkstationOpen) {
-            closeWorkstation();
-            return;
-        }
-
-        if (!isWorkstationOpen) return;
+        if (!isModalOpen) return;
 
         // Skip arrows if user is typing in input or textarea
         if (['INPUT', 'TEXTAREA'].indexOf(document.activeElement.tagName) !== -1) return;
