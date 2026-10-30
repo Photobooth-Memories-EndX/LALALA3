@@ -863,17 +863,11 @@ class TaskReviewStatusFlowTest extends TestCase
 
         $html = $response->getContent();
 
-        // 1. Fullscreen modal and button exist
-        $this->assertStringContainsString('id="fileFullscreenModal"', $html);
-        $this->assertStringContainsString('modal-fullscreen', $html);
-        $this->assertStringContainsString('btn-open-fullscreen', $html);
-        $this->assertStringContainsString('Fullscreen', $html);
-
-        // 2. Open in new tab exists and replaces old "Full tab"
+        // 1. Open in new tab exists and replaces old "Full tab"
         $this->assertStringContainsString('Open in new tab', $html);
         $this->assertStringNotContainsString('> Full tab<', $html);
 
-        // 3. Download button exists
+        // 2. Download button exists
         $this->assertStringContainsString('Download', $html);
     }
 

@@ -368,65 +368,60 @@
 <div class="modal fade" id="reviewSubmissionModal" tabindex="-1" aria-labelledby="reviewSubmissionModalLabel" aria-hidden="true" data-bs-backdrop="static">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content border-0 shadow-lg">
-            {{-- Modal Header: Exact Card Header Layout (Image 3) --}}
-            <div class="modal-header border-bottom py-2.5 px-4 bg-white d-flex align-items-center justify-content-between flex-shrink-0" style="min-height: 64px;">
-                {{-- Left: Task Title & Type --}}
-                <div class="d-flex align-items-center gap-1.5 min-w-0" style="flex: 1 1 0; min-width: 140px;">
-                    <span class="text-secondary fw-semibold text-truncate" style="font-size: 13.5px;">{{ $task->title }}</span>
-                    <span class="text-muted">&bull;</span>
-                    <span class="fw-bold text-dark text-truncate" style="font-size: 13.5px;">{{ $task->typeLabel() }}</span>
+            {{-- Modal Header: Clean, Spacious Title & User Switcher --}}
+            <div class="modal-header border-bottom py-3 px-4 bg-white d-flex align-items-center justify-content-between flex-shrink-0" style="min-height: 70px;">
+                {{-- Left: Task Information --}}
+                <div class="d-flex align-items-center gap-2.5 min-w-0" style="flex: 1 1 0; max-width: 40%;">
+                    <div class="avatar avatar-sm rounded-circle bg-primary-lt text-primary fw-bold flex-shrink-0" style="width: 36px; height: 36px;">
+                        <i class="ti ti-clipboard-check fs-2"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <h5 class="modal-title fw-bold text-dark text-truncate mb-0" id="reviewSubmissionModalLabel" style="font-size: 15px;" title="{{ $task->title }}">
+                                {{ $task->title }}
+                            </h5>
+                            <span class="badge bg-primary-lt text-primary px-2 py-0.5 rounded-pill flex-shrink-0" style="font-size: 11px;">
+                                {{ $task->typeLabel() }}
+                            </span>
+                        </div>
+                        <div class="text-muted small text-truncate mt-0.5" style="font-size: 11.5px;">
+                            Review Submission
+                        </div>
+                    </div>
                 </div>
 
-                {{-- Center: User Switcher [ < ] [ User Name ] [ > ] & Graded Progress Bar Underneath (Image 3) --}}
-                <div class="d-flex flex-column align-items-center justify-content-center text-center mx-auto" style="flex: 2 1 0; min-width: 250px;">
-                    {{-- User Switcher --}}
-                    <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
+                {{-- Center: User Switcher [ < ] [ USER NAME ] [ > ] --}}
+                <div class="d-flex align-items-center justify-content-center text-center px-2" style="flex: 1 1 0;">
+                    <div class="d-inline-flex align-items-center gap-2 bg-light px-3 py-1.5 rounded-pill border">
                         <button type="button"
-                                class="btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center flex-shrink-0"
+                                class="btn btn-sm btn-white rounded-circle p-0 d-inline-flex align-items-center justify-content-center shadow-xs"
                                 id="prevSubmissionBtn"
                                 title="Previous User (Left Arrow)"
-                                style="width: 28px; height: 28px;">
-                            <i class="ti ti-chevron-left" style="font-size: 15px;"></i>
+                                style="width: 28px; height: 28px; border-color: #cbd5e1;">
+                            <i class="ti ti-chevron-left" style="font-size: 14px;"></i>
                         </button>
 
-                        <div class="text-center px-2" style="min-width: 140px; max-width: 320px;">
-                            <div class="fw-bold text-dark text-truncate text-uppercase" id="headerLearnerName" style="font-size: 14px; letter-spacing: 0.3px; line-height: 1.2;">
+                        <div class="text-center px-2" style="min-width: 140px; max-width: 260px;">
+                            <div class="fw-bold text-dark text-truncate text-uppercase" id="headerLearnerName" style="font-size: 13.5px; letter-spacing: 0.3px; line-height: 1.2;">
                                 {{ $defaultActive ? ($defaultActive->user->name ?? 'User') : 'No Submissions' }}
                             </div>
-                            <div class="text-muted" id="headerSubmissionCount" style="font-size: 11px; line-height: 1.2;">
+                            <div class="text-muted" id="headerSubmissionCount" style="font-size: 11px; line-height: 1.1;">
                                 Submission {{ $totalSubmissions > 0 ? 1 : 0 }} of {{ $totalSubmissions }}
                             </div>
                         </div>
 
                         <button type="button"
-                                class="btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center flex-shrink-0"
+                                class="btn btn-sm btn-white rounded-circle p-0 d-inline-flex align-items-center justify-content-center shadow-xs"
                                 id="nextSubmissionBtn"
                                 title="Next User (Right Arrow)"
-                                style="width: 28px; height: 28px;">
-                            <i class="ti ti-chevron-right" style="font-size: 15px;"></i>
+                                style="width: 28px; height: 28px; border-color: #cbd5e1;">
+                            <i class="ti ti-chevron-right" style="font-size: 14px;"></i>
                         </button>
-                    </div>
-
-                    {{-- Graded Progress Bar Underneath --}}
-                    <div class="d-flex align-items-center justify-content-center gap-2">
-                        <span class="small fw-semibold text-muted" id="headerGradedSummary" style="font-size: 11.5px; line-height: 1;">
-                            {{ $gradedCount }} of {{ $totalSubmissions }} graded
-                        </span>
-                        <div class="progress" style="height: 5px; width: 130px; background-color: #e2e8f0; border-radius: 999px;">
-                            <div class="progress-bar bg-success"
-                                 id="headerGradedProgressBar"
-                                 role="progressbar"
-                                 style="width: {{ $totalSubmissions > 0 ? round(($gradedCount / $totalSubmissions) * 100) : 0 }}%; border-radius: 999px;"
-                                 aria-valuenow="{{ $gradedCount }}"
-                                 aria-valuemin="0"
-                                 aria-valuemax="{{ $totalSubmissions }}">
-                            </div>
-                        </div>
                     </div>
                 </div>
 
                 {{-- Right: Balancer spacer + Close Button --}}
-                <div class="d-flex align-items-center justify-content-end gap-2" style="flex: 1 1 0; min-width: 140px;">
+                <div class="d-flex align-items-center justify-content-end gap-2" style="flex: 1 1 0; max-width: 40%;">
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" title="Close & Return to Review">
                         <span class="visually-hidden">Close &amp; Return to Review</span>
                     </button>
@@ -567,19 +562,6 @@
                                                         </div>
 
                                                         <div class="d-flex align-items-center gap-1.5 flex-shrink-0">
-                                                            {{-- Fullscreen Pop-up Button --}}
-                                                            <button type="button"
-                                                                    class="btn btn-sm btn-white text-dark shadow-xs border rounded-2 px-2.5 py-1 btn-open-fullscreen"
-                                                                    data-file-url="{{ $fUrl }}"
-                                                                    data-preview-url="{{ $previewUrl }}"
-                                                                    data-file-name="{{ $fName }}"
-                                                                    data-file-ext="{{ $fExt }}"
-                                                                    data-file-kind="{{ $fKind }}"
-                                                                    data-file-size="{{ $fSize }}"
-                                                                    title="View in Fullscreen Pop-up">
-                                                                <i class="ti ti-maximize me-1 text-primary"></i> <span style="font-size: 12px; font-weight: 500;">Fullscreen</span>
-                                                            </button>
-
                                                             {{-- Open in New Tab Button --}}
                                                             <a href="{{ $tabUrl }}"
                                                                target="_blank"
@@ -602,10 +584,8 @@
                                                     {{-- In-line Embedded Viewer Body --}}
                                                     <div class="card-body p-0 bg-light-subtle position-relative">
                                                         @if ($isImg)
-                                                            <div class="p-3 d-flex align-items-center justify-content-center text-center preview-img-container preview-image-clickable"
-                                                                 style="min-height: 400px; max-height: 62vh; background-color: #f1f5f9; overflow: hidden; cursor: pointer;"
-                                                                 onclick="openFullscreenModal('{{ $fUrl }}', '{{ $fUrl }}', '{{ addslashes($fName) }}', '{{ $fExt }}', '{{ $fKind }}', '{{ $fSize }}')"
-                                                                 title="Click to view full screen">
+                                                            <div class="p-3 d-flex align-items-center justify-content-center text-center preview-img-container"
+                                                                 style="min-height: 400px; max-height: 62vh; background-color: #f1f5f9; overflow: hidden;">
                                                                 <img src="{{ $fUrl }}" alt="{{ $fName }}" class="img-fluid rounded shadow-sm" style="max-height: 58vh; max-width: 95%; object-fit: contain; background: #ffffff;">
                                                             </div>
                                                         @elseif ($isPdf)
@@ -784,19 +764,6 @@
                                             </div>
 
                                             <div class="d-flex align-items-center gap-1.5 flex-shrink-0">
-                                                {{-- Fullscreen Pop-up Button --}}
-                                                <button type="button"
-                                                        class="btn btn-sm btn-white text-dark shadow-xs border rounded-2 px-2.5 py-1 btn-open-fullscreen"
-                                                        data-file-url="{{ $fUrl }}"
-                                                        data-preview-url="{{ $previewUrl }}"
-                                                        data-file-name="{{ $fName }}"
-                                                        data-file-ext="{{ $fExt }}"
-                                                        data-file-kind="{{ $fKind }}"
-                                                        data-file-size="{{ $fSize }}"
-                                                        title="View in Fullscreen Pop-up">
-                                                    <i class="ti ti-maximize me-1 text-primary"></i> <span style="font-size: 12px; font-weight: 500;">Fullscreen</span>
-                                                </button>
-
                                                 {{-- Open in New Tab Button --}}
                                                 <a href="{{ $tabUrl }}"
                                                    target="_blank"
@@ -819,10 +786,8 @@
                                         {{-- In-line Embedded Viewer Body --}}
                                         <div class="card-body p-0 bg-light-subtle position-relative">
                                             @if ($isImg)
-                                                <div class="p-3 d-flex align-items-center justify-content-center text-center preview-img-container preview-image-clickable"
-                                                     style="min-height: 400px; max-height: 60vh; background-color: #f1f5f9; overflow: hidden; cursor: pointer;"
-                                                     onclick="openFullscreenModal('{{ $fUrl }}', '{{ $fUrl }}', '{{ addslashes($fName) }}', '{{ $fExt }}', '{{ $fKind }}', '{{ $fSize }}')"
-                                                     title="Click to view full screen">
+                                                <div class="p-3 d-flex align-items-center justify-content-center text-center preview-img-container"
+                                                     style="min-height: 400px; max-height: 60vh; background-color: #f1f5f9; overflow: hidden;">
                                                     <img src="{{ $fUrl }}" alt="{{ $fName }}" class="img-fluid rounded shadow-sm" style="max-height: 56vh; max-width: 95%; object-fit: contain; background: #ffffff;">
                                                 </div>
                                             @elseif ($isPdf)

@@ -378,13 +378,12 @@ class TaskBackButtonConsistencyTest extends TestCase
         $this->assertStringContainsString('tasks/test_project.pdf', $responseContent);
         $this->assertStringContainsString('<iframe src="', $responseContent);
         $this->assertStringContainsString('test_project.pdf', $responseContent);
-        // Image img tag embedded directly and is clickable
+        // Image img tag embedded directly
         $this->assertStringContainsString('tasks/screenshot.png', $responseContent);
         $this->assertStringContainsString('<img src="', $responseContent);
         $this->assertStringContainsString('screenshot.png', $responseContent);
-        $this->assertStringContainsString('preview-image-clickable', $responseContent);
-        $this->assertStringContainsString('btn-open-fullscreen', $responseContent);
-        $this->assertStringContainsString('Fullscreen', $responseContent);
+        $this->assertStringContainsString('Open in new tab', $responseContent);
+        $this->assertStringContainsString('Download', $responseContent);
     }
 }
 
