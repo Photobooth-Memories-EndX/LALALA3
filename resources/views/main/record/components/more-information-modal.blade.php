@@ -1,4 +1,4 @@
-<!-- More Information Modal (Standardized 3-Card Layout) -->
+<!-- More Information Modal (Standardized Action -> Details Display) -->
 <div class="modal fade" id="moreInformationModal" tabindex="-1" aria-labelledby="moreInformationModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
         <div class="modal-content rounded-4 border-0 shadow">
@@ -6,7 +6,7 @@
             <div class="modal-header border-0 pb-0 pt-3 px-4">
                 <div class="d-flex align-items-center gap-2">
                     <i class="bi bi-file-earmark-text ti ti-file-text text-primary fs-5"></i>
-                    <h5 class="modal-title text-base text-lg font-semibold fw-semibold text-slate-800 mb-0 fs-5" id="moreInformationModalLabel" style="font-size: 1.05rem; font-weight: 600; color: #1e293b;">More Information</h5>
+                    <h5 class="modal-title text-base text-lg font-semibold fw-semibold text-slate-800 mb-0 fs-5" id="moreInformationModalLabel" style="font-size: 1.05rem; font-weight: 600; color: #1e293b;">Record Details</h5>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -15,19 +15,19 @@
                 <!-- Loading State -->
                 <div class="py-4 text-center text-muted" id="more-info-loading" style="display: none;">
                     <div class="spinner-border text-primary" role="status"></div>
-                    <div class="mt-2 small">Loading record information...</div>
+                    <div class="mt-2 small">Loading record details...</div>
                 </div>
 
                 <!-- Attributes Container -->
                 <div id="more-info-content">
-                    <!-- Top Area: Source/Type Pill & Large Bold Course Title -->
+                    <!-- Top Area: Source/Type Pill & Course Title -->
                     <div class="mb-3 pb-3 border-bottom">
-                        <div class="mb-1.5">
+                        <div class="mb-1.5 d-flex align-items-center gap-2">
                             <span class="badge px-2.5 py-1 fw-bold text-uppercase modal-more-source-pill" id="modal-badge-source" style="font-size: 0.75rem; letter-spacing: 0.05em; border-radius: 6px; background-color: #fef3c7; color: #92400e;">
                                 NON KP OWL
                             </span>
                         </div>
-                        <h4 class="text-base text-lg font-bold fw-bold text-slate-900 mb-0" id="modal-course-title" style="font-size: 1.125rem; font-weight: 700; line-height: 1.4; color: #0f172a;">
+                        <h4 class="text-base text-lg font-bold fw-bold text-slate-900 mb-1" id="modal-course-title" style="font-size: 1.125rem; font-weight: 700; line-height: 1.4; color: #0f172a;">
                             -
                         </h4>
                     </div>
@@ -57,21 +57,50 @@
                         </div>
                     </div>
 
-                    <!-- CARD 2: Course & Progress Status (Training Details) -->
+                    <!-- CARD 2: Course & Provider Details -->
                     <div class="card border border-light-subtle bg-light p-3 rounded-3 mb-3 shadow-none">
                         <div class="section-heading text-xs text-sm font-semibold fw-semibold text-slate-700 mb-2.5 d-flex align-items-center gap-1.5" style="font-size: 0.8125rem; font-weight: 600; color: #334155;">
-                            <i class="bi bi-info-circle ti ti-info-circle text-slate-500 me-1.5" style="color: #64748b; font-size: 1rem;"></i> <span>Course &amp; Progress Status</span>
+                            <i class="bi bi-book ti ti-book text-slate-500 me-1.5" style="color: #64748b; font-size: 1rem;"></i> <span>Course &amp; Provider Details</span>
                         </div>
                         <div class="row g-3">
+                            <div class="col-12 col-md-6">
+                                <div class="field-label text-[10px] text-xs font-medium fw-medium text-slate-400 text-uppercase tracking-wider mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">SUB COURSE TITLE</div>
+                                <div class="field-value text-xs text-sm font-bold fw-bold text-slate-800" id="modal-sub-course-title" style="font-size: 0.8125rem; font-weight: 700; color: #1e293b;">-</div>
+                            </div>
                             <div class="col-6 col-md-3">
+                                <div class="field-label text-[10px] text-xs font-medium fw-medium text-slate-400 text-uppercase tracking-wider mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">LEVEL</div>
+                                <div class="field-value text-xs text-sm font-bold fw-bold text-slate-800" id="modal-level" style="font-size: 0.8125rem; font-weight: 700; color: #1e293b;">-</div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="field-label text-[10px] text-xs font-medium fw-medium text-slate-400 text-uppercase tracking-wider mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">BATCH</div>
+                                <div class="field-value text-xs text-sm font-bold fw-bold text-slate-800" id="modal-batch" style="font-size: 0.8125rem; font-weight: 700; color: #1e293b;">-</div>
+                            </div>
+                            <div class="col-6 col-md-6">
+                                <div class="field-label text-[10px] text-xs font-medium fw-medium text-slate-400 text-uppercase tracking-wider mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">SUB PROVIDER</div>
+                                <div class="field-value text-xs text-sm font-bold fw-bold text-slate-800" id="modal-sub-provider" style="font-size: 0.8125rem; font-weight: 700; color: #1e293b;">-</div>
+                            </div>
+                            <div class="col-6 col-md-6">
                                 <div class="field-label text-[10px] text-xs font-medium fw-medium text-slate-400 text-uppercase tracking-wider mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">INSTRUCTOR</div>
                                 <div class="field-value text-xs text-sm font-bold fw-bold text-slate-800" id="modal-instructor" style="font-size: 0.8125rem; font-weight: 700; color: #1e293b;">-</div>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- CARD 3: Progress & Evaluation -->
+                    <div class="card border border-light-subtle bg-light p-3 rounded-3 mb-3 shadow-none">
+                        <div class="section-heading text-xs text-sm font-semibold fw-semibold text-slate-700 mb-2.5 d-flex align-items-center gap-1.5" style="font-size: 0.8125rem; font-weight: 600; color: #334155;">
+                            <i class="bi bi-info-circle ti ti-info-circle text-slate-500 me-1.5" style="color: #64748b; font-size: 1rem;"></i> <span>Progress &amp; Evaluation</span>
+                        </div>
+                        <div class="row g-3">
                             <div class="col-6 col-md-3">
                                 <div class="field-label text-[10px] text-xs font-medium fw-medium text-slate-400 text-uppercase tracking-wider mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">PROGRESS STATUS</div>
                                 <div id="modal-progress-status-container">
                                     <span class="badge bg-success-lt fw-bold px-2 py-0.5 text-success text-xs" id="modal-progress-status" style="font-size: 0.75rem;">-</span>
                                 </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="field-label text-[10px] text-xs font-medium fw-medium text-slate-400 text-uppercase tracking-wider mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">ATTENDANCE REASON</div>
+                                <div class="field-value text-xs text-sm font-bold fw-bold text-slate-800" id="modal-attendance-reason" style="font-size: 0.8125rem; font-weight: 700; color: #1e293b;">-</div>
                             </div>
                             <div class="col-6 col-md-3">
                                 <div class="field-label text-[10px] text-xs font-medium fw-medium text-slate-400 text-uppercase tracking-wider mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">L2 STATUS</div>
@@ -88,10 +117,31 @@
                         </div>
                     </div>
 
-                    <!-- CARD 3: Bond Information -->
+                    <!-- CARD 4: Certificate Details -->
+                    <div class="card border border-light-subtle bg-light p-3 rounded-3 mb-3 shadow-none">
+                        <div class="section-heading text-xs text-sm font-semibold fw-semibold text-slate-700 mb-2.5 d-flex align-items-center gap-1.5" style="font-size: 0.8125rem; font-weight: 600; color: #334155;">
+                            <i class="bi bi-award ti ti-certificate text-slate-500 me-1.5" style="color: #64748b; font-size: 1rem;"></i> <span>Certificate Details</span>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-12 col-md-6">
+                                <div class="field-label text-[10px] text-xs font-medium fw-medium text-slate-400 text-uppercase tracking-wider mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">CERTIFICATE INSTITUTION</div>
+                                <div class="field-value text-xs text-sm font-bold fw-bold text-slate-800" id="modal-cert-institution" style="font-size: 0.8125rem; font-weight: 700; color: #1e293b;">-</div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="field-label text-[10px] text-xs font-medium fw-medium text-slate-400 text-uppercase tracking-wider mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">CERTIFICATE ISSUED DATE</div>
+                                <div class="field-value text-xs text-sm font-bold fw-bold text-slate-800" id="modal-cert-issued-date" style="font-size: 0.8125rem; font-weight: 700; color: #1e293b;">-</div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="field-label text-[10px] text-xs font-medium fw-medium text-slate-400 text-uppercase tracking-wider mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">CERTIFICATE EXPIRED DATE</div>
+                                <div class="field-value text-xs text-sm font-bold fw-bold text-slate-800" id="modal-cert-expired-date" style="font-size: 0.8125rem; font-weight: 700; color: #1e293b;">-</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CARD 5: Bond Information -->
                     <div class="card border border-light-subtle bg-light p-3 rounded-3 mb-2 shadow-none">
                         <div class="section-heading text-xs text-sm font-semibold fw-semibold text-slate-700 mb-2.5 d-flex align-items-center gap-1.5" style="font-size: 0.8125rem; font-weight: 600; color: #334155;">
-                            <i class="bi bi-journal-text ti ti-file-text text-slate-500 me-1.5" style="color: #64748b; font-size: 1rem;"></i> <span>Bond Information</span>
+                            <i class="bi bi-journal-text ti bi-file-text text-slate-500 me-1.5" style="color: #64748b; font-size: 1rem;"></i> <span>Bond Information</span>
                         </div>
                         <div class="row g-3">
                             <div class="col-6 col-md-3">
@@ -273,35 +323,37 @@ window.populateMoreInformationModal = function(response) {
         $badge.css({'background-color': '#e0f2fe', 'color': '#0369a1'});
     }
 
-    // Set #modal-course-title text to response.course_title
+    // Set Course Title & Sub Course Title
     $('#modal-course-title').text(d.course_title || '-');
+    $('#modal-sub-course-title').text(d.sub_course_title || '-');
 
-    // Set #modal-employee-id text to response.employee_id || '-'
+    // Set Employee Information
     $('#modal-employee-id').text(d.employee_id || '-');
-
-    // Set #modal-employee-name text to response.employee_name || '-'
     const empName = d.employee_name || '-';
     $('#modal-employee-name').text(empName !== '-' ? empName.toUpperCase() : '-');
-
-    // Set #modal-grade text to response.grade || '-'
     $('#modal-grade').text(d.grade || '-');
-
-    // Set #modal-job-position text to response.job_position || '-'
     $('#modal-job-position').text(d.job_position || '-');
 
-    // Set #modal-instructor text to response.instructor || '-'
+    // Set Course & Training Details
+    $('#modal-level').text(d.level || '-');
+    $('#modal-batch').text(d.batch || '-');
+    $('#modal-sub-provider').text(d.sub_provider || '-');
     $('#modal-instructor').text(d.instructor || '-');
 
-    // Render status pills for progress_status, l2_status, and l3_status (Green for Passed/Good, Yellow for Ongoing, Gray for Null)
+    // Set Progress & Evaluation
     renderStatusPill('#modal-progress-status', '#modal-progress-status-container', d.progress_status, 'progress');
+    $('#modal-attendance-reason').text(d.attendance_reason || '-');
     renderStatusPill('#modal-l2-status', '#modal-l2-status-container', d.l2_status, 'eval');
     renderStatusPill('#modal-l3-status', '#modal-l3-status-container', d.l3_status, 'eval');
 
-    // Set #modal-bond-status text to response.bond_status || 'No'
+    // Set Certificate Details
+    $('#modal-cert-institution').text(d.certificate_institution || '-');
+    $('#modal-cert-issued-date').text(d.certificate_issued_date || '-');
+    $('#modal-cert-expired-date').text(d.certificate_expired_date || '-');
+
+    // Set Bond Information
     const bondStatus = (d.bond_status === 'Yes' || d.bond_status === '1' || d.bond_status === true) ? 'Yes' : 'No';
     $('#modal-bond-status').text(bondStatus);
-
-    // Set #modal-bond-duration, #modal-bond-end-date, and #modal-bond-amount with fallback '-'
     $('#modal-bond-duration').text(d.bond_duration || '-');
     $('#modal-bond-end-date').text(d.bond_end_date || '-');
     $('#modal-bond-amount').text(d.bond_amount || d.bond_amount_idr || '-');
@@ -360,14 +412,22 @@ $(document).off('click.moreInfo').on('click.moreInfo', '[data-bs-target="#moreIn
                     window.populateMoreInformationModal({
                         source: (source.includes('non') || source === 'offline') ? 'NON KP OWL' : 'KP OWL',
                         course_title: '-',
+                        sub_course_title: '-',
                         employee_id: '-',
                         employee_name: '-',
                         grade: '-',
                         job_position: '-',
+                        level: '-',
+                        batch: '-',
+                        sub_provider: '-',
                         instructor: '-',
+                        attendance_reason: '-',
                         progress_status: '-',
                         l2_status: '-',
                         l3_status: '-',
+                        certificate_institution: '-',
+                        certificate_issued_date: '-',
+                        certificate_expired_date: '-',
                         bond_status: 'No',
                         bond_duration: '-',
                         bond_end_date: '-',

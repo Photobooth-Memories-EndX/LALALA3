@@ -61,6 +61,7 @@ class OnlineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wit
     {
         return [
             'NO',
+            'Source',
             'Employee ID',
             'Employee Name',
             'Grade',
@@ -78,12 +79,15 @@ class OnlineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wit
             'Sub Classification',
             'Delivery Method',
             'Sub Delivery Method',
+            'Provider',
+            'Sub Provider',
             'Provider Name',
             'Venue',
             'Instructor',
             'Course Duration',
-            'Recognized Duration',
+            'Total Recognized Duration',
             'Learning Hours',
+            'Total Engagement Time',
             '% Progress',
             'Progress Status',
             'Start Date',
@@ -103,9 +107,11 @@ class OnlineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wit
             'L2 Status',
             'Score (L3)',
             'L3 Status',
+            'Certificate Availability',
+            'Certificate Institution',
+            'Certificate Issued Date',
+            'Certificate Expired Date',
             'Person in Charge (PIC)',
-            'Certificate',
-            'Total Engagement Time',
         ];
     }
 
@@ -215,51 +221,57 @@ class OnlineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wit
     {
         return [
             'A'  => 6,   // NO
-            'B'  => 16,  // Employee ID
-            'C'  => 30,  // Employee Name
-            'D'  => 12,  // Grade
-            'E'  => 25,  // Job Position
-            'F'  => 20,  // Team
-            'G'  => 25,  // Department
-            'H'  => 25,  // Company
-            'I'  => 35,  // Course Title
-            'J'  => 25,  // Sub Course Title
-            'K'  => 15,  // Type
-            'L'  => 18,  // Category
-            'M'  => 12,  // Level
-            'N'  => 12,  // Batch
-            'O'  => 25,  // Main Classification
-            'P'  => 25,  // Sub Classification
-            'Q'  => 18,  // Delivery Method
-            'R'  => 20,  // Sub Delivery Method
-            'S'  => 25,  // Provider Name
-            'T'  => 20,  // Venue
-            'U'  => 22,  // Instructor
-            'V'  => 16,  // Course Duration
-            'W'  => 16,  // Recognized Duration
-            'X'  => 16,  // Learning Hours
-            'Y'  => 14,  // % Progress
-            'Z'  => 16,  // Progress Status
-            'AA' => 14,  // Start Date
-            'AB' => 14,  // End Date
-            'AC' => 14,  // Start Time
-            'AD' => 14,  // End Time
-            'AE' => 16,  // Record Month
-            'AF' => 15,  // Requirement
-            'AG' => 14,  // Attendance
-            'AH' => 25,  // Attendance Reason
-            'AI' => 14,  // Bond Status
-            'AJ' => 16,  // Bond Duration
-            'AK' => 15,  // Bond End Date
-            'AL' => 18,  // Bond Amount
-            'AM' => 20,  // Score (L1) - Course
-            'AN' => 14,  // Score (L2)
-            'AO' => 14,  // L2 Status
-            'AP' => 14,  // Score (L3)
-            'AQ' => 14,  // L3 Status
-            'AR' => 22,  // Person in Charge (PIC)
-            'AS' => 14,  // Certificate
-            'AT' => 22,  // Total Engagement Time
+            'B'  => 14,  // Source
+            'C'  => 16,  // Employee ID
+            'D'  => 30,  // Employee Name
+            'E'  => 12,  // Grade
+            'F'  => 25,  // Job Position
+            'G'  => 20,  // Team
+            'H'  => 25,  // Department
+            'I'  => 25,  // Company
+            'J'  => 35,  // Course Title
+            'K'  => 25,  // Sub Course Title
+            'L'  => 15,  // Type
+            'M'  => 18,  // Category
+            'N'  => 12,  // Level
+            'O'  => 12,  // Batch
+            'P'  => 25,  // Main Classification
+            'Q'  => 25,  // Sub Classification
+            'R'  => 18,  // Delivery Method
+            'S'  => 20,  // Sub Delivery Method
+            'T'  => 16,  // Provider
+            'U'  => 18,  // Sub Provider
+            'V'  => 25,  // Provider Name
+            'W'  => 20,  // Venue
+            'X'  => 22,  // Instructor
+            'Y'  => 16,  // Course Duration
+            'Z'  => 22,  // Total Recognized Duration
+            'AA' => 16,  // Learning Hours
+            'AB' => 22,  // Total Engagement Time
+            'AC' => 14,  // % Progress
+            'AD' => 16,  // Progress Status
+            'AE' => 14,  // Start Date
+            'AF' => 14,  // End Date
+            'AG' => 14,  // Start Time
+            'AH' => 14,  // End Time
+            'AI' => 16,  // Record Month
+            'AJ' => 15,  // Requirement
+            'AK' => 14,  // Attendance
+            'AL' => 25,  // Attendance Reason
+            'AM' => 14,  // Bond Status
+            'AN' => 16,  // Bond Duration
+            'AO' => 16,  // Bond End Date
+            'AP' => 18,  // Bond Amount
+            'AQ' => 20,  // Score (L1) - Course
+            'AR' => 15,  // Score (L2)
+            'AS' => 15,  // L2 Status
+            'AT' => 15,  // Score (L3)
+            'AU' => 15,  // L3 Status
+            'AV' => 22,  // Certificate Availability
+            'AW' => 25,  // Certificate Institution
+            'AX' => 20,  // Certificate Issued Date
+            'AY' => 20,  // Certificate Expired Date
+            'AZ' => 25,  // Person in Charge (PIC)
         ];
     }
 
@@ -548,54 +560,66 @@ class OnlineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wit
             $afkSec = (int) ($row->afk_duration_seconds ?? 0);
             $afkFormatted = $afkSec > 0 ? DurationFormatter::fromSeconds($afkSec) : ($row->afk_duration_seconds !== null ? '00:00:00' : '-');
 
-            // Row cell mapping (46 columns)
+            // Row cell mapping (52 canonical columns)
+            $certAvailability = $isFinished ? 'Available' : '-';
+            $certInstitution = $isFinished ? 'PT Krakatau Posco' : '-';
+            $certIssuedDate = ($isFinished && $endDateStr !== '-') ? $endDateStr : '-';
+            $certExpiredDate = '-';
+            $finalRecordMonth = ($completedAt && $isFinished) ? date('F', $completedAt) : '-';
+
             $cells = [
                 ['A', 'num', $rowCount, $textStyle],
-                ['B', 'str', $cleanEmpId, $textStyle],
-                ['C', 'str', $row->employee_name ?: ($row->user_name ?? '-'), $textStyle],
-                ['D', 'str', $gradeVal, $textStyle], // Grade
-                ['E', 'str', $jobPosVal, $textStyle], // Job Position
-                ['F', 'str', $row->user_team ?: '-', $textStyle],
-                ['G', 'str', $row->user_department ?: '-', $textStyle],
-                ['H', 'str', $row->user_company ?: '-', $textStyle],
-                ['I', 'str', $courseTitle, $textStyle],
-                ['J', 'str', '-', $textStyle], // Sub Course Title
-                ['K', 'str', $isPlaylist ? 'Playlist' : ($row->content_type ?: 'Content'), $textStyle],
-                ['L', 'str', $isPlaylist ? 'Playlist' : 'Content', $textStyle],
-                ['M', 'str', '-', $textStyle], // Level
-                ['N', 'str', '-', $textStyle], // Batch
-                ['O', 'str', $mainClass, $textStyle],
-                ['P', 'str', '-', $textStyle], // Sub Classification
-                ['Q', 'str', 'Online', $textStyle],
-                ['R', 'str', 'E-learning', $textStyle],
-                ['S', 'str', 'KP-OWL', $textStyle],
-                ['T', 'str', 'KP-OWL', $textStyle],
-                ['U', 'str', ($row->content_author ?? ($row->author ?? '-')) ?: '-', $textStyle],
-                ['V', 'str', $durationFormatted, $textStyle],
-                ['W', 'str', $recognizedFormatted, $textStyle], // Recognized Duration
-                ['X', $lhType, $lhVal, $lhActualStyle], // Learning Hours
-                ['Y', 'pct', $progressDecimal, $pctStyle],
-                ['Z', 'str', $progressStatus, $textStyle],
-                ['AA', 'str', $startDateStr, $textStyle],
-                ['AB', 'str', $endDateStr, $textStyle],
-                ['AC', 'str', $startTimeStr, $textStyle],
-                ['AD', 'str', $endTimeStr, $textStyle],
-                ['AE', 'str', $recordMonthStr, $textStyle],
-                ['AF', 'str', 'Mandatory', $textStyle],
-                ['AG', 'str', $attendanceStr, $textStyle],
-                ['AH', 'str', '-', $textStyle], // Attendance Reason
-                ['AI', 'str', 'No', $textStyle], // Bond Status
-                ['AJ', 'str', '-', $textStyle], // Bond Duration
-                ['AK', 'str', '-', $textStyle], // Bond End Date
-                ['AL', 'str', '-', $textStyle], // Bond Amount
-                ['AM', 'str', '-', $textStyle], // Score L1
-                ['AN', $scoreL2Type, $scoreL2Val, $scoreL2Style], // Score L2
-                ['AO', 'str', '-', $textStyle], // L2 Status
-                ['AP', 'str', '-', $textStyle], // Score L3
-                ['AQ', 'str', '-', $textStyle], // L3 Status
-                ['AR', 'str', '-', $textStyle], // PIC
-                ['AS', 'str', '-', $textStyle], // Certificate
-                ['AT', 'str', $afkFormatted, $textStyle], // Total Engagement Time
+                ['B', 'str', '-', $textStyle], // Source
+                ['C', 'str', $cleanEmpId, $textStyle],
+                ['D', 'str', $row->employee_name ?: ($row->user_name ?? '-'), $textStyle],
+                ['E', 'str', $gradeVal, $textStyle], // Grade
+                ['F', 'str', $jobPosVal, $textStyle], // Job Position
+                ['G', 'str', $row->user_team ?: '-', $textStyle],
+                ['H', 'str', $row->user_department ?: '-', $textStyle],
+                ['I', 'str', $row->user_company ?: '-', $textStyle],
+                ['J', 'str', $courseTitle, $textStyle],
+                ['K', 'str', '-', $textStyle], // Sub Course Title
+                ['L', 'str', $isPlaylist ? 'Playlist' : ($row->content_type ?: 'Content'), $textStyle],
+                ['M', 'str', $isPlaylist ? 'Playlist' : 'Content', $textStyle],
+                ['N', 'str', '-', $textStyle], // Level
+                ['O', 'str', '-', $textStyle], // Batch
+                ['P', 'str', $mainClass, $textStyle],
+                ['Q', 'str', '-', $textStyle], // Sub Classification
+                ['R', 'str', 'Online', $textStyle],
+                ['S', 'str', 'E-learning', $textStyle],
+                ['T', 'str', 'Internal', $textStyle], // Provider
+                ['U', 'str', '-', $textStyle], // Sub Provider
+                ['V', 'str', 'KP-OWL', $textStyle], // Provider Name
+                ['W', 'str', 'Online LMS', $textStyle], // Venue
+                ['X', 'str', ($row->content_author ?? ($row->author ?? '-')) ?: '-', $textStyle], // Instructor
+                ['Y', 'str', $durationFormatted, $textStyle], // Course Duration
+                ['Z', 'str', $recognizedFormatted, $textStyle], // Total Recognized Duration
+                ['AA', $lhType, $lhVal, $lhActualStyle], // Learning Hours
+                ['AB', 'str', $afkFormatted, $textStyle], // Total Engagement Time
+                ['AC', 'pct', $progressDecimal, $pctStyle],
+                ['AD', 'str', $progressStatus, $textStyle],
+                ['AE', 'str', $startDateStr, $textStyle],
+                ['AF', 'str', $endDateStr, $textStyle],
+                ['AG', 'str', $startTimeStr, $textStyle],
+                ['AH', 'str', $endTimeStr, $textStyle],
+                ['AI', 'str', $finalRecordMonth, $textStyle],
+                ['AJ', 'str', 'Mandatory', $textStyle],
+                ['AK', 'str', $attendanceStr, $textStyle],
+                ['AL', 'str', '-', $textStyle], // Attendance Reason
+                ['AM', 'str', 'No', $textStyle], // Bond Status
+                ['AN', 'str', '-', $textStyle], // Bond Duration
+                ['AO', 'str', '-', $textStyle], // Bond End Date
+                ['AP', 'str', '-', $textStyle], // Bond Amount
+                ['AQ', 'str', '-', $textStyle], // Score L1
+                ['AR', $scoreL2Type, $scoreL2Val, $scoreL2Style], // Score L2
+                ['AS', 'str', '-', $textStyle], // L2 Status
+                ['AT', 'str', '-', $textStyle], // Score L3
+                ['AU', 'str', '-', $textStyle], // L3 Status
+                ['AV', 'str', $certAvailability, $textStyle], // Certificate Availability
+                ['AW', 'str', $certInstitution, $textStyle], // Certificate Institution
+                ['AX', 'str', $certIssuedDate, $textStyle], // Certificate Issued Date
+                ['AY', 'str', $certExpiredDate, $textStyle], // Certificate Expired Date
+                ['AZ', 'str', '-', $textStyle], // PIC
             ];
 
             $buffer .= $this->buildXmlRow($r, $cells);

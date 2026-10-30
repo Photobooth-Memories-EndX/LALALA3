@@ -53,6 +53,9 @@ class ImportHistoryController extends Controller
      */
     public function datatable(Request $request): JsonResponse
     {
+        app()->instance('request', $request);
+        app()->forgetInstance('datatables.request');
+
         $filters = [
             'source_type' => $request->input('source_type'),
             'status'      => $request->input('status'),
@@ -71,27 +74,55 @@ class ImportHistoryController extends Controller
             })
             ->addColumn('source_badge', function (ImportBatch $batch) {
                 if ($batch->source_type === ImportBatch::SOURCE_PTKP) {
-                    return '<span class="badge badge-outline text-primary border-primary px-2 py-1"><i class="ti ti-file-upload me-1"></i>PTKP</span>';
+                    return '<span class="badge bg-blue-lt text-blue fw-bold px-2 py-1"><i class="ti ti-file-upload me-1"></i>PTKP</span>';
                 }
-                return '<span class="badge badge-outline text-warning border-warning px-2 py-1"><i class="ti ti-file-spreadsheet me-1"></i>Non PTKP</span>';
+                return '<span class="badge bg-azure-lt text-azure fw-bold px-2 py-1"><i class="ti ti-file-spreadsheet me-1"></i>Non-PTKP</span>';
+            })
+            ->filterColumn('source_badge', function ($query, $keyword) {
+                $query->where('import_batches.source_type', 'LIKE', "%{$keyword}%");
+            })
+            ->orderColumn('source_badge', function ($query, $order) {
+                $query->orderBy('import_batches.source_type', $order);
             })
             ->addColumn('user_name', function (ImportBatch $batch) {
                 return e($batch->importedBy?->name ?? $batch->importedBy?->email ?? 'System');
             })
+            ->filterColumn('user_name', function ($query, $keyword) {
+                $query->whereHas('importedBy', function ($sub) use ($keyword) {
+                    $sub->where('name', 'LIKE', "%{$keyword}%")
+                        ->orWhere('email', 'LIKE', "%{$keyword}%");
+                });
+            })
+            ->orderColumn('user_name', function ($query, $order) {
+                $query->leftJoin('users as u_sort', 'u_sort.id', '=', 'import_batches.imported_by')
+                    ->orderBy('u_sort.name', $order);
+            })
             ->addColumn('started_at_formatted', function (ImportBatch $batch) {
                 return $batch->started_at ? $batch->started_at->format('Y-m-d H:i:s') : '-';
+            })
+            ->orderColumn('started_at_formatted', function ($query, $order) {
+                $query->orderBy('import_batches.started_at', $order);
             })
             ->addColumn('finished_at_formatted', function (ImportBatch $batch) {
                 return $batch->finished_at ? $batch->finished_at->format('Y-m-d H:i:s') : '-';
             })
+            ->orderColumn('finished_at_formatted', function ($query, $order) {
+                $query->orderBy('import_batches.finished_at', $order);
+            })
             ->addColumn('status_badge', function (ImportBatch $batch) {
                 return match ($batch->status) {
-                    ImportBatch::STATUS_COMPLETED => '<span class="badge bg-success-lt text-success fw-bold px-2 py-1"><i class="ti ti-check me-1"></i>Completed</span>',
-                    ImportBatch::STATUS_COMPLETED_WITH_WARNINGS => '<span class="badge bg-warning-lt text-warning fw-bold px-2 py-1"><i class="ti ti-alert-triangle me-1"></i>Warnings</span>',
+                    ImportBatch::STATUS_COMPLETED => '<span class="badge bg-success-lt text-success fw-bold px-2 py-1"><i class="ti ti-check me-1"></i>Success</span>',
+                    ImportBatch::STATUS_COMPLETED_WITH_WARNINGS => '<span class="badge bg-warning-lt text-warning fw-bold px-2 py-1"><i class="ti ti-alert-triangle me-1"></i>Warning</span>',
                     ImportBatch::STATUS_FAILED => '<span class="badge bg-danger-lt text-danger fw-bold px-2 py-1"><i class="ti ti-x me-1"></i>Failed</span>',
-                    ImportBatch::STATUS_IMPORTING => '<span class="badge bg-info-lt text-info fw-bold px-2 py-1"><i class="ti ti-loader me-1 spin"></i>Processing</span>',
+                    ImportBatch::STATUS_IMPORTING => '<span class="badge bg-cyan-lt text-cyan fw-bold px-2 py-1"><i class="ti ti-loader me-1 spin"></i>Processing</span>',
                     default => '<span class="badge bg-secondary-lt text-secondary fw-bold px-2 py-1">' . e($batch->status) . '</span>',
                 };
+            })
+            ->filterColumn('status_badge', function ($query, $keyword) {
+                $query->where('import_batches.status', 'LIKE', "%{$keyword}%");
+            })
+            ->orderColumn('status_badge', function ($query, $order) {
+                $query->orderBy('import_batches.status', $order);
             })
             ->addColumn('has_file', function (ImportBatch $batch) {
                 return $batch->hasStoredFile();
@@ -99,7 +130,7 @@ class ImportHistoryController extends Controller
             ->addColumn('actions', function (ImportBatch $batch) {
                 $uuid = e($batch->batch_uuid);
                 $detailBtn = sprintf(
-                    '<button type="button" class="btn btn-sm btn-outline-primary btn-batch-detail me-1" data-uuid="%s" title="View Batch Detail"><i class="ti ti-eye"></i><span class="d-none d-md-inline ms-1">Detail</span></button>',
+                    '<button type="button" class="btn btn-sm btn-outline-primary owl-action-btn btn-batch-detail" data-uuid="%s" title="View Details" aria-label="View Details"><i class="ti ti-eye"></i></button>',
                     $uuid
                 );
 
@@ -107,12 +138,12 @@ class ImportHistoryController extends Controller
                 if ($batch->hasStoredFile()) {
                     $downloadUrl = route('manage.record.offline.import-history.download', $batch->batch_uuid);
                     $downloadBtn = sprintf(
-                        '<a href="%s" class="btn btn-sm btn-outline-secondary" title="Download Original Excel"><i class="ti ti-download"></i></a>',
+                        '<a href="%s" class="btn btn-sm btn-outline-secondary owl-action-btn ms-1" title="Download Original File" aria-label="Download Original File"><i class="ti ti-download"></i></a>',
                         $downloadUrl
                     );
                 }
 
-                return '<div class="d-inline-flex align-items-center">' . $detailBtn . $downloadBtn . '</div>';
+                return '<div class="d-inline-flex align-items-center justify-content-center">' . $detailBtn . $downloadBtn . '</div>';
             })
             ->rawColumns(['source_badge', 'status_badge', 'actions'])
             ->make(true);
@@ -177,6 +208,9 @@ class ImportHistoryController extends Controller
      */
     public function rowsDatatable(string $uuid, Request $request): JsonResponse
     {
+        app()->instance('request', $request);
+        app()->forgetInstance('datatables.request');
+
         $batch = $this->queryService->getBatchByUuid($uuid);
         if (!$batch) {
             return response()->json(['error' => 'Batch not found.'], 404);

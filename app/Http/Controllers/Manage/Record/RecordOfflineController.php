@@ -113,6 +113,36 @@ class RecordOfflineController extends Controller
         </div>';
     }
 
+    public static function renderMergedDate($startDate, $endDate): string
+    {
+        $startStr = !empty($startDate) ? date('d M Y', strtotime($startDate)) : '-';
+        $endStr = !empty($endDate) ? date('d M Y', strtotime($endDate)) : '-';
+
+        if ($startStr === '-' && $endStr === '-') {
+            return '<span class="text-muted">-</span>';
+        }
+
+        return '<div class="text-nowrap small">
+            <div><span class="text-muted">Start:</span> ' . htmlspecialchars($startStr) . '</div>
+            <div><span class="text-muted">End:</span> ' . htmlspecialchars($endStr) . '</div>
+        </div>';
+    }
+
+    public static function renderMergedTime($startTime, $endTime): string
+    {
+        $startStr = !empty($startTime) ? date('H:i', strtotime($startTime)) : '-';
+        $endStr = !empty($endTime) ? date('H:i', strtotime($endTime)) : '-';
+
+        if ($startStr === '-' && $endStr === '-') {
+            return '<span class="text-muted">-</span>';
+        }
+
+        return '<div class="text-nowrap small">
+            <div><span class="text-muted">Start:</span> ' . htmlspecialchars($startStr) . '</div>
+            <div><span class="text-muted">End:</span> ' . htmlspecialchars($endStr) . '</div>
+        </div>';
+    }
+
     public static function normalizeDeliveryMethod($method): string
     {
         $raw = strtolower(trim((string) $method));
@@ -794,8 +824,27 @@ class RecordOfflineController extends Controller
                 }
                 return '<span class="badge bg-secondary-lt fw-bold px-2 py-1">Not Started</span>';
             })
-            ->addColumn('date_time_merged', function ($row) {
+            ->addColumn('date_time_merged',
+                'date_merged',
+                'time_merged',
+                'total_recognized_duration',
+                'certificate_availability', function ($row) {
                 return self::renderMergedDateTime($row->start_date ?? null, $row->finish_date ?? ($row->end_date ?? null), $row->start_time ?? null, $row->end_time ?? null);
+            })
+            ->addColumn('date_merged', function ($row) {
+                return self::renderMergedDate($row->start_date ?? null, $row->finish_date ?? ($row->end_date ?? null));
+            })
+            ->addColumn('time_merged', function ($row) {
+                return self::renderMergedTime($row->start_time ?? null, $row->end_time ?? null);
+            })
+            ->addColumn('total_recognized_duration', function () {
+                return '-';
+            })
+            ->addColumn('certificate_availability', function ($row) {
+                if (!empty($row->certificate)) {
+                    return '<span class="badge bg-blue-lt text-primary px-2 py-1" title="' . htmlspecialchars($row->certificate) . '"><i class="ti ti-file-certificate me-1"></i> Available</span>';
+                }
+                return '<span class="text-muted small">-</span>';
             })
             ->addColumn('record_month', function ($row) {
                 $dateForMonth = $row->start_date ?: ($row->finish_date ?: ($row->end_date ?? null));
@@ -860,6 +909,10 @@ class RecordOfflineController extends Controller
                 'progress_percent',
                 'progress_status',
                 'date_time_merged',
+                'date_merged',
+                'time_merged',
+                'total_recognized_duration',
+                'certificate_availability',
                 'attendance_badge',
                 'attendance_reason',
                 'score_l1',
@@ -1304,8 +1357,27 @@ class RecordOfflineController extends Controller
                 }
                 return '<span class="badge bg-secondary-lt fw-bold px-2 py-1">Not Started</span>';
             })
-            ->addColumn('date_time_merged', function ($row) {
+            ->addColumn('date_time_merged',
+                'date_merged',
+                'time_merged',
+                'total_recognized_duration',
+                'certificate_availability', function ($row) {
                 return self::renderMergedDateTime($row->start_date ?? null, $row->finish_date ?? ($row->end_date ?? null), $row->start_time ?? null, $row->end_time ?? null);
+            })
+            ->addColumn('date_merged', function ($row) {
+                return self::renderMergedDate($row->start_date ?? null, $row->finish_date ?? ($row->end_date ?? null));
+            })
+            ->addColumn('time_merged', function ($row) {
+                return self::renderMergedTime($row->start_time ?? null, $row->end_time ?? null);
+            })
+            ->addColumn('total_recognized_duration', function () {
+                return '-';
+            })
+            ->addColumn('certificate_availability', function ($row) {
+                if (!empty($row->certificate)) {
+                    return '<span class="badge bg-blue-lt text-primary px-2 py-1" title="' . htmlspecialchars($row->certificate) . '"><i class="ti ti-file-certificate me-1"></i> Available</span>';
+                }
+                return '<span class="text-muted small">-</span>';
             })
             ->addColumn('record_month', function ($row) {
                 $dateForMonth = $row->start_date ?: ($row->finish_date ?: ($row->end_date ?? null));
@@ -1370,6 +1442,10 @@ class RecordOfflineController extends Controller
                 'progress_percent',
                 'progress_status',
                 'date_time_merged',
+                'date_merged',
+                'time_merged',
+                'total_recognized_duration',
+                'certificate_availability',
                 'attendance_badge',
                 'attendance_reason',
                 'score_l1',
@@ -1815,8 +1891,27 @@ class RecordOfflineController extends Controller
                 }
                 return '<span class="badge bg-secondary-lt fw-bold px-2 py-1">Not Started</span>';
             })
-            ->addColumn('date_time_merged', function ($row) {
+            ->addColumn('date_time_merged',
+                'date_merged',
+                'time_merged',
+                'total_recognized_duration',
+                'certificate_availability', function ($row) {
                 return self::renderMergedDateTime($row->start_date ?? null, $row->finish_date ?? ($row->end_date ?? null), $row->start_time ?? null, $row->end_time ?? null);
+            })
+            ->addColumn('date_merged', function ($row) {
+                return self::renderMergedDate($row->start_date ?? null, $row->finish_date ?? ($row->end_date ?? null));
+            })
+            ->addColumn('time_merged', function ($row) {
+                return self::renderMergedTime($row->start_time ?? null, $row->end_time ?? null);
+            })
+            ->addColumn('total_recognized_duration', function () {
+                return '-';
+            })
+            ->addColumn('certificate_availability', function ($row) {
+                if (!empty($row->certificate)) {
+                    return '<span class="badge bg-blue-lt text-primary px-2 py-1" title="' . htmlspecialchars($row->certificate) . '"><i class="ti ti-file-certificate me-1"></i> Available</span>';
+                }
+                return '<span class="text-muted small">-</span>';
             })
             ->addColumn('record_month', function ($row) {
                 $dateForMonth = $row->start_date ?: ($row->finish_date ?: ($row->end_date ?? null));
@@ -1882,6 +1977,10 @@ class RecordOfflineController extends Controller
                 'progress_percent',
                 'progress_status',
                 'date_time_merged',
+                'date_merged',
+                'time_merged',
+                'total_recognized_duration',
+                'certificate_availability',
                 'attendance_badge',
                 'attendance_reason',
                 'score_l1',

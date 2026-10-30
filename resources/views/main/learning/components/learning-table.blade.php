@@ -49,20 +49,23 @@
                         <th class="text-center" style="min-width: 140px;">SUB CLASSIFICATION</th>
                         <th class="text-center" style="min-width: 120px;">DELIVERY METHOD</th>
                         <th style="min-width: 130px;">SUB DELIVERY METHOD</th>
+                        <th class="text-center" style="min-width: 110px;">PROVIDER</th>
                         <th style="min-width: 130px;">PROVIDER NAME</th>
                         <th style="min-width: 120px;">VENUE</th>
                         <th class="text-center" style="min-width: 110px;">COURSE DURATION</th>
-                        <th class="text-center" style="min-width: 130px;">RECOGNIZED DURATION</th>
+                        <th class="text-center" style="min-width: 130px;">TOTAL RECOGNIZED DURATION</th>
                         <th class="text-center" style="min-width: 110px;">LEARNING HOURS</th>
                         <th class="text-center" style="min-width: 110px;">% PROGRESS</th>
                         <th class="text-center" style="min-width: 110px;">PROGRESS STATUS</th>
-                        <th style="min-width: 140px;">DATE TIME</th>
+                        <th style="min-width: 140px;">DATE (START - END)</th>
+                        <th style="min-width: 120px;">TIME (START - END)</th>
                         <th class="text-center" style="min-width: 110px;">RECORD MONTH</th>
                         <th class="text-center" style="min-width: 110px;">REQUIREMENT</th>
                         <th class="text-center" style="min-width: 100px;">ATTENDANCE</th>
                         <th class="text-center" style="min-width: 120px;">SCORE (L1) - COURSE</th>
                         <th class="text-center" style="min-width: 90px;">SCORE (L2)</th>
                         <th class="text-center" style="min-width: 90px;">SCORE (L3)</th>
+                        <th class="text-center" style="min-width: 130px;">CERTIFICATE AVAILABILITY</th>
                         <th style="min-width: 130px;">PERSON IN CHARGE (PIC)</th>
                         <th class="text-center" style="min-width: 130px;">{{ $isAllRecord ? 'TOTAL ENGAGEMENT TIME (LH)' : 'TOTAL ENGAGEMENT TIME' }}</th>
                         <th class="text-end" style="min-width: 80px; width: 80px;">ACTION</th>

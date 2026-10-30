@@ -1,87 +1,136 @@
 /* ==========================================================================
-   Import History Page Styling — OWL LMS (Tabler UI & Dark Mode Compatible)
+   Import History Page Styling — OWL LMS (Standardized with Content Management)
    ========================================================================== */
 
-.import-history-page {
-    min-height: calc(100vh - 80px);
+.page-body {
+    background: #fff;
+}
+[data-bs-theme="dark"] .page-body,
+body.dark-mode .page-body,
+body.theme-dark .page-body {
+    background: var(--tblr-body-bg, #111827);
 }
 
-.import-history-hero-icon {
-    width: 52px;
-    height: 52px;
+/* --------------------------------------------------------------------------
+   Hero Card & Icon (Matching Content Management)
+   -------------------------------------------------------------------------- */
+.content-hero-card {
+    background-color: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+.content-hero-icon {
+    width: 48px;
+    height: 48px;
     border-radius: 12px;
-    background: #e0f2fe;
-    color: #0284c7;
+    background: rgba(15, 94, 156, 0.1);
+    color: #0f5e9c;
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
+}
+[data-bs-theme="dark"] .content-hero-card,
+body.dark-mode .content-hero-card,
+body.theme-dark .content-hero-card {
+    background-color: var(--tblr-bg-surface, #1f2937) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+[data-bs-theme="dark"] .content-hero-icon,
+body.dark-mode .content-hero-icon,
+body.theme-dark .content-hero-icon {
+    background: rgba(106, 174, 214, 0.15) !important;
+    color: #6aaed6 !important;
 }
 
 /* --------------------------------------------------------------------------
-   Summary Cards
+   Stat Cards (Matching Content Management)
    -------------------------------------------------------------------------- */
-.import-summary-card {
-    border-radius: 14px;
-    border: 1px solid #e2e8f0;
-    background: #ffffff;
-    transition: transform 0.18s ease, box-shadow 0.18s ease;
+.content-stat-card {
+    background-color: #ffffff;
+    border-radius: 1rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
-
-.import-summary-card:hover {
+.content-stat-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08) !important;
+}
+[data-bs-theme="dark"] .content-stat-card,
+body.dark-mode .content-stat-card,
+body.theme-dark .content-stat-card {
+    background-color: var(--tblr-bg-surface, #1f2937) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
-.import-summary-card .summary-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 10px;
+/* --------------------------------------------------------------------------
+   Quick Filter Section
+   -------------------------------------------------------------------------- */
+.import-filter-card {
+    border-radius: 16px;
+    background-color: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+}
+.import-filter-card .form-control,
+.import-filter-card .form-select {
+    font-size: 0.85rem;
+    height: 36px;
+    border-color: #dce1e7;
+    border-radius: 8px;
+}
+.import-filter-card .btn-icon {
+    width: 36px;
+    height: 36px;
+    padding: 0 !important;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.25rem;
+    border-radius: 8px;
 }
 
-.import-summary-card .summary-number {
-    font-size: 1.75rem;
+/* --------------------------------------------------------------------------
+   More Filters Dropdown Panel & Active Indicator
+   -------------------------------------------------------------------------- */
+.more-filters-dropdown-panel {
+    background-color: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12) !important;
+}
+
+#more-filters-active-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+/* --------------------------------------------------------------------------
+   Table & Card Wrapper (Matching Content Management owl-main-card & owl-table)
+   -------------------------------------------------------------------------- */
+.owl-main-card {
+    border: 0;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, .07);
+}
+
+.owl-table thead th {
+    background: #f8fafc;
+    color: #64748b;
+    font-size: 11px;
     font-weight: 700;
-    line-height: 1.1;
-    color: #1e293b;
-}
-
-.import-summary-card .summary-label {
-    font-size: 0.8125rem;
-    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: #64748b;
+    letter-spacing: .04em;
+    border-bottom: 1px solid #e5e7eb;
+    vertical-align: middle;
+    padding: 14px 12px;
 }
 
-/* --------------------------------------------------------------------------
-   Filter Card & Inputs
-   -------------------------------------------------------------------------- */
-.import-filter-card {
-    border-radius: 14px;
-    border: 1px solid #e2e8f0;
-    background: #ffffff;
+.owl-table tbody td {
+    vertical-align: middle;
+    font-size: 13px;
+    padding: 14px 12px;
 }
 
-.import-filter-card .form-label {
-    font-size: 0.78rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    color: #64748b;
-    margin-bottom: 0.35rem;
-}
-
-/* --------------------------------------------------------------------------
-   Data Table Wrapper & Badges
-   -------------------------------------------------------------------------- */
-.import-table-card {
-    border-radius: 14px;
-    border: 1px solid #e2e8f0;
-    background: #ffffff;
+.table-hover tbody tr:hover {
+    background: #f8fafc;
 }
 
 .filename-truncate {
@@ -93,22 +142,31 @@
     vertical-align: middle;
 }
 
-.table th {
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: #64748b;
-    background-color: #f8fafc;
+/* Action Buttons (Matching Content Management owl-action-btn) */
+.owl-action-btn {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    transition: all 0.15s ease;
 }
 
-.table td {
-    vertical-align: middle;
+/* DataTables custom pagination styling */
+.dataTables_wrapper .dataTables_paginate .pagination {
+    margin-bottom: 0;
+    gap: 4px;
+}
+.dataTables_wrapper .dataTables_paginate .page-link {
+    border-radius: 8px;
+    padding: 0.35rem 0.65rem;
     font-size: 0.85rem;
 }
 
 /* --------------------------------------------------------------------------
-   Detail Modal & Stats Grid
+   Detail Modal & Audit Stats Grid
    -------------------------------------------------------------------------- */
 #importDetailModal .modal-content {
     border-radius: 16px;
@@ -137,7 +195,6 @@
     color: #64748b;
 }
 
-/* Spin animation */
 @keyframes spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
@@ -148,62 +205,92 @@
 }
 
 /* --------------------------------------------------------------------------
-   Tabler Dark Mode Support
+   Tabler Dark Mode Support (Full Alignment with Content Management)
    -------------------------------------------------------------------------- */
-[data-bs-theme="dark"] .import-summary-card,
-body.dark-mode .import-summary-card,
-body.theme-dark .import-summary-card,
 [data-bs-theme="dark"] .import-filter-card,
 body.dark-mode .import-filter-card,
 body.theme-dark .import-filter-card,
-[data-bs-theme="dark"] .import-table-card,
-body.dark-mode .import-table-card,
-body.theme-dark .import-table-card {
-    background: #1e293b !important;
+[data-bs-theme="dark"] .owl-main-card,
+body.dark-mode .owl-main-card,
+body.theme-dark .owl-main-card {
+    background-color: var(--tblr-bg-surface, #1f2937) !important;
     border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
-[data-bs-theme="dark"] .import-summary-card .summary-number,
-body.dark-mode .import-summary-card .summary-number,
-body.theme-dark .import-summary-card .summary-number {
+[data-bs-theme="dark"] .import-filter-card .form-control,
+[data-bs-theme="dark"] .import-filter-card .form-select,
+body.dark-mode .import-filter-card .form-control,
+body.dark-mode .import-filter-card .form-select,
+body.theme-dark .import-filter-card .form-control,
+body.theme-dark .import-filter-card .form-select {
+    background-color: var(--tblr-bg-surface-secondary, #111827) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
     color: #f8fafc !important;
 }
 
-[data-bs-theme="dark"] .import-summary-card .summary-label,
-body.dark-mode .import-summary-card .summary-label,
-body.theme-dark .import-summary-card .summary-label,
-[data-bs-theme="dark"] .import-filter-card .form-label,
-body.dark-mode .import-filter-card .form-label,
-body.theme-dark .import-filter-card .form-label {
-    color: #94a3b8 !important;
-}
-
-[data-bs-theme="dark"] .table th,
-body.dark-mode .table th,
-body.theme-dark .table th {
+[data-bs-theme="dark"] .owl-table thead th,
+body.dark-mode .owl-table thead th,
+body.theme-dark .owl-table thead th {
     background-color: #0f172a !important;
     color: #94a3b8 !important;
     border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
-[data-bs-theme="dark"] .table td,
-body.dark-mode .table td,
-body.theme-dark .table td {
+[data-bs-theme="dark"] .owl-table tbody td,
+body.dark-mode .owl-table tbody td,
+body.theme-dark .owl-table tbody td {
     color: #f1f5f9 !important;
     border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-bs-theme="dark"] .owl-table tbody tr:hover,
+body.dark-mode .owl-table tbody tr:hover,
+body.theme-dark .owl-table tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+[data-bs-theme="dark"] .dataTables_wrapper .border-top,
+body.dark-mode .dataTables_wrapper .border-top,
+body.theme-dark .dataTables_wrapper .border-top {
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-bs-theme="dark"] .dataTables_wrapper .page-link,
+body.dark-mode .dataTables_wrapper .page-link,
+body.theme-dark .dataTables_wrapper .page-link {
+    background-color: var(--tblr-bg-surface, #1f2937) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    color: #cbd5e1 !important;
+}
+
+[data-bs-theme="dark"] .dataTables_wrapper .page-item.active .page-link,
+body.dark-mode .dataTables_wrapper .page-item.active .page-link,
+body.theme-dark .dataTables_wrapper .page-item.active .page-link {
+    background-color: var(--tblr-primary, #003b6d) !important;
+    border-color: var(--tblr-primary, #003b6d) !important;
+    color: #ffffff !important;
+}
+
+[data-bs-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator,
+body.dark-mode input[type="date"]::-webkit-calendar-picker-indicator,
+body.theme-dark input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
 }
 
 [data-bs-theme="dark"] #importDetailModal .modal-content,
 body.dark-mode #importDetailModal .modal-content,
 body.theme-dark #importDetailModal .modal-content {
-    background-color: #1e293b !important;
+    background-color: var(--tblr-bg-surface, #1f2937) !important;
     color: #f8fafc !important;
 }
 
+[data-bs-theme="dark"] #importDetailModal .card,
+body.dark-mode #importDetailModal .card,
+body.theme-dark #importDetailModal .card,
 [data-bs-theme="dark"] .batch-stats-box,
 body.dark-mode .batch-stats-box,
 body.theme-dark .batch-stats-box {
-    background-color: #0f172a !important;
+    background-color: var(--tblr-bg-surface-secondary, #111827) !important;
     border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
@@ -211,4 +298,35 @@ body.theme-dark .batch-stats-box {
 body.dark-mode .batch-stats-box .stats-lbl,
 body.theme-dark .batch-stats-box .stats-lbl {
     color: #94a3b8 !important;
+}
+
+[data-bs-theme="dark"] .more-filters-dropdown-panel,
+body.dark-mode .more-filters-dropdown-panel,
+body.theme-dark .more-filters-dropdown-panel {
+    background-color: var(--tblr-bg-surface, #1f2937) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    color: #f8fafc !important;
+}
+
+[data-bs-theme="dark"] .more-filters-dropdown-panel .text-dark,
+body.dark-mode .more-filters-dropdown-panel .text-dark,
+body.theme-dark .more-filters-dropdown-panel .text-dark {
+    color: #f8fafc !important;
+}
+
+[data-bs-theme="dark"] .more-filters-dropdown-panel .border-bottom,
+[data-bs-theme="dark"] .more-filters-dropdown-panel .border-top,
+body.dark-mode .more-filters-dropdown-panel .border-bottom,
+body.dark-mode .more-filters-dropdown-panel .border-top,
+body.theme-dark .more-filters-dropdown-panel .border-bottom,
+body.theme-dark .more-filters-dropdown-panel .border-top {
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-bs-theme="dark"] .more-filters-dropdown-panel .form-control,
+body.dark-mode .more-filters-dropdown-panel .form-control,
+body.theme-dark .more-filters-dropdown-panel .form-control {
+    background-color: var(--tblr-bg-surface-secondary, #111827) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    color: #f8fafc !important;
 }

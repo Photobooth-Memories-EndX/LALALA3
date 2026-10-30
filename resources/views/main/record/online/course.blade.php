@@ -104,19 +104,23 @@
                                 <th style="min-width: 150px;">SUB CLASSIFICATION</th>
                                 <th class="text-center" style="min-width: 120px;">DELIVERY METHOD</th>
                                 <th style="min-width: 140px;">SUB DELIVERY METHOD</th>
+                                <th class="text-center" style="min-width: 110px;">PROVIDER</th>
                                 <th style="min-width: 150px;">PROVIDER NAME</th>
                                 <th style="min-width: 140px;">VENUE</th>
                                 <th class="text-center" style="min-width: 110px;">COURSE DURATION</th>
+                                <th class="text-center" style="min-width: 130px;">TOTAL RECOGNIZED DURATION</th>
                                 <th class="text-center" style="min-width: 110px;">LEARNING HOURS</th>
                                 <th class="text-center" style="min-width: 120px;">% PROGRESS</th>
                                 <th class="text-center" style="min-width: 110px;">PROGRESS STATUS</th>
-                                <th style="min-width: 170px;">DATE TIME</th>
+                                <th style="min-width: 140px;">DATE (START - END)</th>
+                                <th style="min-width: 120px;">TIME (START - END)</th>
                                 <th class="text-center" style="min-width: 110px;">RECORD MONTH</th>
                                 <th class="text-center" style="min-width: 110px;">REQUIREMENT</th>
                                 <th class="text-center" style="min-width: 95px;">ATTENDANCE</th>
                                 <th class="text-center" style="min-width: 130px;">SCORE (L1) - COURSE</th>
                                 <th class="text-center" style="min-width: 105px;">SCORE (L2)</th>
                                 <th class="text-center" style="min-width: 105px;">SCORE (L3)</th>
+                                <th class="text-center" style="min-width: 130px;">CERTIFICATE AVAILABILITY</th>
                                 <th style="min-width: 140px;">PERSON IN CHARGE (PIC)</th>
                                 <th class="text-center" style="min-width: 140px;">TOTAL ENGAGEMENT TIME</th>
                                 <th class="text-center" style="min-width: 80px; width: 80px;">ACTION</th>
@@ -243,19 +247,23 @@
                 { data: 'sub_classification', orderable: false, searchable: false, className: 'text-center' },
                 { data: 'delivery_method', orderable: false, searchable: false, className: 'text-center' },
                 { data: 'sub_delivery_method', orderable: false, searchable: false, className: 'text-start' },
+                { data: 'provider', name: 'provider', orderable: false, searchable: false, className: 'text-center' },
                 { data: 'provider_name', orderable: false, searchable: false, className: 'text-start' },
                 { data: 'venue', orderable: false, searchable: false, className: 'text-start' },
                 { data: 'course_duration', name: 'c.duration', className: 'text-center' },
+                { data: 'total_recognized_duration', name: 'total_recognized_duration', orderable: false, searchable: false, className: 'text-center' },
                 { data: 'learning_hours', name: 'unified.learning_hours', className: 'text-center' },
                 { data: 'progress_bar', name: 'unified.progress', className: 'text-center' },
                 { data: 'progress_status', name: 'unified.finish', className: 'text-center' },
-                { data: 'date_time_merged', name: 'unified.created_at', className: 'text-start' },
+                { data: 'date_merged', name: 'unified.created_at', className: 'text-start' },
+                { data: 'time_merged', name: 'unified.created_at', className: 'text-start' },
                 { data: 'record_month', name: 'unified.created_at', className: 'text-center' },
                 { data: 'requirement', name: 'unified.status', className: 'text-center' },
                 { data: 'attendance', orderable: false, searchable: false, className: 'text-center' },
                 { data: 'score_l1', orderable: false, searchable: false, className: 'text-center' },
                 { data: 'score_l2', orderable: false, searchable: false, className: 'text-center' },
                 { data: 'score_l3', orderable: false, searchable: false, className: 'text-center' },
+                { data: 'certificate_availability', name: 'certificate_availability', orderable: false, searchable: false, className: 'text-center' },
                 { data: 'pic', orderable: false, searchable: false, className: 'text-start' },
                 { data: 'total_engagement_time', name: 'unified.learning_hours', className: 'text-center' },
                 { data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-center' }

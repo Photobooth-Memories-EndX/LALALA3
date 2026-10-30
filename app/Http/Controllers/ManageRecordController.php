@@ -272,6 +272,7 @@ class ManageRecordController extends Controller
                 ->where('otu.id', $id)
                 ->select([
                     'otu.id',
+                    'otu.user_id',
                     'otu.employee_id',
                     'otu.name as employee_name',
                     'otu.grade',
@@ -300,6 +301,7 @@ class ManageRecordController extends Controller
                     'ot.category',
                     'ot.level',
                     'ot.batch',
+                    'ot.sub_provider',
                     'ot.instructor',
                     'ot.delivery_method',
                     'ot.sub_delivery_method',
@@ -313,6 +315,7 @@ class ManageRecordController extends Controller
                     ->where('otu.offline_training_id', $id)
                     ->select([
                         'otu.id',
+                        'otu.user_id',
                         'otu.employee_id',
                         'otu.name as employee_name',
                         'otu.grade',
@@ -341,6 +344,7 @@ class ManageRecordController extends Controller
                         'ot.category',
                         'ot.level',
                         'ot.batch',
+                        'ot.sub_provider',
                         'ot.instructor',
                         'ot.delivery_method',
                         'ot.sub_delivery_method',
@@ -417,37 +421,56 @@ class ManageRecordController extends Controller
                 }
                 $subDeliveryMethod = $sub ?: '-';
 
+                // Certificate details from certificates table if linked
+                $cert = DB::table('certificates as cert')
+                    ->leftJoin('certificate_settings as cs', 'cert.certificate_setting_id', '=', 'cs.id')
+                    ->where('cert.offline_training_user_id', $record->id)
+                    ->select('cert.issued_at', 'cs.issuer_name')
+                    ->first();
+                $certInstitution = $cert?->issuer_name ?: '-';
+                $certIssuedDate = $cert?->issued_at ? date('Y-m-d', strtotime($cert->issued_at)) : '-';
+                $certExpiredDate = '-';
+
+                $certAvailRaw = strtolower(trim((string) ($record->certificate ?? '')));
+                $certAvailability = (!empty($cert) || in_array($certAvailRaw, ['yes', '1', 'true', 'available', 'ada'], true))
+                    ? 'Available'
+                    : ($certAvailRaw !== '' && $certAvailRaw !== 'no' && $certAvailRaw !== '-' ? $record->certificate : 'Not Available');
+
                 $recordData = [
-                    'source'              => 'NON KP OWL',
-                    'course_title'        => $record->course_title ?: ($record->sub_course_title ?: 'Offline Training'),
-                    'employee_id'         => $cleanEmpId,
-                    'employee_name'       => $empName,
-                    'grade'               => $record->grade ?: '-',
-                    'job_position'        => $record->job_position ?: '-',
-                    'delivery_method'     => 'Offline',
-                    'sub_delivery_method' => $subDeliveryMethod,
-                    'instructor'          => $record->instructor ?: '-',
-                    'progress_status'     => $progressStatus,
-                    'attendance'          => $attendance,
-                    'l2_status'           => $l2,
-                    'l3_status'           => $l3,
-                    'bond_status'         => $bondStatus,
-                    'bond_duration'       => $bondDuration,
-                    'bond_end_date'       => $bondEndDate,
-                    'bond_amount'         => $bondAmt,
+                    'source'                  => 'NON KP OWL',
+                    'course_title'            => $record->course_title ?: ($record->sub_course_title ?: 'Offline Training'),
+                    'sub_course_title'        => $record->sub_course_title ?: '-',
+                    'employee_id'             => $cleanEmpId,
+                    'employee_name'           => $empName,
+                    'grade'                   => $record->grade ?: '-',
+                    'job_position'            => $record->job_position ?: '-',
+                    'level'                   => $record->level ?: '-',
+                    'batch'                   => $record->batch ?: '-',
+                    'sub_provider'            => $record->sub_provider ?: '-',
+                    'delivery_method'         => 'Offline',
+                    'sub_delivery_method'     => $subDeliveryMethod,
+                    'instructor'              => $record->instructor ?: '-',
+                    'attendance'              => $attendance,
+                    'attendance_reason'       => $record->attendance_reason ?: '-',
+                    'progress_status'         => $progressStatus,
+                    'bond_status'             => $bondStatus,
+                    'bond_duration'           => $bondDuration,
+                    'bond_end_date'           => $bondEndDate,
+                    'bond_amount'             => $bondAmt,
+                    'bond_amount_idr'         => $bondAmt,
+                    'l2_status'               => $l2,
+                    'l3_status'               => $l3,
+                    'certificate_availability'=> $certAvailability,
+                    'certificate_status'      => $certAvailability,
+                    'certificate_institution' => $certInstitution,
+                    'certificate_issued_date' => $certIssuedDate,
+                    'certificate_expired_date'=> $certExpiredDate,
                 ];
 
                 return response()->json(array_merge($recordData, [
                     'success'            => true,
                     'data'               => $recordData,
                     'source_type'        => 'NON KP OWL',
-                    'bond_amount_idr'    => $bondAmt,
-                    'sub_course_title'   => $record->sub_course_title ?: '-',
-                    'level'              => $record->level ?: '-',
-                    'batch'              => $record->batch ?: '-',
-                    'attendance'         => $attendance,
-                    'attendance_reason'  => $record->attendance_reason ?: '-',
-                    'certificate_status' => !empty($record->certificate) ? 'Available' : 'Not Available',
                 ]));
             }
 
@@ -464,36 +487,40 @@ class ManageRecordController extends Controller
                 $subDeliveryMethod = $sub ?: '-';
 
                 $recordData = [
-                    'source'              => 'NON KP OWL',
-                    'course_title'        => $training->course_name ?: ($training->title ?: 'Offline Training'),
-                    'employee_id'         => '-',
-                    'employee_name'       => '-',
-                    'grade'               => '-',
-                    'job_position'        => '-',
-                    'delivery_method'     => 'Offline',
-                    'sub_delivery_method' => $subDeliveryMethod,
-                    'instructor'          => $training->instructor ?: '-',
-                    'progress_status'     => 'Not Started',
-                    'attendance'          => 'No',
-                    'l2_status'           => '-',
-                    'l3_status'           => '-',
-                    'bond_status'         => 'No',
-                    'bond_duration'       => '-',
-                    'bond_end_date'       => '-',
-                    'bond_amount'         => '-',
+                    'source'                  => 'NON KP OWL',
+                    'course_title'            => $training->course_name ?: ($training->title ?: 'Offline Training'),
+                    'sub_course_title'        => $training->sub_course_name ?: '-',
+                    'employee_id'             => '-',
+                    'employee_name'           => '-',
+                    'grade'                   => '-',
+                    'job_position'            => '-',
+                    'level'                   => $training->level ?: '-',
+                    'batch'                   => $training->batch ?: '-',
+                    'sub_provider'            => $training->sub_provider ?: '-',
+                    'delivery_method'         => 'Offline',
+                    'sub_delivery_method'     => $subDeliveryMethod,
+                    'instructor'              => $training->instructor ?: '-',
+                    'progress_status'         => 'Not Started',
+                    'attendance'              => 'No',
+                    'attendance_reason'       => '-',
+                    'l2_status'               => '-',
+                    'l3_status'               => '-',
+                    'bond_status'             => 'No',
+                    'bond_duration'           => '-',
+                    'bond_end_date'           => '-',
+                    'bond_amount'             => '-',
+                    'bond_amount_idr'         => '-',
+                    'certificate_availability'=> 'Not Available',
+                    'certificate_status'      => 'Not Available',
+                    'certificate_institution' => '-',
+                    'certificate_issued_date' => '-',
+                    'certificate_expired_date'=> '-',
                 ];
 
                 return response()->json(array_merge($recordData, [
                     'success'            => true,
                     'data'               => $recordData,
                     'source_type'        => 'NON KP OWL',
-                    'bond_amount_idr'    => '-',
-                    'sub_course_title'   => $training->sub_course_name ?: '-',
-                    'level'              => $training->level ?: '-',
-                    'batch'              => $training->batch ?: '-',
-                    'attendance'         => 'No',
-                    'attendance_reason'  => '-',
-                    'certificate_status' => 'Not Available',
                 ]));
             }
         }
@@ -506,10 +533,14 @@ class ManageRecordController extends Controller
             ->where('cu.id', $id)
             ->select([
                 'cu.id',
+                'cu.user_id',
+                'cu.content_id',
                 'cu.progress',
                 'cu.finish',
                 'u.id_emp as employee_id',
                 'u.name as employee_name',
+                'u.jobgrade as grade',
+                'u.jobposition as job_position',
                 'u.team',
                 'u.department',
                 'u.company_name as company',
@@ -534,37 +565,77 @@ class ManageRecordController extends Controller
                 $empName = strtoupper($empName);
             }
 
+            // Assessment L2 lookup
+            $assessmentResult = DB::table('assesment_results as ar')
+                ->join('assesments as a', 'a.id', '=', 'ar.assesment_id')
+                ->where('ar.user_id', $cu->user_id)
+                ->where('a.content_id', $cu->content_id)
+                ->where('ar.final', 1)
+                ->orderByDesc('ar.score')
+                ->orderByDesc('ar.id')
+                ->select('ar.score', 'ar.pass')
+                ->first();
+            $l2Status = $assessmentResult
+                ? ($assessmentResult->pass == 1 ? 'Pass' : ($assessmentResult->pass === 0 || $assessmentResult->pass === '0' ? 'Fail' : '-'))
+                : '-';
+
+            // Certificate lookup
+            $cert = DB::table('certificates as cert')
+                ->leftJoin('certificate_settings as cs', 'cert.certificate_setting_id', '=', 'cs.id')
+                ->where('cert.user_id', $cu->user_id)
+                ->where('cert.content_user_id', $cu->id)
+                ->select('cert.issued_at', 'cs.issuer_name')
+                ->first();
+            if (!$cert && $cu->content_id) {
+                $cert = DB::table('certificates as cert')
+                    ->leftJoin('certificate_settings as cs', 'cert.certificate_setting_id', '=', 'cs.id')
+                    ->where('cert.user_id', $cu->user_id)
+                    ->where('cert.source_id', $cu->content_id)
+                    ->where('cert.certificate_type', 'content')
+                    ->select('cert.issued_at', 'cs.issuer_name')
+                    ->first();
+            }
+
+            $certInstitution = $cert?->issuer_name ?: ($cu->finish == '1' || $progress >= 100 ? 'OWL Training Management' : '-');
+            $certIssuedDate = $cert?->issued_at ? date('Y-m-d', strtotime($cert->issued_at)) : '-';
+            $certExpiredDate = '-';
+            $certAvailability = ($cert || $cu->finish == '1' || $progress >= 100) ? 'Available' : 'Not Available';
+
             $recordData = [
-                'source'              => 'KP OWL',
-                'course_title'        => $cu->course_title ?: 'Untitled Content',
-                'employee_id'         => $cleanEmpId,
-                'employee_name'       => $empName,
-                'grade'               => '-',
-                'job_position'        => '-',
-                'delivery_method'     => 'Online',
-                'sub_delivery_method' => 'Self-Paced / LMS',
-                'instructor'          => $cu->instructor ?: '-',
-                'progress_status'     => $progressStatus,
-                'attendance'          => $attendance,
-                'l2_status'           => '-',
-                'l3_status'           => '-',
-                'bond_status'         => 'No',
-                'bond_duration'       => '-',
-                'bond_end_date'       => '-',
-                'bond_amount'         => '-',
+                'source'                  => 'KP OWL',
+                'course_title'            => $cu->course_title ?: 'Untitled Content',
+                'sub_course_title'        => '-',
+                'employee_id'             => $cleanEmpId,
+                'employee_name'           => $empName,
+                'grade'                   => $cu->grade ?: '-',
+                'job_position'            => $cu->job_position ?: '-',
+                'level'                   => '-',
+                'batch'                   => '-',
+                'sub_provider'            => '-',
+                'delivery_method'         => 'Online',
+                'sub_delivery_method'     => 'Self-Paced / LMS',
+                'instructor'              => $cu->instructor ?: '-',
+                'attendance'              => $attendance,
+                'attendance_reason'       => '-',
+                'progress_status'         => $progressStatus,
+                'bond_status'             => 'No',
+                'bond_duration'           => '-',
+                'bond_end_date'           => '-',
+                'bond_amount'             => '-',
+                'bond_amount_idr'         => '-',
+                'l2_status'               => $l2Status,
+                'l3_status'               => '-',
+                'certificate_availability'=> $certAvailability,
+                'certificate_status'      => $certAvailability,
+                'certificate_institution' => $certInstitution,
+                'certificate_issued_date' => $certIssuedDate,
+                'certificate_expired_date'=> $certExpiredDate,
             ];
 
             return response()->json(array_merge($recordData, [
                 'success'            => true,
                 'data'               => $recordData,
                 'source_type'        => 'KP OWL',
-                'bond_amount_idr'    => '-',
-                'sub_course_title'   => '-',
-                'level'              => '-',
-                'batch'              => '-',
-                'attendance'         => $attendance,
-                'attendance_reason'  => '-',
-                'certificate_status' => ($cu->finish == '1' || $progress >= 100) ? 'Available' : 'Not Available',
             ]));
         }
 
@@ -576,15 +647,21 @@ class ManageRecordController extends Controller
             ->where('pcu.id', $id)
             ->select([
                 'pcu.id',
+                'pcu.user_id',
+                'pcu.content_id',
+                'pcu.trainingplan_id',
                 'pcu.progress',
                 'pcu.finish',
                 'u.id_emp as employee_id',
                 'u.name as employee_name',
+                'u.jobgrade as grade',
+                'u.jobposition as job_position',
                 'u.team',
                 'u.department',
                 'u.company_name as company',
                 'c.title as course_title',
                 'tp.title as playlist_title',
+                'tp.instructor as playlist_instructor',
                 'c.type',
                 'c.author as instructor',
             ])
@@ -605,58 +682,118 @@ class ManageRecordController extends Controller
                 $empName = strtoupper($empName);
             }
 
+            // Assessment L2 lookup
+            $assessmentResult = DB::table('assesment_results as ar')
+                ->join('assesments as a', 'a.id', '=', 'ar.assesment_id')
+                ->where('ar.user_id', $pcu->user_id)
+                ->where(function ($q) use ($pcu) {
+                    if ($pcu->trainingplan_id) {
+                        $q->where('a.trainingplan_id', $pcu->trainingplan_id);
+                    }
+                    if ($pcu->content_id) {
+                        $q->orWhere('a.content_id', $pcu->content_id);
+                    }
+                })
+                ->where('ar.final', 1)
+                ->orderByDesc('ar.score')
+                ->orderByDesc('ar.id')
+                ->select('ar.score', 'ar.pass')
+                ->first();
+            $l2Status = $assessmentResult
+                ? ($assessmentResult->pass == 1 ? 'Pass' : ($assessmentResult->pass === 0 || $assessmentResult->pass === '0' ? 'Fail' : '-'))
+                : '-';
+
+            // Certificate lookup
+            $cert = DB::table('certificates as cert')
+                ->leftJoin('certificate_settings as cs', 'cert.certificate_setting_id', '=', 'cs.id')
+                ->where('cert.user_id', $pcu->user_id)
+                ->where(function ($q) use ($pcu) {
+                    if ($pcu->trainingplan_id) {
+                        $q->where('cert.source_id', $pcu->trainingplan_id)->where('cert.certificate_type', 'playlist');
+                    }
+                    if ($pcu->content_id) {
+                        $q->orWhere(function ($sub) use ($pcu) {
+                            $sub->where('cert.source_id', $pcu->content_id)->where('cert.certificate_type', 'content');
+                        });
+                    }
+                })
+                ->select('cert.issued_at', 'cs.issuer_name')
+                ->first();
+
+            $certInstitution = $cert?->issuer_name ?: ($pcu->finish == '1' || $progress >= 100 ? 'OWL Training Management' : '-');
+            $certIssuedDate = $cert?->issued_at ? date('Y-m-d', strtotime($cert->issued_at)) : '-';
+            $certExpiredDate = '-';
+            $certAvailability = ($cert || $pcu->finish == '1' || $progress >= 100) ? 'Available' : 'Not Available';
+
             $recordData = [
-                'source'              => 'KP OWL',
-                'course_title'        => $pcu->playlist_title ?: ($pcu->course_title ?: 'Playlist'),
-                'employee_id'         => $cleanEmpId,
-                'employee_name'       => $empName,
-                'grade'               => '-',
-                'job_position'        => '-',
-                'delivery_method'     => 'Online',
-                'sub_delivery_method' => 'Playlist / Path',
-                'instructor'          => $pcu->instructor ?: '-',
-                'progress_status'     => $progressStatus,
-                'attendance'          => $attendance,
-                'l2_status'           => '-',
-                'l3_status'           => '-',
-                'bond_status'         => 'No',
-                'bond_duration'       => '-',
-                'bond_end_date'       => '-',
-                'bond_amount'         => '-',
+                'source'                  => 'KP OWL',
+                'course_title'            => $pcu->playlist_title ?: ($pcu->course_title ?: 'Playlist'),
+                'sub_course_title'        => $pcu->playlist_title && $pcu->course_title ? $pcu->course_title : '-',
+                'employee_id'             => $cleanEmpId,
+                'employee_name'           => $empName,
+                'grade'                   => $pcu->grade ?: '-',
+                'job_position'            => $pcu->job_position ?: '-',
+                'level'                   => '-',
+                'batch'                   => '-',
+                'sub_provider'            => '-',
+                'delivery_method'         => 'Online',
+                'sub_delivery_method'     => 'Playlist / Path',
+                'instructor'              => $pcu->playlist_instructor ?: ($pcu->instructor ?: '-'),
+                'attendance'              => $attendance,
+                'attendance_reason'       => '-',
+                'progress_status'         => $progressStatus,
+                'bond_status'             => 'No',
+                'bond_duration'           => '-',
+                'bond_end_date'           => '-',
+                'bond_amount'             => '-',
+                'bond_amount_idr'         => '-',
+                'l2_status'               => $l2Status,
+                'l3_status'               => '-',
+                'certificate_availability'=> $certAvailability,
+                'certificate_status'      => $certAvailability,
+                'certificate_institution' => $certInstitution,
+                'certificate_issued_date' => $certIssuedDate,
+                'certificate_expired_date'=> $certExpiredDate,
             ];
 
             return response()->json(array_merge($recordData, [
                 'success'            => true,
                 'data'               => $recordData,
                 'source_type'        => 'KP OWL',
-                'bond_amount_idr'    => '-',
-                'sub_course_title'   => $pcu->playlist_title ?: '-',
-                'level'              => '-',
-                'batch'              => '-',
-                'attendance'         => $attendance,
-                'attendance_reason'  => '-',
-                'certificate_status' => ($pcu->finish == '1' || $progress >= 100) ? 'Available' : 'Not Available',
             ]));
         }
 
         return response()->json([
-            'success'         => false,
-            'message'         => 'Record not found',
-            'source'          => '-',
-            'course_title'    => '-',
-            'employee_id'     => '-',
-            'employee_name'   => '-',
-            'grade'           => '-',
-            'job_position'    => '-',
-            'instructor'      => '-',
-            'progress_status' => '-',
-            'attendance'      => '-',
-            'l2_status'       => '-',
-            'l3_status'       => '-',
-            'bond_status'     => 'No',
-            'bond_duration'   => '-',
-            'bond_end_date'   => '-',
-            'bond_amount'     => '-',
+            'success'                  => false,
+            'message'                  => 'Record not found',
+            'source'                   => '-',
+            'course_title'             => '-',
+            'sub_course_title'         => '-',
+            'employee_id'              => '-',
+            'employee_name'            => '-',
+            'grade'                    => '-',
+            'job_position'             => '-',
+            'level'                    => '-',
+            'batch'                    => '-',
+            'sub_provider'             => '-',
+            'delivery_method'          => '-',
+            'sub_delivery_method'      => '-',
+            'instructor'               => '-',
+            'progress_status'          => '-',
+            'attendance'               => '-',
+            'attendance_reason'        => '-',
+            'l2_status'                => '-',
+            'l3_status'                => '-',
+            'bond_status'              => 'No',
+            'bond_duration'            => '-',
+            'bond_end_date'            => '-',
+            'bond_amount'              => '-',
+            'bond_amount_idr'          => '-',
+            'certificate_availability' => 'Not Available',
+            'certificate_status'       => 'Not Available',
+            'certificate_institution'  => '-',
+            'certificate_issued_date'  => '-',
+            'certificate_expired_date' => '-',
         ], 404);
     }
 }

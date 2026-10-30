@@ -60,7 +60,61 @@ class OfflineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wi
 
     public static function headers(): array
     {
-        return OfflineTrainingExcelSchema::legacyHeaders();
+        return [
+            'NO',
+            'Source',
+            'Employee ID',
+            'Employee Name',
+            'Grade',
+            'Job Position',
+            'Team',
+            'Department',
+            'Company',
+            'Course Title',
+            'Sub Course Title',
+            'Type',
+            'Category',
+            'Level',
+            'Batch',
+            'Main Classification',
+            'Sub Classification',
+            'Delivery Method',
+            'Sub Delivery Method',
+            'Provider',
+            'Sub Provider',
+            'Provider Name',
+            'Venue',
+            'Instructor',
+            'Course Duration',
+            'Total Recognized Duration',
+            'Learning Hours',
+            'Total Engagement Time',
+            '% Progress',
+            'Progress Status',
+            'Start Date',
+            'End Date',
+            'Start Time',
+            'End Time',
+            'Record Month',
+            'Requirement',
+            'Attendance',
+            'Attendance Reason',
+            'Bond Status',
+            'Bond Duration',
+            'Bond End Date',
+            'Bond Amount',
+            'Score (L1) - Course',
+            'Score (L2)',
+            'L2 Status',
+            'Score (L3)',
+            'L3 Status',
+            'Certificate Availability',
+            'Certificate Institution',
+            'Certificate Issued Date',
+            'Certificate Expired Date',
+            'Person in Charge (PIC)',
+        ];
+
     }
 
     public function headings(): array
@@ -164,57 +218,121 @@ class OfflineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wi
         $rawEmp = $row->employee_id ?? ($row->id_emp ?? '-');
         $cleanEmpId = ($rawEmp !== '-') ? preg_replace('/\s*[\/\-]\s*NIP.*$/i', '', trim((string) $rawEmp)) : '-';
 
+        $hasCert = (!empty($row->certificate) && $row->certificate !== '-');
+
         return [
-            $cleanEmpId,                                                         // 1. Employee ID
-            $row->participant_name ?? ($row->user_name ?? ($row->name ?? '-')),  // 2. Employee Name
-            $row->grade ?? '-',                                                  // 3. Grade
-            $row->job_position ?? '-',                                           // 4. Job Position
-            $row->team ?? '-',                                                   // 5. Team
-            $row->department ?? '-',                                             // 6. Department
-            $row->company ?? '-',                                                // 7. Company
-            $row->course_name ?? ($row->title ?? '-'),                           // 8. Course Title
-            $row->sub_course_name ?? '-',                                        // 9. Sub Course Title
-            $row->type ?? '-',                                                   // 10. Type
-            $row->category ?? '-',                                               // 11. Category
-            $row->level ?? '-',                                                  // 12. Level
-            $row->batch ?? '-',                                                  // 13. Batch
-            $row->main_classification ?? 'Unclassified',                         // 14. Main Classification
-            $row->sub_classification ?? '-',                                     // 15. Sub Classification
-            $delivMethod,                                                        // 16. Delivery Method
-            $subDelivMethod,                                                     // 17. Sub Delivery Method
-            $row->provider_name ?? ($row->provider ?? '-'),                      // 18. Provider Name
-            $row->venue ?? '-',                                                  // 19. Venue
-            $row->instructor ?? '-',                                             // 20. Instructor
-            $durationFormatted,                                                  // 21. Course Duration
-            $lHoursNumeric,                                                      // 22. Learning Hours
-            $progressDecimal,                                                    // 23. % Progress
-            $progressStatus,                                                     // 24. Progress Status
-            $startDateStr,                                                       // 25. Start Date
-            $endDateStr,                                                         // 26. End Date
-            $startTimeStr,                                                       // 27. Start Time
-            $endTimeStr,                                                         // 28. End Time
+            $this->rowCount,                                                     // 1. NO
+            '-',                                                                 // 2. Source
+            $cleanEmpId,                                                         // 3. Employee ID
+            $row->participant_name ?: ($row->user_name ?? ($row->name ?? '-')),  // 4. Employee Name
+            $row->grade ?: '-',                                                  // 5. Grade
+            $row->job_position ?: '-',                                           // 6. Job Position
+            $row->team ?: '-',                                                   // 7. Team
+            $row->department ?: '-',                                             // 8. Department
+            $row->company ?: '-',                                                // 9. Company
+            $row->course_name ?: ($row->title ?: '-'),                           // 10. Course Title
+            $row->sub_course_name ?: '-',                                        // 11. Sub Course Title
+            $row->type ?: '-',                                                   // 12. Type
+            $row->category ?: '-',                                               // 13. Category
+            $row->level ?: '-',                                                  // 14. Level
+            $row->batch ?: '-',                                                  // 15. Batch
+            $row->main_classification ?: 'Unclassified',                         // 16. Main Classification
+            $row->sub_classification ?: '-',                                     // 17. Sub Classification
+            $delivMethod,                                                        // 18. Delivery Method
+            $subDelivMethod,                                                     // 19. Sub Delivery Method
+            $row->provider ?: '-',                                               // 20. Provider
+            $row->sub_provider ?: '-',                                           // 21. Sub Provider
+            $row->provider_name ?: ($row->provider ?: '-'),                      // 22. Provider Name
+            $row->venue ?: '-',                                                  // 23. Venue
+            $row->instructor ?: '-',                                             // 24. Instructor
+            '-',                                                                 // 25. Course Duration (strictly -)
+            '-',                                                                 // 26. Total Recognized Duration (strictly -)
+            $lHoursNumeric,                                                      // 27. Learning Hours
+            $lHoursNumeric,                                                      // 28. Total Engagement Time
+            $progressDecimal,                                                    // 29. % Progress
+            $progressStatus,                                                     // 30. Progress Status
+            $startDateStr,                                                       // 31. Start Date
+            $endDateStr,                                                         // 32. End Date
+            $startTimeStr,                                                       // 33. Start Time
+            $endTimeStr,                                                         // 34. End Time
             $recordMonthStr,                                                     // 29. Record Month
-            $row->requirement ?? 'Mandatory',                                    // 30. Requirement
-            $attendanceStr,                                                      // 31. Attendance
-            $row->attendance_reason ?? '-',                                      // 32. Attendance Reason
-            $hasBond ? 'Yes' : ($row->bond_status ?? 'No'),                      // 33. Bond Status
-            $bondDurationMonths !== null ? $bondDurationMonths : '-',            // 34. Bond Duration
-            $bondEndDateStr,                                                     // 35. Bond End Date
-            $hasBond ? (float) $idr : '-',                                       // 36. Bond Amount
-            $scoreL1 !== null ? $scoreL1 : '-',                                  // 37. Score (L1) - Course
-            $scoreL2 !== null ? $scoreL2 : '-',                                  // 38. Score (L2)
-            $row->l2_verbal ?? ($scoreL2 !== null ? ($scoreL2 >= 70 ? 'Passed' : 'Failed') : '-'), // 39. L2 Status
-            $scoreL3 !== null ? $scoreL3 : '-',                                  // 40. Score (L3)
-            $row->l3_verbal ?? '-',                                              // 41. L3 Status
-            $row->pic ?? '-',                                                    // 42. Person in Charge (PIC)
-            $row->certificate ?? '-',                                            // 43. Certificate
-            $totalEngNumeric,                                                    // 44. Total Engagement Time
+            $row->requirement ?: 'Mandatory',                                    // 36. Requirement
+            $attendanceStr,                                                      // 37. Attendance
+            $row->attendance_reason ?: '-',                                      // 38. Attendance Reason
+            $hasBond ? 'Yes' : ($row->bond_status ?: 'No'),                      // 39. Bond Status
+            $bondDurationMonths !== null ? $bondDurationMonths : '-',            // 40. Bond Duration
+            $bondEndDateStr,                                                     // 41. Bond End Date
+            $hasBond ? (float) $idr : '-',                                       // 42. Bond Amount
+            $scoreL1 !== null ? $scoreL1 : '-',                                  // 43. Score (L1) - Course
+            $scoreL2 !== null ? $scoreL2 : '-',                                  // 44. Score (L2)
+            $row->l2_verbal ?: ($scoreL2 !== null ? ($scoreL2 >= 70 ? 'Passed' : 'Failed') : '-'), // 45. L2 Status
+            $scoreL3 !== null ? $scoreL3 : '-',                                  // 46. Score (L3)
+            $row->l3_verbal ?: '-',                                              // 47. L3 Status
+            $hasCert ? 'Available' : '-',                                        // 48. Certificate Availability
+            $hasCert ? $row->certificate : '-',                                  // 49. Certificate Institution
+            '-',                                                                 // 50. Certificate Issued Date
+            '-',                                                                 // 51. Certificate Expired Date
+            $row->pic ?: '-',                                                    // 52. Person in Charge (PIC)
         ];
     }
 
     public static function columnWidths(): array
     {
-        return OfflineTrainingExcelSchema::legacyColumnWidths();
+        return [
+            'A'  => 6,   // NO
+            'B'  => 14,  // Source
+            'C'  => 16,  // Employee ID
+            'D'  => 30,  // Employee Name
+            'E'  => 12,  // Grade
+            'F'  => 25,  // Job Position
+            'G'  => 20,  // Team
+            'H'  => 25,  // Department
+            'I'  => 25,  // Company
+            'J'  => 35,  // Course Title
+            'K'  => 25,  // Sub Course Title
+            'L'  => 15,  // Type
+            'M'  => 18,  // Category
+            'N'  => 12,  // Level
+            'O'  => 12,  // Batch
+            'P'  => 25,  // Main Classification
+            'Q'  => 25,  // Sub Classification
+            'R'  => 18,  // Delivery Method
+            'S'  => 20,  // Sub Delivery Method
+            'T'  => 16,  // Provider
+            'U'  => 18,  // Sub Provider
+            'V'  => 25,  // Provider Name
+            'W'  => 20,  // Venue
+            'X'  => 22,  // Instructor
+            'Y'  => 16,  // Course Duration
+            'Z'  => 22,  // Total Recognized Duration
+            'AA' => 16,  // Learning Hours
+            'AB' => 22,  // Total Engagement Time
+            'AC' => 14,  // % Progress
+            'AD' => 16,  // Progress Status
+            'AE' => 14,  // Start Date
+            'AF' => 14,  // End Date
+            'AG' => 14,  // Start Time
+            'AH' => 14,  // End Time
+            'AI' => 16,  // Record Month
+            'AJ' => 15,  // Requirement
+            'AK' => 14,  // Attendance
+            'AL' => 25,  // Attendance Reason
+            'AM' => 14,  // Bond Status
+            'AN' => 16,  // Bond Duration
+            'AO' => 16,  // Bond End Date
+            'AP' => 18,  // Bond Amount
+            'AQ' => 20,  // Score (L1) - Course
+            'AR' => 15,  // Score (L2)
+            'AS' => 15,  // L2 Status
+            'AT' => 15,  // Score (L3)
+            'AU' => 15,  // L3 Status
+            'AV' => 22,  // Certificate Availability
+            'AW' => 25,  // Certificate Institution
+            'AX' => 20,  // Certificate Issued Date
+            'AY' => 20,  // Certificate Expired Date
+            'AZ' => 25,  // Person in Charge (PIC)
+        ];
+
     }
 
     public function query()
@@ -480,51 +598,63 @@ class OfflineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wi
             $rawEmp = $row->employee_id ?: ($row->id_emp ?? '-');
             $cleanEmpId = ($rawEmp !== '-') ? preg_replace('/\s*[\/\-]\s*NIP.*$/i', '', trim((string) $rawEmp)) : '-';
 
+            $hasCert = (!empty($row->certificate) && $row->certificate !== '-');
+            $lHoursCell = ($lHoursNumeric !== null) ? ['AA', 'lh', $lHoursNumeric, '10'] : ['AA', 'str', '-', '0'];
+            $totalEngCell = ($lHoursNumeric !== null) ? ['AB', 'lh', $lHoursNumeric, '10'] : ['AB', 'str', '-', '0'];
+
             $cells = [
-                ['A', 'str', $cleanEmpId, '0'],                                                                           // 1. Employee ID
-                ['B', 'str', $row->participant_name ?: ($row->user_name ?? ($row->name ?? '-')), '0'],                   // 2. Employee Name
-                ['C', 'str', $row->grade ?: '-', '0'],                                                                    // 3. Grade
-                ['D', 'str', $row->job_position ?: '-', '0'],                                                             // 4. Job Position
-                ['E', 'str', $row->team ?: '-', '0'],                                                                     // 5. Team
-                ['F', 'str', $row->department ?: '-', '0'],                                                               // 6. Department
-                ['G', 'str', $row->company ?: '-', '0'],                                                                  // 7. Company
-                ['H', 'str', $row->course_name ?: ($row->title ?: '-'), '0'],                                             // 8. Course Title
-                ['I', 'str', $row->sub_course_name ?: '-', '0'],                                                          // 9. Sub Course Title
-                ['J', 'str', $row->type ?: '-', '0'],                                                                     // 10. Type
-                ['K', 'str', $row->category ?: '-', '0'],                                                                 // 11. Category
-                ['L', 'str', $row->level ?: '-', '0'],                                                                    // 12. Level
-                ['M', 'str', $row->batch ?: '-', '0'],                                                                    // 13. Batch
-                ['N', 'str', $row->main_classification ?: 'Unclassified', '0'],                                           // 14. Main Classification
-                ['O', 'str', $row->sub_classification ?: '-', '0'],                                                       // 15. Sub Classification
-                ['P', 'str', $delivMethod, '0'],                                                                          // 16. Delivery Method
-                ['Q', 'str', $subDelivMethod, '0'],                                                                       // 17. Sub Delivery Method
-                ['R', 'str', $row->provider_name ?: ($row->provider ?: '-'), '0'],                                        // 18. Provider Name
-                ['S', 'str', $row->venue ?: '-', '0'],                                                                    // 19. Venue
-                ['T', 'str', $row->instructor ?: '-', '0'],                                                               // 20. Instructor
-                ['U', 'str', $durationFormatted, '0'],                                                                    // 21. Course Duration
-                $lHoursCell,                                                                                              // 22. Learning Hours ('V')
-                ['W', 'pct', $progressDecimal, '6'],                                                                      // 23. % Progress
-                ['X', 'str', $progressStatus, '0'],                                                                       // 24. Progress Status
-                ['Y', $startDateStr !== '-' ? 'date' : 'str', $startDateStr, $startDateStr !== '-' ? '7' : '0'],        // 25. Start Date
-                ['Z', $endDateStr !== '-' ? 'date' : 'str', $endDateStr, $endDateStr !== '-' ? '7' : '0'],                // 26. End Date
-                ['AA', $startTimeStr !== '-' ? 'time' : 'str', $startTimeStr, $startTimeStr !== '-' ? '8' : '0'],        // 27. Start Time
-                ['AB', $endTimeStr !== '-' ? 'time' : 'str', $endTimeStr, $endTimeStr !== '-' ? '8' : '0'],              // 28. End Time
-                ['AC', 'str', $recordMonthStr, '0'],                                                                      // 29. Record Month
-                ['AD', 'str', $row->requirement ?: 'Mandatory', '0'],                                                     // 30. Requirement
-                ['AE', 'str', $attendanceStr, '0'],                                                                       // 31. Attendance
-                ['AF', 'str', $row->attendance_reason ?: '-', '0'],                                                       // 32. Attendance Reason
-                ['AG', 'str', $hasBond ? 'Yes' : ($row->bond_status ?: 'No'), '0'],                                      // 33. Bond Status
-                $bondDurationMonths !== null ? ['AH', 'int', $bondDurationMonths, '4'] : ['AH', 'str', '-', '0'],       // 34. Bond Duration
-                ['AI', $bondEndDateStr !== '-' ? 'date' : 'str', $bondEndDateStr, $bondEndDateStr !== '-' ? '7' : '0'],  // 35. Bond End Date
-                ['AJ', $hasBond ? 'curr' : 'str', $hasBond ? (float) $idr : '-', $hasBond ? '9' : '0'],                  // 36. Bond Amount
-                $scoreL1 !== null ? (is_int($scoreL1) ? ['AK', 'int', $scoreL1, '4'] : ['AK', 'float', $scoreL1, '11']) : ['AK', 'str', '-', '0'], // 37. Score (L1)
-                $scoreL2 !== null ? (is_int($scoreL2) ? ['AL', 'int', $scoreL2, '4'] : ['AL', 'float', $scoreL2, '11']) : ['AL', 'str', '-', '0'], // 38. Score (L2)
-                ['AM', 'str', $row->l2_verbal ?: ($scoreL2 !== null ? ($scoreL2 >= 70 ? 'Passed' : 'Failed') : '-'), '0'],                         // 39. L2 Status
-                $scoreL3 !== null ? (is_int($scoreL3) ? ['AN', 'int', $scoreL3, '4'] : ['AN', 'float', $scoreL3, '11']) : ['AN', 'str', '-', '0'], // 40. Score (L3)
-                ['AO', 'str', $row->l3_verbal ?: '-', '0'],                                                               // 41. L3 Status
-                ['AP', 'str', $row->pic ?: '-', '0'],                                                                     // 42. Person in Charge (PIC)
-                ['AQ', 'str', $row->certificate ?: '-', '0'],                                                             // 43. Certificate
-                $totalEngCell,                                                                                            // 44. Total Engagement Time ('AR')
+                ['A', 'num', $rowCount, '0'],                                                                       // 1. NO
+                ['B', 'str', '-', '0'],                                                                           // 2. Source
+                ['C', 'str', $cleanEmpId, '0'],                                                                     // 3. Employee ID
+                ['D', 'str', $row->participant_name ?: ($row->user_name ?? ($row->name ?? '-')), '0'],             // 4. Employee Name
+                ['E', 'str', $row->grade ?: '-', '0'],                                                              // 5. Grade
+                ['F', 'str', $row->job_position ?: '-', '0'],                                                       // 6. Job Position
+                ['G', 'str', $row->team ?: '-', '0'],                                                               // 7. Team
+                ['H', 'str', $row->department ?: '-', '0'],                                                         // 8. Department
+                ['I', 'str', $row->company ?: '-', '0'],                                                            // 9. Company
+                ['J', 'str', $row->course_name ?: ($row->title ?: '-'), '0'],                                       // 10. Course Title
+                ['K', 'str', $row->sub_course_name ?: '-', '0'],                                                    // 11. Sub Course Title
+                ['L', 'str', $row->type ?: '-', '0'],                                                               // 12. Type
+                ['M', 'str', $row->category ?: '-', '0'],                                                           // 13. Category
+                ['N', 'str', $row->level ?: '-', '0'],                                                              // 14. Level
+                ['O', 'str', $row->batch ?: '-', '0'],                                                              // 15. Batch
+                ['P', 'str', $row->main_classification ?: 'Unclassified', '0'],                                     // 16. Main Classification
+                ['Q', 'str', $row->sub_classification ?: '-', '0'],                                                 // 17. Sub Classification
+                ['R', 'str', $delivMethod, '0'],                                                                    // 18. Delivery Method
+                ['S', 'str', $subDelivMethod, '0'],                                                                 // 19. Sub Delivery Method
+                ['T', 'str', $row->provider ?: '-', '0'],                                                         // 20. Provider
+                ['U', 'str', $row->sub_provider ?: '-', '0'],                                                     // 21. Sub Provider
+                ['V', 'str', $row->provider_name ?: ($row->provider ?: '-'), '0'],                                  // 22. Provider Name
+                ['W', 'str', $row->venue ?: '-', '0'],                                                              // 23. Venue
+                ['X', 'str', $row->instructor ?: '-', '0'],                                                         // 24. Instructor
+                ['Y', 'str', '-', '0'],                                                                           // 25. Course Duration (strictly -)
+                ['Z', 'str', '-', '0'],                                                                           // 26. Total Recognized Duration (strictly -)
+                $lHoursCell,                                                                                              // 27. Learning Hours ('AA')
+                $totalEngCell,                                                                                            // 28. Total Engagement Time ('AB')
+                ['AC', 'pct', $progressDecimal, '6'],                                                                // 29. % Progress
+                ['AD', 'str', $progressStatus, '0'],                                                                 // 30. Progress Status
+                ['AE', $startDateStr !== '-' ? 'date' : 'str', $startDateStr, $startDateStr !== '-' ? '7' : '0'],  // 31. Start Date
+                ['AF', $endDateStr !== '-' ? 'date' : 'str', $endDateStr, $endDateStr !== '-' ? '7' : '0'],      // 32. End Date
+                ['AG', $startTimeStr !== '-' ? 'time' : 'str', $startTimeStr, $startTimeStr !== '-' ? '8' : '0'],  // 33. Start Time
+                ['AH', $endTimeStr !== '-' ? 'time' : 'str', $endTimeStr, $endTimeStr !== '-' ? '8' : '0'],      // 34. End Time
+                ['AI', 'str', $recordMonthStr, '0'],                                                                // 35. Record Month
+                ['AJ', 'str', $row->requirement ?: 'Mandatory', '0'],                                               // 36. Requirement
+                ['AK', 'str', $attendanceStr, '0'],                                                                 // 37. Attendance
+                ['AL', 'str', $row->attendance_reason ?: '-', '0'],                                                 // 38. Attendance Reason
+                ['AM', 'str', $hasBond ? 'Yes' : ($row->bond_status ?: 'No'), '0'],                                // 39. Bond Status
+                $bondDurationMonths !== null ? ['AN', 'int', $bondDurationMonths, '4'] : ['AN', 'str', '-', '0'], // 40. Bond Duration
+                ['AO', $bondEndDateStr !== '-' ? 'date' : 'str', $bondEndDateStr, $bondEndDateStr !== '-' ? '7' : '0'], // 41. Bond End Date
+                ['AP', $hasBond ? 'curr' : 'str', $hasBond ? (float) $idr : '-', $hasBond ? '9' : '0'],            // 42. Bond Amount
+                $scoreL1 !== null ? (is_int($scoreL1) ? ['AQ', 'int', $scoreL1, '4'] : ['AQ', 'float', $scoreL1, '11']) : ['AQ', 'str', '-', '0'], // 43. Score (L1)
+                $scoreL2 !== null ? (is_int($scoreL2) ? ['AR', 'int', $scoreL2, '4'] : ['AR', 'float', $scoreL2, '11']) : ['AR', 'str', '-', '0'], // 44. Score (L2)
+                ['AS', 'str', $row->l2_verbal ?: ($scoreL2 !== null ? ($scoreL2 >= 70 ? 'Passed' : 'Failed') : '-'), '0'], // 45. L2 Status
+                $scoreL3 !== null ? (is_int($scoreL3) ? ['AT', 'int', $scoreL3, '4'] : ['AT', 'float', $scoreL3, '11']) : ['AT', 'str', '-', '0'], // 46. Score (L3)
+                ['AU', 'str', $row->l3_verbal ?: '-', '0'],                                                       // 47. L3 Status
+                ['AV', 'str', $hasCert ? 'Available' : '-', '0'],                                                // 48. Certificate Availability
+                ['AW', 'str', $hasCert ? $row->certificate : '-', '0'],                                            // 49. Certificate Institution
+                ['AX', 'str', '-', '0'],                                                                           // 50. Certificate Issued Date
+                ['AY', 'str', '-', '0'],                                                                           // 51. Certificate Expired Date
+                ['AZ', 'str', $row->pic ?: '-', '0'],                                                             // 52. Person in Charge (PIC)
             ];
 
             $buffer .= $this->buildXmlRow($r, $cells);

@@ -719,6 +719,8 @@ class LearningDatatableService
             ->addColumn('sub_classification', fn () => '<span class="text-muted small">-</span>')
             ->addColumn('delivery_method', fn () => '<span class="badge bg-blue-lt text-blue">Online</span>')
             ->addColumn('sub_delivery_method', fn ($row) => e($row->category_source === 'Playlist' ? 'Playlist / Path' : 'Self-Paced / LMS'))
+            ->addColumn('provider', fn () => '<span class="badge bg-blue-lt text-blue">Internal</span>')
+            ->addColumn('sub_provider', fn () => '<span class="text-muted small">-</span>')
             ->addColumn('provider_name', fn () => 'KP OWL')
             ->addColumn('venue', fn () => 'Online LMS')
             ->addColumn('duration', fn ($row) => e(DurationFormatter::format($row->content_duration ?? null)))
@@ -754,11 +756,21 @@ class LearningDatatableService
 
                 return RecordOfflineController::renderMergedDateTime($startDate, $endDate, $startTime, $endTime);
             })
+            ->addColumn('date_merged', function ($row) {
+                $startDate = $row->created_at ? Carbon::parse($row->created_at)->format('Y-m-d') : null;
+                $endDate = $row->completed_at ? Carbon::parse($row->completed_at)->format('Y-m-d') : ($row->finish == 1 && $row->updated_at ? Carbon::parse($row->updated_at)->format('Y-m-d') : null);
+                return RecordOfflineController::renderMergedDate($startDate, $endDate);
+            })
+            ->addColumn('time_merged', function ($row) {
+                $startTime = $row->created_at ? Carbon::parse($row->created_at)->format('H:i') : null;
+                $endTime = $row->completed_at ? Carbon::parse($row->completed_at)->format('H:i') : ($row->finish == 1 && $row->updated_at ? Carbon::parse($row->updated_at)->format('H:i') : null);
+                return RecordOfflineController::renderMergedTime($startTime, $endTime);
+            })
             ->addColumn('record_month', function ($row) {
-                $d = $row->completed_at ?: ($row->finish == 1 ? $row->updated_at : $row->created_at);
-                if (!empty($d) && $d !== '-') {
+                $endDate = $row->completed_at ?: ($row->finish == 1 && $row->updated_at ? $row->updated_at : null);
+                if (!empty($endDate) && $endDate !== '-') {
                     try {
-                        return Carbon::parse($d)->format('F');
+                        return Carbon::parse($endDate)->format('F');
                     } catch (\Throwable $e) {
                         return '-';
                     }
@@ -792,7 +804,18 @@ class LearningDatatableService
             })
             ->addColumn('score_l3', fn () => '<span class="text-muted small">-</span>')
             ->addColumn('pic', fn () => '<span class="text-muted small">-</span>')
-            ->addColumn('certificate', fn () => '<span class="text-muted small">-</span>')
+            ->addColumn('certificate', function ($row) {
+                if ($row->finish == 1 || (float)($row->progress ?? 0) >= 100) {
+                    return '<span class="badge bg-blue-lt text-primary px-2 py-1"><i class="ti ti-file-certificate me-1"></i> Available</span>';
+                }
+                return '<span class="text-muted small">-</span>';
+            })
+            ->addColumn('certificate_availability', function ($row) {
+                if ($row->finish == 1 || (float)($row->progress ?? 0) >= 100) {
+                    return '<span class="badge bg-blue-lt text-primary px-2 py-1"><i class="ti ti-file-certificate me-1"></i> Available</span>';
+                }
+                return '<span class="text-muted small">-</span>';
+            })
             ->addColumn('progress_bar', fn ($row) => $this->progressBar($row))
             ->addColumn('progress_percent', fn ($row) => $this->progressBar($row))
             ->addColumn('progress_status', fn ($row) => $this->progressStatusBadge($row))

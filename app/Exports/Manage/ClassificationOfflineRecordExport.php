@@ -79,17 +79,141 @@ class ClassificationOfflineRecordExport implements FromCollection, WithHeadings,
 
     public function headings(): array
     {
-        return OfflineTrainingExcelSchema::legacyHeaders();
+        return [
+            'NO',
+            'Source',
+            'Employee ID',
+            'Employee Name',
+            'Grade',
+            'Job Position',
+            'Team',
+            'Department',
+            'Company',
+            'Course Title',
+            'Sub Course Title',
+            'Type',
+            'Category',
+            'Level',
+            'Batch',
+            'Main Classification',
+            'Sub Classification',
+            'Delivery Method',
+            'Sub Delivery Method',
+            'Provider',
+            'Sub Provider',
+            'Provider Name',
+            'Venue',
+            'Instructor',
+            'Course Duration',
+            'Total Recognized Duration',
+            'Learning Hours',
+            'Total Engagement Time',
+            '% Progress',
+            'Progress Status',
+            'Start Date',
+            'End Date',
+            'Start Time',
+            'End Time',
+            'Record Month',
+            'Requirement',
+            'Attendance',
+            'Attendance Reason',
+            'Bond Status',
+            'Bond Duration',
+            'Bond End Date',
+            'Bond Amount',
+            'Score (L1) - Course',
+            'Score (L2)',
+            'L2 Status',
+            'Score (L3)',
+            'L3 Status',
+            'Certificate Availability',
+            'Certificate Institution',
+            'Certificate Issued Date',
+            'Certificate Expired Date',
+            'Person in Charge (PIC)',
+        ];
+
     }
 
     public function columnWidths(): array
     {
-        return OfflineTrainingExcelSchema::legacyColumnWidths();
+        return [
+            'A'  => 6,   // NO
+            'B'  => 14,  // Source
+            'C'  => 16,  // Employee ID
+            'D'  => 30,  // Employee Name
+            'E'  => 12,  // Grade
+            'F'  => 25,  // Job Position
+            'G'  => 20,  // Team
+            'H'  => 25,  // Department
+            'I'  => 25,  // Company
+            'J'  => 35,  // Course Title
+            'K'  => 25,  // Sub Course Title
+            'L'  => 15,  // Type
+            'M'  => 18,  // Category
+            'N'  => 12,  // Level
+            'O'  => 12,  // Batch
+            'P'  => 25,  // Main Classification
+            'Q'  => 25,  // Sub Classification
+            'R'  => 18,  // Delivery Method
+            'S'  => 20,  // Sub Delivery Method
+            'T'  => 16,  // Provider
+            'U'  => 18,  // Sub Provider
+            'V'  => 25,  // Provider Name
+            'W'  => 20,  // Venue
+            'X'  => 22,  // Instructor
+            'Y'  => 16,  // Course Duration
+            'Z'  => 22,  // Total Recognized Duration
+            'AA' => 16,  // Learning Hours
+            'AB' => 22,  // Total Engagement Time
+            'AC' => 14,  // % Progress
+            'AD' => 16,  // Progress Status
+            'AE' => 14,  // Start Date
+            'AF' => 14,  // End Date
+            'AG' => 14,  // Start Time
+            'AH' => 14,  // End Time
+            'AI' => 16,  // Record Month
+            'AJ' => 15,  // Requirement
+            'AK' => 14,  // Attendance
+            'AL' => 25,  // Attendance Reason
+            'AM' => 14,  // Bond Status
+            'AN' => 16,  // Bond Duration
+            'AO' => 16,  // Bond End Date
+            'AP' => 18,  // Bond Amount
+            'AQ' => 20,  // Score (L1) - Course
+            'AR' => 15,  // Score (L2)
+            'AS' => 15,  // L2 Status
+            'AT' => 15,  // Score (L3)
+            'AU' => 15,  // L3 Status
+            'AV' => 22,  // Certificate Availability
+            'AW' => 25,  // Certificate Institution
+            'AX' => 20,  // Certificate Issued Date
+            'AY' => 20,  // Certificate Expired Date
+            'AZ' => 25,  // Person in Charge (PIC)
+        ];
+
     }
 
     public function columnFormats(): array
     {
-        return OfflineTrainingExcelSchema::legacyColumnFormats();
+        return [
+            'A'  => '0',
+            'C'  => NumberFormat::FORMAT_TEXT,
+            'AA' => '0.##" h"',
+            'AB' => '0.##" h"',
+            'AC' => '0%',
+            'AE' => 'yyyy-mm-dd',
+            'AF' => 'yyyy-mm-dd',
+            'AG' => 'hh:mm:ss',
+            'AH' => 'hh:mm:ss',
+            'AO' => 'yyyy-mm-dd',
+            'AP' => '"Rp"#,##0',
+            'AQ' => '0.##',
+            'AR' => '0',
+            'AT' => '0.##',
+        ];
+
     }
 
     public function query()
@@ -213,51 +337,64 @@ class ClassificationOfflineRecordExport implements FromCollection, WithHeadings,
         $rawEmp = $row->employee_id ?: ($row->id_emp ?? '-');
         $cleanEmpId = ($rawEmp !== '-') ? preg_replace('/\s*[\/\-]\s*NIP.*$/i', '', trim((string) $rawEmp)) : '-';
 
+        $hasCert = (!empty($row->certificate) && $row->certificate !== '-');
+
+        static $rowIdx = 0;
+        $rowIdx++;
+
         return [
-            $cleanEmpId,                                                // 1. Employee ID
-            $row->participant_name ?: ($row->user_name ?? '-'),         // 2. Employee Name
-            $row->grade ?: '-',                                         // 3. Grade
-            $row->job_position ?: '-',                                  // 4. Job Position
-            $row->team ?: '-',                                          // 5. Team
-            $row->department ?: '-',                                    // 6. Department
-            $row->company ?: '-',                                       // 7. Company
-            $row->course_name ?: ($row->title ?: '-'),                  // 8. Course Title
-            $row->sub_course_name ?: '-',                               // 9. Sub Course Title
-            $row->type ?: '-',                                          // 10. Type
-            $row->category ?: '-',                                      // 11. Category
-            $row->level ?: '-',                                         // 12. Level
-            $row->batch ?: '-',                                         // 13. Batch
-            $row->main_classification ?: 'Unclassified',                // 14. Main Classification
-            $row->sub_classification ?: '-',                            // 15. Sub Classification
-            $delivMethod,                                               // 16. Delivery Method
-            $subDelivMethod,                                            // 17. Sub Delivery Method
-            $row->provider_name ?: ($row->provider ?: '-'),             // 18. Provider Name
-            $row->venue ?: '-',                                         // 19. Venue
-            $row->instructor ?: '-',                                    // 20. Instructor
-            $durationFormatted,                                         // 21. Course Duration
-            $lHoursNumeric,                                             // 22. Learning Hours
-            $progressDecimal,                                           // 23. % Progress
-            $progressStatus,                                            // 24. Progress Status
-            $startDateStr,                                              // 25. Start Date
-            $endDateStr,                                                // 26. End Date
-            $startTimeStr,                                              // 27. Start Time
-            $endTimeStr,                                                // 28. End Time
-            $recordMonthStr,                                            // 29. Record Month
-            $row->requirement ?: ($row->status ?: 'Mandatory'),         // 30. Requirement
-            $attendanceStr,                                             // 31. Attendance
-            $row->attendance_reason ?: '-',                             // 32. Attendance Reason
-            $hasBond ? 'Yes' : ($row->bond_status ?: 'No'),             // 33. Bond Status
-            $bondDurationMonths !== null ? $bondDurationMonths : '-',   // 34. Bond Duration
-            $bondEndDateStr,                                            // 35. Bond End Date
-            $hasBond ? (float) $idr : '-',                              // 36. Bond Amount
-            $scoreL1 !== null ? $scoreL1 : '-',                         // 37. Score (L1) - Course
-            $scoreL2 !== null ? $scoreL2 : '-',                         // 38. Score (L2)
-            $row->l2_verbal ?: ($scoreL2 !== null ? ($scoreL2 >= 70 ? 'Passed' : 'Failed') : '-'), // 39. L2 Status
-            $scoreL3 !== null ? $scoreL3 : '-',                         // 40. Score (L3)
-            $row->l3_verbal ?: '-',                                     // 41. L3 Status
-            $row->pic ?: '-',                                           // 42. Person in Charge (PIC)
-            $row->certificate ?: '-',                                   // 43. Certificate
-            $totalEngNumeric,                                           // 44. Total Engagement Time
+            $rowIdx,                                                    // 1. NO
+            '-',                                                        // 2. Source
+            $cleanEmpId,                                                // 3. Employee ID
+            $row->participant_name ?: ($row->user_name ?? '-'),         // 4. Employee Name
+            $row->grade ?: '-',                                         // 5. Grade
+            $row->job_position ?: '-',                                  // 6. Job Position
+            $row->team ?: '-',                                          // 7. Team
+            $row->department ?: '-',                                    // 8. Department
+            $row->company ?: '-',                                       // 9. Company
+            $row->course_name ?: ($row->title ?: '-'),                  // 10. Course Title
+            $row->sub_course_name ?: '-',                               // 11. Sub Course Title
+            $row->type ?: '-',                                          // 12. Type
+            $row->category ?: '-',                                      // 13. Category
+            $row->level ?: '-',                                         // 14. Level
+            $row->batch ?: '-',                                         // 15. Batch
+            $row->main_classification ?: 'Unclassified',                // 16. Main Classification
+            $row->sub_classification ?: '-',                            // 17. Sub Classification
+            $delivMethod,                                               // 18. Delivery Method
+            $subDelivMethod,                                            // 19. Sub Delivery Method
+            $row->provider ?: '-',                                      // 20. Provider
+            $row->sub_provider ?: '-',                                  // 21. Sub Provider
+            $row->provider_name ?: ($row->provider ?: '-'),             // 22. Provider Name
+            $row->venue ?: '-',                                         // 23. Venue
+            $row->instructor ?: '-',                                    // 24. Instructor
+            '-',                                                        // 25. Course Duration (strictly -)
+            '-',                                                        // 26. Total Recognized Duration (strictly -)
+            $lHoursNumeric,                                             // 27. Learning Hours (strictly admin input)
+            $lHoursNumeric,                                             // 28. Total Engagement Time
+            $progressDecimal,                                           // 29. % Progress
+            $progressStatus,                                            // 30. Progress Status
+            $startDateStr,                                              // 31. Start Date
+            $endDateStr,                                                // 32. End Date
+            $startTimeStr,                                              // 33. Start Time
+            $endTimeStr,                                                // 34. End Time
+            $recordMonthStr,                                            // 35. Record Month
+            $row->requirement ?: ($row->status ?: 'Mandatory'),         // 36. Requirement
+            $attendanceStr,                                             // 37. Attendance
+            $row->attendance_reason ?: '-',                             // 38. Attendance Reason
+            $hasBond ? 'Yes' : ($row->bond_status ?: 'No'),             // 39. Bond Status
+            $bondDurationMonths !== null ? $bondDurationMonths : '-',   // 40. Bond Duration
+            $bondEndDateStr,                                            // 41. Bond End Date
+            $hasBond ? (float) $idr : '-',                              // 42. Bond Amount
+            $scoreL1 !== null ? $scoreL1 : '-',                         // 43. Score (L1) - Course
+            $scoreL2 !== null ? $scoreL2 : '-',                         // 44. Score (L2)
+            $row->l2_verbal ?: ($scoreL2 !== null ? ($scoreL2 >= 70 ? 'Passed' : 'Failed') : '-'), // 45. L2 Status
+            $scoreL3 !== null ? $scoreL3 : '-',                         // 46. Score (L3)
+            $row->l3_verbal ?: '-',                                     // 47. L3 Status
+            $hasCert ? 'Available' : '-',                                // 48. Certificate Availability
+            $hasCert ? $row->certificate : '-',                          // 49. Certificate Institution
+            '-',                                                        // 50. Certificate Issued Date
+            '-',                                                        // 51. Certificate Expired Date
+            $row->pic ?: '-',                                           // 52. Person in Charge (PIC)
         ];
     }
 
@@ -311,16 +448,15 @@ class ClassificationOfflineRecordExport implements FromCollection, WithHeadings,
                     ->setVertical(Alignment::VERTICAL_CENTER);
 
                 // Set format codes for numeric & date calculations
-                $sheet->getStyle('V2:V' . $highestRow)->getNumberFormat()->setFormatCode('0.##" h"');
-                $sheet->getStyle('W2:W' . $highestRow)->getNumberFormat()->setFormatCode('0%');
-                $sheet->getStyle('Y2:Y' . $highestRow)->getNumberFormat()->setFormatCode('yyyy-mm-dd');
-                $sheet->getStyle('Z2:Z' . $highestRow)->getNumberFormat()->setFormatCode('yyyy-mm-dd');
-                $sheet->getStyle('AA2:AA' . $highestRow)->getNumberFormat()->setFormatCode('hh:mm:ss');
-                $sheet->getStyle('AB2:AB' . $highestRow)->getNumberFormat()->setFormatCode('hh:mm:ss');
-                $sheet->getStyle('AH2:AH' . $highestRow)->getNumberFormat()->setFormatCode('0');
-                $sheet->getStyle('AI2:AI' . $highestRow)->getNumberFormat()->setFormatCode('yyyy-mm-dd');
-                $sheet->getStyle('AJ2:AJ' . $highestRow)->getNumberFormat()->setFormatCode('"Rp"#,##0');
-                $sheet->getStyle('AR2:AR' . $highestRow)->getNumberFormat()->setFormatCode('0.##" h"');
+                $sheet->getStyle('AA2:AA' . $highestRow)->getNumberFormat()->setFormatCode('0.##" h"');
+                $sheet->getStyle('AB2:AB' . $highestRow)->getNumberFormat()->setFormatCode('0.##" h"');
+                $sheet->getStyle('AC2:AC' . $highestRow)->getNumberFormat()->setFormatCode('0%');
+                $sheet->getStyle('AE2:AE' . $highestRow)->getNumberFormat()->setFormatCode('yyyy-mm-dd');
+                $sheet->getStyle('AF2:AF' . $highestRow)->getNumberFormat()->setFormatCode('yyyy-mm-dd');
+                $sheet->getStyle('AG2:AG' . $highestRow)->getNumberFormat()->setFormatCode('hh:mm:ss');
+                $sheet->getStyle('AH2:AH' . $highestRow)->getNumberFormat()->setFormatCode('hh:mm:ss');
+                $sheet->getStyle('AO2:AO' . $highestRow)->getNumberFormat()->setFormatCode('yyyy-mm-dd');
+                $sheet->getStyle('AP2:AP' . $highestRow)->getNumberFormat()->setFormatCode('"Rp"#,##0');
             },
         ];
     }
