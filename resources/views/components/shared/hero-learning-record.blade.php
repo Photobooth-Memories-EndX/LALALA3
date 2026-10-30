@@ -74,7 +74,7 @@
                         </div>
                     @elseif($recordMode === 'all')
                         {{-- All Records Header Cards --}}
-                        <x-shared.learning-stat-large label="TOTAL LEARNING HOUR (All Record)" :value="number_format($stats['total_hours'], 2)" />
+                        <x-shared.learning-stat-large label="TOTAL LEARNING HOUR (ALL RECORD)" :value="number_format($stats['total_hours'], 2)" />
                         <div class="d-flex flex-column gap-2">
                             <x-shared.learning-stat-small label="LEARNING HOUR OWL" :value="number_format($stats['online_hours'], 2)" />
                             <x-shared.learning-stat-small label="LEARNING HOUR NON KP OWL" :value="number_format($stats['offline_hours'], 2)" />

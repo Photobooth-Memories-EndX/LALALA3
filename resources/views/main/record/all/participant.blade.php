@@ -292,7 +292,7 @@
                             <thead class="bg-light text-muted small text-uppercase">
                                 <tr>
                                     <th style="width: 45px; text-align: center;">NO</th>
-                                    <th style="min-width: 95px;">Source</th>
+                                    <th class="text-center align-middle whitespace-nowrap px-3" style="width: 1%;">Source</th>
                                     <th style="min-width: 110px;">Employee ID</th>
                                     <th style="min-width: 160px;">Employee Name</th>
                                     <th style="min-width: 130px;">Team</th>
@@ -729,7 +729,9 @@
                     {
                         data: 'source_badge',
                         name: 'source',
-                        orderable: true
+                        orderable: true,
+                        width: '1%',
+                        className: 'text-center align-middle whitespace-nowrap px-3'
                     },
                     {
                         data: 'employee_id',

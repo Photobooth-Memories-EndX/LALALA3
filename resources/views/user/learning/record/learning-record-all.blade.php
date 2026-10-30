@@ -813,7 +813,7 @@
                                         <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
                                     </span>
                                 </th>
-                                <th class="text-muted text-center record-sortable" style="width: 7%" data-sort-key="source" data-sort-type="text">
+                                <th class="text-muted text-center align-middle whitespace-nowrap px-3 record-sortable" style="width: 1%; white-space: nowrap;" data-sort-key="source" data-sort-type="text">
                                     <span class="record-sort-header">
                                         <span class="record-sort-label">Source</span>
                                         <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
@@ -914,7 +914,7 @@
                                 data-sort-certificate="{{ $allSortCert }}"
                                 data-sort-source="{{ $row['source'] ?? 'online' }}">
                                 <td class="text-center text-muted record-row-index">{{ $loop->iteration }}</td>
-                                <td class="text-center">
+                                <td class="text-center align-middle whitespace-nowrap px-3" style="width: 1%; white-space: nowrap;">
                                     @if (($row['source'] ?? '') === 'online')
                                         <span class="badge bg-blue-100 text-blue-700 rounded-pill px-2.5 py-1" style="background-color: #dbeafe !important; color: #1d4ed8 !important; font-weight: 600; font-size: 0.75rem;">KP OWL</span>
                                     @else

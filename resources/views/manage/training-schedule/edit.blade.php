@@ -142,16 +142,16 @@
                             $sDesc = is_array($sItem) ? ($sItem['description'] ?? $sItem['desc'] ?? '') : '';
                         @endphp
                         <div class="row g-2 align-items-center syllabus-row">
-                            <div class="col-md-2 col-12">
-                                <input type="text" class="form-control rounded-3 text-center bg-light fw-bold syllabus-point-badge" value="Point {{ $pointNum }}" readonly>
+                            <div class="col-auto" style="width: 50px;">
+                                <input type="text" class="form-control rounded-3 text-center bg-light fw-bold syllabus-point-badge px-1" value="{{ $pointNum }}" readonly>
                             </div>
-                            <div class="col-md-4 col-12">
+                            <div class="col-md-5 col-12">
                                 <input type="text" name="syllabus_title[]" class="form-control rounded-3" placeholder="Topic / Module Title" value="{{ $sTopic }}">
                             </div>
-                            <div class="col-md-5 col-10">
+                            <div class="col-md-5 col-10 flex-grow-1">
                                 <input type="text" name="syllabus_desc[]" class="form-control rounded-3" placeholder="Highlights / Key Points Covered" value="{{ $sDesc }}">
                             </div>
-                            <div class="col-md-1 col-2 text-center">
+                            <div class="col-auto text-center">
                                 <button type="button" class="btn btn-outline-danger btn-sm rounded-circle btn-remove-syllabus" title="Remove point" {{ count($syllabusList) === 1 ? 'disabled' : '' }}>
                                     <i class="ti ti-trash"></i>
                                 </button>
@@ -508,7 +508,7 @@ document.addEventListener('DOMContentLoaded', function () {
         rows.forEach((row, idx) => {
             const badge = row.querySelector('.syllabus-point-badge');
             if (badge) {
-                badge.value = `Point ${idx + 1}`;
+                badge.value = `${idx + 1}`;
             }
             const delBtn = row.querySelector('.btn-remove-syllabus');
             if (delBtn) {
@@ -525,16 +525,16 @@ document.addEventListener('DOMContentLoaded', function () {
             const newRow = document.createElement('div');
             newRow.className = 'row g-2 align-items-center syllabus-row';
             newRow.innerHTML = `
-                <div class="col-md-2 col-12">
-                    <input type="text" class="form-control rounded-3 text-center bg-light fw-bold syllabus-point-badge" value="Point ${newIndex}" readonly>
+                <div class="col-auto" style="width: 50px;">
+                    <input type="text" class="form-control rounded-3 text-center bg-light fw-bold syllabus-point-badge px-1" value="${newIndex}" readonly>
                 </div>
-                <div class="col-md-4 col-12">
+                <div class="col-md-5 col-12">
                     <input type="text" name="syllabus_title[]" class="form-control rounded-3" placeholder="Topic / Module Title">
                 </div>
-                <div class="col-md-5 col-10">
+                <div class="col-md-5 col-10 flex-grow-1">
                     <input type="text" name="syllabus_desc[]" class="form-control rounded-3" placeholder="Highlights / Key Points Covered">
                 </div>
-                <div class="col-md-1 col-2 text-center">
+                <div class="col-auto text-center">
                     <button type="button" class="btn btn-outline-danger btn-sm rounded-circle btn-remove-syllabus" title="Remove point">
                         <i class="ti ti-trash"></i>
                     </button>
