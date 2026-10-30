@@ -179,6 +179,16 @@
     }
 </style>
 
+@php
+    $startInTableView = request('view') === 'table';
+@endphp
+
+@if (!$startInTableView)
+<script>
+    document.body.classList.add('workstation-mode');
+</script>
+@endif
+
 {{-- ══════════════════════════════════════════════════════════════════════ --}}
 {{-- 1. STANDARD PAGE: Responses Table List                                 --}}
 {{-- ══════════════════════════════════════════════════════════════════════ --}}
@@ -217,6 +227,14 @@
                             <span class="ms-2">· {{ $task->fields->count() }} questions</span>
                         @endif
                     </div>
+                </div>
+                <div class="col-auto ms-auto d-print-none">
+                    <button type="button"
+                            class="btn btn-primary d-inline-flex align-items-center gap-1.5 shadow-sm px-3"
+                            onclick="showWorkstationView()">
+                        <i class="ti ti-layout-dashboard fs-2"></i>
+                        <span>Review Workstation</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -336,11 +354,10 @@
     <header class="workstation-header px-3 d-flex align-items-center justify-content-between flex-shrink-0">
         {{-- Left: Consistent Link-Style Back Button & Title --}}
         <div class="d-flex align-items-center gap-3 min-w-0">
-            <a href="javascript:void(0)"
-               onclick="closeWorkstation()"
+            <a href="{{ route('manage.task.parent', $task->parentRouteParams()) }}"
                class="text-primary text-decoration-none fw-semibold d-inline-flex align-items-center gap-1.5 flex-shrink-0"
                style="font-size: 13.5px;"
-               title="Back to responses table">
+               title="Back to task list">
                 <i class="ti ti-arrow-left fs-3"></i>
                 <span>Back</span>
             </a>
@@ -352,16 +369,26 @@
             </div>
         </div>
 
-        {{-- Right: Close Button --}}
-        <div class="d-flex align-items-center justify-content-end">
+        {{-- Right: Switch to Table View Button & Close Button --}}
+        <div class="d-flex align-items-center justify-content-end gap-2">
             <button type="button"
-                    class="btn btn-sm btn-ghost-secondary p-1 text-muted d-flex align-items-center justify-content-center"
-                    onclick="closeWorkstation()"
-                    title="Close & Return to Review"
-                    style="width: 32px; height: 32px; border-radius: 8px;">
+                    class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1.5 px-2.5 py-1 text-muted"
+                    onclick="showTableView()"
+                    title="Switch to Table View"
+                    style="font-size: 13px; border-radius: 6px;">
+                <i class="ti ti-table fs-3"></i>
+                <span>Table View</span>
+            </button>
+
+            <div class="vr my-1 text-muted d-none d-sm-block" style="height: 20px; opacity: 0.25;"></div>
+
+            <a href="{{ route('manage.task.parent', $task->parentRouteParams()) }}"
+               class="btn btn-sm btn-ghost-secondary p-1 text-muted d-flex align-items-center justify-content-center"
+               title="Close & Return to Review"
+               style="width: 32px; height: 32px; border-radius: 8px;">
                 <i class="ti ti-x fs-2"></i>
                 <span class="visually-hidden">Close &amp; Return to Review</span>
-            </button>
+            </a>
         </div>
     </header>
 
@@ -1276,21 +1303,42 @@
     var startX = 0, startY = 0;
     var translateX = 0, translateY = 0;
 
-    // ── Open / Close Workstation Overlay Modal ──────────────────────
-    window.openWorkstation = function (submissionId) {
-        document.body.classList.add('workstation-mode');
-
-        var targetId = parseInt(submissionId);
-        var targetIdx = submissionsData.findIndex(function (s) { return s.id === targetId; });
-        if (targetIdx !== -1) {
-            setActiveSubmissionByIndex(targetIdx);
-        } else if (submissionsData.length > 0) {
-            setActiveSubmissionByIndex(0);
+    // ── Open / Switch Views (Option B: Default Workstation with Table Switch) ──
+    window.showTableView = function () {
+        document.body.classList.remove('workstation-mode');
+        if (window.history && window.history.replaceState) {
+            var url = new URL(window.location);
+            url.searchParams.set('view', 'table');
+            window.history.replaceState({}, '', url);
         }
     };
 
+    window.showWorkstationView = function (submissionId) {
+        document.body.classList.add('workstation-mode');
+        if (submissionId !== undefined && submissionId !== null) {
+            var targetId = parseInt(submissionId);
+            var targetIdx = submissionsData.findIndex(function (s) { return s.id === targetId; });
+            if (targetIdx !== -1) {
+                setActiveSubmissionByIndex(targetIdx);
+            }
+        } else if (submissionsData.length > 0) {
+            if (currentSubmissionIndex < 0 || currentSubmissionIndex >= submissionsData.length) {
+                setActiveSubmissionByIndex(0);
+            }
+        }
+        if (window.history && window.history.replaceState) {
+            var url = new URL(window.location);
+            url.searchParams.delete('view');
+            window.history.replaceState({}, '', url);
+        }
+    };
+
+    window.openWorkstation = function (submissionId) {
+        window.showWorkstationView(submissionId);
+    };
+
     window.closeWorkstation = function () {
-        document.body.classList.remove('workstation-mode');
+        window.showTableView();
     };
 
     // ── Zoom & Pan Transform Engine ─────────────────────────────────
