@@ -3,6 +3,7 @@
 @section('title', 'Import History — Offline Training — OWL LMS')
 
 @push('styles')
+<link rel="stylesheet" href="{{ asset('css/dataTables.bootstrap5.min.css') }}">
 <link rel="stylesheet" href="{{ asset('css/manage/import-history.css') }}">
 @endpush
 
@@ -152,5 +153,7 @@
         }
     };
 </script>
+<script src="{{ asset('js/jquery.dataTables.min.js') }}"></script>
+<script src="{{ asset('js/dataTables.bootstrap5.min.js') }}"></script>
 <script src="{{ asset('js/manage/import-history.js') }}"></script>
 @endpush

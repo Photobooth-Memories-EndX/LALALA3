@@ -472,4 +472,113 @@ class ImportHistoryTest extends TestCase
         $this->assertGreaterThanOrEqual(1, $data['warning_batches']);
         $this->assertGreaterThanOrEqual(1, $data['failed_batches']);
     }
+
+    /** 20. View includes required DataTables JS and CSS assets */
+    public function test_import_history_view_includes_datatables_assets(): void
+    {
+        $response = $this->actingAs($this->admin)
+            ->get(route('manage.record.offline.import-history.index'));
+
+        $response->assertStatus(200);
+        $response->assertSee('dataTables.bootstrap5.min.css');
+        $response->assertSee('jquery.dataTables.min.js');
+        $response->assertSee('dataTables.bootstrap5.min.js');
+    }
+
+    /** 21. Filter by warning status works */
+    public function test_filter_status_warning_works(): void
+    {
+        $warningBatch = $this->createTestBatch(['status' => ImportBatch::STATUS_COMPLETED_WITH_WARNINGS]);
+        $completedBatch = $this->createTestBatch(['status' => ImportBatch::STATUS_COMPLETED]);
+
+        $response = $this->actingAs($this->admin)
+            ->getJson(route('manage.record.offline.import-history.datatable', ['status' => 'COMPLETED_WITH_WARNINGS']));
+
+        $response->assertStatus(200);
+        $response->assertJsonFragment(['batch_uuid' => $warningBatch->batch_uuid]);
+        $response->assertJsonMissing(['batch_uuid' => $completedBatch->batch_uuid]);
+    }
+
+    /** 22. Filter by user works */
+    public function test_filter_by_user_works(): void
+    {
+        $otherUser = $this->createTestUser();
+        $batchMyUser = $this->createTestBatch(['imported_by' => $this->admin->id]);
+        $batchOther = $this->createTestBatch(['imported_by' => $otherUser->id]);
+
+        $response = $this->actingAs($this->admin)
+            ->getJson(route('manage.record.offline.import-history.datatable', ['user_id' => $otherUser->id]));
+
+        $response->assertStatus(200);
+        $response->assertJsonFragment(['batch_uuid' => $batchOther->batch_uuid]);
+        $response->assertJsonMissing(['batch_uuid' => $batchMyUser->batch_uuid]);
+    }
+
+    /** 23. Search by filename and UUID works */
+    public function test_search_by_filename_and_uuid_works(): void
+    {
+        $batchSpecialFile = $this->createTestBatch(['original_filename' => 'special_unique_filename_xyz.xlsx']);
+        $batchOther = $this->createTestBatch(['original_filename' => 'standard_payroll.xlsx']);
+
+        // Search by unique filename keyword
+        $respFile = $this->actingAs($this->admin)
+            ->getJson(route('manage.record.offline.import-history.datatable', ['search_query' => 'unique_filename_xyz']));
+        $respFile->assertStatus(200);
+        $respFile->assertJsonFragment(['batch_uuid' => $batchSpecialFile->batch_uuid]);
+        $respFile->assertJsonMissing(['batch_uuid' => $batchOther->batch_uuid]);
+
+        // Search by UUID substring
+        $uuidSubstring = substr($batchOther->batch_uuid, 0, 12);
+        $respUuid = $this->actingAs($this->admin)
+            ->getJson(route('manage.record.offline.import-history.datatable', ['search_query' => $uuidSubstring]));
+        $respUuid->assertStatus(200);
+        $respUuid->assertJsonFragment(['batch_uuid' => $batchOther->batch_uuid]);
+        $respUuid->assertJsonMissing(['batch_uuid' => $batchSpecialFile->batch_uuid]);
+    }
+
+    /** 24. Full DataTables browser payload with pagination and sort works */
+    public function test_full_datatables_browser_payload_with_pagination_and_sort_works(): void
+    {
+        $batchA = $this->createTestBatch(['total_rows' => 50, 'started_at' => now()->subMinutes(10)]);
+        $batchB = $this->createTestBatch(['total_rows' => 10, 'started_at' => now()->subMinutes(5)]);
+
+        $payload = [
+            'draw'   => 2,
+            'start'  => 0,
+            'length' => 10,
+            'order'  => [
+                0 => ['column' => 7, 'dir' => 'asc'] // Column 7 is total_rows
+            ],
+            'columns' => [
+                0 => ['data' => 'DT_RowIndex', 'name' => 'id'],
+                1 => ['data' => 'batch_uuid', 'name' => 'batch_uuid'],
+                2 => ['data' => 'source_badge', 'name' => 'source_type'],
+                3 => ['data' => 'original_filename', 'name' => 'original_filename'],
+                4 => ['data' => 'user_name', 'name' => 'user_name'],
+                5 => ['data' => 'started_at_formatted', 'name' => 'started_at'],
+                6 => ['data' => 'finished_at_formatted', 'name' => 'finished_at'],
+                7 => ['data' => 'total_rows', 'name' => 'total_rows'],
+                8 => ['data' => 'imported_rows', 'name' => 'imported_rows'],
+                9 => ['data' => 'skipped_rows', 'name' => 'skipped_rows'],
+                10 => ['data' => 'failed_rows', 'name' => 'failed_rows'],
+                11 => ['data' => 'status_badge', 'name' => 'status'],
+                12 => ['data' => 'actions', 'name' => 'actions'],
+            ],
+            'source_type'  => '',
+            'status'       => '',
+            'user_id'      => '',
+            'date_start'   => '',
+            'date_end'     => '',
+            'search_query' => '',
+        ];
+
+        $response = $this->actingAs($this->admin)
+            ->getJson(route('manage.record.offline.import-history.datatable', $payload));
+
+        $response->assertStatus(200);
+        $json = $response->json();
+        $this->assertEquals(2, $json['draw']);
+        $this->assertGreaterThanOrEqual(2, $json['recordsTotal']);
+        $this->assertNotEmpty($json['data']);
+    }
 }

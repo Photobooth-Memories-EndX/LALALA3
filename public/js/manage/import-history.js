@@ -25,6 +25,9 @@
             processing: true,
             serverSide: true,
             responsive: true,
+            pageLength: 10,
+            lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+            dom: '<"top">rt<"bottom d-flex flex-column flex-md-row justify-content-between align-items-center mt-3 gap-2"l ip><"clear">',
             searchDelay: 500,
             ajax: {
                 url: window.importHistoryConfig.routes.datatable,
@@ -60,7 +63,7 @@
                         return `<span class="filename-truncate" title="${safe}"><i class="ti ti-file-text text-muted me-1"></i>${safe}</span>`;
                     }
                 },
-                { data: 'user_name', name: 'imported_by' },
+                { data: 'user_name', name: 'user_name' },
                 { data: 'started_at_formatted', name: 'started_at', className: 'text-nowrap small text-muted' },
                 { data: 'finished_at_formatted', name: 'finished_at', className: 'text-nowrap small text-muted' },
                 { data: 'total_rows', name: 'total_rows', className: 'text-center fw-bold' },
@@ -121,7 +124,7 @@
             refreshSummaryCards();
         });
 
-        $('#filter-source-type, #filter-status, #filter-user').on('change', function () {
+        $('#filter-source-type, #filter-status, #filter-user, #filter-date-start, #filter-date-end').on('change', function () {
             if (batchesTable) batchesTable.ajax.reload();
         });
 
@@ -300,6 +303,8 @@
             serverSide: true,
             responsive: true,
             pageLength: 10,
+            lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+            dom: '<"top">rt<"bottom d-flex flex-column flex-md-row justify-content-between align-items-center mt-3 gap-2"l ip><"clear">',
             searchDelay: 400,
             ajax: {
                 url: rowsUrl,

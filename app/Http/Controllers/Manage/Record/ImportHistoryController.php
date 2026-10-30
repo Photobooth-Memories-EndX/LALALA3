@@ -53,6 +53,9 @@ class ImportHistoryController extends Controller
      */
     public function datatable(Request $request): JsonResponse
     {
+        app()->instance('request', $request);
+        app()->forgetInstance('datatables.request');
+
         $filters = [
             'source_type' => $request->input('source_type'),
             'status'      => $request->input('status'),
@@ -75,14 +78,36 @@ class ImportHistoryController extends Controller
                 }
                 return '<span class="badge badge-outline text-warning border-warning px-2 py-1"><i class="ti ti-file-spreadsheet me-1"></i>Non PTKP</span>';
             })
+            ->filterColumn('source_badge', function ($query, $keyword) {
+                $query->where('import_batches.source_type', 'LIKE', "%{$keyword}%");
+            })
+            ->orderColumn('source_badge', function ($query, $order) {
+                $query->orderBy('import_batches.source_type', $order);
+            })
             ->addColumn('user_name', function (ImportBatch $batch) {
                 return e($batch->importedBy?->name ?? $batch->importedBy?->email ?? 'System');
+            })
+            ->filterColumn('user_name', function ($query, $keyword) {
+                $query->whereHas('importedBy', function ($sub) use ($keyword) {
+                    $sub->where('name', 'LIKE', "%{$keyword}%")
+                        ->orWhere('email', 'LIKE', "%{$keyword}%");
+                });
+            })
+            ->orderColumn('user_name', function ($query, $order) {
+                $query->leftJoin('users as u_sort', 'u_sort.id', '=', 'import_batches.imported_by')
+                    ->orderBy('u_sort.name', $order);
             })
             ->addColumn('started_at_formatted', function (ImportBatch $batch) {
                 return $batch->started_at ? $batch->started_at->format('Y-m-d H:i:s') : '-';
             })
+            ->orderColumn('started_at_formatted', function ($query, $order) {
+                $query->orderBy('import_batches.started_at', $order);
+            })
             ->addColumn('finished_at_formatted', function (ImportBatch $batch) {
                 return $batch->finished_at ? $batch->finished_at->format('Y-m-d H:i:s') : '-';
+            })
+            ->orderColumn('finished_at_formatted', function ($query, $order) {
+                $query->orderBy('import_batches.finished_at', $order);
             })
             ->addColumn('status_badge', function (ImportBatch $batch) {
                 return match ($batch->status) {
@@ -92,6 +117,12 @@ class ImportHistoryController extends Controller
                     ImportBatch::STATUS_IMPORTING => '<span class="badge bg-info-lt text-info fw-bold px-2 py-1"><i class="ti ti-loader me-1 spin"></i>Processing</span>',
                     default => '<span class="badge bg-secondary-lt text-secondary fw-bold px-2 py-1">' . e($batch->status) . '</span>',
                 };
+            })
+            ->filterColumn('status_badge', function ($query, $keyword) {
+                $query->where('import_batches.status', 'LIKE', "%{$keyword}%");
+            })
+            ->orderColumn('status_badge', function ($query, $order) {
+                $query->orderBy('import_batches.status', $order);
             })
             ->addColumn('has_file', function (ImportBatch $batch) {
                 return $batch->hasStoredFile();
@@ -177,6 +208,9 @@ class ImportHistoryController extends Controller
      */
     public function rowsDatatable(string $uuid, Request $request): JsonResponse
     {
+        app()->instance('request', $request);
+        app()->forgetInstance('datatables.request');
+
         $batch = $this->queryService->getBatchByUuid($uuid);
         if (!$batch) {
             return response()->json(['error' => 'Batch not found.'], 404);

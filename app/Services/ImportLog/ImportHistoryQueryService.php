@@ -116,7 +116,11 @@ class ImportHistoryQueryService
             });
         }
 
-        return $query->orderBy('started_at', 'desc');
+        if (empty($filters['no_default_order']) && !request()->filled('order')) {
+            $query->orderBy('started_at', 'desc');
+        }
+
+        return $query;
     }
 
     /**
