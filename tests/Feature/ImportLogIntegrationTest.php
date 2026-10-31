@@ -411,8 +411,6 @@ class ImportLogIntegrationTest extends TestCase
     protected function buildNonPtkpRow(array $overrides = []): array
     {
         $m = array_merge([
-            'status'                   => 'Valid',
-            'row_no'                   => 1,
             'employee_id'              => '100999',
             'name'                     => 'John Doe Non PTKP',
             'grade'                    => '4A',

@@ -150,7 +150,8 @@ $(document).ready(function () {
         if (headerCheck && typeof headerCheck.can_proceed !== 'undefined') {
             $('#non-ptkp-header-check-card').show();
             const formatName = data.format === '2_ROW_GROUPED' ? '2-Row Grouped Headers' : 'Single-Row Canonical Headers';
-            $('#non-ptkp-header-check-subtitle').text(`${formatName} • 48 Canonical Columns`);
+            const colCount = headerCheck.expected_columns || headerCheck.expected_count || 46;
+            $('#non-ptkp-header-check-subtitle').text(`${formatName} • ${colCount} Canonical Columns`);
             $('#non-ptkp-badge-header-valid').toggle(!!headerCheck.can_proceed);
             $('#non-ptkp-badge-header-invalid').toggle(!headerCheck.can_proceed);
         } else {

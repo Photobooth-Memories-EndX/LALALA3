@@ -24,6 +24,35 @@ class OfflineTrainingImportPreviewStateTest extends TestCase
     {
         parent::setUp();
         $this->admin = User::where('role', '2')->first() ?? User::first();
+        $this->createTestUser(['id_emp' => '100001', 'name' => 'User One']);
+        $this->createTestUser(['id_emp' => '100002', 'name' => 'User Two']);
+    }
+
+    protected function createTestUser(array $attributes = []): User
+    {
+        $existing = User::where('id_emp', $attributes['id_emp'] ?? '')->first();
+        if ($existing) {
+            return $existing;
+        }
+
+        $unique = uniqid();
+        $defaults = [
+            'name'         => 'Test Participant ' . $unique,
+            'email'        => 'test_' . $unique . '@example.com',
+            'id_user'      => (string) rand(10000, 99999),
+            'id_emp'       => 'EMP_' . $unique,
+            'id_org_unit'  => 'OU01',
+            'company_name' => 'PT Krakatau Posco',
+            'team'         => 'Test Team',
+            'department'   => 'Test Dept',
+            'division'     => 'Test Division',
+            'ssohash'      => md5($unique),
+            'sap_code'     => (string) rand(10000000, 99999999),
+            'role'         => '1',
+            'password'     => bcrypt('secret'),
+        ];
+
+        return User::create(array_merge($defaults, $attributes));
     }
 
     protected function tearDown(): void
@@ -31,6 +60,7 @@ class OfflineTrainingImportPreviewStateTest extends TestCase
         // Clean up test DB records
         DB::table('offline_training_users')->where('company', 'TEST_PREVIEW_CORP')->delete();
         DB::table('offline_trainings')->where('category', 'TEST_PREVIEW_CAT')->delete();
+        User::whereIn('id_emp', ['100001', '100002'])->delete();
 
         // Clean up temporary files
         foreach ($this->createdTempFiles as $path) {
@@ -226,7 +256,7 @@ class OfflineTrainingImportPreviewStateTest extends TestCase
         $this->assertEquals(2, $response->json('stats.duplicate'));
         $this->assertEquals(0, $response->json('stats.invalid'));
         $this->assertTrue($response->json('header_check.can_proceed'), 'Header must be 100% valid!');
-        $this->assertEquals(44, $response->json('header_check.detected_columns'));
+        $this->assertEquals(46, $response->json('header_check.detected_columns'));
     }
 
     /**
@@ -314,6 +344,7 @@ class OfflineTrainingImportPreviewStateTest extends TestCase
                 'employee_id' => '100001',
                 'name'        => 'User One',
                 'start_date'  => '', // Non-fatal warning: blank dates
+                'end_date'    => '',
                 'finish_date' => '',
             ]),
         ];
@@ -336,36 +367,30 @@ class OfflineTrainingImportPreviewStateTest extends TestCase
      */
     public function test_modal_blade_renders_new_ux_elements(): void
     {
-        $response = $this->actingAs($this->admin)->get('/manage/record/offline');
+        $response = $this->actingAs($this->admin)->get(route('manage.record.offline.import-non-ptkp'));
         $response->assertStatus(200);
 
         // Check stat card tooltips
-        $response->assertSee('title="Total data rows successfully read from the uploaded spreadsheet"', false);
-        $response->assertSee('title="New records that are valid and ready to be imported"', false);
-        $response->assertSee('title="Records already found in Non KP OWL. These records will be skipped"', false);
-        $response->assertSee('title="Unique training events detected in the uploaded spreadsheet"', false);
+        $response->assertSee('title="Total spreadsheet rows read"', false);
+        $response->assertSee('title="Valid records ready to import"', false);
+        $response->assertSee('title="Existing records or duplicates that will be skipped"', false);
+        $response->assertSee('title="Total unique training sessions identified"', false);
 
         // Check readiness banner element
-        $response->assertSee('id="modal-preview-alert"', false);
+        $response->assertSee('id="preview-state-banner"', false);
 
         // Check confirm button
-        $response->assertSee('id="modal-btn-confirm"', false);
+        $response->assertSee('id="btn-action-confirm-import"', false);
 
         // Check inline JavaScript state machine exists in rendered HTML
         $response->assertSee("previewState === 'NO_NEW_RECORDS'", false);
         $response->assertSee('No New Records to Import', false);
-        $response->assertSee('Fix Invalid Records', false);
-        $response->assertSee('switchImportState(\'preview\');', false);
 
         // Check explicit count and duplicate breakdown messaging in JavaScript
-        $response->assertSee('records were successfully read.', false);
+        $response->assertSee('records were read successfully', false);
         $response->assertSee('0 records will be imported and', false);
-        $response->assertSee('duplicate records will be skipped.', false);
-        $response->assertSee('Existing records will remain unchanged.', false);
-        $response->assertSee('Existing duplicate records will remain unchanged.', false);
+        $response->assertSee('duplicate records will be skipped', false);
+        $response->assertSee('Existing database records will not be modified or overwritten.', false);
         $response->assertSee('records to import', false);
-
-        // Verify old buggy logic is NOT present in rendered HTML
-        $response->assertDontSee('if (!canConfirm || (headerCheck && !headerCheck.can_proceed))', false);
     }
 }

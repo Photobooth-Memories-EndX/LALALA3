@@ -80,8 +80,6 @@ class NonPtkpImportTest extends TestCase
     protected function buildNonPtkpRow(array $overrides = []): array
     {
         $m = array_merge([
-            'status'                   => 'Valid',
-            'row_no'                   => 1,
             'employee_id'              => '100999',
             'name'                     => 'John Doe Non PTKP',
             'grade'                    => '4A',
@@ -131,8 +129,6 @@ class NonPtkpImportTest extends TestCase
         ], $overrides);
 
         return [
-            $m['status'],
-            $m['row_no'],
             $m['employee_id'],
             $m['name'],
             $m['grade'],
@@ -1183,89 +1179,32 @@ class NonPtkpImportTest extends TestCase
     }
 
     /**
-     * 22. Test 12 group header ranges, Service Bond (AH-AL), Evaluation (AM-AQ), and freeze pane at D3.
+     * 22. Test simplified single-row header template structure and freeze pane at A2.
      */
     public function test_non_ptkp_group_header_ranges_and_service_bond_evaluation_boundary(): void
     {
+        // Canonical template has no category group headers
         $groups = OfflineTrainingExcelSchema::groups();
-        $this->assertCount(12, $groups);
-
-        // Verify exact titles and column ranges
-        $this->assertSame('STATUS', $groups['status']['title']);
-        $this->assertSame('A', $groups['status']['start_col']);
-        $this->assertSame('B', $groups['status']['end_col']);
-
-        $this->assertSame('PARTICIPANT PROFILE', $groups['participant_profile']['title']);
-        $this->assertSame('C', $groups['participant_profile']['start_col']);
-        $this->assertSame('I', $groups['participant_profile']['end_col']);
-
-        $this->assertSame('TRAINING INFORMATION', $groups['training_information']['title']);
-        $this->assertSame('J', $groups['training_information']['start_col']);
-        $this->assertSame('O', $groups['training_information']['end_col']);
-
-        $this->assertSame('CLASSIFICATION', $groups['classification']['title']);
-        $this->assertSame('P', $groups['classification']['start_col']);
-        $this->assertSame('Q', $groups['classification']['end_col']);
-
-        $this->assertSame('METHOD & DELIVERY', $groups['method_delivery']['title']);
-        $this->assertSame('R', $groups['method_delivery']['start_col']);
-        $this->assertSame('S', $groups['method_delivery']['end_col']);
-
-        $this->assertSame('ORGANIZER & LOGISTICS', $groups['organizer_logistics']['title']);
-        $this->assertSame('T', $groups['organizer_logistics']['start_col']);
-        $this->assertSame('X', $groups['organizer_logistics']['end_col']);
-
-        $this->assertSame('PROGRESS & SCHEDULE', $groups['progress_schedule']['title']);
-        $this->assertSame('Y', $groups['progress_schedule']['start_col']);
-        $this->assertSame('AE', $groups['progress_schedule']['end_col']);
-
-        $this->assertSame('COMPLIANCE', $groups['compliance']['title']);
-        $this->assertSame('AF', $groups['compliance']['start_col']);
-        $this->assertSame('AG', $groups['compliance']['end_col']);
-
-        // Service Bond MUST include Bond Amount (AL)
-        $this->assertSame('SERVICE BOND', $groups['service_bond']['title']);
-        $this->assertSame('AH', $groups['service_bond']['start_col']);
-        $this->assertSame('AL', $groups['service_bond']['end_col']);
-        $this->assertContains(38, $groups['service_bond']['columns']); // Col 38 is AL
-
-        // Evaluation MUST be AM to AQ
-        $this->assertSame('EVALUATION (L1-L3)', $groups['evaluation']['title']);
-        $this->assertSame('AM', $groups['evaluation']['start_col']);
-        $this->assertSame('AQ', $groups['evaluation']['end_col']);
-        $this->assertSame([39, 40, 41, 42, 43], $groups['evaluation']['columns']);
-
-        $this->assertSame('CERTIFICATE', $groups['certificate']['title']);
-        $this->assertSame('AR', $groups['certificate']['start_col']);
-        $this->assertSame('AU', $groups['certificate']['end_col']);
-
-        $this->assertSame('ADMINISTRATION', $groups['administration']['title']);
-        $this->assertSame('AV', $groups['administration']['start_col']);
-        $this->assertSame('AV', $groups['administration']['end_col']);
+        $this->assertEmpty($groups);
 
         // Verify generated spreadsheet styling
         $spreadsheet = OfflineTrainingExcelSchema::generateTemplateSpreadsheet();
         $sheet = $spreadsheet->getSheet(0);
 
-        $this->assertSame('STATUS', $sheet->getCell('A1')->getValue());
-        $this->assertSame('PARTICIPANT PROFILE', $sheet->getCell('C1')->getValue());
-        $this->assertSame('TRAINING INFORMATION', $sheet->getCell('J1')->getValue());
-        $this->assertSame('CLASSIFICATION', $sheet->getCell('P1')->getValue());
-        $this->assertSame('METHOD & DELIVERY', $sheet->getCell('R1')->getValue());
-        $this->assertSame('ORGANIZER & LOGISTICS', $sheet->getCell('T1')->getValue());
-        $this->assertSame('PROGRESS & SCHEDULE', $sheet->getCell('Y1')->getValue());
-        $this->assertSame('COMPLIANCE', $sheet->getCell('AF1')->getValue());
-        $this->assertSame('SERVICE BOND', $sheet->getCell('AH1')->getValue());
-        $this->assertSame('EVALUATION (L1-L3)', $sheet->getCell('AM1')->getValue());
-        $this->assertSame('CERTIFICATE', $sheet->getCell('AR1')->getValue());
-        $this->assertSame('ADMINISTRATION', $sheet->getCell('AV1')->getValue());
+        // Single-row canonical headers on Row 1 (46 columns: Employee ID through PIC)
+        $this->assertSame('Employee ID', $sheet->getCell('A1')->getValue());
+        $this->assertSame('Course Title', $sheet->getCell('H1')->getValue());
+        $this->assertSame('Bond Amount', $sheet->getCell('AJ1')->getValue());
+        $this->assertSame('Score (L1) - Course', $sheet->getCell('AK1')->getValue());
+        $this->assertSame('Person in Charge (PIC)', $sheet->getCell('AT1')->getValue());
 
-        // Col AL (38) is Bond Amount
-        $this->assertSame('Bond Amount', $sheet->getCell('AL2')->getValue());
-        // Col AM (39) is Score (L1) - Course
-        $this->assertSame('Score (L1) - Course', $sheet->getCell('AM2')->getValue());
+        // Freeze pane is A2
+        $this->assertSame('A2', $sheet->getFreezePane());
 
-        // Freeze pane is D3
-        $this->assertSame('D3', $sheet->getFreezePane());
+        // Auto filter covers A1:AT1
+        $this->assertSame('A1:AT1', $sheet->getAutoFilter()->getRange());
+
+        // No merged cells on Row 1
+        $this->assertEmpty($sheet->getMergeCells());
     }
 }

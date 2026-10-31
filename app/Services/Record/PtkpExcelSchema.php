@@ -12,7 +12,7 @@ class PtkpExcelSchema
     public const INSTRUCTIONS_SHEET_TITLE = 'Instructions';
 
     /**
-     * Canonical 48-column specification for PTKP Import.
+     * Canonical 46-column specification for PTKP Import.
      */
     public static function columns(): array
     {
@@ -20,7 +20,7 @@ class PtkpExcelSchema
     }
 
     /**
-     * Exact flat list of 48 canonical header strings.
+     * Exact flat list of 46 canonical header strings.
      */
     public static function headers(): array
     {
@@ -33,126 +33,69 @@ class PtkpExcelSchema
 
     public static function totalColumns(): int
     {
-        return count(self::columns()); // 48
+        return count(self::columns()); // 46
     }
 
     /**
-     * Parent grouping specification for canonical 48 columns (A to AV).
+     * Group definitions (empty array for simplified single-row header template).
      */
     public static function groups(): array
     {
-        return [
-            'status' => [
-                'title'     => 'STATUS',
-                'start_col' => 'A',
-                'end_col'   => 'B',
-                'fill'      => '4B5563',
-                'color'     => 'FFFFFF',
-                'columns'   => [1, 2],
-            ],
-            'participant_profile' => [
-                'title'     => 'PARTICIPANT PROFILE',
-                'start_col' => 'C',
-                'end_col'   => 'I',
-                'fill'      => '002B49',
-                'color'     => 'FFFFFF',
-                'columns'   => [3, 4, 5, 6, 7, 8, 9],
-            ],
-            'training_information' => [
-                'title'     => 'TRAINING INFORMATION',
-                'start_col' => 'J',
-                'end_col'   => 'O',
-                'fill'      => '0C5B9E',
-                'color'     => 'FFFFFF',
-                'columns'   => [10, 11, 12, 13, 14, 15],
-            ],
-            'classification' => [
-                'title'     => 'CLASSIFICATION',
-                'start_col' => 'P',
-                'end_col'   => 'Q',
-                'fill'      => '1B4D3E',
-                'color'     => 'FFFFFF',
-                'columns'   => [16, 17],
-            ],
-            'method_delivery' => [
-                'title'     => 'METHOD & DELIVERY',
-                'start_col' => 'R',
-                'end_col'   => 'S',
-                'fill'      => '3B82F6',
-                'color'     => 'FFFFFF',
-                'columns'   => [18, 19],
-            ],
-            'organizer_logistics' => [
-                'title'     => 'ORGANIZER & LOGISTICS',
-                'start_col' => 'T',
-                'end_col'   => 'X',
-                'fill'      => '475569',
-                'color'     => 'FFFFFF',
-                'columns'   => [20, 21, 22, 23, 24],
-            ],
-            'progress_schedule' => [
-                'title'     => 'PROGRESS & SCHEDULE',
-                'start_col' => 'Y',
-                'end_col'   => 'AE',
-                'fill'      => '0284C7',
-                'color'     => 'FFFFFF',
-                'columns'   => [25, 26, 27, 28, 29, 30, 31],
-            ],
-            'compliance' => [
-                'title'     => 'COMPLIANCE',
-                'start_col' => 'AF',
-                'end_col'   => 'AG',
-                'fill'      => 'D97706',
-                'color'     => 'FFFFFF',
-                'columns'   => [32, 33],
-            ],
-            'service_bond' => [
-                'title'     => 'SERVICE BOND',
-                'start_col' => 'AH',
-                'end_col'   => 'AL',
-                'fill'      => '7C3AED',
-                'color'     => 'FFFFFF',
-                'columns'   => [34, 35, 36, 37, 38],
-            ],
-            'evaluation' => [
-                'title'     => 'EVALUATION (L1-L3)',
-                'start_col' => 'AM',
-                'end_col'   => 'AQ',
-                'fill'      => 'BE185D',
-                'color'     => 'FFFFFF',
-                'columns'   => [39, 40, 41, 42, 43],
-            ],
-            'certificate' => [
-                'title'     => 'CERTIFICATE',
-                'start_col' => 'AR',
-                'end_col'   => 'AU',
-                'fill'      => '0D9488',
-                'color'     => 'FFFFFF',
-                'columns'   => [44, 45, 46, 47],
-            ],
-            'administration' => [
-                'title'     => 'ADMINISTRATION',
-                'start_col' => 'AV',
-                'end_col'   => 'AV',
-                'fill'      => '059669',
-                'color'     => 'FFFFFF',
-                'columns'   => [48],
-            ],
-        ];
+        return [];
     }
 
     /**
-     * Column widths matching the 48 columns.
+     * Column widths matching the 46 canonical columns (A to AT).
      */
     public static function columnWidths(): array
     {
         return [
-            'A' => 12, 'B' => 8,  'C' => 16, 'D' => 30, 'E' => 12, 'F' => 25, 'G' => 20, 'H' => 25,
-            'I' => 25, 'J' => 35, 'K' => 25, 'L' => 15, 'M' => 18, 'N' => 12, 'O' => 12, 'P' => 25,
-            'Q' => 25, 'R' => 18, 'S' => 20, 'T' => 18, 'U' => 18, 'V' => 25, 'W' => 20, 'X' => 22,
-            'Y' => 16, 'Z' => 14, 'AA' => 14, 'AB' => 14, 'AC' => 14, 'AD' => 14, 'AE' => 16, 'AF' => 15,
-            'AG' => 14, 'AH' => 25, 'AI' => 14, 'AJ' => 16, 'AK' => 15, 'AL' => 18, 'AM' => 20, 'AN' => 14,
-            'AO' => 14, 'AP' => 14, 'AQ' => 14, 'AR' => 22, 'AS' => 24, 'AT' => 22, 'AU' => 22, 'AV' => 24,
+            'A'  => 16, // Employee ID
+            'B'  => 30, // Employee Name
+            'C'  => 12, // Grade
+            'D'  => 25, // Job Position
+            'E'  => 20, // Team
+            'F'  => 25, // Department
+            'G'  => 25, // Company
+            'H'  => 35, // Course Title
+            'I'  => 25, // Sub Course Title
+            'J'  => 15, // Type
+            'K'  => 18, // Category
+            'L'  => 12, // Level
+            'M'  => 12, // Batch
+            'N'  => 25, // Main Classification
+            'O'  => 25, // Sub Classification
+            'P'  => 18, // Delivery Method
+            'Q'  => 20, // Sub Delivery Method
+            'R'  => 18, // Provider
+            'S'  => 18, // Sub Provider
+            'T'  => 25, // Provider Name
+            'U'  => 20, // Venue
+            'V'  => 22, // Instructor
+            'W'  => 16, // Learning Hours
+            'X'  => 14, // % Progress
+            'Y'  => 14, // Start Date
+            'Z'  => 14, // End Date
+            'AA' => 14, // Start Time
+            'AB' => 14, // End Time
+            'AC' => 16, // Record Month
+            'AD' => 15, // Requirement
+            'AE' => 14, // Attendance
+            'AF' => 25, // Attendance Reason
+            'AG' => 14, // Bond Status
+            'AH' => 16, // Bond Duration
+            'AI' => 15, // Bond End Date
+            'AJ' => 18, // Bond Amount
+            'AK' => 20, // Score (L1) - Course
+            'AL' => 14, // Score (L2)
+            'AM' => 14, // L2 Status
+            'AN' => 14, // Score (L3)
+            'AO' => 14, // L3 Status
+            'AP' => 22, // Certificate Availability
+            'AQ' => 24, // Certificate Institution
+            'AR' => 22, // Certificate Issued Date
+            'AS' => 22, // Certificate Expired Date
+            'AT' => 24, // Person in Charge (PIC)
         ];
     }
 
@@ -197,20 +140,16 @@ class PtkpExcelSchema
         $r1Col1 = mb_strtolower($row1Cells[1] ?? '', 'UTF-8');
         $r1Col2 = mb_strtolower($row1Cells[2] ?? '', 'UTF-8');
         $r1Col3 = mb_strtolower($row1Cells[3] ?? '', 'UTF-8');
-        $r2Col1 = mb_strtolower($row2Cells[1] ?? '', 'UTF-8');
-        $r2Col2 = mb_strtolower($row2Cells[2] ?? '', 'UTF-8');
-        $r2Col3 = mb_strtolower($row2Cells[3] ?? '', 'UTF-8');
-
-        $row1HasCourseHeader = str_contains($row1Joined, 'course title') ||
-                               str_contains($row1Joined, 'course name') ||
-                               str_contains($row1Joined, 'nama course') ||
-                               str_contains($row1Joined, 'judul');
-
         $row2Joined = mb_strtolower(implode(' ', $row2Cells), 'UTF-8');
         $row2HasCourseHeader = str_contains($row2Joined, 'course title') ||
                                str_contains($row2Joined, 'course name') ||
                                str_contains($row2Joined, 'nama course') ||
                                str_contains($row2Joined, 'judul');
+
+        $row1HasCourseHeader = str_contains($row1Joined, 'course title') ||
+                               str_contains($row1Joined, 'course name') ||
+                               str_contains($row1Joined, 'nama course') ||
+                               str_contains($row1Joined, 'judul');
 
         $isLegacyTwoRow = !$row1HasCourseHeader && (
             str_contains($r1Col3, 'participant profile') ||
@@ -223,10 +162,8 @@ class PtkpExcelSchema
             str_contains($row1Joined, 'evaluation')
         ) && (
             $row2HasCourseHeader ||
-            str_contains($r2Col3, 'employee') ||
-            in_array($r2Col3, ['id', 'nip'], true) ||
-            in_array($r2Col2, ['no', 'no.', 'nomor'], true) ||
-            str_contains($r2Col1, 'status')
+            str_contains(mb_strtolower($row2Cells[3] ?? '', 'UTF-8'), 'employee') ||
+            str_contains(mb_strtolower($row2Cells[1] ?? '', 'UTF-8'), 'employee')
         );
 
         if ($isLegacyTwoRow) {
@@ -275,14 +212,19 @@ class PtkpExcelSchema
     }
 
     /**
-     * Header analysis specifically for canonical 48 PTKP columns with resilient mapping.
+     * Header analysis specifically for canonical 46 PTKP columns with resilient mapping.
+     * Gracefully supports:
+     * 1. Simplified canonical 46 columns (starts with Employee ID at col 1)
+     * 2. 47-column format (starts with leading No column)
+     * 3. 48-column format (starts with leading Status & No columns)
      */
     public static function analyzeHeaders(array $foundHeaders, string $format = 'single_row'): array
     {
-        $columns = self::columns();
-        $expectedCount = count($columns); // 48
+        $columns = self::columns(); // 46 canonical columns
+        $canonicalCount = count($columns); // 46
         $detectedCount = count($foundHeaders);
 
+        // Precompute canonical map
         $canonicalMap = [];
         $aliasToKeyMap = [];
         foreach ($columns as $idx => $col) {
@@ -305,6 +247,34 @@ class PtkpExcelSchema
             }
         }
 
+        // Determine if there are leading auxiliary columns (Status / No)
+        $h1 = isset($foundHeaders[1]) ? self::normalizeHeaderString($foundHeaders[1]) : '';
+        $h2 = isset($foundHeaders[2]) ? self::normalizeHeaderString($foundHeaders[2]) : '';
+        $h3 = isset($foundHeaders[3]) ? self::normalizeHeaderString($foundHeaders[3]) : '';
+
+        $statusAliases = ['status', 'status validasi', 'system status', 'validation status', 'row status', 'stat'];
+        $noAliases = ['no', 'no.', 'nomor', '#', 'row no', 'seq'];
+
+        $offset = 0;
+        $hasLeadingStatus = false;
+        $hasLeadingNo = false;
+
+        if (in_array($h1, $statusAliases, true)) {
+            $hasLeadingStatus = true;
+            if (in_array($h2, $noAliases, true)) {
+                $hasLeadingNo = true;
+                $offset = 2; // Leading Status (1) and No (2)
+            } else {
+                $offset = 1; // Leading Status (1)
+            }
+        } elseif (in_array($h1, $noAliases, true)) {
+            $hasLeadingNo = true;
+            $offset = 1; // Leading No (1)
+        }
+
+        $expectedCount = $canonicalCount + $offset;
+        $maxCol = max($expectedCount, $detectedCount);
+
         $columnResults = [];
         $issues = [];
         $validCount = 0;
@@ -315,16 +285,52 @@ class PtkpExcelSchema
         $duplicateCount = 0;
         $mappedKeys = [];
 
-        $maxCol = max($expectedCount, $detectedCount);
-
-        // Pass 1: Try exact, alias, or repositioned match
         for ($pos = 1; $pos <= $maxCol; $pos++) {
             $colLetter = Coordinate::stringFromColumnIndex($pos);
             $rawFound = isset($foundHeaders[$pos]) ? trim((string) $foundHeaders[$pos]) : '';
             $normFound = self::normalizeHeaderString($rawFound);
-            $canonical = $canonicalMap[$pos] ?? null;
 
-            if ($pos > $expectedCount) {
+            // Handle leading auxiliary columns (Status / No)
+            if ($offset > 0 && $pos <= $offset) {
+                $isStatusCol = ($pos === 1 && $hasLeadingStatus);
+                $isNoCol = ($pos === 1 && $hasLeadingNo && !$hasLeadingStatus) || ($pos === 2 && $hasLeadingNo);
+
+                if ($isStatusCol) {
+                    $validCount++;
+                    $columnResults[$pos] = [
+                        'col'       => $pos,
+                        'letter'    => $colLetter,
+                        'expected'  => 'Status',
+                        'found'     => $rawFound,
+                        'status'    => 'VALID',
+                        'mapped_to' => 'Status',
+                        'key'       => 'status',
+                        'message'   => 'Legacy validation status column (optional on upload).',
+                    ];
+                    continue;
+                }
+
+                if ($isNoCol) {
+                    $validCount++;
+                    $columnResults[$pos] = [
+                        'col'       => $pos,
+                        'letter'    => $colLetter,
+                        'expected'  => 'No',
+                        'found'     => $rawFound,
+                        'status'    => 'VALID',
+                        'mapped_to' => 'No',
+                        'key'       => 'row_no',
+                        'message'   => 'Legacy sequence number column (preview only).',
+                    ];
+                    continue;
+                }
+            }
+
+            // Target canonical index (1 to 46)
+            $canonicalIdx = $pos - $offset;
+            $canonical = $canonicalMap[$canonicalIdx] ?? null;
+
+            if ($canonicalIdx > $canonicalCount) {
                 if ($rawFound !== '') {
                     $invalidCount++;
                     $issue = [
@@ -335,7 +341,7 @@ class PtkpExcelSchema
                         'status'    => 'INVALID',
                         'mapped_to' => null,
                         'key'       => null,
-                        'message'   => "Unexpected extra column {$pos} ({$colLetter}: '{$rawFound}'). PTKP template specifies exactly {$expectedCount} columns.",
+                        'message'   => "Unexpected extra column {$pos} ({$colLetter}: '{$rawFound}'). PTKP template specifies exactly {$canonicalCount} columns.",
                     ];
                     $columnResults[$pos] = $issue;
                     $issues[] = $issue;
@@ -387,7 +393,6 @@ class PtkpExcelSchema
             }
 
             if ($targetKey !== null) {
-                // Duplicate guard: check if this key was already claimed by an earlier column
                 if (isset($mappedKeys[$targetKey])) {
                     $duplicateCount++;
                     $prevCol = $mappedKeys[$targetKey];
@@ -441,14 +446,14 @@ class PtkpExcelSchema
             $issues[] = $issue;
         }
 
-        // Pass 2: Check if any mandatory canonical columns were never mapped
+        // Check if any mandatory canonical columns were never mapped
         foreach ($columns as $idx => $col) {
             $key = $col['key'];
             if (!isset($mappedKeys[$key]) && $col['required']) {
                 $missingCount++;
                 $issues[] = [
-                    'col'       => $idx,
-                    'letter'    => Coordinate::stringFromColumnIndex($idx),
+                    'col'       => $idx + $offset,
+                    'letter'    => Coordinate::stringFromColumnIndex($idx + $offset),
                     'expected'  => $col['header'],
                     'found'     => null,
                     'status'    => 'MISSING',
@@ -463,7 +468,7 @@ class PtkpExcelSchema
         $columnPositions = [];
         foreach ($columns as $idx => $col) {
             $key = $col['key'];
-            $colLetter = $mappedKeys[$key] ?? Coordinate::stringFromColumnIndex($idx);
+            $colLetter = $mappedKeys[$key] ?? Coordinate::stringFromColumnIndex($idx + $offset);
             $columnPositions[$key] = $colLetter;
         }
 

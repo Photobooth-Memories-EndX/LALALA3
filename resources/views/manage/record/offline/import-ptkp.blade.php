@@ -86,7 +86,7 @@
                         <div>
                             <strong class="d-block mb-1">Spreadsheet Guidelines & PTKP Business Rules:</strong>
                             <ul class="mb-0 ps-3">
-                                <li><strong>Template Structure:</strong> Uses the canonical 48-column PTKP template with grouped headers. Obsolete columns have been removed.</li>
+                                <li><strong>Template Structure:</strong> Uses the simplified single-row PTKP template (46 columns). Obsolete columns and group headers have been removed.</li>
                                 <li><strong>Employee Matching:</strong> <em>Employee ID</em> is matched against user accounts in the <code>users</code> table. If missing, not found, or ambiguous, the row is rejected (INVALID).</li>
                                 <li><strong>Identity Synchronization:</strong> Five identity fields (<em>Employee Name</em>, <em>Grade</em>, <em>Job Position</em>, <em>Team</em>, <em>Department</em>) are automatically populated from the <code>users</code> table.</li>
                                 <li><strong>Company Mismatch (PTKP):</strong> Discrepancies between spreadsheet company and database user profile are treated as a <strong>non-blocking warning (INVALID COMPANY)</strong>. The record will still be imported.</li>
@@ -111,7 +111,7 @@
             <div class="card-body">
                 <div class="spinner-border text-warning" style="width: 3.5rem; height: 3.5rem; color: #d97706 !important;" role="status"></div>
                 <h5 class="fw-bold text-dark mt-3 mb-1" id="ptkp-loading-title">Validating Spreadsheet...</h5>
-                <p class="text-muted small mb-0" id="ptkp-loading-subtitle">Reading 48 PTKP columns, verifying Employee IDs, and checking duplicates...</p>
+                <p class="text-muted small mb-0" id="ptkp-loading-subtitle">Reading PTKP columns, verifying Employee IDs, and checking duplicates...</p>
             </div>
         </div>
 

@@ -126,54 +126,52 @@ class OfflineTrainingSmartImportTest extends TestCase
         $merged = array_merge($defaults, $overrides);
 
         return [
-            $merged['status'] ?? 'Valid',                                         // 1. Status
-            $merged['no'] ?? 1,                                                   // 2. No
-            $merged['employee_id'] ?? '100234',                                   // 3. Employee ID
-            $merged['name'] ?? 'Budi Santoso',                                    // 4. Employee Name
-            $merged['grade'] ?? '4A',                                             // 5. Grade
-            $merged['job_position'] ?? 'Electrical Maintenance Engineer',         // 6. Job Position
-            $merged['team'] ?? 'Rolling Mill 1',                                  // 7. Team
-            $merged['department'] ?? 'Maintenance Department',                    // 8. Department
-            $merged['company'] ?? 'TEST_CORP',                                    // 9. Company
-            $merged['course_name'] ?? 'High Voltage Safety & Operation',          // 10. Course Title
-            $merged['sub_course_name'] ?? 'Switchgear Module',                    // 11. Sub Course Title
-            $merged['type'] ?? 'In-House',                                        // 12. Type
-            $merged['category'] ?? 'TEST_CAT',                                    // 13. Category
-            $merged['level'] ?? 'Intermediate',                                   // 14. Level
-            $merged['batch'] ?? 'Batch 1',                                        // 15. Batch
-            $merged['main_classification'] ?? 'Technical',                        // 16. Main Classification
-            $merged['sub_classification'] ?? 'Plant Maintenance',                 // 17. Sub Classification
-            $merged['delivery_method'] ?? 'Offline',                              // 18. Delivery Method
-            $merged['sub_delivery_method'] ?? 'On-site',                          // 19. Sub Delivery Method
-            $merged['provider'] ?? 'External',                                    // 20. Provider
-            $merged['sub_provider'] ?? 'Vendor',                                  // 21. Sub Provider
-            $merged['provider_name'] ?? 'PT Schneider Indonesia',                 // 22. Provider Name
-            $merged['venue'] ?? 'Auditorium Hall B',                              // 23. Venue
-            $merged['instructor'] ?? 'Ir. Gunawan, M.T.',                         // 24. Instructor
-            $merged['learning_hours'] ?? 8.0,                                     // 25. Learning Hours
-            $merged['progress'] ?? 100,                                           // 26. % Progress
-            $merged['start_date'] ?? '2026-08-10',                                // 27. Start Date
-            $merged['finish_date'] ?? ($merged['end_date'] ?? '2026-08-10'),     // 28. End Date
-            $merged['start_time'] ?? '08:00:00',                                  // 29. Start Time
-            $merged['end_time'] ?? '17:00:00',                                    // 30. End Time
-            $merged['month'] ?? 'August',                                         // 31. Record Month
-            $merged['requirement'] ?? 'Mandatory',                                // 32. Requirement
-            $merged['attendance'] ?? 'Yes',                                       // 33. Attendance
-            $merged['attendance_reason'] ?? 'Present in all sessions',            // 34. Attendance Reason
-            $merged['bond_status'] ?? 'No',                                       // 35. Bond Status
-            $merged['bond_duration'] ?? '',                                       // 36. Bond Duration
-            $merged['bond_end_date'] ?? '',                                       // 37. Bond End Date
-            $merged['bond_amount'] ?? '',                                         // 38. Bond Amount
-            $merged['l1_program'] ?? 'Very Good',                                 // 39. Score (L1) - Course
-            $merged['l2_numerical'] ?? ($merged['assessment_score'] ?? 88.0),     // 40. Score (L2)
-            $merged['l2_verbal'] ?? 'Passed with Distinction',                    // 41. L2 Status
-            $merged['l3_numerical'] ?? 92.5,                                      // 42. Score (L3)
-            $merged['l3_verbal'] ?? 'Exceeds Expectations',                       // 43. L3 Status
-            $merged['certificate_availability'] ?? 'Yes',                         // 44. Certificate Availability
-            $merged['certificate_institution'] ?? 'PT Schneider Indonesia',       // 45. Certificate Institution
-            $merged['certificate_issued_date'] ?? '2026-08-11',                   // 46. Certificate Issued Date
-            $merged['certificate_expired_date'] ?? '2028-08-11',                  // 47. Certificate Expired Date
-            $merged['pic'] ?? 'Siti Rahma HRD',                                   // 48. Person in Charge (PIC)
+            $merged['employee_id'] ?? '100234',                                   // 1. Employee ID
+            $merged['name'] ?? 'Budi Santoso',                                    // 2. Employee Name
+            $merged['grade'] ?? '4A',                                             // 3. Grade
+            $merged['job_position'] ?? 'Electrical Maintenance Engineer',         // 4. Job Position
+            $merged['team'] ?? 'Rolling Mill 1',                                  // 5. Team
+            $merged['department'] ?? 'Maintenance Department',                    // 6. Department
+            $merged['company'] ?? 'TEST_CORP',                                    // 7. Company
+            $merged['course_name'] ?? 'High Voltage Safety & Operation',          // 8. Course Title
+            $merged['sub_course_name'] ?? 'Switchgear Module',                    // 9. Sub Course Title
+            $merged['type'] ?? 'In-House',                                        // 10. Type
+            $merged['category'] ?? 'TEST_CAT',                                    // 11. Category
+            $merged['level'] ?? 'Intermediate',                                   // 12. Level
+            $merged['batch'] ?? 'Batch 1',                                        // 13. Batch
+            $merged['main_classification'] ?? 'Technical',                        // 14. Main Classification
+            $merged['sub_classification'] ?? 'Plant Maintenance',                 // 15. Sub Classification
+            $merged['delivery_method'] ?? 'Offline',                              // 16. Delivery Method
+            $merged['sub_delivery_method'] ?? 'On-site',                          // 17. Sub Delivery Method
+            $merged['provider'] ?? 'External',                                    // 18. Provider
+            $merged['sub_provider'] ?? 'Vendor',                                  // 19. Sub Provider
+            $merged['provider_name'] ?? 'PT Schneider Indonesia',                 // 20. Provider Name
+            $merged['venue'] ?? 'Auditorium Hall B',                              // 21. Venue
+            $merged['instructor'] ?? 'Ir. Gunawan, M.T.',                         // 22. Instructor
+            $merged['learning_hours'] ?? 8.0,                                     // 23. Learning Hours
+            $merged['progress'] ?? 100,                                           // 24. % Progress
+            $merged['start_date'] ?? '2026-08-10',                                // 25. Start Date
+            $merged['finish_date'] ?? ($merged['end_date'] ?? '2026-08-10'),     // 26. End Date
+            $merged['start_time'] ?? '08:00:00',                                  // 27. Start Time
+            $merged['end_time'] ?? '17:00:00',                                    // 28. End Time
+            $merged['month'] ?? 'August',                                         // 29. Record Month
+            $merged['requirement'] ?? 'Mandatory',                                // 30. Requirement
+            $merged['attendance'] ?? 'Yes',                                       // 31. Attendance
+            $merged['attendance_reason'] ?? 'Present in all sessions',            // 32. Attendance Reason
+            $merged['bond_status'] ?? 'No',                                       // 33. Bond Status
+            $merged['bond_duration'] ?? '',                                       // 34. Bond Duration
+            $merged['bond_end_date'] ?? '',                                       // 35. Bond End Date
+            $merged['bond_amount'] ?? '',                                         // 36. Bond Amount
+            $merged['l1_program'] ?? 'Very Good',                                 // 37. Score (L1) - Course
+            $merged['l2_numerical'] ?? ($merged['assessment_score'] ?? 88.0),     // 38. Score (L2)
+            $merged['l2_verbal'] ?? 'Passed with Distinction',                    // 39. L2 Status
+            $merged['l3_numerical'] ?? 92.5,                                      // 40. Score (L3)
+            $merged['l3_verbal'] ?? 'Exceeds Expectations',                       // 41. L3 Status
+            $merged['certificate_availability'] ?? 'Yes',                         // 42. Certificate Availability
+            $merged['certificate_institution'] ?? 'PT Schneider Indonesia',       // 43. Certificate Institution
+            $merged['certificate_issued_date'] ?? '2026-08-11',                   // 44. Certificate Issued Date
+            $merged['certificate_expired_date'] ?? '2028-08-11',                  // 45. Certificate Expired Date
+            $merged['pic'] ?? 'Siti Rahma HRD',                                   // 46. Person in Charge (PIC)
         ];
     }
 
@@ -240,7 +238,7 @@ class OfflineTrainingSmartImportTest extends TestCase
     }
 
     /**
-     * CASE 1: Perfect New Template (single header row 1, 48 canonical headers, data on row 2+) -> PASS
+     * CASE 1: Perfect New Template (single header row 1, 46 canonical headers, data on row 2+) -> PASS
      */
     public function test_case_01_perfect_new_template_passes_validation(): void
     {
@@ -256,7 +254,7 @@ class OfflineTrainingSmartImportTest extends TestCase
 
         $this->assertTrue($headerCheck['can_proceed']);
         $this->assertEquals('single_row', $headerCheck['format']);
-        $this->assertEquals(48, $headerCheck['stats']['valid']);
+        $this->assertEquals(46, $headerCheck['stats']['valid']);
         $this->assertEquals(0, $headerCheck['stats']['invalid']);
         $this->assertEquals(0, $headerCheck['stats']['auto_matched']);
         $this->assertEmpty($headerCheck['issues']);
@@ -268,8 +266,9 @@ class OfflineTrainingSmartImportTest extends TestCase
      */
     public function test_case_02_legacy_template_passes_validation(): void
     {
-        $row = $this->buildCanonicalTestRow();
-        $file = $this->createSpreadsheetFile([$row], true);
+        $headers = array_column(\App\Services\Record\PtkpColumnDefinitions::legacy48(), 'header');
+        $row = array_merge(['Valid', 1], $this->buildCanonicalTestRow());
+        $file = $this->createSpreadsheetFile([$row], true, $headers);
 
         $response = $this->actingAs($this->admin)->postJson('/manage/record/offline/import/preview', [
             'file' => $file,
@@ -290,7 +289,7 @@ class OfflineTrainingSmartImportTest extends TestCase
     public function test_case_03_header_capitalization_auto_matches(): void
     {
         $headers = OfflineTrainingExcelSchema::headers();
-        $headers[5] = 'job position'; // Col 6 in 0-indexed is 5
+        $headers[3] = 'job position'; // Col 4 in 0-indexed is 3
 
         $row = $this->buildCanonicalTestRow();
         $file = $this->createSpreadsheetFile([$row], false, $headers);
@@ -303,8 +302,8 @@ class OfflineTrainingSmartImportTest extends TestCase
         $headerCheck = $response->json('header_check');
 
         $this->assertTrue($headerCheck['can_proceed']);
-        $this->assertEquals('AUTO_MATCHED', $headerCheck['columns'][6]['status']);
-        $this->assertEquals('Job Position', $headerCheck['columns'][6]['mapped_to']);
+        $this->assertEquals('AUTO_MATCHED', $headerCheck['columns'][4]['status']);
+        $this->assertEquals('Job Position', $headerCheck['columns'][4]['mapped_to']);
         $this->assertTrue($response->json('can_confirm'));
     }
 
@@ -314,7 +313,7 @@ class OfflineTrainingSmartImportTest extends TestCase
     public function test_case_04_header_underscore_auto_matches(): void
     {
         $headers = OfflineTrainingExcelSchema::headers();
-        $headers[5] = 'job_position';
+        $headers[3] = 'job_position';
 
         $row = $this->buildCanonicalTestRow();
         $file = $this->createSpreadsheetFile([$row], false, $headers);
@@ -327,8 +326,8 @@ class OfflineTrainingSmartImportTest extends TestCase
         $headerCheck = $response->json('header_check');
 
         $this->assertTrue($headerCheck['can_proceed']);
-        $this->assertEquals('AUTO_MATCHED', $headerCheck['columns'][6]['status']);
-        $this->assertEquals('Job Position', $headerCheck['columns'][6]['mapped_to']);
+        $this->assertEquals('AUTO_MATCHED', $headerCheck['columns'][4]['status']);
+        $this->assertEquals('Job Position', $headerCheck['columns'][4]['mapped_to']);
         $this->assertTrue($response->json('can_confirm'));
     }
 
@@ -338,7 +337,7 @@ class OfflineTrainingSmartImportTest extends TestCase
     public function test_case_05_safe_typo_job_position_auto_matches(): void
     {
         $headers = OfflineTrainingExcelSchema::headers();
-        $headers[5] = 'Job Positon'; // Typo: Positon
+        $headers[3] = 'Job Positon'; // Typo: Positon
 
         $row = $this->buildCanonicalTestRow();
         $file = $this->createSpreadsheetFile([$row], false, $headers);
@@ -351,8 +350,8 @@ class OfflineTrainingSmartImportTest extends TestCase
         $headerCheck = $response->json('header_check');
 
         $this->assertTrue($headerCheck['can_proceed']);
-        $this->assertEquals('AUTO_MATCHED', $headerCheck['columns'][6]['status']);
-        $this->assertEquals('Job Position', $headerCheck['columns'][6]['mapped_to']);
+        $this->assertEquals('AUTO_MATCHED', $headerCheck['columns'][4]['status']);
+        $this->assertEquals('Job Position', $headerCheck['columns'][4]['mapped_to']);
         $this->assertTrue($response->json('can_confirm'));
     }
 
@@ -362,7 +361,7 @@ class OfflineTrainingSmartImportTest extends TestCase
     public function test_case_06_safe_typo_assessment_score_auto_matches(): void
     {
         $headers = OfflineTrainingExcelSchema::headers();
-        $headers[39] = 'Score L2'; // Col 40 in 0-indexed is 39
+        $headers[37] = 'Score L2'; // Col 38 in 0-indexed is 37
 
         $row = $this->buildCanonicalTestRow();
         $file = $this->createSpreadsheetFile([$row], false, $headers);
@@ -375,8 +374,8 @@ class OfflineTrainingSmartImportTest extends TestCase
         $headerCheck = $response->json('header_check');
 
         $this->assertTrue($headerCheck['can_proceed']);
-        $this->assertEquals('AUTO_MATCHED', $headerCheck['columns'][40]['status']);
-        $this->assertEquals('Score (L2)', $headerCheck['columns'][40]['mapped_to']);
+        $this->assertEquals('AUTO_MATCHED', $headerCheck['columns'][38]['status']);
+        $this->assertEquals('Score (L2)', $headerCheck['columns'][38]['mapped_to']);
         $this->assertTrue($response->json('can_confirm'));
     }
 
@@ -386,7 +385,7 @@ class OfflineTrainingSmartImportTest extends TestCase
     public function test_case_07_wrong_semantic_header_blocks_confirm(): void
     {
         $headers = OfflineTrainingExcelSchema::headers();
-        $headers[5] = 'Provider'; // Column 6 replaced with Provider (wrong semantic header!)
+        $headers[3] = 'Provider'; // Column 4 replaced with Provider (wrong semantic header!)
 
         $row = $this->buildCanonicalTestRow();
         $file = $this->createSpreadsheetFile([$row], false, $headers);
@@ -399,7 +398,7 @@ class OfflineTrainingSmartImportTest extends TestCase
         $headerCheck = $response->json('header_check');
 
         $this->assertFalse($headerCheck['can_proceed']);
-        $this->assertEquals('INVALID', $headerCheck['columns'][6]['status']);
+        $this->assertEquals('INVALID', $headerCheck['columns'][4]['status']);
         $this->assertFalse($response->json('can_confirm'));
 
         $token = $response->json('data.token');
@@ -413,15 +412,15 @@ class OfflineTrainingSmartImportTest extends TestCase
     }
 
     /**
-     * CASE 8: Missing Column (47 columns only) -> INVALID -> blocked from confirm
+     * CASE 8: Missing Column (45 columns only) -> INVALID -> blocked from confirm
      */
     public function test_case_08_missing_column_blocks_confirm(): void
     {
         $headers = OfflineTrainingExcelSchema::headers();
-        unset($headers[47]); // Remove column 48 (PIC)
+        unset($headers[45]); // Remove column 46 (PIC)
 
         $row = $this->buildCanonicalTestRow();
-        unset($row[47]);
+        unset($row[45]);
         $file = $this->createSpreadsheetFile([$row], false, array_values($headers));
 
         $response = $this->actingAs($this->admin)->postJson('/manage/record/offline/import/preview', [
@@ -479,7 +478,7 @@ class OfflineTrainingSmartImportTest extends TestCase
     public function test_case_10_duplicate_canonical_mapping_blocks_confirm(): void
     {
         $headers = OfflineTrainingExcelSchema::headers();
-        $headers[8] = 'Department'; // Col 9 (Company) replaced with Department!
+        $headers[6] = 'Department'; // Col 7 (Company) replaced with Department!
 
         $row = $this->buildCanonicalTestRow();
         $file = $this->createSpreadsheetFile([$row], false, $headers);
@@ -674,16 +673,15 @@ class OfflineTrainingSmartImportTest extends TestCase
         $this->assertNotNull($sheet);
 
         // Verify headers & freeze pane
-        $this->assertEquals('Status', $sheet->getCell('A2')->getValue());
-        $this->assertEquals('No', $sheet->getCell('B2')->getValue());
-        $this->assertEquals('Employee ID', $sheet->getCell('C2')->getValue());
-        $this->assertEquals('Employee Name', $sheet->getCell('D2')->getValue());
-        $this->assertEquals('Person in Charge (PIC)', $sheet->getCell('AV2')->getValue());
+        $this->assertEquals('Employee ID', $sheet->getCell('A1')->getValue());
+        $this->assertEquals('Employee Name', $sheet->getCell('B1')->getValue());
+        $this->assertEquals('Course Title', $sheet->getCell('H1')->getValue());
+        $this->assertEquals('Person in Charge (PIC)', $sheet->getCell('AT1')->getValue());
 
-        // Verify freeze pane is D3 (Rows 1-2 and columns A-C frozen)
-        $this->assertEquals('D3', $sheet->getFreezePane());
+        // Verify freeze pane is A2 (Row 1 frozen)
+        $this->assertEquals('A2', $sheet->getFreezePane());
 
-        // 3. Fill Row 3 with valid business data
+        // 3. Fill Row 2 with valid business data
         $courseName = 'Round Trip Training 2026';
         $batch = 'Batch RT1';
         $participantName = 'Round Trip User';
@@ -703,7 +701,7 @@ class OfflineTrainingSmartImportTest extends TestCase
         $colIdx = 1;
         foreach ($rowData as $val) {
             $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIdx);
-            $sheet->setCellValue($colLetter . '3', $val);
+            $sheet->setCellValue($colLetter . '2', $val);
             $colIdx++;
         }
 

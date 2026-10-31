@@ -4,6 +4,7 @@ namespace App\Exports\Manage;
 
 use App\Services\Record\PtkpExcelSchema;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
@@ -13,7 +14,7 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 class PtkpImportTemplateExport
 {
     /**
-     * Build the official PTKP import template workbook with exactly 48 canonical columns.
+     * Build the simplified official PTKP import template workbook with single-row header (46 canonical columns).
      */
     public function buildSpreadsheet(): Spreadsheet
     {
@@ -21,7 +22,7 @@ class PtkpImportTemplateExport
         $spreadsheet->getProperties()
             ->setCreator('OWL LMS')
             ->setTitle('PTKP Offline Training Import Template')
-            ->setDescription('Official Excel template for importing PTKP offline training records (48 columns)');
+            ->setDescription('Official simplified Excel template for importing PTKP offline training records (46 columns)');
 
         // Sheet 1: Data sheet
         $sheet = $spreadsheet->getActiveSheet();
@@ -40,83 +41,88 @@ class PtkpImportTemplateExport
 
     protected function buildDataSheet(Worksheet $sheet): void
     {
-        $columns = PtkpExcelSchema::columns();
-        $groups = PtkpExcelSchema::groups();
+        $columns = PtkpExcelSchema::columns(); // 46 columns (Employee ID ... PIC)
+        $totalCols = count($columns);
+        $lastColLetter = Coordinate::stringFromColumnIndex($totalCols);
 
-        // 1. Row 1: Group Headers
-        foreach ($groups as $group) {
-            $startCol = $group['start_col'];
-            $endCol = $group['end_col'];
-            $title = $group['title'];
-            $fill = $group['fill'];
-            $color = $group['color'];
-
-            $range = $startCol === $endCol ? "{$startCol}1" : "{$startCol}1:{$endCol}1";
-            if ($startCol !== $endCol) {
-                $sheet->mergeCells($range);
-            }
-            $sheet->setCellValue("{$startCol}1", $title);
-            $sheet->getStyle($range)->applyFromArray([
-                'font' => ['bold' => true, 'color' => ['rgb' => $color], 'size' => 10],
-                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
-                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $fill]],
-            ]);
-        }
-        $sheet->getRowDimension(1)->setRowHeight(24);
-
-        // 2. Row 2: Column Headers
+        // 1. Row 1: Single Main Header Row (No Group Headers, No Merged Cells)
         foreach ($columns as $idx => $col) {
             $letter = Coordinate::stringFromColumnIndex($idx);
-            $sheet->setCellValue("{$letter}2", $col['header']);
-            $sheet->getStyle("{$letter}2")->applyFromArray([
+            $sheet->setCellValue("{$letter}1", $col['header']);
+            $sheet->getStyle("{$letter}1")->applyFromArray([
                 'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 10],
-                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
-                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '1E293B']],
-                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '475569']]],
+                'alignment' => [
+                    'horizontal' => Alignment::HORIZONTAL_CENTER,
+                    'vertical'   => Alignment::VERTICAL_CENTER,
+                    'wrapText'   => true,
+                ],
+                'fill' => [
+                    'fillType'   => Fill::FILL_SOLID,
+                    'startColor' => ['rgb' => '002B49'], // Deep PTKP navy blue
+                ],
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => Border::BORDER_THIN,
+                        'color'       => ['rgb' => '475569'],
+                    ],
+                ],
             ]);
         }
-        $sheet->getRowDimension(2)->setRowHeight(28);
+        $sheet->getRowDimension(1)->setRowHeight(28);
 
-        // 3. Row 3: Example Data Row
+        // 2. Row 2: Example Data Row (Values start immediately on Row 2)
         foreach ($columns as $idx => $col) {
             $letter = Coordinate::stringFromColumnIndex($idx);
-            $sheet->setCellValueExplicit("{$letter}3", (string) ($col['example'] ?? ''), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
-            $sheet->getStyle("{$letter}3")->applyFromArray([
+            $exampleVal = (string) ($col['example'] ?? '');
+            $sheet->setCellValueExplicit("{$letter}2", $exampleVal, DataType::TYPE_STRING);
+            $sheet->getStyle("{$letter}2")->applyFromArray([
                 'font' => ['color' => ['rgb' => '334155'], 'size' => 9],
                 'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
-                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'CBD5E1']]],
-                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F8FAFC']],
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => Border::BORDER_THIN,
+                        'color'       => ['rgb' => 'CBD5E1'],
+                    ],
+                ],
+                'fill' => [
+                    'fillType'   => Fill::FILL_SOLID,
+                    'startColor' => ['rgb' => 'F8FAFC'],
+                ],
             ]);
         }
-        $sheet->getRowDimension(3)->setRowHeight(20);
+        $sheet->getRowDimension(2)->setRowHeight(20);
 
-        // 4. Set column widths
+        // 3. Set column widths
         foreach (PtkpExcelSchema::columnWidths() as $colLetter => $width) {
             $sheet->getColumnDimension($colLetter)->setWidth($width);
         }
 
-        // 5. Freeze panes at row 3, column D (Status, No, Employee ID sticky)
-        $sheet->freezePane('D3');
+        // 4. Freeze panes directly below the single header row at A2
+        $sheet->freezePane('A2');
+
+        // 5. Auto filter covering all 46 columns (A1:AT1)
+        $sheet->setAutoFilter("A1:{$lastColLetter}1");
     }
 
     protected function buildInstructionsSheet(Worksheet $sheet): void
     {
-        $sheet->setCellValue('A1', 'INSTRUCTIONS FOR FILLING OUT PTKP OWL IMPORT TEMPLATE (48 COLUMNS)');
+        $sheet->setCellValue('A1', 'INSTRUCTIONS FOR FILLING OUT PTKP OWL IMPORT TEMPLATE (46 COLUMNS)');
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
         $sheet->getRowDimension(1)->setRowHeight(30);
 
         $instructions = [
-            ['1. "Status" Column', 'System validation status (optional on upload). Validation results are automatically evaluated by the OWL LMS system.'],
-            ['2. "No" Column', 'Preview sequence number only. Not a database primary key and not stored in data tables.'],
-            ['3. Employee ID', 'Mandatory employee NIP / ID. Used for matching employee accounts in the OWL LMS database.'],
-            ['4. Five Identity Columns', 'Employee Name, Grade, Job Position, Team, and Department are automatically synchronized from actual records in the users table.'],
-            ['5. Course Title', 'Mandatory training title. Rows with empty Course Title will be rejected (INVALID status).'],
-            ['6. Company Mismatch (PTKP)', 'If the Company in Excel differs from the user record in database, the record CAN STILL BE IMPORTED (non-blocking WARNING status).'],
-            ['7. Provider & Sub Provider', 'Training provider categories (Internal / External, Vendor, etc.).'],
-            ['8. Certificate Columns', 'Certificate Availability (Yes/No), Institution, Issued Date, and Expired Date.'],
-            ['9. Person in Charge (PIC)', 'Person in Charge (PIC) is located at the final column (column 48).'],
-            ['10. Date & Time Format', 'Use YYYY-MM-DD for dates and HH:mm or HH:mm:ss for times.'],
-            ['11. Duplicate Prevention', 'Records with identical participant and training combinations within the file or existing database records will be skipped automatically.'],
+            ['1. Simplified Header', 'The template uses a single main header row on Row 1 without category groupings or merge cells. Data starts directly on Row 2.'],
+            ['2. Employee ID', 'Mandatory employee NIP / ID at Column 1 (A). Used for matching employee accounts in the OWL LMS database.'],
+            ['3. Five Identity Columns', 'Employee Name, Grade, Job Position, Team, and Department are automatically synchronized from actual records in the users table.'],
+            ['4. Course Title', 'Mandatory training title. Rows with empty Course Title will be rejected (INVALID status).'],
+            ['5. Company Mismatch (PTKP)', 'If the Company in Excel differs from the user record in database, the record CAN STILL BE IMPORTED (non-blocking WARNING status).'],
+            ['6. Provider & Sub Provider', 'Training provider categories (Internal / External, Vendor, etc.) and provider name.'],
+            ['7. Attendance & Bond', 'Attendance (Yes/No), attendance reason, service bond obligation duration and bond amount.'],
+            ['8. Kirkpatrick Evaluations', 'Score (L1) Course, Score (L2), L2 Status, Score (L3), and L3 Status.'],
+            ['9. Certificate Columns', 'Certificate Availability (Yes/No), Institution, Issued Date, and Expired Date.'],
+            ['10. Person in Charge (PIC)', 'Person in Charge (PIC) is located at the final column (Column 46 / AT).'],
+            ['11. Date & Time Format', 'Use YYYY-MM-DD for dates and HH:mm or HH:mm:ss for times.'],
+            ['12. Duplicate Prevention', 'Records with identical participant and training combinations within the file or existing database records will be skipped automatically.'],
         ];
 
         $row = 3;
@@ -128,6 +134,6 @@ class PtkpImportTemplateExport
         }
 
         $sheet->getColumnDimension('A')->setWidth(30);
-        $sheet->getColumnDimension('B')->setWidth(90);
+        $sheet->getColumnDimension('B')->setWidth(95);
     }
 }

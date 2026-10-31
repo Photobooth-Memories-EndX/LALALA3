@@ -83,7 +83,7 @@ class PtkpImportTest extends TestCase
         $adminResponse->assertSee('INVALID COMPANY');
     }
 
-    public function test_ptkp_template_has_exact_48_columns_and_proper_structure(): void
+    public function test_ptkp_template_has_exact_46_columns_and_proper_structure(): void
     {
         $export = new PtkpImportTemplateExport();
         $spreadsheet = $export->buildSpreadsheet();
@@ -92,73 +92,87 @@ class PtkpImportTest extends TestCase
         $this->assertNotNull($sheet);
 
         $cols = PtkpExcelSchema::columns();
-        $this->assertCount(48, $cols);
+        $this->assertCount(46, $cols);
 
         $expectedFinalHeaders = [
-            1  => 'Status',
-            2  => 'No',
-            3  => 'Employee ID',
-            4  => 'Employee Name',
-            5  => 'Grade',
-            6  => 'Job Position',
-            7  => 'Team',
-            8  => 'Department',
-            9  => 'Company',
-            10 => 'Course Title',
-            11 => 'Sub Course Title',
-            12 => 'Type',
-            13 => 'Category',
-            14 => 'Level',
-            15 => 'Batch',
-            16 => 'Main Classification',
-            17 => 'Sub Classification',
-            18 => 'Delivery Method',
-            19 => 'Sub Delivery Method',
-            20 => 'Provider',
-            21 => 'Sub Provider',
-            22 => 'Provider Name',
-            23 => 'Venue',
-            24 => 'Instructor',
-            25 => 'Learning Hours',
-            26 => '% Progress',
-            27 => 'Start Date',
-            28 => 'End Date',
-            29 => 'Start Time',
-            30 => 'End Time',
-            31 => 'Record Month',
-            32 => 'Requirement',
-            33 => 'Attendance',
-            34 => 'Attendance Reason',
-            35 => 'Bond Status',
-            36 => 'Bond Duration',
-            37 => 'Bond End Date',
-            38 => 'Bond Amount',
-            39 => 'Score (L1) - Course',
-            40 => 'Score (L2)',
-            41 => 'L2 Status',
-            42 => 'Score (L3)',
-            43 => 'L3 Status',
-            44 => 'Certificate Availability',
-            45 => 'Certificate Institution',
-            46 => 'Certificate Issued Date',
-            47 => 'Certificate Expired Date',
-            48 => 'Person in Charge (PIC)',
+            1  => 'Employee ID',
+            2  => 'Employee Name',
+            3  => 'Grade',
+            4  => 'Job Position',
+            5  => 'Team',
+            6  => 'Department',
+            7  => 'Company',
+            8  => 'Course Title',
+            9  => 'Sub Course Title',
+            10 => 'Type',
+            11 => 'Category',
+            12 => 'Level',
+            13 => 'Batch',
+            14 => 'Main Classification',
+            15 => 'Sub Classification',
+            16 => 'Delivery Method',
+            17 => 'Sub Delivery Method',
+            18 => 'Provider',
+            19 => 'Sub Provider',
+            20 => 'Provider Name',
+            21 => 'Venue',
+            22 => 'Instructor',
+            23 => 'Learning Hours',
+            24 => '% Progress',
+            25 => 'Start Date',
+            26 => 'End Date',
+            27 => 'Start Time',
+            28 => 'End Time',
+            29 => 'Record Month',
+            30 => 'Requirement',
+            31 => 'Attendance',
+            32 => 'Attendance Reason',
+            33 => 'Bond Status',
+            34 => 'Bond Duration',
+            35 => 'Bond End Date',
+            36 => 'Bond Amount',
+            37 => 'Score (L1) - Course',
+            38 => 'Score (L2)',
+            39 => 'L2 Status',
+            40 => 'Score (L3)',
+            41 => 'L3 Status',
+            42 => 'Certificate Availability',
+            43 => 'Certificate Institution',
+            44 => 'Certificate Issued Date',
+            45 => 'Certificate Expired Date',
+            46 => 'Person in Charge (PIC)',
         ];
 
         foreach ($expectedFinalHeaders as $idx => $expectedHeader) {
             $this->assertEquals($expectedHeader, $cols[$idx]['header'], "Header mismatch at column {$idx}");
         }
 
-        // PIC must appear only once at column 48
+        // PIC must appear only once at column 46
         $headerStrings = PtkpExcelSchema::headers();
         $picMatches = array_keys(array_filter($headerStrings, fn($h) => str_contains($h, 'PIC') || str_contains($h, 'Person in Charge')));
         $this->assertCount(1, $picMatches);
-        $this->assertEquals(47, $picMatches[0]); // 0-indexed index 47 is column 48
+        $this->assertEquals(45, $picMatches[0]); // 0-indexed index 45 is column 46
 
         // Omitted columns must not exist
         $this->assertNotContains('Course Duration', $headerStrings);
         $this->assertNotContains('Progress Status', $headerStrings);
         $this->assertNotContains('Total Engagement Time', $headerStrings);
+        $this->assertNotContains('Status', $headerStrings);
+        $this->assertNotContains('No', $headerStrings);
+
+        // Verify single-row header structure on Row 1
+        $this->assertSame('Employee ID', $sheet->getCell('A1')->getValue());
+        $this->assertSame('Course Title', $sheet->getCell('H1')->getValue());
+        $this->assertSame('Person in Charge (PIC)', $sheet->getCell('AT1')->getValue());
+
+        // Freeze pane must be A2
+        $this->assertSame('A2', $sheet->getFreezePane());
+
+        // Auto filter must cover A1:AT1
+        $this->assertSame('A1:AT1', $sheet->getAutoFilter()->getRange());
+
+        // No merged cells on Row 1
+        $this->assertEmpty($sheet->getMergeCells());
     }
 
     public function test_template_download_stream_response(): void
@@ -454,7 +468,7 @@ class PtkpImportTest extends TestCase
         $response->assertSee('Import Data Non PTKP');
     }
 
-    public function test_extra_column_beyond_48_blocks_preview_confirmation(): void
+    public function test_extra_column_beyond_template_blocks_preview_confirmation(): void
     {
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
@@ -465,11 +479,9 @@ class PtkpImportTest extends TestCase
             $letter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($idx + 1);
             $sheet->setCellValue("{$letter}1", $h);
         }
-        $sheet->setCellValue('AW1', 'Extra Unexpected Column');
-        $sheet->setCellValue('A2', 'Valid');
-        $sheet->setCellValue('B2', 1);
-        $sheet->setCellValue('C2', 'EMP_TEST_99');
-        $sheet->setCellValue('J2', 'Course Title');
+        $sheet->setCellValue('AU1', 'Extra Unexpected Column');
+        $sheet->setCellValue('A2', 'EMP_TEST_99');
+        $sheet->setCellValue('H2', 'Course Title');
 
         $tempPath = tempnam(sys_get_temp_dir(), 'ptkp_extra_') . '.xlsx';
         (new Xlsx($spreadsheet))->save($tempPath);
@@ -589,24 +601,24 @@ class PtkpImportTest extends TestCase
 
         $columns = PtkpExcelSchema::columns();
 
-        // Swap Column 29 (Start Time) and Column 30 (End Time) in the header
+        // Swap Column 27 (Start Time) and Column 28 (End Time) in the header
         foreach ($columns as $idx => $col) {
             $letter = $col['col_letter'];
-            if ($idx === 29) {
+            if ($idx === 27) {
                 $sheet->setCellValue("{$letter}1", 'End Time');
-            } elseif ($idx === 30) {
+            } elseif ($idx === 28) {
                 $sheet->setCellValue("{$letter}1", 'Start Time');
             } else {
                 $sheet->setCellValue("{$letter}1", $col['header']);
             }
         }
 
-        // Set row values: in swapped column AC (labeled End Time), put 17:00. In AD (labeled Start Time), put 08:00.
+        // Set row values: in swapped column AA (labeled End Time), put 17:00. In AB (labeled Start Time), put 08:00.
         foreach ($columns as $idx => $col) {
             $letter = $col['col_letter'];
-            if ($idx === 29) {
+            if ($idx === 27) {
                 $sheet->setCellValue("{$letter}2", '17:00:00');
-            } elseif ($idx === 30) {
+            } elseif ($idx === 28) {
                 $sheet->setCellValue("{$letter}2", '08:00:00');
             } elseif ($col['key'] === 'employee_id') {
                 $sheet->setCellValueExplicit("{$letter}2", 'EMP_TEST_99', \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
