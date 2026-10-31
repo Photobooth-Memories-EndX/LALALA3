@@ -249,6 +249,9 @@ class RecordAllCombinedTest extends TestCase
         $this->assertStringContainsString('Total Learning', $html);
         $this->assertStringContainsString('KP OWL — Online Learning Records', $html);
         $this->assertStringContainsString('Non KP OWL — Offline Training Records', $html);
+        $this->assertStringContainsString('badge bg-blue-lt', $html);
+        $this->assertStringContainsString('badge-non-kp-owl', $html);
+        $this->assertStringNotContainsString('bg-amber-lt', $html);
     }
 
     /**

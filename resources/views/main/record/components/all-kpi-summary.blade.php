@@ -1,3 +1,24 @@
+<style>
+    /* Non KP OWL Badge */
+    .badge-non-kp-owl {
+        background-color: rgba(255, 152, 0, 0.12) !important;
+        color: #ef8b00 !important;
+        border: 1px solid rgba(255, 152, 0, 0.18) !important;
+        border-radius: 5px !important;
+        padding: 3px 7px !important;
+        font-weight: 500 !important;
+        display: inline-block !important;
+        line-height: 1.2 !important;
+    }
+
+    [data-bs-theme="dark"] .badge-non-kp-owl,
+    body.dark-mode .badge-non-kp-owl,
+    body.theme-dark .badge-non-kp-owl {
+        background-color: rgba(255, 152, 0, 0.18) !important;
+        color: #ffb74d !important;
+        border-color: rgba(255, 152, 0, 0.25) !important;
+    }
+</style>
 <!-- 4 KPI SUMMARY CARDS -->
 <div class="row g-3 mb-4">
     <!-- Card 1: Total Learning -->
@@ -102,7 +123,7 @@
                     </div>
                 </div>
                 <div class="text-end">
-                    <span class="badge bg-amber-lt fw-semibold px-2.5 py-1.5" style="font-size: 0.8rem; color: #b45309 !important;">
+                    <span class="badge-non-kp-owl" style="font-size: 0.8rem;">
                         <i class="ti ti-clock me-1"></i>{{ number_format($offline['total_learning_hours'] ?? 0, 1) }} Hours
                     </span>
                 </div>
