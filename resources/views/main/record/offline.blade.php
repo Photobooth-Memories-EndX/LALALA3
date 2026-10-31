@@ -30,96 +30,80 @@
         </div>
         @endif
 
-        <!-- SECTION HEADER: Non KP OWL -->
-        <div class="card border-0 shadow-sm p-3 p-md-4 mb-4 rounded-3 bg-white record-section-header">
-            <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 record-section-icon"
-                         style="width: 54px; height: 54px; background-color: #fef3c7; color: #d97706; border-radius: 12px;">
-                        <i class="ti ti-certificate fs-1"></i>
-                    </div>
-                    <div>
-                        <h2 class="h3 fw-bold mb-1 text-dark">Non KP OWL</h2>
-                        <p class="text-muted small mb-0">Offline Training Record — Manage offline training programs, classroom sessions, external certifications, and vendor learning records.</p>
-                    </div>
-                </div>
+        @include('main.record.components.record-navigation')
 
-                <!-- Action Buttons: Add Training Dropdown (Manual & Import) | Download Dropdown -->
-                <div class="d-flex align-items-center gap-2 flex-wrap">
-                    <div class="dropdown">
-                        <button type="button" class="btn btn-primary dropdown-toggle rounded-3 px-3 d-inline-flex align-items-center gap-1.5"
-                                style="background-color: #d97706; border-color: #d97706;"
-                                data-bs-toggle="dropdown" data-toggle="dropdown" aria-expanded="false" id="btn-add-training-dropdown">
-                            <i class="ti ti-plus fs-2"></i>
-                            <span>Add Training</span>
-                        </button>
-                        <ul class="dropdown-menu shadow-sm border rounded-3 mt-1 py-1" aria-labelledby="btn-add-training-dropdown" style="min-width: 210px;">
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.record.offline.create') }}" id="btn-open-offline-add" title="Manual Training Record">
-                                    <i class="ti ti-pencil text-secondary fs-3"></i>
-                                    <span>Manual</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.record.offline.import-ptkp') }}" id="btn-open-offline-import-ptkp" title="Import Data PTKP">
-                                    <i class="ti ti-file-upload text-primary fs-3"></i>
-                                    <span>Import Data PTKP</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.record.offline.import-non-ptkp') }}" id="btn-open-offline-import" title="Import Data Non PTKP">
-                                    <i class="ti ti-file-spreadsheet text-success fs-3"></i>
-                                    <span>Import Data Non PTKP</span>
-                                </a>
-                            </li>
-                            <li><hr class="dropdown-divider my-1"></li>
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.record.offline.import-history.index') }}" id="btn-open-offline-import-history" title="View Import History">
-                                    <i class="ti ti-history text-info fs-3"></i>
-                                    <span>Import History</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                    <div class="dropdown">
-                        <button type="button" class="btn btn-outline-secondary dropdown-toggle rounded-3 px-3 d-inline-flex align-items-center gap-1.5"
-                                data-bs-toggle="dropdown" data-toggle="dropdown" aria-expanded="false" id="btn-download-dropdown">
-                            <i class="ti ti-download fs-2"></i>
-                            <span>Download</span>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border rounded-3 mt-1 py-1" aria-labelledby="btn-download-dropdown" style="min-width: 250px;">
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.record.offline.import.template') }}" id="btn-download-offline-template">
-                                    <i class="ti ti-file-description text-secondary fs-3"></i>
-                                    <span>Download Template</span>
-                                </a>
-                            </li>
-                            <li><hr class="dropdown-divider my-1"></li>
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.record.offline.export') }}" id="btn-export-offline-xlsx">
-                                    <i class="ti ti-file-spreadsheet text-success fs-3"></i>
-                                    <span>Download Offline Record (.xlsx)</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.record.offline.export.pdf') }}" id="btn-export-offline-pdf">
-                                    <i class="ti ti-file-type-pdf text-danger fs-3"></i>
-                                    <span>Download PDF (.pdf)</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.record.offline.export.csv') }}" id="btn-export-offline-csv">
-                                    <i class="ti ti-file-type-csv text-primary fs-3"></i>
-                                    <span>Download CSV (.csv)</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
+        <!-- Action Bar: Add Training & Download -->
+        <div class="d-flex justify-content-end align-items-center gap-2 flex-wrap mb-4">
+            <div class="dropdown">
+                <button type="button" class="btn btn-primary dropdown-toggle rounded-3 px-3 d-inline-flex align-items-center gap-1.5"
+                        style="background-color: #d97706; border-color: #d97706;"
+                        data-bs-toggle="dropdown" data-toggle="dropdown" aria-expanded="false" id="btn-add-training-dropdown">
+                    <i class="ti ti-plus fs-2"></i>
+                    <span>Add Training</span>
+                </button>
+                <ul class="dropdown-menu shadow-sm border rounded-3 mt-1 py-1" aria-labelledby="btn-add-training-dropdown" style="min-width: 210px;">
+                    <li>
+                        <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.record.offline.create') }}" id="btn-open-offline-add" title="Manual Training Record">
+                            <i class="ti ti-pencil text-secondary fs-3"></i>
+                            <span>Manual</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.record.offline.import-ptkp') }}" id="btn-open-offline-import-ptkp" title="Import Data PTKP">
+                            <i class="ti ti-file-upload text-primary fs-3"></i>
+                            <span>Import Data PTKP</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.record.offline.import-non-ptkp') }}" id="btn-open-offline-import" title="Import Data Non PTKP">
+                            <i class="ti ti-file-spreadsheet text-success fs-3"></i>
+                            <span>Import Data Non PTKP</span>
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider my-1"></li>
+                    <li>
+                        <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.record.offline.import-history.index') }}" id="btn-open-offline-import-history" title="View Import History">
+                            <i class="ti ti-history text-info fs-3"></i>
+                            <span>Import History</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="dropdown">
+                <button type="button" class="btn btn-outline-secondary dropdown-toggle rounded-3 px-3 d-inline-flex align-items-center gap-1.5"
+                        data-bs-toggle="dropdown" data-toggle="dropdown" aria-expanded="false" id="btn-download-dropdown">
+                    <i class="ti ti-download fs-2"></i>
+                    <span>Download</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm border rounded-3 mt-1 py-1" aria-labelledby="btn-download-dropdown" style="min-width: 250px;">
+                    <li>
+                        <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.record.offline.import.template') }}" id="btn-download-offline-template">
+                            <i class="ti ti-file-description text-secondary fs-3"></i>
+                            <span>Download Template</span>
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider my-1"></li>
+                    <li>
+                        <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.record.offline.export') }}" id="btn-export-offline-xlsx">
+                            <i class="ti ti-file-spreadsheet text-success fs-3"></i>
+                            <span>Download Offline Record (.xlsx)</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.record.offline.export.pdf') }}" id="btn-export-offline-pdf">
+                            <i class="ti ti-file-type-pdf text-danger fs-3"></i>
+                            <span>Download PDF (.pdf)</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.record.offline.export.csv') }}" id="btn-export-offline-csv">
+                            <i class="ti ti-file-type-csv text-primary fs-3"></i>
+                            <span>Download CSV (.csv)</span>
+                        </a>
+                    </li>
+                </ul>
             </div>
         </div>
-
-        @include('main.record.components.record-navigation')
 
         <!-- CLASSIFICATION SUMMARY (ASYNC SKELETON SHELL) -->
         <div class="card border-0 shadow-sm mb-4 classification-summary-card">
@@ -263,6 +247,43 @@
     body.theme-dark #offlineImportModal .table-light {
         background-color: #1e293b !important;
         color: #f8fafc !important;
+    }
+
+    /* Download button & dropdown dark mode support */
+    [data-bs-theme="dark"] #btn-download-dropdown,
+    body.dark-mode #btn-download-dropdown,
+    body.theme-dark #btn-download-dropdown {
+        color: #cbd5e1 !important;
+        border-color: rgba(255, 255, 255, 0.2) !important;
+        background-color: transparent !important;
+    }
+
+    [data-bs-theme="dark"] #btn-download-dropdown:hover,
+    body.dark-mode #btn-download-dropdown:hover,
+    body.theme-dark #btn-download-dropdown:hover {
+        color: #ffffff !important;
+        background-color: rgba(255, 255, 255, 0.08) !important;
+        border-color: rgba(255, 255, 255, 0.3) !important;
+    }
+
+    [data-bs-theme="dark"] .manage-record-page .dropdown-menu,
+    body.dark-mode .manage-record-page .dropdown-menu,
+    body.theme-dark .manage-record-page .dropdown-menu {
+        background-color: #1e293b !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    [data-bs-theme="dark"] .manage-record-page .dropdown-item,
+    body.dark-mode .manage-record-page .dropdown-item,
+    body.theme-dark .manage-record-page .dropdown-item {
+        color: #f8fafc !important;
+    }
+
+    [data-bs-theme="dark"] .manage-record-page .dropdown-item:hover,
+    body.dark-mode .manage-record-page .dropdown-item:hover,
+    body.theme-dark .manage-record-page .dropdown-item:hover {
+        background-color: rgba(255, 255, 255, 0.08) !important;
+        color: #38bdf8 !important;
     }
 </style>
 @endsection

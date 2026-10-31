@@ -18,31 +18,15 @@
             @include('main.record.components.all-kpi-skeleton')
         </div>
 
-        <!-- SECTION HEADER: All Record -->
-        <div class="card border-0 shadow-sm p-3 p-md-4 mb-4 rounded-3 bg-white record-section-header">
-            <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
-                         style="width: 54px; height: 54px; background-color: #ede9fe; color: #7c3aed; border-radius: 12px;">
-                        <i class="ti ti-stack-2 fs-1"></i>
-                    </div>
-                    <div>
-                        <h2 class="h3 fw-bold mb-1 text-dark">All Record</h2>
-                        <p class="text-muted small mb-0">Combined Learning Overview — Unified overview of KP OWL online learning and Non KP OWL offline training records.</p>
-                    </div>
-                </div>
-
-                <!-- Action Buttons: Download All Record -->
-                <div class="d-flex align-items-center gap-2 flex-wrap">
-                    <a href="{{ route('manage.record.export.all') }}" class="btn btn-outline-secondary rounded-3 px-3 d-inline-flex align-items-center gap-1.5" id="btn-export-all-combined">
-                        <i class="ti ti-download fs-2"></i>
-                        <span>Export All Record (.xlsx)</span>
-                    </a>
-                </div>
-            </div>
-        </div>
-
         @include('main.record.components.record-navigation')
+
+        <!-- Action Bar: Export All Record -->
+        <div class="d-flex justify-content-end mb-4">
+            <a href="{{ route('manage.record.export.all') }}" class="btn btn-outline-secondary rounded-3 px-3 d-inline-flex align-items-center gap-1.5" id="btn-export-all-combined">
+                <i class="ti ti-download fs-2"></i>
+                <span>Export All Record (.xlsx)</span>
+            </a>
+        </div>
 
         <!-- CLASSIFICATION SUMMARY CARD (ASYNC SKELETON SHELL) -->
         <div class="card border-0 shadow-sm rounded-4 mb-4">
@@ -140,6 +124,23 @@
     .stat-kpi-card:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08) !important;
+    }
+
+    /* Export button dark mode support */
+    [data-bs-theme="dark"] #btn-export-all-combined,
+    body.dark-mode #btn-export-all-combined,
+    body.theme-dark #btn-export-all-combined {
+        color: #cbd5e1 !important;
+        border-color: rgba(255, 255, 255, 0.2) !important;
+        background-color: transparent !important;
+    }
+
+    [data-bs-theme="dark"] #btn-export-all-combined:hover,
+    body.dark-mode #btn-export-all-combined:hover,
+    body.theme-dark #btn-export-all-combined:hover {
+        color: #ffffff !important;
+        background-color: rgba(255, 255, 255, 0.08) !important;
+        border-color: rgba(255, 255, 255, 0.3) !important;
     }
 </style>
 @endsection

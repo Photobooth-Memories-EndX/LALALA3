@@ -13,28 +13,6 @@
 
         @include('main.record.components.record-hero')
 
-        <!-- SECTION HEADER: Export KP OWL -->
-        <div class="card border-0 shadow-sm p-3 p-md-4 mb-4 rounded-3 bg-white record-section-header">
-            <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 record-section-icon"
-                         style="width: 54px; height: 54px; background-color: #dcfce7; color: #15803d; border-radius: 12px;">
-                        <i class="ti ti-download fs-1"></i>
-                    </div>
-                    <div>
-                        <h2 class="h3 fw-bold mb-1 text-dark">Export KP OWL</h2>
-                        <p class="text-muted small mb-0">Learning Record Export Center — Configure source, filters, and generate comprehensive reports.</p>
-                    </div>
-                </div>
-
-                <div class="d-flex align-items-center gap-2">
-                    <span class="badge bg-success-lt text-success px-3 py-1.5 rounded-pill fw-semibold" style="font-size: 0.8rem;">
-                        <i class="ti ti-shield-check me-1"></i> Verified Export Hub
-                    </span>
-                </div>
-            </div>
-        </div>
-
         @include('main.record.components.record-navigation')
 
         <!-- EXPORT CENTER MAIN FORM CONTAINER -->
