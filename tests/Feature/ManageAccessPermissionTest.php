@@ -179,7 +179,6 @@ class ManageAccessPermissionTest extends TestCase
         $expectedStandardModules = [
             'admin_management' => 'Admin Management',
             'user_management' => 'User Management',
-            'learning_management' => 'Learning Management',
             'content_repository' => 'Content Repository',
             'category_classification' => 'Category & Classification',
             'assessment_management' => 'Assessment Management',
@@ -207,6 +206,10 @@ class ManageAccessPermissionTest extends TestCase
             $response->assertSee($key);
         }
 
+        // Learning Management is removed from UI presentation
+        $content = $response->getContent();
+        $this->assertDoesNotMatchRegularExpression('/<input[^>]*type="checkbox"[^>]*value="learning_management"/i', $content);
+
         foreach ($expectedDebuggerModules as $key => $label) {
             $response->assertSee($label);
             $response->assertSee($key);
@@ -226,6 +229,11 @@ class ManageAccessPermissionTest extends TestCase
         RoleAccessPermission::updateOrCreate(
             ['role' => User::ROLE_USER, 'module_key' => 'learning_hours_management'],
             ['can_access' => false]
+        );
+
+        RoleAccessPermission::updateOrCreate(
+            ['role' => User::ROLE_SUPER_ADMIN, 'module_key' => 'learning_hours_management'],
+            ['can_access' => true]
         );
 
         $this->assertTrue($adminUser->canAccessManageModule('learning_hours_management'));

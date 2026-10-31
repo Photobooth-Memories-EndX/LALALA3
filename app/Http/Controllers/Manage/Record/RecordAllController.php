@@ -106,12 +106,13 @@ class RecordAllController extends Controller
         }
 
         $resolved = self::resolveClassification($classification, true);
+        $displayName = $resolved['displayName'] ?? (strcasecmp($resolved['name'], 'Audit Isolated Classification') === 0 ? 'Unclassification' : $resolved['name']);
         $filterOptions = $this->combinedService->getFilterOptions();
 
         return view('main.record.all.classification', [
-            'title'              => "Classification: {$resolved['name']}",
-            'subtitle'           => "Combined Online & Offline Learning Records for {$resolved['name']}",
-            'classificationName' => $resolved['name'],
+            'title'              => "Classification: {$displayName}",
+            'subtitle'           => "Combined Online & Offline Learning Records for {$displayName}",
+            'classificationName' => $displayName,
             'slug'               => $resolved['slug'],
             'isUnclassified'     => $resolved['is_unclassified'],
             'years'              => $filterOptions['years'],
@@ -428,51 +429,107 @@ class RecordAllController extends Controller
     {
         $trimmed = trim($input);
         $slugified = Str::slug($trimmed);
+        $lower = strtolower($trimmed);
 
-        if ($trimmed === '' || $slugified === '' || $slugified === 'unclassified' || strtolower($trimmed) === 'unclassified') {
+        // 1. Unclassification triggers (empty, null, unclassified, unclassification, audit isolated)
+        $unclassSlugs = ['unclassified', 'unclassification', 'audit-isolated-classification'];
+        $unclassNames = ['unclassified', 'unclassification', 'audit isolated classification'];
+        if ($trimmed === '' || $slugified === '' || in_array($slugified, $unclassSlugs, true) || in_array($lower, $unclassNames, true)) {
             return [
-                'name'            => 'Unclassified',
-                'slug'            => 'unclassified',
+                'name'            => 'Unclassification',
+                'displayName'     => 'Unclassification',
+                'slug'            => 'unclassification',
                 'is_unclassified' => true,
             ];
         }
 
-        $dbOnline = DB::table('classification')
-            ->whereNotNull('classification_name')
-            ->where('classification_name', '!=', '')
-            ->distinct()
-            ->pluck('classification_name')
-            ->all();
-
-        $dbOffline = [];
-        if (Schema::hasTable('offline_trainings')) {
-            $dbOffline = DB::table('offline_trainings')
-                ->whereNull('deleted_at')
-                ->whereNotNull('main_classification')
-                ->where('main_classification', '!=', '')
-                ->distinct()
-                ->pluck('main_classification')
-                ->all();
+        // 2. Load master classifications from table `classification`
+        $masters = [];
+        $dbMasters = DB::table('classification')->orderBy('id')->get();
+        foreach ($dbMasters as $m) {
+            $mSlug = !empty($m->slug) ? $m->slug : Str::slug($m->classification_name);
+            $masters[$mSlug] = [
+                'id'                  => (string) $m->id,
+                'classification_name' => trim($m->classification_name),
+                'slug'                => $mSlug,
+            ];
         }
 
-        $candidates = array_values(array_unique(array_filter(array_map('trim', array_merge($dbOnline, $dbOffline, self::STATIC_CLASSIFICATIONS)))));
+        // Ensure Compliance is recognized as a master classification
+        if (!isset($masters['compliance'])) {
+            $masters['compliance'] = [
+                'id'                  => 'compliance',
+                'classification_name' => 'Compliance',
+                'slug'                => 'compliance',
+            ];
+        }
 
-        foreach ($candidates as $candidate) {
-            if (Str::slug($candidate) === $slugified || strtolower(trim($candidate)) === strtolower($trimmed)) {
+        // 3. Explicit canonical aliases (e.g. Basic Common Duties -> Basic & Common Duties)
+        $aliases = [
+            'basic common duties'     => 'basic-common-duties',
+            'basic & common duties'   => 'basic-common-duties',
+            'basic and common duties' => 'basic-common-duties',
+            'basic-common-duties'     => 'basic-common-duties',
+        ];
+
+        if (isset($aliases[$lower])) {
+            $targetSlug = $aliases[$lower];
+            if (isset($masters[$targetSlug])) {
+                $target = $masters[$targetSlug];
                 return [
-                    'name'            => $candidate,
-                    'slug'            => Str::slug($candidate),
+                    'name'            => $target['classification_name'],
+                    'displayName'     => $target['classification_name'],
+                    'slug'            => $target['slug'],
                     'is_unclassified' => false,
                 ];
             }
         }
 
+        // 4. Match by slug against master classifications
+        if (isset($masters[$slugified])) {
+            $target = $masters[$slugified];
+            return [
+                'name'            => $target['classification_name'],
+                'displayName'     => $target['classification_name'],
+                'slug'            => $target['slug'],
+                'is_unclassified' => false,
+            ];
+        }
+
+        // 5. Match by case-insensitive name against master classifications
+        foreach ($masters as $target) {
+            if (strcasecmp($target['classification_name'], $trimmed) === 0) {
+                return [
+                    'name'            => $target['classification_name'],
+                    'displayName'     => $target['classification_name'],
+                    'slug'            => $target['slug'],
+                    'is_unclassified' => false,
+                ];
+            }
+        }
+
+        // 6. Match by normalized ampersand / 'and' slug
+        $normalizedAmpSlug = Str::slug(str_replace('&', 'and', $trimmed));
+        foreach ($masters as $target) {
+            $targetAmpSlug = Str::slug(str_replace('&', 'and', $target['classification_name']));
+            if ($normalizedAmpSlug === $targetAmpSlug) {
+                return [
+                    'name'            => $target['classification_name'],
+                    'displayName'     => $target['classification_name'],
+                    'slug'            => $target['slug'],
+                    'is_unclassified' => false,
+                ];
+            }
+        }
+
+        // 7. Non-master fallback: if abortIfNotFound is true abort 404, else treat as Unclassification or formatted name
         if ($abortIfNotFound) {
             abort(404, 'Classification not found');
         }
 
         return [
             'name'            => ucwords(str_replace('-', ' ', $slugified)),
+            'displayName'     => ucwords(str_replace('-', ' ', $slugified)),
             'slug'            => $slugified,
             'is_unclassified' => false,
         ];

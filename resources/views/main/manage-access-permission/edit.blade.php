@@ -154,13 +154,26 @@
                 </div>
 
                 @php
+                    $hiddenModuleKeys = [
+                        'learning_management',
+                    ];
                     $debuggerModuleKeys = [
                         'learning_hours_management',
                         'playlist_debug_tools',
                     ];
-                    $standardModules = collect($modules)->except($debuggerModuleKeys);
+                    $standardModules = collect($modules)->except(array_merge($debuggerModuleKeys, $hiddenModuleKeys));
                     $debuggerModules = collect($modules)->only($debuggerModuleKeys);
                 @endphp
+
+                {{-- Preserve unmanaged/hidden permission state so saving UI permissions does not revoke it --}}
+                @php
+                    $learningManagementChecked = isset($permissions['learning_management'])
+                        ? (bool) $permissions['learning_management']
+                        : in_array((int) $role, [\App\Models\User::ROLE_ADMIN, \App\Models\User::ROLE_SUPER_ADMIN], true);
+                @endphp
+                @if ($learningManagementChecked)
+                    <input type="hidden" name="permissions[]" value="learning_management">
+                @endif
 
                 <div class="card permission-module-section border-0 shadow-sm">
                     <div class="card-header permission-section-header">

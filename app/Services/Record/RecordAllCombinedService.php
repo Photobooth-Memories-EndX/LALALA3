@@ -98,32 +98,191 @@ class RecordAllCombinedService
     }
 
     /**
-     * Calculate combined Classification Summary table rows.
+     * Cached master classifications list from table `classification`.
      */
-    public function getClassificationSummary(): Collection
+    protected static ?array $masterClassificationsCache = null;
+
+    /**
+     * Get master classifications from table `classification` + Compliance.
+     */
+    public static function getMasterClassifications(): array
     {
-        // 1. Online classifications
-        $onlineClassifications = $this->learningManageController->getClassificationSummary();
+        if (self::$masterClassificationsCache !== null) {
+            return self::$masterClassificationsCache;
+        }
 
-        $onlineMap = [];
-        foreach ($onlineClassifications as $oc) {
-            $name = trim((string) ($oc->classification_name ?? ''));
-            if ($name === '') {
-                $name = 'Unclassified';
-            }
-            $key = strtolower($name);
+        $masters = [];
+        $dbMasters = DB::table('classification')
+            ->orderBy('id')
+            ->get();
 
-            $onlineMap[$key] = [
-                'name'           => $name,
-                'total_learning' => (int) ($oc->total_learning ?? 0),
-                'ongoing'        => (int) ($oc->ongoing_learning ?? 0),
-                'finished'       => (int) ($oc->finished_learning ?? 0),
-                'learning_hours' => (float) ($oc->learning_hours ?? 0),
+        foreach ($dbMasters as $m) {
+            $slug = !empty($m->slug) ? $m->slug : Str::slug($m->classification_name);
+            $masters[$slug] = [
+                'id'                  => (string) $m->id,
+                'classification_name' => trim($m->classification_name),
+                'slug'                => $slug,
+                'is_active'           => (int) ($m->is_active ?? 1),
             ];
         }
 
-        // 2. Offline classifications
-        $offlineMap = [];
+        if (!isset($masters['compliance'])) {
+            $masters['compliance'] = [
+                'id'                  => 'compliance',
+                'classification_name' => 'Compliance',
+                'slug'                => 'compliance',
+                'is_active'           => 1,
+            ];
+        }
+
+        self::$masterClassificationsCache = $masters;
+        return self::$masterClassificationsCache;
+    }
+
+    /**
+     * Resolve any raw classification name or ID into canonical master entry or Unclassification bucket.
+     */
+    public static function resolveCanonical(?string $rawName, $id = null): array
+    {
+        $masters = self::getMasterClassifications();
+
+        // 1. Try by master ID
+        if ($id !== null && $id !== '') {
+            foreach ($masters as $m) {
+                if ((string) $m['id'] === (string) $id) {
+                    return array_merge($m, ['is_unclassified' => false]);
+                }
+            }
+        }
+
+        $cleaned = trim(preg_replace('/\s+/', ' ', (string) ($rawName ?? '')));
+        $lower = strtolower($cleaned);
+        $slug = Str::slug($cleaned);
+
+        // 2. Unclassified triggers
+        if ($cleaned === '' || in_array($lower, ['unclassified', 'unclassification', 'audit isolated classification'], true) || in_array($slug, ['unclassified', 'unclassification', 'audit-isolated-classification'], true)) {
+            return [
+                'id'                  => 'unclassification',
+                'classification_name' => 'Unclassification',
+                'slug'                => 'unclassification',
+                'is_unclassified'     => true,
+            ];
+        }
+
+        // 3. Explicit alias mapping (Basic Common Duties variations)
+        $aliases = [
+            'basic common duties'     => 'basic-common-duties',
+            'basic & common duties'   => 'basic-common-duties',
+            'basic and common duties' => 'basic-common-duties',
+            'basic-common-duties'     => 'basic-common-duties',
+        ];
+
+        if (isset($aliases[$lower])) {
+            $targetSlug = $aliases[$lower];
+            if (isset($masters[$targetSlug])) {
+                return array_merge($masters[$targetSlug], ['is_unclassified' => false]);
+            }
+        }
+
+        // 4. Match by slug
+        if (isset($masters[$slug])) {
+            return array_merge($masters[$slug], ['is_unclassified' => false]);
+        }
+
+        // 5. Match by case-insensitive name
+        foreach ($masters as $m) {
+            if (strcasecmp($m['classification_name'], $cleaned) === 0) {
+                return array_merge($m, ['is_unclassified' => false]);
+            }
+        }
+
+        // 6. Ampersand / 'and' normalized slug match
+        $normalizedAmpersandSlug = Str::slug(str_replace('&', 'and', $cleaned));
+        foreach ($masters as $m) {
+            $mAmpSlug = Str::slug(str_replace('&', 'and', $m['classification_name']));
+            if ($normalizedAmpersandSlug === $mAmpSlug) {
+                return array_merge($m, ['is_unclassified' => false]);
+            }
+        }
+
+        // 7. Non-master fallback -> Unclassification
+        return [
+            'id'                  => 'unclassification',
+            'classification_name' => 'Unclassification',
+            'slug'                => 'unclassification',
+            'is_unclassified'     => true,
+        ];
+    }
+
+    /**
+     * Calculate combined Classification Summary table rows with canonical mapping.
+     */
+    public function getClassificationSummary(): Collection
+    {
+        // 1. Initialize master summary map
+        $masters = self::getMasterClassifications();
+        $canonicalSummary = [];
+
+        foreach ($masters as $slug => $master) {
+            $canonicalSummary[$slug] = [
+                'id'                  => $master['id'],
+                'classification_name' => $master['classification_name'],
+                'slug'                => $master['slug'],
+                'kp_owl'              => 0,
+                'non_kp_owl'          => 0,
+                'total_learning'      => 0,
+                'learning_hours'      => 0.0,
+                'ongoing'             => 0,
+                'finished'            => 0,
+                'is_unclassified'     => false,
+            ];
+        }
+
+        // Synthetic catch-all Unclassification group
+        $canonicalSummary['unclassification'] = [
+            'id'                  => 'unclassification',
+            'classification_name' => 'Unclassification',
+            'slug'                => 'unclassification',
+            'kp_owl'              => 0,
+            'non_kp_owl'          => 0,
+            'total_learning'      => 0,
+            'learning_hours'      => 0.0,
+            'ongoing'             => 0,
+            'finished'            => 0,
+            'is_unclassified'     => true,
+        ];
+
+        // 2. Online classifications aggregation
+        $onlineClassifications = $this->learningManageController->getClassificationSummary();
+
+        foreach ($onlineClassifications as $oc) {
+            $resolved = self::resolveCanonical($oc->classification_name ?? null, $oc->id ?? null);
+            $targetSlug = $resolved['slug'];
+
+            if (!isset($canonicalSummary[$targetSlug])) {
+                $canonicalSummary[$targetSlug] = [
+                    'id'                  => $resolved['id'],
+                    'classification_name' => $resolved['classification_name'],
+                    'slug'                => $resolved['slug'],
+                    'kp_owl'              => 0,
+                    'non_kp_owl'          => 0,
+                    'total_learning'      => 0,
+                    'learning_hours'      => 0.0,
+                    'ongoing'             => 0,
+                    'finished'            => 0,
+                    'is_unclassified'     => $resolved['is_unclassified'],
+                ];
+            }
+
+            $count = (int) ($oc->total_learning ?? 0);
+            $canonicalSummary[$targetSlug]['kp_owl'] += $count;
+            $canonicalSummary[$targetSlug]['total_learning'] += $count;
+            $canonicalSummary[$targetSlug]['ongoing'] += (int) ($oc->ongoing_learning ?? 0);
+            $canonicalSummary[$targetSlug]['finished'] += (int) ($oc->finished_learning ?? 0);
+            $canonicalSummary[$targetSlug]['learning_hours'] += (float) ($oc->learning_hours ?? 0);
+        }
+
+        // 3. Offline classifications aggregation
         $hasOfflineTables = Schema::hasTable('offline_trainings') && Schema::hasTable('offline_training_users');
 
         if ($hasOfflineTables) {
@@ -135,75 +294,69 @@ class RecordAllCombinedService
 
             $offlineData = $offlineQuery
                 ->select([
-                    DB::raw("COALESCE(NULLIF(TRIM(ot.main_classification), ''), 'Unclassified') as class_name"),
+                    'ot.main_classification as raw_classification',
                     DB::raw("COUNT(otu.id) as total_count"),
                     DB::raw("SUM(CASE WHEN otu.progress > 0 AND otu.progress < 100 THEN 1 ELSE 0 END) as ongoing_count"),
                     DB::raw("SUM(CASE WHEN otu.progress >= 100 THEN 1 ELSE 0 END) as finished_count"),
                     DB::raw("COALESCE(SUM(otu.learning_hours), 0) as total_hours"),
                 ])
-                ->groupBy(DB::raw("COALESCE(NULLIF(TRIM(ot.main_classification), ''), 'Unclassified')"))
+                ->groupBy('ot.main_classification')
                 ->get();
 
             foreach ($offlineData as $od) {
-                $name = trim((string) ($od->class_name ?? 'Unclassified'));
-                if ($name === '') {
-                    $name = 'Unclassified';
+                $resolved = self::resolveCanonical($od->raw_classification ?? null);
+                $targetSlug = $resolved['slug'];
+
+                if (!isset($canonicalSummary[$targetSlug])) {
+                    $canonicalSummary[$targetSlug] = [
+                        'id'                  => $resolved['id'],
+                        'classification_name' => $resolved['classification_name'],
+                        'slug'                => $resolved['slug'],
+                        'kp_owl'              => 0,
+                        'non_kp_owl'          => 0,
+                        'total_learning'      => 0,
+                        'learning_hours'      => 0.0,
+                        'ongoing'             => 0,
+                        'finished'            => 0,
+                        'is_unclassified'     => $resolved['is_unclassified'],
+                    ];
                 }
-                $key = strtolower($name);
 
-                $offlineMap[$key] = [
-                    'name'           => $name,
-                    'total_learning' => (int) ($od->total_count ?? 0),
-                    'ongoing'        => (int) ($od->ongoing_count ?? 0),
-                    'finished'       => (int) ($od->finished_count ?? 0),
-                    'learning_hours' => (float) ($od->total_hours ?? 0),
-                ];
+                $count = (int) ($od->total_count ?? 0);
+                $canonicalSummary[$targetSlug]['non_kp_owl'] += $count;
+                $canonicalSummary[$targetSlug]['total_learning'] += $count;
+                $canonicalSummary[$targetSlug]['ongoing'] += (int) ($od->ongoing_count ?? 0);
+                $canonicalSummary[$targetSlug]['finished'] += (int) ($od->finished_count ?? 0);
+                $canonicalSummary[$targetSlug]['learning_hours'] += (float) ($od->total_hours ?? 0);
             }
         }
 
-        // 3. Union & merge by classification key
-        $allKeys = array_unique(array_merge(array_keys($onlineMap), array_keys($offlineMap)));
-        sort($allKeys);
+        // 4. Split normal classifications and synthetic Unclassification
+        $normal = [];
+        $unclassRow = null;
 
-        $merged = [];
-        $unclassifiedItem = null;
+        foreach ($canonicalSummary as $item) {
+            $item['learning_hours'] = round($item['learning_hours'], 2);
 
-        foreach ($allKeys as $k) {
-            $on = $onlineMap[$k] ?? ['name' => ucfirst($k), 'total_learning' => 0, 'ongoing' => 0, 'finished' => 0, 'learning_hours' => 0.0];
-            $off = $offlineMap[$k] ?? ['name' => ucfirst($k), 'total_learning' => 0, 'ongoing' => 0, 'finished' => 0, 'learning_hours' => 0.0];
-
-            $displayName = $on['name'] !== ucfirst($k) ? $on['name'] : $off['name'];
-            $kpCount = $on['total_learning'];
-            $nonKpCount = $off['total_learning'];
-            $totalCount = $kpCount + $nonKpCount;
-            $totHours = round($on['learning_hours'] + $off['learning_hours'], 2);
-            $ongoingCount = $on['ongoing'] + $off['ongoing'];
-            $finishedCount = $on['finished'] + $off['finished'];
-
-            $row = [
-                'classification_name' => $displayName,
-                'slug'                => Str::slug($displayName) ?: 'unclassified',
-                'kp_owl'              => $kpCount,
-                'non_kp_owl'          => $nonKpCount,
-                'total_learning'      => $totalCount,
-                'learning_hours'      => $totHours,
-                'ongoing'             => $ongoingCount,
-                'finished'            => $finishedCount,
-            ];
-
-            if (strtolower($displayName) === 'unclassified') {
-                $unclassifiedItem = $row;
+            if ($item['is_unclassified'] || $item['slug'] === 'unclassification') {
+                $unclassRow = $item;
             } else {
-                $merged[] = $row;
+                $normal[] = $item;
             }
         }
 
-        // Keep Unclassified at the end if present
-        if ($unclassifiedItem !== null) {
-            $merged[] = $unclassifiedItem;
+        // 5. Custom sorting: normal classifications sorted alphabetically
+        usort($normal, function ($a, $b) {
+            return strcasecmp($a['classification_name'], $b['classification_name']);
+        });
+
+        // 6. Append Unclassification strictly at the bottom (only if total_learning > 0)
+        $merged = $normal;
+        if ($unclassRow !== null && $unclassRow['total_learning'] > 0) {
+            $merged[] = $unclassRow;
         }
 
-        // Add 1-based index 'no'
+        // 7. Generate 1-based sequential 'no'
         $finalCollection = collect();
         foreach ($merged as $idx => $item) {
             $item['no'] = $idx + 1;
@@ -221,31 +374,15 @@ class RecordAllCombinedService
         $classifications = [];
         $years = [];
 
-        // Online classifications
-        $onlineClasses = DB::table('classification')
-            ->whereNotNull('classification_name')
-            ->where('classification_name', '!=', '')
-            ->distinct()
-            ->pluck('classification_name')
-            ->toArray();
-        $classifications = array_merge($classifications, $onlineClasses);
-
-        // Offline classifications
-        if (Schema::hasTable('offline_trainings')) {
-            $offlineClassesQuery = DB::table('offline_trainings')
-                ->whereNotNull('main_classification')
-                ->where('main_classification', '!=', '')
-                ->whereNull('deleted_at');
-            OfflineTraining::applyRecordScope($offlineClassesQuery);
-            $offlineClasses = $offlineClassesQuery
-                ->distinct()
-                ->pluck('main_classification')
-                ->toArray();
-            $classifications = array_merge($classifications, $offlineClasses);
+        // Canonical classifications dropdown from master table + Compliance + Unclassification
+        $masterList = self::getMasterClassifications();
+        $classNames = [];
+        foreach ($masterList as $m) {
+            $classNames[] = $m['classification_name'];
         }
-
-        $classifications = array_values(array_unique(array_filter(array_map('trim', $classifications))));
-        sort($classifications);
+        sort($classNames);
+        $classNames[] = 'Unclassification';
+        $classifications = array_values(array_unique($classNames));
 
         // Online years
         $cuYears = DB::table('content_users')->selectRaw('DISTINCT YEAR(created_at) as yr')->pluck('yr')->toArray();
@@ -882,7 +1019,7 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
             $resolvedClass = RecordAllController::resolveClassification($categorySlug, false);
             $resolvedName = $resolvedClass['name'] ?? $categorySlug;
 
-            if (strtolower($classification) === 'unclassified' || ($resolvedClass['is_unclassified'] ?? false)) {
+            if (strtolower($classification) === 'unclassified' || strtolower($classification) === 'unclassification' || ($resolvedClass['is_unclassified'] ?? false)) {
                 $classContentIds = DB::table('content')
                     ->leftJoin('classification', 'classification.id', '=', 'content.classification_id')
                     ->where(function ($sub) {
@@ -894,8 +1031,9 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
             } else {
                 $classContentIds = DB::table('content')
                     ->join('classification', 'classification.id', '=', 'content.classification_id')
-                    ->where(function ($q) use ($categorySlug, $classificationSlug, $resolvedName) {
+                    ->where(function ($q) use ($categorySlug, $resolvedClass, $resolvedName, $classificationSlug) {
                         $q->where('classification.slug', $categorySlug)
+                          ->orWhere('classification.slug', $resolvedClass['slug'])
                           ->orWhere('classification.slug', Str::slug($categorySlug))
                           ->orWhere('classification.classification_name', $resolvedName)
                           ->orWhere('classification.classification_name', $categorySlug)
@@ -1151,7 +1289,7 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
             $resolvedClass = RecordAllController::resolveClassification($categorySlug, false);
             $resolvedName = $resolvedClass['name'] ?? $categorySlug;
 
-            if (strtolower($classification) === 'unclassified' || ($resolvedClass['is_unclassified'] ?? false)) {
+            if (strtolower($classification) === 'unclassified' || strtolower($classification) === 'unclassification' || ($resolvedClass['is_unclassified'] ?? false)) {
                 $classContentIds = DB::table('content')
                     ->leftJoin('classification', 'classification.id', '=', 'content.classification_id')
                     ->where(function ($sub) {
@@ -1163,8 +1301,9 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
             } else {
                 $classContentIds = DB::table('content')
                     ->join('classification', 'classification.id', '=', 'content.classification_id')
-                    ->where(function ($qSub) use ($categorySlug, $classificationSlug, $resolvedName) {
+                    ->where(function ($qSub) use ($categorySlug, $resolvedClass, $resolvedName, $classificationSlug) {
                         $qSub->where('classification.slug', $categorySlug)
+                          ->orWhere('classification.slug', $resolvedClass['slug'])
                           ->orWhere('classification.slug', Str::slug($categorySlug))
                           ->orWhere('classification.classification_name', $resolvedName)
                           ->orWhere('classification.classification_name', $categorySlug)
@@ -1423,20 +1562,31 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
             $resolvedClass = RecordAllController::resolveClassification($categorySlug, false);
             $resolvedName = $resolvedClass['name'] ?? $categorySlug;
 
-            if (strtolower($classification) === 'unclassified' || ($resolvedClass['is_unclassified'] ?? false)) {
-                $q->where(function ($sub) {
+            if (strtolower($classification) === 'unclassified' || strtolower($classification) === 'unclassification' || ($resolvedClass['is_unclassified'] ?? false)) {
+                $knownMasters = [
+                    'Leadership', 'Basic & Common Duties', 'Basic Common Duties',
+                    'Job Functional', 'Maintenance', 'Language', 'Innovation',
+                    'SHE', 'ISO Standard', 'Technology', 'Other', 'Basic mindset', 'Compliance'
+                ];
+                $q->where(function ($sub) use ($knownMasters) {
                     $sub->whereNull('ot.main_classification')
-                        ->orWhere('ot.main_classification', '');
+                        ->orWhereRaw("TRIM(ot.main_classification) = ''")
+                        ->orWhereIn('ot.main_classification', ['Audit Isolated Classification', 'Unclassified', 'Unclassification'])
+                        ->orWhereNotIn('ot.main_classification', $knownMasters);
                 });
             } else {
-                $q->where(function ($q) use ($categorySlug, $classificationSlug, $resolvedName) {
-                    $q->where('ot.main_classification', $resolvedName)
-                      ->orWhere('ot.main_classification', $categorySlug)
-                      ->orWhereRaw('LOWER(ot.main_classification) = ?', [strtolower($resolvedName)])
-                      ->orWhereRaw('LOWER(ot.main_classification) = ?', [$classificationSlug])
-                      ->orWhereRaw('LOWER(ot.main_classification) = ?', [strtolower($categorySlug)])
-                      ->orWhereRaw("LOWER(REPLACE(REPLACE(ot.main_classification, ' ', '-'), '&', 'and')) = ?", [strtolower(Str::slug($categorySlug))])
-                      ->orWhereRaw("LOWER(REPLACE(ot.main_classification, ' ', '-')) = ?", [strtolower(Str::slug($categorySlug))]);
+                $q->where(function ($q) use ($categorySlug, $resolvedClass, $resolvedName, $classificationSlug) {
+                    if (($resolvedClass['slug'] ?? '') === 'basic-common-duties' || $resolvedName === 'Basic & Common Duties' || $categorySlug === 'basic-common-duties') {
+                        $q->whereIn('ot.main_classification', ['Basic & Common Duties', 'Basic Common Duties']);
+                    } else {
+                        $q->where('ot.main_classification', $resolvedName)
+                          ->orWhere('ot.main_classification', $categorySlug)
+                          ->orWhereRaw('LOWER(ot.main_classification) = ?', [strtolower($resolvedName)])
+                          ->orWhereRaw('LOWER(ot.main_classification) = ?', [$classificationSlug])
+                          ->orWhereRaw('LOWER(ot.main_classification) = ?', [strtolower($categorySlug)])
+                          ->orWhereRaw("LOWER(REPLACE(REPLACE(ot.main_classification, ' ', '-'), '&', 'and')) = ?", [strtolower(Str::slug($resolvedClass['slug'] ?? $categorySlug))])
+                          ->orWhereRaw("LOWER(REPLACE(ot.main_classification, ' ', '-')) = ?", [strtolower(Str::slug($resolvedClass['slug'] ?? $categorySlug))]);
+                    }
                 });
             }
         }

@@ -68,6 +68,17 @@ class ManageAccessPermissionController extends Controller
         $selectedModules = $request->input('permissions', []);
 
         foreach ($this->modules as $moduleKey => $label) {
+            // Permission 'learning_management' is no longer managed through UI.
+            // Retain existing permission assignment so it is not accidentally revoked on save.
+            if ($moduleKey === 'learning_management' && !in_array('learning_management', $selectedModules, true)) {
+                $existing = RoleAccessPermission::where('role', $role)
+                    ->where('module_key', $moduleKey)
+                    ->first();
+                if ($existing) {
+                    continue;
+                }
+            }
+
             RoleAccessPermission::updateOrCreate(
                 [
                     'role' => $role,

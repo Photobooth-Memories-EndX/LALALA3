@@ -11,16 +11,6 @@
 
     <div class="row g-3">
         
-        @if(auth()->user()->canAccessManageModule('learning_management'))
-        @include('main.manage.components.admin-menu-card', [
-            'title' => 'Learning Management',
-            'description' => 'Monitor employee learning activities, track learning progress, review learning history, and oversee training performance.',
-            'url' => url('manage/learning'),
-            'button' => 'Manage Learning',
-            'icon' => 'ti ti-school'
-            ])
-            @endif
-
             @if(auth()->user()->canAccessManageModule('record_management'))
             @include('main.manage.components.admin-menu-card', [
                 'title' => 'Record Management',

@@ -65,6 +65,8 @@ use App\Http\Controllers\Manage\Record\OfflineTrainingOptionController;
 use App\Http\Controllers\Manage\Record\OfflineTrainingImportController;
 use App\Http\Controllers\Manage\Record\Offline\PtkpImportController;
 use App\Http\Controllers\Manage\Record\ImportHistoryController;
+use App\Http\Controllers\Manage\AllRecordController;
+use App\Http\Controllers\Manage\ClassificationRecordController;
 
 /*
 |--------------------------------------------------------------------------
@@ -585,20 +587,32 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
             Route::get('offline/{id}/edit', [RecordOfflineController::class, 'edit'])->name('offline.edit');
             Route::put('offline/{id}', [RecordOfflineController::class, 'update'])->name('offline.update');
             Route::delete('offline/{id}', [RecordOfflineController::class, 'destroy'])->name('offline.destroy');
-            Route::get('all', [RecordAllController::class, 'index'])->name('all');
-            Route::get('all/ajax/summary', [RecordAllController::class, 'ajaxSummary'])->name('all.ajax.summary');
-            Route::get('all/ajax/classification', [RecordAllController::class, 'ajaxClassification'])->name('all.ajax.classification');
-            Route::get('all/classification/{classification}', [RecordAllController::class, 'classification'])->name('all.classification');
-            Route::get('all/classification/{classification}/datatable', [RecordAllController::class, 'classificationDatatable'])->name('all.classification.datatable');
-            Route::get('all/classification/{classification}/download/{format?}', [RecordAllController::class, 'classificationDownload'])->name('all.classification.download');
-            Route::get('all/datatable', [RecordAllController::class, 'datatable'])->name('all.datatable');
+            // Halaman 1 — All Record
+            Route::get('all', [AllRecordController::class, 'index'])->name('all');
+            Route::get('all/data', [AllRecordController::class, 'data'])->name('all.data');
+            Route::get('all/export', [AllRecordController::class, 'export'])->name('all.export');
+            Route::get('all/{source}/{id}/details', [AllRecordController::class, 'details'])->name('all.details');
+            Route::get('all/detail/{source}/{id}', [AllRecordController::class, 'details']);
+
+            // Halaman 2 — Classification Detail
+            Route::get('all/classification/{classification}', [ClassificationRecordController::class, 'index'])->name('all.classification');
+            Route::get('all/classification/{classification}/data', [ClassificationRecordController::class, 'data'])->name('all.classification.data');
+            Route::get('all/classification/{classification}/export', [ClassificationRecordController::class, 'export'])->name('all.classification.export');
+            Route::get('all/classification/{classification}/{source}/{id}/details', [ClassificationRecordController::class, 'details'])->name('all.classification.details');
+            Route::get('all/classification/{classification}/detail/{source}/{id}', [ClassificationRecordController::class, 'details']);
+            Route::get('all/ajax/summary', [AllRecordController::class, 'ajaxSummary'])->name('all.ajax.summary');
+            Route::get('all/ajax/classification', [AllRecordController::class, 'ajaxClassification'])->name('all.ajax.classification');
+            // Legacy alias redirected to ClassificationRecordController
+            Route::get('all/classification/{classification}/datatable', [ClassificationRecordController::class, 'data'])->name('all.classification.datatable');
+            Route::get('all/classification/{classification}/download/{format?}', [ClassificationRecordController::class, 'export'])->name('all.classification.download');
+            Route::get('all/datatable', [AllRecordController::class, 'data'])->name('all.datatable');
             Route::get('all/participant/{identifier}', [RecordAllController::class, 'participantDetail'])->name('all.participant');
             Route::get('all/participant/{identifier}/datatable', [RecordAllController::class, 'participantDatatable'])->name('all.participant.datatable');
             Route::get('all/participant/{identifier}/summary', [RecordAllController::class, 'participantAjaxSummary'])->name('all.participant.summary');
             Route::get('all/participant/{identifier}/export/excel', [RecordAllController::class, 'participantExportExcel'])->name('all.participant.export.excel');
             Route::get('all/participant/{identifier}/export/csv', [RecordAllController::class, 'participantExportCsv'])->name('all.participant.export.csv');
             Route::get('all/participant/{identifier}/export/pdf', [RecordAllController::class, 'participantExportPdf'])->name('all.participant.export.pdf');
-            Route::get('all/course/{type}/{id}', [RecordAllController::class, 'courseRedirect'])->name('all.course');
+            Route::get('all/course/{type}/{id}', [AllRecordController::class, 'courseRedirect'])->name('all.course');
             Route::get('export-all', [RecordExportController::class, 'index'])->name('export-all');
             Route::match(['get', 'post'], 'export-all/preview', [RecordExportController::class, 'preview'])->name('export-all.preview');
             Route::get('export-all/download', [RecordExportController::class, 'download'])->name('export-all.download');

@@ -20,15 +20,7 @@
 
         @include('main.record.components.record-navigation')
 
-        <!-- Action Bar: Export All Record -->
-        <div class="d-flex justify-content-end mb-4">
-            <a href="{{ route('manage.record.export.all') }}" class="btn btn-outline-secondary rounded-3 px-3 d-inline-flex align-items-center gap-1.5" id="btn-export-all-combined">
-                <i class="ti ti-download fs-2"></i>
-                <span>Export All Record (.xlsx)</span>
-            </a>
-        </div>
-
-        <!-- CLASSIFICATION SUMMARY CARD (ASYNC SKELETON SHELL) -->
+        <!-- CLASSIFICATION SUMMARY CARD (COLLAPSIBLE / ASYNC) -->
         <div class="card border-0 shadow-sm rounded-4 mb-4">
             <div class="card-header bg-white border-0 pt-4 pb-2 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
                 <div class="d-flex align-items-center gap-2">
@@ -37,7 +29,14 @@
                     </span>
                     <h4 class="card-title fw-bold text-dark mb-0">Classification Summary</h4>
                 </div>
-                <span class="text-muted small">Combined Online &amp; Offline Training Categories</span>
+                <div class="d-flex align-items-center gap-3">
+                    <span class="text-muted small">Combined Online &amp; Offline Training Categories</span>
+                    <!-- Download Excel Button for All Learning Records -->
+                    <a href="{{ route('manage.record.all.export') }}" id="btn-all-export-excel" class="btn btn-sm btn-success rounded-3 px-3 d-inline-flex align-items-center gap-1.5" title="Export All Learning Records to Excel (.xlsx)">
+                        <i class="ti ti-file-spreadsheet fs-3"></i>
+                        <span>Export Excel (.xlsx)</span>
+                    </a>
+                </div>
             </div>
             <div class="card-body p-4 pt-2" id="all-classification-container">
                 @include('main.record.components.all-classification-skeleton')
@@ -45,36 +44,12 @@
         </div>
     </div>
 </div>
-@include('main.record.components.more-information-modal')
 @endsection
 
 @section('style')
 <style>
     .manage-record-page {
         background: #fff;
-    }
-
-    .table-responsive {
-        max-height: 70vh;
-        overflow-y: auto;
-        position: relative;
-    }
-    table thead th,
-    .manage-record-page table thead th {
-        position: sticky !important;
-        top: 0 !important;
-        z-index: 10 !important;
-        background-color: #f8fafc !important; /* Solid neutral background so rows pass underneath cleanly */
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); /* Subtle bottom border line when sticky */
-    }
-    [data-bs-theme="dark"] table thead th,
-    [data-bs-theme="dark"] .manage-record-page table thead th,
-    body.dark-mode table thead th,
-    body.dark-mode .manage-record-page table thead th,
-    body.theme-dark table thead th,
-    body.theme-dark .manage-record-page table thead th {
-        background-color: #1e293b !important;
-        color: #94a3b8 !important;
     }
 
     [data-bs-theme="dark"] .manage-record-page,
@@ -98,69 +73,13 @@
         color: #60a5fa !important;
     }
 
-    .record-section-header {
-        border-radius: 14px !important;
-        border: 1px solid #e2e8f0 !important;
-    }
-
-    [data-bs-theme="dark"] .record-section-header,
-    body.dark-mode .record-section-header,
-    body.theme-dark .record-section-header {
-        background-color: #1e293b !important;
-        border-color: rgba(255, 255, 255, 0.1) !important;
-    }
-
-    [data-bs-theme="dark"] .record-section-header .text-dark,
-    body.dark-mode .record-section-header .text-dark,
-    body.theme-dark .record-section-header .text-dark {
-        color: #f8fafc !important;
-    }
-
     .stat-kpi-card {
         border-radius: 12px !important;
         transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s cubic-bezier(0.16, 1, 0.3, 1);
     }
-
     .stat-kpi-card:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08) !important;
-    }
-
-    /* Export button dark mode support */
-    [data-bs-theme="dark"] #btn-export-all-combined,
-    body.dark-mode #btn-export-all-combined,
-    body.theme-dark #btn-export-all-combined {
-        color: #cbd5e1 !important;
-        border-color: rgba(255, 255, 255, 0.2) !important;
-        background-color: transparent !important;
-    }
-
-    [data-bs-theme="dark"] #btn-export-all-combined:hover,
-    body.dark-mode #btn-export-all-combined:hover,
-    body.theme-dark #btn-export-all-combined:hover {
-        color: #ffffff !important;
-        background-color: rgba(255, 255, 255, 0.08) !important;
-        border-color: rgba(255, 255, 255, 0.3) !important;
-    }
-
-    /* Non KP OWL Badge */
-    .badge-non-kp-owl {
-        background-color: rgba(255, 152, 0, 0.12) !important;
-        color: #ef8b00 !important;
-        border: 1px solid rgba(255, 152, 0, 0.18) !important;
-        border-radius: 5px !important;
-        padding: 3px 7px !important;
-        font-weight: 500 !important;
-        display: inline-block !important;
-        line-height: 1.2 !important;
-    }
-
-    [data-bs-theme="dark"] .badge-non-kp-owl,
-    body.dark-mode .badge-non-kp-owl,
-    body.theme-dark .badge-non-kp-owl {
-        background-color: rgba(255, 152, 0, 0.18) !important;
-        color: #ffb74d !important;
-        border-color: rgba(255, 152, 0, 0.25) !important;
     }
 </style>
 @endsection
@@ -200,19 +119,6 @@ $(function () {
             error: function (xhr, status) {
                 if (status === 'abort') return;
                 kpiXhr = null;
-                $('#all-kpi-summary-container').html(`
-                    <div class="card border-0 shadow-sm p-3 mb-4 rounded-3 bg-white stat-kpi-card">
-                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                            <div class="d-flex align-items-center gap-2 text-danger small">
-                                <i class="ti ti-alert-circle fs-3"></i>
-                                <span>Unable to load combined learning summary.</span>
-                            </div>
-                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="loadAllKpiSummary()">
-                                <i class="ti ti-refresh me-1"></i> Retry
-                            </button>
-                        </div>
-                    </div>
-                `);
             }
         });
     };
@@ -243,79 +149,12 @@ $(function () {
             error: function (xhr, status) {
                 if (status === 'abort') return;
                 classXhr = null;
-                $('#all-classification-container').html(`
-                    <div class="p-3 text-center">
-                        <div class="text-danger small mb-2">
-                            <i class="ti ti-alert-circle me-1"></i> Unable to load classification summary.
-                        </div>
-                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="loadAllClassificationSummary()">
-                            <i class="ti ti-refresh me-1"></i> Retry
-                        </button>
-                    </div>
-                `);
             }
         });
     };
 
-    // Initial Async Triggers
     loadAllKpiSummary();
     loadAllClassificationSummary();
-
-    // Click event handler for .btn-more-info / More Information
-    $(document).on('click', '.btn-more-info', function (e) {
-        e.preventDefault();
-        const recordId = $(this).data('id') || $(this).data('record-id') || $(this).attr('data-id') || $(this).attr('data-record-id');
-        const source = ($(this).data('source') || $(this).data('record-source') || $(this).attr('data-source') || $(this).attr('data-record-source') || 'offline').toString().toLowerCase();
-        if (!recordId) return;
-
-        const modalEl = document.getElementById('moreInformationModal');
-        if (modalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-            bootstrap.Modal.getOrCreateInstance(modalEl).show();
-        }
-
-        $('#more-info-loading').show();
-        $('#more-info-content').hide();
-
-        // Fetch the record detail via $.ajax() from /manage/record/detail/{id}
-        $.ajax({
-            url: '/manage/record/detail/' + encodeURIComponent(recordId) + (source ? '?source=' + encodeURIComponent(source) : ''),
-            type: 'GET',
-            dataType: 'json',
-            success: function (response) {
-                $('#more-info-loading').hide();
-                $('#more-info-content').show();
-                if (window.populateMoreInformationModal) {
-                    window.populateMoreInformationModal(response);
-                } else {
-                    const d = response.data || response;
-                    $('#modal-badge-source').text(d.source || 'NON KP OWL');
-                    $('#modal-course-title').text(d.course_title || '-');
-                    $('#modal-employee-id').text(d.employee_id || '-');
-                    $('#modal-employee-name').text(d.employee_name || '-');
-                    $('#modal-grade').text(d.grade || '-');
-                    $('#modal-job-position').text(d.job_position || '-');
-                    $('#modal-instructor').text(d.instructor || '-');
-                    $('#modal-bond-status').text(d.bond_status || 'No');
-                    $('#modal-bond-duration').text(d.bond_duration || '-');
-                    $('#modal-bond-end-date').text(d.bond_end_date || '-');
-                    $('#modal-bond-amount').text(d.bond_amount || '-');
-
-                    if ($('#modal-attendance').length || $('#modal-detail-attendance').length) {
-                        const rawAtt = String(d.attendance ?? '').toLowerCase().trim();
-                        const isAttYes = ['1', 'yes', 'true', 'present', 'hadir', 'completed', 'finished'].includes(rawAtt);
-                        const attBadge = isAttYes
-                            ? '<span class="badge bg-success-lt text-success fw-bold px-2 py-1">Yes</span>'
-                            : '<span class="badge bg-danger-lt text-danger fw-bold px-2 py-1">No</span>';
-                        $('#modal-attendance, #modal-detail-attendance').html(attBadge);
-                    }
-                }
-            },
-            error: function () {
-                $('#more-info-loading').hide();
-                $('#more-info-content').show();
-            }
-        });
-    });
 });
 </script>
 @endsection

@@ -207,8 +207,10 @@
                                     <th style="min-width: 110px;">LEARNING HOURS</th>
                                     <th style="min-width: 110px;">% PROGRESS</th>
                                     <th style="min-width: 110px;">PROGRESS STATUS</th>
-                                    <th style="min-width: 140px;">DATE (START - END)</th>
-                                    <th style="min-width: 120px;">TIME (START - END)</th>
+                                    <th style="min-width: 110px;">START DATE</th>
+                                    <th style="min-width: 110px;">END DATE</th>
+                                    <th style="min-width: 100px;">START TIME</th>
+                                    <th style="min-width: 100px;">END TIME</th>
                                     <th style="min-width: 110px;">RECORD MONTH</th>
                                     <th style="min-width: 110px;">REQUIREMENT</th>
                                     <th style="min-width: 100px;">ATTENDANCE</th>
@@ -216,7 +218,7 @@
                                     <th style="min-width: 90px;">SCORE (L2)</th>
                                     <th style="min-width: 90px;">SCORE (L3)</th>
                                     <th style="min-width: 130px;">CERTIFICATE AVAILABILITY</th>
-                                    <th style="min-width: 130px;">PERSON IN CHARGE (PIC)</th>
+
                                     <th style="min-width: 140px;">TOTAL ENGAGEMENT TIME (LH)</th>
                                     <th class="text-end" style="width: 80px;">ACTION</th>
                                 </tr>
@@ -464,6 +466,9 @@
             </div>
         </div>
     </div>
+
+    <!-- INCLUDE RECORD DETAIL MODAL (CANONICAL 18 FIELDS) -->
+    @include('main.record.components.record-detail-modal')
 
     <!-- INCLUDE OFFLINE DETAIL MODAL -->
     @include('main.record.components.more-information-modal')
@@ -1311,6 +1316,7 @@
         $(function() {
             const datatableUrl = @json(route('manage.record.all.classification.datatable', $slug));
             const downloadBaseUrl = @json(route('manage.record.all.classification.download', $slug));
+            window.CLASSIFICATION_DETAIL_ENDPOINT_TEMPLATE = '/manage/record/all/classification/{{ $slug }}/__SOURCE__/__ID__/details';
             const defaultEntries = 25;
 
             let allTable = null;
@@ -1503,7 +1509,7 @@
                         defaultContent: '-'
                     },
                     {
-                        data: 'progress_percent',
+                        data: 'progress_bar',
                         name: 'progress',
                         orderable: true
                     },
@@ -1513,14 +1519,26 @@
                         orderable: true
                     },
                     {
-                        data: 'date_merged',
+                        data: 'start_date',
                         name: 'start_date',
                         orderable: true,
                         defaultContent: '-'
                     },
                     {
-                        data: 'time_merged',
+                        data: 'end_date',
+                        name: 'finish_date',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    {
+                        data: 'start_time',
                         name: 'start_time',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    {
+                        data: 'end_time',
+                        name: 'end_time',
                         orderable: true,
                         defaultContent: '-'
                     },
@@ -1589,14 +1607,8 @@
                         defaultContent: '-'
                     },
                     {
-                        data: 'pic',
-                        name: 'pic',
-                        orderable: true,
-                        defaultContent: '-'
-                    },
-                    {
-                        data: 'total_engagement_duration',
-                        name: 'total_engagement_duration',
+                        data: 'total_engagement_time',
+                        name: 'total_engagement_time',
                         orderable: true,
                         defaultContent: '-'
                     },
