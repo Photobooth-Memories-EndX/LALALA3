@@ -13,6 +13,26 @@
             background-color: #1e293b !important;
             color: #94a3b8 !important;
         }
+
+        /* Non KP OWL Badge */
+        .badge-non-kp-owl {
+            background-color: rgba(255, 152, 0, 0.12) !important;
+            color: #ef8b00 !important;
+            border: 1px solid rgba(255, 152, 0, 0.18) !important;
+            border-radius: 5px !important;
+            padding: 3px 7px !important;
+            font-weight: 500 !important;
+            display: inline-block !important;
+            line-height: 1.2 !important;
+        }
+
+        [data-bs-theme="dark"] .badge-non-kp-owl,
+        body.dark-mode .badge-non-kp-owl,
+        body.theme-dark .badge-non-kp-owl {
+            background-color: rgba(255, 152, 0, 0.18) !important;
+            color: #ffb74d !important;
+            border-color: rgba(255, 152, 0, 0.25) !important;
+        }
     </style>
     <table class="table table-vcenter table-hover align-middle mb-0 all-classification-summary-table">
         <thead class="bg-light text-muted small text-uppercase">
@@ -42,7 +62,7 @@
                         <span class="badge bg-blue-lt px-2.5 py-1 fw-semibold">{{ number_format((int) ($list->kp_owl ?? 0)) }}</span>
                     </td>
                     <td class="text-center">
-                        <span class="badge bg-amber-lt px-2.5 py-1 fw-semibold" style="color: #b45309 !important;">{{ number_format((int) ($list->non_kp_owl ?? 0)) }}</span>
+                        <span class="badge-non-kp-owl">{{ number_format((int) ($list->non_kp_owl ?? 0)) }}</span>
                     </td>
                     <td class="text-center fw-bold text-dark">{{ number_format((int) ($list->total_learning ?? 0)) }}</td>
                     <td class="text-center fw-semibold text-dark">{{ number_format((float) ($list->learning_hours ?? 0), 2) }} Hours</td>

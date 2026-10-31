@@ -142,6 +142,26 @@
         background-color: rgba(255, 255, 255, 0.08) !important;
         border-color: rgba(255, 255, 255, 0.3) !important;
     }
+
+    /* Non KP OWL Badge */
+    .badge-non-kp-owl {
+        background-color: rgba(255, 152, 0, 0.12) !important;
+        color: #ef8b00 !important;
+        border: 1px solid rgba(255, 152, 0, 0.18) !important;
+        border-radius: 5px !important;
+        padding: 3px 7px !important;
+        font-weight: 500 !important;
+        display: inline-block !important;
+        line-height: 1.2 !important;
+    }
+
+    [data-bs-theme="dark"] .badge-non-kp-owl,
+    body.dark-mode .badge-non-kp-owl,
+    body.theme-dark .badge-non-kp-owl {
+        background-color: rgba(255, 152, 0, 0.18) !important;
+        color: #ffb74d !important;
+        border-color: rgba(255, 152, 0, 0.25) !important;
+    }
 </style>
 @endsection
 
