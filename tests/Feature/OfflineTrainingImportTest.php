@@ -181,7 +181,7 @@ class OfflineTrainingImportTest extends TestCase
             $sheet->mergeCells('AP1:AR1');
 
             // Row 2: Canonical child headers
-            $headers = \App\Services\Record\OfflineTrainingExcelSchema::headers();
+            $headers = \App\Services\Record\OfflineTrainingExcelSchema::headers('legacy');
             foreach ($headers as $idx => $header) {
                 $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($idx + 1);
                 $sheet->setCellValue($colLetter . '2', $header);
@@ -190,7 +190,7 @@ class OfflineTrainingImportTest extends TestCase
             $startRow = 3;
         } else {
             // Single row headers on Row 1 (Target format)
-            $headers = \App\Services\Record\OfflineTrainingExcelSchema::headers();
+            $headers = \App\Services\Record\OfflineTrainingExcelSchema::headers('legacy');
             foreach ($headers as $idx => $header) {
                 $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($idx + 1);
                 $sheet->setCellValue($colLetter . '1', $header);
@@ -361,6 +361,21 @@ class OfflineTrainingImportTest extends TestCase
      */
     public function test_single_row_header_fallback_parsing(): void
     {
+        User::firstOrCreate(['id_emp' => 'EMP902'], [
+            'name'         => 'Siti Rahma',
+            'email'        => 'siti_rahma_test@example.com',
+            'password'     => bcrypt('password'),
+            'id_user'      => 'U_EMP902',
+            'id_org_unit'  => 'OU_01',
+            'team'         => 'Maintenance Team',
+            'department'   => 'Maintenance Dept',
+            'division'     => 'Operations',
+            'sap_code'     => 'S_EMP902',
+            'ssohash'      => 'H_EMP902',
+            'role'         => '1',
+            'company_name' => 'TEST_CORP',
+        ]);
+
         $row = $this->buildCanonicalTestRow([
             'employee_id' => 'EMP902',
             'name'        => 'Siti Rahma',
@@ -568,6 +583,21 @@ class OfflineTrainingImportTest extends TestCase
      */
     public function test_in_file_duplicate_participant_is_skipped(): void
     {
+        User::firstOrCreate(['id_emp' => 'EMP_DUP1'], [
+            'name'         => 'Duplicate User',
+            'email'        => 'dup_user_test@example.com',
+            'password'     => bcrypt('password'),
+            'id_user'      => 'U_DUP1',
+            'id_org_unit'  => 'OU_01',
+            'team'         => 'Plant Team',
+            'department'   => 'Maintenance',
+            'division'     => 'Operations',
+            'sap_code'     => 'S_DUP1',
+            'ssohash'      => 'H_DUP1',
+            'role'         => '1',
+            'company_name' => 'TEST_CORP',
+        ]);
+
         $trainingCourse = 'Duplicate In File Test';
         $batch = 'Batch D1';
 
@@ -640,6 +670,21 @@ class OfflineTrainingImportTest extends TestCase
         ]);
 
         // 2. Upload spreadsheet with EMP_EX1 (existing duplicate) and EMP_EX2 (new participant)
+        User::firstOrCreate(['id_emp' => 'EMP_EX2'], [
+            'name'         => 'Brand New Participant',
+            'email'        => 'new_part_test@example.com',
+            'password'     => bcrypt('password'),
+            'id_user'      => 'U_EX2',
+            'id_org_unit'  => 'OU_01',
+            'team'         => 'Audit Team',
+            'department'   => 'Maintenance',
+            'division'     => 'Operations',
+            'sap_code'     => 'S_EX2',
+            'ssohash'      => 'H_EX2',
+            'role'         => '1',
+            'company_name' => 'TEST_CORP',
+        ]);
+
         $rows = [
             $this->buildCanonicalTestRow([
                 'no'               => 1,

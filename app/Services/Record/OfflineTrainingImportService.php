@@ -801,6 +801,9 @@ class OfflineTrainingImportService
                             'learning_hours'        => $tData['learning_hours'],
                             'start_date'            => $tData['start_date'],
                             'finish_date'           => $tData['finish_date'],
+                            'start_time'            => !empty($tData['start_time']) ? $tData['start_time'] : '08:00:00',
+                            'end_time'              => !empty($tData['end_time']) ? $tData['end_time'] : '16:00:00',
+                            'requirement'           => !empty($tData['requirement']) ? $tData['requirement'] : 'non mandatory',
                             'created_by'            => $userId,
                         ]);
                         $existingTrainings[$fp] = $training;
@@ -1213,7 +1216,7 @@ class OfflineTrainingImportService
             'sub_delivery_method'      => $this->normalizeString($raw['sub_delivery_method'] ?? null),
             'provider'                 => $this->normalizeString($raw['provider'] ?? null),
             'sub_provider'             => $this->normalizeString($raw['sub_provider'] ?? null),
-            'provider_name'            => $this->normalizeString($raw['provider_name'] ?? ($raw['provider'] ?? null)),
+            'provider_name'            => $this->normalizeString($raw['provider_name'] ?? null),
             'venue'                    => $this->normalizeString($raw['venue'] ?? null),
             'instructor'               => $this->normalizeString($raw['instructor'] ?? null),
             'duration_seconds'         => $this->normalizeDuration($raw['duration_seconds'] ?? null),
