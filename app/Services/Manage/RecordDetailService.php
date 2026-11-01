@@ -301,7 +301,7 @@ class RecordDetailService
                 'u.jobposition as job_position',
                 'c.title as content_title',
                 'tp.title as playlist_title',
-                'tp.instructor as playlist_instructor',
+                DB::raw("NULL as playlist_instructor"),
                 'c.author as content_author',
             ])
             ->first();

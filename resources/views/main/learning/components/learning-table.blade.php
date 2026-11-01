@@ -3,23 +3,10 @@
 @endphp
 <!-- LEARNING RECORDS TABLE CARD -->
 <div class="card border-0 shadow-sm rounded-4 mb-4">
-    <div class="card-header bg-white border-0 pt-4 pb-2 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
-        <div>
-            <h4 class="card-title fw-bold text-dark mb-0">{{ $cardTitle ?? 'Learning Records' }}</h4>
-            <p class="text-muted small mb-0">{{ $cardSubtitle ?? 'Participant records for this category.' }}</p>
-        </div>
-
-        <!-- Length Menu / Entries Selector -->
-        <div class="d-flex align-items-center gap-2">
-            <label for="table-entries-select" class="text-muted small mb-0">Show</label>
-            <select id="table-entries-select" class="form-select form-select-sm" style="width: 80px;">
-                <option value="10" {{ ($entries ?? 25) == 10 ? 'selected' : '' }}>10</option>
-                <option value="25" {{ ($entries ?? 25) == 25 ? 'selected' : '' }}>25</option>
-                <option value="50" {{ ($entries ?? 25) == 50 ? 'selected' : '' }}>50</option>
-                <option value="100" {{ ($entries ?? 25) == 100 ? 'selected' : '' }}>100</option>
-            </select>
-            <span class="text-muted small">entries</span>
-        </div>
+    <!-- Card Header with Title and Subtitle (No Dropdown at Top) -->
+    <div class="card-header bg-white border-0 pt-4 pb-2 px-4">
+        <h4 class="card-title fw-bold text-dark mb-0">{{ $cardTitle ?? 'Learning Records' }}</h4>
+        <p class="text-muted small mb-0">{{ $cardSubtitle ?? 'Participant records for this category.' }}</p>
     </div>
 
     <div class="card-body p-0">
@@ -76,11 +63,24 @@
         </div>
     </div>
 
-    <!-- Custom Pagination Footer Container -->
-    <div class="card-footer bg-white border-0 py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2" id="learning-table-footer">
-        <div class="text-muted small" id="learning-table-info-container">
-            Showing 0 to 0 of 0 entries
+    <!-- Custom Pagination Footer Container with Bottom-Left Show Entries Dropdown -->
+    <div class="card-footer bg-white border-0 py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-3" id="learning-table-footer">
+        <!-- Bottom-Left: Show Entries Dropdown & Info Summary side-by-side -->
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+            <div class="d-flex align-items-center">
+                <select id="table-entries-select" class="form-select form-select-sm" style="width: auto; min-width: 125px;">
+                    <option value="10" {{ ($entries ?? 25) == 10 ? 'selected' : '' }}>10 Entries</option>
+                    <option value="25" {{ ($entries ?? 25) == 25 ? 'selected' : '' }}>25 Entries</option>
+                    <option value="50" {{ ($entries ?? 25) == 50 ? 'selected' : '' }}>50 Entries</option>
+                    <option value="100" {{ ($entries ?? 25) == 100 ? 'selected' : '' }}>100 Entries</option>
+                </select>
+            </div>
+            <div class="text-muted small" id="learning-table-info-container">
+                Showing 0 to 0 of 0 entries
+            </div>
         </div>
+
+        <!-- Bottom-Right: Pagination Controls -->
         <div id="learning-table-pagination-container"></div>
     </div>
 </div>

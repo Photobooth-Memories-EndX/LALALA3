@@ -58,11 +58,35 @@
             <div class="d-flex align-items-center gap-3">
                 <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 manage-learning-icon-box"
                      style="width: 72px; height: 72px; background-color: #eef2ff; color: #003b6d; border-radius: 12px;">
-                    <i class="ti ti-school" style="font-size: 2rem !important;"></i>
+                    <i class="ti {{ isset($playlist) && $playlist ? 'ti-playlist' : 'ti-school' }}" style="font-size: 2rem !important;"></i>
                 </div>
                 <div>
-                    <h2 class="h3 fw-bold mb-1 text-dark">{{ $title ?? 'Manage Learning' }}</h2>
-                    <p class="text-muted small mb-0">Monitor learning progress, status, and employee training completion in OWL LMS.</p>
+                    <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                        <h2 class="h3 fw-bold mb-0 text-dark">{{ $title ?? 'Manage Learning' }}</h2>
+                        @if (isset($playlist) && $playlist)
+                            <span class="badge bg-blue-lt"><i class="ti ti-playlist me-1"></i>Playlist</span>
+                        @endif
+                    </div>
+                    @if (isset($playlist) && $playlist)
+                        <div class="d-flex align-items-center gap-3 text-muted small flex-wrap my-1">
+                            @if (!empty($playlist->contents))
+                                <span><i class="ti ti-video me-1"></i>{{ $playlist->contents->count() }} Content Items</span>
+                            @endif
+                            @if (!empty($playlist->learning_hours))
+                                <span><i class="ti ti-clock me-1"></i>{{ number_format((float) $playlist->learning_hours, 2) }} Learning Hours</span>
+                            @endif
+                            @if (!empty($playlist->total_duration_seconds))
+                                <span><i class="ti ti-hourglass me-1"></i>{{ gmdate('H:i:s', (int) $playlist->total_duration_seconds) }} Duration</span>
+                            @endif
+                        </div>
+                        @if (!empty($playlist->description))
+                            <p class="text-secondary small mb-0 mt-1" style="max-width: 850px;">{{ $playlist->description }}</p>
+                        @else
+                            <p class="text-muted small mb-0 mt-1">Monitor participant progress and completion for this structured playlist.</p>
+                        @endif
+                    @else
+                        <p class="text-muted small mb-0">Monitor learning progress, status, and employee training completion in OWL LMS.</p>
+                    @endif
                 </div>
             </div>
             {{-- <div class="d-flex align-items-center gap-2 flex-shrink-0">

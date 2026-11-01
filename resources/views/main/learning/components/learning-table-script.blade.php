@@ -225,7 +225,7 @@
             pageLength: defaultEntries,
             lengthMenu: [
                 [10, 25, 50, 100],
-                [10, 25, 50, 100]
+                ['10 Entries', '25 Entries', '50 Entries', '100 Entries']
             ],
             order: [[ {{ ($isAllRecord ?? false) ? 20 : 19 }}, 'desc' ]],
             dom: 't',

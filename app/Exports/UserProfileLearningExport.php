@@ -2,74 +2,46 @@
 
 namespace App\Exports;
 
+use App\Exports\Manage\AllRecordExport;
 use App\Models\User;
-use App\Services\Learning\LearningDatatableService;
-use App\Services\Learning\LearningExportService;
+use App\Services\User\UserProfileLearningHistoryService;
 use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
-use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadings;
-use Maatwebsite\Excel\Concerns\WithMapping;
-use Maatwebsite\Excel\Concerns\WithStyles;
-use Maatwebsite\Excel\Events\AfterSheet;
-use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class UserProfileLearningExport implements FromCollection, WithHeadings, WithMapping, WithColumnWidths, WithStyles, WithEvents, Responsable
+class UserProfileLearningExport implements FromCollection, WithHeadings, WithColumnWidths, Responsable
 {
     use Exportable;
 
     protected User $user;
     protected array $filters;
-    protected int $rowNumber = 0;
 
     public function __construct(User $user, array $filters = [])
     {
         $this->user = $user;
         $this->filters = $filters;
-        $this->rowNumber = 0;
     }
 
     public function collection(): Collection
     {
-        return LearningDatatableService::buildBaseQuery(array_merge($this->filters, [
-            'user_id' => $this->user->id,
-            'employee_id' => $this->user->id,
-        ]))->orderBy('unified.created_at', 'desc')->get();
+        return UserProfileLearningHistoryService::buildCombinedQuery($this->user, $this->filters)
+            ->orderBy('raw_finish_date', 'desc')
+            ->orderBy('record_date', 'desc')
+            ->get();
     }
 
     public function headings(): array
     {
-        return LearningExportService::headings();
+        return AllRecordExport::headings();
     }
 
     public function columnWidths(): array
     {
-        return LearningExportService::columnWidths();
-    }
-
-    public function map($row): array
-    {
-        $this->rowNumber++;
-
-        return LearningExportService::mapRow($row, $this->rowNumber);
-    }
-
-    public function styles(Worksheet $sheet)
-    {
-        return LearningExportService::styles($sheet);
-    }
-
-    public function registerEvents(): array
-    {
-        return [
-            AfterSheet::class => function (AfterSheet $event) {
-                LearningExportService::afterSheetEvent($event);
-            },
-        ];
+        return AllRecordExport::columnWidths();
     }
 
     public function toResponse($request)
@@ -80,11 +52,15 @@ class UserProfileLearningExport implements FromCollection, WithHeadings, WithMap
             Str::slug($this->user->name ?: 'user')
         );
 
+        $cleanEmpId = preg_replace('/\s*[\/\-]\s*NIP.*$/i', '', trim((string) $this->user->id_emp));
         $filters = array_merge($this->filters, [
-            'user_id' => $this->user->id,
-            'employee_id' => $this->user->id,
+            'exact_participant' => [
+                'user_id'     => $this->user->id,
+                'employee_id' => $cleanEmpId,
+                'name'        => $this->user->name,
+            ],
         ]);
 
-        return (new LearningExport($filters))->download($filename);
+        return (new AllRecordExport($filters, $filename))->download($filename);
     }
 }

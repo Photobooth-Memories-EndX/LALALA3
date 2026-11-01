@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\NewsController;
@@ -120,7 +120,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/my-learning/learning-record/export', [LearningRecordExportController::class, 'download'])->name('user.learning.record.export');
     Route::get('/my-learning/learning-record/detail/{source}/{id}', [LearningRecordController::class, 'detail'])->name('user.learning.record.detail');
 
-    // Learning On Going — dua mode terpisah (fragment AJAX): Content & Playlist.
+    // Learning On Going â€” dua mode terpisah (fragment AJAX): Content & Playlist.
     Route::get('/my-learning/ongoing/export', [LearningOngoingController::class, 'download'])->name('user.learning.ongoing.export');
     Route::get('/my-learning/content', [LearningOngoingController::class, 'content'])->name('user.learning.ongoing.content');
     Route::get('/my-learning/playlist', [LearningOngoingController::class, 'playlist'])->name('user.learning.ongoing.playlist');
@@ -332,6 +332,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
         Route::get('user/profile/{hash}/export', [ProfileUserController::class, 'exportExcel'])->name('user.manage.profile.export.excel');
         Route::get('user/profile/{hash}/export/csv', [ProfileUserController::class, 'exportCsv'])->name('user.manage.profile.export.csv');
         Route::get('user/profile/{hash}/export/pdf', [ProfileUserController::class, 'exportPdf'])->name('user.manage.profile.export.pdf');
+        Route::get('user/profile/{hash}/record-detail/{source}/{id}', [ProfileUserController::class, 'learningRecordDetail'])->name('user.manage.profile.learning.record.detail');
     });
 
     Route::group(['middleware' => 'mpermission:certificate_setting'], function () {
@@ -587,14 +588,14 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
             Route::get('offline/{id}/edit', [RecordOfflineController::class, 'edit'])->name('offline.edit');
             Route::put('offline/{id}', [RecordOfflineController::class, 'update'])->name('offline.update');
             Route::delete('offline/{id}', [RecordOfflineController::class, 'destroy'])->name('offline.destroy');
-            // Halaman 1 — All Record
+            // Halaman 1 â€” All Record
             Route::get('all', [AllRecordController::class, 'index'])->name('all');
             Route::get('all/data', [AllRecordController::class, 'data'])->name('all.data');
             Route::get('all/export', [AllRecordController::class, 'export'])->name('all.export');
             Route::get('all/{source}/{id}/details', [AllRecordController::class, 'details'])->name('all.details');
             Route::get('all/detail/{source}/{id}', [AllRecordController::class, 'details']);
 
-            // Halaman 2 — Classification Detail
+            // Halaman 2 â€” Classification Detail
             Route::get('all/classification/{classification}', [ClassificationRecordController::class, 'index'])->name('all.classification');
             Route::get('all/classification/{classification}/data', [ClassificationRecordController::class, 'data'])->name('all.classification.data');
             Route::get('all/classification/{classification}/export', [ClassificationRecordController::class, 'export'])->name('all.classification.export');

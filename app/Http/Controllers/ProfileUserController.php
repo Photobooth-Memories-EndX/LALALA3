@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\Manage\AllRecordExport;
 use App\Exports\UserProfileLearningExport;
 use App\Models\ContentUser;
 use App\Models\User;
@@ -11,7 +12,6 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
-use Yajra\DataTables\Facades\DataTables;
 
 class ProfileUserController extends Controller
 {
@@ -38,44 +38,43 @@ class ProfileUserController extends Controller
             $query->where('id', $user_id);
         })->get();
 
-        $validContent = $content->filter(function ($item) {
-            return !empty($item->content);
-        });
+        // Calculate combined stats across KP OWL and Non KP OWL
+        $combinedQuery = UserProfileLearningHistoryService::buildCombinedQuery($user, []);
+        $combinedRecords = (clone $combinedQuery)->get();
 
-        $lastLearning = optional($validContent->sortByDesc('updated_at')->first()?->content)->title ?? '-';
+        $totalLearning = $combinedRecords->count();
+        $totalFinished = $combinedRecords->filter(fn ($r) => ($r->status ?? '') === 'Finished' || (float) ($r->progress ?? 0) >= 100)->count();
+        $totalOngoing = $combinedRecords->filter(fn ($r) => ($r->status ?? '') === 'Ongoing' || ((float) ($r->progress ?? 0) > 0 && ($r->status ?? '') !== 'Finished' && (float) ($r->progress ?? 0) < 100))->count();
+        $learningHours = round($combinedRecords->sum(fn ($r) => (float) ($r->learning_hours ?? 0)), 1);
 
-        $favoriteCategory = $validContent
-            ->groupBy(function ($item) {
-                return $item->content->classification->classification_name ?? '-';
-            })
-            ->sortByDesc(function ($items) {
-                return $items->count();
-            })
+        $lastLearning = $combinedRecords->first()?->learning_title ?? '-';
+
+        $favoriteCategory = $combinedRecords
+            ->groupBy('classification')
+            ->filter(fn ($items, $key) => !empty($key) && $key !== 'Unclassified')
+            ->sortByDesc(fn ($items) => $items->count())
             ->keys()
-            ->first() ?? '-';
-
-        $learningHours = $validContent->sum(function ($item) {
-            return DurationFormatter::toHours($item->content->duration ?? null);
-        });
-
-        $learningHours = round($learningHours, 1);
+            ->first() ?? ($combinedRecords->first()?->classification ?? '-');
 
         $filterOptions = UserProfileLearningHistoryService::getFilterOptions($user);
 
         return view('main.profile.index', [
-            "profile" => $user,
-            "content" => $content,
-            'lastLearning' => $lastLearning,
+            "profile"          => $user,
+            "content"          => $content,
+            'totalLearning'    => $totalLearning,
+            'totalFinished'    => $totalFinished,
+            'totalOngoing'     => $totalOngoing,
+            'lastLearning'     => $lastLearning,
             'favoriteCategory' => $favoriteCategory,
-            'learningHours' => $learningHours,
-            'classifications' => $filterOptions['classifications'],
-            'trainingTypes' => $filterOptions['trainingTypes'],
-            'years' => $filterOptions['years'],
+            'learningHours'    => $learningHours,
+            'classifications'  => $filterOptions['classifications'],
+            'trainingTypes'    => $filterOptions['trainingTypes'],
+            'years'            => $filterOptions['years'],
         ]);
     }
 
     /**
-     * Server-side DataTables AJAX endpoint for user's learning history.
+     * Server-side DataTables AJAX endpoint for user's learning history (34 UI columns).
      */
     public function learningDatatable(Request $request, $hash)
     {
@@ -84,67 +83,11 @@ class ProfileUserController extends Controller
             abort(404, 'User not found.');
         }
 
-        $query = UserProfileLearningHistoryService::buildQuery($user, $request->all());
-
-        return DataTables::eloquent($query)
-            ->addIndexColumn()
-            ->addColumn('status_badge', function (ContentUser $row) {
-                return (int) ($row->finish ?? 0) === 1
-                    ? '<span class="badge bg-green-lt text-green">Finished</span>'
-                    : '<span class="badge bg-yellow-lt text-yellow">Ongoing</span>';
-            })
-            ->addColumn('user_name', function (ContentUser $row) use ($user) {
-                return e($row->user->name ?? $user->name ?? '-');
-            })
-            ->addColumn('title_html', function (ContentUser $row) {
-                $content = $row->content;
-                if (!$content) {
-                    return '<span class="text-danger fw-semibold">Content Deleted</span>';
-                }
-
-                $isVideo = in_array($content->type, ['Video', 'YouTube']);
-                $icon = $isVideo
-                    ? '<span class="avatar avatar-sm bg-red-lt text-red me-2 flex-shrink-0"><i class="ti ti-video"></i></span>'
-                    : '<span class="avatar avatar-sm bg-yellow-lt text-yellow me-2 flex-shrink-0"><i class="ti ti-file-type-pdf"></i></span>';
-
-                $slugUrl = !empty($content->slug) ? route('learning.manage.content', $content->slug) : null;
-                $titleLink = $slugUrl
-                    ? '<a href="' . e($slugUrl) . '" class="text-reset fw-semibold">' . e($content->title ?: '-') . '</a>'
-                    : '<span class="fw-semibold">' . e($content->title ?: '-') . '</span>';
-
-                $typeSub = '<div class="text-muted small">' . e($content->type ?: '-') . '</div>';
-
-                return '<div class="d-flex align-items-center">' . $icon . '<div>' . $titleLink . $typeSub . '</div></div>';
-            })
-            ->addColumn('classification_html', function (ContentUser $row) {
-                $cl = $row->content?->classification;
-                if ($cl && !empty($cl->slug)) {
-                    $clUrl = route('learning.manage.category', $cl->slug);
-                    return '<a href="' . e($clUrl) . '" class="text-reset">' . e($cl->classification_name) . '</a>';
-                }
-                return '<span class="text-muted">' . e($cl->classification_name ?? '-') . '</span>';
-            })
-            ->addColumn('duration_formatted', function (ContentUser $row) {
-                return DurationFormatter::format($row->content?->duration ?? null);
-            })
-            ->addColumn('date_formatted', function (ContentUser $row) {
-                return optional($row->created_at)->format('d M Y') ?: '-';
-            })
-            ->addColumn('progress_html', function (ContentUser $row) {
-                $prog = (int) ($row->progress ?? 0);
-                return '<div class="d-flex align-items-center gap-2">'
-                    . '<div class="progress progress-sm flex-fill">'
-                    . '<div class="progress-bar bg-primary" style="width: ' . $prog . '%"></div>'
-                    . '</div>'
-                    . '<span class="small text-muted">' . $prog . '%</span>'
-                    . '</div>';
-            })
-            ->rawColumns(['status_badge', 'title_html', 'classification_html', 'progress_html'])
-            ->make(true);
+        return UserProfileLearningHistoryService::datatable($user, $request);
     }
 
     /**
-     * Export user learning history to Excel (.xlsx).
+     * Export user learning history to Excel (.xlsx) with all 52 fields.
      */
     public function exportExcel(Request $request, $hash)
     {
@@ -159,11 +102,20 @@ class ProfileUserController extends Controller
             Str::slug($user->name ?: 'user')
         );
 
-        return Excel::download(new UserProfileLearningExport($user, $request->all()), $filename);
+        $cleanEmpId = preg_replace('/\s*[\/\-]\s*NIP.*$/i', '', trim((string) $user->id_emp));
+        $filters = array_merge($request->all(), [
+            'exact_participant' => [
+                'user_id'     => $user->id,
+                'employee_id' => $cleanEmpId,
+                'name'        => $user->name,
+            ],
+        ]);
+
+        return (new AllRecordExport($filters, $filename))->download($filename);
     }
 
     /**
-     * Export user learning history to CSV (.csv).
+     * Export user learning history to CSV (.csv) with all 52 fields.
      */
     public function exportCsv(Request $request, $hash)
     {
@@ -184,47 +136,101 @@ class ProfileUserController extends Controller
         // UTF-8 BOM
         fwrite($handle, "\xEF\xBB\xBF");
 
-        // CSV Header
-        fputcsv($handle, [
-            'No',
-            'Status',
-            'Employee Name',
-            'Learning Title',
-            'Type',
-            'Classification',
-            'Duration',
-            'Date',
-            'Progress',
-        ]);
+        // 52 CSV Headings
+        fputcsv($handle, AllRecordExport::headings());
 
-        $query = UserProfileLearningHistoryService::buildQuery($user, $request->all())
-            ->orderBy('content_users.created_at', 'desc');
+        $query = UserProfileLearningHistoryService::buildCombinedQuery($user, $request->all())
+            ->orderBy('raw_finish_date', 'desc')
+            ->orderBy('record_date', 'desc');
 
         $rowNum = 0;
-        $query->chunk(500, function ($rows) use ($handle, &$rowNum, $user) {
-            foreach ($rows as $row) {
-                $rowNum++;
-                $content = $row->content;
-                $classification = $content?->classification;
+        foreach ($query->cursor() as $row) {
+            $rowNum++;
 
-                fputcsv($handle, [
-                    $rowNum,
-                    (int) ($row->finish ?? 0) === 1 ? 'Finished' : 'Ongoing',
-                    $row->user?->name ?? $user->name ?? '-',
-                    $content?->title ?? '-',
-                    $content?->type ?? '-',
-                    $classification?->classification_name ?? '-',
-                    DurationFormatter::format($content?->duration ?? null),
-                    optional($row->created_at)->format('d M Y') ?: '-',
-                    ((int) ($row->progress ?? 0)) . '%',
-                ]);
+            $isFinished = (($row->status ?? '') === 'Finished' || (float) ($row->progress ?? 0) >= 100);
+            $durSec = (int) ($row->duration_seconds ?? 0);
+            $recSec = (int) ($row->recognized_duration_seconds ?? 0);
+            $durFmt = $durSec > 0 ? DurationFormatter::fromSeconds($durSec) : '-';
+            $recFmt = $recSec > 0 ? DurationFormatter::fromSeconds($recSec) : '-';
+
+            $afkSec = (int) ($row->afk_duration_seconds ?? 0);
+            if ($afkSec <= 0 && $row->source === 'offline') {
+                $afkSec = (int) round(((float) ($row->learning_hours ?? 0)) * 3600);
             }
-        });
+            $engFmt = $afkSec > 0 ? DurationFormatter::fromSeconds($afkSec) : '-';
+
+            $startDate = !empty($row->start_date) && $row->start_date !== '-' ? date('Y-m-d', strtotime($row->start_date)) : '-';
+            $endDate = !empty($row->end_date) && $row->end_date !== '-' ? date('Y-m-d', strtotime($row->end_date)) : (!empty($row->finish_date) ? date('Y-m-d', strtotime($row->finish_date)) : '-');
+            $startTime = !empty($row->start_time) && $row->start_time !== '-' ? date('H:i:s', strtotime($row->start_time)) : '-';
+            $endTime = !empty($row->end_time) && $row->end_time !== '-' ? date('H:i:s', strtotime($row->end_time)) : '-';
+
+            $recordMonth = ($endDate !== '-') ? date('F', strtotime($endDate)) : '-';
+            $attendance = (in_array(strtolower(trim((string) ($row->attendance ?? ''))), ['1', 'yes', 'present'], true) || (float) ($row->progress ?? 0) > 0 || $isFinished) ? 'Yes' : 'No';
+
+            $certAvail = $isFinished ? 'Available' : '-';
+            $certInst = $isFinished ? (($row->source ?? '') === 'online' ? 'PT Krakatau Posco' : (($row->provider_name ?? '') ?: 'PT Krakatau Posco')) : '-';
+            $certIssued = ($isFinished && $endDate !== '-') ? $endDate : '-';
+
+            fputcsv($handle, [
+                $rowNum,                                                        // 1. NO
+                ($row->source ?? '') === 'online' ? 'KP OWL' : 'Non KP OWL',     // 2. Source
+                $row->employee_id ?? '-',                                       // 3. Employee ID
+                $row->employee_name ?? $user->name,                             // 4. Employee Name
+                $row->grade ?? '-',                                             // 5. Grade
+                $row->job_position ?? '-',                                      // 6. Job Position
+                $row->team ?? '-',                                              // 7. Team
+                $row->department ?? '-',                                        // 8. Department
+                $row->company ?? 'PT Krakatau Posco',                           // 9. Company
+                $row->learning_title ?? '-',                                    // 10. Course Title
+                $row->sub_course_name ?? '-',                                   // 11. Sub Course Title
+                $row->type ?? '-',                                              // 12. Type
+                $row->category ?? '-',                                          // 13. Category
+                $row->level ?? '-',                                             // 14. Level
+                $row->batch ?? '-',                                             // 15. Batch
+                $row->classification ?? 'Unclassified',                         // 16. Main Classification
+                $row->sub_classification ?? '-',                                // 17. Sub Classification
+                $row->delivery_method ?? (($row->source ?? '') === 'online' ? 'Online' : 'Offline'), // 18. Delivery Method
+                $row->sub_delivery_method ?? '-',                               // 19. Sub Delivery Method
+                $row->provider ?? (($row->source ?? '') === 'online' ? 'Internal' : '-'), // 20. Provider
+                $row->sub_provider ?? '-',                                      // 21. Sub Provider
+                $row->provider_name ?? (($row->source ?? '') === 'online' ? 'KP OWL' : '-'), // 22. Provider Name
+                $row->venue ?? (($row->source ?? '') === 'online' ? 'Online LMS' : '-'), // 23. Venue
+                $row->instructor ?? '-',                                        // 24. Instructor
+                $durFmt,                                                        // 25. Course Duration
+                $recFmt,                                                        // 26. Total Recognized Duration
+                round((float) ($row->learning_hours ?? 0), 2),                  // 27. Learning Hours
+                ((int) round((float) ($row->progress ?? 0))) . '%',             // 28. % Progress
+                $isFinished ? 'Finished' : ((float) ($row->progress ?? 0) > 0 ? 'Ongoing' : 'Not Started'), // 29. Progress Status
+                $startDate,                                                     // 30. Start Date
+                $endDate,                                                       // 31. End Date
+                $startTime,                                                     // 32. Start Time
+                $endTime,                                                       // 33. End Time
+                $recordMonth,                                                   // 34. Record Month
+                $row->requirement ?? 'Non-Mandatory',                           // 35. Requirement
+                $attendance,                                                    // 36. Attendance
+                $row->attendance_reason ?? '-',                                 // 37. Attendance Reason
+                $row->bond_status ?? 'No',                                      // 38. Bond Status
+                $row->bond_duration ?? '-',                                     // 39. Bond Duration
+                $row->bond_end_date ?? '-',                                     // 40. Bond End Date
+                $row->bond_amount ?? '-',                                       // 41. Bond Amount
+                $row->l1_program ?? ($row->assessment_score ?? '-'),            // 42. Score (L1) - Course
+                $row->l2_numerical ?? '-',                                      // 43. Score (L2)
+                $row->l2_verbal ?? ($isFinished ? 'Passed' : '-'),              // 44. L2 Status
+                $row->l3_numerical ?? '-',                                      // 45. Score (L3)
+                $row->l3_verbal ?? '-',                                         // 46. L3 Status
+                $certAvail,                                                     // 47. Certificate Availability
+                $certInst,                                                      // 48. Certificate Institution
+                $certIssued,                                                    // 49. Certificate Issued Date
+                $row->certificate_expired_date ?? '-',                          // 50. Certificate Expired Date
+                $row->pic ?? '-',                                               // 51. Person in Charge (PIC)
+                $engFmt,                                                        // 52. Total Engagement Time
+            ]);
+        }
 
         fclose($handle);
 
         return response()->download($tempCsv, $filename, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Type'        => 'text/csv; charset=UTF-8',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ])->deleteFileAfterSend(true);
     }
@@ -239,8 +245,9 @@ class ProfileUserController extends Controller
             abort(404, 'User not found.');
         }
 
-        $records = UserProfileLearningHistoryService::buildQuery($user, $request->all())
-            ->orderBy('content_users.created_at', 'desc')
+        $records = UserProfileLearningHistoryService::buildCombinedQuery($user, $request->all())
+            ->orderBy('raw_finish_date', 'desc')
+            ->orderBy('record_date', 'desc')
             ->get();
 
         $activeFilters = UserProfileLearningHistoryService::activeFilterLabels($request->all());
@@ -252,12 +259,32 @@ class ProfileUserController extends Controller
         );
 
         $pdf = Pdf::loadView('main.profile.export-pdf', [
-            'profile' => $user,
-            'records' => $records,
+            'profile'       => $user,
+            'records'       => $records,
             'activeFilters' => $activeFilters,
         ])->setPaper('a4', 'landscape');
 
         return $pdf->download($filename);
+    }
+
+    /**
+     * Return 17+ Detail fields for a single record on the user profile.
+     */
+    public function learningRecordDetail(Request $request, string $hash, string $source, $id)
+    {
+        $user = User::firstWhere('ssohash', $hash);
+        if (!$user) {
+            abort(404, 'User not found.');
+        }
+
+        $detailService = app(\App\Services\Manage\RecordDetailService::class);
+        $detail = $detailService->getDetail($source, $id);
+
+        return response()->json(array_merge([
+            'success'     => $detail['success'] ?? true,
+            'data'        => $detail,
+            'source_type' => $detail['source'] ?? 'KP OWL',
+        ], $detail));
     }
 
     public function editOutsourcing(User $user)

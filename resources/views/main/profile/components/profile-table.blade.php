@@ -1,14 +1,9 @@
-<div class="card border-0 shadow-sm rounded-4">
+<div class="card border-0 shadow-sm rounded-4 mb-4">
 
-    <div class="card-header border-0 pb-1">
-        <div>
-            <h3 class="card-title mb-1">
-                Learning History
-            </h3>
-            <div class="text-muted small">
-                Daftar learning yang pernah diikuti oleh user ini.
-            </div>
-        </div>
+    <!-- Card Header with Title and Subtitle (No Dropdown at Top) -->
+    <div class="card-header bg-white border-0 pt-4 pb-2 px-4">
+        <h4 class="card-title fw-bold text-dark mb-0">Learning History</h4>
+        <p class="text-muted small mb-0">Daftar learning yang pernah diikuti oleh user ini.</p>
     </div>
 
     <!-- Quick Filter Toolbar Section -->
@@ -118,18 +113,50 @@
     <input type="hidden" id="profile-filter-duration" value="all">
 
     <div class="card-body p-0">
-        <div class="table-responsive p-3">
-            <table class="table table-vcenter card-table table-hover w-100" id="MyTable">
-                <thead>
+        <!-- Top Synchronized Horizontal Scrollbar -->
+        <div class="table-scroll-top-wrapper" id="profile-table-scroll-top-wrapper">
+            <div class="table-scroll-top-inner" id="profile-table-scroll-top-inner"></div>
+        </div>
+
+        <!-- Primary Table Container with Horizontal Scrollbar -->
+        <div class="table-scroll-container" id="profile-table-scroll-container">
+            <table class="table table-hover align-middle mb-0" id="MyTable">
+                <thead class="bg-light text-muted small text-uppercase">
                     <tr>
-                        <th class="text-center" style="width: 45px;">#</th>
-                        <th class="text-center" style="width: 100px;">Status</th>
-                        <th>Name</th>
-                        <th>Title</th>
-                        <th>Classification</th>
-                        <th class="text-center" style="width: 100px;">Duration</th>
-                        <th class="text-center" style="width: 110px;">Date</th>
-                        <th width="15%">Progress</th>
+                        <th class="text-center" style="min-width: 45px; width: 45px;">NO</th>
+                        <th class="text-center" style="min-width: 95px;">SOURCE</th>
+                        <th class="text-center" style="min-width: 110px;">EMPLOYEE ID</th>
+                        <th style="min-width: 160px;">EMPLOYEE NAME</th>
+                        <th style="min-width: 130px;">TEAM</th>
+                        <th style="min-width: 140px;">DEPARTMENT</th>
+                        <th style="min-width: 130px;">COMPANY</th>
+                        <th style="min-width: 220px;">COURSE TITLE</th>
+                        <th class="text-center" style="min-width: 100px;">TYPE</th>
+                        <th style="min-width: 110px;">CATEGORY</th>
+                        <th style="min-width: 140px;">MAIN CLASSIFICATION</th>
+                        <th class="text-center" style="min-width: 140px;">SUB CLASSIFICATION</th>
+                        <th class="text-center" style="min-width: 120px;">DELIVERY METHOD</th>
+                        <th style="min-width: 130px;">SUB DELIVERY METHOD</th>
+                        <th class="text-center" style="min-width: 110px;">PROVIDER</th>
+                        <th style="min-width: 130px;">PROVIDER NAME</th>
+                        <th style="min-width: 120px;">VENUE</th>
+                        <th class="text-center" style="min-width: 110px;">COURSE DURATION</th>
+                        <th class="text-center" style="min-width: 130px;">TOTAL RECOGNIZED DURATION</th>
+                        <th class="text-center" style="min-width: 110px;">LEARNING HOURS</th>
+                        <th class="text-center" style="min-width: 110px;">% PROGRESS</th>
+                        <th class="text-center" style="min-width: 110px;">PROGRESS STATUS</th>
+                        <th style="min-width: 140px;">DATE (START - END)</th>
+                        <th style="min-width: 120px;">TIME (START - END)</th>
+                        <th class="text-center" style="min-width: 110px;">RECORD MONTH</th>
+                        <th class="text-center" style="min-width: 110px;">REQUIREMENT</th>
+                        <th class="text-center" style="min-width: 100px;">ATTENDANCE</th>
+                        <th class="text-center" style="min-width: 120px;">SCORE (L1) - COURSE</th>
+                        <th class="text-center" style="min-width: 90px;">SCORE (L2)</th>
+                        <th class="text-center" style="min-width: 90px;">SCORE (L3)</th>
+                        <th class="text-center" style="min-width: 130px;">CERTIFICATE AVAILABILITY</th>
+                        <th style="min-width: 130px;">PERSON IN CHARGE (PIC)</th>
+                        <th class="text-center" style="min-width: 130px;">TOTAL ENGAGEMENT TIME</th>
+                        <th class="text-end" style="min-width: 80px; width: 80px;">ACTION</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -137,6 +164,27 @@
                 </tbody>
             </table>
         </div>
+    </div>
+
+    <!-- Custom Pagination Footer Container with Bottom-Left Show Entries Dropdown -->
+    <div class="card-footer bg-white border-0 py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-3" id="profile-table-footer">
+        <!-- Bottom-Left: Show Entries Dropdown & Info Summary side-by-side -->
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+            <div class="d-flex align-items-center">
+                <select id="profile-table-entries-select" class="form-select form-select-sm" style="width: auto; min-width: 125px;">
+                    <option value="10">10 Entries</option>
+                    <option value="25" selected>25 Entries</option>
+                    <option value="50">50 Entries</option>
+                    <option value="100">100 Entries</option>
+                </select>
+            </div>
+            <div class="text-muted small" id="profile-table-info-container">
+                Showing 0 to 0 of 0 entries
+            </div>
+        </div>
+
+        <!-- Bottom-Right: Pagination Controls -->
+        <div id="profile-table-pagination-container"></div>
     </div>
 
 </div>

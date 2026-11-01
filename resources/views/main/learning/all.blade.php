@@ -549,6 +549,21 @@
         background-color: var(--tblr-bg-surface, #1f2937) !important;
         border-color: rgba(255, 255, 255, 0.1) !important;
     }
+
+    [data-bs-theme="dark"] #learning-table-footer,
+    body.dark-mode #learning-table-footer,
+    body.theme-dark #learning-table-footer {
+        background-color: var(--tblr-bg-surface, #1e293b) !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }
+
+    [data-bs-theme="dark"] #table-entries-select,
+    body.dark-mode #table-entries-select,
+    body.theme-dark #table-entries-select {
+        background-color: var(--tblr-bg-surface-secondary, #111827) !important;
+        border-color: rgba(255, 255, 255, 0.15) !important;
+        color: #f8fafc !important;
+    }
 </style>
 @endsection
 

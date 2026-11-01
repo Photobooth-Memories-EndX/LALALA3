@@ -1,0 +1,276 @@
+/* KP OWL Learning Record Module - Base / Light Mode CSS (Standardized with Master Reference) */
+
+.rounded-4 {
+    border-radius: 20px !important;
+}
+
+.kp-owl-stat-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-radius: 14px;
+}
+
+.kp-owl-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.06) !important;
+}
+
+.kp-owl-filter-card {
+    border-radius: 16px;
+    background: #ffffff;
+}
+
+.kp-owl-table-card {
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+/* ── Dual Synchronized Horizontal Scrollbars ─────────────────────── */
+.table-scroll-top-wrapper {
+    overflow-x: auto;
+    overflow-y: hidden;
+    height: 12px;
+    margin-bottom: 0px;
+    border-bottom: 1px solid #f1f5f9;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 #f8fafc;
+}
+.table-scroll-top-wrapper::-webkit-scrollbar {
+    height: 8px;
+}
+.table-scroll-top-wrapper::-webkit-scrollbar-track {
+    background: #f8fafc;
+}
+.table-scroll-top-wrapper::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+.table-scroll-top-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+.table-scroll-top-inner {
+    height: 1px;
+}
+
+.table-scroll-container {
+    overflow-x: auto;
+    overflow-y: hidden;
+    width: 100%;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 #f8fafc;
+}
+.table-scroll-container::-webkit-scrollbar {
+    height: 8px;
+}
+.table-scroll-container::-webkit-scrollbar-track {
+    background: #f8fafc;
+}
+.table-scroll-container::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+.table-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* ── Standardized Table Header & Cells ───────────────────────────── */
+#kp-owl-datatable {
+    width: 100% !important;
+}
+#kp-owl-datatable thead th {
+    background-color: #f8fafc !important;
+    color: #64748b !important;
+    font-weight: 600 !important;
+    font-size: 0.72rem !important;
+    letter-spacing: 0.03em !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    padding: 12px 14px !important;
+    text-transform: uppercase !important;
+    vertical-align: middle !important;
+    white-space: nowrap !important;
+}
+
+#kp-owl-datatable tbody td {
+    padding: 12px 14px !important;
+    vertical-align: middle !important;
+    font-size: 0.85rem !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+}
+
+/* Sticky Action Column on Right */
+.sticky-action-col {
+    position: sticky;
+    right: 0;
+    z-index: 5;
+    background-color: #ffffff;
+    box-shadow: -3px 0 6px rgba(0, 0, 0, 0.03);
+}
+
+#kp-owl-datatable thead th.sticky-action-col {
+    z-index: 15;
+    background-color: #f8fafc !important;
+}
+
+#kp-owl-datatable tbody tr:hover td.sticky-action-col {
+    background-color: #f8fafc;
+}
+
+/* ── Action Buttons ──────────────────────────────────────────────── */
+.owl-action-btn-view {
+    color: #0c5b9e !important;
+    border-color: #bfdbfe !important;
+    background-color: #ffffff !important;
+}
+.owl-action-btn-view:hover,
+.owl-action-btn-view:focus {
+    color: #0c5b9e !important;
+    border-color: #0c5b9e !important;
+    background-color: #eff6ff !important;
+    box-shadow: 0 2px 4px rgba(12, 91, 158, 0.12) !important;
+    transform: translateY(-1px);
+}
+
+/* ── Quick Filter Flex Toolbar Layout ────────────────────────────── */
+.quick-filter-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+@media (min-width: 1200px) {
+    .quick-filter-toolbar {
+        flex-wrap: nowrap !important;
+    }
+}
+
+@media (max-width: 1199.98px) {
+    .quick-filter-toolbar {
+        flex-wrap: wrap;
+    }
+}
+
+.quick-filter-search {
+    flex: 1.25 1 180px;
+    min-width: 160px;
+}
+.quick-filter-classification {
+    flex: 0 0 145px;
+    width: 145px;
+    min-width: 130px;
+}
+.quick-filter-category {
+    flex: 0 0 115px;
+    width: 115px;
+    min-width: 105px;
+}
+.quick-filter-status {
+    flex: 0 0 110px;
+    width: 110px;
+    min-width: 100px;
+}
+.quick-filter-type {
+    flex: 0 0 100px;
+    width: 100px;
+    min-width: 90px;
+}
+.quick-filter-year {
+    flex: 0 0 90px;
+    width: 90px;
+    min-width: 80px;
+}
+
+.quick-filter-select {
+    padding-left: 0.5rem !important;
+    padding-right: 1.5rem !important;
+    font-size: 0.85rem !important;
+    height: 36px !important;
+}
+
+.quick-filter-action-btn {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+}
+
+.quick-filter-download {
+    flex-shrink: 0 !important;
+}
+.quick-filter-download .btn-download {
+    height: 36px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.quick-filter-toolbar .form-control {
+    height: 36px !important;
+    font-size: 0.875rem !important;
+}
+
+/* ── Standardized Action Buttons ─────────────────────────────────── */
+.btn-download {
+    background-color: #2fb344 !important;
+    border-color: #2fb344 !important;
+    color: #ffffff !important;
+    transition: all 0.2s ease;
+}
+.btn-download:hover,
+.btn-download:focus,
+.btn-download:active {
+    background-color: #269639 !important;
+    border-color: #269639 !important;
+    color: #ffffff !important;
+}
+.btn-download:hover i,
+.btn-download:focus i,
+.btn-download:active i {
+    color: #ffffff !important;
+}
+
+.btn-more-filters,
+#btn-more-filters {
+    border-color: #0c5b9e !important;
+    color: #0c5b9e !important;
+    background-color: transparent !important;
+    transition: all 0.2s ease;
+}
+.btn-more-filters:hover,
+.btn-more-filters:focus,
+.btn-more-filters:active,
+#btn-more-filters:hover,
+#btn-more-filters:focus,
+#btn-more-filters:active {
+    background-color: #0c5b9e !important;
+    color: #ffffff !important;
+    border-color: #0c5b9e !important;
+}
+.btn-more-filters:hover i,
+.btn-more-filters:focus i,
+.btn-more-filters:active i,
+#btn-more-filters:hover i,
+#btn-more-filters:focus i,
+#btn-more-filters:active i {
+    color: #ffffff !important;
+}
+
+.btn-quick-reset {
+    transition: all 0.2s ease;
+}
+.btn-quick-reset:hover {
+    background-color: #0c5b9e !important;
+    color: #ffffff !important;
+}
+
+/* Modal Z-Index Safeguards */
+.modal-backdrop {
+    z-index: 1050 !important;
+}
+#kp-owl-more-filters-modal,
+#kp-owl-detail-modal {
+    z-index: 1060 !important;
+}

@@ -231,26 +231,46 @@
         <thead>
             <tr>
                 <th class="text-center" style="width: 3.5%;">NO</th>
-                <th class="text-center" style="width: 7%;">STATUS</th>
-                <th style="width: 14%;">EMPLOYEE</th>
-                <th style="width: 27%;">LEARNING TITLE</th>
-                <th class="text-center" style="width: 7%;">TYPE</th>
-                <th style="width: 15%;">CLASSIFICATION</th>
-                <th class="text-center" style="width: 8%;">DURATION</th>
-                <th class="text-center" style="width: 9%;">DATE</th>
-                <th style="width: 9.5%;">PROGRESS</th>
+                <th class="text-center" style="width: 7.5%;">SOURCE</th>
+                <th class="text-center" style="width: 6.5%;">STATUS</th>
+                <th style="width: 13%;">EMPLOYEE</th>
+                <th style="width: 25%;">LEARNING TITLE</th>
+                <th class="text-center" style="width: 6.5%;">TYPE</th>
+                <th style="width: 14%;">CLASSIFICATION</th>
+                <th class="text-center" style="width: 7.5%;">DURATION</th>
+                <th class="text-center" style="width: 8%;">DATE</th>
+                <th style="width: 8.5%;">PROGRESS</th>
             </tr>
         </thead>
         <tbody>
             @forelse ($records as $index => $row)
                 @php
-                    $content = $row->content;
-                    $cl = $content?->classification;
-                    $isFinished = (int) ($row->finish ?? 0) === 1;
-                    $progress = (int) ($row->progress ?? 0);
+                    $isFinished = ($row->status ?? '') === 'Finished' || (int) ($row->finish ?? 0) === 1 || (float) ($row->progress ?? 0) >= 100;
+                    $progress = (int) round((float) ($row->progress ?? 0));
+                    $title = $row->learning_title ?? $row->content?->title ?? '-';
+                    $type = $row->type ?? $row->content?->type ?? '-';
+                    $classification = $row->classification ?? $row->content?->classification?->classification_name ?? '-';
+                    $empName = $row->employee_name ?? $row->user?->name ?? $profile->name ?? '-';
+                    $source = ($row->source ?? '') === 'online' ? 'KP OWL' : (($row->source ?? '') === 'offline' ? 'Non KP OWL' : '-');
+
+                    $durSec = (int) ($row->duration_seconds ?? 0);
+                    $durationFormatted = $durSec > 0 ? \App\Support\DurationFormatter::fromSeconds($durSec) : \App\Support\DurationFormatter::format($row->content?->duration ?? null);
+
+                    $startDate = !empty($row->start_date) && $row->start_date !== '-' ? date('d M Y', strtotime($row->start_date)) : null;
+                    $endDate = !empty($row->end_date) && $row->end_date !== '-' ? date('d M Y', strtotime($row->end_date)) : (!empty($row->finish_date) ? date('d M Y', strtotime($row->finish_date)) : null);
+                    if ($startDate && $endDate && $startDate !== $endDate) {
+                        $dateFormatted = $startDate . ' – ' . $endDate;
+                    } elseif ($startDate || $endDate) {
+                        $dateFormatted = $startDate ?: $endDate;
+                    } else {
+                        $dateFormatted = !empty($row->created_at) ? date('d M Y', strtotime($row->created_at)) : '-';
+                    }
                 @endphp
                 <tr>
                     <td class="text-center">{{ $index + 1 }}</td>
+                    <td class="text-center">
+                        <span class="badge {{ ($row->source ?? '') === 'online' ? 'badge-type' : 'badge-warning' }}">{{ $source }}</span>
+                    </td>
                     <td class="text-center">
                         @if ($isFinished)
                             <span class="badge badge-success">Finished</span>
@@ -258,17 +278,17 @@
                             <span class="badge badge-warning">Ongoing</span>
                         @endif
                     </td>
-                    <td>{{ $row->user?->name ?? $profile->name ?? '-' }}</td>
+                    <td>{{ $empName }}</td>
                     <td>
-                        <div style="font-weight: 600; color: #0f172a;">{{ $content?->title ?? '-' }}</div>
-                        <div style="font-size: 6.5px; color: #64748b;">{{ $content?->type ?? '-' }}</div>
+                        <div style="font-weight: 600; color: #0f172a;">{{ $title }}</div>
+                        <div style="font-size: 6.5px; color: #64748b;">{{ $type }}</div>
                     </td>
                     <td class="text-center">
-                        <span class="badge badge-type">{{ $content?->type ?? '-' }}</span>
+                        <span class="badge badge-type">{{ $type }}</span>
                     </td>
-                    <td>{{ $cl?->classification_name ?? '-' }}</td>
-                    <td class="text-center">{{ \App\Support\DurationFormatter::format($content?->duration ?? null) }}</td>
-                    <td class="text-center">{{ optional($row->created_at)->format('d M Y') ?: '-' }}</td>
+                    <td>{{ $classification }}</td>
+                    <td class="text-center">{{ $durationFormatted }}</td>
+                    <td class="text-center">{{ $dateFormatted }}</td>
                     <td>
                         <div style="font-weight: 600; font-size: 7px;">{{ $progress }}%</div>
                         <div class="progress-bar-container">
@@ -278,7 +298,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="9" class="text-center" style="padding: 20px; color: #94a3b8;">
+                    <td colspan="10" class="text-center" style="padding: 20px; color: #94a3b8;">
                         No learning records found matching the active filter criteria.
                     </td>
                 </tr>

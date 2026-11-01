@@ -103,6 +103,12 @@
                         </div>
                         <div class="col-sm-6">
                             <div class="p-2 rounded-2 bg-white border d-flex justify-content-between">
+                                <span class="text-muted">Sub Provider</span>
+                                <strong class="text-dark" id="ld-content-sub-provider">-</strong>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="p-2 rounded-2 bg-white border d-flex justify-content-between">
                                 <span class="text-muted">Venue</span>
                                 <strong class="text-dark" id="ld-content-venue">-</strong>
                             </div>
@@ -369,6 +375,24 @@
                             <div class="p-2 rounded-2 bg-white border d-flex justify-content-between align-items-center">
                                 <span class="text-muted"><i class="ti ti-certificate me-1 text-warning"></i>Certificate</span>
                                 <strong class="text-dark" id="ld-certificate">-</strong>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="p-2 rounded-2 bg-white border text-center">
+                                <div class="text-muted extra-small mb-1">Certificate Institution</div>
+                                <strong class="text-dark font-monospace" id="ld-certificate-institution">-</strong>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="p-2 rounded-2 bg-white border text-center">
+                                <div class="text-muted extra-small mb-1">Certificate Issued Date</div>
+                                <strong class="text-dark font-monospace" id="ld-certificate-issued-date">-</strong>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="p-2 rounded-2 bg-white border text-center">
+                                <div class="text-muted extra-small mb-1">Certificate Expired Date</div>
+                                <strong class="text-dark font-monospace" id="ld-certificate-expired-date">-</strong>
                             </div>
                         </div>
                     </div>
