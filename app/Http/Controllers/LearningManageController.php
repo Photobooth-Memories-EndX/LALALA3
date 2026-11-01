@@ -565,7 +565,16 @@ class LearningManageController extends Controller
             $recognizedService = app(\App\Services\Learning\LearningRecordRecognizedDurationService::class);
             $recognizedSec = $recognizedService->resolveForContentUser($record);
             $recognizedFormatted = $recognizedService->formatSeconds($recognizedSec);
-            $engagementFormatted = DurationFormatter::fromSeconds((int) ($afkSec ?? 0));
+                        $engagementSec = ($actualWatchSec !== null && $actualWatchSec > 0)
+                ? $actualWatchSec
+                : (($currentTimeSec !== null && $currentTimeSec > 0)
+                    ? $currentTimeSec
+                    : (($afkSec !== null && $afkSec > 0)
+                        ? $afkSec
+                        : ((float) ($record->learning_hours ?? 0) > 0
+                            ? (int) round((float) $record->learning_hours * 3600)
+                            : ($record->isFinished() ? ($durationSeconds ?? 0) : 0))));
+            $engagementFormatted = DurationFormatter::fromSeconds($engagementSec);
 
             return response()->json([
                 'status' => 'success',
@@ -720,7 +729,16 @@ class LearningManageController extends Controller
         $recognizedService = app(\App\Services\Learning\LearningRecordRecognizedDurationService::class);
         $recognizedSec = $recognizedService->resolveForPlaylistContentUser($record);
         $recognizedFormatted = $recognizedService->formatSeconds($recognizedSec);
-        $engagementFormatted = DurationFormatter::fromSeconds((int) ($afkSec ?? 0));
+                $engagementSec = ($actualWatchSec !== null && $actualWatchSec > 0)
+            ? $actualWatchSec
+            : (($currentTimeSec !== null && $currentTimeSec > 0)
+                ? $currentTimeSec
+                : (($afkSec !== null && $afkSec > 0)
+                    ? $afkSec
+                    : ((float) ($record->learning_hour ?? 0) > 0
+                        ? (int) round((float) $record->learning_hour * 3600)
+                        : ($record->isFinished() ? ($durationSeconds ?? 0) : 0))));
+        $engagementFormatted = DurationFormatter::fromSeconds($engagementSec);
 
         return response()->json([
             'status' => 'success',

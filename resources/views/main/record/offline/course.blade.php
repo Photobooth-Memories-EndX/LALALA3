@@ -859,6 +859,84 @@
     .participant-link:hover {
         text-decoration: underline !important;
     }
+    /* Course Table Pagination Styling */
+    #course-table-pagination-container {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+    }
+    #course-table-pagination-container .pagination {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        gap: 4px;
+        width: auto;
+        margin: 0;
+    }
+    #course-table-pagination-container .page-item {
+        flex: 0 0 auto;
+    }
+    #course-table-pagination-container .page-link {
+        min-width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 8px;
+        font-size: 0.8125rem;
+        border-radius: 4px;
+        color: #495057;
+        background-color: #fff;
+        border: 1px solid #e2e8f0;
+        text-decoration: none;
+        transition: all 0.15s ease-in-out;
+    }
+    #course-table-pagination-container .page-link:hover {
+        background-color: #f1f5f9;
+        border-color: #cbd5e1;
+        color: #1e293b;
+    }
+    #course-table-pagination-container .page-item.active .page-link {
+        background-color: #0c5b9e;
+        border-color: #0c5b9e;
+        color: #fff;
+    }
+    #course-table-pagination-container .page-item.disabled .page-link {
+        color: #94a3b8;
+        background-color: #f8fafc;
+        border-color: #e2e8f0;
+        cursor: not-allowed;
+        opacity: 0.65;
+    }
+
+    [data-bs-theme="dark"] #course-table-pagination-container .page-link,
+    body.dark-mode #course-table-pagination-container .page-link,
+    body.theme-dark #course-table-pagination-container .page-link {
+        background-color: #1e293b;
+        border-color: #334155;
+        color: #cbd5e1;
+    }
+    [data-bs-theme="dark"] #course-table-pagination-container .page-link:hover,
+    body.dark-mode #course-table-pagination-container .page-link:hover,
+    body.theme-dark #course-table-pagination-container .page-link:hover {
+        background-color: #334155;
+        color: #fff;
+    }
+    [data-bs-theme="dark"] #course-table-pagination-container .page-item.active .page-link,
+    body.dark-mode #course-table-pagination-container .page-item.active .page-link,
+    body.theme-dark #course-table-pagination-container .page-item.active .page-link {
+        background-color: #0c5b9e;
+        border-color: #0c5b9e;
+        color: #fff;
+    }
+    [data-bs-theme="dark"] #course-table-pagination-container .page-item.disabled .page-link,
+    body.dark-mode #course-table-pagination-container .page-item.disabled .page-link,
+    body.theme-dark #course-table-pagination-container .page-item.disabled .page-link {
+        background-color: #0f172a;
+        border-color: #334155;
+        color: #64748b;
+    }
 </style>
 @endsection
 
@@ -1099,7 +1177,17 @@
                 { data: 'score_l3', name: 'otu.l3_numerical', className: 'text-center' },
                 { data: 'certificate_availability', name: 'otu.certificate', className: 'text-center' },
                 { data: 'pic', name: 'otu.pic', className: 'text-start' },
-                { data: 'total_engagement_time', name: 'otu.learning_hours', className: 'text-center' },
+                {
+                data: 'total_engagement_time',
+                name: 'otu.learning_hours',
+                className: 'text-center',
+                render: function (data, type, row) {
+                    if (type === 'sort' || type === 'type') {
+                        return data;
+                    }
+                    return formatEngagementTime(data);
+                }
+            },
                 { data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-center' }
             ],
             language: {
@@ -1110,6 +1198,28 @@
                 const api = this.api();
                 const pageInfo = api.page.info();
                 const formatNum = (num) => (num || 0).toLocaleString();
+    function formatEngagementTime(val) {
+        if (val === null || val === undefined || val === '' || val === '-') {
+            return '<span class="fw-semibold font-monospace">00:00:00</span>';
+        }
+        if (typeof val === 'string' && val.indexOf(':') !== -1) {
+            return val.indexOf('<') !== -1 ? val : `<span class="fw-semibold font-monospace">${val}</span>`;
+        }
+        let num = typeof val === 'string' ? parseFloat(val.replace(/[^0-9.-]/g, '')) : Number(val);
+        if (!Number.isFinite(num) || num < 0) {
+            return '<span class="fw-semibold font-monospace">00:00:00</span>';
+        }
+        const totalSeconds = Math.round(num * 3600);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        const hms = [
+            String(hours).padStart(2, '0'),
+            String(minutes).padStart(2, '0'),
+            String(seconds).padStart(2, '0')
+        ].join(':');
+        return `<span class="fw-semibold font-monospace">${hms}</span>`;
+    }
 
                 if (pageInfo.recordsTotal > 0 && pageInfo.recordsDisplay > 0) {
                     const start = pageInfo.start + 1;
@@ -1127,18 +1237,30 @@
                 $paginationContainer.empty();
 
                 if (pageInfo.pages > 1) {
+                    const currentPage = pageInfo.page;
+                    const totalPages = pageInfo.pages;
                     let paginationHtml = '<ul class="pagination pagination-sm mb-0">';
-                    const prevDisabled = pageInfo.page === 0 ? 'disabled' : '';
+                    const prevDisabled = currentPage === 0 ? 'disabled' : '';
                     paginationHtml += `
                         <li class="page-item ${prevDisabled}">
-                            <a class="page-link" href="javascript:void(0);" data-page="${pageInfo.page - 1}">
+                            <a class="page-link" href="javascript:void(0);" ${currentPage > 0 ? `data-page="${currentPage - 1}"` : ''} aria-label="Previous">
                                 <i class="ti ti-chevron-left"></i>
                             </a>
                         </li>
                     `;
 
-                    for (let p = 0; p < pageInfo.pages; p++) {
-                        const active = p === pageInfo.page ? 'active' : '';
+                    const startPage = Math.max(0, currentPage - 2);
+                    const endPage = Math.min(totalPages - 1, currentPage + 2);
+
+                    if (startPage > 0) {
+                        paginationHtml += `<li class="page-item"><a class="page-link" href="javascript:void(0);" data-page="0">1</a></li>`;
+                        if (startPage > 1) {
+                            paginationHtml += `<li class="page-item disabled"><span class="page-link">…</span></li>`;
+                        }
+                    }
+
+                    for (let p = startPage; p <= endPage; p++) {
+                        const active = p === currentPage ? 'active' : '';
                         paginationHtml += `
                             <li class="page-item ${active}">
                                 <a class="page-link" href="javascript:void(0);" data-page="${p}">${p + 1}</a>
@@ -1146,10 +1268,17 @@
                         `;
                     }
 
-                    const nextDisabled = pageInfo.page === (pageInfo.pages - 1) ? 'disabled' : '';
+                    if (endPage < totalPages - 1) {
+                        if (endPage < totalPages - 2) {
+                            paginationHtml += `<li class="page-item disabled"><span class="page-link">…</span></li>`;
+                        }
+                        paginationHtml += `<li class="page-item"><a class="page-link" href="javascript:void(0);" data-page="${totalPages - 1}">${totalPages}</a></li>`;
+                    }
+
+                    const nextDisabled = currentPage >= totalPages - 1 ? 'disabled' : '';
                     paginationHtml += `
                         <li class="page-item ${nextDisabled}">
-                            <a class="page-link" href="javascript:void(0);" data-page="${pageInfo.page + 1}">
+                            <a class="page-link" href="javascript:void(0);" ${currentPage < totalPages - 1 ? `data-page="${currentPage + 1}"` : ''} aria-label="Next">
                                 <i class="ti ti-chevron-right"></i>
                             </a>
                         </li>
@@ -1163,6 +1292,9 @@
         // Pagination click handler
         $(document).on('click', '#course-table-pagination-container .page-link', function (e) {
             e.preventDefault();
+            if ($(this).parent().hasClass('disabled') || $(this).parent().hasClass('active')) {
+                return;
+            }
             const page = $(this).data('page');
             if (page !== undefined && page >= 0) {
                 courseTable.page(page).draw('page');

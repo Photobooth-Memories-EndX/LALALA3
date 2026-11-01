@@ -13,6 +13,7 @@
     let currentPage = 1;
     let pageSize = 25;
     let isSubmitting = false;
+    let isFiltering = false;
 
     const $uploadCard = $('#ptkp-upload-card');
     const $loadingCard = $('#ptkp-loading-card');
@@ -23,6 +24,7 @@
     const $selectedFilename = $('#ptkp-selected-filename');
     const $btnValidate = $('#ptkp-btn-validate');
     const $uploadError = $('#ptkp-upload-error');
+    const $tableLoading = $('#ptkp-table-loading');
 
     $dropzone.on('click', () => $fileInput.trigger('click'));
     $fileInput.on('click', (e) => e.stopPropagation());
@@ -111,19 +113,23 @@
         $('#ptkp-preview-filename').text(data.filename || selectedFile.name);
         const stats = data.stats || {};
 
-        $('#ptkp-kpi-total').text(stats.total_rows || 0);
+        const totalRowsCount = (stats.total_rows !== undefined && stats.total_rows !== null) ? stats.total_rows : allRows.length;
+        $('#ptkp-kpi-total').text(totalRowsCount);
         $('#ptkp-kpi-valid').text(stats.valid || 0);
         $('#ptkp-kpi-warning').text(stats.warning || 0);
         $('#ptkp-kpi-duplicate').text(stats.duplicate || 0);
         $('#ptkp-kpi-invalid').text(stats.invalid || 0);
         $('#ptkp-kpi-invalid-company').text(stats.invalid_company || 0);
 
-        $('#count-tab-all').text(allRows.length);
-        $('#count-tab-valid').text(stats.valid || 0);
-        $('#count-tab-warning').text(stats.warning || 0);
-        $('#count-tab-duplicate').text(stats.duplicate || 0);
-        $('#count-tab-invalid').text(stats.invalid || 0);
-        $('#count-tab-invalid-company').text(stats.invalid_company || 0);
+        // Reset filter state to Total Rows (all)
+        currentFilter = 'all';
+        $('.ptkp-summary-filter-card').removeClass('active');
+        $('.ptkp-summary-filter-card[data-filter="all"]').addClass('active');
+
+        // Reset search queries
+        $('#ptkp-search-empid, #ptkp-search-name, #ptkp-search-course, #ptkp-search-pic').val('');
+        searchQuery = { empId: '', name: '', course: '', pic: '' };
+        currentPage = 1;
 
         const headerCheck = data.header_check || {};
         if (headerCheck.issues && headerCheck.issues.length > 0) {
@@ -155,21 +161,71 @@
         applyFilters();
     }
 
-    $('.ptkp-filter-tab').on('click', function () {
-        $('.ptkp-filter-tab').removeClass('active');
+    // Summary Card Click Filter Handler
+    $(document).on('click', '.ptkp-summary-filter-card', function () {
+        if (isFiltering) return;
+        const newFilter = $(this).data('filter');
+        if (newFilter === currentFilter) return;
+
+        isFiltering = true;
+        $('.ptkp-summary-filter-card').removeClass('active');
         $(this).addClass('active');
-        currentFilter = $(this).data('filter');
+        currentFilter = newFilter;
         currentPage = 1;
-        applyFilters();
+
+        // Visual loading state on preview table
+        $tableLoading.stop(true, true).fadeIn(100);
+
+        setTimeout(function () {
+            try {
+                applyFilters();
+            } catch (err) {
+                console.error('Filter execution failed:', err);
+                alert('Filter error: ' + err.message);
+            } finally {
+                $tableLoading.stop(true, true).fadeOut(120);
+                isFiltering = false;
+            }
+        }, 120);
     });
 
-    $('#ptkp-search-empid, #ptkp-search-name, #ptkp-search-course, #ptkp-search-pic').on('input', function () {
-        searchQuery.empId = $('#ptkp-search-empid').val().trim().toLowerCase();
-        searchQuery.name = $('#ptkp-search-name').val().trim().toLowerCase();
-        searchQuery.course = $('#ptkp-search-course').val().trim().toLowerCase();
-        searchQuery.pic = $('#ptkp-search-pic').val().trim().toLowerCase();
+    // Keyboard support for Summary Cards (Enter / Space)
+    $(document).on('keydown', '.ptkp-summary-filter-card', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            $(this).trigger('click');
+        }
+    });
+
+    // Reset Filters Button Handler
+    $(document).on('click', '#ptkp-btn-reset-filters', function () {
+        $('#ptkp-search-empid, #ptkp-search-name, #ptkp-search-course, #ptkp-search-pic').val('');
+        searchQuery = { empId: '', name: '', course: '', pic: '' };
         currentPage = 1;
-        applyFilters();
+
+        if (currentFilter !== 'all') {
+            $('.ptkp-summary-filter-card[data-filter="all"]').trigger('click');
+        } else {
+            $tableLoading.stop(true, true).fadeIn(80);
+            setTimeout(function () {
+                applyFilters();
+                $tableLoading.stop(true, true).fadeOut(100);
+            }, 80);
+        }
+    });
+
+    // Debounced search field inputs
+    let searchDebounceTimer = null;
+    $('#ptkp-search-empid, #ptkp-search-name, #ptkp-search-course, #ptkp-search-pic').on('input', function () {
+        clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = setTimeout(function () {
+            searchQuery.empId = $('#ptkp-search-empid').val().trim().toLowerCase();
+            searchQuery.name = $('#ptkp-search-name').val().trim().toLowerCase();
+            searchQuery.course = $('#ptkp-search-course').val().trim().toLowerCase();
+            searchQuery.pic = $('#ptkp-search-pic').val().trim().toLowerCase();
+            currentPage = 1;
+            applyFilters();
+        }, 150);
     });
 
     $('#ptkp-page-size').on('change', function () {
@@ -180,6 +236,7 @@
 
     function applyFilters() {
         filteredRows = allRows.filter(function (row) {
+            // 1. Status Filter from Active Summary Card
             if (currentFilter !== 'all') {
                 if (currentFilter === 'valid' && row.status !== 'VALID') return false;
                 if (currentFilter === 'warning' && row.status !== 'WARNING') return false;
@@ -187,6 +244,7 @@
                 if (currentFilter === 'invalid' && row.status !== 'INVALID') return false;
                 if (currentFilter === 'invalid_company' && row.status !== 'INVALID COMPANY') return false;
             }
+            // 2. Combined Search Queries
             if (searchQuery.empId && (row.employee_id || '').toLowerCase().indexOf(searchQuery.empId) === -1) return false;
             if (searchQuery.name && (row.name || '').toLowerCase().indexOf(searchQuery.name) === -1) return false;
             if (searchQuery.course && (row.course_name || '').toLowerCase().indexOf(searchQuery.course) === -1) return false;
@@ -209,7 +267,7 @@
         $tbody.empty();
 
         if (pageItems.length === 0) {
-            $tbody.append('<tr><td colspan="9" class="text-center py-4 text-muted">No records match the filter.</td></tr>');
+            $tbody.append('<tr><td colspan="10" class="text-center py-4 text-muted"><i class="ti ti-inbox fs-2 d-block mb-1 text-secondary"></i>No records match the active filter criteria.</td></tr>');
         } else {
             pageItems.forEach(function (row, idx) {
                 const globalIndex = startIdx + idx;
@@ -222,6 +280,7 @@
                     msgsHtml += '</div>';
                 }
 
+                const rowData = row.data || {};
                 $tbody.append(`
                     <tr class="${getRowClass(row.status)}">
                         <td class="text-center fw-medium text-muted">${row.no || (globalIndex + 1)}</td>
@@ -229,16 +288,16 @@
                         <td class="fw-semibold font-monospace">${escapeHtml(row.employee_id || '-')}</td>
                         <td>
                             <div class="fw-semibold text-dark">${escapeHtml(row.name || '-')}</div>
-                            <div class="text-muted extra-small" style="font-size: 0.72rem;">${escapeHtml(row.data.job_position || '-')}</div>
+                            <div class="text-muted extra-small" style="font-size: 0.72rem;">${escapeHtml(rowData.job_position || '-')}</div>
                         </td>
                         <td><span class="text-muted small">${escapeHtml(row.company || '-')}</span></td>
                         <td>
                             <div class="fw-semibold text-dark">${escapeHtml(row.course_name || '-')}</div>
-                            <div class="text-muted extra-small" style="font-size: 0.72rem;">${escapeHtml(row.data.batch || '')} &bull; ${escapeHtml(row.data.start_date || '')}</div>
+                            <div class="text-muted extra-small" style="font-size: 0.72rem;">${escapeHtml(rowData.batch || '')} &bull; ${escapeHtml(rowData.start_date || '')}</div>
                         </td>
                         <td><span class="badge bg-light text-secondary border">${escapeHtml(row.type || '-')}</span></td>
                         <td><span class="text-muted small">${escapeHtml(row.pic || '-')}</span></td>
-                        <td>${msgsHtml}</td>
+                        <td>${msgsHtml || '-'}</td>
                         <td class="text-center">
                             <button type="button" class="btn btn-sm btn-ghost-primary rounded-circle btn-inspect-row" data-row-idx="${globalIndex}" title="Inspect Row">
                                 <i class="ti ti-eye"></i>
@@ -249,7 +308,8 @@
             });
         }
 
-        $('#ptkp-pagination-info').text(total > 0 ? `Showing ${startIdx + 1} to ${endIdx} of ${total} records (Total file rows: ${allRows.length})` : 'No records');
+        const filterLabel = currentFilter !== 'all' ? ` [Filter: ${currentFilter.toUpperCase().replace('_', ' ')}]` : '';
+        $('#ptkp-pagination-info').text(total > 0 ? `Showing ${startIdx + 1} to ${endIdx} of ${total} records${filterLabel} (Total file rows: ${allRows.length})` : `No records found (Total file rows: ${allRows.length})`);
         renderPaginationControls(totalPages);
     }
 
@@ -280,7 +340,7 @@
         $ul.empty();
         if (totalPages <= 1) return;
 
-        $ul.append(`<li class="page-item ${currentPage === 1 ? 'disabled' : ''}"><a class="page-link" href="#" data-page="${currentPage - 1}">Previous</a></li>`);
+        $ul.append(`<li class="page-item ${currentPage === 1 ? 'disabled' : ''}"><a class="page-link" href="#" data-page="${currentPage - 1}" aria-label="Previous">&laquo;</a></li>`);
         let startPage = Math.max(1, currentPage - 2);
         let endPage = Math.min(totalPages, currentPage + 2);
 
@@ -298,7 +358,7 @@
             $ul.append(`<li class="page-item"><a class="page-link" href="#" data-page="${totalPages}">${totalPages}</a></li>`);
         }
 
-        $ul.append(`<li class="page-item ${currentPage === totalPages ? 'disabled' : ''}"><a class="page-link" href="#" data-page="${currentPage + 1}">Next</a></li>`);
+        $ul.append(`<li class="page-item ${currentPage === totalPages ? 'disabled' : ''}"><a class="page-link" href="#" data-page="${currentPage + 1}" aria-label="Next">&raquo;</a></li>`);
 
         $ul.find('a.page-link').on('click', function (e) {
             e.preventDefault();
@@ -435,12 +495,18 @@
     $('#ptkp-btn-import-another').on('click', resetToStage1);
 
     function resetToStage1() {
-        selectedFile = null; importToken = null; allRows = []; filteredRows = []; currentPage = 1; isSubmitting = false;
+        selectedFile = null; importToken = null; allRows = []; filteredRows = []; currentPage = 1; isSubmitting = false; isFiltering = false;
         $fileInput.val('');
         $selectedFilename.text('No file selected');
         $btnValidate.prop('disabled', true);
         $uploadError.hide().text('');
         $previewCard.hide(); $resultCard.hide(); $loadingCard.hide(); $uploadCard.show();
+        $tableLoading.hide();
+        currentFilter = 'all';
+        $('.ptkp-summary-filter-card').removeClass('active');
+        $('.ptkp-summary-filter-card[data-filter="all"]').addClass('active');
+        $('#ptkp-search-empid, #ptkp-search-name, #ptkp-search-course, #ptkp-search-pic').val('');
+        searchQuery = { empId: '', name: '', course: '', pic: '' };
         setStep(1);
     }
 

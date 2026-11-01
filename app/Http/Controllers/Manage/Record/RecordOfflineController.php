@@ -10,6 +10,7 @@ use App\Exports\OfflineParticipantCsvExport;
 use App\Exports\OfflineParticipantExport;
 use App\Exports\OfflineTrainingCsvExport;
 use App\Exports\OfflineTrainingExport;
+use App\Support\DurationFormatter;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use App\Http\Controllers\Controller;
@@ -197,6 +198,26 @@ class RecordOfflineController extends Controller
         return ($hours == (int) $hours)
             ? (int) $hours . ' h'
             : rtrim(rtrim(number_format($hours, 2, '.', ''), '0'), '.') . ' h';
+    }
+
+    public static function formatEngagementTime($rawHours): string
+    {
+        if ($rawHours === null || $rawHours === '' || $rawHours === '-') {
+            return '<span class="fw-semibold font-monospace">00:00:00</span>';
+        }
+        if (!is_numeric($rawHours)) {
+            $cleaned = trim(str_ireplace('h', '', (string) $rawHours));
+            if (is_numeric($cleaned)) {
+                $rawHours = (float) $cleaned;
+            } else {
+                return '<span class="fw-semibold font-monospace">00:00:00</span>';
+            }
+        }
+        $totalSeconds = (int) round((float) $rawHours * 3600);
+        if ($totalSeconds < 0) {
+            $totalSeconds = 0;
+        }
+        return '<span class="fw-semibold font-monospace">' . DurationFormatter::fromSeconds($totalSeconds) . '</span>';
     }
 
     public function index(Request $request)
@@ -896,8 +917,7 @@ class RecordOfflineController extends Controller
             })
             ->addColumn('total_engagement_time', function ($row) {
                 $lh = $row->learning_hours ?? ($row->course_learning_hours ?? null);
-                $fmt = self::formatHours($lh);
-                return $fmt !== '-' ? '<span class="fw-semibold">' . $fmt . '</span>' : '-';
+                return self::formatEngagementTime($lh);
             })
             ->addColumn('action', function ($row) {
                 return self::renderActionDropdown($row->id, 'offline');
@@ -1435,8 +1455,7 @@ class RecordOfflineController extends Controller
             })
             ->addColumn('total_engagement_time', function ($row) {
                 $lh = $row->learning_hours ?? ($row->course_learning_hours ?? null);
-                $fmt = self::formatHours($lh);
-                return $fmt !== '-' ? '<span class="fw-semibold">' . $fmt . '</span>' : '-';
+                return self::formatEngagementTime($lh);
             })
             ->addColumn('action', function ($row) {
                 return self::renderActionDropdown($row->id, 'offline');
@@ -1975,8 +1994,7 @@ class RecordOfflineController extends Controller
             })
             ->addColumn('total_engagement_time', function ($row) {
                 $lh = $row->learning_hours ?? ($row->course_learning_hours ?? null);
-                $fmt = self::formatHours($lh);
-                return $fmt !== '-' ? '<span class="fw-semibold">' . $fmt . '</span>' : '-';
+                return self::formatEngagementTime($lh);
             })
             ->addColumn('action', function ($row) {
                 return self::renderActionDropdown($row->id, 'offline');

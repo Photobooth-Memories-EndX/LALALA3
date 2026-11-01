@@ -157,89 +157,95 @@
                     </div>
                 </div>
 
-                <!-- 6 KPI SUMMARY STAT CARDS -->
-                <div class="row g-2 mb-3">
+                <!-- 6 CLICKABLE KPI SUMMARY STAT CARDS (QUICK FILTER) -->
+                <div class="row g-2 mb-3" id="ptkp-summary-cards-container">
                     <div class="col-6 col-md-2">
-                        <div class="card border-0 shadow-none bg-light p-3 rounded-3 text-center h-100 ptkp-kpi-card">
+                        <div class="card border p-3 rounded-3 text-center h-100 ptkp-kpi-card ptkp-summary-filter-card active"
+                             data-filter="all" role="button" tabindex="0" title="Click to filter: All Records">
                             <div class="text-muted small fw-medium mb-1">Total Rows</div>
-                            <div class="h3 fw-bold text-dark mb-0" id="ptkp-kpi-total">0</div>
+                            <div class="h3 fw-bold text-dark mb-0 ptkp-kpi-count" id="ptkp-kpi-total">0</div>
                         </div>
                     </div>
                     <div class="col-6 col-md-2">
-                        <div class="card border-0 shadow-none p-3 rounded-3 text-center h-100 ptkp-kpi-card ptkp-kpi-valid">
+                        <div class="card border p-3 rounded-3 text-center h-100 ptkp-kpi-card ptkp-summary-filter-card ptkp-kpi-valid"
+                             data-filter="valid" role="button" tabindex="0" title="Click to filter: VALID Records">
                             <div class="small fw-semibold mb-1" style="color: #15803d;">VALID</div>
-                            <div class="h3 fw-bold mb-0" style="color: #15803d;" id="ptkp-kpi-valid">0</div>
+                            <div class="h3 fw-bold mb-0 ptkp-kpi-count" style="color: #15803d;" id="ptkp-kpi-valid">0</div>
                         </div>
                     </div>
                     <div class="col-6 col-md-2">
-                        <div class="card border-0 shadow-none p-3 rounded-3 text-center h-100 ptkp-kpi-card ptkp-kpi-warning">
+                        <div class="card border p-3 rounded-3 text-center h-100 ptkp-kpi-card ptkp-summary-filter-card ptkp-kpi-warning"
+                             data-filter="warning" role="button" tabindex="0" title="Click to filter: WARNING Records">
                             <div class="small fw-semibold mb-1" style="color: #92400e;">WARNING</div>
-                            <div class="h3 fw-bold mb-0" style="color: #92400e;" id="ptkp-kpi-warning">0</div>
+                            <div class="h3 fw-bold mb-0 ptkp-kpi-count" style="color: #92400e;" id="ptkp-kpi-warning">0</div>
                         </div>
                     </div>
                     <div class="col-6 col-md-2">
-                        <div class="card border-0 shadow-none p-3 rounded-3 text-center h-100 ptkp-kpi-card ptkp-kpi-duplicate">
+                        <div class="card border p-3 rounded-3 text-center h-100 ptkp-kpi-card ptkp-summary-filter-card ptkp-kpi-duplicate"
+                             data-filter="duplicate" role="button" tabindex="0" title="Click to filter: DUPLICATE Records">
                             <div class="small fw-semibold mb-1" style="color: #a16207;">DUPLICATE</div>
-                            <div class="h3 fw-bold mb-0" style="color: #a16207;" id="ptkp-kpi-duplicate">0</div>
+                            <div class="h3 fw-bold mb-0 ptkp-kpi-count" style="color: #a16207;" id="ptkp-kpi-duplicate">0</div>
                         </div>
                     </div>
                     <div class="col-6 col-md-2">
-                        <div class="card border-0 shadow-none p-3 rounded-3 text-center h-100 ptkp-kpi-card ptkp-kpi-invalid">
+                        <div class="card border p-3 rounded-3 text-center h-100 ptkp-kpi-card ptkp-summary-filter-card ptkp-kpi-invalid"
+                             data-filter="invalid" role="button" tabindex="0" title="Click to filter: INVALID Records">
                             <div class="small fw-semibold mb-1" style="color: #b91c1c;">INVALID</div>
-                            <div class="h3 fw-bold mb-0" style="color: #b91c1c;" id="ptkp-kpi-invalid">0</div>
+                            <div class="h3 fw-bold mb-0 ptkp-kpi-count" style="color: #b91c1c;" id="ptkp-kpi-invalid">0</div>
                         </div>
                     </div>
                     <div class="col-6 col-md-2">
-                        <div class="card border-0 shadow-none p-3 rounded-3 text-center h-100 ptkp-kpi-card ptkp-kpi-invalid-company">
+                        <div class="card border p-3 rounded-3 text-center h-100 ptkp-kpi-card ptkp-summary-filter-card ptkp-kpi-invalid-company"
+                             data-filter="invalid_company" role="button" tabindex="0" title="Click to filter: INVALID COMPANY Records">
                             <div class="small fw-semibold mb-1" style="color: #c2410c;">INVALID COMPANY</div>
-                            <div class="h3 fw-bold mb-0" style="color: #c2410c;" id="ptkp-kpi-invalid-company">0</div>
+                            <div class="h3 fw-bold mb-0 ptkp-kpi-count" style="color: #c2410c;" id="ptkp-kpi-invalid-company">0</div>
                         </div>
                     </div>
                 </div>
 
-                <!-- FILTER TABS & SEARCH -->
-                <div class="row g-3 align-items-center justify-content-between mb-3">
-                    <div class="col-lg-7">
-                        <div class="d-flex align-items-center gap-1.5 flex-wrap">
-                            <button type="button" class="btn btn-sm btn-light border ptkp-filter-tab active" data-filter="all">All (<span id="count-tab-all">0</span>)</button>
-                            <button type="button" class="btn btn-sm btn-light border ptkp-filter-tab" data-filter="valid">VALID (<span id="count-tab-valid">0</span>)</button>
-                            <button type="button" class="btn btn-sm btn-light border ptkp-filter-tab" data-filter="warning">WARNING (<span id="count-tab-warning">0</span>)</button>
-                            <button type="button" class="btn btn-sm btn-light border ptkp-filter-tab" data-filter="duplicate">DUPLICATE (<span id="count-tab-duplicate">0</span>)</button>
-                            <button type="button" class="btn btn-sm btn-light border ptkp-filter-tab" data-filter="invalid">INVALID (<span id="count-tab-invalid">0</span>)</button>
-                            <button type="button" class="btn btn-sm btn-light border ptkp-filter-tab" data-filter="invalid_company">INVALID COMPANY (<span id="count-tab-invalid-company">0</span>)</button>
+                <!-- COMBINED SEARCH FIELDS & CONTROLS -->
+                <div class="row g-2 mb-3 bg-light p-2.5 rounded-3 border align-items-center">
+                    <div class="col-12 col-md-3">
+                        <div class="input-icon">
+                            <span class="input-icon-addon"><i class="ti ti-id"></i></span>
+                            <input type="text" id="ptkp-search-empid" class="form-control form-control-sm" placeholder="Filter Employee ID...">
                         </div>
                     </div>
-                    <div class="col-lg-5">
-                        <div class="d-flex align-items-center justify-content-lg-end gap-2">
-                            <label for="ptkp-page-size" class="small text-muted mb-0">Show:</label>
-                            <select id="ptkp-page-size" class="form-select form-select-sm" style="width: 85px;">
-                                <option value="15">15</option>
-                                <option value="25" selected>25</option>
-                                <option value="50">50</option>
-                                <option value="100">100</option>
-                            </select>
+                    <div class="col-12 col-md-3">
+                        <div class="input-icon">
+                            <span class="input-icon-addon"><i class="ti ti-user"></i></span>
+                            <input type="text" id="ptkp-search-name" class="form-control form-control-sm" placeholder="Filter Employee Name...">
                         </div>
+                    </div>
+                    <div class="col-12 col-md-3">
+                        <div class="input-icon">
+                            <span class="input-icon-addon"><i class="ti ti-book"></i></span>
+                            <input type="text" id="ptkp-search-course" class="form-control form-control-sm" placeholder="Filter Course Title...">
+                        </div>
+                    </div>
+                    <div class="col-8 col-md-2">
+                        <div class="input-icon">
+                            <span class="input-icon-addon"><i class="ti ti-user-check"></i></span>
+                            <input type="text" id="ptkp-search-pic" class="form-control form-control-sm" placeholder="Filter PIC...">
+                        </div>
+                    </div>
+                    <div class="col-4 col-md-1">
+                        <button type="button" id="ptkp-btn-reset-filters" class="btn btn-sm btn-outline-secondary w-100 d-inline-flex align-items-center justify-content-center gap-1" title="Reset all search filters">
+                            <i class="ti ti-rotate-clockwise"></i>
+                            <span>Reset</span>
+                        </button>
                     </div>
                 </div>
 
-                <!-- SEARCH FIELDS -->
-                <div class="row g-2 mb-3 bg-light p-2.5 rounded-3 border">
-                    <div class="col-md-3">
-                        <input type="text" id="ptkp-search-empid" class="form-control form-control-sm" placeholder="Filter Employee ID...">
+                <!-- PREVIEW TABLE CONTAINER WITH LOADING OVERLAY -->
+                <div class="ptkp-table-wrapper position-relative mb-3">
+                    <!-- Table Loading Overlay -->
+                    <div class="ptkp-table-loading-overlay" id="ptkp-table-loading" style="display: none;">
+                        <div class="d-flex flex-column align-items-center justify-content-center py-5">
+                            <div class="spinner-border text-primary mb-2" style="width: 2.2rem; height: 2.2rem; color: #d97706 !important;" role="status"></div>
+                            <span class="small fw-semibold text-muted" id="ptkp-table-loading-text">Filtering records...</span>
+                        </div>
                     </div>
-                    <div class="col-md-3">
-                        <input type="text" id="ptkp-search-name" class="form-control form-control-sm" placeholder="Filter Employee Name...">
-                    </div>
-                    <div class="col-md-3">
-                        <input type="text" id="ptkp-search-course" class="form-control form-control-sm" placeholder="Filter Course Title...">
-                    </div>
-                    <div class="col-md-3">
-                        <input type="text" id="ptkp-search-pic" class="form-control form-control-sm" placeholder="Filter PIC...">
-                    </div>
-                </div>
-
-                <!-- PREVIEW TABLE -->
-                <div class="ptkp-table-wrapper mb-3">
                     <table class="table table-hover align-middle mb-0 ptkp-table" id="ptkp-preview-table">
                         <thead>
                             <tr>
@@ -261,10 +267,19 @@
                     </table>
                 </div>
 
-                <!-- PAGINATION FOOTER -->
+                <!-- SHOW ENTRIES & PAGINATION FOOTER -->
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
-                    <div class="text-muted small" id="ptkp-pagination-info">
-                        Showing 0 of 0 records
+                    <div class="d-flex align-items-center gap-2">
+                        <label for="ptkp-page-size" class="small text-muted mb-0">Show:</label>
+                        <select id="ptkp-page-size" class="form-select form-select-sm" style="width: 85px;">
+                            <option value="15">15</option>
+                            <option value="25" selected>25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                        <div class="text-muted small ms-2" id="ptkp-pagination-info">
+                            Showing 0 of 0 records
+                        </div>
                     </div>
                     <nav aria-label="Page navigation">
                         <ul class="pagination pagination-sm mb-0" id="ptkp-pagination-nav"></ul>

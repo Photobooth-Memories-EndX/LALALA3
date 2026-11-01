@@ -734,14 +734,12 @@ class LearningDatatableService
                 return '<span class="fw-semibold font-monospace">' . DurationFormatter::fromSeconds($sec) . '</span>';
             })
             ->addColumn('total_engagement_duration', function ($row) {
-                $hours = (float) ($row->learning_hours ?? 0);
-                $fmt = ($hours == (int) $hours) ? (int) $hours . ' h' : rtrim(rtrim(number_format($hours, 2, '.', ''), '0'), '.') . ' h';
-                return '<span class="fw-semibold">' . $fmt . '</span>';
+                $sec = $this->resolveEngagementSeconds($row);
+                return '<span class="fw-semibold font-monospace">' . DurationFormatter::fromSeconds($sec) . '</span>';
             })
             ->addColumn('total_engagement_time', function ($row) {
-                $hours = (float) ($row->learning_hours ?? 0);
-                $fmt = ($hours == (int) $hours) ? (int) $hours . ' h' : rtrim(rtrim(number_format($hours, 2, '.', ''), '0'), '.') . ' h';
-                return '<span class="fw-semibold">' . $fmt . '</span>';
+                $sec = $this->resolveEngagementSeconds($row);
+                return '<span class="fw-semibold font-monospace">' . DurationFormatter::fromSeconds($sec) . '</span>';
             })
             ->addColumn('learning_hours', function ($row) {
                 $hours = (float) ($row->learning_hours ?? 0);
@@ -869,6 +867,8 @@ class LearningDatatableService
                 'batch',
                 'delivery_method',
                 'sub_delivery_method',
+                'provider',
+                'sub_provider',
                 'recognized_duration',
                 'total_recognized_duration',
                 'total_engagement_duration',
@@ -877,6 +877,8 @@ class LearningDatatableService
                 'progress_percent',
                 'progress_status',
                 'date_time_merged',
+                'date_merged',
+                'time_merged',
                 'requirement',
                 'attendance',
                 'attendance_reason',
@@ -885,6 +887,7 @@ class LearningDatatableService
                 'score_l3',
                 'pic',
                 'certificate',
+                'certificate_availability',
                 'action',
             ])
             ->make(true);
@@ -1054,5 +1057,51 @@ class LearningDatatableService
                 </li>
             </ul>
         </div>';
+    }
+
+    /**
+     * Resolve total engagement seconds from row data.
+     * Prioritizes authoritative seconds (actual_watch_seconds), then playtime position (current_time),
+     * then afk_duration_seconds, then decimal learning_hours converted to seconds, then completed/progress duration.
+     */
+    public function resolveEngagementSeconds(object $row): int
+    {
+        $watchSec = (int) ($row->actual_watch_seconds ?? 0);
+        if ($watchSec > 0) {
+            return $watchSec;
+        }
+
+        $currTime = (int) ($row->current_time ?? 0);
+        if ($currTime > 0) {
+            return $currTime;
+        }
+
+        $afkSec = (int) ($row->afk_duration_seconds ?? 0);
+        if ($afkSec > 0) {
+            return $afkSec;
+        }
+
+        if (isset($row->learning_hours) && is_numeric($row->learning_hours) && (float) $row->learning_hours > 0) {
+            return (int) round((float) $row->learning_hours * 3600);
+        }
+
+        $durSec = 0;
+        if (!empty($row->content_duration)) {
+            $durSec = DurationFormatter::toSeconds($row->content_duration) ?? 0;
+        } elseif (!empty($row->duration_seconds)) {
+            $durSec = (int) $row->duration_seconds;
+        }
+
+        $progress = (float) ($row->progress ?? 0);
+        $finish = (string) ($row->finish ?? '0');
+        if (($finish === '1' || $progress >= 100) && $durSec > 0) {
+            return $durSec;
+        }
+
+        if ($progress > 0 && $durSec > 0) {
+            return (int) round(($progress / 100) * $durSec);
+        }
+
+        return 0;
     }
 }
