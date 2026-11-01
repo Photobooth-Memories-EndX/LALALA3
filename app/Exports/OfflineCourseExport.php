@@ -2,42 +2,30 @@
 
 namespace App\Exports;
 
-use App\Exports\Sheets\OfflineCourseDataSheet;
-use App\Exports\Sheets\OfflineTrainingInstructionsSheet;
 use App\Models\OfflineTraining;
-use Illuminate\Contracts\Support\Responsable;
-use Illuminate\Http\Request;
+use App\Services\Record\RecordOfflineQueryService;
 use Illuminate\Support\Str;
-use Maatwebsite\Excel\Concerns\Exportable;
-use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 
-class OfflineCourseExport implements WithMultipleSheets, Responsable
+class OfflineCourseExport extends OfflineRecordExport
 {
-    use Exportable;
-
     protected OfflineTraining $training;
-    protected array $filters = [];
-    protected string $fileName;
 
-    public function __construct(OfflineTraining $training, $filters = [])
+    public function __construct(OfflineTraining $training, $filters = [], ?string $fileName = null)
     {
         $this->training = $training;
-        $this->filters = $filters instanceof Request ? $filters->all() : (array) $filters;
 
-        $courseSlug = Str::slug($training->course_name) ?: 'course';
-        $this->fileName = sprintf('non-kp-owl-course-%d-%s-%s.xlsx', $training->id, $courseSlug, now()->format('Y-m-d'));
+        if ($fileName === null) {
+            $courseSlug = Str::slug($training->course_name) ?: 'course';
+            $fileName = sprintf('non-kp-owl-course-%d-%s-%s.xlsx', $training->id, $courseSlug, now()->format('Y-m-d'));
+        }
+
+        parent::__construct($filters, $fileName);
     }
 
-    public function getFileName(): string
+    public function query()
     {
-        return $this->fileName;
-    }
-
-    public function sheets(): array
-    {
-        return [
-            new OfflineCourseDataSheet($this->training, $this->filters),
-            new OfflineTrainingInstructionsSheet(),
-        ];
+        return RecordOfflineQueryService::buildCourseQuery((int) $this->training->id, $this->filters)
+            ->orderBy('otu.name', 'asc')
+            ->orderBy('otu.id', 'asc');
     }
 }

@@ -2,10 +2,13 @@
 
 namespace App\Exports;
 
-use App\Exports\Manage\ClassificationOfflineRecordExport;
+use App\Http\Controllers\Manage\Record\RecordOfflineController;
+use App\Services\Record\RecordOfflineQueryService;
 
-class OfflineClassificationExport extends ClassificationOfflineRecordExport
+class OfflineClassificationExport extends OfflineRecordExport
 {
+    protected ?string $classification;
+
     /**
      * Classification-scoped Excel export for Non KP OWL offline records.
      *
@@ -15,6 +18,22 @@ class OfflineClassificationExport extends ClassificationOfflineRecordExport
      */
     public function __construct(string $classification, $filters = [], ?string $fileName = null)
     {
-        parent::__construct($classification, $filters, $fileName);
+        $this->classification = $classification;
+
+        if ($fileName === null) {
+            $resolved = RecordOfflineController::resolveClassification($classification);
+            $slug = $resolved['slug'] ?: 'unclassified';
+            $fileName = sprintf('non-kp-owl-%s-%s.xlsx', $slug, now()->format('Y-m-d'));
+        }
+
+        parent::__construct($filters, $fileName);
+    }
+
+    public function query()
+    {
+        return RecordOfflineQueryService::buildClassificationQuery($this->classification, $this->filters)
+            ->orderBy('ot.start_date', 'desc')
+            ->orderBy('ot.id', 'desc')
+            ->orderBy('otu.id', 'asc');
     }
 }

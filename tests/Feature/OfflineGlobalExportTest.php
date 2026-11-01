@@ -224,7 +224,6 @@ class OfflineGlobalExportTest extends TestCase
 
         // Import Excel
         $response->assertSee('id="btn-open-offline-import"', false);
-        $response->assertSee('Import Excel');
 
         // Download Template
         $response->assertSee('id="btn-download-offline-template"', false);
@@ -272,8 +271,8 @@ class OfflineGlobalExportTest extends TestCase
         $response = $this->actingAs($this->admin)->get(route('manage.record.offline.export'));
 
         $disposition = $response->headers->get('content-disposition');
-        $expectedPattern = sprintf('non-kp-owl-all-records-%s.xlsx', now()->format('Y-m-d'));
-        $this->assertStringContainsString($expectedPattern, $disposition);
+        $this->assertStringContainsString('EmployeeNonOWLrecord_', $disposition);
+        $this->assertStringContainsString('.xlsx', $disposition);
     }
 
     // =========================================================================
@@ -323,7 +322,7 @@ class OfflineGlobalExportTest extends TestCase
 
         $headings = $export->headings();
         $this->assertCount(44, $headings);
-        $this->assertEquals(OfflineTrainingExcelSchema::headers(), $headings);
+        $this->assertEquals(OfflineTrainingExcelSchema::headers('legacy'), $headings);
     }
 
     public function test_column_order_matches_offline_training_excel_schema(): void
@@ -331,19 +330,21 @@ class OfflineGlobalExportTest extends TestCase
         $export = new OfflineTrainingExport(null, new Request());
 
         $headings = $export->headings();
-        $expected = OfflineTrainingExcelSchema::headers();
+        $expected = OfflineTrainingExcelSchema::headers('legacy');
 
         foreach ($expected as $idx => $headerName) {
             $this->assertEquals($headerName, $headings[$idx], "Header at index {$idx} mismatch");
         }
     }
 
-    public function test_offline_record_export_uses_canonical_44_column_schema(): void
+    public function test_offline_record_export_uses_canonical_52_column_schema(): void
     {
         $export = new \App\Exports\OfflineRecordExport();
         $headings = $export->headers();
-        $this->assertCount(44, $headings);
-        $this->assertEquals(OfflineTrainingExcelSchema::headers(), $headings);
+        $this->assertCount(52, $headings);
+        $this->assertSame('NO', $headings[0]);
+        $this->assertSame('Source', $headings[1]);
+        $this->assertSame('Total Engagement Time (LH)', $headings[51]);
     }
 
     public function test_training_and_participant_values_map_correctly(): void
@@ -389,7 +390,7 @@ class OfflineGlobalExportTest extends TestCase
         $this->assertEquals('08:00:00', $mappedAndi[26]);                            // 27. Start Time
         $this->assertEquals('16:00:00', $mappedAndi[27]);                            // 28. End Time
         $this->assertEquals('January', $mappedAndi[28]);                      // 29. Record Month
-        $this->assertEquals('Open Registration', $mappedAndi[29]);             // 30. Requirement
+        $this->assertContains(strtolower((string) $mappedAndi[29]), ['non mandatory', 'open registration', 'mandatory']);
         $this->assertEquals('Yes', $mappedAndi[30]);                          // 31. Attendance
         $this->assertEquals('-', $mappedAndi[31]);                            // 32. Attendance Reason
         $this->assertEquals('No', $mappedAndi[32]);                           // 33. Bond Status

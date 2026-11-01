@@ -408,7 +408,10 @@ class RecordOfflineController extends Controller
      */
     public function export(Request $request)
     {
-        return app(\App\Services\Record\ManageOfflineRecordExportService::class)->download($request->all());
+        $dateTime = \App\Http\Controllers\ManageRecordController::formatExportDateTime();
+        $fileName = "EmployeeNonOWLrecord_{$dateTime}.xlsx";
+
+        return app(\App\Services\Record\ManageOfflineRecordExportService::class)->download($request->all(), $fileName);
     }
 
     /**
@@ -789,7 +792,7 @@ class RecordOfflineController extends Controller
                 return $row->bond_end_date ? date('d M Y', strtotime($row->bond_end_date)) : '-';
             })
             ->addColumn('bond_amount', function ($row) {
-                if ($row->bond_amount !== null && $row->bond_amount !== '') {
+                if ($row->bond_amount !== null && $row->bond_amount !== '' && (float) $row->bond_amount > 0) {
                     return '<span class="fw-semibold font-monospace">Rp ' . number_format((float) $row->bond_amount, 0, ',', '.') . '</span>';
                 }
                 return '-';
@@ -1327,7 +1330,7 @@ class RecordOfflineController extends Controller
                 return $row->bond_end_date ? date('d M Y', strtotime($row->bond_end_date)) : '-';
             })
             ->addColumn('bond_amount', function ($row) {
-                if ($row->bond_amount !== null && $row->bond_amount !== '') {
+                if ($row->bond_amount !== null && $row->bond_amount !== '' && (float) $row->bond_amount > 0) {
                     return '<span class="fw-semibold font-monospace">Rp ' . number_format((float) $row->bond_amount, 0, ',', '.') . '</span>';
                 }
                 return '-';
@@ -1866,7 +1869,7 @@ class RecordOfflineController extends Controller
                 return $row->bond_end_date ? date('d M Y', strtotime($row->bond_end_date)) : '-';
             })
             ->addColumn('bond_amount', function ($row) {
-                if ($row->bond_amount !== null && $row->bond_amount !== '') {
+                if ($row->bond_amount !== null && $row->bond_amount !== '' && (float) $row->bond_amount > 0) {
                     return '<span class="fw-semibold font-monospace">Rp ' . number_format((float) $row->bond_amount, 0, ',', '.') . '</span>';
                 }
                 return '-';

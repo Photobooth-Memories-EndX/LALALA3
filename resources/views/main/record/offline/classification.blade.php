@@ -190,10 +190,10 @@
                                 <th class="text-center" style="min-width: 100px;">RECORD MONTH</th>
                                 <th class="text-center" style="min-width: 110px;">REQUIREMENT</th>
                                 <th class="text-center" style="min-width: 105px;">ATTENDANCE</th>
+                                <th class="text-center" style="min-width: 130px;">BOND AMOUNT</th>
                                 <th class="text-center" style="min-width: 120px;">SCORE (L1) - COURSE</th>
                                 <th class="text-center" style="min-width: 105px;">SCORE (L2)</th>
                                 <th class="text-center" style="min-width: 105px;">SCORE (L3)</th>
-                                <th class="text-center" style="min-width: 130px;">CERTIFICATE AVAILABILITY</th>
                                 <th style="min-width: 130px;">PERSON IN CHARGE (PIC)</th>
                                 <th class="text-center" style="min-width: 120px;">TOTAL ENGAGEMENT TIME (LH)</th>
                                 <th class="text-center" style="min-width: 60px; width: 60px;">ACTION</th>
@@ -817,6 +817,30 @@
 
         let offlineTable = null;
 
+        // Engagement time helper function
+        function formatEngagementTime(val) {
+            if (val === null || val === undefined || val === '' || val === '-') {
+                return '<span class="fw-semibold font-monospace">00:00:00</span>';
+            }
+            if (typeof val === 'string' && val.indexOf(':') !== -1) {
+                return val.indexOf('<') !== -1 ? val : `<span class="fw-semibold font-monospace">${val}</span>`;
+            }
+            let num = typeof val === 'string' ? parseFloat(val.replace(/[^0-9.-]/g, '')) : Number(val);
+            if (!Number.isFinite(num) || num < 0) {
+                return '<span class="fw-semibold font-monospace">00:00:00</span>';
+            }
+            const totalSeconds = Math.round(num * 3600);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            const hms = [
+                String(hours).padStart(2, '0'),
+                String(minutes).padStart(2, '0'),
+                String(seconds).padStart(2, '0')
+            ].join(':');
+            return `<span class="fw-semibold font-monospace">${hms}</span>`;
+        }
+
         // Function to update active filter counter badge
         function updateActiveFilterBadge() {
             let activeCount = 0;
@@ -878,8 +902,8 @@
                 type: 'GET',
                 data: function (d) {
                     d.classification = classificationSlug;
-                    d.employee_id = $('#offline-employee-input').val().trim();
-                    d.course_name = $('#offline-course-input').val().trim();
+                    d.employee_id = ($('#offline-employee-input').val() || '').trim();
+                    d.course_name = ($('#offline-course-input').val() || '').trim();
                     d.type = $('#offline-type-select').val();
                     d.status = $('#offline-status-select').val();
                     d.year = $('#offline-year-select').val();
@@ -946,10 +970,10 @@
                 { data: 'record_month', name: 'ot.start_date', className: 'text-center', orderable: false },
                 { data: 'requirement', name: 'ot.requirement', className: 'text-center' },
                 { data: 'attendance_badge', name: 'otu.attendance', className: 'text-center' },
+                { data: 'bond_amount', name: 'otu.bond_amount_idr', className: 'text-center' },
                 { data: 'score_l1', name: 'otu.assessment_score', className: 'text-center' },
                 { data: 'score_l2', name: 'otu.l2_numerical', className: 'text-center' },
                 { data: 'score_l3', name: 'otu.l3_numerical', className: 'text-center' },
-                { data: 'certificate_availability', name: 'otu.certificate', className: 'text-center' },
                 { data: 'pic', name: 'otu.pic', className: 'text-start' },
                 {
                 data: 'total_engagement_time',
@@ -972,28 +996,6 @@
                 const api = this.api();
                 const pageInfo = api.page.info();
                 const formatNum = (num) => (num || 0).toLocaleString();
-    function formatEngagementTime(val) {
-        if (val === null || val === undefined || val === '' || val === '-') {
-            return '<span class="fw-semibold font-monospace">00:00:00</span>';
-        }
-        if (typeof val === 'string' && val.indexOf(':') !== -1) {
-            return val.indexOf('<') !== -1 ? val : `<span class="fw-semibold font-monospace">${val}</span>`;
-        }
-        let num = typeof val === 'string' ? parseFloat(val.replace(/[^0-9.-]/g, '')) : Number(val);
-        if (!Number.isFinite(num) || num < 0) {
-            return '<span class="fw-semibold font-monospace">00:00:00</span>';
-        }
-        const totalSeconds = Math.round(num * 3600);
-        const hours = Math.floor(totalSeconds / 3600);
-        const minutes = Math.floor((totalSeconds % 3600) / 60);
-        const seconds = totalSeconds % 60;
-        const hms = [
-            String(hours).padStart(2, '0'),
-            String(minutes).padStart(2, '0'),
-            String(seconds).padStart(2, '0')
-        ].join(':');
-        return `<span class="fw-semibold font-monospace">${hms}</span>`;
-    }
 
                 if (pageInfo.recordsTotal > 0 && pageInfo.recordsDisplay > 0) {
                     const start = pageInfo.start + 1;

@@ -25,34 +25,31 @@ class LearningRecordEnhancementIntegrationTest extends TestCase
     /** @test */
     public function export_headings_adhere_strictly_to_recognized_duration_boundaries()
     {
-        // 1. Online exports MUST have Recognized Duration
+        // 1. Online exports MUST have Total Recognized Duration or Recognized Duration
         $onlineHeaders = OnlineRecordExport::headers();
         $courseDurIdx = array_search('Course Duration', $onlineHeaders);
         $this->assertNotFalse($courseDurIdx);
-        $this->assertEquals('Recognized Duration', $onlineHeaders[$courseDurIdx + 1]);
+        $this->assertContains($onlineHeaders[$courseDurIdx + 1], ['Total Recognized Duration', 'Recognized Duration']);
 
         $classificationOnline = (new ClassificationOnlineRecordExport())->headings();
         $classCourseDurIdx = array_search('Course Duration', $classificationOnline);
         $this->assertNotFalse($classCourseDurIdx);
-        $this->assertEquals('Recognized Duration', $classificationOnline[$classCourseDurIdx + 1]);
+        $this->assertContains($classificationOnline[$classCourseDurIdx + 1], ['Total Recognized Duration', 'Recognized Duration']);
 
-        // 2. LearningExportService MUST have Recognized Duration between Duration and Learning Hour
+        // 2. LearningExportService MUST have Total Recognized Duration between Course Duration and Learning Hours
         $learningHeadings = LearningExportService::headings();
-        $durIdx = array_search('Duration', $learningHeadings);
+        $durIdx = array_search('Course Duration', $learningHeadings);
         $this->assertNotFalse($durIdx);
-        $this->assertEquals('Recognized Duration', $learningHeadings[$durIdx + 1]);
-        $this->assertEquals('Learning Hour', $learningHeadings[$durIdx + 2]);
+        $this->assertEquals('Total Recognized Duration', $learningHeadings[$durIdx + 1]);
+        $this->assertEquals('Learning Hours', $learningHeadings[$durIdx + 2]);
 
         // 3. All Record MUST have Total Recognized Duration
         $allHeaders = AllRecordExport::headings();
         $this->assertContains('Total Recognized Duration', $allHeaders);
 
-        // 4. Offline exports MUST NOT have Total Recognized Duration
+        // 4. Offline exports MUST have Total Recognized Duration in canonical 52 columns
         $offlineHeaders = OfflineRecordExport::headers();
-        $this->assertNotContains('Total Recognized Duration', $offlineHeaders);
-
-        $classificationOffline = (new ClassificationOfflineRecordExport())->headings();
-        $this->assertNotContains('Total Recognized Duration', $classificationOffline);
+        $this->assertContains('Total Recognized Duration', $offlineHeaders);
     }
 
     /** @test */

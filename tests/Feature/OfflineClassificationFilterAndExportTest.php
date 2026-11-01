@@ -540,7 +540,7 @@ class OfflineClassificationFilterAndExportTest extends TestCase
         $this->assertEquals('Testing Classification', $results[0]->main_classification);
     }
 
-    public function test_export_columns_match_offline_training_excel_schema_44_columns(): void
+    public function test_export_columns_match_canonical_52_columns(): void
     {
         $this->seedFilterTestData('Testing Classification');
 
@@ -549,8 +549,8 @@ class OfflineClassificationFilterAndExportTest extends TestCase
 
         // 1. Verify Headings
         $headings = $export->headings();
-        $expectedHeadings = OfflineTrainingExcelSchema::headers();
-        $this->assertCount(44, $headings);
+        $expectedHeadings = \App\Exports\OfflineRecordExport::headers();
+        $this->assertCount(52, $headings);
         $this->assertEquals($expectedHeadings, $headings);
 
         // 2. Verify Mapping
@@ -559,16 +559,17 @@ class OfflineClassificationFilterAndExportTest extends TestCase
         $this->assertNotNull($firstRow);
 
         $mapped = $export->map($firstRow);
-        $this->assertCount(44, $mapped);
+        $this->assertCount(52, $mapped);
 
-        // Verify key mapped values (44 canonical columns starting with Employee ID at index 0)
-        $this->assertEquals('TESTEMP901', $mapped[0]); // 1. Employee ID
-        $this->assertNotEmpty($mapped[1]); // 2. Employee Name
-        $this->assertContains($mapped[9], ['In-House', 'Public']); // 10. Type
-        $this->assertEquals('Testing Classification', $mapped[13]); // 14. Main Classification
-        $this->assertStringContainsString(':', $mapped[20]); // 21. Course Duration (HH:MM:SS)
-        $this->assertIsNumeric($mapped[21]); // 22. Learning Hours
-        $this->assertIsNumeric($mapped[22]); // 23. % Progress
+        // Verify key mapped values in canonical 52 columns
+        $this->assertEquals(1, $mapped[0]); // 1. NO
+        $this->assertEquals('Non KP OWL', $mapped[1]); // 2. Source
+        $this->assertEquals('TESTEMP901', $mapped[2]); // 3. Employee ID
+        $this->assertNotEmpty($mapped[3]); // 4. Employee Name
+        $this->assertContains($mapped[11], ['In-House', 'Public']); // 12. Type
+        $this->assertEquals('Testing Classification', $mapped[15]); // 16. Main Classification
+        $this->assertIsNumeric($mapped[26]); // 27. Learning Hours
+        $this->assertIsNumeric($mapped[27]); // 28. % Progress
     }
 
     public function test_shared_query_service_guarantees_datatable_and_export_parity(): void

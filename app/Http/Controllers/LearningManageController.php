@@ -397,7 +397,24 @@ class LearningManageController extends Controller
             \Barryvdh\Debugbar\Facades\Debugbar::disable();
         }
 
-        return (new LearningExport($request->all(), $request->input('type', ''), $request->input('slug', '')))
+        $filters = $request->all();
+        $type = (string) $request->input('type', '');
+        $slug = (string) $request->input('slug', '');
+
+        if (empty($type) || in_array(strtolower($type), ['all', 'document', 'video'], true)) {
+            if (!empty($filters['classification_slug'])) {
+                $type = 'category';
+                $slug = $filters['classification_slug'];
+            } elseif (!empty($filters['content_slug'])) {
+                $type = 'content';
+                $slug = $filters['content_slug'];
+            } elseif (!empty($filters['playlist_id'])) {
+                $type = 'playlist';
+                $slug = $filters['playlist_id'];
+            }
+        }
+
+        return (new LearningExport($filters, $type, $slug))
             ->download((function() {
                 $monthMap = [1 => 'Jan', 2 => 'Feb', 3 => 'Mar', 4 => 'Apr', 5 => 'Mei', 6 => 'Jun', 7 => 'Jul', 8 => 'Agu', 9 => 'Sep', 10 => 'Okt', 11 => 'Nov', 12 => 'Des'];
                 $dt = \Carbon\Carbon::now();

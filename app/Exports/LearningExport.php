@@ -3,17 +3,17 @@
 namespace App\Exports;
 
 use App\Services\Learning\LearningDatatableService;
-use App\Support\DurationFormatter;
+use App\Services\Learning\LearningExportService;
 use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
+use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
-use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
@@ -48,12 +48,41 @@ class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
             $this->slug = (string) $slug;
         }
 
+        // Automatic page context resolution
+        if (empty($this->type) || in_array(strtolower($this->type), ['all', 'document', 'video'], true)) {
+            if (!empty($this->filters['classification_slug'])) {
+                $this->type = 'category';
+                $this->slug = (string) $this->filters['classification_slug'];
+            } elseif (!empty($this->filters['content_slug'])) {
+                $this->type = 'content';
+                $this->slug = (string) $this->filters['content_slug'];
+            } elseif (!empty($this->filters['playlist_id'])) {
+                $this->type = 'playlist';
+                $this->slug = (string) $this->filters['playlist_id'];
+            }
+        }
+
+        if ($this->type === 'category' && empty($this->filters['classification_slug'])) {
+            $this->filters['classification_slug'] = $this->slug;
+        } elseif ($this->type === 'content' && empty($this->filters['content_slug'])) {
+            $this->filters['content_slug'] = $this->slug;
+        } elseif ($this->type === 'playlist' && empty($this->filters['playlist_id'])) {
+            $this->filters['playlist_id'] = $this->slug;
+        }
+
         $this->rowNumber = 0;
     }
 
     public function query()
     {
         $query = LearningDatatableService::buildBaseQuery($this->filters, $this->type, $this->slug);
+
+        $query->addSelect([
+            'c.author as content_author',
+            'c.status as content_status',
+            'c.learning_hours as content_training_hours',
+            'tp.learning_hours as playlist_training_hours',
+        ]);
 
         if (empty($this->filters['sort'])) {
             $query->orderBy('unified.created_at', 'desc')
@@ -73,14 +102,14 @@ class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
 
     public function headings(): array
     {
-        return \App\Services\Learning\LearningExportService::headings();
+        return LearningExportService::headings();
     }
 
     public function map($row): array
     {
         $this->rowNumber++;
 
-        return \App\Services\Learning\LearningExportService::mapRow($row, $this->rowNumber);
+        return LearningExportService::mapRow($row, $this->rowNumber);
     }
 
     public function chunkSize(): int
@@ -90,19 +119,19 @@ class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
 
     public function columnWidths(): array
     {
-        return \App\Services\Learning\LearningExportService::columnWidths();
+        return LearningExportService::columnWidths();
     }
 
     public function styles(Worksheet $sheet)
     {
-        return \App\Services\Learning\LearningExportService::styles($sheet);
+        return LearningExportService::styles($sheet);
     }
 
     public function registerEvents(): array
     {
         return [
             AfterSheet::class => function (AfterSheet $event) {
-                \App\Services\Learning\LearningExportService::afterSheetEvent($event);
+                LearningExportService::afterSheetEvent($event);
             },
         ];
     }
@@ -136,6 +165,12 @@ class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
 
     public function generateXlsxFile(): string
     {
+        ini_set('memory_limit', '2048M');
+        ini_set('max_execution_time', 600);
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(600);
+        }
+
         if (class_exists(\Barryvdh\Debugbar\Facades\Debugbar::class)) {
             \Barryvdh\Debugbar\Facades\Debugbar::disable();
         }
@@ -149,7 +184,8 @@ class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
         $zip = new ZipStream(null, $opt);
 
         // 1. [Content_Types].xml
-        $zip->addFile('[Content_Types].xml',
+        $zip->addFile(
+            '[Content_Types].xml',
             '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             . '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
             . '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
@@ -161,7 +197,8 @@ class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
         );
 
         // 2. _rels/.rels
-        $zip->addFile('_rels/.rels',
+        $zip->addFile(
+            '_rels/.rels',
             '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
             . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>'
@@ -169,7 +206,8 @@ class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
         );
 
         // 3. xl/_rels/workbook.xml.rels
-        $zip->addFile('xl/_rels/workbook.xml.rels',
+        $zip->addFile(
+            'xl/_rels/workbook.xml.rels',
             '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
             . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>'
@@ -178,25 +216,35 @@ class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
         );
 
         // 4. xl/workbook.xml
-        $zip->addFile('xl/workbook.xml',
+        $zip->addFile(
+            'xl/workbook.xml',
             '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             . '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
-            . '<sheets><sheet name="Learning Report" sheetId="1" r:id="rId1"/></sheets>'
+            . '<sheets><sheet name="KP OWL Online Records" sheetId="1" r:id="rId1"/></sheets>'
             . '</workbook>'
         );
 
         // 5. xl/styles.xml
-        $zip->addFile('xl/styles.xml',
+        $zip->addFile(
+            'xl/styles.xml',
             '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             . '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
-            . '<fonts count="2">'
-            . '<font><sz val="11"/><name val="Calibri"/></font>'
-            . '<font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>'
+            . '<numFmts count="3">'
+            . '<numFmt numFmtId="165" formatCode="yyyy-mm-dd"/>'
+            . '<numFmt numFmtId="166" formatCode="hh:mm:ss"/>'
+            . '<numFmt numFmtId="167" formatCode="General&quot; h&quot;"/>'
+            . '</numFmts>'
+            . '<fonts count="4">'
+            . '<font><sz val="10"/><name val="Calibri"/></font>'
+            . '<font><b/><sz val="10"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>'
+            . '<font><b/><sz val="10"/><name val="Calibri"/></font>'
+            . '<font><sz val="9"/><name val="Calibri"/></font>'
             . '</fonts>'
-            . '<fills count="3">'
+            . '<fills count="4">'
             . '<fill><patternFill patternType="none"/></fill>'
             . '<fill><patternFill patternType="gray125"/></fill>'
             . '<fill><patternFill patternType="solid"><fgColor rgb="FF002B49"/><bgColor rgb="FF002B49"/></patternFill></fill>'
+            . '<fill><patternFill patternType="solid"><fgColor rgb="FFEBF3FB"/><bgColor rgb="FFEBF3FB"/></patternFill></fill>'
             . '</fills>'
             . '<borders count="2">'
             . '<border><left/><right/><top/><bottom/><diagonal/></border>'
@@ -210,14 +258,22 @@ class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
             . '<cellStyleXfs count="1">'
             . '<xf numFmtId="0" fontId="0" fillId="0" borderId="0"/>'
             . '</cellStyleXfs>'
-            . '<cellXfs count="7">'
-            . '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0"><alignment vertical="center"/></xf>'
-            . '<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
+            . '<cellXfs count="15">'
             . '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
+            . '<xf numFmtId="0" fontId="2" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<xf numFmtId="0" fontId="3" fillId="0" borderId="1" xfId="0" applyFont="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<xf numFmtId="1" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<xf numFmtId="2" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<xf numFmtId="9" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<xf numFmtId="165" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<xf numFmtId="166" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<xf numFmtId="49" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
             . '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0"><alignment horizontal="left" vertical="center"/></xf>'
             . '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0"><alignment horizontal="left" vertical="center" wrapText="1"/></xf>'
-            . '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0"><alignment horizontal="right" vertical="center"/></xf>'
-            . '<xf numFmtId="49" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<xf numFmtId="1" fontId="2" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<xf numFmtId="167" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<xf numFmtId="167" fontId="2" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
             . '</cellXfs>'
             . '</styleSheet>'
         );
@@ -248,7 +304,7 @@ class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
         }
         fwrite($sfh, '</row>' . "\n");
 
-        // Single unbuffered streaming query execution to prevent timeout & memory bloat
+        // Unbuffered streaming query execution to prevent timeout & memory bloat
         $query = $this->query();
         $rowCount = 0;
 
@@ -267,31 +323,12 @@ class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
             while ($row = $stmt->fetch(\PDO::FETCH_OBJ)) {
                 $batchRows[] = $row;
                 if (count($batchRows) >= $batchSize) {
-                    $context = \App\Services\Learning\LearningExportService::buildBatchContext($batchRows);
+                    $context = LearningExportService::buildBatchContext($batchRows);
                     foreach ($batchRows as $item) {
                         $rowCount++;
                         $r = $rowCount + 1;
-                        $data = \App\Services\Learning\LearningExportService::mapRow($item, $rowCount, $context);
-
-                        $rowXml = "<row r=\"{$r}\">";
-                        foreach ($data as $idx => $val) {
-                            $colLetter = Coordinate::stringFromColumnIndex($idx + 1);
-                            $coord = $colLetter . $r;
-                            $escaped = $this->escapeXml($val);
-
-                            $styleIdx = match ($idx) {
-                                0, 6, 9, 10, 12, 13, 14, 15, 16, 17 => 2,
-                                1 => 6,
-                                2, 5, 7 => 4,
-                                3, 4, 8 => 3,
-                                11 => 5,
-                                default => 0,
-                            };
-
-                            $rowXml .= "<c r=\"{$coord}\" t=\"inlineStr\" s=\"{$styleIdx}\"><is><t>{$escaped}</t></is></c>";
-                        }
-                        $rowXml .= "</row>\n";
-                        $buffer .= $rowXml;
+                        $data = LearningExportService::mapRow($item, $rowCount, $context);
+                        $buffer .= $this->buildRowXml($r, $data);
                     }
 
                     fwrite($sfh, $buffer);
@@ -301,31 +338,12 @@ class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
             }
 
             if (!empty($batchRows)) {
-                $context = \App\Services\Learning\LearningExportService::buildBatchContext($batchRows);
+                $context = LearningExportService::buildBatchContext($batchRows);
                 foreach ($batchRows as $item) {
                     $rowCount++;
                     $r = $rowCount + 1;
-                    $data = \App\Services\Learning\LearningExportService::mapRow($item, $rowCount, $context);
-
-                    $rowXml = "<row r=\"{$r}\">";
-                    foreach ($data as $idx => $val) {
-                        $colLetter = Coordinate::stringFromColumnIndex($idx + 1);
-                        $coord = $colLetter . $r;
-                        $escaped = $this->escapeXml($val);
-
-                        $styleIdx = match ($idx) {
-                            0, 6, 9, 10, 12, 13, 14, 15, 16, 17 => 2,
-                            1 => 6,
-                            2, 5, 7 => 4,
-                            3, 4, 8 => 3,
-                            11 => 5,
-                            default => 0,
-                        };
-
-                        $rowXml .= "<c r=\"{$coord}\" t=\"inlineStr\" s=\"{$styleIdx}\"><is><t>{$escaped}</t></is></c>";
-                    }
-                    $rowXml .= "</row>\n";
-                    $buffer .= $rowXml;
+                    $data = LearningExportService::mapRow($item, $rowCount, $context);
+                    $buffer .= $this->buildRowXml($r, $data);
                 }
 
                 fwrite($sfh, $buffer);
@@ -355,10 +373,50 @@ class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
         return $tempXlsx;
     }
 
+    protected function buildRowXml(int $r, array $data): string
+    {
+        $xml = "<row r=\"{$r}\">";
+        foreach ($data as $idx => $val) {
+            $colLetter = Coordinate::stringFromColumnIndex($idx + 1);
+            $coord = $colLetter . $r;
+
+            // Determine style index
+            $styleIdx = match ($idx) {
+                0 => 4,                      // 1. NO (int centered)
+                2 => 9,                      // 3. Employee ID (text centered @)
+                3 => 11,                     // 4. Employee Name (left wrapText)
+                5, 6, 7, 8 => 10,            // 6-9. Job, Team, Dept, Comp (left)
+                9, 10 => 11,                 // 10-11. Course & Sub Course Titles (left wrapText)
+                12, 15, 16, 23 => 10,        // 13. Category, 16-17. Class, 24. Instructor (left)
+                27 => 6,                     // 28. % Progress (pct 0%)
+                42 => (is_numeric($val) ? 4 : 0), // 43. Score L2
+                default => 0,                // centered text
+            };
+
+            if ($idx === 0) {
+                // Number
+                $xml .= "<c r=\"{$coord}\" s=\"{$styleIdx}\"><v>{$val}</v></c>";
+            } elseif ($idx === 27 && is_numeric($val)) {
+                // Percentage (0.85 formatted with numFmtId 9)
+                $floatPct = (float) $val;
+                $xml .= "<c r=\"{$coord}\" s=\"{$styleIdx}\"><v>{$floatPct}</v></c>";
+            } elseif ($idx === 42 && is_numeric($val)) {
+                // Score L2 integer/float
+                $numericScore = (float) $val;
+                $xml .= "<c r=\"{$coord}\" s=\"{$styleIdx}\"><v>{$numericScore}</v></c>";
+            } else {
+                // General strings
+                $escaped = $this->escapeXml($val);
+                $xml .= "<c r=\"{$coord}\" t=\"inlineStr\" s=\"{$styleIdx}\"><is><t>{$escaped}</t></is></c>";
+            }
+        }
+        $xml .= "</row>\n";
+        return $xml;
+    }
+
     protected function escapeXml($value): string
     {
         $clean = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', (string) $value);
         return htmlspecialchars($clean, ENT_XML1 | ENT_COMPAT, 'UTF-8');
     }
 }
-

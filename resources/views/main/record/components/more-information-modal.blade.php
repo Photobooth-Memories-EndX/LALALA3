@@ -123,7 +123,11 @@
                             <i class="bi bi-award ti ti-certificate text-slate-500 me-1.5" style="color: #64748b; font-size: 1rem;"></i> <span>Certificate Details</span>
                         </div>
                         <div class="row g-3">
-                            <div class="col-12 col-md-6">
+                            <div class="col-6 col-md-3">
+                                <div class="field-label text-[10px] text-xs font-medium fw-medium text-slate-400 text-uppercase tracking-wider mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">CERTIFICATE AVAILABILITY</div>
+                                <div class="field-value text-xs text-sm font-bold fw-bold text-slate-800" id="modal-cert-availability" style="font-size: 0.8125rem; font-weight: 700; color: #1e293b;">-</div>
+                            </div>
+                            <div class="col-6 col-md-3">
                                 <div class="field-label text-[10px] text-xs font-medium fw-medium text-slate-400 text-uppercase tracking-wider mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">CERTIFICATE INSTITUTION</div>
                                 <div class="field-value text-xs text-sm font-bold fw-bold text-slate-800" id="modal-cert-institution" style="font-size: 0.8125rem; font-weight: 700; color: #1e293b;">-</div>
                             </div>
@@ -347,6 +351,7 @@ window.populateMoreInformationModal = function(response) {
     renderStatusPill('#modal-l3-status', '#modal-l3-status-container', d.l3_status, 'eval');
 
     // Set Certificate Details
+    $('#modal-cert-availability').text(d.certificate_availability || (d.certificate ? 'Available' : '-'));
     $('#modal-cert-institution').text(d.certificate_institution || '-');
     $('#modal-cert-issued-date').text(d.certificate_issued_date || '-');
     $('#modal-cert-expired-date').text(d.certificate_expired_date || '-');

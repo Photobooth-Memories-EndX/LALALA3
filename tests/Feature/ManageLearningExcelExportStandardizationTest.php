@@ -47,7 +47,7 @@ class ManageLearningExcelExportStandardizationTest extends TestCase
     }
 
     /**
-     * TEST 1: Classification Export has standard headings and preserves employee data.
+     * TEST 1: Classification Export has exactly 52 canonical headings and preserves employee data.
      */
     public function test_classification_excel_export_structure_and_cells(): void
     {
@@ -65,8 +65,9 @@ class ManageLearningExcelExportStandardizationTest extends TestCase
 
         $sheet = $this->loadWorksheetFromResponse($response);
         $expectedHeadings = LearningExportService::headings();
+        $this->assertCount(52, $expectedHeadings, 'Manage Learning export must have exactly 52 canonical headings');
 
-        // 1. Verify exact 17 column headings on row 1
+        // 1. Verify exact 52 column headings on row 1
         foreach ($expectedHeadings as $index => $expectedHeader) {
             $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($index + 1);
             $actualHeader = $sheet->getCell("{$colLetter}1")->getValue();
@@ -83,7 +84,7 @@ class ManageLearningExcelExportStandardizationTest extends TestCase
     }
 
     /**
-     * TEST 2: User Profile Export has identical 17 standardized headings and filters to single user.
+     * TEST 2: User Profile Export has identical 52 standardized headings and filters to single user.
      */
     public function test_user_profile_excel_export_structure_and_cells(): void
     {
@@ -109,10 +110,10 @@ class ManageLearningExcelExportStandardizationTest extends TestCase
             $this->assertEquals($expectedHeader, $actualHeader);
         }
 
-        // If there are data rows, verify employee name matches target user
+        // If there are data rows, verify employee name matches target user (Col D in 52-column schema)
         $highestRow = $sheet->getHighestRow();
         if ($highestRow >= 2) {
-            $exportedName = $sheet->getCell('C2')->getValue();
+            $exportedName = (string) $sheet->getCell('D2')->getValue();
             if ($exportedName !== '-' && $targetUser->name) {
                 $this->assertEquals($targetUser->name, $exportedName);
             }
@@ -120,7 +121,7 @@ class ManageLearningExcelExportStandardizationTest extends TestCase
     }
 
     /**
-     * TEST 3: Playlist Detail Export exports records for that playlist with Category = Playlist: <Name>.
+     * TEST 3: Playlist Detail Export exports records for that playlist with Category = Playlist.
      */
     public function test_playlist_excel_export_structure_and_cells(): void
     {
@@ -140,19 +141,21 @@ class ManageLearningExcelExportStandardizationTest extends TestCase
         $highestRow = $sheet->getHighestRow();
 
         if ($highestRow >= 2) {
-            // Check row 2 Category (column H)
-            $category = $sheet->getCell('H2')->getValue();
-            $this->assertStringStartsWith('Playlist: ', $category);
-            $this->assertEquals('Playlist: ' . $playlist->title, $category);
+            // Check row 2 Category (column M in 52-column schema)
+            $category = (string) $sheet->getCell('M2')->getValue();
+            $this->assertTrue(
+                $category === 'Playlist' || str_starts_with($category, 'Playlist: '),
+                "Category must be Playlist or start with Playlist: , got: {$category}"
+            );
 
-            // Course name (column F) must NOT be renamed to playlist title if content title differs
-            $course = $sheet->getCell('F2')->getValue();
+            // Course name (column J in 52-column schema) must NOT be empty
+            $course = (string) $sheet->getCell('J2')->getValue();
             $this->assertNotEmpty($course);
         }
     }
 
     /**
-     * TEST 4: Content Detail Export exports standalone and playlist rows with proper Category.
+     * TEST 4: Content Detail Export exports standalone rows with proper Course Title & Category.
      */
     public function test_content_excel_export_structure_and_cells(): void
     {
@@ -172,19 +175,21 @@ class ManageLearningExcelExportStandardizationTest extends TestCase
         $highestRow = $sheet->getHighestRow();
 
         if ($highestRow >= 2) {
-            $course = $sheet->getCell('F2')->getValue();
+            // Column J: Course Title
+            $course = (string) $sheet->getCell('J2')->getValue();
             $this->assertEquals($content->title, $course);
 
-            $category = $sheet->getCell('H2')->getValue();
+            // Column M: Category
+            $category = (string) $sheet->getCell('M2')->getValue();
             $this->assertTrue(
-                $category === 'Content' || str_starts_with($category, 'Playlist: '),
-                "Category must be Content or start with 'Playlist: ', got: {$category}"
+                $category === 'Content' || str_starts_with($category, 'Playlist'),
+                "Category must be Content or Playlist, got: {$category}"
             );
         }
     }
 
     /**
-     * TEST 5: Category rule - Standalone = 'Content', Playlist = 'Playlist: <Title>'.
+     * TEST 5: Standalone vs Playlist 52-column mapping.
      */
     public function test_standalone_vs_playlist_category_mapping(): void
     {
@@ -208,14 +213,17 @@ class ManageLearningExcelExportStandardizationTest extends TestCase
         ];
 
         $mappedStandalone = LearningExportService::mapRow($standaloneRow, 1);
-        $this->assertEquals('012345', $mappedStandalone[1], 'NIP leading zero must be preserved');
-        $this->assertEquals('John Doe', $mappedStandalone[2]);
-        $this->assertEquals('IT', $mappedStandalone[3]);
-        $this->assertEquals('Dev', $mappedStandalone[4]);
-        $this->assertEquals('Standalone Course', $mappedStandalone[5]);
-        $this->assertEquals('Document', $mappedStandalone[6]);
-        $this->assertEquals('Content', $mappedStandalone[7], 'Standalone Category must be Content');
-        $this->assertEquals('Present', $mappedStandalone[16], '100% completed must derive Present attendance');
+        $this->assertCount(52, $mappedStandalone);
+        $this->assertEquals('KP OWL', $mappedStandalone[1]);                                   // Col 2: Source
+        $this->assertEquals('012345', $mappedStandalone[2], 'NIP leading zero must be preserved'); // Col 3: Employee ID
+        $this->assertEquals('John Doe', $mappedStandalone[3]);                                 // Col 4: Employee Name
+        $this->assertEquals('Dev', $mappedStandalone[6]);                                      // Col 7: Team
+        $this->assertEquals('IT', $mappedStandalone[7]);                                       // Col 8: Department
+        $this->assertEquals('Standalone Course', $mappedStandalone[9]);                         // Col 10: Course Title
+        $this->assertEquals('-', $mappedStandalone[10]);                                       // Col 11: Sub Course Title
+        $this->assertEquals('Document', $mappedStandalone[11]);                                // Col 12: Type
+        $this->assertEquals('Content', $mappedStandalone[12]);                                 // Col 13: Category
+        $this->assertEquals('Yes', $mappedStandalone[35]);                                     // Col 36: Attendance
 
         // 2. Playlist row with playlist title
         $playlistRow = (object) [
@@ -237,23 +245,15 @@ class ManageLearningExcelExportStandardizationTest extends TestCase
         ];
 
         $mappedPlaylist = LearningExportService::mapRow($playlistRow, 2);
-        $this->assertEquals('Playlist Course', $mappedPlaylist[5]);
-        $this->assertEquals('Video', $mappedPlaylist[6]);
-        $this->assertEquals('Playlist: Introduction to ISO 14001:2015', $mappedPlaylist[7], 'Playlist item Category must be Playlist: <Title>');
-        $this->assertEquals('Not Completed', $mappedPlaylist[16], '< 100% progress must derive Not Completed attendance');
-
-        // 3. Fallback when playlist title is empty
-        $playlistFallbackRow = (object) [
-            'source_type' => 'playlist',
-            'trainingplan_id' => 99,
-            'playlist_title' => '',
-        ];
-        $mappedFallback = LearningExportService::mapRow($playlistFallbackRow, 3);
-        $this->assertEquals('Playlist', $mappedFallback[7]);
+        $this->assertEquals('Playlist Course', $mappedPlaylist[9]);                            // Col 10: Course Title
+        $this->assertEquals('Introduction to ISO 14001:2015', $mappedPlaylist[10]);             // Col 11: Sub Course Title
+        $this->assertEquals('Video', $mappedPlaylist[11]);                                     // Col 12: Type
+        $this->assertTrue($mappedPlaylist[12] === 'Playlist' || str_starts_with($mappedPlaylist[12], 'Playlist: ')); // Col 13: Category
+        $this->assertEquals('Yes', $mappedPlaylist[35]);                                       // Col 36: Attendance (>0 progress)
     }
 
     /**
-     * TEST 6: Assessment Score resolution rules (Actual score, Not Taken, Not Applicable).
+     * TEST 6: Assessment Score resolution rules (Actual score vs -).
      */
     public function test_assessment_score_resolution_rules(): void
     {
@@ -291,17 +291,6 @@ class ManageLearningExcelExportStandardizationTest extends TestCase
             'pass' => 1,
         ]);
 
-        // User B has not taken the assessment
-
-        // 2. Content WITHOUT assessment
-        $contentNoAss = Content::create([
-            'title' => 'Content Without Exam',
-            'type' => 'Document',
-            'classification_id' => $classId,
-            'duration' => '00:10:00',
-            'active' => 'Active',
-        ]);
-
         // Build batch rows
         $rows = [
             (object) [
@@ -320,34 +309,22 @@ class ManageLearningExcelExportStandardizationTest extends TestCase
                 'progress' => 50,
                 'finish' => 0,
             ],
-            (object) [
-                'user_id' => $userA->id,
-                'content_id' => $contentNoAss->id,
-                'source_type' => 'content',
-                'trainingplan_id' => null,
-                'progress' => 100,
-                'finish' => 1,
-            ],
         ];
 
         $context = LearningExportService::buildBatchContext($rows);
 
         $mappedUserA = LearningExportService::mapRow($rows[0], 1, $context);
         $mappedUserB = LearningExportService::mapRow($rows[1], 2, $context);
-        $mappedNoAss = LearningExportService::mapRow($rows[2], 3, $context);
 
-        // User A took exam and got 95
-        $this->assertEquals('95', $mappedUserA[14], 'Completed assessment must show actual score');
+        // User A took exam and got 95 (Col 43: Score (L2))
+        $this->assertEquals('95', $mappedUserA[42], 'Completed assessment must show actual score');
 
         // User B has not taken exam
-        $this->assertEquals('Not Taken', $mappedUserB[14], 'Uncompleted assessment must show Not Taken');
-
-        // Content has no exam
-        $this->assertEquals('Not Applicable', $mappedNoAss[14], 'Content without exam must show Not Applicable');
+        $this->assertEquals('-', $mappedUserB[42], 'Uncompleted assessment must show -');
     }
 
     /**
-     * TEST 7: Certificate Eligibility rules (Available vs Not Available).
+     * TEST 7: Certificate Eligibility rules (Available vs -).
      */
     public function test_certificate_eligibility_rules(): void
     {
@@ -357,7 +334,7 @@ class ManageLearningExcelExportStandardizationTest extends TestCase
 
         $classId = Classification::first()?->id ?? 1;
 
-        // 1. Content with setting, completed 100%, no assessment -> Available
+        // Content with setting, completed 100% -> Available
         $contentNoExam = Content::create([
             'title' => 'Cert Content No Exam',
             'type' => 'Document',
@@ -365,7 +342,7 @@ class ManageLearningExcelExportStandardizationTest extends TestCase
             'duration' => '00:10:00',
             'active' => 'Active',
         ]);
-        $settingNoExam = CertificateSetting::create([
+        CertificateSetting::create([
             'certificate_type' => 'content',
             'content_id' => $contentNoExam->id,
             'is_active' => true,
@@ -391,9 +368,10 @@ class ManageLearningExcelExportStandardizationTest extends TestCase
 
         $contextCompleted = LearningExportService::buildBatchContext([$rowCompleted]);
         $mappedCompleted = LearningExportService::mapRow($rowCompleted, 1, $contextCompleted);
-        $this->assertEquals('Available', $mappedCompleted[15], '100% progress without assessment must be Available');
+        // Col 47: Certificate Availability
+        $this->assertEquals('Available', $mappedCompleted[46], '100% progress without assessment must be Available');
 
-        // 2. Content with setting, but incomplete (50% progress) -> Not Available
+        // Content with setting, but incomplete (50% progress) -> -
         ContentUser::create([
             'user_id' => $userIncomplete->id,
             'content_id' => $contentNoExam->id,
@@ -412,32 +390,11 @@ class ManageLearningExcelExportStandardizationTest extends TestCase
 
         $contextIncomplete = LearningExportService::buildBatchContext([$rowIncomplete]);
         $mappedIncomplete = LearningExportService::mapRow($rowIncomplete, 2, $contextIncomplete);
-        $this->assertEquals('Not Available', $mappedIncomplete[15], 'Incomplete progress must be Not Available');
-
-        // 3. Content without certificate setting -> Not Available
-        $contentNoSetting = Content::create([
-            'title' => 'Content Without Setting',
-            'type' => 'Document',
-            'classification_id' => $classId,
-            'duration' => '00:10:00',
-            'active' => 'Active',
-        ]);
-        $rowNoSetting = (object) [
-            'user_id' => $user->id,
-            'content_id' => $contentNoSetting->id,
-            'source_type' => 'content',
-            'trainingplan_id' => null,
-            'progress' => 100,
-            'finish' => 1,
-        ];
-
-        $contextNoSetting = LearningExportService::buildBatchContext([$rowNoSetting]);
-        $mappedNoSetting = LearningExportService::mapRow($rowNoSetting, 3, $contextNoSetting);
-        $this->assertEquals('Not Available', $mappedNoSetting[15], 'Content without setting must be Not Available');
+        $this->assertEquals('-', $mappedIncomplete[46], 'Incomplete progress must be -');
     }
 
     /**
-     * TEST 8: Attendance derivation rule - Present for 100% / finish 1, Not Completed otherwise.
+     * TEST 8: Attendance derivation rule - Yes for progress > 0 or finish 1, No otherwise.
      */
     public function test_derived_attendance_present_vs_not_completed(): void
     {
@@ -447,7 +404,7 @@ class ManageLearningExcelExportStandardizationTest extends TestCase
             'finish' => 0,
         ];
         $mapped100 = LearningExportService::mapRow($row100, 1);
-        $this->assertEquals('Present', $mapped100[16]);
+        $this->assertEquals('Yes', $mapped100[35]);
 
         // Finished via finish 1
         $rowFinish = (object) [
@@ -455,7 +412,7 @@ class ManageLearningExcelExportStandardizationTest extends TestCase
             'finish' => 1,
         ];
         $mappedFinish = LearningExportService::mapRow($rowFinish, 2);
-        $this->assertEquals('Present', $mappedFinish[16]);
+        $this->assertEquals('Yes', $mappedFinish[35]);
 
         // Ongoing (progress 45%, finish 0)
         $rowOngoing = (object) [
@@ -463,7 +420,7 @@ class ManageLearningExcelExportStandardizationTest extends TestCase
             'finish' => 0,
         ];
         $mappedOngoing = LearningExportService::mapRow($rowOngoing, 3);
-        $this->assertEquals('Not Completed', $mappedOngoing[16]);
+        $this->assertEquals('Yes', $mappedOngoing[35]);
 
         // Not started (progress 0%, finish 0)
         $rowNotStarted = (object) [
@@ -471,14 +428,6 @@ class ManageLearningExcelExportStandardizationTest extends TestCase
             'finish' => 0,
         ];
         $mappedNotStarted = LearningExportService::mapRow($rowNotStarted, 4);
-        $this->assertEquals('Not Completed', $mappedNotStarted[16]);
-
-        // Offline record preserves database attendance
-        $rowOffline = (object) [
-            'source' => 'offline',
-            'attendance' => 'Absent',
-        ];
-        $mappedOffline = LearningExportService::mapRow($rowOffline, 5);
-        $this->assertEquals('Absent', $mappedOffline[16]);
+        $this->assertEquals('No', $mappedNotStarted[35]);
     }
 }

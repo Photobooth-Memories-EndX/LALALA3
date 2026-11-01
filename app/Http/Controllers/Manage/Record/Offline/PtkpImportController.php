@@ -45,6 +45,9 @@ class PtkpImportController extends Controller
         $filename = PtkpExcelSchema::TEMPLATE_FILENAME;
 
         return response()->streamDownload(function () use ($spreadsheet) {
+            if (ob_get_length() > 0) {
+                ob_clean();
+            }
             $writer = new Xlsx($spreadsheet);
             $writer->save('php://output');
         }, $filename, [

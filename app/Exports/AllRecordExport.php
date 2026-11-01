@@ -86,7 +86,6 @@ class AllRecordExport implements Responsable
             'Course Duration',
             'Total Recognized Duration',
             'Learning Hours',
-            'Total Engagement Time (LH)',
             '% Progress',
             'Progress Status',
             'Start Date',
@@ -111,6 +110,7 @@ class AllRecordExport implements Responsable
             'Certificate Issued Date',
             'Certificate Expired Date',
             'Person in Charge (PIC)',
+            'Total Engagement Time (LH)',
         ];
     }
 
@@ -144,31 +144,31 @@ class AllRecordExport implements Responsable
             'Y'  => 16,  // Course Duration
             'Z'  => 22,  // Total Recognized Duration
             'AA' => 16,  // Learning Hours
-            'AB' => 24,  // Total Engagement Time (LH)
-            'AC' => 14,  // % Progress
-            'AD' => 16,  // Progress Status
-            'AE' => 14,  // Start Date
-            'AF' => 14,  // End Date
-            'AG' => 14,  // Start Time
-            'AH' => 14,  // End Time
-            'AI' => 16,  // Record Month
-            'AJ' => 15,  // Requirement
-            'AK' => 14,  // Attendance
-            'AL' => 25,  // Attendance Reason
-            'AM' => 14,  // Bond Status
-            'AN' => 16,  // Bond Duration
-            'AO' => 16,  // Bond End Date
-            'AP' => 18,  // Bond Amount
-            'AQ' => 20,  // Score (L1) - Course
-            'AR' => 15,  // Score (L2)
-            'AS' => 15,  // L2 Status
-            'AT' => 15,  // Score (L3)
-            'AU' => 15,  // L3 Status
-            'AV' => 22,  // Certificate Availability
-            'AW' => 25,  // Certificate Institution
-            'AX' => 20,  // Certificate Issued Date
-            'AY' => 20,  // Certificate Expired Date
-            'AZ' => 25,  // Person in Charge (PIC)
+            'AB' => 14,  // % Progress
+            'AC' => 16,  // Progress Status
+            'AD' => 14,  // Start Date
+            'AE' => 14,  // End Date
+            'AF' => 14,  // Start Time
+            'AG' => 14,  // End Time
+            'AH' => 16,  // Record Month
+            'AI' => 15,  // Requirement
+            'AJ' => 14,  // Attendance
+            'AK' => 25,  // Attendance Reason
+            'AL' => 14,  // Bond Status
+            'AM' => 16,  // Bond Duration
+            'AN' => 16,  // Bond End Date
+            'AO' => 18,  // Bond Amount
+            'AP' => 20,  // Score (L1) - Course
+            'AQ' => 15,  // Score (L2)
+            'AR' => 15,  // L2 Status
+            'AS' => 15,  // Score (L3)
+            'AT' => 15,  // L3 Status
+            'AU' => 22,  // Certificate Availability
+            'AV' => 25,  // Certificate Institution
+            'AW' => 20,  // Certificate Issued Date
+            'AX' => 20,  // Certificate Expired Date
+            'AY' => 25,  // Person in Charge (PIC)
+            'AZ' => 25,  // Total Engagement Time (LH)
         ];
     }
 
@@ -526,31 +526,31 @@ class AllRecordExport implements Responsable
                     ['Y', 'str', $durationFormatted, $textStyle],
                     ['Z', 'str', $row->source === 'offline' ? '-' : $recognizedFormatted, $textStyle],
                     ['AA', $lhNumeric !== null ? 'lh' : 'str', $lhNumeric !== null ? $lhNumeric : '-', $lhNumeric !== null ? $lhStyle : $textStyle],
-                    ['AB', 'str', $totalEngagementDuration, $textStyle],
-                    ['AC', 'pct', $progressDecimal, $pctStyle],
-                    ['AD', 'str', $progressStatus, $textStyle],
-                    ['AE', $startDateStr !== '-' ? 'date' : 'str', $startDateStr, $startDateStr !== '-' ? '7' : $textStyle],
-                    ['AF', $endDateStr !== '-' ? 'date' : 'str', $endDateStr, $endDateStr !== '-' ? '7' : $textStyle],
-                    ['AG', $startTimeStr !== '-' ? 'time' : 'str', $startTimeStr, $startTimeStr !== '-' ? '8' : $textStyle],
-                    ['AH', $endTimeStr !== '-' ? 'time' : 'str', $endTimeStr, $endTimeStr !== '-' ? '8' : $textStyle],
-                    ['AI', 'str', $finalRecordMonth, $textStyle],
-                    ['AJ', 'str', $row->requirement ?: 'Mandatory', $textStyle],
-                    ['AK', 'str', $attendanceStr, $textStyle],
-                    ['AL', 'str', $row->attendance_reason ?: '-', $textStyle],
-                    ['AM', 'str', $row->bond_status ?: 'No', $textStyle],
-                    ['AN', 'str', !empty($row->bond_duration) ? $row->bond_duration . ' Months' : '-', $textStyle],
-                    ['AO', !empty($row->bond_end_date) ? 'date' : 'str', !empty($row->bond_end_date) ? date('Y-m-d', strtotime($row->bond_end_date)) : '-', !empty($row->bond_end_date) ? '7' : $textStyle],
-                    ['AP', $hasBond ? 'curr' : 'str', $hasBond ? (float) $idr : '-', $hasBond ? '9' : $textStyle],
-                    ['AQ', $scoreL1 !== null ? 'float' : 'str', $scoreL1 !== null ? $scoreL1 : '-', $scoreL1 !== null ? '5' : $textStyle],
-                    ['AR', $scoreL2 !== null ? 'int' : 'str', $scoreL2 !== null ? $scoreL2 : '-', $scoreL2 !== null ? $intStyle : $textStyle],
-                    ['AS', 'str', $row->l2_verbal ?: ($scoreL2 !== null ? ($scoreL2 >= 70 ? 'Passed' : 'Failed') : '-'), $textStyle],
-                    ['AT', $scoreL3 !== null ? 'float' : 'str', $scoreL3 !== null ? $scoreL3 : '-', $scoreL3 !== null ? '5' : $textStyle],
-                    ['AU', 'str', $row->l3_verbal ?: '-', $textStyle],
-                    ['AV', 'str', $certAvailability, $textStyle],
-                    ['AW', 'str', $certInstitution, $textStyle],
-                    ['AX', $certIssuedDate !== '-' ? 'date' : 'str', $certIssuedDate, $certIssuedDate !== '-' ? '7' : $textStyle],
-                    ['AY', $certExpiredDate !== '-' ? 'date' : 'str', $certExpiredDate, $certExpiredDate !== '-' ? '7' : $textStyle],
-                    ['AZ', 'str', $row->pic ?: '-', $textStyle],
+                    ['AB', 'pct', $progressDecimal, $pctStyle],
+                    ['AC', 'str', $progressStatus, $textStyle],
+                    ['AD', $startDateStr !== '-' ? 'date' : 'str', $startDateStr, $startDateStr !== '-' ? '7' : $textStyle],
+                    ['AE', $endDateStr !== '-' ? 'date' : 'str', $endDateStr, $endDateStr !== '-' ? '7' : $textStyle],
+                    ['AF', $startTimeStr !== '-' ? 'time' : 'str', $startTimeStr, $startTimeStr !== '-' ? '8' : $textStyle],
+                    ['AG', $endTimeStr !== '-' ? 'time' : 'str', $endTimeStr, $endTimeStr !== '-' ? '8' : $textStyle],
+                    ['AH', 'str', $finalRecordMonth, $textStyle],
+                    ['AI', 'str', $row->requirement ?: 'Mandatory', $textStyle],
+                    ['AJ', 'str', $attendanceStr, $textStyle],
+                    ['AK', 'str', $row->attendance_reason ?: '-', $textStyle],
+                    ['AL', 'str', $row->bond_status ?: 'No', $textStyle],
+                    ['AM', 'str', !empty($row->bond_duration) ? $row->bond_duration . ' Months' : '-', $textStyle],
+                    ['AN', !empty($row->bond_end_date) ? 'date' : 'str', !empty($row->bond_end_date) ? date('Y-m-d', strtotime($row->bond_end_date)) : '-', !empty($row->bond_end_date) ? '7' : $textStyle],
+                    ['AO', $hasBond ? 'curr' : 'str', $hasBond ? (float) $idr : '-', $hasBond ? '9' : $textStyle],
+                    ['AP', $scoreL1 !== null ? 'float' : 'str', $scoreL1 !== null ? $scoreL1 : '-', $scoreL1 !== null ? '5' : $textStyle],
+                    ['AQ', $scoreL2 !== null ? 'int' : 'str', $scoreL2 !== null ? $scoreL2 : '-', $scoreL2 !== null ? $intStyle : $textStyle],
+                    ['AR', 'str', $row->l2_verbal ?: ($scoreL2 !== null ? ($scoreL2 >= 70 ? 'Passed' : 'Failed') : '-'), $textStyle],
+                    ['AS', $scoreL3 !== null ? 'float' : 'str', $scoreL3 !== null ? $scoreL3 : '-', $scoreL3 !== null ? '5' : $textStyle],
+                    ['AT', 'str', $row->l3_verbal ?: '-', $textStyle],
+                    ['AU', 'str', $certAvailability, $textStyle],
+                    ['AV', 'str', $certInstitution, $textStyle],
+                    ['AW', $certIssuedDate !== '-' ? 'date' : 'str', $certIssuedDate, $certIssuedDate !== '-' ? '7' : $textStyle],
+                    ['AX', $certExpiredDate !== '-' ? 'date' : 'str', $certExpiredDate, $certExpiredDate !== '-' ? '7' : $textStyle],
+                    ['AY', 'str', $row->pic ?: '-', $textStyle],
+                    ['AZ', 'str', $totalEngagementDuration, $textStyle],
                 ];
 
                 $buffer .= $this->buildXmlRow($r, $cells);

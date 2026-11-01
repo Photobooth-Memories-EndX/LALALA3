@@ -1067,8 +1067,9 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
         }
 
         // 6. General DataTables Search (when employee & title are not specified)
+        $employeeParam = $filters['employee_id'] ?? ($filters['employee'] ?? ($filters['employees'] ?? null));
         $search = trim((string) (is_array($filters['search'] ?? null) ? ($filters['search']['value'] ?? '') : ($filters['search'] ?? '')));
-        if ($search !== '' && $employee === '' && $title === '') {
+        if ($search !== '' && empty($employeeParam) && $title === '') {
             $searchUserIds = DB::table('users')
                 ->where('name', 'like', "%{$search}%")
                 ->orWhere('id_emp', 'like', "%{$search}%")

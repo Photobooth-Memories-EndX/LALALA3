@@ -18,67 +18,148 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 class LearningExportService
 {
     /**
-     * Standardized Excel Headings for Manage Learning exports.
-     * Preserves employee fields (NIP, Name, Department, Team) while standardizing
-     * all course, progress, date, score, certificate, and attendance columns.
+     * Canonical 52-Column Excel Headings for Manage Learning exports.
+     * Guaranteed exact order and names across Content Overview, Playlist, and Category exports.
      */
     public static function headings(): array
     {
         return [
-            'No',
-            'Employee ID / NIP',
+            'NO',
+            'Source',
+            'Employee ID',
             'Employee Name',
-            'Department',
+            'Grade',
+            'Job Position',
             'Team',
-            'Course',
+            'Department',
+            'Company',
+            'Course Title',
+            'Sub Course Title',
             'Type',
             'Category',
-            'Classification',
-            'Duration',
-            'Recognized Duration',
-            'Learning Hour',
-            'Learning Progress',
+            'Level',
+            'Batch',
+            'Main Classification',
+            'Sub Classification',
+            'Delivery Method',
+            'Sub Delivery Method',
+            'Provider',
+            'Sub Provider',
+            'Provider Name',
+            'Venue',
+            'Instructor',
+            'Course Duration',
+            'Total Recognized Duration',
+            'Learning Hours',
+            '% Progress',
+            'Progress Status',
             'Start Date',
-            'Finish Date',
-            'Assessment Score',
-            'Certificate',
+            'End Date',
+            'Start Time',
+            'End Time',
+            'Record Month',
+            'Requirement',
             'Attendance',
+            'Attendance Reason',
+            'Bond Status',
+            'Bond Duration',
+            'Bond End Date',
+            'Bond Amount',
+            'Score (L1) - Course',
+            'Score (L2)',
+            'L2 Status',
+            'Score (L3)',
+            'L3 Status',
+            'Certificate Availability',
+            'Certificate Institution',
+            'Certificate Issued Date',
+            'Certificate Expired Date',
+            'Person in Charge (PIC)',
+            'Total Engagement Time (LH)',
         ];
     }
 
     /**
-     * Standardized column widths for columns A to R.
+     * Standardized column widths for columns A to AZ (52 canonical columns).
      */
     public static function columnWidths(): array
     {
         return [
-            'A' => 6,   // No
-            'B' => 18,  // Employee ID / NIP
-            'C' => 28,  // Employee Name
-            'D' => 22,  // Department
-            'E' => 20,  // Team
-            'F' => 45,  // Course
-            'G' => 14,  // Type
-            'H' => 40,  // Category (widened for "Playlist: <Title>")
-            'I' => 28,  // Classification
-            'J' => 14,  // Duration
-            'K' => 16,  // Recognized Duration
-            'L' => 16,  // Learning Hour
-            'M' => 18,  // Learning Progress
-            'N' => 18,  // Start Date
-            'O' => 18,  // Finish Date
-            'P' => 18,  // Assessment Score
-            'Q' => 16,  // Certificate
-            'R' => 16,  // Attendance
+            'A'  => 6,   // NO
+            'B'  => 14,  // Source
+            'C'  => 16,  // Employee ID
+            'D'  => 30,  // Employee Name
+            'E'  => 12,  // Grade
+            'F'  => 25,  // Job Position
+            'G'  => 20,  // Team
+            'H'  => 25,  // Department
+            'I'  => 25,  // Company
+            'J'  => 35,  // Course Title
+            'K'  => 25,  // Sub Course Title
+            'L'  => 15,  // Type
+            'M'  => 18,  // Category
+            'N'  => 12,  // Level
+            'O'  => 12,  // Batch
+            'P'  => 25,  // Main Classification
+            'Q'  => 25,  // Sub Classification
+            'R'  => 18,  // Delivery Method
+            'S'  => 20,  // Sub Delivery Method
+            'T'  => 16,  // Provider
+            'U'  => 18,  // Sub Provider
+            'V'  => 25,  // Provider Name
+            'W'  => 20,  // Venue
+            'X'  => 22,  // Instructor
+            'Y'  => 16,  // Course Duration
+            'Z'  => 22,  // Total Recognized Duration
+            'AA' => 16,  // Learning Hours
+            'AB' => 14,  // % Progress
+            'AC' => 16,  // Progress Status
+            'AD' => 14,  // Start Date
+            'AE' => 14,  // End Date
+            'AF' => 14,  // Start Time
+            'AG' => 14,  // End Time
+            'AH' => 16,  // Record Month
+            'AI' => 15,  // Requirement
+            'AJ' => 14,  // Attendance
+            'AK' => 25,  // Attendance Reason
+            'AL' => 14,  // Bond Status
+            'AM' => 16,  // Bond Duration
+            'AN' => 16,  // Bond End Date
+            'AO' => 18,  // Bond Amount
+            'AP' => 20,  // Score (L1) - Course
+            'AQ' => 15,  // Score (L2)
+            'AR' => 15,  // L2 Status
+            'AS' => 15,  // Score (L3)
+            'AT' => 15,  // L3 Status
+            'AU' => 22,  // Certificate Availability
+            'AV' => 25,  // Certificate Institution
+            'AW' => 20,  // Certificate Issued Date
+            'AX' => 20,  // Certificate Expired Date
+            'AY' => 25,  // Person in Charge (PIC)
+            'AZ' => 25,  // Total Engagement Time (LH)
         ];
+    }
+
+    /**
+     * Format numerical learning hours into standard format (e.g. "2 h" or "1.5 h").
+     */
+    public static function formatHours($val): string
+    {
+        if ($val === null || $val === '' || $val === '-') {
+            return '-';
+        }
+        $hours = (float) $val;
+        if ($hours <= 0) {
+            return '-';
+        }
+        return ($hours == (int) $hours)
+            ? (int) $hours . ' h'
+            : rtrim(rtrim(number_format($hours, 2, '.', ''), '0'), '.') . ' h';
     }
 
     /**
      * Build batch resolution context for Category, Assessment Score, and Certificate Eligibility.
      * Resolves metadata across batch without N+1 queries.
-     *
-     * @param iterable $rows
-     * @return LearningExportContext
      */
     public static function buildBatchContext(iterable $rows): LearningExportContext
     {
@@ -476,7 +557,7 @@ class LearningExportService
     }
 
     /**
-     * Map a raw record row (object or array) into the standardized 17-column format.
+     * Map a raw record row (object or array) into the standardized 52-column canonical format.
      */
     public static function mapRow(object|array $row, int $rowNumber, ?LearningExportContext $context = null): array
     {
@@ -484,189 +565,203 @@ class LearningExportService
             $row = (object) $row;
         }
 
-        // 1. Employee Identification (preserve leading zero for NIP)
-        $idEmp = trim((string) ($row->user_id_emp ?? ($row->id_emp ?? ($row->employee_id ?? ($row->user->id_emp ?? '')))));
-        if ($idEmp === '') {
-            $idEmp = '-';
-        }
+        $isPlaylist = (($row->source_type ?? '') === 'playlist')
+            || (!empty($row->trainingplan_id))
+            || (($row->category_source ?? '') === 'Playlist');
 
-        $name = trim((string) ($row->employee_name ?? ($row->user_name ?? ($row->name ?? ($row->user->name ?? '')))));
+        // 1. Employee Identification
+        $rawEmp = $row->id_emp ?? ($row->user_id_emp ?? ($row->employee_id ?? ($row->user->id_emp ?? '-')));
+        $cleanEmpId = ($rawEmp !== '-' && $rawEmp !== null && $rawEmp !== '')
+            ? preg_replace('/\s*[\/\-]\s*NIP.*$/i', '', trim((string) $rawEmp))
+            : '-';
+
+        $name = trim((string) ($row->employee_name ?? ($row->user_name ?? ($row->name ?? ($row->user->name ?? '-')))));
         if ($name === '') {
             $name = '-';
         }
 
-        $department = trim((string) ($row->user_department ?? ($row->department ?? ($row->user->department ?? ''))));
-        if ($department === '') {
-            $department = '-';
+        $grade = trim((string) ($row->user_jobgrade ?? ($row->jobgrade ?? ($row->user->jobgrade ?? '-'))));
+        if ($grade === '') {
+            $grade = '-';
         }
 
-        $team = trim((string) ($row->user_team ?? ($row->team ?? ($row->user->team ?? ''))));
+        $jobPosition = trim((string) ($row->user_jobposition ?? ($row->jobposition ?? ($row->user->jobposition ?? '-'))));
+        if ($jobPosition === '') {
+            $jobPosition = '-';
+        }
+
+        $team = trim((string) ($row->user_team ?? ($row->team ?? ($row->user->team ?? '-'))));
         if ($team === '') {
             $team = '-';
         }
 
-        // 2. Course Title (Always content title, never renamed to playlist title)
-        $course = trim((string) ($row->content_title ?? ($row->title ?? ($row->content->title ?? ''))));
-        if ($course === '') {
-            $course = '-';
+        $department = trim((string) ($row->user_department ?? ($row->department ?? ($row->user->department ?? '-'))));
+        if ($department === '') {
+            $department = '-';
         }
 
-        // 3. Content Type (Document / Video)
-        $rawType = strtolower(trim((string) ($row->content_type ?? ($row->type ?? ($row->content->type ?? '')))));
-        $type = in_array($rawType, ['video', 'youtube', 'mooc'], true) ? 'Video' : 'Document';
+        $company = trim((string) ($row->user_company ?? ($row->company ?? ($row->company_name ?? ($row->user->company_name ?? 'PT Krakatau Posco')))));
+        if ($company === '') {
+            $company = 'PT Krakatau Posco';
+        }
 
-        // 4. Category (Content for standalone, Playlist: <Name> for items inside a playlist)
+        // 2. Titles: Course Title & Sub Course Title
+        $contentTitle = trim((string) ($row->content_title ?? ($row->title ?? ($row->content->title ?? ''))));
+        $playlistTitle = trim((string) ($row->playlist_title ?? ($row->trainingplan->title ?? ($row->trainingPlan->title ?? ''))));
+
+        if ($contentTitle !== '') {
+            $courseTitle = $contentTitle;
+            $subCourseTitle = ($isPlaylist && $playlistTitle !== '') ? $playlistTitle : '-';
+        } elseif ($playlistTitle !== '') {
+            $courseTitle = $playlistTitle;
+            $subCourseTitle = '-';
+        } else {
+            $courseTitle = 'Untitled Content';
+            $subCourseTitle = '-';
+        }
+
+        // 3. Type & Category
+        $rawType = strtolower(trim((string) ($row->content_type ?? ($row->type ?? ($row->content->type ?? '')))));
+        if ($isPlaylist && $contentTitle === '') {
+            $type = 'Playlist';
+        } else {
+            $type = in_array($rawType, ['video', 'youtube', 'mooc'], true) ? 'Video' : 'Document';
+        }
+
         if ($context !== null) {
             $category = $context->resolveCategory($row);
         } else {
-            $isPlaylist = (($row->source_type ?? '') === 'playlist')
-                || (!empty($row->trainingplan_id))
-                || (($row->category_source ?? '') === 'Playlist');
-
             if ($isPlaylist) {
-                $playlistTitle = trim((string) ($row->playlist_title ?? ($row->trainingplan->title ?? ($row->trainingPlan->title ?? ''))));
                 $category = $playlistTitle !== '' ? 'Playlist: ' . $playlistTitle : 'Playlist';
             } else {
                 $category = 'Content';
             }
         }
 
-        // 5. Classification
-        $classification = trim((string) ($row->classification_name ?? ($row->classification ?? ($row->content->classification->classification_name ?? ''))));
-        if ($classification === '') {
-            $classification = '-';
+        // 4. Main Classification
+        $mainClass = trim((string) ($row->classification_name ?? ($row->classification ?? ($row->content->classification->classification_name ?? ''))));
+        if ($mainClass === '') {
+            $mainClass = 'Unclassified';
         }
 
-        // 6. Duration (HH:MM:SS)
+        // 5. Durations & Learning Hours
         $rawDuration = $row->content_duration ?? ($row->duration ?? ($row->content->duration ?? null));
         $durationFormatted = DurationFormatter::format($rawDuration, '-');
 
-        // Recognized Duration
         $recognizedService = app(\App\Services\Learning\LearningRecordRecognizedDurationService::class);
-        $durationSeconds = DurationFormatter::toSeconds($rawDuration) ?? 0;
-        $recSec = $recognizedService->resolveFromRow($row, $durationSeconds);
+        $recSec = $recognizedService->resolveFromRow($row);
         $recognizedFormatted = $recognizedService->formatSeconds($recSec);
 
-        // 7. Progress & Completion Resolver
-        $progress = (int) ($row->progress ?? 0);
-        $finish = (int) ($row->finish ?? 0);
-        $isCompleted = ($finish === 1) || ($progress >= 100);
-        $progressStr = $progress . '%';
-
-        // 8. Learning Hour
-        $learningHour = 0.00;
-        if (isset($row->learning_hours) && (float) $row->learning_hours > 0) {
-            $learningHour = (float) $row->learning_hours;
-        } elseif (isset($row->learning_hour) && (float) $row->learning_hour > 0) {
-            $learningHour = (float) $row->learning_hour;
-        } else {
-            $durationSeconds = DurationFormatter::toSeconds($rawDuration) ?? 0;
-            if ($durationSeconds > 0) {
-                if ($isCompleted) {
-                    $learningHour = $durationSeconds / 3600;
-                } elseif ($progress > 0) {
-                    $learningHour = (($progress / 100) * $durationSeconds) / 3600;
-                }
+        $lHoursVal = $row->content_training_hours ?? ($row->learning_hours ?? ($row->learning_hour ?? null));
+        if ($lHoursVal === null || $lHoursVal === '' || (float) $lHoursVal <= 0) {
+            if ($isPlaylist && $contentTitle === '') {
+                $lHoursVal = $row->playlist_training_hours ?? null;
             }
         }
-        $learningHourFormatted = number_format(round($learningHour, 2), 2);
+        $formattedLHours = self::formatHours($lHoursVal);
 
-        // 9. Start Date & Finish Date
-        $startDate = '-';
-        if (!empty($row->created_at)) {
-            try {
-                $startDate = Carbon::parse($row->created_at)->format('Y-m-d H:i');
-            } catch (\Throwable $e) {
-                $startDate = (string) $row->created_at;
-            }
-        }
+        // 6. Progress & Status
+        $progressNum = (float) ($row->progress ?? 0);
+        $isFinished = ((string) ($row->finish ?? '0') === '1' || $progressNum >= 100);
+        $progressStatus = $isFinished ? 'Finished' : ($progressNum > 0 ? 'Ongoing' : 'Not Started');
+        $progressDecimal = round($progressNum / 100, 4);
 
-        $finishDate = '-';
-        if ($isCompleted) {
-            $rawFinish = $row->completed_at ?? ($row->updated_at ?? null);
-            if (!empty($rawFinish)) {
-                try {
-                    $finishDate = Carbon::parse($rawFinish)->format('Y-m-d H:i');
-                } catch (\Throwable $e) {
-                    $finishDate = (string) $rawFinish;
-                }
-            } elseif (!empty($row->created_at)) {
-                try {
-                    $finishDate = Carbon::parse($row->created_at)->format('Y-m-d H:i');
-                } catch (\Throwable $e) {
-                    $finishDate = (string) $row->created_at;
-                }
-            }
-        }
+        // 7. Dates & Times
+        $createdAt = !empty($row->created_at) ? strtotime($row->created_at) : null;
+        $completedAt = (!empty($row->completed_at) && $isFinished) ? strtotime($row->completed_at) : ($isFinished && !empty($row->updated_at) ? strtotime($row->updated_at) : null);
 
-        // 10. Assessment Score
+        $startDateStr = $createdAt ? date('Y-m-d', $createdAt) : '-';
+        $endDateStr = $completedAt ? date('Y-m-d', $completedAt) : '-';
+        $startTimeStr = $createdAt ? date('H:i:s', $createdAt) : '-';
+        $endTimeStr = $completedAt ? date('H:i:s', $completedAt) : '-';
+        $recordMonthStr = ($completedAt && $isFinished) ? date('F', $completedAt) : '-';
+
+        // 8. Attendance & Requirement
+        $rawStatus = strtolower((string) ($row->status ?? 'non mandatory'));
+        $requirement = in_array($rawStatus, ['mandatory'], true) ? 'Mandatory' : 'Non-Mandatory';
+        $attendanceStr = ($isFinished || $progressNum > 0) ? 'Yes' : 'No';
+
+        // 9. Score (L2)
         if ($context !== null) {
-            $score = $context->resolveScore($row);
+            $resolvedScore = $context->resolveScore($row);
+            $scoreL2Val = is_numeric($resolvedScore)
+                ? ((float) $resolvedScore == (int) $resolvedScore ? (int) $resolvedScore : number_format((float) $resolvedScore, 1))
+                : '-';
+        } elseif (isset($row->score_l2) && is_numeric($row->score_l2)) {
+            $scoreL2Val = (int) round((float) $row->score_l2);
+        } elseif (isset($row->score) && is_numeric($row->score)) {
+            $scoreL2Val = (int) round((float) $row->score);
         } else {
-            if (isset($row->assessment_score) && $row->assessment_score !== null && $row->assessment_score !== '') {
-                $score = is_numeric($row->assessment_score)
-                    ? ((float) $row->assessment_score == (int) $row->assessment_score ? (string) (int) $row->assessment_score : number_format((float) $row->assessment_score, 2))
-                    : (string) $row->assessment_score;
-            } elseif (isset($row->score) && $row->score !== null && $row->score !== '') {
-                $score = is_numeric($row->score)
-                    ? ((float) $row->score == (int) $row->score ? (string) (int) $row->score : number_format((float) $row->score, 2))
-                    : (string) $row->score;
-            } else {
-                $score = '-';
-            }
+            $scoreL2Val = '-';
         }
 
-        // 11. Certificate
-        if ($context !== null) {
-            $certificate = $context->resolveCertificate($row);
-        } else {
-            if (isset($row->certificate) && $row->certificate !== null && $row->certificate !== '') {
-                $certVal = trim((string) $row->certificate);
-                if (in_array(strtolower($certVal), ['ready', 'available', 'yes', '1', 'true'], true)) {
-                    $certificate = 'Available';
-                } elseif (in_array(strtolower($certVal), ['not available', 'no', '0', 'false', 'unavailable'], true)) {
-                    $certificate = 'Not Available';
-                } else {
-                    $certificate = $certVal;
-                }
-            } else {
-                $certificate = '-';
-            }
-        }
+        // 10. Certificate
+        $certAvailability = $isFinished ? 'Available' : '-';
+        $certInstitution = $isFinished ? 'PT Krakatau Posco' : '-';
+        $certIssuedDate = ($isFinished && $endDateStr !== '-') ? $endDateStr : '-';
 
-        // 12. Attendance (Derived for online records; preserved for offline training)
-        if (isset($row->source) && $row->source === 'offline') {
-            if ($row->attendance !== null && $row->attendance !== '') {
-                $attendance = is_bool($row->attendance) || is_numeric($row->attendance)
-                    ? ((bool) $row->attendance ? 'Present' : 'Absent')
-                    : (string) $row->attendance;
-            } else {
-                $attendance = '-';
-            }
-        } else {
-            // Online (content or playlist)
-            $attendance = $isCompleted ? 'Present' : 'Not Completed';
+        // 11. Engagement Time
+        $afkSec = (int) ($row->afk_duration_seconds ?? 0);
+        $afkFormatted = $afkSec > 0 ? DurationFormatter::fromSeconds($afkSec) : (isset($row->afk_duration_seconds) && $row->afk_duration_seconds !== null ? '00:00:00' : '-');
+
+        $instructor = trim((string) ($row->content_author ?? ($row->author ?? ($row->content->author ?? '-'))));
+        if ($instructor === '') {
+            $instructor = '-';
         }
 
         return [
-            $rowNumber,
-            $idEmp,
-            $name,
-            $department,
-            $team,
-            $course,
-            $type,
-            $category,
-            $classification,
-            $durationFormatted,
-            $recognizedFormatted,
-            $learningHourFormatted,
-            $progressStr,
-            $startDate,
-            $finishDate,
-            $score,
-            $certificate,
-            $attendance,
+            $rowNumber,                                                       // 1. NO
+            'KP OWL',                                                         // 2. Source
+            $cleanEmpId,                                                      // 3. Employee ID
+            $name,                                                            // 4. Employee Name
+            $grade,                                                           // 5. Grade
+            $jobPosition,                                                     // 6. Job Position
+            $team,                                                            // 7. Team
+            $department,                                                      // 8. Department
+            $company,                                                         // 9. Company
+            $courseTitle,                                                     // 10. Course Title
+            $subCourseTitle,                                                  // 11. Sub Course Title
+            $type,                                                            // 12. Type
+            $category,                                                        // 13. Category
+            '-',                                                              // 14. Level
+            '-',                                                              // 15. Batch
+            $mainClass,                                                       // 16. Main Classification
+            '-',                                                              // 17. Sub Classification
+            'Online',                                                         // 18. Delivery Method
+            $isPlaylist ? 'Playlist / Path' : 'E-learning',                   // 19. Sub Delivery Method
+            'Internal',                                                       // 20. Provider
+            '-',                                                              // 21. Sub Provider
+            'KP-OWL',                                                         // 22. Provider Name
+            'Online LMS',                                                     // 23. Venue
+            $instructor,                                                      // 24. Instructor
+            $durationFormatted,                                               // 25. Course Duration
+            $recognizedFormatted,                                             // 26. Total Recognized Duration
+            $formattedLHours,                                                 // 27. Learning Hours
+            $progressDecimal,                                                 // 28. % Progress
+            $progressStatus,                                                  // 29. Progress Status
+            $startDateStr,                                                    // 30. Start Date
+            $endDateStr,                                                      // 31. End Date
+            $startTimeStr,                                                    // 32. Start Time
+            $endTimeStr,                                                      // 33. End Time
+            $recordMonthStr,                                                  // 34. Record Month
+            $requirement,                                                     // 35. Requirement
+            $attendanceStr,                                                   // 36. Attendance
+            '-',                                                              // 37. Attendance Reason
+            'No',                                                             // 38. Bond Status
+            '-',                                                              // 39. Bond Duration
+            '-',                                                              // 40. Bond End Date
+            '-',                                                              // 41. Bond Amount
+            '-',                                                              // 42. Score (L1) - Course
+            $scoreL2Val,                                                      // 43. Score (L2)
+            '-',                                                              // 44. L2 Status
+            '-',                                                              // 45. Score (L3)
+            '-',                                                              // 46. L3 Status
+            $certAvailability,                                                // 47. Certificate Availability
+            $certInstitution,                                                 // 48. Certificate Institution
+            $certIssuedDate,                                                  // 49. Certificate Issued Date
+            '-',                                                              // 50. Certificate Expired Date
+            '-',                                                              // 51. Person in Charge (PIC)
+            $afkFormatted,                                                    // 52. Total Engagement Time (LH)
         ];
     }
 
@@ -741,27 +836,20 @@ class LearningExportService
             ],
         ]);
 
-        // 4. Alignments
-        // No (col A): Center
-        $sheet->getStyle("A2:A{$highestRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        // NIP (col B): Center as text
-        $sheet->getStyle("B2:B{$highestRow}")->getNumberFormat()->setFormatCode('@');
-        $sheet->getStyle("B2:B{$highestRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        // Employee Name (col C): Left wrap text
-        $sheet->getStyle("C2:C{$highestRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)->setWrapText(true);
-        // Course Title (col F): Left wrap text
-        $sheet->getStyle("F2:F{$highestRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)->setWrapText(true);
-        // Type (col G): Center
-        $sheet->getStyle("G2:G{$highestRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        // Category (col H): Left wrap text
-        $sheet->getStyle("H2:H{$highestRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)->setWrapText(true);
-        // Classification (col I): Left
-        $sheet->getStyle("I2:I{$highestRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
-        // Duration (col J): Center
-        $sheet->getStyle("J2:J{$highestRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        // Learning Hour (col K): Right
-        $sheet->getStyle("K2:K{$highestRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-        // Progress (col L), Start Date (col M), Finish Date (col N), Score (col O), Certificate (col P), Attendance (col Q): Center
-        $sheet->getStyle("L2:Q{$highestRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        // 5. Alignments and number formats across 52 columns
+        // Center alignment by default
+        $sheet->getStyle("A2:{$highestColumn}{$highestRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        // Text format for Employee ID (Col C)
+        $sheet->getStyle("C2:C{$highestRow}")->getNumberFormat()->setFormatCode('@');
+
+        // Left alignment for Names and Titles
+        $sheet->getStyle("D2:D{$highestRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)->setWrapText(true); // Employee Name
+        $sheet->getStyle("F2:I{$highestRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT); // Job, Team, Dept, Comp
+        $sheet->getStyle("J2:K{$highestRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)->setWrapText(true); // Course & Sub Course Titles
+        $sheet->getStyle("P2:Q{$highestRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT); // Classifications
+
+        // % Progress (Col AB): percentage format
+        $sheet->getStyle("AB2:AB{$highestRow}")->getNumberFormat()->setFormatCode('0%');
     }
 }

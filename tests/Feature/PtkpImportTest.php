@@ -181,7 +181,58 @@ class PtkpImportTest extends TestCase
             ->get(route('manage.record.offline.import-ptkp.template'));
 
         $response->assertStatus(200);
-        $this->assertStringContainsString('spreadsheetml.sheet', $response->headers->get('content-type'));
+        $this->assertStringContainsString('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', $response->headers->get('content-type'));
+        $this->assertStringContainsString('PTKP_OWL_Import_Template.xlsx', $response->headers->get('content-disposition'));
+        $this->assertStringContainsString('attachment', $response->headers->get('content-disposition'));
+
+        $content = $response->streamedContent();
+        $this->assertNotEmpty($content);
+
+        // Binary signature must begin exactly with PK (0x50, 0x4B, 0x03, 0x04) at offset 0 (no BOM, whitespace, or notices)
+        $this->assertSame("PK\x03\x04", substr($content, 0, 4), 'Downloaded XLSX must start with valid ZIP magic bytes (PK\x03\x04) at offset 0.');
+
+        // Test 2 — ZIP Integrity
+        $tempPath = tempnam(sys_get_temp_dir(), 'ptkp_dl_test_') . '.xlsx';
+        file_put_contents($tempPath, $content);
+
+        try {
+            $zip = new \ZipArchive();
+            $zipRes = $zip->open($tempPath, \ZipArchive::CHECKCONS);
+            $this->assertTrue($zipRes === true, "ZipArchive::open failed with error code: {$zipRes}");
+
+            // Test 3 — XLSX Structure
+            $requiredEntries = ['[Content_Types].xml', 'xl/workbook.xml', 'xl/worksheets/sheet1.xml'];
+            foreach ($requiredEntries as $entry) {
+                $entryXml = $zip->getFromName($entry);
+                $this->assertNotFalse($entryXml, "Missing required XLSX entry: {$entry}");
+                $xmlObj = @simplexml_load_string($entryXml);
+                $this->assertNotFalse($xmlObj, "Invalid XML structure in entry: {$entry}");
+            }
+            $zip->close();
+
+            // Test 4 — PhpSpreadsheet Load
+            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($tempPath);
+            $this->assertNotNull($spreadsheet);
+            $sheet = $spreadsheet->getSheetByName(PtkpExcelSchema::DATA_SHEET_TITLE);
+            $this->assertNotNull($sheet);
+            $this->assertSame('Employee ID', $sheet->getCell('A1')->getValue());
+            $this->assertSame('Person in Charge (PIC)', $sheet->getCell('AT1')->getValue());
+
+            // Test 5 — Import Compatibility
+            $uploaded = new UploadedFile($tempPath, 'PTKP_OWL_Import_Template.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', null, true);
+            $importService = app(\App\Services\OfflineTraining\PtkpImportService::class);
+            $meta = $importService->storeTemporaryFile($uploaded, $this->adminUser->id);
+            $preview = $importService->parseAndPreview($meta['token'], $this->adminUser->id);
+
+            $this->assertSame('single_row', $preview['format']);
+            $this->assertTrue($preview['header_check']['can_proceed']);
+            $this->assertSame(46, $preview['header_check']['valid_count']);
+            $this->assertSame(0, $preview['header_check']['invalid_count']);
+        } finally {
+            if (file_exists($tempPath)) {
+                @unlink($tempPath);
+            }
+        }
     }
 
     public function test_valid_ptkp_upload_preview_extracts_five_identities_from_users(): void
