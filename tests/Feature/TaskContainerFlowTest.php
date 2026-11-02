@@ -222,5 +222,21 @@ class TaskContainerFlowTest extends TestCase
         $this->assertEquals($newTitle, $parents->first()->parent_name);
         $this->assertEquals(0, $parents->first()->total);
     }
+
+    public function test_modal_renders_category_dropdown_with_content_playlist_and_options_endpoint(): void
+    {
+        $response = $this->actingAs($this->admin)->get(route('manage.task.index'));
+
+        $response->assertStatus(200);
+        $response->assertSee('id="modalCategorySelect"', false);
+        $response->assertSee('value="content_playlist"', false);
+        $response->assertSee('Content Playlist');
+        $response->assertSee('id="modal_content_playlist_id"', false);
+
+        // Test the content_playlist parentOptions endpoint
+        $optionsResponse = $this->actingAs($this->admin)->getJson(route('manage.task.parents', ['type' => 'content_playlist']));
+        $optionsResponse->assertStatus(200);
+        $this->assertIsArray($optionsResponse->json());
+    }
 }
 

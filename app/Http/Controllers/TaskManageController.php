@@ -327,17 +327,34 @@ class TaskManageController extends Controller
      */
     public function parentOptions(Request $request, string $type)
     {
-        abort_unless(array_key_exists($type, Task::PARENT_TYPES), 404);
+        abort_unless(array_key_exists($type, Task::PARENT_TYPES) || $type === 'content_playlist', 404);
 
         $q = trim($request->input('q', ''));
 
         $items = match ($type) {
             'playlist' => TrainingPlan::when($q !== '', fn ($qq) => $qq->where('title', 'like', "%{$q}%"))
-                ->orderBy('title')->limit(50)->get(['id', 'title']),
+                ->orderBy('title')->limit(100)->get(['id', 'title']),
             'content'  => Content::when($q !== '', fn ($qq) => $qq->where('title', 'like', "%{$q}%"))
-                ->orderBy('title')->limit(50)->get(['id', 'title']),
+                ->orderBy('title')->limit(100)->get(['id', 'title']),
+            'content_playlist' => Content::where(fn ($w) => $w->where('playlistonly', 'Y')->orWhereHas('trainingPlans'))
+                ->with(['trainingPlans:id,title'])
+                ->when($q !== '', fn ($qq) => $qq->where('title', 'like', "%{$q}%"))
+                ->orderBy('title')
+                ->limit(100)
+                ->get()
+                ->map(function ($c) {
+                    $pTitle = $c->trainingPlans->first()?->title;
+                    $title = $c->title;
+                    if ($pTitle && ! str_starts_with($title, "[{$pTitle}]")) {
+                        $title = "{$title} [{$pTitle}]";
+                    }
+                    return [
+                        'id'    => $c->id,
+                        'title' => $title,
+                    ];
+                }),
             'standalone' => TaskGroup::when($q !== '', fn ($qq) => $qq->where('title', 'like', "%{$q}%"))
-                ->orderBy('title')->limit(50)->get(['id', 'title']),
+                ->orderBy('title')->limit(100)->get(['id', 'title']),
             'offline_training' => OfflineTraining::when($q !== '', fn ($qq) => $qq->where(function ($w) use ($q) {
                     $w->where('title', 'like', "%{$q}%")
                       ->orWhere('course_name', 'like', "%{$q}%")

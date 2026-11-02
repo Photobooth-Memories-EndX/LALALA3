@@ -396,87 +396,32 @@
             </div>
 
             <div class="modal-body p-4">
-                {{-- Step 1: Category selection cards --}}
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                    <label class="form-label fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                {{-- Step 1: Category selection dropdown --}}
+                <div class="mb-4">
+                    <label class="form-label fw-bold text-dark mb-2 d-flex align-items-center gap-2" for="modalCategorySelect">
                         <span class="badge bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 20px; height: 20px; font-size: 11px;">1</span>
                         <span>Select Category:</span>
+                        <span class="text-danger">*</span>
                     </label>
-                </div>
-                <div class="row g-3 mb-4" id="modalCategoryRow">
-                    @if ($scope === 'kp')
-                        <!-- Playlist -->
-                        <div class="col-12 col-md-4">
-                            <div class="card h-100 container-type-card cursor-pointer p-3 active-type-card" data-category="playlist">
-                                <div class="d-flex align-items-center justify-content-between mb-2">
-                                    <span class="avatar avatar-sm bg-primary-lt text-primary rounded-2">
-                                        <i class="ti ti-books fs-2"></i>
-                                    </span>
-                                    <div class="form-check m-0 p-0">
-                                        <input type="radio" name="modal_parent_type" value="playlist" class="form-check-input m-0 cursor-pointer" checked>
-                                    </div>
-                                </div>
-                                <div class="fw-bold text-dark mb-1" style="font-size: 0.95rem;">Playlist</div>
-                                <div class="text-muted small" style="font-size: 0.775rem; line-height: 1.35;">
-                                    Tasks integrated within a complete online course.
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Content -->
-                        <div class="col-12 col-md-4">
-                            <div class="card h-100 container-type-card cursor-pointer p-3" data-category="content">
-                                <div class="d-flex align-items-center justify-content-between mb-2">
-                                    <span class="avatar avatar-sm bg-info-lt text-info rounded-2">
-                                        <i class="ti ti-file-text fs-2"></i>
-                                    </span>
-                                    <div class="form-check m-0 p-0">
-                                        <input type="radio" name="modal_parent_type" value="content" class="form-check-input m-0 cursor-pointer">
-                                    </div>
-                                </div>
-                                <div class="fw-bold text-dark mb-1" style="font-size: 0.95rem;">Content</div>
-                                <div class="text-muted small" style="font-size: 0.775rem; line-height: 1.35;">
-                                    Tasks associated with a single learning material / video.
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Others (Standalone) -->
-                        <div class="col-12 col-md-4">
-                            <div class="card h-100 container-type-card cursor-pointer p-3" data-category="standalone">
-                                <div class="d-flex align-items-center justify-content-between mb-2">
-                                    <span class="avatar avatar-sm bg-purple-lt text-purple rounded-2">
-                                        <i class="ti ti-folders fs-2"></i>
-                                    </span>
-                                    <div class="form-check m-0 p-0">
-                                        <input type="radio" name="modal_parent_type" value="standalone" class="form-check-input m-0 cursor-pointer">
-                                    </div>
-                                </div>
-                                <div class="fw-bold text-dark mb-1" style="font-size: 0.95rem;">Others</div>
-                                <div class="text-muted small" style="font-size: 0.775rem; line-height: 1.35;">
-                                    Standalone activities (Onboarding, Workshops, Events).
-                                </div>
-                            </div>
-                        </div>
-                    @else
-                        <!-- Offline Training -->
-                        <div class="col-12">
-                            <div class="card h-100 container-type-card cursor-pointer p-3 active-type-card" data-category="offline_training">
-                                <div class="d-flex align-items-center justify-content-between mb-2">
-                                    <span class="avatar avatar-sm bg-warning-lt text-warning rounded-2">
-                                        <i class="ti ti-map-pin fs-2"></i>
-                                    </span>
-                                    <div class="form-check m-0 p-0">
-                                        <input type="radio" name="modal_parent_type" value="offline_training" class="form-check-input m-0 cursor-pointer" checked>
-                                    </div>
-                                </div>
-                                <div class="fw-bold text-dark mb-1" style="font-size: 0.95rem;">Offline Training</div>
-                                <div class="text-muted small" style="font-size: 0.775rem; line-height: 1.35;">
-                                    Tasks for in-person training / in-class training sessions.
-                                </div>
-                            </div>
-                        </div>
-                    @endif
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0 text-muted rounded-start-3 px-3">
+                            <i class="ti ti-books fs-2 text-primary" id="modalCategoryIcon"></i>
+                        </span>
+                        <select id="modalCategorySelect" class="form-select form-select-lg border-start-0 rounded-end-3" style="font-size: 0.95rem;">
+                            @if ($scope === 'kp')
+                                <option value="playlist" selected>Playlist</option>
+                                <option value="content">Content (All Content)</option>
+                                <option value="content_playlist">Content Playlist</option>
+                                <option value="standalone">Others</option>
+                            @else
+                                <option value="offline_training" selected>Offline Training</option>
+                            @endif
+                        </select>
+                    </div>
+                    <div class="form-hint mt-2 text-muted d-flex align-items-center gap-1.5" id="modalCategoryHint" style="font-size: 0.8rem;">
+                        <i class="ti ti-info-circle text-primary"></i>
+                        <span>Tasks integrated within a complete online course.</span>
+                    </div>
                 </div>
 
                 <hr class="my-3 text-muted opacity-25">
@@ -507,7 +452,7 @@
                         </div>
                     </div>
 
-                    <!-- Dropdown for Content -->
+                    <!-- Dropdown for Content (All Content) -->
                     <div id="modalContentPicker" class="modal-picker-section" style="display: none;">
                         <div class="input-group">
                             <span class="input-group-text bg-white border-end-0 text-muted rounded-start-3 px-3">
@@ -519,7 +464,23 @@
                         </div>
                         <div class="form-hint mt-2 text-muted d-flex align-items-center gap-1.5" style="font-size: 0.8rem;">
                             <i class="ti ti-info-circle text-info"></i>
-                            <span>Choose the single material where this task will be placed.</span>
+                            <span>Choose the learning material from All Content where this task will be placed.</span>
+                        </div>
+                    </div>
+
+                    <!-- Dropdown for Content Playlist -->
+                    <div id="modalContentPlaylistPicker" class="modal-picker-section" style="display: none;">
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0 text-muted rounded-start-3 px-3">
+                                <i class="ti ti-playlist fs-2 text-azure"></i>
+                            </span>
+                            <select id="modal_content_playlist_id" class="form-select form-select-lg border-start-0 rounded-end-3" style="font-size: 0.95rem;">
+                                <option value="">— Loading content playlist... —</option>
+                            </select>
+                        </div>
+                        <div class="form-hint mt-2 text-muted d-flex align-items-center gap-1.5" style="font-size: 0.8rem;">
+                            <i class="ti ti-info-circle text-azure"></i>
+                            <span>Choose the content playlist where this task will be assigned.</span>
                         </div>
                     </div>
 
@@ -609,13 +570,15 @@ document.addEventListener('DOMContentLoaded', function () {
     var modalEl = document.getElementById('chooseContainerModal');
     if (!modalEl) return;
 
-    var radios = document.querySelectorAll('input[name="modal_parent_type"]');
-    var categoryCards = document.querySelectorAll('.container-type-card');
+    var categorySelect = document.getElementById('modalCategorySelect');
+    var categoryIcon = document.getElementById('modalCategoryIcon');
+    var categoryHint = document.getElementById('modalCategoryHint');
     var step2Label = document.getElementById('modalStep2Label');
     var playlistPicker = document.getElementById('modalPlaylistPicker');
     var contentPicker = document.getElementById('modalContentPicker');
+    var contentPlaylistPicker = document.getElementById('modalContentPlaylistPicker');
     var offlinePicker = document.getElementById('modalOfflinePicker');
-        var othersSection = document.getElementById('modalOthersSection');
+    var othersSection = document.getElementById('modalOthersSection');
     var btnSubmit = document.getElementById('btnSubmitContainerModal');
     var btnSubmitText = document.getElementById('btnSubmitText');
     var loadedCache = {};
@@ -634,32 +597,11 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function clearAllInvalid() {
-        ['modal_playlist_id', 'modal_content_id', 'modal_offline_id', 'modal_others_title'].forEach(function (id) {
+        ['modal_playlist_id', 'modal_content_id', 'modal_content_playlist_id', 'modal_offline_id', 'modal_others_title'].forEach(function (id) {
             var el = document.getElementById(id);
             if (el) el.classList.remove('is-invalid');
         });
     }
-
-    function updateActiveCards() {
-        categoryCards.forEach(function (card) {
-            var input = card.querySelector('input[type="radio"]');
-            if (input && input.checked) {
-                card.classList.add('active-type-card');
-            } else {
-                card.classList.remove('active-type-card');
-            }
-        });
-    }
-
-    categoryCards.forEach(function (card) {
-        card.addEventListener('click', function (e) {
-            var radio = card.querySelector('input[type="radio"]');
-            if (radio && !radio.checked) {
-                radio.checked = true;
-                onTypeChange();
-            }
-        });
-    });
 
     function loadOptions(type, selectEl, placeholder) {
         if (!selectEl) return;
@@ -694,33 +636,44 @@ document.addEventListener('DOMContentLoaded', function () {
         selectEl.innerHTML = html;
     }
 
-    
-
     function onTypeChange() {
         clearAllInvalid();
-        updateActiveCards();
 
-        var checkedRadio = document.querySelector('input[name="modal_parent_type"]:checked');
-        var val = checkedRadio ? checkedRadio.value : 'playlist';
+        var val = categorySelect ? categorySelect.value : 'playlist';
 
         if (playlistPicker) playlistPicker.style.display = (val === 'playlist') ? 'block' : 'none';
         if (contentPicker) contentPicker.style.display = (val === 'content') ? 'block' : 'none';
+        if (contentPlaylistPicker) contentPlaylistPicker.style.display = (val === 'content_playlist') ? 'block' : 'none';
         if (offlinePicker) offlinePicker.style.display = (val === 'offline_training') ? 'block' : 'none';
         if (othersSection) othersSection.style.display = (val === 'standalone') ? 'block' : 'none';
 
         if (val === 'playlist') {
+            if (categoryIcon) categoryIcon.className = 'ti ti-books fs-2 text-primary';
+            if (categoryHint) categoryHint.innerHTML = '<i class="ti ti-info-circle text-primary"></i><span>Tasks integrated within a complete online course.</span>';
             if (step2Label) step2Label.textContent = 'Select Course / Playlist:';
             if (btnSubmitText) btnSubmitText.textContent = 'Continue to Manage Tasks';
             loadOptions('playlist', document.getElementById('modal_playlist_id'), '— Select Course / Playlist —');
         } else if (val === 'content') {
-            if (step2Label) step2Label.textContent = 'Select Content / Material:';
+            if (categoryIcon) categoryIcon.className = 'ti ti-file-text fs-2 text-info';
+            if (categoryHint) categoryHint.innerHTML = '<i class="ti ti-info-circle text-info"></i><span>Tasks associated with learning materials from All Content.</span>';
+            if (step2Label) step2Label.textContent = 'Select Content (All Content):';
             if (btnSubmitText) btnSubmitText.textContent = 'Continue to Manage Tasks';
-            loadOptions('content', document.getElementById('modal_content_id'), '— Select Content / Material —');
+            loadOptions('content', document.getElementById('modal_content_id'), '— Select Content / Material (All Content) —');
+        } else if (val === 'content_playlist') {
+            if (categoryIcon) categoryIcon.className = 'ti ti-playlist fs-2 text-azure';
+            if (categoryHint) categoryHint.innerHTML = '<i class="ti ti-info-circle text-azure"></i><span>Tasks associated with contents that belong to playlists.</span>';
+            if (step2Label) step2Label.textContent = 'Select Content Playlist:';
+            if (btnSubmitText) btnSubmitText.textContent = 'Continue to Manage Tasks';
+            loadOptions('content_playlist', document.getElementById('modal_content_playlist_id'), '— Select Content Playlist —');
         } else if (val === 'offline_training') {
+            if (categoryIcon) categoryIcon.className = 'ti ti-map-pin fs-2 text-warning';
+            if (categoryHint) categoryHint.innerHTML = '<i class="ti ti-info-circle text-warning"></i><span>Tasks for in-person training / in-class training sessions.</span>';
             if (step2Label) step2Label.textContent = 'Select Offline Training Session:';
             if (btnSubmitText) btnSubmitText.textContent = 'Continue to Manage Tasks';
             loadOptions('offline_training', document.getElementById('modal_offline_id'), '— Select Offline Training Session —');
-                } else if (val === 'standalone') {
+        } else if (val === 'standalone') {
+            if (categoryIcon) categoryIcon.className = 'ti ti-folders fs-2 text-purple';
+            if (categoryHint) categoryHint.innerHTML = '<i class="ti ti-info-circle text-purple"></i><span>Standalone activities (Onboarding, Workshops, Events).</span>';
             if (step2Label) step2Label.textContent = 'Enter Activity Title:';
             if (btnSubmitText) btnSubmitText.textContent = 'Create & Manage Tasks';
             var titleInput = document.getElementById('modal_others_title');
@@ -730,9 +683,9 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    radios.forEach(function (r) {
-        r.addEventListener('change', onTypeChange);
-    });
+    if (categorySelect) {
+        categorySelect.addEventListener('change', onTypeChange);
+    }
 
     modalEl.addEventListener('show.bs.modal', function () {
         clearAllInvalid();
@@ -742,8 +695,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (btnSubmit) {
         btnSubmit.addEventListener('click', function () {
             clearAllInvalid();
-            var checkedRadio = document.querySelector('input[name="modal_parent_type"]:checked');
-            var type = checkedRadio ? checkedRadio.value : 'playlist';
+            var type = categorySelect ? categorySelect.value : 'playlist';
 
             if (type === 'playlist') {
                 var pSelect = document.getElementById('modal_playlist_id');
@@ -759,6 +711,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     return;
                 }
                 window.location.href = "{{ url('manage/task/parent/content') }}/" + cSelect.value;
+            } else if (type === 'content_playlist') {
+                var cpSelect = document.getElementById('modal_content_playlist_id');
+                if (!cpSelect || !cpSelect.value) {
+                    markInvalid(cpSelect);
+                    return;
+                }
+                window.location.href = "{{ url('manage/task/parent/content') }}/" + cpSelect.value;
             } else if (type === 'offline_training') {
                 var oSelect = document.getElementById('modal_offline_id');
                 if (!oSelect || !oSelect.value) {
@@ -766,7 +725,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     return;
                 }
                 window.location.href = "{{ url('manage/task/parent/offline_training') }}/" + oSelect.value;
-                        } else if (type === 'standalone') {
+            } else if (type === 'standalone') {
                 var titleInput = document.getElementById('modal_others_title');
                 var title = titleInput ? titleInput.value.trim() : '';
                 if (!title) {
