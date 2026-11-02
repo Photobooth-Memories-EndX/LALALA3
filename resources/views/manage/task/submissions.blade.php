@@ -165,6 +165,32 @@
         background-color: rgba(2, 132, 199, 0.25) !important;
         color: #38bdf8 !important;
     }
+
+    /* Standard OWL green download button */
+    .btn-download {
+        background-color: #2fb344 !important;
+        border-color: #2fb344 !important;
+        color: #ffffff !important;
+        transition: all 0.2s ease;
+        height: 38px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-weight: 600;
+        border-radius: 8px !important;
+    }
+    .btn-download:hover,
+    .btn-download:focus,
+    .btn-download:active {
+        background-color: #269639 !important;
+        border-color: #269639 !important;
+        color: #ffffff !important;
+    }
+    .btn-download:hover i,
+    .btn-download:focus i,
+    .btn-download:active i {
+        color: #ffffff !important;
+    }
 </style>
 
 {{-- ══════════════════════════════════════════════════════════════════════ --}}
@@ -207,15 +233,33 @@
                     </div>
                 </div>
 
-                {{-- Download Submissions (Excel) Button --}}
+                {{-- Download Dropdown (Standard OWL quick-filter style) --}}
                 <div class="col-auto ms-auto d-print-none">
-                    <a href="{{ route('manage.task.submissions.export', $task) }}"
-                       class="btn btn-success d-inline-flex align-items-center gap-1.5 shadow-sm fw-semibold px-3 py-2"
-                       title="Download responses to Excel (.xlsx)"
-                       id="btnDownloadExcel">
-                        <i class="ti ti-download fs-2"></i>
-                        <span>Download</span>
-                    </a>
+                    <div class="dropdown flex-shrink-0 quick-filter-download">
+                        <button type="button"
+                                class="btn btn-success dropdown-toggle rounded-3 px-3 btn-download shadow-sm fw-semibold"
+                                data-bs-toggle="dropdown"
+                                data-toggle="dropdown"
+                                aria-expanded="false"
+                                id="btn-download-dropdown"
+                                title="Download Record">
+                            <i class="ti ti-download me-1"></i> Download
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border rounded-3 mt-1 py-1" aria-labelledby="btn-download-dropdown" style="min-width: 220px;">
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.task.submissions.export', [$task, 'format' => 'xlsx']) }}" id="btn-download-export">
+                                    <i class="ti ti-file-spreadsheet text-success fs-3"></i>
+                                    <span>Download Excel (.xlsx)</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.task.submissions.export', [$task, 'format' => 'csv']) }}" id="btn-download-csv">
+                                    <i class="ti ti-file-type-csv text-primary fs-3"></i>
+                                    <span>Download CSV (.csv)</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>

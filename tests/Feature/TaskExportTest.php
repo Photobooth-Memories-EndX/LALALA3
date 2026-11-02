@@ -37,7 +37,7 @@ class TaskExportTest extends TestCase
         ]);
     }
 
-    public function test_admin_submissions_page_renders_green_download_button(): void
+    public function test_admin_submissions_page_renders_standard_green_download_dropdown(): void
     {
         $task = Task::create([
             'parent_type'      => 'playlist',
@@ -51,12 +51,13 @@ class TaskExportTest extends TestCase
         $response = $this->actingAs($this->admin)->get(route('manage.task.submissions', ['task' => $task->id]));
 
         $response->assertStatus(200);
+        $response->assertSee('btn-download-dropdown');
         $response->assertSee('Download');
-        $response->assertSee('btnDownloadExcel');
+        $response->assertSee('btn-download');
         $response->assertSee('btn-success');
-        $response->assertSee('ti-download');
-        // Ensure no dropdown options cluttering
-        $response->assertDontSee('btnExportOptions');
+        $response->assertSee('dropdown-toggle');
+        $response->assertSee('Download Excel (.xlsx)');
+        $response->assertSee('Download CSV (.csv)');
     }
 
     public function test_export_submissions_route_downloads_excel_file(): void
@@ -96,7 +97,8 @@ class TaskExportTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->admin)->get(route('manage.task.submissions.export', [
-            'task' => $task->id,
+            'task'   => $task->id,
+            'format' => 'xlsx',
         ]));
 
         $response->assertStatus(200);
