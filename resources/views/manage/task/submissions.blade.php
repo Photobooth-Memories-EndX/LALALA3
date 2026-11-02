@@ -233,33 +233,14 @@
                     </div>
                 </div>
 
-                {{-- Download Dropdown (Standard OWL quick-filter style) --}}
+                {{-- Download Submissions (Direct Excel Download) --}}
                 <div class="col-auto ms-auto d-print-none">
-                    <div class="dropdown flex-shrink-0 quick-filter-download">
-                        <button type="button"
-                                class="btn btn-success dropdown-toggle rounded-3 px-3 btn-download shadow-sm fw-semibold"
-                                data-bs-toggle="dropdown"
-                                data-toggle="dropdown"
-                                aria-expanded="false"
-                                id="btn-download-dropdown"
-                                title="Download Record">
-                            <i class="ti ti-download me-1"></i> Download
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border rounded-3 mt-1 py-1" aria-labelledby="btn-download-dropdown" style="min-width: 220px;">
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.task.submissions.export', [$task, 'format' => 'xlsx']) }}" id="btn-download-export">
-                                    <i class="ti ti-file-spreadsheet text-success fs-3"></i>
-                                    <span>Download Excel (.xlsx)</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.task.submissions.export', [$task, 'format' => 'csv']) }}" id="btn-download-csv">
-                                    <i class="ti ti-file-type-csv text-primary fs-3"></i>
-                                    <span>Download CSV (.csv)</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
+                    <a href="{{ route('manage.task.submissions.export', [$task, 'format' => 'xlsx']) }}"
+                       class="btn btn-success rounded-3 px-3 btn-download shadow-sm fw-semibold text-decoration-none"
+                       id="btnDownloadExcel"
+                       title="Download Responses (Excel)">
+                        <i class="ti ti-download me-1"></i> Download
+                    </a>
                 </div>
             </div>
         </div>
