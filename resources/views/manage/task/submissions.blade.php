@@ -206,6 +206,70 @@
                         @endif
                     </div>
                 </div>
+
+                {{-- Google Forms Style Export Actions --}}
+                <div class="col-auto ms-auto d-print-none">
+                    <div class="d-flex align-items-center gap-2">
+                        {{-- Primary Export to Excel button (Google Sheets / Excel style) --}}
+                        <a href="{{ route('manage.task.submissions.export', [$task, 'format' => 'xlsx']) }}"
+                           class="btn btn-outline-success d-inline-flex align-items-center gap-2 shadow-xs fw-semibold px-3 py-1.5"
+                           title="Export all responses to Excel (.xlsx)"
+                           id="btnExportExcel">
+                            <i class="ti ti-file-spreadsheet fs-2 text-success"></i>
+                            <span>Export to Excel</span>
+                        </a>
+
+                        {{-- More Export Options Dropdown --}}
+                        <div class="dropdown">
+                            <button type="button"
+                                    class="btn btn-white border shadow-xs d-inline-flex align-items-center gap-1.5 px-2.5 py-1.5"
+                                    data-bs-toggle="dropdown"
+                                    aria-expanded="false"
+                                    title="Export options"
+                                    id="btnExportOptions">
+                                <i class="ti ti-dots-vertical"></i>
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-end shadow-sm border py-2" style="min-width: 250px;">
+                                <h6 class="dropdown-header text-uppercase text-muted" style="font-size: 11px;">Spreadsheet Format</h6>
+                                <a class="dropdown-item d-flex align-items-center gap-2.5 py-2"
+                                   href="{{ route('manage.task.submissions.export', [$task, 'format' => 'xlsx']) }}">
+                                    <i class="ti ti-file-spreadsheet text-success fs-2"></i>
+                                    <div>
+                                        <div class="fw-semibold">Microsoft Excel (.xlsx)</div>
+                                        <div class="text-muted small" style="font-size: 11px;">All questions and responses</div>
+                                    </div>
+                                </a>
+                                <a class="dropdown-item d-flex align-items-center gap-2.5 py-2"
+                                   href="{{ route('manage.task.submissions.export', [$task, 'format' => 'csv']) }}">
+                                    <i class="ti ti-file-text text-primary fs-2"></i>
+                                    <div>
+                                        <div class="fw-semibold">Comma-Separated (.csv)</div>
+                                        <div class="text-muted small" style="font-size: 11px;">Google Sheets / CSV text</div>
+                                    </div>
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <h6 class="dropdown-header text-uppercase text-muted" style="font-size: 11px;">Attachments &amp; Print</h6>
+                                <a class="dropdown-item d-flex align-items-center gap-2.5 py-2"
+                                   href="{{ route('manage.task.submissions.export', [$task, 'format' => 'zip']) }}">
+                                    <i class="ti ti-folder-zip text-warning fs-2"></i>
+                                    <div>
+                                        <div class="fw-semibold">Download Attachments (.zip)</div>
+                                        <div class="text-muted small" style="font-size: 11px;">All submitted files archived</div>
+                                    </div>
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item d-flex align-items-center gap-2.5 py-2"
+                                   href="javascript:window.print();">
+                                    <i class="ti ti-printer text-secondary fs-2"></i>
+                                    <div>
+                                        <div class="fw-semibold">Print Responses</div>
+                                        <div class="text-muted small" style="font-size: 11px;">Print or save as PDF</div>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

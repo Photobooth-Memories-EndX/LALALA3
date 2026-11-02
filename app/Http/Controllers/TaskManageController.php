@@ -752,14 +752,100 @@ class TaskManageController extends Controller
     }
 
     /**
-     * GET /manage/task/{task}/submissions/export — export submissions to Excel (.xlsx).
+     * GET /manage/task/{task}/submissions/export — export submissions (Excel .xlsx, CSV .csv, or attachments .zip).
      */
-    public function exportSubmissions(Task $task)
+    public function exportSubmissions(Request $request, Task $task)
     {
         $safeTitle = Str::slug($task->title) ?: 'task-' . $task->id;
-        $filename = 'Submissions-' . $safeTitle . '-' . now()->format('Ymd_His') . '.xlsx';
+        $format = strtolower((string) $request->query('format', 'xlsx'));
 
-        return Excel::download(new TaskSubmissionsExport($task), $filename);
+        if ($format === 'csv') {
+            $filename = 'Submissions-' . $safeTitle . '-' . now()->format('Ymd_His') . '.csv';
+            return Excel::download(new TaskSubmissionsExport($task), $filename, \Maatwebsite\Excel\Excel::CSV);
+        }
+
+        if ($format === 'zip' || $format === 'attachments') {
+            return $this->exportAttachmentsZip($task);
+        }
+
+        $filename = 'Submissions-' . $safeTitle . '-' . now()->format('Ymd_His') . '.xlsx';
+        return Excel::download(new TaskSubmissionsExport($task), $filename, \Maatwebsite\Excel\Excel::XLSX);
+    }
+
+    /**
+     * Export all submitted file attachments for this task into a structured ZIP archive.
+     */
+    public function exportAttachmentsZip(Task $task)
+    {
+        $submissions = $task->submissions()->with('user')->get();
+        $safeTitle = Str::slug($task->title) ?: 'task-' . $task->id;
+
+        $zipFileName = 'Attachments-' . $safeTitle . '-' . now()->format('Ymd_His') . '.zip';
+        $tempZipPath = storage_path('app' . DIRECTORY_SEPARATOR . 'temp_' . uniqid() . '.zip');
+
+        $zip = new \ZipArchive();
+        if ($zip->open($tempZipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+            return back()->with('error', 'Unable to create zip archive on server.');
+        }
+
+        $filesCount = 0;
+        foreach ($submissions as $sub) {
+            $userName = $sub->user ? Str::slug($sub->user->name) : 'user-' . $sub->user_id;
+            $userPrefix = $userName . '_' . ($sub->user?->id_emp ?? $sub->user_id);
+            $answersByField = $sub->answersByField();
+
+            foreach ($task->fields as $field) {
+                $ans = $answersByField->get($field->id);
+                if (! $ans || ! $ans->hasFiles()) {
+                    continue;
+                }
+
+                $fieldSlug = Str::slug($field->label) ?: 'field-' . $field->id;
+
+                foreach ($ans->filePaths() as $fPath) {
+                    $resolved = $this->resolveSubmissionFilePath($fPath);
+                    if ($resolved && file_exists($resolved)) {
+                        $originalName = basename($resolved);
+                        $zipEntryName = $userPrefix . '/' . $fieldSlug . '/' . $originalName;
+                        $zip->addFile($resolved, $zipEntryName);
+                        $filesCount++;
+                    }
+                }
+            }
+        }
+
+        $zip->close();
+
+        if ($filesCount === 0) {
+            if (file_exists($tempZipPath)) {
+                @unlink($tempZipPath);
+            }
+            return back()->with('error', 'No file attachments found in submissions to export.');
+        }
+
+        return response()->download($tempZipPath, $zipFileName)->deleteFileAfterSend(true);
+    }
+
+    /**
+     * Resolve actual disk path for submission file.
+     */
+    protected function resolveSubmissionFilePath(string $path): ?string
+    {
+        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
+            return \Illuminate\Support\Facades\Storage::disk('public')->path($path);
+        }
+        if (\Illuminate\Support\Facades\Storage::exists($path)) {
+            return \Illuminate\Support\Facades\Storage::path($path);
+        }
+        $pubPath = public_path('storage/' . ltrim($path, '/'));
+        if (file_exists($pubPath)) {
+            return $pubPath;
+        }
+        $direct = public_path(ltrim($path, '/'));
+        if (file_exists($direct)) {
+            return $direct;
+        }
+        return file_exists($path) ? $path : null;
     }
 
     /**

@@ -37,7 +37,9 @@ class TaskSubmissionsExport implements FromCollection, WithHeadings, WithMapping
         $headings = [
             'No',
             'Employee Name',
+            'Employee ID',
             'Email',
+            'Department',
             'Submission Date',
             'Status',
             'Score',
@@ -65,7 +67,9 @@ class TaskSubmissionsExport implements FromCollection, WithHeadings, WithMapping
         $row = [
             $this->index,
             $submission->user?->name ?? ('User #' . $submission->user_id),
+            $submission->user?->id_emp ?? '-',
             $submission->user?->email ?? '-',
+            $submission->user?->department ?? '-',
             $submission->submitted_at ? $submission->submitted_at->format('d/m/Y H:i') : '-',
             ucfirst($submission->status ?? 'pending'),
             $submission->score !== null ? $submission->score : '-',
@@ -90,7 +94,13 @@ class TaskSubmissionsExport implements FromCollection, WithHeadings, WithMapping
                     }
                 }
                 if ($answer->answer_text) {
-                    $parts[] = $answer->answer_text;
+                    $raw = $answer->answer_text;
+                    $decoded = json_decode($raw, true);
+                    if (is_array($decoded)) {
+                        $parts[] = implode(', ', $decoded);
+                    } else {
+                        $parts[] = $raw;
+                    }
                 }
 
                 $row[] = ! empty($parts) ? implode("\n", $parts) : '-';
