@@ -170,6 +170,27 @@ class OnlineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wit
         $certAvailability = $isFinished ? 'Available' : '-';
         $certInstitution = $isFinished ? 'PT Krakatau Posco' : '-';
         $certIssuedDate = ($isFinished && $endDateStr !== '-') ? $endDateStr : '-';
+        $certExpiredDate = '-';
+
+        $csSetting = null;
+        if (!empty($row->content_id)) {
+            $csSetting = DB::table('certificate_settings')->where('content_id', $row->content_id)->first();
+        } elseif (!empty($row->trainingplan_id)) {
+            $csSetting = DB::table('certificate_settings')->where('trainingplan_id', $row->trainingplan_id)->first();
+        }
+        if ($csSetting) {
+            if ($csSetting->institution) {
+                $certInstitution = $csSetting->institution;
+            } elseif ($csSetting->issuer_name) {
+                $certInstitution = $csSetting->issuer_name;
+            }
+            if ($csSetting->issued_date) {
+                $certIssuedDate = date('Y-m-d', strtotime($csSetting->issued_date));
+            }
+            if ($csSetting->expired_date) {
+                $certExpiredDate = date('Y-m-d', strtotime($csSetting->expired_date));
+            }
+        }
 
         return [
             $this->rowCount,                                                  // 1. NO
@@ -221,7 +242,7 @@ class OnlineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wit
             $certAvailability,                                                // 47. Certificate Availability
             $certInstitution,                                                 // 48. Certificate Institution
             $certIssuedDate,                                                  // 49. Certificate Issued Date
-            '-',                                                              // 50. Certificate Expired Date
+            $certExpiredDate,                                                 // 50. Certificate Expired Date
             '-',                                                              // 51. Person in Charge (PIC)
             $afkFormatted,                                                    // 52. Total Engagement Time (LH)
         ];
@@ -575,6 +596,26 @@ class OnlineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wit
             $certInstitution = $isFinished ? 'PT Krakatau Posco' : '-';
             $certIssuedDate = ($isFinished && $endDateStr !== '-') ? $endDateStr : '-';
             $certExpiredDate = '-';
+
+            $csSetting = null;
+            if (!empty($row->content_id)) {
+                $csSetting = DB::table('certificate_settings')->where('content_id', $row->content_id)->first();
+            } elseif (!empty($row->trainingplan_id)) {
+                $csSetting = DB::table('certificate_settings')->where('trainingplan_id', $row->trainingplan_id)->first();
+            }
+            if ($csSetting) {
+                if ($csSetting->institution) {
+                    $certInstitution = $csSetting->institution;
+                } elseif ($csSetting->issuer_name) {
+                    $certInstitution = $csSetting->issuer_name;
+                }
+                if ($csSetting->issued_date) {
+                    $certIssuedDate = date('Y-m-d', strtotime($csSetting->issued_date));
+                }
+                if ($csSetting->expired_date) {
+                    $certExpiredDate = date('Y-m-d', strtotime($csSetting->expired_date));
+                }
+            }
             $finalRecordMonth = ($completedAt && $isFinished) ? date('F', $completedAt) : '-';
 
             $cells = [

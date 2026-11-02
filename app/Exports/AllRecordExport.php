@@ -458,38 +458,92 @@ class AllRecordExport implements Responsable
                         $hasCert = true;
                         $certInstitution = $row->certificate;
                     }
+                    $dbCert = null;
                     if (!empty($row->source_id)) {
                         $dbCert = DB::table('certificates as c')
                             ->leftJoin('certificate_settings as cs', 'cs.id', '=', 'c.certificate_setting_id')
                             ->where('c.offline_training_user_id', $row->source_id)
-                            ->select(['cs.issuer_name', 'c.issued_at', 'c.expired_at'])
+                            ->select([
+                                'cs.issuer_name',
+                                'cs.institution as cs_institution',
+                                'cs.issued_date as cs_issued_date',
+                                'cs.expired_date as cs_expired_date',
+                                'c.institution as c_institution',
+                                'c.issued_at',
+                                'c.issued_date',
+                                'c.expired_date',
+                                'c.expired_at',
+                            ])
                             ->first();
                         if ($dbCert) {
                             $hasCert = true;
-                            if ($dbCert->issuer_name) $certInstitution = $dbCert->issuer_name;
-                            if ($dbCert->issued_at) $certIssuedDate = date('Y-m-d', strtotime($dbCert->issued_at));
-                            if ($dbCert->expired_at) $certExpiredDate = date('Y-m-d', strtotime($dbCert->expired_at));
+                            if ($dbCert->c_institution) $certInstitution = $dbCert->c_institution;
+                            elseif ($dbCert->cs_institution) $certInstitution = $dbCert->cs_institution;
+                            elseif ($dbCert->issuer_name) $certInstitution = $dbCert->issuer_name;
+
+                            if ($dbCert->issued_date) $certIssuedDate = date('Y-m-d', strtotime($dbCert->issued_date));
+                            elseif ($dbCert->cs_issued_date) $certIssuedDate = date('Y-m-d', strtotime($dbCert->cs_issued_date));
+                            elseif ($dbCert->issued_at) $certIssuedDate = date('Y-m-d', strtotime($dbCert->issued_at));
+
+                            if ($dbCert->expired_date) $certExpiredDate = date('Y-m-d', strtotime($dbCert->expired_date));
+                            elseif ($dbCert->cs_expired_date) $certExpiredDate = date('Y-m-d', strtotime($dbCert->cs_expired_date));
+                            elseif ($dbCert->expired_at) $certExpiredDate = date('Y-m-d', strtotime($dbCert->expired_at));
+                        }
+                    }
+                    if (!$dbCert && !empty($row->offline_training_id)) {
+                        $csSetting = DB::table('certificate_settings')->where('offline_training_id', $row->offline_training_id)->first();
+                        if ($csSetting) {
+                            $hasCert = true;
+                            if ($csSetting->institution) $certInstitution = $csSetting->institution;
+                            elseif ($csSetting->issuer_name) $certInstitution = $csSetting->issuer_name;
+                            if ($csSetting->issued_date) $certIssuedDate = date('Y-m-d', strtotime($csSetting->issued_date));
+                            if ($csSetting->expired_date) $certExpiredDate = date('Y-m-d', strtotime($csSetting->expired_date));
                         }
                     }
                 } else {
                     $isFinishedOnline = ($progressNum >= 100 || ($row->status ?? '') === 'Finished' || ($row->finish ?? '') === '1');
+                    $dbCert = null;
                     if (!empty($row->source_id)) {
                         $dbCert = DB::table('certificates as c')
                             ->leftJoin('certificate_settings as cs', 'cs.id', '=', 'c.certificate_setting_id')
                             ->where('c.content_user_id', $row->source_id)
-                            ->select(['cs.issuer_name', 'c.issued_at', 'c.expired_at'])
+                            ->select([
+                                'cs.issuer_name',
+                                'cs.institution as cs_institution',
+                                'cs.issued_date as cs_issued_date',
+                                'cs.expired_date as cs_expired_date',
+                                'c.institution as c_institution',
+                                'c.issued_at',
+                                'c.issued_date',
+                                'c.expired_date',
+                                'c.expired_at',
+                            ])
                             ->first();
                         if ($dbCert) {
                             $hasCert = true;
-                            $certInstitution = $dbCert->issuer_name ?: 'PT Krakatau Posco';
-                            if ($dbCert->issued_at) $certIssuedDate = date('Y-m-d', strtotime($dbCert->issued_at));
-                            if ($dbCert->expired_at) $certExpiredDate = date('Y-m-d', strtotime($dbCert->expired_at));
+                            $certInstitution = $dbCert->c_institution ?: ($dbCert->cs_institution ?: ($dbCert->issuer_name ?: 'PT Krakatau Posco'));
+                            if ($dbCert->issued_date) $certIssuedDate = date('Y-m-d', strtotime($dbCert->issued_date));
+                            elseif ($dbCert->cs_issued_date) $certIssuedDate = date('Y-m-d', strtotime($dbCert->cs_issued_date));
+                            elseif ($dbCert->issued_at) $certIssuedDate = date('Y-m-d', strtotime($dbCert->issued_at));
+
+                            if ($dbCert->expired_date) $certExpiredDate = date('Y-m-d', strtotime($dbCert->expired_date));
+                            elseif ($dbCert->cs_expired_date) $certExpiredDate = date('Y-m-d', strtotime($dbCert->cs_expired_date));
+                            elseif ($dbCert->expired_at) $certExpiredDate = date('Y-m-d', strtotime($dbCert->expired_at));
+                        }
+                    }
+                    if (!$dbCert && !empty($row->content_id)) {
+                        $csSetting = DB::table('certificate_settings')->where('content_id', $row->content_id)->first();
+                        if ($csSetting) {
+                            if ($csSetting->institution) $certInstitution = $csSetting->institution;
+                            elseif ($csSetting->issuer_name) $certInstitution = $csSetting->issuer_name;
+                            if ($csSetting->issued_date) $certIssuedDate = date('Y-m-d', strtotime($csSetting->issued_date));
+                            if ($csSetting->expired_date) $certExpiredDate = date('Y-m-d', strtotime($csSetting->expired_date));
                         }
                     }
                     if (!$hasCert && $isFinishedOnline) {
                         $hasCert = true;
-                        $certInstitution = 'PT Krakatau Posco';
-                        $certIssuedDate = $endDateStr !== '-' ? $endDateStr : ($startDateStr !== '-' ? $startDateStr : '-');
+                        if ($certInstitution === '-') $certInstitution = 'PT Krakatau Posco';
+                        if ($certIssuedDate === '-') $certIssuedDate = $endDateStr !== '-' ? $endDateStr : ($startDateStr !== '-' ? $startDateStr : '-');
                     }
                 }
 

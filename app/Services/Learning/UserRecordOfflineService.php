@@ -183,11 +183,32 @@ class UserRecordOfflineService
             $certActionUrl = null;
         }
 
+        $existingCert = $hasCertificate ? $eligibility->certificate : null;
+        $cs = null;
+        if ($training) {
+            $cs = $training->relationLoaded('certificateSetting') ? $training->certificateSetting : $training->certificateSetting()->first();
+        }
+        $certInstitution = $existingCert?->institution
+            ?: ($cs?->institution
+                ?: ($existingCert?->issuer_name
+                    ?: ($cs?->issuer_name ?: ($otu->certificate ?: '-'))));
+
+        $certIssuedDate = $existingCert?->issued_date
+            ? Carbon::parse($existingCert->issued_date)->format('Y-m-d')
+            : ($cs?->issued_date
+                ? Carbon::parse($cs->issued_date)->format('Y-m-d')
+                : ($existingCert?->issued_at ? Carbon::parse($existingCert->issued_at)->format('Y-m-d') : '-'));
+
+        $certExpiredDate = $existingCert?->expired_date
+            ? Carbon::parse($existingCert->expired_date)->format('Y-m-d')
+            : ($cs?->expired_date ? Carbon::parse($cs->expired_date)->format('Y-m-d') : '-');
+
         $statusRaw = strtolower(trim((string) ($training->requirement ?? $training->status ?? 'non mandatory')));
         $requirement = ($statusRaw === 'mandatory') ? 'Mandatory' : 'Non-Mandatory';
 
         return [
             'id'                        => $otu->id,
+            'offline_training_id'       => $otu->offline_training_id,
             'source'                    => 'offline',
             'row_kind'                  => 'offline',
             'title'                     => optional($training)->title ?: (optional($training)->course_name ?: 'Offline Training'),
@@ -195,7 +216,7 @@ class UserRecordOfflineService
             'requirement'               => $requirement,
             'course_name'               => optional($training)->course_name ?: (optional($training)->title ?: 'Offline Training'),
             'sub_course_name'           => optional($training)->sub_course_name ?: '',
-            'type'                      => '-',
+            'type'                      => optional($training)->type ?: '-',
             'category'                  => 'Non KP-OWL',
             'level'                     => optional($training)->level ?: '-',
             'batch'                     => optional($training)->batch ?: '-',
@@ -224,6 +245,9 @@ class UserRecordOfflineService
             'assessment_score'          => $score,
             'min_score'                 => (int) (optional($training)->passing_grade ?? optional($training)->min_score ?? 70),
             'certificate'               => $otu->certificate,
+            'certificate_institution'   => $certInstitution,
+            'certificate_issued_date'   => $certIssuedDate,
+            'certificate_expired_date'  => $certExpiredDate,
             'has_certificate'           => $hasCertificate,
             'is_eligible'               => $isEligible,
             'cert_state'                => $certState,
