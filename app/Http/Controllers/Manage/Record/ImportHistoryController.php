@@ -130,7 +130,8 @@ class ImportHistoryController extends Controller
             ->addColumn('actions', function (ImportBatch $batch) {
                 $uuid = e($batch->batch_uuid);
                 $detailBtn = sprintf(
-                    '<button type="button" class="btn btn-sm btn-outline-primary owl-action-btn btn-batch-detail" data-uuid="%s" title="View Details" aria-label="View Details"><i class="ti ti-eye"></i></button>',
+                    '<a href="%s" class="btn btn-sm btn-outline-primary owl-action-btn btn-batch-detail" data-uuid="%s" data-bs-toggle="tooltip" data-bs-placement="top" title="View Detail" aria-label="View Detail"><i class="ti ti-eye"></i></a>',
+                    route('manage.record.offline.import-history.detail', $uuid),
                     $uuid
                 );
 
@@ -138,7 +139,7 @@ class ImportHistoryController extends Controller
                 if ($batch->hasStoredFile()) {
                     $downloadUrl = route('manage.record.offline.import-history.download', $batch->batch_uuid);
                     $downloadBtn = sprintf(
-                        '<a href="%s" class="btn btn-sm btn-outline-secondary owl-action-btn ms-1" title="Download Original File" aria-label="Download Original File"><i class="ti ti-download"></i></a>',
+                        '<a href="%s" class="btn btn-sm btn-outline-secondary owl-action-btn ms-1" data-bs-toggle="tooltip" data-bs-placement="top" title="Download Original File" aria-label="Download Original File"><i class="ti ti-download"></i></a>',
                         $downloadUrl
                     );
                 }

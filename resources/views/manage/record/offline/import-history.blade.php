@@ -215,7 +215,8 @@
             summary: "{{ route('manage.record.offline.import-history.summary') }}",
             detail: "{{ route('manage.record.offline.import-history.detail', '__UUID__') }}",
             rows: "{{ route('manage.record.offline.import-history.rows', '__UUID__') }}",
-            download: "{{ route('manage.record.offline.import-history.download', '__UUID__') }}"
+            download: "{{ route('manage.record.offline.import-history.download', '__UUID__') }}",
+            export: "{{ route('manage.record.offline.import-history.export', '__UUID__') }}"
         }
     };
 </script>

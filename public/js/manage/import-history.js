@@ -122,6 +122,14 @@
                 } else {
                     $('#import-batches-counter').text('Showing 0 of 0 batches');
                 }
+
+                // Initialize Bootstrap tooltips on action buttons
+                if (window.bootstrap && bootstrap.Tooltip) {
+                    const tooltipTriggerList = [].slice.call(document.querySelectorAll('#import-batches-table [data-bs-toggle="tooltip"]'));
+                    tooltipTriggerList.map(function (el) {
+                        return bootstrap.Tooltip.getOrCreateInstance(el);
+                    });
+                }
             }
         });
     }
@@ -225,13 +233,8 @@
      * Batch Detail Modal & Rows Datatable
      */
     function initDetailModalEvents() {
-        $(document).on('click', '.btn-batch-detail', function (e) {
-            e.preventDefault();
-            const uuid = $(this).data('uuid');
-            if (!uuid) return;
-
-            openBatchDetailModal(uuid);
-        });
+        // Dedicated Detail Page: Clicking .btn-batch-detail follows href link directly
+        // Modal functions preserved below as fallback
 
         $('#row-filter-action, #row-filter-status').on('change', function () {
             if (rowsTable) rowsTable.ajax.reload();
