@@ -14,6 +14,7 @@ use App\Models\TaskSubmission;
 use App\Models\TrainingPlan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Validator;
@@ -56,7 +57,7 @@ class TaskManageController extends Controller
             ? ($type === 'all' ? ['playlist', 'content', 'standalone'] : [$type])
             : ['offline_training'];
 
-        $baseQuery = Task::query()
+        $tasksQuery = Task::query()
             ->leftJoin('trainingplan', 'trainingplan.id', '=', 'tasks.training_plan_id')
             ->leftJoin('content', 'content.id', '=', 'tasks.content_id')
             ->leftJoin('offline_trainings', 'offline_trainings.id', '=', 'tasks.offline_training_id')
@@ -75,7 +76,27 @@ class TaskManageController extends Controller
             ->selectRaw("COUNT(*) AS total, SUM(tasks.status = 'published') AS published, SUM(tasks.status = 'draft') AS draft")
             ->selectRaw("COALESCE(MAX(COALESCE(trainingplan.created_at, content.created_at, offline_trainings.created_at, task_groups.created_at)), MIN(tasks.created_at)) AS created_at")
             ->groupBy('tasks.parent_type', 'tasks.training_plan_id', 'tasks.content_id', 'tasks.offline_training_id', 'tasks.task_group_id')
-            ->orderBy('parent_name');
+            ;
+
+        if (in_array('standalone', $allowedTypes, true)) {
+            $emptyGroupsQuery = TaskGroup::query()
+                ->whereNotIn('id', function ($sub) {
+                    $sub->select('task_group_id')
+                        ->from('tasks')
+                        ->whereNotNull('task_group_id')
+                        ->whereNull('deleted_at');
+                })
+                ->when($search !== '', fn ($q) => $q->where('title', 'like', "%{$search}%"))
+                ->selectRaw("'standalone' AS parent_type, id AS parent_id, title AS parent_name, 0 AS total, 0 AS published, 0 AS draft, created_at");
+
+            $unionSql = $tasksQuery->unionAll($emptyGroupsQuery);
+            $baseQuery = DB::table(DB::raw("({$unionSql->toSql()}) as combined"))
+                ->mergeBindings($unionSql->getQuery())
+                ->orderByDesc('created_at')
+                ->orderByDesc('parent_id');
+        } else {
+            $baseQuery = $tasksQuery->orderByDesc('created_at')->orderByDesc('parent_id');
+        }
 
         $parents = (clone $baseQuery)->paginate(10)->withQueryString();
 
@@ -85,6 +106,7 @@ class TaskManageController extends Controller
             ->leftJoin('trainingplan', 'trainingplan.id', '=', 'tasks.training_plan_id')
             ->leftJoin('content', 'content.id', '=', 'tasks.content_id')
             ->leftJoin('offline_trainings', 'offline_trainings.id', '=', 'tasks.offline_training_id')
+            ->leftJoin('task_groups', 'task_groups.id', '=', 'tasks.task_group_id')
             ->whereIn('tasks.parent_type', $allowedTypes)
             ->when($search !== '', fn ($q) => $q->where(function ($w) use ($search) {
                 $w->where('trainingplan.title', 'like', "%{$search}%")
