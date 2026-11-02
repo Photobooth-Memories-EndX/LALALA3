@@ -193,7 +193,7 @@ class ManageRecordFull52ColumnExportTest extends TestCase
         $response->assertStatus(200);
 
         $disposition = (string) $response->headers->get('content-disposition');
-        $this->assertMatchesRegularExpression('/filename="EmployeeNonOWLrecord_\d{2}[A-Za-z]{3}\d{4} at \d{2}\.\d{2}\.\d{2}\.xlsx"/', $disposition);
+        $this->assertMatchesRegularExpression('/filename="EmployeeNonOWLrecord_\d{4}-\d{2}-\d{2} at \d{2}-\d{2}-\d{2}\.xlsx"/', $disposition);
 
         $filePath = $response->getFile()->getPathname();
         $this->assertFileExists($filePath);

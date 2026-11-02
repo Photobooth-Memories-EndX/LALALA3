@@ -12,6 +12,26 @@ use ZipArchive;
 class OfflineRecordExportRevisedTest extends TestCase
 {
     /** @test */
+    public function offline_record_export_filename_matches_exact_convention()
+    {
+        $fileName = OfflineRecordExport::generateFileName();
+
+        $this->assertMatchesRegularExpression(
+            '/^EmployeeNonOWLrecord_\d{4}-\d{2}-\d{2} at \d{2}-\d{2}-\d{2}\.xlsx$/',
+            $fileName,
+            'Filename must match EmployeeNonOWLrecord_YYYY-MM-DD at HH-mm-ss.xlsx'
+        );
+
+        $now = now();
+        $expectedDate = $now->format('Y-m-d');
+        $this->assertStringContainsString("EmployeeNonOWLrecord_{$expectedDate} at ", $fileName);
+        $this->assertStringEndsWith('.xlsx', $fileName);
+
+        $export = new OfflineRecordExport();
+        $this->assertEquals($fileName, $export->getFileName());
+    }
+
+    /** @test */
     public function offline_record_export_headers_have_exact_50_columns_without_source_or_total_recognized_duration()
     {
         $headers = OfflineRecordExport::headers();

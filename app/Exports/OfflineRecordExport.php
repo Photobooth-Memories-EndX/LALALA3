@@ -29,17 +29,8 @@ class OfflineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wi
     public static function generateFileName(): string
     {
         $dt = Carbon::now();
-        $monthMap = [
-            1 => 'Jan', 2 => 'Feb', 3 => 'Mar', 4 => 'Apr',
-            5 => 'Mei', 6 => 'Jun', 7 => 'Jul', 8 => 'Agu',
-            9 => 'Sep', 10 => 'Okt', 11 => 'Nov', 12 => 'Des',
-        ];
-        $day = $dt->format('d');
-        $month = $monthMap[(int) $dt->format('n')] ?? $dt->format('M');
-        $year = $dt->format('Y');
-        $time = $dt->format('H.i.s');
 
-        return "EmployeeNonOWLrecord_{$day}{$month}{$year} at {$time}.xlsx";
+        return sprintf('EmployeeNonOWLrecord_%s at %s.xlsx', $dt->format('Y-m-d'), $dt->format('H-i-s'));
     }
 
     public static function formatHours($val): string
