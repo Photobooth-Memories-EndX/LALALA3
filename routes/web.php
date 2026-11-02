@@ -598,6 +598,8 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
             Route::get('all', [AllRecordController::class, 'index'])->name('all');
             Route::get('all/data', [AllRecordController::class, 'data'])->name('all.data');
             Route::get('all/export', [AllRecordController::class, 'export'])->name('all.export');
+            Route::get('all/export/pdf', [AllRecordController::class, 'exportPdf'])->name('all.export.pdf');
+            Route::get('all/export/csv', [AllRecordController::class, 'exportCsv'])->name('all.export.csv');
             Route::get('all/{source}/{id}/details', [AllRecordController::class, 'details'])->name('all.details');
             Route::get('all/detail/{source}/{id}', [AllRecordController::class, 'details']);
 

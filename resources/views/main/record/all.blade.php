@@ -20,6 +20,49 @@
 
         @include('main.record.components.record-navigation')
 
+        @if(session('error'))
+        <div class="alert alert-warning alert-dismissible fade show rounded-3 shadow-sm mb-4" role="alert">
+            <div class="d-flex align-items-center gap-2">
+                <i class="ti ti-alert-triangle fs-2 text-warning"></i>
+                <div>
+                    {{ session('error') }}
+                </div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        @endif
+
+        <!-- Action Button: Download Dropdown -->
+        <div class="d-flex justify-content-end mb-4" id="btn-export-all-combined">
+            <div class="dropdown">
+                <button type="button" class="btn btn-outline-secondary dropdown-toggle rounded-3 px-3 d-inline-flex align-items-center gap-1.5"
+                        data-bs-toggle="dropdown" data-toggle="dropdown" aria-expanded="false" id="btn-download-dropdown">
+                    <i class="ti ti-download fs-2"></i>
+                    <span>Download</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm border rounded-3 mt-1 py-1" aria-labelledby="btn-download-dropdown" style="min-width: 250px;">
+                    <li>
+                        <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.record.all.export', request()->query()) }}" id="btn-all-export-excel" data-testid="btn-export-all-xlsx" title="Download Offline Record (.xlsx)">
+                            <i class="ti ti-file-spreadsheet text-success fs-3"></i>
+                            <span>Download Offline Record (.xlsx)</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.record.all.export.pdf', request()->query()) }}" id="btn-export-all-pdf">
+                            <i class="ti ti-file-type-pdf text-danger fs-3"></i>
+                            <span>Download PDF (.pdf)</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.record.all.export.csv', request()->query()) }}" id="btn-export-all-csv">
+                            <i class="ti ti-file-type-csv text-primary fs-3"></i>
+                            <span>Download CSV (.csv)</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
         <!-- CLASSIFICATION SUMMARY CARD (COLLAPSIBLE / ASYNC) -->
         <div class="card border-0 shadow-sm rounded-4 mb-4">
             <div class="card-header bg-white border-0 pt-4 pb-2 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
@@ -31,11 +74,6 @@
                 </div>
                 <div class="d-flex align-items-center gap-3">
                     <span class="text-muted small">Combined Online &amp; Offline Training Categories</span>
-                    <!-- Download Excel Button for All Learning Records -->
-                    <a href="{{ route('manage.record.all.export') }}" id="btn-all-export-excel" class="btn btn-sm btn-success rounded-3 px-3 d-inline-flex align-items-center gap-1.5" title="Export All Learning Records to Excel (.xlsx)">
-                        <i class="ti ti-file-spreadsheet fs-3"></i>
-                        <span>Export Excel (.xlsx)</span>
-                    </a>
                 </div>
             </div>
             <div class="card-body p-4 pt-2" id="all-classification-container">
@@ -80,6 +118,61 @@
     .stat-kpi-card:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08) !important;
+    }
+
+    /* Download button styling & OWL blue consistency */
+    #btn-download-dropdown {
+        border-color: #0c5b9e;
+        color: #0c5b9e;
+        background-color: transparent;
+        font-weight: 500;
+        transition: all 0.2s ease-in-out;
+    }
+    #btn-download-dropdown:hover,
+    #btn-download-dropdown:focus,
+    #btn-download-dropdown:active,
+    #btn-download-dropdown.show,
+    #btn-download-dropdown[aria-expanded="true"] {
+        color: #ffffff !important;
+        background-color: #0c5b9e !important;
+        border-color: #0c5b9e !important;
+    }
+
+    /* Download button & dropdown dark mode support */
+    [data-bs-theme="dark"] #btn-download-dropdown,
+    body.dark-mode #btn-download-dropdown,
+    body.theme-dark #btn-download-dropdown {
+        color: #cbd5e1 !important;
+        border-color: rgba(255, 255, 255, 0.2) !important;
+        background-color: transparent !important;
+    }
+
+    [data-bs-theme="dark"] #btn-download-dropdown:hover,
+    body.dark-mode #btn-download-dropdown:hover,
+    body.theme-dark #btn-download-dropdown:hover {
+        color: #ffffff !important;
+        background-color: rgba(255, 255, 255, 0.08) !important;
+        border-color: rgba(255, 255, 255, 0.3) !important;
+    }
+
+    [data-bs-theme="dark"] .manage-record-page .dropdown-menu,
+    body.dark-mode .manage-record-page .dropdown-menu,
+    body.theme-dark .manage-record-page .dropdown-menu {
+        background-color: #1e293b !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    [data-bs-theme="dark"] .manage-record-page .dropdown-item,
+    body.dark-mode .manage-record-page .dropdown-item,
+    body.theme-dark .manage-record-page .dropdown-item {
+        color: #f8fafc !important;
+    }
+
+    [data-bs-theme="dark"] .manage-record-page .dropdown-item:hover,
+    body.dark-mode .manage-record-page .dropdown-item:hover,
+    body.theme-dark .manage-record-page .dropdown-item:hover {
+        background-color: rgba(255, 255, 255, 0.08) !important;
+        color: #38bdf8 !important;
     }
 </style>
 @endsection
@@ -155,6 +248,34 @@ $(function () {
 
     loadAllKpiSummary();
     loadAllClassificationSummary();
+
+    // 3. Download Dropdown & Double-Click Prevention
+    let isExporting = false;
+    $(document).on('click', '#btn-all-export-excel, #btn-export-all-pdf, #btn-export-all-csv', function (e) {
+        if (isExporting) {
+            e.preventDefault();
+            return false;
+        }
+
+        const href = $(this).attr('href');
+        if (!href || href === '#' || href.startsWith('javascript:')) {
+            return;
+        }
+
+        isExporting = true;
+        const $btn = $('#btn-download-dropdown');
+        const $icon = $btn.find('i');
+        const originalIconClass = $icon.attr('class') || 'ti ti-download fs-2';
+
+        $btn.addClass('disabled').css('pointer-events', 'none');
+        $icon.attr('class', 'spinner-border spinner-border-sm');
+
+        setTimeout(function () {
+            isExporting = false;
+            $btn.removeClass('disabled').css('pointer-events', '');
+            $icon.attr('class', originalIconClass);
+        }, 2500);
+    });
 });
 </script>
 @endsection

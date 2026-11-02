@@ -61,6 +61,32 @@ class AllRecordController extends Controller
     }
 
     /**
+     * Download CSV export for All Record.
+     */
+    public function exportCsv(Request $request)
+    {
+        $request->merge([
+            'source' => 'all',
+            'format' => 'csv',
+        ]);
+
+        return app(\App\Http\Controllers\Manage\Record\RecordExportController::class)->download($request);
+    }
+
+    /**
+     * Download PDF export for All Record.
+     */
+    public function exportPdf(Request $request)
+    {
+        $request->merge([
+            'source' => 'all',
+            'format' => 'pdf',
+        ]);
+
+        return app(\App\Http\Controllers\Manage\Record\RecordExportController::class)->download($request);
+    }
+
+    /**
      * Asynchronously return combined KPI summary for dashboard cards.
      */
     public function ajaxSummary(Request $request): JsonResponse
