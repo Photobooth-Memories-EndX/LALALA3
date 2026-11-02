@@ -1179,32 +1179,40 @@ class NonPtkpImportTest extends TestCase
     }
 
     /**
-     * 22. Test simplified single-row header template structure and freeze pane at A2.
+     * 22. Test standardized single-row template structure with NO column and freeze pane at B2.
      */
     public function test_non_ptkp_group_header_ranges_and_service_bond_evaluation_boundary(): void
     {
-        // Canonical template has no category group headers
         $groups = OfflineTrainingExcelSchema::groups();
-        $this->assertEmpty($groups);
+        $this->assertEmpty($groups, 'All group headers must be removed in favor of a single-row header.');
 
         // Verify generated spreadsheet styling
         $spreadsheet = OfflineTrainingExcelSchema::generateTemplateSpreadsheet();
         $sheet = $spreadsheet->getSheet(0);
 
-        // Single-row canonical headers on Row 1 (46 columns: Employee ID through PIC)
-        $this->assertSame('Employee ID', $sheet->getCell('A1')->getValue());
-        $this->assertSame('Course Title', $sheet->getCell('H1')->getValue());
-        $this->assertSame('Bond Amount', $sheet->getCell('AJ1')->getValue());
-        $this->assertSame('Score (L1) - Course', $sheet->getCell('AK1')->getValue());
-        $this->assertSame('Person in Charge (PIC)', $sheet->getCell('AT1')->getValue());
+        // Row 1: 47 Column Headers (NO in A, Employee ID in B through PIC in AU)
+        $this->assertSame('NO', $sheet->getCell('A1')->getValue());
+        $this->assertSame('Employee ID', $sheet->getCell('B1')->getValue());
+        $this->assertSame('Course Title', $sheet->getCell('I1')->getValue());
+        $this->assertSame('Bond Amount', $sheet->getCell('AK1')->getValue());
+        $this->assertSame('Score (L1) - Course', $sheet->getCell('AL1')->getValue());
+        $this->assertSame('Person in Charge (PIC)', $sheet->getCell('AU1')->getValue());
 
-        // Freeze pane is A2
-        $this->assertSame('A2', $sheet->getFreezePane());
+        // Row 2: Sample row with NO = 1
+        $this->assertEquals(1, $sheet->getCell('A2')->getValue());
+        $this->assertSame('104921', $sheet->getCell('B2')->getValue());
 
-        // Auto filter covers A1:AT1
-        $this->assertSame('A1:AT1', $sheet->getAutoFilter()->getRange());
+        // Rows 3..7: Sequence numbers 2..6 in Column A
+        $this->assertEquals(2, $sheet->getCell('A3')->getValue());
+        $this->assertEquals(6, $sheet->getCell('A7')->getValue());
 
-        // No merged cells on Row 1
-        $this->assertEmpty($sheet->getMergeCells());
+        // Freeze pane is B2 (Row 1 header and Column A frozen)
+        $this->assertSame('B2', $sheet->getFreezePane());
+
+        // Auto filter covers A1:AU1
+        $this->assertSame('A1:AU1', $sheet->getAutoFilter()->getRange());
+
+        // 0 Merged cell ranges (no group header merged cells)
+        $this->assertCount(0, $sheet->getMergeCells());
     }
 }

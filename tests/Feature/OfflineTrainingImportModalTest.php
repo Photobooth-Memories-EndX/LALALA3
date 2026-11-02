@@ -184,18 +184,18 @@ class OfflineTrainingImportModalTest extends TestCase
         $this->assertEquals('Instructions', $spreadsheet->getSheet(1)->getTitle());
         $this->assertEquals(0, $spreadsheet->getActiveSheetIndex());
 
-        // Verify freeze pane at A2 (single-row header frozen, data starts row 2)
+        // Verify freeze pane at B2 (Row 1 header and Column A 'NO' frozen)
         $sheet = $spreadsheet->getSheet(0);
-        $this->assertEquals('A2', $sheet->getFreezePane());
+        $this->assertEquals('B2', $sheet->getFreezePane());
     }
 
     /**
-     * 6. Test template has single-row header, 0 groups, and 46 canonical columns.
+     * 6. Test template has single-row header (NO column + 46 canonical columns).
      */
     public function test_template_seven_parent_groups_and_forty_four_columns(): void
     {
         $groups = OfflineTrainingExcelSchema::groups();
-        $this->assertEmpty($groups);
+        $this->assertEmpty($groups, 'All group headers must be removed.');
 
         $totalCols = OfflineTrainingExcelSchema::totalColumns();
         $this->assertEquals(46, $totalCols);
@@ -203,24 +203,29 @@ class OfflineTrainingImportModalTest extends TestCase
         $spreadsheet = OfflineTrainingExcelSchema::generateTemplateSpreadsheet();
         $sheet = $spreadsheet->getSheet(0);
 
-        // Row 1 Canonical Headers Check (46 columns: Employee ID through PIC)
-        $this->assertEquals('Employee ID', $sheet->getCell('A1')->getValue());
-        $this->assertEquals('Employee Name', $sheet->getCell('B1')->getValue());
-        $this->assertEquals('Grade', $sheet->getCell('C1')->getValue());
-        $this->assertEquals('Job Position', $sheet->getCell('D1')->getValue());
-        $this->assertEquals('Course Title', $sheet->getCell('H1')->getValue());
-        $this->assertEquals('Provider', $sheet->getCell('R1')->getValue());
-        $this->assertEquals('Sub Provider', $sheet->getCell('S1')->getValue());
-        $this->assertEquals('Bond Status', $sheet->getCell('AG1')->getValue());
-        $this->assertEquals('Score (L2)', $sheet->getCell('AL1')->getValue());
-        $this->assertEquals('L2 Status', $sheet->getCell('AM1')->getValue());
-        $this->assertEquals('Score (L3)', $sheet->getCell('AN1')->getValue());
-        $this->assertEquals('L3 Status', $sheet->getCell('AO1')->getValue());
-        $this->assertEquals('Certificate Availability', $sheet->getCell('AP1')->getValue());
-        $this->assertEquals('Certificate Institution', $sheet->getCell('AQ1')->getValue());
-        $this->assertEquals('Certificate Issued Date', $sheet->getCell('AR1')->getValue());
-        $this->assertEquals('Certificate Expired Date', $sheet->getCell('AS1')->getValue());
-        $this->assertEquals('Person in Charge (PIC)', $sheet->getCell('AT1')->getValue());
+        // Row 1 Column Headers Check (47 columns: NO in A, Employee ID in B through PIC in AU)
+        $this->assertEquals('NO', $sheet->getCell('A1')->getValue());
+        $this->assertEquals('Employee ID', $sheet->getCell('B1')->getValue());
+        $this->assertEquals('Employee Name', $sheet->getCell('C1')->getValue());
+        $this->assertEquals('Grade', $sheet->getCell('D1')->getValue());
+        $this->assertEquals('Job Position', $sheet->getCell('E1')->getValue());
+        $this->assertEquals('Course Title', $sheet->getCell('I1')->getValue());
+        $this->assertEquals('Provider', $sheet->getCell('S1')->getValue());
+        $this->assertEquals('Sub Provider', $sheet->getCell('T1')->getValue());
+        $this->assertEquals('Bond Status', $sheet->getCell('AH1')->getValue());
+        $this->assertEquals('Score (L2)', $sheet->getCell('AM1')->getValue());
+        $this->assertEquals('L2 Status', $sheet->getCell('AN1')->getValue());
+        $this->assertEquals('Score (L3)', $sheet->getCell('AO1')->getValue());
+        $this->assertEquals('L3 Status', $sheet->getCell('AP1')->getValue());
+        $this->assertEquals('Certificate Availability', $sheet->getCell('AQ1')->getValue());
+        $this->assertEquals('Certificate Institution', $sheet->getCell('AR1')->getValue());
+        $this->assertEquals('Certificate Issued Date', $sheet->getCell('AS1')->getValue());
+        $this->assertEquals('Certificate Expired Date', $sheet->getCell('AT1')->getValue());
+        $this->assertEquals('Person in Charge (PIC)', $sheet->getCell('AU1')->getValue());
+
+        // Row 2 Sample Data Check
+        $this->assertEquals(1, $sheet->getCell('A2')->getValue());
+        $this->assertEquals('104921', $sheet->getCell('B2')->getValue());
     }
 
     /**
@@ -279,7 +284,8 @@ class OfflineTrainingImportModalTest extends TestCase
 
         $this->assertStringContainsString('KP OWL LMS', $content);
         $this->assertStringContainsString('Non KP OWL Offline Training Import Guidelines', $content);
-        $this->assertStringContainsString('Simplified Single-Row Header', $content);
+        $this->assertStringContainsString('47 Columns', $content);
+        $this->assertStringContainsString('NO', $content);
         $this->assertStringContainsString('Participant Records', $content);
         $this->assertStringContainsString('Event Grouping', $content);
     }
@@ -311,24 +317,14 @@ class OfflineTrainingImportModalTest extends TestCase
 
     /**
      * 11. Critical Round-Trip Test:
-     *     Generate template -> Fill sample row -> Upload to preview -> Assert valid parsing with 0 unknown headers.
+     *     Generate template -> Upload generated template (with prefilled example row) -> Assert valid parsing with 0 unknown headers.
      */
     public function test_critical_round_trip_template_generation_and_preview(): void
     {
-        // 1. Generate template spreadsheet
+        // 1. Generate template spreadsheet (Row 2 is prefilled with canonical example, Rows 3..7 have sequence numbers)
         $spreadsheet = OfflineTrainingExcelSchema::generateTemplateSpreadsheet();
-        $sheet = $spreadsheet->getSheet(0);
 
-        // 2. Fill row 2 with canonical schema examples (single-row header, data on row 2+)
-        foreach (OfflineTrainingExcelSchema::columns() as $colIdx => $colDef) {
-            $colLetter = Coordinate::stringFromColumnIndex($colIdx);
-            $exampleVal = $colDef['example'] ?? null;
-            if ($exampleVal !== null && $exampleVal !== '') {
-                $sheet->setCellValue($colLetter . '2', $exampleVal);
-            }
-        }
-
-        // 3. Save to temp file
+        // 2. Save directly to temp file
         $tempPath = tempnam(sys_get_temp_dir(), 'owl_modal_test_') . '.xlsx';
         $writer = new Xlsx($spreadsheet);
         $writer->save($tempPath);

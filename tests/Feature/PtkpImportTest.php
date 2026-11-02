@@ -160,19 +160,25 @@ class PtkpImportTest extends TestCase
         $this->assertNotContains('Status', $headerStrings);
         $this->assertNotContains('No', $headerStrings);
 
-        // Verify single-row header structure on Row 1
-        $this->assertSame('Employee ID', $sheet->getCell('A1')->getValue());
-        $this->assertSame('Course Title', $sheet->getCell('H1')->getValue());
-        $this->assertSame('Person in Charge (PIC)', $sheet->getCell('AT1')->getValue());
+        // Verify single-row header structure with NO column
+        $this->assertSame('NO', $sheet->getCell('A1')->getValue());
+        $this->assertSame('Employee ID', $sheet->getCell('B1')->getValue());
+        $this->assertSame('Course Title', $sheet->getCell('I1')->getValue());
+        $this->assertSame('Person in Charge (PIC)', $sheet->getCell('AU1')->getValue());
 
-        // Freeze pane must be A2
-        $this->assertSame('A2', $sheet->getFreezePane());
+        // Verify example and sequence numbers
+        $this->assertEquals(1, $sheet->getCell('A2')->getValue());
+        $this->assertEquals(2, $sheet->getCell('A3')->getValue());
+        $this->assertEquals(6, $sheet->getCell('A7')->getValue());
 
-        // Auto filter must cover A1:AT1
-        $this->assertSame('A1:AT1', $sheet->getAutoFilter()->getRange());
+        // Freeze pane must be B2
+        $this->assertSame('B2', $sheet->getFreezePane());
 
-        // No merged cells on Row 1
-        $this->assertEmpty($sheet->getMergeCells());
+        // Auto filter must cover A1:AU1
+        $this->assertSame('A1:AU1', $sheet->getAutoFilter()->getRange());
+
+        // 0 merged cell ranges (group headers completely removed)
+        $this->assertCount(0, $sheet->getMergeCells());
     }
 
     public function test_template_download_stream_response(): void
@@ -215,8 +221,9 @@ class PtkpImportTest extends TestCase
             $this->assertNotNull($spreadsheet);
             $sheet = $spreadsheet->getSheetByName(PtkpExcelSchema::DATA_SHEET_TITLE);
             $this->assertNotNull($sheet);
-            $this->assertSame('Employee ID', $sheet->getCell('A1')->getValue());
-            $this->assertSame('Person in Charge (PIC)', $sheet->getCell('AT1')->getValue());
+            $this->assertSame('NO', $sheet->getCell('A1')->getValue());
+            $this->assertSame('Employee ID', $sheet->getCell('B1')->getValue());
+            $this->assertSame('Person in Charge (PIC)', $sheet->getCell('AU1')->getValue());
 
             // Test 5 — Import Compatibility
             $uploaded = new UploadedFile($tempPath, 'PTKP_OWL_Import_Template.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', null, true);
@@ -226,7 +233,7 @@ class PtkpImportTest extends TestCase
 
             $this->assertSame('single_row', $preview['format']);
             $this->assertTrue($preview['header_check']['can_proceed']);
-            $this->assertSame(46, $preview['header_check']['valid_count']);
+            $this->assertSame(47, $preview['header_check']['valid_count']);
             $this->assertSame(0, $preview['header_check']['invalid_count']);
         } finally {
             if (file_exists($tempPath)) {

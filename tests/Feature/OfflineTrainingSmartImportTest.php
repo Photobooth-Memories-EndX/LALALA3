@@ -673,15 +673,16 @@ class OfflineTrainingSmartImportTest extends TestCase
         $this->assertNotNull($sheet);
 
         // Verify headers & freeze pane
-        $this->assertEquals('Employee ID', $sheet->getCell('A1')->getValue());
-        $this->assertEquals('Employee Name', $sheet->getCell('B1')->getValue());
-        $this->assertEquals('Course Title', $sheet->getCell('H1')->getValue());
-        $this->assertEquals('Person in Charge (PIC)', $sheet->getCell('AT1')->getValue());
+        $this->assertEquals('NO', $sheet->getCell('A1')->getValue());
+        $this->assertEquals('Employee ID', $sheet->getCell('B1')->getValue());
+        $this->assertEquals('Employee Name', $sheet->getCell('C1')->getValue());
+        $this->assertEquals('Course Title', $sheet->getCell('I1')->getValue());
+        $this->assertEquals('Person in Charge (PIC)', $sheet->getCell('AU1')->getValue());
 
-        // Verify freeze pane is A2 (Row 1 frozen)
-        $this->assertEquals('A2', $sheet->getFreezePane());
+        // Verify freeze pane is B2 (Row 1 header and Column A frozen)
+        $this->assertEquals('B2', $sheet->getFreezePane());
 
-        // 3. Fill Row 2 with valid business data
+        // 3. Fill Row 2 with valid business data (replacing sample row)
         $courseName = 'Round Trip Training 2026';
         $batch = 'Batch RT1';
         $participantName = 'Round Trip User';
@@ -698,7 +699,8 @@ class OfflineTrainingSmartImportTest extends TestCase
             'employee_id' => 'EMP_RT_01',
         ]);
 
-        $colIdx = 1;
+        $sheet->setCellValue('A2', 1);
+        $colIdx = 2;
         foreach ($rowData as $val) {
             $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIdx);
             $sheet->setCellValue($colLetter . '2', $val);

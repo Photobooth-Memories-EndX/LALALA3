@@ -37,7 +37,7 @@ class PtkpExcelSchema
     }
 
     /**
-     * Group definitions (empty array for simplified single-row header template).
+     * Group definitions (empty array: all group headers are removed in favor of single-row header).
      */
     public static function groups(): array
     {
@@ -45,57 +45,58 @@ class PtkpExcelSchema
     }
 
     /**
-     * Column widths matching the 46 canonical columns (A to AT).
+     * Column widths matching the 47 Excel output columns (A to AU), starting with NO at A.
      */
     public static function columnWidths(): array
     {
         return [
-            'A'  => 16, // Employee ID
-            'B'  => 30, // Employee Name
-            'C'  => 12, // Grade
-            'D'  => 25, // Job Position
-            'E'  => 20, // Team
-            'F'  => 25, // Department
-            'G'  => 25, // Company
-            'H'  => 35, // Course Title
-            'I'  => 25, // Sub Course Title
-            'J'  => 15, // Type
-            'K'  => 18, // Category
-            'L'  => 12, // Level
-            'M'  => 12, // Batch
-            'N'  => 25, // Main Classification
-            'O'  => 25, // Sub Classification
-            'P'  => 18, // Delivery Method
-            'Q'  => 20, // Sub Delivery Method
-            'R'  => 18, // Provider
-            'S'  => 18, // Sub Provider
-            'T'  => 25, // Provider Name
-            'U'  => 20, // Venue
-            'V'  => 22, // Instructor
-            'W'  => 16, // Learning Hours
-            'X'  => 14, // % Progress
-            'Y'  => 14, // Start Date
-            'Z'  => 14, // End Date
-            'AA' => 14, // Start Time
-            'AB' => 14, // End Time
-            'AC' => 16, // Record Month
-            'AD' => 15, // Requirement
-            'AE' => 14, // Attendance
-            'AF' => 25, // Attendance Reason
-            'AG' => 14, // Bond Status
-            'AH' => 16, // Bond Duration
-            'AI' => 15, // Bond End Date
-            'AJ' => 18, // Bond Amount
-            'AK' => 20, // Score (L1) - Course
-            'AL' => 14, // Score (L2)
-            'AM' => 14, // L2 Status
-            'AN' => 14, // Score (L3)
-            'AO' => 14, // L3 Status
-            'AP' => 22, // Certificate Availability
-            'AQ' => 24, // Certificate Institution
-            'AR' => 22, // Certificate Issued Date
-            'AS' => 22, // Certificate Expired Date
-            'AT' => 24, // Person in Charge (PIC)
+            'A'  => 8,  // NO
+            'B'  => 16, // Employee ID
+            'C'  => 30, // Employee Name
+            'D'  => 12, // Grade
+            'E'  => 25, // Job Position
+            'F'  => 20, // Team
+            'G'  => 25, // Department
+            'H'  => 25, // Company
+            'I'  => 35, // Course Title
+            'J'  => 25, // Sub Course Title
+            'K'  => 15, // Type
+            'L'  => 18, // Category
+            'M'  => 12, // Level
+            'N'  => 12, // Batch
+            'O'  => 25, // Main Classification
+            'P'  => 25, // Sub Classification
+            'Q'  => 18, // Delivery Method
+            'R'  => 20, // Sub Delivery Method
+            'S'  => 18, // Provider
+            'T'  => 18, // Sub Provider
+            'U'  => 25, // Provider Name
+            'V'  => 20, // Venue
+            'W'  => 22, // Instructor
+            'X'  => 16, // Learning Hours
+            'Y'  => 14, // % Progress
+            'Z'  => 14, // Start Date
+            'AA' => 14, // End Date
+            'AB' => 14, // Start Time
+            'AC' => 14, // End Time
+            'AD' => 16, // Record Month
+            'AE' => 15, // Requirement
+            'AF' => 14, // Attendance
+            'AG' => 25, // Attendance Reason
+            'AH' => 14, // Bond Status
+            'AI' => 16, // Bond Duration
+            'AJ' => 15, // Bond End Date
+            'AK' => 18, // Bond Amount
+            'AL' => 20, // Score (L1) - Course
+            'AM' => 14, // Score (L2)
+            'AN' => 14, // L2 Status
+            'AO' => 14, // Score (L3)
+            'AP' => 14, // L3 Status
+            'AQ' => 22, // Certificate Availability
+            'AR' => 24, // Certificate Institution
+            'AS' => 22, // Certificate Issued Date
+            'AT' => 22, // Certificate Expired Date
+            'AU' => 24, // Person in Charge (PIC)
         ];
     }
 
@@ -152,6 +153,7 @@ class PtkpExcelSchema
                                str_contains($row1Joined, 'judul');
 
         $isLegacyTwoRow = !$row1HasCourseHeader && (
+            str_contains($r1Col1, 'participant profile') ||
             str_contains($r1Col3, 'participant profile') ||
             str_contains($r1Col3, 'job information') ||
             $r1Col1 === 'status' ||

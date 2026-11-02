@@ -675,14 +675,14 @@ class OfflineTrainingExcelSchema
      * Grouped Row 1 headers array (43 elements), preserved for legacy format compatibility.
      */
     /**
-     * Parent grouping specification for standardized 48 columns (or legacy 44).
+     * Parent grouping specification for standardized 46 columns (or legacy 44).
      */
     public static function groups(?string $type = null): array
     {
         if ($type === 'legacy') {
             return self::legacyGroups();
         }
-        return [];
+        return PtkpExcelSchema::groups();
     }
 
     /**
@@ -776,14 +776,18 @@ class OfflineTrainingExcelSchema
 
     public static function groupedRow1Headers(): array
     {
-        $groups = self::legacyGroups();
+        $groups = self::groups();
+        if (empty($groups)) {
+            $groups = self::legacyGroups();
+        }
         $groupStartMap = [];
         foreach ($groups as $group) {
             $groupStartMap[$group['start_col']] = $group['title'];
         }
 
+        $totalCols = self::totalColumns();
         $row1 = [];
-        for ($col = 1; $col <= 48; $col++) {
+        for ($col = 1; $col <= $totalCols; $col++) {
             $colLetter = Coordinate::stringFromColumnIndex($col);
             $row1[] = $groupStartMap[$colLetter] ?? '';
         }
@@ -861,20 +865,20 @@ class OfflineTrainingExcelSchema
             return self::legacyColumnFormats();
         }
         return [
-            'A'  => \PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_TEXT,
-            'W'  => '0.##" h"',
-            'X'  => '0%',
-            'Y'  => 'yyyy-mm-dd',
+            'B'  => \PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_TEXT,
+            'X'  => '0.##" h"',
+            'Y'  => '0%',
             'Z'  => 'yyyy-mm-dd',
-            'AA' => 'hh:mm:ss',
+            'AA' => 'yyyy-mm-dd',
             'AB' => 'hh:mm:ss',
-            'AH' => '0',
-            'AI' => 'yyyy-mm-dd',
-            'AJ' => '"Rp"#,##0',
-            'AL' => '0',
-            'AN' => '0.##',
-            'AR' => 'yyyy-mm-dd',
+            'AC' => 'hh:mm:ss',
+            'AI' => '0',
+            'AJ' => 'yyyy-mm-dd',
+            'AK' => '"Rp"#,##0',
+            'AM' => '0',
+            'AO' => '0.##',
             'AS' => 'yyyy-mm-dd',
+            'AT' => 'yyyy-mm-dd',
         ];
     }
 
@@ -1012,6 +1016,7 @@ class OfflineTrainingExcelSchema
         $isTwoRow = !$row1HasCourseHeader && (
             $r1Col1 === 'status' ||
             $r1Col1 === 'general' ||
+            str_contains($r1Col1, 'participant profile') ||
             str_contains($r1Col3, 'participant profile') ||
             str_contains($r1Col3, 'job information') ||
             str_contains($row1Joined, 'participant profile') ||
@@ -1795,18 +1800,42 @@ class OfflineTrainingExcelSchema
     }
 
     /**
-     * Apply simplified canonical 46-column single-row header styles on Row 1 (A1 to AT1).
-     * No group headers, no merged cells, freeze pane at A2, auto filter on A1:AT1.
+     * Apply standardized 47-column single-row header styles.
+     * Row 1: Header NO (Col A) + 46 Canonical Column Headers (Cols B..AU). No group headers, no merged cells.
+     * Row 2: Example data row (NO = 1, followed by canonical example values).
+     * Rows 3..7: Sequential numbers 2, 3, 4, 5, 6 with empty styled cells.
+     * Freeze panes at B2, AutoFilter on A1:AU1.
      */
     public static function applyDataSheetHeaderStyles(Worksheet $sheet): void
     {
         $columns = self::canonicalColumns();
-        $totalCols = count($columns);
-        $lastColLetter = Coordinate::stringFromColumnIndex($totalCols);
+        $totalCols = count($columns) + 1; // 47 total columns (NO + 46 canonical columns)
+        $lastColLetter = Coordinate::stringFromColumnIndex($totalCols); // AU
 
-        // 1. Row 1: Single Main Column Headers
+        // 1. Row 1: Single Main Column Headers (No Group Headers, No Merged Cells)
+        // Col A (1): NO
+        $sheet->setCellValue('A1', 'NO');
+        $sheet->getStyle('A1')->applyFromArray([
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 10],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical'   => Alignment::VERTICAL_CENTER,
+            ],
+            'fill' => [
+                'fillType'   => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '1E293B'], // Dark slate header
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color'       => ['rgb' => '475569'],
+                ],
+            ],
+        ]);
+
+        // Cols B..AU (2..47): 46 Canonical Column Headers
         foreach ($columns as $idx => $col) {
-            $letter = Coordinate::stringFromColumnIndex($idx);
+            $letter = Coordinate::stringFromColumnIndex($idx + 1);
             $sheet->setCellValue("{$letter}1", $col['header']);
             $sheet->getStyle("{$letter}1")->applyFromArray([
                 'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 10],
@@ -1829,9 +1858,28 @@ class OfflineTrainingExcelSchema
         }
         $sheet->getRowDimension(1)->setRowHeight(28);
 
-        // 2. Row 2: Example Data Row (Values start immediately on Row 2)
+        // 2. Row 2: Example Data Row (NO = 1, followed by canonical example values)
+        $sheet->setCellValueExplicit('A2', 1, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC);
+        $sheet->getStyle('A2')->applyFromArray([
+            'font' => ['color' => ['rgb' => '334155'], 'size' => 9],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical'   => Alignment::VERTICAL_CENTER,
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color'       => ['rgb' => 'CBD5E1'],
+                ],
+            ],
+            'fill' => [
+                'fillType'   => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => 'F8FAFC'],
+            ],
+        ]);
+
         foreach ($columns as $idx => $col) {
-            $letter = Coordinate::stringFromColumnIndex($idx);
+            $letter = Coordinate::stringFromColumnIndex($idx + 1);
             $exampleVal = (string) ($col['example'] ?? '');
             $sheet->setCellValueExplicit("{$letter}2", $exampleVal, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
             $sheet->getStyle("{$letter}2")->applyFromArray([
@@ -1851,41 +1899,82 @@ class OfflineTrainingExcelSchema
         }
         $sheet->getRowDimension(2)->setRowHeight(20);
 
-        // 3. Set column widths
+        // 3. Rows 3 through 7: Empty Data Rows with sequential numbers 2, 3, 4, 5, 6
+        for ($r = 3; $r <= 7; $r++) {
+            $seq = $r - 1; // 2, 3, 4, 5, 6
+            $sheet->setCellValueExplicit("A{$r}", $seq, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC);
+            $sheet->getStyle("A{$r}")->applyFromArray([
+                'font' => ['color' => ['rgb' => '64748B'], 'size' => 9],
+                'alignment' => [
+                    'horizontal' => Alignment::HORIZONTAL_CENTER,
+                    'vertical'   => Alignment::VERTICAL_CENTER,
+                ],
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => Border::BORDER_THIN,
+                        'color'       => ['rgb' => 'E2E8F0'],
+                    ],
+                ],
+                'fill' => [
+                    'fillType'   => Fill::FILL_SOLID,
+                    'startColor' => ['rgb' => $r % 2 === 0 ? 'F8FAFC' : 'FFFFFF'],
+                ],
+            ]);
+
+            for ($c = 2; $c <= $totalCols; $c++) {
+                $letter = Coordinate::stringFromColumnIndex($c);
+                $sheet->getStyle("{$letter}{$r}")->applyFromArray([
+                    'borders' => [
+                        'allBorders' => [
+                            'borderStyle' => Border::BORDER_THIN,
+                            'color'       => ['rgb' => 'E2E8F0'],
+                        ],
+                    ],
+                    'fill' => [
+                        'fillType'   => Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => $r % 2 === 0 ? 'F8FAFC' : 'FFFFFF'],
+                    ],
+                ]);
+            }
+            $sheet->getRowDimension($r)->setRowHeight(20);
+        }
+
+        // 4. Set column widths
         foreach (self::columnWidths() as $colLetter => $width) {
             $sheet->getColumnDimension($colLetter)->setWidth($width);
         }
 
-        // 4. Freeze panes directly below the single header row at A2
-        $sheet->freezePane('A2');
+        // 5. Freeze panes at B2 (sticky NO column A, sticky header Row 1)
+        $sheet->freezePane('B2');
 
-        // 5. Auto filter covering all 46 columns (A1:AT1)
+        // 6. Auto filter covering all 47 columns on Row 1 (A1:AU1)
         $sheet->setAutoFilter("A1:{$lastColLetter}1");
     }
 
     /**
-     * Populate the Instructions worksheet with guidelines for simplified 46-column Non-PTKP import.
+     * Populate the Instructions worksheet with guidelines for standardized 47-column Non-PTKP import.
      */
     public static function populateInstructionsSheet(Worksheet $instructionSheet): void
     {
-        $instructionSheet->setCellValue('A1', 'KP OWL LMS - Non KP OWL Offline Training Import Guidelines (46 Columns)');
+        $instructionSheet->setCellValue('A1', 'KP OWL LMS - Non KP OWL Offline Training Import Guidelines (47 Columns)');
         $instructionSheet->getStyle('A1')->getFont()->setBold(true)->setSize(14)->getColor()->setRGB('0F172A');
         $instructionSheet->getRowDimension(1)->setRowHeight(30);
 
         $instructions = [
-            ['1. Simplified Single-Row Header', 'The template uses a single main header row on Row 1 without category groupings or merge cells. Data starts directly on Row 2.'],
-            ['2. Employee ID', 'Mandatory employee ID / NIP at Column 1 (A). LMS user accounts are linked automatically; external participants without LMS accounts are preserved as WARNING.'],
-            ['3. Participant Records', 'Employee Name, Grade, Job Position, Team, and Department are synchronized with LMS users when available. Each row represents a single participant record.'],
-            ['4. Course Title', 'Mandatory training title. Rows with empty Course Title will be rejected (INVALID status).'],
-            ['5. Company Information', 'Any non-empty company is accepted. Empty company triggers non-blocking review (INVALID COMPANY status).'],
-            ['6. Provider & Sub Provider', 'Training provider categories (Internal / External, Vendor, etc.) and provider name.'],
-            ['7. Attendance & Bond', 'Attendance (Yes/No), attendance reason, service bond duration, bond completion date, and bond amount.'],
-            ['8. Kirkpatrick Evaluations', 'Score (L1) Course, Score (L2), L2 Status, Score (L3), and L3 Status.'],
-            ['9. Certificate Columns', 'Certificate Availability (Yes/No), Institution, Issued Date, and Expired Date.'],
-            ['10. Person in Charge (PIC)', 'Person in Charge (PIC) is located at the final column (Column 46 / AT).'],
-            ['11. Date & Time Format', 'Use YYYY-MM-DD for dates and HH:mm or HH:mm:ss for times.'],
-            ['12. Duplicate Prevention', 'Records with identical participant and training combinations within the file or existing database records will be skipped automatically (DUPLICATE status).'],
-            ['13. Event Grouping', 'Participants in the same course, batch, dates, type, and venue are grouped into a single training session automatically.'],
+            ['1. Template Structure', 'The template uses a single header row on Row 1 (47 columns). Column A (NO) is a visual sequence number only. Data entry begins on Row 2 (Employee ID through PIC).'],
+            ['2. "NO" Column', 'Column A contains sequential row numbering (1, 2, 3...) for user reference. It is not saved to the database and does not affect data validation.'],
+            ['3. Employee ID', 'Mandatory employee ID / NIP at Column 2 (B). LMS user accounts are linked automatically; external participants without LMS accounts are preserved as WARNING.'],
+            ['4. Participant Records', 'Employee Name, Grade, Job Position, Team, and Department are synchronized with LMS users when available. Each row represents a single participant record.'],
+            ['5. Course Title', 'Mandatory training title. Rows with empty Course Title will be rejected (INVALID status).'],
+            ['6. Company Information', 'Any non-empty company is accepted. Empty company triggers non-blocking review (INVALID COMPANY status).'],
+            ['7. Provider & Sub Provider', 'Training provider categories (Internal / External, Vendor, etc.) and provider name.'],
+            ['8. Attendance & Bond', 'Attendance (Yes/No), attendance reason, service bond duration, bond completion date, and bond amount.'],
+            ['9. Kirkpatrick Evaluations', 'Score (L1) Course, Score (L2), L2 Status, Score (L3), and L3 Status.'],
+            ['10. Certificate Columns', 'Certificate Availability (Yes/No), Institution, Issued Date, and Expired Date.'],
+            ['11. Person in Charge (PIC)', 'Person in Charge (PIC) is located at the final column (Column 47 / AU).'],
+            ['12. Date & Time Format', 'Use YYYY-MM-DD for dates and HH:mm or HH:mm:ss for times.'],
+            ['13. Duplicate Prevention', 'Records with identical participant and training combinations within the file or existing database records will be skipped automatically (DUPLICATE status).'],
+            ['14. Event Grouping', 'Participants in the same course, batch, dates, type, and venue are grouped into a single training session automatically.'],
         ];
 
         $row = 3;
