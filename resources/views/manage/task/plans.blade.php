@@ -342,11 +342,19 @@
                                     <td class="text-muted text-nowrap" style="font-size: 0.85rem;" title="{{ $row->created_at ? \Carbon\Carbon::parse($row->created_at)->format('d M Y H:i') : '' }}">
                                         {{ $row->created_at ? \Carbon\Carbon::parse($row->created_at)->format('d M Y') : '—' }}
                                     </td>
-                                    <td class="text-end">
-                                        <a href="{{ route('manage.task.parent', ['parentType' => $row->parent_type, 'parentId' => $row->parent_id ?? 0]) }}"
-                                           class="btn btn-outline-primary rounded-3">
-                                            Manage Tasks <i class="ti ti-arrow-right ms-1"></i>
-                                        </a>
+                                    <td class="text-end text-nowrap">
+                                        <div class="d-inline-flex align-items-center gap-1">
+                                            <a href="{{ route('manage.task.parent', ['parentType' => $row->parent_type, 'parentId' => $row->parent_id ?? 0]) }}"
+                                               class="btn btn-outline-primary rounded-3">
+                                                Manage Tasks <i class="ti ti-arrow-right ms-1"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-outline-secondary container-menu-btn" title="Actions" style="padding: 0.35rem 0.65rem;"
+                                                    data-name="{{ $row->parent_name }}"
+                                                    data-manage-url="{{ route('manage.task.parent', ['parentType' => $row->parent_type, 'parentId' => $row->parent_id ?? 0]) }}"
+                                                    data-delete-url="{{ route('manage.task.container.destroy', ['parentType' => $row->parent_type, 'parentId' => $row->parent_id ?? 0]) }}">
+                                                <i class="ti ti-dots fs-2" style="font-size: 1.25rem; line-height: 1;"></i>
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             @empty
@@ -370,6 +378,12 @@
                     </div>
                 @endif
 
+            </div>
+
+            {{-- Global container actions menu (outside table to avoid clipping) --}}
+            <div id="containerActionsMenu" class="dropdown-menu shadow-lg border rounded-3 py-1" style="display:none; position:fixed; z-index:1080; min-width:180px;">
+                <span class="dropdown-header text-uppercase small fw-bold text-muted px-3 py-2">COURSE ACTIONS</span>
+                <div id="containerActionsItems"></div>
             </div>
 
         </div>
@@ -761,6 +775,79 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     }
+
+    // Container action menu (3 dots)
+    (function () {
+        var menu = document.getElementById('containerActionsMenu');
+        var items = document.getElementById('containerActionsItems');
+        var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        var csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '{{ csrf_token() }}';
+        var openBtn = null;
+
+        function closeMenu() {
+            if (!menu) return;
+            menu.style.display = 'none';
+            openBtn = null;
+            document.removeEventListener('click', outsideClick);
+        }
+
+        function outsideClick(e) {
+            if (openBtn && !menu.contains(e.target) && !openBtn.contains(e.target)) {
+                closeMenu();
+            }
+        }
+
+        document.querySelectorAll('.container-menu-btn').forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                if (openBtn === btn) {
+                    closeMenu();
+                    return;
+                }
+                if (openBtn) closeMenu();
+                openBtn = btn;
+
+                var deleteUrl = btn.dataset.deleteUrl;
+                var manageUrl = btn.dataset.manageUrl;
+                var name = btn.dataset.name || 'this course';
+
+                var h = '';
+                h += '<a href="' + manageUrl + '" class="dropdown-item d-flex align-items-center py-2 px-3 text-primary">';
+                h += '<i class="ti ti-arrow-right me-2 text-primary fs-3"></i><span>Manage Tasks</span>';
+                h += '</a>';
+
+                h += '<div class="dropdown-divider my-1"></div>';
+
+                h += '<form action="' + deleteUrl + '" method="POST" class="m-0" onsubmit="return confirm(\'Move \"' + name.replace(/'/g, "\\'") + '\" to trash? You can restore it later from the Trash page.\')">';
+                h += '<input type="hidden" name="_token" value="' + csrfToken + '">';
+                h += '<input type="hidden" name="_method" value="DELETE">';
+                h += '<button type="submit" class="dropdown-item d-flex align-items-center text-danger py-2 px-3">';
+                h += '<i class="ti ti-trash me-2 text-danger fs-3"></i><span>Move to Trash</span>';
+                h += '</button>';
+                h += '</form>';
+
+                items.innerHTML = h;
+
+                var r = btn.getBoundingClientRect();
+                menu.style.display = 'block';
+                var mw = menu.offsetWidth, mh = menu.offsetHeight;
+                var left = Math.min(r.right - mw, window.innerWidth - mw - 8);
+                var top = r.bottom + 4;
+                if (top + mh > window.innerHeight - 8) {
+                    top = Math.max(8, r.top - mh - 4);
+                }
+                menu.style.left = Math.max(8, left) + 'px';
+                menu.style.top = Math.max(8, top) + 'px';
+
+                setTimeout(function () {
+                    document.addEventListener('click', outsideClick);
+                }, 0);
+            });
+        });
+
+        window.addEventListener('resize', closeMenu);
+        window.addEventListener('scroll', closeMenu, true);
+    })();
 });
 </script>
 @endsection

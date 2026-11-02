@@ -13,6 +13,8 @@ use App\Models\TaskField;
 use App\Models\TaskSubmission;
 use App\Models\TrainingPlan;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -133,7 +135,12 @@ class TaskManageController extends Controller
             ->get()
             ->mapWithKeys(fn ($r) => ["{$r->parent_type}:{$r->parent_id}" => $r->cnt]);
 
-        $trashCount = Task::onlyTrashed()->count();
+        $trashCourseCount = TrainingPlan::onlyTrashed()->count()
+            + Content::onlyTrashed()->count()
+            + OfflineTraining::onlyTrashed()->count()
+            + (Schema::hasColumn('task_groups', 'deleted_at') ? TaskGroup::onlyTrashed()->count() : 0);
+        $trashTaskCount = Task::onlyTrashed()->count();
+        $trashCount = $trashCourseCount + $trashTaskCount;
 
         return view('manage.task.plans', compact('parents', 'stats', 'pendingByParent', 'scope', 'type', 'search', 'trashCount'));
     }
@@ -177,24 +184,183 @@ class TaskManageController extends Controller
     }
 
     /**
-     * GET /manage/task/trash — soft-deleted tasks. Restore or delete forever.
+     * GET /manage/task/trash — unified soft-deleted tasks & courses.
+     * Filter by type: 'all', 'course', or 'task'.
      */
-    public function trash()
+    public function trash(Request $request)
     {
-        $tasks = Task::onlyTrashed()
-            ->with(['creator', 'trainingPlan', 'content'])
-            ->orderByDesc('deleted_at')
-            ->paginate(20);
+        $type = $request->input('type', 'all');
+        if (!in_array($type, ['all', 'course', 'task'], true)) {
+            $type = 'all';
+        }
+        $search = trim($request->input('search', ''));
 
-        return view('manage.task.trash', compact('tasks'));
+        $taskTrashCount = Task::onlyTrashed()->count();
+        $courseTrashCount = TrainingPlan::onlyTrashed()->count()
+            + Content::onlyTrashed()->count()
+            + OfflineTraining::onlyTrashed()->count()
+            + (Schema::hasColumn('task_groups', 'deleted_at') ? TaskGroup::onlyTrashed()->count() : 0);
+        $totalTrashCount = $taskTrashCount + $courseTrashCount;
+
+        $items = collect();
+
+        // 1. Gather Course items if 'all' or 'course'
+        if ($type === 'all' || $type === 'course') {
+            $trashedPlans = TrainingPlan::onlyTrashed()
+                ->when($search !== '', fn ($q) => $q->where('title', 'like', "%{$search}%"))
+                ->get()
+                ->map(fn ($p) => (object) [
+                    'id'          => $p->id,
+                    'item_type'   => 'course',
+                    'course_type' => 'playlist',
+                    'title'       => $p->title,
+                    'type_label'  => 'Course',
+                    'badge_class' => 'bg-purple-lt text-purple',
+                    'category'    => 'Playlist',
+                    'placement'   => 'Playlist Course',
+                    'deleted_at'  => $p->deleted_at,
+                    'restore_url' => route('manage.task.restore', ['id' => $p->id, 'item_type' => 'course', 'course_type' => 'playlist']),
+                    'delete_url'  => route('manage.task.force-destroy', ['id' => $p->id, 'item_type' => 'course', 'course_type' => 'playlist']),
+                    'confirm_msg' => 'Permanently delete this playlist course? This action cannot be undone.',
+                ]);
+
+            $trashedContents = Content::onlyTrashed()
+                ->when($search !== '', fn ($q) => $q->where('title', 'like', "%{$search}%"))
+                ->get()
+                ->map(fn ($c) => (object) [
+                    'id'          => $c->id,
+                    'item_type'   => 'course',
+                    'course_type' => 'content',
+                    'title'       => $c->title,
+                    'type_label'  => 'Course',
+                    'badge_class' => 'bg-info-lt text-info',
+                    'category'    => 'Content',
+                    'placement'   => 'Content Material',
+                    'deleted_at'  => $c->deleted_at,
+                    'restore_url' => route('manage.task.restore', ['id' => $c->id, 'item_type' => 'course', 'course_type' => 'content']),
+                    'delete_url'  => route('manage.task.force-destroy', ['id' => $c->id, 'item_type' => 'course', 'course_type' => 'content']),
+                    'confirm_msg' => 'Permanently delete this content? This action cannot be undone.',
+                ]);
+
+            $trashedOffline = OfflineTraining::onlyTrashed()
+                ->when($search !== '', fn ($q) => $q->where(fn ($w) => $w->where('title', 'like', "%{$search}%")->orWhere('course_name', 'like', "%{$search}%")))
+                ->get()
+                ->map(fn ($ot) => (object) [
+                    'id'          => $ot->id,
+                    'item_type'   => 'course',
+                    'course_type' => 'offline_training',
+                    'title'       => $ot->title ?: ($ot->course_name ?: "Training #{$ot->id}"),
+                    'type_label'  => 'Course',
+                    'badge_class' => 'bg-warning-lt text-warning',
+                    'category'    => 'Offline Training',
+                    'placement'   => 'In-Person Session',
+                    'deleted_at'  => $ot->deleted_at,
+                    'restore_url' => route('manage.task.restore', ['id' => $ot->id, 'item_type' => 'course', 'course_type' => 'offline_training']),
+                    'delete_url'  => route('manage.task.force-destroy', ['id' => $ot->id, 'item_type' => 'course', 'course_type' => 'offline_training']),
+                    'confirm_msg' => 'Permanently delete this offline training session? This action cannot be undone.',
+                ]);
+
+            $trashedGroups = collect();
+            if (Schema::hasColumn('task_groups', 'deleted_at')) {
+                $trashedGroups = TaskGroup::onlyTrashed()
+                    ->when($search !== '', fn ($q) => $q->where('title', 'like', "%{$search}%"))
+                    ->get()
+                    ->map(fn ($tg) => (object) [
+                        'id'          => $tg->id,
+                        'item_type'   => 'course',
+                        'course_type' => 'standalone',
+                        'title'       => $tg->title,
+                        'type_label'  => 'Course',
+                        'badge_class' => 'bg-purple-lt text-purple',
+                        'category'    => 'Others',
+                        'placement'   => 'Standalone Activity',
+                        'deleted_at'  => $tg->deleted_at,
+                        'restore_url' => route('manage.task.restore', ['id' => $tg->id, 'item_type' => 'course', 'course_type' => 'standalone']),
+                        'delete_url'  => route('manage.task.force-destroy', ['id' => $tg->id, 'item_type' => 'course', 'course_type' => 'standalone']),
+                        'confirm_msg' => 'Permanently delete this activity container? This action cannot be undone.',
+                    ]);
+            }
+
+            $items = $items->concat($trashedPlans)->concat($trashedContents)->concat($trashedOffline)->concat($trashedGroups);
+        }
+
+        // 2. Gather Task items if 'all' or 'task'
+        if ($type === 'all' || $type === 'task') {
+            $trashedTasks = Task::onlyTrashed()
+                ->with(['creator', 'trainingPlan', 'content', 'taskGroup', 'offlineTraining'])
+                ->when($search !== '', fn ($q) => $q->where('title', 'like', "%{$search}%"))
+                ->get()
+                ->map(fn ($task) => (object) [
+                    'id'              => $task->id,
+                    'item_type'       => 'task',
+                    'course_type'     => null,
+                    'title'           => $task->title,
+                    'type_label'      => 'Task',
+                    'task_type_label' => Task::TYPES[$task->type] ?? $task->type,
+                    'badge_class'     => 'bg-primary-lt text-primary',
+                    'category'        => Task::PARENT_TYPES[$task->parent_type] ?? $task->parent_type,
+                    'placement'       => $task->parentName(),
+                    'deleted_at'      => $task->deleted_at,
+                    'restore_url'     => route('manage.task.restore', ['id' => $task->id, 'item_type' => 'task']),
+                    'delete_url'      => route('manage.task.force-destroy', ['id' => $task->id, 'item_type' => 'task']),
+                    'confirm_msg'     => 'Delete this task? Questions, responses and files will be wiped and cannot be restored.',
+                ]);
+
+            $items = $items->concat($trashedTasks);
+        }
+
+        // Sort items by deleted_at desc
+        $sortedItems = $items->sortByDesc(fn ($item) => $item->deleted_at ? $item->deleted_at->timestamp : 0)->values();
+
+        // Paginate manually with LengthAwarePaginator
+        $perPage = 20;
+        $page = LengthAwarePaginator::resolveCurrentPage();
+        $paginatedItems = $sortedItems->slice(($page - 1) * $perPage, $perPage)->values();
+
+        $items = new LengthAwarePaginator(
+            $paginatedItems,
+            $sortedItems->count(),
+            $perPage,
+            $page,
+            [
+                'path'  => LengthAwarePaginator::resolveCurrentPath(),
+                'query' => $request->query(),
+            ]
+        );
+
+        $tasks = $items; // for backwards compatibility with existing views/tests
+
+        return view('manage.task.trash', compact(
+            'items',
+            'tasks',
+            'type',
+            'search',
+            'taskTrashCount',
+            'courseTrashCount',
+            'totalTrashCount'
+        ));
     }
 
     /**
-     * POST /manage/task/{id}/restore — bring a trashed task back
-     * (questions, answers and files are untouched by the soft delete).
+     * POST /manage/task/{id}/restore — bring a trashed task or course back.
      */
-    public function restore($id)
+    public function restore(Request $request, $id)
     {
+        $itemType = $request->input('item_type', 'task');
+
+        if ($itemType === 'course') {
+            $courseType = $request->input('course_type');
+            match ($courseType) {
+                'playlist'         => TrainingPlan::onlyTrashed()->findOrFail($id)->restore(),
+                'content'          => Content::onlyTrashed()->findOrFail($id)->restore(),
+                'offline_training' => OfflineTraining::onlyTrashed()->findOrFail($id)->restore(),
+                'standalone'       => TaskGroup::onlyTrashed()->findOrFail($id)->restore(),
+                default            => abort(404),
+            };
+
+            return back()->with('success', 'Course restored.');
+        }
+
         $task = Task::withTrashed()->findOrFail($id);
         $task->restore();
 
@@ -202,11 +368,25 @@ class TaskManageController extends Controller
     }
 
     /**
-     * DELETE /manage/task/{id}/force — permanent delete: task, questions,
-     * submissions, attachments and answer files are wiped for real.
+     * DELETE /manage/task/{id}/force — permanent delete: task or course wiped for real.
      */
-    public function forceDestroy($id)
+    public function forceDestroy(Request $request, $id)
     {
+        $itemType = $request->input('item_type', 'task');
+
+        if ($itemType === 'course') {
+            $courseType = $request->input('course_type');
+            match ($courseType) {
+                'playlist'         => TrainingPlan::onlyTrashed()->findOrFail($id)->forceDelete(),
+                'content'          => Content::onlyTrashed()->findOrFail($id)->forceDelete(),
+                'offline_training' => OfflineTraining::onlyTrashed()->findOrFail($id)->forceDelete(),
+                'standalone'       => TaskGroup::onlyTrashed()->findOrFail($id)->forceDelete(),
+                default            => abort(404),
+            };
+
+            return back()->with('success', 'Course permanently deleted.');
+        }
+
         $task = Task::withTrashed()->findOrFail($id);
 
         if ($task->attachment) {
@@ -225,6 +405,35 @@ class TaskManageController extends Controller
         $task->forceDelete();
 
         return back()->with('success', 'Task permanently deleted.');
+    }
+
+    /**
+     * DELETE /manage/task/container/{parentType}/{parentId} — soft delete container.
+     */
+    public function destroyContainer($parentType, $parentId)
+    {
+        match ($parentType) {
+            'standalone' => (function () use ($parentId) {
+                $group = TaskGroup::findOrFail($parentId);
+                $group->tasks()->delete();
+                $group->delete();
+            })(),
+            'playlist' => (function () use ($parentId) {
+                $plan = TrainingPlan::findOrFail($parentId);
+                $plan->delete();
+            })(),
+            'content' => (function () use ($parentId) {
+                $content = Content::findOrFail($parentId);
+                $content->delete();
+            })(),
+            'offline_training' => (function () use ($parentId) {
+                $ot = OfflineTraining::findOrFail($parentId);
+                $ot->delete();
+            })(),
+            default => abort(404),
+        };
+
+        return back()->with('success', 'Course / activity moved to trash.');
     }
 
     /**
