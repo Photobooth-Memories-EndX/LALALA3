@@ -489,6 +489,7 @@ class OnlineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wit
 
         $query = $this->query();
         $childrenMap = $this->getPlaylistChildrenMap();
+        $recognizedService = app(\App\Services\Learning\LearningRecordRecognizedDurationService::class);
         $rowCount = 0;
         $excelRow = 1;
         $buffer = '';
@@ -560,7 +561,6 @@ class OnlineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wit
             $rawEmp = $row->id_emp ?: ($row->user_id_emp ?? '-');
             $cleanEmpId = ($rawEmp !== '-') ? preg_replace('/\s*[\/\-]\s*NIP.*$/i', '', trim((string) $rawEmp)) : '-';
 
-            $recognizedService = app(\App\Services\Learning\LearningRecordRecognizedDurationService::class);
             $recSec = $recognizedService->resolveFromRow($row);
             $recognizedFormatted = $recognizedService->formatSeconds($recSec);
 

@@ -165,7 +165,7 @@ class ManageRecordController extends Controller
         $dateTime = self::formatExportDateTime();
         $fileName = "EmployeeOWLrecord_{$dateTime}.xlsx";
 
-        return Excel::download(new ClassificationOnlineRecordExport($classVal, $request->all(), $fileName), $fileName);
+        return (new ClassificationOnlineRecordExport($classVal, $request->all(), $fileName))->download($fileName);
     }
 
     public function exportClassificationOffline(Request $request, $classification = null)
