@@ -8,7 +8,6 @@ use App\Models\TaskSubmission;
 use App\Models\TrainingPlan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class TaskExportTest extends TestCase
@@ -38,7 +37,7 @@ class TaskExportTest extends TestCase
         ]);
     }
 
-    public function test_admin_submissions_page_renders_google_forms_export_menu(): void
+    public function test_admin_submissions_page_renders_green_download_button(): void
     {
         $task = Task::create([
             'parent_type'      => 'playlist',
@@ -52,12 +51,12 @@ class TaskExportTest extends TestCase
         $response = $this->actingAs($this->admin)->get(route('manage.task.submissions', ['task' => $task->id]));
 
         $response->assertStatus(200);
-        $response->assertSee('Export to Excel');
-        $response->assertSee('btnExportExcel');
-        $response->assertSee('btnExportOptions');
-        $response->assertSee('Microsoft Excel (.xlsx)');
-        $response->assertSee('Comma-Separated (.csv)');
-        $response->assertSee('Download Attachments (.zip)');
+        $response->assertSee('Download');
+        $response->assertSee('btnDownloadExcel');
+        $response->assertSee('btn-success');
+        $response->assertSee('ti-download');
+        // Ensure no dropdown options cluttering
+        $response->assertDontSee('btnExportOptions');
     }
 
     public function test_export_submissions_route_downloads_excel_file(): void
@@ -97,86 +96,12 @@ class TaskExportTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->admin)->get(route('manage.task.submissions.export', [
-            'task'   => $task->id,
-            'format' => 'xlsx',
+            'task' => $task->id,
         ]));
 
         $response->assertStatus(200);
         $this->assertTrue(
             str_contains((string) $response->headers->get('content-disposition'), '.xlsx')
-        );
-    }
-
-    public function test_export_submissions_route_downloads_csv_file(): void
-    {
-        $task = Task::create([
-            'parent_type'      => 'playlist',
-            'training_plan_id' => $this->plan->id,
-            'title'            => 'Task Export CSV ' . uniqid(),
-            'type'             => 'open_ended',
-            'status'           => 'published',
-            'created_by'       => $this->admin->id,
-        ]);
-
-        $response = $this->actingAs($this->admin)->get(route('manage.task.submissions.export', [
-            'task'   => $task->id,
-            'format' => 'csv',
-        ]));
-
-        $response->assertStatus(200);
-        $this->assertTrue(
-            str_contains((string) $response->headers->get('content-disposition'), '.csv')
-        );
-    }
-
-    public function test_export_submissions_route_downloads_zip_archive_of_attachments(): void
-    {
-        Storage::fake('public');
-
-        $task = Task::create([
-            'parent_type'      => 'playlist',
-            'training_plan_id' => $this->plan->id,
-            'title'            => 'Task Export ZIP ' . uniqid(),
-            'type'             => 'file_submission',
-            'status'           => 'published',
-            'created_by'       => $this->admin->id,
-        ]);
-
-        $field = TaskField::create([
-            'task_id'    => $task->id,
-            'type'       => 'file',
-            'label'      => 'Upload Document',
-            'required'   => true,
-            'sort_order' => 0,
-        ]);
-
-        // Put a fake file on public disk
-        $filePath = 'task-submissions/' . $task->id . '/test_document.txt';
-        Storage::disk('public')->put($filePath, 'Hello World Submission Content');
-
-        TaskSubmission::create([
-            'task_id'            => $task->id,
-            'user_id'            => $this->learner->id,
-            'status'             => 'pending',
-            'resubmit_requested' => false,
-            'submitted_at'       => now(),
-            'answers'            => [
-                $field->id => [
-                    'task_field_id' => $field->id,
-                    'answer_text'   => null,
-                    'file_path'     => [$filePath],
-                ],
-            ],
-        ]);
-
-        $response = $this->actingAs($this->admin)->get(route('manage.task.submissions.export', [
-            'task'   => $task->id,
-            'format' => 'zip',
-        ]));
-
-        $response->assertStatus(200);
-        $this->assertTrue(
-            str_contains((string) $response->headers->get('content-disposition'), '.zip')
         );
     }
 }
