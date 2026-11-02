@@ -295,13 +295,17 @@ class ManageRecordController extends Controller
                     'otu.assessment_score',
                     'otu.pic',
                     'otu.certificate',
+                    'ot.id as offline_training_id',
                     'ot.course_name as course_title',
                     'ot.sub_course_name as sub_course_title',
                     'ot.type',
                     'ot.category',
                     'ot.level',
                     'ot.batch',
+                    'ot.provider',
                     'ot.sub_provider',
+                    'ot.provider_name',
+                    'ot.venue',
                     'ot.instructor',
                     'ot.delivery_method',
                     'ot.sub_delivery_method',
@@ -338,13 +342,17 @@ class ManageRecordController extends Controller
                         'otu.assessment_score',
                         'otu.pic',
                         'otu.certificate',
+                        'ot.id as offline_training_id',
                         'ot.course_name as course_title',
                         'ot.sub_course_name as sub_course_title',
                         'ot.type',
                         'ot.category',
                         'ot.level',
                         'ot.batch',
+                        'ot.provider',
                         'ot.sub_provider',
+                        'ot.provider_name',
+                        'ot.venue',
                         'ot.instructor',
                         'ot.delivery_method',
                         'ot.sub_delivery_method',
@@ -421,18 +429,48 @@ class ManageRecordController extends Controller
                 }
                 $subDeliveryMethod = $sub ?: '-';
 
-                // Certificate details from certificates table if linked
+                // Certificate details from certificates table or certificate_settings
                 $cert = DB::table('certificates as cert')
                     ->leftJoin('certificate_settings as cs', 'cert.certificate_setting_id', '=', 'cs.id')
                     ->where('cert.offline_training_user_id', $record->id)
-                    ->select('cert.issued_at', 'cs.issuer_name')
+                    ->select([
+                        'cert.issued_at',
+                        'cert.issued_date',
+                        'cert.expired_date',
+                        'cert.institution as cert_institution',
+                        'cs.issuer_name',
+                        'cs.institution as cs_institution',
+                        'cs.issued_date as cs_issued_date',
+                        'cs.expired_date as cs_expired_date',
+                    ])
                     ->first();
-                $certInstitution = $cert?->issuer_name ?: '-';
-                $certIssuedDate = $cert?->issued_at ? date('Y-m-d', strtotime($cert->issued_at)) : '-';
-                $certExpiredDate = '-';
+
+                $certSetting = null;
+                $trainingId = $record->offline_training_id ?? null;
+                if ($trainingId) {
+                    $certSetting = DB::table('certificate_settings')
+                        ->where('offline_training_id', $trainingId)
+                        ->first();
+                }
+
+                $certInstitution = $cert?->cert_institution
+                    ?: ($cert?->cs_institution
+                        ?: ($certSetting?->institution
+                            ?: ($cert?->issuer_name
+                                ?: ($certSetting?->issuer_name ?: ($record->certificate ?: '-')))));
+
+                $certIssuedDate = $cert?->issued_date
+                    ?: ($certSetting?->issued_date
+                        ? date('Y-m-d', strtotime($certSetting->issued_date))
+                        : ($cert?->issued_at ? date('Y-m-d', strtotime($cert->issued_at)) : '-'));
+
+                $certExpiredDate = $cert?->expired_date
+                    ?: ($certSetting?->expired_date
+                        ? date('Y-m-d', strtotime($certSetting->expired_date))
+                        : '-');
 
                 $certAvailRaw = strtolower(trim((string) ($record->certificate ?? '')));
-                $certAvailability = (!empty($cert) || in_array($certAvailRaw, ['yes', '1', 'true', 'available', 'ada'], true))
+                $certAvailability = (!empty($cert) || !empty($certSetting) || in_array($certAvailRaw, ['yes', '1', 'true', 'available', 'ada'], true))
                     ? 'Available'
                     : ($certAvailRaw !== '' && $certAvailRaw !== 'no' && $certAvailRaw !== '-' ? $record->certificate : 'Not Available');
 
@@ -444,9 +482,13 @@ class ManageRecordController extends Controller
                     'employee_name'           => $empName,
                     'grade'                   => $record->grade ?: '-',
                     'job_position'            => $record->job_position ?: '-',
+                    'team'                    => $record->team ?: '-',
                     'level'                   => $record->level ?: '-',
                     'batch'                   => $record->batch ?: '-',
+                    'provider'                => $record->provider ?: 'External',
                     'sub_provider'            => $record->sub_provider ?: '-',
+                    'provider_name'           => $record->provider_name ?: ($record->provider ?: '-'),
+                    'venue'                   => $record->venue ?: '-',
                     'delivery_method'         => 'Offline',
                     'sub_delivery_method'     => $subDeliveryMethod,
                     'instructor'              => $record->instructor ?: '-',
@@ -486,6 +528,11 @@ class ManageRecordController extends Controller
                 }
                 $subDeliveryMethod = $sub ?: '-';
 
+                $cs = DB::table('certificate_settings')->where('offline_training_id', $training->id)->first();
+                $certInstitution = $cs?->institution ?: ($cs?->issuer_name ?: '-');
+                $certIssuedDate = $cs?->issued_date ? date('Y-m-d', strtotime($cs->issued_date)) : '-';
+                $certExpiredDate = $cs?->expired_date ? date('Y-m-d', strtotime($cs->expired_date)) : '-';
+
                 $recordData = [
                     'source'                  => 'NON KP OWL',
                     'course_title'            => $training->course_name ?: ($training->title ?: 'Offline Training'),
@@ -494,9 +541,13 @@ class ManageRecordController extends Controller
                     'employee_name'           => '-',
                     'grade'                   => '-',
                     'job_position'            => '-',
+                    'team'                    => '-',
                     'level'                   => $training->level ?: '-',
                     'batch'                   => $training->batch ?: '-',
+                    'provider'                => $training->provider ?: 'External',
                     'sub_provider'            => $training->sub_provider ?: '-',
+                    'provider_name'           => $training->provider_name ?: ($training->provider ?: '-'),
+                    'venue'                   => $training->venue ?: '-',
                     'delivery_method'         => 'Offline',
                     'sub_delivery_method'     => $subDeliveryMethod,
                     'instructor'              => $training->instructor ?: '-',
@@ -510,11 +561,11 @@ class ManageRecordController extends Controller
                     'bond_end_date'           => '-',
                     'bond_amount'             => '-',
                     'bond_amount_idr'         => '-',
-                    'certificate_availability'=> 'Not Available',
-                    'certificate_status'      => 'Not Available',
-                    'certificate_institution' => '-',
-                    'certificate_issued_date' => '-',
-                    'certificate_expired_date'=> '-',
+                    'certificate_availability'=> !empty($cs) ? 'Available' : 'Not Available',
+                    'certificate_status'      => !empty($cs) ? 'Available' : 'Not Available',
+                    'certificate_institution' => $certInstitution,
+                    'certificate_issued_date' => $certIssuedDate,
+                    'certificate_expired_date'=> $certExpiredDate,
                 ];
 
                 return response()->json(array_merge($recordData, [
@@ -584,7 +635,16 @@ class ManageRecordController extends Controller
                 ->leftJoin('certificate_settings as cs', 'cert.certificate_setting_id', '=', 'cs.id')
                 ->where('cert.user_id', $cu->user_id)
                 ->where('cert.content_user_id', $cu->id)
-                ->select('cert.issued_at', 'cs.issuer_name')
+                ->select([
+                    'cert.issued_at',
+                    'cert.issued_date',
+                    'cert.expired_date',
+                    'cert.institution as cert_institution',
+                    'cs.issuer_name',
+                    'cs.institution as cs_institution',
+                    'cs.issued_date as cs_issued_date',
+                    'cs.expired_date as cs_expired_date',
+                ])
                 ->first();
             if (!$cert && $cu->content_id) {
                 $cert = DB::table('certificates as cert')
@@ -592,14 +652,43 @@ class ManageRecordController extends Controller
                     ->where('cert.user_id', $cu->user_id)
                     ->where('cert.source_id', $cu->content_id)
                     ->where('cert.certificate_type', 'content')
-                    ->select('cert.issued_at', 'cs.issuer_name')
+                    ->select([
+                        'cert.issued_at',
+                        'cert.issued_date',
+                        'cert.expired_date',
+                        'cert.institution as cert_institution',
+                        'cs.issuer_name',
+                        'cs.institution as cs_institution',
+                        'cs.issued_date as cs_issued_date',
+                        'cs.expired_date as cs_expired_date',
+                    ])
                     ->first();
             }
 
-            $certInstitution = $cert?->issuer_name ?: ($cu->finish == '1' || $progress >= 100 ? 'OWL Training Management' : '-');
-            $certIssuedDate = $cert?->issued_at ? date('Y-m-d', strtotime($cert->issued_at)) : '-';
-            $certExpiredDate = '-';
-            $certAvailability = ($cert || $cu->finish == '1' || $progress >= 100) ? 'Available' : 'Not Available';
+            $cs = null;
+            if (!$cert && $cu->content_id) {
+                $cs = DB::table('certificate_settings')->where('content_id', $cu->content_id)->first();
+            }
+
+            $certInstitution = $cert?->cert_institution
+                ?: ($cert?->cs_institution
+                    ?: ($certSetting?->institution
+                        ?: ($cert?->issuer_name
+                            ?: ($cs?->institution
+                                ?: ($cs?->issuer_name
+                                    ?: ($cu->finish == '1' || $progress >= 100 ? 'PT Krakatau Posco' : '-'))))));
+
+            $certIssuedDate = $cert?->issued_date
+                ?: ($cs?->issued_date
+                    ? date('Y-m-d', strtotime($cs->issued_date))
+                    : ($cert?->issued_at ? date('Y-m-d', strtotime($cert->issued_at)) : '-'));
+
+            $certExpiredDate = $cert?->expired_date
+                ?: ($cs?->expired_date
+                    ? date('Y-m-d', strtotime($cs->expired_date))
+                    : '-');
+
+            $certAvailability = ($cert || $cs || $cu->finish == '1' || $progress >= 100) ? 'Available' : 'Not Available';
 
             $recordData = [
                 'source'                  => 'KP OWL',
@@ -609,9 +698,13 @@ class ManageRecordController extends Controller
                 'employee_name'           => $empName,
                 'grade'                   => $cu->grade ?: '-',
                 'job_position'            => $cu->job_position ?: '-',
+                'team'                    => $cu->team ?: '-',
                 'level'                   => '-',
                 'batch'                   => '-',
+                'provider'                => 'Internal',
                 'sub_provider'            => '-',
+                'provider_name'           => 'KP-OWL',
+                'venue'                   => 'KP-OWL',
                 'delivery_method'         => 'Online',
                 'sub_delivery_method'     => 'Self-Paced / LMS',
                 'instructor'              => $cu->instructor ?: '-',
@@ -717,13 +810,46 @@ class ManageRecordController extends Controller
                         });
                     }
                 })
-                ->select('cert.issued_at', 'cs.issuer_name')
+                ->select([
+                    'cert.issued_at',
+                    'cert.issued_date',
+                    'cert.expired_date',
+                    'cert.institution as cert_institution',
+                    'cs.issuer_name',
+                    'cs.institution as cs_institution',
+                    'cs.issued_date as cs_issued_date',
+                    'cs.expired_date as cs_expired_date',
+                ])
                 ->first();
 
-            $certInstitution = $cert?->issuer_name ?: ($pcu->finish == '1' || $progress >= 100 ? 'OWL Training Management' : '-');
-            $certIssuedDate = $cert?->issued_at ? date('Y-m-d', strtotime($cert->issued_at)) : '-';
-            $certExpiredDate = '-';
-            $certAvailability = ($cert || $pcu->finish == '1' || $progress >= 100) ? 'Available' : 'Not Available';
+            $cs = null;
+            if (!$cert) {
+                if ($pcu->trainingplan_id) {
+                    $cs = DB::table('certificate_settings')->where('trainingplan_id', $pcu->trainingplan_id)->first();
+                }
+                if (!$cs && $pcu->content_id) {
+                    $cs = DB::table('certificate_settings')->where('content_id', $pcu->content_id)->first();
+                }
+            }
+
+            $certInstitution = $cert?->cert_institution
+                ?: ($cert?->cs_institution
+                    ?: ($cs?->institution
+                        ?: ($cert?->issuer_name
+                            ?: ($cs?->issuer_name
+                                ?: ($pcu->finish == '1' || $progress >= 100 ? 'PT Krakatau Posco' : '-')))));
+
+            $certIssuedDate = $cert?->issued_date
+                ?: ($cs?->issued_date
+                    ? date('Y-m-d', strtotime($cs->issued_date))
+                    : ($cert?->issued_at ? date('Y-m-d', strtotime($cert->issued_at)) : '-'));
+
+            $certExpiredDate = $cert?->expired_date
+                ?: ($cs?->expired_date
+                    ? date('Y-m-d', strtotime($cs->expired_date))
+                    : '-');
+
+            $certAvailability = ($cert || $cs || $pcu->finish == '1' || $progress >= 100) ? 'Available' : 'Not Available';
 
             $recordData = [
                 'source'                  => 'KP OWL',
@@ -733,9 +859,13 @@ class ManageRecordController extends Controller
                 'employee_name'           => $empName,
                 'grade'                   => $pcu->grade ?: '-',
                 'job_position'            => $pcu->job_position ?: '-',
+                'team'                    => $pcu->team ?: '-',
                 'level'                   => '-',
                 'batch'                   => '-',
+                'provider'                => 'Internal',
                 'sub_provider'            => '-',
+                'provider_name'           => 'KP-OWL',
+                'venue'                   => 'KP-OWL',
                 'delivery_method'         => 'Online',
                 'sub_delivery_method'     => 'Playlist / Path',
                 'instructor'              => $pcu->playlist_instructor ?: ($pcu->instructor ?: '-'),

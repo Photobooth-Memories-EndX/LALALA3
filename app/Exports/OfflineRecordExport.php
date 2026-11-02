@@ -219,6 +219,32 @@ class OfflineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wi
 
         $hasCert = (!empty($row->certificate) && $row->certificate !== '-');
 
+        $dbCert = null;
+        if (!empty($row->id)) {
+            $dbCert = DB::table('certificates as c')
+                ->leftJoin('certificate_settings as cs', 'cs.id', '=', 'c.certificate_setting_id')
+                ->where('c.offline_training_user_id', $row->id)
+                ->select(['cs.issuer_name', 'cs.institution', 'c.issued_at', 'c.issued_date', 'c.expired_date'])
+                ->first();
+        }
+        $csSetting = null;
+        if (!empty($row->offline_training_id)) {
+            $csSetting = DB::table('certificate_settings')->where('offline_training_id', $row->offline_training_id)->first();
+        }
+
+        $certInst = $dbCert?->institution
+            ?: ($csSetting?->institution
+                ?: ($dbCert?->issuer_name
+                    ?: ($csSetting?->issuer_name ?: ($hasCert ? $row->certificate : '-'))));
+        $certIssued = $dbCert?->issued_date
+            ? date('Y-m-d', strtotime($dbCert->issued_date))
+            : ($csSetting?->issued_date
+                ? date('Y-m-d', strtotime($csSetting->issued_date))
+                : ($dbCert?->issued_at ? date('Y-m-d', strtotime($dbCert->issued_at)) : '-'));
+        $certExpired = $dbCert?->expired_date
+            ? date('Y-m-d', strtotime($dbCert->expired_date))
+            : ($csSetting?->expired_date ? date('Y-m-d', strtotime($csSetting->expired_date)) : '-');
+
         return [
             $this->rowCount,                                                                                    // 1. NO
             'Non KP OWL',                                                                                       // 2. Source
@@ -267,9 +293,9 @@ class OfflineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wi
             $scoreL3 !== null ? $scoreL3 : '-',                                                                 // 45. Score (L3)
             $row->l3_verbal ?: '-',                                                                             // 46. L3 Status
             $hasCert ? 'Available' : '-',                                                                       // 47. Certificate Availability
-            $hasCert ? $row->certificate : '-',                                                                 // 48. Certificate Institution
-            '-',                                                                                                // 49. Certificate Issued Date
-            '-',                                                                                                // 50. Certificate Expired Date
+            $certInst,                                                                                          // 48. Certificate Institution
+            $certIssued,                                                                                        // 49. Certificate Issued Date
+            $certExpired,                                                                                       // 50. Certificate Expired Date
             $row->pic ?: '-',                                                                                   // 51. Person in Charge (PIC)
             $totalEngNumeric,                                                                                   // 52. Total Engagement Time (LH)
         ];
@@ -597,6 +623,32 @@ class OfflineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wi
             $cleanEmpId = ($rawEmp !== '-') ? preg_replace('/\s*[\/\-]\s*NIP.*$/i', '', trim((string) $rawEmp)) : '-';
 
             $hasCert = (!empty($row->certificate) && $row->certificate !== '-');
+
+        $dbCert = null;
+        if (!empty($row->id)) {
+            $dbCert = DB::table('certificates as c')
+                ->leftJoin('certificate_settings as cs', 'cs.id', '=', 'c.certificate_setting_id')
+                ->where('c.offline_training_user_id', $row->id)
+                ->select(['cs.issuer_name', 'cs.institution', 'c.issued_at', 'c.issued_date', 'c.expired_date'])
+                ->first();
+        }
+        $csSetting = null;
+        if (!empty($row->offline_training_id)) {
+            $csSetting = DB::table('certificate_settings')->where('offline_training_id', $row->offline_training_id)->first();
+        }
+
+        $certInst = $dbCert?->institution
+            ?: ($csSetting?->institution
+                ?: ($dbCert?->issuer_name
+                    ?: ($csSetting?->issuer_name ?: ($hasCert ? $row->certificate : '-'))));
+        $certIssued = $dbCert?->issued_date
+            ? date('Y-m-d', strtotime($dbCert->issued_date))
+            : ($csSetting?->issued_date
+                ? date('Y-m-d', strtotime($csSetting->issued_date))
+                : ($dbCert?->issued_at ? date('Y-m-d', strtotime($dbCert->issued_at)) : '-'));
+        $certExpired = $dbCert?->expired_date
+            ? date('Y-m-d', strtotime($dbCert->expired_date))
+            : ($csSetting?->expired_date ? date('Y-m-d', strtotime($csSetting->expired_date)) : '-');
             $lHoursCell = ($lHoursNumeric !== null) ? ['AA', 'lh', $lHoursNumeric, '10'] : ['AA', 'str', '-', '0'];
             $totalEngCell = ($lHoursNumeric !== null) ? ['AZ', 'lh', $lHoursNumeric, '10'] : ['AZ', 'str', '-', '0'];
 
@@ -648,9 +700,9 @@ class OfflineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wi
                 $scoreL3 !== null ? (is_int($scoreL3) ? ['AS', 'int', $scoreL3, '4'] : ['AS', 'float', $scoreL3, '11']) : ['AS', 'str', '-', '0'], // 45. Score (L3)
                 ['AT', 'str', $row->l3_verbal ?: '-', '0'],                                                         // 46. L3 Status
                 ['AU', 'str', $hasCert ? 'Available' : '-', '0'],                                                  // 47. Certificate Availability
-                ['AV', 'str', $hasCert ? $row->certificate : '-', '0'],                                            // 48. Certificate Institution
-                ['AW', 'str', '-', '0'],                                                                            // 49. Certificate Issued Date
-                ['AX', 'str', '-', '0'],                                                                            // 50. Certificate Expired Date
+                ['AV', 'str', $certInst, '0'],                                                                      // 48. Certificate Institution
+                ['AW', $certIssued !== '-' ? 'date' : 'str', $certIssued, $certIssued !== '-' ? '7' : '0'],        // 49. Certificate Issued Date
+                ['AX', $certExpired !== '-' ? 'date' : 'str', $certExpired, $certExpired !== '-' ? '7' : '0'],      // 50. Certificate Expired Date
                 ['AY', 'str', $row->pic ?: '-', '0'],                                                               // 51. Person in Charge (PIC)
                 $totalEngCell,                                                                                      // 52. Total Engagement Time (LH)
             ];

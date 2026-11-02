@@ -640,7 +640,7 @@
                             <tr>
                                 <th class="text-muted text-center record-sortable" style="width: 3%" data-sort-key="no" data-sort-type="number">
                                     <span class="record-sort-header">
-                                        <span class="record-sort-label">No</span>
+                                        <span class="record-sort-label">NO</span>
                                         <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
                                     </span>
                                 </th>
@@ -676,19 +676,19 @@
                                 </th>
                                 <th class="text-muted text-center record-sortable" style="width: 8%" data-sort-key="learning-hour" data-sort-type="number">
                                     <span class="record-sort-header">
-                                        <span class="record-sort-label">Learning Hour</span>
+                                        <span class="record-sort-label">Learning Hours</span>
                                         <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
                                     </span>
                                 </th>
                                 <th class="text-muted text-center record-sortable" style="width: 7%" data-sort-key="progress" data-sort-type="number">
                                     <span class="record-sort-header">
-                                        <span class="record-sort-label">Progress</span>
+                                        <span class="record-sort-label">% Progress</span>
                                         <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
                                     </span>
                                 </th>
                                 <th class="text-muted record-sortable" style="width: 11%" data-sort-key="finish" data-sort-type="text">
                                     <span class="record-sort-header">
-                                        <span class="record-sort-label">Date Time</span>
+                                        <span class="record-sort-label">Start Date - End Time</span>
                                         <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
                                     </span>
                                 </th>
@@ -759,7 +759,7 @@
                                 </td>
                                 <td class="text-center">
                                     <span class="badge bg-secondary-lt text-secondary learning-record-badge">
-                                        {{ $row['category'] ?: '—' }}
+                                        {{ $row['category'] ?: 'â€”' }}
                                     </span>
                                 </td>
                                 <td class="text-center">
@@ -899,7 +899,7 @@
             <div class="modal-header border-0 pb-0">
                 <h3 class="modal-title fw-semibold d-flex align-items-center gap-1" id="recordOfflineMoreFilterModalLabel" style="font-size: 1.1rem;">
                     <i class="ti ti-adjustments-horizontal text-primary me-1"></i>
-                    <span>More Filters — Offline Record</span>
+                    <span>More Filters â€” Offline Record</span>
                 </h3>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>

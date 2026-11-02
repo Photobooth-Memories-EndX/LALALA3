@@ -12,7 +12,7 @@
     $years           = collect($filterOptions['years'] ?? []);
     $learningHours   = collect($filterOptions['learningHours'] ?? []);
 
-    // Jumlah baris yang siap generate certificate — sumber counter card header.
+    // Jumlah baris yang siap generate certificate â€” sumber counter card header.
     $certReadyCount = $rows->where('cert_state', 'ready')->count();
 
     $months = [
@@ -37,16 +37,16 @@
     // Kolom tabel; 'sort' = key data-sort-* pada baris (learning-record.js),
     // 'type' = cara membandingkan nilai saat sorting (text/number/duration).
     $columns = [
-        ['label' => 'No',                  'width' => '3%',  'sort' => 'no',             'type' => 'number'],
+        ['label' => 'NO',                  'width' => '3%',  'sort' => 'no',             'type' => 'number'],
         ['label' => 'Course Title',        'width' => '22%', 'sort' => 'title',          'type' => 'text'],
         ['label' => 'Type',                'width' => '6%',  'sort' => 'type',           'type' => 'text'],
         ['label' => 'Category',            'width' => '7%',  'sort' => 'category',       'type' => 'text'],
         ['label' => 'Main Classification', 'width' => '9%',  'sort' => 'classification', 'type' => 'text'],
         ['label' => 'Course Duration',     'width' => '7%',  'sort' => 'duration',       'type' => 'duration'],
         ['label' => 'Total Recognized Duration', 'width' => '8%', 'sort' => 'recognized-duration', 'type' => 'duration'],
-        ['label' => 'Learning Hour',       'width' => '7%',  'sort' => 'learning-hour',  'type' => 'number'],
-        ['label' => 'Progress',            'width' => '6%',  'sort' => 'progress',       'type' => 'number'],
-        ['label' => 'Date Time',           'width' => '11%', 'sort' => 'finish',         'type' => 'text'],
+        ['label' => 'Learning Hours',      'width' => '7%',  'sort' => 'learning-hour',  'type' => 'number'],
+        ['label' => '% Progress',          'width' => '6%',  'sort' => 'progress',       'type' => 'number'],
+        ['label' => 'Start Date - End Time', 'width' => '11%', 'sort' => 'finish',       'type' => 'text'],
         ['label' => 'Attendance',          'width' => '6%',  'sort' => 'attendance',     'type' => 'text'],
         ['label' => 'Assessment Score (L2)', 'width' => '6%',  'sort' => 'score',        'type' => 'number'],
         ['label' => 'Action',              'width' => '5%'],

@@ -809,7 +809,7 @@
                             <tr>
                                 <th class="text-muted text-center record-sortable" style="width: 3%" data-sort-key="no" data-sort-type="number">
                                     <span class="record-sort-header">
-                                        <span class="record-sort-label">No</span>
+                                        <span class="record-sort-label">NO</span>
                                         <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
                                     </span>
                                 </th>
@@ -857,19 +857,19 @@
                                 </th>
                                 <th class="text-muted text-center record-sortable" style="width: 8%" data-sort-key="learning-hour" data-sort-type="number">
                                     <span class="record-sort-header">
-                                        <span class="record-sort-label">Learning Hour</span>
+                                        <span class="record-sort-label">Learning Hours</span>
                                         <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
                                     </span>
                                 </th>
                                 <th class="text-muted text-center record-sortable" style="width: 7%" data-sort-key="progress" data-sort-type="number">
                                     <span class="record-sort-header">
-                                        <span class="record-sort-label">Progress</span>
+                                        <span class="record-sort-label">% Progress</span>
                                         <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
                                     </span>
                                 </th>
                                 <th class="text-muted record-sortable" style="width: 11%" data-sort-key="finish" data-sort-type="text">
                                     <span class="record-sort-header">
-                                        <span class="record-sort-label">Date Time</span>
+                                        <span class="record-sort-label">Start Date - End Time</span>
                                         <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
                                     </span>
                                 </th>
@@ -981,7 +981,7 @@
                                         <span class="badge bg-blue-lt text-blue learning-record-badge">Content</span>
                                     @else
                                         <span class="badge bg-secondary-lt text-secondary learning-record-badge">
-                                            {{ $row['category'] ?: '—' }}
+                                            {{ $row['category'] ?: 'â€”' }}
                                         </span>
                                     @endif
                                 </td>
@@ -1063,7 +1063,7 @@
                                                 <div class="small text-danger">Passing Grade : {{ (int) $allMinScore }}</div>
                                             @endif
                                         @else
-                                            <span class="learning-score-empty-pill">—</span>
+                                            <span class="learning-score-empty-pill">â€”</span>
                                         @endif
                                     </div>
                                 </td>
@@ -1143,14 +1143,14 @@
             <div class="modal-header border-bottom py-3 px-4">
                 <h3 class="modal-title fw-semibold d-flex align-items-center gap-2 mb-0" id="recordAllMoreFilterModalLabel" style="font-size: 1.15rem;">
                     <i class="ti ti-adjustments-horizontal text-primary" style="font-size: 1.35rem;"></i>
-                    <span>More Filters — All Record</span>
+                    <span>More Filters â€” All Record</span>
                 </h3>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
             <div class="modal-body p-4">
                 <form id="recordAllMoreFilterForm" onsubmit="event.preventDefault(); $('#btnApplyAllMoreFilterModal').trigger('click');">
-                    {{-- ── SECTION 1: GENERAL FILTERS (ONLINE & OFFLINE) ── --}}
+                    {{-- â”€â”€ SECTION 1: GENERAL FILTERS (ONLINE & OFFLINE) â”€â”€ --}}
                     <div class="mb-4">
                         <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
                             <i class="ti ti-layers-intersect text-primary fs-3"></i>
@@ -1179,7 +1179,7 @@
                                 <select class="form-select record-filter-select rounded-3" name="record_filter_status" id="recordAllModalStatus">
                                     <option value="all" {{ $filterStatus === 'all' ? 'selected' : '' }}>All Status</option>
                                     <option value="completed" {{ $filterStatus === 'completed' ? 'selected' : '' }}>Completed (100%)</option>
-                                    <option value="in_progress" {{ $filterStatus === 'in_progress' ? 'selected' : '' }}>In Progress (1% – 99%)</option>
+                                    <option value="in_progress" {{ $filterStatus === 'in_progress' ? 'selected' : '' }}>In Progress (1% â€“ 99%)</option>
                                     <option value="not_started" {{ $filterStatus === 'not_started' ? 'selected' : '' }}>Not Started (0%)</option>
                                 </select>
                             </div>
@@ -1220,7 +1220,7 @@
                         </div>
                     </div>
 
-                    {{-- ── SECTION 2: OFFLINE-SPECIFIC FILTERS ── --}}
+                    {{-- â”€â”€ SECTION 2: OFFLINE-SPECIFIC FILTERS â”€â”€ --}}
                     <div class="mb-2">
                         <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
                             <i class="ti ti-certificate text-amber fs-3"></i>

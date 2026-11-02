@@ -39,79 +39,112 @@
                         <h4 class="fw-bold text-dark mb-0" id="modal-detail-course-name">{{ $record['title'] ?? ($record['course_name'] ?? '-') }}</h4>
                     </div>
 
-                    <!-- 1. Employee Information Card -->
-                    <div class="card border-0 bg-light-subtle rounded-3 p-3 mb-3">
-                        <h5 class="fw-bold text-dark fs-6 mb-3">
-                            <i class="ti ti-user me-1 text-primary"></i> Employee Information
-                        </h5>
+                    <!-- SECTION 1: Employee Information -->
+                    <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 mb-3 shadow-sm" style="border: 1px solid #e2e8f0; border-radius: 1rem; padding: 1rem; background-color: rgba(248, 250, 252, 0.5); box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+                        <div class="section-heading text-xs text-sm font-semibold fw-semibold text-slate-700 mb-3 d-flex align-items-center gap-1.5" style="font-size: 0.8125rem; font-weight: 600; color: #334155;">
+                            <i class="ti ti-user text-slate-500 me-1.5" style="color: #64748b; font-size: 1rem;"></i> <span>Employee Information</span>
+                        </div>
+                        <!-- Row 1: Employee ID | Employee Name -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-12 col-md-6">
+                                <div class="text-xs text-muted text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">EMPLOYEE ID</div>
+                                <div class="fw-bold text-dark fs-7" id="modal-detail-employee-id">{{ $record['employee_id'] ?? ($record['nip'] ?? (auth()->user()->employee_id ?? (auth()->user()->nip ?? (auth()->user()->id_emp ?? '-')))) }}</div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="text-xs text-muted text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">EMPLOYEE NAME</div>
+                                <div class="fw-bold text-dark fs-7 text-uppercase" id="modal-detail-employee-name">{{ $record['user_name'] ?? ($record['participant_name'] ?? (auth()->user()->name ?? '-')) }}</div>
+                            </div>
+                        </div>
+                        <!-- Row 2: Team -->
                         <div class="row g-3">
-                            <div class="col-md-4">
-                                <div class="text-xs text-muted text-uppercase">Employee ID</div>
-                                <div class="fw-semibold text-dark fs-7" id="modal-detail-employee-id">{{ $record['employee_id'] ?? ($record['nip'] ?? (auth()->user()->employee_id ?? (auth()->user()->nip ?? (auth()->user()->id_emp ?? '-')))) }}</div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="text-xs text-muted text-uppercase">Employee Name</div>
-                                <div class="fw-semibold text-dark fs-7" id="modal-detail-employee-name">{{ $record['user_name'] ?? ($record['participant_name'] ?? (auth()->user()->name ?? '-')) }}</div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="text-xs text-muted text-uppercase">Team</div>
-                                <div class="fw-semibold text-dark fs-7" id="modal-detail-team">{{ $record['team'] ?? (auth()->user()->team ?? '-') }}</div>
+                            <div class="col-12 col-md-6">
+                                <div class="text-xs text-muted text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">TEAM</div>
+                                <div class="fw-bold text-dark fs-7" id="modal-detail-team">{{ $record['team'] ?? (auth()->user()->team ?? '-') }}</div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- 2. Training Information Card -->
-                    <div class="card border-0 bg-light-subtle rounded-3 p-3 mb-3">
-                        <h5 class="fw-bold text-dark fs-6 mb-3">
-                            <i class="ti ti-info-circle me-1 text-primary"></i> Training Information
-                        </h5>
+                    <!-- SECTION 2: Training & Location Information -->
+                    <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 mb-3 shadow-sm" style="border: 1px solid #e2e8f0; border-radius: 1rem; padding: 1rem; background-color: rgba(248, 250, 252, 0.5); box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+                        <div class="section-heading text-xs text-sm font-semibold fw-semibold text-slate-700 mb-3 d-flex align-items-center gap-1.5" style="font-size: 0.8125rem; font-weight: 600; color: #334155;">
+                            <i class="ti ti-map-pin text-slate-500 me-1.5" style="color: #64748b; font-size: 1rem;"></i> <span>Training &amp; Location Information</span>
+                        </div>
+                        <!-- Row 1: Delivery Method | Provider -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-12 col-md-6">
+                                <div class="text-xs text-muted text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">DELIVERY METHOD</div>
+                                <div class="fw-bold text-dark fs-7" id="modal-detail-delivery-method">{{ \App\Models\OfflineTraining::normalizeDeliveryMethod($record['delivery_method'] ?? '-') }}</div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="text-xs text-muted text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">PROVIDER</div>
+                                <div class="fw-bold text-dark fs-7" id="modal-detail-provider">{{ $record['provider'] ?? '-' }}</div>
+                            </div>
+                        </div>
+                        <!-- Row 2: Provider Name | Venue -->
                         <div class="row g-3">
-                            <div class="col-md-6">
-                                <div class="text-xs text-muted text-uppercase">Delivery Method</div>
-                                <div class="fw-semibold text-dark fs-7" id="modal-detail-delivery-method">{{ \App\Models\OfflineTraining::normalizeDeliveryMethod($record['delivery_method'] ?? '-') }}</div>
+                            <div class="col-12 col-md-6">
+                                <div class="text-xs text-muted text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">PROVIDER NAME</div>
+                                <div class="fw-bold text-dark fs-7" id="modal-detail-provider-name">{{ $record['provider_name'] ?? '-' }}</div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="text-xs text-muted text-uppercase">Provider</div>
-                                <div class="fw-semibold text-dark fs-7" id="modal-detail-provider">{{ $record['provider'] ?? '-' }}</div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="text-xs text-muted text-uppercase">Venue</div>
-                                <div class="fw-semibold text-dark fs-7" id="modal-detail-venue">{{ $record['venue'] ?? '-' }}</div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="text-xs text-muted text-uppercase">Provider Name</div>
-                                <div class="fw-semibold text-dark fs-7" id="modal-detail-provider-name">{{ $record['provider_name'] ?? '-' }}</div>
+                            <div class="col-12 col-md-6">
+                                <div class="text-xs text-muted text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">VENUE</div>
+                                <div class="fw-bold text-dark fs-7" id="modal-detail-venue">{{ $record['venue'] ?? '-' }}</div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- 3. Bond Information Card -->
-                    <div class="card border-0 bg-light-subtle rounded-3 p-3">
-                        <h5 class="fw-bold text-dark fs-6 mb-3">
-                            <i class="ti ti-file-text me-1 text-primary"></i> Bond Information
-                        </h5>
+                    <!-- SECTION 3: Bond Details (Retain 4 items in 1 single row) -->
+                    <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 mb-3 shadow-sm" style="border: 1px solid #e2e8f0; border-radius: 1rem; padding: 1rem; background-color: rgba(248, 250, 252, 0.5); box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+                        <div class="section-heading text-xs text-sm font-semibold fw-semibold text-slate-700 mb-3 d-flex align-items-center gap-1.5" style="font-size: 0.8125rem; font-weight: 600; color: #334155;">
+                            <i class="ti ti-file-text text-slate-500 me-1.5" style="color: #64748b; font-size: 1rem;"></i> <span>Bond Details</span>
+                        </div>
                         <div class="row g-3">
-                            <div class="col-md-3">
-                                <div class="text-xs text-muted text-uppercase">Bond Status</div>
-                                <div class="fw-semibold text-dark fs-7" id="modal-detail-bond-status">{{ $record['bond_status'] ?? '-' }}</div>
+                            <div class="col-6 col-md-3">
+                                <div class="text-xs text-muted text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">BOND STATUS</div>
+                                <div class="fw-bold text-dark fs-7" id="modal-detail-bond-status">{{ $record['bond_status'] ?? '-' }}</div>
                             </div>
-                            <div class="col-md-3">
-                                <div class="text-xs text-muted text-uppercase">Bond Duration</div>
-                                <div class="fw-semibold text-dark fs-7" id="modal-detail-bond-duration">{{ !empty($record['bond_duration']) ? $record['bond_duration'] . ' Months' : '-' }}</div>
+                            <div class="col-6 col-md-3">
+                                <div class="text-xs text-muted text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">BOND DURATION</div>
+                                <div class="fw-bold text-dark fs-7" id="modal-detail-bond-duration">{{ !empty($record['bond_duration']) ? $record['bond_duration'] . ' Months' : '-' }}</div>
                             </div>
-                            <div class="col-md-3">
-                                <div class="text-xs text-muted text-uppercase">Bond End Date</div>
-                                <div class="fw-semibold text-dark fs-7" id="modal-detail-bond-end-date">{{ $record['bond_end_date'] ?? '-' }}</div>
+                            <div class="col-6 col-md-3">
+                                <div class="text-xs text-muted text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">BOND END DATE</div>
+                                <div class="fw-bold text-dark fs-7" id="modal-detail-bond-end-date">{{ $record['bond_end_date'] ?? '-' }}</div>
                             </div>
-                            <div class="col-md-3">
-                                <div class="text-xs text-muted text-uppercase">Bond Amount</div>
-                                <div class="fw-semibold text-dark fs-7" id="modal-detail-bond-amount">
+                            <div class="col-6 col-md-3">
+                                <div class="text-xs text-muted text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">BOND AMOUNT</div>
+                                <div class="fw-bold text-dark fs-7 font-monospace" id="modal-detail-bond-amount">
                                     {{ (!empty($record['bond_amount_idr']) && (float) $record['bond_amount_idr'] > 0)
                                         ? 'Rp ' . number_format((float) $record['bond_amount_idr'], 0, ',', '.')
                                         : ((!empty($record['bond_amount']) && is_numeric($record['bond_amount']) && (float) $record['bond_amount'] > 0)
                                             ? 'Rp ' . number_format((float) $record['bond_amount'], 0, ',', '.')
                                             : '-') }}
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 4: Certificate Details -->
+                    <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 mb-3 shadow-sm" style="border: 1px solid #e2e8f0; border-radius: 1rem; padding: 1rem; background-color: rgba(248, 250, 252, 0.5); box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+                        <div class="section-heading text-xs text-sm font-semibold fw-semibold text-slate-700 mb-3 d-flex align-items-center gap-1.5" style="font-size: 0.8125rem; font-weight: 600; color: #334155;">
+                            <i class="ti ti-certificate text-slate-500 me-1.5" style="color: #64748b; font-size: 1rem;"></i> <span>Certificate Details</span>
+                        </div>
+                        <!-- Row 1: Certificate Institution -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-12 col-md-6">
+                                <div class="text-xs text-muted text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">CERTIFICATE INSTITUTION</div>
+                                <div class="fw-bold text-dark fs-7" id="modal-detail-cert-institution">-</div>
+                            </div>
+                        </div>
+                        <!-- Row 2: Certificate Issued Date | Certificate Expired Date -->
+                        <div class="row g-3">
+                            <div class="col-12 col-md-6">
+                                <div class="text-xs text-muted text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">CERTIFICATE ISSUED DATE</div>
+                                <div class="fw-bold text-dark fs-7" id="modal-detail-cert-issued-date">-</div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="text-xs text-muted text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">CERTIFICATE EXPIRED DATE</div>
+                                <div class="fw-bold text-dark fs-7" id="modal-detail-cert-expired-date">-</div>
                             </div>
                         </div>
                     </div>
@@ -206,6 +239,11 @@
             bondAmountText = d.bond_amount_formatted;
         }
         $('#modal-detail-bond-amount').text(bondAmountText);
+
+        // 5. Card 4: Certificate Details (Institution, Issued Date, Expired Date)
+        $('#modal-detail-cert-institution').text(fallback(d.certificate_institution, isOnline ? 'PT KRAKATAU POSCO' : '-'));
+        $('#modal-detail-cert-issued-date').text(fallback(d.certificate_issued_date, '-'));
+        $('#modal-detail-cert-expired-date').text(fallback(d.certificate_expired_date, '-'));
     }
 
     $(document).on('click', '[data-bs-target="#recordDetailModal"], .btn-record-detail', function(e) {

@@ -29,7 +29,7 @@ class ExportMyOfflineLearningRecord implements FromArray, ShouldAutoSize, WithCo
 
     private function toExcelDate(?string $dateStr): float|int|string
     {
-        if (empty($dateStr) || $dateStr === '-' || $dateStr === '—') {
+        if (empty($dateStr) || $dateStr === '-' || $dateStr === 'â€”') {
             return '-';
         }
 
@@ -43,7 +43,7 @@ class ExportMyOfflineLearningRecord implements FromArray, ShouldAutoSize, WithCo
 
     private function toExcelTime(?string $dateTimeOrTime): float|string
     {
-        if (empty($dateTimeOrTime) || $dateTimeOrTime === '-' || $dateTimeOrTime === '—') {
+        if (empty($dateTimeOrTime) || $dateTimeOrTime === '-' || $dateTimeOrTime === 'â€”') {
             return '-';
         }
 
@@ -89,7 +89,7 @@ class ExportMyOfflineLearningRecord implements FromArray, ShouldAutoSize, WithCo
             $rowTeam = (!empty($row['team']) && $row['team'] !== '-') ? (string) $row['team'] : $userTeam;
 
             $courseTitle = (!empty($row['title']) && $row['title'] !== '-') ? $row['title'] : ((!empty($row['course_name']) && $row['course_name'] !== '-') ? $row['course_name'] : '-');
-            $type = '-';
+            $type = (!empty($row['type']) && $row['type'] !== '-') ? $row['type'] : '-';
             $category = 'Non KP-OWL';
             $mainClassification = (!empty($row['main_classification']) && $row['main_classification'] !== '-')
                 ? $row['main_classification']
@@ -114,7 +114,11 @@ class ExportMyOfflineLearningRecord implements FromArray, ShouldAutoSize, WithCo
             $reqRaw = strtolower(trim((string) ($row['requirement'] ?? '')));
             $requirement = ($reqRaw === 'mandatory') ? 'Mandatory' : 'Non-Mandatory';
 
-$deliveryMethod = \App\Models\OfflineTraining::normalizeDeliveryMethod($row['delivery_method'] ?? 'Offline');
+            $rawAtt = $row['attendance_status'] ?? ($row['attendance'] ?? 'No');
+            $attLower = strtolower(trim((string) $rawAtt));
+            $attendance = in_array($attLower, ['1', 'true', 'present', 'yes'], true) ? 'Yes' : 'No';
+
+            $deliveryMethod = \App\Models\OfflineTraining::normalizeDeliveryMethod($row['delivery_method'] ?? 'Offline');
 
             $provider = (!empty($row['provider']) && $row['provider'] !== '—' && $row['provider'] !== '-')
                 ? $row['provider']
@@ -139,34 +143,42 @@ $deliveryMethod = \App\Models\OfflineTraining::normalizeDeliveryMethod($row['del
                 : '-';
 
             $certificate = (!empty($row['certificate']) && $row['certificate'] !== '-' || !empty($row['has_certificate'])) ? 'Available' : 'Not Available';
+            $certInstitution = $row['certificate_institution'] ?? '-';
+            $certIssuedDate = $this->toExcelDate($row['certificate_issued_date'] ?? null);
+            $certExpiredDate = $this->toExcelDate($row['certificate_expired_date'] ?? null);
 
             $rowArr = [
-                $number++,                                          // A: NO
-                $rowEmpId,                                          // B: Employee ID
-                $rowName,                                           // C: Employee Name
-                $rowTeam,                                           // D: Team
-                $courseTitle,                                       // E: Course Title
-                $type,                                              // F: Type
-                $category,                                          // G: Category
-                $mainClassification,                                // H: Main Classification
-                $durationCell,                                      // I: Course Duration
-                $lhValue,                                           // J: Learning Hour
-                $progressCell,                                      // K: % Progress
-                $startDate,                                         // L: Start Date
-                $endDate,                                           // M: End Date
-                $startTime,                                         // N: Start Time
-                $endTime,                                           // O: End Time
-                $requirement,                                       // P: Requirement
-                $deliveryMethod,                                    // Q: Delivery Method
-                $provider,                                          // R: Provider
-                $providerName,                                      // S: Provider Name
-                $venue,                                             // T: Venue
-                $scoreVal,                                          // U: Assessment Score (L2)
-                $bondStatus,                                        // V: Bond Status
-                $bondDuration,                                      // W: Bond Duration
-                $bondEndDate,                                       // X: Bond End Date
-                $bondAmount,                                        // Y: Bond Amount
-                $certificate,                                       // Z: Certificate
+                $number++,                                          // 1. NO
+                $rowEmpId,                                          // 2. Employee ID
+                $rowName,                                           // 3. Employee Name
+                $rowTeam,                                           // 4. Team
+                $courseTitle,                                       // 5. Course Title
+                $type,                                              // 6. Type
+                $category,                                          // 7. Category
+                $mainClassification,                                // 8. Main Classification
+                $durationCell,                                      // 9. Course Duration
+                '-',                                                // 10. Total Recognized Duration (KP OWL & All Record only; exclude/hyphen '-' for Non-KP OWL)
+                $lhValue,                                           // 11. Learning Hours
+                $progressCell,                                      // 12. % Progress
+                $startDate,                                         // 13. Start Date
+                $endDate,                                           // 14. End Date
+                $startTime,                                         // 15. Start Time
+                $endTime,                                           // 16. End Time
+                $requirement,                                       // 17. Requirement
+                $deliveryMethod,                                    // 18. Delivery Method
+                $provider,                                          // 19. Provider
+                $providerName,                                      // 20. Provider Name
+                $venue,                                             // 21. Venue
+                $attendance,                                        // 22. Attendance
+                $scoreVal,                                          // 23. Assessment Score (L2)
+                $bondStatus,                                        // 24. Bond Status
+                $bondDuration,                                      // 25. Bond Duration
+                $bondEndDate,                                       // 26. Bond End Date
+                $bondAmount,                                        // 27. Bond Amount
+                $certificate,                                       // 28. Certificate
+                $certInstitution,                                   // 29. Certificate Institution
+                $certIssuedDate,                                    // 30. Certificate Issued Date
+                $certExpiredDate,                                   // 31. Certificate Expired Date
             ];
 
             foreach ($rowArr as $k => $v) {
@@ -184,32 +196,37 @@ $deliveryMethod = \App\Models\OfflineTraining::normalizeDeliveryMethod($row['del
     public function headings(): array
     {
         return [
-            'NO',                   // A
-            'Employee ID',          // B
-            'Employee Name',        // C
-            'Team',                 // D
-            'Course Title',         // E
-            'Type',                 // F
-            'Category',             // G
-            'Main Classification',  // H
-            'Course Duration',      // I
-            'Learning Hour',        // J
-            '% Progress',           // K
-            'Start Date',           // L
-            'End Date',             // M
-            'Start Time',           // N
-            'End Time',             // O
-            'Requirement',          // P
-            'Delivery Method',      // Q
-            'Provider',             // R
-            'Provider Name',        // S
-            'Venue',                // T
-            'Assessment Score (L2)',// U
-            'Bond Status',          // V
-            'Bond Duration',        // W
-            'Bond End Date',        // X
-            'Bond Amount',          // Y
-            'Certificate',          // Z
+            'NO',                           // 1
+            'Employee ID',                  // 2
+            'Employee Name',                // 3
+            'Team',                         // 4
+            'Course Title',                 // 5
+            'Type',                         // 6
+            'Category',                     // 7
+            'Main Classification',          // 8
+            'Course Duration',              // 9
+            'Total Recognized Duration',    // 10
+            'Learning Hours',               // 11
+            '% Progress',                   // 12
+            'Start Date',                   // 13
+            'End Date',                     // 14
+            'Start Time',                   // 15
+            'End Time',                     // 16
+            'Requirement',                  // 17
+            'Delivery Method',              // 18
+            'Provider',                     // 19
+            'Provider Name',                // 20
+            'Venue',                        // 21
+            'Attendance',                   // 22
+            'Assessment Score (L2)',        // 23
+            'Bond Status',                  // 24
+            'Bond Duration',                // 25
+            'Bond End Date',                // 26
+            'Bond Amount',                  // 27
+            'Certificate',                  // 28
+            'Certificate Institution',      // 29
+            'Certificate Issued Date',      // 30
+            'Certificate Expired Date',     // 31
         ];
     }
 
@@ -225,23 +242,28 @@ $deliveryMethod = \App\Models\OfflineTraining::normalizeDeliveryMethod($row['del
             'G'  => NumberFormat::FORMAT_GENERAL,       // Category
             'H'  => NumberFormat::FORMAT_GENERAL,       // Main Classification
             'I'  => 'hh:mm:ss',                         // Course Duration (Native Time)
-            'J'  => '0.00 "h"',                         // Learning Hour
-            'K'  => '0%',                               // % Progress
-            'L'  => 'yyyy-mm-dd',                       // Start Date
-            'M'  => 'yyyy-mm-dd',                       // End Date
-            'N'  => 'hh:mm:ss',                         // Start Time (Native Time)
-            'O'  => 'hh:mm:ss',                         // End Time (Native Time)
-            'P'  => NumberFormat::FORMAT_GENERAL,       // Requirement
-            'Q'  => NumberFormat::FORMAT_GENERAL,       // Delivery Method
-            'R'  => NumberFormat::FORMAT_GENERAL,       // Provider
-            'S'  => NumberFormat::FORMAT_GENERAL,       // Provider Name
-            'T'  => NumberFormat::FORMAT_GENERAL,       // Venue
-            'U'  => '0',                                // Assessment Score (L2)
-            'V'  => NumberFormat::FORMAT_GENERAL,       // Bond Status
-            'W'  => '0.##',                             // Bond Duration
-            'X'  => 'yyyy-mm-dd',                       // Bond End Date
-            'Y'  => '"Rp "#,##0;;"Rp -"',               // Bond Amount
-            'Z'  => NumberFormat::FORMAT_GENERAL,       // Certificate
+            'J'  => NumberFormat::FORMAT_GENERAL,       // Total Recognized Duration ('-')
+            'K'  => '0.00 "h"',                         // Learning Hours
+            'L'  => '0%',                               // % Progress
+            'M'  => 'yyyy-mm-dd',                       // Start Date
+            'N'  => 'yyyy-mm-dd',                       // End Date
+            'O'  => 'hh:mm:ss',                         // Start Time (Native Time)
+            'P'  => 'hh:mm:ss',                         // End Time (Native Time)
+            'Q'  => NumberFormat::FORMAT_GENERAL,       // Requirement
+            'R'  => NumberFormat::FORMAT_GENERAL,       // Delivery Method
+            'S'  => NumberFormat::FORMAT_GENERAL,       // Provider
+            'T'  => NumberFormat::FORMAT_GENERAL,       // Provider Name
+            'U'  => NumberFormat::FORMAT_GENERAL,       // Venue
+            'V'  => NumberFormat::FORMAT_GENERAL,       // Attendance
+            'W'  => '0',                                // Assessment Score (L2)
+            'X'  => NumberFormat::FORMAT_GENERAL,       // Bond Status
+            'Y'  => '0.##',                             // Bond Duration
+            'Z'  => 'yyyy-mm-dd',                       // Bond End Date
+            'AA' => '"Rp "#,##0;;"Rp -"',               // Bond Amount
+            'AB' => NumberFormat::FORMAT_GENERAL,       // Certificate
+            'AC' => NumberFormat::FORMAT_GENERAL,       // Certificate Institution
+            'AD' => 'yyyy-mm-dd',                       // Certificate Issued Date
+            'AE' => 'yyyy-mm-dd',                       // Certificate Expired Date
         ];
     }
 
@@ -277,7 +299,7 @@ $deliveryMethod = \App\Models\OfflineTraining::normalizeDeliveryMethod($row['del
                     ->setVertical(Alignment::VERTICAL_CENTER);
 
                 if ($highestRow >= 2) {
-                    $sheet->getStyle('U2:U' . $highestRow)->getNumberFormat()->setFormatCode('0');
+                    $sheet->getStyle('W2:W' . $highestRow)->getNumberFormat()->setFormatCode('0');
                 }
 
                 $sheet->setShowSummaryBelow(false);

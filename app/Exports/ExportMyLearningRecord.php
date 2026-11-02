@@ -9,6 +9,7 @@ use App\Services\Learning\LearningRecordPlaylistExportService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithColumnFormatting;
@@ -34,7 +35,7 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithColumnFor
 
     private function toExcelDate(?string $dateStr): float|int|string
     {
-        if (empty($dateStr) || $dateStr === '-' || $dateStr === '—') {
+        if (empty($dateStr) || $dateStr === '-' || $dateStr === 'â€”') {
             return '-';
         }
 
@@ -48,7 +49,7 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithColumnFor
 
     private function toExcelTime(?string $dateTimeOrTime): float|string
     {
-        if (empty($dateTimeOrTime) || $dateTimeOrTime === '-' || $dateTimeOrTime === '—') {
+        if (empty($dateTimeOrTime) || $dateTimeOrTime === '-' || $dateTimeOrTime === 'â€”') {
             return '-';
         }
 
@@ -103,6 +104,22 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithColumnFor
         $playlistChildrenService = app(LearningRecordPlaylistExportService::class);
         $childrenMap = $playlistChildrenService->getPlaylistChildrenBatch((int) $user->id, $playlistIds);
 
+        // Preload certificate settings and user certificates (Zero N+1)
+        $contentIds = [];
+        $planIds = [];
+        foreach ($this->rows as $r) {
+            if (!empty($r['content_id'])) $contentIds[] = (int) $r['content_id'];
+            if (!empty($r['plan_id'])) $planIds[] = (int) $r['plan_id'];
+            if (!empty($r['playlist_id'])) $planIds[] = (int) $r['playlist_id'];
+        }
+        $certSettingsContent = !empty($contentIds)
+            ? DB::table('certificate_settings')->whereIn('content_id', array_unique($contentIds))->get()->keyBy('content_id')
+            : collect();
+        $certSettingsPlan = !empty($planIds)
+            ? DB::table('certificate_settings')->whereIn('trainingplan_id', array_unique($planIds))->get()->keyBy('trainingplan_id')
+            : collect();
+        $userCertificates = DB::table('certificates')->where('user_id', $user->id)->get();
+
         $output = [$this->headings()];
         $number = 1;
 
@@ -126,7 +143,8 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithColumnFor
             $startTime = $this->toExcelTime($startRaw);
             $endTime = $this->toExcelTime($finishRaw);
 
-            $attendance = 'Yes';
+            $rawAttendance = $row['attendance_status'] ?? $row['attendance'] ?? ($progressInt >= 100 ? 'Yes' : 'No');
+            $attendance = in_array(strtolower(trim((string) $rawAttendance)), ['1', 'true', 'present', 'yes'], true) ? 'Yes' : 'No';
             $requirement = $row['requirement'] ?? Content::mapRequirement($row['subtitle'] ?? ($row['status'] ?? null));
 
             $deliveryMethod = \App\Models\OfflineTraining::normalizeDeliveryMethod($row['delivery_method'] ?? 'Online');
@@ -150,36 +168,58 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithColumnFor
                 $playlistId = (int) str_replace('playlist_', '', $row['item_id']);
             }
 
+            $cid = $row['content_id'] ?? ($row['id'] ?? null);
+            $pid = $row['plan_id'] ?? ($row['playlist_id'] ?? null);
+            $onCs = ($isPlaylist && $pid && isset($certSettingsPlan[$pid]))
+                ? $certSettingsPlan[$pid]
+                : ($cid && isset($certSettingsContent[$cid]) ? $certSettingsContent[$cid] : null);
+
+            $userCert = $userCertificates->first(function ($c) use ($cid, $pid, $isPlaylist) {
+                if ($isPlaylist && $pid) {
+                    return $c->source_id == $pid && in_array($c->certificate_type, ['playlist', 'trainingplan']);
+                }
+                return $c->source_id == $cid && in_array($c->certificate_type, ['content', 'course']);
+            });
+
+            $isReady = ($row['cert_state'] ?? 'none') === 'ready' || $progressInt >= 100;
+            $certInstitution = $userCert?->institution ?: ($onCs?->institution ?: ($onCs?->issuer_name ?: ($isReady ? 'PT Krakatau Posco' : '-')));
+            $certIssuedDate = $this->toExcelDate($userCert?->issued_date ?: ($onCs?->issued_date ?: ($userCert?->issued_at ?: ($isReady && !empty($finishRaw) ? $finishRaw : null))));
+            $certExpiredDate = $this->toExcelDate($userCert?->expired_date ?: ($onCs?->expired_date ?: null));
+
             $category = $isPlaylist ? 'Playlist' : 'All Content';
 
             $rowArr = [
-                $number++,                                                                                          // A: NO
-                $empId,                                                                                             // B: Employee ID
-                $userName,                                                                                          // C: Employee Name
-                $userTeam,                                                                                          // D: Team
-                $row['title'] ?? '-',                                                                               // E: Course Title
-                $row['type'] ?? '-',                                                                                // F: Type
-                $category,                                                                                          // G: Category
-                (!empty($row['classification']) && $row['classification'] !== '-') ? $row['classification'] : '-',  // H: Main Classification
-                $durationCell,                                                                                      // I: Course Duration
-                $recognizedCell,                                                                                    // J: Total Recognized Duration
-                $lhValue,                                                                                           // K: Learning Hour
-                $progressCell,                                                                                      // L: Progress
-                $startDate,                                                                                         // M: Start Date
-                $endDate,                                                                                           // N: End Date
-                $startTime,                                                                                         // O: Start Time
-                $endTime,                                                                                           // P: End Time
-                $requirement ?: '-',                                                                                // Q: Requirement
-                $deliveryMethod,                                                                                    // R: Delivery Method
-                $provider,                                                                                          // S: Provider
-                $providerName,                                                                                      // T: Provider Name
-                $venue,                                                                                             // U: Venue
-                $scoreVal,                                                                                          // V: Assessment Score (L2)
-                $bondStatus,                                                                                        // W: Bond Status
-                $bondDuration,                                                                                      // X: Bond Duration
-                $bondEndDate,                                                                                       // Y: Bond End Date
-                $bondAmount,                                                                                        // Z: Bond Amount
-                $certificate,                                                                                       // AA: Certificate
+                $number++,                                                                                          // 1. NO
+                $empId,                                                                                             // 2. Employee ID
+                $userName,                                                                                          // 3. Employee Name
+                $userTeam,                                                                                          // 4. Team
+                $row['title'] ?? '-',                                                                               // 5. Course Title
+                $row['type'] ?? '-',                                                                                // 6. Type
+                $category,                                                                                          // 7. Category
+                (!empty($row['classification']) && $row['classification'] !== '-') ? $row['classification'] : '-',  // 8. Main Classification
+                $durationCell,                                                                                      // 9. Course Duration
+                $recognizedCell,                                                                                    // 10. Total Recognized Duration
+                $lhValue,                                                                                           // 11. Learning Hours
+                $progressCell,                                                                                      // 12. % Progress
+                $startDate,                                                                                         // 13. Start Date
+                $endDate,                                                                                           // 14. End Date
+                $startTime,                                                                                         // 15. Start Time
+                $endTime,                                                                                           // 16. End Time
+                $requirement ?: '-',                                                                                // 17. Requirement
+                $deliveryMethod,                                                                                    // 18. Delivery Method
+                $provider,                                                                                          // 19. Provider
+                $providerName,                                                                                      // 20. Provider Name
+                $venue,                                                                                             // 21. Venue
+                $attendance,                                                                                        // 22. Attendance
+                $scoreVal,                                                                                          // 23. Assessment Score (L2)
+                $bondStatus,                                                                                        // 24. Bond Status
+                $bondDuration,                                                                                      // 25. Bond Duration
+                $bondEndDate,                                                                                       // 26. Bond End Date
+                $bondAmount,                                                                                        // 27. Bond Amount
+                $certificate,                                                                                       // 28. Certificate
+                $certInstitution,                                                                                   // 29. Certificate Institution
+                $certIssuedDate,                                                                                    // 30. Certificate Issued Date
+                $certExpiredDate,                                                                                   // 31. Certificate Expired Date
             ];
 
             // Auto-fallback empty values to '-'
@@ -204,33 +244,37 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithColumnFor
                         $childScore = $this->formatCleanScore($child['score'] ?? null);
 
                         $childRowArr = [
-                            '-',                                                    // A: No
-                            $empId,                                                 // B: Employee ID
-                            $userName,                                              // C: Name
-                            $userTeam,                                              // D: Team
-                            '    ' . ($child['title'] ?? '-'),                      // E: Course Title
-                            $child['type'] ?? '-',                                  // F: Type
-                            'Content Playlist',                                     // G: Category (Dynamic Playlist Content)
-                            $child['classification'] ?? '-',                        // H: Main Classification
-                            $childDurCell,                                          // I: Course Duration
-                            $childRecDurCell,                                       // J: Total Recognized Duration
-                            '-',                                                    // K: Learning Hour (Prevent double calculation in SUM)
-                            $childProgInt / 100,                                    // L: Progress
-                            $this->toExcelDate($child['start_date'] ?? null),       // M: Start Date
-                            $this->toExcelDate($child['end_date'] ?? null),         // N: End Date
-                            $this->toExcelTime($child['start_time'] ?? null),       // O: Start Time
-                            $this->toExcelTime($child['end_time'] ?? null),         // P: End Time
-                            $child['requirement'] ?? 'Non-Mandatory',               // Q: Requirement
-                            'Online',                                               // R: Delivery Method
-                            'Internal',                                             // S: Provider
-                            'KP-OWL',                                               // T: Provider Name
-                            'KP-OWL',                                               // U: Venue
-                            $childScore,                                            // V: Assessment Score (L2)
-                            '-',                                                    // W: Bond Status
-                            '-',                                                    // X: Bond Duration
-                            '-',                                                    // Y: Bond End Date
-                            '-',                                                    // Z: Bond Amount
-                            '-',                                                    // AA: Certificate
+                            '-',                                                    // 1. NO
+                            $empId,                                                 // 2. Employee ID
+                            $userName,                                              // 3. Employee Name
+                            $userTeam,                                              // 4. Team
+                            '    ' . ($child['title'] ?? '-'),                      // 5. Course Title
+                            $child['type'] ?? '-',                                  // 6. Type
+                            'Content Playlist',                                     // 7. Category (Dynamic Playlist Content)
+                            $child['classification'] ?? '-',                        // 8. Main Classification
+                            $childDurCell,                                          // 9. Course Duration
+                            $childRecDurCell,                                       // 10. Total Recognized Duration
+                            '-',                                                    // 11. Learning Hours (Prevent double calculation in SUM)
+                            $childProgInt / 100,                                    // 12. % Progress
+                            $this->toExcelDate($child['start_date'] ?? null),       // 13. Start Date
+                            $this->toExcelDate($child['end_date'] ?? null),         // 14. End Date
+                            $this->toExcelTime($child['start_time'] ?? null),       // 15. Start Time
+                            $this->toExcelTime($child['end_time'] ?? null),         // 16. End Time
+                            $child['requirement'] ?? 'Non-Mandatory',               // 17. Requirement
+                            'Online',                                               // 18. Delivery Method
+                            'Internal',                                             // 19. Provider
+                            'KP-OWL',                                               // 20. Provider Name
+                            'KP-OWL',                                               // 21. Venue
+                            $childProgInt >= 100 ? 'Yes' : 'No',                    // 22. Attendance
+                            $childScore,                                            // 23. Assessment Score (L2)
+                            '-',                                                    // 24. Bond Status
+                            '-',                                                    // 25. Bond Duration
+                            '-',                                                    // 26. Bond End Date
+                            '-',                                                    // 27. Bond Amount
+                            '-',                                                    // 28. Certificate
+                            '-',                                                    // 29. Certificate Institution
+                            '-',                                                    // 30. Certificate Issued Date
+                            '-',                                                    // 31. Certificate Expired Date
                         ];
 
                         foreach ($childRowArr as $k => $v) {
@@ -252,33 +296,37 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithColumnFor
     public function headings(): array
     {
         return [
-            'NO',                   // A
-            'Employee ID',          // B
-            'Employee Name',        // C
-            'Team',                 // D
-            'Course Title',         // E
-            'Type',                 // F
-            'Category',             // G
-            'Main Classification',  // H
-            'Course Duration',      // I
-            'Total Recognized Duration', // J
-            'Learning Hour',        // K
-            'Progress',             // L
-            'Start Date',           // M
-            'End Date',             // N
-            'Start Time',           // O
-            'End Time',             // P
-            'Requirement',          // Q
-            'Delivery Method',      // R
-            'Provider',             // S
-            'Provider Name',        // T
-            'Venue',                // U
-            'Assessment Score (L2)',// V
-            'Bond Status',          // W
-            'Bond Duration',        // X
-            'Bond End Date',        // Y
-            'Bond Amount',          // Z
-            'Certificate',          // AA
+            'NO',                           // 1
+            'Employee ID',                  // 2
+            'Employee Name',                // 3
+            'Team',                         // 4
+            'Course Title',                 // 5
+            'Type',                         // 6
+            'Category',                     // 7
+            'Main Classification',          // 8
+            'Course Duration',              // 9
+            'Total Recognized Duration',    // 10
+            'Learning Hours',               // 11
+            '% Progress',                   // 12
+            'Start Date',                   // 13
+            'End Date',                     // 14
+            'Start Time',                   // 15
+            'End Time',                     // 16
+            'Requirement',                  // 17
+            'Delivery Method',              // 18
+            'Provider',                     // 19
+            'Provider Name',                // 20
+            'Venue',                        // 21
+            'Attendance',                   // 22
+            'Assessment Score (L2)',        // 23
+            'Bond Status',                  // 24
+            'Bond Duration',                // 25
+            'Bond End Date',                // 26
+            'Bond Amount',                  // 27
+            'Certificate',                  // 28
+            'Certificate Institution',      // 29
+            'Certificate Issued Date',      // 30
+            'Certificate Expired Date',     // 31
         ];
     }
 
@@ -295,7 +343,7 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithColumnFor
             'H'  => NumberFormat::FORMAT_GENERAL,       // Main Classification
             'I'  => 'hh:mm:ss',                         // Course Duration (Native Time)
             'J'  => 'hh:mm:ss',                         // Total Recognized Duration (Native Time)
-            'K'  => '0.00 "h"',                         // Learning Hour
+            'K'  => '0.00 "h"',                         // Learning Hours
             'L'  => '0%',                               // % Progress
             'M'  => 'yyyy-mm-dd',                       // Start Date
             'N'  => 'yyyy-mm-dd',                       // End Date
@@ -306,12 +354,16 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithColumnFor
             'S'  => NumberFormat::FORMAT_GENERAL,       // Provider
             'T'  => NumberFormat::FORMAT_GENERAL,       // Provider Name
             'U'  => NumberFormat::FORMAT_GENERAL,       // Venue
-            'V'  => '0',                                // Assessment Score (L2)
-            'W'  => NumberFormat::FORMAT_GENERAL,       // Bond Status
-            'X'  => '0.##',                             // Bond Duration
-            'Y'  => 'yyyy-mm-dd',                       // Bond End Date
-            'Z'  => '"Rp "#,##0;;"Rp -"',               // Bond Amount
-            'AA' => NumberFormat::FORMAT_GENERAL,       // Certificate
+            'V'  => NumberFormat::FORMAT_GENERAL,       // Attendance
+            'W'  => '0',                                // Assessment Score (L2)
+            'X'  => NumberFormat::FORMAT_GENERAL,       // Bond Status
+            'Y'  => '0.##',                             // Bond Duration
+            'Z'  => 'yyyy-mm-dd',                       // Bond End Date
+            'AA' => '"Rp "#,##0;;"Rp -"',               // Bond Amount
+            'AB' => NumberFormat::FORMAT_GENERAL,       // Certificate
+            'AC' => NumberFormat::FORMAT_GENERAL,       // Certificate Institution
+            'AD' => 'yyyy-mm-dd',                       // Certificate Issued Date
+            'AE' => 'yyyy-mm-dd',                       // Certificate Expired Date
         ];
     }
 
@@ -347,7 +399,7 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithColumnFor
                     ->setVertical(Alignment::VERTICAL_CENTER);
 
                 if ($highestRow >= 2) {
-                    $sheet->getStyle('V2:V' . $highestRow)->getNumberFormat()->setFormatCode('0');
+                    $sheet->getStyle('W2:W' . $highestRow)->getNumberFormat()->setFormatCode('0');
                 }
 
                 // Highlight main Playlist items with light blue/gray fill (#EBF3FB) and bold text

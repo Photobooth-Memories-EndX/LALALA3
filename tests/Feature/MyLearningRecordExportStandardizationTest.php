@@ -73,55 +73,113 @@ class MyLearningRecordExportStandardizationTest extends TestCase
     {
         $this->actingAs($this->userA);
 
-        // 1. KP OWL (Online): Exactly 12 columns matching record-section.blade.php
+        // 1. KP OWL (Online): Standardized 31 sequential columns
         $exportOnline = new ExportMyLearningRecord();
         $this->assertEquals([
-            'No',
-            'Course',
+            'NO',
+            'Employee ID',
+            'Employee Name',
+            'Team',
+            'Course Title',
             'Type',
             'Category',
-            'Classification',
-            'Duration',
-            'Learning Hour',
-            'Progress',
-            'Date Time',
+            'Main Classification',
+            'Course Duration',
+            'Total Recognized Duration',
+            'Learning Hours',
+            '% Progress',
+            'Start Date',
+            'End Date',
+            'Start Time',
+            'End Time',
+            'Requirement',
+            'Delivery Method',
+            'Provider',
+            'Provider Name',
+            'Venue',
             'Attendance',
-            'Assessment Score',
+            'Assessment Score (L2)',
+            'Bond Status',
+            'Bond Duration',
+            'Bond End Date',
+            'Bond Amount',
             'Certificate',
+            'Certificate Institution',
+            'Certificate Issued Date',
+            'Certificate Expired Date',
         ], $exportOnline->headings());
 
-        // 2. Non KP OWL (Offline): Exactly 12 columns matching learning-record-offline.blade.php
+        // 2. Non KP OWL (Offline): Standardized 31 sequential columns
         $exportOffline = new ExportMyOfflineLearningRecord();
         $this->assertEquals([
-            'No',
-            'Training Title',
+            'NO',
+            'Employee ID',
+            'Employee Name',
+            'Team',
+            'Course Title',
             'Type',
             'Category',
-            'Classification',
-            'Duration',
-            'Learning Hour',
-            'Progress',
+            'Main Classification',
+            'Course Duration',
+            'Total Recognized Duration',
+            'Learning Hours',
+            '% Progress',
+            'Start Date',
+            'End Date',
+            'Start Time',
+            'End Time',
+            'Requirement',
+            'Delivery Method',
+            'Provider',
+            'Provider Name',
+            'Venue',
             'Attendance',
-            'Date',
-            'Score',
+            'Assessment Score (L2)',
+            'Bond Status',
+            'Bond Duration',
+            'Bond End Date',
+            'Bond Amount',
             'Certificate',
+            'Certificate Institution',
+            'Certificate Issued Date',
+            'Certificate Expired Date',
         ], $exportOffline->headings());
 
-        // 3. All Record: Exactly 12 columns matching learning-record-all.blade.php (No 'Source' column)
+        // 3. All Record: Standardized 32 sequential columns (Includes 'Source')
         $exportAll = new ExportMyAllLearningRecord();
         $this->assertEquals([
-            'No',
-            'Training Title',
+            'NO',
+            'Source',
+            'Employee ID',
+            'Employee Name',
+            'Team',
+            'Course Title',
             'Type',
             'Category',
-            'Classification',
-            'Duration',
-            'Learning Hour',
-            'Progress',
+            'Main Classification',
+            'Course Duration',
+            'Total Recognized Duration',
+            'Learning Hours',
+            '% Progress',
+            'Start Date',
+            'End Date',
+            'Start Time',
+            'End Time',
+            'Requirement',
+            'Delivery Method',
+            'Provider',
+            'Provider Name',
+            'Venue',
             'Attendance',
-            'Date',
-            'Score',
+            'Assessment Score (L2)',
+            'Bond Status',
+            'Bond Duration',
+            'Bond End Date',
+            'Bond Amount',
             'Certificate',
+            'Certificate Institution',
+            'Certificate Issued Date',
+            'Certificate Expired Date',
         ], $exportAll->headings());
     }
 
@@ -177,30 +235,28 @@ class MyLearningRecordExportStandardizationTest extends TestCase
         $onlineData = (new ExportMyLearningRecord())->array();
         $this->assertCount(2, $onlineData); // 1 header + 1 data row
         $this->assertNull(collect($onlineData)->firstWhere(0, 'TOTAL'), 'Online export must NOT have TOTAL row');
-        $this->assertEquals('Standard Online Course', $onlineData[1][1]);
-        $this->assertEquals('00:30:00', $onlineData[1][5]);
-        $this->assertEquals('0.50 hrs', $onlineData[1][6]);
-        $this->assertEquals('100%', $onlineData[1][7]);
-        $this->assertEquals('Present', $onlineData[1][9]);
+        $this->assertEquals('Standard Online Course', $onlineData[1][4]); // Course Title at index 4
+        $this->assertEquals(0.5, $onlineData[1][10]); // Learning Hours at index 10
+        $this->assertEquals(1.0, $onlineData[1][11]); // % Progress at index 11
+        $this->assertEquals('Yes', $onlineData[1][21]); // Attendance at index 21
 
         // B. Offline Check
         $offlineData = (new ExportMyOfflineLearningRecord())->array();
         $this->assertCount(2, $offlineData); // 1 header + 1 data row
         $this->assertNull(collect($offlineData)->firstWhere(0, 'TOTAL'), 'Offline export must NOT have TOTAL row');
-        $this->assertEquals('Standard Offline Workshop', $offlineData[1][1]);
-        $this->assertEquals('08:00:00', $offlineData[1][5]);
-        $this->assertEquals('8.00 hrs', $offlineData[1][6]);
-        $this->assertEquals('100%', $offlineData[1][7]);
-        $this->assertEquals('Present', $offlineData[1][8]);
+        $this->assertEquals('Standard Offline Workshop', $offlineData[1][4]); // Course Title at index 4
+        $this->assertEquals(8.0, $offlineData[1][10]); // Learning Hours at index 10
+        $this->assertEquals(1.0, $offlineData[1][11]); // % Progress at index 11
+        $this->assertEquals('Yes', $offlineData[1][21]); // Attendance at index 21
 
         // C. All Record Check
         $allData = (new ExportMyAllLearningRecord())->array();
         $this->assertCount(3, $allData); // 1 header + 2 data rows
         $this->assertNull(collect($allData)->firstWhere(0, 'TOTAL'), 'All Record export must NOT have TOTAL row');
         // Find the online course row in All Record
-        $onlineRowInAll = collect($allData)->firstWhere(1, 'Standard Online Course');
+        $onlineRowInAll = collect($allData)->firstWhere(5, 'Standard Online Course');
         $this->assertNotNull($onlineRowInAll);
-        $this->assertEquals('Present', $onlineRowInAll[8]); // Attendance at index 8 for online in All Record
+        $this->assertEquals('Yes', $onlineRowInAll[22]); // Attendance at index 22 for online in All Record
     }
 
     /**
@@ -250,14 +306,14 @@ class MyLearningRecordExportStandardizationTest extends TestCase
         $this->actingAs($this->userA);
 
         $onlineData = (new ExportMyLearningRecord())->array();
-        $this->assertFalse(collect($onlineData)->pluck(1)->contains('User B Secret Training'));
+        $this->assertFalse(collect($onlineData)->pluck(4)->contains('User B Secret Training'));
 
         $offlineData = (new ExportMyOfflineLearningRecord())->array();
-        $this->assertFalse(collect($offlineData)->pluck(1)->contains('User B Secret Offline Event'));
+        $this->assertFalse(collect($offlineData)->pluck(4)->contains('User B Secret Offline Event'));
 
         $allData = (new ExportMyAllLearningRecord())->array();
-        $this->assertFalse(collect($allData)->pluck(1)->contains('User B Secret Training'));
-        $this->assertFalse(collect($allData)->pluck(1)->contains('User B Secret Offline Event'));
+        $this->assertFalse(collect($allData)->pluck(5)->contains('User B Secret Training'));
+        $this->assertFalse(collect($allData)->pluck(5)->contains('User B Secret Offline Event'));
     }
 
     /**
@@ -317,9 +373,9 @@ class MyLearningRecordExportStandardizationTest extends TestCase
         $items = array_slice($data, 1);
 
         $this->assertCount(1, $items);
-        $this->assertEquals('Effective Business Communication', $items[0][1]);
-        $this->assertEquals('In-House', $items[0][2]);
-        $this->assertEquals('Leadership', $items[0][4]);
+        $this->assertEquals('Effective Business Communication', $items[0][4]); // Course Title at index 4
+        $this->assertEquals('In-House', $items[0][5]); // Type at index 5
+        $this->assertEquals('Leadership', $items[0][7]); // Main Classification at index 7
 
         // Non-matching search yields header only
         $emptyExport = new ExportMyOfflineLearningRecord(['search' => 'NonExistentKeywordXYZ']);
@@ -376,13 +432,13 @@ class MyLearningRecordExportStandardizationTest extends TestCase
         $exportPresent = new ExportMyOfflineLearningRecord(['attendance' => 'Present']);
         $itemsPresent = array_slice($exportPresent->array(), 1);
         $this->assertCount(1, $itemsPresent);
-        $this->assertEquals('First Aid Practical Course', $itemsPresent[0][1]);
+        $this->assertEquals('First Aid Practical Course', $itemsPresent[0][4]);
 
         // Filter by Delivery Method: Field Simulation
         $exportField = new ExportMyOfflineLearningRecord(['delivery_method' => 'Field Simulation']);
         $itemsField = array_slice($exportField->array(), 1);
         $this->assertCount(1, $itemsField);
-        $this->assertEquals('Fire Safety Drill', $itemsField[0][1]);
+        $this->assertEquals('Fire Safety Drill', $itemsField[0][4]);
     }
 
     /**
