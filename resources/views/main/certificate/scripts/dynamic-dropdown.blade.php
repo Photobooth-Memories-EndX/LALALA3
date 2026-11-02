@@ -101,5 +101,21 @@ $(function () {
     $(document).on('change', '.certificate-assessment-required, .certificate-default-template', function () {
         toggleFields($(this).closest('form'));
     });
+
+    // Default Institution Button Handler
+    $(document).on('click', '.btn-default-institution', function () {
+        $(this).closest('form').find('.certificate-institution-input').val('PT KRAKATAU POSCO');
+    });
+
+    // Client-side date order validation
+    $(document).on('change', '.certificate-issued-date, .certificate-expired-date', function () {
+        const form = $(this).closest('form');
+        const issued = form.find('.certificate-issued-date').val();
+        const expired = form.find('.certificate-expired-date').val();
+        if (issued && expired && expired < issued) {
+            alert('Certificate Expired Date must not be earlier than Certificate Issued Date.');
+            form.find('.certificate-expired-date').val('');
+        }
+    });
 });
 </script>

@@ -18,6 +18,7 @@ class OfflineTrainingUser extends Model
 
     protected $fillable = [
         'offline_training_id',
+        'certificate_id',
         'user_id',
         'employee_id',
         'name',
@@ -100,6 +101,11 @@ class OfflineTrainingUser extends Model
     public function training(): BelongsTo
     {
         return $this->belongsTo(OfflineTraining::class, 'offline_training_id');
+    }
+
+    public function certificateSetting(): BelongsTo
+    {
+        return $this->belongsTo(CertificateSetting::class, 'certificate_id');
     }
 
     public function user(): BelongsTo

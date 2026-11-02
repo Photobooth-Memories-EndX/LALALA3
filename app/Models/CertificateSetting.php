@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CertificateSetting extends Model
 {
@@ -16,6 +17,9 @@ class CertificateSetting extends Model
         'minimum_progress',
         'minimum_score',
         'issuer_name',
+        'institution',
+        'issued_date',
+        'expired_date',
         'issuer_logo',
         'use_default_template',
         'certificate_template',
@@ -26,9 +30,21 @@ class CertificateSetting extends Model
 
     protected $casts = [
         'is_assessment_required' => 'boolean',
-        'use_default_template' => 'boolean',
-        'is_active' => 'boolean',
+        'use_default_template'   => 'boolean',
+        'is_active'              => 'boolean',
+        'issued_date'            => 'date',
+        'expired_date'           => 'date',
     ];
+
+    public function offlineTrainingUsers(): HasMany
+    {
+        return $this->hasMany(OfflineTrainingUser::class, 'certificate_id');
+    }
+
+    public function getCertificateAvailableAttribute(): string
+    {
+        return $this->is_active ? 'YES' : 'NO';
+    }
 
     public function content()
     {

@@ -191,11 +191,20 @@ class CertificateController extends Controller
             ->addColumn('issuer', function ($row) {
                 return '<span>' . e($row->issuer_name) . '</span>';
             })
+            ->addColumn('institution', function ($row) {
+                return '<span>' . e($row->institution ?: 'PT KRAKATAU POSCO') . '</span>';
+            })
+            ->addColumn('issued_date', function ($row) {
+                return $row->issued_date ? '<span class="badge bg-secondary-lt">' . $row->issued_date->format('d-m-Y') . '</span>' : '<span class="text-muted">-</span>';
+            })
+            ->addColumn('expired_date', function ($row) {
+                return $row->expired_date ? '<span class="badge bg-secondary-lt">' . $row->expired_date->format('d-m-Y') . '</span>' : '<span class="text-muted">-</span>';
+            })
             ->addColumn('status', fn ($row) => $row->is_active
-                ? '<span class="badge bg-green-lt text-green">ON</span>'
-                : '<span class="badge bg-red-lt text-red">OFF</span>')
+                ? '<span class="badge bg-green-lt text-green">ON</span><div class="small text-muted" style="font-size:10px;">Available: YES</div>'
+                : '<span class="badge bg-red-lt text-red">OFF</span><div class="small text-muted" style="font-size:10px;">Available: NO</div>')
             ->addColumn('action', fn ($row) => $this->certificateActionColumn($row))
-            ->rawColumns(['type', 'assessment', 'minimum_progress', 'minimum_score', 'issuer', 'status', 'action'])
+            ->rawColumns(['type', 'assessment', 'minimum_progress', 'minimum_score', 'issuer', 'institution', 'issued_date', 'expired_date', 'status', 'action'])
             ->make(true);
     }
 
@@ -212,6 +221,9 @@ class CertificateController extends Controller
             'minimum_progress'       => $setting->minimum_progress,
             'minimum_score'          => $setting->minimum_score,
             'issuer_name'            => $setting->issuer_name,
+            'institution'            => $setting->institution ?: 'PT KRAKATAU POSCO',
+            'issued_date'            => optional($setting->issued_date)->format('Y-m-d'),
+            'expired_date'           => optional($setting->expired_date)->format('Y-m-d'),
             'use_default_template'   => (bool) $setting->use_default_template,
             'custom_background'      => $setting->custom_background,
             'is_active'              => (bool) $setting->is_active,
@@ -246,6 +258,9 @@ public function store(Request $request)
         'minimum_progress' => 'required|integer|min:0|max:100',
         'minimum_score' => 'nullable|integer|min:0|max:100',
         'issuer_name' => 'required|string|max:255',
+        'institution' => 'nullable|string|max:255',
+        'issued_date' => 'nullable|date',
+        'expired_date' => 'nullable|date|after_or_equal:issued_date',
         'use_default_template' => 'nullable|boolean',
         'certificate_template' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:4096',
         'custom_background' => array_filter([
@@ -255,6 +270,8 @@ public function store(Request $request)
             'max:2048',
         ]),
         'is_active' => 'required|boolean',
+    ], [
+        'expired_date.after_or_equal' => 'Expired date must not be earlier than issued date.',
     ]);
 
     $data = $request->only([
@@ -263,9 +280,15 @@ public function store(Request $request)
         'minimum_progress',
         'minimum_score',
         'issuer_name',
+        'institution',
+        'issued_date',
+        'expired_date',
         'is_active',
         'use_default_template',
     ]);
+    if (empty($data['institution'])) {
+        $data['institution'] = 'PT KRAKATAU POSCO';
+    }
 
     $data['is_assessment_required'] = $request->has('is_assessment_required') ? 1 : 0;
     $data['use_default_template'] = $request->has('use_default_template');
@@ -310,6 +333,9 @@ public function update(Request $request, CertificateSetting $certificateSetting)
         'minimum_progress' => 'required|integer|min:0|max:100',
         'minimum_score' => 'nullable|integer|min:0|max:100',
         'issuer_name' => 'required|string|max:255',
+        'institution' => 'nullable|string|max:255',
+        'issued_date' => 'nullable|date',
+        'expired_date' => 'nullable|date|after_or_equal:issued_date',
         'use_default_template' => 'nullable|boolean',
         'certificate_template' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:4096',
         'custom_background' => array_filter([
@@ -319,6 +345,8 @@ public function update(Request $request, CertificateSetting $certificateSetting)
             'max:2048',
         ]),
         'is_active' => 'required|boolean',
+    ], [
+        'expired_date.after_or_equal' => 'Expired date must not be earlier than issued date.',
     ]);
 
     $data = $request->only([
@@ -327,9 +355,15 @@ public function update(Request $request, CertificateSetting $certificateSetting)
         'minimum_progress',
         'minimum_score',
         'issuer_name',
+        'institution',
+        'issued_date',
+        'expired_date',
         'is_active',
         'use_default_template',
     ]);
+    if (empty($data['institution'])) {
+        $data['institution'] = 'PT KRAKATAU POSCO';
+    }
 
     $data['is_assessment_required'] = $request->has('is_assessment_required') ? 1 : 0;
     $data['use_default_template'] = $request->has('use_default_template');

@@ -22,6 +22,23 @@
             || !empty($setting->custom_background)
             || !empty($setting->background_image)
         );
+
+    // Certificate Information Fields (Historical snapshot with setting fallback)
+    $certAvailable = $isDebugCertificatePreview
+        ? ($setting?->is_active ? 'YES' : 'NO')
+        : $certificate->certificate_available;
+
+    $certInstitution = $isDebugCertificatePreview
+        ? ($setting?->institution ?: 'PT KRAKATAU POSCO')
+        : $certificate->display_institution;
+
+    $certIssuedDate = $isDebugCertificatePreview
+        ? $setting?->issued_date
+        : $certificate->display_issued_date;
+
+    $certExpiredDate = $isDebugCertificatePreview
+        ? $setting?->expired_date
+        : $certificate->display_expired_date;
 @endphp
 
 <div class="page-header d-print-none mb-3">
@@ -167,58 +184,62 @@
                         {{ $displayParticipantName }}
                     </h3>
 
-                    <div class="row text-left mb-4">
-
-                        <div class="col-md-6 mb-3">
-
-                            <div class="small text-muted">
-                                Certificate Number
-                            </div>
-
-                            <div class="font-weight-bold">
-                                {{ $isDebugCertificatePreview ? 'Not created (debug preview)' : $certificate->certificate_number }}
-                            </div>
-
+                    <div class="card border border-light-subtle rounded-3 text-start mb-4 shadow-none bg-light-subtle">
+                        <div class="card-header bg-transparent border-0 pb-0">
+                            <h4 class="card-title text-muted text-uppercase small fw-bold mb-0">Certificate Information</h4>
                         </div>
-
-                        <div class="col-md-6 mb-3">
-
-                            <div class="small text-muted">
-                                Credential ID
+                        <div class="card-body pt-3">
+                            <div class="row g-3">
+                                <div class="col-sm-6 col-md-3">
+                                    <div class="small text-muted">Certificate Available</div>
+                                    <div class="fw-bold mt-1">
+                                        @if($certAvailable === 'YES')
+                                            <span class="badge bg-green-lt text-green">YES</span>
+                                        @else
+                                            <span class="badge bg-red-lt text-red">NO</span>
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="col-sm-6 col-md-3">
+                                    <div class="small text-muted">Learning Status</div>
+                                    <div class="fw-bold mt-1">
+                                        <span class="badge bg-blue-lt text-blue">Completed</span>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6 col-md-3">
+                                    <div class="small text-muted">Certificate Issued Date</div>
+                                    <div class="fw-bold mt-1">
+                                        {{ $certIssuedDate ? \Carbon\Carbon::parse($certIssuedDate)->format('d-m-Y') : '-' }}
+                                    </div>
+                                </div>
+                                <div class="col-sm-6 col-md-3">
+                                    <div class="small text-muted">Certificate Expired Date</div>
+                                    <div class="fw-bold mt-1">
+                                        {{ $certExpiredDate ? \Carbon\Carbon::parse($certExpiredDate)->format('d-m-Y') : '-' }}
+                                    </div>
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <div class="small text-muted">Certificate Institution</div>
+                                    <div class="fw-bold mt-1">{{ $certInstitution }}</div>
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <div class="small text-muted">Issuer Name</div>
+                                    <div class="fw-bold mt-1">{{ optional($setting)->issuer_name ?: 'OWL Training Management' }}</div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="small text-muted">Certificate Number</div>
+                                    <div class="fw-bold mt-1">
+                                        {{ $isDebugCertificatePreview ? 'Not created (debug preview)' : $certificate->certificate_number }}
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="small text-muted">Credential ID</div>
+                                    <div class="fw-bold mt-1">
+                                        {{ $isDebugCertificatePreview ? 'Not created (debug preview)' : $certificate->credential_id }}
+                                    </div>
+                                </div>
                             </div>
-
-                            <div class="font-weight-bold">
-                                {{ $isDebugCertificatePreview ? 'Not created (debug preview)' : $certificate->credential_id }}
-                            </div>
-
                         </div>
-
-                        <div class="col-md-6">
-
-                            <div class="small text-muted">
-                                Issued Date
-                            </div>
-
-                            <div class="font-weight-bold">
-                                {{ $isDebugCertificatePreview
-                                    ? 'Not issued'
-                                    : optional($certificate->issued_at)->format('d M Y') }}
-                            </div>
-
-                        </div>
-
-                        <div class="col-md-6">
-
-                            <div class="small text-muted">
-                                Issuer
-                            </div>
-
-                            <div class="font-weight-bold">
-                                {{ optional($setting)->issuer_name }}
-                            </div>
-
-                        </div>
-
                     </div>
 
                     <hr>

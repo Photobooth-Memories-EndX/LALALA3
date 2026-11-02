@@ -34,6 +34,7 @@ class OfflineCertificateSettingService
             'minimum_score'          => 80,
             'is_assessment_required' => 0,
             'issuer_name'            => 'OWL Training Management',
+            'institution'            => 'PT KRAKATAU POSCO',
             'use_default_template'   => 1,
             'is_active'              => 1,
         ], $overrides);

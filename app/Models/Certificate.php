@@ -19,13 +19,18 @@ class Certificate extends Model
         'credential_url',
         'title',
         'participant_name',
+        'institution',
+        'issued_date',
+        'expired_date',
         'score',
         'issued_at',
         'file_path',
     ];
 
     protected $casts = [
-        'issued_at' => 'date',
+        'issued_at'    => 'date',
+        'issued_date'  => 'date',
+        'expired_date' => 'date',
     ];
 
     public function user()
@@ -51,6 +56,26 @@ class Certificate extends Model
     public function offlineTraining()
     {
         return $this->belongsTo(OfflineTraining::class, 'source_id');
+    }
+
+    public function getDisplayInstitutionAttribute(): string
+    {
+        return $this->institution ?: ($this->certificateSetting?->institution ?: 'PT KRAKATAU POSCO');
+    }
+
+    public function getDisplayIssuedDateAttribute()
+    {
+        return $this->issued_date ?: ($this->certificateSetting?->issued_date ?: $this->issued_at);
+    }
+
+    public function getDisplayExpiredDateAttribute()
+    {
+        return $this->expired_date ?: $this->certificateSetting?->expired_date;
+    }
+
+    public function getCertificateAvailableAttribute(): string
+    {
+        return ($this->certificateSetting?->is_active ?? true) ? 'YES' : 'NO';
     }
 
     public function getLinkedInUrlAttribute(): string

@@ -54,11 +54,12 @@ class CertificateSyncService
     {
         return [
             'is_assessment_required' => false,
-            'minimum_progress' => 100,
-            'minimum_score' => 80,
-            'issuer_name' => 'OWL Training Management',
-            'use_default_template' => true,
-            'is_active' => true,
+            'minimum_progress'       => 100,
+            'minimum_score'          => 80,
+            'issuer_name'            => 'OWL Training Management',
+            'institution'            => 'PT KRAKATAU POSCO',
+            'use_default_template'   => true,
+            'is_active'              => true,
         ];
     }
 }

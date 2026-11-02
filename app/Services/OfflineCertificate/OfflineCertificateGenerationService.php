@@ -78,13 +78,23 @@ class OfflineCertificateGenerationService
                 'credential_url'           => route('certificate.verify', $credentialId),
                 'title'                    => $trainingTitle,
                 'participant_name'         => $participantName,
+                'institution'              => $setting->institution ?: 'PT KRAKATAU POSCO',
+                'issued_date'              => $setting->issued_date ?: now(),
+                'expired_date'             => $setting->expired_date,
                 'score'                    => $check->score,
                 'issued_at'                => now(),
             ]);
 
-            // Sync legacy certificate text flag on participant if present
+            // Sync legacy certificate text flag & certificate_id on participant
+            $participantUpdates = [];
             if (empty($participant->certificate) || in_array(strtolower((string) $participant->certificate), ['0', 'no', 'false'], true)) {
-                $participant->update(['certificate' => 'Yes']);
+                $participantUpdates['certificate'] = 'Yes';
+            }
+            if (empty($participant->certificate_id)) {
+                $participantUpdates['certificate_id'] = $setting->id;
+            }
+            if (!empty($participantUpdates)) {
+                $participant->update($participantUpdates);
             }
 
             return $certificate;
