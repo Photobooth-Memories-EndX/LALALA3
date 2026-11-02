@@ -852,7 +852,9 @@ class MyTaskController extends Controller
         return redirect()->route('user.learning.dashboard', [
             'learning_tab'   => 'my-task',
             'active_task_id' => $task->id,
-        ])->with('success', 'Answers submitted successfully. Waiting for admin review.');
+        ])->with('success', 'Answers submitted successfully. Waiting for admin review.')
+          ->with('task_submitted_id', $task->id)
+          ->with('task_submitted_title', $task->title);
     }
 
     /**

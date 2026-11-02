@@ -9,6 +9,20 @@
 </template>
 
 @php
+    $filter = $filter ?? 'all';
+    $search = $search ?? '';
+    $activeGroup = $activeGroup ?? null;
+    $groups = $groups ?? collect();
+    $filterStatus = $filterStatus ?? 'all';
+    $filterYear = $filterYear ?? 'all';
+    $filterMonth = $filterMonth ?? 'all';
+    $filterType = $filterType ?? 'all';
+    $statusOptions = $statusOptions ?? ['all' => 'All', 'in_progress' => 'In Progress', 'submitted' => 'Pending Review', 'completed' => 'Completed', 'rejected' => 'Rejected', 'overdue' => 'Overdue'];
+    $typeOptions = $typeOptions ?? ['all' => 'All', 'playlist' => 'Playlist', 'content' => 'Content', 'asesment' => 'Assessment', 'others' => 'Others'];
+    $months = $months ?? [];
+    $years = $years ?? [];
+    $categoryCounts = $categoryCounts ?? ['all' => 0, 'playlist' => 0, 'content' => 0, 'asesment' => 0, 'others' => 0];
+    $summary = $summary ?? ['total' => 0, 'not_started' => 0, 'completed' => 0, 'overdue' => 0];
     $statusLabels = [
         'in_progress' => 'In Progress',
         'submitted'   => 'Pending review',
@@ -473,6 +487,13 @@
     if (isset($activeGroup) && ! empty($activeGroup['tasks'])) {
         $allModalTasks = $allModalTasks->concat($activeGroup['tasks'])->unique('id');
     }
+    $targetModalTaskId = session('task_submitted_id') ?: request('task_submitted_id', old('active_task_id', request('active_task_id', session('active_task_id'))));
+    if ($targetModalTaskId && ! $allModalTasks->contains('id', (int) $targetModalTaskId)) {
+        $extraTask = \App\Models\Task::find($targetModalTaskId);
+        if ($extraTask) {
+            $allModalTasks->push($extraTask);
+        }
+    }
 @endphp
 
 @foreach ($allModalTasks as $task)
@@ -680,15 +701,133 @@
     @endif
 @endforeach
 
+@php
+    $submittedTaskId = session('task_submitted_id') ?: request('task_submitted_id');
+    $submittedTaskTitle = session('task_submitted_title') ?: request('task_submitted_title');
+    if ($submittedTaskId && ! $submittedTaskTitle) {
+        $foundTask = \App\Models\Task::find($submittedTaskId);
+        if ($foundTask) {
+            $submittedTaskTitle = $foundTask->title;
+        }
+    }
+@endphp
 
+@if ($submittedTaskId)
+    {{-- Success Pop-Up Modal After Submitting Task (English) --}}
+    <div class="modal modal-blur fade"
+         id="taskSubmittedSuccessModal"
+         tabindex="-1"
+         role="dialog"
+         aria-labelledby="taskSubmittedSuccessModalTitle"
+         aria-hidden="true"
+         data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 440px;" role="document">
+            <div class="modal-content rounded-4 border-0 shadow-lg position-relative p-4 text-center">
+                <button type="button"
+                        class="btn btn-sm btn-icon btn-ghost-secondary rounded-circle position-absolute"
+                        data-bs-dismiss="modal"
+                        aria-label="Close"
+                        title="Close"
+                        style="top: 16px; right: 16px; width: 32px; height: 32px; border: none; padding: 0; display: inline-flex; align-items: center; justify-content: center; z-index: 10;">
+                    <i class="ti ti-x text-muted" style="font-size: 20px; font-weight: bold; line-height: 1;"></i>
+                </button>
+                <div class="modal-body p-2 pt-3">
+                    {{-- Clean Green Checkmark Icon --}}
+                    <div class="mb-3 d-inline-flex align-items-center justify-content-center rounded-circle"
+                         style="width: 72px; height: 72px; background: rgba(34, 197, 94, 0.12); color: #16a34a; box-shadow: 0 0 0 8px rgba(34, 197, 94, 0.05);">
+                        <i class="ti ti-circle-check" style="font-size: 42px;"></i>
+                    </div>
+
+                    {{-- English Title --}}
+                    <h4 class="fw-bold text-dark mb-2" id="taskSubmittedSuccessModalTitle">
+                        Task Submitted Successfully!
+                    </h4>
+
+                    {{-- English Description --}}
+                    <p class="text-muted mb-3" style="font-size: 14px; line-height: 1.5;">
+                        Your task answers have been submitted successfully and are currently waiting for admin review.
+                    </p>
+
+                    @if ($submittedTaskTitle)
+                        <div class="p-2.5 px-3 bg-light rounded-3 text-truncate fw-semibold text-secondary mb-4 small border text-start d-flex align-items-center gap-2" style="max-width: 100%;">
+                            <i class="ti ti-file-text text-primary fs-3 flex-shrink-0"></i>
+                            <span class="text-truncate">{{ $submittedTaskTitle }}</span>
+                        </div>
+                    @else
+                        <div class="mb-3"></div>
+                    @endif
+
+                    {{-- Action Buttons: Close and View Task --}}
+                    <div class="d-flex align-items-center justify-content-center gap-2 pt-2 border-top">
+                        <button type="button"
+                                class="btn btn-outline-secondary px-4 py-2 rounded-3 fw-semibold flex-fill"
+                                data-bs-dismiss="modal">
+                            Close
+                        </button>
+                        <button type="button"
+                                class="btn btn-primary px-4 py-2 rounded-3 fw-semibold flex-fill d-inline-flex align-items-center justify-content-center gap-1.5 shadow-sm"
+                                id="btnViewSubmittedTask"
+                                data-task-id="{{ $submittedTaskId }}">
+                            <i class="ti ti-eye fs-2"></i>
+                            <span>View Task</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+@endif
 
 <script>
 (function () {
-    // 1. If validation error occurred or active_task_id is set in request, reopen the modal for the active task
+    // 1. Reopen modal or show submission success pop-up
     @php
         $autoOpenTaskId = old('active_task_id', request('active_task_id', session('active_task_id')));
     @endphp
-    @if ($autoOpenTaskId)
+
+    @if ($submittedTaskId)
+        try {
+            var currentUrl = new URL(window.location.href);
+            if (currentUrl.searchParams.has('task_submitted_id') || currentUrl.searchParams.has('active_task_id')) {
+                currentUrl.searchParams.delete('task_submitted_id');
+                currentUrl.searchParams.delete('active_task_id');
+                window.history.replaceState({}, document.title, currentUrl.pathname + (currentUrl.searchParams.toString() ? '?' + currentUrl.searchParams.toString() : ''));
+            }
+        } catch (e) {}
+
+        var successModalEl = document.getElementById('taskSubmittedSuccessModal');
+        var viewTaskBtn = document.getElementById('btnViewSubmittedTask');
+        var openTargetTaskId = null;
+
+        if (successModalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            setTimeout(function () {
+                bootstrap.Modal.getOrCreateInstance(successModalEl).show();
+            }, 150);
+
+            if (viewTaskBtn) {
+                viewTaskBtn.addEventListener('click', function () {
+                    openTargetTaskId = this.getAttribute('data-task-id');
+                    var inst = bootstrap.Modal.getInstance(successModalEl);
+                    if (inst) {
+                        inst.hide();
+                    } else {
+                        var targetEl = document.getElementById('taskModal-' + openTargetTaskId);
+                        if (targetEl) bootstrap.Modal.getOrCreateInstance(targetEl).show();
+                    }
+                });
+            }
+
+            successModalEl.addEventListener('hidden.bs.modal', function () {
+                if (openTargetTaskId) {
+                    var targetEl = document.getElementById('taskModal-' + openTargetTaskId);
+                    if (targetEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                        bootstrap.Modal.getOrCreateInstance(targetEl).show();
+                    }
+                    openTargetTaskId = null;
+                }
+            });
+        }
+    @elseif ($autoOpenTaskId)
         var autoOpenModalEl = document.getElementById('taskModal-{{ $autoOpenTaskId }}');
         if (autoOpenModalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
             setTimeout(function () {

@@ -953,5 +953,43 @@ class TaskReviewStatusFlowTest extends TestCase
         $needReviewHtml = $needReviewResponse->getContent();
         $this->assertStringContainsString('data-status="need_review"', $needReviewHtml);
         $this->assertStringNotContainsString('data-status="approve"', $needReviewHtml);
+    }public function test_user_submission_renders_success_popup_modal_with_view_task_and_close(): void
+    {
+        $task = Task::create([
+            'parent_type'      => 'playlist',
+            'training_plan_id' => $this->plan->id,
+            'title'            => 'Task Success Popup Test ' . uniqid(),
+            'type'             => 'open_ended',
+            'status'           => 'published',
+            'created_by'       => $this->admin->id,
+        ]);
+
+        $this->actingAs($this->learner);
+
+        session([
+            'task_submitted_id'    => $task->id,
+            'task_submitted_title' => $task->title,
+        ]);
+
+        $html = view('user.learning.dashboard-partials.my-task', [
+            'tasks'                => collect([$task]),
+            'groups'               => collect(),
+            'search'               => '',
+            'activeGroup'          => null,
+            'activeTab'            => 'all',
+            'statusFilter'         => 'all',
+            'revisionCounts'       => [],
+            'statusCounts'         => ['all' => 1, 'in_progress' => 0, 'completed' => 0, 'expired' => 0, 'submitted' => 1, 'rejected' => 0],
+            'statusLabels'         => ['completed' => 'Completed', 'submitted' => 'Pending review', 'rejected' => 'Rejected'],
+            'statusBadges'         => ['completed' => 'bg-success-lt text-success', 'submitted' => 'bg-warning-lt text-warning', 'rejected' => 'bg-danger-lt text-danger'],
+            'displayStatus'        => fn ($s) => $s,
+        ])->render();
+
+        $this->assertStringContainsString('id="taskSubmittedSuccessModal"', $html);
+        $this->assertStringContainsString('Task Submitted Successfully!', $html);
+        $this->assertStringContainsString('Your task answers have been submitted successfully and are currently waiting for admin review.', $html);
+        $this->assertStringContainsString('id="btnViewSubmittedTask"', $html);
+        $this->assertStringContainsString('View Task', $html);
+        $this->assertStringContainsString('Close', $html);
     }
 }

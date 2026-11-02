@@ -98,4 +98,10 @@
 @endsection
 
 @include('user.learning.partials.dashboard-style')
+@if (session('task_submitted_id'))
+    <script>
+        window._taskSubmittedId = {{ (int) session('task_submitted_id') }};
+        window._taskSubmittedTitle = @json(session('task_submitted_title', ''));
+    </script>
+@endif
 @include('user.learning.partials.dashboard-script')

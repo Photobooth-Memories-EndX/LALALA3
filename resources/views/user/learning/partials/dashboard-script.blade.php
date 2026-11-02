@@ -244,6 +244,14 @@
                 var rm = _recordMode || recordModeFromUrl();
                 if (rm) params.set('record_mode', rm);
             }
+            if (tab === 'my-task' && window._taskSubmittedId) {
+                params.set('task_submitted_id', window._taskSubmittedId);
+                if (window._taskSubmittedTitle) {
+                    params.set('task_submitted_title', window._taskSubmittedTitle);
+                }
+                window._taskSubmittedId = null;
+                window._taskSubmittedTitle = null;
+            }
             var fetchUrl = '{{ route("user.learning.dashboard.partial", ["tab" => "__TAB__"]) }}'.replace('__TAB__', tab);
             if (params.toString()) {
                 fetchUrl += '?' + params.toString();
