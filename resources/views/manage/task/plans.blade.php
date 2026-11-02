@@ -290,6 +290,7 @@
                                 <th class="text-center">PUBLISHED</th>
                                 <th class="text-center">DRAFT</th>
                                 <th class="text-center">PENDING REVIEW</th>
+                                <th class="text-nowrap">CREATED AT</th>
                                 <th class="text-end">ACTION</th>
                             </tr>
                         </thead>
@@ -338,6 +339,9 @@
                                             <span class="badge bg-secondary-lt text-muted px-2 py-0.5" style="font-size: 0.75rem;">0</span>
                                         @endif
                                     </td>
+                                    <td class="text-muted text-nowrap" style="font-size: 0.85rem;" title="{{ $row->created_at ? \Carbon\Carbon::parse($row->created_at)->format('d M Y H:i') : '' }}">
+                                        {{ $row->created_at ? \Carbon\Carbon::parse($row->created_at)->format('d M Y') : '—' }}
+                                    </td>
                                     <td class="text-end">
                                         <a href="{{ route('manage.task.parent', ['parentType' => $row->parent_type, 'parentId' => $row->parent_id ?? 0]) }}"
                                            class="btn btn-outline-primary rounded-3">
@@ -347,7 +351,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="text-center text-muted py-4">
+                                    <td colspan="9" class="text-center text-muted py-4">
                                         @if ($scope === 'non_kp')
                                             No tasks found for offline trainings. <a href="{{ route('manage.task.create', ['scope' => 'non_kp', 'parent_type' => 'offline_training']) }}">Create a new task</a> to get started.
                                         @else

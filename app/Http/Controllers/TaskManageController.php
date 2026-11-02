@@ -73,6 +73,7 @@ class TaskManageController extends Controller
             ->selectRaw('tasks.parent_type, COALESCE(tasks.training_plan_id, tasks.content_id, tasks.offline_training_id, tasks.task_group_id, 0) AS parent_id')
             ->selectRaw("MAX(COALESCE(trainingplan.title, content.title, offline_trainings.title, offline_trainings.course_name, task_groups.title, 'Others')) AS parent_name")
             ->selectRaw("COUNT(*) AS total, SUM(tasks.status = 'published') AS published, SUM(tasks.status = 'draft') AS draft")
+            ->selectRaw("COALESCE(MAX(COALESCE(trainingplan.created_at, content.created_at, offline_trainings.created_at, task_groups.created_at)), MIN(tasks.created_at)) AS created_at")
             ->groupBy('tasks.parent_type', 'tasks.training_plan_id', 'tasks.content_id', 'tasks.offline_training_id', 'tasks.task_group_id')
             ->orderBy('parent_name');
 

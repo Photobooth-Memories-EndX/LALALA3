@@ -178,5 +178,29 @@ class TaskContainerFlowTest extends TestCase
         $editPage->assertSee('Save as Draft');
         $editPage->assertSee('Publish Task');
     }
+
+    public function test_admin_course_task_list_renders_created_at_column(): void
+    {
+        $group = TaskGroup::create([
+            'title'      => 'Test Container ' . uniqid(),
+            'created_by' => $this->admin->id,
+            'created_at' => now()->subDays(5),
+        ]);
+
+        Task::create([
+            'title'         => 'Test Task Inside Container ' . uniqid(),
+            'parent_type'   => 'standalone',
+            'task_group_id' => $group->id,
+            'type'          => 'assignment',
+            'status'        => 'published',
+            'created_by'    => $this->admin->id,
+        ]);
+
+        $response = $this->actingAs($this->admin)->get(route('manage.task.index'));
+
+        $response->assertStatus(200);
+        $response->assertSee('CREATED AT');
+        $response->assertSee($group->created_at->format('d M Y'));
+    }
 }
 
