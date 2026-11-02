@@ -51,17 +51,23 @@
         margin-bottom: 1.25rem;
     }
     #reviewSubmissionModal .modal-content {
+        height: calc(100vh - 2.5rem);
         max-height: calc(100vh - 2.5rem);
         border-radius: 12px;
         overflow: hidden;
+        display: flex;
+        flex-direction: column;
     }
     #reviewSubmissionModal .modal-body {
+        height: calc(100vh - 120px);
         max-height: calc(100vh - 120px);
         overflow: hidden !important;
+        flex: 1 1 auto;
     }
     /* Left task view canvas: no outer scrollbar */
     #reviewSubmissionModal .review-canvas-col {
-        max-height: calc(100vh - 120px);
+        height: 100%;
+        max-height: 100%;
         overflow-y: auto;
         background: #f8fafc;
         padding: 1.25rem;
@@ -73,14 +79,16 @@
     }
     /* Right grading panel: fixed & pinned, no scrollbar, full height flex */
     #reviewSubmissionModal .review-panel-col {
-        height: calc(100vh - 120px);
-        max-height: calc(100vh - 120px);
+        height: 100%;
+        max-height: 100%;
         overflow-y: auto;
         background: #ffffff;
         padding: 1.25rem 1.5rem;
         border-left: 1px solid #e2e8f0;
         scrollbar-width: none;
         -ms-overflow-style: none;
+        display: flex;
+        flex-direction: column;
     }
     #reviewSubmissionModal .review-panel-col::-webkit-scrollbar {
         display: none;
@@ -341,6 +349,8 @@
                                         <button type="button"
                                                 class="btn btn-sm btn-primary submission-menu-btn d-inline-flex align-items-center gap-1.5 px-3 py-1.5 shadow-sm"
                                                 onclick="openWorkstation({{ $submission->id }})"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#reviewSubmissionModal"
                                                 title="Review Submission">
                                             <i class="ti ti-clipboard-check fs-2"></i>
                                             <span>Review Submission</span>
@@ -519,12 +529,13 @@
 
                                                     $fKind = $isImg ? 'Image' : ($isPdf ? 'PDF Document' : ($isDoc ? 'Office Document' : ($isVid ? 'Video' : ($isAud ? 'Audio' : 'File'))));
 
-                                                    if ($isDoc || in_array($fExt, ['docx','doc','xlsx','xls','csv'])) {
+                                                    if ($isDoc || in_array($fExt, ['docx','doc','xlsx','xls','csv','ppt','pptx'])) {
                                                         $previewUrl = route('manage.task.submissions.preview-doc', [$task, 'path' => $fPathNorm]);
                                                         $tabUrl = $previewUrl;
-                                                        $iconClass = in_array($fExt, ['doc','docx']) ? 'ti-file-description' : 'ti-file-spreadsheet';
-                                                        $iconBg = in_array($fExt, ['doc','docx']) ? 'bg-primary-lt' : 'bg-success-lt';
-                                                        $iconColor = in_array($fExt, ['doc','docx']) ? 'text-primary' : 'text-success';
+                                                        $isPpt = in_array($fExt, ['ppt', 'pptx']);
+                                                        $iconClass = in_array($fExt, ['doc','docx']) ? 'ti-file-description' : ($isPpt ? 'ti-presentation' : 'ti-file-spreadsheet');
+                                                        $iconBg = in_array($fExt, ['doc','docx']) ? 'bg-primary-lt' : ($isPpt ? 'bg-orange-lt' : 'bg-success-lt');
+                                                        $iconColor = in_array($fExt, ['doc','docx']) ? 'text-primary' : ($isPpt ? 'text-orange' : 'text-success');
                                                     } elseif ($isPdf) {
                                                         $previewUrl = $fUrl;
                                                         $tabUrl = $fUrl;
@@ -733,12 +744,13 @@
 
                                         $fKind = $isImg ? 'Image' : ($isPdf ? 'PDF Document' : ($isDoc ? 'Office Document' : ($isVid ? 'Video' : ($isAud ? 'Audio' : 'File'))));
 
-                                        if ($isDoc || in_array($fExt, ['docx','doc','xlsx','xls','csv'])) {
+                                        if ($isDoc || in_array($fExt, ['docx','doc','xlsx','xls','csv','ppt','pptx'])) {
                                             $previewUrl = route('manage.task.submissions.preview-doc', [$task, 'path' => $fPathNorm]);
                                             $tabUrl = $previewUrl;
-                                            $iconClass = in_array($fExt, ['doc','docx']) ? 'ti-file-description' : 'ti-file-spreadsheet';
-                                            $iconBg = in_array($fExt, ['doc','docx']) ? 'bg-primary-lt' : 'bg-success-lt';
-                                            $iconColor = in_array($fExt, ['doc','docx']) ? 'text-primary' : 'text-success';
+                                            $isPpt = in_array($fExt, ['ppt', 'pptx']);
+                                            $iconClass = in_array($fExt, ['doc','docx']) ? 'ti-file-description' : ($isPpt ? 'ti-presentation' : 'ti-file-spreadsheet');
+                                            $iconBg = in_array($fExt, ['doc','docx']) ? 'bg-primary-lt' : ($isPpt ? 'bg-orange-lt' : 'bg-success-lt');
+                                            $iconColor = in_array($fExt, ['doc','docx']) ? 'text-primary' : ($isPpt ? 'text-orange' : 'text-success');
                                         } elseif ($isPdf) {
                                             $previewUrl = $fUrl;
                                             $tabUrl = $fUrl;
@@ -925,28 +937,27 @@
                                 <input type="hidden" id="modalResubmitUrl" value="">
                                 <input type="hidden" id="modalRejectUrl" value="">
 
-                                {{-- 1. Tombol Approve & Rejected di Atas --}}
+                                {{-- 1. Dropdown Decision (Approve / Rejected) di Atas --}}
                                 <div id="actionButtonsContainer" class="mb-3 flex-shrink-0">
-                                    <div class="d-flex gap-2">
-                                        <button type="button"
-                                                class="btn btn-outline-success flex-fill py-2 fw-semibold d-inline-flex align-items-center justify-content-center gap-1.5 shadow-xs"
-                                                id="btnActionApprove"
-                                                style="border-radius: 8px;">
-                                            <i class="ti ti-check fs-2"></i>
-                                            <span id="btnActionApproveText">Approve</span>
-                                        </button>
-
-                                        <button type="button"
-                                                class="btn btn-outline-danger flex-fill py-2 fw-semibold d-inline-flex align-items-center justify-content-center gap-1.5 shadow-xs"
-                                                id="btnActionReject"
-                                                style="border-radius: 8px;">
-                                            <i class="ti ti-x fs-2"></i>
-                                            <span id="btnActionRejectText">Rejected</span>
-                                        </button>
+                                    <label class="form-label fw-semibold text-dark mb-1.5" for="selectGradingDecision" style="font-size: 12.5px;">
+                                        Decision <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="position-relative">
+                                        <select id="selectGradingDecision"
+                                                class="form-select fw-semibold shadow-xs"
+                                                style="border-radius: 8px; font-size: 13.5px; padding: 0.65rem 0.85rem; border-color: #cbd5e1;">
+                                            <option value="">— Select Decision —</option>
+                                            <option value="approve">✓ Approve</option>
+                                            <option value="rejected">✕ Rejected</option>
+                                        </select>
                                     </div>
                                     <div id="gradingDecisionHint" class="text-muted text-center mt-2 small" style="font-size: 11.5px;">
-                                        Click <strong class="text-success">Approve</strong> or <strong class="text-danger">Rejected</strong> above to grade.
+                                        Select <strong class="text-success">Approve</strong> or <strong class="text-danger">Rejected</strong> above to grade.
                                     </div>
+
+                                    {{-- Hidden compatibility elements for tests & automated triggers --}}
+                                    <button type="button" id="btnActionApprove" class="d-none">Approve</button>
+                                    <button type="button" id="btnActionReject" class="d-none">Rejected</button>
                                 </div>
 
                                 {{-- 2. Section Approve: Kolom nilai di atas, tombol submit di bawah kanan panel --}}
@@ -973,18 +984,12 @@
                                         </div>
                                     </div>
 
-                                    {{-- Tombol Submit di Bawah Kanan (Konsisten di Pojok Kanan Bawah) --}}
-                                    <div class="d-flex justify-content-end align-items-center gap-2 mt-auto pt-3 border-top">
+                                    {{-- Tombol Submit di Bawah Kanan Halaman Pop-up --}}
+                                    <div class="d-flex justify-content-end align-items-center mt-auto pt-3 border-top">
                                         <button type="button"
-                                                class="btn btn-outline-secondary btn-sm px-3 py-1.5"
-                                                data-bs-dismiss="modal"
-                                                style="font-size: 12.5px;">
-                                            Cancel
-                                        </button>
-                                        <button type="button"
-                                                class="btn btn-success btn-sm px-4 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-xs"
+                                                class="btn btn-success px-4 py-2 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-sm"
                                                 id="btnConfirmApproveAction"
-                                                style="border-radius: 8px; font-size: 12.5px;">
+                                                style="border-radius: 8px; font-size: 13px;">
                                             <i class="ti ti-check fs-2"></i>
                                             <span id="btnConfirmApproveActionText">Submit</span>
                                         </button>
@@ -1033,25 +1038,19 @@
                                         </div>
                                     </div>
 
-                                    {{-- Di Bawah Kanan: Cancel, Request Resubmit dan Completed as Rejected --}}
+                                    {{-- Di Bawah Kanan Halaman Pop-up: Request Resubmit dan Completed as Rejected --}}
                                     <div id="rejectedOptionsWrapper" class="d-flex justify-content-end align-items-center gap-2 mt-auto pt-3 border-top flex-wrap">
                                         <button type="button"
-                                                class="btn btn-outline-secondary btn-sm px-3 py-1.5"
-                                                data-bs-dismiss="modal"
-                                                style="font-size: 12.5px;">
-                                            Cancel
-                                        </button>
-                                        <button type="button"
                                                 id="btnSubmitResubmit"
-                                                class="btn btn-warning text-dark btn-sm px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-xs"
-                                                style="border-radius: 8px; font-size: 12.5px;">
+                                                class="btn btn-warning text-dark px-3.5 py-2 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-sm"
+                                                style="border-radius: 8px; font-size: 13px;">
                                             <i class="ti ti-refresh fs-2"></i>
                                             <span id="btnSubmitResubmitText">Request Resubmit</span>
                                         </button>
                                         <button type="button"
                                                 id="btnSubmitCompletedRejected"
-                                                class="btn btn-danger btn-sm px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-xs"
-                                                style="border-radius: 8px; font-size: 12.5px;">
+                                                class="btn btn-danger px-3.5 py-2 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-sm"
+                                                style="border-radius: 8px; font-size: 13px;">
                                             <i class="ti ti-circle-x fs-2"></i>
                                             <span id="btnSubmitCompletedRejectedText">Completed as Rejected</span>
                                         </button>
@@ -1065,15 +1064,7 @@
                                 <button type="submit" id="modalSubmitBtn" class="d-none">Submit</button>
                                 <button type="button" id="modalResubmitBtn" class="d-none">Request Resubmit</button>
 
-                                <div id="defaultCancelWrapper" class="d-flex justify-content-end mt-auto pt-3 border-top">
-                                    <button type="button"
-                                            class="btn btn-link text-muted py-1 text-decoration-none"
-                                            data-bs-dismiss="modal"
-                                            title="Close & Return to Review"
-                                            style="font-size: 13px;">
-                                        Cancel
-                                    </button>
-                                </div>
+                                <div id="defaultCancelWrapper" class="d-none"></div>
                             </form>
                         </div>
                     </div>
@@ -1255,20 +1246,39 @@
 
     // ── Open / Switch Views (Table View with Review Modal Popup) ──
     window.openWorkstation = function (submissionId) {
-        if (submissionId !== undefined && submissionId !== null) {
-            var targetId = parseInt(submissionId);
-            var targetIdx = submissionsData.findIndex(function (s) { return s.id === targetId; });
-            if (targetIdx !== -1) {
-                setActiveSubmissionByIndex(targetIdx);
+        try {
+            if (submissionId !== undefined && submissionId !== null) {
+                var targetId = parseInt(submissionId, 10);
+                var targetIdx = submissionsData.findIndex(function (s) { return s.id === targetId; });
+                if (targetIdx !== -1) {
+                    setActiveSubmissionByIndex(targetIdx);
+                }
+            } else if (submissionsData.length > 0) {
+                if (currentSubmissionIndex < 0 || currentSubmissionIndex >= submissionsData.length) {
+                    setActiveSubmissionByIndex(0);
+                }
             }
-        } else if (submissionsData.length > 0) {
-            if (currentSubmissionIndex < 0 || currentSubmissionIndex >= submissionsData.length) {
-                setActiveSubmissionByIndex(0);
-            }
+        } catch (err) {
+            console.error('Error setting active submission in openWorkstation:', err);
         }
+
         var modalEl = document.getElementById('reviewSubmissionModal');
-        if (modalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-            bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        if (modalEl) {
+            var BsModal = getBootstrapModal();
+            if (BsModal) {
+                try {
+                    if (typeof BsModal.getOrCreateInstance === 'function') {
+                        BsModal.getOrCreateInstance(modalEl).show();
+                    } else {
+                        var inst = BsModal.getInstance ? BsModal.getInstance(modalEl) : null;
+                        (inst || new BsModal(modalEl)).show();
+                    }
+                } catch (e) {
+                    try { (new BsModal(modalEl)).show(); } catch (e2) {}
+                }
+            } else if (typeof $ !== 'undefined' && $.fn && typeof $.fn.modal === 'function') {
+                $(modalEl).modal('show');
+            }
         }
     };
 
@@ -1701,16 +1711,16 @@
                 feedbackInput.classList.remove('is-invalid');
             }
 
-            if (btnActionApprove) {
-                btnActionApprove.className = 'btn btn-outline-success flex-fill py-2 fw-semibold d-inline-flex align-items-center justify-content-center gap-1.5 shadow-xs';
-                btnActionApprove.disabled = false;
+            if (typeof resetGradingMode === 'function') {
+                resetGradingMode();
+            } else {
+                var selDec = document.getElementById('selectGradingDecision');
+                if (selDec) {
+                    selDec.value = '';
+                    selDec.className = 'form-select fw-semibold shadow-xs';
+                    selDec.style.borderColor = '#cbd5e1';
+                }
             }
-            if (btnActionApproveText) btnActionApproveText.textContent = 'Approve';
-            if (btnActionReject) {
-                btnActionReject.className = 'btn btn-outline-danger flex-fill py-2 fw-semibold d-inline-flex align-items-center justify-content-center gap-1.5 shadow-xs';
-                btnActionReject.disabled = false;
-            }
-            if (btnActionRejectText) btnActionRejectText.textContent = 'Rejected';
         }
 
         if (typeof hideRejectModal === 'function') hideRejectModal();
@@ -1889,6 +1899,43 @@
     }
 
     // ── Toggle Modes: Approve vs Rejected at Top ──
+    window.resetGradingMode = function () {
+        var approveSec = document.getElementById('gradingApproveSection');
+        var rejectSec = document.getElementById('gradingRejectSection');
+        var decisionHint = document.getElementById('gradingDecisionHint');
+        var defaultCancel = document.getElementById('defaultCancelWrapper');
+        var selectDecision = document.getElementById('selectGradingDecision');
+
+        if (approveSec) {
+            approveSec.classList.add('d-none');
+            approveSec.classList.remove('d-flex');
+        }
+        if (rejectSec) {
+            rejectSec.classList.add('d-none');
+            rejectSec.classList.remove('d-flex');
+        }
+        if (decisionHint) decisionHint.classList.remove('d-none');
+        if (defaultCancel) defaultCancel.classList.remove('d-none');
+
+        if (selectDecision) {
+            selectDecision.value = '';
+            selectDecision.className = 'form-select fw-semibold shadow-xs';
+            selectDecision.style.borderColor = '#cbd5e1';
+        }
+
+        var scoreApp = document.getElementById('modalScoreInputApprove');
+        var scoreRej = document.getElementById('modalScoreInputReject');
+        var hiddenScore = document.getElementById('modalScoreInput');
+        var feedbackInput = document.getElementById('modalFeedbackInput');
+        if (scoreApp) scoreApp.value = '';
+        if (scoreRej) scoreRej.value = '';
+        if (hiddenScore) hiddenScore.value = '';
+        if (feedbackInput) {
+            feedbackInput.value = '';
+            feedbackInput.classList.remove('is-invalid');
+        }
+    };
+
     window.selectApproveMode = function () {
         var sub = submissionsData[currentSubmissionIndex];
         if (!sub) return;
@@ -1897,18 +1944,16 @@
             return;
         }
 
-        var btnActionApprove = document.getElementById('btnActionApprove');
-        var btnActionReject = document.getElementById('btnActionReject');
+        var selectDecision = document.getElementById('selectGradingDecision');
+        if (selectDecision) {
+            selectDecision.value = 'approve';
+            selectDecision.className = 'form-select fw-semibold shadow-xs border-success text-success bg-success-lt';
+            selectDecision.style.borderColor = '';
+        }
+
         var approveSec = document.getElementById('gradingApproveSection');
         var rejectSec = document.getElementById('gradingRejectSection');
         var decisionHint = document.getElementById('gradingDecisionHint');
-
-        if (btnActionApprove) {
-            btnActionApprove.className = 'btn btn-success text-white flex-fill py-2 fw-semibold d-inline-flex align-items-center justify-content-center gap-1.5 shadow-sm';
-        }
-        if (btnActionReject) {
-            btnActionReject.className = 'btn btn-outline-danger flex-fill py-2 fw-semibold d-inline-flex align-items-center justify-content-center gap-1.5 shadow-xs';
-        }
 
         if (approveSec) {
             approveSec.classList.remove('d-none');
@@ -1922,6 +1967,7 @@
         var defaultCancel = document.getElementById('defaultCancelWrapper');
         if (defaultCancel) defaultCancel.classList.add('d-none');
 
+        var scoreInputApprove = document.getElementById('modalScoreInputApprove');
         if (scoreInputApprove) {
             setTimeout(function () { scoreInputApprove.focus(); }, 120);
         }
@@ -1935,18 +1981,16 @@
             return;
         }
 
-        var btnActionApprove = document.getElementById('btnActionApprove');
-        var btnActionReject = document.getElementById('btnActionReject');
+        var selectDecision = document.getElementById('selectGradingDecision');
+        if (selectDecision) {
+            selectDecision.value = 'rejected';
+            selectDecision.className = 'form-select fw-semibold shadow-xs border-danger text-danger bg-danger-lt';
+            selectDecision.style.borderColor = '';
+        }
+
         var approveSec = document.getElementById('gradingApproveSection');
         var rejectSec = document.getElementById('gradingRejectSection');
         var decisionHint = document.getElementById('gradingDecisionHint');
-
-        if (btnActionReject) {
-            btnActionReject.className = 'btn btn-danger text-white flex-fill py-2 fw-semibold d-inline-flex align-items-center justify-content-center gap-1.5 shadow-sm';
-        }
-        if (btnActionApprove) {
-            btnActionApprove.className = 'btn btn-outline-success flex-fill py-2 fw-semibold d-inline-flex align-items-center justify-content-center gap-1.5 shadow-xs';
-        }
 
         if (rejectSec) {
             rejectSec.classList.remove('d-none');
@@ -1960,12 +2004,27 @@
         var defaultCancel2 = document.getElementById('defaultCancelWrapper');
         if (defaultCancel2) defaultCancel2.classList.add('d-none');
 
-        if (sidebarFeedback) {
-            setTimeout(function () { sidebarFeedback.focus(); }, 120);
+        var feedbackInput = document.getElementById('modalFeedbackInput');
+        if (feedbackInput) {
+            setTimeout(function () { feedbackInput.focus(); }, 120);
         }
     };
 
-    // 1. Top Button Clicks: Approve & Rejected
+    // 1. Dropdown Decision Event
+    var selectGradingDecision = document.getElementById('selectGradingDecision');
+    if (selectGradingDecision) {
+        selectGradingDecision.addEventListener('change', function () {
+            if (this.value === 'approve') {
+                selectApproveMode();
+            } else if (this.value === 'rejected') {
+                selectRejectMode();
+            } else {
+                resetGradingMode();
+            }
+        });
+    }
+
+    // Compatibility triggers for automated tests / legacy calls
     var btnActionApprove = document.getElementById('btnActionApprove');
     if (btnActionApprove) {
         btnActionApprove.addEventListener('click', function () {

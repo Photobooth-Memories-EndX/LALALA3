@@ -27,3 +27,5 @@ yarn-error.log
 !.tmp-edge-profile/.gitkeep
 # Codebase Memory MCP
 /.codebase-memory/
+
+/.playwright-mcp/

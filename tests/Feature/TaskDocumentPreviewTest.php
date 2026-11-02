@@ -219,5 +219,41 @@ class TaskDocumentPreviewTest extends TestCase
         $response->assertSee('submissions/preview-document');
         $response->assertSee('DOCX');
     }
-}
 
+    public function test_document_preview_service_renders_pptx(): void
+    {
+        $service = new DocumentPreviewService();
+        $samplePptx = 'task-submissions/2387/OKAAsBTOrrIXktq43tE2RUAJwvrVk3dvJS9RpxWY.pptx';
+
+        $html = $service->render($samplePptx);
+
+        $this->assertStringContainsString('pptx-slide-canvas', $html);
+        $this->assertStringContainsString('Slide 1 of 15', $html);
+        $this->assertStringContainsString('pptx-toolbar', $html);
+        $this->assertStringNotContainsString('Direct HTML preview is not available', $html);
+    }
+
+    public function test_preview_document_route_returns_200_for_valid_pptx(): void
+    {
+        $task = Task::create([
+            'parent_type'      => 'playlist',
+            'training_plan_id' => $this->plan->id,
+            'title'            => 'Task Preview PPTX ' . uniqid(),
+            'type'             => 'open_ended',
+            'status'           => 'published',
+            'created_by'       => $this->admin->id,
+        ]);
+
+        $samplePptx = 'task-submissions/2387/OKAAsBTOrrIXktq43tE2RUAJwvrVk3dvJS9RpxWY.pptx';
+
+        $response = $this->actingAs($this->admin)->get(route('manage.task.submissions.preview-doc', [
+            'task' => $task->id,
+            'path' => $samplePptx,
+        ]));
+
+        $response->assertStatus(200);
+        $response->assertHeader('Content-Type', 'text/html; charset=UTF-8');
+        $this->assertStringContainsString('pptx-slide-canvas', $response->getContent());
+        $this->assertStringContainsString('Slide 1 of 15', $response->getContent());
+    }
+}
