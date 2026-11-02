@@ -262,19 +262,46 @@ class LearningDatatableService
         // 6. Classification Filter Pushdown (via indexed content_id)
         $classParam = $filters['classification_slug'] ?? ($filters['classification'] ?? ($filters['classification_id'] ?? ($type === 'category' ? $slug : null)));
         if (filled($classParam) && $classParam !== 'all') {
-            $classContentQuery = DB::table('content')
-                ->join('classification', 'classification.id', '=', 'content.classification_id');
-            if (is_numeric($classParam)) {
-                $classContentQuery->where('classification.id', (int) $classParam);
-            } else {
-                $classContentQuery->where(function ($q) use ($classParam) {
-                    $q->where('classification.slug', $classParam)
-                      ->orWhere('classification.classification_name', $classParam);
+            $classParamLower = strtolower(trim((string) $classParam));
+            $isUnclass = in_array($classParamLower, ['unclassification', 'unclassified', 'audit-isolated-classification', 'audit isolated classification'], true);
+            if ($isUnclass) {
+                $validContentIds = DB::table('content as c')
+                    ->join('classification as cl', 'cl.id', '=', 'c.classification_id')
+                    ->whereNull('c.deleted_at')
+                    ->whereNotNull('cl.classification_name')
+                    ->whereNotNull('cl.slug')
+                    ->where('cl.slug', '!=', '')
+                    ->pluck('c.id')
+                    ->toArray();
+
+                $cuSelect->where(function ($q) use ($validContentIds) {
+                    $q->whereNull('cu.content_id');
+                    if (!empty($validContentIds)) {
+                        $q->orWhereNotIn('cu.content_id', $validContentIds);
+                    }
                 });
+
+                $pcuSelect->where(function ($q) use ($validContentIds) {
+                    $q->whereNull('pcu.content_id');
+                    if (!empty($validContentIds)) {
+                        $q->orWhereNotIn('pcu.content_id', $validContentIds);
+                    }
+                });
+            } else {
+                $classContentQuery = DB::table('content')
+                    ->join('classification', 'classification.id', '=', 'content.classification_id');
+                if (is_numeric($classParam)) {
+                    $classContentQuery->where('classification.id', (int) $classParam);
+                } else {
+                    $classContentQuery->where(function ($q) use ($classParam) {
+                        $q->where('classification.slug', $classParam)
+                          ->orWhere('classification.classification_name', $classParam);
+                    });
+                }
+                $classContentIds = $classContentQuery->pluck('content.id')->toArray();
+                $cuSelect->whereIn('cu.content_id', !empty($classContentIds) ? $classContentIds : [-1]);
+                $pcuSelect->whereIn('pcu.content_id', !empty($classContentIds) ? $classContentIds : [-1]);
             }
-            $classContentIds = $classContentQuery->pluck('content.id')->toArray();
-            $cuSelect->whereIn('cu.content_id', !empty($classContentIds) ? $classContentIds : [-1]);
-            $pcuSelect->whereIn('pcu.content_id', !empty($classContentIds) ? $classContentIds : [-1]);
         }
 
         // 6b. Content Type Filter Pushdown (Document / Video / MOOC)
@@ -1000,11 +1027,17 @@ class LearningDatatableService
     private function classificationColumn($row): string
     {
         if (empty($row->classification_name)) {
-            return '-';
+            $unclassUrl = \Illuminate\Support\Facades\Route::has('manage.record.online.classification')
+                ? route('manage.record.online.classification', 'unclassification')
+                : route('learning.manage.category', 'unclassification');
+            return '<a href="' . $unclassUrl . '" class="text-reset fw-semibold">Unclassification</a>';
         }
 
         if (!empty($row->classification_slug)) {
-            return '<a href="' . route('learning.manage.category', $row->classification_slug) . '" class="text-reset">'
+            $classUrl = \Illuminate\Support\Facades\Route::has('manage.record.online.classification')
+                ? route('manage.record.online.classification', $row->classification_slug)
+                : route('learning.manage.category', $row->classification_slug);
+            return '<a href="' . $classUrl . '" class="text-reset">'
                 . e($row->classification_name)
                 . '</a>';
         }

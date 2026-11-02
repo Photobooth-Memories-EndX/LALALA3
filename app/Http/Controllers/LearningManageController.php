@@ -53,7 +53,7 @@ class LearningManageController extends Controller
         ];
     }
 
-    public function getClassificationSummary()
+    public function getClassificationSummary(bool $includeUnclassified = false)
     {
         $unifiedSubquery = DB::table('content_users')
             ->select([
@@ -70,7 +70,7 @@ class LearningManageController extends Controller
                     ])
             );
 
-        return DB::table('classification')
+        $classified = DB::table('classification')
             ->leftJoin('content', function ($join) {
                 $join->on('content.classification_id', '=', 'classification.id')
                     ->whereNull('content.deleted_at');
@@ -131,6 +131,72 @@ class LearningManageController extends Controller
             ->groupBy('classification.id')
             ->orderBy('classification_name')
             ->get();
+
+        if (!$includeUnclassified) {
+            return $classified;
+        }
+
+        $unclassLearning = DB::query()
+            ->fromSub($unifiedSubquery, 'lr')
+            ->leftJoin('content as c', function ($join) {
+                $join->on('c.id', '=', 'lr.content_id')
+                    ->whereNull('c.deleted_at');
+            })
+            ->leftJoin('classification as cl', function ($join) {
+                $join->on('cl.id', '=', 'c.classification_id')
+                    ->whereNotNull('cl.classification_name')
+                    ->whereNotNull('cl.slug')
+                    ->where('cl.slug', '!=', '');
+            })
+            ->whereNull('cl.id')
+            ->select([
+                DB::raw('COUNT(lr.id) as total_learning'),
+                DB::raw("COALESCE(SUM(CASE WHEN lr.finish = '0' THEN 1 ELSE 0 END), 0) as ongoing_learning"),
+                DB::raw("COALESCE(SUM(CASE WHEN lr.finish = '1' THEN 1 ELSE 0 END), 0) as finished_learning"),
+                DB::raw("
+                    COALESCE(
+                        SUM(
+                            CASE 
+                                WHEN lr.id IS NOT NULL 
+                                    AND c.duration IS NOT NULL 
+                                    AND c.duration != '' 
+                                THEN CASE 
+                                    WHEN LENGTH(c.duration) - LENGTH(REPLACE(c.duration, ':', '')) = 2 
+                                    THEN TIME_TO_SEC(c.duration) 
+                                    ELSE TIME_TO_SEC(CONCAT('00:', c.duration)) 
+                                END 
+                                ELSE 0 
+                            END 
+                        ) / 3600, 0 
+                    ) as learning_hours
+                "),
+            ])
+            ->first();
+
+        $unclassContentCount = DB::table('content as c')
+            ->leftJoin('classification as cl', function ($join) {
+                $join->on('cl.id', '=', 'c.classification_id')
+                    ->whereNotNull('cl.classification_name')
+                    ->whereNotNull('cl.slug')
+                    ->where('cl.slug', '!=', '');
+            })
+            ->whereNull('c.deleted_at')
+            ->whereNull('cl.id')
+            ->count();
+
+        $unclassRow = (object) [
+            'id'                  => 'unclassification',
+            'classification_name' => 'Unclassification',
+            'slug'                => 'unclassification',
+            'content_total'       => (int) $unclassContentCount,
+            'total_learning'      => (int) ($unclassLearning->total_learning ?? 0),
+            'ongoing_learning'    => (int) ($unclassLearning->ongoing_learning ?? 0),
+            'finished_learning'   => (int) ($unclassLearning->finished_learning ?? 0),
+            'learning_hours'      => (float) ($unclassLearning->learning_hours ?? 0),
+            'is_unclassified'     => true,
+        ];
+
+        return $classified->push($unclassRow);
     }
 
     public function getTotalLearningHours(): float
@@ -201,26 +267,34 @@ class LearningManageController extends Controller
 
     public function category($slug, Request $request)
     {
-        $classification = Classification::where('slug', $slug)->firstOrFail();
+        $isUnclass = in_array(strtolower($slug), ['unclassification', 'unclassified', 'audit-isolated-classification'], true);
+        if ($isUnclass) {
+            $classificationName = 'Unclassification';
+            $categorySlug = 'unclassification';
+        } else {
+            $classification = Classification::where('slug', $slug)->firstOrFail();
+            $classificationName = $classification->classification_name;
+            $categorySlug = $classification->slug;
+        }
 
         if ($request->input('action') === 'download') {
-            return (new LearningExport($request->all(), 'category', $slug))
+            return (new LearningExport($request->all(), 'category', $categorySlug))
                 ->download(now()->format('Ymd_His') . '_learning.xlsx');
         }
 
         if ($request->input('action') === 'download_pdf' || $request->input('format') === 'pdf') {
-            $request->merge(['type' => 'category', 'slug' => $slug]);
+            $request->merge(['type' => 'category', 'slug' => $categorySlug]);
             return $this->downloadPdf($request);
         }
 
         if ($request->input('action') === 'download_csv' || $request->input('format') === 'csv') {
-            $request->merge(['type' => 'category', 'slug' => $slug]);
+            $request->merge(['type' => 'category', 'slug' => $categorySlug]);
             return $this->downloadCsv($request);
         }
 
         return view('main.learning.all', $this->learningViewData(
             $request,
-            'Classification: ' . $classification->classification_name,
+            'Classification: ' . $classificationName,
             $slug
         ));
     }
@@ -462,10 +536,16 @@ class LearningManageController extends Controller
         $contextTitle = 'KP OWL — Online Learning Record';
         $classificationName = null;
         if (!empty($slug) && $type === 'category') {
-            $classification = Classification::where('slug', $slug)->first();
-            if ($classification) {
-                $classificationName = $classification->classification_name;
-                $contextTitle = 'KP OWL — Classification: ' . $classificationName;
+            $isUnclass = in_array(strtolower($slug), ['unclassification', 'unclassified', 'audit-isolated-classification'], true);
+            if ($isUnclass) {
+                $classificationName = 'Unclassification';
+                $contextTitle = 'KP OWL — Classification: Unclassification';
+            } else {
+                $classification = Classification::where('slug', $slug)->first();
+                if ($classification) {
+                    $classificationName = $classification->classification_name;
+                    $contextTitle = 'KP OWL — Classification: ' . $classificationName;
+                }
             }
         } elseif (!empty($slug) && $type === 'content') {
             $contentModel = Content::where('slug', $slug)->first();

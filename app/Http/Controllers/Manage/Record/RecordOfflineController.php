@@ -355,36 +355,90 @@ class RecordOfflineController extends Controller
 
         $records = $query
             ->select([
-                DB::raw("COALESCE(NULLIF(TRIM(ot.main_classification), ''), 'Unclassified') as classification_name"),
+                DB::raw("
+                    CASE 
+                        WHEN ot.main_classification IS NULL 
+                          OR TRIM(ot.main_classification) = '' 
+                          OR LOWER(TRIM(ot.main_classification)) IN ('unclassified', 'unclassification', 'audit isolated classification', 'audit-isolated-classification')
+                        THEN 'Unclassification'
+                        WHEN LOWER(TRIM(ot.main_classification)) IN ('basic common duties', 'basic & common duties', 'basic and common duties')
+                        THEN 'Basic & Common Duties'
+                        ELSE TRIM(ot.main_classification)
+                    END as classification_name
+                "),
                 DB::raw("COUNT(DISTINCT ot.id) as programs"),
                 DB::raw("COUNT(otu.id) as total_participants"),
                 DB::raw("COALESCE(SUM(otu.learning_hours), 0) as learning_hours"),
                 DB::raw("SUM(CASE WHEN otu.progress > 0 AND otu.progress < 100 THEN 1 ELSE 0 END) as ongoing"),
                 DB::raw("SUM(CASE WHEN otu.progress >= 100 THEN 1 ELSE 0 END) as finished"),
             ])
-            ->groupBy(DB::raw("COALESCE(NULLIF(TRIM(ot.main_classification), ''), 'Unclassified')"))
-            ->orderBy('classification_name', 'asc')
+            ->groupBy(DB::raw("
+                CASE 
+                    WHEN ot.main_classification IS NULL 
+                      OR TRIM(ot.main_classification) = '' 
+                      OR LOWER(TRIM(ot.main_classification)) IN ('unclassified', 'unclassification', 'audit isolated classification', 'audit-isolated-classification')
+                    THEN 'Unclassification'
+                    WHEN LOWER(TRIM(ot.main_classification)) IN ('basic common duties', 'basic & common duties', 'basic and common duties')
+                    THEN 'Basic & Common Duties'
+                    ELSE TRIM(ot.main_classification)
+                END
+            "))
             ->get();
 
-        return $records->map(function ($item, $index) {
+        $normal = [];
+        $unclass = null;
+
+        foreach ($records as $item) {
             $name = (string) $item->classification_name;
             $resolved = self::resolveClassification($name);
 
-            return (object) [
-                'no'                 => $index + 1,
-                'classification_name'=> $name,
-                'slug'               => $resolved['slug'],
-                'programs'           => (int) ($item->programs ?? 0),
-                'total_participants' => (int) ($item->total_participants ?? 0),
-                'learning_hours'     => (float) ($item->learning_hours ?? 0),
-                'ongoing'            => (int) ($item->ongoing ?? 0),
-                'finished'           => (int) ($item->finished ?? 0),
-            ];
-        });
+            if ($resolved['is_unclassified'] || $name === 'Unclassification' || $resolved['slug'] === 'unclassification') {
+                $unclass = $item;
+            } else {
+                $normal[] = (object) [
+                    'classification_name' => $resolved['name'],
+                    'slug'                => $resolved['slug'],
+                    'programs'           => (int) ($item->programs ?? 0),
+                    'total_participants' => (int) ($item->total_participants ?? 0),
+                    'learning_hours'     => (float) ($item->learning_hours ?? 0),
+                    'ongoing'            => (int) ($item->ongoing ?? 0),
+                    'finished'           => (int) ($item->finished ?? 0),
+                ];
+            }
+        }
+
+        usort($normal, fn ($a, $b) => strcasecmp($a->classification_name, $b->classification_name));
+
+        $result = collect();
+        $no = 1;
+        foreach ($normal as $item) {
+            $item->no = $no++;
+            $result->push($item);
+        }
+
+        if ($unclass) {
+            $result->push((object) [
+                'no'                 => $no++,
+                'classification_name'=> 'Unclassification',
+                'slug'               => 'unclassification',
+                'programs'           => (int) ($unclass->programs ?? 0),
+                'total_participants' => (int) ($unclass->total_participants ?? 0),
+                'learning_hours'     => (float) ($unclass->learning_hours ?? 0),
+                'ongoing'            => (int) ($unclass->ongoing ?? 0),
+                'finished'           => (int) ($unclass->finished ?? 0),
+            ]);
+        }
+
+        return $result;
     }
 
     public function classification(string $classification, Request $request)
     {
+        $lower = strtolower(trim($classification));
+        if (in_array($lower, ['audit-isolated-classification', 'audit isolated classification', 'unclassified'], true)) {
+            return redirect()->route('manage.record.offline.classification', array_merge(['classification' => 'unclassification'], $request->query()), 301);
+        }
+
         $resolved = self::resolveClassification($classification);
 
         return view('main.record.offline.classification', [
@@ -1568,12 +1622,35 @@ class RecordOfflineController extends Controller
     {
         $trimmed = trim($input);
         $slugified = Str::slug($trimmed);
+        $lower = strtolower($trimmed);
 
-        if ($trimmed === '' || $slugified === '' || $slugified === 'unclassified' || strtolower($trimmed) === 'unclassified') {
+        $unclassTriggers = [
+            'unclassified',
+            'unclassification',
+            'audit-isolated-classification',
+            'audit isolated classification',
+        ];
+
+        if ($trimmed === '' || $slugified === '' || in_array($slugified, $unclassTriggers, true) || in_array($lower, $unclassTriggers, true)) {
             return [
-                'name'            => 'Unclassified',
-                'slug'            => 'unclassified',
+                'name'            => 'Unclassification',
+                'slug'            => 'unclassification',
                 'is_unclassified' => true,
+            ];
+        }
+
+        $canonicalAliases = [
+            'basic common duties'     => 'Basic & Common Duties',
+            'basic & common duties'   => 'Basic & Common Duties',
+            'basic and common duties' => 'Basic & Common Duties',
+            'basic-common-duties'     => 'Basic & Common Duties',
+        ];
+
+        if (isset($canonicalAliases[$lower]) || isset($canonicalAliases[$slugified])) {
+            return [
+                'name'            => 'Basic & Common Duties',
+                'slug'            => 'basic-common-duties',
+                'is_unclassified' => false,
             ];
         }
 

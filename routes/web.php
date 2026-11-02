@@ -527,6 +527,12 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
             Route::get('online/export/pdf', [RecordOnlineController::class, 'exportPdf'])->name('online.export.pdf');
             Route::get('online/export/csv', [RecordOnlineController::class, 'exportCsv'])->name('online.export.csv');
             Route::get('online/download', [RecordOnlineController::class, 'download'])->name('online.download');
+            Route::get('online/classification/{classification}', [RecordOnlineController::class, 'classification'])->name('online.classification');
+            Route::get('online/classification/{classification}/datatable', [RecordOnlineController::class, 'classificationDatatable'])->name('online.classification.datatable');
+            Route::get('online/classification/{classification}/download/{format?}', [RecordOnlineController::class, 'classificationDownload'])->name('online.classification.download');
+            Route::get('online/classification/{classification}/export/excel', [RecordOnlineController::class, 'classificationExportExcel'])->name('online.classification.export.excel');
+            Route::get('online/classification/{classification}/export/csv', [RecordOnlineController::class, 'classificationExportCsv'])->name('online.classification.export.csv');
+            Route::get('online/classification/{classification}/export/pdf', [RecordOnlineController::class, 'classificationExportPdf'])->name('online.classification.export.pdf');
             Route::get('online/{type}/{id}/detail', [RecordOnlineController::class, 'detail'])->name('online.detail');
             Route::delete('online/{type}/{id}', [RecordOnlineController::class, 'destroy'])->name('online.destroy');
 

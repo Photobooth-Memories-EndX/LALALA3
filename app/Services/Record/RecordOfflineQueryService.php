@@ -150,7 +150,9 @@ class RecordOfflineQueryService
             if ($resolved['is_unclassified']) {
                 $query->where(function ($q) {
                     $q->whereNull('ot.main_classification')
-                      ->orWhere('ot.main_classification', '');
+                      ->orWhere('ot.main_classification', '')
+                      ->orWhereIn('ot.main_classification', ['Unclassified', 'Unclassification', 'Audit Isolated Classification'])
+                      ->orWhereRaw("LOWER(TRIM(ot.main_classification)) IN ('unclassified', 'unclassification', 'audit isolated classification', 'audit-isolated-classification')");
                 });
             } else {
                 $resolvedName = $resolved['name'];
@@ -953,7 +955,9 @@ class RecordOfflineQueryService
             if ($resolved['is_unclassified']) {
                 $query->where(function ($q) {
                     $q->whereNull('ot.main_classification')
-                      ->orWhere('ot.main_classification', '');
+                      ->orWhere('ot.main_classification', '')
+                      ->orWhereIn('ot.main_classification', ['Unclassified', 'Unclassification', 'Audit Isolated Classification'])
+                      ->orWhereRaw("LOWER(TRIM(ot.main_classification)) IN ('unclassified', 'unclassification', 'audit isolated classification', 'audit-isolated-classification')");
                 });
             } else {
                 $resolvedName = $resolved['name'];

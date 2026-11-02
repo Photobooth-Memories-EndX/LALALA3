@@ -14,10 +14,10 @@
         <tbody>
             @forelse ($classification as $list)
                 <tr>
-                    <td>{{ $loop->iteration }}</td>
+                    <td>{{ $list->no ?? $loop->iteration }}</td>
                     <td>
                         @if($list->slug)
-                            <a href="{{ route('learning.manage.category', $list->slug) }}" class="fw-bold text-primary text-decoration-underline">
+                            <a href="{{ route('manage.record.online.classification', $list->slug) }}" class="fw-bold text-primary text-decoration-underline online-classification-link" data-slug="{{ $list->slug }}">
                                 {{ $list->classification_name }}
                             </a>
                         @else
@@ -26,7 +26,7 @@
                     </td>
                     <td class="text-center">{{ number_format((int) ($list->content_total ?? 0)) }}</td>
                     <td class="text-center fw-semibold">{{ number_format((int) ($list->total_learning ?? 0)) }}</td>
-                    <td class="text-center fw-semibold">{{ number_format($list->learning_hours, 1) }} Hours</td>
+                    <td class="text-center fw-semibold">{{ (fmod((float) ($list->learning_hours ?? 0), 1) == 0 ? (int) ($list->learning_hours ?? 0) : round((float) ($list->learning_hours ?? 0), 1)) }} Hours</td>
                     <td class="text-center text-warning fw-semibold">{{ number_format((int) ($list->ongoing_learning ?? 0)) }}</td>
                     <td class="text-center text-success fw-semibold">{{ number_format((int) ($list->finished_learning ?? 0)) }}</td>
                 </tr>

@@ -80,7 +80,7 @@ class RecordOnlineController extends Controller
 
     public function ajaxClassification(Request $request)
     {
-        $classification = $this->learningManageController->getClassificationSummary();
+        $classification = $this->learningManageController->getClassificationSummary(true);
 
         if ($request->wantsJson() || $request->input('format') === 'json') {
             return response()->json([
@@ -93,6 +93,93 @@ class RecordOnlineController extends Controller
             'classification' => $classification,
         ]);
     }
+    public function classification(string $classification, Request $request)
+    {
+        $isUnclass = in_array(strtolower($classification), ['unclassification', 'unclassified', 'audit-isolated-classification'], true);
+        if ($isUnclass) {
+            $classificationName = 'Unclassification';
+            $slug = 'unclassification';
+            $isUnclassified = true;
+        } else {
+            $cat = \App\Models\Classification::where('slug', $classification)
+                ->orWhere('classification_name', $classification)
+                ->first();
+            $classificationName = $cat ? $cat->classification_name : ucwords(str_replace('-', ' ', $classification));
+            $slug = $cat ? $cat->slug : \Illuminate\Support\Str::slug($classification);
+            $isUnclassified = false;
+        }
+
+        return view('main.record.online.classification', [
+            'title'              => "Classification: {$classificationName}",
+            'subtitle'           => 'Monitor online learning records and participant progress for this classification.',
+            'classificationName' => $classificationName,
+            'slug'               => $slug,
+            'isUnclassified'     => $isUnclassified,
+            'years'              => LearningManageController::learningYears(),
+            'entries'            => (int) $request->input('entries', 25),
+            'downloadUrl'        => route('manage.record.online.classification.download', $slug),
+            'exportExcelUrl'     => route('manage.record.online.classification.export.excel', $slug),
+            'exportCsvUrl'       => route('manage.record.online.classification.export.csv', $slug),
+            'exportPdfUrl'       => route('manage.record.online.classification.export.pdf', $slug),
+        ]);
+    }
+
+    public function classificationDatatable(string $classification, Request $request, LearningDatatableService $datatableService)
+    {
+        $request->merge([
+            'classification'      => $classification,
+            'classification_slug' => $classification,
+            'type'                => 'category',
+            'slug'                => $classification,
+        ]);
+
+        return $datatableService->make($request);
+    }
+
+    public function classificationDownload(string $classification, Request $request, ?string $format = null)
+    {
+        $fmt = strtolower((string) ($format ?: $request->input('format', 'excel')));
+        if ($fmt === 'csv') {
+            return $this->classificationExportCsv($classification, $request);
+        }
+        if ($fmt === 'pdf') {
+            return $this->classificationExportPdf($classification, $request);
+        }
+
+        return $this->classificationExportExcel($classification, $request);
+    }
+
+    public function classificationExportExcel(string $classification, Request $request)
+    {
+        ini_set('memory_limit', '2048M');
+        ini_set('max_execution_time', 600);
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(600);
+        }
+
+        $dateTime = \App\Http\Controllers\ManageRecordController::formatExportDateTime();
+        $fileName = "EmployeeOWLrecord_{$dateTime}.xlsx";
+
+        return app(\App\Services\Record\ManageOnlineRecordExportService::class)->downloadClassification($classification, $request->all(), $fileName);
+    }
+
+    public function classificationExportCsv(string $classification, Request $request)
+    {
+        $export = new OnlineRecordCsvExport(
+            $request->all(),
+            'category',
+            $classification
+        );
+
+        return $export->download();
+    }
+
+    public function classificationExportPdf(string $classification, Request $request)
+    {
+        $request->merge(['type' => 'category', 'slug' => $classification]);
+        return $this->learningManageController->downloadPdf($request);
+    }
+
 
     public function datatable(Request $request, LearningDatatableService $datatableService)
     {
