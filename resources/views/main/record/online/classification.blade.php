@@ -393,7 +393,6 @@
                 data: function (d) {
                     d.classification = classificationSlug;
                     d.classification_slug = classificationSlug;
-                    d.type = 'category';
                     d.slug = classificationSlug;
                     d.employee_id = $('#online-employee-input').val();
                     d.learning_title = $('#online-title-input').val();

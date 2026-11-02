@@ -10,17 +10,17 @@
     </div>
 
     <div class="row g-3">
-        
+
             @if(auth()->user()->canAccessManageModule('record_management'))
             @include('main.manage.components.admin-menu-card', [
-                'title' => 'Record Management',
+                'title' => 'Learning & Record Management',
                 'description' => 'Manage KP OWL and Non KP OWL learning records, including online and offline training data, participant progress, classifications, and record exports.',
                 'url' => route('manage.record.online'),
                 'button' => 'Manage Records',
                 'icon' => 'ti ti-folders'
             ])
             @endif
-            
+
             @if(auth()->user()->canAccessManageModule('assessment_management'))
                 @include('main.manage.components.admin-menu-card', [
                     'title' => 'Assessment Management',
@@ -50,7 +50,7 @@
                     'icon' => 'ti ti-route'
                     ])
             @endif
-            
+
             @if(auth()->user()->canAccessManageModule('question_bank'))
             @include('main.manage.components.admin-menu-card', [
                 'title' => 'Question Bank',
@@ -60,7 +60,7 @@
                 'icon' => 'ti ti-help-circle'
                 ])
             @endif
-            
+
             @if(auth()->user()->canAccessManageModule('news_announcement'))
                 @include('main.manage.components.admin-menu-card', [
                     'title' => 'News & Announcements',
@@ -70,7 +70,7 @@
                     'icon' => 'ti ti-news'
                 ])
             @endif
-            
+
             @if(auth()->user()->canAccessManageModule('event_documentation'))
                 @include('main.manage.components.admin-menu-card', [
                         'title' => 'Event Documentation',

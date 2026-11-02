@@ -6,7 +6,7 @@
         </div>
 
         <h1 id="manage-record-hero-title" class="manage-record-hero__title">
-            Learning Record Management
+            Learning & Record Management
         </h1>
 
         <p class="manage-record-hero__description mb-0">

@@ -129,7 +129,6 @@ class RecordOnlineController extends Controller
         $request->merge([
             'classification'      => $classification,
             'classification_slug' => $classification,
-            'type'                => 'category',
             'slug'                => $classification,
         ]);
 
@@ -160,13 +159,21 @@ class RecordOnlineController extends Controller
         $dateTime = \App\Http\Controllers\ManageRecordController::formatExportDateTime();
         $fileName = "EmployeeOWLrecord_{$dateTime}.xlsx";
 
-        return app(\App\Services\Record\ManageOnlineRecordExportService::class)->downloadClassification($classification, $request->all(), $fileName);
+        $filters = $request->all();
+        $filters['classification'] = $classification;
+        $filters['classification_slug'] = $classification;
+
+        return app(\App\Services\Record\ManageOnlineRecordExportService::class)->downloadClassification($classification, $filters, $fileName);
     }
 
     public function classificationExportCsv(string $classification, Request $request)
     {
+        $filters = $request->all();
+        $filters['classification'] = $classification;
+        $filters['classification_slug'] = $classification;
+
         $export = new OnlineRecordCsvExport(
-            $request->all(),
+            $filters,
             'category',
             $classification
         );
@@ -176,7 +183,12 @@ class RecordOnlineController extends Controller
 
     public function classificationExportPdf(string $classification, Request $request)
     {
-        $request->merge(['type' => 'category', 'slug' => $classification]);
+        $request->merge([
+            'classification'      => $classification,
+            'classification_slug' => $classification,
+            'slug'                => $classification,
+            'type'                => 'category',
+        ]);
         return $this->learningManageController->downloadPdf($request);
     }
 

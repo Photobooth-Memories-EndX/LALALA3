@@ -305,7 +305,13 @@ class LearningDatatableService
         }
 
         // 6b. Content Type Filter Pushdown (Document / Video / MOOC)
-        $typeFilter = $filters['type'] ?? ($filters['content_type'] ?? null);
+        $typeFilter = $filters['content_type'] ?? null;
+        if (!filled($typeFilter) && filled($filters['type'] ?? null)) {
+            $candidateType = strtolower(trim((string) $filters['type']));
+            if (in_array($candidateType, ['document', 'video', 'youtube', 'mooc'], true)) {
+                $typeFilter = $candidateType;
+            }
+        }
         if (filled($typeFilter) && $typeFilter !== 'all') {
             $typeStr = strtolower(trim((string) $typeFilter));
             $typeContentIds = DB::table('content')
@@ -679,8 +685,9 @@ class LearningDatatableService
 
         $categoryParam = strtolower(trim((string) ($request->input('category') ?? ($request->input('learning_source') ?? ($request->input('source') ?? 'all')))));
 
-        $hasFilters = (filled($request->input('status')) && $request->input('status') !== 'all')
-            || (filled($request->input('type')) && $request->input('type') !== 'all')
+        $hasAdditionalFilters = (filled($request->input('status')) && $request->input('status') !== 'all')
+            || (filled($request->input('content_type')) && $request->input('content_type') !== 'all')
+            || (filled($request->input('type')) && in_array(strtolower(trim((string) $request->input('type'))), ['document', 'video', 'youtube', 'mooc'], true))
             || (filled($request->input('program_type')) && $request->input('program_type') !== 'all')
             || (filled($request->input('program')) && $request->input('program') !== 'all')
             || (filled($request->input('status_type')) && $request->input('status_type') !== 'all')
@@ -689,7 +696,7 @@ class LearningDatatableService
             || filled($request->input('to_date'))
             || (filled($request->input('progress_range')) && $request->input('progress_range') !== 'all')
             || (filled($request->input('duration')) && $request->input('duration') !== 'all')
-            || filled($request->input('classification_slug'))
+            || (filled($request->input('category')) && $request->input('category') !== 'all')
             || filled($request->input('content_slug'))
             || (filled($request->input('employee_id')) && $request->input('employee_id') !== 'all')
             || (filled($request->input('user_id')) && $request->input('user_id') !== 'all')
@@ -700,21 +707,36 @@ class LearningDatatableService
             || filled(trim((string) $request->input('search.value')))
             || (is_string($request->input('search')) && trim($request->input('search')) !== '');
 
+        $classParam = $request->input('classification_slug') ?? ($request->input('classification') ?? null);
+        $hasClassFilter = filled($classParam) && $classParam !== 'all';
+
+        $hasFilters = $hasAdditionalFilters || $hasClassFilter;
+
         $totalAll = ContentUser::count() + PlaylistContentUser::count();
 
         $query = self::buildBaseQuery($request->all());
 
+        $filteredCount = $hasFilters ? $query->count() : null;
+
+        if ($hasClassFilter) {
+            $totalRecords = $hasAdditionalFilters
+                ? self::buildBaseQuery(['classification_slug' => $classParam])->count()
+                : $filteredCount;
+        } elseif ($categoryParam === 'all_content') {
+            $totalRecords = ContentUser::count();
+        } elseif ($categoryParam === 'playlist') {
+            $totalRecords = PlaylistContentUser::count();
+        } else {
+            $totalRecords = $totalAll;
+        }
+
         $dataTable = DataTables::query($query)
-            ->setTotalRecords($totalAll);
+            ->setTotalRecords($totalRecords);
 
         if ($hasFilters) {
-            $dataTable->setFilteredRecords($query->count());
-        } elseif ($categoryParam === 'all_content') {
-            $dataTable->setFilteredRecords(ContentUser::count());
-        } elseif ($categoryParam === 'playlist') {
-            $dataTable->setFilteredRecords(PlaylistContentUser::count());
+            $dataTable->setFilteredRecords($filteredCount);
         } else {
-            $dataTable->setFilteredRecords($totalAll);
+            $dataTable->setFilteredRecords($totalRecords);
         }
 
         return $dataTable
