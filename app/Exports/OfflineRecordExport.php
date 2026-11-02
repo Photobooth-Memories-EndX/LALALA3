@@ -62,7 +62,6 @@ class OfflineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wi
     {
         return [
             'NO',
-            'Source',
             'Employee ID',
             'Employee Name',
             'Grade',
@@ -86,7 +85,6 @@ class OfflineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wi
             'Venue',
             'Instructor',
             'Course Duration',
-            'Total Recognized Duration',
             'Learning Hours',
             '% Progress',
             'Progress Status',
@@ -125,32 +123,74 @@ class OfflineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wi
     {
         $this->rowCount++;
 
-        // Duration formatted as HH:MM:SS
+        // 1. Delivery Method & Sub Delivery Method normalization based on FIXS TEMPLATE PTKP.xlsx
+        $rawDeliv = strtolower(trim((string) ($row->delivery_method ?? '')));
+        $rawSubDeliv = strtolower(trim((string) ($row->sub_delivery_method ?? '')));
+
+        if (in_array($rawDeliv, ['online', 'e-learning', 'elearning', 'webinar'], true)) {
+            $delivMethod = 'Online';
+        } elseif (in_array($rawDeliv, ['blended', 'hybrid'], true)) {
+            $delivMethod = 'Blended';
+        } else {
+            $delivMethod = 'Offline';
+        }
+
+        if (str_contains($rawSubDeliv, 'off-site') || str_contains($rawSubDeliv, 'offsite') || str_contains($rawSubDeliv, 'off site')) {
+            $subDelivMethod = 'Off-Site';
+            $delivMethod = 'Offline';
+        } elseif (str_contains($rawSubDeliv, 'webinar')) {
+            $subDelivMethod = 'Webinar';
+            $delivMethod = 'Online';
+        } elseif (str_contains($rawSubDeliv, 'e-learning') || str_contains($rawSubDeliv, 'elearning')) {
+            $subDelivMethod = 'E-learning';
+            $delivMethod = 'Online';
+        } elseif (str_contains($rawSubDeliv, 'hybrid') || str_contains($rawSubDeliv, 'blended')) {
+            $subDelivMethod = 'Hybrid';
+            $delivMethod = 'Blended';
+        } elseif (str_contains($rawSubDeliv, 'on-site') || str_contains($rawSubDeliv, 'onsite') || str_contains($rawSubDeliv, 'on site')) {
+            $subDelivMethod = 'On-Site';
+            if ($delivMethod !== 'Blended' && $delivMethod !== 'Online') {
+                $delivMethod = 'Offline';
+            }
+        } else {
+            if ($delivMethod === 'Online') {
+                $subDelivMethod = 'E-learning';
+            } elseif ($delivMethod === 'Blended') {
+                $subDelivMethod = 'Hybrid';
+            } else {
+                $subDelivMethod = 'On-Site';
+            }
+        }
+
+        // 2. Course Duration: formatted as HH:MM:SS
         $durationFormatted = '-';
-        if (!empty($row->duration_seconds)) {
-            $secs = (int) $row->duration_seconds;
-            $hours = floor($secs / 3600);
-            $mins = floor(($secs % 3600) / 60);
-            $seconds = $secs % 60;
+        $courseDurSec = !empty($row->duration_seconds) && (int) $row->duration_seconds > 0
+            ? (int) $row->duration_seconds
+            : (!empty($row->course_learning_hours) && (float) $row->course_learning_hours > 0 ? (int) ((float) $row->course_learning_hours * 3600) : null);
+
+        if ($courseDurSec !== null && $courseDurSec > 0) {
+            $hours = floor($courseDurSec / 3600);
+            $mins = floor(($courseDurSec % 3600) / 60);
+            $seconds = $courseDurSec % 60;
             $durationFormatted = sprintf('%02d:%02d:%02d', $hours, $mins, $seconds);
         }
 
-        // Learning Hours (raw numeric float for SUM calculations)
-        $rawLh = $row->course_learning_hours ?? ($row->learning_hours ?? null);
+        // 3. Learning Hours (raw numeric float for SUM calculations)
+        $rawLh = $row->learning_hours ?? ($row->course_learning_hours ?? null);
         $lHoursNumeric = ($rawLh !== null && $rawLh !== '' && is_numeric($rawLh))
             ? (float) $rawLh
             : '-';
 
-        // Progress & Status (raw numeric decimal)
+        // 4. Progress & Status
         $progressNum = (float) ($row->progress ?? 0);
         $progressDecimal = round($progressNum / 100, 4);
         $progressStatus = ($progressNum >= 100) ? 'Finished' : (($progressNum > 0) ? 'Ongoing' : 'Not Started');
 
-        // Date & Time split
-        $startDateStr = !empty($row->start_date) ? date('Y-m-d', strtotime($row->start_date)) : '-';
+        // 5. Date & Time (yyyy/mm/dd and hh:mm:ss)
+        $startDateStr = !empty($row->start_date) ? date('Y/m/d', strtotime($row->start_date)) : '-';
         $endDateStr = !empty($row->end_date)
-            ? date('Y-m-d', strtotime($row->end_date))
-            : (!empty($row->finish_date) ? date('Y-m-d', strtotime($row->finish_date)) : '-');
+            ? date('Y/m/d', strtotime($row->end_date))
+            : (!empty($row->finish_date) ? date('Y/m/d', strtotime($row->finish_date)) : '-');
 
         $startTimeStr = !empty($row->start_time) ? date('H:i:s', strtotime($row->start_time)) : '-';
         $endTimeStr = !empty($row->end_time) ? date('H:i:s', strtotime($row->end_time)) : '-';
@@ -158,7 +198,7 @@ class OfflineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wi
         $recordMonthDate = $row->start_date ?: ($row->end_date ?: ($row->created_at ?? null));
         $recordMonthStr = !empty($recordMonthDate) ? date('F', strtotime($recordMonthDate)) : '-';
 
-        // Attendance: strictly Yes or No
+        // 6. Attendance: strictly Yes or No
         $rawAtt = strtolower(trim((string) ($row->attendance ?? '')));
         if ($rawAtt !== '') {
             $attendanceStr = in_array($rawAtt, ['1', 'yes', 'present', 'true', 'hadir', 'completed', 'finished'], true) ? 'Yes' : 'No';
@@ -166,112 +206,117 @@ class OfflineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wi
             $attendanceStr = ($progressNum >= 100 || !empty($row->finish_date)) ? 'Yes' : 'No';
         }
 
-        // Delivery Method: strictly Online or Offline
-        $rawDeliv = strtolower(trim((string) ($row->delivery_method ?? '')));
-        $delivMethod = in_array($rawDeliv, ['online', 'e-learning', 'webinar', 'kp-owl', 'kp owl'], true) ? 'Online' : 'Offline';
-        $subDelivMethod = $row->sub_delivery_method ?: 'On-site';
-
-        // Bond Amount & Duration
+        // 7. Bond Amount, Duration & End Date
         $idr = $row->bond_amount_idr ?? ($row->bond_amount ?? null);
         $hasBond = ($idr !== null && is_numeric($idr) && (float) $idr > 0);
 
-        $bondDurationMonths = null;
+        $bondDurationVal = 6;
         if (!empty($row->bond_duration)) {
             $parsedDur = (int) preg_replace('/\D/', '', (string) $row->bond_duration);
             if ($parsedDur > 0) {
-                $bondDurationMonths = $parsedDur;
+                $bondDurationVal = $parsedDur;
             }
         }
 
-        $bondEndDateStr = !empty($row->bond_end_date) ? date('Y-m-d', strtotime($row->bond_end_date)) : '-';
+        $bondEndDateStr = !empty($row->bond_end_date) ? date('Y/m/d', strtotime($row->bond_end_date)) : '-';
 
-        // Scores: strictly whole integers if whole number
-        $scoreL1 = null;
-        if (isset($row->l1_program) && is_numeric($row->l1_program)) {
-            $val = (float) $row->l1_program;
-            $intVal = (int) round($val);
-            $scoreL1 = (abs($val - $intVal) < 0.0001) ? $intVal : round($val, 2);
-        }
+        // 8. Scores (Float 0.00)
+        $scoreL1 = (isset($row->l1_program) && is_numeric($row->l1_program)) ? (float) $row->l1_program : null;
 
-        $scoreL2 = null;
         $rawScoreL2 = $row->assessment_score ?? ($row->l2_numerical ?? null);
-        if ($rawScoreL2 !== null && is_numeric($rawScoreL2)) {
-            $val = (float) $rawScoreL2;
-            $intVal = (int) round($val);
-            $scoreL2 = (abs($val - $intVal) < 0.0001) ? $intVal : round($val, 2);
+        $scoreL2 = ($rawScoreL2 !== null && is_numeric($rawScoreL2)) ? (float) $rawScoreL2 : null;
+
+        $scoreL3 = (isset($row->l3_numerical) && is_numeric($row->l3_numerical)) ? (float) $row->l3_numerical : null;
+
+        // 9. L2 Status: strictly PASSED, FAILED, or -
+        $l2Status = '-';
+        $rawL2Verbal = strtolower(trim((string) ($row->l2_verbal ?? '')));
+        if ($rawL2Verbal !== '' && $rawL2Verbal !== '-') {
+            if (str_contains($rawL2Verbal, 'pass') || str_contains($rawL2Verbal, 'good') || str_contains($rawL2Verbal, 'excellent') || str_contains($rawL2Verbal, 'satisfactory')) {
+                $l2Status = 'PASSED';
+            } elseif (str_contains($rawL2Verbal, 'fail')) {
+                $l2Status = 'FAILED';
+            }
+        }
+        if ($l2Status === '-' && $scoreL2 !== null) {
+            $l2Status = ($scoreL2 >= 70) ? 'PASSED' : 'FAILED';
         }
 
-        $scoreL3 = null;
-        if (isset($row->l3_numerical) && is_numeric($row->l3_numerical)) {
-            $val = (float) $row->l3_numerical;
-            $intVal = (int) round($val);
-            $scoreL3 = (abs($val - $intVal) < 0.0001) ? $intVal : round($val, 2);
+        // 10. L3 Status: free text string
+        $l3Status = !empty($row->l3_verbal) && $row->l3_verbal !== '-' ? trim((string) $row->l3_verbal) : '-';
+
+        // 11. Total Engagement Time: from duration for attendees, 0 for absent
+        $totalEngagementFormatted = '-';
+        if ($attendanceStr === 'Yes') {
+            $totSec = $courseDurSec ?: (!empty($row->learning_hours) && (float) $row->learning_hours > 0 ? (int) ((float) $row->learning_hours * 3600) : 0);
+            if ($totSec > 0) {
+                $hours = floor($totSec / 3600);
+                $mins = floor(($totSec % 3600) / 60);
+                $seconds = $totSec % 60;
+                $totalEngagementFormatted = sprintf('%02d:%02d:%02d', $hours, $mins, $seconds);
+            } elseif ($courseDurSec !== null) {
+                $totalEngagementFormatted = '00:00:00';
+            }
+        } elseif ($attendanceStr === 'No') {
+            $totalEngagementFormatted = '00:00:00';
         }
 
-        $totalEngVal = $row->learning_hours ?? ($row->course_learning_hours ?? null);
-        $totalEngNumeric = ($totalEngVal !== null && $totalEngVal !== '' && is_numeric($totalEngVal))
-            ? (float) $totalEngVal
-            : '-';
-
-        // Employee ID: clean without / NIP
+        // 12. Employee ID & Certificate
         $rawEmp = $row->employee_id ?? ($row->id_emp ?? '-');
         $cleanEmpId = ($rawEmp !== '-') ? preg_replace('/\s*[\/\-]\s*NIP.*$/i', '', trim((string) $rawEmp)) : '-';
-
         $hasCert = (!empty($row->certificate) && $row->certificate !== '-');
 
         return [
             $this->rowCount,                                                                                    // 1. NO
-            'Non KP OWL',                                                                                       // 2. Source
-            $cleanEmpId,                                                                                        // 3. Employee ID
-            $row->participant_name ?: ($row->user_name ?? ($row->name ?? '-')),                                 // 4. Employee Name
-            $row->grade ?: '-',                                                                                 // 5. Grade
-            $row->job_position ?: '-',                                                                          // 6. Job Position
-            $row->team ?: '-',                                                                                  // 7. Team
-            $row->department ?: '-',                                                                            // 8. Department
-            $row->company ?: '-',                                                                               // 9. Company
-            $row->course_name ?: ($row->title ?: '-'),                                                          // 10. Course Title
-            $row->sub_course_name ?: '-',                                                                       // 11. Sub Course Title
-            $row->type ?: '-',                                                                                  // 12. Type
-            $row->category ?: '-',                                                                              // 13. Category
-            $row->level ?: '-',                                                                                 // 14. Level
-            $row->batch ?: '-',                                                                                 // 15. Batch
-            $row->main_classification ?: 'Unclassified',                                                        // 16. Main Classification
-            $row->sub_classification ?: '-',                                                                    // 17. Sub Classification
-            $delivMethod,                                                                                       // 18. Delivery Method
-            $subDelivMethod,                                                                                    // 19. Sub Delivery Method
-            $row->provider ?: '-',                                                                              // 20. Provider
-            $row->sub_provider ?: '-',                                                                          // 21. Sub Provider
-            $row->provider_name ?: ($row->provider ?: '-'),                                                     // 22. Provider Name
-            $row->venue ?: '-',                                                                                 // 23. Venue
-            $row->instructor ?: '-',                                                                            // 24. Instructor
-            '-',                                                                                                // 25. Course Duration (strictly -)
-            '-',                                                                                                // 26. Total Recognized Duration (strictly -)
-            $lHoursNumeric,                                                                                     // 27. Learning Hours
-            $progressDecimal,                                                                                   // 28. % Progress
-            $progressStatus,                                                                                    // 29. Progress Status
-            $startDateStr,                                                                                      // 30. Start Date
-            $endDateStr,                                                                                        // 31. End Date
-            $startTimeStr,                                                                                      // 32. Start Time
-            $endTimeStr,                                                                                        // 33. End Time
-            $recordMonthStr,                                                                                    // 34. Record Month
-            $row->requirement ?: 'Mandatory',                                                                   // 35. Requirement
-            $attendanceStr,                                                                                     // 36. Attendance
-            $row->attendance_reason ?: '-',                                                                     // 37. Attendance Reason
-            $hasBond ? 'Yes' : ($row->bond_status ?: 'No'),                                                     // 38. Bond Status
-            $bondDurationMonths !== null ? $bondDurationMonths : '-',                                           // 39. Bond Duration
-            $bondEndDateStr,                                                                                    // 40. Bond End Date
-            $hasBond ? (float) $idr : '-',                                                                      // 41. Bond Amount
-            $scoreL1 !== null ? $scoreL1 : '-',                                                                 // 42. Score (L1) - Course
-            $scoreL2 !== null ? $scoreL2 : '-',                                                                 // 43. Score (L2)
-            $row->l2_verbal ?: ($scoreL2 !== null ? ($scoreL2 >= 70 ? 'Passed' : 'Failed') : '-'),                // 44. L2 Status
-            $scoreL3 !== null ? $scoreL3 : '-',                                                                 // 45. Score (L3)
-            $row->l3_verbal ?: '-',                                                                             // 46. L3 Status
-            $hasCert ? 'Available' : '-',                                                                       // 47. Certificate Availability
-            $hasCert ? $row->certificate : '-',                                                                 // 48. Certificate Institution
-            '-',                                                                                                // 49. Certificate Issued Date
-            '-',                                                                                                // 50. Certificate Expired Date
-            $row->pic ?: '-',                                                                                   // 51. Person in Charge (PIC)
-            $totalEngNumeric,                                                                                   // 52. Total Engagement Time (LH)
+            $cleanEmpId,                                                                                        // 2. Employee ID
+            $row->participant_name ?: ($row->user_name ?? ($row->name ?? '-')),                                 // 3. Employee Name
+            $row->grade ?: '-',                                                                                 // 4. Grade
+            $row->job_position ?: '-',                                                                          // 5. Job Position
+            $row->team ?: '-',                                                                                  // 6. Team
+            $row->department ?: '-',                                                                            // 7. Department
+            $row->company ?: '-',                                                                               // 8. Company
+            $row->course_name ?: ($row->title ?: '-'),                                                          // 9. Course Title
+            $row->sub_course_name ?: '-',                                                                       // 10. Sub Course Title
+            $row->type ?: '-',                                                                                  // 11. Type
+            $row->category ?: '-',                                                                              // 12. Category
+            $row->level ?: '-',                                                                                 // 13. Level
+            $row->batch ?: '-',                                                                                 // 14. Batch
+            $row->main_classification ?: 'Unclassified',                                                        // 15. Main Classification
+            $row->sub_classification ?: '-',                                                                    // 16. Sub Classification
+            $delivMethod,                                                                                       // 17. Delivery Method
+            $subDelivMethod,                                                                                    // 18. Sub Delivery Method
+            $row->provider ?: '-',                                                                              // 19. Provider
+            $row->sub_provider ?: '-',                                                                          // 20. Sub Provider
+            $row->provider_name ?: ($row->provider ?: '-'),                                                     // 21. Provider Name
+            $row->venue ?: '-',                                                                                 // 22. Venue
+            $row->instructor ?: '-',                                                                            // 23. Instructor
+            $durationFormatted,                                                                                 // 24. Course Duration
+            $lHoursNumeric,                                                                                     // 25. Learning Hours
+            $progressDecimal,                                                                                   // 26. % Progress
+            $progressStatus,                                                                                    // 27. Progress Status
+            $startDateStr,                                                                                      // 28. Start Date
+            $endDateStr,                                                                                        // 29. End Date
+            $startTimeStr,                                                                                      // 30. Start Time
+            $endTimeStr,                                                                                        // 31. End Time
+            $recordMonthStr,                                                                                    // 32. Record Month
+            $row->requirement ?: 'Mandatory',                                                                   // 33. Requirement
+            $attendanceStr,                                                                                     // 34. Attendance
+            $row->attendance_reason ?: '-',                                                                     // 35. Attendance Reason
+            $hasBond ? 'Yes' : ($row->bond_status ?: 'No'),                                                     // 36. Bond Status
+            $bondDurationVal,                                                                                   // 37. Bond Duration
+            $bondEndDateStr,                                                                                    // 38. Bond End Date
+            $hasBond ? (float) $idr : '-',                                                                      // 39. Bond Amount
+            $scoreL1 !== null ? $scoreL1 : '-',                                                                 // 40. Score (L1) - Course
+            $scoreL2 !== null ? $scoreL2 : '-',                                                                 // 41. Score (L2)
+            $l2Status,                                                                                          // 42. L2 Status
+            $scoreL3 !== null ? $scoreL3 : '-',                                                                 // 43. Score (L3)
+            $l3Status,                                                                                          // 44. L3 Status
+            $hasCert ? 'Available' : '-',                                                                       // 45. Certificate Availability
+            $hasCert ? $row->certificate : '-',                                                                 // 46. Certificate Institution
+            '-',                                                                                                // 47. Certificate Issued Date
+            '-',                                                                                                // 48. Certificate Expired Date
+            $row->pic ?: '-',                                                                                   // 49. Person in Charge (PIC)
+            $totalEngagementFormatted,                                                                          // 50. Total Engagement Time (LH)
         ];
     }
 
@@ -279,57 +324,55 @@ class OfflineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wi
     {
         return [
             'A'  => 6,   // NO
-            'B'  => 14,  // Source
-            'C'  => 16,  // Employee ID
-            'D'  => 30,  // Employee Name
-            'E'  => 12,  // Grade
-            'F'  => 25,  // Job Position
-            'G'  => 20,  // Team
-            'H'  => 25,  // Department
-            'I'  => 25,  // Company
-            'J'  => 35,  // Course Title
-            'K'  => 25,  // Sub Course Title
-            'L'  => 15,  // Type
-            'M'  => 18,  // Category
-            'N'  => 12,  // Level
-            'O'  => 12,  // Batch
-            'P'  => 25,  // Main Classification
-            'Q'  => 25,  // Sub Classification
-            'R'  => 18,  // Delivery Method
-            'S'  => 20,  // Sub Delivery Method
-            'T'  => 16,  // Provider
-            'U'  => 18,  // Sub Provider
-            'V'  => 25,  // Provider Name
-            'W'  => 20,  // Venue
-            'X'  => 22,  // Instructor
-            'Y'  => 16,  // Course Duration
-            'Z'  => 22,  // Total Recognized Duration
-            'AA' => 16,  // Learning Hours
-            'AB' => 14,  // % Progress
-            'AC' => 16,  // Progress Status
-            'AD' => 14,  // Start Date
-            'AE' => 14,  // End Date
-            'AF' => 14,  // Start Time
-            'AG' => 14,  // End Time
-            'AH' => 16,  // Record Month
-            'AI' => 15,  // Requirement
-            'AJ' => 14,  // Attendance
-            'AK' => 25,  // Attendance Reason
-            'AL' => 14,  // Bond Status
-            'AM' => 16,  // Bond Duration
-            'AN' => 16,  // Bond End Date
-            'AO' => 18,  // Bond Amount
-            'AP' => 20,  // Score (L1) - Course
-            'AQ' => 15,  // Score (L2)
-            'AR' => 15,  // L2 Status
-            'AS' => 15,  // Score (L3)
-            'AT' => 15,  // L3 Status
-            'AU' => 22,  // Certificate Availability
-            'AV' => 25,  // Certificate Institution
-            'AW' => 20,  // Certificate Issued Date
-            'AX' => 20,  // Certificate Expired Date
-            'AY' => 25,  // Person in Charge (PIC)
-            'AZ' => 25,  // Total Engagement Time (LH)
+            'B'  => 16,  // Employee ID
+            'C'  => 30,  // Employee Name
+            'D'  => 12,  // Grade
+            'E'  => 25,  // Job Position
+            'F'  => 20,  // Team
+            'G'  => 25,  // Department
+            'H'  => 25,  // Company
+            'I'  => 35,  // Course Title
+            'J'  => 25,  // Sub Course Title
+            'K'  => 15,  // Type
+            'L'  => 18,  // Category
+            'M'  => 12,  // Level
+            'N'  => 12,  // Batch
+            'O'  => 25,  // Main Classification
+            'P'  => 25,  // Sub Classification
+            'Q'  => 18,  // Delivery Method
+            'R'  => 20,  // Sub Delivery Method
+            'S'  => 16,  // Provider
+            'T'  => 18,  // Sub Provider
+            'U'  => 25,  // Provider Name
+            'V'  => 20,  // Venue
+            'W'  => 22,  // Instructor
+            'X'  => 18,  // Course Duration
+            'Y'  => 16,  // Learning Hours
+            'Z'  => 14,  // % Progress
+            'AA' => 16,  // Progress Status
+            'AB' => 14,  // Start Date
+            'AC' => 14,  // End Date
+            'AD' => 14,  // Start Time
+            'AE' => 14,  // End Time
+            'AF' => 16,  // Record Month
+            'AG' => 15,  // Requirement
+            'AH' => 14,  // Attendance
+            'AI' => 25,  // Attendance Reason
+            'AJ' => 14,  // Bond Status
+            'AK' => 16,  // Bond Duration
+            'AL' => 16,  // Bond End Date
+            'AM' => 18,  // Bond Amount
+            'AN' => 20,  // Score (L1) - Course
+            'AO' => 15,  // Score (L2)
+            'AP' => 15,  // L2 Status
+            'AQ' => 15,  // Score (L3)
+            'AR' => 15,  // L3 Status
+            'AS' => 22,  // Certificate Availability
+            'AT' => 25,  // Certificate Institution
+            'AU' => 20,  // Certificate Issued Date
+            'AV' => 20,  // Certificate Expired Date
+            'AW' => 25,  // Person in Charge (PIC)
+            'AX' => 25,  // Total Engagement Time (LH)
         ];
     }
 
@@ -417,27 +460,25 @@ class OfflineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wi
             . '</workbook>'
         );
 
-        // 5. xl/styles.xml with global center alignment
+        // 5. xl/styles.xml - Default Excel Normal Theme (clean, no custom colors or zebra striping)
         $zip->addFile(
             'xl/styles.xml',
             '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             . '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
-            . '<numFmts count="5">'
-            . '<numFmt numFmtId="164" formatCode="&quot;Rp&quot;#,##0"/>'
-            . '<numFmt numFmtId="165" formatCode="yyyy-mm-dd"/>'
-            . '<numFmt numFmtId="166" formatCode="hh:mm:ss"/>'
-            . '<numFmt numFmtId="167" formatCode="0.##&quot; h&quot;"/>'
-            . '<numFmt numFmtId="168" formatCode="0.##"/>'
+            . '<numFmts count="6">'
+            . '<numFmt numFmtId="164" formatCode="yyyy/mm/dd"/>'
+            . '<numFmt numFmtId="165" formatCode="hh:mm:ss"/>'
+            . '<numFmt numFmtId="166" formatCode="[h]:mm:ss"/>'
+            . '<numFmt numFmtId="167" formatCode="0.00&quot; h&quot;"/>'
+            . '<numFmt numFmtId="168" formatCode="0&quot; MONTH&quot;"/>'
+            . '<numFmt numFmtId="169" formatCode="&quot;Rp&quot;#,##0"/>'
             . '</numFmts>'
-            . '<fonts count="3">'
-            . '<font><sz val="10"/><name val="Calibri"/></font>'
-            . '<font><b/><sz val="10"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>'
-            . '<font><b/><sz val="10"/><name val="Calibri"/></font>'
+            . '<fonts count="1">'
+            . '<font><sz val="11"/><name val="Calibri"/><family val="2"/></font>'
             . '</fonts>'
-            . '<fills count="3">'
+            . '<fills count="2">'
             . '<fill><patternFill patternType="none"/></fill>'
             . '<fill><patternFill patternType="gray125"/></fill>'
-            . '<fill><patternFill patternType="solid"><fgColor rgb="FF002B49"/><bgColor rgb="FF002B49"/></patternFill></fill>'
             . '</fills>'
             . '<borders count="1">'
             . '<border><left/><right/><top/><bottom/><diagonal/></border>'
@@ -445,20 +486,21 @@ class OfflineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wi
             . '<cellStyleXfs count="1">'
             . '<xf numFmtId="0" fontId="0" fillId="0" borderId="0"/>'
             . '</cellStyleXfs>'
-            . '<cellXfs count="12">'
-            . '<xf numFmtId="49" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
-            . '<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
-            . '<xf numFmtId="49" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
-            . '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
-            . '<xf numFmtId="1" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
-            . '<xf numFmtId="2" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
-            . '<xf numFmtId="9" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
-            . '<xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
-            . '<xf numFmtId="166" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
-            . '<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
-            . '<xf numFmtId="167" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
-            . '<xf numFmtId="168" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<cellXfs count="10">'
+            . '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
+            . '<xf numFmtId="1" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>'
+            . '<xf numFmtId="9" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>'
+            . '<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>'
+            . '<xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>'
+            . '<xf numFmtId="166" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>'
+            . '<xf numFmtId="167" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>'
+            . '<xf numFmtId="168" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>'
+            . '<xf numFmtId="2" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>'
+            . '<xf numFmtId="169" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>'
             . '</cellXfs>'
+            . '<cellStyles count="1">'
+            . '<cellStyle name="Normal" xfId="0" builtinId="0"/>'
+            . '</cellStyles>'
             . '</styleSheet>'
         );
 
@@ -476,13 +518,13 @@ class OfflineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wi
         fwrite($sfh, '</cols>' . "\n");
         fwrite($sfh, '<sheetData>' . "\n");
 
-        // Header row (Row 1)
+        // Header row (Row 1) - Standard Normal Theme
         $headers = self::headings();
-        fwrite($sfh, '<row r="1" ht="28" customHeight="1">' . "\n");
+        fwrite($sfh, '<row r="1">' . "\n");
         foreach ($headers as $i => $h) {
             $coord = Coordinate::stringFromColumnIndex($i + 1) . '1';
             $val = $this->escapeXml($h);
-            fwrite($sfh, "<c r=\"{$coord}\" t=\"inlineStr\" s=\"1\"><is><t>{$val}</t></is></c>\n");
+            fwrite($sfh, "<c r=\"{$coord}\" t=\"inlineStr\" s=\"0\"><is><t>{$val}</t></is></c>\n");
         }
         fwrite($sfh, '</row>' . "\n");
 
@@ -497,174 +539,250 @@ class OfflineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wi
 
         try {
             foreach ($query->cursor() as $row) {
-            $rowCount++;
-            $r = $rowCount + 1;
+                $rowCount++;
+                $r = $rowCount + 1;
 
-            // Duration formatted as HH:MM:SS
-            $durationFormatted = '-';
-            if (!empty($row->duration_seconds)) {
-                $secs = (int) $row->duration_seconds;
-                $hours = floor($secs / 3600);
-                $mins = floor(($secs % 3600) / 60);
-                $seconds = $secs % 60;
-                $durationFormatted = sprintf('%02d:%02d:%02d', $hours, $mins, $seconds);
-            }
+                // 1. Delivery Method & Sub Delivery Method normalization based on FIXS TEMPLATE PTKP.xlsx
+                $rawDeliv = strtolower(trim((string) ($row->delivery_method ?? '')));
+                $rawSubDeliv = strtolower(trim((string) ($row->sub_delivery_method ?? '')));
 
-            // Learning Hours (raw numeric float for SUM calculations)
-            $rawLh = $row->course_learning_hours ?? ($row->learning_hours ?? null);
-            $lHoursNumeric = null;
-            if ($rawLh !== null && $rawLh !== '' && is_numeric($rawLh)) {
-                $lHoursNumeric = (float) $rawLh;
-            }
-            $lHoursCell = ($lHoursNumeric !== null) ? ['V', 'lh', $lHoursNumeric, '10'] : ['V', 'str', '-', '0'];
+                if (in_array($rawDeliv, ['online', 'e-learning', 'elearning', 'webinar'], true)) {
+                    $delivMethod = 'Online';
+                } elseif (in_array($rawDeliv, ['blended', 'hybrid'], true)) {
+                    $delivMethod = 'Blended';
+                } else {
+                    $delivMethod = 'Offline';
+                }
 
-            // Progress & Status
-            $progressNum = (float) ($row->progress ?? 0);
-            $progressDecimal = round($progressNum / 100, 4);
-            $progressStatus = ($progressNum >= 100) ? 'Finished' : (($progressNum > 0) ? 'Ongoing' : 'Not Started');
+                if (str_contains($rawSubDeliv, 'off-site') || str_contains($rawSubDeliv, 'offsite') || str_contains($rawSubDeliv, 'off site')) {
+                    $subDelivMethod = 'Off-Site';
+                    $delivMethod = 'Offline';
+                } elseif (str_contains($rawSubDeliv, 'webinar')) {
+                    $subDelivMethod = 'Webinar';
+                    $delivMethod = 'Online';
+                } elseif (str_contains($rawSubDeliv, 'e-learning') || str_contains($rawSubDeliv, 'elearning')) {
+                    $subDelivMethod = 'E-learning';
+                    $delivMethod = 'Online';
+                } elseif (str_contains($rawSubDeliv, 'hybrid') || str_contains($rawSubDeliv, 'blended')) {
+                    $subDelivMethod = 'Hybrid';
+                    $delivMethod = 'Blended';
+                } elseif (str_contains($rawSubDeliv, 'on-site') || str_contains($rawSubDeliv, 'onsite') || str_contains($rawSubDeliv, 'on site')) {
+                    $subDelivMethod = 'On-Site';
+                    if ($delivMethod !== 'Blended' && $delivMethod !== 'Online') {
+                        $delivMethod = 'Offline';
+                    }
+                } else {
+                    if ($delivMethod === 'Online') {
+                        $subDelivMethod = 'E-learning';
+                    } elseif ($delivMethod === 'Blended') {
+                        $subDelivMethod = 'Hybrid';
+                    } else {
+                        $subDelivMethod = 'On-Site';
+                    }
+                }
 
-            // Date & Time split
-            $startDateStr = !empty($row->start_date) ? date('Y-m-d', strtotime($row->start_date)) : '-';
-            $endDateStr = !empty($row->end_date)
-                ? date('Y-m-d', strtotime($row->end_date))
-                : (!empty($row->finish_date) ? date('Y-m-d', strtotime($row->finish_date)) : '-');
+                // 2. Course Duration: numeric Excel duration ([h]:mm:ss)
+                $courseDurVal = null;
+                $courseDurSec = !empty($row->duration_seconds) && (int) $row->duration_seconds > 0
+                    ? (int) $row->duration_seconds
+                    : (!empty($row->course_learning_hours) && (float) $row->course_learning_hours > 0 ? (int) ((float) $row->course_learning_hours * 3600) : null);
 
-            $startTimeStr = !empty($row->start_time) ? date('H:i:s', strtotime($row->start_time)) : '-';
-            $endTimeStr = !empty($row->end_time) ? date('H:i:s', strtotime($row->end_time)) : '-';
+                if ($courseDurSec !== null && $courseDurSec > 0) {
+                    $courseDurVal = $courseDurSec / 86400.0;
+                }
 
-            $recordMonthDate = $row->start_date ?: ($row->end_date ?: ($row->created_at ?? null));
-            $recordMonthStr = !empty($recordMonthDate) ? date('F', strtotime($recordMonthDate)) : '-';
+                // 3. Learning Hours: float numeric (0.00" h")
+                $rawLh = $row->learning_hours ?? ($row->course_learning_hours ?? null);
+                $lHoursNumeric = ($rawLh !== null && $rawLh !== '' && is_numeric($rawLh))
+                    ? (float) $rawLh
+                    : null;
 
-            // Attendance: strictly Yes or No
-            $rawAtt = strtolower(trim((string) ($row->attendance ?? '')));
-            if ($rawAtt !== '') {
-                $attendanceStr = in_array($rawAtt, ['1', 'yes', 'present', 'true', 'hadir', 'completed', 'finished'], true) ? 'Yes' : 'No';
-            } else {
-                $attendanceStr = ($progressNum >= 100 || !empty($row->finish_date)) ? 'Yes' : 'No';
-            }
+                // 4. Progress & Status
+                $progressNum = (float) ($row->progress ?? 0);
+                $progressDecimal = round($progressNum / 100, 4);
+                $progressStatus = ($progressNum >= 100) ? 'Finished' : (($progressNum > 0) ? 'Ongoing' : 'Not Started');
 
-            // Delivery method alignment: strictly Online or Offline
-            $rawDeliv = strtolower(trim((string) ($row->delivery_method ?? '')));
-            $delivMethod = in_array($rawDeliv, ['online', 'e-learning', 'webinar', 'kp-owl', 'kp owl'], true) ? 'Online' : 'Offline';
-            $subDelivMethod = $row->sub_delivery_method ?: 'On-site';
+                // 5. Dates & Times (Date & Time Serials)
+                $startDateSerial = null;
+                if (!empty($row->start_date) && strlen($row->start_date) >= 10) {
+                    $cDate = substr($row->start_date, 0, 10);
+                    $cParts = explode('-', $cDate);
+                    if (count($cParts) === 3 && checkdate((int) $cParts[1], (int) $cParts[2], (int) $cParts[0])) {
+                        $startDateSerial = 25569 + (int) (gmmktime(0, 0, 0, (int) $cParts[1], (int) $cParts[2], (int) $cParts[0]) / 86400);
+                    }
+                }
 
-            // Bond amount & duration
-            $idr = $row->bond_amount_idr ?? ($row->bond_amount ?? null);
-            $hasBond = ($idr !== null && is_numeric($idr) && (float) $idr > 0);
+                $endDateSerial = null;
+                $rawEndDate = $row->end_date ?: ($row->finish_date ?? null);
+                if (!empty($rawEndDate) && strlen($rawEndDate) >= 10) {
+                    $eDate = substr($rawEndDate, 0, 10);
+                    $eParts = explode('-', $eDate);
+                    if (count($eParts) === 3 && checkdate((int) $eParts[1], (int) $eParts[2], (int) $eParts[0])) {
+                        $endDateSerial = 25569 + (int) (gmmktime(0, 0, 0, (int) $eParts[1], (int) $eParts[2], (int) $eParts[0]) / 86400);
+                    }
+                }
 
-            $bondDurationMonths = null;
-            if (!empty($row->bond_duration)) {
-                $parsedDur = (int) preg_replace('/\D/', '', (string) $row->bond_duration);
-                if ($parsedDur > 0) {
-                    $bondDurationMonths = $parsedDur;
+                $startTimeSerial = null;
+                if (!empty($row->start_time)) {
+                    $st = trim((string) $row->start_time);
+                    if (preg_match('/^(\d{1,2}):(\d{2})(?::(\d{2}))?/', $st, $m)) {
+                        $th = (int) $m[1];
+                        $tm = (int) $m[2];
+                        $ts = isset($m[3]) ? (int) $m[3] : 0;
+                        $startTimeSerial = ($th * 3600 + $tm * 60 + $ts) / 86400.0;
+                    }
+                }
+
+                $endTimeSerial = null;
+                if (!empty($row->end_time)) {
+                    $et = trim((string) $row->end_time);
+                    if (preg_match('/^(\d{1,2}):(\d{2})(?::(\d{2}))?/', $et, $m)) {
+                        $th = (int) $m[1];
+                        $tm = (int) $m[2];
+                        $ts = isset($m[3]) ? (int) $m[3] : 0;
+                        $endTimeSerial = ($th * 3600 + $tm * 60 + $ts) / 86400.0;
+                    }
+                }
+
+                $recordMonthDate = $row->start_date ?: ($row->end_date ?: ($row->created_at ?? null));
+                $recordMonthStr = !empty($recordMonthDate) ? date('F', strtotime($recordMonthDate)) : '-';
+
+                // 6. Attendance: strictly Yes or No
+                $rawAtt = strtolower(trim((string) ($row->attendance ?? '')));
+                if ($rawAtt !== '') {
+                    $attendanceStr = in_array($rawAtt, ['1', 'yes', 'present', 'true', 'hadir', 'completed', 'finished'], true) ? 'Yes' : 'No';
+                } else {
+                    $attendanceStr = ($progressNum >= 100 || !empty($row->finish_date)) ? 'Yes' : 'No';
+                }
+
+                // 7. Bond Amount, Duration & End Date
+                $idr = $row->bond_amount_idr ?? ($row->bond_amount ?? null);
+                $hasBond = ($idr !== null && is_numeric($idr) && (float) $idr > 0);
+
+                $bondDurationVal = 6;
+                if (!empty($row->bond_duration)) {
+                    $parsedDur = (int) preg_replace('/\D/', '', (string) $row->bond_duration);
+                    if ($parsedDur > 0) {
+                        $bondDurationVal = $parsedDur;
+                    }
+                }
+
+                $bondEndDateSerial = null;
+                if (!empty($row->bond_end_date) && strlen($row->bond_end_date) >= 10) {
+                    $bDate = substr($row->bond_end_date, 0, 10);
+                    $bParts = explode('-', $bDate);
+                    if (count($bParts) === 3 && checkdate((int) $bParts[1], (int) $bParts[2], (int) $bParts[0])) {
+                        $bondEndDateSerial = 25569 + (int) (gmmktime(0, 0, 0, (int) $bParts[1], (int) $bParts[2], (int) $bParts[0]) / 86400);
+                    }
+                }
+
+                // 8. Scores (Float 0.00)
+                $scoreL1 = (isset($row->l1_program) && is_numeric($row->l1_program)) ? (float) $row->l1_program : null;
+
+                $rawScoreL2 = $row->assessment_score ?? ($row->l2_numerical ?? null);
+                $scoreL2 = ($rawScoreL2 !== null && is_numeric($rawScoreL2)) ? (float) $rawScoreL2 : null;
+
+                $scoreL3 = (isset($row->l3_numerical) && is_numeric($row->l3_numerical)) ? (float) $row->l3_numerical : null;
+
+                // 9. L2 Status: strictly PASSED, FAILED, or -
+                $l2Status = '-';
+                $rawL2Verbal = strtolower(trim((string) ($row->l2_verbal ?? '')));
+                if ($rawL2Verbal !== '' && $rawL2Verbal !== '-') {
+                    if (str_contains($rawL2Verbal, 'pass') || str_contains($rawL2Verbal, 'good') || str_contains($rawL2Verbal, 'excellent') || str_contains($rawL2Verbal, 'satisfactory')) {
+                        $l2Status = 'PASSED';
+                    } elseif (str_contains($rawL2Verbal, 'fail')) {
+                        $l2Status = 'FAILED';
+                    }
+                }
+                if ($l2Status === '-' && $scoreL2 !== null) {
+                    $l2Status = ($scoreL2 >= 70) ? 'PASSED' : 'FAILED';
+                }
+
+                // 10. L3 Status: free text string
+                $l3Status = !empty($row->l3_verbal) && $row->l3_verbal !== '-' ? trim((string) $row->l3_verbal) : '-';
+
+                // 11. Total Engagement Time: from duration for attendees, 0 for absent
+                $totEngVal = null;
+                if ($attendanceStr === 'Yes') {
+                    $totSec = $courseDurSec ?: (!empty($row->learning_hours) && (float) $row->learning_hours > 0 ? (int) ((float) $row->learning_hours * 3600) : null);
+                    if ($totSec !== null && $totSec > 0) {
+                        $totEngVal = $totSec / 86400.0;
+                    } elseif ($courseDurSec !== null) {
+                        $totEngVal = 0.0;
+                    }
+                } elseif ($attendanceStr === 'No') {
+                    $totEngVal = 0.0;
+                }
+
+                // 12. Employee ID & Certificate
+                $rawEmp = $row->employee_id ?? ($row->id_emp ?? '-');
+                $cleanEmpId = ($rawEmp !== '-') ? preg_replace('/\s*[\/\-]\s*NIP.*$/i', '', trim((string) $rawEmp)) : '-';
+                $hasCert = (!empty($row->certificate) && $row->certificate !== '-');
+
+                // 50 Canonical Cells (A through AX) - Uniform default style
+                $cells = [
+                    ['A',  'int',   $rowCount, '1'],                                                                                    // 1. NO
+                    ['B',  'str',   $cleanEmpId, '0'],                                                                                  // 2. Employee ID
+                    ['C',  'str',   $row->participant_name ?: ($row->user_name ?? ($row->name ?? '-')), '0'],                          // 3. Employee Name
+                    ['D',  'str',   $row->grade ?: '-', '0'],                                                                           // 4. Grade
+                    ['E',  'str',   $row->job_position ?: '-', '0'],                                                                    // 5. Job Position
+                    ['F',  'str',   $row->team ?: '-', '0'],                                                                            // 6. Team
+                    ['G',  'str',   $row->department ?: '-', '0'],                                                                      // 7. Department
+                    ['H',  'str',   $row->company ?: '-', '0'],                                                                         // 8. Company
+                    ['I',  'str',   $row->course_name ?: ($row->title ?: '-'), '0'],                                                    // 9. Course Title
+                    ['J',  'str',   $row->sub_course_name ?: '-', '0'],                                                                 // 10. Sub Course Title
+                    ['K',  'str',   $row->type ?: '-', '0'],                                                                            // 11. Type
+                    ['L',  'str',   $row->category ?: '-', '0'],                                                                        // 12. Category
+                    ['M',  'str',   $row->level ?: '-', '0'],                                                                           // 13. Level
+                    ['N',  'str',   $row->batch ?: '-', '0'],                                                                           // 14. Batch
+                    ['O',  'str',   $row->main_classification ?: 'Unclassified', '0'],                                                  // 15. Main Classification
+                    ['P',  'str',   $row->sub_classification ?: '-', '0'],                                                              // 16. Sub Classification
+                    ['Q',  'str',   $delivMethod, '0'],                                                                                 // 17. Delivery Method
+                    ['R',  'str',   $subDelivMethod, '0'],                                                                              // 18. Sub Delivery Method
+                    ['S',  'str',   $row->provider ?: '-', '0'],                                                                        // 19. Provider
+                    ['T',  'str',   $row->sub_provider ?: '-', '0'],                                                                    // 20. Sub Provider
+                    ['U',  'str',   $row->provider_name ?: ($row->provider ?: '-'), '0'],                                               // 21. Provider Name
+                    ['V',  'str',   $row->venue ?: '-', '0'],                                                                           // 22. Venue
+                    ['W',  'str',   $row->instructor ?: '-', '0'],                                                                      // 23. Instructor
+                    ['X',  $courseDurVal !== null ? 'dur' : 'str', $courseDurVal !== null ? $courseDurVal : '-', $courseDurVal !== null ? '5' : '0'], // 24. Course Duration
+                    ['Y',  $lHoursNumeric !== null ? 'lh' : 'str', $lHoursNumeric !== null ? $lHoursNumeric : '-', $lHoursNumeric !== null ? '6' : '0'], // 25. Learning Hours
+                    ['Z',  'pct',   $progressDecimal, '2'],                                                                             // 26. % Progress
+                    ['AA', 'str',   $progressStatus, '0'],                                                                              // 27. Progress Status
+                    ['AB', $startDateSerial !== null ? 'date' : 'str', $startDateSerial !== null ? $startDateSerial : '-', $startDateSerial !== null ? '3' : '0'], // 28. Start Date
+                    ['AC', $endDateSerial !== null ? 'date' : 'str', $endDateSerial !== null ? $endDateSerial : '-', $endDateSerial !== null ? '3' : '0'],     // 29. End Date
+                    ['AD', $startTimeSerial !== null ? 'time' : 'str', $startTimeSerial !== null ? $startTimeSerial : '-', $startTimeSerial !== null ? '4' : '0'], // 30. Start Time
+                    ['AE', $endTimeSerial !== null ? 'time' : 'str', $endTimeSerial !== null ? $endTimeSerial : '-', $endTimeSerial !== null ? '4' : '0'],     // 31. End Time
+                    ['AF', 'str',   $recordMonthStr, '0'],                                                                              // 32. Record Month
+                    ['AG', 'str',   $row->requirement ?: 'Mandatory', '0'],                                                            // 33. Requirement
+                    ['AH', 'str',   $attendanceStr, '0'],                                                                               // 34. Attendance
+                    ['AI', 'str',   $row->attendance_reason ?: '-', '0'],                                                              // 35. Attendance Reason
+                    ['AJ', 'str',   $hasBond ? 'Yes' : ($row->bond_status ?: 'No'), '0'],                                              // 36. Bond Status
+                    ['AK', 'int',   $bondDurationVal, '7'],                                                                             // 37. Bond Duration
+                    ['AL', $bondEndDateSerial !== null ? 'date' : 'str', $bondEndDateSerial !== null ? $bondEndDateSerial : '-', $bondEndDateSerial !== null ? '3' : '0'], // 38. Bond End Date
+                    ['AM', $hasBond ? 'curr' : 'str', $hasBond ? (float) $idr : '-', $hasBond ? '9' : '0'],                           // 39. Bond Amount
+                    ['AN', $scoreL1 !== null ? 'float' : 'str', $scoreL1 !== null ? $scoreL1 : '-', $scoreL1 !== null ? '8' : '0'],  // 40. Score (L1) - Course
+                    ['AO', $scoreL2 !== null ? 'float' : 'str', $scoreL2 !== null ? $scoreL2 : '-', $scoreL2 !== null ? '8' : '0'],  // 41. Score (L2)
+                    ['AP', 'str',   $l2Status, '0'],                                                                                    // 42. L2 Status
+                    ['AQ', $scoreL3 !== null ? 'float' : 'str', $scoreL3 !== null ? $scoreL3 : '-', $scoreL3 !== null ? '8' : '0'],  // 43. Score (L3)
+                    ['AR', 'str',   $l3Status, '0'],                                                                                    // 44. L3 Status
+                    ['AS', 'str',   $hasCert ? 'Available' : '-', '0'],                                                                // 45. Certificate Availability
+                    ['AT', 'str',   $hasCert ? $row->certificate : '-', '0'],                                                          // 46. Certificate Institution
+                    ['AU', 'str',   '-', '0'],                                                                                         // 47. Certificate Issued Date
+                    ['AV', 'str',   '-', '0'],                                                                                         // 48. Certificate Expired Date
+                    ['AW', 'str',   $row->pic ?: '-', '0'],                                                                            // 49. Person in Charge (PIC)
+                    ['AX', $totEngVal !== null ? 'dur' : 'str', $totEngVal !== null ? $totEngVal : '-', $totEngVal !== null ? '5' : '0'], // 50. Total Engagement Time (LH)
+                ];
+
+                $buffer .= $this->buildXmlRow($r, $cells);
+
+                if ($rowCount % $batchSize === 0) {
+                    fwrite($sfh, $buffer);
+                    $buffer = '';
                 }
             }
-
-            $bondEndDateStr = !empty($row->bond_end_date) ? date('Y-m-d', strtotime($row->bond_end_date)) : '-';
-
-            // Scores: strictly whole integers if whole number
-            $scoreL1 = null;
-            if (isset($row->l1_program) && is_numeric($row->l1_program)) {
-                $val = (float) $row->l1_program;
-                $intVal = (int) round($val);
-                $scoreL1 = (abs($val - $intVal) < 0.0001) ? $intVal : round($val, 2);
-            }
-
-            $scoreL2 = null;
-            $rawScoreL2 = $row->assessment_score ?? ($row->l2_numerical ?? null);
-            if ($rawScoreL2 !== null && is_numeric($rawScoreL2)) {
-                $val = (float) $rawScoreL2;
-                $intVal = (int) round($val);
-                $scoreL2 = (abs($val - $intVal) < 0.0001) ? $intVal : round($val, 2);
-            }
-
-            $scoreL3 = null;
-            if (isset($row->l3_numerical) && is_numeric($row->l3_numerical)) {
-                $val = (float) $row->l3_numerical;
-                $intVal = (int) round($val);
-                $scoreL3 = (abs($val - $intVal) < 0.0001) ? $intVal : round($val, 2);
-            }
-
-            $totalEngVal = $row->learning_hours ?? ($row->course_learning_hours ?? null);
-            $totalEngNumeric = null;
-            if ($totalEngVal !== null && $totalEngVal !== '' && is_numeric($totalEngVal)) {
-                $totalEngNumeric = (float) $totalEngVal;
-            }
-            $totalEngCell = ($totalEngNumeric !== null) ? ['AR', 'lh', $totalEngNumeric, '10'] : ['AR', 'str', '-', '0'];
-
-            // Employee ID: raw string/integer only
-            $rawEmp = $row->employee_id ?: ($row->id_emp ?? '-');
-            $cleanEmpId = ($rawEmp !== '-') ? preg_replace('/\s*[\/\-]\s*NIP.*$/i', '', trim((string) $rawEmp)) : '-';
-
-            $hasCert = (!empty($row->certificate) && $row->certificate !== '-');
-            $lHoursCell = ($lHoursNumeric !== null) ? ['AA', 'lh', $lHoursNumeric, '10'] : ['AA', 'str', '-', '0'];
-            $totalEngCell = ($lHoursNumeric !== null) ? ['AZ', 'lh', $lHoursNumeric, '10'] : ['AZ', 'str', '-', '0'];
-
-            $cells = [
-                ['A', 'num', $rowCount, '0'],                                                                       // 1. NO
-                ['B', 'str', 'Non KP OWL', '0'],                                                                    // 2. Source
-                ['C', 'str', $cleanEmpId, '0'],                                                                     // 3. Employee ID
-                ['D', 'str', $row->participant_name ?: ($row->user_name ?? ($row->name ?? '-')), '0'],             // 4. Employee Name
-                ['E', 'str', $row->grade ?: '-', '0'],                                                              // 5. Grade
-                ['F', 'str', $row->job_position ?: '-', '0'],                                                       // 6. Job Position
-                ['G', 'str', $row->team ?: '-', '0'],                                                               // 7. Team
-                ['H', 'str', $row->department ?: '-', '0'],                                                         // 8. Department
-                ['I', 'str', $row->company ?: '-', '0'],                                                            // 9. Company
-                ['J', 'str', $row->course_name ?: ($row->title ?: '-'), '0'],                                       // 10. Course Title
-                ['K', 'str', $row->sub_course_name ?: '-', '0'],                                                    // 11. Sub Course Title
-                ['L', 'str', $row->type ?: '-', '0'],                                                               // 12. Type
-                ['M', 'str', $row->category ?: '-', '0'],                                                           // 13. Category
-                ['N', 'str', $row->level ?: '-', '0'],                                                              // 14. Level
-                ['O', 'str', $row->batch ?: '-', '0'],                                                              // 15. Batch
-                ['P', 'str', $row->main_classification ?: 'Unclassified', '0'],                                     // 16. Main Classification
-                ['Q', 'str', $row->sub_classification ?: '-', '0'],                                                 // 17. Sub Classification
-                ['R', 'str', $delivMethod, '0'],                                                                    // 18. Delivery Method
-                ['S', 'str', $subDelivMethod, '0'],                                                                 // 19. Sub Delivery Method
-                ['T', 'str', $row->provider ?: '-', '0'],                                                           // 20. Provider
-                ['U', 'str', $row->sub_provider ?: '-', '0'],                                                       // 21. Sub Provider
-                ['V', 'str', $row->provider_name ?: ($row->provider ?: '-'), '0'],                                  // 22. Provider Name
-                ['W', 'str', $row->venue ?: '-', '0'],                                                              // 23. Venue
-                ['X', 'str', $row->instructor ?: '-', '0'],                                                         // 24. Instructor
-                ['Y', 'str', '-', '0'],                                                                             // 25. Course Duration (strictly -)
-                ['Z', 'str', '-', '0'],                                                                             // 26. Total Recognized Duration (strictly -)
-                $lHoursCell,                                                                                        // 27. Learning Hours
-                ['AB', 'pct', $progressDecimal, '6'],                                                               // 28. % Progress
-                ['AC', 'str', $progressStatus, '0'],                                                                 // 29. Progress Status
-                ['AD', $startDateStr !== '-' ? 'date' : 'str', $startDateStr, $startDateStr !== '-' ? '7' : '0'],  // 30. Start Date
-                ['AE', $endDateStr !== '-' ? 'date' : 'str', $endDateStr, $endDateStr !== '-' ? '7' : '0'],        // 31. End Date
-                ['AF', $startTimeStr !== '-' ? 'time' : 'str', $startTimeStr, $startTimeStr !== '-' ? '8' : '0'],  // 32. Start Time
-                ['AG', $endTimeStr !== '-' ? 'time' : 'str', $endTimeStr, $endTimeStr !== '-' ? '8' : '0'],        // 33. End Time
-                ['AH', 'str', $recordMonthStr, '0'],                                                                // 34. Record Month
-                ['AI', 'str', $row->requirement ?: 'Mandatory', '0'],                                               // 35. Requirement
-                ['AJ', 'str', $attendanceStr, '0'],                                                                 // 36. Attendance
-                ['AK', 'str', $row->attendance_reason ?: '-', '0'],                                                 // 37. Attendance Reason
-                ['AL', 'str', $hasBond ? 'Yes' : ($row->bond_status ?: 'No'), '0'],                                 // 38. Bond Status
-                $bondDurationMonths !== null ? ['AM', 'int', $bondDurationMonths, '4'] : ['AM', 'str', '-', '0'], // 39. Bond Duration
-                ['AN', $bondEndDateStr !== '-' ? 'date' : 'str', $bondEndDateStr, $bondEndDateStr !== '-' ? '7' : '0'], // 40. Bond End Date
-                ['AO', $hasBond ? 'curr' : 'str', $hasBond ? (float) $idr : '-', $hasBond ? '9' : '0'],            // 41. Bond Amount
-                $scoreL1 !== null ? (is_int($scoreL1) ? ['AP', 'int', $scoreL1, '4'] : ['AP', 'float', $scoreL1, '11']) : ['AP', 'str', '-', '0'], // 42. Score (L1) - Course
-                $scoreL2 !== null ? (is_int($scoreL2) ? ['AQ', 'int', $scoreL2, '4'] : ['AQ', 'float', $scoreL2, '11']) : ['AQ', 'str', '-', '0'], // 43. Score (L2)
-                ['AR', 'str', $row->l2_verbal ?: ($scoreL2 !== null ? ($scoreL2 >= 70 ? 'Passed' : 'Failed') : '-'), '0'], // 44. L2 Status
-                $scoreL3 !== null ? (is_int($scoreL3) ? ['AS', 'int', $scoreL3, '4'] : ['AS', 'float', $scoreL3, '11']) : ['AS', 'str', '-', '0'], // 45. Score (L3)
-                ['AT', 'str', $row->l3_verbal ?: '-', '0'],                                                         // 46. L3 Status
-                ['AU', 'str', $hasCert ? 'Available' : '-', '0'],                                                  // 47. Certificate Availability
-                ['AV', 'str', $hasCert ? $row->certificate : '-', '0'],                                            // 48. Certificate Institution
-                ['AW', 'str', '-', '0'],                                                                            // 49. Certificate Issued Date
-                ['AX', 'str', '-', '0'],                                                                            // 50. Certificate Expired Date
-                ['AY', 'str', $row->pic ?: '-', '0'],                                                               // 51. Person in Charge (PIC)
-                $totalEngCell,                                                                                      // 52. Total Engagement Time (LH)
-            ];
-
-            $buffer .= $this->buildXmlRow($r, $cells);
-
-            if ($rowCount % $batchSize === 0) {
-                fwrite($sfh, $buffer);
-                $buffer = '';
-            }
+        } finally {
+            $pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, $wasBuffered);
         }
-    } finally {
-        $pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, $wasBuffered);
-    }
 
         if ($buffer !== '') {
             fwrite($sfh, $buffer);
@@ -693,13 +811,22 @@ class OfflineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wi
             $coord = "{$colLetter}{$r}";
 
             if ($val === null || $val === '' || $val === '-') {
-                $xml .= "<c r=\"{$coord}\" t=\"inlineStr\" s=\"{$styleId}\"><is><t>-</t></is></c>";
+                $xml .= "<c r=\"{$coord}\" t=\"inlineStr\" s=\"0\"><is><t>-</t></is></c>";
             } elseif ($type === 'pct') {
                 $xml .= "<c r=\"{$coord}\" s=\"{$styleId}\"><v>{$val}</v></c>";
+            } elseif ($type === 'dur') {
+                $durVal = number_format((float) $val, 10, '.', '');
+                $xml .= "<c r=\"{$coord}\" s=\"{$styleId}\"><v>{$durVal}</v></c>";
             } elseif ($type === 'lh') {
-                $lhVal = (float) $val;
+                $lhVal = number_format((float) $val, 2, '.', '');
                 $xml .= "<c r=\"{$coord}\" s=\"{$styleId}\"><v>{$lhVal}</v></c>";
-            } elseif ($type === 'int') {
+            } elseif ($type === 'date') {
+                $dateInt = (int) $val;
+                $xml .= "<c r=\"{$coord}\" s=\"{$styleId}\"><v>{$dateInt}</v></c>";
+            } elseif ($type === 'time') {
+                $timeVal = number_format((float) $val, 10, '.', '');
+                $xml .= "<c r=\"{$coord}\" s=\"{$styleId}\"><v>{$timeVal}</v></c>";
+            } elseif ($type === 'int' || $type === 'num') {
                 $intVal = (int) $val;
                 $xml .= "<c r=\"{$coord}\" s=\"{$styleId}\"><v>{$intVal}</v></c>";
             } elseif ($type === 'float') {

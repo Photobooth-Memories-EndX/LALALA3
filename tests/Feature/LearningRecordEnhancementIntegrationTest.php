@@ -47,9 +47,11 @@ class LearningRecordEnhancementIntegrationTest extends TestCase
         $allHeaders = AllRecordExport::headings();
         $this->assertContains('Total Recognized Duration', $allHeaders);
 
-        // 4. Offline exports MUST have Total Recognized Duration in canonical 52 columns
+        // 4. Non KP OWL (Offline) export MUST NOT have Total Recognized Duration or Source, with canonical 50 columns
         $offlineHeaders = OfflineRecordExport::headers();
-        $this->assertContains('Total Recognized Duration', $offlineHeaders);
+        $this->assertNotContains('Total Recognized Duration', $offlineHeaders);
+        $this->assertNotContains('Source', $offlineHeaders);
+        $this->assertCount(50, $offlineHeaders);
     }
 
     /** @test */
