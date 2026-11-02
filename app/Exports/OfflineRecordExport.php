@@ -14,7 +14,7 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use ZipStream\Option\Archive as ArchiveOptions;
 use ZipStream\ZipStream;
 
-class OfflineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\WithHeadings, \Maatwebsite\Excel\Concerns\WithMapping
+class OfflineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\WithHeadings, \Maatwebsite\Excel\Concerns\WithMapping, \Maatwebsite\Excel\Concerns\WithStyles
 {
     protected array $filters = [];
     protected string $fileName;
@@ -367,6 +367,29 @@ class OfflineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wi
         ];
     }
 
+    public function styles(\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet)
+    {
+        return [
+            1 => [
+                'font' => [
+                    'bold' => true,
+                    'color' => ['rgb' => 'FFFFFF'],
+                    'size' => 11,
+                    'name' => 'Calibri',
+                ],
+                'fill' => [
+                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'startColor' => ['rgb' => '002B49'],
+                ],
+                'alignment' => [
+                    'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                    'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                    'wrapText' => true,
+                ],
+            ],
+        ];
+    }
+
     public function query()
     {
         return RecordOfflineQueryService::buildGlobalQuery($this->filters)
@@ -451,7 +474,7 @@ class OfflineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wi
             . '</workbook>'
         );
 
-        // 5. xl/styles.xml - Default Excel Normal Theme (clean, no custom colors or zebra striping)
+        // 5. xl/styles.xml - Blue Header (Row 1) & Default Excel Normal Theme (Row 2+)
         $zip->addFile(
             'xl/styles.xml',
             '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
@@ -464,12 +487,14 @@ class OfflineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wi
             . '<numFmt numFmtId="168" formatCode="0&quot; MONTH&quot;"/>'
             . '<numFmt numFmtId="169" formatCode="&quot;Rp&quot;#,##0"/>'
             . '</numFmts>'
-            . '<fonts count="1">'
+            . '<fonts count="2">'
             . '<font><sz val="11"/><name val="Calibri"/><family val="2"/></font>'
+            . '<font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/><family val="2"/></font>'
             . '</fonts>'
-            . '<fills count="2">'
+            . '<fills count="3">'
             . '<fill><patternFill patternType="none"/></fill>'
             . '<fill><patternFill patternType="gray125"/></fill>'
+            . '<fill><patternFill patternType="solid"><fgColor rgb="FF002B49"/><bgColor rgb="FF002B49"/></patternFill></fill>'
             . '</fills>'
             . '<borders count="1">'
             . '<border><left/><right/><top/><bottom/><diagonal/></border>'
@@ -477,7 +502,7 @@ class OfflineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wi
             . '<cellStyleXfs count="1">'
             . '<xf numFmtId="0" fontId="0" fillId="0" borderId="0"/>'
             . '</cellStyleXfs>'
-            . '<cellXfs count="10">'
+            . '<cellXfs count="11">'
             . '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
             . '<xf numFmtId="1" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>'
             . '<xf numFmtId="9" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>'
@@ -488,6 +513,7 @@ class OfflineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wi
             . '<xf numFmtId="168" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>'
             . '<xf numFmtId="2" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>'
             . '<xf numFmtId="169" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>'
+            . '<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
             . '</cellXfs>'
             . '<cellStyles count="1">'
             . '<cellStyle name="Normal" xfId="0" builtinId="0"/>'
@@ -509,13 +535,13 @@ class OfflineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wi
         fwrite($sfh, '</cols>' . "\n");
         fwrite($sfh, '<sheetData>' . "\n");
 
-        // Header row (Row 1) - Standard Normal Theme
+        // Header row (Row 1) - Dark Blue (#002B49) background, White Bold text, Center aligned
         $headers = self::headings();
-        fwrite($sfh, '<row r="1">' . "\n");
+        fwrite($sfh, '<row r="1" ht="26" customHeight="1">' . "\n");
         foreach ($headers as $i => $h) {
             $coord = Coordinate::stringFromColumnIndex($i + 1) . '1';
             $val = $this->escapeXml($h);
-            fwrite($sfh, "<c r=\"{$coord}\" t=\"inlineStr\" s=\"0\"><is><t>{$val}</t></is></c>\n");
+            fwrite($sfh, "<c r=\"{$coord}\" t=\"inlineStr\" s=\"10\"><is><t>{$val}</t></is></c>\n");
         }
         fwrite($sfh, '</row>' . "\n");
 

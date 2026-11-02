@@ -58,7 +58,7 @@ class OfflineRecordExportRevisedTest extends TestCase
     }
 
     /** @test */
-    public function offline_record_export_generates_valid_xlsx_with_default_theme()
+    public function offline_record_export_generates_valid_xlsx_with_blue_header_only_and_default_data_rows()
     {
         $export = new OfflineRecordExport();
         $filePath = $export->generateXlsxFile();
@@ -72,11 +72,10 @@ class OfflineRecordExportRevisedTest extends TestCase
         $sheetXml = $zip->getFromName('xl/worksheets/sheet1.xml');
         $zip->close();
 
-        // Verify Default Normal Theme (no blue fill, no bold font, only 2 default fills)
-        $this->assertStringNotContainsString('FF002B49', $stylesXml, 'Styles must not contain custom blue fill');
-        $this->assertStringNotContainsString('002B49', $stylesXml, 'Styles must not contain hex 002B49');
-        $this->assertStringNotContainsString('<b/>', $stylesXml, 'Styles must not contain bold font tags');
-        $this->assertStringContainsString('<fills count="2">', $stylesXml, 'Fills count must be 2 (none and gray125 only)');
+        // Verify Blue Header fill exists in styles.xml
+        $this->assertStringContainsString('FF002B49', $stylesXml, 'Styles must contain dark blue fill #002B49');
+        $this->assertStringContainsString('FFFFFFFF', $stylesXml, 'Styles must contain white font color');
+        $this->assertStringContainsString('<fills count="3">', $stylesXml, 'Fills count must be 3 (none, gray125, solid blue)');
 
         // Verify custom number formats
         $this->assertStringContainsString('yyyy/mm/dd', $stylesXml);
@@ -85,12 +84,17 @@ class OfflineRecordExportRevisedTest extends TestCase
         $this->assertStringContainsString('0.00&quot; h&quot;', $stylesXml);
         $this->assertStringContainsString('0&quot; MONTH&quot;', $stylesXml);
 
-        // Verify header row 1 in sheet1.xml
-        $this->assertStringContainsString('<row r="1">', $sheetXml);
-        $this->assertStringNotContainsString('<row r="1" ht=', $sheetXml);
-        $this->assertStringContainsString('r="A1"', $sheetXml);
-        $this->assertStringContainsString('r="AX1"', $sheetXml);
+        // Verify header row 1 in sheet1.xml uses blue header style (s="10")
+        $this->assertStringContainsString('<row r="1" ht="26" customHeight="1">', $sheetXml);
+        $this->assertStringContainsString('r="A1" t="inlineStr" s="10"', $sheetXml);
+        $this->assertStringContainsString('r="AX1" t="inlineStr" s="10"', $sheetXml);
         $this->assertStringNotContainsString('r="AY1"', $sheetXml);
+
+        // Verify data rows do NOT use header style s="10"
+        preg_match_all('/<row r="([2-9]|\d{2,})"[^>]*>(.*?)<\/row>/', $sheetXml, $dataRows);
+        foreach ($dataRows[2] as $rowContent) {
+            $this->assertStringNotContainsString('s="10"', $rowContent, 'Data rows must not use header blue style');
+        }
 
         // Verify with PhpSpreadsheet
         $spreadsheet = IOFactory::load($filePath);
@@ -99,12 +103,25 @@ class OfflineRecordExportRevisedTest extends TestCase
         $this->assertEquals('AX', $sheet->getHighestColumn());
         $this->assertGreaterThanOrEqual(2, $sheet->getHighestRow());
 
-        // Inspect row 2
-        $row2Headers = [];
+        // Header row cell A1 has blue fill and bold white text
+        $cellA1 = $sheet->getCell('A1');
+        $fillA1 = $cellA1->getStyle()->getFill();
+        $this->assertEquals('FF002B49', strtoupper((string) $fillA1->getStartColor()->getARGB()));
+        $this->assertTrue($cellA1->getStyle()->getFont()->getBold());
+        $this->assertEquals('FFFFFFFF', strtoupper((string) $cellA1->getStyle()->getFont()->getColor()->getARGB()));
+
+        // Data row cell A2 has NO fill and regular font
+        $cellA2 = $sheet->getCell('A2');
+        $fillA2Type = $cellA2->getStyle()->getFill()->getFillType();
+        $this->assertEquals(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_NONE, $fillA2Type);
+        $this->assertFalse($cellA2->getStyle()->getFont()->getBold());
+
+        // Inspect row 1 headers
+        $row1Headers = [];
         for ($c = 1; $c <= 50; $c++) {
-            $row2Headers[] = (string) $sheet->getCellByColumnAndRow($c, 1)->getValue();
+            $row1Headers[] = (string) $sheet->getCellByColumnAndRow($c, 1)->getValue();
         }
-        $this->assertSame(OfflineRecordExport::headers(), $row2Headers);
+        $this->assertSame(OfflineRecordExport::headers(), $row1Headers);
 
         // Verify delivery method normalization
         $deliv = (string) $sheet->getCell('Q2')->getValue();
