@@ -105,50 +105,53 @@
                     </div>
                 </div>
 
-                {{-- Search Input with Autocomplete --}}
-                <div class="position-relative flex-grow-1 my-task-search-wrapper certificate-search-container" style="min-width: 220px;">
-                    <span class="position-absolute top-50 start-0 translate-middle-y ps-3 text-muted pointer-events-none" style="z-index: 2;">
-                        <i class="ti ti-search" style="font-size: 15px;"></i>
-                    </span>
-                    <input type="text"
-                           class="form-control my-task-search-input module-search-input"
-                           id="certificate-search-input"
-                           name="certificate_search"
-                           placeholder="Certificate number, credential, participant, target or type..."
-                           value="{{ request('certificate_search', request('search', request('q'))) }}"
-                           autocomplete="off">
-                    @if (request()->filled('certificate_search') || request()->filled('search') || request()->filled('q'))
-                        <button type="button" class="btn btn-link position-absolute top-50 end-0 translate-middle-y pe-2.5 text-muted text-decoration-none my-task-search-clear" id="certificateClearSearch" title="Clear search" style="z-index: 2;">
-                            <i class="ti ti-x"></i>
-                        </button>
-                    @endif
-                    <div id="certificate-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1 module-search-dropdown" style="display: none; max-height: 380px; overflow-y: auto; z-index: 1050; padding: 0;">
-                        <div class="autocomplete-list-group list-group list-group-flush"></div>
-                        <div class="search-footer border-top bg-light p-2 text-center sticky-bottom"></div>
+                {{-- Search & Action Buttons Group (Single row, action buttons on right) --}}
+                <div class="d-flex align-items-center gap-2 flex-grow-1 certificate-search-actions-group">
+                    {{-- Search Input with Autocomplete --}}
+                    <div class="position-relative flex-grow-1 my-task-search-wrapper certificate-search-container" style="min-width: 180px;">
+                        <span class="position-absolute top-50 start-0 translate-middle-y ps-3 text-muted pointer-events-none" style="z-index: 2;">
+                            <i class="ti ti-search" style="font-size: 15px;"></i>
+                        </span>
+                        <input type="text"
+                               class="form-control my-task-search-input module-search-input"
+                               id="certificate-search-input"
+                               name="certificate_search"
+                               placeholder="Certificate number, credential, participant, target or type..."
+                               value="{{ request('certificate_search', request('search', request('q'))) }}"
+                               autocomplete="off">
+                        @if (request()->filled('certificate_search') || request()->filled('search') || request()->filled('q'))
+                            <button type="button" class="btn btn-link position-absolute top-50 end-0 translate-middle-y pe-2.5 text-muted text-decoration-none my-task-search-clear" id="certificateClearSearch" title="Clear search" style="z-index: 2;">
+                                <i class="ti ti-x"></i>
+                            </button>
+                        @endif
+                        <div id="certificate-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1 module-search-dropdown" style="display: none; max-height: 380px; overflow-y: auto; z-index: 1050; padding: 0;">
+                            <div class="autocomplete-list-group list-group list-group-flush"></div>
+                            <div class="search-footer border-top bg-light p-2 text-center sticky-bottom"></div>
+                        </div>
                     </div>
-                </div>
 
-                {{-- Square Action Buttons --}}
-                <button type="button" class="btn btn-primary my-task-btn-square my-task-btn-search"
-                        id="certificateApplyFilter" title="Apply Filter" aria-label="Apply Filter">
-                    <i class="ti ti-search text-white fs-3"></i>
-                </button>
-                <button type="button" class="btn btn-white my-task-btn-square my-task-btn-filter position-relative"
-                        data-bs-toggle="modal" data-bs-target="#certificateMoreFiltersModal"
-                        title="More Filters" aria-label="More Filters">
-                    <i class="ti ti-adjustments-horizontal fs-3 text-secondary"></i>
-                    <span class="badge bg-primary text-white {{ $advancedCount ? '' : 'd-none' }}" id="certificateMoreFiltersCount">{{ $advancedCount ?: '' }}</span>
-                </button>
-                <button type="button" class="btn btn-white my-task-btn-square my-task-btn-reset"
-                        id="certificateResetFilter" title="Reset Filter" aria-label="Reset Filter">
-                    <i class="ti ti-refresh fs-3 text-secondary"></i>
-                </button>
-                <button type="button" class="btn btn-white my-task-btn-square my-task-btn-export"
-                        id="certificateDownloadExcel"
-                        data-export-url="{{ $exportUrl }}"
-                        title="Download Excel" aria-label="Download Excel">
-                    <i class="ti ti-download fs-3 text-secondary"></i>
-                </button>
+                    {{-- Square Action Buttons --}}
+                    <button type="button" class="btn btn-primary my-task-btn-square my-task-btn-search flex-shrink-0"
+                            id="certificateApplyFilter" title="Apply Filter" aria-label="Apply Filter">
+                        <i class="ti ti-search text-white fs-3"></i>
+                    </button>
+                    <button type="button" class="btn btn-white my-task-btn-square my-task-btn-filter position-relative flex-shrink-0"
+                            data-bs-toggle="modal" data-bs-target="#certificateMoreFiltersModal"
+                            title="More Filters" aria-label="More Filters">
+                        <i class="ti ti-adjustments-horizontal fs-3 text-secondary"></i>
+                        <span class="badge bg-primary text-white {{ $advancedCount ? '' : 'd-none' }}" id="certificateMoreFiltersCount">{{ $advancedCount ?: '' }}</span>
+                    </button>
+                    <button type="button" class="btn btn-white my-task-btn-square my-task-btn-reset flex-shrink-0"
+                            id="certificateResetFilter" title="Reset Filter" aria-label="Reset Filter">
+                        <i class="ti ti-refresh fs-3 text-secondary"></i>
+                    </button>
+                    <button type="button" class="btn btn-white my-task-btn-square my-task-btn-export flex-shrink-0"
+                            id="certificateDownloadExcel"
+                            data-export-url="{{ $exportUrl }}"
+                            title="Download Excel" aria-label="Download Excel">
+                        <i class="ti ti-download fs-3 text-secondary"></i>
+                    </button>
+                </div>
             </div>
 
             {{-- Active Filters indicator --}}

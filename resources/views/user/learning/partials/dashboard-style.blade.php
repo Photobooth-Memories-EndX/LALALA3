@@ -138,10 +138,32 @@
      * Live Autocomplete Dropdown Search for Ongoing, Assessment & Certificate Learning
      */
     .search-ongoing-container,
-    .assessment-search-container,
     .certificate-search-container {
         position: relative;
+        flex: 1 1 200px;
+        min-width: 180px;
+        width: auto;
+    }
+
+    .assessment-search-container {
+        position: relative;
         width: 100%;
+    }
+
+    .ongoing-search-actions-group,
+    .certificate-search-actions-group {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex: 1 1 300px;
+        min-width: 260px;
+    }
+
+    @media (max-width: 575.98px) {
+        .ongoing-search-actions-group,
+        .certificate-search-actions-group {
+            width: 100%;
+        }
     }
 
     #ongoing-search-results,
