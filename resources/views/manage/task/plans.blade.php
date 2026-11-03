@@ -518,16 +518,17 @@
                     <div id="modalOthersSection" class="modal-picker-section" style="display: none;">
                         <div class="input-group">
                             <span class="input-group-text bg-white border-end-0 text-muted rounded-start-3 px-3">
-                                <i class="ti ti-folder-plus fs-2 text-primary"></i>
+                                <i class="ti ti-folder-plus fs-2 text-purple"></i>
                             </span>
                             <input type="text"
                                    id="modal_others_title"
                                    class="form-control form-control-lg border-start-0 rounded-end-3"
                                    placeholder="e.g. Onboarding Batch 2026 / Safety Leadership Workshop"
-                                   autocomplete="off">
+                                   autocomplete="off"
+                                   style="font-size: 0.95rem;">
                         </div>
                         <div class="form-hint mt-2 text-muted d-flex align-items-center gap-1.5" style="font-size: 0.8rem;">
-                            <i class="ti ti-info-circle text-primary"></i>
+                            <i class="ti ti-info-circle text-purple"></i>
                             <span>Enter the title for this activity. You will be directed to add tasks to it.</span>
                         </div>
                     </div>
@@ -572,6 +573,17 @@
         box-shadow: 0 4px 14px rgba(32, 107, 196, 0.12);
     }
     
+    #chooseContainerModal .input-group .form-control,
+    #chooseContainerModal .input-group .form-select,
+    #chooseContainerModal .input-group .input-group-text {
+        height: 44px;
+        min-height: 44px;
+        font-size: 0.95rem;
+    }
+    #chooseContainerModal .input-group .form-control::placeholder {
+        font-size: 0.95rem;
+        color: #94a3b8;
+    }
     .input-group:focus-within .input-group-text,
     .input-group:focus-within .form-control,
     .input-group:focus-within .form-select {
