@@ -333,8 +333,8 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithColumnFor
     public function columnFormats(): array
     {
         return [
-            'A'  => NumberFormat::FORMAT_GENERAL,       // NO
-            'B'  => NumberFormat::FORMAT_GENERAL,       // Employee ID
+            'A'  => '0',                                // NO (Pure integer)
+            'B'  => NumberFormat::FORMAT_TEXT,          // Employee ID (Explicit String)
             'C'  => NumberFormat::FORMAT_GENERAL,       // Employee Name
             'D'  => NumberFormat::FORMAT_GENERAL,       // Team
             'E'  => NumberFormat::FORMAT_GENERAL,       // Course Title
@@ -357,9 +357,9 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithColumnFor
             'V'  => NumberFormat::FORMAT_GENERAL,       // Attendance
             'W'  => '0',                                // Assessment Score (L2)
             'X'  => NumberFormat::FORMAT_GENERAL,       // Bond Status
-            'Y'  => '0.##',                             // Bond Duration
+            'Y'  => '0',                                // Bond Duration (Pure integer)
             'Z'  => 'yyyy-mm-dd',                       // Bond End Date
-            'AA' => '"Rp "#,##0;;"Rp -"',               // Bond Amount
+            'AA' => '#,##0',                            // Bond Amount (Pure integer currency)
             'AB' => NumberFormat::FORMAT_GENERAL,       // Certificate
             'AC' => NumberFormat::FORMAT_GENERAL,       // Certificate Institution
             'AD' => 'yyyy-mm-dd',                       // Certificate Issued Date
@@ -399,7 +399,16 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithColumnFor
                     ->setVertical(Alignment::VERTICAL_CENTER);
 
                 if ($highestRow >= 2) {
-                    $sheet->getStyle('W2:W' . $highestRow)->getNumberFormat()->setFormatCode('0');
+                    for ($r = 2; $r <= $highestRow; $r++) {
+                        $val = $sheet->getCell('B' . $r)->getValue();
+                        if ($val !== null && $val !== '' && $val !== '-') {
+                            $sheet->setCellValueExplicit('B' . $r, (string) $val, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+                        }
+                    }
+                    $sheet->getStyle('A2:A' . $highestRow)->getNumberFormat()->setFormatCode('0');
+                    $sheet->getStyle('Y2:Y' . $highestRow)->getNumberFormat()->setFormatCode('0');
+                    $sheet->getStyle('W2:W' . $highestRow)->getNumberFormat()->setFormatCode('0.00');
+                    $sheet->getStyle('AA2:AA' . $highestRow)->getNumberFormat()->setFormatCode('#,##0');
                 }
 
                 // Highlight main Playlist items with light blue/gray fill (#EBF3FB) and bold text

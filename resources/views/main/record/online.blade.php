@@ -74,7 +74,28 @@
 @endsection
 
 @section('style')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <style>
+    #classification-summary-container,
+    .classification-summary-card .table-responsive {
+        max-height: 70vh;
+        overflow-y: auto;
+        position: relative;
+    }
+    .classification-summary-card thead th {
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 10 !important;
+        background-color: #f8fafc !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+    [data-bs-theme="dark"] .classification-summary-card thead th,
+    body.dark-mode .classification-summary-card thead th,
+    body.theme-dark .classification-summary-card thead th {
+        background-color: #1e293b !important;
+        color: #94a3b8 !important;
+    }
+
     .manage-record-page {
         background: #fff;
     }

@@ -5,8 +5,8 @@
             <!-- Modal Header -->
             <div class="modal-header border-0 pb-0 pt-3 px-4">
                 <div class="d-flex align-items-center gap-2">
-                    <i class="bi bi-file-earmark-text ti ti-file-text text-primary fs-5"></i>
-                    <h5 class="modal-title text-base text-lg font-semibold fw-semibold text-slate-800 mb-0 fs-5" id="moreInformationModalLabel" style="font-size: 1.05rem; font-weight: 600; color: #1e293b;">Record Details</h5>
+                    <i class="bi bi-file-earmark-text text-primary fs-5"></i>
+                    <h5 class="modal-title fw-semibold text-slate-800 mb-0" id="moreInformationModalLabel" style="font-size: 1.05rem; font-weight: 600; color: #1e293b;">Record Details</h5>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -20,118 +20,162 @@
 
                 <!-- Attributes Container -->
                 <div id="more-info-content">
-                    <!-- Top Area: Source/Type Pill & Course Title -->
+                    <!-- Top Area: Source/Type Pill & Header Sub-title [Category] Course Title -->
                     <div class="mb-3 pb-3 border-bottom">
                         <div class="mb-1.5 d-flex align-items-center gap-2">
                             <span class="badge px-2.5 py-1 fw-bold text-uppercase modal-more-source-pill" id="modal-badge-source" style="font-size: 0.75rem; letter-spacing: 0.05em; border-radius: 6px; background-color: #fef3c7; color: #92400e;">
-                                NON KP OWL
+                                KP OWL
                             </span>
                         </div>
-                        <h4 class="text-base text-lg font-bold fw-bold text-slate-900 mb-1" id="modal-course-title" style="font-size: 1.125rem; font-weight: 700; line-height: 1.4; color: #0f172a;">
+                        <h4 class="fw-bold text-slate-900 mb-1" id="modal-course-title" style="font-size: 1.125rem; font-weight: 700; line-height: 1.4; color: #0f172a;">
                             -
                         </h4>
                     </div>
 
                     <!-- SECTION 1: Employee Information -->
                     <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 mb-3 shadow-sm" style="border: 1px solid #e2e8f0; border-radius: 1rem; padding: 1rem; background-color: rgba(248, 250, 252, 0.5); box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
-                        <div class="section-heading text-xs text-sm font-semibold fw-semibold text-slate-700 mb-3 d-flex align-items-center gap-1.5" style="font-size: 0.8125rem; font-weight: 600; color: #334155;">
-                            <i class="bi bi-person ti ti-user text-slate-500 me-1.5" style="color: #64748b; font-size: 1rem;"></i> <span>Employee Information</span>
+                        <div class="section-heading fw-semibold text-slate-700 mb-3 d-flex align-items-center gap-1.5" style="font-size: 0.8125rem; font-weight: 600; color: #334155;">
+                            <i class="bi bi-person text-slate-500 me-1.5" style="color: #64748b; font-size: 1rem;"></i> <span>Employee Information</span>
                         </div>
                         <!-- Row 1: Employee ID | Employee Name -->
                         <div class="row g-3 mb-3">
                             <div class="col-12 col-md-6">
-                                <div class="field-label text-[10px] text-xs font-medium fw-medium text-slate-400 text-uppercase tracking-wider mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">EMPLOYEE ID</div>
-                                <div class="field-value text-xs text-sm font-bold fw-bold text-slate-800" id="modal-employee-id" style="font-size: 0.8125rem; font-weight: 700; color: #1e293b;">-</div>
+                                <div class="field-label text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">EMPLOYEE ID</div>
+                                <div class="field-value fw-bold text-slate-800" id="modal-employee-id" style="font-size: 0.8125rem; font-weight: 700; color: #1e293b;">-</div>
                             </div>
                             <div class="col-12 col-md-6">
-                                <div class="field-label text-[10px] text-xs font-medium fw-medium text-slate-400 text-uppercase tracking-wider mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">EMPLOYEE NAME</div>
-                                <div class="field-value text-xs text-sm font-bold fw-bold text-slate-800 text-uppercase" id="modal-employee-name" style="font-size: 0.8125rem; font-weight: 700; color: #1e293b;">-</div>
+                                <div class="field-label text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">EMPLOYEE NAME</div>
+                                <div class="field-value fw-bold text-slate-800 text-uppercase" id="modal-employee-name" style="font-size: 0.8125rem; font-weight: 700; color: #1e293b;">-</div>
                             </div>
                         </div>
-                        <!-- Row 2: Team -->
+                        <!-- Row 2: Grade | Job Position -->
                         <div class="row g-3">
                             <div class="col-12 col-md-6">
-                                <div class="field-label text-[10px] text-xs font-medium fw-medium text-slate-400 text-uppercase tracking-wider mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">TEAM</div>
-                                <div class="field-value text-xs text-sm font-bold fw-bold text-slate-800" id="modal-team" style="font-size: 0.8125rem; font-weight: 700; color: #1e293b;">-</div>
+                                <div class="field-label text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">GRADE</div>
+                                <div class="field-value fw-bold text-slate-800" id="modal-grade" style="font-size: 0.8125rem; font-weight: 700; color: #1e293b;">-</div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="field-label text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">JOB POSITION</div>
+                                <div class="field-value fw-bold text-slate-800" id="modal-job-position" style="font-size: 0.8125rem; font-weight: 700; color: #1e293b;">-</div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- SECTION 2: Training & Location Information -->
+                    <!-- SECTION 2: Course & Batch Information -->
                     <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 mb-3 shadow-sm" style="border: 1px solid #e2e8f0; border-radius: 1rem; padding: 1rem; background-color: rgba(248, 250, 252, 0.5); box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
-                        <div class="section-heading text-xs text-sm font-semibold fw-semibold text-slate-700 mb-3 d-flex align-items-center gap-1.5" style="font-size: 0.8125rem; font-weight: 600; color: #334155;">
-                            <i class="bi bi-geo-alt ti ti-map-pin text-slate-500 me-1.5" style="color: #64748b; font-size: 1rem;"></i> <span>Training &amp; Location Information</span>
+                        <div class="section-heading fw-semibold text-slate-700 mb-3 d-flex align-items-center gap-1.5" style="font-size: 0.8125rem; font-weight: 600; color: #334155;">
+                            <i class="bi bi-book text-slate-500 me-1.5" style="color: #64748b; font-size: 1rem;"></i> <span>Course &amp; Batch Information</span>
                         </div>
-                        <!-- Row 1: Delivery Method | Provider -->
+                        <!-- Row 1: Sub Course Title | Level -->
                         <div class="row g-3 mb-3">
                             <div class="col-12 col-md-6">
-                                <div class="field-label text-[10px] text-xs font-medium fw-medium text-slate-400 text-uppercase tracking-wider mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">DELIVERY METHOD</div>
-                                <div class="field-value text-xs text-sm font-bold fw-bold text-slate-800" id="modal-delivery-method" style="font-size: 0.8125rem; font-weight: 700; color: #1e293b;">-</div>
+                                <div class="field-label text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">SUB COURSE TITLE</div>
+                                <div class="field-value fw-bold text-slate-800" id="modal-sub-course-title" style="font-size: 0.8125rem; font-weight: 700; color: #1e293b;">-</div>
                             </div>
                             <div class="col-12 col-md-6">
-                                <div class="field-label text-[10px] text-xs font-medium fw-medium text-slate-400 text-uppercase tracking-wider mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">PROVIDER</div>
-                                <div class="field-value text-xs text-sm font-bold fw-bold text-slate-800" id="modal-provider" style="font-size: 0.8125rem; font-weight: 700; color: #1e293b;">-</div>
+                                <div class="field-label text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">LEVEL</div>
+                                <div class="field-value fw-bold text-slate-800" id="modal-level" style="font-size: 0.8125rem; font-weight: 700; color: #1e293b;">-</div>
                             </div>
                         </div>
-                        <!-- Row 2: Provider Name | Venue -->
+                        <!-- Row 2: Batch | Instructor -->
                         <div class="row g-3">
                             <div class="col-12 col-md-6">
-                                <div class="field-label text-[10px] text-xs font-medium fw-medium text-slate-400 text-uppercase tracking-wider mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">PROVIDER NAME</div>
-                                <div class="field-value text-xs text-sm font-bold fw-bold text-slate-800" id="modal-provider-name" style="font-size: 0.8125rem; font-weight: 700; color: #1e293b;">-</div>
+                                <div class="field-label text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">BATCH</div>
+                                <div class="field-value fw-bold text-slate-800" id="modal-batch" style="font-size: 0.8125rem; font-weight: 700; color: #1e293b;">-</div>
                             </div>
                             <div class="col-12 col-md-6">
-                                <div class="field-label text-[10px] text-xs font-medium fw-medium text-slate-400 text-uppercase tracking-wider mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">VENUE</div>
-                                <div class="field-value text-xs text-sm font-bold fw-bold text-slate-800" id="modal-venue" style="font-size: 0.8125rem; font-weight: 700; color: #1e293b;">-</div>
+                                <div class="field-label text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">INSTRUCTOR</div>
+                                <div class="field-value fw-bold text-slate-800" id="modal-instructor" style="font-size: 0.8125rem; font-weight: 700; color: #1e293b;">-</div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- SECTION 3: Bond Details (Retain 4 items in 1 single row) -->
+                    <!-- SECTION 3: Location & Provider Information -->
                     <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 mb-3 shadow-sm" style="border: 1px solid #e2e8f0; border-radius: 1rem; padding: 1rem; background-color: rgba(248, 250, 252, 0.5); box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
-                        <div class="section-heading text-xs text-sm font-semibold fw-semibold text-slate-700 mb-3 d-flex align-items-center gap-1.5" style="font-size: 0.8125rem; font-weight: 600; color: #334155;">
-                            <i class="bi bi-journal-text ti bi-file-text text-slate-500 me-1.5" style="color: #64748b; font-size: 1rem;"></i> <span>Bond Details</span>
+                        <div class="section-heading fw-semibold text-slate-700 mb-3 d-flex align-items-center gap-1.5" style="font-size: 0.8125rem; font-weight: 600; color: #334155;">
+                            <i class="bi bi-geo-alt text-slate-500 me-1.5" style="color: #64748b; font-size: 1rem;"></i> <span>Location &amp; Provider Information</span>
                         </div>
+                        <!-- Row 1: Sub Provider | Attendance Reason -->
                         <div class="row g-3">
-                            <div class="col-6 col-md-3">
-                                <div class="field-label text-[10px] text-xs font-medium fw-medium text-slate-400 text-uppercase tracking-wider mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">BOND STATUS</div>
-                                <div class="field-value text-xs text-sm font-bold fw-bold text-slate-800" id="modal-bond-status" style="font-size: 0.8125rem; font-weight: 700; color: #1e293b;">No</div>
+                            <div class="col-12 col-md-6">
+                                <div class="field-label text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">SUB PROVIDER</div>
+                                <div class="field-value fw-bold text-slate-800" id="modal-sub-provider" style="font-size: 0.8125rem; font-weight: 700; color: #1e293b;">-</div>
                             </div>
-                            <div class="col-6 col-md-3">
-                                <div class="field-label text-[10px] text-xs font-medium fw-medium text-slate-400 text-uppercase tracking-wider mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">BOND DURATION</div>
-                                <div class="field-value text-xs text-sm font-bold fw-bold text-slate-800" id="modal-bond-duration" style="font-size: 0.8125rem; font-weight: 700; color: #1e293b;">-</div>
-                            </div>
-                            <div class="col-6 col-md-3">
-                                <div class="field-label text-[10px] text-xs font-medium fw-medium text-slate-400 text-uppercase tracking-wider mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">BOND END DATE</div>
-                                <div class="field-value text-xs text-sm font-bold fw-bold text-slate-800" id="modal-bond-end-date" style="font-size: 0.8125rem; font-weight: 700; color: #1e293b;">-</div>
-                            </div>
-                            <div class="col-6 col-md-3">
-                                <div class="field-label text-[10px] text-xs font-medium fw-medium text-slate-400 text-uppercase tracking-wider mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">BOND AMOUNT</div>
-                                <div class="field-value text-xs text-sm font-bold fw-bold text-slate-800 font-monospace" id="modal-bond-amount" style="font-size: 0.8125rem; font-weight: 700; color: #1e293b;">-</div>
+                            <div class="col-12 col-md-6">
+                                <div class="field-label text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">ATTENDANCE REASON</div>
+                                <div class="field-value fw-bold text-slate-800" id="modal-attendance-reason" style="font-size: 0.8125rem; font-weight: 700; color: #1e293b;">-</div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- SECTION 4: Certificate Details -->
+                    <!-- SECTION 4: Bond Details (1 Row with 4 Columns) -->
                     <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 mb-3 shadow-sm" style="border: 1px solid #e2e8f0; border-radius: 1rem; padding: 1rem; background-color: rgba(248, 250, 252, 0.5); box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
-                        <div class="section-heading text-xs text-sm font-semibold fw-semibold text-slate-700 mb-3 d-flex align-items-center gap-1.5" style="font-size: 0.8125rem; font-weight: 600; color: #334155;">
-                            <i class="bi bi-award ti ti-certificate text-slate-500 me-1.5" style="color: #64748b; font-size: 1rem;"></i> <span>Certificate Details</span>
+                        <div class="section-heading fw-semibold text-slate-700 mb-3 d-flex align-items-center gap-1.5" style="font-size: 0.8125rem; font-weight: 600; color: #334155;">
+                            <i class="bi bi-journal-text text-slate-500 me-1.5" style="color: #64748b; font-size: 1rem;"></i> <span>Bond Details</span>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-6 col-md-3">
+                                <div class="field-label text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">BOND STATUS</div>
+                                <div class="field-value fw-bold text-slate-800" id="modal-bond-status" style="font-size: 0.8125rem; font-weight: 700; color: #1e293b;">No</div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="field-label text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">BOND DURATION</div>
+                                <div class="field-value fw-bold text-slate-800" id="modal-bond-duration" style="font-size: 0.8125rem; font-weight: 700; color: #1e293b;">-</div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="field-label text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">BOND END DATE</div>
+                                <div class="field-value fw-bold text-slate-800" id="modal-bond-end-date" style="font-size: 0.8125rem; font-weight: 700; color: #1e293b;">-</div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="field-label text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">BOND AMOUNT</div>
+                                <div class="field-value fw-bold text-slate-800 font-monospace" id="modal-bond-amount" style="font-size: 0.8125rem; font-weight: 700; color: #1e293b;">-</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 5: Assessment & Score Details -->
+                    <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 mb-3 shadow-sm" style="border: 1px solid #e2e8f0; border-radius: 1rem; padding: 1rem; background-color: rgba(248, 250, 252, 0.5); box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+                        <div class="section-heading fw-semibold text-slate-700 mb-3 d-flex align-items-center gap-1.5" style="font-size: 0.8125rem; font-weight: 600; color: #334155;">
+                            <i class="bi bi-check2-circle text-slate-500 me-1.5" style="color: #64748b; font-size: 1rem;"></i> <span>Assessment &amp; Score Details</span>
+                        </div>
+                        <!-- Row 1: L2 Status | L3 Status -->
+                        <div class="row g-3">
+                            <div class="col-12 col-md-6">
+                                <div class="field-label text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">L2 STATUS</div>
+                                <div class="field-value fw-bold text-slate-800" id="modal-l2-status-container">
+                                    <span id="modal-l2-status">-</span>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="field-label text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">L3 STATUS</div>
+                                <div class="field-value fw-bold text-slate-800" id="modal-l3-status-container">
+                                    <span id="modal-l3-status">-</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 6: Certificate Details -->
+                    <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 mb-3 shadow-sm" style="border: 1px solid #e2e8f0; border-radius: 1rem; padding: 1rem; background-color: rgba(248, 250, 252, 0.5); box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+                        <div class="section-heading fw-semibold text-slate-700 mb-3 d-flex align-items-center gap-1.5" style="font-size: 0.8125rem; font-weight: 600; color: #334155;">
+                            <i class="bi bi-award text-slate-500 me-1.5" style="color: #64748b; font-size: 1rem;"></i> <span>Certificate Details</span>
                         </div>
                         <!-- Row 1: Certificate Institution -->
                         <div class="row g-3 mb-3">
-                            <div class="col-12 col-md-6">
-                                <div class="field-label text-[10px] text-xs font-medium fw-medium text-slate-400 text-uppercase tracking-wider mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">CERTIFICATE INSTITUTION</div>
-                                <div class="field-value text-xs text-sm font-bold fw-bold text-slate-800" id="modal-cert-institution" style="font-size: 0.8125rem; font-weight: 700; color: #1e293b;">-</div>
+                            <div class="col-12">
+                                <div class="field-label text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">CERTIFICATE INSTITUTION</div>
+                                <div class="field-value fw-bold text-slate-800" id="modal-cert-institution" style="font-size: 0.8125rem; font-weight: 700; color: #1e293b;">-</div>
                             </div>
                         </div>
                         <!-- Row 2: Certificate Issued Date | Certificate Expired Date -->
                         <div class="row g-3">
                             <div class="col-12 col-md-6">
-                                <div class="field-label text-[10px] text-xs font-medium fw-medium text-slate-400 text-uppercase tracking-wider mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">CERTIFICATE ISSUED DATE</div>
-                                <div class="field-value text-xs text-sm font-bold fw-bold text-slate-800" id="modal-cert-issued-date" style="font-size: 0.8125rem; font-weight: 700; color: #1e293b;">-</div>
+                                <div class="field-label text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">CERTIFICATE ISSUED DATE</div>
+                                <div class="field-value fw-bold text-slate-800" id="modal-cert-issued-date" style="font-size: 0.8125rem; font-weight: 700; color: #1e293b;">-</div>
                             </div>
                             <div class="col-12 col-md-6">
-                                <div class="field-label text-[10px] text-xs font-medium fw-medium text-slate-400 text-uppercase tracking-wider mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">CERTIFICATE EXPIRED DATE</div>
-                                <div class="field-value text-xs text-sm font-bold fw-bold text-slate-800" id="modal-cert-expired-date" style="font-size: 0.8125rem; font-weight: 700; color: #1e293b;">-</div>
+                                <div class="field-label text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">CERTIFICATE EXPIRED DATE</div>
+                                <div class="field-value fw-bold text-slate-800" id="modal-cert-expired-date" style="font-size: 0.8125rem; font-weight: 700; color: #1e293b;">-</div>
                             </div>
                         </div>
                     </div>
@@ -148,11 +192,11 @@ body.theme-dark #moreInformationModal .modal-content {
     background-color: var(--tblr-bg-surface, #1f2937) !important;
     color: #f8fafc !important;
 }
-[data-bs-theme="dark"] #moreInformationModal .bg-light,
-body.dark-mode #moreInformationModal .bg-light,
-body.theme-dark #moreInformationModal .bg-light {
-    background-color: #111827 !important;
-    border-color: #374151 !important;
+[data-bs-theme="dark"] #moreInformationModal .border-slate-200,
+body.dark-mode #moreInformationModal .border-slate-200,
+body.theme-dark #moreInformationModal .border-slate-200 {
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    background-color: rgba(30, 41, 59, 0.5) !important;
 }
 [data-bs-theme="dark"] #moreInformationModal .text-slate-800,
 body.dark-mode #moreInformationModal .text-slate-800,
@@ -169,10 +213,11 @@ body.dark-mode #moreInformationModal .text-slate-700,
 body.theme-dark #moreInformationModal .text-slate-700 {
     color: #cbd5e1 !important;
 }
+[data-bs-theme="dark"] #moreInformationModal .text-slate-500,
 [data-bs-theme="dark"] #moreInformationModal .text-slate-400,
 body.dark-mode #moreInformationModal .text-slate-400,
 body.theme-dark #moreInformationModal .text-slate-400 {
-    color: #64748b !important;
+    color: #94a3b8 !important;
 }
 </style>
 
@@ -182,7 +227,7 @@ body.theme-dark #moreInformationModal .text-slate-400 {
         <div class="modal-content rounded-4 border-0 shadow">
             <div class="modal-body text-center py-4">
                 <div class="avatar avatar-lg rounded-circle bg-danger-lt mx-auto mb-3 text-danger">
-                    <i class="ti ti-trash fs-1"></i>
+                    <i class="bi bi-trash fs-1"></i>
                 </div>
                 <h5 class="fw-bold text-dark mb-2" id="deleteRecordModalLabel">Delete Record?</h5>
                 <p class="text-muted small mb-3">Are you sure you want to delete this training record? This action cannot be undone.</p>
@@ -244,10 +289,10 @@ $(document).on('click', '.btn-confirm-delete-action', function(e) {
 });
 
 // Helper for rendering status pills (Green for Passed/Good, Yellow for Ongoing, Gray for Null)
-function renderStatusPill(pillSelector, containerSelector, val, type) {
+function renderStatusPill(pillSelector, containerSelector, val) {
     const $container = $(containerSelector);
     if (!val || val === '-' || val === 'null' || val === 'undefined') {
-        const html = '<span class="text-muted fw-bold text-xs" style="font-size: 0.8125rem;" id="' + pillSelector.replace('#', '') + '">-</span>';
+        const html = '<span class="text-muted fw-bold" style="font-size: 0.8125rem;" id="' + pillSelector.replace('#', '') + '">-</span>';
         if ($container.length) {
             $container.html(html);
         } else {
@@ -257,7 +302,6 @@ function renderStatusPill(pillSelector, containerSelector, val, type) {
     }
 
     let str = String(val).trim();
-    // Strip percentage labels e.g. "Ongoing (75%)" -> "Ongoing"
     str = str.replace(/\s*\(\d+(\.\d+)?%\)/i, '');
     const lower = str.toLowerCase();
 
@@ -272,7 +316,7 @@ function renderStatusPill(pillSelector, containerSelector, val, type) {
         badgeClass = 'bg-danger-lt text-danger';
     }
 
-    const pillHtml = '<span class="badge ' + badgeClass + ' fw-bold px-2 py-0.5 text-xs" style="font-size: 0.75rem;" id="' + pillSelector.replace('#', '') + '">' + str + '</span>';
+    const pillHtml = '<span class="badge ' + badgeClass + ' fw-bold px-2 py-0.5" style="font-size: 0.75rem;" id="' + pillSelector.replace('#', '') + '">' + str + '</span>';
     if ($container.length) {
         $container.html(pillHtml);
     } else {
@@ -285,8 +329,8 @@ window.populateMoreInformationModal = function(response) {
     if (!response) return;
     const d = response.data || response;
 
-    // Set #modal-badge-source text to response.source
-    const sourceText = d.source || (d.source_type || 'NON KP OWL');
+    // Set #modal-badge-source text
+    const sourceText = d.source || (d.source_type || 'KP OWL');
     const isOffline = (sourceText.toUpperCase().includes('NON') || sourceText.toLowerCase().includes('offline'));
     const $badge = $('#modal-badge-source');
     $badge.text(sourceText);
@@ -296,50 +340,69 @@ window.populateMoreInformationModal = function(response) {
         $badge.css({'background-color': '#e0f2fe', 'color': '#0369a1'});
     }
 
-    // Set Course Title
-    $('#modal-course-title').text(d.course_title || d.title || '-');
+    // Header Sub-title: Display [Category] Course Title
+    const rawCategory = d.category || d.category_source || '';
+    const cleanCategory = (rawCategory && rawCategory !== '-' && rawCategory !== 'null' && rawCategory !== 'undefined') ? rawCategory.trim() : '';
+    const courseTitle = d.course_title || d.title || d.learning_title || '-';
+    const headerSubTitle = cleanCategory ? ('[' + cleanCategory + '] ' + courseTitle) : courseTitle;
+    $('#modal-course-title').text(headerSubTitle);
 
     // Section 1 - Employee Information
-    $('#modal-employee-id').text(d.employee_id || '-');
+    $('#modal-employee-id').text(d.employee_id || d.id_emp || '-');
     const empName = d.employee_name || d.user_name || d.participant_name || '-';
     $('#modal-employee-name').text(empName !== '-' ? empName.toUpperCase() : '-');
-    $('#modal-team').text(d.team || '-');
+    $('#modal-grade').text(d.grade || d.jobgrade || d.user_jobgrade || '-');
+    $('#modal-job-position').text(d.job_position || d.jobposition || d.user_jobposition || '-');
 
-    // Section 2 - Training & Location Information
-    $('#modal-delivery-method').text(d.delivery_method || (isOffline ? 'Offline' : 'Online'));
-    $('#modal-provider').text(d.provider || (isOffline ? 'External' : 'Internal'));
-    $('#modal-provider-name').text(d.provider_name || (isOffline ? '-' : 'KP-OWL'));
-    $('#modal-venue').text(d.venue || (isOffline ? '-' : 'Online LMS'));
+    // Section 2 - Course & Batch Information
+    $('#modal-sub-course-title').text(d.sub_course_title || d.sub_course_name || '-');
+    $('#modal-level').text(d.level || '-');
+    $('#modal-batch').text(d.batch || '-');
+    $('#modal-instructor').text(d.instructor || d.content_author || d.author || '-');
 
-    // Section 3 - Bond Details
+    // Section 3 - Location & Provider Information
+    $('#modal-sub-provider').text(d.sub_provider || '-');
+    $('#modal-attendance-reason').text(d.attendance_reason || '-');
+
+    // Section 4 - Bond Details (1 Row with 4 Columns)
     const rawBond = String(d.bond_status ?? '').toLowerCase().trim();
     const hasBond = ['yes', '1', 'true', 'ya'].includes(rawBond);
-    $('#modal-bond-status').text(hasBond ? 'Yes' : 'No');
-    const bondDur = d.bond_duration;
-    if (bondDur && bondDur !== '-' && String(bondDur).trim() !== '' && !isNaN(bondDur) && parseInt(bondDur) > 0) {
-        $('#modal-bond-duration').text(parseInt(bondDur) + ' Months');
+    const isOnlineOrKpOwl = (d.source === 'KP OWL' || d.source === 'online' || d.record_source === 'online' || (d.source_type && String(d.source_type).includes('KP OWL')));
+    if (hasBond) {
+        $('#modal-bond-status').text('Yes');
+    } else if (isOnlineOrKpOwl || rawBond === '-' || rawBond === '' || rawBond === 'null' || rawBond === 'undefined') {
+        $('#modal-bond-status').text('-');
     } else {
-        $('#modal-bond-duration').text(d.bond_duration || '-');
+        $('#modal-bond-status').text('No');
     }
-    $('#modal-bond-end-date').text(d.bond_end_date && d.bond_end_date !== '-' ? d.bond_end_date : '-');
-    let bondAmt = d.bond_amount || d.bond_amount_idr || '-';
-    if (bondAmt !== '-' && !isNaN(bondAmt) && parseFloat(bondAmt) > 0) {
-        bondAmt = 'Rp ' + Math.round(parseFloat(bondAmt)).toLocaleString('id-ID');
-    }
-    $('#modal-bond-amount').text(bondAmt);
 
-    // Section 4 - Certificate Details
-    $('#modal-cert-institution').text(d.certificate_institution || '-');
-    $('#modal-cert-issued-date').text(d.certificate_issued_date || '-');
-    $('#modal-cert-expired-date').text(d.certificate_expired_date || '-');
-
-    if ($('#modal-attendance').length || $('#modal-detail-attendance').length) {
-        const rawAtt = String(d.attendance ?? '').toLowerCase().trim();
-        const isAttYes = ['1', 'yes', 'true', 'present', 'hadir', 'completed', 'finished'].includes(rawAtt);
-        $('#modal-attendance, #modal-detail-attendance').html(isAttYes
-            ? '<span class="badge bg-success-lt text-success fw-bold px-2 py-1">Yes</span>'
-            : '<span class="badge bg-danger-lt text-danger fw-bold px-2 py-1">No</span>');
+    if (hasBond) {
+        const bondDur = d.bond_duration;
+        if (bondDur && bondDur !== '-' && String(bondDur).trim() !== '' && !isNaN(bondDur) && parseInt(bondDur) > 0) {
+            $('#modal-bond-duration').text(parseInt(bondDur) + ' Months');
+        } else {
+            $('#modal-bond-duration').text(d.bond_duration || '-');
+        }
+        $('#modal-bond-end-date').text(d.bond_end_date && d.bond_end_date !== '-' ? d.bond_end_date : '-');
+        let bondAmt = d.bond_amount || d.bond_amount_idr || '-';
+        if (bondAmt !== '-' && !isNaN(bondAmt) && parseFloat(bondAmt) > 0) {
+            bondAmt = 'Rp ' + Math.round(parseFloat(bondAmt)).toLocaleString('id-ID');
+        }
+        $('#modal-bond-amount').text(bondAmt);
+    } else {
+        $('#modal-bond-duration').text('-');
+        $('#modal-bond-end-date').text('-');
+        $('#modal-bond-amount').text('-');
     }
+
+    // Section 5 - Assessment & Score Details
+    renderStatusPill('#modal-l2-status', '#modal-l2-status-container', d.l2_status || d.score_l2_status);
+    renderStatusPill('#modal-l3-status', '#modal-l3-status-container', d.l3_status || d.score_l3_status);
+
+    // Section 6 - Certificate Details
+    $('#modal-cert-institution').text(d.certificate_institution || d.institution || '-');
+    $('#modal-cert-issued-date').text(d.certificate_issued_date || d.issued_date || '-');
+    $('#modal-cert-expired-date').text(d.certificate_expired_date || d.expired_date || '-');
 };
 
 // Global click handler for .btn-more-info / More Information
@@ -347,7 +410,7 @@ $(document).off('click.moreInfo').on('click.moreInfo', '[data-bs-target="#moreIn
     e.preventDefault();
     const $el = $(this);
     const recordId = $el.data('id') || $el.data('record-id') || $el.attr('data-id') || $el.attr('data-record-id');
-    const source = ($el.data('source') || $el.data('record-source') || $el.attr('data-source') || $el.attr('data-record-source') || 'offline').toString().toLowerCase();
+    const source = ($el.data('source') || $el.data('record-source') || $el.attr('data-source') || $el.attr('data-record-source') || 'online').toString().toLowerCase();
 
     if (!recordId) return;
 
@@ -386,21 +449,27 @@ $(document).off('click.moreInfo').on('click.moreInfo', '[data-bs-target="#moreIn
                     $('#more-info-content').show();
                     window.populateMoreInformationModal({
                         source: (source.includes('non') || source === 'offline') ? 'NON KP OWL' : 'KP OWL',
+                        category: (source.includes('non') || source === 'offline') ? 'Non KP OWL' : 'KP OWL',
                         course_title: '-',
                         employee_id: '-',
                         employee_name: '-',
-                        team: '-',
-                        delivery_method: (source.includes('non') || source === 'offline') ? 'Offline' : 'Online',
-                        provider: (source.includes('non') || source === 'offline') ? 'External' : 'Internal',
-                        provider_name: (source.includes('non') || source === 'offline') ? '-' : 'KP-OWL',
-                        venue: (source.includes('non') || source === 'offline') ? '-' : 'Online LMS',
-                        certificate_institution: '-',
-                        certificate_issued_date: '-',
-                        certificate_expired_date: '-',
+                        grade: '-',
+                        job_position: '-',
+                        sub_course_title: '-',
+                        level: '-',
+                        batch: '-',
+                        instructor: '-',
+                        sub_provider: '-',
+                        attendance_reason: '-',
                         bond_status: 'No',
                         bond_duration: '-',
                         bond_end_date: '-',
-                        bond_amount: '-'
+                        bond_amount: '-',
+                        l2_status: '-',
+                        l3_status: '-',
+                        certificate_institution: '-',
+                        certificate_issued_date: '-',
+                        certificate_expired_date: '-'
                     });
                 }
             });

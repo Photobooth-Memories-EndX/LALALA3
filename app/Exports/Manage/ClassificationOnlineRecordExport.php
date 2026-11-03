@@ -93,7 +93,7 @@ class ClassificationOnlineRecordExport extends OnlineRecordExport
             'Certificate Issued Date',
             'Certificate Expired Date',
             'Person in Charge (PIC)',
-            'Total Engagement Time (LH)',
+            'Total Engagement Time',
         ];
     }
 
@@ -171,7 +171,7 @@ class ClassificationOnlineRecordExport extends OnlineRecordExport
         // 2. Titles (Playlist: Course Title = Playlist Title, Sub Course Title = Content Title)
         if ($isPlaylist) {
             $courseTitle = $row->playlist_title ?: ($row->content_title ?: 'Playlist');
-            $subCourseTitle = $row->content_title ?: '-';
+            $subCourseTitle = '-';
         } else {
             $courseTitle = $row->content_title ?: 'Untitled Content';
             $subCourseTitle = '-';
@@ -208,8 +208,8 @@ class ClassificationOnlineRecordExport extends OnlineRecordExport
         $createdAt = !empty($row->created_at) ? strtotime($row->created_at) : null;
         $completedAt = (!empty($row->completed_at) && $isFinished) ? strtotime($row->completed_at) : null;
 
-        $startDateStr = $createdAt ? date('Y/m/d', $createdAt) : '-';
-        $endDateStr = ($completedAt && $isFinished) ? date('Y/m/d', $completedAt) : '-';
+        $startDateStr = $createdAt ? date('Y-m-d', $createdAt) : '-';
+        $endDateStr = ($completedAt && $isFinished) ? date('Y-m-d', $completedAt) : '-';
         $startTimeStr = $createdAt ? date('H:i:s', $createdAt) : '-';
         $endTimeStr = ($completedAt && $isFinished) ? date('H:i:s', $completedAt) : '-';
 
@@ -370,7 +370,7 @@ class ClassificationOnlineRecordExport extends OnlineRecordExport
             '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             . '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
             . '<numFmts count="4">'
-            . '<numFmt numFmtId="164" formatCode="yyyy/mm/dd"/>'
+            . '<numFmt numFmtId="164" formatCode="yyyy-mm-dd"/>'
             . '<numFmt numFmtId="165" formatCode="hh:mm:ss"/>'
             . '<numFmt numFmtId="166" formatCode="[h]:mm:ss"/>'
             . '<numFmt numFmtId="167" formatCode="0.0&quot; h&quot;"/>'
@@ -462,7 +462,7 @@ class ClassificationOnlineRecordExport extends OnlineRecordExport
                 // 2. Titles (Playlist: Course Title = Playlist Title, Sub Course Title = Content Title)
                 if ($isPlaylist) {
                     $courseTitle = $row->playlist_title ?: ($row->content_title ?: 'Playlist');
-                    $subCourseTitle = $row->content_title ?: '-';
+                    $subCourseTitle = '-';
                 } else {
                     $courseTitle = $row->content_title ?: 'Untitled Content';
                     $subCourseTitle = '-';

@@ -102,7 +102,6 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
             'Course Duration',
             'Total Recognized Duration',
             'Learning Hours',
-            'Total Engagement Time (LH)',
             '% Progress',
             'Progress Status',
             'Start Date',
@@ -127,6 +126,7 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
             'Certificate Issued Date',
             'Certificate Expired Date',
             'Person in Charge (PIC)',
+            'Total Engagement Time',
         ];
     }
 
@@ -410,7 +410,6 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
                 $durationFormatted,
                 $row->source === 'offline' ? '-' : $recognizedFormatted,
                 $lhNumeric,
-                $totalEngagementDuration,
                 $progressDecimal,
                 $progressStatus,
                 $startDateStr,
@@ -435,6 +434,7 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
                 $certIssuedDate,
                 $certExpiredDate,
                 $row->pic ?: '-',
+                $totalEngagementDuration,
             ]);
         }
 

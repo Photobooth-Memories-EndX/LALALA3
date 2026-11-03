@@ -6,6 +6,7 @@
     @yield('style')
     @stack('styles')
     <link rel="stylesheet" href="{{ asset('vendor/tabler-icons/tabler-icons.min.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 </head>
 @php
     $cookieTheme = request()->cookie('owl-theme');

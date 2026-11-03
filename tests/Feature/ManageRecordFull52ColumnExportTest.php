@@ -76,7 +76,7 @@ class ManageRecordFull52ColumnExportTest extends TestCase
         'Certificate Issued Date',
         'Certificate Expired Date',
         'Person in Charge (PIC)',
-        'Total Engagement Time (LH)',
+        'Total Engagement Time',
     ];
 
     protected function setUp(): void

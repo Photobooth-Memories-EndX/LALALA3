@@ -516,6 +516,15 @@ class OnlineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wit
         $buffer = '';
         $batchSize = 1000;
 
+        $contentCertSettings = DB::table('certificate_settings')
+            ->whereNotNull('content_id')
+            ->get()
+            ->keyBy('content_id');
+        $tpCertSettings = DB::table('certificate_settings')
+            ->whereNotNull('trainingplan_id')
+            ->get()
+            ->keyBy('trainingplan_id');
+
         $pdo = DB::connection()->getPdo();
         $wasBuffered = $pdo->getAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY);
         $pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
@@ -599,9 +608,9 @@ class OnlineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wit
 
             $csSetting = null;
             if (!empty($row->content_id)) {
-                $csSetting = DB::table('certificate_settings')->where('content_id', $row->content_id)->first();
+                $csSetting = $contentCertSettings->get($row->content_id);
             } elseif (!empty($row->trainingplan_id)) {
-                $csSetting = DB::table('certificate_settings')->where('trainingplan_id', $row->trainingplan_id)->first();
+                $csSetting = $tpCertSettings->get($row->trainingplan_id);
             }
             if ($csSetting) {
                 if ($csSetting->institution) {
@@ -697,7 +706,7 @@ class OnlineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wit
                             ['H', 'str', $row->user_department ?: '-', '3'],                   // 8. Department
                             ['I', 'str', $row->user_company ?: '-', '3'],                      // 9. Company
                             ['J', 'str', '    ' . $child->title, '3'],                        // 10. Course Title
-                            ['K', 'str', 'Child of ' . $courseTitle, '3'],                    // 11. Sub Course Title
+                            ['K', 'str', '-', '3'],                                           // 11. Sub Course Title
                             ['L', 'str', ucfirst($child->type ?: 'Content'), '3'],            // 12. Type
                             ['M', 'str', 'Content Playlist', '3'],                            // 13. Category
                             ['N', 'str', '-', '3'],                                           // 14. Level

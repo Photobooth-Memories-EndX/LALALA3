@@ -53,6 +53,7 @@
     />
 </template>
 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <style>
     /* Force rounded pill styling on all Quick Filter tab states in Learning Record */
     .quick-filter-btn,
@@ -1103,7 +1104,7 @@
                                                    data-bs-target="#recordDetailModal"
                                                    data-record-id="{{ $row['id'] }}"
                                                    data-record-source="{{ $row['source'] ?? 'offline' }}">
-                                                    <i class="ti ti-info-circle"></i> More Information
+                                                    <i class="bi bi-eye text-primary me-2"></i> More Information
                                                 </a>
                                             </li>
                                             <li>
@@ -1112,17 +1113,17 @@
                                                         <form method="POST" action="{{ $row['cert_action_url'] }}" class="m-0 p-0">
                                                             @csrf
                                                             <button type="submit" class="dropdown-item d-flex align-items-center gap-2 text-success border-0 bg-transparent w-100">
-                                                                <i class="ti ti-certificate"></i> Generate Certificate
+                                                                <i class="bi bi-award text-info me-2"></i> Generate Certificate
                                                             </button>
                                                         </form>
                                                     @else
                                                         <a class="dropdown-item d-flex align-items-center gap-2 text-success" href="{{ $row['cert_action_url'] }}" target="_blank">
-                                                            <i class="ti ti-certificate"></i> Generate Certificate
+                                                            <i class="bi bi-award text-info me-2"></i> Generate Certificate
                                                         </a>
                                                     @endif
                                                 @else
                                                     <a class="dropdown-item d-flex align-items-center gap-2 disabled text-muted" href="#" onclick="return false;" style="cursor: not-allowed;">
-                                                        <i class="ti ti-certificate"></i> Generate Certificate
+                                                        <i class="bi bi-award text-info me-2"></i> Generate Certificate
                                                     </a>
                                                 @endif
                                             </li>

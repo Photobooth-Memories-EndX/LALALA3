@@ -216,6 +216,7 @@
 @endsection
 
 @section('style')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <link rel="stylesheet" href="{{ asset('css/dataTables.bootstrap5.min.css') }}">
 <style>
     .manage-record-page {
@@ -261,11 +262,20 @@
         background: #cbd5e1;
         border-radius: 4px;
     }
+    .table-responsive,
+    .table-scroll-container {
+        max-height: 70vh;
+        overflow-y: auto;
+        position: relative;
+    }
     .table-scroll-container {
         width: 100%;
         max-width: 100%;
         overflow-x: auto;
+        overflow-y: auto;
+        max-height: 70vh;
         position: relative;
+        -webkit-overflow-scrolling: touch;
         scrollbar-width: thin;
         scrollbar-color: #94a3b8 #f1f5f9;
     }
@@ -288,6 +298,11 @@
         margin-bottom: 0;
     }
     #online-classification-table thead th {
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 10 !important;
+        background-color: #f8fafc !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
         font-size: 0.72rem;
         letter-spacing: 0.03em;
         font-weight: 700;
@@ -423,7 +438,30 @@
                 { data: 'course_duration', name: 'c.duration', className: 'text-center' },
                 { data: 'total_recognized_duration', name: 'total_recognized_duration', orderable: false, className: 'text-center' },
                 { data: 'learning_hours', name: 'unified.learning_hours', className: 'text-center' },
-                { data: 'progress_bar', name: 'unified.progress', className: 'text-center' },
+                {
+                    data: 'progress_bar',
+                    name: 'unified.progress',
+                    className: 'text-center',
+                    render: function (data, type, row) {
+                        if (type === 'sort' || type === 'type') {
+                            return row.progress !== undefined ? row.progress : 0;
+                        }
+                        let rawVal = row.progress !== undefined ? row.progress : data;
+                        if (typeof rawVal === 'string') {
+                            const match = rawVal.match(/(\d+(?:\.\d+)?)\s*%/);
+                            if (match) {
+                                return Math.round(parseFloat(match[1])) + '%';
+                            }
+                            rawVal = rawVal.replace(/<[^>]*>?/gm, '').trim();
+                        }
+                        if (rawVal !== '' && !isNaN(rawVal)) {
+                            const num = parseFloat(rawVal);
+                            const pct = (num <= 1 && num > 0) ? Math.round(num * 100) : Math.round(num);
+                            return pct + '%';
+                        }
+                        return '0%';
+                    }
+                },
                 { data: 'status_badge', name: 'unified.finish', className: 'text-center' },
                 { data: 'date_merged', name: 'unified.created_at' },
                 { data: 'time_merged', name: 'unified.created_at' },
@@ -436,7 +474,47 @@
                 { data: 'certificate', name: 'certificate', orderable: false, className: 'text-center' },
                 { data: 'pic', name: 'pic', orderable: false },
                 { data: 'total_engagement_time', name: 'total_engagement_time', orderable: false, className: 'text-center' },
-                { data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-end' }
+                {
+                    data: 'action',
+                    name: 'action',
+                    orderable: false,
+                    searchable: false,
+                    className: 'text-end',
+                    render: function (data, type, row) {
+                        if (data && typeof data === 'string' && data.indexOf('dropdown-menu') !== -1) {
+                            return data;
+                        }
+                        const recordId = row.source_id || row.id || '';
+                        const editUrl = '/manage/record/online/' + encodeURIComponent(recordId) + '/edit';
+                        return `<div class="dropdown">
+                            <button class="btn btn-sm btn-icon btn-ghost-secondary" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="ti ti-dots-vertical"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center gap-2 btn-view-learning-detail btn-more-info" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#moreInformationModal" data-source-type="${row.source_type || 'content'}" data-source-id="${recordId}" data-id="${recordId}" data-record-id="${recordId}" data-source="online" data-record-source="online">
+                                        <i class="bi bi-eye text-primary me-2"></i> More Information
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center gap-2" href="${editUrl}">
+                                        <i class="bi bi-pencil-square text-warning me-2"></i> Edit Record
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center gap-2 text-danger" href="#" data-bs-toggle="modal" data-bs-target="#deleteRecordModal" data-record-id="${recordId}" data-record-source="online">
+                                        <i class="bi bi-trash text-danger me-2"></i> Delete Record
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center gap-2 disabled text-muted" href="#" onclick="return false;" style="cursor: not-allowed;">
+                                        <i class="bi bi-award text-info me-2"></i> Generate Certificate
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>`;
+                    }
+                }
             ],
             drawCallback: function (settings) {
                 const api = this.api();
@@ -449,6 +527,39 @@
                 renderCustomPagination(api, '#online-table-pagination-container');
                 syncScrollbars();
             }
+        });
+
+                // Explicit click handler for More Information modal in Online Classification
+        $(document).on('click', '.btn-more-info', function (e) {
+            e.preventDefault();
+            const recordId = $(this).data('id') || $(this).data('record-id') || $(this).attr('data-id') || $(this).attr('data-record-id');
+            const source = ($(this).data('source') || $(this).data('record-source') || $(this).attr('data-source') || $(this).attr('data-record-source') || 'online').toString().toLowerCase();
+            if (!recordId) return;
+
+            const modalEl = document.getElementById('moreInformationModal');
+            if (modalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                bootstrap.Modal.getOrCreateInstance(modalEl).show();
+            }
+
+            $('#more-info-loading').show();
+            $('#more-info-content').hide();
+
+            $.ajax({
+                url: '/manage/record/detail/' + encodeURIComponent(recordId) + (source ? '?source=' + encodeURIComponent(source) : ''),
+                type: 'GET',
+                dataType: 'json',
+                success: function (response) {
+                    $('#more-info-loading').hide();
+                    $('#more-info-content').show();
+                    if (window.populateMoreInformationModal) {
+                        window.populateMoreInformationModal(response);
+                    }
+                },
+                error: function () {
+                    $('#more-info-loading').hide();
+                    $('#more-info-content').show();
+                }
+            });
         });
 
         // Entries dropdown change
