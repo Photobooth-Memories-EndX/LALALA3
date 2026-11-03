@@ -120,7 +120,7 @@ class MyTaskController extends Controller
             9 => 'September', 10 => 'October', 11 => 'November', 12 => 'December',
         ];
 
-        $years = $tasks->map(function ($t) {
+        $years = $tasks->toBase()->map(function ($t) {
             return $t->deadline ? $t->deadline->format('Y') : ($t->created_at ? $t->created_at->format('Y') : null);
         })->filter()->push(date('Y'))->unique()->sortDesc()->values();
 

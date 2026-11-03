@@ -894,12 +894,9 @@ class TaskReviewStatusFlowTest extends TestCase
 
         // 2. Completed (Approve)
         $existingUsers = User::where('role', User::ROLE_USER)->where('id', '!=', $this->learner->id)->take(2)->get();
-        $user2 = $existingUsers[0] ?? User::create([
-            'name'     => 'User Two ' . uniqid(),
-            'email'    => 'user2_' . uniqid() . '@example.com',
-            'password' => bcrypt('password'),
-            'role'     => User::ROLE_USER,
-            'team'     => 'Default Team',
+        $user2 = $existingUsers[0] ?? User::factory()->create([
+            'role' => User::ROLE_USER,
+            'team' => 'Default Team',
         ]);
         TaskSubmission::create([
             'task_id'            => $task->id,
@@ -911,12 +908,9 @@ class TaskReviewStatusFlowTest extends TestCase
         ]);
 
         // 3. Resubmit (Rejected)
-        $user3 = $existingUsers[1] ?? User::create([
-            'name'     => 'User Three ' . uniqid(),
-            'email'    => 'user3_' . uniqid() . '@example.com',
-            'password' => bcrypt('password'),
-            'role'     => User::ROLE_USER,
-            'team'     => 'Default Team',
+        $user3 = $existingUsers[1] ?? User::factory()->create([
+            'role' => User::ROLE_USER,
+            'team' => 'Default Team',
         ]);
         TaskSubmission::create([
             'task_id'            => $task->id,

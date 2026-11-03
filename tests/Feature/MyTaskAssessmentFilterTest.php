@@ -194,4 +194,32 @@ class MyTaskAssessmentFilterTest extends TestCase
         $response->assertSee('Annual Company Feedback Task');
         $response->assertDontSee('Hidden Assessment in Others Filter');
     }
+
+    public function test_empty_task_tab_renders_cleanly_without_exception(): void
+    {
+        $freshUser = User::create([
+            'name'       => 'Empty State Fresh User',
+            'email'      => 'freshuser_' . uniqid() . '@example.com',
+            'password'   => bcrypt('password'),
+            'role'       => '1',
+            'team'       => 'TEST-TEAM',
+            'department' => 'TEST-DEPT',
+            'division'   => 'TEST-DIV',
+            'id_emp'     => 'EMP' . rand(10000, 99999),
+            'ssohash'    => \Illuminate\Support\Str::random(32),
+            'sap_code'   => 'SAP' . rand(1000, 9999),
+            'active'     => 1,
+        ]);
+
+        $response = $this->actingAs($freshUser)->get(route('user.learning.dashboard.partial', [
+            'tab' => 'my-task',
+        ]));
+
+        $response->assertStatus(200);
+        $response->assertSee('My Tasks');
+        $response->assertSee('All Tasks');
+        $response->assertSee('Total Tasks');
+        $response->assertSee('No tasks available');
+        $response->assertDontSee('Gagal memuat konten');
+    }
 }

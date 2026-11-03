@@ -111,7 +111,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 @endif
-@if ($errors->any())
+@if (isset($errors) && $errors->any())
     <div class="alert alert-danger alert-dismissible shadow-sm rounded-4 mb-3" role="alert">
         <div class="d-flex align-items-center">
             <i class="ti ti-alert-triangle fs-2 me-2"></i>
