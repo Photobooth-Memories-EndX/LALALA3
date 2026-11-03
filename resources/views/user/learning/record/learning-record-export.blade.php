@@ -17,9 +17,9 @@
                 <p class="text-muted small mb-0 my-task-filter-subtitle">Export your verified training records in Excel spreadsheet format (.xlsx).</p>
             </div>
             <div class="d-flex align-items-center flex-wrap gap-2 my-task-pills-row">
+                <button type="button" class="my-task-category-pill record-mode-btn" data-mode="all" title="All Record">All Record</button>
                 <button type="button" class="my-task-category-pill record-mode-btn" data-mode="online" title="KP OWL">KP OWL</button>
                 <button type="button" class="my-task-category-pill record-mode-btn" data-mode="offline" title="Non KP OWL">Non KP OWL</button>
-                <button type="button" class="my-task-category-pill record-mode-btn" data-mode="all" title="All Record">All Record</button>
                 <button type="button" class="my-task-category-pill record-mode-btn active" data-mode="export" title="Export Center">Export Center</button>
             </div>
         </div>
