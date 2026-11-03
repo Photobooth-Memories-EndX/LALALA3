@@ -333,6 +333,55 @@ class AllRecordExport implements Responsable
         $buffer = '';
         $batchSize = 1000;
 
+        $contentCertSettings = DB::table('certificate_settings')
+            ->whereNotNull('content_id')
+            ->get()
+            ->keyBy('content_id');
+        $offlineCertSettings = DB::table('certificate_settings')
+            ->whereNotNull('offline_training_id')
+            ->get()
+            ->keyBy('offline_training_id');
+        $tpCertSettings = DB::table('certificate_settings')
+            ->whereNotNull('trainingplan_id')
+            ->get()
+            ->keyBy('trainingplan_id');
+
+        $contentUserCerts = DB::table('certificates as c')
+            ->leftJoin('certificate_settings as cs', 'cs.id', '=', 'c.certificate_setting_id')
+            ->whereNotNull('c.content_user_id')
+            ->select([
+                'c.content_user_id',
+                'cs.issuer_name',
+                'cs.institution as cs_institution',
+                'cs.issued_date as cs_issued_date',
+                'cs.expired_date as cs_expired_date',
+                'c.institution as c_institution',
+                'c.issued_at',
+                'c.issued_date',
+                'c.expired_date',
+                'c.expired_at',
+            ])
+            ->get()
+            ->keyBy('content_user_id');
+
+        $offlineUserCerts = DB::table('certificates as c')
+            ->leftJoin('certificate_settings as cs', 'cs.id', '=', 'c.certificate_setting_id')
+            ->whereNotNull('c.offline_training_user_id')
+            ->select([
+                'c.offline_training_user_id',
+                'cs.issuer_name',
+                'cs.institution as cs_institution',
+                'cs.issued_date as cs_issued_date',
+                'cs.expired_date as cs_expired_date',
+                'c.institution as c_institution',
+                'c.issued_at',
+                'c.issued_date',
+                'c.expired_date',
+                'c.expired_at',
+            ])
+            ->get()
+            ->keyBy('offline_training_user_id');
+
         $pdo = DB::connection()->getPdo();
         $wasBuffered = $pdo->getAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY);
         $pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
@@ -458,40 +507,23 @@ class AllRecordExport implements Responsable
                         $hasCert = true;
                         $certInstitution = $row->certificate;
                     }
-                    $dbCert = null;
-                    if (!empty($row->source_id)) {
-                        $dbCert = DB::table('certificates as c')
-                            ->leftJoin('certificate_settings as cs', 'cs.id', '=', 'c.certificate_setting_id')
-                            ->where('c.offline_training_user_id', $row->source_id)
-                            ->select([
-                                'cs.issuer_name',
-                                'cs.institution as cs_institution',
-                                'cs.issued_date as cs_issued_date',
-                                'cs.expired_date as cs_expired_date',
-                                'c.institution as c_institution',
-                                'c.issued_at',
-                                'c.issued_date',
-                                'c.expired_date',
-                                'c.expired_at',
-                            ])
-                            ->first();
-                        if ($dbCert) {
-                            $hasCert = true;
-                            if ($dbCert->c_institution) $certInstitution = $dbCert->c_institution;
-                            elseif ($dbCert->cs_institution) $certInstitution = $dbCert->cs_institution;
-                            elseif ($dbCert->issuer_name) $certInstitution = $dbCert->issuer_name;
+                    $dbCert = !empty($row->source_id) ? $offlineUserCerts->get($row->source_id) : null;
+                    if ($dbCert) {
+                        $hasCert = true;
+                        if ($dbCert->c_institution) $certInstitution = $dbCert->c_institution;
+                        elseif ($dbCert->cs_institution) $certInstitution = $dbCert->cs_institution;
+                        elseif ($dbCert->issuer_name) $certInstitution = $dbCert->issuer_name;
 
-                            if ($dbCert->issued_date) $certIssuedDate = date('Y-m-d', strtotime($dbCert->issued_date));
-                            elseif ($dbCert->cs_issued_date) $certIssuedDate = date('Y-m-d', strtotime($dbCert->cs_issued_date));
-                            elseif ($dbCert->issued_at) $certIssuedDate = date('Y-m-d', strtotime($dbCert->issued_at));
+                        if ($dbCert->issued_date) $certIssuedDate = date('Y-m-d', strtotime($dbCert->issued_date));
+                        elseif ($dbCert->cs_issued_date) $certIssuedDate = date('Y-m-d', strtotime($dbCert->cs_issued_date));
+                        elseif ($dbCert->issued_at) $certIssuedDate = date('Y-m-d', strtotime($dbCert->issued_at));
 
-                            if ($dbCert->expired_date) $certExpiredDate = date('Y-m-d', strtotime($dbCert->expired_date));
-                            elseif ($dbCert->cs_expired_date) $certExpiredDate = date('Y-m-d', strtotime($dbCert->cs_expired_date));
-                            elseif ($dbCert->expired_at) $certExpiredDate = date('Y-m-d', strtotime($dbCert->expired_at));
-                        }
+                        if ($dbCert->expired_date) $certExpiredDate = date('Y-m-d', strtotime($dbCert->expired_date));
+                        elseif ($dbCert->cs_expired_date) $certExpiredDate = date('Y-m-d', strtotime($dbCert->cs_expired_date));
+                        elseif ($dbCert->expired_at) $certExpiredDate = date('Y-m-d', strtotime($dbCert->expired_at));
                     }
                     if (!$dbCert && !empty($row->offline_training_id)) {
-                        $csSetting = DB::table('certificate_settings')->where('offline_training_id', $row->offline_training_id)->first();
+                        $csSetting = $offlineCertSettings->get($row->offline_training_id);
                         if ($csSetting) {
                             $hasCert = true;
                             if ($csSetting->institution) $certInstitution = $csSetting->institution;
@@ -502,37 +534,20 @@ class AllRecordExport implements Responsable
                     }
                 } else {
                     $isFinishedOnline = ($progressNum >= 100 || ($row->status ?? '') === 'Finished' || ($row->finish ?? '') === '1');
-                    $dbCert = null;
-                    if (!empty($row->source_id)) {
-                        $dbCert = DB::table('certificates as c')
-                            ->leftJoin('certificate_settings as cs', 'cs.id', '=', 'c.certificate_setting_id')
-                            ->where('c.content_user_id', $row->source_id)
-                            ->select([
-                                'cs.issuer_name',
-                                'cs.institution as cs_institution',
-                                'cs.issued_date as cs_issued_date',
-                                'cs.expired_date as cs_expired_date',
-                                'c.institution as c_institution',
-                                'c.issued_at',
-                                'c.issued_date',
-                                'c.expired_date',
-                                'c.expired_at',
-                            ])
-                            ->first();
-                        if ($dbCert) {
-                            $hasCert = true;
-                            $certInstitution = $dbCert->c_institution ?: ($dbCert->cs_institution ?: ($dbCert->issuer_name ?: 'PT Krakatau Posco'));
-                            if ($dbCert->issued_date) $certIssuedDate = date('Y-m-d', strtotime($dbCert->issued_date));
-                            elseif ($dbCert->cs_issued_date) $certIssuedDate = date('Y-m-d', strtotime($dbCert->cs_issued_date));
-                            elseif ($dbCert->issued_at) $certIssuedDate = date('Y-m-d', strtotime($dbCert->issued_at));
+                    $dbCert = !empty($row->source_id) ? $contentUserCerts->get($row->source_id) : null;
+                    if ($dbCert) {
+                        $hasCert = true;
+                        $certInstitution = $dbCert->c_institution ?: ($dbCert->cs_institution ?: ($dbCert->issuer_name ?: 'PT Krakatau Posco'));
+                        if ($dbCert->issued_date) $certIssuedDate = date('Y-m-d', strtotime($dbCert->issued_date));
+                        elseif ($dbCert->cs_issued_date) $certIssuedDate = date('Y-m-d', strtotime($dbCert->cs_issued_date));
+                        elseif ($dbCert->issued_at) $certIssuedDate = date('Y-m-d', strtotime($dbCert->issued_at));
 
-                            if ($dbCert->expired_date) $certExpiredDate = date('Y-m-d', strtotime($dbCert->expired_date));
-                            elseif ($dbCert->cs_expired_date) $certExpiredDate = date('Y-m-d', strtotime($dbCert->cs_expired_date));
-                            elseif ($dbCert->expired_at) $certExpiredDate = date('Y-m-d', strtotime($dbCert->expired_at));
-                        }
+                        if ($dbCert->expired_date) $certExpiredDate = date('Y-m-d', strtotime($dbCert->expired_date));
+                        elseif ($dbCert->cs_expired_date) $certExpiredDate = date('Y-m-d', strtotime($dbCert->cs_expired_date));
+                        elseif ($dbCert->expired_at) $certExpiredDate = date('Y-m-d', strtotime($dbCert->expired_at));
                     }
                     if (!$dbCert && !empty($row->content_id)) {
-                        $csSetting = DB::table('certificate_settings')->where('content_id', $row->content_id)->first();
+                        $csSetting = $contentCertSettings->get($row->content_id);
                         if ($csSetting) {
                             if ($csSetting->institution) $certInstitution = $csSetting->institution;
                             elseif ($csSetting->issuer_name) $certInstitution = $csSetting->issuer_name;

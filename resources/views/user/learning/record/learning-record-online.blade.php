@@ -12,6 +12,7 @@
     />
 </template>
 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <style>
     /* Force rounded pill styling on all Quick Filter tab states in Learning Record */
     .quick-filter-btn,

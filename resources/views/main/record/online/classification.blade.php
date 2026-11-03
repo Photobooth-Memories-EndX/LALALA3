@@ -216,6 +216,7 @@
 @endsection
 
 @section('style')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <link rel="stylesheet" href="{{ asset('css/dataTables.bootstrap5.min.css') }}">
 <style>
     .manage-record-page {
@@ -436,7 +437,47 @@
                 { data: 'certificate', name: 'certificate', orderable: false, className: 'text-center' },
                 { data: 'pic', name: 'pic', orderable: false },
                 { data: 'total_engagement_time', name: 'total_engagement_time', orderable: false, className: 'text-center' },
-                { data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-end' }
+                {
+                    data: 'action',
+                    name: 'action',
+                    orderable: false,
+                    searchable: false,
+                    className: 'text-end',
+                    render: function (data, type, row) {
+                        if (data && typeof data === 'string' && data.indexOf('dropdown-menu') !== -1) {
+                            return data;
+                        }
+                        const recordId = row.source_id || row.id || '';
+                        const editUrl = '/manage/record/online/' + encodeURIComponent(recordId) + '/edit';
+                        return `<div class="dropdown">
+                            <button class="btn btn-sm btn-icon btn-ghost-secondary" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="ti ti-dots-vertical"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center gap-2 btn-view-learning-detail btn-more-info" href="javascript:void(0);" data-source-type="${row.source_type || 'content'}" data-source-id="${recordId}" data-id="${recordId}" data-record-id="${recordId}" data-source="online" data-record-source="online">
+                                        <i class="bi bi-eye text-primary me-2"></i> More Information
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center gap-2" href="${editUrl}">
+                                        <i class="bi bi-pencil-square text-warning me-2"></i> Edit Record
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center gap-2 text-danger" href="#" data-bs-toggle="modal" data-bs-target="#deleteRecordModal" data-record-id="${recordId}" data-record-source="online">
+                                        <i class="bi bi-trash text-danger me-2"></i> Delete Record
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center gap-2 disabled text-muted" href="#" onclick="return false;" style="cursor: not-allowed;">
+                                        <i class="bi bi-award text-info me-2"></i> Generate Certificate
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>`;
+                    }
+                }
             ],
             drawCallback: function (settings) {
                 const api = this.api();

@@ -2259,22 +2259,22 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
                     <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                         <li>
                             <a class="dropdown-item d-flex align-items-center gap-2 btn-more-info" href="#" data-bs-toggle="modal" data-bs-target="#moreInformationModal" data-id="' . e($id) . '" data-record-id="' . e($id) . '" data-source="' . e($source) . '" data-record-source="' . e($source) . '">
-                                <i class="ti ti-eye text-primary"></i> More Information
+                                <i class="bi bi-eye text-primary me-2"></i> More Information
                             </a>
                         </li>
                         <li>
                             <a class="dropdown-item d-flex align-items-center gap-2" href="' . e($editUrl) . '">
-                                <i class="ti ti-edit text-warning"></i> Edit Record
+                                <i class="bi bi-pencil-square text-warning me-2"></i> Edit Record
                             </a>
                         </li>
                         <li>
                             <a class="dropdown-item d-flex align-items-center gap-2 text-danger" href="#" data-bs-toggle="modal" data-bs-target="#deleteRecordModal" data-record-id="' . e($id) . '" data-record-source="' . e($source) . '">
-                                <i class="ti ti-trash"></i> Delete Record
+                                <i class="bi bi-trash text-danger me-2"></i> Delete Record
                             </a>
                         </li>
                         <li>
                             <a class="dropdown-item d-flex align-items-center gap-2 disabled text-muted" href="#" onclick="return false;" style="cursor: not-allowed;">
-                                <i class="ti ti-certificate"></i> Generate Certificate
+                                <i class="bi bi-award text-info me-2"></i> Generate Certificate
                             </a>
                         </li>
                     </ul>
@@ -2764,22 +2764,22 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
                     <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                         <li>
                             <a class="dropdown-item d-flex align-items-center gap-2 btn-more-info" href="#" data-bs-toggle="modal" data-bs-target="#moreInformationModal" data-id="' . e($id) . '" data-record-id="' . e($id) . '" data-source="' . e($source) . '" data-record-source="' . e($source) . '">
-                                <i class="ti ti-eye text-primary"></i> More Information
+                                <i class="bi bi-eye text-primary me-2"></i> More Information
                             </a>
                         </li>
                         <li>
                             <a class="dropdown-item d-flex align-items-center gap-2" href="' . e($editUrl) . '">
-                                <i class="ti ti-edit text-warning"></i> Edit Record
+                                <i class="bi bi-pencil-square text-warning me-2"></i> Edit Record
                             </a>
                         </li>
                         <li>
                             <a class="dropdown-item d-flex align-items-center gap-2 text-danger" href="#" data-bs-toggle="modal" data-bs-target="#deleteRecordModal" data-record-id="' . e($id) . '" data-record-source="' . e($source) . '">
-                                <i class="ti ti-trash"></i> Delete Record
+                                <i class="bi bi-trash text-danger me-2"></i> Delete Record
                             </a>
                         </li>
                         <li>
                             <a class="dropdown-item d-flex align-items-center gap-2 disabled text-muted" href="#" onclick="return false;" style="cursor: not-allowed;">
-                                <i class="ti ti-certificate"></i> Generate Certificate
+                                <i class="bi bi-award text-info me-2"></i> Generate Certificate
                             </a>
                         </li>
                     </ul>

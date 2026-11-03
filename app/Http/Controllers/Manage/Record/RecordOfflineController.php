@@ -65,22 +65,22 @@ class RecordOfflineController extends Controller
             <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                 <li>
                     <a class="dropdown-item d-flex align-items-center gap-2 btn-more-info" href="#" data-bs-toggle="modal" data-bs-target="#moreInformationModal" data-id="' . $id . '" data-record-id="' . $id . '" data-source="' . $source . '" data-record-source="' . $source . '">
-                        <i class="ti ti-eye text-primary"></i> More Information
+                        <i class="bi bi-eye text-primary me-2"></i> More Information
                     </a>
                 </li>
                 <li>
                     <a class="dropdown-item d-flex align-items-center gap-2" href="' . $editUrl . '">
-                        <i class="ti ti-edit text-warning"></i> Edit Record
+                        <i class="bi bi-pencil-square text-warning me-2"></i> Edit Record
                     </a>
                 </li>
                 <li>
                     <a class="dropdown-item d-flex align-items-center gap-2 text-danger" href="#" data-bs-toggle="modal" data-bs-target="#deleteRecordModal" data-record-id="' . $id . '" data-record-source="' . $source . '">
-                        <i class="ti ti-trash"></i> Delete Record
+                        <i class="bi bi-trash text-danger me-2"></i> Delete Record
                     </a>
                 </li>
                 <li>
                     <a class="dropdown-item d-flex align-items-center gap-2 disabled text-muted" href="#" onclick="return false;" style="cursor: not-allowed;">
-                        <i class="ti ti-certificate"></i> Generate Certificate
+                        <i class="bi bi-award text-info me-2"></i> Generate Certificate
                     </a>
                 </li>
             </ul>
@@ -462,8 +462,7 @@ class RecordOfflineController extends Controller
      */
     public function export(Request $request)
     {
-        $dateTime = \App\Http\Controllers\ManageRecordController::formatExportDateTime();
-        $fileName = "EmployeeNonOWLrecord_{$dateTime}.xlsx";
+        $fileName = \App\Exports\OfflineRecordExport::generateFileName();
 
         return app(\App\Services\Record\ManageOfflineRecordExportService::class)->download($request->all(), $fileName);
     }
