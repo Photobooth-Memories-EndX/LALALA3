@@ -23,9 +23,6 @@
                     </h2>
                 </div>
                 <div class="col-auto ms-auto d-flex gap-2">
-                    <a href="{{ route('manage.task.trash') }}" class="btn btn-outline-secondary">
-                        <i class="ti ti-trash me-1"></i>Trash
-                    </a>
                     {{-- Parent is auto-embedded: no need to pick it again in the form --}}
                     <a href="{{ route('manage.task.create', ['parent_type' => $parentType, 'parent_id' => $parentId]) }}" class="btn btn-primary px-3 rounded-3 d-inline-flex align-items-center gap-1.5 shadow-sm">
                         <i class="ti ti-plus fs-2"></i> Add Task

@@ -949,17 +949,17 @@
 
                                 {{-- Grading Section Header --}}
                                 <div class="text-uppercase text-muted fw-bold mb-2.5" style="font-size: 11px; letter-spacing: 0.5px;">
-                                    GRADING
+                                    VALIDATION
                                 </div>
 
                                 {{-- Banner Ketika Sudah di-Grading (Tidak Bisa di-Grading Lagi) --}}
                                 <div id="alreadyGradedBanner" class="p-3 rounded-3 border mb-3 d-none">
                                     <div class="d-flex align-items-center gap-2 mb-1">
                                         <i id="gradedBannerIcon" class="ti ti-lock fs-2"></i>
-                                        <h6 id="gradedBannerTitle" class="fw-bold mb-0">Grading Closed</h6>
+                                        <h6 id="gradedBannerTitle" class="fw-bold mb-0">Validation Closed</h6>
                                     </div>
                                     <div id="gradedBannerDesc" class="text-muted" style="font-size: 11.5px;">
-                                        This submission has already been graded and cannot be changed.
+                                        This submission has already been validated and cannot be changed.
                                     </div>
                                 </div>
                             </div>
@@ -988,7 +988,7 @@
                                         </select>
                                     </div>
                                     <div id="gradingDecisionHint" class="text-muted text-center mt-2 small" style="font-size: 11.5px;">
-                                        Select <strong class="text-success">Approve</strong> or <strong class="text-danger">Rejected</strong> above to grade.
+                                        Select <strong class="text-success">Approve</strong> or <strong class="text-danger">Rejected</strong> above to validate.
                                     </div>
 
                                     {{-- Hidden compatibility elements for tests & automated triggers --}}
@@ -1164,7 +1164,7 @@
                     <!-- Filled dynamically -->
                 </div>
                 <div id="confirmModalWarning" class="small fw-semibold text-danger" style="font-size: 11.5px;">
-                    <i class="ti ti-lock me-1"></i>Grading cannot be changed once approved.
+                    <i class="ti ti-lock me-1"></i>Validation cannot be changed once approved.
                 </div>
             </div>
             <div class="modal-footer bg-light px-3 py-2 border-top d-flex justify-content-end gap-2">
@@ -1248,7 +1248,7 @@
                     Cancel
                 </button>
                 <div class="text-muted" style="font-size: 11.5px;">
-                    <i class="ti ti-lock me-1"></i>Grading cannot be changed once processed.
+                    <i class="ti ti-lock me-1"></i>Validation cannot be changed once processed.
                 </div>
             </div>
         </div>
@@ -1691,7 +1691,7 @@
                     }
                     if (gradedBannerDesc) {
                         gradedBannerDesc.className = 'text-muted small mt-1';
-                        gradedBannerDesc.textContent = 'This submission has already been approved and cannot be re-graded.';
+                        gradedBannerDesc.textContent = 'This submission has already been approved and cannot be re-validated.';
                     }
                 } else if (sub.resubmit_requested) {
                     alreadyGradedBanner.className = 'p-3 rounded-3 border mb-3 alert-warning border-warning-subtle bg-warning-lt';
@@ -1713,7 +1713,7 @@
                     }
                     if (gradedBannerDesc) {
                         gradedBannerDesc.className = 'text-muted small mt-1';
-                        gradedBannerDesc.textContent = 'This submission was marked as completed as rejected and cannot be re-graded.';
+                        gradedBannerDesc.textContent = 'This submission was marked as completed as rejected and cannot be re-validated.';
                     }
                 }
             }
@@ -1976,7 +1976,7 @@
         var sub = submissionsData[currentSubmissionIndex];
         if (!sub) return;
         if (sub.status === 'completed' || sub.status === 'rejected' || sub.resubmit_requested) {
-            alert('This submission has already been graded and cannot be changed.');
+            alert('This submission has already been validated and cannot be changed.');
             return;
         }
 
@@ -2013,7 +2013,7 @@
         var sub = submissionsData[currentSubmissionIndex];
         if (!sub) return;
         if (sub.status === 'completed' || sub.status === 'rejected' || sub.resubmit_requested) {
-            alert('This submission has already been graded and cannot be changed.');
+            alert('This submission has already been validated and cannot be changed.');
             return;
         }
 
@@ -2082,7 +2082,7 @@
             var sub = submissionsData[currentSubmissionIndex];
             if (!sub) return;
             if (sub.status === 'completed' || sub.status === 'rejected' || sub.resubmit_requested) {
-                alert('This submission has already been graded and cannot be changed.');
+                alert('This submission has already been validated and cannot be changed.');
                 return;
             }
 
@@ -2114,7 +2114,7 @@
 
             if (confirmWarning) {
                 confirmWarning.className = 'small fw-semibold text-danger';
-                confirmWarning.innerHTML = '<i class="ti ti-lock me-1"></i>Grading cannot be changed once approved.';
+                confirmWarning.innerHTML = '<i class="ti ti-lock me-1"></i>Validation cannot be changed once approved.';
             }
 
             if (confirmBtn) {
@@ -2157,7 +2157,7 @@
             var sub = submissionsData[currentSubmissionIndex];
             if (!sub) return;
             if (sub.status === 'completed' || sub.status === 'rejected' || sub.resubmit_requested) {
-                alert('This submission has already been graded and cannot be changed.');
+                alert('This submission has already been validated and cannot be changed.');
                 return;
             }
 
@@ -2207,7 +2207,7 @@
             var sub = submissionsData[currentSubmissionIndex];
             if (!sub) return;
             if (sub.status === 'completed' || sub.status === 'rejected' || sub.resubmit_requested) {
-                alert('This submission has already been graded and cannot be changed.');
+                alert('This submission has already been validated and cannot be changed.');
                 return;
             }
 
@@ -2395,7 +2395,7 @@
         })
         .then(function (result) {
             if (!result.ok || !result.data.success) {
-                var errMsg = (result.data && result.data.message) ? result.data.message : 'Failed to submit grading.';
+                var errMsg = (result.data && result.data.message) ? result.data.message : 'Failed to submit validation.';
                 alert(errMsg);
                 if (onFinish) onFinish(false);
                 return;

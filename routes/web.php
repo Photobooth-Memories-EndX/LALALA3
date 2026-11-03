@@ -543,6 +543,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
             Route::get('trash', [TaskManageController::class, 'trash'])->name('trash');
 Route::post('{id}/restore', [TaskManageController::class, 'restore'])->name('restore');
 Route::delete('{id}/force', [TaskManageController::class, 'forceDestroy'])->name('force-destroy');
+            Route::delete('container/{parentType}/{parentId}', [TaskManageController::class, 'destroyContainer'])->name('container.destroy');
 Route::get('{task}/qr', [TaskManageController::class, 'qr'])->name('qr');
 
 

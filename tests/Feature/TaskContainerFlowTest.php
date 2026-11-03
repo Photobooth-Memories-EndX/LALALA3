@@ -178,5 +178,65 @@ class TaskContainerFlowTest extends TestCase
         $editPage->assertSee('Save as Draft');
         $editPage->assertSee('Publish Task');
     }
+
+    public function test_admin_course_task_list_renders_created_at_column(): void
+    {
+        $group = TaskGroup::create([
+            'title'      => 'Test Container ' . uniqid(),
+            'created_by' => $this->admin->id,
+            'created_at' => now()->subDays(5),
+        ]);
+
+        Task::create([
+            'title'         => 'Test Task Inside Container ' . uniqid(),
+            'parent_type'   => 'standalone',
+            'task_group_id' => $group->id,
+            'type'          => 'assignment',
+            'status'        => 'published',
+            'created_by'    => $this->admin->id,
+        ]);
+
+        $response = $this->actingAs($this->admin)->get(route('manage.task.index'));
+
+        $response->assertStatus(200);
+        $response->assertSee('CREATED AT');
+        $response->assertSee($group->created_at->format('d M Y'));
+    }
+
+    public function test_empty_container_without_tasks_is_rendered_and_newest_at_top(): void
+    {
+        $newTitle = 'Fresh Empty Container ' . uniqid();
+        $group = TaskGroup::create([
+            'title'      => $newTitle,
+            'created_by' => $this->admin->id,
+            'created_at' => now()->addMinutes(10),
+        ]);
+
+        $response = $this->actingAs($this->admin)->get(route('manage.task.index'));
+
+        $response->assertStatus(200);
+        $response->assertSee($newTitle);
+
+        $parents = $response->viewData('parents');
+        $this->assertNotEmpty($parents);
+        $this->assertEquals($newTitle, $parents->first()->parent_name);
+        $this->assertEquals(0, $parents->first()->total);
+    }
+
+    public function test_modal_renders_category_dropdown_with_content_playlist_and_options_endpoint(): void
+    {
+        $response = $this->actingAs($this->admin)->get(route('manage.task.index'));
+
+        $response->assertStatus(200);
+        $response->assertSee('id="modalCategorySelect"', false);
+        $response->assertSee('value="content_playlist"', false);
+        $response->assertSee('Content Playlist');
+        $response->assertSee('id="modal_content_playlist_id"', false);
+
+        // Test the content_playlist parentOptions endpoint
+        $optionsResponse = $this->actingAs($this->admin)->getJson(route('manage.task.parents', ['type' => 'content_playlist']));
+        $optionsResponse->assertStatus(200);
+        $this->assertIsArray($optionsResponse->json());
+    }
 }
 
