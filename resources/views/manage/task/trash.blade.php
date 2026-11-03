@@ -100,9 +100,9 @@
                         <thead>
                             <tr class="text-uppercase small fw-bold text-muted bg-light">
                                 <th class="w-1">NO</th>
-                                <th>ITEM / TITLE</th>
+                                <th>TITLE</th>
                                 <th>TYPE</th>
-                                <th>CATEGORY / PLACEMENT</th>
+                                <th>CATEGORY</th>
                                 <th>DELETED AT</th>
                                 <th class="text-end">ACTION</th>
                             </tr>
@@ -123,11 +123,6 @@
                                     <td class="text-muted">{{ ($items->firstItem() ?? 0) + $i }}</td>
                                     <td>
                                         <div class="fw-semibold text-dark">{{ $itemTitle }}</div>
-                                        @if ($itemType === 'course')
-                                            <div class="text-muted small">Course Container &bull; {{ $itemCategory }}</div>
-                                        @else
-                                            <div class="text-muted small">Task &bull; {{ $item->task_type_label ?? 'Task' }}</div>
-                                        @endif
                                     </td>
                                     <td>
                                         @if ($itemType === 'course')
@@ -144,9 +139,6 @@
                                         <span class="badge {{ $itemBadgeClass }}">
                                             {{ $itemCategory }}
                                         </span>
-                                        @if ($itemPlacement)
-                                            <span class="text-muted small ms-1">{{ $itemPlacement }}</span>
-                                        @endif
                                     </td>
                                     <td class="text-muted text-nowrap" style="font-size: 0.85rem;">
                                         {{ $item->deleted_at ? \Carbon\Carbon::parse($item->deleted_at)->format('d M Y H:i') : '-' }}
@@ -330,7 +322,7 @@
                 h += '<input type="hidden" name="_token" value="' + csrfToken + '">';
                 h += '<input type="hidden" name="_method" value="DELETE">';
                 h += '<button type="submit" class="dropdown-item d-flex align-items-center text-danger py-2 px-3">';
-                h += '<i class="ti ti-trash me-2 text-danger fs-3"></i><span>Delete Permanently</span>';
+                h += '<i class="ti ti-trash me-2 text-danger fs-3"></i><span>Delete</span>';
                 h += '</button>';
                 h += '</form>';
 
