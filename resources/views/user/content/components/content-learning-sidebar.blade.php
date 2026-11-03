@@ -132,24 +132,24 @@
                 </div>
                 <div class="text-muted small mb-3">
                     @if ($isContentCompleted)
-                        Materi telah selesai. Kerjakan tugas sekarang.
+                        Content completed. Start your task now.
                     @else
-                        Selesaikan materi 100% untuk membuka Task.
+                        Complete 100% of the content to unlock Task.
                     @endif
                 </div>
 
                 @if ($isContentCompleted)
                     <a href="{{ route('user.learning.dashboard', ['learning_tab' => 'my-task', 'my_task_parent' => 'content:' . $content->id]) }}"
                        class="btn btn-primary w-100 rounded-pill shadow-sm">
-                        <i class="ti ti-list-check me-1"></i> Buka Task
+                        <i class="ti ti-list-check me-1"></i> Open Task
                     </a>
                 @else
                     <button type="button"
                             class="btn btn-secondary disabled w-100 rounded-pill opacity-75"
                             disabled
                             style="cursor: not-allowed;"
-                            title="Selesaikan materi 100% terlebih dahulu untuk membuka Task.">
-                        <i class="ti ti-lock me-1"></i> Task Terkunci
+                            title="Complete 100% of the content to unlock Task.">
+                        <i class="ti ti-lock me-1"></i> Task Locked
                     </button>
                 @endif
             </div>
