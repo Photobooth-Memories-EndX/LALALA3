@@ -555,11 +555,13 @@
         pointer-events: auto;
     }
 
-    .certificate-action-wrapper.is-disabled {
+    .certificate-action-wrapper.is-disabled,
+    .task-action-wrapper.is-disabled {
         cursor: not-allowed;
     }
 
-    .certificate-action-button:disabled {
+    .certificate-action-button:disabled,
+    .task-action-button:disabled {
         opacity: .6;
         pointer-events: none;
     }
@@ -1300,7 +1302,9 @@
     :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-navigation-card .btn:disabled,
     :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-navigation-card .btn.disabled,
     :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-navigation-card .certificate-action-button:disabled,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-navigation-card .task-action-button:disabled,
     :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-navigation-card .certificate-action-wrapper.is-disabled .btn,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-navigation-card .task-action-wrapper.is-disabled .btn,
     :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-navigation-card .btn-outline-secondary:disabled {
         background: #1e293b !important;
         border: 1px solid #334155 !important;
@@ -1310,7 +1314,8 @@
 
     :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-navigation-card .btn:disabled i,
     :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-navigation-card .btn-outline-secondary:disabled i,
-    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-navigation-card .certificate-action-button:disabled i {
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-navigation-card .certificate-action-button:disabled i,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-navigation-card .task-action-button:disabled i {
         color: #94a3b8 !important;
     }
 
