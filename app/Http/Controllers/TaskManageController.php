@@ -1274,7 +1274,9 @@ class TaskManageController extends Controller
         } else {
             $rules['fields'] = ['required', 'array', 'min:1'];
             $rules['fields.*.id'] = ['nullable', 'integer'];
-            $rules['fields.*.label'] = ['required', 'string', 'max:255'];
+            $rules['fields.*.label'] = ($type === 'file_submission')
+                ? ['nullable', 'string', 'max:255']
+                : ['required', 'string', 'max:255'];
             $rules['fields.*.type'] = ['required', Rule::in($allowedFieldTypes)];
             $rules['fields.*.required'] = ['nullable'];
             // Choice options & correct-answer index are validated in after()
@@ -1363,7 +1365,7 @@ class TaskManageController extends Controller
             }
 
             $data = [
-                'label'          => $input['label'],
+                'label'          => (trim((string) ($input['label'] ?? '')) ?: (($task->type === 'file_submission') ? 'File Submission' : '')),
                 'type'           => $input['type'],
                 'required'       => ! empty($input['required']),
                 'sort_order'     => $index,

@@ -43,7 +43,7 @@ class Task extends Model
 
     /** Short explanation shown under the type dropdown in the admin form. */
     public const TYPE_HINTS = [
-        'file_submission'   => 'User uploads file(s) as the answer. Add file-upload questions below.',
+        'file_submission'   => 'User uploads file(s) as the answer. Specify file upload requirements below.',
         'course_assignment' => 'User opens a course (inside this LMS or an external link). An LMS course completes this task automatically at 100% progress.',
         'survey'            => 'Learners complete an existing survey form. Select the target survey from the dropdown below.',
         'essay'             => 'Written reflection. User answers in long text; admin scores manually.',

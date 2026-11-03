@@ -238,5 +238,55 @@ class TaskContainerFlowTest extends TestCase
         $optionsResponse->assertStatus(200);
         $this->assertIsArray($optionsResponse->json());
     }
+
+    public function test_file_submission_form_hides_add_question_and_defaults_label(): void
+    {
+        $group = TaskGroup::create([
+            'title'      => 'Group FS ' . uniqid(),
+            'created_by' => $this->admin->id,
+        ]);
+
+        // 1. Check create view for file_submission (default) hides Add Question
+        $createFs = $this->actingAs($this->admin)->get(route('manage.task.create'));
+        $createFs->assertStatus(200);
+        $createFs->assertSee('id="addQuestionWrap" class="mt-3" style="display:none;"', false);
+        $createFs->assertSee('File Submission Requirements');
+
+        // 2. Check create view for action_plan displays Add Question
+        $createAp = $this->actingAs($this->admin)->get(route('manage.task.create', ['type' => 'action_plan']));
+        $createAp->assertStatus(200);
+        $createAp->assertSee('id="addQuestionWrap" class="mt-3" style=""', false);
+
+        // 3. Storing file_submission without label defaults to 'File Submission'
+        $taskTitle = 'FS Test ' . uniqid();
+        $storeResp = $this->actingAs($this->admin)->post(route('manage.task.store'), [
+            'parent_type' => 'standalone',
+            'parent_id'   => $group->id,
+            'title'       => $taskTitle,
+            'description' => 'Test file submission description',
+            'type'        => 'file_submission',
+            'action'      => 'publish',
+            'points'      => 100,
+            'fields'      => [
+                0 => [
+                    'label'       => '',
+                    'type'        => 'file',
+                    'required'    => '1',
+                    'file_types'  => 'document',
+                    'max_files'   => 2,
+                    'max_size_mb' => 10,
+                ],
+            ],
+        ]);
+
+        $task = Task::where('title', $taskTitle)->first();
+        $this->assertNotNull($task);
+        $this->assertEquals('file_submission', $task->type);
+
+        $field = $task->fields()->first();
+        $this->assertNotNull($field);
+        $this->assertEquals('File Submission', $field->label);
+        $this->assertEquals('file', $field->type);
+    }
 }
 

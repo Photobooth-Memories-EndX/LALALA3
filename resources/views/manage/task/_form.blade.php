@@ -7,7 +7,7 @@
     if (! array_key_exists($defaultParentType, \App\Models\Task::PARENT_TYPES)) {
         $defaultParentType = 'playlist';
     }
-    $currentType = old('type', $task->type ?? 'action_plan');
+    $currentType = old('type', $task->type ?? request('type', 'file_submission'));
     $currentLinkType = old('link_type', $task->link_type ?? 'lms');
     $currentParentType = old('parent_type', $task->parent_type ?? ($lockedParent['type'] ?? $defaultParentType));
     $currentParentId = old('parent_id', isset($task) ? $task->parentId() : ($lockedParent['id'] ?? ''));
@@ -633,7 +633,7 @@
         <div class="card-body p-4">
             <div id="fieldsWrap"></div>
 
-            <div id="addQuestionWrap" class="mt-3" style="display:none;">
+            <div id="addQuestionWrap" class="mt-3" style="{{ $currentType === 'action_plan' ? '' : 'display:none;' }}">
                 <button type="button" class="btn btn-outline-primary rounded-3 px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2" id="btnAddField" style="border-color: #0c4b81; color: #0c4b81;">
                     <i class="ti ti-plus fs-3"></i> Add Question
                 </button>
@@ -990,8 +990,9 @@
             return html;
         }
 
-        function fileSettingsHTML(i, data) {
-            return '<div class="fileSettings mt-3 p-3 rounded-3" style="background-color: #f8fafc; border: 1px solid #e2e8f0; display:none">' +
+        function fileSettingsHTML(i, data, visible) {
+            var displayStyle = visible ? '' : 'display:none;';
+            return '<div class="fileSettings p-3 rounded-3" style="background-color: #f8fafc; border: 1px solid #e2e8f0; ' + displayStyle + '">' +
                 '<div class="row g-3">' +
                     '<div class="col-12 col-md-5">' +
                         '<label class="form-label small fw-bold text-dark mb-1">Allowed file types</label>' +
@@ -1029,13 +1030,36 @@
             var allowed = allowedTypes();
             var selType = allowed.indexOf(data.type) !== -1 ? data.type : (allowed[0] || 'textarea');
             var isEssay = (currentType() === 'essay');
+            var isFileSubmission = (currentType() === 'file_submission');
 
             var card = document.createElement('div');
             card.dataset.index = i;
-            card.dataset.ftype = selType;
+            card.dataset.ftype = isFileSubmission ? 'file' : selType;
             card.className = 'field-card';
 
-            if (isEssay) {
+if (isFileSubmission) {
+                card.innerHTML =
+                    '<input type="hidden" name="fields[' + i + '][id]" value="' + esc(data.id || '') + '">' +
+                    '<input type="hidden" name="fields[' + i + '][type]" value="file">' +
+                    '<input type="hidden" name="fields[' + i + '][label]" value="' + esc(data.label || 'File Submission') + '">' +
+                    '<div class="d-none typeCol"><input type="hidden" name="fields[' + i + '][type]" value="file"></div>' +
+                    '<div class="d-flex align-items-center justify-content-between mb-3">' +
+                        '<div class="questionNumberBadge">' +
+                            '<span class="badge rounded-pill fw-semibold" style="background-color: #f0f7ff; color: #0c4b81; border: 1px solid #bfdbfe; padding: 0.35rem 1rem; font-size: 0.875rem;">' +
+                                '<i class="ti ti-file-upload me-1"></i> File Upload Requirements' +
+                            '</span>' +
+                        '</div>' +
+                        '<div>' +
+                            '<label class="form-check form-switch mb-0 d-inline-flex align-items-center gap-2 cursor-pointer">' +
+                                '<input type="checkbox" class="form-check-input field-required-toggle" name="fields[' + i + '][required]" value="1"' +
+                                    (data.required !== false ? ' checked' : '') + ' style="cursor: pointer;">' +
+                                '<span class="form-check-label fw-semibold text-dark" style="font-size: 0.95rem;">Required</span>' +
+                            '</label>' +
+                        '</div>' +
+                    '</div>' +
+                    fileSettingsHTML(i, data, true) +
+                    '<div class="optionsEditor mt-2" style="display:none"><div class="optionsList"></div><div class="optionsHint"></div></div>';
+            } else if (isEssay) {
                 card.innerHTML =
                     '<input type="hidden" name="fields[' + i + '][id]" value="' + esc(data.id || '') + '">' +
                     '<input type="hidden" name="fields[' + i + '][type]" value="textarea">' +
@@ -1166,11 +1190,12 @@
 
         function updateQuestionNumbers() {
             var cards = wrap.querySelectorAll('.field-card');
+            var t = currentType();
             cards.forEach(function (c, idx) {
                 var numText = c.querySelector('.qNumText');
                 if (numText) numText.textContent = (idx + 1);
                 var btn = c.querySelector('.btnRemoveField');
-                if (btn) btn.style.display = (cards.length > 1) ? '' : 'none';
+                if (btn) btn.style.display = (t === 'action_plan' && cards.length > 1) ? '' : 'none';
             });
         }
 
@@ -1178,7 +1203,9 @@
         var btnAddField = document.getElementById('btnAddField');
         if (btnAddField) {
             btnAddField.addEventListener('click', function () {
-                addField();
+                if (currentType() === 'action_plan') {
+                    addField();
+                }
             });
         }
 
@@ -1561,7 +1588,7 @@
 
             var addQuestionWrap = document.getElementById('addQuestionWrap');
             if (addQuestionWrap) {
-                addQuestionWrap.style.display = (hasBuilder && !isEssay) ? '' : 'none';
+                addQuestionWrap.style.display = (t === 'action_plan') ? '' : 'none';
             }
 
             var isLockedParent = {{ !empty($lockedParent) ? 'true' : 'false' }};
@@ -1634,23 +1661,32 @@
                 el.disabled = false;
             });
 
-            var wasEssay = wrap.querySelector('.gform-essay-block') !== null;
+            var currentCardMode = isFileSubmission ? 'file_submission' : (isEssay ? 'essay' : 'action_plan');
+            var prevCardMode = wrap.dataset.cardMode || '';
 
-            if (isEssay !== wasEssay && wrap.querySelectorAll('.field-card').length > 0) {
+            if (prevCardMode !== '' && prevCardMode !== currentCardMode && wrap.querySelectorAll('.field-card').length > 0) {
                 // Re-render fields in the new format while preserving existing labels/data
                 var currentData = [];
                 wrap.querySelectorAll('.field-card').forEach(function(c) {
                     var labelInp = c.querySelector('input[name$="[label]"], textarea[name$="[label]"]');
                     var idInp = c.querySelector('input[name$="[id]"]');
                     var reqInp = c.querySelector('input[name$="[required]"]');
+                    var fileTypeInp = c.querySelector('select[name$="[file_types]"]');
+                    var maxFilesInp = c.querySelector('select[name$="[max_files]"]');
+                    var maxSizeInp = c.querySelector('select[name$="[max_size_mb]"]');
+                    var allowLinkInp = c.querySelector('input[name$="[allow_link]"]');
                     currentData.push({
                         id: idInp ? idInp.value : '',
                         label: labelInp ? labelInp.value : '',
-                        type: isEssay ? 'textarea' : (c.dataset.ftype || allowedTypes()[0]),
-                        required: reqInp ? reqInp.checked : true
+                        type: isFileSubmission ? 'file' : (isEssay ? 'textarea' : (c.dataset.ftype || allowedTypes()[0])),
+                        required: reqInp ? reqInp.checked : true,
+                        file_types: fileTypeInp ? fileTypeInp.value : '',
+                        max_files: maxFilesInp ? maxFilesInp.value : 1,
+                        max_size_mb: maxSizeInp ? maxSizeInp.value : DEFAULT_MAX_SIZE_MB,
+                        allow_link: allowLinkInp ? allowLinkInp.checked : false
                     });
                 });
-                if (isEssay && currentData.length > 1) {
+                if ((isFileSubmission || isEssay) && currentData.length > 1) {
                     currentData = [currentData[0]];
                 }
                 wrap.innerHTML = '';
@@ -1658,8 +1694,10 @@
                 currentData.forEach(function(d) {
                     addField(d);
                 });
+                wrap.dataset.cardMode = currentCardMode;
                 return;
             }
+            wrap.dataset.cardMode = currentCardMode;
 
             // Rebuild each card's type column for the newly allowed set.
             var allowed = allowedTypes();
@@ -1860,10 +1898,11 @@
                     html += '<div class="alert alert-warning">This task has no questions yet.</div>';
                 } else {
                     fieldCards.forEach(function (card, idx) {
+                        var isFs = (t === 'file_submission');
                         var labelInput = card.querySelector('input[name$="[label]"], textarea[name$="[label]"]');
-                        var qTitle = (labelInput ? labelInput.value.trim() : '') || ('Question ' + (idx + 1));
+                        var qTitle = isFs ? 'Upload File' : ((labelInput ? labelInput.value.trim() : '') || ('Question ' + (idx + 1)));
                         var ftype = card.dataset.ftype;
-                        var typeLabel = FIELD_TYPES[ftype] || 'Question';
+                        var typeLabel = isFs ? 'File Upload' : (FIELD_TYPES[ftype] || 'Question');
                         var isRequired = true;
                         var reqChk = card.querySelector('input[name$="[required]"]');
                         if (reqChk) isRequired = reqChk.checked;
@@ -1871,7 +1910,9 @@
                         html += '<div class="card border rounded-3 shadow-none bg-white mb-3" style="border-color: #e2e8f0 !important;">' +
                             '<div class="card-header bg-light-subtle py-2 px-3 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">' +
                                 '<div class="d-flex align-items-center gap-2">' +
-                                    '<span class="badge bg-primary text-white rounded-pill px-2.5 py-1 fw-bold" style="font-size: 11px;">Question #' + (idx + 1) + '</span>' +
+                                    (isFs
+                                        ? '<span class="badge bg-primary text-white rounded-pill px-2.5 py-1 fw-bold" style="font-size: 11px;"><i class="ti ti-file-upload me-1"></i>File Upload</span>'
+                                        : '<span class="badge bg-primary text-white rounded-pill px-2.5 py-1 fw-bold" style="font-size: 11px;">Question #' + (idx + 1) + '</span>') +
                                     (isRequired ? '<span class="badge bg-danger-lt text-danger fw-semibold" style="font-size: 11px;">Required</span>' : '<span class="badge bg-secondary-lt text-muted fw-normal" style="font-size: 11px;">Optional</span>') +
                                 '</div>' +
                                 '<span class="badge bg-secondary-lt text-secondary fw-semibold small">' + esc(typeLabel) + '</span>' +

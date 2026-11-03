@@ -242,7 +242,11 @@
                                     <i class="ti ti-file-text text-primary"></i> Your Submitted Answers
                                 </h5>
                                 <span class="badge bg-light text-secondary border">
-                                    {{ $task->fields->count() }} {{ Str::plural('Question', $task->fields->count()) }}
+                                    @if ($task->type === 'file_submission')
+                                        File Submission
+                                    @else
+                                        {{ $task->fields->count() }} {{ Str::plural('Question', $task->fields->count()) }}
+                                    @endif
                                 </span>
                             </div>
 
@@ -255,8 +259,18 @@
                                         <div class="card border rounded-3 shadow-none bg-white">
                                             <div class="card-header bg-light-subtle py-2.5 px-3 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
                                                 <div class="d-flex align-items-center gap-2">
-                                                    <span class="badge bg-primary-lt text-primary fw-bold" style="font-size: 11px;">Q{{ $idx + 1 }}</span>
-                                                    <span class="fw-bold text-dark fs-6">{{ $field->label }}</span>
+                                                    @if ($task->type === 'file_submission')
+                                                        <span class="badge bg-primary-lt text-primary fw-bold" style="font-size: 11px;"><i class="ti ti-file-upload me-1"></i>File Upload</span>
+                                                    @else
+                                                        <span class="badge bg-primary-lt text-primary fw-bold" style="font-size: 11px;">Q{{ $idx + 1 }}</span>
+                                                    @endif
+                                                    @php
+                                                        $dispRevLabel = $field->label;
+                                                        if ($task->type === 'file_submission' && in_array(strtolower(trim($dispRevLabel)), ['file submission', 'question', 'question 1', 'question #1', ''], true)) {
+                                                            $dispRevLabel = 'File Upload';
+                                                        }
+                                                    @endphp
+                                                    <span class="fw-bold text-dark fs-6">{{ $dispRevLabel }}</span>
                                                     @if ($field->required)
                                                         <span class="text-danger" title="Required">*</span>
                                                     @endif
@@ -538,9 +552,15 @@
                                 <div class="card border rounded-3 shadow-none bg-white mb-3 task-question-card" style="border-color: #e2e8f0 !important;">
                                     <div class="card-header bg-light-subtle py-2 px-3 px-md-3.5 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
                                         <div class="d-flex align-items-center gap-2">
-                                            <span class="badge bg-primary text-white rounded-pill px-2.5 py-1 fw-bold" style="font-size: 11px;">
-                                                Question #{{ $idx + 1 }}
-                                            </span>
+                                            @if ($task->type === 'file_submission')
+                                                <span class="badge bg-primary text-white rounded-pill px-2.5 py-1 fw-bold" style="font-size: 11px;">
+                                                    <i class="ti ti-file-upload me-1"></i>File Upload
+                                                </span>
+                                            @else
+                                                <span class="badge bg-primary text-white rounded-pill px-2.5 py-1 fw-bold" style="font-size: 11px;">
+                                                    Question #{{ $idx + 1 }}
+                                                </span>
+                                            @endif
                                             @if ($field->required)
                                                 <span class="badge bg-danger-lt text-danger fw-semibold" style="font-size: 11px;">Required</span>
                                             @else
@@ -552,8 +572,14 @@
                                         </span>
                                     </div>
                                     <div class="card-body p-3 p-md-3.5">
+                                        @php
+                                            $dispUserLabel = $field->label;
+                                            if ($task->type === 'file_submission' && in_array(strtolower(trim($dispUserLabel)), ['file submission', 'question', 'question 1', 'question #1', ''], true)) {
+                                                $dispUserLabel = 'Upload File';
+                                            }
+                                        @endphp
                                         <label class="form-label fw-bold text-dark mb-2 fs-5 d-block" style="line-height: 1.4;">
-                                            {{ $field->label }}
+                                            {{ $dispUserLabel }}
                                             @if ($field->required)
                                                 <span class="text-danger">*</span>
                                             @endif
@@ -824,7 +850,7 @@
                             @endforeach
 
                             @if ($task->fields->isEmpty())
-                                <div class="alert alert-warning">This task has no questions yet.</div>
+                                <div class="alert alert-warning">{{ $task->type === 'file_submission' ? 'This task has no submission requirements yet.' : 'This task has no questions yet.' }}</div>
                             @endif
 
                             <div class="d-flex align-items-center justify-content-end gap-2 mt-4 pt-3 border-top">
