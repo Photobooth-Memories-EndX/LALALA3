@@ -221,4 +221,56 @@ class ManageOnlineRecordExportServiceTest extends TestCase
         $this->assertEquals(16, $sheet->getColumnDimension('B')->getWidth());
         $this->assertEquals(25, $sheet->getColumnDimension('AY')->getWidth());
     }
+
+    /** @test */
+    public function bond_fields_are_strictly_hyphen_in_kp_owl_mapping()
+    {
+        $dummyRecord = (object) [
+            'id_emp' => '009876',
+            'user_name' => 'Bond Test User',
+            'content_id' => 123,
+            'source_type' => 'content',
+            'title' => 'Sample Course',
+            'bond_status' => 'Yes',
+            'bond_duration' => 12,
+            'bond_amount' => 5000000,
+        ];
+
+        $service = app(ManageOnlineRecordExportService::class);
+        $mapped = $service->mapRow($dummyRecord, 1);
+
+        $this->assertEquals('-', $mapped['bond_status']);
+        $this->assertEquals('-', $mapped['bond_duration']);
+        $this->assertEquals('-', $mapped['bond_end_date']);
+        $this->assertEquals('-', $mapped['bond_amount']);
+    }
+
+    /** @test */
+    public function duration_and_numeric_cells_are_formatted_for_sum_calculations()
+    {
+        $service = app(ManageOnlineRecordExportService::class);
+        $dummyRecord = (object) [
+            'id_emp' => '001234',
+            'user_name' => 'Calc User',
+            'content_id' => 888,
+            'source_type' => 'content',
+            'title' => 'Math & Calculations',
+            'content_duration' => '02:30:00',
+            'duration_seconds' => 9000,
+            'content_training_hours' => 2.50,
+            'progress' => 50,
+            'finish' => '0',
+            'afk_duration_seconds' => 3600,
+        ];
+
+        $context = [
+            'recognized_service' => app(\App\Services\Learning\LearningRecordRecognizedDurationService::class),
+        ];
+
+        $mapped = $service->mapRow($dummyRecord, 1, $context);
+        $this->assertEquals(0.5, $mapped['progress']);
+        $this->assertEquals(2.5, $mapped['learning_hours']);
+        $this->assertEquals('02:30:00', $mapped['course_duration']);
+        $this->assertEquals('01:00:00', $mapped['total_engagement_time']);
+    }
 }

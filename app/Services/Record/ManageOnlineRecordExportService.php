@@ -413,10 +413,10 @@ class ManageOnlineRecordExportService
             'requirement'               => $requirementStr,               // 34. Requirement
             'attendance'                => $attendanceStr,                // 35. Attendance
             'attendance_reason'         => '-',                           // 36. Attendance Reason
-            'bond_status'               => 'No',                          // 37. Bond Status
-            'bond_duration'             => 0,                             // 38. Bond Duration
+            'bond_status'               => '-',                           // 37. Bond Status
+            'bond_duration'             => '-',                           // 38. Bond Duration
             'bond_end_date'             => '-',                           // 39. Bond End Date
-            'bond_amount'               => 0,                             // 40. Bond Amount
+            'bond_amount'               => '-',                           // 40. Bond Amount
             'score_l1'                  => '-',                           // 41. Score (L1) - Course
             'score_l2'                  => $scoreL2Val,                   // 42. Score (L2)
             'l2_status'                 => '-',                           // 43. L2 Status
@@ -521,55 +521,81 @@ class ManageOnlineRecordExportService
                 } elseif ($colLetter === 'A') {
                     // NO: Pure Integer
                     $sheet->setCellValueExplicit($cellCoord, (int) $val, DataType::TYPE_NUMERIC);
-                } elseif ($colLetter === 'Z' || $colLetter === 'AA') {
-                    // Learning Hours (Z) & % Progress (AA): Numeric decimal format 0.00
+                } elseif ($colLetter === 'X' || $colLetter === 'Y' || $colLetter === 'AY') {
+                    // Duration Columns (Course Duration, Total Recognized Duration, Total Engagement Time):
+                    // Convert seconds to Excel date fraction ($sec / 86400) so Excel SUM works!
+                    $sec = ($val !== '-' && $val !== '' && $val !== null) ? DurationFormatter::toSeconds((string) $val) : null;
+                    if ($sec !== null && $sec >= 0) {
+                        $sheet->setCellValueExplicit($cellCoord, $sec / 86400, DataType::TYPE_NUMERIC);
+                    } else {
+                        $sheet->setCellValueExplicit($cellCoord, '-', DataType::TYPE_STRING);
+                    }
+                } elseif ($colLetter === 'AE' || $colLetter === 'AF') {
+                    // Time Columns (Start Time, End Time)
+                    $sec = ($val !== '-' && $val !== '' && $val !== null) ? DurationFormatter::toSeconds((string) $val) : null;
+                    if ($sec !== null && $sec >= 0) {
+                        $sheet->setCellValueExplicit($cellCoord, $sec / 86400, DataType::TYPE_NUMERIC);
+                    } else {
+                        $sheet->setCellValueExplicit($cellCoord, (string) ($val ?? '-'), DataType::TYPE_STRING);
+                    }
+                } elseif ($colLetter === 'Z') {
+                    // Learning Hours: Numeric decimal format 0.00
                     if (is_numeric($val)) {
                         $sheet->setCellValueExplicit($cellCoord, (float) $val, DataType::TYPE_NUMERIC);
                     } else {
-                        $sheet->setCellValueExplicit($cellCoord, (string) $val, DataType::TYPE_STRING);
+                        $sheet->setCellValueExplicit($cellCoord, '-', DataType::TYPE_STRING);
                     }
-                } elseif ($colLetter === 'AL') {
-                    // Bond Duration: Pure Integer
-                    if (is_numeric($val)) {
-                        $sheet->setCellValueExplicit($cellCoord, (int) $val, DataType::TYPE_NUMERIC);
-                    } else {
-                        $sheet->setCellValueExplicit($cellCoord, (string) $val, DataType::TYPE_STRING);
-                    }
-                } elseif ($colLetter === 'AN') {
-                    // Bond Amount: Pure Integer Currency
+                } elseif ($colLetter === 'AA') {
+                    // % Progress: Numeric decimal with 0% format
                     if (is_numeric($val)) {
                         $sheet->setCellValueExplicit($cellCoord, (float) $val, DataType::TYPE_NUMERIC);
                     } else {
-                        $sheet->setCellValueExplicit($cellCoord, (string) $val, DataType::TYPE_STRING);
+                        $sheet->setCellValueExplicit($cellCoord, 0.0, DataType::TYPE_NUMERIC);
                     }
-                } elseif ($colLetter === 'AP') {
-                    // Score L2: Decimal format 0.00
+                } elseif ($colLetter === 'AK' || $colLetter === 'AL' || $colLetter === 'AM' || $colLetter === 'AN') {
+                    // Bond fields (Status, Duration, End Date, Amount): strictly '-' for KP OWL
+                    $sheet->setCellValueExplicit($cellCoord, '-', DataType::TYPE_STRING);
+                } elseif ($colLetter === 'AO' || $colLetter === 'AP' || $colLetter === 'AR') {
+                    // Scores: Decimal format 0.00
                     if (is_numeric($val)) {
                         $sheet->setCellValueExplicit($cellCoord, (float) $val, DataType::TYPE_NUMERIC);
                     } else {
-                        $sheet->setCellValueExplicit($cellCoord, (string) $val, DataType::TYPE_STRING);
+                        $sheet->setCellValueExplicit($cellCoord, '-', DataType::TYPE_STRING);
                     }
                 } else {
-                    $sheet->setCellValueExplicit($cellCoord, (string) $val, DataType::TYPE_STRING);
+                    $sheet->setCellValueExplicit($cellCoord, (string) ($val ?? '-'), DataType::TYPE_STRING);
                 }
             }
         }
 
         // Apply Global Number Formatting Rules
         if ($rowIndex >= 2) {
-            // Pure Integers (NO: A, Bond Duration: AL) -> Format as '0' without .0 trailing decimals
+            // Pure Integers (NO: A) -> Format as '0' without .0 trailing decimals
             $sheet->getStyle("A2:A{$rowIndex}")->getNumberFormat()->setFormatCode('0');
-            $sheet->getStyle("AL2:AL{$rowIndex}")->getNumberFormat()->setFormatCode('0');
 
-            // Hours & Scores (Learning Hours: Z, Progress: AA, Score L2: AP) -> Format as '0.00'
+            // Durations (Course Duration: X, Total Recognized Duration: Y, Total Engagement Time: AY) -> '[hh]:mm:ss'
+            $sheet->getStyle("X2:X{$rowIndex}")->getNumberFormat()->setFormatCode('[hh]:mm:ss');
+            $sheet->getStyle("Y2:Y{$rowIndex}")->getNumberFormat()->setFormatCode('[hh]:mm:ss');
+            $sheet->getStyle("AY2:AY{$rowIndex}")->getNumberFormat()->setFormatCode('[hh]:mm:ss');
+
+            // Times (Start Time: AE, End Time: AF) -> 'hh:mm:ss'
+            $sheet->getStyle("AE2:AE{$rowIndex}")->getNumberFormat()->setFormatCode('hh:mm:ss');
+            $sheet->getStyle("AF2:AF{$rowIndex}")->getNumberFormat()->setFormatCode('hh:mm:ss');
+
+            // Hours & Scores (Learning Hours: Z, Scores: AO, AP, AR) -> Format as '0.00'
             $sheet->getStyle("Z2:Z{$rowIndex}")->getNumberFormat()->setFormatCode('0.00');
-            $sheet->getStyle("AA2:AA{$rowIndex}")->getNumberFormat()->setFormatCode('0.00');
             $sheet->getStyle("AO2:AO{$rowIndex}")->getNumberFormat()->setFormatCode('0.00');
             $sheet->getStyle("AP2:AP{$rowIndex}")->getNumberFormat()->setFormatCode('0.00');
             $sheet->getStyle("AR2:AR{$rowIndex}")->getNumberFormat()->setFormatCode('0.00');
 
-            // Currency (Bond Amount: AN) -> Format as '#,##0' without trailing decimals
-            $sheet->getStyle("AN2:AN{$rowIndex}")->getNumberFormat()->setFormatCode('#,##0');
+            // % Progress (AA) -> Format as '0%'
+            $sheet->getStyle("AA2:AA{$rowIndex}")->getNumberFormat()->setFormatCode('0%');
+
+            // Dates (Start Date: AC, End Date: AD, Issued Date: AV, Expired Date: AW) -> 'yyyy-mm-dd'
+            $sheet->getStyle("AC2:AC{$rowIndex}")->getNumberFormat()->setFormatCode('yyyy-mm-dd');
+            $sheet->getStyle("AD2:AD{$rowIndex}")->getNumberFormat()->setFormatCode('yyyy-mm-dd');
+            $sheet->getStyle("AV2:AV{$rowIndex}")->getNumberFormat()->setFormatCode('yyyy-mm-dd');
+            $sheet->getStyle("AW2:AW{$rowIndex}")->getNumberFormat()->setFormatCode('yyyy-mm-dd');
 
             // Center alignment across all data cells
             $sheet->getStyle("A2:{$highestCol}{$rowIndex}")->applyFromArray([
@@ -652,17 +678,19 @@ class ManageOnlineRecordExportService
             . '</workbook>'
         );
 
-        // 5. xl/styles.xml with explicit number formats: 0.00, 0, #,##0, yyyy-mm-dd, hh:mm:ss
+        // 5. xl/styles.xml with explicit number formats: 0.00, 0, #,##0, yyyy-mm-dd, hh:mm:ss, [hh]:mm:ss, 0%
         $zip->addFile(
             'xl/styles.xml',
             '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             . '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
-            . '<numFmts count="5">'
+            . '<numFmts count="7">'
             . '<numFmt numFmtId="164" formatCode="yyyy-mm-dd"/>'
             . '<numFmt numFmtId="165" formatCode="hh:mm:ss"/>'
             . '<numFmt numFmtId="166" formatCode="0.00"/>'
             . '<numFmt numFmtId="167" formatCode="#,##0"/>'
             . '<numFmt numFmtId="168" formatCode="0"/>'
+            . '<numFmt numFmtId="169" formatCode="[hh]:mm:ss"/>'
+            . '<numFmt numFmtId="170" formatCode="0%"/>'
             . '</numFmts>'
             . '<fonts count="2">'
             . '<font><sz val="10"/><name val="Calibri"/></font>'
@@ -679,7 +707,7 @@ class ManageOnlineRecordExportService
             . '<cellStyleXfs count="1">'
             . '<xf numFmtId="0" fontId="0" fillId="0" borderId="0"/>'
             . '</cellStyleXfs>'
-            . '<cellXfs count="7">'
+            . '<cellXfs count="9">'
             . '<xf numFmtId="49" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>' // s=0 (string centered)
             . '<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>' // s=1 (header dark blue)
             . '<xf numFmtId="168" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>' // s=2 (pure integer 0)
@@ -687,6 +715,8 @@ class ManageOnlineRecordExportService
             . '<xf numFmtId="167" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>' // s=4 (currency #,##0)
             . '<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>' // s=5 (date yyyy-mm-dd)
             . '<xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>' // s=6 (time hh:mm:ss)
+            . '<xf numFmtId="169" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>' // s=7 (duration [hh]:mm:ss)
+            . '<xf numFmtId="170" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>' // s=8 (percentage 0%)
             . '</cellXfs>'
             . '</styleSheet>'
         );
@@ -768,26 +798,52 @@ class ManageOnlineRecordExportService
                         // Employee ID: Explicit String (s=0, t=inlineStr)
                         $escaped = $this->escapeXml((string) $val);
                         $xmlRow .= "<c r=\"{$coord}\" t=\"inlineStr\" s=\"0\"><is><t>{$escaped}</t></is></c>";
-                    } elseif ($colLetter === 'A' || $colLetter === 'AL') {
-                        // NO and Bond Duration: Pure Integer (s=2, format 0)
+                    } elseif ($colLetter === 'A') {
+                        // NO: Pure Integer (s=2, format 0)
                         $intVal = (int) $val;
                         $xmlRow .= "<c r=\"{$coord}\" s=\"2\"><v>{$intVal}</v></c>";
-                    } elseif ($colLetter === 'AN') {
-                        // Bond Amount: Pure Integer Currency (s=4, format #,##0)
-                        $currVal = (float) $val;
-                        $xmlRow .= "<c r=\"{$coord}\" s=\"4\"><v>{$currVal}</v></c>";
-                    } elseif ($colLetter === 'Z' || $colLetter === 'AA' || $colLetter === 'AP') {
-                        // Learning Hours, % Progress, Score L2: Decimal 0.00 (s=3)
-                        $decVal = number_format((float) $val, 2, '.', '');
-                        $xmlRow .= "<c r=\"{$coord}\" s=\"3\"><v>{$decVal}</v></c>";
+                    } elseif ($colLetter === 'X' || $colLetter === 'Y' || $colLetter === 'AY') {
+                        // Duration Columns: Course Duration, Total Recognized Duration, Total Engagement Time
+                        // Numeric Excel date fraction ($sec / 86400) with format [hh]:mm:ss (s=7) so Excel SUM works!
+                        $sec = ($val !== '-' && $val !== '' && $val !== null) ? DurationFormatter::toSeconds((string) $val) : null;
+                        if ($sec !== null && $sec >= 0) {
+                            $fraction = $sec / 86400;
+                            $xmlRow .= "<c r=\"{$coord}\" s=\"7\"><v>{$fraction}</v></c>";
+                        } else {
+                            $xmlRow .= "<c r=\"{$coord}\" t=\"inlineStr\" s=\"0\"><is><t>-</t></is></c>";
+                        }
+                    } elseif ($colLetter === 'AE' || $colLetter === 'AF') {
+                        // Time Columns: Start Time, End Time (s=6, format hh:mm:ss)
+                        $sec = ($val !== '-' && $val !== '' && $val !== null) ? DurationFormatter::toSeconds((string) $val) : null;
+                        if ($sec !== null && $sec >= 0) {
+                            $fraction = $sec / 86400;
+                            $xmlRow .= "<c r=\"{$coord}\" s=\"6\"><v>{$fraction}</v></c>";
+                        } else {
+                            $xmlRow .= "<c r=\"{$coord}\" t=\"inlineStr\" s=\"0\"><is><t>-</t></is></c>";
+                        }
+                    } elseif ($colLetter === 'Z' || $colLetter === 'AO' || $colLetter === 'AP' || $colLetter === 'AR') {
+                        // Learning Hours, Scores: Decimal 0.00 (s=3)
+                        if (is_numeric($val)) {
+                            $decVal = number_format((float) $val, 2, '.', '');
+                            $xmlRow .= "<c r=\"{$coord}\" s=\"3\"><v>{$decVal}</v></c>";
+                        } else {
+                            $xmlRow .= "<c r=\"{$coord}\" t=\"inlineStr\" s=\"0\"><is><t>-</t></is></c>";
+                        }
+                    } elseif ($colLetter === 'AA') {
+                        // % Progress: Numeric with 0% format (s=8)
+                        if (is_numeric($val)) {
+                            $pctVal = (float) $val;
+                            $xmlRow .= "<c r=\"{$coord}\" s=\"8\"><v>{$pctVal}</v></c>";
+                        } else {
+                            $xmlRow .= "<c r=\"{$coord}\" s=\"8\"><v>0</v></c>";
+                        }
+                    } elseif ($colLetter === 'AK' || $colLetter === 'AL' || $colLetter === 'AM' || $colLetter === 'AN') {
+                        // Bond fields: strictly '-'
+                        $xmlRow .= "<c r=\"{$coord}\" t=\"inlineStr\" s=\"0\"><is><t>-</t></is></c>";
                     } elseif ($colLetter === 'AC' || $colLetter === 'AD' || $colLetter === 'AV' || $colLetter === 'AW') {
-                        // Dates: YYYY-MM-DD
+                        // Dates: YYYY-MM-DD (s=5)
                         $escaped = $this->escapeXml($val);
                         $xmlRow .= "<c r=\"{$coord}\" t=\"inlineStr\" s=\"5\"><is><t>{$escaped}</t></is></c>";
-                    } elseif ($colLetter === 'X' || $colLetter === 'Y' || $colLetter === 'AE' || $colLetter === 'AF' || $colLetter === 'AY') {
-                        // Times: HH:MM:SS
-                        $escaped = $this->escapeXml($val);
-                        $xmlRow .= "<c r=\"{$coord}\" t=\"inlineStr\" s=\"6\"><is><t>{$escaped}</t></is></c>";
                     } else {
                         $escaped = $this->escapeXml($val);
                         $xmlRow .= "<c r=\"{$coord}\" t=\"inlineStr\" s=\"0\"><is><t>{$escaped}</t></is></c>";

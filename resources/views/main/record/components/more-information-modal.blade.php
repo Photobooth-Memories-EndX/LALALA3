@@ -367,19 +367,33 @@ window.populateMoreInformationModal = function(response) {
     // Section 4 - Bond Details (1 Row with 4 Columns)
     const rawBond = String(d.bond_status ?? '').toLowerCase().trim();
     const hasBond = ['yes', '1', 'true', 'ya'].includes(rawBond);
-    $('#modal-bond-status').text(hasBond ? 'Yes' : 'No');
-    const bondDur = d.bond_duration;
-    if (bondDur && bondDur !== '-' && String(bondDur).trim() !== '' && !isNaN(bondDur) && parseInt(bondDur) > 0) {
-        $('#modal-bond-duration').text(parseInt(bondDur) + ' Months');
+    const isOnlineOrKpOwl = (d.source === 'KP OWL' || d.source === 'online' || d.record_source === 'online' || (d.source_type && String(d.source_type).includes('KP OWL')));
+    if (hasBond) {
+        $('#modal-bond-status').text('Yes');
+    } else if (isOnlineOrKpOwl || rawBond === '-' || rawBond === '' || rawBond === 'null' || rawBond === 'undefined') {
+        $('#modal-bond-status').text('-');
     } else {
-        $('#modal-bond-duration').text(d.bond_duration || '-');
+        $('#modal-bond-status').text('No');
     }
-    $('#modal-bond-end-date').text(d.bond_end_date && d.bond_end_date !== '-' ? d.bond_end_date : '-');
-    let bondAmt = d.bond_amount || d.bond_amount_idr || '-';
-    if (bondAmt !== '-' && !isNaN(bondAmt) && parseFloat(bondAmt) > 0) {
-        bondAmt = 'Rp ' + Math.round(parseFloat(bondAmt)).toLocaleString('id-ID');
+
+    if (hasBond) {
+        const bondDur = d.bond_duration;
+        if (bondDur && bondDur !== '-' && String(bondDur).trim() !== '' && !isNaN(bondDur) && parseInt(bondDur) > 0) {
+            $('#modal-bond-duration').text(parseInt(bondDur) + ' Months');
+        } else {
+            $('#modal-bond-duration').text(d.bond_duration || '-');
+        }
+        $('#modal-bond-end-date').text(d.bond_end_date && d.bond_end_date !== '-' ? d.bond_end_date : '-');
+        let bondAmt = d.bond_amount || d.bond_amount_idr || '-';
+        if (bondAmt !== '-' && !isNaN(bondAmt) && parseFloat(bondAmt) > 0) {
+            bondAmt = 'Rp ' + Math.round(parseFloat(bondAmt)).toLocaleString('id-ID');
+        }
+        $('#modal-bond-amount').text(bondAmt);
+    } else {
+        $('#modal-bond-duration').text('-');
+        $('#modal-bond-end-date').text('-');
+        $('#modal-bond-amount').text('-');
     }
-    $('#modal-bond-amount').text(bondAmt);
 
     // Section 5 - Assessment & Score Details
     renderStatusPill('#modal-l2-status', '#modal-l2-status-container', d.l2_status || d.score_l2_status);
