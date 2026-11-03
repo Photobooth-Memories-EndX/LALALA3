@@ -152,4 +152,22 @@ class TaskUnifiedTrashTest extends TestCase
         $response->assertRedirect();
         $this->assertTrue($group->fresh()->trashed());
     }
+    public function test_trash_view_renders_cleanly_when_only_tasks_passed(): void
+    {
+        $task = Task::create([
+            'title'       => 'Legacy Trashed ' . uniqid(),
+            'type'        => 'upload',
+            'parent_type' => 'playlist',
+            'training_plan_id' => $this->plan->id,
+            'status'      => 'published',
+            'created_by'  => $this->admin->id,
+        ]);
+        $task->delete();
+
+        $view = $this->actingAs($this->admin)->view('manage.task.trash', [
+            'tasks' => Task::onlyTrashed()->paginate(20),
+        ]);
+
+        $view->assertSee('Legacy Trashed');
+    }
 }

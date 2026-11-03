@@ -3,6 +3,19 @@
 @extends('layouts.sidebar-master')
 
 @section('content')
+    @php
+        $items = $items ?? $tasks ?? collect();
+        $type = $type ?? request('type', 'all');
+        $search = $search ?? request('search', '');
+        $taskTrashCount = $taskTrashCount ?? \App\Models\Task::onlyTrashed()->count();
+        $courseTrashCount = $courseTrashCount ?? (
+            \App\Models\TrainingPlan::onlyTrashed()->count()
+            + \App\Models\Content::onlyTrashed()->count()
+            + \App\Models\OfflineTraining::onlyTrashed()->count()
+            + (\Illuminate\Support\Facades\Schema::hasColumn('task_groups', 'deleted_at') ? \App\Models\TaskGroup::onlyTrashed()->count() : 0)
+        );
+        $totalTrashCount = $totalTrashCount ?? ($taskTrashCount + $courseTrashCount);
+    @endphp
     <div class="page-header d-print-none mb-3">
         <div class="container-xl">
             <div class="mb-2">
@@ -96,18 +109,28 @@
                         </thead>
                         <tbody>
                             @forelse ($items as $i => $item)
+                                @php
+                                    $itemTitle = $item->title ?? 'Untitled';
+                                    $itemType = $item->item_type ?? ($item instanceof \App\Models\Task ? 'task' : 'course');
+                                    $itemCategory = $item->category ?? ($item instanceof \App\Models\Task ? (\App\Models\Task::PARENT_TYPES[$item->parent_type] ?? $item->parent_type) : 'Course');
+                                    $itemPlacement = $item->placement ?? ($item instanceof \App\Models\Task ? $item->parentName() : '');
+                                    $itemBadgeClass = $item->badge_class ?? ($itemType === 'course' ? 'bg-purple-lt text-purple' : 'bg-primary-lt text-primary');
+                                    $itemRestoreUrl = $item->restore_url ?? route('manage.task.restore', ['id' => $item->id, 'item_type' => $itemType]);
+                                    $itemDeleteUrl = $item->delete_url ?? route('manage.task.force-destroy', ['id' => $item->id, 'item_type' => $itemType]);
+                                    $itemConfirmMsg = $item->confirm_msg ?? 'Permanently delete this item? This action cannot be undone.';
+                                @endphp
                                 <tr>
                                     <td class="text-muted">{{ ($items->firstItem() ?? 0) + $i }}</td>
                                     <td>
-                                        <div class="fw-semibold text-dark">{{ $item->title }}</div>
-                                        @if ($item->item_type === 'course')
-                                            <div class="text-muted small">Course Container &bull; {{ $item->category }}</div>
+                                        <div class="fw-semibold text-dark">{{ $itemTitle }}</div>
+                                        @if ($itemType === 'course')
+                                            <div class="text-muted small">Course Container &bull; {{ $itemCategory }}</div>
                                         @else
                                             <div class="text-muted small">Task &bull; {{ $item->task_type_label ?? 'Task' }}</div>
                                         @endif
                                     </td>
                                     <td>
-                                        @if ($item->item_type === 'course')
+                                        @if ($itemType === 'course')
                                             <span class="badge bg-purple-lt text-purple fw-semibold">
                                                 <i class="ti ti-books me-1"></i>Course
                                             </span>
@@ -118,11 +141,11 @@
                                         @endif
                                     </td>
                                     <td>
-                                        <span class="badge {{ $item->badge_class }}">
-                                            {{ $item->category }}
+                                        <span class="badge {{ $itemBadgeClass }}">
+                                            {{ $itemCategory }}
                                         </span>
-                                        @if ($item->placement)
-                                            <span class="text-muted small ms-1">{{ $item->placement }}</span>
+                                        @if ($itemPlacement)
+                                            <span class="text-muted small ms-1">{{ $itemPlacement }}</span>
                                         @endif
                                     </td>
                                     <td class="text-muted text-nowrap" style="font-size: 0.85rem;">
@@ -130,9 +153,9 @@
                                     </td>
                                     <td class="text-end text-nowrap">
                                         <button type="button" class="btn btn-outline-secondary trash-menu-btn" title="Actions" style="padding: 0.35rem 0.65rem;"
-                                                data-restore-url="{{ $item->restore_url }}"
-                                                data-delete-url="{{ $item->delete_url }}"
-                                                data-confirm-msg="{{ $item->confirm_msg }}">
+                                                data-restore-url="{{ $itemRestoreUrl }}"
+                                                data-delete-url="{{ $itemDeleteUrl }}"
+                                                data-confirm-msg="{{ $itemConfirmMsg }}">
                                             <i class="ti ti-dots fs-2" style="font-size: 1.25rem; line-height: 1;"></i>
                                         </button>
                                     </td>
