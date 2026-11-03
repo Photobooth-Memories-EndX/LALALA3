@@ -122,6 +122,19 @@
         box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08) !important;
     }
 
+    [data-bs-theme="dark"] .stat-kpi-card,
+    body.dark-mode .stat-kpi-card,
+    body.theme-dark .stat-kpi-card {
+        background-color: #1e293b !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    [data-bs-theme="dark"] .stat-kpi-card .text-dark,
+    body.dark-mode .stat-kpi-card .text-dark,
+    body.theme-dark .stat-kpi-card .text-dark {
+        color: #f8fafc !important;
+    }
+
     /* Download button styling & OWL blue consistency */
     #btn-download-dropdown {
         border-color: #0c5b9e;

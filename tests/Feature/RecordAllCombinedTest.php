@@ -244,14 +244,12 @@ class RecordAllCombinedTest extends TestCase
             $data['total_learning_hours']
         );
 
-        // Check HTML contains KPI and Source Summary cards
+        // Check HTML contains 4 standardized summary cards
         $html = $response->json('html');
-        $this->assertStringContainsString('Total Learning', $html);
-        $this->assertStringContainsString('KP OWL — Online Learning Records', $html);
-        $this->assertStringContainsString('Non KP OWL — Offline Training Records', $html);
-        $this->assertStringContainsString('badge bg-blue-lt', $html);
-        $this->assertStringContainsString('badge-non-kp-owl', $html);
-        $this->assertStringNotContainsString('bg-amber-lt', $html);
+        $this->assertStringContainsString('Total Learning Data', $html);
+        $this->assertStringContainsString('Ongoing Course', $html);
+        $this->assertStringContainsString('Finished Course', $html);
+        $this->assertStringContainsString('Total Learning Hours', $html);
     }
 
     /**

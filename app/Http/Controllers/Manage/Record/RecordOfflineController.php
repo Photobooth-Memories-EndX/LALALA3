@@ -272,10 +272,8 @@ class RecordOfflineController extends Controller
                 ->where('otu.progress', '>=', 100)
                 ->count();
             $ongoing = (int) (clone $baseUserQuery)
-                ->where(function ($q) {
-                    $q->where('otu.progress', '<', 100)
-                      ->orWhereNull('otu.progress');
-                })
+                ->where('otu.progress', '>', 0)
+                ->where('otu.progress', '<', 100)
                 ->count();
             $completionRate = $totalParticipants > 0 ? round(($finished / $totalParticipants) * 100, 1) : 0.0;
         } else {
@@ -288,23 +286,31 @@ class RecordOfflineController extends Controller
         }
 
         $data = [
+            'total_learning'       => $totalParticipants,
             'total_trainings'      => $totalTrainings,
             'total_participants'   => $totalParticipants,
-            'total_learning_hours' => round($totalHours, 1),
+            'total_learning_hours' => round($totalHours, 2),
             'finished'             => $finished,
             'ongoing'              => $ongoing,
             'completion_rate'      => $completionRate,
             'totalTrainings'       => $totalTrainings,
             'totalParticipants'    => $totalParticipants,
-            'totalLearningHours'   => round($totalHours, 1),
+            'totalLearningHours'   => round($totalHours, 2),
             'completionRate'       => $completionRate,
         ];
 
+        if ($request->input('format') === 'html') {
+            return view('main.record.components.offline-kpi-summary', $data);
+        }
+
         return response()->json([
             'success'              => true,
+            'total_learning'       => $data['total_learning'],
+            'ongoing'              => $data['ongoing'],
+            'finished'             => $data['finished'],
+            'total_learning_hours' => $data['total_learning_hours'],
             'total_trainings'      => $data['total_trainings'],
             'total_participants'   => $data['total_participants'],
-            'total_learning_hours' => $data['total_learning_hours'],
             'completion_rate'      => $data['completion_rate'],
             'data'                 => $data,
             'html'                 => view('main.record.components.offline-kpi-summary', $data)->render(),
