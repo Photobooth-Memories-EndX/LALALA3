@@ -110,7 +110,7 @@ class AllRecordExport implements Responsable
             'Certificate Issued Date',
             'Certificate Expired Date',
             'Person in Charge (PIC)',
-            'Total Engagement Time (LH)',
+            'Total Engagement Time',
         ];
     }
 
@@ -359,7 +359,6 @@ class AllRecordExport implements Responsable
                 'c.issued_at',
                 'c.issued_date',
                 'c.expired_date',
-                'c.expired_at',
             ])
             ->get()
             ->keyBy('content_user_id');
@@ -377,7 +376,6 @@ class AllRecordExport implements Responsable
                 'c.issued_at',
                 'c.issued_date',
                 'c.expired_date',
-                'c.expired_at',
             ])
             ->get()
             ->keyBy('offline_training_user_id');

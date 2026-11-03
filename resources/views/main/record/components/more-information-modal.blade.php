@@ -343,7 +343,7 @@ window.populateMoreInformationModal = function(response) {
     // Header Sub-title: Display [Category] Course Title
     const rawCategory = d.category || d.category_source || '';
     const cleanCategory = (rawCategory && rawCategory !== '-' && rawCategory !== 'null' && rawCategory !== 'undefined') ? rawCategory.trim() : '';
-    const courseTitle = d.course_title || d.title || '-';
+    const courseTitle = d.course_title || d.title || d.learning_title || '-';
     const headerSubTitle = cleanCategory ? ('[' + cleanCategory + '] ' + courseTitle) : courseTitle;
     $('#modal-course-title').text(headerSubTitle);
 

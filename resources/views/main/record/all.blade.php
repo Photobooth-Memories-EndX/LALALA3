@@ -43,9 +43,9 @@
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end shadow-sm border rounded-3 mt-1 py-1" aria-labelledby="btn-download-dropdown" style="min-width: 250px;">
                     <li>
-                        <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.record.all.export', request()->query()) }}" id="btn-all-export-excel" data-testid="btn-export-all-xlsx" title="Download Offline Record (.xlsx)">
+                        <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.record.all.export', request()->query()) }}" id="btn-all-export-excel" data-testid="btn-export-all-xlsx" title="Download All Record (.xlsx)">
                             <i class="ti ti-file-spreadsheet text-success fs-3"></i>
-                            <span>Download Offline Record (.xlsx)</span>
+                            <span>Download All Record (.xlsx)</span>
                         </a>
                     </li>
                     <li>
@@ -87,6 +87,7 @@
 @endsection
 
 @section('style')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <style>
     .manage-record-page {
         background: #fff;
