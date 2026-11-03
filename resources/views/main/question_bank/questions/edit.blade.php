@@ -45,8 +45,7 @@
     
                         <x-alert type='success' />
     
-                        <x-form action="{{ route('question.bank.update.question', ['question_bank_slug' => $questionBank->slug, 'question_id' => $question->id]) }}" method="post" enctype="multipart/form-data">
-                            @csrf
+                        <x-form id="questionForm" action="{{ route('question.bank.update.question', ['question_bank_slug' => $questionBank->slug, 'question_id' => $question->id]) }}" method="post" enctype="multipart/form-data">
                             @method('PUT')
                             <div class="mb-3">
                                 <x-label class="form-label">Question</x-label>
@@ -407,18 +406,25 @@
                 window.tinyMCE.triggerSave();
             }
 
-            var form = document.querySelector('form.card-body, form') || document.forms[0];
+            var form = document.getElementById('questionForm') || document.querySelector('form.card-body, form') || document.forms[0];
             if (form) {
                 var formData = new FormData(form);
                 formData.set('action', 'draft');
 
-                fetch(form.action, {
+                var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') 
+                    || form.querySelector('input[name="_token"]')?.value;
+
+                var targetUrl = form.getAttribute('action') || form.action;
+
+                fetch(targetUrl, {
                     method: 'POST',
                     body: formData,
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json'
-                    }
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    },
+                    credentials: 'same-origin'
                 })
                 .then(function (response) {
                     if (!response.ok) {
@@ -427,20 +433,19 @@
                     return response.json();
                 })
                 .then(function (data) {
-                    window.location.href = "{{ route('question.bank.index') }}";
+                    window.location.href = (data && data.redirect) ? data.redirect : "{{ route('question.bank.index') }}";
                 })
                 .catch(function (err) {
-                    console.error('AJAX draft save failed, submitting fallback:', err);
-                    var actionInput = form.querySelector('input[name="action"]');
-                    if (!actionInput) {
-                        actionInput = document.createElement('input');
-                        actionInput.type = 'hidden';
-                        actionInput.name = 'action';
-                        form.appendChild(actionInput);
+                    console.error('AJAX draft save failed:', err);
+                    if (err && err.redirect) {
+                        window.location.href = err.redirect;
+                        return;
                     }
-                    actionInput.value = 'draft';
-                    form.submit();
+                    // Safely exit to question bank index without blind form.submit() which causes 419 Page Expired
+                    window.location.href = "{{ route('question.bank.index') }}";
                 });
+            } else {
+                window.location.href = "{{ route('question.bank.index') }}";
             }
         });
 

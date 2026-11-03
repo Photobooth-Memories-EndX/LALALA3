@@ -532,173 +532,196 @@
 
 <div class="learning-record-shell">
     {{-- Filter Card All --}}
-    <div class="card border-0 shadow-sm rounded-4 mb-4 learning-record-card">
-        <div class="card-body p-4 border-bottom">
+    <div class="card border-0 shadow-sm rounded-4 mb-3 my-task-filter-card learning-record-card">
+        <div class="card-body p-3 p-md-4">
             <div class="record-filter-shell" id="recordAllFilterBar">
-                <div class="learning-filter-heading fast-filter-header">
-                    <div class="fast-filter-header-copy">
-                        <h3 class="card-title fast-filter-title">Quick Filter</h3>
-                    </div>
-                    <x-learning.record-mode-switch mode="all" />
+                {{-- Header: Title & Subtitle --}}
+                <div class="mb-3">
+                    <h2 class="fw-bold mb-1 my-task-filter-title">Learning Record</h2>
+                    <p class="text-muted small mb-0 my-task-filter-subtitle">Review your complete history of completed courses, playlists, and learning hours.</p>
                 </div>
 
-                <div class="record-fast-filter-section">
-                    <div class="fast-filter-toolbar">
-                        <div class="learning-quick-dropdowns learning-fast-filter">
-                            {{-- Dropdown Source (Online | Offline) --}}
-                            <div class="dropdown">
-                                <button type="button"
-                                        class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ $filterSource !== 'all' ? 'active' : '' }}"
-                                        data-bs-toggle="dropdown"
-                                        aria-expanded="false">
-                                    Source: <span class="fw-semibold">{{ ucfirst($filterSource) }}</span>
-                                </button>
-                                <div class="dropdown-menu">
-                                    @foreach ($sources as $sKey => $sLabel)
-                                        <a href="#"
-                                           class="dropdown-item record-all-filter-item {{ (string) $filterSource === (string) $sKey ? 'active' : '' }}"
-                                           data-param="record_filter_source"
-                                           data-value="{{ $sKey }}">
-                                            {{ $sLabel }}
-                                        </a>
-                                    @endforeach
-                                </div>
-                            </div>
+                {{-- Category Filter Pills --}}
+                <div class="d-flex align-items-center flex-wrap gap-2 mb-3 my-task-pills-row">
+                    <button type="button"
+                            class="my-task-category-pill record-mode-btn"
+                            data-mode="online"
+                            title="KP OWL">
+                        <i class="ti ti-device-laptop me-1"></i> KP OWL
+                    </button>
+                    <button type="button"
+                            class="my-task-category-pill record-mode-btn"
+                            data-mode="offline"
+                            title="Non KP OWL">
+                        <i class="ti ti-certificate me-1"></i> Non KP OWL
+                    </button>
+                    <button type="button"
+                            class="my-task-category-pill record-mode-btn active"
+                            data-mode="all"
+                            title="All Record">
+                        <i class="ti ti-stack-2 me-1"></i> All Record
+                    </button>
+                </div>
 
-                            {{-- Dropdown Type --}}
-                            <div class="dropdown">
-                                <button type="button"
-                                        class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ $filterType !== 'all' ? 'active' : '' }}"
-                                        data-bs-toggle="dropdown"
-                                        aria-expanded="false">
-                                    Type: <span class="fw-semibold">{{ $filterType === 'all' ? 'All' : $filterType }}</span>
-                                </button>
-                                <div class="dropdown-menu">
-                                    <a href="#"
-                                       class="dropdown-item record-all-filter-item {{ $filterType === 'all' ? 'active' : '' }}"
-                                       data-param="record_filter_type"
-                                       data-value="all">
-                                        All Types
-                                    </a>
-                                    @foreach ($types as $typeOption)
-                                        <a href="#"
-                                           class="dropdown-item record-all-filter-item {{ (string) $filterType === (string) $typeOption ? 'active' : '' }}"
-                                           data-param="record_filter_type"
-                                           data-value="{{ $typeOption }}">
-                                            {{ $typeOption }}
-                                        </a>
-                                    @endforeach
-                                </div>
-                            </div>
+                {{-- Subtle Divider Line --}}
+                <hr class="my-3 my-task-divider">
 
-                            {{-- Dropdown Classification --}}
-                            <div class="dropdown">
-                                <button type="button"
-                                        class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ $filterClassification !== 'all' ? 'active' : '' }}"
-                                        data-bs-toggle="dropdown"
-                                        aria-expanded="false">
-                                    Classification:
-                                    <span class="fw-semibold">
-                                        {{ $filterClassification === 'all' ? 'All' : $filterClassification }}
-                                    </span>
-                                </button>
-                                <div class="dropdown-menu learning-quick-dropdown-scroll">
-                                    <a href="#"
-                                       class="dropdown-item record-all-filter-item {{ $filterClassification === 'all' ? 'active' : '' }}"
-                                       data-param="record_filter_classification"
-                                       data-value="all">
-                                        All Classification
-                                    </a>
-                                    @foreach ($classifications as $classificationOption)
-                                        <a href="#"
-                                           class="dropdown-item record-all-filter-item {{ (string) $filterClassification === (string) $classificationOption ? 'active' : '' }}"
-                                           data-param="record_filter_classification"
-                                           data-value="{{ $classificationOption }}">
-                                            {{ $classificationOption }}
-                                        </a>
-                                    @endforeach
-                                </div>
-                            </div>
-
-                            {{-- Dropdown Year --}}
-                            <div class="dropdown">
-                                <button type="button"
-                                        class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ $filterYear !== 'all' ? 'active' : '' }}"
-                                        data-bs-toggle="dropdown"
-                                        aria-expanded="false">
-                                    Year:
-                                    <span class="fw-semibold">
-                                        {{ $filterYear === 'all' ? 'All' : $filterYear }}
-                                    </span>
-                                </button>
-                                <div class="dropdown-menu">
-                                    <a href="#"
-                                       class="dropdown-item record-all-filter-item {{ $filterYear === 'all' ? 'active' : '' }}"
-                                       data-param="record_filter_year"
-                                       data-value="all">
-                                        All Years
-                                    </a>
-                                    @foreach ($years as $yearOption)
-                                        <a href="#"
-                                           class="dropdown-item record-all-filter-item {{ (string) $filterYear === (string) $yearOption ? 'active' : '' }}"
-                                           data-param="record_filter_year"
-                                           data-value="{{ $yearOption }}">
-                                            {{ $yearOption }}
-                                        </a>
-                                    @endforeach
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- Search Input --}}
-                        <div class="record-toolbar-search">
-                            <label class="visually-hidden" for="recordAllSearch">Search all learning records</label>
-                            <div class="input-icon">
-                                <span class="input-icon-addon"><i class="ti ti-search"></i></span>
-                                <input type="text" class="form-control" id="recordAllSearch"
-                                       value="{{ $search }}"
-                                       placeholder="Search title, classification, provider, or source..." autocomplete="off">
-                            </div>
-                        </div>
-
-                        {{-- Action Buttons --}}
-                        <div class="record-filter-actions d-flex align-items-center gap-2">
-                            {{-- 1. Search Button --}}
-                            <button type="button" class="btn btn-primary btn-learning-primary record-all-apply-btn record-filter-action-btn"
-                                    id="recordAllApplyBtn"
-                                    title="Search & Apply Filter"
-                                    aria-label="Search & Apply Filter">
-                                <i class="ti ti-search" aria-hidden="true"></i>
-                            </button>
-
-                            {{-- 2. More Filter Button --}}
-                            <button type="button"
-                                    class="btn btn-outline-primary btn-learning-secondary record-filter-action-btn position-relative {{ $activeMoreFilterCount > 0 ? 'active' : '' }}"
-                                    id="recordAllMoreFilterBtn"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#recordAllMoreFilterModal"
-                                    title="More Filters"
-                                    aria-label="More Filters">
-                                <i class="ti ti-adjustments-horizontal" aria-hidden="true"></i>
-                                @if ($activeMoreFilterCount > 0)
-                                    <span class="badge bg-primary text-white position-absolute top-0 start-100 translate-middle rounded-pill" style="font-size: 10px; min-width: 18px; height: 18px; padding: 0 4px; display: inline-flex; align-items: center; justify-content: center;">{{ $activeMoreFilterCount }}</span>
-                                @endif
-                            </button>
-
-                            {{-- 3. Reset Button --}}
-                            <button type="button" class="btn btn-outline-secondary btn-learning-outline record-all-reset-btn record-filter-action-btn"
-                                    id="recordAllResetBtn"
-                                    title="Reset Filter"
-                                    aria-label="Reset Filter">
-                                <i class="ti ti-refresh" aria-hidden="true"></i>
-                            </button>
-
-                            {{-- Hidden export anchor for test / script compatibility --}}
-                            <a href="{{ route('user.learning.record.export', array_merge(request()->all(), ['source' => 'all'])) }}"
-                               id="recordAllExportBtn"
-                               class="d-none"></a>
+                {{-- Fast Filter Toolbar --}}
+                <div class="d-flex align-items-center flex-wrap gap-2 w-100 my-task-toolbar learning-quick-dropdowns">
+                    {{-- Dropdown Source (Online | Offline) --}}
+                    <div class="dropdown">
+                        <button type="button"
+                                class="btn my-task-dropdown-btn dropdown-toggle {{ $filterSource !== 'all' ? 'active' : '' }}"
+                                data-bs-toggle="dropdown"
+                                data-bs-display="static"
+                                aria-expanded="false">
+                            Source: <span class="fw-semibold">{{ ucfirst($filterSource) }}</span>
+                        </button>
+                        <div class="dropdown-menu shadow-sm">
+                            @foreach ($sources as $sKey => $sLabel)
+                                <a href="#"
+                                   class="dropdown-item my-task-dropdown-item record-all-filter-item {{ (string) $filterSource === (string) $sKey ? 'active' : '' }}"
+                                   data-param="record_filter_source"
+                                   data-value="{{ $sKey }}">
+                                    {{ $sLabel }}
+                                </a>
+                            @endforeach
                         </div>
                     </div>
+
+                    {{-- Dropdown Type --}}
+                    <div class="dropdown">
+                        <button type="button"
+                                class="btn my-task-dropdown-btn dropdown-toggle {{ $filterType !== 'all' ? 'active' : '' }}"
+                                data-bs-toggle="dropdown"
+                                data-bs-display="static"
+                                aria-expanded="false">
+                            Type: <span class="fw-semibold">{{ $filterType === 'all' ? 'All' : $filterType }}</span>
+                        </button>
+                        <div class="dropdown-menu shadow-sm">
+                            <a href="#"
+                               class="dropdown-item my-task-dropdown-item record-all-filter-item {{ $filterType === 'all' ? 'active' : '' }}"
+                               data-param="record_filter_type"
+                               data-value="all">
+                                All Types
+                            </a>
+                            @foreach ($types as $typeOption)
+                                <a href="#"
+                                   class="dropdown-item my-task-dropdown-item record-all-filter-item {{ (string) $filterType === (string) $typeOption ? 'active' : '' }}"
+                                   data-param="record_filter_type"
+                                   data-value="{{ $typeOption }}">
+                                    {{ $typeOption }}
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    {{-- Dropdown Classification --}}
+                    <div class="dropdown">
+                        <button type="button"
+                                class="btn my-task-dropdown-btn dropdown-toggle {{ $filterClassification !== 'all' ? 'active' : '' }}"
+                                data-bs-toggle="dropdown"
+                                data-bs-display="static"
+                                aria-expanded="false">
+                            Classification:
+                            <span class="fw-semibold">
+                                {{ $filterClassification === 'all' ? 'All' : $filterClassification }}
+                            </span>
+                        </button>
+                        <div class="dropdown-menu shadow-sm" style="max-height: 280px; overflow-y: auto;">
+                            <a href="#"
+                               class="dropdown-item my-task-dropdown-item record-all-filter-item {{ $filterClassification === 'all' ? 'active' : '' }}"
+                               data-param="record_filter_classification"
+                               data-value="all">
+                                All Classification
+                            </a>
+                            @foreach ($classifications as $classificationOption)
+                                <a href="#"
+                                   class="dropdown-item my-task-dropdown-item record-all-filter-item {{ (string) $filterClassification === (string) $classificationOption ? 'active' : '' }}"
+                                   data-param="record_filter_classification"
+                                   data-value="{{ $classificationOption }}">
+                                    {{ $classificationOption }}
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    {{-- Dropdown Year --}}
+                    <div class="dropdown">
+                        <button type="button"
+                                class="btn my-task-dropdown-btn dropdown-toggle {{ $filterYear !== 'all' ? 'active' : '' }}"
+                                data-bs-toggle="dropdown"
+                                data-bs-display="static"
+                                aria-expanded="false">
+                            Year:
+                            <span class="fw-semibold">
+                                {{ $filterYear === 'all' ? 'All' : $filterYear }}
+                            </span>
+                        </button>
+                        <div class="dropdown-menu shadow-sm">
+                            <a href="#"
+                               class="dropdown-item my-task-dropdown-item record-all-filter-item {{ $filterYear === 'all' ? 'active' : '' }}"
+                               data-param="record_filter_year"
+                               data-value="all">
+                                All Years
+                            </a>
+                            @foreach ($years as $yearOption)
+                                <a href="#"
+                                   class="dropdown-item my-task-dropdown-item record-all-filter-item {{ (string) $filterYear === (string) $yearOption ? 'active' : '' }}"
+                                   data-param="record_filter_year"
+                                   data-value="{{ $yearOption }}">
+                                    {{ $yearOption }}
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    {{-- Search Input --}}
+                    <div class="position-relative flex-grow-1 my-task-search-wrapper" style="min-width: 220px;">
+                        <span class="position-absolute top-50 start-0 translate-middle-y ps-3 text-muted pointer-events-none" style="z-index: 2;">
+                            <i class="ti ti-search" style="font-size: 15px;"></i>
+                        </span>
+                        <input type="text" class="form-control my-task-search-input" id="recordAllSearch"
+                               value="{{ $search }}"
+                               placeholder="Search title, classification, provider, or source..." autocomplete="off">
+                    </div>
+
+                    {{-- Action Buttons --}}
+                    <button type="button" class="btn btn-primary my-task-btn-square my-task-btn-search record-all-apply-btn"
+                            id="recordAllApplyBtn"
+                            title="Search & Apply Filter"
+                            aria-label="Search & Apply Filter">
+                        <i class="ti ti-search text-white fs-3" aria-hidden="true"></i>
+                    </button>
+
+                    <button type="button"
+                            class="btn btn-white my-task-btn-square my-task-btn-filter position-relative {{ $activeMoreFilterCount > 0 ? 'active' : '' }}"
+                            id="recordAllMoreFilterBtn"
+                            data-bs-toggle="modal"
+                            data-bs-target="#recordAllMoreFilterModal"
+                            title="More Filters"
+                            aria-label="More Filters">
+                        <i class="ti ti-adjustments-horizontal fs-3 text-secondary" aria-hidden="true"></i>
+                        @if ($activeMoreFilterCount > 0)
+                            <span class="badge bg-primary text-white position-absolute top-0 start-100 translate-middle rounded-pill" style="font-size: 10px; min-width: 18px; height: 18px; padding: 0 4px; display: inline-flex; align-items: center; justify-content: center;">{{ $activeMoreFilterCount }}</span>
+                        @endif
+                    </button>
+
+                    <button type="button" class="btn btn-white my-task-btn-square my-task-btn-reset record-all-reset-btn"
+                            id="recordAllResetBtn"
+                            title="Reset Filter"
+                            aria-label="Reset Filter">
+                        <i class="ti ti-refresh fs-3 text-secondary" aria-hidden="true"></i>
+                    </button>
+
+                    <a href="{{ route('user.learning.record.export', array_merge(request()->all(), ['source' => 'all'])) }}"
+                       class="btn btn-white my-task-btn-square my-task-btn-export"
+                       id="recordAllExportBtn"
+                       title="Export All Learning Records"
+                       aria-label="Export All Learning Records">
+                        <i class="ti ti-download fs-3 text-secondary" aria-hidden="true"></i>
+                    </a>
+                </div>
 
                     {{-- Active More Filter Badges --}}
                     @if ($activeMoreFilterCount > 0)

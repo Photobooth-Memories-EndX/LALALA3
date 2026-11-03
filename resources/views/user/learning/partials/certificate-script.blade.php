@@ -174,6 +174,11 @@
                 setQuickValue($dropdown, value, quickFilterLabel($dropdown, value));
             });
 
+            var activeType = certificateFilterState.certificate_filter_type || 'all';
+            $('.certificate-category-pill').removeClass('active').filter(function () {
+                return String($(this).data('value')) === String(activeType);
+            }).addClass('active');
+
             $('#certificate_issuer').val(certificateFilterState.certificate_issuer || '');
             $('#certificate_date_from').val(certificateFilterState.certificate_date_from || '');
             $('#certificate_date_to').val(certificateFilterState.certificate_date_to || '');
@@ -209,6 +214,11 @@
                 var name = String(this.name);
                 nextState[name] = String($(this).val() || 'all');
             });
+
+            var $activePill = $('.certificate-category-pill.active');
+            if ($activePill.length) {
+                nextState.certificate_filter_type = String($activePill.data('value') || 'all');
+            }
 
             nextState.certificate_issuer = $.trim($('#certificate_issuer').val() || $('[name="certificate_issuer"]').val() || '');
             nextState.certificate_date_from = $.trim($('#certificate_date_from').val() || $('[name="certificate_date_from"]').val() || '');
@@ -388,6 +398,9 @@
             if (filterType === 'type') {
                 $('input[name="certificate_filter_type"]').prop('checked', false).filter('[value="' + val + '"]').prop('checked', true);
                 $('#certificateAdvancedType').val(val);
+                $('.certificate-category-pill').removeClass('active').filter(function () {
+                    return String($(this).data('value')) === String(val);
+                }).addClass('active');
             } else if (filterType === 'year') {
                 $('input[name="certificate_filter_year"]').prop('checked', false).filter('[value="' + val + '"]').prop('checked', true);
             } else if (filterType === 'month') {
@@ -397,6 +410,30 @@
             applyCertificateFilters();
         });
 
+        $(document).off('click.certificateCategoryPill').on('click.certificateCategoryPill', '.certificate-category-pill', function (e) {
+            e.preventDefault();
+            var val = String($(this).data('value') || 'all');
+            $('.certificate-category-pill').removeClass('active').filter(function () {
+                return String($(this).data('value')) === val;
+            }).addClass('active');
+            var $dropdown = $('#certificateFilterBar [data-certificate-filter="type"]');
+            setQuickValue($dropdown, val, $.trim($(this).text()));
+            $('input[name="certificate_filter_type"]').prop('checked', false).filter('[value="' + val + '"]').prop('checked', true);
+            $('#certificateAdvancedType').val(val);
+            applyCertificateFilters();
+        });
+
+        $(document).off('click.certificateClearSearch').on('click.certificateClearSearch', '#certificateClearSearch', function (e) {
+            e.preventDefault();
+            $('#certificate-search-input, #certificateSearch').val('');
+            applyCertificateFilters();
+        });
+
+        $(document).off('click.certificateActiveReset').on('click.certificateActiveReset', '#certificateActiveResetBtn', function (e) {
+            e.preventDefault();
+            $('#certificateResetFilter').trigger('click');
+        });
+
         $(document).off('change.learningCertificateRadio')
             .on('change.learningCertificateRadio', 'input[name="certificate_filter_type"], input[name="certificate_filter_year"], input[name="certificate_filter_month"]', function () {
                 var name = this.name;
@@ -404,6 +441,9 @@
                 if (name === 'certificate_filter_type') {
                     var label = $(this).next('.form-check-label').text() || 'All';
                     setQuickValue($('#certificateFilterBar [data-certificate-filter="type"]'), val, $.trim(label));
+                    $('.certificate-category-pill').removeClass('active').filter(function () {
+                        return String($(this).data('value')) === String(val);
+                    }).addClass('active');
                 } else if (name === 'certificate_filter_year') {
                     setQuickValue($('#certificateFilterBar [data-certificate-filter="year"]'), val, val === 'all' ? 'All' : val);
                 } else if (name === 'certificate_filter_month') {

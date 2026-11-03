@@ -70,11 +70,11 @@ body.theme-dark .quick-filter-btn.active {
 @endonce
 
 {{-- Quick Filter Tab Row: Left = Mode Tabs (All Record, KP OWL, Non KP OWL), Right = Unified Download Dropdown --}}
-<div class="d-flex align-items-center justify-content-between gap-2 w-100 mt-3 mb-0 quick-filter-row record-mode-switch-wrapper">
+<div class="d-flex align-items-center justify-content-between gap-2 w-100 mt-3 mb-0 quick-filter-row record-mode-switch-wrapper my-task-pills-row">
     <!-- Left Side: Quick Filter Tabs (Sequence: All Record -> KP OWL -> Non KP OWL) -->
-    <div class="learning-mode-switch record-mode-switch d-flex align-items-center gap-2" role="group" aria-label="Learning Record mode">
+    <div class="learning-mode-switch record-mode-switch d-flex align-items-center gap-2 flex-wrap" role="group" aria-label="Learning Record mode">
         <button type="button"
-                class="btn learning-mode-btn record-mode-btn quick-filter-btn rounded-pill rounded-full px-4 py-2 border-0 {{ $currentMode === 'all' ? 'active' : '' }}"
+                class="btn learning-mode-btn record-mode-btn quick-filter-btn my-task-category-pill rounded-pill rounded-full px-4 py-2 border-0 {{ $currentMode === 'all' ? 'active' : '' }}"
                 data-mode="all"
                 title="All Record"
                 aria-label="All Record"
@@ -83,7 +83,7 @@ body.theme-dark .quick-filter-btn.active {
             <span>All Record</span>
         </button>
         <button type="button"
-                class="btn learning-mode-btn record-mode-btn quick-filter-btn rounded-pill rounded-full px-4 py-2 border-0 {{ $currentMode === 'online' ? 'active' : '' }}"
+                class="btn learning-mode-btn record-mode-btn quick-filter-btn my-task-category-pill rounded-pill rounded-full px-4 py-2 border-0 {{ $currentMode === 'online' ? 'active' : '' }}"
                 data-mode="online"
                 title="KP OWL"
                 aria-label="KP OWL"
@@ -92,7 +92,7 @@ body.theme-dark .quick-filter-btn.active {
             <span>KP OWL</span>
         </button>
         <button type="button"
-                class="btn learning-mode-btn record-mode-btn quick-filter-btn rounded-pill rounded-full px-4 py-2 border-0 {{ $currentMode === 'offline' ? 'active' : '' }}"
+                class="btn learning-mode-btn record-mode-btn quick-filter-btn my-task-category-pill rounded-pill rounded-full px-4 py-2 border-0 {{ $currentMode === 'offline' ? 'active' : '' }}"
                 data-mode="offline"
                 title="Non KP OWL"
                 aria-label="Non KP OWL"

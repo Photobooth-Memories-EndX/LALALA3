@@ -11,9 +11,9 @@
     }
 @endphp
 <a href="{{ $downloadUrl }}"
-   class="btn btn-success bg-emerald-600 text-white hover:bg-emerald-700 d-inline-flex align-items-center justify-content-center p-2.5 rounded-3 shadow-sm ongoing-download-button"
-   title="Download"
+   class="btn btn-outline-success btn-learning-success ongoing-filter-action-btn ongoing-download-button my-task-btn-square my-task-btn-export"
+   title="Download Excel"
    aria-label="Download {{ ucfirst($mode) }} learning records as Excel">
-    <i class="bi bi-download ti ti-download" aria-hidden="true"></i>
-    <span class="visually-hidden">Download</span>
+    <i class="ti ti-download fs-3" aria-hidden="true"></i>
+    <span class="visually-hidden">Download Excel</span>
 </a>

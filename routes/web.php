@@ -1,6 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\TaskManageController;
+use App\Http\Controllers\MyTaskController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AdminController;
@@ -210,6 +212,20 @@ Route::group(['prefix' => 'assesment', 'middleware' => 'auth'], function () {
     });
 });
 Route::get('/assessment-hub', [AssesmentUserController::class, 'index'])->middleware('auth')->name('assessment.index');
+
+/*
+|--------------------------------------------------------------------------
+| My Task (User)
+|--------------------------------------------------------------------------
+*/
+Route::group(['prefix' => 'my-task', 'middleware' => 'auth'], function () {
+    Route::get('/', [MyTaskController::class, 'index'])->name('my-task.index');
+    Route::post('/{task}/submit', [MyTaskController::class, 'submit'])->name('my-task.submit');
+    Route::post('/redeem', [MyTaskController::class, 'redeemCode'])->name('my-task.redeem');
+    Route::get('/redeem/{code}', [MyTaskController::class, 'redeemViaLink'])->name('my-task.redeem-link');
+    Route::get('/unlock/{task}', [MyTaskController::class, 'redeemViaSignedLink'])->name('my-task.redeem-signed');
+    Route::get('/unlock-playlist/{playlist}', [MyTaskController::class, 'unlockPlaylist'])->name('my-task.unlock-playlist');
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -475,7 +491,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
     });
 
     Route::group(['middleware' => 'mpermission:playlist_learning_path'], function () {
-        Route::get('playlist/search-autocomplete', [TrainingPlanController::class, 'autocompleteSearch'])->name('manage.trainingplan.autocomplete');
+        Route::get('playlist/search-autocomplete', [TrainingPlanController::class, 'autocompleteSearch'])->name('manage.playlist.autocomplete');
         Route::get('playlist/{playlist}/order', [TrainingPlanController::class, 'order'])->name('manage.playlist.order');
         Route::get('playlist-thumbnail-test', [TrainingPlanController::class, 'thumbnailTest'])->name('playlist.thumbnailTest');
         Route::post('playlist/synchronize-durations', [TrainingPlanController::class, 'synchronizeDurations'])->name('manage.playlist.synchronize-durations');
@@ -506,6 +522,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
         Route::get('learning', [LearningManageController::class, 'index'])->name('learning.manage.index');
         Route::get('learning/all', [LearningManageController::class, 'all'])->name('learning.manage.all');
         Route::get('learning/category/{slug}', [LearningManageController::class, 'category'])->name('learning.manage.category');
+        Route::get('learning/manage.category');
         Route::get('learning/content/{slug}', [LearningManageController::class, 'content'])->name('learning.manage.content');
         Route::get('learning/playlist/{id}', [LearningManageController::class, 'playlistDetail'])->name('learning.manage.playlist');
         Route::get('learning/record-detail/{type}/{id}', [LearningManageController::class, 'recordDetail'])->name('learning.manage.record-detail');
@@ -514,6 +531,50 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
         Route::get('learning/download', [LearningManageController::class, 'download'])->name('manage.learning.download')->middleware('mpermission:learning_management');
         Route::get('learning/download/pdf', [LearningManageController::class, 'downloadPdf'])->name('manage.learning.download.pdf')->middleware('mpermission:learning_management');
         Route::get('learning/download/csv', [LearningManageController::class, 'downloadCsv'])->name('manage.learning.download.csv')->middleware('mpermission:learning_management');
+    });
+
+    // ── Task Management ─────────────────────────────────────────────
+    // Permission sendiri: task_management (terpisah dari learning_management)
+    Route::group(['middleware' => 'mpermission:task_management'], function () {
+        Route::prefix('task')->name('manage.task.')->group(function () {
+            // Dashboard: induk (playlist / content / offline training) yang punya task
+            Route::get('/', [TaskManageController::class, 'index'])->name('index');
+
+            Route::get('trash', [TaskManageController::class, 'trash'])->name('trash');
+Route::post('{id}/restore', [TaskManageController::class, 'restore'])->name('restore');
+Route::delete('{id}/force', [TaskManageController::class, 'forceDestroy'])->name('force-destroy');
+Route::get('{task}/qr', [TaskManageController::class, 'qr'])->name('qr');
+
+
+
+            // AJAX: dropdown + search induk untuk form create/edit
+            Route::get('parents/{type}', [TaskManageController::class, 'parentOptions'])->name('parents');
+            Route::post('group', [TaskManageController::class, 'storeGroup'])->name('group.store');
+
+            // Daftar task milik satu induk
+            Route::get('parent/{parentType}/{parentId}', [TaskManageController::class, 'parentTasks'])->name('parent');
+
+            Route::get('/create', [TaskManageController::class, 'create'])->name('create');
+            Route::post('/', [TaskManageController::class, 'store'])->name('store');
+            Route::get('/ajax/training-plan-contents/{trainingPlan}', [TaskManageController::class, 'trainingPlanContents'])
+                ->name('training-plan-contents');
+            Route::get('/{task}/edit', [TaskManageController::class, 'edit'])->name('edit');
+            Route::put('/{task}', [TaskManageController::class, 'update'])->name('update');
+            Route::delete('/{task}', [TaskManageController::class, 'destroy'])->name('destroy');
+            Route::post('/{task}/publish', [TaskManageController::class, 'publish'])->name('publish');
+
+            // Review submission user
+            Route::get('/{task}/submissions', [TaskManageController::class, 'submissions'])->name('submissions');
+            Route::get('/{task}/submissions/preview-document', [TaskManageController::class, 'previewDocument'])->name('submissions.preview-doc');
+            Route::get('/{task}/submissions/export', [TaskManageController::class, 'exportSubmissions'])->name('submissions.export');
+            Route::post('/{task}/submissions/bulk-complete', [TaskManageController::class, 'bulkComplete'])->name('submissions.bulk-complete');
+            Route::post('/{task}/submissions/{submission}/resubmit', [TaskManageController::class, 'requestResubmit'])->name('submissions.resubmit');
+            Route::post('/{task}/submissions/{submission}/reject', [TaskManageController::class, 'rejectSubmission'])->name('submissions.reject');
+
+            // Koreksi submission user -> tandai selesai
+            Route::post('/{task}/submissions/{submission}/complete', [TaskManageController::class, 'completeSubmission'])
+                ->name('submissions.complete');
+        });
     });
 
     Route::group(['middleware' => 'mpermission:record_management'], function () {
@@ -654,13 +715,13 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
             Route::post('/calculate-selected', [ContentUserLearningHourController::class, 'calculateSelected'])->name('calculate-selected');
             Route::post('/recalculate-selected', [ContentUserLearningHourController::class, 'recalculateSelected'])->name('recalculate-selected');
             Route::post('/batch/start', [ContentUserLearningHourController::class, 'startBatch'])->name('batch.start');
-            Route::post('/batch/process', [ContentUserLearningHourController::class, 'processBatch'])->name('batch.process');
+            Route::post('/batch/process', [ContentUserLearningHourController::class, 'processBatch'])->name('process-batch');
         });
 
         Route::prefix('learning-hours/playlist-content-user')->name('manage.learning-hours.playlist-content-user.')->group(function () {
             Route::get('/', [PlaylistContentUserLearningHourController::class, 'index'])->name('index');
             Route::get('/datatable', [PlaylistContentUserLearningHourController::class, 'datatable'])->name('datatable');
-            Route::get('/statistics', [PlaylistContentUserLearningHourController::class, 'statistics'])->name('statistics');
+            Route::get('/statistics', [ContentUserLearningHourController::class, 'statistics'])->name('statistics');
             Route::post('/calculate', [PlaylistContentUserLearningHourController::class, 'calculate'])->name('calculate');
         });
 

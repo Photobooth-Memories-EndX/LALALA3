@@ -11,7 +11,17 @@
 
     <div class="row g-3">
 
-            @if(auth()->user()->canAccessManageModule('record_management'))
+        @if(auth()->user()->canAccessManageModule('task_management'))
+            @include('main.manage.components.admin-menu-card', [
+                'title' => 'Task Management',
+                'description' => 'Manage course tasks and assignments, set deadlines, publish tasks, and review user submissions.',
+                'url' => url('manage/task'),
+                'button' => 'Manage Tasks',
+                'icon' => 'ti ti-clipboard-list'
+            ])
+        @endif
+
+        @if(auth()->user()->canAccessManageModule('record_management'))
             @include('main.manage.components.admin-menu-card', [
                 'title' => 'Learning & Record Management',
                 'description' => 'Manage KP OWL and Non KP OWL learning records, including online and offline training data, participant progress, classifications, and record exports.',
@@ -19,8 +29,7 @@
                 'button' => 'Manage Records',
                 'icon' => 'ti ti-folders'
             ])
-            @endif
-
+        @endif
             @if(auth()->user()->canAccessManageModule('assessment_management'))
                 @include('main.manage.components.admin-menu-card', [
                     'title' => 'Assessment Management',

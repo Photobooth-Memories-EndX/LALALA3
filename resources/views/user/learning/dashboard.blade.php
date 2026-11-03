@@ -3,11 +3,14 @@
 @section('content')
 
 @php
-    $learningTabs = ['ongoing', 'record', 'assessment', 'certificate'];
-    $initialLearningTab = in_array(request('learning_tab'), $learningTabs, true)
-        ? request('learning_tab')
+    $learningTabs = ['ongoing', 'record', 'my-task', 'certificate'];
+    $rawTab = request('learning_tab');
+    if ($rawTab === 'assessment') {
+        $rawTab = 'my-task';
+    }
+    $initialLearningTab = in_array($rawTab, $learningTabs, true)
+        ? $rawTab
         : 'ongoing';
-
 @endphp
 
 <style>
@@ -77,6 +80,13 @@
                 <x-shared.hero-learning-assessment />
             </div>
 
+            <div data-learning-hero="my-task"
+     class="{{ $initialLearningTab === 'my-task' ? '' : 'd-none' }}"
+     aria-hidden="{{ $initialLearningTab === 'my-task' ? 'false' : 'true' }}">
+    <x-shared.hero-learning-my-task />
+</div>
+
+
             <div data-learning-hero="certificate"
                  class="{{ $initialLearningTab === 'certificate' ? '' : 'd-none' }}"
                  aria-hidden="{{ $initialLearningTab === 'certificate' ? 'false' : 'true' }}">
@@ -120,4 +130,10 @@
 @endsection
 
 @include('user.learning.partials.dashboard-style')
+@if (session('task_submitted_id'))
+    <script>
+        window._taskSubmittedId = {{ (int) session('task_submitted_id') }};
+        window._taskSubmittedTitle = @json(session('task_submitted_title', ''));
+    </script>
+@endif
 @include('user.learning.partials.dashboard-script')

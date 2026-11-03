@@ -32,10 +32,10 @@ class AppServiceProvider extends ServiceProvider
     {
         Paginator::useBootstrapFive();
 
-        view()->composer('partials.header', function ($view) {
+        view()->composer(['partials.header', 'layouts.header'], function ($view) {
             $view->with('category', Classification::select('classification_name', 'slug')->get());
         });
-        view()->composer('partials.header', function ($view) {
+        view()->composer(['partials.header', 'layouts.header'], function ($view) {
             $view->with(
                 'mylearningongoing',
                 app(LearningAnalyticsService::class)->ongoingLearningCount((int) auth()->id())

@@ -8,7 +8,7 @@
 
     <script>
         var _activeTab = null;
-        var _learningTabs = ['ongoing', 'record', 'assessment', 'certificate'];
+        var _learningTabs = ['ongoing', 'record', 'my-task', 'certificate'];
         var _ongoingMode = null;
         var _recordMode = null;
         var _tabFetchSequence = 0;
@@ -16,6 +16,9 @@
 
         function learningTabFromUrl() {
             var tab = String(new URLSearchParams(window.location.search).get('learning_tab') || 'ongoing');
+            if (tab === 'assessment') {
+                return 'my-task';
+            }
             return _learningTabs.indexOf(tab) !== -1 ? tab : 'ongoing';
         }
 
@@ -43,19 +46,16 @@
         function recordSkeletonHtml(mode) {
             mode = mode || 'online';
 
-            var switchInsideHeaderHtml = '<div class="learning-filter-heading fast-filter-header">' +
-                '<div class="fast-filter-header-copy">' +
-                    '<h3 class="card-title fast-filter-title">Quick Filter</h3>' +
-                '</div>' +
-                '<div class="d-flex align-items-center justify-content-between gap-2 w-100 mt-3 mb-0 quick-filter-row record-mode-switch-wrapper">' +
-                    '<div class="learning-mode-switch record-mode-switch d-flex align-items-center gap-2" role="group" aria-label="Learning Record mode">' +
-                        '<button type="button" class="btn learning-mode-btn record-mode-btn quick-filter-btn rounded-pill rounded-full px-4 py-2 border-0 ' + (mode === 'all' ? 'active' : '') + '" data-mode="all" title="All Record" aria-label="All Record" style="border-radius: 9999px !important;"><i class="ti ti-stack-2"></i><span>All Record</span></button>' +
-                        '<button type="button" class="btn learning-mode-btn record-mode-btn quick-filter-btn rounded-pill rounded-full px-4 py-2 border-0 ' + (mode === 'online' ? 'active' : '') + '" data-mode="online" title="KP OWL" aria-label="KP OWL" style="border-radius: 9999px !important;"><i class="ti ti-device-laptop"></i><span>KP OWL</span></button>' +
-                        '<button type="button" class="btn learning-mode-btn record-mode-btn quick-filter-btn rounded-pill rounded-full px-4 py-2 border-0 ' + (mode === 'offline' ? 'active' : '') + '" data-mode="offline" title="Non KP OWL" aria-label="Non KP OWL" style="border-radius: 9999px !important;"><i class="ti ti-certificate"></i><span>Non KP OWL</span></button>' +
-                    '</div>' +
-                    '<span class="placeholder rounded-3 ms-auto" style="width:118px;height:40px;"></span>' +
-                '</div>' +
-            '</div>';
+            var switchInsideHeaderHtml = '<div class="mb-3">' +
+                '<h2 class="fw-bold mb-1 my-task-filter-title">Learning Record</h2>' +
+                '<p class="text-muted small mb-0 my-task-filter-subtitle">Track your completed learning history across KP OWL and Non KP OWL activities.</p>' +
+            '</div>' +
+            '<div class="d-flex align-items-center flex-wrap gap-2 mb-3 my-task-pills-row">' +
+                '<button type="button" class="my-task-category-pill record-mode-btn ' + (mode === 'online' ? 'active' : '') + '" data-mode="online">KP OWL</button>' +
+                '<button type="button" class="my-task-category-pill record-mode-btn ' + (mode === 'offline' ? 'active' : '') + '" data-mode="offline">Non KP OWL</button>' +
+                '<button type="button" class="my-task-category-pill record-mode-btn ' + (mode === 'all' ? 'active' : '') + '" data-mode="all">All Record</button>' +
+            '</div>' +
+            '<hr class="my-3 my-task-divider">';
 
             var tableRows = '';
             for (var i = 0; i < 5; i++) {
@@ -76,18 +76,20 @@
             }
 
             return '<div class="learning-record-shell">' +
-                '<div class="card border-0 shadow-sm rounded-4 mb-4 learning-record-card">' +
-                    '<div class="card-body p-4 border-bottom placeholder-glow">' +
+                '<div class="card border-0 shadow-sm rounded-4 mb-3 my-task-filter-card">' +
+                    '<div class="card-body p-3 p-md-4 placeholder-glow">' +
                         switchInsideHeaderHtml +
-                        '<div class="d-flex align-items-center flex-wrap gap-2 mt-3">' +
-                            '<span class="placeholder rounded-pill quick-filter-skeleton" style="width:110px;height:38px;border-radius:9999px !important;"></span>' +
-                            '<span class="placeholder rounded-pill quick-filter-skeleton" style="width:140px;height:38px;border-radius:9999px !important;"></span>' +
-                            '<span class="placeholder rounded-pill quick-filter-skeleton" style="width:90px;height:38px;border-radius:9999px !important;"></span>' +
-                            '<span class="placeholder flex-grow-1 rounded-3" style="min-width:200px;height:38px;"></span>' +
-                            '<span class="placeholder rounded-3" style="width:38px;height:38px;"></span>' +
-                            '<span class="placeholder rounded-3" style="width:38px;height:38px;"></span>' +
+                        '<div class="d-flex align-items-center flex-wrap gap-2 w-100 my-task-toolbar">' +
+                            '<span class="placeholder rounded-2" style="width:110px;height:38px;"></span>' +
+                            '<span class="placeholder rounded-2" style="width:140px;height:38px;"></span>' +
+                            '<span class="placeholder rounded-2" style="width:90px;height:38px;"></span>' +
+                            '<span class="placeholder flex-grow-1 rounded-2" style="min-width:180px;height:38px;"></span>' +
+                            '<span class="placeholder rounded-2" style="width:38px;height:38px;"></span>' +
+                            '<span class="placeholder rounded-2" style="width:38px;height:38px;"></span>' +
                         '</div>' +
                     '</div>' +
+                '</div>' +
+                '<div class="card border-0 shadow-sm rounded-4 mb-4 learning-record-card">' +
                     '<div class="card-body p-0">' +
                         '<div class="table-responsive learning-record-scroll">' +
                             '<table class="table table-vcenter card-table mb-0 learning-record-table placeholder-glow">' +
@@ -161,6 +163,18 @@
             template.remove();
         }
 
+        function syncLearningMyTaskHero() {
+            var template = document.querySelector(
+                '#learning-tab-content template[data-learning-my-task-hero]'
+            );
+            var heroRegion = document.querySelector('[data-learning-hero="my-task"]');
+
+            if (!template || !heroRegion) return;
+
+            heroRegion.replaceChildren(template.content.cloneNode(true));
+            template.remove();
+        }
+
         function syncLearningCertificateHero() {
             var template = document.querySelector(
                 '#learning-tab-content template[data-learning-certificate-hero]'
@@ -205,6 +219,9 @@
             if ($.fn.DataTable && $.fn.DataTable.isDataTable('#certificateTable')) {
                 $('#certificateTable').DataTable().destroy();
             }
+            if ($.fn.DataTable && $.fn.DataTable.isDataTable('#myTaskTable')) {
+                $('#myTaskTable').DataTable().destroy();
+            }
 
             // Show skeleton while loading
             if (tab === 'record') {
@@ -219,6 +236,7 @@
                 if (tab !== 'ongoing' && key.indexOf('ongoing_') === 0) params.delete(key);
                 if (tab !== 'record' && key.indexOf('record_') === 0) params.delete(key);
                 if (tab !== 'assessment' && key.indexOf('assessment_') === 0) params.delete(key);
+                if (tab !== 'my-task' && key.indexOf('my_task_') === 0) params.delete(key);
                 if (tab !== 'certificate' && key.indexOf('certificate_') === 0) params.delete(key);
             });
             if (tab === 'ongoing' && _ongoingMode) {
@@ -227,6 +245,14 @@
             if (tab === 'record') {
                 var rm = _recordMode || recordModeFromUrl();
                 if (rm) params.set('record_mode', rm);
+            }
+            if (tab === 'my-task' && window._taskSubmittedId) {
+                params.set('task_submitted_id', window._taskSubmittedId);
+                if (window._taskSubmittedTitle) {
+                    params.set('task_submitted_title', window._taskSubmittedTitle);
+                }
+                window._taskSubmittedId = null;
+                window._taskSubmittedTitle = null;
             }
             var fetchUrl = '{{ route("user.learning.dashboard.partial", ["tab" => "__TAB__"]) }}'.replace('__TAB__', tab);
             if (params.toString()) {
@@ -253,10 +279,12 @@
                 syncLearningOngoingHero();
                 syncLearningAssessmentHero();
                 syncLearningRecordHero();
+                syncLearningMyTaskHero();
                 syncLearningCertificateHero();
                 initLearningAssessment();
                 initLearningCertificate();
                 initLearningRecord();
+                if (typeof initMyTask === 'function') initMyTask();
                 initOngoingSearchAutocomplete();
             })
             .catch(function (err) {
@@ -380,13 +408,9 @@
         });
 
         // ── Quick dropdown filters Learning On Going (Type / Status / Year / Month) ──
-        // Terapkan pilihan via AJAX (tanpa reload halaman): perbarui query string di URL
-        // lalu muat ulang partial tab ongoing memakai endpoint yang sudah ada.
         function applyOngoingQuickFilter(param, value, isArray) {
             var params = new URLSearchParams(window.location.search);
 
-            // Hapus nilai lama param tsb (bentuk "param", "param[]" maupun "param[0]")
-            // dan reset pagination agar hasil filter mulai dari halaman pertama.
             Array.from(params.keys()).forEach(function (key) {
                 if (key === param || key.indexOf(param + '[') === 0 || key === 'ongoing_page') {
                     params.delete(key);
@@ -400,12 +424,10 @@
             var qs = params.toString();
             history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
 
-            _activeTab = null; // paksa loadLearningTab memuat ulang partial ongoing
+            _activeTab = null;
             loadLearningTab('ongoing');
         }
 
-        // Delegated: item dropdown ikut ter-render ulang setiap partial dimuat via AJAX.
-        // Klik item yang sudah aktif = batalkan pilihan (toggle, tanpa opsi "All" pada Type).
         $(document).on('click', '.ongoing-quick-item', function (e) {
             e.preventDefault();
             applyOngoingQuickFilter(
@@ -416,8 +438,6 @@
         });
 
         // ── Mode switch Learning On Going: Content | Playlist ────────────────────────
-        // Dua flow independen — pindah mode me-reset seluruh filter ongoing, lalu
-        // partial mode terpilih dimuat via AJAX (tanpa reload halaman).
         $(document).on('click', '.ongoing-mode-btn', function () {
             var mode   = String($(this).data('mode'));
             var params = new URLSearchParams(window.location.search);
@@ -437,7 +457,7 @@
             var qs = params.toString();
             history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
 
-            _activeTab = null; // paksa loadLearningTab memuat ulang partial ongoing
+            _activeTab = null;
             loadLearningTab('ongoing');
         });
 
@@ -503,10 +523,12 @@
         });
 
         // ── Mode switch Learning Record: Online | Offline | All ───────────────────────
+
+        // ── Mode switch Learning Record: Online | Offline | All | Export ────────────
         $(document).on('click', '.record-mode-btn', function (e) {
             e.preventDefault();
             var mode = String($(this).data('mode') || 'online').toLowerCase();
-            if (['online', 'offline', 'all'].indexOf(mode) === -1) {
+            if (['online', 'offline', 'all', 'export'].indexOf(mode) === -1) {
                 mode = 'online';
             }
 

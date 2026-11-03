@@ -42,11 +42,6 @@
 
                         <i class="ti ti-bell fs-2"></i>
 
-                        @if (($mylearningongoing ?? 0) >= 1)
-                            <span class="badge bg-red badge-notification">
-                                {{ $mylearningongoing }}
-                            </span>
-                        @endif
                     </a>
 
                     <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
@@ -54,17 +49,10 @@
                             Notifications
                         </div>
 
-                        @if (($mylearningongoing ?? 0) >= 1)
-                            <a href="{{ route('user.learning.dashboard') }}" class="dropdown-item">
-                                <i class="ti ti-book-2 me-2"></i>
-                                You have {{ $mylearningongoing }} ongoing learning
-                            </a>
-                        @else
                             <span class="dropdown-item text-muted">
                                 <i class="ti ti-bell-off me-2"></i>
                                 No notifications
                             </span>
-                        @endif
                     </div>
                 </div>
 
@@ -99,9 +87,6 @@
                         <span class="nav-link-icon"><i class="ti ti-book-2"></i></span>
                         <span class="nav-link-title">My Learning</span>
 
-                        @if ($mylearningongoing >= 1)
-                            <span class="badge bg-red ms-auto">{{ $mylearningongoing }}</span>
-                        @endif
                     </a>
                 </li>
 
@@ -239,11 +224,6 @@
 
                         <i class="ti ti-bell fs-2"></i>
 
-                        @if (($mylearningongoing ?? 0) >= 1)
-                            <span class="badge bg-red badge-notification">
-                                {{ $mylearningongoing }}
-                            </span>
-                        @endif
                     </a>
 
                     <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
@@ -251,17 +231,10 @@
                             Notifications
                         </div>
 
-                        @if (($mylearningongoing ?? 0) >= 1)
-                            <a href="{{ route('user.learning.dashboard') }}" class="dropdown-item">
-                                <i class="ti ti-book-2 me-2"></i>
-                                You have {{ $mylearningongoing }} ongoing learning
-                            </a>
-                        @else
                             <span class="dropdown-item text-muted">
                                 <i class="ti ti-bell-off me-2"></i>
                                 No notifications
                             </span>
-                        @endif
                     </div>
                 </div>
 
@@ -433,11 +406,6 @@
 
                             <i class="ti ti-bell fs-2"></i>
 
-                            @if (($mylearningongoing ?? 0) >= 1)
-                                <span class="badge bg-red badge-notification">
-                                    {{ $mylearningongoing }}
-                                </span>
-                            @endif
                         </a>
 
                         <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
@@ -445,17 +413,10 @@
                                 Notifications
                             </div>
 
-                            @if (($mylearningongoing ?? 0) >= 1)
-                                <a href="{{ route('user.learning.dashboard') }}" class="dropdown-item">
-                                    <i class="ti ti-book-2 me-2"></i>
-                                    You have {{ $mylearningongoing }} ongoing learning
-                                </a>
-                            @else
                                 <span class="dropdown-item text-muted">
                                     <i class="ti ti-bell-off me-2"></i>
                                     No notifications
                                 </span>
-                            @endif
                         </div>
                     </div>
                 </div>

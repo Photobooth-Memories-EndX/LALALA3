@@ -44,6 +44,10 @@ class LearningController extends Controller
             return app(LearningRecordController::class)->certificate();
         }
 
+        if (session()->has('task_submitted_id')) {
+            session()->keep(['task_submitted_id', 'task_submitted_title', 'success']);
+        }
+
         $userId = Auth::id();
         $user   = Auth::user();
 
@@ -133,6 +137,7 @@ class LearningController extends Controller
                 default   => app(\App\Http\Controllers\User\Record\LearningRecordOnlineController::class)->partial($eligibilityService),
             },
             'assessment'  => app(LearningAssessmentController::class)->partial(request()),
+            'my-task'     => app(\App\Http\Controllers\MyTaskController::class)->tabPartial(request()),
             'claim'       => view('user.learning.dashboard-partials.claim'),
             'certificate' => app(LearningRecordController::class)->certificate(),
             'monitoring'  => app(LearningMonitoringController::class)->partial(),

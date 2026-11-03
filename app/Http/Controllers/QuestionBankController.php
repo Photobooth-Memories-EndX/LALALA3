@@ -132,25 +132,38 @@ class QuestionBankController extends Controller
 
     public function store(Request $request)
     {
+        $isDraft = $request->input('action') === 'draft';
+
         $this->validate($request, [
-            'title'        => 'required|unique:question_banks,title',
-            'created_date' => 'required|date',
+            'title'        => $isDraft ? 'nullable|max:255' : 'required|unique:question_banks,title',
+            'created_date' => $isDraft ? 'nullable|date' : 'required|date',
         ]);
 
+        if ($isDraft && empty(trim((string) $request->input('title')))) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'status'   => 200,
+                    'message'  => 'No changes saved.',
+                    'redirect' => route('question.bank.index')
+                ]);
+            }
+            return redirect()->route('question.bank.index');
+        }
+
         $questionBank = new QuestionBank;
-        $questionBank->title        = $request->input('title');
-        $questionBank->created_date = $request->input('created_date');
+        $questionBank->title        = $request->input('title') ?: 'Draft Question Bank ' . date('Y-m-d H:i');
+        $questionBank->created_date = $request->input('created_date') ?: date('Y-m-d');
         $questionBank->save();
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
                 'status'   => 200,
-                'message'  => $request->title . " has already successfully created in the question bank.",
+                'message'  => $questionBank->title . " has already successfully created in the question bank.",
                 'redirect' => route('question.bank.index')
             ]);
         }
 
-        return redirect()->route('question.bank.index')->with('success',  $request->title . " has already successfully created in the question bank.");
+        return redirect()->route('question.bank.index')->with('success',  $questionBank->title . " has already successfully created in the question bank.");
     }
 
     public function edit($slug)
@@ -163,14 +176,19 @@ class QuestionBankController extends Controller
     public function update(Request $request, $id)
     {
         $questionBank = QuestionBank::findOrFail($id);
+        $isDraft = $request->input('action') === 'draft';
 
         $this->validate($request, [
-            'title'        => 'required|unique:question_banks,title,' . $id,
-            'created_date' => 'required|date',
+            'title'        => $isDraft ? 'nullable|max:255' : 'required|unique:question_banks,title,' . $id,
+            'created_date' => $isDraft ? 'nullable|date' : 'required|date',
         ]);
 
-        $questionBank->title        = $request->title;
-        $questionBank->created_date = $request->created_date;
+        if ($request->filled('title')) {
+            $questionBank->title = $request->title;
+        }
+        if ($request->filled('created_date')) {
+            $questionBank->created_date = $request->created_date;
+        }
         $questionBank->save();
 
         if ($request->ajax() || $request->wantsJson()) {

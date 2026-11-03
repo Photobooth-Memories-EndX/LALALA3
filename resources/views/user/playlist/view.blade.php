@@ -45,7 +45,7 @@
                 <i class="ti ti-arrow-left"></i> Back
             </a>
 
-            @include('user.playlist.components.view-hero')
+@include('user.playlist.components.view-hero')
 
             <div class="playlist-learning-shell">
                 <button type="button"
@@ -81,6 +81,7 @@
                             'content_all' => $content_all,
                             'playlist' => $playlist,
                         ])
+
                         @include('user.playlist.components.view-content-info')
 
                         @if ($canUsePlaylistDebug)
