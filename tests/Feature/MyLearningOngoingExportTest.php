@@ -185,7 +185,7 @@ class MyLearningOngoingExportTest extends TestCase
                 ->assertDontSee('Export Excel')
                 ->assertDontSee('Download PDF (.pdf)')
                 ->assertDontSee('Download CSV (.csv)')
-                ->assertSee('btn-outline-success btn-learning-success ongoing-filter-action-btn', false)
+                ->assertSee('btn-white my-task-btn-square my-task-btn-export', false)
                 ->assertSee('ongoing-download-button', false)
                 ->assertSee('format=excel', false)
                 ->assertSee('ongoing_mode=' . $mode, false)
