@@ -2,6 +2,8 @@
 
 namespace App\Services\OfflineTraining;
 
+use App\Services\OfflineTraining\ExcelDateTimeParser;
+
 use App\Models\OfflineTraining;
 use App\Models\OfflineTrainingUser;
 use App\Models\User;
@@ -193,27 +195,44 @@ class PtkpValidationService
         }
 
         // 4. Date and Time Format Validations
+        $rowNum = $normalized['excel_row'] ?? null;
+        $empId = trim((string) ($normalized['employee_id'] ?? ''));
+        $ctx = ($rowNum ? "Excel Row {$rowNum}" : "") . ($empId !== '' ? " (Employee ID: '{$empId}')" : "");
+        $ctx = $ctx ? "{$ctx}: " : "";
+
         if (!empty($normalized['start_time_invalid'])) {
-            $errors[] = "Invalid Start Time format: '{$normalized['raw_start_time']}'. Expected HH:mm or HH:mm:ss.";
+            $errors[] = "{$ctx}Invalid Start Time format: '{$normalized['raw_start_time']}'. " . ($normalized['start_time_error'] ?? 'Expected HH:mm or HH:mm:ss (00:00:00 - 23:59:59).');
         }
         if (!empty($normalized['end_time_invalid'])) {
-            $errors[] = "Invalid End Time format: '{$normalized['raw_end_time']}'. Expected HH:mm or HH:mm:ss.";
+            $errors[] = "{$ctx}Invalid End Time format: '{$normalized['raw_end_time']}'. " . ($normalized['end_time_error'] ?? 'Expected HH:mm or HH:mm:ss (00:00:00 - 23:59:59).');
         }
         if (!empty($normalized['start_date_invalid'])) {
-            $errors[] = "Invalid Start Date format: '{$normalized['raw_start_date']}'. Expected YYYY-MM-DD.";
+            $errors[] = "{$ctx}Invalid Start Date format: '{$normalized['raw_start_date']}'. " . ($normalized['start_date_error'] ?? 'Expected valid date (DD/MM/YYYY).');
         }
         if (!empty($normalized['end_date_invalid'])) {
-            $errors[] = "Invalid End Date format: '{$normalized['raw_end_date']}'. Expected YYYY-MM-DD.";
+            $errors[] = "{$ctx}Invalid End Date format: '{$normalized['raw_end_date']}'. " . ($normalized['end_date_error'] ?? 'Expected valid date (DD/MM/YYYY).');
+        }
+        if (!empty($normalized['bond_end_date_invalid'])) {
+            $errors[] = "{$ctx}Invalid Bond End Date format: '{$normalized['raw_bond_end_date']}'. " . ($normalized['bond_end_date_error'] ?? 'Expected valid date (DD/MM/YYYY).');
+        }
+        if (!empty($normalized['certificate_issued_date_invalid'])) {
+            $errors[] = "{$ctx}Invalid Certificate Issued Date format: '{$normalized['raw_certificate_issued_date']}'. " . ($normalized['certificate_issued_date_error'] ?? 'Expected valid date (DD/MM/YYYY).');
+        }
+        if (!empty($normalized['certificate_expired_date_invalid'])) {
+            $errors[] = "{$ctx}Invalid Certificate Expired Date format: '{$normalized['raw_certificate_expired_date']}'. " . ($normalized['certificate_expired_date_error'] ?? 'Expected valid date (DD/MM/YYYY).');
         }
 
-        // 5. Date & Time sequence validations
+        // 5. Date sequence validations: Start Date cannot be after End Date when both are present
         if (!empty($normalized['start_date']) && !empty($normalized['finish_date'])) {
             if ($normalized['start_date'] > $normalized['finish_date']) {
-                $warnings[] = "Start Date ({$normalized['start_date']}) is after End Date ({$normalized['finish_date']}).";
-            } elseif ($normalized['start_date'] === $normalized['finish_date'] && !empty($normalized['start_time']) && !empty($normalized['end_time'])) {
-                if ($normalized['start_time'] > $normalized['end_time']) {
-                    $warnings[] = "Start Time ({$normalized['start_time']}) is after End Time ({$normalized['end_time']}).";
-                }
+                $errors[] = "{$ctx}Start Date ({$normalized['start_date']}) cannot be after End Date ({$normalized['finish_date']}).";
+            }
+        }
+
+        // 6. Certificate sequence validation: Issued Date cannot be after Expired Date when both are present
+        if (!empty($normalized['certificate_issued_date']) && !empty($normalized['certificate_expired_date'])) {
+            if ($normalized['certificate_issued_date'] > $normalized['certificate_expired_date']) {
+                $errors[] = "{$ctx}Certificate Issued Date ({$normalized['certificate_issued_date']}) cannot be after Certificate Expired Date ({$normalized['certificate_expired_date']}).";
             }
         }
 
@@ -315,45 +334,36 @@ class PtkpValidationService
 
         // Dates & times
         $rawStartDate = $raw['start_date'] ?? null;
-        $normalized['start_date'] = $this->parseDate($rawStartDate);
-        $normalized['start_date_invalid'] = false;
-        if ($rawStartDate !== null && trim((string) $rawStartDate) !== '' && !in_array(strtolower(trim((string) $rawStartDate)), ['-', '--', 'n/a', 'na', 'none', 'null', 'tba'], true)) {
-            if ($normalized['start_date'] === null) {
-                $normalized['start_date_invalid'] = true;
-                $normalized['raw_start_date'] = trim((string) $rawStartDate);
-            }
-        }
+        $startDateResult = ExcelDateTimeParser::parseDateResult($rawStartDate);
+        $normalized['start_date'] = $startDateResult['value'];
+        $normalized['start_date_invalid'] = !$startDateResult['valid'];
+        $normalized['start_date_error'] = $startDateResult['error'];
+        $normalized['raw_start_date'] = $rawStartDate;
+        $normalized['start_date_display'] = ExcelDateTimeParser::formatDisplayDate($startDateResult['value']);
 
         $rawEndDate = $raw['end_date'] ?? null;
-        $normalized['end_date'] = $this->parseDate($rawEndDate);
-        $normalized['end_date_invalid'] = false;
-        if ($rawEndDate !== null && trim((string) $rawEndDate) !== '' && !in_array(strtolower(trim((string) $rawEndDate)), ['-', '--', 'n/a', 'na', 'none', 'null', 'tba'], true)) {
-            if ($normalized['end_date'] === null) {
-                $normalized['end_date_invalid'] = true;
-                $normalized['raw_end_date'] = trim((string) $rawEndDate);
-            }
-        }
+        $endDateResult = ExcelDateTimeParser::parseDateResult($rawEndDate);
+        $normalized['end_date'] = $endDateResult['value'];
+        $normalized['end_date_invalid'] = !$endDateResult['valid'];
+        $normalized['end_date_error'] = $endDateResult['error'];
+        $normalized['raw_end_date'] = $rawEndDate;
+        $normalized['end_date_display'] = ExcelDateTimeParser::formatDisplayDate($endDateResult['value']);
+
         $normalized['finish_date'] = $normalized['end_date'] ?? $normalized['start_date'];
 
         $rawStartTime = $raw['start_time'] ?? null;
-        $normalized['start_time'] = $this->parseTime($rawStartTime);
-        $normalized['start_time_invalid'] = false;
-        if ($rawStartTime !== null && trim((string) $rawStartTime) !== '' && !in_array(strtolower(trim((string) $rawStartTime)), ['-', '--', 'n/a', 'na', 'none', 'null', 'tba', 'belum ada'], true)) {
-            if ($normalized['start_time'] === null) {
-                $normalized['start_time_invalid'] = true;
-                $normalized['raw_start_time'] = trim((string) $rawStartTime);
-            }
-        }
+        $startTimeResult = ExcelDateTimeParser::parseTimeResult($rawStartTime);
+        $normalized['start_time'] = $startTimeResult['value'];
+        $normalized['start_time_invalid'] = !$startTimeResult['valid'];
+        $normalized['start_time_error'] = $startTimeResult['error'];
+        $normalized['raw_start_time'] = $rawStartTime;
 
         $rawEndTime = $raw['end_time'] ?? null;
-        $normalized['end_time'] = $this->parseTime($rawEndTime);
-        $normalized['end_time_invalid'] = false;
-        if ($rawEndTime !== null && trim((string) $rawEndTime) !== '' && !in_array(strtolower(trim((string) $rawEndTime)), ['-', '--', 'n/a', 'na', 'none', 'null', 'tba', 'belum ada'], true)) {
-            if ($normalized['end_time'] === null) {
-                $normalized['end_time_invalid'] = true;
-                $normalized['raw_end_time'] = trim((string) $rawEndTime);
-            }
-        }
+        $endTimeResult = ExcelDateTimeParser::parseTimeResult($rawEndTime);
+        $normalized['end_time'] = $endTimeResult['value'];
+        $normalized['end_time_invalid'] = !$endTimeResult['valid'];
+        $normalized['end_time_error'] = $endTimeResult['error'];
+        $normalized['raw_end_time'] = $rawEndTime;
 
         $normalized['month'] = isset($raw['month']) ? trim((string) $raw['month']) : null;
 
@@ -366,8 +376,13 @@ class PtkpValidationService
         if ($normalized['duration_seconds'] === null && !empty($normalized['start_time']) && !empty($normalized['end_time'])) {
             $t1 = strtotime($normalized['start_time']);
             $t2 = strtotime($normalized['end_time']);
-            if ($t1 !== false && $t2 !== false && $t2 > $t1) {
-                $normalized['duration_seconds'] = $t2 - $t1;
+            if ($t1 !== false && $t2 !== false) {
+                if ($t2 >= $t1) {
+                    $normalized['duration_seconds'] = $t2 - $t1;
+                } else {
+                    // Spans midnight (e.g. 22:00 to 02:00 = 4 hours)
+                    $normalized['duration_seconds'] = ($t2 + 86400) - $t1;
+                }
             }
         }
         if ($normalized['duration_seconds'] === null && !empty($normalized['learning_hours']) && $normalized['learning_hours'] > 0) {
@@ -379,7 +394,13 @@ class PtkpValidationService
         $normalized['attendance_reason'] = isset($raw['attendance_reason']) ? trim((string) $raw['attendance_reason']) : null;
         $normalized['bond_status'] = isset($raw['bond_status']) ? trim((string) $raw['bond_status']) : null;
         $normalized['bond_duration'] = $this->parseNumeric($raw['bond_duration'] ?? null, true);
-        $normalized['bond_end_date'] = $this->parseDate($raw['bond_end_date'] ?? null);
+        $rawBondEndDate = $raw['bond_end_date'] ?? null;
+        $bondEndDateResult = ExcelDateTimeParser::parseDateResult($rawBondEndDate);
+        $normalized['bond_end_date'] = $bondEndDateResult['value'];
+        $normalized['bond_end_date_invalid'] = !$bondEndDateResult['valid'];
+        $normalized['bond_end_date_error'] = $bondEndDateResult['error'];
+        $normalized['raw_bond_end_date'] = $rawBondEndDate;
+        $normalized['bond_end_date_display'] = ExcelDateTimeParser::formatDisplayDate($bondEndDateResult['value']);
         $normalized['bond_amount'] = $this->parseNumeric($raw['bond_amount'] ?? null);
         $normalized['bond_amount_idr'] = $normalized['bond_amount'];
 
@@ -394,8 +415,21 @@ class PtkpValidationService
         // Certificate details & PIC
         $normalized['certificate_availability'] = isset($raw['certificate_availability']) ? trim((string) $raw['certificate_availability']) : null;
         $normalized['certificate_institution'] = isset($raw['certificate_institution']) ? trim((string) $raw['certificate_institution']) : null;
-        $normalized['certificate_issued_date'] = $this->parseDate($raw['certificate_issued_date'] ?? null);
-        $normalized['certificate_expired_date'] = $this->parseDate($raw['certificate_expired_date'] ?? null);
+        $rawCertIssued = $raw['certificate_issued_date'] ?? null;
+        $certIssuedResult = ExcelDateTimeParser::parseDateResult($rawCertIssued);
+        $normalized['certificate_issued_date'] = $certIssuedResult['value'];
+        $normalized['certificate_issued_date_invalid'] = !$certIssuedResult['valid'];
+        $normalized['certificate_issued_date_error'] = $certIssuedResult['error'];
+        $normalized['raw_certificate_issued_date'] = $rawCertIssued;
+        $normalized['certificate_issued_date_display'] = ExcelDateTimeParser::formatDisplayDate($certIssuedResult['value']);
+
+        $rawCertExpired = $raw['certificate_expired_date'] ?? null;
+        $certExpiredResult = ExcelDateTimeParser::parseDateResult($rawCertExpired);
+        $normalized['certificate_expired_date'] = $certExpiredResult['value'];
+        $normalized['certificate_expired_date_invalid'] = !$certExpiredResult['valid'];
+        $normalized['certificate_expired_date_error'] = $certExpiredResult['error'];
+        $normalized['raw_certificate_expired_date'] = $rawCertExpired;
+        $normalized['certificate_expired_date_display'] = ExcelDateTimeParser::formatDisplayDate($certExpiredResult['value']);
         $normalized['certificate'] = $normalized['certificate_availability'] ?? null;
         $normalized['pic'] = isset($raw['pic']) ? trim((string) $raw['pic']) : null;
 
@@ -404,79 +438,12 @@ class PtkpValidationService
 
     public function parseDate($value): ?string
     {
-        if ($value === null || $value === '') {
-            return null;
-        }
-
-        if (is_numeric($value)) {
-            try {
-                return Carbon::instance(ExcelDate::excelToDateTimeObject((float) $value))->format('Y-m-d');
-            } catch (Throwable $e) {
-                return null;
-            }
-        }
-
-        $str = trim((string) $value);
-        if ($str === '' || in_array(strtolower($str), ['-', '--', 'n/a', 'na', 'none', 'null', 'tba'], true)) {
-            return null;
-        }
-
-        try {
-            return Carbon::parse($str)->format('Y-m-d');
-        } catch (Throwable $e) {
-            return null;
-        }
+        return ExcelDateTimeParser::parseDate($value);
     }
 
     public function parseTime($value): ?string
     {
-        if ($value === null || $value === '') {
-            return null;
-        }
-
-        // 1. Numeric Excel time serial or datetime float
-        if (is_numeric($value)) {
-            $num = (float) $value;
-            if ($num >= 0.0 && $num < 1.0) {
-                $seconds = (int) round($num * 86400);
-                $h = floor($seconds / 3600) % 24;
-                $m = floor(($seconds % 3600) / 60);
-                $s = $seconds % 60;
-                return sprintf('%02d:%02d:%02d', $h, $m, $s);
-            }
-            if ($num >= 1.0) {
-                try {
-                    return ExcelDate::excelToDateTimeObject($num)->format('H:i:s');
-                } catch (Throwable $e) {
-                    return null;
-                }
-            }
-            return null;
-        }
-
-        $str = trim((string) $value);
-        if ($str === '' || in_array(strtolower($str), ['-', '--', 'n/a', 'na', 'none', 'null', 'tba', 'belum ada'], true)) {
-            return null;
-        }
-
-        // 2. Direct HH:mm or HH:mm:ss regex
-        if (preg_match('/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/', $str, $matches)) {
-            $h = (int) $matches[1];
-            $m = (int) $matches[2];
-            $s = isset($matches[3]) ? (int) $matches[3] : 0;
-            if ($h >= 0 && $h <= 23 && $m >= 0 && $m <= 59 && $s >= 0 && $s <= 59) {
-                return sprintf('%02d:%02d:%02d', $h, $m, $s);
-            }
-            return null;
-        }
-
-        // 3. Carbon parse for AM/PM formats (e.g. '8:30 AM', '5:00 PM') or full datetime strings
-        try {
-            $dt = Carbon::parse($str);
-            return $dt->format('H:i:s');
-        } catch (Throwable $e) {
-            return null;
-        }
+        return ExcelDateTimeParser::parseTime($value);
     }
 
     public function parseDurationToSeconds($value): ?int

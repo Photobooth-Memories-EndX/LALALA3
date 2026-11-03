@@ -615,7 +615,7 @@
                         <td><span class="text-muted small">${escapeHtml(row.company || '-')}</span></td>
                         <td>
                             <div class="fw-semibold text-dark">${escapeHtml(row.course_name || '-')}</div>
-                            <div class="text-muted extra-small" style="font-size: 0.72rem;">${escapeHtml(rowData.batch || '')} &bull; ${escapeHtml(rowData.start_date || '')}</div>
+                            <div class="text-muted extra-small" style="font-size: 0.72rem;">${escapeHtml(rowData.batch || '')} &bull; ${escapeHtml(formatDateDisplay(rowData.start_date_display || rowData.start_date) || '')}</div>
                         </td>
                         <td><span class="badge bg-light text-secondary border">${escapeHtml(row.type || '-')}</span></td>
                         <td><span class="text-muted small">${escapeHtml(row.pic || '-')}</span></td>
@@ -735,8 +735,8 @@
             ['22. Instructor', d.instructor],
             ['23. Learning Hours', d.learning_hours],
             ['24. % Progress', d.progress],
-            ['25. Start Date', d.start_date],
-            ['26. End Date', d.finish_date || d.end_date],
+            ['25. Start Date', formatDateDisplay(d.start_date_display || d.start_date)],
+            ['26. End Date', formatDateDisplay(d.end_date_display || d.finish_date || d.end_date)],
             ['27. Start Time', d.start_time],
             ['28. End Time', d.end_time],
             ['29. Record Month', d.month],
@@ -745,7 +745,7 @@
             ['32. Attendance Reason', d.attendance_reason],
             ['33. Bond Status', d.bond_status],
             ['34. Bond Duration', d.bond_duration],
-            ['35. Bond End Date', d.bond_end_date],
+            ['35. Bond End Date', formatDateDisplay(d.bond_end_date_display || d.bond_end_date)],
             ['36. Bond Amount', d.bond_amount],
             ['37. Score (L1) - Course', d.l1_program],
             ['38. Score (L2)', d.assessment_score],
@@ -754,8 +754,8 @@
             ['41. L3 Status', d.l3_verbal],
             ['42. Certificate Availability', d.certificate_availability],
             ['43. Certificate Institution', d.certificate_institution],
-            ['44. Certificate Issued Date', d.certificate_issued_date],
-            ['45. Certificate Expired Date', d.certificate_expired_date],
+            ['44. Certificate Issued Date', formatDateDisplay(d.certificate_issued_date_display || d.certificate_issued_date)],
+            ['45. Certificate Expired Date', formatDateDisplay(d.certificate_expired_date_display || d.certificate_expired_date)],
             ['46. Person in Charge (PIC)', d.pic]
         ];
 
@@ -937,6 +937,20 @@
         const k = 1024, sizes = ['Bytes', 'KB', 'MB', 'GB'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    function formatDateDisplay(val) {
+        if (!val || val === '-' || val === 'null' || val === 'undefined') return '-';
+        const s = String(val).trim();
+        const isoMatch = s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
+        if (isoMatch) {
+            return `${String(isoMatch[3]).padStart(2, '0')}/${String(isoMatch[2]).padStart(2, '0')}/${isoMatch[1]}`;
+        }
+        const dmyMatch = s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/);
+        if (dmyMatch) {
+            return `${String(dmyMatch[1]).padStart(2, '0')}/${String(dmyMatch[2]).padStart(2, '0')}/${dmyMatch[3]}`;
+        }
+        return s;
     }
 
     function escapeHtml(str) {

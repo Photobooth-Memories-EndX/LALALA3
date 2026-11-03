@@ -2,6 +2,8 @@
 
 namespace App\Services\Record;
 
+use App\Services\OfflineTraining\ExcelDateTimeParser;
+
 use App\Models\ImportBatch;
 use App\Models\ImportBatchRow;
 use App\Models\OfflineTraining;
@@ -851,6 +853,12 @@ class OfflineTrainingImportService
                             'updated_at'          => $now,
                         ];
 
+                        if (isset($otuColumns['certificate_issued_date'])) {
+                            $pRow['certificate_issued_date'] = !empty($p['certificate_issued_date']) ? $p['certificate_issued_date'] : null;
+                        }
+                        if (isset($otuColumns['certificate_expired_date'])) {
+                            $pRow['certificate_expired_date'] = !empty($p['certificate_expired_date']) ? $p['certificate_expired_date'] : null;
+                        }
                         if (isset($otuColumns['bond_duration'])) {
                             $pRow['bond_duration'] = $p['bond_duration'] ?? null;
                         }

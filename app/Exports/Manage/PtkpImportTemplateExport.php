@@ -9,10 +9,14 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class PtkpImportTemplateExport
 {
+    public const DATE_COLUMNS = ['Z', 'AA', 'AJ', 'AS', 'AT'];
+
     /**
      * Build the official PTKP import template workbook with leading visual NO column and 46 canonical columns (47 columns total).
      * Single-row header structure on Row 1 (completely free of group headers and STATUS).
@@ -114,11 +118,33 @@ class PtkpImportTemplateExport
 
         foreach ($columns as $idx => $col) {
             $letter = Coordinate::stringFromColumnIndex($idx + 1);
-            $exampleVal = (string) ($col['example'] ?? '');
-            $sheet->setCellValueExplicit("{$letter}2", $exampleVal, DataType::TYPE_STRING);
+            $key = $col['key'] ?? '';
+
+            if (in_array($letter, self::DATE_COLUMNS, true)) {
+                // Set native Excel date serial numbers so underlying value is valid date
+                $dateMap = [
+                    'Z'  => '2026-08-10',
+                    'AA' => '2026-08-10',
+                    'AJ' => '2028-08-10',
+                    'AS' => '2026-08-10',
+                    'AT' => '2029-08-10',
+                ];
+                $dateStr = $dateMap[$letter] ?? '2026-08-10';
+                $serial = ExcelDate::stringToExcel($dateStr);
+                $sheet->setCellValueExplicit("{$letter}2", $serial, DataType::TYPE_NUMERIC);
+                $sheet->getStyle("{$letter}2")->getNumberFormat()->setFormatCode('dd/mm/yyyy');
+            } else {
+                $exampleVal = (string) ($col['example'] ?? '');
+                $sheet->setCellValueExplicit("{$letter}2", $exampleVal, DataType::TYPE_STRING);
+            }
+
+            $alignHoriz = in_array($letter, self::DATE_COLUMNS, true) ? Alignment::HORIZONTAL_CENTER : Alignment::HORIZONTAL_LEFT;
             $sheet->getStyle("{$letter}2")->applyFromArray([
                 'font' => ['color' => ['rgb' => '334155'], 'size' => 9],
-                'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
+                'alignment' => [
+                    'vertical'   => Alignment::VERTICAL_CENTER,
+                    'horizontal' => $alignHoriz,
+                ],
                 'borders' => [
                     'allBorders' => [
                         'borderStyle' => Border::BORDER_THIN,
@@ -130,6 +156,13 @@ class PtkpImportTemplateExport
                     'startColor' => ['rgb' => 'F8FAFC'],
                 ],
             ]);
+        }
+
+        // Apply dd/mm/yyyy number formatting to all five date columns across rows 2..1000
+        foreach (self::DATE_COLUMNS as $dCol) {
+            $sheet->getStyle("{$dCol}2:{$dCol}1000")
+                ->getNumberFormat()
+                ->setFormatCode('dd/mm/yyyy');
         }
         $sheet->getRowDimension(2)->setRowHeight(20);
 
@@ -203,7 +236,7 @@ class PtkpImportTemplateExport
             ['9. Kirkpatrick Evaluations', 'Score (L1) Course, Score (L2), L2 Status, Score (L3), and L3 Status.'],
             ['10. Certificate Columns', 'Certificate Availability (Yes/No), Institution, Issued Date, and Expired Date.'],
             ['11. Person in Charge (PIC)', 'Person in Charge (PIC) is located at the final column (Column 47 / AU).'],
-            ['12. Date & Time Format', 'Use YYYY-MM-DD for dates and HH:mm or HH:mm:ss for times.'],
+            ['12. Date & Time Format', 'Use DD/MM/YYYY (e.g. 10/08/2026) for dates and HH:mm or HH:mm:ss for times.'],
             ['13. Duplicate Prevention', 'Records with identical participant and training combinations within the file or existing database records will be skipped automatically.'],
         ];
 

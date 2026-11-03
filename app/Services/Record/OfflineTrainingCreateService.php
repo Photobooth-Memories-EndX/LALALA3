@@ -215,6 +215,8 @@ class OfflineTrainingCreateService
                 'progress'          => $progress !== null ? $progress : 100.0,
                 'assessment_score'  => $this->normalizeAssessmentScore($raw['assessment_score'] ?? null),
                 'certificate'       => $this->normalizeString($raw['certificate'] ?? null),
+                'certificate_issued_date'  => $this->normalizeDate($raw['certificate_issued_date'] ?? null),
+                'certificate_expired_date' => $this->normalizeDate($raw['certificate_expired_date'] ?? null),
                 'attendance'        => $attendance !== null ? $attendance : true,
                 'attendance_reason' => $this->normalizeString($raw['attendance_reason'] ?? null),
                 'bond_status'       => $bondStatus,

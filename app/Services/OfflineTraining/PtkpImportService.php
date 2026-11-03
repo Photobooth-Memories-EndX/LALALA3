@@ -7,6 +7,7 @@ use App\Models\ImportBatchRow;
 use App\Models\OfflineTraining;
 use App\Models\OfflineTrainingUser;
 use App\Services\ImportLog\ImportLogService;
+use App\Services\OfflineTraining\ExcelDateTimeParser;
 use App\Services\Record\PtkpExcelSchema;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
@@ -460,7 +461,12 @@ class PtkpImportService
             $key = $col['key'];
             $colLetter = $columnPositions[$key] ?? \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($idx);
             $cell = $worksheet->getCell("{$colLetter}{$row}");
-            $val = $cell->getValue();
+
+            try {
+                $val = $cell->getCalculatedValue();
+            } catch (\Throwable $e) {
+                $val = $cell->getValue();
+            }
 
             // 1. Employee ID leading zero preservation from formatted value
             if ($key === 'employee_id' && $val !== null) {
@@ -474,38 +480,37 @@ class PtkpImportService
                 }
             }
 
-            // 2. Convert Excel date serial numbers to Y-m-d format
+            // 2. Convert Excel date serial numbers or date objects to Y-m-d format
             if ($val !== null && in_array($key, ['start_date', 'finish_date', 'end_date', 'bond_end_date', 'certificate_issued_date', 'certificate_expired_date'], true)) {
-                if (is_numeric($val) && (float) $val >= 1.0) {
-                    try {
-                        $val = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject((float) $val)->format('Y-m-d');
-                    } catch (\Throwable $e) {
-                        // Keep raw value for normalizer to process/flag
-                    }
+                $dateResult = ExcelDateTimeParser::parseDateResult($val);
+                if ($dateResult['valid'] && $dateResult['value'] !== null) {
+                    $val = $dateResult['value'];
+                } elseif ($dateResult['is_empty']) {
+                    $val = null;
+                } else {
+                    $val = is_scalar($val) ? trim((string) $val) : 'Invalid Date';
                 }
             }
 
-            // 3. Convert Excel time serial numbers or datetime serials to HH:mm:ss format
+            // 3. Convert Excel time serial numbers or fractional day to HH:mm:ss format
             if ($val !== null && in_array($key, ['start_time', 'end_time'], true)) {
-                if (is_numeric($val)) {
-                    $num = (float) $val;
-                    if ($num >= 0.0 && $num < 1.0) {
-                        $seconds = (int) round($num * 86400);
-                        $h = floor($seconds / 3600) % 24;
-                        $m = floor(($seconds % 3600) / 60);
-                        $s = $seconds % 60;
-                        $val = sprintf('%02d:%02d:%02d', $h, $m, $s);
-                    } elseif ($num >= 1.0) {
-                        try {
-                            $val = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($num)->format('H:i:s');
-                        } catch (\Throwable $e) {
-                            // Keep raw value for normalizer to process/flag
-                        }
-                    }
+                $timeResult = ExcelDateTimeParser::parseTimeResult($val);
+                if ($timeResult['valid'] && $timeResult['value'] !== null) {
+                    $val = $timeResult['value'];
+                } elseif ($timeResult['is_empty']) {
+                    $val = null;
+                } else {
+                    $val = is_scalar($val) ? trim((string) $val) : 'Invalid Time';
                 }
             }
 
-            $values[$key] = $val !== null ? trim((string) $val) : null;
+            if ($val instanceof \DateTimeInterface) {
+                $values[$key] = $val->format('Y-m-d H:i:s');
+            } elseif (is_scalar($val)) {
+                $values[$key] = trim((string) $val);
+            } else {
+                $values[$key] = $val;
+            }
         }
 
         return $values;
