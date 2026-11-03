@@ -355,7 +355,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach ($activeGroup['tasks'] as $i => $task)
+                    @forelse ($activeGroup['tasks'] as $i => $task)
                         @php
                             $tStatus = $task->userStatusFor(auth()->user());
                             $tSubmission = $task->submissionFor(auth()->user());
@@ -447,7 +447,14 @@
                                 @endif
                             </td>
                         </tr>
-                    @endforeach
+                    @empty
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-5">
+                                <i class="ti ti-list-check fs-1 d-block mb-2 text-muted opacity-50"></i>
+                                <div class="fw-semibold">No tasks available in this activity</div>
+                            </td>
+                        </tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>
@@ -455,26 +462,11 @@
 @else
 
 
-    {{-- Parent list / Assessment table --}}
-    @if ($groups->isNotEmpty())
-        @if ($filter === 'asesment' || $filterType === 'assessment')
-            @include('user.learning.dashboard-partials.my-task-assessment-table', ['assessmentGroups' => $groups])
-        @else
-            @include('user.learning.dashboard-partials.my-task-parent-table', ['tableGroups' => $groups])
-        @endif
+    {{-- Parent list / Assessment table (always renders table with empty row in tbody when no data) --}}
+    @if ($filter === 'asesment' || ($filterType ?? '') === 'assessment')
+        @include('user.learning.dashboard-partials.my-task-assessment-table', ['assessmentGroups' => $groups])
     @else
-        <div class="card border-0 shadow-sm rounded-4">
-            <div class="card-body p-4 text-center text-muted">
-                <i class="ti ti-list-check fs-1 d-block mb-2"></i>
-                @if ($filter === 'all' && ($search ?? '') === '')
-                    No tasks yet. Open a playlist or content you follow first — tasks will appear here after you open it.
-                @elseif ($filter === 'asesment')
-                    No assessments available at this time.
-                @else
-                    No tasks match this filter.
-                @endif
-            </div>
-        </div>
+        @include('user.learning.dashboard-partials.my-task-parent-table', ['tableGroups' => $groups])
     @endif
 @endif
 

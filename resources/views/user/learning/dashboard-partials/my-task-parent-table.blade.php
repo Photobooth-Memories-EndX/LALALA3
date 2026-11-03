@@ -13,7 +13,7 @@
                 </tr>
             </thead>
             <tbody id="parentTableAccordion">
-                @foreach ($tableGroups as $i => $group)
+                @forelse ($tableGroups as $i => $group)
                     @php
                         $isAssessmentGroup = ($group['parent_type'] ?? '') === 'assessment';
                         $firstTask = $group['tasks']->first();
@@ -368,7 +368,21 @@
                             </div>
                         </td>
                     </tr>
-                @endforeach
+                @empty
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-5">
+                            <i class="ti ti-list-check fs-1 d-block mb-2 text-muted opacity-50"></i>
+                            <div class="fw-semibold">No tasks available</div>
+                            <div class="small mt-1 text-muted">
+                                @if (($filter ?? 'all') === 'all' && empty($search))
+                                    No tasks yet. Open a playlist or content you follow first — tasks will appear here after you open it.
+                                @else
+                                    No tasks match your search or filter criteria.
+                                @endif
+                            </div>
+                        </td>
+                    </tr>
+                @endforelse
             </tbody>
         </table>
     </div>
