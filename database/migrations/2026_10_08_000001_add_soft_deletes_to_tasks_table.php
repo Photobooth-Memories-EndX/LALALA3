@@ -13,15 +13,19 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('tasks', function (Blueprint $table) {
-            $table->softDeletes();
-        });
+        if (Schema::hasTable('tasks') && !Schema::hasColumn('tasks', 'deleted_at')) {
+            Schema::table('tasks', function (Blueprint $table) {
+                $table->softDeletes();
+            });
+        }
     }
 
     public function down(): void
     {
-        Schema::table('tasks', function (Blueprint $table) {
-            $table->dropSoftDeletes();
-        });
+        if (Schema::hasTable('tasks') && Schema::hasColumn('tasks', 'deleted_at')) {
+            Schema::table('tasks', function (Blueprint $table) {
+                $table->dropSoftDeletes();
+            });
+        }
     }
 };

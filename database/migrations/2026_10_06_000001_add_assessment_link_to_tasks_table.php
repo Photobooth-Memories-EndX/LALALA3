@@ -12,16 +12,24 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('tasks', function (Blueprint $table) {
-            $table->foreignId('assessment_id')->nullable()->after('type')
-                ->constrained('assesments')->nullOnDelete();
-        });
+        if (Schema::hasTable('tasks') && !Schema::hasColumn('tasks', 'assessment_id')) {
+            Schema::table('tasks', function (Blueprint $table) {
+                $table->foreignId('assessment_id')->nullable()->after('type')
+                    ->constrained('assesments')->nullOnDelete();
+            });
+        }
     }
 
     public function down(): void
     {
-        Schema::table('tasks', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('assessment_id');
-        });
+        if (Schema::hasTable('tasks') && Schema::hasColumn('tasks', 'assessment_id')) {
+            Schema::table('tasks', function (Blueprint $table) {
+                try {
+                    $table->dropConstrainedForeignId('assessment_id');
+                } catch (\Throwable $e) {
+                    $table->dropColumn('assessment_id');
+                }
+            });
+        }
     }
 };

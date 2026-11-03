@@ -12,15 +12,19 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('task_fields', function (Blueprint $table) {
-            $table->boolean('allow_link')->default(false)->after('max_size_mb');
-        });
+        if (Schema::hasTable('task_fields') && !Schema::hasColumn('task_fields', 'allow_link')) {
+            Schema::table('task_fields', function (Blueprint $table) {
+                $table->boolean('allow_link')->default(false)->after('max_size_mb');
+            });
+        }
     }
 
     public function down(): void
     {
-        Schema::table('task_fields', function (Blueprint $table) {
-            $table->dropColumn('allow_link');
-        });
+        if (Schema::hasTable('task_fields') && Schema::hasColumn('task_fields', 'allow_link')) {
+            Schema::table('task_fields', function (Blueprint $table) {
+                $table->dropColumn('allow_link');
+            });
+        }
     }
 };

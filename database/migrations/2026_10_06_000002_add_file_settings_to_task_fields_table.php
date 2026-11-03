@@ -19,22 +19,41 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('task_fields', function (Blueprint $table) {
-            $table->json('file_types')->nullable()->after('correct_answer');
-            $table->unsignedTinyInteger('max_files')->default(1)->after('file_types');
-            $table->unsignedInteger('max_size_mb')->nullable()->after('max_files');
-        });
+        if (Schema::hasTable('task_fields')) {
+            Schema::table('task_fields', function (Blueprint $table) {
+                if (!Schema::hasColumn('task_fields', 'file_types')) {
+                    $table->json('file_types')->nullable()->after('correct_answer');
+                }
+                if (!Schema::hasColumn('task_fields', 'max_files')) {
+                    $table->unsignedTinyInteger('max_files')->default(1)->after('file_types');
+                }
+                if (!Schema::hasColumn('task_fields', 'max_size_mb')) {
+                    $table->unsignedInteger('max_size_mb')->nullable()->after('max_files');
+                }
+            });
+        }
 
-        // TEXT via raw statement (avoids doctrine/dbal dependency for change()).
-        DB::statement('ALTER TABLE `task_submission_answers` MODIFY `file_path` TEXT NULL');
+        if (Schema::hasTable('task_submission_answers')) {
+            // TEXT via raw statement (avoids doctrine/dbal dependency for change()).
+            DB::statement('ALTER TABLE `task_submission_answers` MODIFY `file_path` TEXT NULL');
+        }
     }
 
     public function down(): void
     {
-        Schema::table('task_fields', function (Blueprint $table) {
-            $table->dropColumn(['file_types', 'max_files', 'max_size_mb']);
-        });
+        if (Schema::hasTable('task_fields')) {
+            Schema::table('task_fields', function (Blueprint $table) {
+                $columns = array_filter(['file_types', 'max_files', 'max_size_mb'], function ($col) {
+                    return Schema::hasColumn('task_fields', $col);
+                });
+                if (!empty($columns)) {
+                    $table->dropColumn($columns);
+                }
+            });
+        }
 
-        DB::statement('ALTER TABLE `task_submission_answers` MODIFY `file_path` VARCHAR(255) NULL');
+        if (Schema::hasTable('task_submission_answers')) {
+            DB::statement('ALTER TABLE `task_submission_answers` MODIFY `file_path` VARCHAR(255) NULL');
+        }
     }
 };

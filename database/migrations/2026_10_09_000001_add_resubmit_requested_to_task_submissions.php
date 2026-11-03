@@ -8,15 +8,19 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('task_submissions', function (Blueprint $table) {
-            $table->boolean('resubmit_requested')->default(false)->after('feedback');
-        });
+        if (Schema::hasTable('task_submissions') && !Schema::hasColumn('task_submissions', 'resubmit_requested')) {
+            Schema::table('task_submissions', function (Blueprint $table) {
+                $table->boolean('resubmit_requested')->default(false)->after('feedback');
+            });
+        }
     }
 
     public function down(): void
     {
-        Schema::table('task_submissions', function (Blueprint $table) {
-            $table->dropColumn('resubmit_requested');
-        });
+        if (Schema::hasTable('task_submissions') && Schema::hasColumn('task_submissions', 'resubmit_requested')) {
+            Schema::table('task_submissions', function (Blueprint $table) {
+                $table->dropColumn('resubmit_requested');
+            });
+        }
     }
 };
