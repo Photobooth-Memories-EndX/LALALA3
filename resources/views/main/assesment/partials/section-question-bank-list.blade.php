@@ -47,7 +47,7 @@
                             </td>
                             <td class="text-center">
                                 <span class="badge bg-blue-lt text-blue">
-                                    {{ count($aqb->question_bank->questions) }} Questions
+                                    {{ $aqb->question_bank->questions_count ?? count($aqb->question_bank->questions) }} Questions
                                 </span>
                             </td>
                             <td class="text-center">

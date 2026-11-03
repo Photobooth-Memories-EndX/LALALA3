@@ -237,6 +237,10 @@
                 if (amountQuestion > totalQuestions) {
                     alert('Please fill amount of questions max ' + totalQuestions + '.');
                 } else {
+                    let $btn = $('#btn-store-qeustion-bank');
+                    let originalHtml = $btn.html();
+                    $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2" role="status"></span> Adding...');
+
                     $.ajax({
                         url: routeAddQuestion,
                         type: "POST",
@@ -249,17 +253,22 @@
                         },
                         success: function(data) {
                             if (data.status == 422) {
+                                $btn.prop('disabled', false).html(originalHtml);
                                 $('#modal-added-question-bank').modal('show');
                                 $('#message-added-question-bank').html(data.message);
                             } else {
                                 $('#modal-add-question-bank').modal('show');
                                 $('#message-add-question-bank').html(data.message);
             
-                                setInterval(() => {
+                                setTimeout(() => {
                                     $('#modal-add-question-bank').modal('hide');
                                     location.reload();
-                                }, 2000);
+                                }, 800);
                             }
+                        },
+                        error: function() {
+                            $btn.prop('disabled', false).html(originalHtml);
+                            alert('An error occurred while adding the question bank. Please try again.');
                         }
                     });
                 }
