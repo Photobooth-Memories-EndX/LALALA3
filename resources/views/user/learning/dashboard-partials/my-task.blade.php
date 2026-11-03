@@ -18,10 +18,10 @@
     $filterMonth = $filterMonth ?? 'all';
     $filterType = $filterType ?? 'all';
     $statusOptions = $statusOptions ?? ['all' => 'All', 'in_progress' => 'In Progress', 'submitted' => 'Pending Review', 'completed' => 'Completed', 'rejected' => 'Rejected', 'overdue' => 'Overdue'];
-    $typeOptions = $typeOptions ?? ['all' => 'All', 'playlist' => 'Playlist', 'content' => 'Content', 'asesment' => 'Assessment', 'others' => 'Others'];
+    $typeOptions = $typeOptions ?? ['all' => 'All', 'playlist' => 'Playlist', 'content' => 'Content', 'content_playlist' => 'Content Playlist', 'asesment' => 'Assessment', 'others' => 'Others'];
     $months = $months ?? [];
     $years = $years ?? [];
-    $categoryCounts = $categoryCounts ?? ['all' => 0, 'playlist' => 0, 'content' => 0, 'asesment' => 0, 'others' => 0];
+    $categoryCounts = $categoryCounts ?? ['all' => 0, 'playlist' => 0, 'content' => 0, 'content_playlist' => 0, 'asesment' => 0, 'others' => 0];
     $summary = $summary ?? ['total' => 0, 'not_started' => 0, 'completed' => 0, 'overdue' => 0];
     $statusLabels = [
         'in_progress' => 'In Progress',
@@ -45,6 +45,7 @@
     $parentTypeBadge = [
         'playlist'         => 'bg-primary-lt text-primary',
         'content'          => 'bg-info-lt text-info',
+        'content_playlist' => 'bg-azure-lt text-azure',
         'offline_training' => 'bg-warning-lt text-warning',
         'standalone'       => 'bg-secondary-lt text-secondary',
         'assessment'       => 'bg-purple-lt text-purple',
@@ -52,6 +53,7 @@
     $parentTypeLabel = [
         'playlist'         => 'Playlist',
         'content'          => 'Content',
+        'content_playlist' => 'Content Playlist',
         'offline_training' => 'Offline Training',
         'standalone'       => 'Others',
         'assessment'       => 'Assessment',
@@ -73,11 +75,12 @@
         'my_task_parent' => ($activeGroup ?? null) ? $activeGroup['key'] : null,
     ]));
     $tabs = [
-        'all'      => ['label' => 'All Tasks'],
-        'playlist' => ['label' => 'Playlist'],
-        'content'  => ['label' => 'Content'],
-        'asesment' => ['label' => 'Assessment'],
-        'others'   => ['label' => 'Others'],
+        'all'              => ['label' => 'All Tasks'],
+        'playlist'         => ['label' => 'Playlist'],
+        'content'          => ['label' => 'Content'],
+        'content_playlist' => ['label' => 'Content Playlist'],
+        'asesment'         => ['label' => 'Assessment'],
+        'others'           => ['label' => 'Others'],
     ];
     // Clicking a tab navigates immediately (keeps search + parent context + dropdown filters).
     $tabUrl = fn ($key) => route('user.learning.dashboard', array_filter([

@@ -36,3 +36,4 @@ class MyTaskGateButtonTest extends TestCase
         $this->assertStringContainsString('/my-task/unlock-playlist/42', $htmlCompleted);
     }
 }
+

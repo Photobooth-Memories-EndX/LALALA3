@@ -71,12 +71,33 @@ class MyTaskController extends Controller
                     return (bool) ($sub && $sub->resubmit_requested);
                 })->count();
 
+                $isContentPlaylist = false;
+                $courseName = null;
+                if ($first->parent_type === 'content') {
+                    $content = $first->content;
+                    if ($content) {
+                        $isPlaylistOnly = ($content->playlistonly ?? '') === 'Y';
+                        $hasPlans = $content->relationLoaded('trainingPlans')
+                            ? $content->trainingPlans->isNotEmpty()
+                            : $content->trainingPlans()->exists();
+                        $isContentPlaylist = $isPlaylistOnly || $hasPlans;
+                        if ($hasPlans) {
+                            $firstPlan = $content->relationLoaded('trainingPlans')
+                                ? $content->trainingPlans->first()
+                                : $content->trainingPlans()->first();
+                            $courseName = $firstPlan?->title;
+                        }
+                    }
+                }
+
+                $parentType = $isContentPlaylist ? 'content_playlist' : $first->parent_type;
+
                 return [
                     'key'              => $key,
-                    'parent_type'      => $first->parent_type,
+                    'parent_type'      => $parentType,
                     'parent_name'      => $first->parentName(),
                     'parent_url'       => $this->parentUrl($first),
-                    'course_name'      => null,
+                    'course_name'      => $courseName,
                     'tasks'            => $groupTasks->values(),
                     'total'            => $groupTasks->count(),
                     'completed'        => $statuses->filter(fn ($s) => $s === 'completed')->count(),
@@ -100,6 +121,7 @@ class MyTaskController extends Controller
             'all'              => 'All',
             'playlist'         => 'Playlist',
             'content'          => 'Content',
+            'content_playlist' => 'Content Playlist',
             'assessment'       => 'Assessment',
             'standalone'       => 'Others',
             'offline_training' => 'Offline Training',
@@ -220,23 +242,25 @@ class MyTaskController extends Controller
             'resubmit'    => $allTasksAndAssessments->filter(fn ($t) => in_array($t->userStatusFor($user), ['rejected', 'resubmit'], true))->count(),
         ];
 
-        // Category counts for quick filter tabs: all, playlist, content, asesment, others
+        // Category counts for quick filter tabs: all, playlist, content, content_playlist, asesment, others
         // Note: 'all' contains course tasks. Assessments are dedicated under the 'asesment' quick filter.
         $categoryCounts = [
-            'all'      => $taskGroups->count(),
-            'playlist' => $taskGroups->filter(fn ($g) => $g['parent_type'] === 'playlist')->count(),
-            'content'  => $taskGroups->filter(fn ($g) => $g['parent_type'] === 'content')->count(),
-            'asesment' => $assessmentGroups->count(),
-            'others'   => $taskGroups->filter(fn ($g) => in_array($g['parent_type'], ['standalone', 'offline_training'], true) || !in_array($g['parent_type'], ['playlist', 'content'], true))->count(),
+            'all'              => $taskGroups->count(),
+            'playlist'         => $taskGroups->filter(fn ($g) => $g['parent_type'] === 'playlist')->count(),
+            'content'          => $taskGroups->filter(fn ($g) => $g['parent_type'] === 'content')->count(),
+            'content_playlist' => $taskGroups->filter(fn ($g) => $g['parent_type'] === 'content_playlist')->count(),
+            'asesment'         => $assessmentGroups->count(),
+            'others'           => $taskGroups->filter(fn ($g) => in_array($g['parent_type'], ['standalone', 'offline_training'], true) || !in_array($g['parent_type'], ['playlist', 'content', 'content_playlist'], true))->count(),
         ];
 
         // Revision counts per quick filter category for notification badges on pills
         $revisionCounts = [
-            'all'      => 0,
-            'playlist' => 0,
-            'content'  => 0,
-            'asesment' => 0,
-            'others'   => 0,
+            'all'              => 0,
+            'playlist'         => 0,
+            'content'          => 0,
+            'content_playlist' => 0,
+            'asesment'         => 0,
+            'others'           => 0,
         ];
 
         foreach ($tasks as $task) {
@@ -246,7 +270,16 @@ class MyTaskController extends Controller
                 if ($task->parent_type === 'playlist') {
                     $revisionCounts['playlist']++;
                 } elseif ($task->parent_type === 'content') {
-                    $revisionCounts['content']++;
+                    $content = $task->content;
+                    $isCp = $content && (
+                        ($content->playlistonly ?? '') === 'Y'
+                        || ($content->relationLoaded('trainingPlans') ? $content->trainingPlans->isNotEmpty() : $content->trainingPlans()->exists())
+                    );
+                    if ($isCp) {
+                        $revisionCounts['content_playlist']++;
+                    } else {
+                        $revisionCounts['content']++;
+                    }
                 } else {
                     $revisionCounts['others']++;
                 }
@@ -267,11 +300,12 @@ class MyTaskController extends Controller
             $groups = $assessmentGroups->values();
         } else {
             $groups = match ($filter) {
-                'all'         => $taskGroups,
-                'playlist'    => $taskGroups->filter(fn ($g) => $g['parent_type'] === 'playlist')->values(),
-                'content'     => $taskGroups->filter(fn ($g) => $g['parent_type'] === 'content')->values(),
-                'asesment'    => $assessmentGroups->values(),
-                'others'      => $taskGroups->filter(fn ($g) => in_array($g['parent_type'], ['standalone', 'offline_training'], true) || !in_array($g['parent_type'], ['playlist', 'content'], true))->values(),
+                'all'              => $taskGroups,
+                'playlist'         => $taskGroups->filter(fn ($g) => $g['parent_type'] === 'playlist')->values(),
+                'content'          => $taskGroups->filter(fn ($g) => $g['parent_type'] === 'content')->values(),
+                'content_playlist' => $taskGroups->filter(fn ($g) => $g['parent_type'] === 'content_playlist')->values(),
+                'asesment'         => $assessmentGroups->values(),
+                'others'           => $taskGroups->filter(fn ($g) => in_array($g['parent_type'], ['standalone', 'offline_training'], true) || !in_array($g['parent_type'], ['playlist', 'content', 'content_playlist'], true))->values(),
                 // Backward-compatibility: if legacy status filters are passed
                 'rejected'    => $allGroups->filter(fn ($g) => $g['tasks']->contains(fn ($t) => in_array($t->userStatusFor($user), ['rejected', 'resubmit'], true)))->values(),
                 'resubmit'    => $allGroups->filter(fn ($g) => $g['tasks']->contains(fn ($t) => in_array($t->userStatusFor($user), ['rejected', 'resubmit'], true)))->values(),
@@ -581,6 +615,24 @@ class MyTaskController extends Controller
             return route('user.playlist.show', $task->trainingPlan->slug);
         }
 
+        if ($task->parent_type === 'content' && $task->content) {
+            $content = $task->content;
+            $hasPlans = $content->relationLoaded('trainingPlans')
+                ? $content->trainingPlans->isNotEmpty()
+                : $content->trainingPlans()->exists();
+            if ($hasPlans) {
+                $plan = $content->relationLoaded('trainingPlans')
+                    ? $content->trainingPlans->first()
+                    : $content->trainingPlans()->first();
+                if ($plan && !empty($plan->slug) && !empty($content->slug) && \Illuminate\Support\Facades\Route::has('playlist.user.view')) {
+                    return route('playlist.user.view', [$plan->slug, $content->slug]);
+                }
+            }
+            if (!empty($content->slug) && \Illuminate\Support\Facades\Route::has('content.user.view')) {
+                return route('content.user.view', $content->slug);
+            }
+        }
+
         if ($task->parent_type === 'offline_training') {
             return route('trainingplan.user.index', ['tab' => 'history']);
         }
@@ -875,7 +927,7 @@ class MyTaskController extends Controller
         // (Fetched up front so the main query needs no nested closures.)
         $redeemedIds = TaskCodeRedemption::where('user_id', $user->id)->pluck('task_id')->all();
 
-        return Task::with(['trainingPlan', 'linkedPlan', 'content', 'offlineTraining', 'taskGroup', 'fields' => fn ($q) => $q->ordered()])
+        return Task::with(['trainingPlan', 'linkedPlan', 'content.trainingPlans:id,title,slug', 'offlineTraining', 'taskGroup', 'fields' => fn ($q) => $q->ordered()])
             ->with([
                 'submissions' => fn ($q) => $q->where('user_id', $user->id),
             ])
