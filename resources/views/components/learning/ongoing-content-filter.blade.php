@@ -303,58 +303,63 @@
                     </div>
                 </div>
 
-                {{-- 5. Search input with live autocomplete dropdown --}}
-                <div class="position-relative flex-grow-1 my-task-search-wrapper search-ongoing-container" style="min-width: 220px;">
-                    <span class="position-absolute top-50 start-0 translate-middle-y ps-3 text-muted pointer-events-none" style="z-index: 2;">
-                        <i class="ti ti-search" style="font-size: 15px;"></i>
-                    </span>
-                    <input type="text"
-                           name="ongoing_search"
-                           id="ongoing-search-input"
-                           value="{{ request('ongoing_search', request('q')) }}"
-                           class="form-control my-task-search-input module-search-input"
-                           aria-label="Search classes or categories"
-                           placeholder="Search classes or categories..."
-                           autocomplete="off">
-                    @if (request()->filled('ongoing_search') || request()->filled('q'))
-                        <a href="{{ route('user.learning.dashboard') }}" class="btn btn-link position-absolute top-50 end-0 translate-middle-y pe-2.5 text-muted text-decoration-none my-task-search-clear" title="Clear search" style="z-index: 2;">
-                            <i class="ti ti-x"></i>
-                        </a>
-                    @endif
-                    <div id="ongoing-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1 module-search-dropdown" style="display: none; max-height: 380px; overflow-y: auto; z-index: 1050; padding: 0;">
-                        <div class="autocomplete-list-group list-group list-group-flush"></div>
-                        <div class="search-footer border-top bg-light p-2 text-center sticky-bottom"></div>
+                {{-- Search & Action Buttons Group (Single row, action buttons on right) --}}
+                <div class="d-flex align-items-center gap-2 flex-grow-1 ongoing-search-actions-group">
+                    {{-- 5. Search input with live autocomplete dropdown --}}
+                    <div class="position-relative flex-grow-1 my-task-search-wrapper search-ongoing-container" style="min-width: 180px;">
+                        <span class="position-absolute top-50 start-0 translate-middle-y ps-3 text-muted pointer-events-none" style="z-index: 2;">
+                            <i class="ti ti-search" style="font-size: 15px;"></i>
+                        </span>
+                        <input type="text"
+                               name="ongoing_search"
+                               id="ongoing-search-input"
+                               value="{{ request('ongoing_search', request('q')) }}"
+                               class="form-control my-task-search-input module-search-input"
+                               aria-label="Search classes or categories"
+                               placeholder="Search classes or categories..."
+                               autocomplete="off">
+                        @if (request()->filled('ongoing_search') || request()->filled('q'))
+                            <a href="{{ route('user.learning.dashboard') }}" class="btn btn-link position-absolute top-50 end-0 translate-middle-y pe-2.5 text-muted text-decoration-none my-task-search-clear" title="Clear search" style="z-index: 2;">
+                                <i class="ti ti-x"></i>
+                            </a>
+                        @endif
+                        <div id="ongoing-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1 module-search-dropdown" style="display: none; max-height: 380px; overflow-y: auto; z-index: 1050; padding: 0;">
+                            <div class="autocomplete-list-group list-group list-group-flush"></div>
+                            <div class="search-footer border-top bg-light p-2 text-center sticky-bottom"></div>
+                        </div>
+                    </div>
+
+                    {{-- 6. Square Action Buttons --}}
+                    <button type="submit"
+                            class="btn btn-primary my-task-btn-square my-task-btn-search flex-shrink-0"
+                            title="Apply Filter"
+                            aria-label="Apply Filter">
+                        <i class="ti ti-search text-white fs-3"></i>
+                    </button>
+
+                    <button type="button"
+                            class="btn btn-white my-task-btn-square my-task-btn-filter position-relative flex-shrink-0"
+                            data-bs-toggle="modal"
+                            data-bs-target="#ongoingMoreFiltersModal"
+                            title="More Filters"
+                            aria-label="More Filters">
+                        <i class="ti ti-adjustments-horizontal fs-3 text-secondary"></i>
+                        @if ($advancedCount > 0)
+                            <span class="badge bg-primary text-white">{{ $advancedCount }}</span>
+                        @endif
+                    </button>
+
+                    <a href="{{ route('user.learning.dashboard') }}"
+                       class="btn btn-white my-task-btn-square my-task-btn-reset flex-shrink-0"
+                       title="Reset Filter"
+                       aria-label="Reset Filter">
+                        <i class="ti ti-refresh fs-3 text-secondary"></i>
+                    </a>
+
+                    <div class="flex-shrink-0">
+                        <x-learning.ongoing-export mode="{{ request('ongoing_mode') === 'mooc' ? 'mooc' : 'content' }}" />
                     </div>
                 </div>
-
-                {{-- 6. Square Action Buttons --}}
-                <button type="submit"
-                        class="btn btn-primary my-task-btn-square my-task-btn-search"
-                        title="Apply Filter"
-                        aria-label="Apply Filter">
-                    <i class="ti ti-search text-white fs-3"></i>
-                </button>
-
-                <button type="button"
-                        class="btn btn-white my-task-btn-square my-task-btn-filter position-relative"
-                        data-bs-toggle="modal"
-                        data-bs-target="#ongoingMoreFiltersModal"
-                        title="More Filters"
-                        aria-label="More Filters">
-                    <i class="ti ti-adjustments-horizontal fs-3 text-secondary"></i>
-                    @if ($advancedCount > 0)
-                        <span class="badge bg-primary text-white">{{ $advancedCount }}</span>
-                    @endif
-                </button>
-
-                <a href="{{ route('user.learning.dashboard') }}"
-                   class="btn btn-white my-task-btn-square my-task-btn-reset"
-                   title="Reset Filter"
-                   aria-label="Reset Filter">
-                    <i class="ti ti-refresh fs-3 text-secondary"></i>
-                </a>
-
-                <x-learning.ongoing-export mode="{{ request('ongoing_mode') === 'mooc' ? 'mooc' : 'content' }}" />
             </div>
 
             {{-- Active Filters indicator --}}

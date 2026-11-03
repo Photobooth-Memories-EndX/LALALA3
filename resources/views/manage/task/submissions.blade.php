@@ -227,8 +227,10 @@
                                     Target: <a href="{{ $task->external_url }}" target="_blank">{{ Str::limit($task->external_url, 50) }}</a>
                                 @endif
                             </span>
+                        @elseif ($task->type === 'file_submission')
+                            <span class="ms-2">· File Submission</span>
                         @else
-                            <span class="ms-2">· {{ $task->fields->count() }} questions</span>
+                            <span class="ms-2">· {{ $task->fields->count() }} {{ Str::plural('question', $task->fields->count()) }}</span>
                         @endif
                     </div>
                 </div>
@@ -511,13 +513,26 @@
 
                                 <div class="card border rounded-3 p-3.5 bg-white mb-3 shadow-xs task-question-card" style="border-color: #e2e8f0 !important;">
                                     {{-- Question Header matching SpeedGrader --}}
+                                    @php
+                                        $fLabel = $field->label;
+                                        if ($task->type === 'file_submission' && in_array(strtolower(trim($fLabel)), ['file submission', 'question', 'question 1', 'question #1', ''], true)) {
+                                            $fLabel = 'Submitted File';
+                                        }
+                                    @endphp
                                     <div class="d-flex align-items-center gap-2 mb-2.5 flex-wrap">
-                                        <span class="d-inline-flex align-items-center justify-content-center text-white fw-bold rounded-2 flex-shrink-0"
-                                              style="background-color: #0f2942; width: 22px; height: 22px; font-size: 11.5px; border-radius: 5px;">
-                                            {{ $fIdx + 1 }}
-                                        </span>
+                                        @if ($task->type === 'file_submission')
+                                            <span class="d-inline-flex align-items-center justify-content-center text-white fw-bold rounded-2 flex-shrink-0"
+                                                  style="background-color: #0f2942; width: 22px; height: 22px; font-size: 11.5px; border-radius: 5px;">
+                                                <i class="ti ti-file-upload fs-6"></i>
+                                            </span>
+                                        @else
+                                            <span class="d-inline-flex align-items-center justify-content-center text-white fw-bold rounded-2 flex-shrink-0"
+                                                  style="background-color: #0f2942; width: 22px; height: 22px; font-size: 11.5px; border-radius: 5px;">
+                                                {{ $fIdx + 1 }}
+                                            </span>
+                                        @endif
                                         <h6 class="fw-bold mb-0 text-truncate" style="font-size: 14px; color: #0f2942;">
-                                            {{ $field->label }}
+                                            {{ $fLabel }}
                                         </h6>
                                         <span class="text-muted" style="font-size: 12.5px;">
                                             &bull; {{ $field->typeLabel() }}
@@ -710,7 +725,7 @@
                                                 </div>
                                             </div>
                                         @elseif (empty($files))
-                                            <div class="text-muted fst-italic small py-2 px-1">— No file or link submitted for this question —</div>
+                                            <div class="text-muted fst-italic small py-2 px-1">— No file or link submitted —</div>
                                         @endif
                                     @endif
 

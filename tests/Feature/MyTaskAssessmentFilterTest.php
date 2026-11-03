@@ -194,4 +194,116 @@ class MyTaskAssessmentFilterTest extends TestCase
         $response->assertSee('Annual Company Feedback Task');
         $response->assertDontSee('Hidden Assessment in Others Filter');
     }
+
+    public function test_empty_task_tab_renders_cleanly_without_exception(): void
+    {
+        $freshUser = User::create([
+            'name'       => 'Empty State Fresh User',
+            'email'      => 'freshuser_' . uniqid() . '@example.com',
+            'password'   => bcrypt('password'),
+            'role'       => '1',
+            'team'       => 'TEST-TEAM',
+            'department' => 'TEST-DEPT',
+            'division'   => 'TEST-DIV',
+            'id_emp'     => 'EMP' . rand(10000, 99999),
+            'ssohash'    => \Illuminate\Support\Str::random(32),
+            'sap_code'   => 'SAP' . rand(1000, 9999),
+            'active'     => 1,
+        ]);
+
+        $response = $this->actingAs($freshUser)->get(route('user.learning.dashboard.partial', [
+            'tab' => 'my-task',
+        ]));
+
+        $response->assertStatus(200);
+        $response->assertSee('My Tasks');
+        $response->assertSee('All Tasks');
+        $response->assertSee('Total Tasks');
+        $response->assertSee('Content Playlist');
+        $response->assertSee('No tasks available');
+        $response->assertDontSee('Gagal memuat konten');
+    }
+
+    public function test_quick_filter_by_content_playlist_returns_only_content_playlist_tasks(): void
+    {
+        // 1. Create a training plan (playlist)
+        $plan = TrainingPlan::create([
+            'title'       => 'Onboarding Leadership Program',
+            'slug'        => 'onboarding-leadership-' . uniqid(),
+            'status'      => 'publish',
+            'created_by'  => $this->admin->id,
+        ]);
+
+        // 2. Create a content that belongs to this playlist (Content Playlist)
+        $cpContent = Content::create([
+            'title'        => 'Leadership Video Part 1',
+            'type'         => 'video',
+            'status'       => 'mandatory',
+            'playlistonly' => 'Y',
+            'active'       => 'Active',
+            'created_by'   => $this->admin->id,
+        ]);
+        $plan->contents()->attach($cpContent->id, ['content_order' => 1, 'created_at' => now(), 'updated_at' => now()]);
+
+        // User opens this content
+        ContentUser::create([
+            'content_id' => $cpContent->id,
+            'user_id'    => $this->user->id,
+            'progress'   => 80,
+        ]);
+
+        // Create task under this playlist content
+        $cpTask = Task::create([
+            'parent_type' => 'content',
+            'content_id'  => $cpContent->id,
+            'title'       => 'Leadership Reflection Activity',
+            'type'        => 'action_plan',
+            'status'      => 'published',
+            'created_by'  => $this->admin->id,
+        ]);
+
+        // 3. Create a regular standalone content (All Content, not in any playlist)
+        $regContent = Content::create([
+            'title'        => 'General Excel Mastery',
+            'type'         => 'document',
+            'status'       => 'mandatory',
+            'playlistonly' => 'N',
+            'active'       => 'Active',
+            'created_by'   => $this->admin->id,
+        ]);
+        ContentUser::create([
+            'content_id' => $regContent->id,
+            'user_id'    => $this->user->id,
+            'progress'   => 40,
+        ]);
+        $regTask = Task::create([
+            'parent_type' => 'content',
+            'content_id'  => $regContent->id,
+            'title'       => 'Excel Formula Exercise',
+            'type'        => 'file_submission',
+            'status'      => 'published',
+            'created_by'  => $this->admin->id,
+        ]);
+
+        // 4. Request with content_playlist filter
+        $responseCp = $this->actingAs($this->user)->get(route('user.learning.dashboard.partial', [
+            'tab'            => 'my-task',
+            'my_task_filter' => 'content_playlist',
+        ]));
+
+        $responseCp->assertStatus(200);
+        $responseCp->assertSee('Leadership Reflection Activity');
+        $responseCp->assertSee('Content Playlist');
+        $responseCp->assertDontSee('Excel Formula Exercise');
+
+        // 5. Request with regular content filter
+        $responseReg = $this->actingAs($this->user)->get(route('user.learning.dashboard.partial', [
+            'tab'            => 'my-task',
+            'my_task_filter' => 'content',
+        ]));
+
+        $responseReg->assertStatus(200);
+        $responseReg->assertSee('Excel Formula Exercise');
+        $responseReg->assertDontSee('Leadership Reflection Activity');
+    }
 }

@@ -51,9 +51,9 @@
                 '<p class="text-muted small mb-0 my-task-filter-subtitle">Track your completed learning history across KP OWL and Non KP OWL activities.</p>' +
             '</div>' +
             '<div class="d-flex align-items-center flex-wrap gap-2 mb-3 my-task-pills-row">' +
+                '<button type="button" class="my-task-category-pill record-mode-btn ' + (mode === 'all' ? 'active' : '') + '" data-mode="all">All Record</button>' +
                 '<button type="button" class="my-task-category-pill record-mode-btn ' + (mode === 'online' ? 'active' : '') + '" data-mode="online">KP OWL</button>' +
                 '<button type="button" class="my-task-category-pill record-mode-btn ' + (mode === 'offline' ? 'active' : '') + '" data-mode="offline">Non KP OWL</button>' +
-                '<button type="button" class="my-task-category-pill record-mode-btn ' + (mode === 'all' ? 'active' : '') + '" data-mode="all">All Record</button>' +
             '</div>' +
             '<hr class="my-3 my-task-divider">';
 

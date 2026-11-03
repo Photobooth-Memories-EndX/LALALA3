@@ -235,7 +235,7 @@ class AssesmentController extends Controller
             ->paginate($entries)
             ->withQueryString();
 
-        $trainingplans = TrainingPlan::latest()->get();
+        $trainingplans = TrainingPlan::select('id', 'title')->latest('id')->get();
         $totalActiveContentCount = Assesment::where('type', 'content')->where('status', 'OK')->count();
 
         return view('main.assesment.index', compact(
@@ -257,7 +257,7 @@ class AssesmentController extends Controller
     public function create()
     {
         $contents = Content::latest()->get();
-        $trainingplans = TrainingPlan::latest()->get();
+        $trainingplans = TrainingPlan::select('id', 'title')->latest('id')->get();
         $trainingplan = $trainingplans;
 
         $selectedTpId = old('trainingplan_id');
@@ -352,13 +352,15 @@ class AssesmentController extends Controller
 
     public function edit(Assesment $assesment)
     {
-        $contents      = Content::latest()->get();
-        $trainingplans = TrainingPlan::latest()->get();
+        $contents      = Content::select('id', 'title')->latest('id')->get();
+        $trainingplans = TrainingPlan::select('id', 'title')->latest('id')->get();
         $trainingplan  = $trainingplans;
-        $questionBanks = QuestionBank::get();
+        $questionBanks = QuestionBank::withCount('questions')->orderBy('title')->get();
 
         $totalQuestions          = 0;
-        $assessmentQuestionBanks = AssesmentQuestionBank::where('assesment_id', $assesment->id)->get();
+        $assessmentQuestionBanks = AssesmentQuestionBank::where('assesment_id', $assesment->id)
+            ->with(['question_bank' => fn($q) => $q->withCount('questions')])
+            ->get();
         $totalQuestions          = $assessmentQuestionBanks->sum('questions_amount');
 
         $selectedTpId = old('trainingplan_id', $assesment->trainingplan_id);
@@ -372,7 +374,7 @@ class AssesmentController extends Controller
 
         $currentContentId = old('content_id', $assesment->content_id);
         if ($currentContentId && !$playlistContents->contains('id', $currentContentId)) {
-            $currentContent = Content::find($currentContentId);
+            $currentContent = Content::select('id', 'title')->find($currentContentId);
             if ($currentContent) {
                 $playlistContents->push($currentContent);
             }

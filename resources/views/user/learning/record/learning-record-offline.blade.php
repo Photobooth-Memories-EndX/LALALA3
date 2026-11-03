@@ -420,6 +420,12 @@
                 <div class="d-flex align-items-center flex-wrap gap-2 mb-3 my-task-pills-row">
                     <button type="button"
                             class="my-task-category-pill record-mode-btn"
+                            data-mode="all"
+                            title="All Record">
+                        <i class="ti ti-stack-2 me-1"></i> All Record
+                    </button>
+                    <button type="button"
+                            class="my-task-category-pill record-mode-btn"
                             data-mode="online"
                             title="KP OWL">
                         <i class="ti ti-device-laptop me-1"></i> KP OWL
@@ -429,12 +435,6 @@
                             data-mode="offline"
                             title="Non KP OWL">
                         <i class="ti ti-certificate me-1"></i> Non KP OWL
-                    </button>
-                    <button type="button"
-                            class="my-task-category-pill record-mode-btn"
-                            data-mode="all"
-                            title="All Record">
-                        <i class="ti ti-stack-2 me-1"></i> All Record
                     </button>
                 </div>
 

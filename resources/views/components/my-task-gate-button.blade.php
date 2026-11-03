@@ -9,10 +9,9 @@
      controller: round(finished/total*100), sudah termasuk debug override).
 
      Logic:
-     - < 100% : tombol tampil tapi dikunci dalam <span> bertitle (pola yang
-       sama dengan tombol Generate Certificate, karena tombol disabled tidak
-       memunculkan tooltip); hover memunculkan peringatan, diklik muncul
-       pesan peringatan.
+     - < 100% : tombol terkunci (disabled) di dalam wrapper bertitle;
+       hover memunculkan kursor not-allowed dan tooltip (mengikuti pola
+       Generate Certificate), tombol tidak dapat diklik.
      - = 100% : tombol normal; diklik mencatat unlock lalu mengarah ke tab Task.
 --}}
 @php
@@ -23,9 +22,13 @@
 @endphp
 
 @if ($mtLocked)
-    <span class="d-block flex-fill" title="Complete the course 100% first to unlock Task.">
-        <button type="button" class="btn btn-secondary opacity-75 w-100"
-                onclick="alert('Complete the course 100% first to unlock Task.')">
+    <span class="task-action-wrapper certificate-action-wrapper is-disabled d-block flex-fill"
+          tabindex="0"
+          title="Complete the course 100% first to unlock Task.">
+        <button type="button"
+                class="btn btn-primary task-action-button certificate-action-button w-100"
+                aria-disabled="true"
+                disabled>
             <i class="ti ti-lock me-2" aria-hidden="true"></i>Task
         </button>
     </span>

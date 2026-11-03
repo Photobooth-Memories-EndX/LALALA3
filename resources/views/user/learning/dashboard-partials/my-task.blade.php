@@ -18,10 +18,10 @@
     $filterMonth = $filterMonth ?? 'all';
     $filterType = $filterType ?? 'all';
     $statusOptions = $statusOptions ?? ['all' => 'All', 'in_progress' => 'In Progress', 'submitted' => 'Pending Review', 'completed' => 'Completed', 'rejected' => 'Rejected', 'overdue' => 'Overdue'];
-    $typeOptions = $typeOptions ?? ['all' => 'All', 'playlist' => 'Playlist', 'content' => 'Content', 'asesment' => 'Assessment', 'others' => 'Others'];
+    $typeOptions = $typeOptions ?? ['all' => 'All', 'playlist' => 'Playlist', 'content' => 'Content', 'content_playlist' => 'Content Playlist', 'asesment' => 'Assessment', 'others' => 'Others'];
     $months = $months ?? [];
     $years = $years ?? [];
-    $categoryCounts = $categoryCounts ?? ['all' => 0, 'playlist' => 0, 'content' => 0, 'asesment' => 0, 'others' => 0];
+    $categoryCounts = $categoryCounts ?? ['all' => 0, 'playlist' => 0, 'content' => 0, 'content_playlist' => 0, 'asesment' => 0, 'others' => 0];
     $summary = $summary ?? ['total' => 0, 'not_started' => 0, 'completed' => 0, 'overdue' => 0];
     $statusLabels = [
         'in_progress' => 'In Progress',
@@ -45,6 +45,7 @@
     $parentTypeBadge = [
         'playlist'         => 'bg-primary-lt text-primary',
         'content'          => 'bg-info-lt text-info',
+        'content_playlist' => 'bg-azure-lt text-azure',
         'offline_training' => 'bg-warning-lt text-warning',
         'standalone'       => 'bg-secondary-lt text-secondary',
         'assessment'       => 'bg-purple-lt text-purple',
@@ -52,6 +53,7 @@
     $parentTypeLabel = [
         'playlist'         => 'Playlist',
         'content'          => 'Content',
+        'content_playlist' => 'Content Playlist',
         'offline_training' => 'Offline Training',
         'standalone'       => 'Others',
         'assessment'       => 'Assessment',
@@ -73,11 +75,12 @@
         'my_task_parent' => ($activeGroup ?? null) ? $activeGroup['key'] : null,
     ]));
     $tabs = [
-        'all'      => ['label' => 'All Tasks'],
-        'playlist' => ['label' => 'Playlist'],
-        'content'  => ['label' => 'Content'],
-        'asesment' => ['label' => 'Assessment'],
-        'others'   => ['label' => 'Others'],
+        'all'              => ['label' => 'All Tasks'],
+        'playlist'         => ['label' => 'Playlist'],
+        'content'          => ['label' => 'Content'],
+        'content_playlist' => ['label' => 'Content Playlist'],
+        'asesment'         => ['label' => 'Assessment'],
+        'others'           => ['label' => 'Others'],
     ];
     // Clicking a tab navigates immediately (keeps search + parent context + dropdown filters).
     $tabUrl = fn ($key) => route('user.learning.dashboard', array_filter([
@@ -111,7 +114,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 @endif
-@if ($errors->any())
+@if (isset($errors) && $errors->any())
     <div class="alert alert-danger alert-dismissible shadow-sm rounded-4 mb-3" role="alert">
         <div class="d-flex align-items-center">
             <i class="ti ti-alert-triangle fs-2 me-2"></i>
@@ -355,7 +358,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach ($activeGroup['tasks'] as $i => $task)
+                    @forelse ($activeGroup['tasks'] as $i => $task)
                         @php
                             $tStatus = $task->userStatusFor(auth()->user());
                             $tSubmission = $task->submissionFor(auth()->user());
@@ -447,7 +450,14 @@
                                 @endif
                             </td>
                         </tr>
-                    @endforeach
+                    @empty
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-5">
+                                <i class="ti ti-list-check fs-1 d-block mb-2 text-muted opacity-50"></i>
+                                <div class="fw-semibold">No tasks available in this activity</div>
+                            </td>
+                        </tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>
@@ -455,26 +465,11 @@
 @else
 
 
-    {{-- Parent list / Assessment table --}}
-    @if ($groups->isNotEmpty())
-        @if ($filter === 'asesment' || $filterType === 'assessment')
-            @include('user.learning.dashboard-partials.my-task-assessment-table', ['assessmentGroups' => $groups])
-        @else
-            @include('user.learning.dashboard-partials.my-task-parent-table', ['tableGroups' => $groups])
-        @endif
+    {{-- Parent list / Assessment table (always renders table with empty row in tbody when no data) --}}
+    @if ($filter === 'asesment' || ($filterType ?? '') === 'assessment')
+        @include('user.learning.dashboard-partials.my-task-assessment-table', ['assessmentGroups' => $groups])
     @else
-        <div class="card border-0 shadow-sm rounded-4">
-            <div class="card-body p-4 text-center text-muted">
-                <i class="ti ti-list-check fs-1 d-block mb-2"></i>
-                @if ($filter === 'all' && ($search ?? '') === '')
-                    No tasks yet. Open a playlist or content you follow first — tasks will appear here after you open it.
-                @elseif ($filter === 'asesment')
-                    No assessments available at this time.
-                @else
-                    No tasks match this filter.
-                @endif
-            </div>
-        </div>
+        @include('user.learning.dashboard-partials.my-task-parent-table', ['tableGroups' => $groups])
     @endif
 @endif
 
