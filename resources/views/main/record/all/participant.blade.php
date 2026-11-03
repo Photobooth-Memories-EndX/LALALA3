@@ -216,6 +216,7 @@
                             </button>
 
                             <!-- 7. Download Dropdown (Light Green) -->
+                            @can('learning_management')
                             <div class="dropdown flex-shrink-0 ms-auto">
                                 <button type="button" id="btn-participant-download"
                                     class="btn btn-download-light-green rounded-3 px-3 dropdown-toggle d-inline-flex align-items-center gap-1"
@@ -270,6 +271,7 @@
                                     </li>
                                 </ul>
                             </div>
+                            @endcan
                         </div>
                     </form>
                 </div>

@@ -171,6 +171,7 @@
                         </button>
 
                         <!-- Export Dropdown (Excel, CSV, PDF Landscape) -->
+                        @can('learning_management')
                         <div class="dropdown flex-shrink-0">
                             <button class="btn btn-success dropdown-toggle rounded-3 px-3 btn-download"
                                     type="button" id="courseExportDropdown" data-bs-toggle="dropdown" aria-expanded="false" title="Export Records">
@@ -207,6 +208,7 @@
                                 </li>
                             </ul>
                         </div>
+                        @endcan
                     </div>
                 </form>
             </div>

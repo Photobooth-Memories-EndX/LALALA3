@@ -301,6 +301,13 @@ class LearningManageController extends Controller
 
     public function content($slug, Request $request)
     {
+        $isDownload = in_array($request->input('action'), ['download', 'download_pdf', 'download_csv'], true)
+            || in_array($request->input('format'), ['pdf', 'csv'], true);
+
+        if ($isDownload && !auth()->user()?->canAccessManageModule('learning_management')) {
+            abort(403, 'Anda tidak memiliki akses untuk mengunduh record ini.');
+        }
+
         $contentModel = Content::where('slug', $slug)->first();
 
         if ($request->input('action') === 'download') {
@@ -327,6 +334,13 @@ class LearningManageController extends Controller
 
     public function playlistDetail($id, Request $request)
     {
+        $isDownload = in_array($request->input('action'), ['download', 'download_pdf', 'download_csv'], true)
+            || in_array($request->input('format'), ['pdf', 'csv'], true);
+
+        if ($isDownload && !auth()->user()?->canAccessManageModule('learning_management')) {
+            abort(403, 'Anda tidak memiliki akses untuk mengunduh record ini.');
+        }
+
         $playlist = is_numeric($id)
             ? TrainingPlan::with(['contents.classification'])->find($id)
             : TrainingPlan::with(['contents.classification'])->where('slug', $id)->first();

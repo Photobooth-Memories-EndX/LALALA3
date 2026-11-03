@@ -91,6 +91,7 @@
                         </button>
 
                         <!-- Download Dropdown (Excel, CSV, PDF) -->
+                        @can('learning_management')
                         <div class="dropdown flex-shrink-0">
                             <button class="btn btn-success dropdown-toggle rounded-3 px-3 btn-download d-inline-flex align-items-center gap-1"
                                     type="button" id="btn-download-online-export" data-bs-toggle="dropdown" aria-expanded="false" title="Export Records">
@@ -133,6 +134,7 @@
                                 </li>
                             </ul>
                         </div>
+                        @endcan
                     </div>
                 </form>
             </div>

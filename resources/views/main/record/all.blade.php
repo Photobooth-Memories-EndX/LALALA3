@@ -33,6 +33,7 @@
         @endif
 
         <!-- Action Button: Download Dropdown -->
+        @can('learning_management')
         <div class="d-flex justify-content-end mb-4" id="btn-export-all-combined">
             <div class="dropdown">
                 <button type="button" class="btn btn-outline-secondary dropdown-toggle rounded-3 px-3 d-inline-flex align-items-center gap-1.5"
@@ -62,6 +63,7 @@
                 </ul>
             </div>
         </div>
+        @endcan
 
         <!-- CLASSIFICATION SUMMARY CARD (COLLAPSIBLE / ASYNC) -->
         <div class="card border-0 shadow-sm rounded-4 mb-4">

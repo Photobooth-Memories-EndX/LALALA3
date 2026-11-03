@@ -412,10 +412,12 @@
                             <span>Reset Filter</span>
                         </button>
 
+                        @can('learning_management')
                         <button type="submit" id="btn-export-download" class="btn btn-success rounded-3 px-4 d-inline-flex align-items-center gap-2 fw-semibold">
                             <i class="ti ti-download fs-2"></i>
                             <span>Generate Export</span>
                         </button>
+                        @endcan
                     </div>
                 </div>
             </div>

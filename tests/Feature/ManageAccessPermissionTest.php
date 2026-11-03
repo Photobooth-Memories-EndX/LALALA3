@@ -194,6 +194,7 @@ class ManageAccessPermissionTest extends TestCase
         $expectedDebuggerModules = [
             'learning_hours_management' => 'Learning Hours Management',
             'playlist_debug_tools' => 'Playlist Debug Tools',
+            'learning_management' => 'Learning Management',
         ];
 
         $response = $this->actingAs($this->superAdmin)
@@ -205,10 +206,6 @@ class ManageAccessPermissionTest extends TestCase
             $response->assertSee($label);
             $response->assertSee($key);
         }
-
-        // Learning Management is removed from UI presentation
-        $content = $response->getContent();
-        $this->assertDoesNotMatchRegularExpression('/<input[^>]*type="checkbox"[^>]*value="learning_management"/i', $content);
 
         foreach ($expectedDebuggerModules as $key => $label) {
             $response->assertSee($label);

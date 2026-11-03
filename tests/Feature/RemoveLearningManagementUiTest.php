@@ -55,9 +55,9 @@ class RemoveLearningManagementUiTest extends TestCase
     }
 
     /**
-     * Test 2: Edit Access Permission page does not display Learning Management checkbox.
+     * Test 2: Edit Access Permission page displays Learning Management checkbox in Debugger Developer Tools.
      */
-    public function test_access_permission_edit_does_not_display_learning_management_checkbox(): void
+    public function test_access_permission_edit_displays_learning_management_checkbox(): void
     {
         $response = $this->actingAs($this->superAdmin)
             ->get(route('manage.access-permission.edit', 3));
@@ -65,11 +65,11 @@ class RemoveLearningManagementUiTest extends TestCase
         $response->assertOk();
         $content = $response->getContent();
 
-        // Checkbox for learning_management must NOT exist in the DOM
-        $this->assertDoesNotMatchRegularExpression(
+        // Checkbox for learning_management must exist in the DOM
+        $this->assertMatchesRegularExpression(
             '/<input[^>]*type="checkbox"[^>]*value="learning_management"/i',
             $content,
-            'Learning Management checkbox must not be rendered in Edit Access Permission'
+            'Learning Management checkbox must be rendered in Edit Access Permission'
         );
 
         // Checkboxes for other modules must still be rendered
@@ -88,9 +88,9 @@ class RemoveLearningManagementUiTest extends TestCase
     }
 
     /**
-     * Test 3: Saving permissions does NOT revoke or overwrite learning_management.
+     * Test 3: Saving permissions correctly updates learning_management permission.
      */
-    public function test_access_permission_save_preserves_learning_management_permission(): void
+    public function test_access_permission_save_updates_learning_management_permission(): void
     {
         // Ensure Role 3 currently has learning_management = true
         RoleAccessPermission::updateOrCreate(
@@ -98,7 +98,7 @@ class RemoveLearningManagementUiTest extends TestCase
             ['can_access' => true]
         );
 
-        // Administrator saves changes for Role 3 without learning_management in payload
+        // Administrator saves changes for Role 3 without learning_management in payload (disables it)
         $response = $this->actingAs($this->superAdmin)
             ->put(route('manage.access-permission.update', 3), [
                 'permissions' => [
@@ -110,13 +110,28 @@ class RemoveLearningManagementUiTest extends TestCase
 
         $response->assertRedirect(route('manage.access-permission.index'));
 
-        // Verify learning_management is STILL true in the database
+        // Verify learning_management is false in the database
         $permission = RoleAccessPermission::where('role', 3)
             ->where('module_key', 'learning_management')
             ->first();
 
         $this->assertNotNull($permission, 'RoleAccessPermission for learning_management must remain in database');
-        $this->assertTrue((bool) $permission->can_access, 'learning_management permission must remain true on save');
+        $this->assertFalse((bool) $permission->can_access, 'learning_management permission must be false when unchecked');
+
+        // Administrator saves changes for Role 3 with learning_management in payload (enables it)
+        $response2 = $this->actingAs($this->superAdmin)
+            ->put(route('manage.access-permission.update', 3), [
+                'permissions' => [
+                    'admin_management',
+                    'record_management',
+                    'content_repository',
+                    'learning_management',
+                ],
+            ]);
+
+        $response2->assertRedirect(route('manage.access-permission.index'));
+        $permission->refresh();
+        $this->assertTrue((bool) $permission->can_access, 'learning_management permission must be true when checked');
     }
 
     /**

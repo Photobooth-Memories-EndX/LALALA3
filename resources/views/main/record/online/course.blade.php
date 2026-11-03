@@ -29,12 +29,14 @@
                 </div>
 
                 <!-- Action Download -->
+                @can('learning_management')
                 <div class="d-flex align-items-center gap-2 flex-wrap">
                     <a href="{{ route('manage.record.online.export') }}" class="btn btn-success rounded-3 px-3 d-inline-flex align-items-center gap-1.5" id="btn-export-online-course">
                         <i class="ti ti-download fs-2"></i>
                         <span>Download Excel</span>
                     </a>
                 </div>
+                @endcan
             </div>
         </div>
 

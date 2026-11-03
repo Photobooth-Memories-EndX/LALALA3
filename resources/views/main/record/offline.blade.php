@@ -69,6 +69,7 @@
                     </li>
                 </ul>
             </div>
+            @can('learning_management')
             <div class="dropdown">
                 <button type="button" class="btn btn-outline-secondary dropdown-toggle rounded-3 px-3 d-inline-flex align-items-center gap-1.5"
                         data-bs-toggle="dropdown" data-toggle="dropdown" aria-expanded="false" id="btn-download-dropdown">
@@ -103,6 +104,7 @@
                     </li>
                 </ul>
             </div>
+            @endcan
         </div>
 
         <!-- CLASSIFICATION SUMMARY (ASYNC SKELETON SHELL) -->

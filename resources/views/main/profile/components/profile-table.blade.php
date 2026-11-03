@@ -76,6 +76,7 @@
                 </button>
 
                 <!-- 9. Download Dropdown Button -->
+                @can('learning_management')
                 <div class="dropdown flex-shrink-0 quick-filter-download">
                     <button type="button" class="btn btn-success dropdown-toggle rounded-3 px-3 btn-download"
                             data-bs-toggle="dropdown" aria-expanded="false" id="btn-profile-download-dropdown" title="Download Records">
@@ -102,6 +103,7 @@
                         </li>
                     </ul>
                 </div>
+                @endcan
             </div>
         </form>
     </div>
