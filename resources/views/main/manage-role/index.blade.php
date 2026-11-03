@@ -55,6 +55,8 @@
                 </div>
             @endif
 
+            @include('main.manage-role.components.role-nav-tabs')
+
             @include('main.manage-role.components.stat-cards')
 
             @include('main.manage-role.components.filter-card')
@@ -289,7 +291,10 @@
     body.theme-dark .role-filter-card,
     [data-bs-theme="dark"] .role-table-card,
     [data-theme="dark"] .role-table-card,
-    body.theme-dark .role-table-card {
+    body.theme-dark .role-table-card,
+    [data-bs-theme="dark"] .role-nav-tabs-card,
+    [data-theme="dark"] .role-nav-tabs-card,
+    body.theme-dark .role-nav-tabs-card {
         background-color: #1e293b !important;
         border: 1px solid rgba(255, 255, 255, 0.12) !important;
         color: #f8fafc !important;

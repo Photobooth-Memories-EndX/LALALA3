@@ -231,46 +231,262 @@
 
                 <!-- 6 CLICKABLE KPI SUMMARY STAT CARDS (QUICK FILTER) -->
                 <div class="row g-2 mb-3" id="ptkp-summary-cards-container">
+                    <!-- Card 1: Total Rows -->
                     <div class="col-6 col-md-2">
                         <div class="card border p-3 rounded-3 text-center h-100 ptkp-kpi-card ptkp-summary-filter-card active"
-                             data-filter="all" role="button" tabindex="0" title="Click to filter: All Records">
-                            <div class="text-muted small fw-medium mb-1">Total Rows</div>
+                             data-filter="all" role="button" tabindex="0">
+                            <div class="d-flex align-items-center justify-content-center gap-1 text-muted small fw-medium mb-1">
+                                <span>Total Rows</span>
+                                <span class="ptkp-info-icon" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="top" data-bs-custom-class="ptkp-status-tooltip"
+                                      data-tooltip-id="ptkp-tt-content-total"
+                                      tabindex="0" role="button" aria-label="Explanation of Total Rows">
+                                    <i class="ti ti-info-circle"></i>
+                                </span>
+                            </div>
                             <div class="h3 fw-bold text-dark mb-0 ptkp-kpi-count" id="ptkp-kpi-total">0</div>
                         </div>
                     </div>
+
+                    <!-- Card 2: VALID -->
                     <div class="col-6 col-md-2">
                         <div class="card border p-3 rounded-3 text-center h-100 ptkp-kpi-card ptkp-summary-filter-card ptkp-kpi-valid"
-                             data-filter="valid" role="button" tabindex="0" title="Click to filter: VALID Records">
-                            <div class="small fw-semibold mb-1" style="color: #15803d;">VALID</div>
+                             data-filter="valid" role="button" tabindex="0">
+                            <div class="d-flex align-items-center justify-content-center gap-1 small fw-semibold mb-1" style="color: #15803d;">
+                                <span>VALID</span>
+                                <span class="ptkp-info-icon" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="top" data-bs-custom-class="ptkp-status-tooltip"
+                                      data-tooltip-id="ptkp-tt-content-valid"
+                                      tabindex="0" role="button" aria-label="Explanation of Valid status">
+                                    <i class="ti ti-info-circle"></i>
+                                </span>
+                            </div>
                             <div class="h3 fw-bold mb-0 ptkp-kpi-count" style="color: #15803d;" id="ptkp-kpi-valid">0</div>
                         </div>
                     </div>
+
+                    <!-- Card 3: WARNING -->
                     <div class="col-6 col-md-2">
                         <div class="card border p-3 rounded-3 text-center h-100 ptkp-kpi-card ptkp-summary-filter-card ptkp-kpi-warning"
-                             data-filter="warning" role="button" tabindex="0" title="Click to filter: WARNING Records">
-                            <div class="small fw-semibold mb-1" style="color: #92400e;">WARNING</div>
+                             data-filter="warning" role="button" tabindex="0">
+                            <div class="d-flex align-items-center justify-content-center gap-1 small fw-semibold mb-1" style="color: #92400e;">
+                                <span>WARNING</span>
+                                <span class="ptkp-info-icon" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="top" data-bs-custom-class="ptkp-status-tooltip"
+                                      data-tooltip-id="ptkp-tt-content-warning"
+                                      tabindex="0" role="button" aria-label="Explanation of Warning status">
+                                    <i class="ti ti-info-circle"></i>
+                                </span>
+                            </div>
                             <div class="h3 fw-bold mb-0 ptkp-kpi-count" style="color: #92400e;" id="ptkp-kpi-warning">0</div>
                         </div>
                     </div>
+
+                    <!-- Card 4: DUPLICATE -->
                     <div class="col-6 col-md-2">
                         <div class="card border p-3 rounded-3 text-center h-100 ptkp-kpi-card ptkp-summary-filter-card ptkp-kpi-duplicate"
-                             data-filter="duplicate" role="button" tabindex="0" title="Click to filter: DUPLICATE Records">
-                            <div class="small fw-semibold mb-1" style="color: #a16207;">DUPLICATE</div>
+                             data-filter="duplicate" role="button" tabindex="0">
+                            <div class="d-flex align-items-center justify-content-center gap-1 small fw-semibold mb-1" style="color: #a16207;">
+                                <span>DUPLICATE</span>
+                                <span class="ptkp-info-icon" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="top" data-bs-custom-class="ptkp-status-tooltip"
+                                      data-tooltip-id="ptkp-tt-content-duplicate"
+                                      tabindex="0" role="button" aria-label="Explanation of Duplicate status">
+                                    <i class="ti ti-info-circle"></i>
+                                </span>
+                            </div>
                             <div class="h3 fw-bold mb-0 ptkp-kpi-count" style="color: #a16207;" id="ptkp-kpi-duplicate">0</div>
                         </div>
                     </div>
+
+                    <!-- Card 5: INVALID -->
                     <div class="col-6 col-md-2">
                         <div class="card border p-3 rounded-3 text-center h-100 ptkp-kpi-card ptkp-summary-filter-card ptkp-kpi-invalid"
-                             data-filter="invalid" role="button" tabindex="0" title="Click to filter: INVALID Records">
-                            <div class="small fw-semibold mb-1" style="color: #b91c1c;">INVALID</div>
+                             data-filter="invalid" role="button" tabindex="0">
+                            <div class="d-flex align-items-center justify-content-center gap-1 small fw-semibold mb-1" style="color: #b91c1c;">
+                                <span>INVALID</span>
+                                <span class="ptkp-info-icon" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="top" data-bs-custom-class="ptkp-status-tooltip"
+                                      data-tooltip-id="ptkp-tt-content-invalid"
+                                      tabindex="0" role="button" aria-label="Explanation of Invalid status">
+                                    <i class="ti ti-info-circle"></i>
+                                </span>
+                            </div>
                             <div class="h3 fw-bold mb-0 ptkp-kpi-count" style="color: #b91c1c;" id="ptkp-kpi-invalid">0</div>
                         </div>
                     </div>
+
+                    <!-- Card 6: INVALID COMPANY -->
                     <div class="col-6 col-md-2">
                         <div class="card border p-3 rounded-3 text-center h-100 ptkp-kpi-card ptkp-summary-filter-card ptkp-kpi-invalid-company"
-                             data-filter="invalid_company" role="button" tabindex="0" title="Click to filter: INVALID COMPANY Records">
-                            <div class="small fw-semibold mb-1" style="color: #c2410c;">INVALID COMPANY</div>
+                             data-filter="invalid_company" role="button" tabindex="0">
+                            <div class="d-flex align-items-center justify-content-center gap-1 small fw-semibold mb-1" style="color: #c2410c;">
+                                <span>INVALID COMPANY</span>
+                                <span class="ptkp-info-icon" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="top" data-bs-custom-class="ptkp-status-tooltip"
+                                      data-tooltip-id="ptkp-tt-content-invalid-company"
+                                      tabindex="0" role="button" aria-label="Explanation of Invalid Company status">
+                                    <i class="ti ti-info-circle"></i>
+                                </span>
+                            </div>
                             <div class="h3 fw-bold mb-0 ptkp-kpi-count" style="color: #c2410c;" id="ptkp-kpi-invalid-company">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VALIDATION STATUS EXPLANATION TOOLTIP TEMPLATES -->
+                <div id="ptkp-tooltip-templates" class="d-none" aria-hidden="true">
+                    <!-- Template 1: Total Rows -->
+                    <div id="ptkp-tt-content-total">
+                        <div class="ptkp-tt-box text-start">
+                            <div class="ptkp-tt-head fw-bold mb-1.5 d-flex align-items-center justify-content-between">
+                                <span class="fs-6">Total Uploaded Records</span>
+                                <span class="badge bg-secondary-lt text-dark extra-small">Total Dataset</span>
+                            </div>
+                            <div class="ptkp-tt-desc mb-2">
+                                The total number of data rows detected in the uploaded Excel file, excluding the header row.
+                            </div>
+                            <div class="ptkp-tt-section mb-2">
+                                <div class="ptkp-tt-subhead fw-semibold text-uppercase text-muted extra-small mb-1">Important Notes</div>
+                                <ul class="ptkp-tt-list ps-3 mb-0">
+                                    <li>Represents the complete dataset evaluated during this import session.</li>
+                                    <li>Includes valid, warning, duplicate, and invalid entries.</li>
+                                    <li>Click this card to view all records regardless of status.</li>
+                                </ul>
+                            </div>
+                            <div class="ptkp-tt-foot pt-2 border-top d-flex align-items-center justify-content-between">
+                                <span class="extra-small text-muted fw-medium">Import Status:</span>
+                                <span class="badge bg-blue-lt text-blue fw-bold">Total dataset evaluated</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Template 2: VALID -->
+                    <div id="ptkp-tt-content-valid">
+                        <div class="ptkp-tt-box text-start">
+                            <div class="ptkp-tt-head fw-bold mb-1.5 d-flex align-items-center justify-content-between">
+                                <span class="fs-6">Valid Records</span>
+                                <span class="badge bg-success-lt text-success extra-small">Importable</span>
+                            </div>
+                            <div class="ptkp-tt-desc mb-2">
+                                These records have successfully passed all required validation checks. Employee information, company details, and course information meet the system's requirements.
+                            </div>
+                            <div class="ptkp-tt-section mb-2">
+                                <div class="ptkp-tt-subhead fw-semibold text-uppercase text-muted extra-small mb-1">Validation Criteria</div>
+                                <ul class="ptkp-tt-list ps-3 mb-0">
+                                    <li>Employee ID exists and is recognized.</li>
+                                    <li>Employee information is successfully matched with the Users database.</li>
+                                    <li>Required Course Title is provided.</li>
+                                    <li>Company information meets the applicable validation rules.</li>
+                                    <li>No blocking validation errors are detected.</li>
+                                </ul>
+                            </div>
+                            <div class="ptkp-tt-foot pt-2 border-top d-flex align-items-center justify-content-between">
+                                <span class="extra-small text-muted fw-medium">Import Status:</span>
+                                <span class="badge bg-success text-white fw-bold">Will be imported successfully</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Template 3: WARNING -->
+                    <div id="ptkp-tt-content-warning">
+                        <div class="ptkp-tt-box text-start">
+                            <div class="ptkp-tt-head fw-bold mb-1.5 d-flex align-items-center justify-content-between">
+                                <span class="fs-6">Warning Records</span>
+                                <span class="badge bg-warning-lt text-warning extra-small">Importable</span>
+                            </div>
+                            <div class="ptkp-tt-desc mb-2">
+                                These records contain minor validation issues or incomplete information that do not prevent the import process. They are still eligible for import according to the applicable validation rules.
+                            </div>
+                            <div class="ptkp-tt-section mb-2">
+                                <div class="ptkp-tt-subhead fw-semibold text-uppercase text-muted extra-small mb-1">Important Notes</div>
+                                <ul class="ptkp-tt-list ps-3 mb-0">
+                                    <li>The record has passed mandatory validation.</li>
+                                    <li>One or more non-blocking warnings have been detected.</li>
+                                    <li>The administrator should review the warning details.</li>
+                                    <li>These records can still be imported if permitted by the existing import rules.</li>
+                                </ul>
+                            </div>
+                            <div class="ptkp-tt-foot pt-2 border-top d-flex align-items-center justify-content-between">
+                                <span class="extra-small text-muted fw-medium">Import Status:</span>
+                                <span class="badge bg-warning text-dark fw-bold">Will be imported with warnings</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Template 4: DUPLICATE -->
+                    <div id="ptkp-tt-content-duplicate">
+                        <div class="ptkp-tt-box text-start">
+                            <div class="ptkp-tt-head fw-bold mb-1.5 d-flex align-items-center justify-content-between">
+                                <span class="fs-6">Duplicate Records</span>
+                                <span class="badge bg-purple-lt text-purple extra-small">Skipped</span>
+                            </div>
+                            <div class="ptkp-tt-desc mb-2">
+                                These records have been identified as duplicates based on the system's existing duplicate detection rules. Importing them again could create duplicate training records.
+                            </div>
+                            <div class="ptkp-tt-section mb-2">
+                                <div class="ptkp-tt-subhead fw-semibold text-uppercase text-muted extra-small mb-1">Important Notes</div>
+                                <ul class="ptkp-tt-list ps-3 mb-0">
+                                    <li>The record matches an existing record or duplicate condition.</li>
+                                    <li>The system identifies it as an existing or repeated entry.</li>
+                                    <li>Duplicate records are excluded from the import process.</li>
+                                    <li>Existing records will not be overwritten.</li>
+                                </ul>
+                            </div>
+                            <div class="ptkp-tt-foot pt-2 border-top d-flex align-items-center justify-content-between">
+                                <span class="extra-small text-muted fw-medium">Import Status:</span>
+                                <span class="badge bg-purple text-white fw-bold">Will be skipped</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Template 5: INVALID -->
+                    <div id="ptkp-tt-content-invalid">
+                        <div class="ptkp-tt-box text-start">
+                            <div class="ptkp-tt-head fw-bold mb-1.5 d-flex align-items-center justify-content-between">
+                                <span class="fs-6">Invalid Employee ID or Course</span>
+                                <span class="badge bg-danger-lt text-danger extra-small">Rejected</span>
+                            </div>
+                            <div class="ptkp-tt-desc mb-2">
+                                These records have failed mandatory Employee ID or Course validation requirements and cannot be imported into the system.
+                            </div>
+                            <div class="ptkp-tt-section mb-2">
+                                <div class="ptkp-tt-subhead fw-semibold text-uppercase text-muted extra-small mb-1">Validation Rules</div>
+                                <ul class="ptkp-tt-list ps-3 mb-0">
+                                    <li><strong>PTKP:</strong> Employee ID is missing or cannot be recognized, Course information is empty, or both are invalid.</li>
+                                    <li><strong>Non-PTKP:</strong> Employee ID is missing, or Course information is missing.</li>
+                                </ul>
+                            </div>
+                            <div class="ptkp-tt-fix mb-2">
+                                <div class="fw-semibold text-danger extra-small mb-0.5"><i class="ti ti-wrench me-1"></i>How to Fix:</div>
+                                <div class="extra-small">Review the Employee ID and Course Title columns in the uploaded Excel file. Correct the missing or invalid entries and re-upload the file.</div>
+                            </div>
+                            <div class="ptkp-tt-foot pt-2 border-top d-flex align-items-center justify-content-between">
+                                <span class="extra-small text-muted fw-medium">Import Status:</span>
+                                <span class="badge bg-danger text-white fw-bold">Will not be imported</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Template 6: INVALID COMPANY -->
+                    <div id="ptkp-tt-content-invalid-company">
+                        <div class="ptkp-tt-box text-start">
+                            <div class="ptkp-tt-head fw-bold mb-1.5 d-flex align-items-center justify-content-between">
+                                <span class="fs-6">Invalid Company Records</span>
+                                <span class="badge bg-orange-lt text-orange extra-small">Skipped</span>
+                            </div>
+                            <div class="ptkp-tt-desc mb-2">
+                                These records contain missing or unsupported company information and cannot be imported under the applicable rules.
+                            </div>
+                            <div class="ptkp-tt-section mb-2">
+                                <div class="ptkp-tt-subhead fw-semibold text-uppercase text-muted extra-small mb-1">Validation Rules</div>
+                                <ul class="ptkp-tt-list ps-3 mb-0">
+                                    <li>Company code is invalid, unmapped, or missing.</li>
+                                    <li>Company is not recognized in the system configuration.</li>
+                                </ul>
+                            </div>
+                            <div class="ptkp-tt-fix mb-2">
+                                <div class="fw-semibold text-orange extra-small mb-0.5"><i class="ti ti-wrench me-1"></i>How to Fix:</div>
+                                <div class="extra-small">Verify that the company code matches the accepted company list in the system configuration. Update the company values in the Excel file and re-upload.</div>
+                            </div>
+                            <div class="ptkp-tt-foot pt-2 border-top d-flex align-items-center justify-content-between">
+                                <span class="extra-small text-muted fw-medium">Import Status:</span>
+                                <span class="badge bg-orange text-white fw-bold">Will be skipped</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -416,7 +632,7 @@
                                         <i class="ti ti-check"></i>
                                     </span>
                                     <div>
-                                        <h5 class="fw-bold text-dark mb-1">Jumlah Record yang Akan Di-import</h5>
+                                        <h5 class="fw-bold text-dark mb-1">Records to Be Imported</h5>
                                         <p class="text-muted small mb-0">Records that passed validation and are eligible for import.</p>
                                     </div>
                                 </div>
@@ -463,7 +679,7 @@
                                         <i class="ti ti-ban"></i>
                                     </span>
                                     <div>
-                                        <h5 class="fw-bold text-dark mb-1">Jumlah Record yang Tidak Di-import</h5>
+                                        <h5 class="fw-bold text-dark mb-1">Records Not Imported</h5>
                                         <p class="text-muted small mb-0">Records that will be skipped because they failed validation or already exist.</p>
                                     </div>
                                 </div>
@@ -472,14 +688,14 @@
                                     <div class="pre-import-row">
                                         <div class="pre-import-row-label">
                                             <span class="pre-import-row-icon" style="background-color: #fee2e2; color: #dc2626;"><i class="ti ti-x"></i></span>
-                                            <span>Invalid Employee ID &amp; Course</span>
+                                            <span>Invalid Employee ID or Course</span>
                                         </div>
                                         <span class="pre-import-row-count text-danger" id="ptkp-step3-invalid-count">0</span>
                                     </div>
                                     <div class="pre-import-row">
                                         <div class="pre-import-row-label">
-                                            <span class="pre-import-row-icon" style="background-color: #f1f5f9; color: #64748b;"><i class="ti ti-info-circle"></i></span>
-                                            <span>Invalid Company (Skipped) <span class="text-muted extra-small" title="Non-blocking warning in OWL backend; imported with review note">(Non-blocking in OWL)</span></span>
+                                            <span class="pre-import-row-icon" style="background-color: #ffedd5; color: #ea580c;"><i class="ti ti-building"></i></span>
+                                            <span>Invalid Company (Skipped)</span>
                                         </div>
                                         <span class="pre-import-row-count text-muted" id="ptkp-step3-invalid-company-skipped">0</span>
                                     </div>
@@ -509,7 +725,7 @@
                             <i class="ti ti-shield-check fs-1"></i>
                         </div>
                         <div class="small lh-base text-dark">
-                            <strong class="text-dark">Database Safety Guarantee:</strong> Only records that passed validation will be imported into KP-OWL. Existing enrolled participants and duplicate entries will not be overwritten.
+                            <strong class="text-dark">Database Safety Guarantee:</strong> Only records that pass validation will be imported into KP-OWL. Existing enrolled participants and duplicate entries will not be overwritten.
                         </div>
                     </div>
                 </div>
@@ -674,16 +890,26 @@
                     </div>
                 </div>
 
-                <!-- 4. BOTTOM ACTION BUTTONS -->
-                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 pt-3 border-top">
-                    <button type="button" class="btn btn-outline-secondary rounded-3 px-4 py-2.5 d-inline-flex align-items-center gap-2" id="ptkp-btn-import-another">
-                        <i class="ti ti-upload fs-2"></i>
-                        <span>Import Another File</span>
-                    </button>
-                    <a href="{{ route('manage.record.offline') }}" class="btn btn-primary rounded-3 px-4 py-2.5 d-inline-flex align-items-center gap-2" style="background-color: #1e3a8a; border-color: #1e3a8a;" id="ptkp-btn-view-records">
-                        <i class="ti ti-table fs-2"></i>
-                        <span>View Imported Records</span>
-                    </a>
+                <!-- 4. BOTTOM ACTION BUTTONS (REORGANIZED LEFT & RIGHT GROUPS) -->
+                <div class="d-flex flex-column flex-md-row align-items-stretch align-items-md-center justify-content-between gap-3 pt-4 border-top" id="ptkp-result-actions">
+                    <!-- LEFT GROUP: Import Another File -->
+                    <div class="ptkp-result-action-left">
+                        <button type="button" class="btn btn-outline-primary rounded-3 px-4 py-2 d-inline-flex align-items-center justify-content-center gap-2 fw-medium ptkp-btn-action" id="ptkp-btn-import-another">
+                            <i class="ti ti-upload fs-2"></i>
+                            <span>Import Another File</span>
+                        </button>
+                    </div>
+                    <!-- RIGHT GROUP: View Imported Records & View Import Log -->
+                    <div class="ptkp-result-action-right d-flex flex-column flex-sm-row align-items-stretch align-items-sm-center gap-2.5">
+                        <a href="{{ route('manage.record.offline') }}" class="btn btn-outline-primary rounded-3 px-4 py-2 d-inline-flex align-items-center justify-content-center gap-2 fw-medium ptkp-btn-action" id="ptkp-btn-view-records">
+                            <i class="ti ti-table fs-2"></i>
+                            <span>View Imported Records</span>
+                        </a>
+                        <a href="{{ route('manage.record.offline.import-history.index') }}" class="btn btn-primary rounded-3 px-4 py-2 d-inline-flex align-items-center justify-content-center gap-2 fw-semibold ptkp-btn-action" style="background-color: #1e3a8a; border-color: #1e3a8a;" id="ptkp-btn-view-log">
+                            <i class="ti ti-clipboard-list fs-2"></i>
+                            <span>View Import Log</span>
+                        </a>
+                    </div>
                 </div>
 
             </div>
@@ -728,7 +954,9 @@
         preview: "{{ route('manage.record.offline.import-ptkp.preview') }}",
         confirm: "{{ route('manage.record.offline.import-ptkp.confirm') }}",
         cancel:  "{{ route('manage.record.offline.import-ptkp.cancel') }}",
-        offline: "{{ route('manage.record.offline') }}"
+        offline: "{{ route('manage.record.offline') }}",
+        history: "{{ route('manage.record.offline.import-history.index') }}",
+        historyDetail: "{{ url('manage/record/offline/import-history') }}"
     };
 </script>
 <script src="{{ asset('js/manage/ptkp-import.js') }}"></script>

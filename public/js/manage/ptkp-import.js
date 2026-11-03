@@ -50,7 +50,8 @@
         }
 
         if (importHistory) {
-            importHistory.classList.toggle('d-none', currentStep < 3);
+            // Task 1: Do not display Import History button on Step 3 or upon successful import
+            importHistory.classList.add('d-none');
         }
     }
 
@@ -310,10 +311,63 @@
         }
 
         applyFilters();
+        initTooltips();
+    }
+
+    let tooltipHideTimer = null;
+
+    // Initialize tooltips on page elements using rich HTML definitions
+    function initTooltips() {
+        if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('.ptkp-info-icon[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+                const existing = bootstrap.Tooltip.getInstance(tooltipTriggerEl);
+                if (existing) {
+                    existing.dispose();
+                }
+                const targetId = tooltipTriggerEl.getAttribute('data-tooltip-id');
+                const contentEl = targetId ? document.getElementById(targetId) : null;
+                const contentHtml = contentEl ? contentEl.innerHTML : (tooltipTriggerEl.getAttribute('title') || '');
+
+                new bootstrap.Tooltip(tooltipTriggerEl, {
+                    container: 'body',
+                    boundary: 'window',
+                    html: true,
+                    title: contentHtml,
+                    customClass: 'ptkp-status-tooltip',
+                    trigger: 'manual',
+                    fallbackPlacements: ['bottom', 'right', 'left']
+                });
+            });
+        }
+    }
+
+    $(document).ready(function () {
+        initTooltips();
+    });
+
+    // Helper to dismiss all active status tooltips
+    function hideAllStatusTooltips() {
+        if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+            $('.ptkp-info-icon[data-bs-toggle="tooltip"]').each(function () {
+                const instance = bootstrap.Tooltip.getInstance(this);
+                if (instance) {
+                    instance.hide();
+                }
+            });
+        }
     }
 
     // Summary Card Click Filter Handler
-    $(document).on('click', '.ptkp-summary-filter-card', function () {
+    $(document).on('click', '.ptkp-summary-filter-card', function (e) {
+        // Prevent filter toggle if user clicked on tooltip/info icon
+        if ($(e.target).closest('.ptkp-info-icon, .tooltip').length > 0) {
+            return;
+        }
+
+        // Hide all status tooltips when card filter is executed
+        hideAllStatusTooltips();
+
         if (isFiltering) return;
         const newFilter = $(this).data('filter');
         if (newFilter === currentFilter) return;
@@ -340,9 +394,130 @@
 
     // Keyboard support for Summary Cards (Enter / Space)
     $(document).on('keydown', '.ptkp-summary-filter-card', function (e) {
+        if ($(e.target).closest('.ptkp-info-icon').length > 0) {
+            return;
+        }
         if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
             $(this).trigger('click');
+        }
+    });
+
+    // Desktop hover: Hovering summary card shows detailed status explanation
+    $(document).on('mouseenter', '.ptkp-summary-filter-card', function () {
+        if (tooltipHideTimer) {
+            clearTimeout(tooltipHideTimer);
+            tooltipHideTimer = null;
+        }
+        const iconEl = $(this).find('.ptkp-info-icon')[0];
+        if (iconEl && typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+            // Dismiss other cards' tooltips
+            $('.ptkp-info-icon').each(function () {
+                if (this !== iconEl) {
+                    const other = bootstrap.Tooltip.getInstance(this);
+                    if (other) other.hide();
+                }
+            });
+            const instance = bootstrap.Tooltip.getInstance(iconEl);
+            if (instance) {
+                instance.show();
+            }
+        }
+    });
+
+    $(document).on('mouseleave', '.ptkp-summary-filter-card', function () {
+        const iconEl = $(this).find('.ptkp-info-icon')[0];
+        if (iconEl && typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+            tooltipHideTimer = setTimeout(function () {
+                if (!$('.tooltip:hover').length && !$(iconEl).closest('.ptkp-summary-filter-card').is(':hover')) {
+                    const instance = bootstrap.Tooltip.getInstance(iconEl);
+                    if (instance) {
+                        instance.hide();
+                    }
+                }
+            }, 120);
+        }
+    });
+
+    // Keep tooltip visible when cursor moves inside the tooltip popup to read or select text
+    $(document).on('mouseenter', '.tooltip', function () {
+        if (tooltipHideTimer) {
+            clearTimeout(tooltipHideTimer);
+            tooltipHideTimer = null;
+        }
+    });
+
+    $(document).on('mouseleave', '.tooltip', function () {
+        tooltipHideTimer = setTimeout(function () {
+            if (!$('.ptkp-summary-filter-card:hover').length) {
+                hideAllStatusTooltips();
+            }
+        }, 120);
+    });
+
+    // Keyboard focus accessibility for info icon
+    $(document).on('focus', '.ptkp-info-icon', function () {
+        if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+            const instance = bootstrap.Tooltip.getInstance(this);
+            if (instance) instance.show();
+        }
+    });
+
+    $(document).on('blur', '.ptkp-info-icon', function () {
+        if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+            const instance = bootstrap.Tooltip.getInstance(this);
+            if (instance) instance.hide();
+        }
+    });
+
+    // Independent interaction for info icon (stops propagation so card filter does not trigger)
+    $(document).on('click', '.ptkp-info-icon', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+            const instance = bootstrap.Tooltip.getInstance(this);
+            if (instance) {
+                const tip = instance.getTipElement ? instance.getTipElement() : null;
+                const isShown = tip && tip.classList.contains('show');
+                // Hide other tooltips
+                $('.ptkp-info-icon').each(function () {
+                    if (this !== e.currentTarget) {
+                        const other = bootstrap.Tooltip.getInstance(this);
+                        if (other) other.hide();
+                    }
+                });
+                if (isShown) {
+                    instance.hide();
+                } else {
+                    instance.show();
+                }
+            }
+        }
+    });
+
+    // Dismiss active tooltips when clicking anywhere outside
+    $(document).on('click', function (e) {
+        if ($(e.target).closest('.ptkp-info-icon, .tooltip, .ptkp-summary-filter-card').length === 0) {
+            hideAllStatusTooltips();
+        }
+    });
+
+    $(document).on('keydown', '.ptkp-info-icon', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            e.stopPropagation();
+            if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+                const tooltipInstance = bootstrap.Tooltip.getInstance(this);
+                if (tooltipInstance) {
+                    const tip = tooltipInstance.getTipElement ? tooltipInstance.getTipElement() : null;
+                    const isShown = tip && tip.classList.contains('show');
+                    if (isShown) {
+                        tooltipInstance.hide();
+                    } else {
+                        tooltipInstance.show();
+                    }
+                }
+            }
         }
     });
 
@@ -676,26 +851,33 @@
         const reused = res.trainings_reused ?? 0;
         const totalSkipped = duplicates + invalid;
 
-        // 1. Success Banner Text
-        if (totalSkipped > 0) {
-            $('#res-header-title').text('Import Completed');
-            $('#res-header-desc').text('Your training records have been processed. Please review the import results below.');
-        } else {
+        // 1. Success Banner Notification
+        if (totalSkipped === 0 && imported > 0) {
             $('#res-header-title').text('Import Completed');
             $('#res-header-desc').text('Your training records have been processed successfully. All eligible records have been imported.');
+        } else if (imported > 0 && totalSkipped > 0) {
+            $('#res-header-title').text('Import Completed');
+            $('#res-header-desc').text('Your training records have been processed with partial results. ' + imported.toLocaleString() + ' imported, ' + totalSkipped.toLocaleString() + ' skipped.');
+        } else if (total === 0) {
+            $('#res-header-title').text('Import Completed');
+            $('#res-header-desc').text('No training records were processed.');
+        } else {
+            $('#res-header-title').text('Import Completed');
+            $('#res-header-desc').text('Your training records have been processed. No records were imported as all records were skipped.');
         }
 
-        // 2. Success Rate Calculation
-        let rate = '0.0';
+        // 2. Success Rate Calculation (Safe handling of 0 records)
+        let rateNum = 0;
         if (total > 0) {
-            rate = ((imported / total) * 100).toFixed(1);
+            rateNum = (imported / total) * 100;
         }
-        $('#res-rate-percentage').text(rate + '%');
-        $('#res-rate-progress-bar').css('width', rate + '%').attr('aria-valuenow', rate);
+        const rateFormatted = (rateNum % 1 === 0 ? rateNum.toFixed(0) : rateNum.toFixed(1)) + '%';
+        $('#res-rate-percentage').text(rateFormatted);
+        $('#res-rate-progress-bar').css('width', rateNum + '%').attr('aria-valuenow', rateNum.toFixed(1));
         $('#res-rate-imported-count').text(imported.toLocaleString());
         $('#res-rate-skipped-count').text(totalSkipped.toLocaleString());
 
-        // 3. 6 Summary Cards
+        // 3. 6 Summary Cards (Dynamic actual results)
         $('#res-total-processed').text(total.toLocaleString());
         $('#res-imported-participants').text(imported.toLocaleString());
         $('#res-imported-count').text(imported.toLocaleString());
@@ -705,6 +887,14 @@
         $('#res-invalid-company-imported').text(invalidCompany.toLocaleString());
         $('#res-trainings-created').text(created.toLocaleString());
         $('#res-trainings-reused').text(reused.toLocaleString());
+
+        // 4. Update Navigation Buttons
+        const batchUuid = res.batch_uuid || null;
+        if (batchUuid && window.ptkpRoutes && window.ptkpRoutes.historyDetail) {
+            $('#ptkp-btn-view-log').attr('href', window.ptkpRoutes.historyDetail + '/' + encodeURIComponent(batchUuid) + '/detail');
+        } else if (window.ptkpRoutes && window.ptkpRoutes.history) {
+            $('#ptkp-btn-view-log').attr('href', window.ptkpRoutes.history);
+        }
     }
 
     $('#ptkp-btn-import-another').on('click', resetToStage1);

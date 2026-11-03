@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Throwable;
+use Yajra\DataTables\Facades\DataTables;
 
 class ManageRoleController extends Controller
 {
@@ -115,6 +116,7 @@ class ManageRoleController extends Controller
             'assignableRoles' => $this->assignableRoleLabels(),
 
             'totalUsers'      => User::count(),
+            'totalResigned'   => User::onlyTrashed()->count(),
             'totalDivision'   => $divisions->count(),
             'totalDepartment' => $departments->count(),
             'totalTeam'       => $teams->count(),
@@ -124,6 +126,252 @@ class ManageRoleController extends Controller
     /**
      * AJAX autocomplete live search for Manage Role.
      */
+    /**
+     * Tampilkan halaman Resign Management berdasarkan Soft-Deleted users (deleted_at IS NOT NULL).
+     */
+    public function resign(Request $request)
+    {
+        $totalResigned = User::onlyTrashed()->count();
+        $totalUsers    = User::count();
+
+        // Distinct companies, divisions, and departments for dropdown filters
+        $companies = User::withTrashed()
+            ->whereNotNull('company_name')
+            ->whereRaw("TRIM(company_name) != ''")
+            ->selectRaw('TRIM(company_name) as company_name')
+            ->distinct()
+            ->orderBy('company_name')
+            ->pluck('company_name');
+
+        $divisions = User::withTrashed()
+            ->whereNotNull('division')
+            ->whereRaw("TRIM(division) != ''")
+            ->selectRaw('TRIM(division) as division')
+            ->distinct()
+            ->orderBy('division')
+            ->pluck('division');
+
+        $departments = User::withTrashed()
+            ->whereNotNull('department')
+            ->whereRaw("TRIM(department) != ''")
+            ->selectRaw('TRIM(department) as department')
+            ->distinct()
+            ->orderBy('department')
+            ->pluck('department');
+
+        $totalCompanies = User::onlyTrashed()
+            ->whereNotNull('company_name')
+            ->whereRaw("TRIM(company_name) != ''")
+            ->distinct()
+            ->count('company_name');
+
+        $totalDivisions = User::onlyTrashed()
+            ->whereNotNull('division')
+            ->whereRaw("TRIM(division) != ''")
+            ->distinct()
+            ->count('division');
+
+        $totalDepartments = User::onlyTrashed()
+            ->whereNotNull('department')
+            ->whereRaw("TRIM(department) != ''")
+            ->distinct()
+            ->count('department');
+
+        return view('main.manage-role.resign', [
+            'totalResigned'    => $totalResigned,
+            'totalUsers'       => $totalUsers,
+            'totalCompanies'   => $totalCompanies,
+            'totalDivisions'   => $totalDivisions,
+            'totalDepartments' => $totalDepartments,
+            'companies'        => $companies,
+            'divisions'        => $divisions,
+            'departments'      => $departments,
+        ]);
+    }
+
+    /**
+     * DataTables AJAX server-side provider untuk Resign Management.
+     */
+    public function resignDatatable(Request $request)
+    {
+        $query = User::onlyTrashed()->select([
+            'id',
+            'id_emp',
+            'name',
+            'email',
+            'sap_code',
+            'company_name',
+            'jobgrade',
+            'jobposition',
+            'team',
+            'department',
+            'division',
+            'orgunit',
+            'id_org_unit',
+            'cell_phone',
+            'sex',
+            'id_user',
+            'positionID',
+            'appr1',
+            'appr2',
+            'role',
+            'resign',
+            'flag',
+            'job_clan',
+            'job_family',
+            'deleted_at',
+            'created_at',
+            'updated_at',
+        ]);
+
+        // Filter: Company
+        if ($request->filled('company')) {
+            $query->where('company_name', $request->input('company'));
+        }
+
+        // Filter: Division
+        if ($request->filled('division')) {
+            $query->where('division', $request->input('division'));
+        }
+
+        // Filter: Department
+        if ($request->filled('department')) {
+            $query->where('department', $request->input('department'));
+        }
+
+        // Filter: Resign Date Range (From & To)
+        if ($request->filled('date_from')) {
+            $query->whereDate('deleted_at', '>=', $request->input('date_from'));
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('deleted_at', '<=', $request->input('date_to'));
+        }
+
+        // Filter: Specific Resign Date
+        if ($request->filled('resign_date')) {
+            $query->whereDate('deleted_at', $request->input('resign_date'));
+        }
+
+        // Custom Search (Employee ID, Name, SAP Code, Email, Job Position, etc.)
+        $search = trim((string) ($request->input('search_keyword') ?: $request->input('search.value')));
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('id_emp', 'like', "%{$search}%")
+                    ->orWhere('sap_code', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('company_name', 'like', "%{$search}%")
+                    ->orWhere('jobposition', 'like', "%{$search}%")
+                    ->orWhere('jobgrade', 'like', "%{$search}%")
+                    ->orWhere('team', 'like', "%{$search}%")
+                    ->orWhere('department', 'like', "%{$search}%")
+                    ->orWhere('division', 'like', "%{$search}%")
+                    ->orWhere('orgunit', 'like', "%{$search}%")
+                    ->orWhere('id_org_unit', 'like', "%{$search}%");
+            });
+        }
+
+        // Default sorting by newest Resign Date if not specified by user
+        if (!$request->has('order')) {
+            $query->orderBy('users.deleted_at', 'desc');
+        }
+
+        return DataTables::eloquent($query)
+            ->addIndexColumn()
+            ->addColumn('id_emp_formatted', function (User $user) {
+                return $user->id_emp
+                    ? '<span class="badge bg-blue-lt font-monospace text-primary fw-semibold px-2 py-1">' . e($user->id_emp) . '</span>'
+                    : '<span class="text-muted">-</span>';
+            })
+            ->addColumn('name_formatted', function (User $user) {
+                $name = e($user->name ?: '-');
+                $email = e($user->email ?: '-');
+                return '<div class="fw-bold text-dark emp-name">' . $name . '</div>'
+                    . '<div class="text-muted small emp-email"><i class="ti ti-mail me-1"></i>' . $email . '</div>';
+            })
+            ->editColumn('sap_code', function (User $user) {
+                return $user->sap_code
+                    ? '<span class="font-monospace text-dark">' . e($user->sap_code) . '</span>'
+                    : '<span class="text-muted">-</span>';
+            })
+            ->editColumn('company_name', function (User $user) {
+                return $user->company_name
+                    ? '<span class="badge bg-secondary-lt text-dark fw-medium">' . e($user->company_name) . '</span>'
+                    : '<span class="text-muted">-</span>';
+            })
+            ->editColumn('jobgrade', fn (User $user) => $user->jobgrade ? e($user->jobgrade) : '<span class="text-muted">-</span>')
+            ->editColumn('jobposition', fn (User $user) => $user->jobposition ? e($user->jobposition) : '<span class="text-muted">-</span>')
+            ->editColumn('team', fn (User $user) => $user->team ? e($user->team) : '<span class="text-muted">-</span>')
+            ->editColumn('department', fn (User $user) => $user->department ? e($user->department) : '<span class="text-muted">-</span>')
+            ->editColumn('division', fn (User $user) => $user->division ? e($user->division) : '<span class="text-muted">-</span>')
+            ->editColumn('orgunit', fn (User $user) => ($user->orgunit ?: $user->id_org_unit) ? e($user->orgunit ?: $user->id_org_unit) : '<span class="text-muted">-</span>')
+            ->editColumn('deleted_at', function (User $user) {
+                if (!$user->deleted_at) {
+                    return '<span class="text-muted">-</span>';
+                }
+                $dateFormatted = $user->deleted_at->format('d M Y');
+                $timeFormatted = $user->deleted_at->format('H:i') . ' WIB';
+                $diffForHumans = $user->deleted_at->diffForHumans();
+                return '<div class="d-flex flex-column">'
+                    . '<span class="fw-semibold text-danger d-inline-flex align-items-center gap-1" title="' . e($diffForHumans) . '">'
+                    . '<i class="ti ti-calendar-time fs-4"></i>' . e($dateFormatted) . '</span>'
+                    . '<small class="text-muted">' . e($timeFormatted) . '</small>'
+                    . '</div>';
+            })
+            ->addColumn('status_badge', function (User $user) {
+                return '<span class="badge bg-danger-lt text-danger fw-semibold d-inline-flex align-items-center gap-1">'
+                    . '<i class="ti ti-user-off fs-4"></i> Resigned</span>';
+            })
+            ->addColumn('action', function (User $user) {
+                $userJson = htmlspecialchars(json_encode([
+                    'id'           => $user->id,
+                    'name'         => $user->name,
+                    'id_emp'       => $user->id_emp,
+                    'sap_code'     => $user->sap_code,
+                    'email'        => $user->email,
+                    'company_name' => $user->company_name,
+                    'jobgrade'     => $user->jobgrade,
+                    'jobposition'  => $user->jobposition,
+                    'team'         => $user->team,
+                    'department'   => $user->department,
+                    'division'     => $user->division,
+                    'orgunit'      => $user->orgunit ?: $user->id_org_unit,
+                    'cell_phone'   => $user->cell_phone,
+                    'sex'          => $user->sex,
+                    'role'         => $user->role_name ?? 'User',
+                    'positionID'   => $user->positionID,
+                    'appr1'        => $user->appr1,
+                    'appr2'        => $user->appr2,
+                    'job_clan'     => $user->job_clan,
+                    'job_family'   => $user->job_family,
+                    'resign_flag'  => $user->resign,
+                    'resign_date'  => $user->deleted_at ? $user->deleted_at->format('d M Y H:i:s') . ' WIB (' . $user->deleted_at->diffForHumans() . ')' : '-',
+                    'created_at'   => $user->created_at ? $user->created_at->format('d M Y H:i:s') : '-',
+                    'updated_at'   => $user->updated_at ? $user->updated_at->format('d M Y H:i:s') : '-',
+                ]), ENT_QUOTES, 'UTF-8');
+
+                return '<button type="button" class="btn btn-sm btn-outline-info btn-view-detail" '
+                    . 'data-user="' . $userJson . '" title="View Detail (Read-Only)">'
+                    . '<i class="ti ti-eye"></i> Detail</button>';
+            })
+            ->rawColumns([
+                'id_emp_formatted',
+                'name_formatted',
+                'sap_code',
+                'company_name',
+                'jobgrade',
+                'jobposition',
+                'team',
+                'department',
+                'division',
+                'orgunit',
+                'deleted_at',
+                'status_badge',
+                'action',
+            ])
+            ->make(true);
+    }
+
     public function liveSearch(Request $request)
     {
         $q = trim($request->get('q', ''));
