@@ -1,6 +1,6 @@
 @extends('layouts.sidebar-master')
 
-@section('title', 'Import PTKP Data — OWL LMS')
+@section('title', 'Import PTKP Training Records — Import PTKP Data — OWL LMS')
 
 @section('style')
 <link rel="stylesheet" href="{{ asset('css/manage/ptkp-import.css') }}">
@@ -10,8 +10,15 @@
 <div class="page-body ptkp-import-page py-4">
     <div class="container-xl">
         <!-- BREADCRUMB / BACK LINK -->
-        <div class="mb-3">
-            <a href="{{ route('manage.record.offline') }}" class="btn-back-ptkp d-inline-flex align-items-center gap-1.5 text-decoration-none fw-medium">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{{ route('manage.dashboard') }}" class="text-decoration-none">Manage Record</a></li>
+                    <li class="breadcrumb-item"><a href="{{ route('manage.record.offline') }}" class="text-decoration-none">Offline Record</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Import PTKP Data</li>
+                </ol>
+            </nav>
+            <a href="{{ route('manage.record.offline') }}" class="btn-back-ptkp d-inline-flex align-items-center gap-1.5 text-decoration-none fw-medium" id="btn-top-back">
                 <i class="ti ti-arrow-left"></i>
                 <span>Back to Offline Records</span>
             </a>
@@ -26,52 +33,115 @@
                         <i class="ti ti-file-spreadsheet fs-1"></i>
                     </div>
                     <div>
-                        <h2 class="h3 fw-bold mb-1 text-dark">Import PTKP Data</h2>
-                        <p class="text-muted small mb-0">Upload and validate PTKP offline training records before importing into OWL LMS with automatic employee identity synchronization.</p>
+                        <h2 class="h3 fw-bold mb-1 text-dark">Import PTKP Training Records</h2>
+                        <p class="text-muted small mb-0">Upload and import offline training records into KP-OWL. Employee information will be matched automatically.</p>
                     </div>
                 </div>
-                <div>
-                    <a href="{{ route('manage.record.offline.import-history.index') }}" class="btn btn-outline-secondary rounded-pill d-inline-flex align-items-center gap-2 px-3 py-2 me-2" id="btn-ptkp-history"><i class="ti ti-history fs-2"></i><span>Import History</span></a>
-                    <a href="{{ route('manage.record.offline.import-ptkp.template') }}" class="btn btn-outline-primary rounded-pill d-inline-flex align-items-center gap-2 px-3 py-2" id="btn-download-ptkp-template">
+                <div class="d-flex align-items-center gap-2" id="ptkp-header-actions">
+                    <!-- Download Template: Only Step 1 -->
+                    <a href="{{ route('manage.record.offline.import-ptkp.template') }}" class="btn btn-outline-primary rounded-pill d-inline-flex align-items-center gap-2 px-3 py-2" id="btn-download-ptkp-template" title="Download Template (.xlsx)">
                         <i class="ti ti-download fs-2"></i>
                         <span>Download PTKP Template (.xlsx)</span>
+                    </a>
+                    <!-- Import History: Only Step 3 & Result -->
+                    <a href="{{ route('manage.record.offline.import-history.index') }}" class="btn btn-outline-secondary rounded-pill d-inline-flex align-items-center gap-2 px-3 py-2 d-none" id="btn-ptkp-history" title="View Import History">
+                        <i class="ti ti-history fs-2"></i>
+                        <span>Import History</span>
                     </a>
                 </div>
             </div>
         </div>
 
-        <!-- 4-STAGE PROCESS INDICATOR -->
-        <div class="card border-0 shadow-sm p-3 mb-4 rounded-3 bg-white">
+        <!-- EXACTLY 3-STEP PROCESS INDICATOR -->
+        <div class="card border-0 shadow-sm p-3 mb-4 rounded-3 bg-white ptkp-stepper-card">
             <div class="ptkp-steps">
-                <div class="ptkp-step-item active" id="ptkp-step-ind-1"><div class="ptkp-step-bubble">1</div><div class="ptkp-step-title">Upload Spreadsheet</div></div>
-                <div class="ptkp-step-item" id="ptkp-step-ind-2"><div class="ptkp-step-bubble">2</div><div class="ptkp-step-title">Validation Preview</div></div>
-                <div class="ptkp-step-item" id="ptkp-step-ind-3"><div class="ptkp-step-bubble">3</div><div class="ptkp-step-title">Review Data</div></div>
-                <div class="ptkp-step-item" id="ptkp-step-ind-4"><div class="ptkp-step-bubble">4</div><div class="ptkp-step-title">Import Records</div></div>
+                <!-- Step 1 -->
+                <div class="ptkp-step-item active" id="ptkp-step-ind-1" data-step="1">
+                    <div class="ptkp-step-bubble">
+                        <span class="step-num">1</span>
+                        <i class="ti ti-check step-check"></i>
+                    </div>
+                    <div class="ptkp-step-title">Upload File</div>
+                </div>
+                <div class="ptkp-step-line" id="ptkp-step-line-1"></div>
+                <!-- Step 2 -->
+                <div class="ptkp-step-item" id="ptkp-step-ind-2" data-step="2">
+                    <div class="ptkp-step-bubble">
+                        <span class="step-num">2</span>
+                        <i class="ti ti-check step-check"></i>
+                    </div>
+                    <div class="ptkp-step-title">Validation & Review</div>
+                </div>
+                <div class="ptkp-step-line" id="ptkp-step-line-2"></div>
+                <!-- Step 3 -->
+                <div class="ptkp-step-item" id="ptkp-step-ind-3" data-step="3">
+                    <div class="ptkp-step-bubble">
+                        <span class="step-num">3</span>
+                        <i class="ti ti-check step-check"></i>
+                    </div>
+                    <div class="ptkp-step-title">Import Records</div>
+                </div>
             </div>
         </div>
 
-        <!-- STAGE 1: UPLOAD SPREADSHEET -->
+        <!-- =================================================================== -->
+        <!-- STEP 1: UPLOAD FILE                                                 -->
+        <!-- =================================================================== -->
         <div class="card border-0 shadow-sm rounded-4 mb-4" id="ptkp-upload-card">
             <div class="card-body p-4">
                 <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
                     <div class="d-flex align-items-center gap-2">
-                        <span class="badge bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 26px; height: 26px; font-size: 0.8rem;">1</span>
-                        <h4 class="card-title fw-bold text-dark mb-0">Upload PTKP Spreadsheet</h4>
+                        <span class="badge bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 26px; height: 26px; font-size: 0.8rem; background-color: #1e3a8a !important;">1</span>
+                        <div>
+                            <h4 class="card-title fw-bold text-dark mb-0">Upload File</h4>
+                            <div class="text-muted small">Upload your Excel spreadsheet to begin the import process.</div>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Dropzone Area -->
                 <div class="ptkp-dropzone p-5 text-center my-3 position-relative" id="ptkp-dropzone">
                     <input type="file" id="ptkp-file-input" class="position-absolute top-0 start-0 w-100 h-100 opacity-0" style="cursor: pointer;" accept=".xlsx,.xls" />
-                    <div class="dropzone-content py-3">
-                        <div class="avatar avatar-lg rounded-circle mx-auto mb-3" style="background-color: #fef3c7; color: #d97706; width: 64px; height: 64px;">
-                            <i class="ti ti-upload fs-1"></i>
+                    
+                    <!-- Initial State (Hidden when file is selected) -->
+                    <div class="dropzone-content py-3" id="ptkp-dropzone-initial">
+                        <div class="avatar avatar-lg rounded-circle mx-auto mb-3" style="background-color: #eff6ff; color: #1e3a8a; width: 64px; height: 64px;">
+                            <i class="ti ti-cloud-upload fs-1"></i>
                         </div>
                         <h5 class="fw-bold text-dark mb-1">Choose an Excel file or drag & drop here</h5>
                         <p class="text-muted small mb-2">Supported formats: <strong>.xlsx, .xls</strong> (Max 20MB)</p>
-                        <div class="d-inline-flex align-items-center gap-1 text-primary fw-medium small mt-1">
-                            <i class="ti ti-paperclip"></i>
-                            <span id="ptkp-selected-filename">No file selected</span>
+                        <div class="d-inline-flex align-items-center gap-1 text-muted small mt-1">
+                            <span class="badge bg-light text-muted border px-2.5 py-1" id="ptkp-selected-filename">
+                                <i class="ti ti-paperclip me-1"></i>No file selected
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Selected File Info Card (Only shown when file is selected) -->
+                    <div class="ptkp-file-card p-4 text-start position-relative" id="ptkp-file-info-card" style="display: none; cursor: default;">
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="avatar avatar-lg rounded-3 flex-shrink-0 d-flex align-items-center justify-content-center" style="background-color: #dcfce7; color: #16a34a; width: 56px; height: 56px;">
+                                    <i class="ti ti-file-spreadsheet fs-1"></i>
+                                </div>
+                                <div style="min-width: 0;">
+                                    <h5 class="fw-bold text-dark mb-1 text-truncate" id="ptkp-card-filename">file.xlsx</h5>
+                                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                                        <span class="text-muted small" id="ptkp-card-filesize">0 KB</span>
+                                        <span class="badge bg-success-lt text-success"><i class="ti ti-check me-1"></i>File ready for validation</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 d-inline-flex align-items-center gap-1" id="ptkp-btn-change-file">
+                                    <i class="ti ti-refresh"></i>
+                                    <span>Change File</span>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 d-inline-flex align-items-center gap-1" id="ptkp-btn-remove-file">
+                                    <i class="ti ti-trash"></i>
+                                    <span>Remove</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -97,37 +167,39 @@
                 </div>
 
                 <!-- Action Button -->
-                <div class="d-flex justify-content-end gap-2">
-                    <button type="button" id="ptkp-btn-validate" class="btn btn-primary rounded-3 px-4 d-inline-flex align-items-center gap-2" style="background-color: #d97706; border-color: #d97706;" disabled>
+                <div class="d-flex align-items-center justify-content-end pt-3 border-top">
+                    <button type="button" id="ptkp-btn-validate" class="btn btn-primary rounded-3 px-4 d-inline-flex align-items-center gap-2" style="background-color: #1e3a8a; border-color: #1e3a8a;" disabled>
                         <i class="ti ti-sparkles"></i>
-                        <span>Validate & Preview Records</span>
+                        <span>Validate</span>
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- LOADING SKELETON STATE -->
+        <!-- =================================================================== -->
+        <!-- LOADING CARD (VALIDATING STATE)                                     -->
+        <!-- =================================================================== -->
         <div class="card border-0 shadow-sm rounded-4 mb-4 py-5 text-center" id="ptkp-loading-card" style="display: none;">
-            <div class="card-body">
-                <div class="spinner-border text-warning" style="width: 3.5rem; height: 3.5rem; color: #d97706 !important;" role="status"></div>
-                <h5 class="fw-bold text-dark mt-3 mb-1" id="ptkp-loading-title">Validating Spreadsheet...</h5>
+            <div class="card-body py-5">
+                <div class="spinner-border text-primary mb-3" style="width: 3.5rem; height: 3.5rem; color: #1e3a8a !important;" role="status"></div>
+                <h4 class="fw-bold text-dark mt-3 mb-1" id="ptkp-loading-title">Validating Spreadsheet...</h4>
                 <p class="text-muted small mb-0" id="ptkp-loading-subtitle">Reading PTKP columns, verifying Employee IDs, and checking duplicates...</p>
             </div>
         </div>
 
-        <!-- STAGE 2: VALIDATION PREVIEW CARD -->
+        <!-- =================================================================== -->
+        <!-- STEP 2: VALIDATION & REVIEW                                         -->
+        <!-- =================================================================== -->
         <div class="card border-0 shadow-sm rounded-4 mb-4" id="ptkp-preview-card" style="display: none;">
-            <div class="card-header bg-white border-0 pt-4 pb-0 px-4">
+            <div class="card-header bg-white border-bottom pt-4 pb-3 px-4 rounded-top-4">
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                     <div class="d-flex align-items-center gap-2">
-                        <span class="badge bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 26px; height: 26px; font-size: 0.8rem;">2</span>
-                        <h4 class="card-title fw-bold text-dark mb-0">PTKP Validation & Review</h4>
+                        <span class="badge bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 26px; height: 26px; font-size: 0.8rem; background-color: #1e3a8a !important;">2</span>
+                        <div>
+                            <h4 class="card-title fw-bold text-dark mb-0">Validation & Review</h4>
+                            <div class="text-muted small">Review validated training records before importing them into KP-OWL.</div>
+                        </div>
                         <span class="badge bg-light text-secondary border px-2.5 py-1.5 ms-2" id="ptkp-preview-filename">-</span>
-                    </div>
-                    <div>
-                        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" id="ptkp-btn-cancel-preview">
-                            <i class="ti ti-arrow-left me-1"></i> Cancel & Re-upload
-                        </button>
                     </div>
                 </div>
             </div>
@@ -239,10 +311,9 @@
 
                 <!-- PREVIEW TABLE CONTAINER WITH LOADING OVERLAY -->
                 <div class="ptkp-table-wrapper position-relative mb-3">
-                    <!-- Table Loading Overlay -->
                     <div class="ptkp-table-loading-overlay" id="ptkp-table-loading" style="display: none;">
                         <div class="d-flex flex-column align-items-center justify-content-center py-5">
-                            <div class="spinner-border text-primary mb-2" style="width: 2.2rem; height: 2.2rem; color: #d97706 !important;" role="status"></div>
+                            <div class="spinner-border text-primary mb-2" style="width: 2.2rem; height: 2.2rem; color: #1e3a8a !important;" role="status"></div>
                             <span class="small fw-semibold text-muted" id="ptkp-table-loading-text">Filtering records...</span>
                         </div>
                     </div>
@@ -286,88 +357,337 @@
                     </nav>
                 </div>
 
-                <!-- FOOTER ACTIONS -->
+                <!-- STEP 2 NAVIGATION BUTTONS: Cancel, Back, Next -->
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 pt-3 border-top">
-                    <button type="button" class="btn btn-outline-secondary rounded-3 px-4" id="ptkp-btn-footer-cancel">
-                        Cancel
+                    <div>
+                        <button type="button" class="btn btn-outline-danger rounded-3 px-4" id="ptkp-btn-cancel-preview">
+                            <i class="ti ti-x me-1"></i>Cancel
+                        </button>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" class="btn btn-outline-secondary rounded-3 px-4 d-inline-flex align-items-center gap-1.5" id="ptkp-btn-back-to-step1">
+                            <i class="ti ti-arrow-left"></i>
+                            <span>Back</span>
+                        </button>
+                        <button type="button" class="btn btn-primary rounded-3 px-4 d-inline-flex align-items-center gap-2" id="ptkp-btn-next-to-step3" style="background-color: #1e3a8a; border-color: #1e3a8a;">
+                            <span>Next / Continue to Import</span>
+                            <i class="ti ti-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- STEP 3: IMPORT RECORDS                                              -->
+        <!-- =================================================================== -->
+        <div class="card border-0 shadow-sm rounded-4 mb-4" id="ptkp-confirm-card" style="display: none;">
+            <div class="card-header bg-white border-bottom pt-4 pb-3 px-4 rounded-top-4">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 26px; height: 26px; font-size: 0.8rem; background-color: #1e3a8a !important;">3</span>
+                    <div>
+                        <h4 class="card-title fw-bold text-dark mb-0">Import Records</h4>
+                        <div class="text-muted small">Import validated training records into KP-OWL.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-body p-4 p-md-5">
+                <!-- Pre-Import Summary & Safeguards -->
+                <div class="pre-import-summary-wrapper mb-4">
+                    <!-- Section Header -->
+                    <div class="d-flex align-items-center gap-3 mb-4">
+                        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px; background-color: #eff6ff; color: #1e3a8a; border: 1px solid #bfdbfe;">
+                            <i class="ti ti-clipboard-check fs-1"></i>
+                        </div>
+                        <div>
+                            <h4 class="fw-bold text-dark mb-0">Pre-Import Summary &amp; Safeguards</h4>
+                            <div class="text-muted small">Verify exact record counts and database safety guarantees before execution.</div>
+                        </div>
+                    </div>
+
+                    <!-- Summary Cards (50:50, Equal Height) -->
+                    <div class="row g-4 mb-4">
+                        <!-- Group A: Records to Be Imported (Left Card) -->
+                        <div class="col-12 col-lg-6">
+                            <div class="card border rounded-4 p-4 h-100 pre-import-card pre-import-card-eligible">
+                                <div class="pre-import-header">
+                                    <span class="pre-import-header-icon" style="background-color: #1e3a8a;">
+                                        <i class="ti ti-check"></i>
+                                    </span>
+                                    <div>
+                                        <h5 class="fw-bold text-dark mb-1">Jumlah Record yang Akan Di-import</h5>
+                                        <p class="text-muted small mb-0">Records that passed validation and are eligible for import.</p>
+                                    </div>
+                                </div>
+
+                                <div class="pre-import-breakdown">
+                                    <div class="pre-import-row">
+                                        <div class="pre-import-row-label">
+                                            <span class="pre-import-row-icon" style="background-color: #dcfce7; color: #16a34a;"><i class="ti ti-check"></i></span>
+                                            <span>Valid Records</span>
+                                        </div>
+                                        <span class="pre-import-row-count text-success" id="ptkp-step3-valid-count">0</span>
+                                    </div>
+                                    <div class="pre-import-row">
+                                        <div class="pre-import-row-label">
+                                            <span class="pre-import-row-icon" style="background-color: #fef3c7; color: #d97706;"><i class="ti ti-alert-triangle"></i></span>
+                                            <span>Warning Records (Non-blocking)</span>
+                                        </div>
+                                        <span class="pre-import-row-count text-warning" id="ptkp-step3-warning-count">0</span>
+                                    </div>
+                                    <div class="pre-import-row" id="ptkp-step3-invalid-company-eligible-row" style="display: none;">
+                                        <div class="pre-import-row-label">
+                                            <span class="pre-import-row-icon" style="background-color: #ffedd5; color: #ea580c;"><i class="ti ti-building"></i></span>
+                                            <span>Invalid Company (Imported with Review Tag)</span>
+                                        </div>
+                                        <span class="pre-import-row-count text-orange" id="ptkp-step3-invalid-company-count">0</span>
+                                    </div>
+                                </div>
+
+                                <div class="pre-import-total-box mt-auto">
+                                    <div>
+                                        <div class="pre-import-total-label">Total to Import</div>
+                                        <div class="pre-import-total-desc">Ready to write into database</div>
+                                    </div>
+                                    <div class="pre-import-total-value" id="ptkp-step3-total-to-import">0 Records</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Group B: Records Not to Be Imported (Right Card) -->
+                        <div class="col-12 col-lg-6">
+                            <div class="card border rounded-4 p-4 h-100 pre-import-card pre-import-card-skipped">
+                                <div class="pre-import-header">
+                                    <span class="pre-import-header-icon" style="background-color: #dc2626;">
+                                        <i class="ti ti-ban"></i>
+                                    </span>
+                                    <div>
+                                        <h5 class="fw-bold text-dark mb-1">Jumlah Record yang Tidak Di-import</h5>
+                                        <p class="text-muted small mb-0">Records that will be skipped because they failed validation or already exist.</p>
+                                    </div>
+                                </div>
+
+                                <div class="pre-import-breakdown">
+                                    <div class="pre-import-row">
+                                        <div class="pre-import-row-label">
+                                            <span class="pre-import-row-icon" style="background-color: #fee2e2; color: #dc2626;"><i class="ti ti-x"></i></span>
+                                            <span>Invalid Employee ID &amp; Course</span>
+                                        </div>
+                                        <span class="pre-import-row-count text-danger" id="ptkp-step3-invalid-count">0</span>
+                                    </div>
+                                    <div class="pre-import-row">
+                                        <div class="pre-import-row-label">
+                                            <span class="pre-import-row-icon" style="background-color: #f1f5f9; color: #64748b;"><i class="ti ti-info-circle"></i></span>
+                                            <span>Invalid Company (Skipped) <span class="text-muted extra-small" title="Non-blocking warning in OWL backend; imported with review note">(Non-blocking in OWL)</span></span>
+                                        </div>
+                                        <span class="pre-import-row-count text-muted" id="ptkp-step3-invalid-company-skipped">0</span>
+                                    </div>
+                                    <div class="pre-import-row">
+                                        <div class="pre-import-row-label">
+                                            <span class="pre-import-row-icon" style="background-color: #f3e8ff; color: #7c3aed;"><i class="ti ti-copy"></i></span>
+                                            <span>Duplicate Records</span>
+                                        </div>
+                                        <span class="pre-import-row-count text-purple" id="ptkp-step3-duplicate-count">0</span>
+                                    </div>
+                                </div>
+
+                                <div class="pre-import-total-box mt-auto">
+                                    <div>
+                                        <div class="pre-import-total-label">Total Not Imported</div>
+                                        <div class="pre-import-total-desc">Safely skipped to prevent bad data</div>
+                                    </div>
+                                    <div class="pre-import-total-value" id="ptkp-step3-total-not-imported">0 Records</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Safeguard Notice Banner -->
+                    <div class="pre-import-safeguard-banner mb-0">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px; background-color: #e0f2fe; color: #0284c7;">
+                            <i class="ti ti-shield-check fs-1"></i>
+                        </div>
+                        <div class="small lh-base text-dark">
+                            <strong class="text-dark">Database Safety Guarantee:</strong> Only records that passed validation will be imported into KP-OWL. Existing enrolled participants and duplicate entries will not be overwritten.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 3 NAVIGATION BUTTONS: Back, Confirm & Import -->
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 pt-4 border-top">
+                    <button type="button" class="btn btn-outline-secondary rounded-3 px-4 py-2.5 d-inline-flex align-items-center gap-2 fw-medium" id="ptkp-btn-back-to-step2">
+                        <i class="ti ti-arrow-left fs-2"></i>
+                        <span>Back</span>
                     </button>
-                    <button type="button" class="btn btn-success rounded-3 px-4 d-inline-flex align-items-center gap-2" id="ptkp-btn-confirm" disabled>
-                        <i class="ti ti-check"></i>
-                        <span>Confirm & Import (<span id="ptkp-btn-confirm-count">0</span> Records)</span>
+                    <button type="button" class="btn btn-primary btn-confirm-import-darkblue rounded-3 px-4 py-2.5 d-inline-flex align-items-center gap-2 fw-semibold" id="ptkp-btn-confirm" disabled>
+                        <i class="ti ti-check fs-2"></i>
+                        <span>Confirm &amp; Import (<span id="ptkp-btn-confirm-count">0</span> Records)</span>
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- STAGE 3: RESULT SUMMARY CARD -->
+        <!-- =================================================================== -->
+        <!-- FINAL RESULT PAGE: IMPORT COMPLETED (DASHBOARD REDESIGN)           -->
+        <!-- =================================================================== -->
         <div class="card border-0 shadow-sm rounded-4 mb-4" id="ptkp-result-card" style="display: none;">
-            <div class="card-body p-5 text-center">
-                <div class="avatar avatar-xl rounded-circle mx-auto mb-3" style="background-color: #ecfdf5; color: #059669; width: 72px; height: 72px;">
-                    <i class="ti ti-circle-check fs-1"></i>
-                </div>
-                <h3 class="fw-bold text-dark mb-1">PTKP Import Completed</h3>
-                <p class="text-muted small mb-4">Summary of spreadsheet processing and offline training record persistence.</p>
+            <div class="card-body p-4 p-md-5">
 
-                <!-- 8 Result Metrics -->
-                <div class="row g-3 justify-content-center mb-4 text-start" style="max-width: 900px; margin: 0 auto;">
-                    <div class="col-sm-6 col-md-3">
-                        <div class="card border-0 bg-light p-3 rounded-3 text-center">
-                            <div class="text-muted small">Total Processed</div>
-                            <div class="h3 fw-bold text-dark mb-0" id="res-total-processed">0</div>
+                <!-- 1. SUCCESS BANNER -->
+                <div class="p-4 rounded-4 mb-4" id="res-success-banner" style="background-color: #ecfdf5; border: 1px solid #a7f3d0;">
+                    <div class="d-flex align-items-start gap-3">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px; background-color: #10b981; color: #ffffff;">
+                            <i class="ti ti-check fs-1 fw-bold"></i>
                         </div>
-                    </div>
-                    <div class="col-sm-6 col-md-3">
-                        <div class="card border-0 p-3 rounded-3 text-center" style="background-color: #ecfdf5;">
-                            <div class="small fw-semibold" style="color: #065f46;">Successfully Imported</div>
-                            <div class="h3 fw-bold mb-0" style="color: #047857;" id="res-imported-participants">0</div>
-                        </div>
-                    </div>
-                    <div class="col-sm-6 col-md-3">
-                        <div class="card border-0 p-3 rounded-3 text-center" style="background-color: #fefce8;">
-                            <div class="small fw-semibold" style="color: #a16207;">Duplicates Skipped</div>
-                            <div class="h3 fw-bold mb-0" style="color: #a16207;" id="res-duplicates-skipped">0</div>
-                        </div>
-                    </div>
-                    <div class="col-sm-6 col-md-3">
-                        <div class="card border-0 p-3 rounded-3 text-center" style="background-color: #fef2f2;">
-                            <div class="small fw-semibold" style="color: #991b1b;">Invalid Skipped</div>
-                            <div class="h3 fw-bold mb-0" style="color: #dc2626;" id="res-invalid-skipped">0</div>
-                        </div>
-                    </div>
-                    <div class="col-sm-6 col-md-3">
-                        <div class="card border-0 p-3 rounded-3 text-center" style="background-color: #fffbeb;">
-                            <div class="small fw-semibold" style="color: #92400e;">Warnings Imported</div>
-                            <div class="h3 fw-bold mb-0" style="color: #92400e;" id="res-warnings-imported">0</div>
-                        </div>
-                    </div>
-                    <div class="col-sm-6 col-md-3">
-                        <div class="card border-0 p-3 rounded-3 text-center" style="background-color: #fff7ed;">
-                            <div class="small fw-semibold" style="color: #c2410c;">Invalid Company Imported</div>
-                            <div class="h3 fw-bold mb-0" style="color: #c2410c;" id="res-invalid-company-imported">0</div>
-                        </div>
-                    </div>
-                    <div class="col-sm-6 col-md-3">
-                        <div class="card border-0 p-3 rounded-3 text-center" style="background-color: #f0fdfa;">
-                            <div class="small fw-semibold" style="color: #115e59;">New Trainings Created</div>
-                            <div class="h3 fw-bold mb-0" style="color: #0f766e;" id="res-trainings-created">0</div>
-                        </div>
-                    </div>
-                    <div class="col-sm-6 col-md-3">
-                        <div class="card border-0 p-3 rounded-3 text-center" style="background-color: #eff6ff;">
-                            <div class="small fw-semibold" style="color: #1e40af;">Trainings Reused</div>
-                            <div class="h3 fw-bold mb-0" style="color: #2563eb;" id="res-trainings-reused">0</div>
+                        <div>
+                            <h3 class="fw-bold mb-1" style="color: #064e3b;" id="res-header-title">Import Completed</h3>
+                            <p class="mb-0 text-muted" id="res-header-desc" style="color: #047857 !important;">Your training records have been processed successfully. Please review the import results below.</p>
                         </div>
                     </div>
                 </div>
 
-                <div class="d-flex align-items-center justify-content-center gap-3">
-                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" id="ptkp-btn-import-another">
-                        <i class="ti ti-upload me-1"></i> Import Another Spreadsheet
+                <!-- 2. IMPORT SUCCESS RATE SECTION -->
+                <div class="card border rounded-4 mb-4 shadow-none" style="background-color: #ffffff; border-color: #e2e8f0 !important;">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <h4 class="fw-bold text-dark mb-0">Import Success Rate</h4>
+                            <span class="h1 fw-bold text-dark mb-0" id="res-rate-percentage">0.0%</span>
+                        </div>
+
+                        <!-- Progress Bar -->
+                        <div class="progress rounded-pill mb-3" style="height: 14px; background-color: #e2e8f0;">
+                            <div class="progress-bar rounded-pill" id="res-rate-progress-bar" role="progressbar" style="width: 0%; background-color: #1e3a8a; transition: width 0.8s ease;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+
+                        <div class="d-flex align-items-center justify-content-between small">
+                            <span class="d-inline-flex align-items-center gap-1.5 fw-bold" style="color: #15803d;">
+                                <i class="ti ti-check"></i> <span id="res-rate-imported-count">0</span> imported
+                            </span>
+                            <span class="d-inline-flex align-items-center gap-1.5 text-muted fw-semibold">
+                                <span id="res-rate-skipped-count">0</span> skipped
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. IMPORT SUMMARY — 6 CARDS IN 2 COLUMNS -->
+                <div class="mb-4">
+                    <h4 class="fw-bold text-dark mb-3">Import Summary</h4>
+                    <div class="row g-3 g-md-4">
+                        <!-- Card 1: Total Records Processed -->
+                        <div class="col-12 col-md-6">
+                            <div class="card border rounded-3 p-3 p-md-4 h-100 import-summary-card" style="background-color: #f8fafc; border-color: #e2e8f0 !important;">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 52px; height: 52px; background-color: #eff6ff; color: #1e3a8a;">
+                                        <i class="ti ti-file-text fs-1"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="text-muted small fw-semibold">Total Records Processed</div>
+                                        <div class="h2 fw-bold text-dark mb-0" id="res-total-processed">0</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card 2: Successfully Imported -->
+                        <div class="col-12 col-md-6">
+                            <div class="card border rounded-3 p-3 p-md-4 h-100 import-summary-card" style="background-color: #f0fdf4; border-color: #bbf7d0 !important;">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 52px; height: 52px; background-color: #dcfce7; color: #16a34a;">
+                                        <i class="ti ti-circle-check fs-1"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="small fw-semibold" style="color: #166534;">Successfully Imported</div>
+                                        <div class="h2 fw-bold mb-0" style="color: #15803d;" id="res-imported-participants">0</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card 3: Records Imported with Warnings -->
+                        <div class="col-12 col-md-6">
+                            <div class="card border rounded-3 p-3 p-md-4 h-100 import-summary-card" style="background-color: #fffbeb; border-color: #fde68a !important;">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 52px; height: 52px; background-color: #fef3c7; color: #d97706;">
+                                        <i class="ti ti-alert-triangle fs-1"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="small fw-semibold" style="color: #92400e;">Records Imported with Warnings</div>
+                                        <div class="h2 fw-bold mb-0" style="color: #b45309;" id="res-warnings-imported">0</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card 4: Duplicate Records Skipped -->
+                        <div class="col-12 col-md-6">
+                            <div class="card border rounded-3 p-3 p-md-4 h-100 import-summary-card" style="background-color: #faf5ff; border-color: #e9d5ff !important;">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 52px; height: 52px; background-color: #f3e8ff; color: #7c3aed;">
+                                        <i class="ti ti-copy fs-1"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="small fw-semibold" style="color: #6b21a8;">Duplicate Records Skipped</div>
+                                        <div class="h2 fw-bold mb-0" style="color: #7c3aed;" id="res-duplicates-skipped">0</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card 5: Invalid Employee ID / Course -->
+                        <div class="col-12 col-md-6">
+                            <div class="card border rounded-3 p-3 p-md-4 h-100 import-summary-card" style="background-color: #fef2f2; border-color: #fecaca !important;">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 52px; height: 52px; background-color: #fee2e2; color: #dc2626;">
+                                        <i class="ti ti-user-x fs-1"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="small fw-semibold" style="color: #991b1b;">Invalid Employee ID / Course</div>
+                                        <div class="h2 fw-bold mb-0" style="color: #dc2626;" id="res-invalid-skipped">0</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card 6: Invalid Company Records -->
+                        <div class="col-12 col-md-6">
+                            <div class="card border rounded-3 p-3 p-md-4 h-100 import-summary-card" style="background-color: #fff7ed; border-color: #fed7aa !important;">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 52px; height: 52px; background-color: #ffedd5; color: #ea580c;">
+                                        <i class="ti ti-building fs-1"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="small fw-semibold" style="color: #9a3412;">Invalid Company Records</div>
+                                        <div class="h2 fw-bold mb-0" style="color: #ea580c;" id="res-invalid-company-imported">0</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Additional Session Metadata (trainings created & reused) -->
+                    <div class="d-flex align-items-center justify-content-end gap-3 mt-3 text-muted extra-small">
+                        <span><i class="ti ti-sparkles me-1 text-primary"></i>Training Sessions Created: <strong class="text-dark" id="res-trainings-created">0</strong></span>
+                        <span>·</span>
+                        <span><i class="ti ti-rotate-clockwise me-1 text-secondary"></i>Sessions Reused: <strong class="text-dark" id="res-trainings-reused">0</strong></span>
+                    </div>
+                </div>
+
+                <!-- 4. BOTTOM ACTION BUTTONS -->
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 pt-3 border-top">
+                    <button type="button" class="btn btn-outline-secondary rounded-3 px-4 py-2.5 d-inline-flex align-items-center gap-2" id="ptkp-btn-import-another">
+                        <i class="ti ti-upload fs-2"></i>
+                        <span>Import Another File</span>
                     </button>
-                    <a href="{{ route('manage.record.offline') }}" class="btn btn-primary rounded-pill px-4" style="background-color: #d97706; border-color: #d97706;">
-                        <i class="ti ti-table me-1"></i> View Offline Records
+                    <a href="{{ route('manage.record.offline') }}" class="btn btn-primary rounded-3 px-4 py-2.5 d-inline-flex align-items-center gap-2" style="background-color: #1e3a8a; border-color: #1e3a8a;" id="ptkp-btn-view-records">
+                        <i class="ti ti-table fs-2"></i>
+                        <span>View Imported Records</span>
                     </a>
                 </div>
+
+            </div>
+        </div>
             </div>
         </div>
     </div>
@@ -379,7 +699,7 @@
         <div class="modal-content rounded-4 border-0 shadow">
             <div class="modal-header border-bottom py-3 px-4">
                 <div class="d-flex align-items-center gap-2">
-                    <span class="avatar rounded-3" style="background-color: #fef3c7; color: #d97706; width: 42px; height: 42px;">
+                    <span class="avatar rounded-3" style="background-color: #eff6ff; color: #1e3a8a; width: 42px; height: 42px;">
                         <i class="ti ti-file-search fs-2"></i>
                     </span>
                     <div>
@@ -407,7 +727,8 @@
     window.ptkpRoutes = {
         preview: "{{ route('manage.record.offline.import-ptkp.preview') }}",
         confirm: "{{ route('manage.record.offline.import-ptkp.confirm') }}",
-        cancel:  "{{ route('manage.record.offline.import-ptkp.cancel') }}"
+        cancel:  "{{ route('manage.record.offline.import-ptkp.cancel') }}",
+        offline: "{{ route('manage.record.offline') }}"
     };
 </script>
 <script src="{{ asset('js/manage/ptkp-import.js') }}"></script>

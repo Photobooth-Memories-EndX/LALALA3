@@ -39,8 +39,8 @@ class OfflineTrainingImportController extends Controller
         }
 
         return view('main.record.offline-import-non-ptkp', [
-            'title'    => 'Import Non-PTKP Data',
-            'subtitle' => 'Upload and validate Non-PTKP offline training records before importing into OWL LMS.',
+            'title'    => 'Import Non-PTKP Training Records',
+            'subtitle' => 'Upload and import non-PTKP offline training records into KP-OWL. Employee information will be matched automatically.',
         ]);
     }
 

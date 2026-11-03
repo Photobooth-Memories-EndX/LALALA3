@@ -103,7 +103,7 @@ class OfflineTrainingImportModalTest extends TestCase
         $response->assertSee('id="stepper-step-1"', false);
         $response->assertSee('id="stepper-step-2"', false);
         $response->assertSee('id="stepper-step-3"', false);
-        $response->assertSee('id="stepper-step-4"', false);
+        $response->assertDontSee('id="stepper-step-4"', false);
 
         // State panels
         $response->assertSee('id="panel-state-upload"', false);
@@ -130,7 +130,7 @@ class OfflineTrainingImportModalTest extends TestCase
         $response->assertSee('id="preview-main-table"', false);
         $response->assertSee('id="preview-main-tbody"', false);
         $response->assertSee('id="btn-action-confirm-import"', false);
-        $response->assertSee('id="btn-action-reupload"', false);
+        $response->assertSee('id="btn-back-to-step1"', false);
 
         // Result panel metrics
         $response->assertSee('id="res-imported-count"', false);

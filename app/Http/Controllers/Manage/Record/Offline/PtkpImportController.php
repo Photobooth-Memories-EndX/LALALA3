@@ -30,8 +30,8 @@ class PtkpImportController extends Controller
     public function index()
     {
         return view('manage.record.offline.import-ptkp', [
-            'title'    => 'Import Data PTKP',
-            'subtitle' => 'Upload and import PTKP offline training records with automatic employee identity synchronization',
+            'title'    => 'Import PTKP Training Records',
+            'subtitle' => 'Upload and import offline training records into KP-OWL. Employee information will be matched automatically.',
         ]);
     }
 

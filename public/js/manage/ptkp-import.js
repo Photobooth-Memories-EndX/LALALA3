@@ -1,5 +1,6 @@
 /**
  * PTKP Offline Training Import UI Handler
+ * Redesigned 3-Step Process for OWL LMS
  */
 (function ($) {
     'use strict';
@@ -15,32 +16,116 @@
     let isSubmitting = false;
     let isFiltering = false;
 
+    // DOM Elements
     const $uploadCard = $('#ptkp-upload-card');
     const $loadingCard = $('#ptkp-loading-card');
     const $previewCard = $('#ptkp-preview-card');
+    const $confirmCard = $('#ptkp-confirm-card');
     const $resultCard = $('#ptkp-result-card');
+
     const $fileInput = $('#ptkp-file-input');
     const $dropzone = $('#ptkp-dropzone');
+    const $dropzoneInitial = $('#ptkp-dropzone-initial');
+    const $fileInfoCard = $('#ptkp-file-info-card');
+    const $cardFilename = $('#ptkp-card-filename');
+    const $cardFilesize = $('#ptkp-card-filesize');
     const $selectedFilename = $('#ptkp-selected-filename');
     const $btnValidate = $('#ptkp-btn-validate');
     const $uploadError = $('#ptkp-upload-error');
     const $tableLoading = $('#ptkp-table-loading');
 
-    $dropzone.on('click', () => $fileInput.trigger('click'));
-    $fileInput.on('click', (e) => e.stopPropagation());
+    // Header Action Buttons
+    const $btnDownloadTemplate = $('#btn-download-ptkp-template');
+    const $btnImportHistory = $('#btn-ptkp-history');
+
+    // =========================================================================
+    // CONDITIONAL HEADER BUTTON VISIBILITY
+    // =========================================================================
+    function updateHeaderActions(currentStep) {
+        const downloadTemplate = document.getElementById('btn-download-ptkp-template') || document.getElementById('downloadTemplate');
+        const importHistory = document.getElementById('btn-ptkp-history') || document.getElementById('importHistory');
+
+        if (downloadTemplate) {
+            downloadTemplate.classList.toggle('d-none', currentStep !== 1);
+        }
+
+        if (importHistory) {
+            importHistory.classList.toggle('d-none', currentStep < 3);
+        }
+    }
+
+    // =========================================================================
+    // 3-STEP PROCESS STEPPER & HEADER ACTION PLACEMENT
+    // =========================================================================
+    function setStep(stepNumber) {
+        // Step 1: Upload File
+        // Step 2: Validation & Review
+        // Step 3: Import Records
+        // Step 4: Import Summary (Result)
+        $('.ptkp-step-item').removeClass('active completed');
+        $('.ptkp-step-line').removeClass('completed');
+
+        if (stepNumber === 1) {
+            $('#ptkp-step-ind-1').addClass('active');
+        } else if (stepNumber === 2) {
+            $('#ptkp-step-ind-1').addClass('completed');
+            $('#ptkp-step-line-1').addClass('completed');
+            $('#ptkp-step-ind-2').addClass('active');
+        } else if (stepNumber === 3) {
+            $('#ptkp-step-ind-1').addClass('completed');
+            $('#ptkp-step-line-1').addClass('completed');
+            $('#ptkp-step-ind-2').addClass('completed');
+            $('#ptkp-step-line-2').addClass('completed');
+            $('#ptkp-step-ind-3').addClass('active');
+        } else if (stepNumber >= 4) {
+            $('#ptkp-step-ind-1, #ptkp-step-ind-2, #ptkp-step-ind-3').addClass('completed');
+            $('#ptkp-step-line-1, #ptkp-step-line-2').addClass('completed');
+        }
+
+        updateHeaderActions(stepNumber);
+    }
+
+    // Initialize Stepper at Step 1
+    setStep(1);
+
+    // =========================================================================
+    // FILE SELECTION, DRAG-AND-DROP & UI FIX
+    // =========================================================================
+    $dropzone.on('click', function (e) {
+        // Only trigger click if target is not a button inside the card
+        if ($(e.target).closest('button, a').length === 0) {
+            $fileInput.trigger('click');
+        }
+    });
+
+    $fileInput.on('click', function (e) {
+        e.stopPropagation();
+    });
+
     $fileInput.on('change', function () {
-        if (this.files && this.files[0]) handleFileSelect(this.files[0]);
+        if (this.files && this.files[0]) {
+            handleFileSelect(this.files[0]);
+        }
     });
 
     $dropzone.on('dragover dragenter', function (e) {
-        e.preventDefault(); e.stopPropagation(); $(this).addClass('dragover');
+        e.preventDefault();
+        e.stopPropagation();
+        $(this).addClass('dragover');
     });
+
     $dropzone.on('dragleave dragend drop', function (e) {
-        e.preventDefault(); e.stopPropagation(); $(this).removeClass('dragover');
+        e.preventDefault();
+        e.stopPropagation();
+        $(this).removeClass('dragover');
     });
+
     $dropzone.on('drop', function (e) {
         const dt = e.originalEvent.dataTransfer;
-        if (dt && dt.files && dt.files.length) handleFileSelect(dt.files[0]);
+        if (dt && dt.files && dt.files.length) {
+            $fileInput[0].files = dt.files;
+            handleFileSelect(dt.files[0]);
+        }
     });
 
     function handleFileSelect(file) {
@@ -48,35 +133,62 @@
         const ext = file.name.split('.').pop().toLowerCase();
         if (['xlsx', 'xls'].indexOf(ext) === -1) {
             $uploadError.text('Invalid format. Please select an .xlsx or .xls spreadsheet.').show();
+            resetFileSelection();
             return;
         }
         if (file.size > 20 * 1024 * 1024) {
-            $uploadError.text('File size exceeds 20MB limit.').show();
+            $uploadError.text('File size exceeds maximum allowed limit of 20MB.').show();
+            resetFileSelection();
             return;
         }
+
         selectedFile = file;
+
+        // Visual fix: Hide initial state, show file info card
+        $dropzoneInitial.hide();
+        $fileInfoCard.show();
+        $cardFilename.text(file.name);
+        $cardFilesize.text(formatBytes(file.size));
         $selectedFilename.html('<strong>' + escapeHtml(file.name) + '</strong> (' + formatBytes(file.size) + ')');
+
         $btnValidate.prop('disabled', false);
     }
 
-    function setStep(stepNumber) {
-        $('.ptkp-step-item').removeClass('active completed');
-        for (let i = 1; i <= 4; i++) {
-            const $item = $(`#ptkp-step-ind-${i}`);
-            if (i < stepNumber) $item.addClass('completed');
-            else if (i === stepNumber) $item.addClass('active');
-        }
+    function resetFileSelection() {
+        selectedFile = null;
+        $fileInput.val('');
+        $dropzoneInitial.show();
+        $fileInfoCard.hide();
+        $selectedFilename.html('<i class="ti ti-paperclip me-1"></i>No file selected');
+        $btnValidate.prop('disabled', true);
+        $uploadError.hide().text('');
     }
 
+    // Remove / Change File buttons
+    $('#ptkp-btn-remove-file').on('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        resetFileSelection();
+    });
+
+    $('#ptkp-btn-change-file').on('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $fileInput.trigger('click');
+    });
+
+    // =========================================================================
+    // STEP 1: VALIDATE ACTION (LOADING STATE, NOT A STEPPER STAGE)
+    // =========================================================================
     $btnValidate.on('click', function () {
         if (!selectedFile) return;
+
         const formData = new FormData();
         formData.append('file', selectedFile);
         formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
 
         $uploadCard.hide();
         $loadingCard.show();
-        setStep(2);
         $('#ptkp-loading-title').text('Validating Spreadsheet...');
         $('#ptkp-loading-subtitle').text('Reading PTKP columns, verifying Employee IDs, and checking duplicates...');
 
@@ -92,9 +204,12 @@
                     importToken = res.token;
                     allRows = res.rows || [];
                     renderPreviewStage(res);
+                    setStep(2);
+                    updateHeaderActions(2);
                 } else {
                     $uploadCard.show();
                     setStep(1);
+                    updateHeaderActions(1);
                     $uploadError.text(res.message || 'Validation failed.').show();
                 }
             },
@@ -102,15 +217,18 @@
                 $loadingCard.hide();
                 $uploadCard.show();
                 setStep(1);
-                $uploadError.text((xhr.responseJSON && xhr.responseJSON.message) || 'Failed to process file.').show();
+                updateHeaderActions(1);
+                $uploadError.text((xhr.responseJSON && xhr.responseJSON.message) || 'Failed to process spreadsheet file.').show();
             }
         });
     });
 
+    // =========================================================================
+    // STEP 2: RENDER PREVIEW & REVIEW DATA
+    // =========================================================================
     function renderPreviewStage(data) {
         $previewCard.show();
-        setStep(3);
-        $('#ptkp-preview-filename').text(data.filename || selectedFile.name);
+        $('#ptkp-preview-filename').text(data.filename || (selectedFile && selectedFile.name) || 'Spreadsheet');
         const stats = data.stats || {};
 
         const totalRowsCount = (stats.total_rows !== undefined && stats.total_rows !== null) ? stats.total_rows : allRows.length;
@@ -120,6 +238,35 @@
         $('#ptkp-kpi-duplicate').text(stats.duplicate || 0);
         $('#ptkp-kpi-invalid').text(stats.invalid || 0);
         $('#ptkp-kpi-invalid-company').text(stats.invalid_company || 0);
+
+        // Pre-populate Step 3 values
+        const validCount = stats.valid || 0;
+        const warningCount = stats.warning || 0;
+        const invalidCompanyCount = stats.invalid_company || 0;
+        const invalidCount = stats.invalid || 0;
+        const duplicateCount = stats.duplicate || 0;
+
+        // Group A: Records to Be Imported
+        const totalToImport = data.importable_count !== undefined 
+            ? data.importable_count 
+            : (validCount + warningCount + invalidCompanyCount);
+        $('#ptkp-step3-valid-count').text(validCount.toLocaleString());
+        $('#ptkp-step3-warning-count').text(warningCount.toLocaleString());
+        if (invalidCompanyCount > 0) {
+            $('#ptkp-step3-invalid-company-count').text(invalidCompanyCount.toLocaleString());
+            $('#ptkp-step3-invalid-company-eligible-row').show();
+        } else {
+            $('#ptkp-step3-invalid-company-eligible-row').hide();
+        }
+        $('#ptkp-step3-total-to-import').text(totalToImport.toLocaleString() + ' Records');
+
+        // Group B: Records Not to Be Imported (Skipped)
+        const invalidCompanySkipped = 0; // In OWL, invalid company is a non-blocking warning and is imported
+        const totalNotImported = invalidCount + duplicateCount + invalidCompanySkipped;
+        $('#ptkp-step3-invalid-count').text(invalidCount.toLocaleString());
+        $('#ptkp-step3-invalid-company-skipped').text(invalidCompanySkipped.toLocaleString());
+        $('#ptkp-step3-duplicate-count').text(duplicateCount.toLocaleString());
+        $('#ptkp-step3-total-not-imported').text(totalNotImported.toLocaleString() + ' Records');
 
         // Reset filter state to Total Rows (all)
         currentFilter = 'all';
@@ -131,6 +278,7 @@
         searchQuery = { empId: '', name: '', course: '', pic: '' };
         currentPage = 1;
 
+        // Header diagnostic check
         const headerCheck = data.header_check || {};
         if (headerCheck.issues && headerCheck.issues.length > 0) {
             let html = '<ul class="mb-0 ps-3">';
@@ -149,12 +297,15 @@
         if (total > 0 && importable === 0 && duplicates > 0) {
             $('#ptkp-no-new-records-alert').show();
             $('#ptkp-no-new-records-desc').text('All records already exist in the database. No new records will be imported.');
+            $('#ptkp-btn-next-to-step3').prop('disabled', true);
             $('#ptkp-btn-confirm').prop('disabled', true);
         } else if (importable <= 0) {
             $('#ptkp-no-new-records-alert').hide();
+            $('#ptkp-btn-next-to-step3').prop('disabled', true);
             $('#ptkp-btn-confirm').prop('disabled', true);
         } else {
             $('#ptkp-no-new-records-alert').hide();
+            $('#ptkp-btn-next-to-step3').prop('disabled', false);
             $('#ptkp-btn-confirm').prop('disabled', false);
         }
 
@@ -173,7 +324,6 @@
         currentFilter = newFilter;
         currentPage = 1;
 
-        // Visual loading state on preview table
         $tableLoading.stop(true, true).fadeIn(100);
 
         setTimeout(function () {
@@ -181,7 +331,6 @@
                 applyFilters();
             } catch (err) {
                 console.error('Filter execution failed:', err);
-                alert('Filter error: ' + err.message);
             } finally {
                 $tableLoading.stop(true, true).fadeOut(120);
                 isFiltering = false;
@@ -236,7 +385,6 @@
 
     function applyFilters() {
         filteredRows = allRows.filter(function (row) {
-            // 1. Status Filter from Active Summary Card
             if (currentFilter !== 'all') {
                 if (currentFilter === 'valid' && row.status !== 'VALID') return false;
                 if (currentFilter === 'warning' && row.status !== 'WARNING') return false;
@@ -244,7 +392,6 @@
                 if (currentFilter === 'invalid' && row.status !== 'INVALID') return false;
                 if (currentFilter === 'invalid_company' && row.status !== 'INVALID COMPANY') return false;
             }
-            // 2. Combined Search Queries
             if (searchQuery.empId && (row.employee_id || '').toLowerCase().indexOf(searchQuery.empId) === -1) return false;
             if (searchQuery.name && (row.name || '').toLowerCase().indexOf(searchQuery.name) === -1) return false;
             if (searchQuery.course && (row.course_name || '').toLowerCase().indexOf(searchQuery.course) === -1) return false;
@@ -446,17 +593,50 @@
         new bootstrap.Modal(document.getElementById('ptkpInspectionModal')).show();
     });
 
-    $('#ptkp-btn-cancel-preview, #ptkp-btn-footer-cancel').on('click', function () {
-        if (!confirm('Cancel this import session?')) return;
+    // =========================================================================
+    // STEP 2 NAVIGATION: Cancel, Back, Next
+    // =========================================================================
+    $('#ptkp-btn-cancel-preview').on('click', function () {
+        if (!confirm('Are you sure you want to cancel this import session? Temporary files will be removed.')) return;
         if (importToken) {
-            $.post(window.ptkpRoutes.cancel, { token: importToken, _token: $('meta[name="csrf-token"]').attr('content') });
+            $.post(window.ptkpRoutes.cancel, { token: importToken, _token: $('meta[name="csrf-token"]').attr('content') }, function () {
+                window.location.href = window.ptkpRoutes.offline;
+            }).fail(function () {
+                window.location.href = window.ptkpRoutes.offline;
+            });
+        } else {
+            window.location.href = window.ptkpRoutes.offline;
         }
-        resetToStage1();
+    });
+
+    // Back from Step 2 to Step 1 without losing file/validation data
+    $('#ptkp-btn-back-to-step1').on('click', function () {
+        $previewCard.hide();
+        $uploadCard.show();
+        setStep(1);
+        updateHeaderActions(1);
+    });
+
+    // Next from Step 2 to Step 3
+    $('#ptkp-btn-next-to-step3').on('click', function () {
+        $previewCard.hide();
+        $confirmCard.show();
+        setStep(3);
+        updateHeaderActions(3);
+    });
+
+    // =========================================================================
+    // STEP 3: BACK & CONFIRM IMPORT
+    // =========================================================================
+    $('#ptkp-btn-back-to-step2').on('click', function () {
+        $confirmCard.hide();
+        $previewCard.show();
+        setStep(2);
+        updateHeaderActions(2);
     });
 
     $('#ptkp-btn-confirm').on('click', function () {
         if (isSubmitting || !importToken) return;
-        if (!confirm('Proceed to import the valid records into OWL LMS?')) return;
 
         isSubmitting = true;
         const $btn = $(this);
@@ -468,46 +648,98 @@
             data: { token: importToken, _token: $('meta[name="csrf-token"]').attr('content') },
             success: function (res) {
                 isSubmitting = false;
-                $previewCard.hide();
+                $confirmCard.hide();
                 renderResultStage(res.result || {});
+                setStep(4);
             },
             error: function (xhr) {
                 isSubmitting = false;
-                $btn.prop('disabled', false).html('<i class="ti ti-check me-1"></i> Confirm & Import');
-                alert('Error: ' + ((xhr.responseJSON && xhr.responseJSON.message) || 'Import failed.'));
+                const importable = $('#ptkp-btn-confirm-count').text();
+                $btn.prop('disabled', false).html('<i class="ti ti-check me-1"></i> Confirm & Import (' + importable + ' Records)');
+                alert('Error: ' + ((xhr.responseJSON && xhr.responseJSON.message) || 'Import failed. Please try again.'));
             }
         });
     });
 
+    // =========================================================================
+    // FINAL RESULT: IMPORT SUMMARY
+    // =========================================================================
     function renderResultStage(res) {
         $resultCard.show();
-        setStep(4);
-        $('#res-total-processed').text(res.total_rows_processed || 0);
-        $('#res-imported-participants').text(res.imported || 0);
-        $('#res-duplicates-skipped').text(res.skipped_duplicates || 0);
-        $('#res-invalid-skipped').text(res.skipped_invalid || 0);
-        $('#res-warnings-imported').text(res.warnings_imported || 0);
-        $('#res-invalid-company-imported').text(res.invalid_company_imported || 0);
-        $('#res-trainings-created').text(res.trainings_created || 0);
-        $('#res-trainings-reused').text(res.trainings_reused || 0);
+        const total = res.total_rows_processed ?? res.rows_processed ?? 0;
+        const imported = res.imported ?? 0;
+        const warnings = res.warnings_imported ?? 0;
+        const duplicates = res.skipped_duplicates ?? 0;
+        const invalid = res.skipped_invalid ?? res.invalid ?? 0;
+        const invalidCompany = res.invalid_company_imported ?? 0;
+        const created = res.trainings_created ?? 0;
+        const reused = res.trainings_reused ?? 0;
+        const totalSkipped = duplicates + invalid;
+
+        // 1. Success Banner Text
+        if (totalSkipped > 0) {
+            $('#res-header-title').text('Import Completed');
+            $('#res-header-desc').text('Your training records have been processed. Please review the import results below.');
+        } else {
+            $('#res-header-title').text('Import Completed');
+            $('#res-header-desc').text('Your training records have been processed successfully. All eligible records have been imported.');
+        }
+
+        // 2. Success Rate Calculation
+        let rate = '0.0';
+        if (total > 0) {
+            rate = ((imported / total) * 100).toFixed(1);
+        }
+        $('#res-rate-percentage').text(rate + '%');
+        $('#res-rate-progress-bar').css('width', rate + '%').attr('aria-valuenow', rate);
+        $('#res-rate-imported-count').text(imported.toLocaleString());
+        $('#res-rate-skipped-count').text(totalSkipped.toLocaleString());
+
+        // 3. 6 Summary Cards
+        $('#res-total-processed').text(total.toLocaleString());
+        $('#res-imported-participants').text(imported.toLocaleString());
+        $('#res-imported-count').text(imported.toLocaleString());
+        $('#res-warnings-imported').text(warnings.toLocaleString());
+        $('#res-duplicates-skipped').text(duplicates.toLocaleString());
+        $('#res-invalid-skipped').text(invalid.toLocaleString());
+        $('#res-invalid-company-imported').text(invalidCompany.toLocaleString());
+        $('#res-trainings-created').text(created.toLocaleString());
+        $('#res-trainings-reused').text(reused.toLocaleString());
     }
 
     $('#ptkp-btn-import-another').on('click', resetToStage1);
 
     function resetToStage1() {
-        selectedFile = null; importToken = null; allRows = []; filteredRows = []; currentPage = 1; isSubmitting = false; isFiltering = false;
+        selectedFile = null;
+        importToken = null;
+        allRows = [];
+        filteredRows = [];
+        currentPage = 1;
+        isSubmitting = false;
+        isFiltering = false;
+
         $fileInput.val('');
-        $selectedFilename.text('No file selected');
+        $dropzoneInitial.show();
+        $fileInfoCard.hide();
+        $selectedFilename.html('<i class="ti ti-paperclip me-1"></i>No file selected');
         $btnValidate.prop('disabled', true);
         $uploadError.hide().text('');
-        $previewCard.hide(); $resultCard.hide(); $loadingCard.hide(); $uploadCard.show();
+
+        $previewCard.hide();
+        $confirmCard.hide();
+        $resultCard.hide();
+        $loadingCard.hide();
+        $uploadCard.show();
         $tableLoading.hide();
+
         currentFilter = 'all';
         $('.ptkp-summary-filter-card').removeClass('active');
         $('.ptkp-summary-filter-card[data-filter="all"]').addClass('active');
         $('#ptkp-search-empid, #ptkp-search-name, #ptkp-search-course, #ptkp-search-pic').val('');
         searchQuery = { empId: '', name: '', course: '', pic: '' };
+
         setStep(1);
+        updateHeaderActions(1);
     }
 
     function formatBytes(bytes) {

@@ -312,8 +312,8 @@ class NonPtkpImportTest extends TestCase
         $adminResp = $this->actingAs($this->admin)->get('/manage/record/offline/import-non-ptkp');
         $adminResp->assertStatus(200);
         $adminResp->assertSee('Import Non-PTKP Data');
-        $adminResp->assertSee('Upload Spreadsheet');
-        $adminResp->assertSee('Validation Preview');
+        $adminResp->assertSee('Upload File');
+        $adminResp->assertSee('Validation & Review', false);
         $adminResp->assertDontSee('Import Status Guide');
         $adminResp->assertDontSee('Import Status Legend');
     }

@@ -1,24 +1,28 @@
 @extends('layouts.sidebar-master')
 
+@section('title', 'Import Non-PTKP Training Records — Import Non-PTKP Data — OWL LMS')
+
+@section('style')
+<link rel="stylesheet" href="{{ asset('css/manage/non-ptkp-import.css') }}">
+@endsection
+
 @section('content')
-<div class="page-body manage-record-page manage-record-import-non-ptkp">
+<div class="page-body manage-record-page manage-record-import-non-ptkp py-4">
     <div class="container-xl">
 
-        <!-- BREADCRUMB -->
-        <nav aria-label="breadcrumb" class="mb-3">
-            <ol class="breadcrumb mb-0">
-                <li class="breadcrumb-item">
-                    <a href="{{ route('manage.dashboard') }}" class="text-decoration-none">Manage Record</a>
-                </li>
-                <li class="breadcrumb-item">
-                    <a href="{{ route('manage.record.offline') }}" class="text-decoration-none">Offline Record</a>
-                </li>
-                <li class="breadcrumb-item active" aria-current="page">Import Non-PTKP Data</li>
-            </ol>
-        </nav>
-
-        <!-- TOP BACK ACTION -->
-        <div class="mb-3">
+        <!-- BREADCRUMB / TOP BACK LINK -->
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item">
+                        <a href="{{ route('manage.dashboard') }}" class="text-decoration-none">Manage Record</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{{ route('manage.record.offline') }}" class="text-decoration-none">Offline Record</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">Import Non-PTKP Data</li>
+                </ol>
+            </nav>
             <a href="{{ route('manage.record.offline') }}" class="btn-back d-inline-flex align-items-center gap-1.5 text-decoration-none fw-medium" id="btn-top-back">
                 <i class="ti ti-arrow-left fs-3"></i>
                 <span>Back to Offline Records</span>
@@ -34,108 +38,115 @@
                         <i class="ti ti-file-spreadsheet fs-1"></i>
                     </div>
                     <div>
-                        <h2 class="h3 fw-bold mb-1 text-dark">Import Non-PTKP Data</h2>
-                        <p class="text-muted small mb-0">Upload and validate Non-PTKP offline training records before importing into OWL LMS.</p>
+                        <h2 class="h3 fw-bold mb-1 text-dark">Import Non-PTKP Training Records</h2>
+                        <p class="text-muted small mb-0">Upload and import non-PTKP offline training records into KP-OWL. Employee information will be matched automatically.</p>
                     </div>
                 </div>
-                <div class="d-flex align-items-center gap-2">
-                    <a href="{{ route('manage.record.offline.import.template') }}" class="btn btn-outline-primary rounded-3 px-3 d-inline-flex align-items-center gap-1.5" id="btn-download-template" title="Download Official Excel Template">
+                <div class="d-flex align-items-center gap-2" id="header-action-container">
+                    <!-- Download Template: Only Step 1 -->
+                    <a href="{{ route('manage.record.offline.import.template') }}" class="btn btn-outline-primary rounded-pill d-inline-flex align-items-center gap-2 px-3 py-2" id="btn-download-template" title="Download Template (.xlsx)">
                         <i class="ti ti-download fs-2"></i>
-                        <span>Download Template</span>
+                        <span>Download Non-PTKP Template (.xlsx)</span>
+                    </a>
+                    <!-- Import History: Only Step 3 & Result -->
+                    <a href="{{ route('manage.record.offline.import-history.index') }}" class="btn btn-outline-secondary rounded-pill d-inline-flex align-items-center gap-2 px-3 py-2 d-none" id="btn-import-history" title="View Import History">
+                        <i class="ti ti-history fs-2"></i>
+                        <span>Import History</span>
                     </a>
                 </div>
             </div>
         </div>
 
-        <!-- MODERN STEP PROGRESS INDICATOR -->
-        <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white stepper-card">
-            <div class="card-body p-3 p-md-4">
-                <div class="row g-2 stepper-wrapper">
-                    <!-- Step 1 -->
-                    <div class="col-6 col-md-3">
-                        <div class="stepper-item active" id="stepper-step-1">
-                            <div class="stepper-badge">
-                                <span class="stepper-num">1</span>
-                                <i class="ti ti-check stepper-check"></i>
-                            </div>
-                            <div class="stepper-content">
-                                <div class="stepper-title">Upload Spreadsheet</div>
-                                <div class="stepper-desc text-muted">Select .xlsx / .xls file</div>
-                            </div>
-                        </div>
+        <!-- EXACTLY 3-STEP PROCESS INDICATOR -->
+        <div class="card border-0 shadow-sm p-3 mb-4 rounded-3 bg-white stepper-card">
+            <div class="owl-stepper">
+                <!-- Step 1 -->
+                <div class="stepper-item-node active stepper-item" id="stepper-step-1" data-step="1">
+                    <div class="stepper-circle">
+                        <span class="stepper-num">1</span>
+                        <i class="ti ti-check stepper-check"></i>
                     </div>
-                    <!-- Step 2 -->
-                    <div class="col-6 col-md-3">
-                        <div class="stepper-item pending" id="stepper-step-2">
-                            <div class="stepper-badge">
-                                <span class="stepper-num">2</span>
-                                <i class="ti ti-check stepper-check"></i>
-                            </div>
-                            <div class="stepper-content">
-                                <div class="stepper-title">Validation Preview</div>
-                                <div class="stepper-desc text-muted">Validate columns & records</div>
-                            </div>
-                        </div>
+                    <div class="stepper-label">Upload File</div>
+                </div>
+                <div class="stepper-connector" id="stepper-line-1"></div>
+                <!-- Step 2 -->
+                <div class="stepper-item-node stepper-item" id="stepper-step-2" data-step="2">
+                    <div class="stepper-circle">
+                        <span class="stepper-num">2</span>
+                        <i class="ti ti-check stepper-check"></i>
                     </div>
-                    <!-- Step 3 -->
-                    <div class="col-6 col-md-3">
-                        <div class="stepper-item pending" id="stepper-step-3">
-                            <div class="stepper-badge">
-                                <span class="stepper-num">3</span>
-                                <i class="ti ti-check stepper-check"></i>
-                            </div>
-                            <div class="stepper-content">
-                                <div class="stepper-title">Review Data</div>
-                                <div class="stepper-desc text-muted">Review status & details</div>
-                            </div>
-                        </div>
+                    <div class="stepper-label">Validation & Review</div>
+                </div>
+                <div class="stepper-connector" id="stepper-line-2"></div>
+                <!-- Step 3 -->
+                <div class="stepper-item-node stepper-item" id="stepper-step-3" data-step="3">
+                    <div class="stepper-circle">
+                        <span class="stepper-num">3</span>
+                        <i class="ti ti-check stepper-check"></i>
                     </div>
-                    <!-- Step 4 -->
-                    <div class="col-6 col-md-3">
-                        <div class="stepper-item pending" id="stepper-step-4">
-                            <div class="stepper-badge">
-                                <span class="stepper-num">4</span>
-                                <i class="ti ti-check stepper-check"></i>
-                            </div>
-                            <div class="stepper-content">
-                                <div class="stepper-title">Import Records</div>
-                                <div class="stepper-desc text-muted">Save to database</div>
-                            </div>
-                        </div>
-                    </div>
+                    <div class="stepper-label">Import Records</div>
                 </div>
             </div>
         </div>
 
         <!-- =================================================================== -->
-        <!-- STATE 1: UPLOAD SPREADSHEET                                         -->
+        <!-- STEP 1: UPLOAD FILE                                                 -->
         <!-- =================================================================== -->
         <div class="card border-0 shadow-sm rounded-4 mb-4 panel-import-state" id="panel-state-upload">
-            <div class="card-body p-4 p-md-5">
+            <div class="card-body p-4">
                 <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
                     <div class="d-flex align-items-center gap-2">
-                        <span class="badge bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 28px; font-size: 0.85rem; background-color: #d97706 !important;">1</span>
-                        <h4 class="fw-bold text-dark mb-0">Upload Spreadsheet</h4>
+                        <span class="badge bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 26px; height: 26px; font-size: 0.8rem; background-color: #1e3a8a !important;">1</span>
+                        <div>
+                            <h4 class="card-title fw-bold text-dark mb-0">Upload File</h4>
+                            <div class="text-muted small">Upload your Excel spreadsheet to begin the import process.</div>
+                        </div>
                     </div>
-                    <span class="badge bg-light text-secondary border px-2.5 py-1">Supported formats: .xlsx, .xls</span>
                 </div>
 
                 <!-- Dropzone Upload Area -->
-                <div class="upload-dropzone border border-2 border-dashed rounded-4 p-5 text-center my-3 bg-light position-relative" id="dropzone-container">
+                <div class="upload-dropzone p-5 text-center my-3 position-relative" id="dropzone-container">
                     <input type="file" id="excel-file-input" class="position-absolute top-0 start-0 w-100 h-100 opacity-0" style="cursor: pointer;" accept=".xlsx,.xls" />
-                    <div class="dropzone-content py-2">
-                        <div class="avatar avatar-lg rounded-circle mx-auto mb-3" style="background-color: #fef3c7; color: #d97706; width: 64px; height: 64px;">
+                    
+                    <!-- Initial State (Hidden when file is selected) -->
+                    <div class="dropzone-content py-3" id="dropzone-initial">
+                        <div class="avatar avatar-lg rounded-circle mx-auto mb-3" style="background-color: #eff6ff; color: #1e3a8a; width: 64px; height: 64px;">
                             <i class="ti ti-cloud-upload fs-1"></i>
                         </div>
                         <h5 class="fw-bold text-dark mb-1">Choose an Excel file or drag & drop here</h5>
                         <p class="text-muted small mb-2">Supported formats: <strong>.xlsx, .xls</strong> (Max 20MB)</p>
-                        
-                        <div class="selected-file-pill d-none align-items-center gap-2 mx-auto mt-3 py-1.5 px-3 rounded-pill bg-white border shadow-sm" id="selected-file-box" style="max-width: 480px;">
-                            <i class="ti ti-file-spreadsheet text-success fs-3"></i>
-                            <span class="text-dark fw-semibold small text-truncate" id="selected-filename-text">No file selected</span>
-                            <button type="button" class="btn btn-sm btn-ghost-danger rounded-circle p-1 ms-auto" id="btn-clear-file" title="Remove file">
-                                <i class="ti ti-x"></i>
-                            </button>
+                        <div class="d-inline-flex align-items-center gap-1 text-muted small mt-1">
+                            <span class="badge bg-light text-muted border px-2.5 py-1" id="selected-file-box">
+                                <i class="ti ti-paperclip me-1"></i><span id="selected-filename-text">No file selected</span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Selected File Info Card (Only shown when file is selected) -->
+                    <div class="selected-file-info-card p-4 text-start position-relative" id="selected-file-card" style="display: none; cursor: default;">
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="avatar avatar-lg rounded-3 flex-shrink-0 d-flex align-items-center justify-content-center" style="background-color: #dcfce7; color: #16a34a; width: 56px; height: 56px;">
+                                    <i class="ti ti-file-spreadsheet fs-1"></i>
+                                </div>
+                                <div style="min-width: 0;">
+                                    <h5 class="fw-bold text-dark mb-1 text-truncate" id="selected-filename-display">file.xlsx</h5>
+                                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                                        <span class="text-muted small" id="selected-filesize-display">0 KB</span>
+                                        <span class="badge bg-success-lt text-success"><i class="ti ti-check me-1"></i>File ready for validation</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 d-inline-flex align-items-center gap-1" id="btn-change-file">
+                                    <i class="ti ti-refresh"></i>
+                                    <span>Change File</span>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 d-inline-flex align-items-center gap-1" id="btn-clear-file">
+                                    <i class="ti ti-trash"></i>
+                                    <span>Remove</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -155,9 +166,7 @@
                         <div class="w-100">
                             <strong class="d-block mb-1.5 text-dark">Non-PTKP OWL Spreadsheet Guidelines:</strong>
                             <ul class="mb-0 ps-3">
-                                <li>Use the official OWL Non-PTKP template.</li>
-                                <li>Template with <strong>canonical 44 columns</strong> is supported in accordance with backend validation.</li>
-                                <li>Legacy format with <strong>two-row grouped headers</strong> is automatically supported.</li>
+                                <li>Use the official OWL Non-PTKP template. Canonical single-row 46 columns and grouped headers are supported.</li>
                                 <li>Do not rename or remove mandatory headers: <code>Course Name</code> / <code>Course Title</code>, <code>ID</code> / <code>Employee ID</code>, and <code>Name</code>.</li>
                                 <li>Each row represents <strong>one training participant</strong>.</li>
                                 <li>Participants in the same training session will be <strong>automatically grouped into a single training event</strong> based on course, batch, dates, type, and venue.</li>
@@ -167,59 +176,48 @@
                     </div>
                 </div>
 
-                <!-- Action Buttons: Cancel, Download Template, Validate & Preview -->
-                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2 border-top">
-                    <a href="{{ route('manage.record.offline') }}" class="btn btn-outline-secondary rounded-3 px-4">
-                        <i class="ti ti-arrow-left me-1"></i> Back
-                    </a>
-                    <div class="d-flex align-items-center gap-2">
-                        <a href="{{ route('manage.record.offline.import.template') }}" class="btn btn-outline-primary rounded-3 px-3">
-                            <i class="ti ti-download me-1"></i> Download Template
-                        </a>
-                        <button type="button" class="btn btn-primary rounded-3 px-4 d-inline-flex align-items-center gap-2" id="btn-validate-upload" style="background-color: #d97706; border-color: #d97706;" disabled>
-                            <i class="ti ti-sparkles"></i>
-                            <span>Validate & Preview Records</span>
-                        </button>
-                    </div>
+                <!-- Action Buttons: Validate -->
+                <div class="d-flex align-items-center justify-content-end pt-3 border-top">
+                    <button type="button" class="btn btn-primary rounded-3 px-4 d-inline-flex align-items-center gap-2" id="btn-validate-upload" style="background-color: #1e3a8a; border-color: #1e3a8a;" disabled>
+                        <i class="ti ti-sparkles"></i>
+                        <span>Validate</span>
+                    </button>
                 </div>
             </div>
         </div>
 
         <!-- =================================================================== -->
-        <!-- STATE 2: VALIDATING / LOADING                                       -->
+        <!-- LOADING CARD (VALIDATING STATE)                                     -->
         <!-- =================================================================== -->
         <div class="card border-0 shadow-sm rounded-4 mb-4 py-5 text-center panel-import-state" id="panel-state-loading" style="display: none;">
             <div class="card-body py-5">
-                <div class="spinner-border text-primary mb-3" style="width: 3.5rem; height: 3.5rem; color: #d97706 !important;" role="status"></div>
+                <div class="spinner-border text-primary mb-3" style="width: 3.5rem; height: 3.5rem; color: #1e3a8a !important;" role="status"></div>
                 <h4 class="fw-bold text-dark mt-2 mb-1" id="loading-state-title">Validating Spreadsheet...</h4>
                 <p class="text-muted small mb-3" id="loading-state-subtitle">Reading columns, resolving header groups, and checking existing records...</p>
                 <div class="progress progress-sm mx-auto" style="max-width: 320px; height: 4px;">
-                    <div class="progress-bar progress-bar-indeterminate" style="background-color: #d97706;"></div>
+                    <div class="progress-bar progress-bar-indeterminate" style="background-color: #1e3a8a;"></div>
                 </div>
             </div>
         </div>
 
         <!-- =================================================================== -->
-        <!-- STATE 3: PREVIEW & REVIEW DATA                                      -->
+        <!-- STEP 2: VALIDATION & REVIEW                                         -->
         <!-- =================================================================== -->
         <div class="card border-0 shadow-sm rounded-4 mb-4 panel-import-state" id="panel-state-preview" style="display: none;">
             <div class="card-header bg-white border-bottom pt-4 pb-3 px-4 rounded-top-4">
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                    <div class="d-flex align-items-center gap-2.5 flex-wrap">
-                        <span class="badge bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 28px; font-size: 0.85rem; background-color: #d97706 !important;">2</span>
-                        <h4 class="fw-bold text-dark mb-0">Non-PTKP Validation & Review</h4>
-                        <span class="badge bg-light text-secondary border px-2.5 py-1" id="preview-filename-badge">-</span>
-                    </div>
-                    <div class="d-flex align-items-center gap-2">
-                        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" id="btn-reupload-file">
-                            <i class="ti ti-arrow-left me-1"></i> Cancel & Re-upload
-                        </button>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <span class="badge bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 26px; height: 26px; font-size: 0.8rem; background-color: #1e3a8a !important;">2</span>
+                        <div>
+                            <h4 class="fw-bold text-dark mb-0">Validation & Review</h4>
+                            <div class="text-muted small">Review validated training records before importing them into KP-OWL.</div>
+                        </div>
+                        <span class="badge bg-light text-secondary border px-2.5 py-1 ms-2" id="preview-filename-badge">-</span>
                     </div>
                 </div>
             </div>
 
             <div class="card-body p-4">
-
                 <!-- 1. TEMPLATE HEADER STRUCTURE DIAGNOSTIC CARD -->
                 <div class="card border rounded-3 mb-4 shadow-none" id="preview-header-check-card" style="display: none; background-color: #f8fafc; border-color: #e2e8f0 !important;">
                     <div class="card-body p-3">
@@ -310,7 +308,7 @@
                 <!-- 3. RINGKASAN KONDISIONAL STATUS BANNER -->
                 <div id="preview-state-banner" class="mb-4" style="display: none;"></div>
 
-                <!-- 4. PERBANDINGAN DATA SEBELUM IMPORT (Tahap 8) -->
+                <!-- 4. PERBANDINGAN DATA SEBELUM IMPORT -->
                 <div class="card border rounded-3 mb-4 shadow-none comparison-summary-card" style="background-color: #fafbfc; border-color: #e2e8f0 !important;">
                     <div class="card-body p-3 p-md-4">
                         <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
@@ -401,7 +399,7 @@
                     </div>
                 </div>
 
-                <!-- 6. TABEL PERBANDINGAN STATUS SEBELUM IMPORT (Tahap 7) -->
+                <!-- 6. PREVIEW DATA TABLE -->
                 <div class="table-responsive border rounded-3 mb-4 preview-table-container">
                     <table class="table table-sm table-hover table-vcenter mb-0 align-middle" id="preview-main-table">
                         <thead class="table-light text-uppercase extra-small text-muted sticky-top" style="z-index: 2; font-size: 0.75rem; letter-spacing: 0.04em;">
@@ -439,104 +437,351 @@
                     </div>
                 </div>
 
-                <!-- 7. TAHAP 4: FOOTER ACTIONS & CONFIRMATION (Tahap 9) -->
+                <!-- STEP 2 NAVIGATION: Cancel, Back, Next -->
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 pt-3 border-top">
                     <div>
-                        <span class="text-muted small" id="preview-footer-summary-text">
-                            Review validation results before confirming import.
-                        </span>
-                    </div>
-
-                    <div class="d-flex align-items-center gap-2">
-                        <button type="button" class="btn btn-outline-secondary rounded-3 px-3" id="btn-action-reupload">
-                            <i class="ti ti-arrow-left me-1"></i> Cancel & Re-upload
+                        <button type="button" class="btn btn-outline-danger rounded-3 px-4" id="btn-action-cancel">
+                            <i class="ti ti-x me-1"></i>Cancel
                         </button>
-                        <a href="{{ route('manage.record.offline') }}" class="btn btn-outline-secondary rounded-3 px-3" id="btn-action-cancel">
-                            Cancel
-                        </a>
-                        <button type="button" class="btn btn-primary rounded-3 px-4 d-inline-flex align-items-center gap-1.5" id="btn-action-confirm-import" style="background-color: #d97706; border-color: #d97706;">
-                            <i class="ti ti-check fs-2"></i>
-                            <span id="btn-confirm-label">Confirm & Import</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" class="btn btn-outline-secondary rounded-3 px-4 d-inline-flex align-items-center gap-1.5" id="btn-back-to-step1">
+                            <i class="ti ti-arrow-left"></i>
+                            <span>Back</span>
+                        </button>
+                        <button type="button" class="btn btn-primary rounded-3 px-4 d-inline-flex align-items-center gap-2" id="btn-next-to-step3" style="background-color: #1e3a8a; border-color: #1e3a8a;">
+                            <span>Next / Continue to Import</span>
+                            <i class="ti ti-arrow-right"></i>
                         </button>
                     </div>
                 </div>
-
             </div>
         </div>
 
         <!-- =================================================================== -->
-        <!-- STATE 4: IMPORTING IN PROGRESS                                      -->
+        <!-- STEP 3: IMPORT RECORDS                                              -->
+        <!-- =================================================================== -->
+        <div class="card border-0 shadow-sm rounded-4 mb-4 panel-import-state" id="panel-state-confirm" style="display: none;">
+            <div class="card-header bg-white border-bottom pt-4 pb-3 px-4 rounded-top-4">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 26px; height: 26px; font-size: 0.8rem; background-color: #1e3a8a !important;">3</span>
+                    <div>
+                        <h4 class="card-title fw-bold text-dark mb-0">Import Records</h4>
+                        <div class="text-muted small">Import validated training records into KP-OWL.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-body p-4 p-md-5">
+                <!-- Pre-Import Summary & Safeguards -->
+                <div class="pre-import-summary-wrapper mb-4">
+                    <!-- Section Header -->
+                    <div class="d-flex align-items-center gap-3 mb-4">
+                        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px; background-color: #eff6ff; color: #1e3a8a; border: 1px solid #bfdbfe;">
+                            <i class="ti ti-clipboard-check fs-1"></i>
+                        </div>
+                        <div>
+                            <h4 class="fw-bold text-dark mb-0">Pre-Import Summary &amp; Safeguards</h4>
+                            <div class="text-muted small">Verify exact record counts and database safety guarantees before execution.</div>
+                        </div>
+                    </div>
+
+                    <!-- Summary Cards (50:50, Equal Height) -->
+                    <div class="row g-4 mb-4">
+                        <!-- Group A: Records to Be Imported (Left Card) -->
+                        <div class="col-12 col-lg-6">
+                            <div class="card border rounded-4 p-4 h-100 pre-import-card pre-import-card-eligible">
+                                <div class="pre-import-header">
+                                    <span class="pre-import-header-icon" style="background-color: #1e3a8a;">
+                                        <i class="ti ti-check"></i>
+                                    </span>
+                                    <div>
+                                        <h5 class="fw-bold text-dark mb-1">Jumlah Record yang Akan Di-import</h5>
+                                        <p class="text-muted small mb-0">Records that passed validation and are eligible for import.</p>
+                                    </div>
+                                </div>
+
+                                <div class="pre-import-breakdown">
+                                    <div class="pre-import-row">
+                                        <div class="pre-import-row-label">
+                                            <span class="pre-import-row-icon" style="background-color: #dcfce7; color: #16a34a;"><i class="ti ti-check"></i></span>
+                                            <span>Valid Records</span>
+                                        </div>
+                                        <span class="pre-import-row-count text-success" id="res-step3-valid-count">0</span>
+                                    </div>
+                                    <div class="pre-import-row">
+                                        <div class="pre-import-row-label">
+                                            <span class="pre-import-row-icon" style="background-color: #fef3c7; color: #d97706;"><i class="ti ti-alert-triangle"></i></span>
+                                            <span>Warning Records (Non-blocking)</span>
+                                        </div>
+                                        <span class="pre-import-row-count text-warning" id="res-step3-warning-count">0</span>
+                                    </div>
+                                    <div class="pre-import-row" id="res-step3-invalid-company-eligible-row" style="display: none;">
+                                        <div class="pre-import-row-label">
+                                            <span class="pre-import-row-icon" style="background-color: #ffedd5; color: #ea580c;"><i class="ti ti-building"></i></span>
+                                            <span>Invalid Company (Imported with Review Tag)</span>
+                                        </div>
+                                        <span class="pre-import-row-count text-orange" id="res-step3-invalid-company-count">0</span>
+                                    </div>
+                                </div>
+
+                                <div class="pre-import-total-box mt-auto">
+                                    <div>
+                                        <div class="pre-import-total-label">Total to Import</div>
+                                        <div class="pre-import-total-desc">Ready to write into database</div>
+                                    </div>
+                                    <div class="pre-import-total-value" id="res-step3-total-to-import">0 Records</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Group B: Records Not to Be Imported (Right Card) -->
+                        <div class="col-12 col-lg-6">
+                            <div class="card border rounded-4 p-4 h-100 pre-import-card pre-import-card-skipped">
+                                <div class="pre-import-header">
+                                    <span class="pre-import-header-icon" style="background-color: #dc2626;">
+                                        <i class="ti ti-ban"></i>
+                                    </span>
+                                    <div>
+                                        <h5 class="fw-bold text-dark mb-1">Jumlah Record yang Tidak Di-import</h5>
+                                        <p class="text-muted small mb-0">Records that will be skipped because they failed validation or already exist.</p>
+                                    </div>
+                                </div>
+
+                                <div class="pre-import-breakdown">
+                                    <div class="pre-import-row">
+                                        <div class="pre-import-row-label">
+                                            <span class="pre-import-row-icon" style="background-color: #fee2e2; color: #dc2626;"><i class="ti ti-x"></i></span>
+                                            <span>Invalid Employee ID &amp; Course</span>
+                                        </div>
+                                        <span class="pre-import-row-count text-danger" id="res-step3-invalid-count">0</span>
+                                    </div>
+                                    <div class="pre-import-row">
+                                        <div class="pre-import-row-label">
+                                            <span class="pre-import-row-icon" style="background-color: #f1f5f9; color: #64748b;"><i class="ti ti-info-circle"></i></span>
+                                            <span>Invalid Company (Skipped) <span class="text-muted extra-small" title="Non-blocking warning in OWL backend; imported with review note">(Non-blocking in OWL)</span></span>
+                                        </div>
+                                        <span class="pre-import-row-count text-muted" id="res-step3-invalid-company-skipped">0</span>
+                                    </div>
+                                    <div class="pre-import-row">
+                                        <div class="pre-import-row-label">
+                                            <span class="pre-import-row-icon" style="background-color: #f3e8ff; color: #7c3aed;"><i class="ti ti-copy"></i></span>
+                                            <span>Duplicate Records</span>
+                                        </div>
+                                        <span class="pre-import-row-count text-purple" id="res-step3-duplicate-count">0</span>
+                                    </div>
+                                </div>
+
+                                <div class="pre-import-total-box mt-auto">
+                                    <div>
+                                        <div class="pre-import-total-label">Total Not Imported</div>
+                                        <div class="pre-import-total-desc">Safely skipped to prevent bad data</div>
+                                    </div>
+                                    <div class="pre-import-total-value" id="res-step3-total-not-imported">0 Records</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Safeguard Notice Banner -->
+                    <div class="pre-import-safeguard-banner mb-0">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px; background-color: #e0f2fe; color: #0284c7;">
+                            <i class="ti ti-shield-check fs-1"></i>
+                        </div>
+                        <div class="small lh-base text-dark">
+                            <strong class="text-dark">Database Safety Guarantee:</strong> Only records that passed validation will be imported into KP-OWL. Existing enrolled participants and duplicate entries will not be overwritten.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 3 NAVIGATION BUTTONS: Back, Confirm & Import -->
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 pt-4 border-top">
+                    <button type="button" class="btn btn-outline-secondary rounded-3 px-4 py-2.5 d-inline-flex align-items-center gap-2 fw-medium" id="btn-back-to-step2">
+                        <i class="ti ti-arrow-left fs-2"></i>
+                        <span>Back</span>
+                    </button>
+                    <button type="button" class="btn btn-primary btn-confirm-import-darkblue rounded-3 px-4 py-2.5 d-inline-flex align-items-center gap-2 fw-semibold" id="btn-action-confirm-import">
+                        <i class="ti ti-check fs-2"></i>
+                        <span>Confirm &amp; Import (<span id="btn-confirm-import-count">0</span> Records)</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- IMPORTING IN PROGRESS LOADING STATE                                 -->
         <!-- =================================================================== -->
         <div class="card border-0 shadow-sm rounded-4 mb-4 py-5 text-center panel-import-state" id="panel-state-importing" style="display: none;">
             <div class="card-body py-5">
-                <div class="spinner-border text-primary mb-3" style="width: 3.5rem; height: 3.5rem; color: #d97706 !important;" role="status"></div>
+                <div class="spinner-border text-primary mb-3" style="width: 3.5rem; height: 3.5rem; color: #1e3a8a !important;" role="status"></div>
                 <h4 class="fw-bold text-dark mt-2 mb-1">Importing Training Records...</h4>
                 <p class="text-muted small mb-3">Executing database transaction, creating training sessions, and registering participants...</p>
                 <div class="progress progress-sm mx-auto" style="max-width: 340px; height: 4px;">
-                    <div class="progress-bar progress-bar-indeterminate" style="background-color: #d97706;"></div>
+                    <div class="progress-bar progress-bar-indeterminate" style="background-color: #1e3a8a;"></div>
                 </div>
             </div>
         </div>
 
         <!-- =================================================================== -->
-        <!-- STATE 5: IMPORT RESULT SUMMARY                                      -->
+        <!-- FINAL RESULT PAGE: IMPORT COMPLETED (DASHBOARD REDESIGN)           -->
         <!-- =================================================================== -->
         <div class="card border-0 shadow-sm rounded-4 mb-4 panel-import-state" id="panel-state-result" style="display: none;">
-            <div class="card-body p-4 p-md-5 text-center">
-                <div class="avatar avatar-xl rounded-circle mx-auto mb-3" style="background-color: #ecfdf5; color: #059669; width: 72px; height: 72px;">
-                    <i class="ti ti-check fs-1"></i>
-                </div>
-                <h3 class="fw-bold text-dark mb-1">Non-PTKP Import Completed!</h3>
-                <p class="text-muted small mb-4">Summary of Non-PTKP offline training records processed and saved to database.</p>
+            <div class="card-body p-4 p-md-5">
 
-                <!-- 6 Metrics Result Grid -->
-                <div class="row g-3 justify-content-center mb-4 text-start" style="max-width: 880px; margin: 0 auto;">
-                    <div class="col-6 col-sm-4 col-md-2">
-                        <div class="card border-0 bg-light p-3 rounded-3 text-center h-100">
-                            <div class="text-muted extra-small mb-1">Total Processed</div>
-                            <div class="h3 fw-bold text-dark mb-0" id="res-total-processed">0</div>
+                <!-- 1. SUCCESS BANNER -->
+                <div class="p-4 rounded-4 mb-4" id="res-success-banner" style="background-color: #ecfdf5; border: 1px solid #a7f3d0;">
+                    <div class="d-flex align-items-start gap-3">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px; background-color: #10b981; color: #ffffff;">
+                            <i class="ti ti-check fs-1 fw-bold"></i>
                         </div>
-                    </div>
-                    <div class="col-6 col-sm-4 col-md-2">
-                        <div class="card border-0 p-3 rounded-3 text-center h-100" style="background-color: #ecfdf5;">
-                            <div class="extra-small fw-semibold mb-1" style="color: #065f46;">Successfully Imported</div>
-                            <div class="h3 fw-bold mb-0" style="color: #047857;" id="res-imported-count">0</div>
-                        </div>
-                    </div>
-                    <div class="col-6 col-sm-4 col-md-2">
-                        <div class="card border-0 p-3 rounded-3 text-center h-100" style="background-color: #f5f3ff;">
-                            <div class="extra-small fw-semibold mb-1" style="color: #5b21b6;">Duplicates Skipped</div>
-                            <div class="h3 fw-bold mb-0" style="color: #7c3aed;" id="res-duplicates-skipped">0</div>
-                        </div>
-                    </div>
-                    <div class="col-6 col-sm-4 col-md-2">
-                        <div class="card border-0 p-3 rounded-3 text-center h-100" style="background-color: #fef2f2;">
-                            <div class="extra-small fw-semibold mb-1" style="color: #991b1b;">Invalid Skipped</div>
-                            <div class="h3 fw-bold mb-0" style="color: #dc2626;" id="res-invalid-skipped">0</div>
-                        </div>
-                    </div>
-                    <div class="col-6 col-sm-4 col-md-2">
-                        <div class="card border-0 p-3 rounded-3 text-center h-100" style="background-color: #f0fdfa;">
-                            <div class="extra-small fw-semibold mb-1" style="color: #115e59;">Trainings Created</div>
-                            <div class="h3 fw-bold mb-0" style="color: #0f766e;" id="res-trainings-created">0</div>
-                        </div>
-                    </div>
-                    <div class="col-6 col-sm-4 col-md-2">
-                        <div class="card border-0 p-3 rounded-3 text-center h-100" style="background-color: #eff6ff;">
-                            <div class="extra-small fw-semibold mb-1" style="color: #1e40af;">Trainings Reused</div>
-                            <div class="h3 fw-bold mb-0" style="color: #2563eb;" id="res-trainings-reused">0</div>
+                        <div>
+                            <h3 class="fw-bold mb-1" style="color: #064e3b;" id="res-header-title">Import Completed</h3>
+                            <p class="mb-0 text-muted" id="res-header-desc" style="color: #047857 !important;">Your training records have been processed successfully. Please review the import results below.</p>
                         </div>
                     </div>
                 </div>
 
-                <div class="d-flex align-items-center justify-content-center gap-3 pt-2">
-                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" id="btn-import-another">
-                        <i class="ti ti-upload me-1"></i> Import Another Spreadsheet
+                <!-- 2. IMPORT SUCCESS RATE SECTION -->
+                <div class="card border rounded-4 mb-4 shadow-none" style="background-color: #ffffff; border-color: #e2e8f0 !important;">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <h4 class="fw-bold text-dark mb-0">Import Success Rate</h4>
+                            <span class="h1 fw-bold text-dark mb-0" id="res-rate-percentage">0.0%</span>
+                        </div>
+
+                        <!-- Progress Bar -->
+                        <div class="progress rounded-pill mb-3" style="height: 14px; background-color: #e2e8f0;">
+                            <div class="progress-bar rounded-pill" id="res-rate-progress-bar" role="progressbar" style="width: 0%; background-color: #1e3a8a; transition: width 0.8s ease;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+
+                        <div class="d-flex align-items-center justify-content-between small">
+                            <span class="d-inline-flex align-items-center gap-1.5 fw-bold" style="color: #15803d;">
+                                <i class="ti ti-check"></i> <span id="res-rate-imported-count">0</span> imported
+                            </span>
+                            <span class="d-inline-flex align-items-center gap-1.5 text-muted fw-semibold">
+                                <span id="res-rate-skipped-count">0</span> skipped
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. IMPORT SUMMARY — 6 CARDS IN 2 COLUMNS -->
+                <div class="mb-4">
+                    <h4 class="fw-bold text-dark mb-3">Import Summary</h4>
+                    <div class="row g-3 g-md-4">
+                        <!-- Card 1: Total Records Processed -->
+                        <div class="col-12 col-md-6">
+                            <div class="card border rounded-3 p-3 p-md-4 h-100 import-summary-card" style="background-color: #f8fafc; border-color: #e2e8f0 !important;">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 52px; height: 52px; background-color: #eff6ff; color: #1e3a8a;">
+                                        <i class="ti ti-file-text fs-1"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="text-muted small fw-semibold">Total Records Processed</div>
+                                        <div class="h2 fw-bold text-dark mb-0" id="res-total-processed">0</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card 2: Successfully Imported -->
+                        <div class="col-12 col-md-6">
+                            <div class="card border rounded-3 p-3 p-md-4 h-100 import-summary-card" style="background-color: #f0fdf4; border-color: #bbf7d0 !important;">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 52px; height: 52px; background-color: #dcfce7; color: #16a34a;">
+                                        <i class="ti ti-circle-check fs-1"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="small fw-semibold" style="color: #166534;">Successfully Imported</div>
+                                        <div class="h2 fw-bold mb-0" style="color: #15803d;" id="res-imported-count">0</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card 3: Records Imported with Warnings -->
+                        <div class="col-12 col-md-6">
+                            <div class="card border rounded-3 p-3 p-md-4 h-100 import-summary-card" style="background-color: #fffbeb; border-color: #fde68a !important;">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 52px; height: 52px; background-color: #fef3c7; color: #d97706;">
+                                        <i class="ti ti-alert-triangle fs-1"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="small fw-semibold" style="color: #92400e;">Records Imported with Warnings</div>
+                                        <div class="h2 fw-bold mb-0" style="color: #b45309;" id="res-warnings-imported">0</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card 4: Duplicate Records Skipped -->
+                        <div class="col-12 col-md-6">
+                            <div class="card border rounded-3 p-3 p-md-4 h-100 import-summary-card" style="background-color: #faf5ff; border-color: #e9d5ff !important;">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 52px; height: 52px; background-color: #f3e8ff; color: #7c3aed;">
+                                        <i class="ti ti-copy fs-1"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="small fw-semibold" style="color: #6b21a8;">Duplicate Records Skipped</div>
+                                        <div class="h2 fw-bold mb-0" style="color: #7c3aed;" id="res-duplicates-skipped">0</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card 5: Invalid Employee ID / Course -->
+                        <div class="col-12 col-md-6">
+                            <div class="card border rounded-3 p-3 p-md-4 h-100 import-summary-card" style="background-color: #fef2f2; border-color: #fecaca !important;">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 52px; height: 52px; background-color: #fee2e2; color: #dc2626;">
+                                        <i class="ti ti-user-x fs-1"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="small fw-semibold" style="color: #991b1b;">Invalid Employee ID / Course</div>
+                                        <div class="h2 fw-bold mb-0" style="color: #dc2626;" id="res-invalid-skipped">0</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card 6: Invalid Company Records -->
+                        <div class="col-12 col-md-6">
+                            <div class="card border rounded-3 p-3 p-md-4 h-100 import-summary-card" style="background-color: #fff7ed; border-color: #fed7aa !important;">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 52px; height: 52px; background-color: #ffedd5; color: #ea580c;">
+                                        <i class="ti ti-building fs-1"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="small fw-semibold" style="color: #9a3412;">Invalid Company Records</div>
+                                        <div class="h2 fw-bold mb-0" style="color: #ea580c;" id="res-invalid-company-imported">0</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Additional Session Metadata (trainings created & reused) -->
+                    <div class="d-flex align-items-center justify-content-end gap-3 mt-3 text-muted extra-small">
+                        <span><i class="ti ti-sparkles me-1 text-primary"></i>Training Sessions Created: <strong class="text-dark" id="res-trainings-created">0</strong></span>
+                        <span>·</span>
+                        <span><i class="ti ti-rotate-clockwise me-1 text-secondary"></i>Sessions Reused: <strong class="text-dark" id="res-trainings-reused">0</strong></span>
+                    </div>
+                </div>
+
+                <!-- 4. BOTTOM ACTION BUTTONS -->
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 pt-3 border-top">
+                    <button type="button" class="btn btn-outline-secondary rounded-3 px-4 py-2.5 d-inline-flex align-items-center gap-2" id="btn-import-another">
+                        <i class="ti ti-upload fs-2"></i>
+                        <span>Import Another File</span>
                     </button>
-                    <a href="{{ route('manage.record.offline') }}" class="btn btn-primary rounded-pill px-4" style="background-color: #d97706; border-color: #d97706;">
-                        <i class="ti ti-table me-1"></i> Back to Offline Records
+                    <a href="{{ route('manage.record.offline') }}" class="btn btn-primary rounded-3 px-4 py-2.5 d-inline-flex align-items-center gap-2" style="background-color: #1e3a8a; border-color: #1e3a8a;" id="btn-view-imported-records">
+                        <i class="ti ti-table fs-2"></i>
+                        <span>View Imported Records</span>
                     </a>
                 </div>
+
+            </div>
+        </div>
             </div>
         </div>
 
@@ -549,516 +794,107 @@
 <div class="modal fade" id="previewRowModal" tabindex="-1" aria-labelledby="previewRowModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
         <div class="modal-content rounded-4 border-0 shadow">
-            <div class="modal-header border-bottom py-3 px-4 bg-white rounded-top-4">
-                <div class="d-flex align-items-center gap-2.5">
-                    <span class="avatar rounded-3" style="background-color: #fef3c7; color: #d97706; width: 42px; height: 42px;">
+            <div class="modal-header border-bottom py-3 px-4">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="avatar rounded-3" style="background-color: #eff6ff; color: #1e3a8a; width: 42px; height: 42px;">
                         <i class="ti ti-file-search fs-2"></i>
                     </span>
                     <div>
-                        <h5 class="modal-title fw-bold text-dark mb-0" id="previewRowModalLabel">Participant Record Details</h5>
-                        <div class="text-muted extra-small">Excel Row #<span id="modal-detail-row-num">-</span> &bull; 44 Non-PTKP OWL Canonical Columns</div>
+                        <h5 class="modal-title fw-bold text-dark mb-0">Record Detail Inspection (Row <span id="modal-detail-row-num">-</span>)</h5>
+                        <div class="text-muted extra-small">Detailed comparison between spreadsheet columns and system schema</div>
                     </div>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
-            <div class="modal-body p-4 bg-light">
-                <!-- Status & Message Banner -->
-                <div id="modal-detail-status-banner" class="mb-3"></div>
+            <div class="modal-body p-4">
+                <div id="modal-detail-status-banner" class="mb-4"></div>
 
                 <div class="row g-3">
-                    <!-- 1. Participant / Employee Info -->
+                    <!-- 1. Participant Details -->
                     <div class="col-md-6">
-                        <div class="card border-0 bg-white p-3 rounded-3 shadow-none h-100">
-                            <div class="fw-bold small text-dark mb-2 text-uppercase d-flex align-items-center gap-1.5" style="letter-spacing: 0.04em;">
-                                <i class="ti ti-user text-primary"></i> 1. Participant Information
+                        <div class="card border-0 bg-light p-3 rounded-3 h-100">
+                            <div class="fw-bold small text-dark mb-2 text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.05em;">
+                                <i class="ti ti-user me-1 text-primary"></i> 1. Participant Information
                             </div>
                             <div class="row g-2 small">
-                                <div class="col-6">
-                                    <span class="text-muted d-block extra-small">Employee ID (NIP):</span>
-                                    <span class="fw-semibold text-dark" id="modal-detail-nip">-</span>
-                                </div>
-                                <div class="col-6">
-                                    <span class="text-muted d-block extra-small">Name:</span>
-                                    <span class="fw-semibold text-dark" id="modal-detail-name">-</span>
-                                </div>
-                                <div class="col-6">
-                                    <span class="text-muted d-block extra-small">Grade:</span>
-                                    <span class="fw-semibold text-dark" id="modal-detail-grade">-</span>
-                                </div>
-                                <div class="col-6">
-                                    <span class="text-muted d-block extra-small">Job Position:</span>
-                                    <span class="fw-semibold text-dark" id="modal-detail-position">-</span>
-                                </div>
-                                <div class="col-6">
-                                    <span class="text-muted d-block extra-small">Team:</span>
-                                    <span class="fw-semibold text-dark" id="modal-detail-team">-</span>
-                                </div>
-                                <div class="col-6">
-                                    <span class="text-muted d-block extra-small">Department:</span>
-                                    <span class="fw-semibold text-dark" id="modal-detail-dept">-</span>
-                                </div>
-                                <div class="col-6">
-                                    <span class="text-muted d-block extra-small">Company:</span>
-                                    <span class="fw-semibold text-dark" id="modal-detail-company">-</span>
-                                </div>
-                                <div class="col-6">
-                                    <span class="text-muted d-block extra-small">LMS User Match:</span>
-                                    <span id="modal-detail-user-match">-</span>
-                                </div>
+                                <div class="col-6"><span class="text-muted d-block">Employee ID:</span><span class="fw-semibold text-dark font-monospace" id="modal-detail-nip">-</span></div>
+                                <div class="col-6"><span class="text-muted d-block">Full Name:</span><span class="fw-semibold text-dark" id="modal-detail-name">-</span></div>
+                                <div class="col-6"><span class="text-muted d-block">Grade:</span><span class="fw-semibold text-dark" id="modal-detail-grade">-</span></div>
+                                <div class="col-6"><span class="text-muted d-block">Job Position:</span><span class="fw-semibold text-dark" id="modal-detail-position">-</span></div>
+                                <div class="col-6"><span class="text-muted d-block">Team:</span><span class="fw-semibold text-dark" id="modal-detail-team">-</span></div>
+                                <div class="col-6"><span class="text-muted d-block">Department:</span><span class="fw-semibold text-dark" id="modal-detail-dept">-</span></div>
+                                <div class="col-6"><span class="text-muted d-block">Company:</span><span class="fw-semibold text-dark" id="modal-detail-company">-</span></div>
+                                <div class="col-6"><span class="text-muted d-block">LMS Match:</span><span id="modal-detail-user-match">-</span></div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- 2. Training Information -->
+                    <!-- 2. Training Event Details -->
                     <div class="col-md-6">
-                        <div class="card border-0 bg-white p-3 rounded-3 shadow-none h-100">
-                            <div class="fw-bold small text-dark mb-2 text-uppercase d-flex align-items-center gap-1.5" style="letter-spacing: 0.04em;">
-                                <i class="ti ti-book text-primary"></i> 2. Training Information
+                        <div class="card border-0 bg-light p-3 rounded-3 h-100">
+                            <div class="fw-bold small text-dark mb-2 text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.05em;">
+                                <i class="ti ti-book me-1 text-primary"></i> 2. Training Event
                             </div>
                             <div class="row g-2 small">
-                                <div class="col-12">
-                                    <span class="text-muted d-block extra-small">Course Name:</span>
-                                    <span class="fw-semibold text-dark" id="modal-detail-course">-</span>
-                                </div>
-                                <div class="col-6">
-                                    <span class="text-muted d-block extra-small">Sub Course Name:</span>
-                                    <span class="fw-semibold text-dark" id="modal-detail-subcourse">-</span>
-                                </div>
-                                <div class="col-6">
-                                    <span class="text-muted d-block extra-small">Batch:</span>
-                                    <span class="fw-semibold text-dark" id="modal-detail-batch">-</span>
-                                </div>
-                                <div class="col-6">
-                                    <span class="text-muted d-block extra-small">Type:</span>
-                                    <span class="fw-semibold text-dark" id="modal-detail-type">-</span>
-                                </div>
-                                <div class="col-6">
-                                    <span class="text-muted d-block extra-small">Category:</span>
-                                    <span class="fw-semibold text-dark" id="modal-detail-category">-</span>
-                                </div>
-                                <div class="col-6">
-                                    <span class="text-muted d-block extra-small">Level:</span>
-                                    <span class="fw-semibold text-dark" id="modal-detail-level">-</span>
-                                </div>
-                                <div class="col-6">
-                                    <span class="text-muted d-block extra-small">Venue:</span>
-                                    <span class="fw-semibold text-dark" id="modal-detail-venue">-</span>
-                                </div>
+                                <div class="col-12"><span class="text-muted d-block">Course Title:</span><span class="fw-semibold text-dark" id="modal-detail-course">-</span></div>
+                                <div class="col-12"><span class="text-muted d-block">Sub Course Title:</span><span class="fw-semibold text-dark" id="modal-detail-subcourse">-</span></div>
+                                <div class="col-6"><span class="text-muted d-block">Batch:</span><span class="fw-semibold text-dark" id="modal-detail-batch">-</span></div>
+                                <div class="col-6"><span class="text-muted d-block">Type:</span><span class="fw-semibold text-dark" id="modal-detail-type">-</span></div>
+                                <div class="col-6"><span class="text-muted d-block">Category:</span><span class="fw-semibold text-dark" id="modal-detail-category">-</span></div>
+                                <div class="col-6"><span class="text-muted d-block">Level:</span><span class="fw-semibold text-dark" id="modal-detail-level">-</span></div>
+                                <div class="col-12"><span class="text-muted d-block">Venue:</span><span class="fw-semibold text-dark" id="modal-detail-venue">-</span></div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- 3. Schedule & Classification -->
+                    <!-- 3. Schedule, Hours & Provider -->
                     <div class="col-md-6">
-                        <div class="card border-0 bg-white p-3 rounded-3 shadow-none h-100">
-                            <div class="fw-bold small text-dark mb-2 text-uppercase d-flex align-items-center gap-1.5" style="letter-spacing: 0.04em;">
-                                <i class="ti ti-calendar-event text-primary"></i> 3. Schedule & Classification
+                        <div class="card border-0 bg-light p-3 rounded-3 h-100">
+                            <div class="fw-bold small text-dark mb-2 text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.05em;">
+                                <i class="ti ti-calendar me-1 text-primary"></i> 3. Schedule & Provider
                             </div>
                             <div class="row g-2 small">
-                                <div class="col-6">
-                                    <span class="text-muted d-block extra-small">Start Date:</span>
-                                    <span class="fw-semibold text-dark" id="modal-detail-start-date">-</span>
-                                </div>
-                                <div class="col-6">
-                                    <span class="text-muted d-block extra-small">Finish Date:</span>
-                                    <span class="fw-semibold text-dark" id="modal-detail-finish-date">-</span>
-                                </div>
-                                <div class="col-6">
-                                    <span class="text-muted d-block extra-small">Learning Hours:</span>
-                                    <span class="fw-semibold text-dark" id="modal-detail-hours">-</span>
-                                </div>
-                                <div class="col-6">
-                                    <span class="text-muted d-block extra-small">Duration:</span>
-                                    <span class="fw-semibold text-dark" id="modal-detail-duration">-</span>
-                                </div>
-                                <div class="col-6">
-                                    <span class="text-muted d-block extra-small">Main Classification:</span>
-                                    <span class="fw-semibold text-dark" id="modal-detail-main-class">-</span>
-                                </div>
-                                <div class="col-6">
-                                    <span class="text-muted d-block extra-small">Sub Classification:</span>
-                                    <span class="fw-semibold text-dark" id="modal-detail-sub-class">-</span>
-                                </div>
-                                <div class="col-6">
-                                    <span class="text-muted d-block extra-small">Corporate KPI:</span>
-                                    <span class="fw-semibold text-dark" id="modal-detail-kpi">-</span>
-                                </div>
-                                <div class="col-6">
-                                    <span class="text-muted d-block extra-small">Provider:</span>
-                                    <span class="fw-semibold text-dark" id="modal-detail-provider">-</span>
-                                </div>
+                                <div class="col-6"><span class="text-muted d-block">Start Date:</span><span class="fw-semibold text-dark" id="modal-detail-start-date">-</span></div>
+                                <div class="col-6"><span class="text-muted d-block">Finish Date:</span><span class="fw-semibold text-dark" id="modal-detail-finish-date">-</span></div>
+                                <div class="col-6"><span class="text-muted d-block">Learning Hours:</span><span class="fw-semibold text-dark" id="modal-detail-hours">-</span></div>
+                                <div class="col-6"><span class="text-muted d-block">Duration:</span><span class="fw-semibold text-dark" id="modal-detail-duration">-</span></div>
+                                <div class="col-6"><span class="text-muted d-block">Main Class:</span><span class="fw-semibold text-dark" id="modal-detail-main-class">-</span></div>
+                                <div class="col-6"><span class="text-muted d-block">Sub Class:</span><span class="fw-semibold text-dark" id="modal-detail-sub-class">-</span></div>
+                                <div class="col-6"><span class="text-muted d-block">Corp KPI:</span><span class="fw-semibold text-dark" id="modal-detail-kpi">-</span></div>
+                                <div class="col-6"><span class="text-muted d-block">Provider:</span><span class="fw-semibold text-dark" id="modal-detail-provider">-</span></div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- 4. Obligation & Kirkpatrick Evaluations -->
+                    <!-- 4. Progress, Obligation & Kirkpatrick -->
                     <div class="col-md-6">
-                        <div class="card border-0 bg-white p-3 rounded-3 shadow-none h-100">
-                            <div class="fw-bold small text-dark mb-2 text-uppercase d-flex align-items-center gap-1.5" style="letter-spacing: 0.04em;">
-                                <i class="ti ti-award text-primary"></i> 4. Evaluation & Obligation
+                        <div class="card border-0 bg-light p-3 rounded-3 h-100">
+                            <div class="fw-bold small text-dark mb-2 text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.05em;">
+                                <i class="ti ti-award me-1 text-primary"></i> 4. Evaluation & Obligation
                             </div>
                             <div class="row g-2 small">
-                                <div class="col-6">
-                                    <span class="text-muted d-block extra-small">Progress & Score:</span>
-                                    <span class="fw-semibold text-dark" id="modal-detail-progress">-</span>
-                                </div>
-                                <div class="col-6">
-                                    <span class="text-muted d-block extra-small">Attendance:</span>
-                                    <span class="fw-semibold text-dark" id="modal-detail-attendance">-</span>
-                                </div>
-                                <div class="col-6">
-                                    <span class="text-muted d-block extra-small">Bond Status:</span>
-                                    <span class="fw-semibold text-dark" id="modal-detail-bond">-</span>
-                                </div>
-                                <div class="col-6">
-                                    <span class="text-muted d-block extra-small">Bond Amount:</span>
-                                    <span class="fw-semibold text-dark" id="modal-detail-bond-amt">-</span>
-                                </div>
-                                <div class="col-6">
-                                    <span class="text-muted d-block extra-small">L1 Program:</span>
-                                    <span class="fw-semibold text-dark" id="modal-detail-l1">-</span>
-                                </div>
-                                <div class="col-6">
-                                    <span class="text-muted d-block extra-small">L2 Evaluation:</span>
-                                    <span class="fw-semibold text-dark" id="modal-detail-l2">-</span>
-                                </div>
-                                <div class="col-6">
-                                    <span class="text-muted d-block extra-small">L3 Evaluation:</span>
-                                    <span class="fw-semibold text-dark" id="modal-detail-l3">-</span>
-                                </div>
-                                <div class="col-6">
-                                    <span class="text-muted d-block extra-small">PIC:</span>
-                                    <span class="fw-semibold text-dark" id="modal-detail-pic">-</span>
-                                </div>
+                                <div class="col-6"><span class="text-muted d-block">Progress & Score:</span><span class="fw-semibold text-dark" id="modal-detail-progress">-</span></div>
+                                <div class="col-6"><span class="text-muted d-block">Attendance:</span><span class="fw-semibold text-dark" id="modal-detail-attendance">-</span></div>
+                                <div class="col-6"><span class="text-muted d-block">Service Bond:</span><span class="fw-semibold text-dark" id="modal-detail-bond">-</span></div>
+                                <div class="col-6"><span class="text-muted d-block">Bond Amount:</span><span class="fw-semibold text-dark" id="modal-detail-bond-amt">-</span></div>
+                                <div class="col-6"><span class="text-muted d-block">Score L1:</span><span class="fw-semibold text-dark" id="modal-detail-l1">-</span></div>
+                                <div class="col-6"><span class="text-muted d-block">Score L2:</span><span class="fw-semibold text-dark" id="modal-detail-l2">-</span></div>
+                                <div class="col-6"><span class="text-muted d-block">Score L3:</span><span class="fw-semibold text-dark" id="modal-detail-l3">-</span></div>
+                                <div class="col-6"><span class="text-muted d-block">PIC:</span><span class="fw-semibold text-dark" id="modal-detail-pic">-</span></div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="modal-footer border-top py-2.5 px-4 bg-white rounded-bottom-4">
-                <button type="button" class="btn btn-secondary rounded-pill px-4 ms-auto" data-bs-dismiss="modal">Close</button>
+            <div class="modal-footer border-top py-3 px-4 bg-light rounded-bottom-4">
+                <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
 </div>
 
-@endsection
-
-@section('style')
-<style>
-    .manage-record-import-non-ptkp {
-        background: #f8fafc;
-        min-height: 100vh;
-    }
-
-    [data-bs-theme="dark"] .manage-record-import-non-ptkp,
-    body.dark-mode .manage-record-import-non-ptkp,
-    body.theme-dark .manage-record-import-non-ptkp {
-        background: var(--tblr-body-bg, #111827);
-    }
-
-    .btn-back {
-        color: #0c5b9e !important;
-        font-weight: 500;
-        transition: transform 0.2s ease, opacity 0.2s ease;
-    }
-    .btn-back:hover {
-        opacity: 0.85;
-        transform: translateX(-3px);
-    }
-    [data-bs-theme="dark"] .btn-back,
-    body.dark-mode .btn-back,
-    body.theme-dark .btn-back {
-        color: #60a5fa !important;
-    }
-
-    .record-section-header {
-        border-radius: 14px !important;
-        border: 1px solid #e2e8f0 !important;
-        border-left: 4px solid #d97706 !important;
-    }
-
-    [data-bs-theme="dark"] .record-section-header,
-    body.dark-mode .record-section-header,
-    body.theme-dark .record-section-header {
-        background-color: #1e293b !important;
-        border-color: rgba(255, 255, 255, 0.1) !important;
-        border-left-color: #d97706 !important;
-    }
-
-    [data-bs-theme="dark"] .record-section-header .text-dark,
-    body.dark-mode .record-section-header .text-dark,
-    body.theme-dark .record-section-header .text-dark {
-        color: #f8fafc !important;
-    }
-
-    /* Stepper Styling */
-    .stepper-card {
-        border-radius: 14px !important;
-        border: 1px solid #e2e8f0 !important;
-    }
-    [data-bs-theme="dark"] .stepper-card,
-    body.dark-mode .stepper-card,
-    body.theme-dark .stepper-card {
-        background-color: #1e293b !important;
-        border-color: rgba(255, 255, 255, 0.1) !important;
-    }
-
-    .stepper-item {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 10px 14px;
-        border-radius: 10px;
-        border: 1px solid #e2e8f0;
-        background: #f8fafc;
-        transition: all 0.2s ease;
-    }
-    .stepper-badge {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-        font-size: 0.85rem;
-        background: #e2e8f0;
-        color: #64748b;
-        flex-shrink: 0;
-        position: relative;
-    }
-    .stepper-check {
-        display: none;
-    }
-    .stepper-title {
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: #64748b;
-        line-height: 1.2;
-    }
-    .stepper-desc {
-        font-size: 0.72rem;
-        line-height: 1.2;
-    }
-
-    /* Stepper Active */
-    .stepper-item.active {
-        background: #fffbeb;
-        border-color: #fcd34d;
-    }
-    .stepper-item.active .stepper-badge {
-        background: #d97706;
-        color: #ffffff;
-        box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.2);
-    }
-    .stepper-item.active .stepper-title {
-        color: #92400e;
-        font-weight: 700;
-    }
-
-    /* Stepper Completed */
-    .stepper-item.completed {
-        background: #ecfdf5;
-        border-color: #a7f3d0;
-    }
-    .stepper-item.completed .stepper-badge {
-        background: #10b981;
-        color: #ffffff;
-    }
-    .stepper-item.completed .stepper-num {
-        display: none;
-    }
-    .stepper-item.completed .stepper-check {
-        display: inline-block;
-        font-size: 1rem;
-    }
-    .stepper-item.completed .stepper-title {
-        color: #065f46;
-    }
-
-    [data-bs-theme="dark"] .stepper-item,
-    body.dark-mode .stepper-item,
-    body.theme-dark .stepper-item {
-        background: #111827;
-        border-color: rgba(255, 255, 255, 0.1);
-    }
-    [data-bs-theme="dark"] .stepper-item.active,
-    body.dark-mode .stepper-item.active,
-    body.theme-dark .stepper-item.active {
-        background: rgba(217, 119, 6, 0.15);
-        border-color: #d97706;
-    }
-    [data-bs-theme="dark"] .stepper-item.active .stepper-title,
-    body.dark-mode .stepper-item.active .stepper-title,
-    body.theme-dark .stepper-item.active .stepper-title {
-        color: #fbbf24;
-    }
-    [data-bs-theme="dark"] .stepper-item.completed,
-    body.dark-mode .stepper-item.completed,
-    body.theme-dark .stepper-item.completed {
-        background: rgba(16, 185, 129, 0.15);
-        border-color: #10b981;
-    }
-    [data-bs-theme="dark"] .stepper-item.completed .stepper-title,
-    body.dark-mode .stepper-item.completed .stepper-title,
-    body.theme-dark .stepper-item.completed .stepper-title {
-        color: #34d399;
-    }
-
-    /* Dropzone Drag & Drop */
-    .upload-dropzone {
-        border-color: #cbd5e1 !important;
-        transition: all 0.2s ease;
-        background-color: #f8fafc !important;
-    }
-    .upload-dropzone.dragover {
-        border-color: #d97706 !important;
-        background-color: #fffbeb !important;
-    }
-    [data-bs-theme="dark"] .upload-dropzone,
-    body.dark-mode .upload-dropzone,
-    body.theme-dark .upload-dropzone {
-        background-color: #111827 !important;
-        border-color: rgba(255, 255, 255, 0.2) !important;
-    }
-    [data-bs-theme="dark"] .upload-dropzone.dragover,
-    body.dark-mode .upload-dropzone.dragover,
-    body.theme-dark .upload-dropzone.dragover {
-        background-color: rgba(217, 119, 6, 0.15) !important;
-        border-color: #d97706 !important;
-    }
-
-    /* KPI Stat Boxes */
-    .stat-box {
-        transition: transform 0.15s ease, box-shadow 0.15s ease;
-    }
-    .stat-box:hover {
-        transform: translateY(-2px);
-    }
-    [data-bs-theme="dark"] .stat-box.bg-light,
-    body.dark-mode .stat-box.bg-light,
-    body.theme-dark .stat-box.bg-light {
-        background-color: #1e293b !important;
-        color: #f8fafc !important;
-    }
-    [data-bs-theme="dark"] .stat-box .text-dark,
-    body.dark-mode .stat-box .text-dark,
-    body.theme-dark .stat-box .text-dark {
-        color: #f8fafc !important;
-    }
-
-    /* Table preview styling */
-    .preview-table-container {
-        max-height: 520px;
-        overflow-y: auto;
-    }
-    .status-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        display: inline-block;
-    }
-
-    /* Status Badges */
-    .badge-status-valid {
-        background-color: #d1fae5;
-        color: #065f46;
-        border: 1px solid #a7f3d0;
-    }
-    .badge-status-warning {
-        background-color: #fef3c7;
-        color: #92400e;
-        border: 1px solid #fde68a;
-    }
-    .badge-status-duplicate {
-        background-color: #ede9fe;
-        color: #5b21b6;
-        border: 1px solid #ddd6fe;
-    }
-    .badge-status-invalid {
-        background-color: #fee2e2;
-        color: #991b1b;
-        border: 1px solid #fecaca;
-    }
-    .badge-status-invalid-company {
-        background-color: #ffedd5;
-        color: #9a3412;
-        border: 1px solid #fed7aa;
-    }
-
-    [data-bs-theme="dark"] .badge-status-valid,
-    body.dark-mode .badge-status-valid,
-    body.theme-dark .badge-status-valid {
-        background-color: rgba(16, 185, 129, 0.2);
-        color: #6ee7b7;
-        border-color: rgba(16, 185, 129, 0.4);
-    }
-    [data-bs-theme="dark"] .badge-status-warning,
-    body.dark-mode .badge-status-warning,
-    body.theme-dark .badge-status-warning {
-        background-color: rgba(245, 158, 11, 0.2);
-        color: #fcd34d;
-        border-color: rgba(245, 158, 11, 0.4);
-    }
-    [data-bs-theme="dark"] .badge-status-duplicate,
-    body.dark-mode .badge-status-duplicate,
-    body.theme-dark .badge-status-duplicate {
-        background-color: rgba(139, 92, 246, 0.2);
-        color: #c4b5fd;
-        border-color: rgba(139, 92, 246, 0.4);
-    }
-    [data-bs-theme="dark"] .badge-status-invalid,
-    body.dark-mode .badge-status-invalid,
-    body.theme-dark .badge-status-invalid {
-        background-color: rgba(239, 68, 68, 0.2);
-        color: #fca5a5;
-        border-color: rgba(239, 68, 68, 0.4);
-    }
-    [data-bs-theme="dark"] .badge-status-invalid-company,
-    body.dark-mode .badge-status-invalid-company,
-    body.theme-dark .badge-status-invalid-company {
-        background-color: rgba(249, 115, 22, 0.2);
-        color: #fdba74;
-        border-color: rgba(249, 115, 22, 0.4);
-    }
-
-    /* Dark mode card backgrounds */
-    [data-bs-theme="dark"] .card.bg-white,
-    body.dark-mode .card.bg-white,
-    body.theme-dark .card.bg-white,
-    [data-bs-theme="dark"] .card-header.bg-white,
-    body.dark-mode .card-header.bg-white,
-    body.theme-dark .card-header.bg-white {
-        background-color: var(--tblr-bg-surface, #1e293b) !important;
-        color: #f8fafc !important;
-    }
-    [data-bs-theme="dark"] .text-dark,
-    body.dark-mode .text-dark,
-    body.theme-dark .text-dark {
-        color: #f8fafc !important;
-    }
-    [data-bs-theme="dark"] .table-light,
-    body.dark-mode .table-light,
-    body.theme-dark .table-light {
-        background-color: #1e293b !important;
-        color: #94a3b8 !important;
-    }
-    [data-bs-theme="dark"] .comparison-summary-card,
-    body.dark-mode .comparison-summary-card,
-    body.theme-dark .comparison-summary-card {
-        background-color: #111827 !important;
-        border-color: rgba(255, 255, 255, 0.1) !important;
-    }
-    [data-bs-theme="dark"] .comparison-summary-card .bg-white,
-    body.dark-mode .comparison-summary-card .bg-white,
-    body.theme-dark .comparison-summary-card .bg-white {
-        background-color: #1e293b !important;
-        border-color: rgba(255, 255, 255, 0.1) !important;
-    }
-</style>
 @endsection
 
 @section('script')
@@ -1076,17 +912,26 @@ $(document).ready(function () {
     // DOM Elements
     const $fileInput = $('#excel-file-input');
     const $dropzone = $('#dropzone-container');
-    const $selectedFileBox = $('#selected-file-box');
+    const $dropzoneInitial = $('#dropzone-initial');
+    const $selectedFileCard = $('#selected-file-card');
+    const $selectedFilenameDisplay = $('#selected-filename-display');
+    const $selectedFilesizeDisplay = $('#selected-filesize-display');
     const $selectedFilenameText = $('#selected-filename-text');
     const $btnClearFile = $('#btn-clear-file');
+    const $btnChangeFile = $('#btn-change-file');
     const $uploadErrorBox = $('#upload-error-box');
     const $uploadErrorMsg = $('#upload-error-message');
     const $btnValidate = $('#btn-validate-upload');
+
+    // Header buttons
+    const $btnDownloadTemplate = $('#btn-download-template');
+    const $btnImportHistory = $('#btn-import-history');
 
     // State panels
     const $panelUpload = $('#panel-state-upload');
     const $panelLoading = $('#panel-state-loading');
     const $panelPreview = $('#panel-state-preview');
+    const $panelConfirm = $('#panel-state-confirm');
     const $panelImporting = $('#panel-state-importing');
     const $panelResult = $('#panel-state-result');
 
@@ -1094,17 +939,39 @@ $(document).ready(function () {
     const $step1 = $('#stepper-step-1');
     const $step2 = $('#stepper-step-2');
     const $step3 = $('#stepper-step-3');
-    const $step4 = $('#stepper-step-4');
+    const $line1 = $('#stepper-line-1');
+    const $line2 = $('#stepper-line-2');
 
     // CSRF Setup
     const csrfToken = $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}';
 
     // =========================================================================
-    // STEPPER STATE MANAGEMENT
+    // CONDITIONAL HEADER BUTTON VISIBILITY
+    // =========================================================================
+    function updateHeaderActions(currentStep) {
+        const downloadTemplate = document.getElementById('btn-download-template') || document.getElementById('downloadTemplate');
+        const importHistory = document.getElementById('btn-import-history') || document.getElementById('importHistory');
+
+        if (downloadTemplate) {
+            downloadTemplate.classList.toggle('d-none', currentStep !== 1);
+        }
+
+        if (importHistory) {
+            importHistory.classList.toggle('d-none', currentStep < 3);
+        }
+    }
+
+    // =========================================================================
+    // 3-STEP PROCESS STEPPER & HEADER ACTION PLACEMENT
     // =========================================================================
     function setStepState(activeStep) {
-        // activeStep: 1 (upload), 2 (validating), 3 (preview/review), 4 (importing/result)
-        const steps = [$step1, $step2, $step3, $step4];
+        // activeStep:
+        // 1: Upload File
+        // 2: Validation & Review
+        // 3: Import Records
+        // 4: Import Summary (Result)
+        const steps = [$step1, $step2, $step3];
+        const lines = [$line1, $line2];
 
         steps.forEach(function ($step, idx) {
             const stepNum = idx + 1;
@@ -1118,40 +985,76 @@ $(document).ready(function () {
                 $step.addClass('pending');
             }
         });
+
+        lines.forEach(function ($line, idx) {
+            const lineNum = idx + 1;
+            if (lineNum < activeStep) {
+                $line.addClass('completed');
+            } else {
+                $line.removeClass('completed');
+            }
+        });
+
+        if (activeStep >= 4) {
+            $step1.removeClass('active pending').addClass('completed');
+            $step2.removeClass('active pending').addClass('completed');
+            $step3.removeClass('active pending').addClass('completed');
+            $line1.addClass('completed');
+            $line2.addClass('completed');
+        }
+
+        updateHeaderActions(activeStep);
     }
 
     function switchPanel(panelName) {
         $panelUpload.hide();
         $panelLoading.hide();
         $panelPreview.hide();
+        $panelConfirm.hide();
         $panelImporting.hide();
         $panelResult.hide();
 
         if (panelName === 'upload') {
             setStepState(1);
+            updateHeaderActions(1);
             $panelUpload.show();
         } else if (panelName === 'loading') {
-            setStepState(2);
+            // Validation loading indicator (stays at Step 1 visually)
             $panelLoading.show();
         } else if (panelName === 'preview') {
-            setStepState(3);
+            setStepState(2);
+            updateHeaderActions(2);
             $panelPreview.show();
+        } else if (panelName === 'confirm') {
+            setStepState(3);
+            updateHeaderActions(3);
+            $panelConfirm.show();
         } else if (panelName === 'importing') {
-            setStepState(4);
             $panelImporting.show();
         } else if (panelName === 'result') {
-            // All steps completed
-            $step1.removeClass('active pending').addClass('completed');
-            $step2.removeClass('active pending').addClass('completed');
-            $step3.removeClass('active pending').addClass('completed');
-            $step4.removeClass('active pending').addClass('completed');
+            setStepState(4);
+            updateHeaderActions(4);
             $panelResult.show();
         }
     }
 
+    // Initialize Stepper & Header Actions at Step 1
+    setStepState(1);
+    updateHeaderActions(1);
+
     // =========================================================================
-    // FILE SELECTION & DRAG-AND-DROP
+    // FILE SELECTION, DRAG-AND-DROP & UI FIX
     // =========================================================================
+    $dropzone.on('click', function (e) {
+        if ($(e.target).closest('button, a').length === 0) {
+            $fileInput.trigger('click');
+        }
+    });
+
+    $fileInput.on('click', function (e) {
+        e.stopPropagation();
+    });
+
     $dropzone.on('dragover dragenter', function (e) {
         e.preventDefault();
         e.stopPropagation();
@@ -1178,13 +1081,21 @@ $(document).ready(function () {
     });
 
     $btnClearFile.on('click', function (e) {
+        e.preventDefault();
         e.stopPropagation();
         resetFileInput();
     });
 
+    $btnChangeFile.on('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $fileInput.trigger('click');
+    });
+
     function resetFileInput() {
         $fileInput.val('');
-        $selectedFileBox.addClass('d-none').removeClass('d-inline-flex');
+        $dropzoneInitial.show();
+        $selectedFileCard.hide();
         $selectedFilenameText.text('No file selected');
         $btnValidate.prop('disabled', true);
         $uploadErrorBox.hide();
@@ -1215,12 +1126,18 @@ $(document).ready(function () {
 
         const sizeKb = (file.size / 1024).toFixed(1);
         $selectedFilenameText.text(`${file.name} (${sizeKb} KB)`);
-        $selectedFileBox.removeClass('d-none').addClass('d-inline-flex');
+        $selectedFilenameDisplay.text(file.name);
+        $selectedFilesizeDisplay.text(`${sizeKb} KB`);
+
+        // Visual fix: Hide initial state, show file info card
+        $dropzoneInitial.hide();
+        $selectedFileCard.show();
+
         $btnValidate.prop('disabled', false);
     }
 
     // =========================================================================
-    // VALIDATE & PREVIEW (AJAX)
+    // STEP 1: VALIDATE ACTION (LOADING STATE)
     // =========================================================================
     $btnValidate.on('click', function () {
         const file = $fileInput[0].files && $fileInput[0].files[0];
@@ -1271,7 +1188,7 @@ $(document).ready(function () {
     });
 
     // =========================================================================
-    // RENDER PREVIEW STATE & STATS
+    // STEP 2: RENDER PREVIEW STATE & STATS
     // =========================================================================
     function renderPreviewState(response) {
         const payload = (response && response.data) ? response.data : response;
@@ -1303,6 +1220,27 @@ $(document).ready(function () {
         $('#comp-duplicate-records').text(duplicateRows.toLocaleString());
         $('#comp-warning-records').text(warningRows.toLocaleString());
         $('#comp-invalid-records').text(invalidRows.toLocaleString());
+
+        // Pre-populate Step 3 Pre-Import Summary & Safeguards
+        const invalidCompanyRows = Number(stats.invalid_company || 0);
+        const totalToImport = validRows + warningRows + invalidCompanyRows;
+        $('#res-step3-valid-count').text(validRows.toLocaleString());
+        $('#res-step3-warning-count').text(warningRows.toLocaleString());
+        if (invalidCompanyRows > 0) {
+            $('#res-step3-invalid-company-count').text(invalidCompanyRows.toLocaleString());
+            $('#res-step3-invalid-company-eligible-row').show();
+        } else {
+            $('#res-step3-invalid-company-eligible-row').hide();
+        }
+        $('#res-step3-total-to-import').text(totalToImport.toLocaleString() + ' Records');
+
+        const invalidCompanySkipped = 0;
+        const totalNotImported = invalidRows + duplicateRows + invalidCompanySkipped;
+        $('#res-step3-invalid-count').text(invalidRows.toLocaleString());
+        $('#res-step3-invalid-company-skipped').text(invalidCompanySkipped.toLocaleString());
+        $('#res-step3-duplicate-count').text(duplicateRows.toLocaleString());
+        $('#res-step3-total-not-imported').text(totalNotImported.toLocaleString() + ' Records');
+        $('#btn-confirm-import-count').text(totalToImport.toLocaleString());
 
         // 2. Filter tabs counts
         $('#filter-count-all').text(previewRowsData.length.toLocaleString());
@@ -1343,307 +1281,197 @@ $(document).ready(function () {
         $('.filter-tab-btn').removeClass('active');
         $('[data-filter="all"]').addClass('active');
 
+        // Check if importable
+        const importableCount = validRows + warningRows;
+        if (importableCount > 0 && isHeaderValid) {
+            $('#btn-next-to-step3').prop('disabled', false);
+            $('#btn-action-confirm-import').prop('disabled', false);
+        } else {
+            $('#btn-next-to-step3').prop('disabled', true);
+            $('#btn-action-confirm-import').prop('disabled', true);
+        }
+
         renderTable();
         switchPanel('preview');
     }
 
-    // =========================================================================
-    // HEADER STRUCTURE DIAGNOSTIC CARD
-    // =========================================================================
     function renderHeaderCheckCard(headerCheck) {
-        const $card = $('#preview-header-check-card');
         if (!headerCheck) {
-            $card.hide();
+            $('#preview-header-check-card').hide();
             return;
         }
 
-        $card.show();
-        const hStats = headerCheck.stats || {};
-        const formatLabel = headerCheck.format === 'legacy_two_row' ? 'Legacy 2-Row Format' : 'Single Header Row Format';
-        $('#header-check-subtitle').html(`44 Expected Columns &bull; ${headerCheck.detected_columns} Detected Columns &bull; <span class="badge bg-secondary-lt">${formatLabel}</span>`);
+        const validCount = Number(headerCheck.valid_headers_count || 0);
+        const matchedCount = Number(headerCheck.matched_aliases_count || 0);
+        const issuesCount = Number(headerCheck.issues_count || 0);
+        const totalDetected = Number(headerCheck.detected_columns_count || 0);
+        const expectedCount = Number(headerCheck.expected_columns_count || 44);
 
-        $('#badge-header-valid').text(`✓ ${hStats.valid || 0} Valid`).show();
+        $('#header-check-subtitle').text(`${expectedCount} Expected Columns • ${totalDetected} Detected Columns`);
+        $('#badge-header-valid').text(`✓ ${validCount} Valid`);
 
-        if ((hStats.auto_matched || 0) > 0) {
-            $('#badge-header-matched').text(`⚠ ${hStats.auto_matched} Auto-Matched`).show();
+        if (matchedCount > 0) {
+            $('#badge-header-matched').text(`⚠ ${matchedCount} Auto-Matched`).show();
         } else {
             $('#badge-header-matched').hide();
         }
 
-        const totalIssues = (hStats.invalid || 0) + (hStats.missing || 0) + (hStats.duplicate || 0) + (hStats.ambiguous || 0);
-        if (totalIssues > 0) {
-            $('#badge-header-invalid').text(`✕ ${totalIssues} Needs Correction`).show();
+        if (issuesCount > 0) {
+            $('#badge-header-invalid').text(`✕ ${issuesCount} Issues Found`).show();
         } else {
             $('#badge-header-invalid').hide();
         }
 
-        const $details = $('#header-check-details');
-        const $issuesContainer = $('#header-check-issues-container');
-        $issuesContainer.empty();
-
-        let hasDetails = false;
-
-        // Issues list
-        if (headerCheck.issues && headerCheck.issues.length > 0) {
-            hasDetails = true;
-            headerCheck.issues.forEach(function (issue) {
-                const colLabel = issue.letter ? `Col ${issue.letter} (#${issue.col})` : `Col #${issue.col || '?'}`;
-                $issuesContainer.append(`
-                    <div class="alert alert-danger py-1.5 px-2 mb-1 rounded-2 d-flex align-items-start gap-2">
-                        <i class="ti ti-alert-triangle fs-3 flex-shrink-0 text-danger mt-0.5"></i>
-                        <div>
-                            <span class="badge bg-danger text-white me-1">${escapeHtml(issue.status)}</span>
-                            <strong>${escapeHtml(colLabel)}:</strong> ${escapeHtml(issue.message)}
-                            ${issue.expected ? `<div class="extra-small text-muted mt-0.5">Expected header: <code>${escapeHtml(issue.expected)}</code></div>` : ''}
-                        </div>
-                    </div>
-                `);
+        const issues = headerCheck.issues || [];
+        if (issues.length > 0) {
+            let issuesHtml = '<div class="alert alert-warning py-2 px-3 mb-0 rounded-3"><ul class="mb-0 ps-3">';
+            issues.forEach(function (iss) {
+                issuesHtml += `<li><strong>${escapeHtml(iss.header || 'Header')}:</strong> ${escapeHtml(iss.message || '')}</li>`;
             });
-        }
-
-        // Auto-matched columns list
-        if (headerCheck.auto_matched_list && headerCheck.auto_matched_list.length > 0) {
-            hasDetails = true;
-            const matchedItems = headerCheck.auto_matched_list.map(function (m) {
-                return `<span class="badge bg-warning-subtle text-dark border me-1 mb-1">Col ${m.letter}: "<em>${escapeHtml(m.found)}</em>" &rarr; <strong>${escapeHtml(m.mapped_to)}</strong></span>`;
-            }).join(' ');
-
-            $issuesContainer.append(`
-                <div class="alert alert-warning py-1.5 px-2 mb-1 rounded-2">
-                    <div class="fw-semibold text-warning-emphasis mb-1"><i class="ti ti-sparkles me-1"></i> Auto-Matched Columns (${headerCheck.auto_matched_list.length}):</div>
-                    <div>${matchedItems}</div>
-                </div>
-            `);
-        }
-
-        if (hasDetails) {
-            $details.show();
+            issuesHtml += '</ul></div>';
+            $('#header-check-issues-container').html(issuesHtml);
+            $('#header-check-details').show();
         } else {
-            $details.hide();
+            $('#header-check-details').hide();
         }
+
+        $('#preview-header-check-card').show();
     }
 
-    // =========================================================================
-    // STATE BANNER & CONFIRM BUTTON
-    // =========================================================================
-    function renderStateBanner(previewState, totalRows, validRows, warningRows, duplicateRows, invalidRows) {
+    function renderStateBanner(state, total, valid, warning, duplicate, invalid) {
         const $banner = $('#preview-state-banner');
-        const $btnConfirm = $('#btn-action-confirm-import');
-        const $footerSummary = $('#preview-footer-summary-text');
-        const $confirmLabel = $('#btn-confirm-label');
+        let html = '';
 
-        $btnConfirm.prop('disabled', true).removeClass('btn-danger btn-secondary btn-primary disabled');
-
-        if (previewState === 'HEADER_ERROR') {
-            $banner.show().html(`
-                <div class="alert alert-danger border d-flex align-items-start gap-2.5 py-3 px-3 mb-0 rounded-3">
-                    <i class="ti ti-alert-octagon fs-2 text-danger flex-shrink-0 mt-0.5"></i>
-                    <div class="w-100">
-                        <strong class="d-block text-danger fw-bold mb-0.5 fs-4">Header Correction Required</strong>
-                        <div class="text-secondary small">Spreadsheet column structure does not match the official Non-PTKP OWL template format. Please review the highlighted issues above and re-upload the corrected file.</div>
-                    </div>
-                </div>
-            `);
-            $btnConfirm.addClass('btn-danger disabled').html('<i class="ti ti-ban me-1"></i> Header Correction Required');
-            $footerSummary.html('<span class="text-danger fw-medium"><i class="ti ti-alert-circle me-1"></i>Import blocked: Header column structure must be corrected first.</span>');
-
-        } else if (previewState === 'DATA_ERROR') {
-            $banner.show().html(`
-                <div class="alert alert-danger border d-flex align-items-start gap-2.5 py-3 px-3 mb-0 rounded-3">
-                    <i class="ti ti-alert-triangle fs-2 text-danger flex-shrink-0 mt-0.5"></i>
-                    <div class="w-100">
-                        <strong class="d-block text-danger fw-bold mb-0.5 fs-4">Data Correction Required</strong>
-                        <div class="small">A total of <strong>${totalRows.toLocaleString()}</strong> records were read.</div>
-                        <div class="my-1.5 text-danger fw-semibold small">A total of <strong>${invalidRows.toLocaleString()}</strong> records contain invalid data and must be corrected before the import can proceed.</div>
-                        <div class="d-flex flex-wrap align-items-center gap-1.5 my-2">
-                            <span class="badge bg-secondary-lt"><i class="ti ti-file-spreadsheet me-1"></i>${totalRows.toLocaleString()} read</span>
-                            <span class="badge bg-danger-lt fw-bold"><i class="ti ti-alert-triangle me-1"></i>${invalidRows.toLocaleString()} invalid</span>
-                            <span class="badge bg-success-lt"><i class="ti ti-check me-1"></i>${validRows.toLocaleString()} ready</span>
-                            ${duplicateRows > 0 ? `<span class="badge bg-purple-lt"><i class="ti ti-copy-off me-1"></i>${duplicateRows.toLocaleString()} duplicates skipped</span>` : ''}
+        if (state === 'NO_NEW_RECORDS') {
+            html = `
+                <div class="alert alert-warning border-0 rounded-3 p-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="avatar rounded-circle bg-warning text-white flex-shrink-0">
+                            <i class="ti ti-alert-circle fs-2"></i>
                         </div>
-                        <div class="extra-small text-muted pt-1 border-top border-danger-subtle">
-                            Correct the highlighted red rows in your Excel file and upload again.
+                        <div>
+                            <h5 class="fw-bold mb-1">No New Records to Import</h5>
+                            <p class="mb-0 small">All ${total} records in the file are duplicates or already enrolled in OWL LMS. No new records will be imported.</p>
                         </div>
                     </div>
-                </div>
-            `);
-            $btnConfirm.addClass('btn-danger disabled').html('<i class="ti ti-alert-triangle me-1"></i> Correct Invalid Records');
-            $footerSummary.html('<span class="text-danger fw-medium"><i class="ti ti-alert-circle me-1"></i>Import blocked: ' + invalidRows.toLocaleString() + ' invalid records must be corrected.</span>');
-
-        } else if (previewState === 'EMPTY_FILE') {
-            $banner.show().html(`
-                <div class="alert alert-warning border d-flex align-items-start gap-2.5 py-3 px-3 mb-0 rounded-3">
-                    <i class="ti ti-alert-circle fs-2 text-warning flex-shrink-0 mt-0.5"></i>
-                    <div class="w-100">
-                        <strong class="d-block text-warning fw-bold mb-0.5 fs-4">No Data Rows Found</strong>
-                        <div class="text-secondary small">The spreadsheet file contains no participant rows to import. Please check your file.</div>
-                    </div>
-                </div>
-            `);
-            $btnConfirm.addClass('btn-secondary disabled').html('<i class="ti ti-ban me-1"></i> No Data Found');
-            $footerSummary.text('The spreadsheet file contains no records to import.');
-
-        } else if (previewState === 'NO_NEW_RECORDS') {
-            // SCREENSHOT CASE: All rows are duplicates, valid = 0, invalid = 0
-            $banner.show().html(`
-                <div class="alert alert-secondary border d-flex align-items-start gap-2.5 py-3 px-3 mb-0 rounded-3 bg-light-subtle text-secondary-emphasis">
-                    <i class="ti ti-info-circle fs-2 text-secondary flex-shrink-0 mt-0.5"></i>
-                    <div class="w-100">
-                        <div class="fw-bold text-dark mb-0.5 fs-4">No New Records to Import</div>
-                        <div class="text-secondary small">All <strong>${totalRows.toLocaleString()}</strong> records were read successfully, but they already exist in the database. No new records will be imported.</div>
-                        <div class="my-1.5 text-dark fw-medium small"><strong>0 records will be imported and ${duplicateRows.toLocaleString()} duplicate records will be skipped.</strong></div>
-                        <div class="d-flex flex-wrap align-items-center gap-1.5 my-2">
-                            <span class="badge bg-secondary-lt"><i class="ti ti-file-spreadsheet me-1"></i>${totalRows.toLocaleString()} read</span>
-                            <span class="badge bg-secondary-lt text-muted"><i class="ti ti-ban me-1"></i>0 new records</span>
-                            <span class="badge bg-purple-lt"><i class="ti ti-copy-off me-1"></i>${duplicateRows.toLocaleString()} duplicates skipped</span>
+                </div>`;
+        } else if (state === 'DATA_ERROR' || state === 'HEADER_ERROR') {
+            html = `
+                <div class="alert alert-danger border-0 rounded-3 p-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="avatar rounded-circle bg-danger text-white flex-shrink-0">
+                            <i class="ti ti-circle-x fs-2"></i>
                         </div>
-                        <div class="extra-small text-muted pt-1 border-top border-secondary-subtle">
-                            <i class="ti ti-shield-check text-success me-1"></i>Existing database records will not be modified or overwritten.
+                        <div>
+                            <h5 class="fw-bold mb-1">Validation Errors Found</h5>
+                            <p class="mb-0 small">${invalid} invalid record(s) contain formatting or mandatory field errors. Please correct the spreadsheet before confirming.</p>
                         </div>
                     </div>
-                </div>
-            `);
-            $btnConfirm.addClass('btn-secondary disabled')
-                       .css({ 'opacity': '0.7', 'cursor': 'not-allowed', 'background-color': '#6c757d', 'border-color': '#6c757d' })
-                       .html('<i class="ti ti-copy-off me-1"></i> No New Records to Import');
-            $footerSummary.html('<span class="text-muted">' + totalRows.toLocaleString() + ' records read &bull; 0 imported &bull; ' + duplicateRows.toLocaleString() + ' duplicates skipped</span>');
-
-        } else if (previewState === 'READY_WITH_DUPLICATES') {
-            const warningInfo = (warningRows > 0)
-                ? `<div class="extra-small text-muted mt-1"><i class="ti ti-alert-circle text-warning me-1"></i><strong>${warningRows.toLocaleString()}</strong> records have nonfatal notes.</div>`
-                : '';
-
-            $banner.show().html(`
-                <div class="alert alert-info border d-flex align-items-start gap-2.5 py-3 px-3 mb-0 rounded-3">
-                    <i class="ti ti-info-circle fs-2 text-info flex-shrink-0 mt-0.5"></i>
-                    <div class="w-100">
-                        <div class="fw-bold text-dark mb-0.5 fs-4">Ready to Import</div>
-                        <div class="small">A total of <strong>${totalRows.toLocaleString()}</strong> records were read.</div>
-                        <div class="my-1.5 text-dark fw-medium small"><strong>${validRows.toLocaleString()} records will be imported and ${duplicateRows.toLocaleString()} duplicate records will be skipped automatically.</strong></div>
-                        ${warningInfo}
-                        <div class="d-flex flex-wrap align-items-center gap-1.5 my-2">
-                            <span class="badge bg-secondary-lt"><i class="ti ti-file-spreadsheet me-1"></i>${totalRows.toLocaleString()} read</span>
-                            <span class="badge bg-success-lt fw-bold"><i class="ti ti-check me-1"></i>${validRows.toLocaleString()} records to import</span>
-                            <span class="badge bg-purple-lt"><i class="ti ti-copy-off me-1"></i>${duplicateRows.toLocaleString()} duplicates skipped</span>
+                </div>`;
+        } else if (state === 'READY_WITH_DUPLICATES') {
+            html = `
+                <div class="alert alert-info border-0 rounded-3 p-3" style="background-color: #f0fdf4; color: #166534;">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="avatar rounded-circle bg-success text-white flex-shrink-0">
+                            <i class="ti ti-circle-check fs-2"></i>
                         </div>
-                        <div class="extra-small text-muted pt-1 border-top border-info-subtle">
-                            <i class="ti ti-shield-check text-success me-1"></i>Existing duplicate records will remain intact without changes.
+                        <div>
+                            <h5 class="fw-bold mb-1">Spreadsheet Validated Successfully</h5>
+                            <p class="mb-0 small">${valid} valid record(s) ready to import. ${duplicate} duplicate record(s) will be safely skipped.</p>
                         </div>
                     </div>
-                </div>
-            `);
-            $btnConfirm.prop('disabled', false)
-                       .addClass('btn-primary')
-                       .css({ 'background-color': '#d97706', 'border-color': '#d97706' })
-                       .html('<i class="ti ti-check me-1"></i> Confirm & Import ' + validRows.toLocaleString() + ' Records');
-            $footerSummary.html('<span class="text-dark fw-medium">' + totalRows.toLocaleString() + ' read &bull; <strong>' + validRows.toLocaleString() + ' ready to import</strong> &bull; ' + duplicateRows.toLocaleString() + ' duplicates skipped</span>');
-
+                </div>`;
         } else {
-            // READY (100% valid)
-            const warningInfo = (warningRows > 0)
-                ? `<div class="extra-small text-muted mt-1"><i class="ti ti-alert-circle text-warning me-1"></i><strong>${warningRows.toLocaleString()}</strong> records have nonfatal notes.</div>`
-                : '';
-
-            $banner.show().html(`
-                <div class="alert alert-success border d-flex align-items-start gap-2.5 py-3 px-3 mb-0 rounded-3">
-                    <i class="ti ti-circle-check fs-2 text-success flex-shrink-0 mt-0.5"></i>
-                    <div class="w-100">
-                        <div class="fw-bold text-dark mb-0.5 fs-4">Ready to Import</div>
-                        <div class="small">All <strong>${totalRows.toLocaleString()}</strong> records passed validation and are ready to be imported into OWL LMS.</div>
-                        <div class="my-1.5 text-dark fw-medium small"><strong>${validRows.toLocaleString()} records will be imported.</strong></div>
-                        ${warningInfo}
-                        <div class="d-flex flex-wrap align-items-center gap-1.5 my-2">
-                            <span class="badge bg-secondary-lt"><i class="ti ti-file-spreadsheet me-1"></i>${totalRows.toLocaleString()} read</span>
-                            <span class="badge bg-success-lt fw-bold"><i class="ti ti-check me-1"></i>${validRows.toLocaleString()} records ready</span>
-                            <span class="badge bg-secondary-lt text-muted"><i class="ti ti-copy-off me-1"></i>0 duplicates</span>
+            html = `
+                <div class="alert alert-success border-0 rounded-3 p-3" style="background-color: #ecfdf5; color: #065f46;">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="avatar rounded-circle bg-success text-white flex-shrink-0">
+                            <i class="ti ti-circle-check fs-2"></i>
                         </div>
-                        <div class="extra-small text-muted pt-1 border-top border-success-subtle">
-                            <i class="ti ti-shield-check text-success me-1"></i>All records are valid and ready to be imported into OWL LMS.
+                        <div>
+                            <h5 class="fw-bold mb-1">All Records Validated</h5>
+                            <p class="mb-0 small">All ${valid} records meet Non-PTKP OWL LMS schema rules and are ready to be imported.</p>
                         </div>
                     </div>
-                </div>
-            `);
-            $btnConfirm.prop('disabled', false)
-                       .addClass('btn-primary')
-                       .css({ 'background-color': '#d97706', 'border-color': '#d97706' })
-                       .html('<i class="ti ti-check me-1"></i> Confirm & Import ' + validRows.toLocaleString() + ' Records');
-            $footerSummary.html('<span class="text-dark fw-medium">All ' + validRows.toLocaleString() + ' records are valid and ready to import</span>');
+                </div>`;
         }
+
+        $banner.html(html).show();
     }
 
     // =========================================================================
-    // TABLE FILTER & RENDERING (Tahap 7 & 8)
+    // TABLE RENDERING & FILTERING
     // =========================================================================
     function getFilteredRows() {
         return previewRowsData.filter(function (row) {
-            // Status tab filter
-            if (currentFilter !== 'all') {
-                if (row.status !== currentFilter) return false;
+            if (currentFilter !== 'all' && row.status !== currentFilter) {
+                return false;
             }
-
-            // Search query filter
             if (searchQuery) {
                 const q = searchQuery.toLowerCase();
                 const d = row.data || {};
-                const name = (d.name || '').toLowerCase();
-                const nip = (d.employee_id || '').toLowerCase();
-                const course = (d.course_name || '').toLowerCase();
-                const batch = (d.batch || '').toLowerCase();
-                const msgs = (row.messages || []).join(' ').toLowerCase();
-
-                return name.includes(q) || nip.includes(q) || course.includes(q) || batch.includes(q) || msgs.includes(q);
+                const match = (
+                    String(d.employee_id || '').toLowerCase().includes(q) ||
+                    String(d.name || '').toLowerCase().includes(q) ||
+                    String(d.course_name || '').toLowerCase().includes(q) ||
+                    String(d.pic || '').toLowerCase().includes(q) ||
+                    String(d.company || '').toLowerCase().includes(q)
+                );
+                if (!match) return false;
             }
-
             return true;
         });
     }
 
     function renderTable() {
-        const $tbody = $('#preview-main-tbody');
-        $tbody.empty();
-
         const filtered = getFilteredRows();
-        $('#preview-visible-count').text(filtered.length.toLocaleString());
+        const totalFiltered = filtered.length;
+        const totalPages = Math.ceil(totalFiltered / pageSize) || 1;
 
-        if (filtered.length === 0) {
-            $tbody.append('<tr><td colspan="10" class="text-center py-5 text-muted"><i class="ti ti-folder-off fs-1 d-block mb-2 text-secondary"></i>No records match the filter criteria.</td></tr>');
-            $('#preview-pagination-container').hide();
-            return;
-        }
-
-        // Pagination calculations
-        const totalPages = Math.ceil(filtered.length / pageSize) || 1;
         if (currentPage > totalPages) currentPage = totalPages;
         if (currentPage < 1) currentPage = 1;
 
-        $('#page-current').text(currentPage);
-        $('#page-total').text(totalPages);
-        $('#btn-page-prev').prop('disabled', currentPage <= 1);
-        $('#btn-page-next').prop('disabled', currentPage >= totalPages);
+        const startIdx = (currentPage - 1) * pageSize;
+        const endIdx = Math.min(startIdx + pageSize, totalFiltered);
+        const pagedRows = filtered.slice(startIdx, endIdx);
+
+        $('#preview-visible-count').text(totalFiltered.toLocaleString());
+        $('#preview-total-count').text(previewRowsData.length.toLocaleString());
 
         if (totalPages > 1) {
+            $('#page-current').text(currentPage);
+            $('#page-total').text(totalPages);
+            $('#btn-page-prev').prop('disabled', currentPage <= 1);
+            $('#btn-page-next').prop('disabled', currentPage >= totalPages);
             $('#preview-pagination-container').show();
         } else {
             $('#preview-pagination-container').hide();
         }
 
-        const startIdx = (currentPage - 1) * pageSize;
-        const pageRows = filtered.slice(startIdx, startIdx + pageSize);
+        const $tbody = $('#preview-main-tbody');
+        $tbody.empty();
 
-        pageRows.forEach(function (row, localIdx) {
+        if (pagedRows.length === 0) {
+            $tbody.append(`
+                <tr>
+                    <td colspan="10" class="text-center py-5 text-muted">
+                        <i class="ti ti-inbox fs-1 d-block mb-2 text-secondary"></i>
+                        No records match the active filter criteria.
+                    </td>
+                </tr>
+            `);
+            return;
+        }
+
+        pagedRows.forEach(function (row, localIdx) {
             const globalIdx = previewRowsData.indexOf(row);
             const d = row.data || {};
 
-            // Status badge classes & labels
             let badgeClass = 'badge-ptkp-valid';
             let badgeLabel = 'VALID';
             let badgeIcon = 'ti-check';
 
-            if (row.status === 'valid') {
-                badgeClass = 'badge-ptkp-valid';
-                badgeLabel = 'VALID';
-                badgeIcon = 'ti-check';
-            } else if (row.status === 'warning') {
+            if (row.status === 'warning') {
                 badgeClass = 'badge-ptkp-warning';
                 badgeLabel = 'WARNING';
                 badgeIcon = 'ti-alert-triangle';
@@ -1665,11 +1493,6 @@ $(document).ready(function () {
                 ? '<i class="ti ti-check text-success ms-1" title="LMS user matched (ID: ' + escapeHtml(d.user_id || '') + ')"></i>'
                 : '<i class="ti ti-help text-muted ms-1" title="LMS user account not found (user_id NULL)"></i>';
 
-            const msgText = (row.messages && row.messages.length > 0) ? row.messages.join('; ') : 'Ready to import';
-            const msgClass = (row.status === 'invalid' || row.status === 'invalid_company')
-                ? 'text-danger fw-semibold'
-                : (row.status === 'duplicate' ? 'text-purple' : (row.status === 'warning' ? 'text-warning-emphasis' : 'text-muted'));
-
             const tr = [
                 '<tr>',
                 '<td class="text-center fw-medium text-muted">' + escapeHtml(row.excel_row || (startIdx + localIdx + 1)) + '</td>',
@@ -1686,8 +1509,7 @@ $(document).ready(function () {
                 '</td>',
                 '<td><span class="badge bg-light text-secondary border">' + escapeHtml(d.type || '-') + '</span></td>',
                 '<td><span class="text-muted small">' + escapeHtml(d.pic || '-') + '</span></td>',
-
-                '<td>' + (row.messages && row.messages.length > 0 ? ('<div class="ptkp-row-msg ' + msgClass + '">' + escapeHtml(row.messages[0]) + (row.messages.length > 1 ? ' <span class="badge bg-light text-secondary border">+' + (row.messages.length - 1) + '</span>' : '') + '</div>') : '<span class="text-success small"><i class="ti ti-check me-1"></i>Ready to import</span>') + '</td>',
+                '<td>' + (row.messages && row.messages.length > 0 ? ('<div class="ptkp-row-msg text-muted">' + escapeHtml(row.messages[0]) + (row.messages.length > 1 ? ' <span class="badge bg-light text-secondary border">+' + (row.messages.length - 1) + '</span>' : '') + '</div>') : '<span class="text-success small"><i class="ti ti-check me-1"></i>Ready to import</span>') + '</td>',
                 '<td class="text-center">',
                     '<button type="button" class="btn btn-sm btn-ghost-primary rounded-circle p-1 btn-inspect-row" data-index="' + globalIdx + '" title="Inspect Row">',
                         '<i class="ti ti-eye fs-3"></i>',
@@ -1748,7 +1570,6 @@ $(document).ready(function () {
         const d = row.data || {};
         $('#modal-detail-row-num').text(row.excel_row);
 
-        // Status banner inside modal
         let alertClass = 'alert-info';
         if (row.status === 'valid') alertClass = 'alert-success';
         else if (row.status === 'warning') alertClass = 'alert-warning';
@@ -1819,42 +1640,48 @@ $(document).ready(function () {
     });
 
     // =========================================================================
-    // CANCEL & RE-UPLOAD
+    // STEP 2 NAVIGATION: Cancel, Back, Next
     // =========================================================================
-    function handleCancelSession() {
+    $('#btn-action-cancel').on('click', function () {
+        if (!confirm('Are you sure you want to cancel this import session? Temporary files will be removed.')) return;
         if (importToken) {
             $.ajax({
                 url: "{{ route('manage.record.offline.import.cancel') }}",
                 type: 'POST',
-                data: {
-                    token: importToken,
-                    _token: csrfToken
-                },
-                headers: {
-                    'X-CSRF-TOKEN': csrfToken
+                data: { token: importToken, _token: csrfToken },
+                headers: { 'X-CSRF-TOKEN': csrfToken },
+                complete: function () {
+                    window.location.href = "{{ route('manage.record.offline') }}";
                 }
             });
+        } else {
+            window.location.href = "{{ route('manage.record.offline') }}";
         }
+    });
 
-        importToken = null;
-        previewRowsData = [];
-        resetFileInput();
+    // Back to Step 1 without losing file or validation data
+    $('#btn-back-to-step1').on('click', function () {
         switchPanel('upload');
-    }
+        updateHeaderActions(1);
+    });
 
-    $('#btn-reupload-file, #btn-action-reupload').on('click', handleCancelSession);
+    // Next to Step 3
+    $('#btn-next-to-step3').on('click', function () {
+        switchPanel('confirm');
+        updateHeaderActions(3);
+    });
 
     // =========================================================================
-    // CONFIRM & EXECUTE IMPORT (Tahap 4 & 9)
+    // STEP 3: BACK & CONFIRM IMPORT
     // =========================================================================
+    $('#btn-back-to-step2').on('click', function () {
+        switchPanel('preview');
+        updateHeaderActions(2);
+    });
+
     $('#btn-action-confirm-import').on('click', function () {
         if (!importToken) return;
 
-        if (!confirm('Are you sure you want to import valid records into the database? Duplicate and invalid records will be skipped safely.')) {
-            return;
-        }
-
-        // Disable button to prevent double-click
         const $btn = $(this);
         $btn.prop('disabled', true);
 
@@ -1875,23 +1702,54 @@ $(document).ready(function () {
                     importCompleted = true;
                     importToken = null;
                     const r = res.result;
+                    const total = Number(r.rows_processed ?? r.total_rows_processed ?? 0);
+                    const imported = Number(r.imported ?? 0);
+                    const warnings = Number(r.warnings_imported ?? 0);
+                    const duplicates = Number(r.skipped_duplicates ?? 0);
+                    const invalid = Number(r.invalid ?? r.skipped_invalid ?? 0);
+                    const invalidCompany = Number(r.invalid_company_imported ?? 0);
+                    const created = Number(r.trainings_created ?? 0);
+                    const reused = Number(r.trainings_reused ?? 0);
+                    const totalSkipped = duplicates + invalid;
 
-                    $('#res-total-processed').text((r.rows_processed || 0).toLocaleString());
-                    $('#res-imported-count').text((r.imported || 0).toLocaleString());
-                    $('#res-duplicates-skipped').text((r.skipped_duplicates || 0).toLocaleString());
-                    $('#res-invalid-skipped').text((r.invalid || 0).toLocaleString());
-                    $('#res-trainings-created').text((r.trainings_created || 0).toLocaleString());
-                    $('#res-trainings-reused').text((r.trainings_reused || 0).toLocaleString());
+                    // 1. Success Banner Text
+                    if (totalSkipped > 0) {
+                        $('#res-header-title').text('Import Completed');
+                        $('#res-header-desc').text('Your training records have been processed. Please review the import results below.');
+                    } else {
+                        $('#res-header-title').text('Import Completed');
+                        $('#res-header-desc').text('Your training records have been processed successfully. All eligible records have been imported.');
+                    }
+
+                    // 2. Success Rate Calculation
+                    let rate = '0.0';
+                    if (total > 0) {
+                        rate = ((imported / total) * 100).toFixed(1);
+                    }
+                    $('#res-rate-percentage').text(rate + '%');
+                    $('#res-rate-progress-bar').css('width', rate + '%').attr('aria-valuenow', rate);
+                    $('#res-rate-imported-count').text(imported.toLocaleString());
+                    $('#res-rate-skipped-count').text(totalSkipped.toLocaleString());
+
+                    // 3. 6 Summary Cards
+                    $('#res-total-processed').text(total.toLocaleString());
+                    $('#res-imported-count').text(imported.toLocaleString());
+                    $('#res-warnings-imported').text(warnings.toLocaleString());
+                    $('#res-duplicates-skipped').text(duplicates.toLocaleString());
+                    $('#res-invalid-skipped').text(invalid.toLocaleString());
+                    $('#res-invalid-company-imported').text(invalidCompany.toLocaleString());
+                    $('#res-trainings-created').text(created.toLocaleString());
+                    $('#res-trainings-reused').text(reused.toLocaleString());
 
                     switchPanel('result');
                 } else {
-                    switchPanel('preview');
+                    switchPanel('confirm');
                     $btn.prop('disabled', false);
                     alert(res.message || 'Import execution failed.');
                 }
             },
             error: function (xhr) {
-                switchPanel('preview');
+                switchPanel('confirm');
                 $btn.prop('disabled', false);
                 let errMsg = 'Failed to execute import into database.';
                 if (xhr.responseJSON && xhr.responseJSON.message) {
@@ -1902,15 +1760,16 @@ $(document).ready(function () {
         });
     });
 
+    // Import Another button
     $('#btn-import-another').on('click', function () {
         importCompleted = false;
         importToken = null;
         previewRowsData = [];
         resetFileInput();
         switchPanel('upload');
+        updateHeaderActions(1);
     });
 
-    // Helper HTML Escape
     function escapeHtml(text) {
         if (text === null || text === undefined) return '';
         return String(text)

@@ -119,19 +119,19 @@ class OfflineTrainingImportDedicatedPageTest extends TestCase
         $response->assertSee('Import Non-PTKP Data');
         $response->assertSee('Manage Record');
         $response->assertSee('Offline Record');
-        $response->assertSee('Upload and validate Non-PTKP offline training records before importing into OWL LMS.');
+        $response->assertSee('Upload and import non-PTKP offline training records into KP-OWL. Employee information will be matched automatically.');
         $response->assertSee('Back to Offline Records');
         $response->assertSee(route('manage.record.offline'));
 
         // Stepper: 4 stages
-        $response->assertSee('Upload Spreadsheet');
-        $response->assertSee('Validation Preview');
-        $response->assertSee('Review Data');
+        $response->assertSee('Upload File');
+        $response->assertSee('Validation & Review', false);
+        // Stage 3: Import Records
         $response->assertSee('Import Records');
         $response->assertSee('id="stepper-step-1"', false);
         $response->assertSee('id="stepper-step-2"', false);
         $response->assertSee('id="stepper-step-3"', false);
-        $response->assertSee('id="stepper-step-4"', false);
+        $response->assertDontSee('id="stepper-step-4"', false);
 
         // Stage 1 elements
         $response->assertSee('id="dropzone-container"', false);
@@ -143,7 +143,7 @@ class OfflineTrainingImportDedicatedPageTest extends TestCase
         // Comparison table elements
         $response->assertSee('id="preview-main-table"', false);
         $response->assertSee('id="btn-action-confirm-import"', false);
-        $response->assertSee('id="btn-reupload-file"', false);
+        $response->assertSee('id="btn-back-to-step1"', false);
         $response->assertSee('Pre-Import Data Comparison');
     }
 
