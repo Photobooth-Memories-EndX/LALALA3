@@ -34,20 +34,12 @@
         </thead>
 
         <tbody>
-            @forelse ($assessments as $assessment)
+            @foreach ($assessments as $assessment)
                 <x-learning.assessment.assessment-row
                     :assessment="$assessment"
                     :index="$loop->iteration"
                 />
-            @empty
-                <tr>
-                    <td colspan="8" class="text-center text-muted py-5">
-                        <i class="ti ti-clipboard-check fs-1 d-block mb-2 text-muted opacity-50"></i>
-                        <div class="fw-semibold">No assessments available</div>
-                        <div class="small mt-1 text-muted">Assessments assigned to you will appear here.</div>
-                    </td>
-                </tr>
-            @endforelse
+            @endforeach
         </tbody>
     </table>
 </div>

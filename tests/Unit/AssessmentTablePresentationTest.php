@@ -43,6 +43,18 @@ class AssessmentTablePresentationTest extends TestCase
         $this->assertStringContainsString('Passing Grade : 85', $html);
     }
 
+    public function test_empty_assessment_table_renders_empty_tbody_for_datatables(): void
+    {
+        $html = Blade::render(
+            '<x-learning.assessment.assessment-table :assessments="$assessments" />',
+            ['assessments' => collect()]
+        );
+
+        $this->assertStringContainsString('id="assessmentTable"', $html);
+        $this->assertStringContainsString('<tbody>', $html);
+        $this->assertStringNotContainsString('colspan="8"', $html);
+    }
+
     private function assessment(string $title, int $passingGrade, array $results = []): Assesment
     {
         $assessment = (new Assesment())->forceFill([
@@ -60,12 +72,14 @@ class AssessmentTablePresentationTest extends TestCase
 
     private function result(int $score, bool $passed, bool $final = true): AssesmentResult
     {
-        return (new AssesmentResult())->forceFill([
+        $return = (new AssesmentResult())->forceFill([
             'user_id' => 7,
             'final' => $final ? 1 : 0,
             'pass' => $passed ? 1 : 0,
             'score' => $score,
             'batch' => 1,
         ]);
+
+        return $return;
     }
 }
