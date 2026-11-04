@@ -657,10 +657,13 @@ class RecordAllCombinedService
                 DB::raw("CASE WHEN unified.source = 'offline' THEN ot.level ELSE NULL END as level"),
                 DB::raw("CASE WHEN unified.source = 'offline' THEN ot.batch ELSE NULL END as batch"),
                 DB::raw("CASE
-                    WHEN unified.source = 'offline' THEN COALESCE(NULLIF(TRIM(ot.main_classification), ''), 'Unclassified')
+                    WHEN unified.source = 'offline' THEN COALESCE(NULLIF(TRIM(otu.main_classification), ''), NULLIF(TRIM(ot.main_classification), ''), 'Unclassified')
                     ELSE COALESCE(NULLIF(TRIM(cl.classification_name), ''), 'Unclassified')
                 END as classification"),
-                DB::raw("CASE WHEN unified.source = 'offline' THEN ot.sub_classification ELSE NULL END as sub_classification"),
+                DB::raw("CASE
+                    WHEN unified.source = 'offline' THEN COALESCE(NULLIF(TRIM(otu.sub_classification), ''), ot.sub_classification)
+                    ELSE NULL
+                END as sub_classification"),
                 DB::raw("CASE WHEN unified.source = 'offline' THEN ot.counted_corporate_kpi ELSE NULL END as counted_corporate_kpi"),
                 DB::raw("CASE WHEN unified.source = 'offline' THEN ot.sub_corporate_kpi ELSE NULL END as sub_corporate_kpi"),
                 DB::raw("CASE WHEN unified.source = 'offline' THEN ot.delivery_method ELSE NULL END as delivery_method"),
@@ -1565,30 +1568,31 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
             $resolvedClass = RecordAllController::resolveClassification($categorySlug, false);
             $resolvedName = $resolvedClass['name'] ?? $categorySlug;
 
+            $classCol = "COALESCE(NULLIF(TRIM(otu.main_classification), ''), ot.main_classification)";
             if (strtolower($classification) === 'unclassified' || strtolower($classification) === 'unclassification' || ($resolvedClass['is_unclassified'] ?? false)) {
                 $knownMasters = [
                     'Leadership', 'Basic & Common Duties', 'Basic Common Duties',
                     'Job Functional', 'Maintenance', 'Language', 'Innovation',
                     'SHE', 'ISO Standard', 'Technology', 'Other', 'Basic mindset', 'Compliance'
                 ];
-                $q->where(function ($sub) use ($knownMasters) {
-                    $sub->whereNull('ot.main_classification')
-                        ->orWhereRaw("TRIM(ot.main_classification) = ''")
-                        ->orWhereIn('ot.main_classification', ['Audit Isolated Classification', 'Unclassified', 'Unclassification'])
-                        ->orWhereNotIn('ot.main_classification', $knownMasters);
+                $q->where(function ($sub) use ($knownMasters, $classCol) {
+                    $sub->whereNull(DB::raw($classCol))
+                        ->orWhereRaw("TRIM({$classCol}) = ''")
+                        ->orWhereRaw("{$classCol} IN ('Audit Isolated Classification', 'Unclassified', 'Unclassification')")
+                        ->orWhereRaw("{$classCol} NOT IN ('" . implode("', '", $knownMasters) . "')");
                 });
             } else {
-                $q->where(function ($q) use ($categorySlug, $resolvedClass, $resolvedName, $classificationSlug) {
+                $q->where(function ($q) use ($categorySlug, $resolvedClass, $resolvedName, $classificationSlug, $classCol) {
                     if (($resolvedClass['slug'] ?? '') === 'basic-common-duties' || $resolvedName === 'Basic & Common Duties' || $categorySlug === 'basic-common-duties') {
-                        $q->whereIn('ot.main_classification', ['Basic & Common Duties', 'Basic Common Duties']);
+                        $q->whereRaw("{$classCol} IN ('Basic & Common Duties', 'Basic Common Duties')");
                     } else {
-                        $q->where('ot.main_classification', $resolvedName)
-                          ->orWhere('ot.main_classification', $categorySlug)
-                          ->orWhereRaw('LOWER(ot.main_classification) = ?', [strtolower($resolvedName)])
-                          ->orWhereRaw('LOWER(ot.main_classification) = ?', [$classificationSlug])
-                          ->orWhereRaw('LOWER(ot.main_classification) = ?', [strtolower($categorySlug)])
-                          ->orWhereRaw("LOWER(REPLACE(REPLACE(ot.main_classification, ' ', '-'), '&', 'and')) = ?", [strtolower(Str::slug($resolvedClass['slug'] ?? $categorySlug))])
-                          ->orWhereRaw("LOWER(REPLACE(ot.main_classification, ' ', '-')) = ?", [strtolower(Str::slug($resolvedClass['slug'] ?? $categorySlug))]);
+                        $q->where(DB::raw($classCol), $resolvedName)
+                          ->orWhere(DB::raw($classCol), $categorySlug)
+                          ->orWhereRaw("LOWER({$classCol}) = ?", [strtolower($resolvedName)])
+                          ->orWhereRaw("LOWER({$classCol}) = ?", [$classificationSlug])
+                          ->orWhereRaw("LOWER({$classCol}) = ?", [strtolower($categorySlug)])
+                          ->orWhereRaw("LOWER(REPLACE(REPLACE({$classCol}, ' ', '-'), '&', 'and')) = ?", [strtolower(Str::slug($resolvedClass['slug'] ?? $categorySlug))])
+                          ->orWhereRaw("LOWER(REPLACE({$classCol}, ' ', '-')) = ?", [strtolower(Str::slug($resolvedClass['slug'] ?? $categorySlug))]);
                     }
                 });
             }
@@ -1620,7 +1624,7 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
                 $sub->where('otu.employee_id', 'like', "%{$search}%")
                     ->orWhere('otu.name', 'like', "%{$search}%")
                     ->orWhere('ot.course_name', 'like', "%{$search}%")
-                    ->orWhere('ot.main_classification', 'like', "%{$search}%");
+                    ->orWhereRaw("COALESCE(NULLIF(TRIM(otu.main_classification), ''), ot.main_classification) LIKE ?", ["%{$search}%"]);
             });
         }
 

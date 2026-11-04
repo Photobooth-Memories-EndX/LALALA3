@@ -31,3 +31,6 @@ yarn-error.log
 /.codebase-memory/
 
 /.playwright-mcp/
+
+# Temporary scratch scripts
+/scratch/

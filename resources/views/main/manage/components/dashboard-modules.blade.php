@@ -183,13 +183,13 @@
                     'button' => 'Manage Roles',
                     'icon' => 'ti ti-user-shield'
                 ])
-                @include('main.manage.components.admin-menu-card', [
+                {{-- @include('main.manage.components.admin-menu-card', [
                     'title' => 'Resign Management',
                     'description' => 'Monitor soft-deleted employee accounts (deleted_at IS NOT NULL), track offboarding history, and audit resigned users.',
                     'url' => route('manage.role.resign'),
                     'button' => 'Manage Resigned',
                     'icon' => 'ti ti-user-off'
-                ])
+                ]) --}}
             @endif
 
             @if(auth()->user()->canAccessManageModule('monitoring'))

@@ -414,7 +414,9 @@ class PtkpImportService
                 'sanitized_data'      => [
                     'employee_id'    => $normalized['employee_id'],
                     'name'           => $normalized['name'],
-                    'course_name'    => $normalized['course_name'],
+                    'course_name'         => $normalized['course_name'],
+                    'main_classification' => $normalized['main_classification'],
+                    'sub_classification'  => $normalized['sub_classification'],
                     'learning_hours' => $normalized['learning_hours'],
                     'start_date'     => $normalized['start_date'],
                     'finish_date'    => $normalized['finish_date'],

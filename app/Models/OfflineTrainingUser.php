@@ -27,6 +27,8 @@ class OfflineTrainingUser extends Model
         'team',
         'department',
         'company',
+        'main_classification',
+        'sub_classification',
         'learning_hours',
         'start_date',
         'end_date',
@@ -106,6 +108,26 @@ class OfflineTrainingUser extends Model
     public function getBondAmountIdrAttribute()
     {
         return $this->getBondAmountAttribute();
+    }
+
+    public function getMainClassificationAttribute(): ?string
+    {
+        $val = $this->attributes['main_classification'] ?? null;
+        if ($val !== null && trim((string) $val) !== '') {
+            return $val;
+        }
+
+        return optional($this->training)->main_classification;
+    }
+
+    public function getSubClassificationAttribute(): ?string
+    {
+        $val = $this->attributes['sub_classification'] ?? null;
+        if ($val !== null && trim((string) $val) !== '') {
+            return $val;
+        }
+
+        return optional($this->training)->sub_classification;
     }
 
     public function training(): BelongsTo

@@ -363,13 +363,13 @@ class RecordOfflineController extends Controller
             ->select([
                 DB::raw("
                     CASE 
-                        WHEN ot.main_classification IS NULL 
-                          OR TRIM(ot.main_classification) = '' 
-                          OR LOWER(TRIM(ot.main_classification)) IN ('unclassified', 'unclassification', 'audit isolated classification', 'audit-isolated-classification')
+                        WHEN COALESCE(NULLIF(TRIM(otu.main_classification), ''), ot.main_classification) IS NULL 
+                          OR TRIM(COALESCE(NULLIF(TRIM(otu.main_classification), ''), ot.main_classification)) = '' 
+                          OR LOWER(TRIM(COALESCE(NULLIF(TRIM(otu.main_classification), ''), ot.main_classification))) IN ('unclassified', 'unclassification', 'audit isolated classification', 'audit-isolated-classification')
                         THEN 'Unclassification'
-                        WHEN LOWER(TRIM(ot.main_classification)) IN ('basic common duties', 'basic & common duties', 'basic and common duties')
+                        WHEN LOWER(TRIM(COALESCE(NULLIF(TRIM(otu.main_classification), ''), ot.main_classification))) IN ('basic common duties', 'basic & common duties', 'basic and common duties')
                         THEN 'Basic & Common Duties'
-                        ELSE TRIM(ot.main_classification)
+                        ELSE TRIM(COALESCE(NULLIF(TRIM(otu.main_classification), ''), ot.main_classification))
                     END as classification_name
                 "),
                 DB::raw("COUNT(DISTINCT ot.id) as programs"),
@@ -2181,8 +2181,8 @@ class RecordOfflineController extends Controller
                 'ot.level',
                 'ot.batch',
                 // Classification & KPI
-                'ot.main_classification',
-                'ot.sub_classification',
+                \App\Services\Record\RecordOfflineQueryService::mainClassificationSelect(),
+                \App\Services\Record\RecordOfflineQueryService::subClassificationSelect(),
                 'ot.counted_corporate_kpi',
                 'ot.corporate_kpi_year',
                 'ot.sub_corporate_kpi',

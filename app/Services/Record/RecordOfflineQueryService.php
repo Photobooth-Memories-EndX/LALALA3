@@ -57,6 +57,44 @@ class RecordOfflineQueryService
         return self::$hasRequirement ? 'ot.requirement' : DB::raw("COALESCE(ot.status, 'Mandatory') as requirement");
     }
 
+    protected static ?bool $hasParticipantClassification = null;
+
+    protected static function hasParticipantClassification(): bool
+    {
+        if (self::$hasParticipantClassification === null) {
+            self::$hasParticipantClassification = Schema::hasColumn('offline_training_users', 'main_classification');
+        }
+        return self::$hasParticipantClassification;
+    }
+
+    protected static function mainClassificationSelect(): mixed
+    {
+        return self::hasParticipantClassification()
+            ? DB::raw("COALESCE(NULLIF(TRIM(otu.main_classification), ''), ot.main_classification) as main_classification")
+            : 'ot.main_classification';
+    }
+
+    protected static function subClassificationSelect(): mixed
+    {
+        return self::hasParticipantClassification()
+            ? DB::raw("COALESCE(NULLIF(TRIM(otu.sub_classification), ''), ot.sub_classification) as sub_classification")
+            : 'ot.sub_classification';
+    }
+
+    protected static function mainClassificationSqlColumn(): string
+    {
+        return self::hasParticipantClassification()
+            ? "COALESCE(NULLIF(TRIM(otu.main_classification), ''), ot.main_classification)"
+            : "ot.main_classification";
+    }
+
+    protected static function subClassificationSqlColumn(): string
+    {
+        return self::hasParticipantClassification()
+            ? "COALESCE(NULLIF(TRIM(otu.sub_classification), ''), ot.sub_classification)"
+            : "ot.sub_classification";
+    }
+
     /**
      * Build shared query for Non KP OWL offline records with all Quick and More Filters applied.
      *
@@ -119,8 +157,8 @@ class RecordOfflineQueryService
                 'ot.category',
                 'ot.level',
                 'ot.batch',
-                'ot.main_classification',
-                'ot.sub_classification',
+                self::mainClassificationSelect(),
+                self::subClassificationSelect(),
                 'ot.counted_corporate_kpi',
                 'ot.corporate_kpi_year',
                 'ot.sub_corporate_kpi',
@@ -149,23 +187,24 @@ class RecordOfflineQueryService
             $classificationSlug = str_replace('-', ' ', strtolower($categorySlug));
             $resolved = RecordOfflineController::resolveClassification($categorySlug);
 
+            $classCol = self::mainClassificationSqlColumn();
             if ($resolved['is_unclassified']) {
-                $query->where(function ($q) {
-                    $q->whereNull('ot.main_classification')
-                      ->orWhere('ot.main_classification', '')
-                      ->orWhereIn('ot.main_classification', ['Unclassified', 'Unclassification', 'Audit Isolated Classification'])
-                      ->orWhereRaw("LOWER(TRIM(ot.main_classification)) IN ('unclassified', 'unclassification', 'audit isolated classification', 'audit-isolated-classification')");
+                $query->where(function ($q) use ($classCol) {
+                    $q->whereNull(DB::raw($classCol))
+                      ->orWhereRaw("{$classCol} = ''")
+                      ->orWhereRaw("{$classCol} IN ('Unclassified', 'Unclassification', 'Audit Isolated Classification')")
+                      ->orWhereRaw("LOWER(TRIM({$classCol})) IN ('unclassified', 'unclassification', 'audit isolated classification', 'audit-isolated-classification')");
                 });
             } else {
                 $resolvedName = $resolved['name'];
-                $query->where(function ($q) use ($categorySlug, $classificationSlug, $resolvedName) {
-                    $q->where('ot.main_classification', $resolvedName)
-                      ->orWhere('ot.main_classification', $categorySlug)
-                      ->orWhereRaw('LOWER(ot.main_classification) = ?', [strtolower($resolvedName)])
-                      ->orWhereRaw('LOWER(ot.main_classification) = ?', [$classificationSlug])
-                      ->orWhereRaw('LOWER(ot.main_classification) = ?', [strtolower($categorySlug)])
-                      ->orWhereRaw("LOWER(REPLACE(REPLACE(ot.main_classification, ' ', '-'), '&', 'and')) = ?", [strtolower(\Illuminate\Support\Str::slug($categorySlug))])
-                      ->orWhereRaw("LOWER(REPLACE(ot.main_classification, ' ', '-')) = ?", [strtolower(\Illuminate\Support\Str::slug($categorySlug))]);
+                $query->where(function ($q) use ($categorySlug, $classificationSlug, $resolvedName, $classCol) {
+                    $q->where(DB::raw($classCol), $resolvedName)
+                      ->orWhere(DB::raw($classCol), $categorySlug)
+                      ->orWhereRaw("LOWER({$classCol}) = ?", [strtolower($resolvedName)])
+                      ->orWhereRaw("LOWER({$classCol}) = ?", [$classificationSlug])
+                      ->orWhereRaw("LOWER({$classCol}) = ?", [strtolower($categorySlug)])
+                      ->orWhereRaw("LOWER(REPLACE(REPLACE({$classCol}, ' ', '-'), '&', 'and')) = ?", [strtolower(\Illuminate\Support\Str::slug($categorySlug))])
+                      ->orWhereRaw("LOWER(REPLACE({$classCol}, ' ', '-')) = ?", [strtolower(\Illuminate\Support\Str::slug($categorySlug))]);
                 });
             }
         }
@@ -735,8 +774,8 @@ class RecordOfflineQueryService
             'ot.category',
             'ot.level',
             'ot.batch',
-            'ot.main_classification',
-            'ot.sub_classification',
+            self::mainClassificationSelect(),
+            self::subClassificationSelect(),
             'ot.counted_corporate_kpi',
             'ot.sub_corporate_kpi',
             'ot.corporate_kpi_year',
@@ -961,21 +1000,22 @@ class RecordOfflineQueryService
             $categorySlug = $classParam;
             $classificationSlug = str_replace('-', ' ', strtolower($categorySlug));
             $resolved = RecordOfflineController::resolveClassification($categorySlug);
+            $classCol = self::mainClassificationSqlColumn();
             if ($resolved['is_unclassified']) {
-                $query->where(function ($q) {
-                    $q->whereNull('ot.main_classification')
-                      ->orWhere('ot.main_classification', '')
-                      ->orWhereIn('ot.main_classification', ['Unclassified', 'Unclassification', 'Audit Isolated Classification'])
-                      ->orWhereRaw("LOWER(TRIM(ot.main_classification)) IN ('unclassified', 'unclassification', 'audit isolated classification', 'audit-isolated-classification')");
+                $query->where(function ($q) use ($classCol) {
+                    $q->whereNull(DB::raw($classCol))
+                      ->orWhereRaw("{$classCol} = ''")
+                      ->orWhereRaw("{$classCol} IN ('Unclassified', 'Unclassification', 'Audit Isolated Classification')")
+                      ->orWhereRaw("LOWER(TRIM({$classCol})) IN ('unclassified', 'unclassification', 'audit isolated classification', 'audit-isolated-classification')");
                 });
             } else {
                 $resolvedName = $resolved['name'];
-                $query->where(function ($q) use ($categorySlug, $classificationSlug, $resolvedName) {
-                    $q->where('ot.main_classification', $resolvedName)
-                      ->orWhere('ot.main_classification', $categorySlug)
-                      ->orWhereRaw('LOWER(ot.main_classification) = ?', [strtolower($resolvedName)])
-                      ->orWhereRaw('LOWER(ot.main_classification) = ?', [$classificationSlug])
-                      ->orWhereRaw('LOWER(ot.main_classification) = ?', [strtolower($categorySlug)]);
+                $query->where(function ($q) use ($categorySlug, $classificationSlug, $resolvedName, $classCol) {
+                    $q->where(DB::raw($classCol), $resolvedName)
+                      ->orWhere(DB::raw($classCol), $categorySlug)
+                      ->orWhereRaw("LOWER({$classCol}) = ?", [strtolower($resolvedName)])
+                      ->orWhereRaw("LOWER({$classCol}) = ?", [$classificationSlug])
+                      ->orWhereRaw("LOWER({$classCol}) = ?", [strtolower($categorySlug)]);
                 });
             }
         }
@@ -983,7 +1023,8 @@ class RecordOfflineQueryService
         // More Filter: Sub Classification
         $subClassParam = trim((string) ($filters['sub_classification'] ?? ''));
         if ($subClassParam !== '' && $subClassParam !== 'all') {
-            $query->where('ot.sub_classification', 'like', "%{$subClassParam}%");
+            $subClassCol = self::subClassificationSqlColumn();
+            $query->whereRaw("{$subClassCol} LIKE ?", ["%{$subClassParam}%"]);
         }
 
         // More Filter: Category
@@ -1256,8 +1297,8 @@ class RecordOfflineQueryService
             'ot.category',
             'ot.level',
             'ot.batch',
-            'ot.main_classification',
-            'ot.sub_classification',
+            self::mainClassificationSelect(),
+            self::subClassificationSelect(),
             'ot.counted_corporate_kpi',
             'ot.corporate_kpi_year',
             'ot.sub_corporate_kpi',
