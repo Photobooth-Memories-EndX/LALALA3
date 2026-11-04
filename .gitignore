@@ -32,5 +32,9 @@ yarn-error.log
 
 /.playwright-mcp/
 
-# Temporary scratch scripts
+
+# Antigravity & Gemini
+/.gemini/
+.gemini/
+
 /scratch/
