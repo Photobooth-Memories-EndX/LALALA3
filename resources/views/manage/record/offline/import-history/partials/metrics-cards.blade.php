@@ -5,7 +5,7 @@
         'warning'         => (int) ($batch->warning_rows ?? 0),
         'duplicate'       => (int) ($batch->duplicate_rows ?? 0),
         'invalid'         => (int) ($batch->invalid_rows ?? 0),
-        'invalid_company' => method_exists($batch, 'rows') ? (int) $batch->rows()->where('validation_status', \App\Models\ImportBatchRow::STATUS_INVALID_COMPANY)->count() : 0,
+        'invalid_company' => 0,
         'all_total'       => (int) ($batch->total_rows ?? 0),
     ];
 @endphp

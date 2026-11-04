@@ -89,12 +89,14 @@ class ImportHistoryDetailController extends Controller
             ->pluck('count', 'validation_status')
             ->toArray();
 
+        $hasRows = !empty($rowCounts);
+
         $metrics = [
-            'valid'           => isset($rowCounts[\App\Models\ImportBatchRow::STATUS_VALID]) ? (int) $rowCounts[\App\Models\ImportBatchRow::STATUS_VALID] : (int) $batch->valid_rows,
-            'warning'         => isset($rowCounts[\App\Models\ImportBatchRow::STATUS_WARNING]) ? (int) $rowCounts[\App\Models\ImportBatchRow::STATUS_WARNING] : (int) $batch->warning_rows,
-            'duplicate'       => isset($rowCounts[\App\Models\ImportBatchRow::STATUS_DUPLICATE]) ? (int) $rowCounts[\App\Models\ImportBatchRow::STATUS_DUPLICATE] : (int) $batch->duplicate_rows,
-            'invalid'         => isset($rowCounts[\App\Models\ImportBatchRow::STATUS_INVALID]) ? (int) $rowCounts[\App\Models\ImportBatchRow::STATUS_INVALID] : (int) $batch->invalid_rows,
-            'invalid_company' => isset($rowCounts[\App\Models\ImportBatchRow::STATUS_INVALID_COMPANY]) ? (int) $rowCounts[\App\Models\ImportBatchRow::STATUS_INVALID_COMPANY] : 0,
+            'valid'           => $hasRows ? (int) ($rowCounts[\App\Models\ImportBatchRow::STATUS_VALID] ?? 0) : (int) $batch->valid_rows,
+            'warning'         => $hasRows ? (int) ($rowCounts[\App\Models\ImportBatchRow::STATUS_WARNING] ?? 0) : (int) $batch->warning_rows,
+            'duplicate'       => $hasRows ? (int) ($rowCounts[\App\Models\ImportBatchRow::STATUS_DUPLICATE] ?? 0) : (int) $batch->duplicate_rows,
+            'invalid'         => $hasRows ? (int) ($rowCounts[\App\Models\ImportBatchRow::STATUS_INVALID] ?? 0) : (int) $batch->invalid_rows,
+            'invalid_company' => (int) ($rowCounts[\App\Models\ImportBatchRow::STATUS_INVALID_COMPANY] ?? 0),
             'all_total'       => (int) $batch->total_rows,
         ];
 

@@ -223,7 +223,21 @@ class ImportHistoryController extends Controller
             'search'            => $request->input('search.value') ?: $request->input('search_query'),
         ];
 
-        $query = $this->queryService->getBatchRowsQuery($batch->id, $filters);
+        $query = $this->queryService->getBatchRowsQuery($batch->id, $filters)
+            ->select([
+                'id',
+                'import_batch_id',
+                'row_number',
+                'sheet_name',
+                'employee_id',
+                'employee_name',
+                'course_name',
+                'validation_status',
+                'action',
+                'messages',
+                'offline_training_id',
+                'offline_training_user_id',
+            ]);
 
         return DataTables::of($query)
             ->addColumn('validation_status_badge', function (ImportBatchRow $row) {

@@ -63,8 +63,11 @@ class ImportHistoryExportService
                     $reader = IOFactory::createReaderForFile($fullPath);
                     $reader->setReadDataOnly(true);
                     $sourceSpreadsheet = $reader->load($fullPath);
-                    $sourceSheet = $sourceSpreadsheet->getSheet(0);
-                    $colMap = $this->buildColumnMapping($sourceSheet, $canonicalCols);
+                    $firstSheet = $sourceSpreadsheet->getSheet(0);
+                    $colMap = $this->buildColumnMapping($firstSheet, $canonicalCols);
+                    $sourceSheet = $firstSheet->toArray(null, false, false, true);
+                    $sourceSpreadsheet->disconnectWorksheets();
+                    unset($sourceSpreadsheet, $firstSheet);
                 }
             } catch (\Throwable $e) {
                 // Stored file reading failed, fall back gracefully to DB row_data
@@ -102,8 +105,18 @@ class ImportHistoryExportService
      */
     protected function fetchFilteredRows(int $batchId, array $filters): EloquentCollection
     {
-        $query = $this->queryService->getBatchRowsQuery($batchId, $filters);
-        return $query->get();
+        return $this->queryService->getBatchRowsQuery($batchId, $filters)
+            ->select([
+                'id',
+                'import_batch_id',
+                'row_number',
+                'employee_id',
+                'employee_name',
+                'course_name',
+                'validation_status',
+                'row_data',
+            ])
+            ->get();
     }
 
     /**
@@ -155,7 +168,7 @@ class ImportHistoryExportService
     protected function extractRowValues(
         ImportBatchRow $row,
         array $canonicalCols,
-        ?Worksheet $sourceSheet,
+        $sourceSheet,
         array $colMap
     ): array {
         $extracted = [];
@@ -166,8 +179,12 @@ class ImportHistoryExportService
             $val = null;
 
             if ($sourceSheet && $row->row_number && isset($colMap[$key])) {
-                $cellCoord = $colMap[$key] . $row->row_number;
-                $val = $sourceSheet->getCell($cellCoord)->getValue();
+                if (is_array($sourceSheet)) {
+                    $val = $sourceSheet[$row->row_number][$colMap[$key]] ?? null;
+                } elseif ($sourceSheet instanceof Worksheet) {
+                    $cellCoord = $colMap[$key] . $row->row_number;
+                    $val = $sourceSheet->getCell($cellCoord)->getValue();
+                }
             }
 
             if ($val === null || $val === '') {
@@ -233,10 +250,10 @@ class ImportHistoryExportService
     protected function buildSingleStatusSheet(
         Worksheet $sheet,
         ImportBatch $batch,
-        EloquentCollection $rows,
+        $rows,
         string $status,
         array $canonicalCols,
-        ?Worksheet $sourceSheet,
+        $sourceSheet,
         array $colMap
     ): void {
         $sheet->setTitle(substr($status, 0, 31));
@@ -295,26 +312,26 @@ class ImportHistoryExportService
         foreach ($canonicalCols as $idx => $colDef) {
             $letter = Coordinate::stringFromColumnIndex(1 + $idx);
             $sheet->setCellValue("{$letter}2", $colDef['header']);
-            $sheet->getStyle("{$letter}2")->applyFromArray([
-                'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 9.5],
-                'alignment' => [
-                    'horizontal' => Alignment::HORIZONTAL_CENTER,
-                    'vertical'   => Alignment::VERTICAL_CENTER,
-                    'wrapText'   => true,
-                ],
-                'fill' => [
-                    'fillType'   => Fill::FILL_SOLID,
-                    'startColor' => ['rgb' => '002B49'], // Tabler Navy
-                ],
-                'borders' => [
-                    'allBorders' => [
-                        'borderStyle' => Border::BORDER_THIN,
-                        'color'       => ['rgb' => '475569'],
-                    ],
-                ],
-            ]);
             $sheet->getColumnDimension($letter)->setWidth($this->getDefaultWidth($colDef['key']));
         }
+        $sheet->getStyle("A2:{$canonicalEndColLetter}2")->applyFromArray([
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 9.5],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical'   => Alignment::VERTICAL_CENTER,
+                'wrapText'   => true,
+            ],
+            'fill' => [
+                'fillType'   => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '002B49'], // Tabler Navy
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color'       => ['rgb' => '475569'],
+                ],
+            ],
+        ]);
 
         // Far right Status Header on Row 2
         $sheet->setCellValue("{$lastColLetter}2", 'Status');
@@ -338,6 +355,9 @@ class ImportHistoryExportService
         $sheet->getColumnDimension($lastColLetter)->setWidth(18);
         $sheet->getRowDimension(2)->setRowHeight(28);
 
+        // Set default row height for data rows without creating thousands of RowDimension objects
+        $sheet->getDefaultRowDimension()->setRowHeight(22);
+
         // Rows 3..N: Data Rows
         $currentRow = 3;
         foreach ($rows as $row) {
@@ -347,24 +367,45 @@ class ImportHistoryExportService
                 $letter = Coordinate::stringFromColumnIndex(1 + $idx);
                 $val = $extracted[$colDef['key']] ?? '';
                 $sheet->setCellValueExplicit("{$letter}{$currentRow}", (string) $val, DataType::TYPE_STRING);
-                $sheet->getStyle("{$letter}{$currentRow}")->applyFromArray([
-                    'font' => ['size' => 9.5, 'color' => ['rgb' => '1E293B']],
-                    'alignment' => [
-                        'vertical' => Alignment::VERTICAL_CENTER,
-                        'horizontal' => in_array($colDef['type'], ['number', 'date', 'boolean']) ? Alignment::HORIZONTAL_CENTER : Alignment::HORIZONTAL_LEFT,
-                    ],
-                    'borders' => [
-                        'allBorders' => [
-                            'borderStyle' => Border::BORDER_THIN,
-                            'color'       => ['rgb' => 'E2E8F0'],
-                        ],
-                    ],
-                ]);
             }
 
             // Far right Status column
-            $sheet->setCellValueExplicit("{$lastColLetter}{$currentRow}", $row->validation_status, DataType::TYPE_STRING);
-            $sheet->getStyle("{$lastColLetter}{$currentRow}")->applyFromArray([
+            $sheet->setCellValueExplicit("{$lastColLetter}{$currentRow}", (string) $row->validation_status, DataType::TYPE_STRING);
+
+            $currentRow++;
+        }
+
+        // Apply bulk styles to data rows if any rows exist
+        if ($currentRow > 3) {
+            $lastRow = $currentRow - 1;
+
+            // 1. Base style for all canonical data cells
+            $sheet->getStyle("A3:{$canonicalEndColLetter}{$lastRow}")->applyFromArray([
+                'font' => ['size' => 9.5, 'color' => ['rgb' => '1E293B']],
+                'alignment' => [
+                    'vertical' => Alignment::VERTICAL_CENTER,
+                    'horizontal' => Alignment::HORIZONTAL_LEFT,
+                ],
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => Border::BORDER_THIN,
+                        'color'       => ['rgb' => 'E2E8F0'],
+                    ],
+                ],
+            ]);
+
+            // 2. Specific column horizontal alignments (number, date, boolean)
+            foreach ($canonicalCols as $idx => $colDef) {
+                if (in_array($colDef['type'] ?? 'string', ['number', 'date', 'boolean'], true)) {
+                    $letter = Coordinate::stringFromColumnIndex(1 + $idx);
+                    $sheet->getStyle("{$letter}3:{$letter}{$lastRow}")
+                        ->getAlignment()
+                        ->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                }
+            }
+
+            // 3. Status column styling
+            $sheet->getStyle("{$lastColLetter}3:{$lastColLetter}{$lastRow}")->applyFromArray([
                 'font' => ['bold' => true, 'size' => 9.5, 'color' => ['rgb' => $color['text_dark']]],
                 'alignment' => [
                     'horizontal' => Alignment::HORIZONTAL_CENTER,
@@ -381,9 +422,6 @@ class ImportHistoryExportService
                     ],
                 ],
             ]);
-
-            $sheet->getRowDimension($currentRow)->setRowHeight(22);
-            $currentRow++;
         }
 
         // Freeze panes at row 3 (so both header rows remain visible on scroll)
@@ -397,9 +435,9 @@ class ImportHistoryExportService
     protected function buildAllStatusesSheet(
         Worksheet $sheet,
         ImportBatch $batch,
-        EloquentCollection $rows,
+        $rows,
         array $canonicalCols,
-        ?Worksheet $sourceSheet,
+        $sourceSheet,
         array $colMap
     ): void {
         $sheet->setTitle('Audit Log (All Groups)');
@@ -464,26 +502,26 @@ class ImportHistoryExportService
             foreach ($canonicalCols as $idx => $colDef) {
                 $colLetter = Coordinate::stringFromColumnIndex($startColIdx + $idx);
                 $sheet->setCellValue("{$colLetter}2", $colDef['header']);
-                $sheet->getStyle("{$colLetter}2")->applyFromArray([
-                    'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 9.5],
-                    'alignment' => [
-                        'horizontal' => Alignment::HORIZONTAL_CENTER,
-                        'vertical'   => Alignment::VERTICAL_CENTER,
-                        'wrapText'   => true,
-                    ],
-                    'fill' => [
-                        'fillType'   => Fill::FILL_SOLID,
-                        'startColor' => ['rgb' => '002B49'],
-                    ],
-                    'borders' => [
-                        'allBorders' => [
-                            'borderStyle' => Border::BORDER_THIN,
-                            'color'       => ['rgb' => '475569'],
-                        ],
-                    ],
-                ]);
                 $sheet->getColumnDimension($colLetter)->setWidth($this->getDefaultWidth($colDef['key']));
             }
+            $sheet->getStyle("{$startLetter}2:{$endLetter}2")->applyFromArray([
+                'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 9.5],
+                'alignment' => [
+                    'horizontal' => Alignment::HORIZONTAL_CENTER,
+                    'vertical'   => Alignment::VERTICAL_CENTER,
+                    'wrapText'   => true,
+                ],
+                'fill' => [
+                    'fillType'   => Fill::FILL_SOLID,
+                    'startColor' => ['rgb' => '002B49'],
+                ],
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => Border::BORDER_THIN,
+                        'color'       => ['rgb' => '475569'],
+                    ],
+                ],
+            ]);
 
             $currentColIndex = $endColIdx + 1;
         }
@@ -511,6 +549,8 @@ class ImportHistoryExportService
         ]);
         $sheet->getColumnDimension($statusColLetter)->setWidth(18);
 
+        // Row dimensions
+        $sheet->getDefaultRowDimension()->setRowHeight(22);
         $sheet->getRowDimension(1)->setRowHeight(30);
         $sheet->getRowDimension(2)->setRowHeight(28);
 
@@ -539,25 +579,57 @@ class ImportHistoryExportService
                         $colLetter = Coordinate::stringFromColumnIndex($range['start_idx'] + $cIdx);
                         $val = $extracted[$colDef['key']] ?? '';
                         $sheet->setCellValueExplicit("{$colLetter}{$currentRow}", (string) $val, DataType::TYPE_STRING);
-                        $sheet->getStyle("{$colLetter}{$currentRow}")->applyFromArray([
-                            'font' => ['size' => 9.5, 'color' => ['rgb' => '1E293B']],
-                            'alignment' => [
-                                'vertical' => Alignment::VERTICAL_CENTER,
-                                'horizontal' => in_array($colDef['type'], ['number', 'date', 'boolean']) ? Alignment::HORIZONTAL_CENTER : Alignment::HORIZONTAL_LEFT,
-                            ],
-                            'borders' => [
-                                'allBorders' => [
-                                    'borderStyle' => Border::BORDER_THIN,
-                                    'color'       => ['rgb' => 'E2E8F0'],
-                                ],
-                            ],
-                        ]);
                     }
-                } else {
-                    // Empty cells for alignment
-                    foreach ($canonicalCols as $cIdx => $colDef) {
-                        $colLetter = Coordinate::stringFromColumnIndex($range['start_idx'] + $cIdx);
-                        $sheet->getStyle("{$colLetter}{$currentRow}")->applyFromArray([
+                }
+            }
+
+            // Far right Status column value
+            $displayStatus = !empty($rowStatusValues) ? implode(', ', array_unique($rowStatusValues)) : '-';
+            $sheet->setCellValueExplicit("{$statusColLetter}{$currentRow}", $displayStatus, DataType::TYPE_STRING);
+        }
+
+        // Apply bulk styles to data rows
+        if ($maxGroupCount > 0) {
+            $endRow = 2 + $maxGroupCount;
+
+            foreach ($groups as $statusName) {
+                $range = $groupRanges[$statusName];
+                $startLetter = $range['start_letter'];
+                $endLetter = $range['end_letter'];
+                $groupCount = count($groupedRows[$statusName]);
+
+                if ($groupCount > 0) {
+                    $groupDataEndRow = 2 + $groupCount;
+
+                    // Data cells in this group
+                    $sheet->getStyle("{$startLetter}3:{$endLetter}{$groupDataEndRow}")->applyFromArray([
+                        'font' => ['size' => 9.5, 'color' => ['rgb' => '1E293B']],
+                        'alignment' => [
+                            'vertical' => Alignment::VERTICAL_CENTER,
+                            'horizontal' => Alignment::HORIZONTAL_LEFT,
+                        ],
+                        'borders' => [
+                            'allBorders' => [
+                                'borderStyle' => Border::BORDER_THIN,
+                                'color'       => ['rgb' => 'E2E8F0'],
+                            ],
+                        ],
+                    ]);
+
+                    // Column horizontal alignments for this group
+                    for ($cIdx = 0; $cIdx < $canonicalCount; $cIdx++) {
+                        if (in_array($canonicalCols[$cIdx]['type'] ?? 'string', ['number', 'date', 'boolean'], true)) {
+                            $colLetter = Coordinate::stringFromColumnIndex($range['start_idx'] + $cIdx);
+                            $sheet->getStyle("{$colLetter}3:{$colLetter}{$groupDataEndRow}")
+                                ->getAlignment()
+                                ->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                        }
+                    }
+
+                    // Empty cells below populated rows in this group
+                    if ($groupDataEndRow < $endRow) {
+                        $emptyStartRow = $groupDataEndRow + 1;
+                        $sheet->getStyle("{$startLetter}{$emptyStartRow}:{$endLetter}{$endRow}")->applyFromArray([
                             'borders' => [
                                 'allBorders' => [
                                     'borderStyle' => Border::BORDER_THIN,
@@ -566,13 +638,21 @@ class ImportHistoryExportService
                             ],
                         ]);
                     }
+                } else {
+                    // Entire group has 0 rows: style all cells as empty cells
+                    $sheet->getStyle("{$startLetter}3:{$endLetter}{$endRow}")->applyFromArray([
+                        'borders' => [
+                            'allBorders' => [
+                                'borderStyle' => Border::BORDER_THIN,
+                                'color'       => ['rgb' => 'F1F5F9'],
+                            ],
+                        ],
+                    ]);
                 }
             }
 
-            // Far right Status column value
-            $displayStatus = !empty($rowStatusValues) ? implode(', ', array_unique($rowStatusValues)) : '-';
-            $sheet->setCellValueExplicit("{$statusColLetter}{$currentRow}", $displayStatus, DataType::TYPE_STRING);
-            $sheet->getStyle("{$statusColLetter}{$currentRow}")->applyFromArray([
+            // Far right Status column styling
+            $sheet->getStyle("{$statusColLetter}3:{$statusColLetter}{$endRow}")->applyFromArray([
                 'font' => ['bold' => true, 'size' => 9.5, 'color' => ['rgb' => '334155']],
                 'alignment' => [
                     'horizontal' => Alignment::HORIZONTAL_CENTER,
@@ -585,8 +665,6 @@ class ImportHistoryExportService
                     ],
                 ],
             ]);
-
-            $sheet->getRowDimension($currentRow)->setRowHeight(22);
         }
 
         $sheet->freezePane('A3');
