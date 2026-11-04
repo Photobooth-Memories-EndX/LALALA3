@@ -242,235 +242,252 @@ body.theme-dark #moreInformationModal .text-slate-400 {
 </div>
 
 <script>
-let deleteRecordId = null;
-let deleteRecordSource = 'offline';
-let deleteRecordType = 'content';
+(function() {
+    // Helper to safely set text content by element ID
+    function setModalText(id, val) {
+        var el = document.getElementById(id);
+        if (el) {
+            el.textContent = (val !== null && val !== undefined && val !== '') ? val : '-';
+        }
+    }
 
-$(document).on('click', '[data-bs-target="#deleteRecordModal"]', function(e) {
-    deleteRecordId = $(this).data('record-id') || $(this).data('id');
-    deleteRecordSource = ($(this).data('record-source') || $(this).data('source') || 'offline').toString().toLowerCase();
-    deleteRecordType = ($(this).data('source-type') || $(this).data('type') || 'content').toString().toLowerCase();
-});
+    // Helper for rendering status pills (Green for Passed/Good, Yellow for Ongoing, Gray for Null)
+    function renderStatusPill(pillSelector, containerSelector, val) {
+        var cleanId = pillSelector.replace('#', '');
+        var container = document.querySelector(containerSelector);
+        var target = document.querySelector(pillSelector);
 
-$(document).on('click', '.btn-confirm-delete-action', function(e) {
-    e.preventDefault();
-    if (!deleteRecordId) return;
-
-    const $btn = $(this);
-    $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status"></span> Deleting...');
-
-    const url = (deleteRecordSource === 'offline')
-        ? '/manage/record/offline/' + deleteRecordId
-        : '/manage/record/online/' + (deleteRecordType === 'playlist' ? 'playlist' : 'content') + '/' + deleteRecordId;
-
-    $.ajax({
-        url: url,
-        type: 'DELETE',
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        success: function(res) {
-            $('#deleteRecordModal').modal('hide');
-            $btn.prop('disabled', false).text('Delete');
-            deleteRecordId = null;
-            if (window.LaravelDataTables) {
-                $.each(window.LaravelDataTables, function(k, dt) { dt.ajax.reload(null, false); });
-            } else if ($.fn.DataTable) {
-                $('.dataTable').each(function() {
-                    if ($.fn.DataTable.isDataTable(this)) {
-                        $(this).DataTable().ajax.reload(null, false);
-                    }
-                });
+        if (!val || val === '-' || val === 'null' || val === 'undefined') {
+            var html = '<span class="text-muted fw-bold" style="font-size: 0.8125rem;" id="' + cleanId + '">-</span>';
+            if (container) {
+                container.innerHTML = html;
+            } else if (target) {
+                target.outerHTML = html;
             }
-        },
-        error: function(xhr) {
-            $btn.prop('disabled', false).text('Delete');
-            const msg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'Error deleting record.';
-            alert(msg);
+            return;
         }
-    });
-});
 
-// Helper for rendering status pills (Green for Passed/Good, Yellow for Ongoing, Gray for Null)
-function renderStatusPill(pillSelector, containerSelector, val) {
-    const $container = $(containerSelector);
-    if (!val || val === '-' || val === 'null' || val === 'undefined') {
-        const html = '<span class="text-muted fw-bold" style="font-size: 0.8125rem;" id="' + pillSelector.replace('#', '') + '">-</span>';
-        if ($container.length) {
-            $container.html(html);
+        var str = String(val).trim();
+        str = str.replace(/\s*\(\d+(\.\d+)?%\)/i, '');
+        var lower = str.toLowerCase();
+
+        var badgeClass = 'bg-secondary-lt text-secondary';
+        if (lower === 'not started' || lower === 'not_started' || lower === 'null') {
+            badgeClass = 'bg-secondary-lt text-secondary';
+        } else if (lower === 'passed' || lower === 'finished' || lower === 'completed' || lower === 'pass' || lower.includes('good') || lower === 'excellent') {
+            badgeClass = 'bg-success-lt text-success';
+        } else if (lower === 'ongoing' || lower.includes('progress')) {
+            badgeClass = 'bg-warning-lt text-warning';
+        } else if (lower === 'fail' || lower === 'failed' || lower.includes('poor')) {
+            badgeClass = 'bg-danger-lt text-danger';
+        }
+
+        var pillHtml = '<span class="badge ' + badgeClass + ' fw-bold px-2 py-0.5" style="font-size: 0.75rem;" id="' + cleanId + '">' + str + '</span>';
+        if (container) {
+            container.innerHTML = pillHtml;
+        } else if (target) {
+            target.outerHTML = pillHtml;
+        }
+    }
+
+    // Global modal populator function (vanilla JS, independent of jQuery timing)
+    window.populateMoreInformationModal = function(response) {
+        if (!response) return;
+        var raw = response.data || response;
+        // Normalize nested employee, learning, and progress structures (e.g. from RecordOnlineController::detail)
+        var emp = raw.employee || {};
+        var lrn = raw.learning || {};
+        var prog = raw.progress || {};
+
+        var d = {
+            source: raw.source || raw.source_type || (raw.source_badge ? (typeof raw.source_badge === 'string' ? raw.source_badge.replace(/<[^>]*>?/gm, '').trim() : 'KP OWL') : 'KP OWL'),
+            source_type: raw.source_type || raw.source || 'KP OWL',
+            category: raw.category || raw.category_source || lrn.enrollment || lrn.category || '',
+            course_title: raw.course_title || raw.title || raw.course_name || raw.learning_title || lrn.title || '-',
+            sub_course_title: raw.sub_course_title || raw.sub_course_name || raw.sub_course || lrn.sub_title || '-',
+            employee_id: raw.employee_id || raw.id_emp || raw.nip || emp.id_emp || emp.employee_id || emp.nip || '-',
+            employee_name: raw.employee_name || raw.user_name || raw.participant_name || raw.name || emp.name || emp.employee_name || '-',
+            grade: raw.grade || raw.jobgrade || raw.user_jobgrade || emp.grade || emp.jobgrade || '-',
+            job_position: raw.job_position || raw.jobposition || raw.user_jobposition || raw.position || emp.job_position || emp.jobposition || '-',
+            level: raw.level || lrn.level || '-',
+            batch: raw.batch || lrn.batch || '-',
+            instructor: raw.instructor || raw.author || raw.content_author || lrn.author || lrn.instructor || '-',
+            sub_provider: raw.sub_provider || raw.provider_name || raw.provider || lrn.provider || '-',
+            attendance_reason: raw.attendance_reason || '-',
+            bond_status: raw.bond_status ?? '-',
+            bond_duration: raw.bond_duration ?? '-',
+            bond_end_date: raw.bond_end_date ?? '-',
+            bond_amount: raw.bond_amount ?? raw.bond_amount_idr ?? '-',
+            l2_status: raw.l2_status || raw.score_l2_status || '-',
+            l3_status: raw.l3_status || raw.score_l3_status || '-',
+            certificate_institution: raw.certificate_institution || raw.institution || '-',
+            certificate_issued_date: raw.certificate_issued_date || raw.issued_date || '-',
+            certificate_expired_date: raw.certificate_expired_date || raw.expired_date || '-',
+        };
+
+        // Set #modal-badge-source text & color
+        var sourceText = d.source || (d.source_type || 'KP OWL');
+        var isOffline = (sourceText.toUpperCase().includes('NON') || sourceText.toLowerCase().includes('offline'));
+        var badge = document.getElementById('modal-badge-source');
+        if (badge) {
+            badge.textContent = sourceText;
+            if (isOffline) {
+                badge.style.backgroundColor = '#fef3c7';
+                badge.style.color = '#92400e';
+            } else {
+                badge.style.backgroundColor = '#e0f2fe';
+                badge.style.color = '#0369a1';
+            }
+        }
+
+        // Header Sub-title: Display [Category] Course Title
+        var rawCategory = d.category || d.category_source || '';
+        var cleanCategory = (rawCategory && rawCategory !== '-' && rawCategory !== 'null' && rawCategory !== 'undefined') ? String(rawCategory).trim() : '';
+        var courseTitle = d.course_title || d.title || d.learning_title || '-';
+        var headerSubTitle = cleanCategory ? ('[' + cleanCategory + '] ' + courseTitle) : courseTitle;
+        setModalText('modal-course-title', headerSubTitle);
+
+        // Section 1 - Employee Information
+        setModalText('modal-employee-id', d.employee_id || d.id_emp || '-');
+        var empName = d.employee_name || d.user_name || d.participant_name || '-';
+        setModalText('modal-employee-name', empName !== '-' ? String(empName).toUpperCase() : '-');
+        setModalText('modal-grade', d.grade || d.jobgrade || d.user_jobgrade || '-');
+        setModalText('modal-job-position', d.job_position || d.jobposition || d.user_jobposition || '-');
+
+        // Section 2 - Course & Batch Information
+        setModalText('modal-sub-course-title', d.sub_course_title || d.sub_course_name || '-');
+        setModalText('modal-level', d.level || '-');
+        setModalText('modal-batch', d.batch || '-');
+        setModalText('modal-instructor', d.instructor || d.content_author || d.author || '-');
+
+        // Section 3 - Location & Provider Information
+        setModalText('modal-sub-provider', d.sub_provider || '-');
+        setModalText('modal-attendance-reason', d.attendance_reason || '-');
+
+        // Section 4 - Bond Details (1 Row with 4 Columns)
+        var rawBond = String(d.bond_status ?? '').toLowerCase().trim();
+        var hasBond = ['yes', '1', 'true', 'ya'].includes(rawBond);
+        var isOnlineOrKpOwl = (d.source === 'KP OWL' || d.source === 'online' || d.record_source === 'online' || (d.source_type && String(d.source_type).includes('KP OWL')));
+        if (hasBond) {
+            setModalText('modal-bond-status', 'Yes');
+        } else if (isOnlineOrKpOwl || rawBond === '-' || rawBond === '' || rawBond === 'null' || rawBond === 'undefined') {
+            setModalText('modal-bond-status', '-');
         } else {
-            $(pillSelector).replaceWith(html);
+            setModalText('modal-bond-status', 'No');
         }
-        return;
-    }
 
-    let str = String(val).trim();
-    str = str.replace(/\s*\(\d+(\.\d+)?%\)/i, '');
-    const lower = str.toLowerCase();
+        if (hasBond) {
+            var bondDur = d.bond_duration;
+            if (bondDur && bondDur !== '-' && String(bondDur).trim() !== '' && !isNaN(bondDur) && parseInt(bondDur) > 0) {
+                setModalText('modal-bond-duration', parseInt(bondDur) + ' Months');
+            } else {
+                setModalText('modal-bond-duration', d.bond_duration || '-');
+            }
+            setModalText('modal-bond-end-date', d.bond_end_date && d.bond_end_date !== '-' ? d.bond_end_date : '-');
+            var bondAmt = d.bond_amount || d.bond_amount_idr || '-';
+            if (bondAmt !== '-' && !isNaN(bondAmt) && parseFloat(bondAmt) > 0) {
+                bondAmt = 'Rp ' + Math.round(parseFloat(bondAmt)).toLocaleString('id-ID');
+            }
+            setModalText('modal-bond-amount', bondAmt);
+        } else {
+            setModalText('modal-bond-duration', '-');
+            setModalText('modal-bond-end-date', '-');
+            setModalText('modal-bond-amount', '-');
+        }
 
-    let badgeClass = 'bg-secondary-lt text-secondary';
-    if (lower === 'not started' || lower === 'not_started' || lower === 'null') {
-        badgeClass = 'bg-secondary-lt text-secondary';
-    } else if (lower === 'passed' || lower === 'finished' || lower === 'completed' || lower === 'pass' || lower.includes('good') || lower === 'excellent') {
-        badgeClass = 'bg-success-lt text-success';
-    } else if (lower === 'ongoing' || lower.includes('progress')) {
-        badgeClass = 'bg-warning-lt text-warning';
-    } else if (lower === 'fail' || lower === 'failed' || lower.includes('poor')) {
-        badgeClass = 'bg-danger-lt text-danger';
-    }
+        // Section 5 - Assessment & Score Details
+        renderStatusPill('#modal-l2-status', '#modal-l2-status-container', d.l2_status || d.score_l2_status);
+        renderStatusPill('#modal-l3-status', '#modal-l3-status-container', d.l3_status || d.score_l3_status);
 
-    const pillHtml = '<span class="badge ' + badgeClass + ' fw-bold px-2 py-0.5" style="font-size: 0.75rem;" id="' + pillSelector.replace('#', '') + '">' + str + '</span>';
-    if ($container.length) {
-        $container.html(pillHtml);
-    } else {
-        $(pillSelector).replaceWith(pillHtml);
-    }
-}
-
-// Global modal populator function
-window.populateMoreInformationModal = function(response) {
-    if (!response) return;
-    const raw = response.data || response;
-    // Normalize nested employee, learning, and progress structures (e.g. from RecordOnlineController::detail)
-    const emp = raw.employee || {};
-    const lrn = raw.learning || {};
-    const prog = raw.progress || {};
-
-    const d = {
-        source: raw.source || raw.source_type || (raw.source_badge ? $(raw.source_badge).text().trim() : 'KP OWL'),
-        source_type: raw.source_type || raw.source || 'KP OWL',
-        category: raw.category || raw.category_source || lrn.enrollment || lrn.category || '',
-        course_title: raw.course_title || raw.title || raw.course_name || raw.learning_title || lrn.title || '-',
-        sub_course_title: raw.sub_course_title || raw.sub_course_name || raw.sub_course || lrn.sub_title || '-',
-        employee_id: raw.employee_id || raw.id_emp || raw.nip || emp.id_emp || emp.employee_id || emp.nip || '-',
-        employee_name: raw.employee_name || raw.user_name || raw.participant_name || raw.name || emp.name || emp.employee_name || '-',
-        grade: raw.grade || raw.jobgrade || raw.user_jobgrade || emp.grade || emp.jobgrade || '-',
-        job_position: raw.job_position || raw.jobposition || raw.user_jobposition || raw.position || emp.job_position || emp.jobposition || '-',
-        level: raw.level || lrn.level || '-',
-        batch: raw.batch || lrn.batch || '-',
-        instructor: raw.instructor || raw.author || raw.content_author || lrn.author || lrn.instructor || '-',
-        sub_provider: raw.sub_provider || raw.provider_name || raw.provider || lrn.provider || '-',
-        attendance_reason: raw.attendance_reason || '-',
-        bond_status: raw.bond_status ?? '-',
-        bond_duration: raw.bond_duration ?? '-',
-        bond_end_date: raw.bond_end_date ?? '-',
-        bond_amount: raw.bond_amount ?? raw.bond_amount_idr ?? '-',
-        l2_status: raw.l2_status || raw.score_l2_status || '-',
-        l3_status: raw.l3_status || raw.score_l3_status || '-',
-        certificate_institution: raw.certificate_institution || raw.institution || '-',
-        certificate_issued_date: raw.certificate_issued_date || raw.issued_date || '-',
-        certificate_expired_date: raw.certificate_expired_date || raw.expired_date || '-',
+        // Section 6 - Certificate Details
+        setModalText('modal-cert-institution', d.certificate_institution || d.institution || '-');
+        setModalText('modal-cert-issued-date', d.certificate_issued_date || d.issued_date || '-');
+        setModalText('modal-cert-expired-date', d.certificate_expired_date || d.expired_date || '-');
     };
 
-    // Set #modal-badge-source text
-    const sourceText = d.source || (d.source_type || 'KP OWL');
-    const isOffline = (sourceText.toUpperCase().includes('NON') || sourceText.toLowerCase().includes('offline'));
-    const $badge = $('#modal-badge-source');
-    $badge.text(sourceText);
-    if (isOffline) {
-        $badge.css({'background-color': '#fef3c7', 'color': '#92400e'});
-    } else {
-        $badge.css({'background-color': '#e0f2fe', 'color': '#0369a1'});
-    }
-
-    // Header Sub-title: Display [Category] Course Title
-    const rawCategory = d.category || d.category_source || '';
-    const cleanCategory = (rawCategory && rawCategory !== '-' && rawCategory !== 'null' && rawCategory !== 'undefined') ? rawCategory.trim() : '';
-    const courseTitle = d.course_title || d.title || d.learning_title || '-';
-    const headerSubTitle = cleanCategory ? ('[' + cleanCategory + '] ' + courseTitle) : courseTitle;
-    $('#modal-course-title').text(headerSubTitle);
-
-    // Section 1 - Employee Information
-    $('#modal-employee-id').text(d.employee_id || d.id_emp || '-');
-    const empName = d.employee_name || d.user_name || d.participant_name || '-';
-    $('#modal-employee-name').text(empName !== '-' ? empName.toUpperCase() : '-');
-    $('#modal-grade').text(d.grade || d.jobgrade || d.user_jobgrade || '-');
-    $('#modal-job-position').text(d.job_position || d.jobposition || d.user_jobposition || '-');
-
-    // Section 2 - Course & Batch Information
-    $('#modal-sub-course-title').text(d.sub_course_title || d.sub_course_name || '-');
-    $('#modal-level').text(d.level || '-');
-    $('#modal-batch').text(d.batch || '-');
-    $('#modal-instructor').text(d.instructor || d.content_author || d.author || '-');
-
-    // Section 3 - Location & Provider Information
-    $('#modal-sub-provider').text(d.sub_provider || '-');
-    $('#modal-attendance-reason').text(d.attendance_reason || '-');
-
-    // Section 4 - Bond Details (1 Row with 4 Columns)
-    const rawBond = String(d.bond_status ?? '').toLowerCase().trim();
-    const hasBond = ['yes', '1', 'true', 'ya'].includes(rawBond);
-    const isOnlineOrKpOwl = (d.source === 'KP OWL' || d.source === 'online' || d.record_source === 'online' || (d.source_type && String(d.source_type).includes('KP OWL')));
-    if (hasBond) {
-        $('#modal-bond-status').text('Yes');
-    } else if (isOnlineOrKpOwl || rawBond === '-' || rawBond === '' || rawBond === 'null' || rawBond === 'undefined') {
-        $('#modal-bond-status').text('-');
-    } else {
-        $('#modal-bond-status').text('No');
-    }
-
-    if (hasBond) {
-        const bondDur = d.bond_duration;
-        if (bondDur && bondDur !== '-' && String(bondDur).trim() !== '' && !isNaN(bondDur) && parseInt(bondDur) > 0) {
-            $('#modal-bond-duration').text(parseInt(bondDur) + ' Months');
-        } else {
-            $('#modal-bond-duration').text(d.bond_duration || '-');
+    // Initialize jQuery event listeners once jQuery is loaded
+    function initMoreInfoModalListeners() {
+        if (typeof jQuery === 'undefined' && typeof $ === 'undefined') {
+            setTimeout(initMoreInfoModalListeners, 60);
+            return;
         }
-        $('#modal-bond-end-date').text(d.bond_end_date && d.bond_end_date !== '-' ? d.bond_end_date : '-');
-        let bondAmt = d.bond_amount || d.bond_amount_idr || '-';
-        if (bondAmt !== '-' && !isNaN(bondAmt) && parseFloat(bondAmt) > 0) {
-            bondAmt = 'Rp ' + Math.round(parseFloat(bondAmt)).toLocaleString('id-ID');
-        }
-        $('#modal-bond-amount').text(bondAmt);
-    } else {
-        $('#modal-bond-duration').text('-');
-        $('#modal-bond-end-date').text('-');
-        $('#modal-bond-amount').text('-');
-    }
+        var $ = window.jQuery || window.$;
 
-    // Section 5 - Assessment & Score Details
-    renderStatusPill('#modal-l2-status', '#modal-l2-status-container', d.l2_status || d.score_l2_status);
-    renderStatusPill('#modal-l3-status', '#modal-l3-status-container', d.l3_status || d.score_l3_status);
+        var deleteRecordId = null;
+        var deleteRecordSource = 'offline';
+        var deleteRecordType = 'content';
 
-    // Section 6 - Certificate Details
-    $('#modal-cert-institution').text(d.certificate_institution || d.institution || '-');
-    $('#modal-cert-issued-date').text(d.certificate_issued_date || d.issued_date || '-');
-    $('#modal-cert-expired-date').text(d.certificate_expired_date || d.expired_date || '-');
-};
+        $(document).off('click.deleteRecordModalTrigger').on('click.deleteRecordModalTrigger', '[data-bs-target="#deleteRecordModal"]', function(e) {
+            deleteRecordId = $(this).data('record-id') || $(this).data('id');
+            deleteRecordSource = ($(this).data('record-source') || $(this).data('source') || 'offline').toString().toLowerCase();
+            deleteRecordType = ($(this).data('source-type') || $(this).data('type') || 'content').toString().toLowerCase();
+        });
 
-// Global click handler for .btn-more-info / More Information
-$(document).off('click.moreInfo').on('click.moreInfo', '[data-bs-target="#moreInformationModal"], .btn-more-info, .btn-more-information', function(e) {
-    e.preventDefault();
-    const $el = $(this);
-    const recordId = $el.data('id') || $el.data('record-id') || $el.attr('data-id') || $el.attr('data-record-id');
-    const source = ($el.data('source') || $el.data('record-source') || $el.attr('data-source') || $el.attr('data-record-source') || 'online').toString().toLowerCase();
-    const type = ($el.data('source-type') || $el.data('type') || $el.attr('data-source-type') || $el.attr('data-type') || '').toString().toLowerCase();
+        $(document).off('click.confirmDeleteRecordAction').on('click.confirmDeleteRecordAction', '.btn-confirm-delete-action', function(e) {
+            e.preventDefault();
+            if (!deleteRecordId) return;
 
-    if (!recordId) return;
+            var $btn = $(this);
+            $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status"></span> Deleting...');
 
-    const modalEl = document.getElementById('moreInformationModal');
-    if (modalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-        const modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
-        modalInstance.show();
-    }
+            var url = (deleteRecordSource === 'offline')
+                ? '/manage/record/offline/' + deleteRecordId
+                : '/manage/record/online/' + (deleteRecordType === 'playlist' ? 'playlist' : 'content') + '/' + deleteRecordId;
 
-    $('#more-info-loading').show();
-    $('#more-info-content').hide();
-
-    // Fetch the record detail via $.ajax() from /manage/record/detail/{id}
-    $.ajax({
-        url: '/manage/record/detail/' + encodeURIComponent(recordId) + '?source=' + encodeURIComponent(source) + (type ? '&type=' + encodeURIComponent(type) : ''),
-        type: 'GET',
-        dataType: 'json',
-        success: function(response) {
-            $('#more-info-loading').hide();
-            $('#more-info-content').show();
-            window.populateMoreInformationModal(response);
-        },
-        error: function() {
-            // Fallback attempt to /manage/record/{id}/more-info
             $.ajax({
-                url: '/manage/record/' + encodeURIComponent(recordId) + '/more-info?source=' + encodeURIComponent(source) + (type ? '&type=' + encodeURIComponent(type) : ''),
+                url: url,
+                type: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(res) {
+                    $('#deleteRecordModal').modal('hide');
+                    $btn.prop('disabled', false).text('Delete');
+                    deleteRecordId = null;
+                    if (window.LaravelDataTables) {
+                        $.each(window.LaravelDataTables, function(k, dt) { dt.ajax.reload(null, false); });
+                    } else if ($.fn.DataTable) {
+                        $('.dataTable').each(function() {
+                            if ($.fn.DataTable.isDataTable(this)) {
+                                $(this).DataTable().ajax.reload(null, false);
+                            }
+                        });
+                    }
+                },
+                error: function(xhr) {
+                    $btn.prop('disabled', false).text('Delete');
+                    var msg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'Error deleting record.';
+                    alert(msg);
+                }
+            });
+        });
+
+        // Global click handler for .btn-more-info / More Information
+        $(document).off('click.moreInfoModal').on('click.moreInfoModal', '[data-bs-target="#moreInformationModal"], .btn-more-info, .btn-more-information', function(e) {
+            var $el = $(this);
+            var recordId = $el.data('id') || $el.data('record-id') || $el.attr('data-id') || $el.attr('data-record-id');
+            var source = ($el.data('source') || $el.data('record-source') || $el.attr('data-source') || $el.attr('data-record-source') || 'online').toString().toLowerCase();
+            var type = ($el.data('source-type') || $el.data('type') || $el.attr('data-source-type') || $el.attr('data-type') || '').toString().toLowerCase();
+
+            if (!recordId) return;
+
+            // Avoid duplicate parallel requests if already fetching
+            if ($el.data('more-info-fetching')) return;
+            $el.data('more-info-fetching', true);
+            setTimeout(function() { $el.removeData('more-info-fetching'); }, 800);
+
+            var modalEl = document.getElementById('moreInformationModal');
+            if (modalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                var modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
+                modalInstance.show();
+            }
+
+            $('#more-info-loading').show();
+            $('#more-info-content').hide();
+
+            // Fetch the record detail via $.ajax() from /manage/record/detail/{id}
+            $.ajax({
+                url: '/manage/record/detail/' + encodeURIComponent(recordId) + '?source=' + encodeURIComponent(source) + (type ? '&type=' + encodeURIComponent(type) : ''),
                 type: 'GET',
                 dataType: 'json',
                 success: function(response) {
@@ -479,48 +496,67 @@ $(document).off('click.moreInfo').on('click.moreInfo', '[data-bs-target="#moreIn
                     window.populateMoreInformationModal(response);
                 },
                 error: function() {
-                    // Fallback to user learning record detail
+                    // Fallback attempt to /manage/record/{id}/more-info
                     $.ajax({
-                        url: '/my-learning/learning-record/detail/' + encodeURIComponent(source) + '/' + encodeURIComponent(recordId),
+                        url: '/manage/record/' + encodeURIComponent(recordId) + '/more-info?source=' + encodeURIComponent(source) + (type ? '&type=' + encodeURIComponent(type) : ''),
                         type: 'GET',
                         dataType: 'json',
-                        success: function(userRes) {
+                        success: function(response) {
                             $('#more-info-loading').hide();
                             $('#more-info-content').show();
-                            window.populateMoreInformationModal(userRes);
+                            window.populateMoreInformationModal(response);
                         },
                         error: function() {
-                            $('#more-info-loading').hide();
-                            $('#more-info-content').show();
-                            window.populateMoreInformationModal({
-                        source: (source.includes('non') || source === 'offline') ? 'NON KP OWL' : 'KP OWL',
-                        category: (source.includes('non') || source === 'offline') ? 'Non KP OWL' : 'KP OWL',
-                        course_title: '-',
-                        employee_id: '-',
-                        employee_name: '-',
-                        grade: '-',
-                        job_position: '-',
-                        sub_course_title: '-',
-                        level: '-',
-                        batch: '-',
-                        instructor: '-',
-                        sub_provider: '-',
-                        attendance_reason: '-',
-                        bond_status: '-',
-                        bond_duration: '-',
-                        bond_end_date: '-',
-                        bond_amount: '-',
-                        l2_status: '-',
-                        l3_status: '-',
-                        certificate_institution: '-',
-                        certificate_issued_date: '-',
-                        certificate_expired_date: '-'
-                    });
+                            // Fallback to user learning record detail
+                            $.ajax({
+                                url: '/my-learning/learning-record/detail/' + encodeURIComponent(source) + '/' + encodeURIComponent(recordId),
+                                type: 'GET',
+                                dataType: 'json',
+                                success: function(userRes) {
+                                    $('#more-info-loading').hide();
+                                    $('#more-info-content').show();
+                                    window.populateMoreInformationModal(userRes);
+                                },
+                                error: function() {
+                                    $('#more-info-loading').hide();
+                                    $('#more-info-content').show();
+                                    window.populateMoreInformationModal({
+                                        source: (source.includes('non') || source === 'offline') ? 'NON KP OWL' : 'KP OWL',
+                                        category: (source.includes('non') || source === 'offline') ? 'Non KP OWL' : 'KP OWL',
+                                        course_title: '-',
+                                        employee_id: '-',
+                                        employee_name: '-',
+                                        grade: '-',
+                                        job_position: '-',
+                                        sub_course_title: '-',
+                                        level: '-',
+                                        batch: '-',
+                                        instructor: '-',
+                                        sub_provider: '-',
+                                        attendance_reason: '-',
+                                        bond_status: '-',
+                                        bond_duration: '-',
+                                        bond_end_date: '-',
+                                        bond_amount: '-',
+                                        l2_status: '-',
+                                        l3_status: '-',
+                                        certificate_institution: '-',
+                                        certificate_issued_date: '-',
+                                        certificate_expired_date: '-'
+                                    });
+                                }
+                            });
                         }
                     });
                 }
             });
-        }
-    });
-});
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initMoreInfoModalListeners);
+    } else {
+        initMoreInfoModalListeners();
+    }
+})();
 </script>

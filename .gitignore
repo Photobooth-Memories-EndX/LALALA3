@@ -31,3 +31,7 @@ yarn-error.log
 /.codebase-memory/
 
 /.playwright-mcp/
+
+# Antigravity & Gemini
+/.gemini/
+.gemini/
