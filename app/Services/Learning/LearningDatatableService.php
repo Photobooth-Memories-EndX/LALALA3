@@ -121,7 +121,7 @@ class LearningDatatableService
             ->select([
                 'pcu.id as source_id',
                 DB::raw("'playlist' as source_type"),
-                DB::raw("'Playlist' as category_source"),
+                DB::raw("'Content Playlist' as category_source"),
                 'pcu.user_id',
                 'pcu.content_id',
                 'pcu.trainingplan_id',
@@ -730,6 +730,22 @@ class LearningDatatableService
             $totalRecords = $totalAll;
         }
 
+        $tpdRows = DB::table('trainingplandetail as tpd')
+            ->join('trainingplan as tp', 'tp.id', '=', 'tpd.trainingplan_id')
+            ->whereNull('tp.deleted_at')
+            ->orderBy('tpd.id', 'asc')
+            ->select('tpd.content_id', 'tp.id as tp_id', 'tp.title as tp_title')
+            ->get();
+        $tpdCache = [];
+        foreach ($tpdRows as $tpd) {
+            if (!isset($tpdCache[$tpd->content_id])) {
+                $tpdCache[$tpd->content_id] = [
+                    'id'    => (int) $tpd->tp_id,
+                    'title' => (string) $tpd->tp_title,
+                ];
+            }
+        }
+
         $dataTable = DataTables::query($query)
             ->setTotalRecords($totalRecords);
 
@@ -756,11 +772,27 @@ class LearningDatatableService
             ->addColumn('job_position', fn ($row) => e($row->jobposition ?? ($row->user_jobposition ?: '-')))
             ->addColumn('learning_title', fn ($row) => $this->learningTitleColumn($row))
             ->addColumn('course_title', fn ($row) => $this->learningTitleColumn($row))
+            ->addColumn('playlist', function ($row) use ($tpdCache) {
+                $playlistTitle = !empty($row->playlist_title) ? $row->playlist_title : null;
+                $tpId = !empty($row->trainingplan_id) ? $row->trainingplan_id : null;
+                if (!$playlistTitle && !empty($row->content_id) && isset($tpdCache[$row->content_id])) {
+                    $playlistTitle = $tpdCache[$row->content_id]['title'];
+                    $tpId = $tpdCache[$row->content_id]['id'];
+                }
+                if (!empty($playlistTitle)) {
+                    if (!empty($tpId)) {
+                        $url = route('learning.manage.playlist', ['id' => $tpId]);
+                        return '<a href="' . e($url) . '" class="text-primary fw-semibold" title="' . e($playlistTitle) . '"><i class="bi bi-collection-play me-1"></i>' . e($playlistTitle) . '</a>';
+                    }
+                    return e($playlistTitle);
+                }
+                return '<span class="text-muted small">-</span>';
+            })
             ->addColumn('sub_course_title', fn () => '<span class="text-muted small">-</span>')
             ->addColumn('type_badge', fn ($row) => $this->typeBadge($row))
             ->addColumn('type', fn ($row) => $this->typeBadge($row))
-            ->addColumn('category_badge', fn ($row) => $this->categoryBadge($row))
-            ->addColumn('category', fn ($row) => $this->categoryBadge($row))
+            ->addColumn('category_badge', fn ($row) => $this->categoryBadge($row, $tpdCache))
+            ->addColumn('category', fn ($row) => $this->categoryBadge($row, $tpdCache))
             ->addColumn('level', fn () => '<span class="text-muted small">-</span>')
             ->addColumn('batch', fn () => '<span class="text-muted small">-</span>')
             ->addColumn('classification_name', fn ($row) => $this->classificationColumn($row))
@@ -984,23 +1016,14 @@ class LearningDatatableService
         return '<span class="badge bg-secondary-lt text-secondary">' . e(ucfirst((string) ($row->status ?? '-'))) . '</span>';
     }
 
-    private function categoryBadge($row): string
+    private function categoryBadge($row, array $tpdCache = []): string
     {
-        if ($row->category_source === 'Playlist') {
-            if (!empty($row->playlist_title) && !empty($row->trainingplan_id)) {
-                $url = route('learning.manage.playlist', ['id' => $row->trainingplan_id]);
+        $hasPlaylist = !empty($row->playlist_title)
+            || (!empty($row->content_id) && isset($tpdCache[$row->content_id]))
+            || in_array($row->category_source, ['Content Playlist', 'Playlist'], true);
 
-                return '<div class="playlist-category text-start">'
-                    . '<span class="fw-semibold playlist-category-label">Playlist:</span> '
-                    . '<a href="' . e($url) . '" class="text-primary fw-semibold playlist-cell-link" title="' . e($row->playlist_title) . '">'
-                    . e($row->playlist_title)
-                    . '</a>'
-                    . '</div>';
-            }
-
-            return '<div class="playlist-category text-start">'
-                . '<span class="fw-semibold playlist-category-label">Playlist</span>'
-                . '</div>';
+        if ($hasPlaylist) {
+            return '<span class="badge bg-purple-lt text-purple">Content Playlist</span>';
         }
 
         return '<span class="badge bg-azure-lt text-azure">All Content</span>';
@@ -1091,22 +1114,22 @@ class LearningDatatableService
             </button>
             <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                 <li>
-                    <a class="dropdown-item d-flex align-items-center gap-2 btn-view-learning-detail btn-more-info" href="javascript:void(0);" data-source-type="' . e($sourceType) . '" data-source-id="' . e($id) . '" data-id="' . e($id) . '" data-record-id="' . e($id) . '" data-source="online" data-record-source="online">
+                    <a class="dropdown-item d-flex align-items-center gap-2 btn-view-learning-detail btn-more-info" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#moreInformationModal" data-source-type="' . e($sourceType) . '" data-source-id="' . e($id) . '" data-id="' . e($id) . '" data-record-id="' . e($id) . '" data-source="online" data-record-source="online">
                         <i class="bi bi-eye text-primary me-2"></i> More Information
                     </a>
                 </li>
                 <li>
-                    <a class="dropdown-item d-flex align-items-center gap-2" href="' . e($editUrl) . '">
+                    <a class="dropdown-item d-flex align-items-center gap-2 btn-edit-record" href="' . e($editUrl) . '" data-id="' . e($id) . '">
                         <i class="bi bi-pencil-square text-warning me-2"></i> Edit Record
                     </a>
                 </li>
                 <li>
-                    <a class="dropdown-item d-flex align-items-center gap-2 text-danger" href="#" data-bs-toggle="modal" data-bs-target="#deleteRecordModal" data-record-id="' . e($id) . '" data-record-source="online">
+                    <a class="dropdown-item d-flex align-items-center gap-2 btn-delete-record text-danger" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#deleteRecordModal" data-id="' . e($id) . '" data-record-id="' . e($id) . '" data-source="online">
                         <i class="bi bi-trash text-danger me-2"></i> Delete Record
                     </a>
                 </li>
                 <li>
-                    <a class="dropdown-item d-flex align-items-center gap-2 disabled text-muted" href="#" onclick="return false;" style="cursor: not-allowed;">
+                    <a class="dropdown-item d-flex align-items-center gap-2 btn-generate-cert disabled text-muted" href="javascript:void(0);" data-id="' . e($id) . '" onclick="return false;" style="cursor: not-allowed;">
                         <i class="bi bi-award text-info me-2"></i> Generate Certificate
                     </a>
                 </li>

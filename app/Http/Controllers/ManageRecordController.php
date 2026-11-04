@@ -253,6 +253,8 @@ class ManageRecordController extends Controller
 
         $sourceParam = $request ? strtolower(trim((string) $request->input('source', ''))) : '';
         $source = $sourceParam;
+        $typeParam = $request ? strtolower(trim((string) $request->input('type', ''))) : '';
+        $type = $typeParam;
 
         // Normalize composite IDs (e.g. 'offline:123', 'online:content:456', 'online:playlist:789')
         if (is_string($id) && strpos($id, ':') !== false) {
@@ -262,6 +264,11 @@ class ManageRecordController extends Controller
                 $source = 'offline';
             } elseif (in_array('online', $parts, true)) {
                 $source = 'online';
+            }
+            if (in_array('playlist', $parts, true)) {
+                $type = 'playlist';
+            } elseif (in_array('content', $parts, true)) {
+                $type = 'content';
             }
         }
 
@@ -556,7 +563,7 @@ class ManageRecordController extends Controller
                     'attendance_reason'       => '-',
                     'l2_status'               => '-',
                     'l3_status'               => '-',
-                    'bond_status'             => 'No',
+                    'bond_status'             => '-',
                     'bond_duration'           => '-',
                     'bond_end_date'           => '-',
                     'bond_amount'             => '-',
@@ -577,29 +584,60 @@ class ManageRecordController extends Controller
         }
 
         // 2. Online record: check content_users
-        $cu = DB::table('content_users as cu')
-            ->join('users as u', 'cu.user_id', '=', 'u.id')
-            ->leftJoin('content as c', 'cu.content_id', '=', 'c.id')
-            ->leftJoin('classification as cl', 'c.classification_id', '=', 'cl.id')
-            ->where('cu.id', $id)
-            ->select([
-                'cu.id',
-                'cu.user_id',
-                'cu.content_id',
-                'cu.progress',
-                'cu.finish',
-                'u.id_emp as employee_id',
-                'u.name as employee_name',
-                'u.jobgrade as grade',
-                'u.jobposition as job_position',
-                'u.team',
-                'u.department',
-                'u.company_name as company',
-                'c.title as course_title',
-                'c.type',
-                'c.author as instructor',
-            ])
-            ->first();
+        $cu = null;
+        if ($type !== 'playlist') {
+            $cu = DB::table('content_users as cu')
+                ->leftJoin('users as u', 'cu.user_id', '=', 'u.id')
+                ->leftJoin('content as c', 'cu.content_id', '=', 'c.id')
+                ->leftJoin('classification as cl', 'c.classification_id', '=', 'cl.id')
+                ->where('cu.id', $id)
+                ->select([
+                    'cu.id',
+                    'cu.user_id',
+                    'cu.content_id',
+                    'cu.progress',
+                    'cu.finish',
+                    'u.id_emp as employee_id',
+                    'u.name as employee_name',
+                    'u.jobgrade as grade',
+                    'u.jobposition as job_position',
+                    'u.team',
+                    'u.department',
+                    'u.company_name as company',
+                    'c.title as course_title',
+                    'c.type',
+                    'c.author as instructor',
+                    'cl.classification_name',
+                ])
+                ->first();
+
+            if (!$cu && is_numeric($id)) {
+                $cu = DB::table('content_users as cu')
+                    ->leftJoin('users as u', 'cu.user_id', '=', 'u.id')
+                    ->leftJoin('content as c', 'cu.content_id', '=', 'c.id')
+                    ->leftJoin('classification as cl', 'c.classification_id', '=', 'cl.id')
+                    ->where('cu.content_id', $id)
+                    ->select([
+                        'cu.id',
+                        'cu.user_id',
+                        'cu.content_id',
+                        'cu.progress',
+                        'cu.finish',
+                        'u.id_emp as employee_id',
+                        'u.name as employee_name',
+                        'u.jobgrade as grade',
+                        'u.jobposition as job_position',
+                        'u.team',
+                        'u.department',
+                        'u.company_name as company',
+                        'c.title as course_title',
+                        'c.type',
+                        'c.author as instructor',
+                        'cl.classification_name',
+                    ])
+                    ->first();
+            }
+        }
 
         if ($cu) {
             $progress = (float) ($cu->progress ?? 0);
@@ -614,6 +652,30 @@ class ManageRecordController extends Controller
             $empName = trim((string) ($cu->employee_name ?: '-'));
             if ($empName !== '-') {
                 $empName = strtoupper($empName);
+            }
+
+            $empGrade = $cu->grade ?: null;
+            $empJobPosition = $cu->job_position ?: null;
+            if ((!$empGrade || !$empJobPosition) && ($cleanEmpId !== '-' || $cu->user_id)) {
+                $empProfile = DB::table('offline_training_users')
+                    ->where(function ($q) use ($cleanEmpId, $cu) {
+                        if ($cleanEmpId !== '-') {
+                            $q->where('employee_id', $cleanEmpId);
+                        }
+                        if ($cu->user_id) {
+                            $q->orWhere('user_id', $cu->user_id);
+                        }
+                    })
+                    ->where(function ($q) {
+                        $q->whereNotNull('grade')->orWhereNotNull('job_position');
+                    })
+                    ->orderByDesc('id')
+                    ->first();
+
+                if ($empProfile) {
+                    $empGrade = $empGrade ?: $empProfile->grade;
+                    $empJobPosition = $empJobPosition ?: $empProfile->job_position;
+                }
             }
 
             // Assessment L2 lookup
@@ -672,11 +734,10 @@ class ManageRecordController extends Controller
 
             $certInstitution = $cert?->cert_institution
                 ?: ($cert?->cs_institution
-                    ?: ($certSetting?->institution
-                        ?: ($cert?->issuer_name
-                            ?: ($cs?->institution
-                                ?: ($cs?->issuer_name
-                                    ?: ($cu->finish == '1' || $progress >= 100 ? 'PT Krakatau Posco' : '-'))))));
+                    ?: ($cert?->issuer_name
+                        ?: ($cs?->institution
+                            ?: ($cs?->issuer_name
+                                ?: ($cu->finish == '1' || $progress >= 100 ? 'PT Krakatau Posco' : '-')))));
 
             $certIssuedDate = $cert?->issued_date
                 ?: ($cs?->issued_date
@@ -692,12 +753,14 @@ class ManageRecordController extends Controller
 
             $recordData = [
                 'source'                  => 'KP OWL',
+                'category'                => $cu->classification_name ?: ($cu->type ?: 'KP OWL'),
+                'category_source'         => $cu->classification_name ?: ($cu->type ?: 'KP OWL'),
                 'course_title'            => $cu->course_title ?: 'Untitled Content',
                 'sub_course_title'        => '-',
                 'employee_id'             => $cleanEmpId,
                 'employee_name'           => $empName,
-                'grade'                   => $cu->grade ?: '-',
-                'job_position'            => $cu->job_position ?: '-',
+                'grade'                   => $empGrade ?: '-',
+                'job_position'            => $empJobPosition ?: '-',
                 'team'                    => $cu->team ?: '-',
                 'level'                   => '-',
                 'batch'                   => '-',
@@ -711,7 +774,7 @@ class ManageRecordController extends Controller
                 'attendance'              => $attendance,
                 'attendance_reason'       => '-',
                 'progress_status'         => $progressStatus,
-                'bond_status'             => 'No',
+                'bond_status'             => '-',
                 'bond_duration'           => '-',
                 'bond_end_date'           => '-',
                 'bond_amount'             => '-',
@@ -734,9 +797,10 @@ class ManageRecordController extends Controller
 
         // 3. Check playlist_content_users
         $pcu = DB::table('playlist_content_users as pcu')
-            ->join('users as u', 'pcu.user_id', '=', 'u.id')
+            ->leftJoin('users as u', 'pcu.user_id', '=', 'u.id')
             ->leftJoin('content as c', 'pcu.content_id', '=', 'c.id')
             ->leftJoin('trainingplan as tp', 'pcu.trainingplan_id', '=', 'tp.id')
+            ->leftJoin('classification as cl', 'c.classification_id', '=', 'cl.id')
             ->where('pcu.id', $id)
             ->select([
                 'pcu.id',
@@ -754,11 +818,41 @@ class ManageRecordController extends Controller
                 'u.company_name as company',
                 'c.title as course_title',
                 'tp.title as playlist_title',
-                'tp.instructor as playlist_instructor',
                 'c.type',
                 'c.author as instructor',
+                'cl.classification_name',
             ])
             ->first();
+
+        if (!$pcu && is_numeric($id)) {
+            $pcu = DB::table('playlist_content_users as pcu')
+                ->leftJoin('users as u', 'pcu.user_id', '=', 'u.id')
+                ->leftJoin('content as c', 'pcu.content_id', '=', 'c.id')
+                ->leftJoin('trainingplan as tp', 'pcu.trainingplan_id', '=', 'tp.id')
+                ->leftJoin('classification as cl', 'c.classification_id', '=', 'cl.id')
+                ->where('pcu.trainingplan_id', $id)
+                ->select([
+                    'pcu.id',
+                    'pcu.user_id',
+                    'pcu.content_id',
+                    'pcu.trainingplan_id',
+                    'pcu.progress',
+                    'pcu.finish',
+                    'u.id_emp as employee_id',
+                    'u.name as employee_name',
+                    'u.jobgrade as grade',
+                    'u.jobposition as job_position',
+                    'u.team',
+                    'u.department',
+                    'u.company_name as company',
+                    'c.title as course_title',
+                    'tp.title as playlist_title',
+                    'c.type',
+                    'c.author as instructor',
+                    'cl.classification_name',
+                ])
+                ->first();
+        }
 
         if ($pcu) {
             $progress = (float) ($pcu->progress ?? 0);
@@ -773,6 +867,30 @@ class ManageRecordController extends Controller
             $empName = trim((string) ($pcu->employee_name ?: '-'));
             if ($empName !== '-') {
                 $empName = strtoupper($empName);
+            }
+
+            $empGrade = $pcu->grade ?: null;
+            $empJobPosition = $pcu->job_position ?: null;
+            if ((!$empGrade || !$empJobPosition) && ($cleanEmpId !== '-' || $pcu->user_id)) {
+                $empProfile = DB::table('offline_training_users')
+                    ->where(function ($q) use ($cleanEmpId, $pcu) {
+                        if ($cleanEmpId !== '-') {
+                            $q->where('employee_id', $cleanEmpId);
+                        }
+                        if ($pcu->user_id) {
+                            $q->orWhere('user_id', $pcu->user_id);
+                        }
+                    })
+                    ->where(function ($q) {
+                        $q->whereNotNull('grade')->orWhereNotNull('job_position');
+                    })
+                    ->orderByDesc('id')
+                    ->first();
+
+                if ($empProfile) {
+                    $empGrade = $empGrade ?: $empProfile->grade;
+                    $empJobPosition = $empJobPosition ?: $empProfile->job_position;
+                }
             }
 
             // Assessment L2 lookup
@@ -853,12 +971,14 @@ class ManageRecordController extends Controller
 
             $recordData = [
                 'source'                  => 'KP OWL',
+                'category'                => $pcu->classification_name ?: 'Playlist',
+                'category_source'         => $pcu->classification_name ?: 'Playlist',
                 'course_title'            => $pcu->playlist_title ?: ($pcu->course_title ?: 'Playlist'),
                 'sub_course_title'        => $pcu->playlist_title && $pcu->course_title ? $pcu->course_title : '-',
                 'employee_id'             => $cleanEmpId,
                 'employee_name'           => $empName,
-                'grade'                   => $pcu->grade ?: '-',
-                'job_position'            => $pcu->job_position ?: '-',
+                'grade'                   => $empGrade ?: '-',
+                'job_position'            => $empJobPosition ?: '-',
                 'team'                    => $pcu->team ?: '-',
                 'level'                   => '-',
                 'batch'                   => '-',
@@ -868,11 +988,11 @@ class ManageRecordController extends Controller
                 'venue'                   => 'KP-OWL',
                 'delivery_method'         => 'Online',
                 'sub_delivery_method'     => 'Playlist / Path',
-                'instructor'              => $pcu->playlist_instructor ?: ($pcu->instructor ?: '-'),
+                'instructor'              => $pcu->instructor ?: '-',
                 'attendance'              => $attendance,
                 'attendance_reason'       => '-',
                 'progress_status'         => $progressStatus,
-                'bond_status'             => 'No',
+                'bond_status'             => '-',
                 'bond_duration'           => '-',
                 'bond_end_date'           => '-',
                 'bond_amount'             => '-',

@@ -80,7 +80,7 @@ class OnlineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wit
             'Team',
             'Department',
             'Company',
-            'Course Title',
+            'Course Title',
             'Sub Course Title',
             'Type',
             'Category',
@@ -220,14 +220,14 @@ class OnlineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wit
             $row->user_company ?: '-',                                        // 8. Company
             $courseTitle,                                                     // 9. Course Title
             '-',                                                              // 10. Sub Course Title
-            $isPlaylist ? 'Playlist' : ($row->content_type ?: 'Content'),     // 11. Type
-            $isPlaylist ? 'Playlist' : 'Content',                             // 12. Category
+            $isPlaylist ? 'Playlist' : ($row->content_type ?: 'Document'),    // 11. Type
+            $isPlaylist ? 'Content Playlist' : 'All Content',                 // 12. Category
             '-',                                                              // 13. Level
             '-',                                                              // 14. Batch
             $mainClass,                                                       // 15. Main Classification
             '-',                                                              // 16. Sub Classification
             'Online',                                                         // 17. Delivery Method
-            'E-learning',                                                     // 18. Sub Delivery Method
+            'KP OWL',                                                         // 18. Sub Delivery Method
             'Internal',                                                       // 19. Provider
             '-',                                                              // 20. Sub Provider
             'KP-OWL',                                                         // 21. Provider Name
@@ -245,21 +245,21 @@ class OnlineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wit
             $recordMonthStr,                                                  // 33. Record Month
             'Mandatory',                                                      // 34. Requirement
             $attendanceStr,                                                   // 35. Attendance
-            '',                                                               // 36. Attendance Reason
+            '-',                                                              // 36. Attendance Reason
             'No',                                                             // 37. Bond Status
-            '',                                                               // 38. Bond Duration
-            '',                                                               // 39. Bond End Date
-            '',                                                               // 40. Bond Amount
-            '',                                                               // 41. Score (L1) - Course
-            $scoreL2Val,                                                      // 42. Score (L2)
-            $scoreL2Val !== '' ? ($scoreL2Val >= 70 ? 'Passed' : 'Failed') : '', // 43. L2 Status
-            '',                                                               // 44. Score (L3)
-            '',                                                               // 45. L3 Status
+            '-',                                                              // 38. Bond Duration
+            '-',                                                              // 39. Bond End Date
+            '-',                                                              // 40. Bond Amount
+            '-',                                                              // 41. Score (L1) - Course
+            $scoreL2Val !== '' ? $scoreL2Val : '-',                           // 42. Score (L2)
+            $scoreL2Val !== '' && $scoreL2Val !== '-' ? ($scoreL2Val >= 70 ? 'Passed' : 'Failed') : '-', // 43. L2 Status
+            '-',                                                              // 44. Score (L3)
+            '-',                                                              // 45. L3 Status
             $certAvailability,                                                // 46. Certificate Availability
             $certInstitution,                                                 // 47. Certificate Institution
             $certIssuedDate,                                                  // 48. Certificate Issued Date
             $certExpiredDate,                                                 // 49. Certificate Expired Date
-            '',                                                               // 50. Person in Charge (PIC)
+            '-',                                                              // 50. Person in Charge (PIC)
             $totalEngagementDuration,                                         // 51. Total Engagement Time
             $totalEngagementLh,                                               // 52. Total Engagement Time (LH)
         ];
@@ -467,7 +467,7 @@ class OnlineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wit
             . '<numFmt numFmtId="164" formatCode="&quot;Rp&quot;#,##0"/>'
             . '<numFmt numFmtId="165" formatCode="dd/mm/yyyy"/>'
             . '<numFmt numFmtId="166" formatCode="hh:mm:ss"/>'
-            . '<numFmt numFmtId="167" formatCode="0.00"/>'
+            . '<numFmt numFmtId="167" formatCode="0.00&quot; h&quot;"/>'
             . '</numFmts>'
             . '<fonts count="4">'
             . '<font><sz val="10"/><name val="Calibri"/></font>'

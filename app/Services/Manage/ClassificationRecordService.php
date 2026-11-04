@@ -407,8 +407,9 @@ class ClassificationRecordService
                 return sprintf('%02d:%02d:%02d', $h, $m, $s);
             })
             ->addColumn('action', function ($row) {
-                $source = $row->source ?? 'online';
-                $id = $row->source_id ?? '';
+                $source = strtolower(trim((string) ($row->source ?? 'online')));
+                $id = $row->source_id ?? ($row->id ?? '');
+                $sourceType = $row->source_type ?? ($source === 'offline' ? 'offline' : 'content');
                 $editUrl = route('manage.record.edit', $id) . '?source=' . e($source);
 
                 return '<div class="dropdown">
@@ -417,13 +418,13 @@ class ClassificationRecordService
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                         <li>
-                            <a class="dropdown-item d-flex align-items-center gap-2 btn-view-detail" href="#" data-id="' . e($id) . '" data-source="' . e($source) . '">
-                                <i class="ti ti-eye text-primary"></i> Details
+                            <a class="dropdown-item d-flex align-items-center gap-2 btn-more-info" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#moreInformationModal" data-id="' . e($id) . '" data-record-id="' . e($id) . '" data-source-id="' . e($id) . '" data-type="' . e($sourceType) . '" data-source-type="' . e($sourceType) . '" data-source="' . e($source) . '" data-record-source="' . e($source) . '">
+                                <i class="bi bi-eye text-primary"></i> More Information
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item d-flex align-items-center gap-2" href="' . e($editUrl) . '">
-                                <i class="ti ti-edit text-warning"></i> Edit Record
+                            <a class="dropdown-item d-flex align-items-center gap-2 btn-edit-record" href="' . e($editUrl) . '" data-id="' . e($id) . '">
+                                <i class="bi bi-pencil-square text-warning"></i> Edit Record</a></li><li><a class="dropdown-item d-flex align-items-center gap-2 btn-delete-record text-danger" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#deleteRecordModal" data-id="' . e($id) . '" data-record-id="' . e($id) . '" data-source="' . e($source) . '" data-record-source="' . e($source) . '" data-type="' . e($sourceType) . '" data-source-type="' . e($sourceType) . '"><i class="bi bi-trash text-danger"></i> Delete Record</a></li><li><a class="dropdown-item d-flex align-items-center gap-2 btn-generate-cert disabled text-muted" href="javascript:void(0);" data-id="' . e($id) . '" onclick="return false;" style="cursor: not-allowed;"><i class="bi bi-award text-info"></i> Generate Certificate
                             </a>
                         </li>
                     </ul>

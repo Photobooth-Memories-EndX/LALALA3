@@ -5,8 +5,9 @@
             <!-- Modal Header -->
             <div class="modal-header border-0 pb-0 pt-3 px-4">
                 <div class="d-flex align-items-center gap-2">
-                    <i class="bi bi-file-earmark-text text-primary fs-5"></i>
-                    <h5 class="modal-title fw-semibold text-slate-800 mb-0" id="moreInformationModalLabel" style="font-size: 1.05rem; font-weight: 600; color: #1e293b;">Record Details</h5>
+                    <h5 class="modal-title font-semibold text-slate-800 d-flex align-items-center gap-2 mb-0" id="moreInformationModalLabel" style="font-size: 1.05rem; font-weight: 600; color: #1e293b;">
+                        <i class="bi bi-info-circle text-blue-600"></i> More Information
+                    </h5>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -243,10 +244,12 @@ body.theme-dark #moreInformationModal .text-slate-400 {
 <script>
 let deleteRecordId = null;
 let deleteRecordSource = 'offline';
+let deleteRecordType = 'content';
 
 $(document).on('click', '[data-bs-target="#deleteRecordModal"]', function(e) {
     deleteRecordId = $(this).data('record-id') || $(this).data('id');
     deleteRecordSource = ($(this).data('record-source') || $(this).data('source') || 'offline').toString().toLowerCase();
+    deleteRecordType = ($(this).data('source-type') || $(this).data('type') || 'content').toString().toLowerCase();
 });
 
 $(document).on('click', '.btn-confirm-delete-action', function(e) {
@@ -258,7 +261,7 @@ $(document).on('click', '.btn-confirm-delete-action', function(e) {
 
     const url = (deleteRecordSource === 'offline')
         ? '/manage/record/offline/' + deleteRecordId
-        : '/manage/record/online/content/' + deleteRecordId;
+        : '/manage/record/online/' + (deleteRecordType === 'playlist' ? 'playlist' : 'content') + '/' + deleteRecordId;
 
     $.ajax({
         url: url,
@@ -327,7 +330,37 @@ function renderStatusPill(pillSelector, containerSelector, val) {
 // Global modal populator function
 window.populateMoreInformationModal = function(response) {
     if (!response) return;
-    const d = response.data || response;
+    const raw = response.data || response;
+    // Normalize nested employee, learning, and progress structures (e.g. from RecordOnlineController::detail)
+    const emp = raw.employee || {};
+    const lrn = raw.learning || {};
+    const prog = raw.progress || {};
+
+    const d = {
+        source: raw.source || raw.source_type || (raw.source_badge ? $(raw.source_badge).text().trim() : 'KP OWL'),
+        source_type: raw.source_type || raw.source || 'KP OWL',
+        category: raw.category || raw.category_source || lrn.enrollment || lrn.category || '',
+        course_title: raw.course_title || raw.title || raw.course_name || raw.learning_title || lrn.title || '-',
+        sub_course_title: raw.sub_course_title || raw.sub_course_name || raw.sub_course || lrn.sub_title || '-',
+        employee_id: raw.employee_id || raw.id_emp || raw.nip || emp.id_emp || emp.employee_id || emp.nip || '-',
+        employee_name: raw.employee_name || raw.user_name || raw.participant_name || raw.name || emp.name || emp.employee_name || '-',
+        grade: raw.grade || raw.jobgrade || raw.user_jobgrade || emp.grade || emp.jobgrade || '-',
+        job_position: raw.job_position || raw.jobposition || raw.user_jobposition || raw.position || emp.job_position || emp.jobposition || '-',
+        level: raw.level || lrn.level || '-',
+        batch: raw.batch || lrn.batch || '-',
+        instructor: raw.instructor || raw.author || raw.content_author || lrn.author || lrn.instructor || '-',
+        sub_provider: raw.sub_provider || raw.provider_name || raw.provider || lrn.provider || '-',
+        attendance_reason: raw.attendance_reason || '-',
+        bond_status: raw.bond_status ?? '-',
+        bond_duration: raw.bond_duration ?? '-',
+        bond_end_date: raw.bond_end_date ?? '-',
+        bond_amount: raw.bond_amount ?? raw.bond_amount_idr ?? '-',
+        l2_status: raw.l2_status || raw.score_l2_status || '-',
+        l3_status: raw.l3_status || raw.score_l3_status || '-',
+        certificate_institution: raw.certificate_institution || raw.institution || '-',
+        certificate_issued_date: raw.certificate_issued_date || raw.issued_date || '-',
+        certificate_expired_date: raw.certificate_expired_date || raw.expired_date || '-',
+    };
 
     // Set #modal-badge-source text
     const sourceText = d.source || (d.source_type || 'KP OWL');
@@ -411,6 +444,7 @@ $(document).off('click.moreInfo').on('click.moreInfo', '[data-bs-target="#moreIn
     const $el = $(this);
     const recordId = $el.data('id') || $el.data('record-id') || $el.attr('data-id') || $el.attr('data-record-id');
     const source = ($el.data('source') || $el.data('record-source') || $el.attr('data-source') || $el.attr('data-record-source') || 'online').toString().toLowerCase();
+    const type = ($el.data('source-type') || $el.data('type') || $el.attr('data-source-type') || $el.attr('data-type') || '').toString().toLowerCase();
 
     if (!recordId) return;
 
@@ -425,7 +459,7 @@ $(document).off('click.moreInfo').on('click.moreInfo', '[data-bs-target="#moreIn
 
     // Fetch the record detail via $.ajax() from /manage/record/detail/{id}
     $.ajax({
-        url: '/manage/record/detail/' + encodeURIComponent(recordId) + (source ? '?source=' + encodeURIComponent(source) : ''),
+        url: '/manage/record/detail/' + encodeURIComponent(recordId) + '?source=' + encodeURIComponent(source) + (type ? '&type=' + encodeURIComponent(type) : ''),
         type: 'GET',
         dataType: 'json',
         success: function(response) {
@@ -436,7 +470,7 @@ $(document).off('click.moreInfo').on('click.moreInfo', '[data-bs-target="#moreIn
         error: function() {
             // Fallback attempt to /manage/record/{id}/more-info
             $.ajax({
-                url: '/manage/record/' + encodeURIComponent(recordId) + '/more-info?source=' + encodeURIComponent(source),
+                url: '/manage/record/' + encodeURIComponent(recordId) + '/more-info?source=' + encodeURIComponent(source) + (type ? '&type=' + encodeURIComponent(type) : ''),
                 type: 'GET',
                 dataType: 'json',
                 success: function(response) {
@@ -445,9 +479,20 @@ $(document).off('click.moreInfo').on('click.moreInfo', '[data-bs-target="#moreIn
                     window.populateMoreInformationModal(response);
                 },
                 error: function() {
-                    $('#more-info-loading').hide();
-                    $('#more-info-content').show();
-                    window.populateMoreInformationModal({
+                    // Fallback to user learning record detail
+                    $.ajax({
+                        url: '/my-learning/learning-record/detail/' + encodeURIComponent(source) + '/' + encodeURIComponent(recordId),
+                        type: 'GET',
+                        dataType: 'json',
+                        success: function(userRes) {
+                            $('#more-info-loading').hide();
+                            $('#more-info-content').show();
+                            window.populateMoreInformationModal(userRes);
+                        },
+                        error: function() {
+                            $('#more-info-loading').hide();
+                            $('#more-info-content').show();
+                            window.populateMoreInformationModal({
                         source: (source.includes('non') || source === 'offline') ? 'NON KP OWL' : 'KP OWL',
                         category: (source.includes('non') || source === 'offline') ? 'Non KP OWL' : 'KP OWL',
                         course_title: '-',
@@ -461,7 +506,7 @@ $(document).off('click.moreInfo').on('click.moreInfo', '[data-bs-target="#moreIn
                         instructor: '-',
                         sub_provider: '-',
                         attendance_reason: '-',
-                        bond_status: 'No',
+                        bond_status: '-',
                         bond_duration: '-',
                         bond_end_date: '-',
                         bond_amount: '-',
@@ -470,6 +515,8 @@ $(document).off('click.moreInfo').on('click.moreInfo', '[data-bs-target="#moreIn
                         certificate_institution: '-',
                         certificate_issued_date: '-',
                         certificate_expired_date: '-'
+                    });
+                        }
                     });
                 }
             });

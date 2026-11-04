@@ -232,7 +232,7 @@ class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
             . '<numFmts count="3">'
             . '<numFmt numFmtId="165" formatCode="yyyy-mm-dd"/>'
             . '<numFmt numFmtId="166" formatCode="hh:mm:ss"/>'
-            . '<numFmt numFmtId="167" formatCode="General&quot; h&quot;"/>'
+            . '<numFmt numFmtId="167" formatCode="0.00&quot; h&quot;"/>'
             . '</numFmts>'
             . '<fonts count="4">'
             . '<font><sz val="10"/><name val="Calibri"/></font>'

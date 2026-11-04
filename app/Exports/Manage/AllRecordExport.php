@@ -273,11 +273,12 @@ class AllRecordExport implements Responsable
             'xl/styles.xml',
             '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             . '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
-            . '<numFmts count="4">'
+            . '<numFmts count="5">'
             . '<numFmt numFmtId="164" formatCode="&quot;Rp&quot;#,##0"/>'
             . '<numFmt numFmtId="165" formatCode="dd/mm/yyyy"/>'
-            . '<numFmt numFmtId="166" formatCode="hh:mm:ss"/>'
-            . '<numFmt numFmtId="167" formatCode="0.00"/>'
+            . '<numFmt numFmtId="166" formatCode="[hh]:mm:ss"/>'
+            . '<numFmt numFmtId="167" formatCode="0.00&quot; h&quot;"/>'
+            . '<numFmt numFmtId="168" formatCode="0&quot; Months&quot;"/>'
             . '</numFmts>'
             . '<fonts count="3">'
             . '<font><sz val="10"/><name val="Calibri"/></font>'
@@ -296,7 +297,7 @@ class AllRecordExport implements Responsable
             . '<cellStyleXfs count="1">'
             . '<xf numFmtId="0" fontId="0" fillId="0" borderId="0"/>'
             . '</cellStyleXfs>'
-            . '<cellXfs count="14">'
+            . '<cellXfs count="18">'
             . '<xf numFmtId="49" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
             . '<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
             . '<xf numFmtId="49" fontId="2" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
@@ -311,6 +312,10 @@ class AllRecordExport implements Responsable
             . '<xf numFmtId="9" fontId="2" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
             . '<xf numFmtId="167" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
             . '<xf numFmtId="167" fontId="2" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<xf numFmtId="166" fontId="2" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<xf numFmtId="2" fontId="2" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<xf numFmtId="168" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<xf numFmtId="168" fontId="2" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
             . '</cellXfs>'
             . '</styleSheet>'
         );
@@ -401,8 +406,27 @@ class AllRecordExport implements Responsable
                 $r = $rowCount + 1;
 
                 $isPlaylistRow = ($row->type === 'Playlist' || ($row->source_type ?? '') === 'playlist');
+                $isOffline = ($row->source === 'offline');
+                $parentPlaylistTitle = '-';
+                if ($isOffline) {
+                    $categoryVal = 'Non KP-OWL';
+                } else {
+                    $contentId = !empty($row->content_id) ? (int) $row->content_id : null;
+                    $parentPlaylist = ($contentId && isset($tpdCache[$contentId])) ? $tpdCache[$contentId] : null;
 
-                // Duration formatted as HH:MM:SS
+                    if (!empty($row->playlist_title)) {
+                        $parentPlaylistTitle = trim((string) $row->playlist_title);
+                        $categoryVal = 'Content Playlist';
+                    } elseif ($parentPlaylist) {
+                        $parentPlaylistTitle = $parentPlaylist['title'];
+                        $categoryVal = 'Content Playlist';
+                    } else {
+                        $parentPlaylistTitle = '-';
+                        $categoryVal = 'All Content';
+                    }
+                }
+
+                // Course Duration formatted as HH:MM:SS
                 $durationFormatted = '-';
                 if (!empty($row->duration_seconds)) {
                     $secs = (int) $row->duration_seconds;
@@ -411,9 +435,12 @@ class AllRecordExport implements Responsable
                     $seconds = $secs % 60;
                     $durationFormatted = sprintf('%02d:%02d:%02d', $hours, $mins, $seconds);
                 }
+                $courseSecs = (int) ($row->duration_seconds ?? 0);
+                $courseDurVal = ($courseSecs > 0) ? ($courseSecs / 86400.0) : '-';
 
                 // Recognized Duration formatted as HH:MM:SS
                 $recognizedFormatted = '-';
+                $recognizedDurVal = '-';
                 if ($row->source !== 'offline') {
                     if (isset($row->recognized_duration_seconds)) {
                         $rSecs = (int) $row->recognized_duration_seconds;
@@ -421,13 +448,10 @@ class AllRecordExport implements Responsable
                         $recognizedService = app(\App\Services\Learning\LearningRecordRecognizedDurationService::class);
                         $rSecs = $recognizedService->resolveFromRow($row);
                     }
-                    $rHours = floor($rSecs / 3600);
-                    $rMins = floor(($rSecs % 3600) / 60);
-                    $rSeconds = $rSecs % 60;
-                    $recognizedFormatted = sprintf('%02d:%02d:%02d', $rHours, $rMins, $rSeconds);
+                    $recognizedDurVal = ($rSecs >= 0) ? ($rSecs / 86400.0) : 0;
                 }
 
-                // Total Engagement Duration formatted as HH:MM:SS
+// Total Engagement Duration formatted as HH:MM:SS (Col 51) and Total Engagement Time (LH) (Col 52)
                 $engSecs = (int) ($row->afk_duration_seconds ?? 0);
                 if ($engSecs <= 0 && $row->source === 'offline') {
                     $engSecs = (int) round(((float) ($row->training_hours ?? ($row->learning_hours ?? 0))) * 3600);
@@ -437,6 +461,7 @@ class AllRecordExport implements Responsable
                 $es = $engSecs % 60;
                 $totalEngagementDuration = sprintf('%02d:%02d:%02d', $eh, $em, $es);
                 $totalEngagementLh = round($engSecs / 3600, 2);
+                $totalEngagementVal = ($engSecs >= 0) ? ($engSecs / 86400.0) : 0;
 
                 // Learning Hours: raw numeric float for SUM calculations
                 $lhNumeric = ($row->learning_hours !== null && $row->learning_hours !== '' && is_numeric($row->learning_hours))
@@ -455,7 +480,7 @@ class AllRecordExport implements Responsable
                 $delivMethod = $isKpOwl ? 'Online' : 'Offline';
 
                 if ($isKpOwl) {
-                    $subDelivMethod = $row->sub_delivery_method ?: (($row->source_type ?? '') === 'playlist' ? 'Playlist / Path' : 'Self-Paced / LMS');
+                    $subDelivMethod = 'KP OWL';
                 } else {
                     $sub = $row->sub_delivery_method ?? $row->training_type ?? $row->type ?? null;
                     if (!$sub || $sub === '-' || strtolower(trim((string) $sub)) === 'offline') {
@@ -500,7 +525,10 @@ class AllRecordExport implements Responsable
 
                 $textStyle = $isPlaylistRow ? '2' : '0';
                 $intStyle = $isPlaylistRow ? '10' : '4';
+                $floatStyle = $isPlaylistRow ? '15' : '5';
                 $pctStyle = $isPlaylistRow ? '11' : '6';
+                $timeStyle = $isPlaylistRow ? '14' : '8';
+                $bondDurStyle = $isPlaylistRow ? '17' : '16';
 
                 // Employee ID: raw string/integer only
                 $rawEmp = $row->employee_id ?: '-';
@@ -601,8 +629,8 @@ class AllRecordExport implements Responsable
                     ['H', 'str', $row->company ?: '-', $textStyle],                             // 8. Company
                     ['I', 'str', $row->learning_title ?: '-', $textStyle],                      // 9. Course Title
                     ['J', 'str', $row->sub_course_name ?: '-', $textStyle],                     // 10. Sub Course Title
-                    ['K', 'str', $row->type ?: '-', $textStyle],                                // 11. Type
-                    ['L', 'str', $row->category ?: '-', $textStyle],                            // 12. Category
+                    ['K', 'str', ($row->source === 'offline' || !$isKpOwl) ? '-' : ($row->type ?: '-'), $textStyle], // 11. Type
+                    ['L', 'str', $categoryVal, $textStyle],                                     // 12. Category
                     ['M', 'str', $row->level ?: '-', $textStyle],                               // 13. Level
                     ['N', 'str', $row->batch ?: '-', $textStyle],                               // 14. Batch
                     ['O', 'str', $row->classification ?: 'Unclassified', $textStyle],           // 15. Main Classification
@@ -628,7 +656,7 @@ class AllRecordExport implements Responsable
                     ['AI', 'str', $attendanceStr, $textStyle],                                  // 35. Attendance
                     ['AJ', 'str', $row->attendance_reason ?: '', $textStyle],                   // 36. Attendance Reason
                     ['AK', 'str', $row->bond_status ?: 'No', $textStyle],                       // 37. Bond Status
-                    ['AL', 'str', !empty($row->bond_duration) ? $row->bond_duration . ' Months' : '', $textStyle], // 38. Bond Duration
+                    ['AL', (!empty($row->bond_duration) && is_numeric($row->bond_duration) && (int)$row->bond_duration > 0) ? 'month' : 'str', (!empty($row->bond_duration) && is_numeric($row->bond_duration) && (int)$row->bond_duration > 0) ? (int)$row->bond_duration : '-', (!empty($row->bond_duration) && is_numeric($row->bond_duration) && (int)$row->bond_duration > 0) ? $bondDurStyle : $textStyle], // 38. Bond Duration
                     ['AM', $bondEndDateStr !== '' ? 'str' : 'blank', $bondEndDateStr, $bondEndDateStr !== '' ? '7' : $textStyle], // 39. Bond End Date
                     ['AN', $hasBond ? 'curr' : 'blank', $hasBond ? (float) $idr : '', $hasBond ? '9' : $textStyle], // 40. Bond Amount
                     ['AO', $scoreL1 !== null ? 'float' : 'blank', $scoreL1 !== null ? $scoreL1 : '', $scoreL1 !== null ? '5' : $textStyle], // 41. Score (L1) - Course
@@ -682,14 +710,14 @@ class AllRecordExport implements Responsable
             [$colLetter, $type, $val, $styleId] = $c;
             $coord = "{$colLetter}{$r}";
 
-            if ($val === null || $val === '' || $type === 'blank') {
-                $xml .= "<c r=\"{$coord}\" s=\"{$styleId}\"/>";
+            if ($val === null || $val === '' || $val === '-' || $type === 'blank') {
+                $xml .= "<c r=\"{$coord}\" t=\"inlineStr\" s=\"{$styleId}\"><is><t>" . ($val === '-' ? '-' : '') . "</t></is></c>";
             } elseif ($type === 'pct') {
                 $xml .= "<c r=\"{$coord}\" s=\"{$styleId}\"><v>{$val}</v></c>";
             } elseif ($type === 'lh' || $type === 'hours') {
                 $lhVal = (float) $val;
                 $xml .= "<c r=\"{$coord}\" s=\"{$styleId}\"><v>{$lhVal}</v></c>";
-            } elseif ($type === 'int') {
+            } elseif ($type === 'int' || $type === 'month') {
                 $intVal = (int) $val;
                 $xml .= "<c r=\"{$coord}\" s=\"{$styleId}\"><v>{$intVal}</v></c>";
             } elseif ($type === 'float') {
@@ -698,6 +726,34 @@ class AllRecordExport implements Responsable
             } elseif ($type === 'curr') {
                 $currVal = (float) $val;
                 $xml .= "<c r=\"{$coord}\" s=\"{$styleId}\"><v>{$currVal}</v></c>";
+            } elseif ($type === 'num') {
+                $xml .= "<c r=\"{$coord}\" s=\"{$styleId}\"><v>{$val}</v></c>";
+            } elseif ($type === 'dur' || $type === 'time') {
+                if (is_numeric($val)) {
+                    $numStr = sprintf('%.10F', (float) $val);
+                    $numStr = rtrim(rtrim($numStr, '0'), '.');
+                    if ($numStr === '') $numStr = '0';
+                    $xml .= "<c r=\"{$coord}\" s=\"{$styleId}\"><v>{$numStr}</v></c>";
+                } else {
+                    $frac = $this->timeToExcelFraction((string) $val);
+                    if ($frac !== null) {
+                        $numStr = sprintf('%.10F', $frac);
+                        $numStr = rtrim(rtrim($numStr, '0'), '.');
+                        if ($numStr === '') $numStr = '0';
+                        $xml .= "<c r=\"{$coord}\" s=\"{$styleId}\"><v>{$numStr}</v></c>";
+                    } else {
+                        $esc = $this->escapeXml((string) $val);
+                        $xml .= "<c r=\"{$coord}\" t=\"inlineStr\" s=\"{$styleId}\"><is><t>{$esc}</t></is></c>";
+                    }
+                }
+            } elseif ($type === 'date') {
+                $days = $this->dateToExcelSerial((string) $val);
+                if ($days > 0) {
+                    $xml .= "<c r=\"{$coord}\" s=\"{$styleId}\"><v>{$days}</v></c>";
+                } else {
+                    $esc = $this->escapeXml((string) $val);
+                    $xml .= "<c r=\"{$coord}\" t=\"inlineStr\" s=\"{$styleId}\"><is><t>{$esc}</t></is></c>";
+                }
             } else {
                 $escaped = $this->escapeXml($val);
                 $xml .= "<c r=\"{$coord}\" t=\"inlineStr\" s=\"{$styleId}\"><is><t>{$escaped}</t></is></c>";
@@ -711,5 +767,24 @@ class AllRecordExport implements Responsable
     {
         $clean = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', (string) $value);
         return htmlspecialchars($clean, ENT_XML1 | ENT_COMPAT, 'UTF-8');
+    }
+
+    protected function timeToExcelFraction(string $timeStr): ?float
+    {
+        $timeStr = trim($timeStr);
+        if ($timeStr === '' || $timeStr === '-') return null;
+        $parts = explode(':', $timeStr);
+        if (count($parts) < 2) return null;
+        $h = (int) $parts[0];
+        $m = (int) $parts[1];
+        $s = isset($parts[2]) ? (int) $parts[2] : 0;
+        return ($h * 3600 + $m * 60 + $s) / 86400.0;
+    }
+
+    protected function dateToExcelSerial(string $dateStr): int
+    {
+        $ts = strtotime($dateStr);
+        if (!$ts || $ts <= 0) return 0;
+        return (int) (25569 + ($ts / 86400));
     }
 }

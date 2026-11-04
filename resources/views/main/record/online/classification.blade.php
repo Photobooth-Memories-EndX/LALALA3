@@ -163,6 +163,7 @@
                                 <th style="min-width: 140px;">DEPARTMENT</th>
                                 <th style="min-width: 130px;">COMPANY</th>
                                 <th style="min-width: 220px;">COURSE TITLE</th>
+                                <th style="min-width: 200px;">PLAYLIST</th>
                                 <th class="text-center" style="min-width: 100px;">TYPE</th>
                                 <th style="min-width: 110px;">CATEGORY</th>
                                 <th style="min-width: 140px;">MAIN CLASSIFICATION</th>
@@ -387,7 +388,7 @@
             serverSide: true,
             autoWidth: false,
             responsive: false,
-            order: [[21, 'desc']], // Order by date desc
+            order: [[22, 'desc']], // Order by date desc
             pageLength: 25,
             dom: '<"top">rt<"bottom"><"clear">',
             language: {
@@ -426,6 +427,7 @@
                 { data: 'department', name: 'u.department' },
                 { data: 'company', name: 'u.company_name' },
                 { data: 'course_title', name: 'c.title' },
+                { data: 'playlist', name: 'playlist', orderable: false },
                 { data: 'type', name: 'c.type', className: 'text-center' },
                 { data: 'category', name: 'unified.category_source' },
                 { data: 'main_classification', name: 'cl.classification_name' },
@@ -485,6 +487,7 @@
                             return data;
                         }
                         const recordId = row.source_id || row.id || '';
+                        const recordType = row.source_type || row.type || 'content';
                         const editUrl = '/manage/record/online/' + encodeURIComponent(recordId) + '/edit';
                         return `<div class="dropdown">
                             <button class="btn btn-sm btn-icon btn-ghost-secondary" type="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -492,23 +495,23 @@
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                                 <li>
-                                    <a class="dropdown-item d-flex align-items-center gap-2 btn-view-learning-detail btn-more-info" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#moreInformationModal" data-source-type="${row.source_type || 'content'}" data-source-id="${recordId}" data-id="${recordId}" data-record-id="${recordId}" data-source="online" data-record-source="online">
-                                        <i class="bi bi-eye text-primary me-2"></i> More Information
+                                    <a class="dropdown-item d-flex align-items-center gap-2 btn-more-info" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#moreInformationModal" data-id="${recordId}" data-record-id="${recordId}" data-source-id="${recordId}" data-type="${recordType}" data-source-type="${recordType}" data-source="online" data-record-source="online">
+                                        <i class="bi bi-eye text-primary"></i> More Information
                                     </a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item d-flex align-items-center gap-2" href="${editUrl}">
-                                        <i class="bi bi-pencil-square text-warning me-2"></i> Edit Record
+                                    <a class="dropdown-item d-flex align-items-center gap-2 btn-edit-record" href="${editUrl}" data-id="${recordId}">
+                                        <i class="bi bi-pencil-square text-warning"></i> Edit Record
                                     </a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item d-flex align-items-center gap-2 text-danger" href="#" data-bs-toggle="modal" data-bs-target="#deleteRecordModal" data-record-id="${recordId}" data-record-source="online">
-                                        <i class="bi bi-trash text-danger me-2"></i> Delete Record
+                                    <a class="dropdown-item d-flex align-items-center gap-2 btn-delete-record text-danger" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#deleteRecordModal" data-id="${recordId}" data-record-id="${recordId}" data-source="online">
+                                        <i class="bi bi-trash text-danger"></i> Delete Record
                                     </a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item d-flex align-items-center gap-2 disabled text-muted" href="#" onclick="return false;" style="cursor: not-allowed;">
-                                        <i class="bi bi-award text-info me-2"></i> Generate Certificate
+                                    <a class="dropdown-item d-flex align-items-center gap-2 btn-generate-cert disabled text-muted" href="javascript:void(0);" data-id="${recordId}" onclick="return false;" style="cursor: not-allowed;">
+                                        <i class="bi bi-award text-info"></i> Generate Certificate
                                     </a>
                                 </li>
                             </ul>
@@ -534,6 +537,7 @@
             e.preventDefault();
             const recordId = $(this).data('id') || $(this).data('record-id') || $(this).attr('data-id') || $(this).attr('data-record-id');
             const source = ($(this).data('source') || $(this).data('record-source') || $(this).attr('data-source') || $(this).attr('data-record-source') || 'online').toString().toLowerCase();
+            const type = ($(this).data('source-type') || $(this).data('type') || $(this).attr('data-source-type') || $(this).attr('data-type') || '').toString().toLowerCase();
             if (!recordId) return;
 
             const modalEl = document.getElementById('moreInformationModal');
@@ -545,7 +549,7 @@
             $('#more-info-content').hide();
 
             $.ajax({
-                url: '/manage/record/detail/' + encodeURIComponent(recordId) + (source ? '?source=' + encodeURIComponent(source) : ''),
+                url: '/manage/record/detail/' + encodeURIComponent(recordId) + '?source=' + encodeURIComponent(source) + (type ? '&type=' + encodeURIComponent(type) : ''),
                 type: 'GET',
                 dataType: 'json',
                 success: function (response) {
