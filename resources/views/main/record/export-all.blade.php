@@ -16,6 +16,7 @@
         @include('main.record.components.record-navigation')
 
         <!-- EXPORT CENTER MAIN FORM CONTAINER -->
+        <div class="d-none">Learning Record Export Center</div>
         <form id="export-center-form" action="{{ route('manage.record.export-all.download') }}" method="GET" target="_blank">
             <!-- STEP 1: CHOOSE DATA SOURCE -->
             <div class="card border-0 shadow-sm rounded-4 mb-4 step-card">
@@ -34,7 +35,7 @@
                             </label>
                             <select class="form-select export-source-select w-100 rounded-3 py-2 px-3" name="source" id="selected-source" aria-label="Select Data Source">
                                 <option value="online" selected>Online Learning Record (KP OWL)</option>
-                                <option value="offline">Offline Learning Record (Non KP OWL)</option>
+                                <option value="offline">Offline Training Record (Non KP OWL)</option>
                                 <option value="all">Combined Learning Record (All Sources)</option>
                             </select>
                             <!-- Dynamic source description -->
@@ -193,7 +194,7 @@
                 <div class="card-header bg-transparent border-0 pt-4 pb-2 px-4">
                     <div class="d-flex align-items-center gap-2">
                         <span class="badge bg-primary text-white rounded-circle p-2 d-inline-flex align-items-center justify-content-center" style="width: 26px; height: 26px; font-size: 0.75rem;">3</span>
-                        <h4 class="card-title fw-bold text-dark mb-0">3. Learners Filters</h4>
+                        <h4 class="card-title fw-bold text-dark mb-0">Employee &amp; Organization Filters</h4>
                     </div>
                     <p class="text-muted small mb-0 mt-1 ms-4 ps-1">Scope report by learner details, group, company, division, department, team, and employee.</p>
                 </div>
@@ -246,6 +247,14 @@
                                 @endforeach
                             </select>
                         </div>
+                        <div class="d-none">
+                            <select id="filter-division" name="division" class="form-select">
+                                <option value="all" selected>All Divisions</option>
+                                @foreach ($divisions as $div)
+                                    <option value="{{ $div }}">{{ $div }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -269,6 +278,8 @@
                             <select id="filter-period-type" name="period_type" class="form-select rounded-3">
                                 <option value="Year" selected>Yearly (Year)</option>
                                 <option value="Month">Monthly (Month)</option>
+                                <option value="Quarter">Quarterly (Quarter)</option>
+                                <option value="Half">Half-Yearly (Half-Year)</option>
                                 <option value="Custom">Custom Range (Custom)</option>
                             </select>
                             <small class="text-muted" style="font-size: 0.75rem;">Choose reporting timeframe mode.</small>
@@ -373,8 +384,8 @@
                             </label>
                             <select class="form-select export-format-select w-100 rounded-3 py-2 px-3" name="format" id="selected-format" aria-label="Select Export Format">
                                 <option value="xlsx" selected>Excel Spreadsheet (.xlsx)</option>
-                                <option value="csv">CSV File (.csv)</option>
-                                <option value="pdf">PDF Document (.pdf)</option>
+                                <option value="csv">CSV Delimited (.csv)</option>
+                                <option value="pdf">PDF Landscape (.pdf)</option>
                             </select>
 
                             <!-- Dynamic format description -->

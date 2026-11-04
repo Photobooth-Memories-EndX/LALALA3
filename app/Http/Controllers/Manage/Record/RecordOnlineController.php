@@ -219,7 +219,8 @@ class RecordOnlineController extends Controller
         $dateTime = \App\Http\Controllers\ManageRecordController::formatExportDateTime();
         $fileName = "EmployeeOWLrecord_{$dateTime}.xlsx";
 
-        return app(\App\Services\Record\ManageOnlineRecordExportService::class)->download($request->all(), $fileName);
+        $export = new \App\Exports\OnlineRecordExport($request->all(), $fileName);
+        return $export->download($fileName);
     }
 
     public function download(Request $request)

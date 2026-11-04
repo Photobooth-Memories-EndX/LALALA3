@@ -19,8 +19,7 @@ class OfflineClassificationStandard52ColumnExportTest extends TestCase
     protected ?User $admin;
 
     public const CANONICAL_52_COLUMNS = [
-        'NO',
-        'Source',
+        'No',
         'Employee ID',
         'Employee Name',
         'Grade',
@@ -70,6 +69,7 @@ class OfflineClassificationStandard52ColumnExportTest extends TestCase
         'Certificate Issued Date',
         'Certificate Expired Date',
         'Person in Charge (PIC)',
+        'Total Engagement Time',
         'Total Engagement Time (LH)',
     ];
 

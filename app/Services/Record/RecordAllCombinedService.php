@@ -706,6 +706,8 @@ class RecordAllCombinedService
                 END as status"),
                 DB::raw("CASE WHEN unified.source = 'offline' THEN otu.assessment_score ELSE NULL END as assessment_score"),
                 DB::raw("CASE WHEN unified.source = 'offline' THEN otu.certificate ELSE NULL END as certificate"),
+                DB::raw("CASE WHEN unified.source = 'offline' THEN DATE_FORMAT(otu.certificate_issued_date, '%Y-%m-%d') ELSE NULL END as certificate_issued_date"),
+                DB::raw("CASE WHEN unified.source = 'offline' THEN DATE_FORMAT(otu.certificate_expired_date, '%Y-%m-%d') ELSE NULL END as certificate_expired_date"),
                 DB::raw("CASE WHEN unified.source = 'offline' THEN otu.attendance ELSE NULL END as attendance"),
                 DB::raw("CASE WHEN unified.source = 'offline' THEN otu.attendance_reason ELSE NULL END as attendance_reason"),
                 DB::raw("CASE WHEN unified.source = 'offline' THEN otu.bond_status ELSE NULL END as bond_status"),

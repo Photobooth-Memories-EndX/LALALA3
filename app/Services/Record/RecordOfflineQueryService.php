@@ -96,6 +96,8 @@ class RecordOfflineQueryService
                 'otu.progress',
                 'otu.assessment_score',
                 'otu.certificate',
+                'otu.certificate_issued_date',
+                'otu.certificate_expired_date',
                 'otu.attendance',
                 'otu.attendance_reason',
                 'otu.bond_status',
@@ -530,7 +532,12 @@ class RecordOfflineQueryService
      */
     public static function buildGlobalQuery(array $filters = []): Builder
     {
-        unset($filters['classification'], $filters['main_classification']);
+        if (isset($filters['classification']) && ($filters['classification'] === 'all' || $filters['classification'] === '')) {
+            unset($filters['classification']);
+        }
+        if (isset($filters['main_classification']) && ($filters['main_classification'] === 'all' || $filters['main_classification'] === '')) {
+            unset($filters['main_classification']);
+        }
 
         return self::buildQuery($filters, null);
     }
@@ -705,6 +712,8 @@ class RecordOfflineQueryService
             'otu.progress',
             'otu.assessment_score',
             'otu.certificate',
+            'otu.certificate_issued_date',
+            'otu.certificate_expired_date',
             'otu.attendance',
             'otu.attendance_reason',
             'otu.bond_status',
@@ -1224,6 +1233,8 @@ class RecordOfflineQueryService
             'otu.progress',
             'otu.assessment_score',
             'otu.certificate',
+            'otu.certificate_issued_date',
+            'otu.certificate_expired_date',
             'otu.attendance',
             'otu.attendance_reason',
             'otu.bond_status',

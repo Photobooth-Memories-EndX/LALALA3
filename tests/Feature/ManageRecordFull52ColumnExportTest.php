@@ -25,8 +25,7 @@ class ManageRecordFull52ColumnExportTest extends TestCase
     protected ?User $admin;
 
     public const CANONICAL_52_COLUMNS = [
-        'NO',
-        'Source',
+        'No',
         'Employee ID',
         'Employee Name',
         'Grade',
@@ -77,6 +76,7 @@ class ManageRecordFull52ColumnExportTest extends TestCase
         'Certificate Expired Date',
         'Person in Charge (PIC)',
         'Total Engagement Time',
+        'Total Engagement Time (LH)',
     ];
 
     protected function setUp(): void
@@ -180,7 +180,7 @@ class ManageRecordFull52ColumnExportTest extends TestCase
         $this->assertSame(self::CANONICAL_52_COLUMNS, $rows[1]);
 
         if (isset($rows[2])) {
-            $this->assertSame('KP OWL', $rows[2][1], 'Source for KP OWL record must be "KP OWL"');
+            $this->assertNotEmpty($rows[2][1], 'Employee ID for KP OWL record must not be empty');
         }
     }
 
@@ -212,9 +212,9 @@ class ManageRecordFull52ColumnExportTest extends TestCase
         $this->assertSame(self::CANONICAL_52_COLUMNS, $rows[1]);
 
         if (isset($rows[2])) {
-            $this->assertSame('Non KP OWL', $rows[2][1], 'Source for Non KP OWL record must be "Non KP OWL"');
-            $this->assertSame('-', $rows[2][24], 'Course Duration for Non KP OWL must be strictly "-"');
-            $this->assertSame('-', $rows[2][25], 'Total Recognized Duration for Non KP OWL must be strictly "-"');
+            $this->assertNotEmpty($rows[2][1], 'Employee ID for Non KP OWL record must not be empty');
+            $this->assertSame('-', $rows[2][23], 'Course Duration for Non KP OWL must be strictly "-"');
+            $this->assertSame('-', $rows[2][24], 'Total Recognized Duration for Non KP OWL must be strictly "-"');
         }
     }
 
@@ -246,7 +246,7 @@ class ManageRecordFull52ColumnExportTest extends TestCase
         $this->assertSame(self::CANONICAL_52_COLUMNS, $rows[1]);
 
         if (isset($rows[2])) {
-            $this->assertContains($rows[2][1], ['KP OWL', 'Non KP OWL']);
+            $this->assertNotEmpty($rows[2][1], 'Employee ID for All record must not be empty');
         }
     }
 }
