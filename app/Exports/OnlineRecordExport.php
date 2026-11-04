@@ -404,14 +404,15 @@ class OnlineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wit
     public function generateXlsxFile(): string
     {
         ini_set('memory_limit', '2048M');
-        ini_set('max_execution_time', 600);
+        ini_set('max_execution_time', 0);
         if (function_exists('set_time_limit')) {
-            @set_time_limit(600);
+            @set_time_limit(0);
         }
 
         $tempXlsx = tempnam(sys_get_temp_dir(), 'online_record_') . '.xlsx';
         $opt = new ArchiveOptions();
         $opt->setSendHttpHeaders(false);
+        $opt->setDeflateLevel(1);
         $fh = fopen($tempXlsx, 'w+b');
         $opt->setOutputStream($fh);
 
@@ -794,6 +795,9 @@ class OnlineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wit
                 if ($excelRow % $batchSize === 0) {
                     fwrite($sfh, $buffer);
                     $buffer = '';
+                    if (function_exists('set_time_limit')) {
+                        @set_time_limit(0);
+                    }
                 }
             }
         } finally {
@@ -803,12 +807,18 @@ class OnlineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wit
         if ($buffer !== '') {
             fwrite($sfh, $buffer);
             $buffer = '';
+                    if (function_exists('set_time_limit')) {
+                        @set_time_limit(0);
+                    }
         }
 
         fwrite($sfh, '</sheetData>' . "\n");
         fwrite($sfh, '</worksheet>' . "\n");
         rewind($sfh);
 
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(0);
+        }
         $zip->addFileFromStream('xl/worksheets/sheet1.xml', $sfh);
         fclose($sfh);
         @unlink($sheetFile);

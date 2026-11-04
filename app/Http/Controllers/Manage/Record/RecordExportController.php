@@ -786,6 +786,12 @@ class RecordExportController extends Controller
      */
     public function download(Request $request): Response
     {
+                ini_set('memory_limit', '2048M');
+        ini_set('max_execution_time', 0);
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(0);
+        }
+
         $inputData = $request->all();
         if (isset($inputData['year'])) {
             if (is_array($inputData['year'])) {
@@ -847,6 +853,12 @@ class RecordExportController extends Controller
      */
     protected function downloadOnline(array $filters, string $format, Request $request): Response
     {
+                ini_set('memory_limit', '2048M');
+        ini_set('max_execution_time', 0);
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(0);
+        }
+
         $dateSuffix = now()->format('Y-m-d');
         $service = app(OnlineFullRecordExportService::class);
 
@@ -954,6 +966,12 @@ class RecordExportController extends Controller
      */
     protected function downloadOffline(array $filters, string $format, Request $request): Response
     {
+                ini_set('memory_limit', '2048M');
+        ini_set('max_execution_time', 0);
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(0);
+        }
+
         $dateSuffix = now()->format('Y-m-d');
 
         if ($format === 'csv') {
@@ -1007,6 +1025,12 @@ class RecordExportController extends Controller
      */
     protected function downloadAll(array $filters, string $format, Request $request): Response
     {
+                ini_set('memory_limit', '2048M');
+        ini_set('max_execution_time', 0);
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(0);
+        }
+
         $dateSuffix = now()->format('Y-m-d');
 
         if ($format === 'csv') {
