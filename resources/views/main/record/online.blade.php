@@ -266,7 +266,8 @@
                 },
                 success: function (response) {
                     classificationXhr = null;
-                    $('#classification-summary-container').html(response);
+                    const html = typeof response === 'object' && response.html ? response.html : response;
+                    $('#classification-summary-container').html(html);
                 },
                 error: function (xhr, status) {
                     if (status === 'abort') {

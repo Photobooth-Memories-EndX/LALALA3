@@ -112,18 +112,30 @@ class AllRecordController extends Controller
     {
         $classification = $this->allRecordService->getClassificationSummary();
 
+        $grandTotal = [
+            'kp_owl'         => (int) $classification->sum('kp_owl'),
+            'non_kp_owl'     => (int) $classification->sum('non_kp_owl'),
+            'total_learning' => (int) $classification->sum('total_learning'),
+            'learning_hours' => (float) round($classification->sum('learning_hours'), 2),
+            'ongoing'        => (int) $classification->sum('ongoing'),
+            'finished'       => (int) $classification->sum('finished'),
+        ];
+
         if ($request->input('format') === 'json') {
             return response()->json([
-                'success' => true,
-                'data'    => $classification,
+                'success'     => true,
+                'data'        => $classification,
+                'grand_total' => $grandTotal,
             ]);
         }
 
         return response()->json([
-            'success' => true,
-            'data'    => $classification,
-            'html'    => view('main.record.components.all-classification-summary', [
+            'success'     => true,
+            'data'        => $classification,
+            'grand_total' => $grandTotal,
+            'html'        => view('main.record.components.all-classification-summary', [
                 'classification' => $classification,
+                'grandTotal'     => $grandTotal,
             ])->render(),
         ]);
     }

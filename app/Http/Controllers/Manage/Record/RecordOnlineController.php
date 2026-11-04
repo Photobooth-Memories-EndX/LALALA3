@@ -82,15 +82,39 @@ class RecordOnlineController extends Controller
     {
         $classification = $this->learningManageController->getClassificationSummary(true);
 
+        $grandTotal = [
+            'content_total'     => (int) $classification->sum('content_total'),
+            'content'           => (int) $classification->sum('content_total'),
+            'total_learning'    => (int) $classification->sum('total_learning'),
+            'learning_hours'    => (float) round($classification->sum('learning_hours'), 1),
+            'ongoing_learning'  => (int) $classification->sum('ongoing_learning'),
+            'ongoing'           => (int) $classification->sum('ongoing_learning'),
+            'finished_learning' => (int) $classification->sum('finished_learning'),
+            'finished'          => (int) $classification->sum('finished_learning'),
+        ];
+
+        if ($request->input('format') === 'html') {
+            return view('main.record.components.online-classification-summary', [
+                'classification' => $classification,
+                'grandTotal'     => $grandTotal,
+            ]);
+        }
+
         if ($request->wantsJson() || $request->input('format') === 'json') {
             return response()->json([
-                'success' => true,
-                'data' => $classification,
+                'success'     => true,
+                'data'        => $classification,
+                'grand_total' => $grandTotal,
+                'html'        => view('main.record.components.online-classification-summary', [
+                    'classification' => $classification,
+                    'grandTotal'     => $grandTotal,
+                ])->render(),
             ]);
         }
 
         return view('main.record.components.online-classification-summary', [
             'classification' => $classification,
+            'grandTotal'     => $grandTotal,
         ]);
     }
     public function classification(string $classification, Request $request)
