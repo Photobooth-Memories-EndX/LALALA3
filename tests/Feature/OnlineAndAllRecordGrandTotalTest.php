@@ -139,4 +139,35 @@ class OnlineAndAllRecordGrandTotalTest extends TestCase
         $offlineRes->assertStatus(200);
         $offlineRes->assertSee('offline-classification-summary-container');
     }
+
+    /**
+     * Test 5: All Record Header KPI cards match Classification GRAND TOTAL exactly.
+     */
+    public function test_all_record_header_statistics_match_classification_grand_total_exactly(): void
+    {
+        $summaryRes = $this->actingAs($this->admin)->getJson(route('manage.record.all.ajax.summary'));
+        $summaryRes->assertStatus(200);
+        $summaryRes->assertJson(['success' => true]);
+
+        $classificationRes = $this->actingAs($this->admin)->getJson(route('manage.record.all.ajax.classification'));
+        $classificationRes->assertStatus(200);
+        $classificationRes->assertJson(['success' => true]);
+
+        $gt = $classificationRes->json('grand_total');
+        $this->assertNotNull($gt);
+
+        // Assert 4 KPI values match grand total exactly
+        $this->assertSame($gt['total_learning'], $summaryRes->json('total_learning'), 'Header Card 1 (Total Learning Data) must match Classification Grand Total exactly.');
+        $this->assertSame($gt['ongoing'], $summaryRes->json('ongoing'), 'Header Card 2 (Ongoing Course) must match Classification Grand Total exactly.');
+        $this->assertSame($gt['finished'], $summaryRes->json('finished'), 'Header Card 3 (Finished Course) must match Classification Grand Total exactly.');
+        $this->assertEquals((float) $gt['learning_hours'], (float) $summaryRes->json('total_learning_hours'), 'Header Card 4 (Total Learning Hours) must match Classification Grand Total exactly.');
+
+        // Assert rendered HTML contains the exact values
+        $html = $summaryRes->json('html');
+        $this->assertNotEmpty($html);
+        $this->assertStringContainsString(number_format($gt['total_learning']), $html);
+        $this->assertStringContainsString(number_format($gt['ongoing']), $html);
+        $this->assertStringContainsString(number_format($gt['finished']), $html);
+        $this->assertStringContainsString(number_format((float) $gt['learning_hours'], 2), $html);
+    }
 }

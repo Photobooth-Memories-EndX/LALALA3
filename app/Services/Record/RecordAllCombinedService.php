@@ -26,160 +26,18 @@ class RecordAllCombinedService
     }
 
     /**
+     * In-memory cache for canonical aggregated summary and classifications within request lifecycle.
+     */
+    protected ?array $canonicalAggregatedDataCache = null;
+
+    /**
      * Calculate combined KPI summary across Online and Offline records.
+     * Derived from canonical unified aggregation to guarantee exact synchronization
+     * with the Classification Summary GRAND TOTAL row.
      */
     public function getSummary(): array
     {
-        // 1. Online Content KPI & Actual Learning Hours (content_users)
-        // Deduplicated: exclude records mirrored from playlist_content_users to prevent double counting
-        $hasContentUsers = Schema::hasTable('content_users');
-        $hasPlaylistUsers = Schema::hasTable('playlist_content_users');
-
-        $cuTotal = 0;
-        $cuOngoing = 0;
-        $cuFinished = 0;
-        $cuHours = 0.0;
-
-        if ($hasContentUsers) {
-            if ($hasPlaylistUsers) {
-                $cuStats = DB::selectOne("
-                    SELECT 
-                        COUNT(*) as total,
-                        SUM(CASE WHEN cu.finish = '1' OR cu.progress >= 100 THEN 1 ELSE 0 END) as finished,
-                        SUM(CASE WHEN (cu.finish = '0' OR cu.finish IS NULL OR cu.finish != '1') AND cu.progress > 0 AND cu.progress < 100 THEN 1 ELSE 0 END) as ongoing,
-                        COALESCE(SUM(cu.learning_hours), 0) as hours
-                    FROM content_users cu
-                    WHERE NOT EXISTS (
-                        SELECT 1 
-                        FROM playlist_content_users pcu 
-                        WHERE pcu.user_id = cu.user_id 
-                          AND pcu.content_id = cu.content_id
-                    )
-                ");
-            } else {
-                $cuStats = DB::selectOne("
-                    SELECT 
-                        COUNT(*) as total,
-                        SUM(CASE WHEN cu.finish = '1' OR cu.progress >= 100 THEN 1 ELSE 0 END) as finished,
-                        SUM(CASE WHEN (cu.finish = '0' OR cu.finish IS NULL OR cu.finish != '1') AND cu.progress > 0 AND cu.progress < 100 THEN 1 ELSE 0 END) as ongoing,
-                        COALESCE(SUM(cu.learning_hours), 0) as hours
-                    FROM content_users cu
-                ");
-            }
-
-            $cuTotal = (int) ($cuStats->total ?? 0);
-            $cuOngoing = (int) ($cuStats->ongoing ?? 0);
-            $cuFinished = (int) ($cuStats->finished ?? 0);
-            $cuHours = (float) ($cuStats->hours ?? 0);
-        }
-
-        // 2. Online Playlist KPI & Actual Learning Hours (playlist_content_users)
-        // Grouped by user_id and trainingplan_id (1 playlist course per user enrollment)
-        $pcuTotal = 0;
-        $pcuOngoing = 0;
-        $pcuFinished = 0;
-        $pcuHours = 0.0;
-
-        if ($hasPlaylistUsers) {
-            $pcuStats = DB::selectOne("
-                SELECT 
-                    COUNT(*) as total,
-                    SUM(CASE WHEN completed_modules = total_modules THEN 1 ELSE 0 END) as finished,
-                    SUM(CASE WHEN completed_modules < total_modules AND sum_progress > 0 THEN 1 ELSE 0 END) as ongoing,
-                    COALESCE(SUM(total_hours), 0) as hours
-                FROM (
-                    SELECT 
-                        user_id, 
-                        trainingplan_id,
-                        COUNT(*) as total_modules,
-                        SUM(CASE WHEN finish = '1' OR progress >= 100 THEN 1 ELSE 0 END) as completed_modules,
-                        SUM(progress) as sum_progress,
-                        SUM(COALESCE(learning_hour, 0)) as total_hours
-                    FROM playlist_content_users
-                    GROUP BY user_id, trainingplan_id
-                ) as grouped_courses
-            ");
-
-            $pcuTotal = (int) ($pcuStats->total ?? 0);
-            $pcuOngoing = (int) ($pcuStats->ongoing ?? 0);
-            $pcuFinished = (int) ($pcuStats->finished ?? 0);
-            $pcuHours = (float) ($pcuStats->hours ?? 0);
-        }
-
-        $onlineTotal = $cuTotal + $pcuTotal;
-        $onlineOngoing = $cuOngoing + $pcuOngoing;
-        $onlineFinished = $cuFinished + $pcuFinished;
-        $onlineHours = $cuHours + $pcuHours;
-
-        // 3. Offline KPI & Learning Hours (from offline_training_users)
-        $hasOfflineTables = Schema::hasTable('offline_trainings') && Schema::hasTable('offline_training_users');
-
-        if ($hasOfflineTables) {
-            $baseOfflineUserQuery = DB::table('offline_training_users as otu')
-                ->join('offline_trainings as ot', 'ot.id', '=', 'otu.offline_training_id')
-                ->whereNull('otu.deleted_at')
-                ->whereNull('ot.deleted_at');
-            OfflineTraining::applyRecordScope($baseOfflineUserQuery, 'ot');
-
-            $offlineTotal = (int) (clone $baseOfflineUserQuery)->count();
-
-            $offlineOngoing = (int) (clone $baseOfflineUserQuery)
-                ->where('otu.progress', '>', 0)
-                ->where('otu.progress', '<', 100)
-                ->count();
-
-            $offlineFinished = (int) (clone $baseOfflineUserQuery)
-                ->where('otu.progress', '>=', 100)
-                ->count();
-
-            // Strictly credited participant learning hours from offline_training_users!
-            $offlineHours = (float) (clone $baseOfflineUserQuery)
-                ->sum('otu.learning_hours');
-        } else {
-            $offlineTotal = 0;
-            $offlineOngoing = 0;
-            $offlineFinished = 0;
-            $offlineHours = 0.0;
-        }
-
-        // 4. Combined Metrics
-        $totalLearning = $onlineTotal + $offlineTotal;
-        $totalOngoing = $onlineOngoing + $offlineOngoing;
-        $totalFinished = $onlineFinished + $offlineFinished;
-        $totalLearningHours = round($onlineHours + $offlineHours, 2);
-        $completionRate = $totalLearning > 0 ? round(($totalFinished / $totalLearning) * 100, 1) : 0.0;
-
-        return [
-            'total_learning'       => $totalLearning,
-            'ongoing'              => $totalOngoing,
-            'finished'             => $totalFinished,
-            'total_learning_hours' => $totalLearningHours,
-            'completion_rate'      => $completionRate,
-            'online' => [
-                'total_learning'       => $onlineTotal,
-                'ongoing'              => $onlineOngoing,
-                'finished'             => $onlineFinished,
-                'total_learning_hours' => round($onlineHours, 2),
-                'content' => [
-                    'total_learning'       => $cuTotal,
-                    'ongoing'              => $cuOngoing,
-                    'finished'             => $cuFinished,
-                    'total_learning_hours' => round($cuHours, 2),
-                ],
-                'playlist' => [
-                    'total_learning'       => $pcuTotal,
-                    'ongoing'              => $pcuOngoing,
-                    'finished'             => $pcuFinished,
-                    'total_learning_hours' => round($pcuHours, 2),
-                ],
-            ],
-            'offline' => [
-                'total_learning'       => $offlineTotal,
-                'ongoing'              => $offlineOngoing,
-                'finished'             => $offlineFinished,
-                'total_learning_hours' => round($offlineHours, 2),
-            ],
-        ];
+        return $this->getCanonicalAggregatedData()['summary'];
     }
 
     /**
@@ -302,8 +160,21 @@ class RecordAllCombinedService
     /**
      * Calculate combined Classification Summary table rows with canonical mapping.
      */
-    public function getClassificationSummary(): Collection
+    public function getClassificationSummary(bool $fresh = false): Collection
     {
+        return $this->getCanonicalAggregatedData($fresh)['classification'];
+    }
+
+    /**
+     * Compute and return canonical unified aggregation across Online (KP OWL) and Offline (Non KP OWL).
+     * Single source of truth for both KPI Header Cards and Classification Summary Grand Total.
+     */
+    public function getCanonicalAggregatedData(bool $fresh = false): array
+    {
+        if (!$fresh && $this->canonicalAggregatedDataCache !== null) {
+            return $this->canonicalAggregatedDataCache;
+        }
+
         // 1. Initialize master summary map
         $masters = self::getMasterClassifications();
         $canonicalSummary = [];
@@ -340,6 +211,11 @@ class RecordAllCombinedService
         // 2. Online classifications aggregation
         $onlineClassifications = $this->learningManageController->getClassificationSummary();
 
+        $onlineTotal = 0;
+        $onlineOngoing = 0;
+        $onlineFinished = 0;
+        $onlineHours = 0.0;
+
         foreach ($onlineClassifications as $oc) {
             $resolved = self::resolveCanonical($oc->classification_name ?? null, $oc->id ?? null);
             $targetSlug = $resolved['slug'];
@@ -360,15 +236,62 @@ class RecordAllCombinedService
             }
 
             $count = (int) ($oc->total_learning ?? 0);
+            $ongoingCount = (int) ($oc->ongoing_learning ?? 0);
+            $finishedCount = (int) ($oc->finished_learning ?? 0);
+            $hours = (float) ($oc->learning_hours ?? 0);
+
             $canonicalSummary[$targetSlug]['kp_owl'] += $count;
             $canonicalSummary[$targetSlug]['total_learning'] += $count;
-            $canonicalSummary[$targetSlug]['ongoing'] += (int) ($oc->ongoing_learning ?? 0);
-            $canonicalSummary[$targetSlug]['finished'] += (int) ($oc->finished_learning ?? 0);
-            $canonicalSummary[$targetSlug]['learning_hours'] += (float) ($oc->learning_hours ?? 0);
+            $canonicalSummary[$targetSlug]['ongoing'] += $ongoingCount;
+            $canonicalSummary[$targetSlug]['finished'] += $finishedCount;
+            $canonicalSummary[$targetSlug]['learning_hours'] += $hours;
+
+            $onlineTotal += $count;
+            $onlineOngoing += $ongoingCount;
+            $onlineFinished += $finishedCount;
+            $onlineHours += $hours;
         }
+
+        // Detailed Content and Playlist sub-counts for online breakdown
+        $cuStats = Schema::hasTable('content_users')
+            ? DB::selectOne("
+                SELECT 
+                    COUNT(*) as total,
+                    SUM(CASE WHEN finish = '1' THEN 1 ELSE 0 END) as finished,
+                    SUM(CASE WHEN finish = '0' THEN 1 ELSE 0 END) as ongoing,
+                    COALESCE(SUM(learning_hours), 0) as hours
+                FROM content_users
+            ")
+            : null;
+
+        $pcuStats = Schema::hasTable('playlist_content_users')
+            ? DB::selectOne("
+                SELECT 
+                    COUNT(*) as total,
+                    SUM(CASE WHEN finish = '1' THEN 1 ELSE 0 END) as finished,
+                    SUM(CASE WHEN finish = '0' THEN 1 ELSE 0 END) as ongoing,
+                    COALESCE(SUM(learning_hour), 0) as hours
+                FROM playlist_content_users
+            ")
+            : null;
+
+        $cuTotal = (int) ($cuStats->total ?? 0);
+        $cuOngoing = (int) ($cuStats->ongoing ?? 0);
+        $cuFinished = (int) ($cuStats->finished ?? 0);
+        $cuHours = (float) ($cuStats->hours ?? 0);
+
+        $pcuTotal = (int) ($pcuStats->total ?? 0);
+        $pcuOngoing = (int) ($pcuStats->ongoing ?? 0);
+        $pcuFinished = (int) ($pcuStats->finished ?? 0);
+        $pcuHours = (float) ($pcuStats->hours ?? 0);
 
         // 3. Offline classifications aggregation
         $hasOfflineTables = Schema::hasTable('offline_trainings') && Schema::hasTable('offline_training_users');
+
+        $offlineTotal = 0;
+        $offlineOngoing = 0;
+        $offlineFinished = 0;
+        $offlineHours = 0.0;
 
         if ($hasOfflineTables) {
             $offlineQuery = DB::table('offline_training_users as otu')
@@ -408,11 +331,20 @@ class RecordAllCombinedService
                 }
 
                 $count = (int) ($od->total_count ?? 0);
+                $ongoingCount = (int) ($od->ongoing_count ?? 0);
+                $finishedCount = (int) ($od->finished_count ?? 0);
+                $hours = (float) ($od->total_hours ?? 0);
+
                 $canonicalSummary[$targetSlug]['non_kp_owl'] += $count;
                 $canonicalSummary[$targetSlug]['total_learning'] += $count;
-                $canonicalSummary[$targetSlug]['ongoing'] += (int) ($od->ongoing_count ?? 0);
-                $canonicalSummary[$targetSlug]['finished'] += (int) ($od->finished_count ?? 0);
-                $canonicalSummary[$targetSlug]['learning_hours'] += (float) ($od->total_hours ?? 0);
+                $canonicalSummary[$targetSlug]['ongoing'] += $ongoingCount;
+                $canonicalSummary[$targetSlug]['finished'] += $finishedCount;
+                $canonicalSummary[$targetSlug]['learning_hours'] += $hours;
+
+                $offlineTotal += $count;
+                $offlineOngoing += $ongoingCount;
+                $offlineFinished += $finishedCount;
+                $offlineHours += $hours;
             }
         }
 
@@ -448,7 +380,51 @@ class RecordAllCombinedService
             $finalCollection->push((object) $item);
         }
 
-        return $finalCollection;
+        // 8. Overall unified KPI metrics derived directly from classification collection
+        $totalLearning = (int) $finalCollection->sum('total_learning');
+        $totalOngoing = (int) $finalCollection->sum('ongoing');
+        $totalFinished = (int) $finalCollection->sum('finished');
+        $totalLearningHours = round((float) $finalCollection->sum('learning_hours'), 2);
+        $completionRate = $totalLearning > 0 ? round(($totalFinished / $totalLearning) * 100, 1) : 0.0;
+
+        $summary = [
+            'total_learning'       => $totalLearning,
+            'ongoing'              => $totalOngoing,
+            'finished'             => $totalFinished,
+            'total_learning_hours' => $totalLearningHours,
+            'completion_rate'      => $completionRate,
+            'online' => [
+                'total_learning'       => $onlineTotal,
+                'ongoing'              => $onlineOngoing,
+                'finished'             => $onlineFinished,
+                'total_learning_hours' => round($onlineHours, 2),
+                'content' => [
+                    'total_learning'       => $cuTotal,
+                    'ongoing'              => $cuOngoing,
+                    'finished'             => $cuFinished,
+                    'total_learning_hours' => round($cuHours, 2),
+                ],
+                'playlist' => [
+                    'total_learning'       => $pcuTotal,
+                    'ongoing'              => $pcuOngoing,
+                    'finished'             => $pcuFinished,
+                    'total_learning_hours' => round($pcuHours, 2),
+                ],
+            ],
+            'offline' => [
+                'total_learning'       => $offlineTotal,
+                'ongoing'              => $offlineOngoing,
+                'finished'             => $offlineFinished,
+                'total_learning_hours' => round($offlineHours, 2),
+            ],
+        ];
+
+        $this->canonicalAggregatedDataCache = [
+            'summary'        => $summary,
+            'classification' => $finalCollection,
+        ];
+
+        return $this->canonicalAggregatedDataCache;
     }
 
     /**
