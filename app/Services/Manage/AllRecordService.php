@@ -219,6 +219,9 @@ class AllRecordService
                 $hours = (float) ($row->training_hours ?? ($row->learning_hours ?? 0));
                 return '<span class="fw-semibold">' . number_format($hours, 1) . 'h</span>';
             })
+            ->addColumn('learning_hours_formatted', function ($row) {
+                return number_format((float) ($row->learning_hours ?? 0), 2);
+            })
             ->addColumn('progress_bar', function ($row) {
                 $progress = max(0, min(100, round((float) ($row->progress ?? 0))));
                 $color = $progress >= 100 ? 'bg-success' : ($progress > 0 ? 'bg-warning' : 'bg-secondary');

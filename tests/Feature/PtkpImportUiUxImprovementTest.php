@@ -69,54 +69,44 @@ class PtkpImportUiUxImprovementTest extends TestCase
         $response->assertSee('Total dataset evaluated', false);
         $response->assertSee('data-tooltip-id="ptkp-tt-content-total"', false);
 
-        // 2. VALID
+        // 2. VALID (Standardized Minimal Tooltip)
         $response->assertSee('VALID', false);
         $response->assertSee('Valid Records', false);
-        $response->assertSee('These records have successfully passed all required validation checks. Employee information, company details, and course information meet the system\'s requirements.', false);
-        $response->assertSee('Employee ID exists and is recognized.', false);
-        $response->assertSee('Employee information is successfully matched with the Users database.', false);
-        $response->assertSee('Required Course Title is provided.', false);
-        $response->assertSee('Company information meets the applicable validation rules.', false);
-        $response->assertSee('No blocking validation errors are detected.', false);
-        $response->assertSee('Will be imported successfully', false);
+        $response->assertSee('These records have passed all validation checks and are ready to be imported into the system.', false);
+        $response->assertDontSee('Employee ID exists and is recognized.', false);
+        $response->assertDontSee('Validation Criteria', false);
         $response->assertSee('data-tooltip-id="ptkp-tt-content-valid"', false);
 
-        // 3. WARNING
+        // 3. WARNING (Standardized Minimal Tooltip)
         $response->assertSee('WARNING', false);
         $response->assertSee('Warning Records', false);
-        $response->assertSee('These records contain minor validation issues or incomplete information that do not prevent the import process. They are still eligible for import according to the applicable validation rules.', false);
-        $response->assertSee('The record has passed mandatory validation.', false);
-        $response->assertSee('One or more non-blocking warnings have been detected.', false);
-        $response->assertSee('The administrator should review the warning details.', false);
-        $response->assertSee('Will be imported with warnings', false);
+        $response->assertSee('These records contain potential issues or incomplete information that may require attention before importing.', false);
+        $response->assertDontSee('The record has passed mandatory validation.', false);
+        $response->assertDontSee('Will be imported with warnings', false);
         $response->assertSee('data-tooltip-id="ptkp-tt-content-warning"', false);
 
-        // 4. DUPLICATE
+        // 4. DUPLICATE (Standardized Minimal Tooltip)
         $response->assertSee('DUPLICATE', false);
         $response->assertSee('Duplicate Records', false);
         $response->assertSee('These records have been identified as duplicates based on the system\'s existing duplicate detection rules. Importing them again could create duplicate training records.', false);
-        $response->assertSee('The record matches an existing record or duplicate condition.', false);
-        $response->assertSee('Duplicate records are excluded from the import process.', false);
-        $response->assertSee('Existing records will not be overwritten.', false);
-        $response->assertSee('Will be skipped', false);
+        $response->assertDontSee('The record matches an existing record or duplicate condition.', false);
+        $response->assertDontSee('Duplicate records are excluded from the import process.', false);
         $response->assertSee('data-tooltip-id="ptkp-tt-content-duplicate"', false);
 
-        // 5. INVALID
+        // 5. INVALID (Standardized Minimal Tooltip)
         $response->assertSee('INVALID', false);
-        $response->assertSee('Invalid Employee ID or Course', false);
-        $response->assertSee('These records have failed mandatory Employee ID or Course validation requirements and cannot be imported into the system.', false);
-        $response->assertSee('Employee ID is missing or cannot be recognized', false);
-        $response->assertSee('Course information is empty', false);
-        $response->assertSee('Review the Employee ID and Course Title columns in the uploaded Excel file. Correct the missing or invalid entries and re-upload the file.', false);
-        $response->assertSee('Will not be imported', false);
+        $response->assertSee('Invalid Records', false);
+        $response->assertSee('These records contain invalid or incomplete information and cannot be imported until the required data is corrected.', false);
+        $response->assertDontSee('Employee ID is missing or cannot be recognized', false);
+        $response->assertDontSee('How to Fix:', false);
         $response->assertSee('data-tooltip-id="ptkp-tt-content-invalid"', false);
 
-        // 6. INVALID COMPANY
+        // 6. INVALID COMPANY (Standardized Minimal Tooltip)
         $response->assertSee('INVALID COMPANY', false);
         $response->assertSee('Invalid Company Records', false);
         $response->assertSee('These records contain missing or unsupported company information and cannot be imported under the applicable rules.', false);
-        $response->assertSee('Company code is invalid, unmapped, or missing.', false);
-        $response->assertSee('Verify that the company code matches the accepted company list in the system configuration. Update the company values in the Excel file and re-upload.', false);
+        $response->assertDontSee('Company code is invalid, unmapped, or missing.', false);
+        $response->assertDontSee('Verify that the company code matches', false);
         $response->assertSee('data-tooltip-id="ptkp-tt-content-invalid-company"', false);
 
         // Ensure info icons have tooltip attributes and html support

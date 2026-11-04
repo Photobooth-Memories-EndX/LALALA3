@@ -1034,6 +1034,208 @@ body.theme-dark .ptkp-status-tooltip.bs-tooltip-bottom .tooltip-arrow::before {
 }
 
 /* ==========================================================================
+   STANDARDIZED MINIMAL VALIDATION SUMMARY TOOLTIPS / POPUPS (ALL 5 STATUSES)
+   ========================================================================== */
+.ptkp-validation-tooltip.tooltip,
+.ptkp-duplicate-tooltip.tooltip {
+    z-index: 1090 !important;
+}
+
+.ptkp-validation-tooltip.tooltip .tooltip-inner,
+.ptkp-validation-tooltip.ptkp-status-tooltip .tooltip-inner,
+.ptkp-validation-tooltip .tooltip-inner,
+.ptkp-duplicate-tooltip.tooltip .tooltip-inner,
+.ptkp-duplicate-tooltip.ptkp-status-tooltip .tooltip-inner,
+.ptkp-duplicate-tooltip .tooltip-inner,
+.tooltip:has(.ptkp-tt-minimal) .tooltip-inner {
+    max-width: min(340px, 92vw) !important;
+    padding: 14px 16px !important;
+    background-color: #ffffff !important;
+    color: #343a40 !important;
+    border: 1px solid #e9ecef !important;
+    border-radius: 10px !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04) !important;
+    text-align: left !important;
+    line-height: 1.5 !important;
+}
+
+/* Arrow styling for minimal white popups (Light Mode) */
+.ptkp-validation-tooltip[data-popper-placement^="top"] .tooltip-arrow::before,
+.ptkp-validation-tooltip.bs-tooltip-top .tooltip-arrow::before,
+.ptkp-validation-tooltip .tooltip-arrow::before,
+.ptkp-duplicate-tooltip[data-popper-placement^="top"] .tooltip-arrow::before,
+.ptkp-duplicate-tooltip.bs-tooltip-top .tooltip-arrow::before,
+.ptkp-duplicate-tooltip .tooltip-arrow::before,
+.tooltip:has(.ptkp-tt-minimal)[data-popper-placement^="top"] .tooltip-arrow::before,
+.tooltip:has(.ptkp-tt-minimal).bs-tooltip-top .tooltip-arrow::before,
+.tooltip:has(.ptkp-tt-minimal) .tooltip-arrow::before {
+    border-top-color: #ffffff !important;
+}
+
+.ptkp-validation-tooltip[data-popper-placement^="bottom"] .tooltip-arrow::before,
+.ptkp-validation-tooltip.bs-tooltip-bottom .tooltip-arrow::before,
+.ptkp-duplicate-tooltip[data-popper-placement^="bottom"] .tooltip-arrow::before,
+.ptkp-duplicate-tooltip.bs-tooltip-bottom .tooltip-arrow::before,
+.tooltip:has(.ptkp-tt-minimal)[data-popper-placement^="bottom"] .tooltip-arrow::before,
+.tooltip:has(.ptkp-tt-minimal).bs-tooltip-bottom .tooltip-arrow::before {
+    border-bottom-color: #ffffff !important;
+}
+
+.ptkp-validation-tooltip[data-popper-placement^="left"] .tooltip-arrow::before,
+.ptkp-validation-tooltip.bs-tooltip-start .tooltip-arrow::before,
+.ptkp-duplicate-tooltip[data-popper-placement^="left"] .tooltip-arrow::before,
+.ptkp-duplicate-tooltip.bs-tooltip-start .tooltip-arrow::before,
+.tooltip:has(.ptkp-tt-minimal)[data-popper-placement^="left"] .tooltip-arrow::before,
+.tooltip:has(.ptkp-tt-minimal).bs-tooltip-start .tooltip-arrow::before {
+    border-left-color: #ffffff !important;
+}
+
+.ptkp-validation-tooltip[data-popper-placement^="right"] .tooltip-arrow::before,
+.ptkp-validation-tooltip.bs-tooltip-end .tooltip-arrow::before,
+.ptkp-duplicate-tooltip[data-popper-placement^="right"] .tooltip-arrow::before,
+.ptkp-duplicate-tooltip.bs-tooltip-end .tooltip-arrow::before,
+.tooltip:has(.ptkp-tt-minimal)[data-popper-placement^="right"] .tooltip-arrow::before,
+.tooltip:has(.ptkp-tt-minimal).bs-tooltip-end .tooltip-arrow::before {
+    border-right-color: #ffffff !important;
+}
+
+/* Inner content typography (Light Mode) */
+.ptkp-validation-tooltip .ptkp-tt-box,
+.ptkp-duplicate-tooltip .ptkp-tt-box,
+.ptkp-tt-minimal {
+    color: #343a40 !important;
+}
+
+.ptkp-validation-tooltip .ptkp-tt-head,
+.ptkp-duplicate-tooltip .ptkp-tt-head,
+.ptkp-tt-minimal .ptkp-tt-head {
+    font-size: 0.875rem !important;
+    font-weight: 700 !important;
+    color: #212529 !important;
+    line-height: 1.35 !important;
+    margin-bottom: 5px !important;
+    letter-spacing: -0.01em;
+}
+
+.ptkp-validation-tooltip .ptkp-tt-desc,
+.ptkp-duplicate-tooltip .ptkp-tt-desc,
+.ptkp-tt-minimal .ptkp-tt-desc {
+    font-size: 0.8125rem !important;
+    font-weight: 400 !important;
+    line-height: 1.5 !important;
+    color: #495057 !important;
+    margin-bottom: 0 !important;
+}
+
+/* ==========================================================================
+   DARK MODE SUPPORT FOR STANDARDIZED VALIDATION POPUPS
+   ========================================================================== */
+[data-bs-theme="dark"] .ptkp-validation-tooltip .tooltip-inner,
+[data-bs-theme="dark"] .ptkp-validation-tooltip.tooltip .tooltip-inner,
+[data-bs-theme="dark"] .ptkp-duplicate-tooltip .tooltip-inner,
+[data-bs-theme="dark"] .tooltip:has(.ptkp-tt-minimal) .tooltip-inner,
+body.dark-mode .ptkp-validation-tooltip .tooltip-inner,
+body.dark-mode .ptkp-duplicate-tooltip .tooltip-inner,
+body.dark-mode .tooltip:has(.ptkp-tt-minimal) .tooltip-inner,
+body.theme-dark .ptkp-validation-tooltip .tooltip-inner,
+body.theme-dark .ptkp-duplicate-tooltip .tooltip-inner,
+body.theme-dark .tooltip:has(.ptkp-tt-minimal) .tooltip-inner {
+    background-color: #1e293b !important;
+    color: #f1f5f9 !important;
+    border: 1px solid #334155 !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important;
+}
+
+[data-bs-theme="dark"] .ptkp-validation-tooltip[data-popper-placement^="top"] .tooltip-arrow::before,
+[data-bs-theme="dark"] .ptkp-validation-tooltip.bs-tooltip-top .tooltip-arrow::before,
+[data-bs-theme="dark"] .ptkp-validation-tooltip .tooltip-arrow::before,
+[data-bs-theme="dark"] .ptkp-duplicate-tooltip[data-popper-placement^="top"] .tooltip-arrow::before,
+[data-bs-theme="dark"] .tooltip:has(.ptkp-tt-minimal)[data-popper-placement^="top"] .tooltip-arrow::before,
+body.dark-mode .ptkp-validation-tooltip .tooltip-arrow::before,
+body.dark-mode .ptkp-duplicate-tooltip .tooltip-arrow::before,
+body.dark-mode .tooltip:has(.ptkp-tt-minimal) .tooltip-arrow::before,
+body.theme-dark .ptkp-validation-tooltip .tooltip-arrow::before,
+body.theme-dark .ptkp-duplicate-tooltip .tooltip-arrow::before,
+body.theme-dark .tooltip:has(.ptkp-tt-minimal) .tooltip-arrow::before {
+    border-top-color: #1e293b !important;
+}
+
+[data-bs-theme="dark"] .ptkp-validation-tooltip[data-popper-placement^="bottom"] .tooltip-arrow::before,
+[data-bs-theme="dark"] .ptkp-validation-tooltip.bs-tooltip-bottom .tooltip-arrow::before,
+[data-bs-theme="dark"] .ptkp-duplicate-tooltip[data-popper-placement^="bottom"] .tooltip-arrow::before,
+[data-bs-theme="dark"] .tooltip:has(.ptkp-tt-minimal)[data-popper-placement^="bottom"] .tooltip-arrow::before,
+body.dark-mode .ptkp-validation-tooltip.bs-tooltip-bottom .tooltip-arrow::before,
+body.dark-mode .ptkp-duplicate-tooltip.bs-tooltip-bottom .tooltip-arrow::before,
+body.dark-mode .tooltip:has(.ptkp-tt-minimal).bs-tooltip-bottom .tooltip-arrow::before,
+body.theme-dark .ptkp-validation-tooltip.bs-tooltip-bottom .tooltip-arrow::before,
+body.theme-dark .ptkp-duplicate-tooltip.bs-tooltip-bottom .tooltip-arrow::before,
+body.theme-dark .tooltip:has(.ptkp-tt-minimal).bs-tooltip-bottom .tooltip-arrow::before {
+    border-bottom-color: #1e293b !important;
+}
+
+[data-bs-theme="dark"] .ptkp-validation-tooltip[data-popper-placement^="left"] .tooltip-arrow::before,
+[data-bs-theme="dark"] .ptkp-validation-tooltip.bs-tooltip-start .tooltip-arrow::before,
+[data-bs-theme="dark"] .ptkp-duplicate-tooltip[data-popper-placement^="left"] .tooltip-arrow::before,
+[data-bs-theme="dark"] .tooltip:has(.ptkp-tt-minimal)[data-popper-placement^="left"] .tooltip-arrow::before,
+body.dark-mode .ptkp-validation-tooltip.bs-tooltip-start .tooltip-arrow::before,
+body.dark-mode .ptkp-duplicate-tooltip.bs-tooltip-start .tooltip-arrow::before,
+body.dark-mode .tooltip:has(.ptkp-tt-minimal).bs-tooltip-start .tooltip-arrow::before,
+body.theme-dark .ptkp-validation-tooltip.bs-tooltip-start .tooltip-arrow::before,
+body.theme-dark .ptkp-duplicate-tooltip.bs-tooltip-start .tooltip-arrow::before,
+body.theme-dark .tooltip:has(.ptkp-tt-minimal).bs-tooltip-start .tooltip-arrow::before {
+    border-left-color: #1e293b !important;
+}
+
+[data-bs-theme="dark"] .ptkp-validation-tooltip[data-popper-placement^="right"] .tooltip-arrow::before,
+[data-bs-theme="dark"] .ptkp-validation-tooltip.bs-tooltip-end .tooltip-arrow::before,
+[data-bs-theme="dark"] .ptkp-duplicate-tooltip[data-popper-placement^="right"] .tooltip-arrow::before,
+[data-bs-theme="dark"] .tooltip:has(.ptkp-tt-minimal)[data-popper-placement^="right"] .tooltip-arrow::before,
+body.dark-mode .ptkp-validation-tooltip.bs-tooltip-end .tooltip-arrow::before,
+body.dark-mode .ptkp-duplicate-tooltip.bs-tooltip-end .tooltip-arrow::before,
+body.dark-mode .tooltip:has(.ptkp-tt-minimal).bs-tooltip-end .tooltip-arrow::before,
+body.theme-dark .ptkp-validation-tooltip.bs-tooltip-end .tooltip-arrow::before,
+body.theme-dark .ptkp-duplicate-tooltip.bs-tooltip-end .tooltip-arrow::before,
+body.theme-dark .tooltip:has(.ptkp-tt-minimal).bs-tooltip-end .tooltip-arrow::before {
+    border-right-color: #1e293b !important;
+}
+
+[data-bs-theme="dark"] .ptkp-validation-tooltip .ptkp-tt-box,
+[data-bs-theme="dark"] .ptkp-duplicate-tooltip .ptkp-tt-box,
+[data-bs-theme="dark"] .ptkp-tt-minimal,
+body.dark-mode .ptkp-validation-tooltip .ptkp-tt-box,
+body.dark-mode .ptkp-duplicate-tooltip .ptkp-tt-box,
+body.dark-mode .ptkp-tt-minimal,
+body.theme-dark .ptkp-validation-tooltip .ptkp-tt-box,
+body.theme-dark .ptkp-duplicate-tooltip .ptkp-tt-box,
+body.theme-dark .ptkp-tt-minimal {
+    color: #f1f5f9 !important;
+}
+
+[data-bs-theme="dark"] .ptkp-validation-tooltip .ptkp-tt-head,
+[data-bs-theme="dark"] .ptkp-duplicate-tooltip .ptkp-tt-head,
+[data-bs-theme="dark"] .ptkp-tt-minimal .ptkp-tt-head,
+body.dark-mode .ptkp-validation-tooltip .ptkp-tt-head,
+body.dark-mode .ptkp-duplicate-tooltip .ptkp-tt-head,
+body.dark-mode .ptkp-tt-minimal .ptkp-tt-head,
+body.theme-dark .ptkp-validation-tooltip .ptkp-tt-head,
+body.theme-dark .ptkp-duplicate-tooltip .ptkp-tt-head,
+body.theme-dark .ptkp-tt-minimal .ptkp-tt-head {
+    color: #ffffff !important;
+}
+
+[data-bs-theme="dark"] .ptkp-validation-tooltip .ptkp-tt-desc,
+[data-bs-theme="dark"] .ptkp-duplicate-tooltip .ptkp-tt-desc,
+[data-bs-theme="dark"] .ptkp-tt-minimal .ptkp-tt-desc,
+body.dark-mode .ptkp-validation-tooltip .ptkp-tt-desc,
+body.dark-mode .ptkp-duplicate-tooltip .ptkp-tt-desc,
+body.dark-mode .ptkp-tt-minimal .ptkp-tt-desc,
+body.theme-dark .ptkp-validation-tooltip .ptkp-tt-desc,
+body.theme-dark .ptkp-duplicate-tooltip .ptkp-tt-desc,
+body.theme-dark .ptkp-tt-minimal .ptkp-tt-desc {
+    color: #cbd5e1 !important;
+}
+
+/* ==========================================================================
    RESULT ACTIONS (STEP 3 SUCCESS) — RESPONSIVE BUTTONS
    ========================================================================== */
 #ptkp-result-actions {

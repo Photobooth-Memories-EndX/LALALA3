@@ -253,7 +253,7 @@
                              data-filter="valid" role="button" tabindex="0">
                             <div class="d-flex align-items-center justify-content-center gap-1 small fw-semibold mb-1" style="color: #15803d;">
                                 <span>VALID</span>
-                                <span class="ptkp-info-icon" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="top" data-bs-custom-class="ptkp-status-tooltip"
+                                <span class="ptkp-info-icon" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="top" data-bs-custom-class="ptkp-status-tooltip ptkp-validation-tooltip"
                                       data-tooltip-id="ptkp-tt-content-valid"
                                       tabindex="0" role="button" aria-label="Explanation of Valid status">
                                     <i class="ti ti-info-circle"></i>
@@ -269,7 +269,7 @@
                              data-filter="warning" role="button" tabindex="0">
                             <div class="d-flex align-items-center justify-content-center gap-1 small fw-semibold mb-1" style="color: #92400e;">
                                 <span>WARNING</span>
-                                <span class="ptkp-info-icon" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="top" data-bs-custom-class="ptkp-status-tooltip"
+                                <span class="ptkp-info-icon" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="top" data-bs-custom-class="ptkp-status-tooltip ptkp-validation-tooltip"
                                       data-tooltip-id="ptkp-tt-content-warning"
                                       tabindex="0" role="button" aria-label="Explanation of Warning status">
                                     <i class="ti ti-info-circle"></i>
@@ -285,7 +285,7 @@
                              data-filter="duplicate" role="button" tabindex="0">
                             <div class="d-flex align-items-center justify-content-center gap-1 small fw-semibold mb-1" style="color: #a16207;">
                                 <span>DUPLICATE</span>
-                                <span class="ptkp-info-icon" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="top" data-bs-custom-class="ptkp-status-tooltip"
+                                <span class="ptkp-info-icon" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="top" data-bs-custom-class="ptkp-status-tooltip ptkp-validation-tooltip"
                                       data-tooltip-id="ptkp-tt-content-duplicate"
                                       tabindex="0" role="button" aria-label="Explanation of Duplicate status">
                                     <i class="ti ti-info-circle"></i>
@@ -301,7 +301,7 @@
                              data-filter="invalid" role="button" tabindex="0">
                             <div class="d-flex align-items-center justify-content-center gap-1 small fw-semibold mb-1" style="color: #b91c1c;">
                                 <span>INVALID</span>
-                                <span class="ptkp-info-icon" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="top" data-bs-custom-class="ptkp-status-tooltip"
+                                <span class="ptkp-info-icon" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="top" data-bs-custom-class="ptkp-status-tooltip ptkp-validation-tooltip"
                                       data-tooltip-id="ptkp-tt-content-invalid"
                                       tabindex="0" role="button" aria-label="Explanation of Invalid status">
                                     <i class="ti ti-info-circle"></i>
@@ -317,7 +317,7 @@
                              data-filter="invalid_company" role="button" tabindex="0">
                             <div class="d-flex align-items-center justify-content-center gap-1 small fw-semibold mb-1" style="color: #c2410c;">
                                 <span>INVALID COMPANY</span>
-                                <span class="ptkp-info-icon" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="top" data-bs-custom-class="ptkp-status-tooltip"
+                                <span class="ptkp-info-icon" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="top" data-bs-custom-class="ptkp-status-tooltip ptkp-validation-tooltip"
                                       data-tooltip-id="ptkp-tt-content-invalid-company"
                                       tabindex="0" role="button" aria-label="Explanation of Invalid Company status">
                                     <i class="ti ti-info-circle"></i>
@@ -355,137 +355,52 @@
                         </div>
                     </div>
 
-                    <!-- Template 2: VALID -->
+                    <!-- Template 2: VALID (Simplified Minimal Tooltip) -->
                     <div id="ptkp-tt-content-valid">
-                        <div class="ptkp-tt-box text-start">
-                            <div class="ptkp-tt-head fw-bold mb-1.5 d-flex align-items-center justify-content-between">
-                                <span class="fs-6">Valid Records</span>
-                                <span class="badge bg-success-lt text-success extra-small">Importable</span>
-                            </div>
-                            <div class="ptkp-tt-desc mb-2">
-                                These records have successfully passed all required validation checks. Employee information, company details, and course information meet the system's requirements.
-                            </div>
-                            <div class="ptkp-tt-section mb-2">
-                                <div class="ptkp-tt-subhead fw-semibold text-uppercase text-muted extra-small mb-1">Validation Criteria</div>
-                                <ul class="ptkp-tt-list ps-3 mb-0">
-                                    <li>Employee ID exists and is recognized.</li>
-                                    <li>Employee information is successfully matched with the Users database.</li>
-                                    <li>Required Course Title is provided.</li>
-                                    <li>Company information meets the applicable validation rules.</li>
-                                    <li>No blocking validation errors are detected.</li>
-                                </ul>
-                            </div>
-                            <div class="ptkp-tt-foot pt-2 border-top d-flex align-items-center justify-content-between">
-                                <span class="extra-small text-muted fw-medium">Import Status:</span>
-                                <span class="badge bg-success text-white fw-bold">Will be imported successfully</span>
+                        <div class="ptkp-tt-box ptkp-tt-minimal text-start">
+                            <div class="ptkp-tt-head fw-bold mb-1">Valid Records</div>
+                            <div class="ptkp-tt-desc mb-0">
+                                These records have passed all validation checks and are ready to be imported into the system.
                             </div>
                         </div>
                     </div>
 
-                    <!-- Template 3: WARNING -->
+                    <!-- Template 3: WARNING (Simplified Minimal Tooltip) -->
                     <div id="ptkp-tt-content-warning">
-                        <div class="ptkp-tt-box text-start">
-                            <div class="ptkp-tt-head fw-bold mb-1.5 d-flex align-items-center justify-content-between">
-                                <span class="fs-6">Warning Records</span>
-                                <span class="badge bg-warning-lt text-warning extra-small">Importable</span>
-                            </div>
-                            <div class="ptkp-tt-desc mb-2">
-                                These records contain minor validation issues or incomplete information that do not prevent the import process. They are still eligible for import according to the applicable validation rules.
-                            </div>
-                            <div class="ptkp-tt-section mb-2">
-                                <div class="ptkp-tt-subhead fw-semibold text-uppercase text-muted extra-small mb-1">Important Notes</div>
-                                <ul class="ptkp-tt-list ps-3 mb-0">
-                                    <li>The record has passed mandatory validation.</li>
-                                    <li>One or more non-blocking warnings have been detected.</li>
-                                    <li>The administrator should review the warning details.</li>
-                                    <li>These records can still be imported if permitted by the existing import rules.</li>
-                                </ul>
-                            </div>
-                            <div class="ptkp-tt-foot pt-2 border-top d-flex align-items-center justify-content-between">
-                                <span class="extra-small text-muted fw-medium">Import Status:</span>
-                                <span class="badge bg-warning text-dark fw-bold">Will be imported with warnings</span>
+                        <div class="ptkp-tt-box ptkp-tt-minimal text-start">
+                            <div class="ptkp-tt-head fw-bold mb-1">Warning Records</div>
+                            <div class="ptkp-tt-desc mb-0">
+                                These records contain potential issues or incomplete information that may require attention before importing.
                             </div>
                         </div>
                     </div>
 
-                    <!-- Template 4: DUPLICATE -->
+                    <!-- Template 4: DUPLICATE (Simplified Minimal Tooltip) -->
                     <div id="ptkp-tt-content-duplicate">
-                        <div class="ptkp-tt-box text-start">
-                            <div class="ptkp-tt-head fw-bold mb-1.5 d-flex align-items-center justify-content-between">
-                                <span class="fs-6">Duplicate Records</span>
-                                <span class="badge bg-purple-lt text-purple extra-small">Skipped</span>
-                            </div>
-                            <div class="ptkp-tt-desc mb-2">
+                        <div class="ptkp-tt-box ptkp-tt-minimal text-start">
+                            <div class="ptkp-tt-head fw-bold mb-1">Duplicate Records</div>
+                            <div class="ptkp-tt-desc mb-0">
                                 These records have been identified as duplicates based on the system's existing duplicate detection rules. Importing them again could create duplicate training records.
                             </div>
-                            <div class="ptkp-tt-section mb-2">
-                                <div class="ptkp-tt-subhead fw-semibold text-uppercase text-muted extra-small mb-1">Important Notes</div>
-                                <ul class="ptkp-tt-list ps-3 mb-0">
-                                    <li>The record matches an existing record or duplicate condition.</li>
-                                    <li>The system identifies it as an existing or repeated entry.</li>
-                                    <li>Duplicate records are excluded from the import process.</li>
-                                    <li>Existing records will not be overwritten.</li>
-                                </ul>
-                            </div>
-                            <div class="ptkp-tt-foot pt-2 border-top d-flex align-items-center justify-content-between">
-                                <span class="extra-small text-muted fw-medium">Import Status:</span>
-                                <span class="badge bg-purple text-white fw-bold">Will be skipped</span>
-                            </div>
                         </div>
                     </div>
 
-                    <!-- Template 5: INVALID -->
+                    <!-- Template 5: INVALID (Simplified Minimal Tooltip) -->
                     <div id="ptkp-tt-content-invalid">
-                        <div class="ptkp-tt-box text-start">
-                            <div class="ptkp-tt-head fw-bold mb-1.5 d-flex align-items-center justify-content-between">
-                                <span class="fs-6">Invalid Employee ID or Course</span>
-                                <span class="badge bg-danger-lt text-danger extra-small">Rejected</span>
-                            </div>
-                            <div class="ptkp-tt-desc mb-2">
-                                These records have failed mandatory Employee ID or Course validation requirements and cannot be imported into the system.
-                            </div>
-                            <div class="ptkp-tt-section mb-2">
-                                <div class="ptkp-tt-subhead fw-semibold text-uppercase text-muted extra-small mb-1">Validation Rules</div>
-                                <ul class="ptkp-tt-list ps-3 mb-0">
-                                    <li><strong>PTKP:</strong> Employee ID is missing or cannot be recognized, Course information is empty, or both are invalid.</li>
-                                    <li><strong>Non-PTKP:</strong> Employee ID is missing, or Course information is missing.</li>
-                                </ul>
-                            </div>
-                            <div class="ptkp-tt-fix mb-2">
-                                <div class="fw-semibold text-danger extra-small mb-0.5"><i class="ti ti-wrench me-1"></i>How to Fix:</div>
-                                <div class="extra-small">Review the Employee ID and Course Title columns in the uploaded Excel file. Correct the missing or invalid entries and re-upload the file.</div>
-                            </div>
-                            <div class="ptkp-tt-foot pt-2 border-top d-flex align-items-center justify-content-between">
-                                <span class="extra-small text-muted fw-medium">Import Status:</span>
-                                <span class="badge bg-danger text-white fw-bold">Will not be imported</span>
+                        <div class="ptkp-tt-box ptkp-tt-minimal text-start">
+                            <div class="ptkp-tt-head fw-bold mb-1">Invalid Records</div>
+                            <div class="ptkp-tt-desc mb-0">
+                                These records contain invalid or incomplete information and cannot be imported until the required data is corrected.
                             </div>
                         </div>
                     </div>
 
-                    <!-- Template 6: INVALID COMPANY -->
+                    <!-- Template 6: INVALID COMPANY (Simplified Minimal Tooltip) -->
                     <div id="ptkp-tt-content-invalid-company">
-                        <div class="ptkp-tt-box text-start">
-                            <div class="ptkp-tt-head fw-bold mb-1.5 d-flex align-items-center justify-content-between">
-                                <span class="fs-6">Invalid Company Records</span>
-                                <span class="badge bg-orange-lt text-orange extra-small">Skipped</span>
-                            </div>
-                            <div class="ptkp-tt-desc mb-2">
+                        <div class="ptkp-tt-box ptkp-tt-minimal text-start">
+                            <div class="ptkp-tt-head fw-bold mb-1">Invalid Company Records</div>
+                            <div class="ptkp-tt-desc mb-0">
                                 These records contain missing or unsupported company information and cannot be imported under the applicable rules.
-                            </div>
-                            <div class="ptkp-tt-section mb-2">
-                                <div class="ptkp-tt-subhead fw-semibold text-uppercase text-muted extra-small mb-1">Validation Rules</div>
-                                <ul class="ptkp-tt-list ps-3 mb-0">
-                                    <li>Company code is invalid, unmapped, or missing.</li>
-                                    <li>Company is not recognized in the system configuration.</li>
-                                </ul>
-                            </div>
-                            <div class="ptkp-tt-fix mb-2">
-                                <div class="fw-semibold text-orange extra-small mb-0.5"><i class="ti ti-wrench me-1"></i>How to Fix:</div>
-                                <div class="extra-small">Verify that the company code matches the accepted company list in the system configuration. Update the company values in the Excel file and re-upload.</div>
-                            </div>
-                            <div class="ptkp-tt-foot pt-2 border-top d-flex align-items-center justify-content-between">
-                                <span class="extra-small text-muted fw-medium">Import Status:</span>
-                                <span class="badge bg-orange text-white fw-bold">Will be skipped</span>
                             </div>
                         </div>
                     </div>

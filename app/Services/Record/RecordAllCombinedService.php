@@ -30,15 +30,88 @@ class RecordAllCombinedService
      */
     public function getSummary(): array
     {
-        // 1. Online KPI & Learning Hours (canonical methods)
-        $onlineKpi = $this->learningManageController->getKpiSummary();
-        $onlineHours = $this->learningManageController->getTotalLearningHours();
+        // 1. Online Content KPI & Actual Learning Hours (content_users)
+        // Deduplicated: exclude records mirrored from playlist_content_users to prevent double counting
+        $hasContentUsers = Schema::hasTable('content_users');
+        $hasPlaylistUsers = Schema::hasTable('playlist_content_users');
 
-        $onlineTotal = (int) ($onlineKpi['total_learning'] ?? 0);
-        $onlineOngoing = (int) ($onlineKpi['ongoing'] ?? 0);
-        $onlineFinished = (int) ($onlineKpi['finished'] ?? 0);
+        $cuTotal = 0;
+        $cuOngoing = 0;
+        $cuFinished = 0;
+        $cuHours = 0.0;
 
-        // 2. Offline KPI & Learning Hours (from offline_training_users)
+        if ($hasContentUsers) {
+            if ($hasPlaylistUsers) {
+                $cuStats = DB::selectOne("
+                    SELECT 
+                        COUNT(*) as total,
+                        SUM(CASE WHEN cu.finish = '1' OR cu.progress >= 100 THEN 1 ELSE 0 END) as finished,
+                        SUM(CASE WHEN (cu.finish = '0' OR cu.finish IS NULL OR cu.finish != '1') AND cu.progress > 0 AND cu.progress < 100 THEN 1 ELSE 0 END) as ongoing,
+                        COALESCE(SUM(cu.learning_hours), 0) as hours
+                    FROM content_users cu
+                    WHERE NOT EXISTS (
+                        SELECT 1 
+                        FROM playlist_content_users pcu 
+                        WHERE pcu.user_id = cu.user_id 
+                          AND pcu.content_id = cu.content_id
+                    )
+                ");
+            } else {
+                $cuStats = DB::selectOne("
+                    SELECT 
+                        COUNT(*) as total,
+                        SUM(CASE WHEN cu.finish = '1' OR cu.progress >= 100 THEN 1 ELSE 0 END) as finished,
+                        SUM(CASE WHEN (cu.finish = '0' OR cu.finish IS NULL OR cu.finish != '1') AND cu.progress > 0 AND cu.progress < 100 THEN 1 ELSE 0 END) as ongoing,
+                        COALESCE(SUM(cu.learning_hours), 0) as hours
+                    FROM content_users cu
+                ");
+            }
+
+            $cuTotal = (int) ($cuStats->total ?? 0);
+            $cuOngoing = (int) ($cuStats->ongoing ?? 0);
+            $cuFinished = (int) ($cuStats->finished ?? 0);
+            $cuHours = (float) ($cuStats->hours ?? 0);
+        }
+
+        // 2. Online Playlist KPI & Actual Learning Hours (playlist_content_users)
+        // Grouped by user_id and trainingplan_id (1 playlist course per user enrollment)
+        $pcuTotal = 0;
+        $pcuOngoing = 0;
+        $pcuFinished = 0;
+        $pcuHours = 0.0;
+
+        if ($hasPlaylistUsers) {
+            $pcuStats = DB::selectOne("
+                SELECT 
+                    COUNT(*) as total,
+                    SUM(CASE WHEN completed_modules = total_modules THEN 1 ELSE 0 END) as finished,
+                    SUM(CASE WHEN completed_modules < total_modules AND sum_progress > 0 THEN 1 ELSE 0 END) as ongoing,
+                    COALESCE(SUM(total_hours), 0) as hours
+                FROM (
+                    SELECT 
+                        user_id, 
+                        trainingplan_id,
+                        COUNT(*) as total_modules,
+                        SUM(CASE WHEN finish = '1' OR progress >= 100 THEN 1 ELSE 0 END) as completed_modules,
+                        SUM(progress) as sum_progress,
+                        SUM(COALESCE(learning_hour, 0)) as total_hours
+                    FROM playlist_content_users
+                    GROUP BY user_id, trainingplan_id
+                ) as grouped_courses
+            ");
+
+            $pcuTotal = (int) ($pcuStats->total ?? 0);
+            $pcuOngoing = (int) ($pcuStats->ongoing ?? 0);
+            $pcuFinished = (int) ($pcuStats->finished ?? 0);
+            $pcuHours = (float) ($pcuStats->hours ?? 0);
+        }
+
+        $onlineTotal = $cuTotal + $pcuTotal;
+        $onlineOngoing = $cuOngoing + $pcuOngoing;
+        $onlineFinished = $cuFinished + $pcuFinished;
+        $onlineHours = $cuHours + $pcuHours;
+
+        // 3. Offline KPI & Learning Hours (from offline_training_users)
         $hasOfflineTables = Schema::hasTable('offline_trainings') && Schema::hasTable('offline_training_users');
 
         if ($hasOfflineTables) {
@@ -69,7 +142,7 @@ class RecordAllCombinedService
             $offlineHours = 0.0;
         }
 
-        // 3. Combined Metrics
+        // 4. Combined Metrics
         $totalLearning = $onlineTotal + $offlineTotal;
         $totalOngoing = $onlineOngoing + $offlineOngoing;
         $totalFinished = $onlineFinished + $offlineFinished;
@@ -87,6 +160,18 @@ class RecordAllCombinedService
                 'ongoing'              => $onlineOngoing,
                 'finished'             => $onlineFinished,
                 'total_learning_hours' => round($onlineHours, 2),
+                'content' => [
+                    'total_learning'       => $cuTotal,
+                    'ongoing'              => $cuOngoing,
+                    'finished'             => $cuFinished,
+                    'total_learning_hours' => round($cuHours, 2),
+                ],
+                'playlist' => [
+                    'total_learning'       => $pcuTotal,
+                    'ongoing'              => $pcuOngoing,
+                    'finished'             => $pcuFinished,
+                    'total_learning_hours' => round($pcuHours, 2),
+                ],
             ],
             'offline' => [
                 'total_learning'       => $offlineTotal,

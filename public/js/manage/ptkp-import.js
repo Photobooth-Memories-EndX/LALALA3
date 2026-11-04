@@ -329,12 +329,24 @@
                 const contentEl = targetId ? document.getElementById(targetId) : null;
                 const contentHtml = contentEl ? contentEl.innerHTML : (tooltipTriggerEl.getAttribute('title') || '');
 
+                let customClass = tooltipTriggerEl.getAttribute('data-bs-custom-class') || 'ptkp-status-tooltip';
+                const validationIds = [
+                    'ptkp-tt-content-valid',
+                    'ptkp-tt-content-warning',
+                    'ptkp-tt-content-duplicate',
+                    'ptkp-tt-content-invalid',
+                    'ptkp-tt-content-invalid-company'
+                ];
+                if (validationIds.includes(targetId) && !customClass.includes('ptkp-validation-tooltip')) {
+                    customClass += ' ptkp-validation-tooltip';
+                }
+
                 new bootstrap.Tooltip(tooltipTriggerEl, {
                     container: 'body',
                     boundary: 'window',
                     html: true,
                     title: contentHtml,
-                    customClass: 'ptkp-status-tooltip',
+                    customClass: customClass,
                     trigger: 'manual',
                     fallbackPlacements: ['bottom', 'right', 'left']
                 });
