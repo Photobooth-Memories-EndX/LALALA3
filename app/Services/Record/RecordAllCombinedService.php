@@ -1818,6 +1818,22 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
             $sourceTotal = $totalAll;
         }
 
+        $tpdRows = DB::table('trainingplandetail as tpd')
+            ->join('trainingplan as tp', 'tp.id', '=', 'tpd.trainingplan_id')
+            ->whereNull('tp.deleted_at')
+            ->orderBy('tpd.id', 'asc')
+            ->select('tpd.content_id', 'tp.id as tp_id', 'tp.title as tp_title')
+            ->get();
+        $tpdCache = [];
+        foreach ($tpdRows as $tpd) {
+            if (!isset($tpdCache[$tpd->content_id])) {
+                $tpdCache[$tpd->content_id] = [
+                    'id'    => (int) $tpd->tp_id,
+                    'title' => (string) $tpd->tp_title,
+                ];
+            }
+        }
+
         $dataTable = DataTables::of($query)
             ->setTotalRecords($sourceTotal);
 
@@ -2022,6 +2038,46 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
             ->addColumn('l3_numerical_formatted', function ($row) {
                 return ($row->l3_numerical !== null && $row->l3_numerical !== '') ? number_format((float) $row->l3_numerical, 1) : '-';
             })
+            ->addColumn('playlist', function ($row) use ($tpdCache) {
+                if ($row->source === 'offline') {
+                    return '<span class="text-muted small">-</span>';
+                }
+                $playlistTitle = !empty($row->playlist_title) ? $row->playlist_title : null;
+                $tpId = !empty($row->trainingplan_id) ? $row->trainingplan_id : null;
+                if (!$playlistTitle && !empty($row->content_id) && isset($tpdCache[$row->content_id])) {
+                    $playlistTitle = $tpdCache[$row->content_id]['title'];
+                    $tpId = $tpdCache[$row->content_id]['id'];
+                }
+                if (!empty($playlistTitle)) {
+                    if (!empty($tpId)) {
+                        $url = route('learning.manage.playlist', ['id' => $tpId]);
+                        return '<a href="' . e($url) . '" class="text-primary fw-semibold" title="' . e($playlistTitle) . '"><i class="bi bi-collection-play me-1"></i>' . e($playlistTitle) . '</a>';
+                    }
+                    return e($playlistTitle);
+                }
+                return '<span class="text-muted small">-</span>';
+            })
+            ->addColumn('type', function ($row) {
+                if ($row->source === 'offline') {
+                    return '<span class="text-muted small">-</span>';
+                }
+                $t = $row->type ?? 'Document';
+                return htmlspecialchars($t ?: 'Document');
+            })
+            ->addColumn('category', function ($row) use ($tpdCache) {
+                if ($row->source === 'offline') {
+                    return '<span class="badge bg-secondary-lt text-secondary">Non KP-OWL</span>';
+                }
+                $hasPlaylist = !empty($row->playlist_title)
+                    || (!empty($row->content_id) && isset($tpdCache[$row->content_id]))
+                    || in_array($row->category ?? '', ['Content Playlist', 'Playlist'], true)
+                    || ($row->source_type ?? '') === 'playlist';
+
+                if ($hasPlaylist) {
+                    return '<span class="badge bg-purple-lt text-purple">Content Playlist</span>';
+                }
+                return '<span class="badge bg-blue-lt text-blue">All Content</span>';
+            })
             ->addColumn('course_title', function ($row) {
                 $title = htmlspecialchars($row->learning_title ?: '-');
                 $rawReq = $row->requirement ?? ($row->status ?? 'Non-Mandatory');
@@ -2060,7 +2116,7 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
             })
             ->addColumn('sub_delivery_method', function ($row) {
                 if ($row->source === 'online') {
-                    return ($row->source_type ?? '') === 'playlist' ? 'Playlist / Path' : 'Self-Paced / LMS';
+                    return 'KP OWL';
                 }
                 $sub = $row->sub_delivery_method ?? $row->training_type ?? $row->type ?? null;
                 if (!$sub || $sub === '-' || strtolower(trim((string) $sub)) === 'offline') {
@@ -2258,22 +2314,22 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                         <li>
-                            <a class="dropdown-item d-flex align-items-center gap-2 btn-more-info" href="#" data-bs-toggle="modal" data-bs-target="#moreInformationModal" data-id="' . e($id) . '" data-record-id="' . e($id) . '" data-source="' . e($source) . '" data-record-source="' . e($source) . '">
+                            <a class="dropdown-item d-flex align-items-center gap-2 btn-more-info" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#moreInformationModal" data-id="' . e($id) . '" data-record-id="' . e($id) . '" data-source="' . e($source) . '" data-record-source="' . e($source) . '">
                                 <i class="bi bi-eye text-primary me-2"></i> More Information
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item d-flex align-items-center gap-2" href="' . e($editUrl) . '">
+                            <a class="dropdown-item d-flex align-items-center gap-2 btn-edit-record" href="' . e($editUrl) . '" data-id="' . e($id) . '">
                                 <i class="bi bi-pencil-square text-warning me-2"></i> Edit Record
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item d-flex align-items-center gap-2 text-danger" href="#" data-bs-toggle="modal" data-bs-target="#deleteRecordModal" data-record-id="' . e($id) . '" data-record-source="' . e($source) . '">
+                            <a class="dropdown-item d-flex align-items-center gap-2 btn-delete-record text-danger" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#deleteRecordModal" data-id="' . e($id) . '" data-record-id="' . e($id) . '" data-source="' . e($source) . '" data-record-source="' . e($source) . '">
                                 <i class="bi bi-trash text-danger me-2"></i> Delete Record
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item d-flex align-items-center gap-2 disabled text-muted" href="#" onclick="return false;" style="cursor: not-allowed;">
+                            <a class="dropdown-item d-flex align-items-center gap-2 btn-generate-cert disabled text-muted" href="javascript:void(0);" data-id="' . e($id) . '" onclick="return false;" style="cursor: not-allowed;">
                                 <i class="bi bi-award text-info me-2"></i> Generate Certificate
                             </a>
                         </li>
@@ -2592,6 +2648,46 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
                 $d = $row->finish_date ?? ($row->start_date ?? ($row->record_date ?? null));
                 return ($d && $d !== '-') ? date('d M Y', strtotime($d)) : '-';
             })
+            ->addColumn('playlist', function ($row) use ($tpdCache) {
+                if ($row->source === 'offline') {
+                    return '<span class="text-muted small">-</span>';
+                }
+                $playlistTitle = !empty($row->playlist_title) ? $row->playlist_title : null;
+                $tpId = !empty($row->trainingplan_id) ? $row->trainingplan_id : null;
+                if (!$playlistTitle && !empty($row->content_id) && isset($tpdCache[$row->content_id])) {
+                    $playlistTitle = $tpdCache[$row->content_id]['title'];
+                    $tpId = $tpdCache[$row->content_id]['id'];
+                }
+                if (!empty($playlistTitle)) {
+                    if (!empty($tpId)) {
+                        $url = route('learning.manage.playlist', ['id' => $tpId]);
+                        return '<a href="' . e($url) . '" class="text-primary fw-semibold" title="' . e($playlistTitle) . '"><i class="bi bi-collection-play me-1"></i>' . e($playlistTitle) . '</a>';
+                    }
+                    return e($playlistTitle);
+                }
+                return '<span class="text-muted small">-</span>';
+            })
+            ->addColumn('type', function ($row) {
+                if ($row->source === 'offline') {
+                    return '<span class="text-muted small">-</span>';
+                }
+                $t = $row->type ?? 'Document';
+                return htmlspecialchars($t ?: 'Document');
+            })
+            ->addColumn('category', function ($row) use ($tpdCache) {
+                if ($row->source === 'offline') {
+                    return '<span class="badge bg-secondary-lt text-secondary">Non KP-OWL</span>';
+                }
+                $hasPlaylist = !empty($row->playlist_title)
+                    || (!empty($row->content_id) && isset($tpdCache[$row->content_id]))
+                    || in_array($row->category ?? '', ['Content Playlist', 'Playlist'], true)
+                    || ($row->source_type ?? '') === 'playlist';
+
+                if ($hasPlaylist) {
+                    return '<span class="badge bg-purple-lt text-purple">Content Playlist</span>';
+                }
+                return '<span class="badge bg-blue-lt text-blue">All Content</span>';
+            })
             ->addColumn('course_title', function ($row) {
                 $title = htmlspecialchars($row->learning_title ?: '-');
                 $rawReq = $row->requirement ?? ($row->status ?? 'Non-Mandatory');
@@ -2763,22 +2859,22 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                         <li>
-                            <a class="dropdown-item d-flex align-items-center gap-2 btn-more-info" href="#" data-bs-toggle="modal" data-bs-target="#moreInformationModal" data-id="' . e($id) . '" data-record-id="' . e($id) . '" data-source="' . e($source) . '" data-record-source="' . e($source) . '">
+                            <a class="dropdown-item d-flex align-items-center gap-2 btn-more-info" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#moreInformationModal" data-id="' . e($id) . '" data-record-id="' . e($id) . '" data-source="' . e($source) . '" data-record-source="' . e($source) . '">
                                 <i class="bi bi-eye text-primary me-2"></i> More Information
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item d-flex align-items-center gap-2" href="' . e($editUrl) . '">
+                            <a class="dropdown-item d-flex align-items-center gap-2 btn-edit-record" href="' . e($editUrl) . '" data-id="' . e($id) . '">
                                 <i class="bi bi-pencil-square text-warning me-2"></i> Edit Record
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item d-flex align-items-center gap-2 text-danger" href="#" data-bs-toggle="modal" data-bs-target="#deleteRecordModal" data-record-id="' . e($id) . '" data-record-source="' . e($source) . '">
+                            <a class="dropdown-item d-flex align-items-center gap-2 btn-delete-record text-danger" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#deleteRecordModal" data-id="' . e($id) . '" data-record-id="' . e($id) . '" data-source="' . e($source) . '" data-record-source="' . e($source) . '">
                                 <i class="bi bi-trash text-danger me-2"></i> Delete Record
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item d-flex align-items-center gap-2 disabled text-muted" href="#" onclick="return false;" style="cursor: not-allowed;">
+                            <a class="dropdown-item d-flex align-items-center gap-2 btn-generate-cert disabled text-muted" href="javascript:void(0);" data-id="' . e($id) . '" onclick="return false;" style="cursor: not-allowed;">
                                 <i class="bi bi-award text-info me-2"></i> Generate Certificate
                             </a>
                         </li>

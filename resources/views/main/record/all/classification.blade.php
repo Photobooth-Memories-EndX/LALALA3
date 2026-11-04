@@ -195,6 +195,7 @@
                                     <th style="min-width: 140px;">DEPARTMENT</th>
                                     <th style="min-width: 130px;">COMPANY</th>
                                     <th class="text-center" style="min-width: 220px; text-align: center;">COURSE TITLE</th>
+                                    <th style="min-width: 200px;">PLAYLIST</th>
                                     <th style="min-width: 100px;">TYPE</th>
                                     <th style="min-width: 110px;">CATEGORY</th>
                                     <th style="min-width: 140px;">MAIN CLASSIFICATION</th>
@@ -2729,7 +2730,8 @@
             $(document).on('click', '.btn-more-info', function (e) {
                 e.preventDefault();
                 const recordId = $(this).data('id') || $(this).data('record-id') || $(this).attr('data-id') || $(this).attr('data-record-id');
-                const source = ($(this).data('source') || $(this).data('record-source') || $(this).attr('data-source') || $(this).attr('data-record-source') || 'offline').toString().toLowerCase();
+                const source = ($(this).data('source') || $(this).data('record-source') || $(this).attr('data-source') || $(this).attr('data-record-source') || 'online').toString().toLowerCase();
+                const type = ($(this).data('source-type') || $(this).data('type') || $(this).attr('data-source-type') || $(this).attr('data-type') || '').toString().toLowerCase();
                 if (!recordId) return;
 
                 const modalEl = document.getElementById('moreInformationModal');
@@ -2742,7 +2744,7 @@
 
                 // Fetch the record detail via $.ajax() from /manage/record/detail/{id}
                 $.ajax({
-                    url: '/manage/record/detail/' + encodeURIComponent(recordId) + (source ? '?source=' + encodeURIComponent(source) : ''),
+                    url: '/manage/record/detail/' + encodeURIComponent(recordId) + '?source=' + encodeURIComponent(source) + (type ? '&type=' + encodeURIComponent(type) : ''),
                     type: 'GET',
                     dataType: 'json',
                     success: function (response) {

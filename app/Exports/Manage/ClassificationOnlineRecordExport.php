@@ -373,7 +373,7 @@ class ClassificationOnlineRecordExport extends OnlineRecordExport
             . '<numFmt numFmtId="164" formatCode="yyyy-mm-dd"/>'
             . '<numFmt numFmtId="165" formatCode="hh:mm:ss"/>'
             . '<numFmt numFmtId="166" formatCode="[h]:mm:ss"/>'
-            . '<numFmt numFmtId="167" formatCode="0.0&quot; h&quot;"/>'
+            . '<numFmt numFmtId="167" formatCode="0.00&quot; h&quot;"/>'
             . '</numFmts>'
             . '<fonts count="1">'
             . '<font><sz val="11"/><name val="Calibri"/><family val="2"/></font>'
@@ -594,7 +594,7 @@ class ClassificationOnlineRecordExport extends OnlineRecordExport
                     ['O', 'str', $row->classification_name ?: 'Unclassified', '0'],             // 15. Main Classification
                     ['P', 'str', '-', '0'],                                                      // 16. Sub Classification
                     ['Q', 'str', 'Online', '0'],                                                 // 17. Delivery Method
-                    ['R', 'str', 'E-learning', '0'],                                             // 18. Sub Delivery Method
+                    ['S', 'str', 'KP OWL', '0'],                                             // 18. Sub Delivery Method
                     ['S', 'str', 'Internal', '0'],                                               // 19. Provider
                     ['T', 'str', 'INTERNAL TRAINING TEAM', '0'],                                 // 20. Sub Provider
                     ['U', 'str', 'KP-OWL', '0'],                                                 // 21. Provider Name

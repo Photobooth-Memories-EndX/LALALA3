@@ -283,7 +283,7 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
             $delivMethod = $isKpOwl ? 'Online' : 'Offline';
 
             if ($isKpOwl) {
-                $subDelivMethod = $row->sub_delivery_method ?: (($row->source_type ?? '') === 'playlist' ? 'Playlist / Path' : 'Self-Paced / LMS');
+                $subDelivMethod = 'KP OWL';
             } else {
                 $sub = $row->sub_delivery_method ?? $row->training_type ?? $row->type ?? null;
                 if (!$sub || $sub === '-' || strtolower(trim((string) $sub)) === 'offline') {
@@ -394,7 +394,7 @@ class ClassificationAllRecordExport implements FromCollection, WithHeadings, Wit
                 $row->company ?: '-',
                 $row->learning_title ?: '-',
                 $row->sub_course_name ?: '-',
-                $row->type ?: '-',
+                ($row->source === 'offline' || !$isKpOwl) ? '-' : ($row->type ?: '-'),
                 $row->category ?: '-',
                 $row->level ?: '-',
                 $row->batch ?: '-',

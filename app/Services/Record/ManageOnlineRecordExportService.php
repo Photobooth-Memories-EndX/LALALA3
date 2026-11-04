@@ -41,6 +41,7 @@ class ManageOnlineRecordExportService
             'Department',
             'Company',
             'Course Title',
+            'Playlist',
             'Sub Course Title',
             'Type',
             'Category',
@@ -109,48 +110,49 @@ class ManageOnlineRecordExportService
             'G'  => 25,  // Department
             'H'  => 25,  // Company
             'I'  => 35,  // Course Title
-            'J'  => 25,  // Sub Course Title
-            'K'  => 15,  // Type
-            'L'  => 18,  // Category
-            'M'  => 12,  // Level
-            'N'  => 12,  // Batch
-            'O'  => 25,  // Main Classification
-            'P'  => 25,  // Sub Classification
-            'Q'  => 18,  // Delivery Method
-            'R'  => 20,  // Sub Delivery Method
-            'S'  => 16,  // Provider
-            'T'  => 20,  // Sub Provider
-            'U'  => 25,  // Provider Name
-            'V'  => 20,  // Venue
-            'W'  => 22,  // Instructor
-            'X'  => 16,  // Course Duration
-            'Y'  => 22,  // Total Recognized Duration
-            'Z'  => 16,  // Learning Hours
-            'AA' => 14,  // % Progress
-            'AB' => 16,  // Progress Status
-            'AC' => 14,  // Start Date
-            'AD' => 14,  // End Date
-            'AE' => 14,  // Start Time
-            'AF' => 14,  // End Time
-            'AG' => 16,  // Record Month
-            'AH' => 15,  // Requirement
-            'AI' => 14,  // Attendance
-            'AJ' => 25,  // Attendance Reason
-            'AK' => 14,  // Bond Status
-            'AL' => 16,  // Bond Duration
-            'AM' => 16,  // Bond End Date
-            'AN' => 18,  // Bond Amount
-            'AO' => 20,  // Score (L1) - Course
-            'AP' => 15,  // Score (L2)
-            'AQ' => 15,  // L2 Status
-            'AR' => 15,  // Score (L3)
-            'AS' => 15,  // L3 Status
-            'AT' => 22,  // Certificate Availability
-            'AU' => 25,  // Certificate Institution
-            'AV' => 20,  // Certificate Issued Date
-            'AW' => 20,  // Certificate Expired Date
-            'AX' => 25,  // Person in Charge (PIC)
-            'AY' => 25,  // Total Engagement Time
+            'J'  => 25,  // Playlist
+            'K'  => 25,  // Sub Course Title
+            'L'  => 15,  // Type
+            'M'  => 18,  // Category
+            'N'  => 12,  // Level
+            'O'  => 12,  // Batch
+            'P'  => 25,  // Main Classification
+            'Q'  => 25,  // Sub Classification
+            'R'  => 18,  // Delivery Method
+            'S'  => 20,  // Sub Delivery Method
+            'T'  => 16,  // Provider
+            'U'  => 20,  // Sub Provider
+            'V'  => 25,  // Provider Name
+            'W'  => 20,  // Venue
+            'X'  => 22,  // Instructor
+            'Y'  => 16,  // Course Duration
+            'Z'  => 22,  // Total Recognized Duration
+            'AA' => 16,  // Learning Hours
+            'AB' => 14,  // % Progress
+            'AC' => 16,  // Progress Status
+            'AD' => 14,  // Start Date
+            'AE' => 14,  // End Date
+            'AF' => 14,  // Start Time
+            'AG' => 14,  // End Time
+            'AH' => 16,  // Record Month
+            'AI' => 15,  // Requirement
+            'AJ' => 14,  // Attendance
+            'AK' => 25,  // Attendance Reason
+            'AL' => 14,  // Bond Status
+            'AM' => 16,  // Bond Duration
+            'AN' => 16,  // Bond End Date
+            'AO' => 18,  // Bond Amount
+            'AP' => 20,  // Score (L1) - Course
+            'AQ' => 15,  // Score (L2)
+            'AR' => 15,  // L2 Status
+            'AS' => 15,  // Score (L3)
+            'AT' => 15,  // L3 Status
+            'AU' => 22,  // Certificate Availability
+            'AV' => 25,  // Certificate Institution
+            'AW' => 20,  // Certificate Issued Date
+            'AX' => 20,  // Certificate Expired Date
+            'AY' => 25,  // Person in Charge (PIC)
+            'AZ' => 25,  // Total Engagement Time
         ];
     }
 
@@ -254,22 +256,19 @@ class ManageOnlineRecordExportService
         $cleanEmpId = ($rawEmp !== '-') ? preg_replace('/\s*[\/\-]\s*NIP.*$/i', '', trim((string) $rawEmp)) : '-';
 
         // 2. Category determination & Parent Playlist derivation
-        $isContentInPlaylist = !empty($row->trainingplan_id) && !empty($row->content_id);
-        if ($isContentInPlaylist) {
-            $category = 'Content Playlist';
-        } elseif ($isPlaylist) {
-            $category = 'Playlist';
-        } else {
-            $category = 'All Content';
-        }
+        $tpdCache = $context['tpd_cache'] ?? [];
+        $contentId = !empty($row->content_id) ? (int) $row->content_id : null;
+        $parentPlaylist = ($contentId && isset($tpdCache[$contentId])) ? $tpdCache[$contentId] : null;
 
-        // Parent Playlist Column Logic:
-        // If Category == 'Content Playlist', fetch parent Playlist title of current Course Title; otherwise '-'
-        $parentPlaylistTitle = '-';
-        if ($category === 'Content Playlist') {
-            $parentPlaylistTitle = !empty($row->playlist_title)
-                ? trim((string) $row->playlist_title)
-                : $this->resolveParentPlaylistTitle((int) ($row->content_id ?? 0), (int) ($row->trainingplan_id ?? 0));
+        if (!empty($row->playlist_title)) {
+            $parentPlaylistTitle = trim((string) $row->playlist_title);
+            $category = 'Content Playlist';
+        } elseif ($parentPlaylist) {
+            $parentPlaylistTitle = $parentPlaylist['title'];
+            $category = 'Content Playlist';
+        } else {
+            $parentPlaylistTitle = '-';
+            $category = 'All Content';
         }
 
         // 3. Course Title & Sub Course Title
@@ -386,15 +385,16 @@ class ManageOnlineRecordExportService
             'department'                => ($row->user_department ?? null) ?: '-',  // 7. Department
             'company'                   => ($row->user_company ?? null) ?: (($row->company_name ?? null) ?: 'PT Krakatau Posco'), // 8. Company
             'course_title'              => $courseTitle,                  // 9. Course Title
-            'sub_course_title'          => $subCourseTitle,               // 10. Sub Course Title (Strictly '-')
-            'type'                      => $typeVal,                      // 11. Type
-            'category'                  => $category,                     // 12. Category
+            'playlist'                  => $parentPlaylistTitle,          // 10. Playlist
+            'sub_course_title'          => $subCourseTitle,               // 11. Sub Course Title (Strictly '-')
+            'type'                      => $typeVal,                      // 12. Type
+            'category'                  => $category,                     // 13. Category
             'level'                     => '-',                           // 13. Level
             'batch'                     => '-',                           // 14. Batch
             'main_classification'       => ($row->classification_name ?? null) ?: 'Unclassified', // 15. Main Classification
             'sub_classification'        => '-',                           // 16. Sub Classification
             'delivery_method'           => 'Online',                      // 17. Delivery Method
-            'sub_delivery_method'       => 'E-learning',                  // 18. Sub Delivery Method
+            'sub_delivery_method'       => 'KP OWL',                  // 18. Sub Delivery Method
             'provider'                  => 'Internal',                    // 19. Provider
             'sub_provider'              => '-',                           // 20. Sub Provider
             'provider_name'             => 'KP-OWL',                      // 21. Provider Name
@@ -427,8 +427,7 @@ class ManageOnlineRecordExportService
             'certificate_issued_date'   => $certIssuedDate,               // 48. Certificate Issued Date
             'certificate_expired_date'  => $certExpiredDate,              // 49. Certificate Expired Date
             'pic'                       => $picName,                      // 50. Person in Charge (PIC)
-            'total_engagement_time'     => $afkFormatted,                 // 51. Total Engagement Time
-            'playlist'                  => $parentPlaylistTitle,          // Parent Playlist title (for Category == 'Content Playlist')
+            'total_engagement_time'     => $afkFormatted,                 // 52. Total Engagement Time
         ];
     }
 
@@ -495,11 +494,28 @@ class ManageOnlineRecordExportService
             })
             ->value('name') ?: 'MOHAMAD NAFFISYA KANCANA GUMILANG';
 
+        $tpdRows = DB::table('trainingplandetail as tpd')
+            ->join('trainingplan as tp', 'tp.id', '=', 'tpd.trainingplan_id')
+            ->whereNull('tp.deleted_at')
+            ->orderBy('tpd.id', 'asc')
+            ->select('tpd.content_id', 'tp.id as tp_id', 'tp.title as tp_title')
+            ->get();
+        $tpdCache = [];
+        foreach ($tpdRows as $tpd) {
+            if (!isset($tpdCache[$tpd->content_id])) {
+                $tpdCache[$tpd->content_id] = [
+                    'id'    => (int) $tpd->tp_id,
+                    'title' => (string) $tpd->tp_title,
+                ];
+            }
+        }
+
         $context = [
             'recognized_service'    => app(LearningRecordRecognizedDurationService::class),
             'content_cert_settings' => $contentCertSettings,
             'tp_cert_settings'      => $tpCertSettings,
             'pic_name'              => $adminPic,
+            'tpd_cache'             => $tpdCache,
         ];
 
         $query = $this->buildQuery($filters, $classification);
@@ -508,7 +524,7 @@ class ManageOnlineRecordExportService
         foreach ($query->cursor() as $record) {
             $rowIndex++;
             $mapped = $this->mapRow($record, $rowIndex - 1, $context);
-            $values = array_values(array_slice($mapped, 0, 51));
+            $values = array_values(array_slice($mapped, 0, 52));
 
             foreach ($values as $colIdx => $val) {
                 $colLetter = Coordinate::stringFromColumnIndex($colIdx + 1);
@@ -521,7 +537,7 @@ class ManageOnlineRecordExportService
                 } elseif ($colLetter === 'A') {
                     // NO: Pure Integer
                     $sheet->setCellValueExplicit($cellCoord, (int) $val, DataType::TYPE_NUMERIC);
-                } elseif ($colLetter === 'X' || $colLetter === 'Y' || $colLetter === 'AY') {
+                } elseif ($colLetter === 'Y' || $colLetter === 'Z' || $colLetter === 'AZ') {
                     // Duration Columns (Course Duration, Total Recognized Duration, Total Engagement Time):
                     // Convert seconds to Excel date fraction ($sec / 86400) so Excel SUM works!
                     $sec = ($val !== '-' && $val !== '' && $val !== null) ? DurationFormatter::toSeconds((string) $val) : null;
@@ -530,7 +546,7 @@ class ManageOnlineRecordExportService
                     } else {
                         $sheet->setCellValueExplicit($cellCoord, '-', DataType::TYPE_STRING);
                     }
-                } elseif ($colLetter === 'AE' || $colLetter === 'AF') {
+                } elseif ($colLetter === 'AF' || $colLetter === 'AG') {
                     // Time Columns (Start Time, End Time)
                     $sec = ($val !== '-' && $val !== '' && $val !== null) ? DurationFormatter::toSeconds((string) $val) : null;
                     if ($sec !== null && $sec >= 0) {
@@ -538,24 +554,24 @@ class ManageOnlineRecordExportService
                     } else {
                         $sheet->setCellValueExplicit($cellCoord, (string) ($val ?? '-'), DataType::TYPE_STRING);
                     }
-                } elseif ($colLetter === 'Z') {
-                    // Learning Hours: Numeric decimal format 0.00
+                } elseif ($colLetter === 'AA') {
+                    // Learning Hours: Numeric decimal format 0.00" h"
                     if (is_numeric($val)) {
                         $sheet->setCellValueExplicit($cellCoord, (float) $val, DataType::TYPE_NUMERIC);
                     } else {
                         $sheet->setCellValueExplicit($cellCoord, '-', DataType::TYPE_STRING);
                     }
-                } elseif ($colLetter === 'AA') {
+                } elseif ($colLetter === 'AB') {
                     // % Progress: Numeric decimal with 0% format
                     if (is_numeric($val)) {
                         $sheet->setCellValueExplicit($cellCoord, (float) $val, DataType::TYPE_NUMERIC);
                     } else {
                         $sheet->setCellValueExplicit($cellCoord, 0.0, DataType::TYPE_NUMERIC);
                     }
-                } elseif ($colLetter === 'AK' || $colLetter === 'AL' || $colLetter === 'AM' || $colLetter === 'AN') {
+                } elseif ($colLetter === 'AL' || $colLetter === 'AM' || $colLetter === 'AN' || $colLetter === 'AO') {
                     // Bond fields (Status, Duration, End Date, Amount): strictly '-' for KP OWL
                     $sheet->setCellValueExplicit($cellCoord, '-', DataType::TYPE_STRING);
-                } elseif ($colLetter === 'AO' || $colLetter === 'AP' || $colLetter === 'AR') {
+                } elseif ($colLetter === 'AP' || $colLetter === 'AQ' || $colLetter === 'AS') {
                     // Scores: Decimal format 0.00
                     if (is_numeric($val)) {
                         $sheet->setCellValueExplicit($cellCoord, (float) $val, DataType::TYPE_NUMERIC);
@@ -573,29 +589,29 @@ class ManageOnlineRecordExportService
             // Pure Integers (NO: A) -> Format as '0' without .0 trailing decimals
             $sheet->getStyle("A2:A{$rowIndex}")->getNumberFormat()->setFormatCode('0');
 
-            // Durations (Course Duration: X, Total Recognized Duration: Y, Total Engagement Time: AY) -> '[hh]:mm:ss'
-            $sheet->getStyle("X2:X{$rowIndex}")->getNumberFormat()->setFormatCode('[hh]:mm:ss');
+            // Durations (Course Duration: Y, Total Recognized Duration: Z, Total Engagement Time: AZ) -> '[hh]:mm:ss'
             $sheet->getStyle("Y2:Y{$rowIndex}")->getNumberFormat()->setFormatCode('[hh]:mm:ss');
-            $sheet->getStyle("AY2:AY{$rowIndex}")->getNumberFormat()->setFormatCode('[hh]:mm:ss');
+            $sheet->getStyle("Z2:Z{$rowIndex}")->getNumberFormat()->setFormatCode('[hh]:mm:ss');
+            $sheet->getStyle("AZ2:AZ{$rowIndex}")->getNumberFormat()->setFormatCode('[hh]:mm:ss');
 
-            // Times (Start Time: AE, End Time: AF) -> 'hh:mm:ss'
-            $sheet->getStyle("AE2:AE{$rowIndex}")->getNumberFormat()->setFormatCode('hh:mm:ss');
+            // Times (Start Time: AF, End Time: AG) -> 'hh:mm:ss'
             $sheet->getStyle("AF2:AF{$rowIndex}")->getNumberFormat()->setFormatCode('hh:mm:ss');
+            $sheet->getStyle("AG2:AG{$rowIndex}")->getNumberFormat()->setFormatCode('hh:mm:ss');
 
-            // Hours & Scores (Learning Hours: Z, Scores: AO, AP, AR) -> Format as '0.00'
-            $sheet->getStyle("Z2:Z{$rowIndex}")->getNumberFormat()->setFormatCode('0.00');
-            $sheet->getStyle("AO2:AO{$rowIndex}")->getNumberFormat()->setFormatCode('0.00');
+            // Hours & Scores (Learning Hours: AA, Scores: AP, AQ, AS)
+            $sheet->getStyle("AA2:AA{$rowIndex}")->getNumberFormat()->setFormatCode('0.00" h"');
             $sheet->getStyle("AP2:AP{$rowIndex}")->getNumberFormat()->setFormatCode('0.00');
-            $sheet->getStyle("AR2:AR{$rowIndex}")->getNumberFormat()->setFormatCode('0.00');
+            $sheet->getStyle("AQ2:AQ{$rowIndex}")->getNumberFormat()->setFormatCode('0.00');
+            $sheet->getStyle("AS2:AS{$rowIndex}")->getNumberFormat()->setFormatCode('0.00');
 
-            // % Progress (AA) -> Format as '0%'
-            $sheet->getStyle("AA2:AA{$rowIndex}")->getNumberFormat()->setFormatCode('0%');
+            // % Progress (AB) -> Format as '0%'
+            $sheet->getStyle("AB2:AB{$rowIndex}")->getNumberFormat()->setFormatCode('0%');
 
-            // Dates (Start Date: AC, End Date: AD, Issued Date: AV, Expired Date: AW) -> 'yyyy-mm-dd'
-            $sheet->getStyle("AC2:AC{$rowIndex}")->getNumberFormat()->setFormatCode('yyyy-mm-dd');
+            // Dates (Start Date: AD, End Date: AE, Issued Date: AW, Expired Date: AX) -> 'yyyy-mm-dd'
             $sheet->getStyle("AD2:AD{$rowIndex}")->getNumberFormat()->setFormatCode('yyyy-mm-dd');
-            $sheet->getStyle("AV2:AV{$rowIndex}")->getNumberFormat()->setFormatCode('yyyy-mm-dd');
+            $sheet->getStyle("AE2:AE{$rowIndex}")->getNumberFormat()->setFormatCode('yyyy-mm-dd');
             $sheet->getStyle("AW2:AW{$rowIndex}")->getNumberFormat()->setFormatCode('yyyy-mm-dd');
+            $sheet->getStyle("AX2:AX{$rowIndex}")->getNumberFormat()->setFormatCode('yyyy-mm-dd');
 
             // Center alignment across all data cells
             $sheet->getStyle("A2:{$highestCol}{$rowIndex}")->applyFromArray([
@@ -683,7 +699,7 @@ class ManageOnlineRecordExportService
             'xl/styles.xml',
             '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             . '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
-            . '<numFmts count="7">'
+            . '<numFmts count="8">'
             . '<numFmt numFmtId="164" formatCode="yyyy-mm-dd"/>'
             . '<numFmt numFmtId="165" formatCode="hh:mm:ss"/>'
             . '<numFmt numFmtId="166" formatCode="0.00"/>'
@@ -691,6 +707,7 @@ class ManageOnlineRecordExportService
             . '<numFmt numFmtId="168" formatCode="0"/>'
             . '<numFmt numFmtId="169" formatCode="[hh]:mm:ss"/>'
             . '<numFmt numFmtId="170" formatCode="0%"/>'
+            . '<numFmt numFmtId="171" formatCode="0.00&quot; h&quot;"/>'
             . '</numFmts>'
             . '<fonts count="2">'
             . '<font><sz val="10"/><name val="Calibri"/></font>'
@@ -707,7 +724,7 @@ class ManageOnlineRecordExportService
             . '<cellStyleXfs count="1">'
             . '<xf numFmtId="0" fontId="0" fillId="0" borderId="0"/>'
             . '</cellStyleXfs>'
-            . '<cellXfs count="9">'
+            . '<cellXfs count="10">'
             . '<xf numFmtId="49" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>' // s=0 (string centered)
             . '<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>' // s=1 (header dark blue)
             . '<xf numFmtId="168" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>' // s=2 (pure integer 0)
@@ -717,6 +734,7 @@ class ManageOnlineRecordExportService
             . '<xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>' // s=6 (time hh:mm:ss)
             . '<xf numFmtId="169" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>' // s=7 (duration [hh]:mm:ss)
             . '<xf numFmtId="170" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>' // s=8 (percentage 0%)
+            . '<xf numFmtId="171" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>' // s=9 (learning hours 0.00 h)
             . '</cellXfs>'
             . '</styleSheet>'
         );
@@ -761,11 +779,28 @@ class ManageOnlineRecordExportService
             })
             ->value('name') ?: 'MOHAMAD NAFFISYA KANCANA GUMILANG';
 
+        $tpdRows = DB::table('trainingplandetail as tpd')
+            ->join('trainingplan as tp', 'tp.id', '=', 'tpd.trainingplan_id')
+            ->whereNull('tp.deleted_at')
+            ->orderBy('tpd.id', 'asc')
+            ->select('tpd.content_id', 'tp.id as tp_id', 'tp.title as tp_title')
+            ->get();
+        $tpdCache = [];
+        foreach ($tpdRows as $tpd) {
+            if (!isset($tpdCache[$tpd->content_id])) {
+                $tpdCache[$tpd->content_id] = [
+                    'id'    => (int) $tpd->tp_id,
+                    'title' => (string) $tpd->tp_title,
+                ];
+            }
+        }
+
         $context = [
             'recognized_service'    => app(LearningRecordRecognizedDurationService::class),
             'content_cert_settings' => $contentCertSettings,
             'tp_cert_settings'      => $tpCertSettings,
             'pic_name'              => $adminPic,
+            'tpd_cache'             => $tpdCache,
         ];
 
         $query = $this->buildQuery($filters, $classification);
@@ -785,7 +820,7 @@ class ManageOnlineRecordExportService
                 $r = $excelRow;
 
                 $mapped = $this->mapRow($record, $rowCount, $context);
-                $values = array_values(array_slice($mapped, 0, 51));
+                $values = array_values(array_slice($mapped, 0, 52));
 
                 $xmlRow = "<row r=\"{$r}\">";
                 foreach ($values as $colIdx => $val) {
@@ -802,8 +837,8 @@ class ManageOnlineRecordExportService
                         // NO: Pure Integer (s=2, format 0)
                         $intVal = (int) $val;
                         $xmlRow .= "<c r=\"{$coord}\" s=\"2\"><v>{$intVal}</v></c>";
-                    } elseif ($colLetter === 'X' || $colLetter === 'Y' || $colLetter === 'AY') {
-                        // Duration Columns: Course Duration, Total Recognized Duration, Total Engagement Time
+                    } elseif ($colLetter === 'Y' || $colLetter === 'Z' || $colLetter === 'AZ') {
+                        // Duration Columns: Course Duration (Y), Total Recognized Duration (Z), Total Engagement Time (AZ)
                         // Numeric Excel date fraction ($sec / 86400) with format [hh]:mm:ss (s=7) so Excel SUM works!
                         $sec = ($val !== '-' && $val !== '' && $val !== null) ? DurationFormatter::toSeconds((string) $val) : null;
                         if ($sec !== null && $sec >= 0) {
@@ -812,8 +847,8 @@ class ManageOnlineRecordExportService
                         } else {
                             $xmlRow .= "<c r=\"{$coord}\" t=\"inlineStr\" s=\"0\"><is><t>-</t></is></c>";
                         }
-                    } elseif ($colLetter === 'AE' || $colLetter === 'AF') {
-                        // Time Columns: Start Time, End Time (s=6, format hh:mm:ss)
+                    } elseif ($colLetter === 'AF' || $colLetter === 'AG') {
+                        // Time Columns: Start Time (AF), End Time (AG) (s=6, format hh:mm:ss)
                         $sec = ($val !== '-' && $val !== '' && $val !== null) ? DurationFormatter::toSeconds((string) $val) : null;
                         if ($sec !== null && $sec >= 0) {
                             $fraction = $sec / 86400;
@@ -821,15 +856,23 @@ class ManageOnlineRecordExportService
                         } else {
                             $xmlRow .= "<c r=\"{$coord}\" t=\"inlineStr\" s=\"0\"><is><t>-</t></is></c>";
                         }
-                    } elseif ($colLetter === 'Z' || $colLetter === 'AO' || $colLetter === 'AP' || $colLetter === 'AR') {
-                        // Learning Hours, Scores: Decimal 0.00 (s=3)
+                    } elseif ($colLetter === 'AA') {
+                        // Learning Hours: Numeric float with 0.00" h" format (s=9) so Excel can SUM natively!
+                        if (is_numeric($val)) {
+                            $decVal = number_format((float) $val, 2, '.', '');
+                            $xmlRow .= "<c r=\"{$coord}\" s=\"9\"><v>{$decVal}</v></c>";
+                        } else {
+                            $xmlRow .= "<c r=\"{$coord}\" t=\"inlineStr\" s=\"0\"><is><t>-</t></is></c>";
+                        }
+                    } elseif ($colLetter === 'AP' || $colLetter === 'AQ' || $colLetter === 'AS') {
+                        // Scores: Decimal 0.00 (s=3)
                         if (is_numeric($val)) {
                             $decVal = number_format((float) $val, 2, '.', '');
                             $xmlRow .= "<c r=\"{$coord}\" s=\"3\"><v>{$decVal}</v></c>";
                         } else {
                             $xmlRow .= "<c r=\"{$coord}\" t=\"inlineStr\" s=\"0\"><is><t>-</t></is></c>";
                         }
-                    } elseif ($colLetter === 'AA') {
+                    } elseif ($colLetter === 'AB') {
                         // % Progress: Numeric with 0% format (s=8)
                         if (is_numeric($val)) {
                             $pctVal = (float) $val;
@@ -837,10 +880,10 @@ class ManageOnlineRecordExportService
                         } else {
                             $xmlRow .= "<c r=\"{$coord}\" s=\"8\"><v>0</v></c>";
                         }
-                    } elseif ($colLetter === 'AK' || $colLetter === 'AL' || $colLetter === 'AM' || $colLetter === 'AN') {
+                    } elseif ($colLetter === 'AL' || $colLetter === 'AM' || $colLetter === 'AN' || $colLetter === 'AO') {
                         // Bond fields: strictly '-'
                         $xmlRow .= "<c r=\"{$coord}\" t=\"inlineStr\" s=\"0\"><is><t>-</t></is></c>";
-                    } elseif ($colLetter === 'AC' || $colLetter === 'AD' || $colLetter === 'AV' || $colLetter === 'AW') {
+                    } elseif ($colLetter === 'AD' || $colLetter === 'AE' || $colLetter === 'AW' || $colLetter === 'AX') {
                         // Dates: YYYY-MM-DD (s=5)
                         $escaped = $this->escapeXml($val);
                         $xmlRow .= "<c r=\"{$coord}\" t=\"inlineStr\" s=\"5\"><is><t>{$escaped}</t></is></c>";

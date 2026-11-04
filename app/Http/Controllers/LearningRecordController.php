@@ -1206,16 +1206,40 @@ class LearningRecordController extends Controller
                 $record->bond_amount_formatted = '-';
             }
             $record->source = 'Non-KP OWL';
-            $record->title = !empty($record->title) ? $record->title : (!empty($record->course_name) ? $record->course_name : 'Training Record');
-            $record->user_name = !empty($record->user_name) ? $record->user_name : (!empty($record->participant_name) ? $record->participant_name : (Auth::user()?->name ?? '-'));
+            $record->course_title = !empty($record->title) ? $record->title : (!empty($record->course_name) ? $record->course_name : 'Training Record');
+            $record->title = $record->course_title;
+            $record->course_name = $record->course_title;
+            $record->sub_course_title = $record->sub_course_name ?? '-';
+            $record->employee_name = !empty($record->user_name) ? $record->user_name : (!empty($record->participant_name) ? $record->participant_name : (Auth::user()?->name ?? '-'));
+            $record->user_name = $record->employee_name;
+            $record->participant_name = $record->employee_name;
             $record->employee_id = !empty($record->employee_id) ? $record->employee_id : (Auth::user()?->employee_id ?? Auth::user()?->nip ?? Auth::user()?->id_emp ?? '-');
+            $record->grade = $record->grade ?? (Auth::user()?->jobgrade ?? Auth::user()?->grade ?? '-');
+            $record->job_position = $record->job_position ?? (Auth::user()?->jobposition ?? Auth::user()?->job_position ?? '-');
             $record->team = !empty($record->team) ? $record->team : (Auth::user()?->team ?? '-');
+            $record->department = $record->department ?? (Auth::user()?->department ?? '-');
+            $record->company = $record->company ?? (Auth::user()?->company_name ?? Auth::user()?->company ?? 'PT Krakatau Posco');
+            $record->level = $record->level ?? '-';
+            $record->batch = $record->batch ?? '-';
             $record->delivery_method = \App\Models\OfflineTraining::normalizeDeliveryMethod($record->delivery_method ?? 'Offline');
+            $record->sub_delivery_method = $record->sub_delivery_method ?? 'On-Site';
             $record->provider = !empty($record->provider) ? $record->provider : 'External';
+            $record->sub_provider = $record->sub_provider ?? '-';
             $record->provider_name = !empty($record->provider_name) ? $record->provider_name : '-';
             $record->venue = !empty($record->venue) ? $record->venue : '-';
+            $record->instructor = $record->instructor ?? '-';
+            $record->attendance = $record->attendance ?? 'Yes';
+            $record->attendance_reason = $record->attendance_reason ?? '-';
             $record->bond_status = !empty($record->bond_status) ? $record->bond_status : 'No';
+            $record->bond_duration = $record->bond_duration ?? '-';
             $record->bond_end_date = !empty($record->bond_end_date) ? $record->bond_end_date : '-';
+            $record->bond_amount = $record->bond_amount_formatted ?? '-';
+            $record->l2_status = $record->l2_verbal ?? ($record->l2_status ?? '-');
+            $record->l3_status = $record->l3_verbal ?? ($record->l3_status ?? '-');
+            $record->certificate_availability = $record->certificate;
+            $record->certificate_institution = $record->certificate_institution ?? ($record->institution ?? '-');
+            $record->certificate_issued_date = $record->certificate_issued_date ?? ($record->issued_date ?? '-');
+            $record->certificate_expired_date = $record->certificate_expired_date ?? ($record->expired_date ?? '-');
 
             return response()->json([
                 'success' => true,
@@ -1245,8 +1269,11 @@ class LearningRecordController extends Controller
                     'data'    => [
                         'id'                     => 'playlist_' . $plan->id,
                         'source'                 => 'KP OWL',
+                        'course_title'           => $plan->title,
                         'title'                  => $plan->title,
                         'course_name'            => $plan->title,
+                        'sub_course_title'       => '-',
+                        'sub_course_name'        => '-',
                         'type'                   => 'Playlist',
                         'category'               => 'Playlist',
                         'level'                  => '-',
@@ -1256,34 +1283,41 @@ class LearningRecordController extends Controller
                         'counted_corporate_kpi'  => 'No',
                         'sub_corporate_kpi'      => '-',
                         'delivery_method'        => 'Online',
-                        'sub_delivery_method'    => 'E-learning',
+                        'sub_delivery_method'    => 'Playlist / Path',
                         'provider'               => 'Internal',
                         'sub_provider'           => '-',
                         'provider_name'          => 'KP-OWL',
-                        'venue'                  => 'KP-OWL',
-                        'instructor'             => '-',
+                        'venue'                  => 'Online LMS',
+                        'instructor'             => $plan->instructor ?: 'Training Team',
                         'duration'               => $plan->duration ?? '-',
                         'duration_seconds'       => (int) ($plan->total_duration_seconds ?? 0),
                         'course_learning_hours'  => $actualHours,
                         'learning_hours'         => $actualHours,
                         'progress'               => 100,
-                        'start_date'             => optional($plan->created_at)->format('Y-m-d H:i:s') ?? '-',
-                        'finish_date'            => optional($plan->updated_at)->format('Y-m-d H:i:s') ?? '-',
+                        'start_date'             => optional($plan->created_at)->format('Y-m-d') ?? '-',
+                        'finish_date'            => optional($plan->updated_at)->format('Y-m-d') ?? '-',
                         'attendance'             => 'Yes',
                         'attendance_reason'      => '-',
                         'certificate'            => (($plan->finished_items ?? 0) >= ($plan->total_items ?? 1)) ? 'Available' : 'Not Available',
-                        'bond_status'            => 'No',
-                        'bond_duration'          => null,
+                        'certificate_availability'=> (($plan->finished_items ?? 0) >= ($plan->total_items ?? 1)) ? 'Available' : 'Not Available',
+                        'certificate_institution' => 'PT Krakatau Posco',
+                        'certificate_issued_date' => optional($plan->updated_at)->format('Y-m-d') ?? '-',
+                        'certificate_expired_date'=> '-',
+                        'bond_status'            => '-',
+                        'bond_duration'          => '-',
                         'bond_end_date'          => '-',
                         'bond_amount'            => '-',
                         'bond_amount_idr'        => '-',
                         'bond_amount_formatted'  => '-',
+                        'l2_status'              => '-',
+                        'l3_status'              => '-',
                         'pic'                    => '-',
+                        'employee_id'            => Auth::user()?->employee_id ?? Auth::user()?->nip ?? Auth::user()?->id_emp ?? '-',
+                        'employee_name'          => Auth::user()?->name ?? '-',
                         'user_name'              => Auth::user()?->name ?? '-',
                         'participant_name'       => Auth::user()?->name ?? '-',
-                        'employee_id'            => Auth::user()?->employee_id ?? Auth::user()?->nip ?? Auth::user()?->id_emp ?? '-',
-                        'grade'                  => Auth::user()?->grade ?? '-',
-                        'job_position'           => Auth::user()?->job_position ?? Auth::user()?->position ?? '-',
+                        'grade'                  => Auth::user()?->grade ?? Auth::user()?->jobgrade ?? '-',
+                        'job_position'           => Auth::user()?->job_position ?? Auth::user()?->jobposition ?? Auth::user()?->position ?? '-',
                         'team'                   => Auth::user()?->team ?? '-',
                         'department'             => Auth::user()?->department ?? '-',
                         'company'                => Auth::user()?->company ?? Auth::user()?->company_name ?? 'PT Krakatau Posco',
@@ -1300,15 +1334,47 @@ class LearningRecordController extends Controller
         $content = $contentUser->content;
         $actualHours = $this->recordLhService()->calculateContent($contentUser);
         $durationSec = DurationFormatter::toSeconds(optional($content)->duration) ?? 0;
+        $isFinished = ((int) ($contentUser->progress ?? 0) >= 100 || (int) ($contentUser->finish ?? 0) === 1);
+
+        // Assessment L2 lookup
+        $assessmentResult = DB::table('assesment_results as ar')
+            ->join('assesments as a', 'a.id', '=', 'ar.assesment_id')
+            ->where('ar.user_id', $userId)
+            ->where('a.content_id', $contentUser->content_id)
+            ->where('ar.final', 1)
+            ->orderByDesc('ar.score')
+            ->select('ar.score', 'ar.pass')
+            ->first();
+        $l2Status = $assessmentResult
+            ? ($assessmentResult->pass == 1 ? 'Pass' : ($assessmentResult->pass === 0 || $assessmentResult->pass === '0' ? 'Fail' : '-'))
+            : '-';
+
+        // Certificate lookup
+        $cs = DB::table('certificate_settings')->where('content_id', $contentUser->content_id)->first();
+        $cert = DB::table('certificates')
+            ->where('user_id', $userId)
+            ->where(function ($q) use ($contentUser) {
+                $q->where('content_user_id', $contentUser->id)
+                  ->orWhere(function ($q2) use ($contentUser) {
+                      $q2->where('source_id', $contentUser->content_id)->where('certificate_type', 'content');
+                  });
+            })
+            ->first();
+
+        $certInstitution = $cert?->institution ?: ($cs?->institution ?: ($cs?->issuer_name ?: ($isFinished ? 'PT Krakatau Posco' : '-')));
+        $certIssuedDate = $cert?->issued_date ?: ($cs?->issued_date ? date('Y-m-d', strtotime($cs->issued_date)) : ($cert?->issued_at ? date('Y-m-d', strtotime($cert->issued_at)) : ($isFinished ? optional($contentUser->completed_at ?? $contentUser->updated_at)->format('Y-m-d') : '-')));
+        $certExpiredDate = $cert?->expired_date ?: ($cs?->expired_date ? date('Y-m-d', strtotime($cs->expired_date)) : '-');
 
         return response()->json([
             'success' => true,
             'data'    => [
                 'id'                     => $contentUser->id,
                 'source'                 => 'KP OWL',
-                'title'                  => optional($content)->title ?? '-',
-                'course_name'            => optional($content)->title ?? '-',
-                'sub_course_name'        => optional($content)->description ?? '',
+                'course_title'           => optional($content)->title ?? 'Untitled Content',
+                'title'                  => optional($content)->title ?? 'Untitled Content',
+                'course_name'            => optional($content)->title ?? 'Untitled Content',
+                'sub_course_title'       => '-',
+                'sub_course_name'        => '-',
                 'type'                   => \App\Support\ContentTypeHelper::label(optional($content)->type) ?: 'Content',
                 'category'               => 'All Content',
                 'level'                  => '-',
@@ -1322,30 +1388,37 @@ class LearningRecordController extends Controller
                 'provider'               => 'Internal',
                 'sub_provider'           => '-',
                 'provider_name'          => 'KP-OWL',
-                'venue'                  => 'KP-OWL',
-                'instructor'             => optional($content)->author ?: '-',
+                'venue'                  => 'Online LMS',
+                'instructor'             => optional($content)->author ?: 'Training Team',
                 'duration'               => DurationFormatter::formatForLearningRecord(optional($content)->duration),
                 'duration_seconds'       => $durationSec,
                 'course_learning_hours'  => $actualHours,
                 'learning_hours'         => $actualHours,
                 'progress'               => (int) ($contentUser->progress ?? 0),
-                'start_date'             => optional($contentUser->created_at)->format('Y-m-d H:i:s') ?? '-',
-                'finish_date'            => (int) ($contentUser->finish ?? 0) === 1 ? optional($contentUser->completed_at ?? $contentUser->updated_at)->format('Y-m-d H:i:s') : '-',
-                'attendance'             => ((int) ($contentUser->progress ?? 0) >= 100) ? 'Yes' : 'No',
+                'start_date'             => optional($contentUser->created_at)->format('Y-m-d') ?? '-',
+                'finish_date'            => $isFinished ? optional($contentUser->completed_at ?? $contentUser->updated_at)->format('Y-m-d') : '-',
+                'attendance'             => $isFinished ? 'Yes' : 'No',
                 'attendance_reason'      => '-',
-                'certificate'            => ((int) ($contentUser->progress ?? 0) >= 100) ? 'Available' : 'Not Available',
-                'bond_status'            => 'No',
-                'bond_duration'          => null,
+                'certificate'            => $isFinished ? 'Available' : 'Not Available',
+                'certificate_availability'=> $isFinished ? 'Available' : 'Not Available',
+                'certificate_institution' => $certInstitution,
+                'certificate_issued_date' => $certIssuedDate,
+                'certificate_expired_date'=> $certExpiredDate,
+                'bond_status'            => '-',
+                'bond_duration'          => '-',
                 'bond_end_date'          => '-',
                 'bond_amount'            => '-',
                 'bond_amount_idr'        => '-',
                 'bond_amount_formatted'  => '-',
+                'l2_status'              => $l2Status,
+                'l3_status'              => '-',
                 'pic'                    => '-',
+                'employee_id'            => Auth::user()?->employee_id ?? Auth::user()?->nip ?? Auth::user()?->id_emp ?? '-',
+                'employee_name'          => Auth::user()?->name ?? '-',
                 'user_name'              => Auth::user()?->name ?? '-',
                 'participant_name'       => Auth::user()?->name ?? '-',
-                'employee_id'            => Auth::user()?->employee_id ?? Auth::user()?->nip ?? Auth::user()?->id_emp ?? '-',
-                'grade'                  => Auth::user()?->grade ?? '-',
-                'job_position'           => Auth::user()?->job_position ?? Auth::user()?->position ?? '-',
+                'grade'                  => Auth::user()?->grade ?? Auth::user()?->jobgrade ?? '-',
+                'job_position'           => Auth::user()?->job_position ?? Auth::user()?->jobposition ?? Auth::user()?->position ?? '-',
                 'team'                   => Auth::user()?->team ?? '-',
                 'department'             => Auth::user()?->department ?? '-',
                 'company'                => Auth::user()?->company ?? Auth::user()?->company_name ?? 'PT Krakatau Posco',

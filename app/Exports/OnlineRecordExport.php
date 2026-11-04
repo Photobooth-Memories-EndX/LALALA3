@@ -70,6 +70,7 @@ class OnlineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wit
             'Department',
             'Company',
             'Course Title',
+            'Playlist',
             'Sub Course Title',
             'Type',
             'Category',
@@ -203,15 +204,16 @@ class OnlineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wit
             $row->user_department ?: '-',                                     // 8. Department
             $row->user_company ?: '-',                                        // 9. Company
             $courseTitle,                                                     // 10. Course Title
-            '-',                                                              // 11. Sub Course Title
-            $isPlaylist ? 'Playlist' : ($row->content_type ?: 'Content'),     // 12. Type
-            $isPlaylist ? 'Playlist' : 'Content',                             // 13. Category
+            $isPlaylist ? trim((string)($row->playlist_title ?: 'Playlist')) : '-', // 11. Playlist
+            '-',                                                              // 12. Sub Course Title
+            $isPlaylist ? 'Playlist' : ($row->content_type ?: 'Document'),    // 13. Type
+            $isPlaylist ? 'Content Playlist' : 'All Content',                 // 14. Category
             '-',                                                              // 14. Level
             '-',                                                              // 15. Batch
             $mainClass,                                                       // 16. Main Classification
             '-',                                                              // 17. Sub Classification
             'Online',                                                         // 18. Delivery Method
-            'E-learning',                                                     // 19. Sub Delivery Method
+            'KP OWL',                                                         // 20. Sub Delivery Method
             'Internal',                                                       // 20. Provider
             '-',                                                              // 21. Sub Provider
             'KP-OWL',                                                         // 22. Provider Name
@@ -444,7 +446,7 @@ class OnlineRecordExport implements Responsable, \Maatwebsite\Excel\Concerns\Wit
             . '<numFmt numFmtId="164" formatCode="&quot;Rp&quot;#,##0"/>'
             . '<numFmt numFmtId="165" formatCode="yyyy-mm-dd"/>'
             . '<numFmt numFmtId="166" formatCode="hh:mm:ss"/>'
-            . '<numFmt numFmtId="167" formatCode="General&quot; h&quot;"/>'
+            . '<numFmt numFmtId="167" formatCode="0.00&quot; h&quot;"/>'
             . '</numFmts>'
             . '<fonts count="4">'
             . '<font><sz val="10"/><name val="Calibri"/></font>'
