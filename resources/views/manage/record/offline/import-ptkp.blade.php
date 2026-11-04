@@ -237,7 +237,7 @@
                              data-filter="all" role="button" tabindex="0">
                             <div class="d-flex align-items-center justify-content-center gap-1 text-muted small fw-medium mb-1">
                                 <span>Total Rows</span>
-                                <span class="ptkp-info-icon" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="top" data-bs-custom-class="ptkp-status-tooltip"
+                                <span class="ptkp-info-icon" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="top" data-bs-custom-class="ptkp-status-tooltip ptkp-validation-tooltip"
                                       data-tooltip-id="ptkp-tt-content-total"
                                       tabindex="0" role="button" aria-label="Explanation of Total Rows">
                                     <i class="ti ti-info-circle"></i>
@@ -330,27 +330,12 @@
 
                 <!-- VALIDATION STATUS EXPLANATION TOOLTIP TEMPLATES -->
                 <div id="ptkp-tooltip-templates" class="d-none" aria-hidden="true">
-                    <!-- Template 1: Total Rows -->
+                    <!-- Template 1: Total Rows (Simplified Minimal Tooltip) -->
                     <div id="ptkp-tt-content-total">
-                        <div class="ptkp-tt-box text-start">
-                            <div class="ptkp-tt-head fw-bold mb-1.5 d-flex align-items-center justify-content-between">
-                                <span class="fs-6">Total Uploaded Records</span>
-                                <span class="badge bg-secondary-lt text-dark extra-small">Total Dataset</span>
-                            </div>
-                            <div class="ptkp-tt-desc mb-2">
+                        <div class="ptkp-tt-box ptkp-tt-minimal text-start">
+                            <div class="ptkp-tt-head fw-bold mb-1">Total Uploaded Records</div>
+                            <div class="ptkp-tt-desc mb-0">
                                 The total number of data rows detected in the uploaded Excel file, excluding the header row.
-                            </div>
-                            <div class="ptkp-tt-section mb-2">
-                                <div class="ptkp-tt-subhead fw-semibold text-uppercase text-muted extra-small mb-1">Important Notes</div>
-                                <ul class="ptkp-tt-list ps-3 mb-0">
-                                    <li>Represents the complete dataset evaluated during this import session.</li>
-                                    <li>Includes valid, warning, duplicate, and invalid entries.</li>
-                                    <li>Click this card to view all records regardless of status.</li>
-                                </ul>
-                            </div>
-                            <div class="ptkp-tt-foot pt-2 border-top d-flex align-items-center justify-content-between">
-                                <span class="extra-small text-muted fw-medium">Import Status:</span>
-                                <span class="badge bg-blue-lt text-blue fw-bold">Total dataset evaluated</span>
                             </div>
                         </div>
                     </div>

@@ -319,36 +319,116 @@ class RecordOfflineController extends Controller
 
     public function ajaxClassification(Request $request)
     {
-        $classification = $this->getClassificationSummary();
+        $summaryData = $this->getClassificationSummaryData();
+        $classification = $summaryData['classifications'];
+        $grandTotal = $summaryData['grand_total'];
 
         if ($request->input('format') === 'html') {
             return view('main.record.components.offline-classification-summary', [
                 'classification' => $classification,
+                'grandTotal'     => $grandTotal,
             ]);
         }
 
         if ($request->wantsJson() || $request->ajax() || $request->input('format') === 'json') {
             return response()->json([
-                'success' => true,
-                'data'    => $classification,
-                'html'    => view('main.record.components.offline-classification-summary', [
+                'success'     => true,
+                'data'        => $classification,
+                'grand_total' => $grandTotal,
+                'html'        => view('main.record.components.offline-classification-summary', [
                     'classification' => $classification,
+                    'grandTotal'     => $grandTotal,
                 ])->render(),
             ]);
         }
 
         return view('main.record.components.offline-classification-summary', [
             'classification' => $classification,
+            'grandTotal'     => $grandTotal,
         ]);
     }
 
     public function getClassificationSummary(): Collection
     {
+        return $this->getClassificationSummaryData()['classifications'];
+    }
+
+    public function getClassificationSummaryData(): array
+    {
         $hasTables = Schema::hasTable('offline_trainings') && Schema::hasTable('offline_training_users');
 
         if (!$hasTables) {
-            return collect();
+            return [
+                'classifications' => collect(),
+                'grand_total'     => [
+                    'programs'           => 0,
+                    'content'            => 0,
+                    'total_participants' => 0,
+                    'total_learning'     => 0,
+                    'learning_hours'     => 0.0,
+                    'ongoing'            => 0,
+                    'finished'           => 0,
+                ],
+            ];
         }
+
+        // 1. Retrieve all active classifications from the classification master table as the primary source
+        $masterMap = [];
+        if (Schema::hasTable('classification')) {
+            $masterQuery = DB::table('classification');
+            if (Schema::hasColumn('classification', 'is_active')) {
+                $masterQuery->where(function ($q) {
+                    $q->whereNull('is_active')->orWhere('is_active', 1);
+                });
+            }
+            $masterClassifications = $masterQuery->orderBy('classification_name', 'asc')->get();
+
+            foreach ($masterClassifications as $mc) {
+                $name = trim((string) $mc->classification_name);
+                $resolved = self::resolveClassification($name);
+                $slug = !empty($mc->slug) ? $mc->slug : $resolved['slug'];
+
+                $masterMap[$slug] = (object) [
+                    'id'                  => (string) $mc->id,
+                    'classification_name' => $name,
+                    'slug'                => $slug,
+                    'programs'            => 0,
+                    'content'             => 0,
+                    'total_participants'  => 0,
+                    'total_learning'      => 0,
+                    'learning_hours'      => 0.0,
+                    'ongoing'             => 0,
+                    'finished'            => 0,
+                    'is_unclassified'     => false,
+                ];
+            }
+        }
+
+        // 2. Synthetic catch-all Unclassification row (always present at bottom of classifications list)
+        $unclassRow = (object) [
+            'id'                  => 'unclassification',
+            'classification_name' => 'Unclassification',
+            'slug'                => 'unclassification',
+            'programs'            => 0,
+            'content'             => 0,
+            'total_participants'  => 0,
+            'total_learning'      => 0,
+            'learning_hours'      => 0.0,
+            'ongoing'             => 0,
+            'finished'            => 0,
+            'is_unclassified'     => true,
+        ];
+
+        // 3. Aggregate offline trainings and participants using consistent select and group by expressions
+        $classExpr = "CASE 
+            WHEN COALESCE(NULLIF(TRIM(otu.main_classification), ''), ot.main_classification) IS NULL 
+              OR TRIM(COALESCE(NULLIF(TRIM(otu.main_classification), ''), ot.main_classification)) = '' 
+              OR LOWER(TRIM(COALESCE(NULLIF(TRIM(otu.main_classification), ''), ot.main_classification))) IN ('unclassified', 'unclassification', 'audit isolated classification', 'audit-isolated-classification')
+            THEN 'Unclassification'
+            WHEN LOWER(TRIM(COALESCE(NULLIF(TRIM(otu.main_classification), ''), ot.main_classification))) IN ('basic common duties', 'basic & common duties', 'basic and common duties')
+            THEN 'Basic & Common Duties'
+            ELSE TRIM(COALESCE(NULLIF(TRIM(otu.main_classification), ''), ot.main_classification))
+        END";
 
         $query = DB::table('offline_trainings as ot')
             ->leftJoin('offline_training_users as otu', function ($join) {
@@ -361,81 +441,84 @@ class RecordOfflineController extends Controller
 
         $records = $query
             ->select([
-                DB::raw("
-                    CASE 
-                        WHEN COALESCE(NULLIF(TRIM(otu.main_classification), ''), ot.main_classification) IS NULL 
-                          OR TRIM(COALESCE(NULLIF(TRIM(otu.main_classification), ''), ot.main_classification)) = '' 
-                          OR LOWER(TRIM(COALESCE(NULLIF(TRIM(otu.main_classification), ''), ot.main_classification))) IN ('unclassified', 'unclassification', 'audit isolated classification', 'audit-isolated-classification')
-                        THEN 'Unclassification'
-                        WHEN LOWER(TRIM(COALESCE(NULLIF(TRIM(otu.main_classification), ''), ot.main_classification))) IN ('basic common duties', 'basic & common duties', 'basic and common duties')
-                        THEN 'Basic & Common Duties'
-                        ELSE TRIM(COALESCE(NULLIF(TRIM(otu.main_classification), ''), ot.main_classification))
-                    END as classification_name
-                "),
+                DB::raw("{$classExpr} as classification_name"),
                 DB::raw("COUNT(DISTINCT ot.id) as programs"),
                 DB::raw("COUNT(otu.id) as total_participants"),
                 DB::raw("COALESCE(SUM(otu.learning_hours), 0) as learning_hours"),
                 DB::raw("SUM(CASE WHEN otu.progress > 0 AND otu.progress < 100 THEN 1 ELSE 0 END) as ongoing"),
                 DB::raw("SUM(CASE WHEN otu.progress >= 100 THEN 1 ELSE 0 END) as finished"),
             ])
-            ->groupBy(DB::raw("
-                CASE 
-                    WHEN ot.main_classification IS NULL 
-                      OR TRIM(ot.main_classification) = '' 
-                      OR LOWER(TRIM(ot.main_classification)) IN ('unclassified', 'unclassification', 'audit isolated classification', 'audit-isolated-classification')
-                    THEN 'Unclassification'
-                    WHEN LOWER(TRIM(ot.main_classification)) IN ('basic common duties', 'basic & common duties', 'basic and common duties')
-                    THEN 'Basic & Common Duties'
-                    ELSE TRIM(ot.main_classification)
-                END
-            "))
+            ->groupBy(DB::raw($classExpr))
             ->get();
-
-        $normal = [];
-        $unclass = null;
 
         foreach ($records as $item) {
             $name = (string) $item->classification_name;
             $resolved = self::resolveClassification($name);
+            $slug = $resolved['slug'];
 
-            if ($resolved['is_unclassified'] || $name === 'Unclassification' || $resolved['slug'] === 'unclassification') {
-                $unclass = $item;
+            if ($resolved['is_unclassified'] || $slug === 'unclassification' || $name === 'Unclassification') {
+                $unclassRow->programs += (int) ($item->programs ?? 0);
+                $unclassRow->content += (int) ($item->programs ?? 0);
+                $unclassRow->total_participants += (int) ($item->total_participants ?? 0);
+                $unclassRow->total_learning += (int) ($item->total_participants ?? 0);
+                $unclassRow->learning_hours += (float) ($item->learning_hours ?? 0);
+                $unclassRow->ongoing += (int) ($item->ongoing ?? 0);
+                $unclassRow->finished += (int) ($item->finished ?? 0);
+            } elseif (isset($masterMap[$slug])) {
+                $masterMap[$slug]->programs += (int) ($item->programs ?? 0);
+                $masterMap[$slug]->content += (int) ($item->programs ?? 0);
+                $masterMap[$slug]->total_participants += (int) ($item->total_participants ?? 0);
+                $masterMap[$slug]->total_learning += (int) ($item->total_participants ?? 0);
+                $masterMap[$slug]->learning_hours += (float) ($item->learning_hours ?? 0);
+                $masterMap[$slug]->ongoing += (int) ($item->ongoing ?? 0);
+                $masterMap[$slug]->finished += (int) ($item->finished ?? 0);
             } else {
-                $normal[] = (object) [
+                // Any classification found in offline records not present in master table
+                $masterMap[$slug] = (object) [
+                    'id'                  => $slug,
                     'classification_name' => $resolved['name'],
-                    'slug'                => $resolved['slug'],
-                    'programs'           => (int) ($item->programs ?? 0),
-                    'total_participants' => (int) ($item->total_participants ?? 0),
-                    'learning_hours'     => (float) ($item->learning_hours ?? 0),
-                    'ongoing'            => (int) ($item->ongoing ?? 0),
-                    'finished'           => (int) ($item->finished ?? 0),
+                    'slug'                => $slug,
+                    'programs'            => (int) ($item->programs ?? 0),
+                    'content'             => (int) ($item->programs ?? 0),
+                    'total_participants'  => (int) ($item->total_participants ?? 0),
+                    'total_learning'      => (int) ($item->total_participants ?? 0),
+                    'learning_hours'      => (float) ($item->learning_hours ?? 0),
+                    'ongoing'             => (int) ($item->ongoing ?? 0),
+                    'finished'            => (int) ($item->finished ?? 0),
+                    'is_unclassified'     => false,
                 ];
             }
         }
 
+        $normal = array_values($masterMap);
         usort($normal, fn ($a, $b) => strcasecmp($a->classification_name, $b->classification_name));
 
         $result = collect();
         $no = 1;
         foreach ($normal as $item) {
             $item->no = $no++;
+            $item->learning_hours = round((float) $item->learning_hours, 2);
             $result->push($item);
         }
 
-        if ($unclass) {
-            $result->push((object) [
-                'no'                 => $no++,
-                'classification_name'=> 'Unclassification',
-                'slug'               => 'unclassification',
-                'programs'           => (int) ($unclass->programs ?? 0),
-                'total_participants' => (int) ($unclass->total_participants ?? 0),
-                'learning_hours'     => (float) ($unclass->learning_hours ?? 0),
-                'ongoing'            => (int) ($unclass->ongoing ?? 0),
-                'finished'           => (int) ($unclass->finished ?? 0),
-            ]);
-        }
+        $unclassRow->no = $no++;
+        $unclassRow->learning_hours = round((float) $unclassRow->learning_hours, 2);
+        $result->push($unclassRow);
 
-        return $result;
+        $grandTotal = [
+            'programs'           => (int) $result->sum('programs'),
+            'content'            => (int) $result->sum('programs'),
+            'total_participants' => (int) $result->sum('total_participants'),
+            'total_learning'     => (int) $result->sum('total_participants'),
+            'learning_hours'     => (float) round($result->sum('learning_hours'), 2),
+            'ongoing'            => (int) $result->sum('ongoing'),
+            'finished'           => (int) $result->sum('finished'),
+        ];
+
+        return [
+            'classifications' => $result,
+            'grand_total'     => $grandTotal,
+        ];
     }
 
     public function classification(string $classification, Request $request)

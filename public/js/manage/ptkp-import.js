@@ -331,6 +331,7 @@
 
                 let customClass = tooltipTriggerEl.getAttribute('data-bs-custom-class') || 'ptkp-status-tooltip';
                 const validationIds = [
+                    'ptkp-tt-content-total',
                     'ptkp-tt-content-valid',
                     'ptkp-tt-content-warning',
                     'ptkp-tt-content-duplicate',

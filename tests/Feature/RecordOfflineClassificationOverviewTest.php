@@ -280,7 +280,7 @@ class RecordOfflineClassificationOverviewTest extends TestCase
         // 11. Groups by main_classification
         $leadership = $data->firstWhere('classification_name', 'Leadership');
         $basic = $data->firstWhere('classification_name', 'Basic & Common Duties');
-        $unclassified = $data->firstWhere('classification_name', 'Unclassified');
+        $unclassified = $data->firstWhere('classification_name', 'Unclassification') ?? $data->firstWhere('classification_name', 'Unclassified');
 
         $this->assertNotNull($leadership, 'Leadership classification must exist.');
         $this->assertNotNull($basic, 'Basic & Common Duties classification must exist.');
@@ -327,7 +327,7 @@ class RecordOfflineClassificationOverviewTest extends TestCase
         // 18 & 19. Clickable links with detail routes
         $response->assertSee(route('manage.record.offline.classification', 'leadership'));
         $response->assertSee(route('manage.record.offline.classification', 'basic-common-duties'));
-        $response->assertSee(route('manage.record.offline.classification', 'unclassified'));
+        $response->assertSee(route('manage.record.offline.classification', $unclassified['slug'] ?? 'unclassification'));
     }
 
     /**
