@@ -211,7 +211,7 @@
                             <table style="width: 100%; border-collapse: collapse; font-size: 12px; font-weight: 700; color: #0f172a;">
                                 <tr>
                                     <td style="white-space: nowrap; width: 1%; padding-right: 12px; vertical-align: middle;">
-                                        Date: {{ \Carbon\Carbon::parse($training->start_date)->format('d M Y') }}@if($training->end_date && $training->end_date != $training->start_date) - {{ \Carbon\Carbon::parse($training->end_date)->format('d M Y') }}@endif
+                                        @if(empty($training->start_date) || strtolower($training->status ?? '') === 'unscheduled')Date: TBA (To be announce)@else Date: {{ \Carbon\Carbon::parse($training->start_date)->format('d M Y') }}@if($training->end_date && $training->end_date != $training->start_date) - {{ \Carbon\Carbon::parse($training->end_date)->format('d M Y') }}@endif @endif
                                     </td>
                                     <td style="white-space: nowrap; width: 1%; padding: 0 12px; color: #94a3b8; vertical-align: middle;">|</td>
                                     <td style="vertical-align: middle; color: #0f172a; word-break: break-word; line-height: 1.3;">
@@ -237,7 +237,7 @@
                                 <td style="font-weight: 600; color: #334155; padding: 2.5px 0; vertical-align: top;">Time</td>
                                 <td style="text-align: center; color: #334155; padding: 2.5px 0; vertical-align: top;">:</td>
                                 <td style="color: #0f172a; padding: 2.5px 0;">
-                                    {{ \Carbon\Carbon::parse($training->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($training->end_time)->format('H:i') }} WIB
+                                    @if(empty($training->start_time) || empty($training->end_time) || strtolower($training->status ?? '') === 'unscheduled')TBA @else {{ \Carbon\Carbon::parse($training->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($training->end_time)->format('H:i') }} WIB @endif
                                 </td>
                             </tr>
                             <tr>

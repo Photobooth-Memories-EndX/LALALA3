@@ -789,5 +789,10 @@ class TrainingScheduleExportAndCountTest extends TestCase
 
         $this->assertStringContainsString('TBA (To be announce)', $viewHtml);
         $this->assertStringContainsString('Unscheduled', $viewHtml);
+
+        // Also verify manage index loads without format() on null error
+        $manageResponse = $this->actingAs($admin)->get(route('manage.training-schedule.index'));
+        $manageResponse->assertStatus(200);
+        $manageResponse->assertSee('TBA (To be announce)');
     }
 }

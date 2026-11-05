@@ -418,7 +418,7 @@
                             $statusRaw = $training->status ?? 'Open Registration';
                             $isOpen = in_array(strtolower($statusRaw), ['open', 'open registration']);
 
-                            $startDate = $item->start_date ? \Carbon\Carbon::parse($item->start_date)->format('d M Y') : '-';
+                            $startDate = (!empty($item->start_date) && strtolower($item->status ?? '') !== 'unscheduled') ? \Carbon\Carbon::parse($item->start_date)->format('d M Y') : 'TBA (To be announce)';
                             $endDate = $item->end_date ? \Carbon\Carbon::parse($item->end_date)->format('d M Y') : $startDate;
                             $schedulePeriod = ($startDate === $endDate || empty($item->end_date)) ? $startDate : "{$startDate} - {$endDate}";
 
@@ -531,7 +531,7 @@
                                         <td style="font-weight: 700; color: #475569; padding: 3px 0; vertical-align: top;">Time</td>
                                         <td style="text-align: center; font-weight: 700; color: #475569; padding: 3px 0; vertical-align: top;">:</td>
                                         <td style="color: #0f172a; padding: 3px 0;">
-                                            {{ \Carbon\Carbon::parse($training->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($training->end_time)->format('H:i') }} WIB
+                                            @if(empty($training->start_time) || empty($training->end_time) || strtolower($training->status ?? '') === 'unscheduled')TBA @else {{ \Carbon\Carbon::parse($training->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($training->end_time)->format('H:i') }} WIB @endif
                                         </td>
                                     </tr>
                                     <tr>

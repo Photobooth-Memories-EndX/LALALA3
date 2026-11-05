@@ -394,7 +394,7 @@
                                                         data-training-id="{{ $item->id }}"
                                                         data-training-title="{{ $item->title }}"
                                                         data-training-code="{{ $item->training_code ?? 'PTKP-TR-' . $item->id }}"
-                                                        data-training-date="{{ $startDate->format('d M Y') }}"
+                                                        data-training-date="{{ $startDate ? $startDate->format('d M Y') : 'TBA (To be announce)' }}"
                                                         data-delete-url="{{ route('manage.training-schedule.destroy', $item->id) }}">
                                                     <i class="ti ti-trash fs-2"></i>
                                                 </button>
