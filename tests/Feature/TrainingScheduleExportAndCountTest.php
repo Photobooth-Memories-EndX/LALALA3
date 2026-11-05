@@ -467,15 +467,15 @@ class TrainingScheduleExportAndCountTest extends TestCase
 
         // 1. Both Open: 1 and Closed: 1 badges must be rendered on the shared date
         $this->assertStringContainsString('Open: 1', $calHtml);
-        $this->assertStringContainsString('Closed: 1', $calHtml);
-        $this->assertStringContainsString('bg-success-light text-success', $calHtml);
-        $this->assertStringContainsString('bg-secondary-light text-secondary', $calHtml);
+        $this->assertStringContainsString('Private: 1', $calHtml);
+        $this->assertStringContainsString('cal-status-badge-open', $calHtml);
+        $this->assertStringContainsString('cal-status-badge-private', $calHtml);
 
         // 2. Legend must contain all 4 status indicators in English
         $this->assertStringContainsString('Open Registration', $calHtml);
-        $this->assertStringContainsString('Registration Closed', $calHtml);
-        $this->assertStringContainsString('Running / Today\'s Session', $calHtml);
-        $this->assertStringContainsString('Past Training Session', $calHtml);
+        $this->assertStringContainsString('Private (Invitation-Only)', $calHtml);
+        $this->assertStringContainsString('Running', $calHtml);
+        $this->assertStringContainsString('Ended', $calHtml);
     }
 
     /**
@@ -566,8 +566,8 @@ class TrainingScheduleExportAndCountTest extends TestCase
         // Check tClosed
         $this->assertTrue($eventsById->has((string)$tClosed->id));
         $closedEvent = $eventsById->get((string)$tClosed->id);
-        $this->assertEquals('Closed', $closedEvent['status']);
-        $this->assertEquals('Closed', $closedEvent['computedStatus']);
+        $this->assertEquals('Private', $closedEvent['status']);
+        $this->assertEquals('Private', $closedEvent['computedStatus']);
     }
 
     /**
@@ -607,9 +607,9 @@ class TrainingScheduleExportAndCountTest extends TestCase
             OfflineTrainingController::evaluateCalendarCellStatus($trainingSpanningTodayAndFuture, $todayStr, $todayStr)
         );
 
-        // Future date cell (> today) with registration closed => Closed (NEVER Running)
+        // Future date cell (> today) with registration closed => Private (Invitation-Only)
         $this->assertEquals(
-            'Closed',
+            'Private',
             OfflineTrainingController::evaluateCalendarCellStatus($trainingSpanningTodayAndFuture, $futureDateStr, $todayStr)
         );
 
@@ -637,9 +637,9 @@ class TrainingScheduleExportAndCountTest extends TestCase
             'todaysAgenda' => collect(),
         ])->render();
 
-        // On future date cell (futureDateStr), both Open: 1 and Closed: 1 badges must be present
+        // On future date cell (futureDateStr), both Open: 1 and Private: 1 badges must be present
         $this->assertStringContainsString('Open: 1', $calHtml);
-        $this->assertStringContainsString('Closed: 1', $calHtml);
+        $this->assertStringContainsString('Private: 1', $calHtml);
 
         // On today's date cell, Running: 2 must be present
         $this->assertStringContainsString('Running: 2', $calHtml);

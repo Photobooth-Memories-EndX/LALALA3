@@ -1257,17 +1257,15 @@ class OfflineTrainingController extends Controller
             $regCloseTime = $t->registration_close_time ? substr($t->registration_close_time, 0, 5) : '23:59';
             $isPublished = $t->status !== 'Draft' && (!isset($t->is_published) || (bool) $t->is_published);
 
-            // Calendar & List Status Classification Logic
+            // Calendar & List Status Classification Logic: Open, Private, Ended, Running
             if ($endDateStr < $today) {
                 $status = 'Ended'; // Dark Gray badge
             } elseif ($startDateStr <= $today && $endDateStr >= $today && $regCloseDateStr < $today) {
                 $status = 'Running'; // Orange badge (Currently running & registration closed)
-            } elseif ($regCloseDateStr >= $today && $isPublished) {
+            } elseif ($regCloseDateStr >= $today && $isPublished && !in_array(strtolower($t->status ?? ''), ['closed', 'private', 'draft'])) {
                 $status = 'Open'; // Green badge (Registration open)
-            } elseif ($startDateStr > $today && $regCloseDateStr < $today) {
-                $status = 'Closed'; // Gray badge (Registration closed, session upcoming)
             } else {
-                $status = 'Closed';
+                $status = 'Private'; // Soft Blue badge (Invitation-Only Training)
             }
 
             $enrolled = (int) ($t->participants_count ?? ($t->registered_seats_count ?? 0));
@@ -1375,6 +1373,8 @@ class OfflineTrainingController extends Controller
 
         // $cellDate represents the specific day square rendered on the calendar grid
         // $today represents the current real-world date (e.g., Oct 13, 2026)
+        $isOpenStatus = !in_array(strtolower($statusStr), ['closed', 'private', 'draft']);
+
         if ($cellDate < $today) {
             // Past dates in calendar always show as Ended
             return 'Ended';
@@ -1383,14 +1383,14 @@ class OfflineTrainingController extends Controller
             if ($sDate <= $today && $eDate >= $today) {
                 return 'Running';
             } else {
-                return ($regCloseDate >= $today && $isPublished) ? 'Open' : 'Closed';
+                return ($regCloseDate >= $today && $isPublished && $isOpenStatus) ? 'Open' : 'Private';
             }
         } else {
-            // Future dates in calendar show Open or Closed based on registration date
-            if ($regCloseDate >= $today && $isPublished) {
+            // Future dates in calendar show Open or Private based on registration date
+            if ($regCloseDate >= $today && $isPublished && $isOpenStatus) {
                 return 'Open';
             } else {
-                return 'Closed';
+                return 'Private';
             }
         }
     }

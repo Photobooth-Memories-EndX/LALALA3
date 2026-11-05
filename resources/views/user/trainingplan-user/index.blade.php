@@ -111,10 +111,11 @@
             border-color: #a7f3d0;
         }
 
+        .cal-status-badge-private,
         .cal-status-badge-closed {
-            background-color: #f1f5f9 !important;
-            color: #475569 !important;
-            border-color: #cbd5e1 !important;
+            background-color: #e0f2fe !important;
+            color: #0369a1 !important;
+            border-color: #bae6fd !important;
         }
 
         .cal-status-badge-running {
@@ -461,17 +462,15 @@
         $regCloseTime = $t->registration_close_time ? substr($t->registration_close_time, 0, 5) : '23:59';
         $isPublished = $t->status !== 'Draft' && (!isset($t->is_published) || (bool) $t->is_published);
 
-        // Calendar & List Status Classification Logic
+        // Calendar & List Status Classification Logic: Open, Private, Ended, Running
         if ($endDateStr < $today) {
             $status = 'Ended'; // Dark Gray badge
         } elseif ($startDateStr <= $today && $endDateStr >= $today && $regCloseDateStr < $today) {
             $status = 'Running'; // Orange badge (Currently running & registration closed)
-        } elseif ($regCloseDateStr >= $today && $isPublished) {
+        } elseif ($regCloseDateStr >= $today && $isPublished && !in_array(strtolower($t->status ?? ''), ['closed', 'private', 'draft'])) {
             $status = 'Open'; // Green badge (Registration open)
-        } elseif ($startDateStr > $today && $regCloseDateStr < $today) {
-            $status = 'Closed'; // Gray badge (Registration closed, session upcoming)
         } else {
-            $status = 'Closed';
+            $status = 'Private'; // Soft Blue badge (Invitation-Only Training)
         }
 
         $enrolled = (int) ($t->participants_count ?? ($t->registered_seats_count ?? 0));
@@ -641,13 +640,15 @@
                         let badgesHtml = '';
                         if (activeTrainingsForDay.length > 0) {
                             const nowTimeMs = new Date().getTime();
-                            const counts = { open: 0, closed: 0, running: 0, ended: 0 };
+                            const counts = { open: 0, private: 0, running: 0, ended: 0 };
 
                             activeTrainingsForDay.forEach(e => {
                                 const s = e.startDate || `${e.year}-${String(e.month + 1).padStart(2, '0')}-${String(e.day).padStart(2, '0')}`;
                                 const end = e.endDate || s;
                                 const regClose = e.registration_close_date || e.registrationCloseDate || s;
                                 const isPublished = (e.is_published === undefined || e.is_published === null || e.is_published === true || e.is_published === 1);
+                                const rawStatus = (e.rawStatus || e.status || '').toLowerCase().trim();
+                                const isOpenStatus = !['closed', 'private', 'draft'].includes(rawStatus);
 
                                 let cellStatus;
                                 if (cellDateFormatted < todayDateFormatted) {
@@ -658,17 +659,17 @@
                                     if (s <= todayDateFormatted && end >= todayDateFormatted) {
                                         cellStatus = 'running';
                                     } else {
-                                        cellStatus = (regClose >= todayDateFormatted && isPublished) ? 'open' : 'closed';
+                                        cellStatus = (regClose >= todayDateFormatted && isPublished && isOpenStatus) ? 'open' : 'private';
                                     }
                                 } else {
-                                    // Future dates in calendar show Open or Closed based on registration date
-                                    if (regClose >= todayDateFormatted && isPublished) {
+                                    // Future dates in calendar show Open or Private based on registration date and status
+                                    if (regClose >= todayDateFormatted && isPublished && isOpenStatus) {
                                         cellStatus = 'open';
                                     } else {
-                                        cellStatus = 'closed';
+                                        cellStatus = 'private';
                                     }
                                 }
-                                counts[cellStatus]++;
+                                counts[cellStatus] = (counts[cellStatus] || 0) + 1;
                             });
 
                             let pillsHtml = '';
@@ -685,17 +686,17 @@
                                     </span>
                                 `;
                             }
-                            if (counts.closed > 0) {
+                            if (counts.private > 0) {
                                 pillsHtml += `
-                                    <span class="badge bg-secondary-light text-secondary border border-secondary-subtle rounded-pill extra-small py-1 px-2 fw-semibold cal-status-badge cal-status-badge-closed"
-                                          style="background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;"
+                                    <span class="badge rounded-pill extra-small py-1 px-2 fw-semibold cal-status-badge cal-status-badge-private"
+                                          style="background-color: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;"
                                           role="button"
                                           data-year="${year}"
                                           data-month="${month}"
                                           data-day="${thisDay}"
-                                          data-status="closed"
-                                          title="${counts.closed} Closed Training(s)">
-                                        Closed: ${counts.closed}
+                                          data-status="private"
+                                          title="${counts.private} Private Training(s)">
+                                        Private: ${counts.private}
                                     </span>
                                 `;
                             }
@@ -797,6 +798,8 @@
             const end = item.endDate || s;
             const regClose = item.registration_close_date || item.registrationCloseDate || s;
             const isPublished = (item.is_published === undefined || item.is_published === null || item.is_published === true || item.is_published === 1);
+            const rawStatus = (item.rawStatus || item.status || '').toLowerCase().trim();
+            const isOpenStatus = !['closed', 'private', 'draft'].includes(rawStatus);
 
             if (targetDateStr < todayDateFormatted) {
                 // Past dates in calendar always show as Ended
@@ -806,14 +809,14 @@
                 if (s <= todayDateFormatted && end >= todayDateFormatted) {
                     return 'running';
                 } else {
-                    return (regClose >= todayDateFormatted && isPublished) ? 'open' : 'closed';
+                    return (regClose >= todayDateFormatted && isPublished && isOpenStatus) ? 'open' : 'private';
                 }
             } else {
-                // Future dates in calendar show Open or Closed based on registration date
-                if (regClose >= todayDateFormatted && isPublished) {
+                // Future dates in calendar show Open or Private based on registration date and status
+                if (regClose >= todayDateFormatted && isPublished && isOpenStatus) {
                     return 'open';
                 } else {
-                    return 'closed';
+                    return 'private';
                 }
             }
         }
@@ -844,8 +847,12 @@
                     status = specificItem.status;
                     matchingEvents = [specificItem];
                 }
-            } else if (status && ['open', 'closed', 'running', 'ended'].includes(status)) {
-                const filteredByStatus = matchingEvents.filter(e => getEventStatusOnDate(e, targetDateStr, todayDateFormatted) === status);
+            } else if (status && ['open', 'private', 'closed', 'running', 'ended'].includes(status)) {
+                const targetStatus = (status === 'closed' ? 'private' : status);
+                const filteredByStatus = matchingEvents.filter(e => {
+                    const st = getEventStatusOnDate(e, targetDateStr, todayDateFormatted);
+                    return st === targetStatus || (targetStatus === 'private' && (st === 'private' || st === 'closed'));
+                });
                 if (filteredByStatus.length > 0) {
                     matchingEvents = filteredByStatus;
                 }
@@ -854,7 +861,7 @@
             const isOpen = (status === 'open');
             const isRunning = (status === 'running');
             const isEnded = (status === 'ended' || (targetDateStr < todayDateFormatted && !isOpen && !isRunning));
-            const isClosed = (status === 'closed');
+            const isPrivate = (status === 'private' || status === 'closed');
 
             const modalStatusTitle = document.getElementById('modalStatusTitle');
             const modalStatusCountBadge = document.getElementById('modalStatusCountBadge');
@@ -873,7 +880,7 @@
                 } else if (isOpen) {
                     modalStatusTitle.textContent = 'Open Trainings';
                 } else {
-                    modalStatusTitle.textContent = 'Registration Closed Trainings';
+                    modalStatusTitle.textContent = 'Private / Invitation-Only Trainings';
                 }
             }
             if (modalSelectedDateText) {
@@ -900,10 +907,10 @@
                     modalStatusCountBadge.textContent = `${matchingEvents.length} Open`;
                 } else {
                     modalStatusCountBadge.className = 'badge rounded-pill fw-semibold px-2-5 py-1 fs-6';
-                    modalStatusCountBadge.style.backgroundColor = '#f1f5f9';
-                    modalStatusCountBadge.style.color = '#475569';
-                    modalStatusCountBadge.style.border = '1px solid #cbd5e1';
-                    modalStatusCountBadge.textContent = `${matchingEvents.length} Closed`;
+                    modalStatusCountBadge.style.backgroundColor = '#e0f2fe';
+                    modalStatusCountBadge.style.color = '#0369a1';
+                    modalStatusCountBadge.style.border = '1px solid #bae6fd';
+                    modalStatusCountBadge.textContent = `${matchingEvents.length} Private`;
                 }
             }
             if (modalStatusIconWrap) {
@@ -917,12 +924,12 @@
                     modalStatusIconWrap.style.backgroundColor = '#d1fae5';
                     modalStatusIconWrap.style.color = '#047857';
                 } else {
-                    modalStatusIconWrap.style.backgroundColor = '#f1f5f9';
-                    modalStatusIconWrap.style.color = '#475569';
+                    modalStatusIconWrap.style.backgroundColor = '#e0f2fe';
+                    modalStatusIconWrap.style.color = '#0369a1';
                 }
             }
             if (modalStatusIcon) {
-                modalStatusIcon.className = isRunning ? 'ti ti-player-play fs-2' : (isEnded ? 'ti ti-check fs-2' : (isOpen ? 'ti ti-circle-check fs-2' : 'ti ti-lock fs-2'));
+                modalStatusIcon.className = isRunning ? 'ti ti-player-play fs-2' : (isEnded ? 'ti ti-check fs-2' : (isOpen ? 'ti ti-circle-check fs-2' : 'ti ti-lock-access fs-2'));
             }
 
             // Populate Items List (Compact Rows for High Scalability)
@@ -1001,8 +1008,8 @@
                             */
                         } else if ((isDeadlinePassed || isRawClosed || isQuotaFull) && !isEndedSession && !isRunningSession) {
                             badgeHtml = `
-                                <span class="badge bg-gray-100 text-gray-600 rounded-pill px-3 py-1-5 fw-semibold" style="background-color: #f3f4f6; color: #4b5563; border: 1px solid #e5e7eb;">
-                                    Registration Closed
+                                <span class="badge rounded-pill px-3 py-1-5 fw-semibold" style="background-color: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;">
+                                    Private (Invitation-Only)
                                 </span>
                             `;
                             actionBtnHtml = '';
