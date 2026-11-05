@@ -46,13 +46,15 @@
                         <span>Manage Schedules</span>
                     </button>
                 </li>
-                <!-- <li class="nav-item" role="presentation">
+                {{--
+                <li class="nav-item" role="presentation">
                     <button class="nav-link fw-bold px-4 py-2 rounded-3 d-inline-flex align-items-center gap-2" 
                             id="tab-participant-tracking-btn" data-bs-toggle="pill" data-bs-target="#tab-participant-tracking-pane" type="button" role="tab" aria-selected="false">
                         <i class="ti ti-users-group fs-2"></i>
                         <span>Participant Tracking & Approvals</span>
                     </button>
-                </li> -->
+                </li>
+                --}}
             </ul>
         </div>
 
@@ -67,10 +69,11 @@
                 @include('main.manage-training-schedule.components.schedule-table')
             </div>
 
-            <!-- {{-- PANE 2: PARTICIPANT TRACKING & APPROVALS --}}
+            {{-- PANE 2: PARTICIPANT TRACKING & APPROVALS (HIDDEN)
             <div class="tab-pane fade" id="tab-participant-tracking-pane" role="tabpanel">
                 @include('main.manage-training-schedule.partials.tracking-section')
-            </div> -->
+            </div>
+            --}}
         </div>
 
         {{-- More Filters Modal --}}
