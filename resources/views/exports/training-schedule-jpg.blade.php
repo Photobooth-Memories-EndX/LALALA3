@@ -174,12 +174,51 @@
                                 <td style="vertical-align: top; text-align: right; width: 55%; padding-right: 0;">
                                     @php
                                         $statusRaw = $training->status ?? 'Open Registration';
-                                        $isOpen = in_array(strtolower($statusRaw), ['open', 'open registration']);
+                                        $isUnscheduled = strtolower($statusRaw) === 'unscheduled' || (empty($training->start_date) && strtolower($statusRaw) !== 'draft');
+
+                                        $isRegDeadlinePassed = false;
+                                        if (!empty($training->registration_close_date)) {
+                                            $regCloseDate = \Carbon\Carbon::parse($training->registration_close_date);
+                                            $regCloseTime = $training->registration_close_time ? substr($training->registration_close_time, 0, 5) : '23:59';
+                                            $closeDatetime = \Carbon\Carbon::parse($regCloseDate->format('Y-m-d') . ' ' . $regCloseTime . ':59');
+                                            $isRegDeadlinePassed = \Carbon\Carbon::now()->gt($closeDatetime);
+                                        } elseif (!empty($training->start_date)) {
+                                            $closeDatetime = \Carbon\Carbon::parse(\Carbon\Carbon::parse($training->start_date)->format('Y-m-d') . ' 23:59:59');
+                                            $isRegDeadlinePassed = \Carbon\Carbon::now()->gt($closeDatetime);
+                                        }
+
+                                        if ($isUnscheduled) {
+                                            $displayStatus = 'Unscheduled';
+                                        } elseif (in_array(strtolower($statusRaw), ['running'])) {
+                                            $displayStatus = 'Running';
+                                        } elseif (in_array(strtolower($statusRaw), ['closed']) || $isRegDeadlinePassed) {
+                                            $displayStatus = 'Closed';
+                                        } elseif (in_array(strtolower($statusRaw), ['open', 'open registration'])) {
+                                            $displayStatus = 'Open Registration';
+                                        } else {
+                                            $displayStatus = $statusRaw;
+                                        }
                                     @endphp
-                                    <div style="font-size: 12px; font-weight: 700; color: {{ $isOpen ? '#15803d' : '#475569' }};">
-                                        {{ $isOpen ? 'Open Registration' : 'Closed' }}
+                                    <div style="display: inline-block;">
+                                        @if($displayStatus === 'Open Registration')
+                                            <span style="display: inline-block; background: #dcfce7; color: #15803d; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 12px; white-space: nowrap;">
+                                                Open Registration
+                                            </span>
+                                        @elseif($displayStatus === 'Unscheduled')
+                                            <span style="display: inline-block; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 12px; white-space: nowrap;">
+                                                Unscheduled
+                                            </span>
+                                        @elseif($displayStatus === 'Running')
+                                            <span style="display: inline-block; background: #fef3c7; color: #b45309; border: 1px solid #fde68a; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 12px; white-space: nowrap;">
+                                                Running
+                                            </span>
+                                        @else
+                                            <span style="display: inline-block; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 12px; white-space: nowrap;">
+                                                Closed
+                                            </span>
+                                        @endif
                                     </div>
-                                    @if($training->registration_close_date)
+                                    @if($displayStatus !== 'Unscheduled' && $training->registration_close_date)
                                         @php
                                             $closeTimeFormatted = '23:59';
                                             if (!empty($training->registration_close_time)) {
@@ -211,7 +250,7 @@
                             <table style="width: 100%; border-collapse: collapse; font-size: 12px; font-weight: 700; color: #0f172a;">
                                 <tr>
                                     <td style="white-space: nowrap; width: 1%; padding-right: 12px; vertical-align: middle;">
-                                        @if(empty($training->start_date) || strtolower($training->status ?? '') === 'unscheduled')Date: TBA (To be announce)@else Date: {{ \Carbon\Carbon::parse($training->start_date)->format('d M Y') }}@if($training->end_date && $training->end_date != $training->start_date) - {{ \Carbon\Carbon::parse($training->end_date)->format('d M Y') }}@endif @endif
+                                        @if(empty($training->start_date) || $isUnscheduled)Date: TBA (To be announce)@else Date: {{ \Carbon\Carbon::parse($training->start_date)->format('d M Y') }}@if($training->end_date && $training->end_date != $training->start_date) - {{ \Carbon\Carbon::parse($training->end_date)->format('d M Y') }}@endif @endif
                                     </td>
                                     <td style="white-space: nowrap; width: 1%; padding: 0 12px; color: #94a3b8; vertical-align: middle;">|</td>
                                     <td style="vertical-align: middle; color: #0f172a; word-break: break-word; line-height: 1.3;">
@@ -237,7 +276,7 @@
                                 <td style="font-weight: 600; color: #334155; padding: 2.5px 0; vertical-align: top;">Time</td>
                                 <td style="text-align: center; color: #334155; padding: 2.5px 0; vertical-align: top;">:</td>
                                 <td style="color: #0f172a; padding: 2.5px 0;">
-                                    @if(empty($training->start_time) || empty($training->end_time) || strtolower($training->status ?? '') === 'unscheduled')TBA @else {{ \Carbon\Carbon::parse($training->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($training->end_time)->format('H:i') }} WIB @endif
+                                    @if(empty($training->start_time) || empty($training->end_time) || $isUnscheduled)TBA @else {{ \Carbon\Carbon::parse($training->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($training->end_time)->format('H:i') }} WIB @endif
                                 </td>
                             </tr>
                             <tr>

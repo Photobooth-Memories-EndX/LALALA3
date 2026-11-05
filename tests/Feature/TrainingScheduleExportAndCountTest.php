@@ -799,4 +799,85 @@ class TrainingScheduleExportAndCountTest extends TestCase
         $manageResponse->assertStatus(200);
         $manageResponse->assertSee('TBA (To be announce)');
     }
+
+    /**
+     * 22. Verify PDF and JPG exports adapt dynamic status (Unscheduled, Closed on deadline passed, Open Registration).
+     */
+    public function test_export_pdf_and_jpg_dynamic_status_evaluation_and_unscheduled_support(): void
+    {
+        $pastDeadlineTraining = new OfflineTraining([
+            'id'                       => 991,
+            'title'                    => 'Past Deadline Training',
+            'category'                 => 'Technical',
+            'status'                   => 'Open Registration',
+            'start_date'               => Carbon::now()->subDays(5)->format('Y-m-d'),
+            'registration_close_date'  => Carbon::now()->subDays(6)->format('Y-m-d'),
+            'registration_close_time'  => '23:59:00',
+            'start_time'               => '08:00:00',
+            'end_time'                 => '16:00:00',
+            'location'                 => 'Room 101',
+            'instructor'               => 'Instructor A',
+            'quota'                    => 20,
+        ]);
+
+        $unscheduledTraining = new OfflineTraining([
+            'id'                       => 992,
+            'title'                    => 'Unscheduled Event',
+            'category'                 => 'Leadership',
+            'status'                   => 'Unscheduled',
+            'start_date'               => null,
+            'registration_close_date'  => null,
+            'start_time'               => null,
+            'end_time'                 => null,
+            'location'                 => 'Grand Ballroom',
+            'instructor'               => 'Instructor B',
+            'quota'                    => 30,
+        ]);
+
+        $openTraining = new OfflineTraining([
+            'id'                       => 993,
+            'title'                    => 'Legit Open Training',
+            'category'                 => 'Safety',
+            'status'                   => 'Open Registration',
+            'start_date'               => Carbon::now()->addDays(10)->format('Y-m-d'),
+            'registration_close_date'  => Carbon::now()->addDays(5)->format('Y-m-d'),
+            'registration_close_time'  => '23:59:00',
+            'start_time'               => '08:00:00',
+            'end_time'                 => '16:00:00',
+            'location'                 => 'Room 102',
+            'instructor'               => 'Instructor C',
+            'quota'                    => 25,
+        ]);
+
+        // 1. PDF export view checks
+        $pdfHtml = view('exports.training-schedule-pdf', [
+            'trainings' => collect([$pastDeadlineTraining, $unscheduledTraining, $openTraining]),
+        ])->render();
+
+        // Past deadline training should display "Closed" badge in PDF
+        $this->assertStringContainsString('Past Deadline Training', $pdfHtml);
+        $this->assertStringContainsString('Closed', $pdfHtml);
+
+        // Unscheduled training should display "Unscheduled" badge and "TBA"
+        $this->assertStringContainsString('Unscheduled Event', $pdfHtml);
+        $this->assertStringContainsString('Unscheduled', $pdfHtml);
+        $this->assertStringContainsString('TBA (To be announce)', $pdfHtml);
+
+        // Open training should display "Open Registration" badge
+        $this->assertStringContainsString('Legit Open Training', $pdfHtml);
+        $this->assertStringContainsString('Open Registration', $pdfHtml);
+
+        // 2. JPG export view checks
+        $jpgHtml = view('exports.training-schedule-jpg', [
+            'trainings' => collect([$pastDeadlineTraining, $unscheduledTraining, $openTraining]),
+        ])->render();
+
+        $this->assertStringContainsString('Past Deadline Training', $jpgHtml);
+        $this->assertStringContainsString('Closed', $jpgHtml);
+        $this->assertStringContainsString('Unscheduled Event', $jpgHtml);
+        $this->assertStringContainsString('Unscheduled', $jpgHtml);
+        $this->assertStringContainsString('Date: TBA (To be announce)', $jpgHtml);
+        $this->assertStringContainsString('Legit Open Training', $jpgHtml);
+        $this->assertStringContainsString('Open Registration', $jpgHtml);
+    }
 }

@@ -137,10 +137,11 @@ class OfflineTrainingController extends Controller
 
         if ($request->filled('status') && $request->input('status') !== 'all') {
             $statusMap = [
-                'open'    => 'Open Registration',
-                'running' => 'Running',
-                'closed'  => 'Closed',
-                'draft'   => 'Draft',
+                'open'        => 'Open Registration',
+                'running'     => 'Running',
+                'closed'      => 'Closed',
+                'draft'       => 'Draft',
+                'unscheduled' => 'Unscheduled',
             ];
             $labels['Status'] = $statusMap[strtolower($request->input('status'))] ?? $request->input('status');
         }
@@ -1649,7 +1650,7 @@ class OfflineTrainingController extends Controller
     {
         $trainings = $this->buildFilteredScheduleQuery($request)
             ->where('status', '!=', 'Running')
-            ->whereIn('status', ['Open', 'Open Registration', 'Closed'])
+            ->whereIn('status', ['Open', 'Open Registration', 'Closed', 'Unscheduled'])
             ->orderBy('start_date', 'asc')
             ->get();
 
@@ -1676,7 +1677,7 @@ class OfflineTrainingController extends Controller
 
         $trainings = $this->buildFilteredScheduleQuery($request)
             ->where('status', '!=', 'Running')
-            ->whereIn('status', ['Open', 'Open Registration', 'Closed'])
+            ->whereIn('status', ['Open', 'Open Registration', 'Closed', 'Unscheduled'])
             ->orderBy('start_date', 'asc')
             ->get();
 
