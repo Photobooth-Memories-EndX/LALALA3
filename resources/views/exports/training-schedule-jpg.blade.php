@@ -171,7 +171,7 @@
                                 </td>
 
                                 <!-- Right: Status Text & Short Close Date (Strictly Right Aligned) -->
-                                <td style="vertical-align: top; text-align: right; width: 55%; padding-right: 8px;">
+                                <td style="vertical-align: top; text-align: right; width: 55%; padding-right: 0;">
                                     @php
                                         $statusRaw = $training->status ?? 'Open Registration';
                                         $isOpen = in_array(strtolower($statusRaw), ['open', 'open registration']);
@@ -195,12 +195,12 @@
                         </table>
 
                         <!-- Title & Subtitle -->
-                        <h3 style="font-size: 16px; font-weight: 800; color: #002B49; margin: 4px 0 2px 0; line-height: 1.35;">
+                        <h3 style="font-size: 16px; font-weight: 800; color: #002B49; margin: 4px 0 2px 0; line-height: 1.35; word-break: break-word;">
                             {{ $training->title }}
                         </h3>
-                        @if(!empty($training->subtitle))
+                        @if(!empty($training->subtitle) || !empty($training->sub_course_name))
                             <div style="font-size: 12px; color: #64748b; margin-bottom: 10px;">
-                                {{ $training->subtitle }}
+                                {{ $training->subtitle ?? $training->sub_course_name }}
                             </div>
                         @else
                             <div style="margin-bottom: 10px;"></div>
