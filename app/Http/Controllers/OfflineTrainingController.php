@@ -221,6 +221,9 @@ class OfflineTrainingController extends Controller
             'location',
             'target_audience',
             'requirements',
+            'course_completion_requirement',
+            'completion_requirement',
+            'participant_requirement',
         ];
 
         $optionsGrouped = OfflineTrainingOption::active()
@@ -507,22 +510,62 @@ class OfflineTrainingController extends Controller
             }
         }
 
+        // Field 7: Course Completion Requirements
+        $completionReqOptions = $optionsGrouped->get('course_completion_requirement', collect())
+            ->merge($optionsGrouped->get('completion_requirement', collect()))
+            ->unique('value')
+            ->values();
+        $existingCompletionReqs = OfflineTraining::whereNotNull('course_completion_requirement')
+            ->where('course_completion_requirement', '!=', '')
+            ->distinct()
+            ->pluck('course_completion_requirement')
+            ->all();
+        $defaultCompletionReqs = [
+            'Minimum 80% attendance and active participation',
+            'Minimum 80% attendance and post-test passing score (>= 75)',
+            'Complete all module quizzes and final project',
+            '100% attendance and course evaluation submission',
+            'None (Certificate upon full session attendance)',
+        ];
+        $completionReqValues = $completionReqOptions->pluck('value')->all();
+        foreach (array_unique(array_merge($existingCompletionReqs, $defaultCompletionReqs)) as $crqName) {
+            $crqTrimmed = trim((string) $crqName);
+            if ($crqTrimmed !== '' && !in_array($crqTrimmed, $completionReqValues, true)) {
+                $completionReqOptions->push((object)[
+                    'id'    => null,
+                    'value' => $crqTrimmed,
+                    'text'  => $crqTrimmed,
+                ]);
+                $completionReqValues[] = $crqTrimmed;
+            }
+        }
+        $completionReqOptions = $completionReqOptions->sortBy('value')->values();
+
+        if (!OfflineTrainingOption::whereIn('option_type', ['course_completion_requirement', 'completion_requirement'])->exists()) {
+            foreach ($defaultCompletionReqs as $dCrq) {
+                $this->offlineOptionService->registerOption('course_completion_requirement', $dCrq, null, 'system');
+            }
+        }
+
         $options = [
-            'title'              => $titleOptions,
-            'course_name'        => $titleOptions,
-            'sub_course_name'    => $subCourseOptions,
-            'instructor'         => $instructorOptions,
-            'instructor_name'    => $instructorOptions,
-            'location'           => $locationOptions,
-            'venue'              => $locationOptions,
-            'target_employee'    => $targetEmployeeOptions,
-            'target_audience'    => $targetEmployeeOptions,
-            'prerequisites'      => $prerequisiteOptions,
-            'requirements'       => $prerequisiteOptions,
-            'type'               => $types,
-            'category'           => $categories,
-            'level'              => $levels,
-            'sub_classification' => $subClassifications,
+            'title'                         => $titleOptions,
+            'course_name'                   => $titleOptions,
+            'sub_course_name'               => $subCourseOptions,
+            'instructor'                    => $instructorOptions,
+            'instructor_name'               => $instructorOptions,
+            'location'                      => $locationOptions,
+            'venue'                         => $locationOptions,
+            'target_employee'               => $targetEmployeeOptions,
+            'target_audience'               => $targetEmployeeOptions,
+            'prerequisites'                 => $prerequisiteOptions,
+            'requirements'                  => $prerequisiteOptions,
+            'participant_requirement'       => $prerequisiteOptions,
+            'course_completion_requirement' => $completionReqOptions,
+            'completion_requirement'        => $completionReqOptions,
+            'type'                          => $types,
+            'category'                      => $categories,
+            'level'                         => $levels,
+            'sub_classification'            => $subClassifications,
         ];
 
         return [
@@ -564,8 +607,9 @@ class OfflineTrainingController extends Controller
             'instructor'          => [$isDraft ? 'nullable' : 'required', 'string', 'max:255'],
             'location'            => [$isDraft ? 'nullable' : 'required', 'string', 'max:255'],
             'target_employee'     => ['nullable', 'string', 'max:255'],
-            'prerequisites'       => ['nullable', 'string', 'max:255'],
-            'quota'               => [$isDraft ? 'nullable' : 'required', 'integer', 'min:1'],
+            'prerequisites'                 => ['nullable', 'string', 'max:255'],
+            'course_completion_requirement' => ['nullable', 'string', 'max:500'],
+            'quota'                         => [$isDraft ? 'nullable' : 'required', 'integer', 'min:1'],
             'status'              => ['nullable', 'string', 'in:Open Registration,Running,Closed,Draft,Open'],
             'start_date'              => [$isDraft ? 'nullable' : 'required', 'date'],
             'end_date'                => ['nullable', 'date'],
@@ -637,9 +681,10 @@ class OfflineTrainingController extends Controller
             'instructor'              => $request->input('instructor', '-') ?: '-',
             'location'                => $request->input('location', '-') ?: '-',
             'venue'                   => $request->input('location', '-') ?: '-',
-            'target_employee'         => $request->input('target_employee'),
-            'prerequisites'           => $request->input('prerequisites'),
-            'quota'                   => (int) ($request->input('quota') ?: 30),
+            'target_employee'               => $request->input('target_employee'),
+            'prerequisites'                 => $request->input('prerequisites'),
+            'course_completion_requirement' => $request->input('course_completion_requirement'),
+            'quota'                         => (int) ($request->input('quota') ?: 30),
             'status'                  => $status,
             'start_date'              => $startDate,
             'end_date'                => $endDate,
@@ -709,8 +754,9 @@ class OfflineTrainingController extends Controller
             'instructor'          => [$isDraft ? 'nullable' : 'required', 'string', 'max:255'],
             'location'            => [$isDraft ? 'nullable' : 'required', 'string', 'max:255'],
             'target_employee'     => ['nullable', 'string', 'max:255'],
-            'prerequisites'       => ['nullable', 'string', 'max:255'],
-            'quota'               => [$isDraft ? 'nullable' : 'required', 'integer', 'min:1'],
+            'prerequisites'                 => ['nullable', 'string', 'max:255'],
+            'course_completion_requirement' => ['nullable', 'string', 'max:500'],
+            'quota'                         => [$isDraft ? 'nullable' : 'required', 'integer', 'min:1'],
             'status'              => ['nullable', 'string', 'in:Open Registration,Running,Closed,Draft,Open'],
             'start_date'              => [$isDraft ? 'nullable' : 'required', 'date'],
             'end_date'                => ['nullable', 'date'],
@@ -782,9 +828,10 @@ class OfflineTrainingController extends Controller
             'instructor'              => $request->input('instructor', $training->instructor ?: '-') ?: '-',
             'location'                => $request->input('location', $training->location ?: '-') ?: '-',
             'venue'                   => $request->input('location', $training->venue ?: '-') ?: '-',
-            'target_employee'         => $request->input('target_employee'),
-            'prerequisites'           => $request->input('prerequisites'),
-            'quota'                   => (int) ($request->input('quota') ?: ($training->quota ?: 30)),
+            'target_employee'               => $request->input('target_employee'),
+            'prerequisites'                 => $request->input('prerequisites'),
+            'course_completion_requirement' => $request->input('course_completion_requirement'),
+            'quota'                         => (int) ($request->input('quota') ?: ($training->quota ?: 30)),
             'status'                  => $status,
             'start_date'              => $startDate,
             'end_date'                => $endDate,
@@ -832,8 +879,11 @@ class OfflineTrainingController extends Controller
         $typeMap = [
             'title'           => OfflineOptionService::TYPE_COURSE_NAME,
             'location'        => OfflineOptionService::TYPE_VENUE,
-            'target_audience' => OfflineOptionService::TYPE_TARGET_EMPLOYEE,
-            'requirements'    => OfflineOptionService::TYPE_PREREQUISITES,
+            'target_audience'               => OfflineOptionService::TYPE_TARGET_EMPLOYEE,
+            'requirements'                  => OfflineOptionService::TYPE_PREREQUISITES,
+            'participant_requirement'       => OfflineOptionService::TYPE_PREREQUISITES,
+            'course_completion_requirement' => 'course_completion_requirement',
+            'completion_requirement'        => 'course_completion_requirement',
         ];
         $type = $typeMap[$type] ?? $type;
 
@@ -1304,8 +1354,11 @@ class OfflineTrainingController extends Controller
                 'endTime'                 => substr($t->end_time ?? '', 0, 5),
                 'time'                    => substr($t->start_time ?? '', 0, 5) . ' - ' . substr($t->end_time ?? '', 0, 5) . ' WIB',
                 'dateTime'                => $startDate->format('d F Y') . ', ' . substr($t->start_time ?? '', 0, 5) . ' - ' . substr($t->end_time ?? '', 0, 5) . ' WIB',
-                'location'                => $t->location,
-                'instructor'              => $t->instructor,
+                'prerequisites'                 => $t->prerequisites,
+                'participant_requirement'       => $t->prerequisites,
+                'course_completion_requirement' => $t->course_completion_requirement,
+                'location'                      => $t->location,
+                'instructor'                    => $t->instructor,
                 'quota'                   => (int) $t->quota,
                 'enrolled'                => (int) $enrolled,
                 'isFull'                  => $enrolled >= $quota,

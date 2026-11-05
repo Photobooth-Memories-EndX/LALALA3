@@ -355,6 +355,8 @@
                                                         data-end-time="{{ $endTime }}"
                                                         data-duration-hours="{{ \Carbon\Carbon::parse($item->start_time)->diffInHours(\Carbon\Carbon::parse($item->end_time)) . ' Hours' }}"
                                                         data-requirements="{{ $item->requirements ?? ($item->prerequisites ?? '') }}"
+                                                        data-participant-requirement="{{ $item->prerequisites ?? ($item->requirements ?? '') }}"
+                                                        data-course-completion-requirement="{{ $item->course_completion_requirement ?? '' }}"
                                                         data-target="{{ $item->target_employee ?? '' }}"
                                                         data-description="{{ $item->description ?? '' }}"
                                                         data-objectives="{{ $item->learning_objectives ?? '' }}"

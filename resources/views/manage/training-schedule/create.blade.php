@@ -265,11 +265,11 @@
                         <div class="invalid-feedback">Please select or specify the target employee or audience.</div>
                     </div>
 
-                    <!-- Requirements -->
+                    <!-- Participant Requirement (For User) -->
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold text-dark">Requirements</label>
-                        <select name="prerequisites" id="select-prerequisites" class="form-select rounded-3 w-100" data-option-type="prerequisites" data-option-title="Requirements">
-                            <option value="">Select Requirements (Optional)...</option>
+                        <label class="form-label fw-semibold text-dark">Participant Requirement</label>
+                        <select name="prerequisites" id="select-prerequisites" class="form-select rounded-3 w-100" data-option-type="prerequisites" data-option-title="Participant Requirement">
+                            <option value="">Select Participant Requirement (Optional)...</option>
                             @foreach ($options['prerequisites'] ?? [] as $preOpt)
                                 <option value="{{ $preOpt->value }}" {{ old('prerequisites') == $preOpt->value ? 'selected' : '' }}>
                                     {{ $preOpt->value }}
@@ -277,6 +277,23 @@
                             @endforeach
                             @if (old('prerequisites') && !collect($options['prerequisites'] ?? [])->pluck('value')->contains(old('prerequisites')))
                                 <option value="{{ old('prerequisites') }}" selected>{{ old('prerequisites') }}</option>
+                            @endif
+                            <option value="__add_new__" class="fw-bold text-primary">+ Add New...</option>
+                        </select>
+                    </div>
+
+                    <!-- Course Completion Requirement (For Training) -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-dark">Course Completion Requirement</label>
+                        <select name="course_completion_requirement" id="select-course-completion-requirement" class="form-select rounded-3 w-100" data-option-type="course_completion_requirement" data-option-title="Course Completion Requirement">
+                            <option value="">Select Course Completion Requirement (Optional)...</option>
+                            @foreach ($options['course_completion_requirement'] ?? [] as $crOpt)
+                                <option value="{{ $crOpt->value }}" {{ old('course_completion_requirement') == $crOpt->value ? 'selected' : '' }}>
+                                    {{ $crOpt->value }}
+                                </option>
+                            @endforeach
+                            @if (old('course_completion_requirement') && !collect($options['course_completion_requirement'] ?? [])->pluck('value')->contains(old('course_completion_requirement')))
+                                <option value="{{ old('course_completion_requirement') }}" selected>{{ old('course_completion_requirement') }}</option>
                             @endif
                             <option value="__add_new__" class="fw-bold text-primary">+ Add New...</option>
                         </select>
@@ -294,7 +311,6 @@
                         <label class="form-label fw-semibold text-dark">Registration Status <span class="text-danger">*</span></label>
                         <select name="status" class="form-select rounded-3" required>
                             <option value="Open Registration" {{ old('status', 'Open Registration') == 'Open Registration' ? 'selected' : '' }}>Open Registration [Active]</option>
-                            <option value="Running" {{ old('status') == 'Running' ? 'selected' : '' }}>Running [In Progress]</option>
                             <option value="Closed" {{ old('status') == 'Closed' ? 'selected' : '' }}>Closed / Full</option>
                         </select>
                         <div class="invalid-feedback">Please select a registration status.</div>

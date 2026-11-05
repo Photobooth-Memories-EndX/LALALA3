@@ -78,14 +78,34 @@
                     </div>
                 </div>
 
-                <!-- Requirements Card (Prerequisites) -->
-                <div class="card border border-light-subtle rounded-3 bg-light-subtle p-3 mb-3 {{ (isset($training) && ($training->requirements || $training->prerequisites)) ? '' : 'd-none' }}" id="syllabusModalRequirementsCard">
-                    <div class="d-flex align-items-start gap-2">
-                        <i class="ti ti-checklist text-primary fs-2 flex-shrink-0 mt-0-5"></i>
-                        <div class="w-100">
-                            <div class="fw-bold text-dark small mb-1">Requirements</div>
-                            <div class="text-muted small mb-0" id="syllabusModalRequirements">
-                                {{ isset($training) ? ($training->requirements ?? $training->prerequisites ?? '') : '' }}
+                <!-- Requirements Section (Participant Requirement & Course Completion Requirement) -->
+                <div class="row g-3 mb-3" id="syllabusModalRequirementsSection">
+                    <!-- Participant Requirement (For User) -->
+                    <div class="col-md-6" id="syllabusModalParticipantReqCol">
+                        <div class="card border border-light-subtle rounded-3 bg-light-subtle p-3 h-100" id="syllabusModalParticipantReqCard">
+                            <div class="d-flex align-items-start gap-2">
+                                <i class="ti ti-user-check text-primary fs-2 flex-shrink-0 mt-0-5"></i>
+                                <div class="w-100">
+                                    <div class="fw-bold text-dark small mb-1">Participant Requirement</div>
+                                    <div class="text-muted small mb-0" id="syllabusModalParticipantReq">
+                                        {{ isset($training) ? ($training->prerequisites ?? $training->requirements ?? 'None') : 'None' }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Course Completion Requirement (For Training) -->
+                    <div class="col-md-6" id="syllabusModalCompletionReqCol">
+                        <div class="card border border-light-subtle rounded-3 bg-light-subtle p-3 h-100" id="syllabusModalCompletionReqCard">
+                            <div class="d-flex align-items-start gap-2">
+                                <i class="ti ti-certificate text-primary fs-2 flex-shrink-0 mt-0-5"></i>
+                                <div class="w-100">
+                                    <div class="fw-bold text-dark small mb-1">Course Completion Requirement</div>
+                                    <div class="text-muted small mb-0" id="syllabusModalCompletionReq">
+                                        {{ isset($training) ? ($training->course_completion_requirement ?? 'Minimum 80% attendance & active participation') : 'Minimum 80% attendance & active participation' }}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -148,6 +168,10 @@ document.addEventListener('DOMContentLoaded', function () {
         const targetCard = document.getElementById('syllabusModalTargetCard');
         const modalReq = document.getElementById('syllabusModalRequirements');
         const reqCard = document.getElementById('syllabusModalRequirementsCard');
+        const modalParticipantReq = document.getElementById('syllabusModalParticipantReq');
+        const modalCompletionReq = document.getElementById('syllabusModalCompletionReq');
+        const participantReqCard = document.getElementById('syllabusModalParticipantReqCard');
+        const completionReqCard = document.getElementById('syllabusModalCompletionReqCard');
         const modalCalcDuration = document.getElementById('syllabusModalCalculatedDuration');
         const modalTimeRange = document.getElementById('syllabusModalTimeRange');
         const topicsContainer = document.getElementById('syllabusModalTopicsContainer');
@@ -161,6 +185,8 @@ document.addEventListener('DOMContentLoaded', function () {
         const overview = btn.getAttribute('data-description') || '';
         const objectives = btn.getAttribute('data-objectives') || '';
         const requirements = btn.getAttribute('data-requirements') || btn.getAttribute('data-prerequisites') || '';
+        const participantReq = btn.getAttribute('data-participant-requirement') || btn.getAttribute('data-prerequisites') || requirements || '';
+        const completionReq = btn.getAttribute('data-course-completion-requirement') || btn.getAttribute('data-completion-requirement') || '';
         const targetEmployee = btn.getAttribute('data-target') || btn.getAttribute('data-target-employee') || '';
         const startTime = btn.getAttribute('data-start-time') || '';
         const endTime = btn.getAttribute('data-end-time') || '';
@@ -222,24 +248,39 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
-        // Requirements
-        if (modalReq && reqCard) {
-            if (requirements.trim()) {
-                reqCard.classList.remove('d-none');
-                const reqLines = requirements.split(/\r?\n/).map(l => l.replace(/^[•\-\*]\s*/, '').trim()).filter(Boolean);
-                if (reqLines.length > 1) {
-                    modalReq.innerHTML = reqLines.map(line => `
-                        <div class="d-flex align-items-start gap-2 mb-1">
-                            <span class="fw-bold" style="color: #003b6d; line-height: 1.4;">•</span>
-                            <span>${line}</span>
-                        </div>
-                    `).join('');
-                } else {
-                    modalReq.textContent = requirements;
-                }
+        // Requirements: Participant Requirement & Course Completion Requirement
+        if (modalParticipantReq) {
+            const pReqText = participantReq.trim() || 'None';
+            const reqLines = pReqText.split(/\r?\n/).map(l => l.replace(/^[•\-\*]\s*/, '').trim()).filter(Boolean);
+            if (reqLines.length > 1) {
+                modalParticipantReq.innerHTML = reqLines.map(line => `
+                    <div class="d-flex align-items-start gap-2 mb-1">
+                        <span class="fw-bold" style="color: #003b6d; line-height: 1.4;">•</span>
+                        <span>${line}</span>
+                    </div>
+                `).join('');
             } else {
-                reqCard.classList.add('d-none');
+                modalParticipantReq.textContent = pReqText;
             }
+        }
+
+        if (modalCompletionReq) {
+            const cReqText = completionReq.trim() || 'Minimum 80% attendance & active participation';
+            const compLines = cReqText.split(/\r?\n/).map(l => l.replace(/^[•\-\*]\s*/, '').trim()).filter(Boolean);
+            if (compLines.length > 1) {
+                modalCompletionReq.innerHTML = compLines.map(line => `
+                    <div class="d-flex align-items-start gap-2 mb-1">
+                        <span class="fw-bold" style="color: #003b6d; line-height: 1.4;">•</span>
+                        <span>${line}</span>
+                    </div>
+                `).join('');
+            } else {
+                modalCompletionReq.textContent = cReqText;
+            }
+        }
+
+        if (modalReq) {
+            modalReq.textContent = participantReq.trim() || '-';
         }
 
         if (modalOver) {

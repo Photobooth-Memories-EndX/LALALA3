@@ -661,4 +661,50 @@ class TrainingScheduleExportAndCountTest extends TestCase
         $controllerContent = file_get_contents(app_path('Http/Controllers/OfflineTrainingController.php'));
         $this->assertStringContainsString("view('exports.training-schedule-jpg'", $controllerContent);
     }
+
+    /**
+     * 16. Verify registration status dropdown excludes Running option in create and edit forms.
+     */
+    public function test_registration_status_excludes_running_option_in_create_and_edit_views(): void
+    {
+        $createHtml = file_get_contents(resource_path('views/manage/training-schedule/create.blade.php'));
+        $editHtml = file_get_contents(resource_path('views/manage/training-schedule/edit.blade.php'));
+
+        // Neither form should have Running as a registration status option
+        $this->assertStringNotContainsString('value="Running"', $createHtml);
+        $this->assertStringNotContainsString('value="Running"', $editHtml);
+
+        // Both must have Open Registration and Closed
+        $this->assertStringContainsString('value="Open Registration"', $createHtml);
+        $this->assertStringContainsString('value="Closed"', $createHtml);
+        $this->assertStringContainsString('value="Open Registration"', $editHtml);
+        $this->assertStringContainsString('value="Closed"', $editHtml);
+    }
+
+    /**
+     * 17. Verify Participant Requirement and Course Completion Requirement fields in manage forms and syllabus modal.
+     */
+    public function test_participant_and_course_completion_requirements_in_manage_and_modal(): void
+    {
+        $createHtml = file_get_contents(resource_path('views/manage/training-schedule/create.blade.php'));
+        $editHtml = file_get_contents(resource_path('views/manage/training-schedule/edit.blade.php'));
+        $modalHtml = file_get_contents(resource_path('views/user/trainingplan-user/modals/syllabus-modal.blade.php'));
+
+        // Manage create and edit have both Participant Requirement and Course Completion Requirement
+        $this->assertStringContainsString('Participant Requirement', $createHtml);
+        $this->assertStringContainsString('Course Completion Requirement', $createHtml);
+        $this->assertStringContainsString('name="prerequisites"', $createHtml);
+        $this->assertStringContainsString('name="course_completion_requirement"', $createHtml);
+
+        $this->assertStringContainsString('Participant Requirement', $editHtml);
+        $this->assertStringContainsString('Course Completion Requirement', $editHtml);
+        $this->assertStringContainsString('name="prerequisites"', $editHtml);
+        $this->assertStringContainsString('name="course_completion_requirement"', $editHtml);
+
+        // Syllabus Modal has both sections
+        $this->assertStringContainsString('Participant Requirement', $modalHtml);
+        $this->assertStringContainsString('Course Completion Requirement', $modalHtml);
+        $this->assertStringContainsString('syllabusModalParticipantReq', $modalHtml);
+        $this->assertStringContainsString('syllabusModalCompletionReq', $modalHtml);
+    }
 }

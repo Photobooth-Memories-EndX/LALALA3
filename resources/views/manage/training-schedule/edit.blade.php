@@ -326,12 +326,12 @@
                         <div class="invalid-feedback">Please select or specify the target employee or audience.</div>
                     </div>
 
-                    <!-- Requirements -->
+                    <!-- Participant Requirement (For User) -->
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold text-dark">Requirements</label>
+                        <label class="form-label fw-semibold text-dark">Participant Requirement</label>
                         @php $curPrereq = old('prerequisites', $training->prerequisites); @endphp
-                        <select name="prerequisites" id="select-prerequisites" class="form-select rounded-3 w-100" data-option-type="prerequisites" data-option-title="Requirements">
-                            <option value="">Select Requirements (Optional)...</option>
+                        <select name="prerequisites" id="select-prerequisites" class="form-select rounded-3 w-100" data-option-type="prerequisites" data-option-title="Participant Requirement">
+                            <option value="">Select Participant Requirement (Optional)...</option>
                             @foreach ($options['prerequisites'] ?? [] as $preOpt)
                                 <option value="{{ $preOpt->value }}" {{ $curPrereq == $preOpt->value ? 'selected' : '' }}>
                                     {{ $preOpt->value }}
@@ -339,6 +339,24 @@
                             @endforeach
                             @if ($curPrereq && !collect($options['prerequisites'] ?? [])->pluck('value')->contains($curPrereq))
                                 <option value="{{ $curPrereq }}" selected>{{ $curPrereq }} (Current)</option>
+                            @endif
+                            <option value="__add_new__" class="fw-bold text-primary">+ Add New...</option>
+                        </select>
+                    </div>
+
+                    <!-- Course Completion Requirement (For Training) -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-dark">Course Completion Requirement</label>
+                        @php $curCompletion = old('course_completion_requirement', $training->course_completion_requirement); @endphp
+                        <select name="course_completion_requirement" id="select-course-completion-requirement" class="form-select rounded-3 w-100" data-option-type="course_completion_requirement" data-option-title="Course Completion Requirement">
+                            <option value="">Select Course Completion Requirement (Optional)...</option>
+                            @foreach ($options['course_completion_requirement'] ?? [] as $crOpt)
+                                <option value="{{ $crOpt->value }}" {{ $curCompletion == $crOpt->value ? 'selected' : '' }}>
+                                    {{ $crOpt->value }}
+                                </option>
+                            @endforeach
+                            @if ($curCompletion && !collect($options['course_completion_requirement'] ?? [])->pluck('value')->contains($curCompletion))
+                                <option value="{{ $curCompletion }}" selected>{{ $curCompletion }} (Current)</option>
                             @endif
                             <option value="__add_new__" class="fw-bold text-primary">+ Add New...</option>
                         </select>
@@ -357,7 +375,6 @@
                         @php $currentStatus = old('status', $training->status); @endphp
                         <select name="status" class="form-select rounded-3" required>
                             <option value="Open Registration" {{ $currentStatus == 'Open Registration' || $currentStatus == 'Open' ? 'selected' : '' }}>Open Registration [Active]</option>
-                            <option value="Running" {{ $currentStatus == 'Running' ? 'selected' : '' }}>Running [In Progress]</option>
                             <option value="Closed" {{ $currentStatus == 'Closed' ? 'selected' : '' }}>Closed / Full</option>
                             <option value="Draft" {{ $currentStatus == 'Draft' ? 'selected' : '' }}>Draft</option>
                         </select>
