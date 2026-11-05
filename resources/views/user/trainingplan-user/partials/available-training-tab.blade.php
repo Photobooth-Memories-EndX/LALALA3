@@ -158,7 +158,7 @@
     </div>
 
     {{-- Available Training Table --}}
-    <div class="table-responsive">
+    <div class="table-responsive manage-schedule-scroll">
         <table class="table table-vcenter card-table table-hover align-middle mb-0" id="availableTrainingTable">
             <thead>
                 <tr class="text-muted extra-small text-uppercase fw-bold" style="letter-spacing: 0.05em; background-color: #f8fafc;">

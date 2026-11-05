@@ -2,7 +2,7 @@
     $trainings = $trainings ?? \App\Models\OfflineTraining::forSchedule()->withCount('participants')->orderBy('start_date', 'asc')->paginate(10);
 @endphp
 <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden">
-    <div class="table-responsive">
+    <div class="table-responsive manage-schedule-scroll">
         <table class="table table-vcenter card-table table-hover align-middle mb-0" id="manageScheduleTable">
             <thead>
                 <tr class="text-muted extra-small text-uppercase fw-bold text-center align-middle" style="letter-spacing: 0.05em; background-color: #f8fafc;">

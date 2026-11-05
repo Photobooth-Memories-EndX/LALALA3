@@ -34,6 +34,32 @@
             box-shadow: 0 4px 12px rgba(0, 59, 109, 0.25);
         }
 
+        /* Table Sticky Freeze Header & Scrollable Container */
+        .table-responsive.manage-schedule-scroll,
+        .manage-schedule-scroll {
+            max-height: 70vh !important;
+            overflow-y: auto !important;
+            overflow-x: auto !important;
+            position: relative !important;
+            -webkit-overflow-scrolling: touch;
+            width: 100% !important;
+        }
+
+        #availableTrainingTable thead th {
+            position: sticky !important;
+            top: 0 !important;
+            z-index: 10 !important;
+            background-color: #f8fafc !important;
+            box-shadow: inset 0 -1px 0 #e2e8f0, 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+        }
+
+        [data-bs-theme="dark"] #availableTrainingTable thead th,
+        body.dark-mode #availableTrainingTable thead th,
+        body.theme-dark #availableTrainingTable thead th {
+            background-color: #1e293b !important;
+            color: #94a3b8 !important;
+        }
+
         /* Calendar grid styling */
         .cal-grid-table th {
             font-size: 0.82rem;

@@ -281,7 +281,7 @@
                         <input type="text" id="searchInlineParticipant" class="form-control form-control-sm rounded-3" placeholder="Filter employee name / NIP...">
                     </div>
                 </div>
-                <div class="table-responsive">
+                <div class="table-responsive manage-schedule-scroll">
                     <table class="table table-vcenter table-hover align-middle mb-0" id="tableInlineByTraining">
                         <thead>
                             <tr class="text-muted extra-small text-uppercase fw-bold" style="background-color: #f8fafc;">
@@ -364,7 +364,7 @@
                         <i class="ti ti-history me-1 text-primary"></i> Registered Trainings & Application History
                     </span>
                 </div>
-                <div class="table-responsive">
+                <div class="table-responsive manage-schedule-scroll">
                     <table class="table table-vcenter table-hover align-middle mb-0" id="tableInlineByEmployee">
                         <thead>
                             <tr class="text-muted extra-small text-uppercase fw-bold" style="background-color: #f8fafc;">

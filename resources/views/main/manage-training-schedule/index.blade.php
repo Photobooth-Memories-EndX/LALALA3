@@ -87,6 +87,40 @@
 
 @section('style')
 <style>
+    /* Table Sticky Freeze Header & Scrollable Container */
+    .table-responsive.manage-schedule-scroll,
+    .manage-schedule-scroll {
+        max-height: 70vh !important;
+        overflow-y: auto !important;
+        overflow-x: auto !important;
+        position: relative !important;
+        -webkit-overflow-scrolling: touch;
+        width: 100% !important;
+    }
+
+    #manageScheduleTable thead th,
+    #tableInlineByTraining thead th,
+    #tableInlineByEmployee thead th {
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 10 !important;
+        background-color: #f8fafc !important;
+        box-shadow: inset 0 -1px 0 #e2e8f0, 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+    }
+
+    [data-bs-theme="dark"] #manageScheduleTable thead th,
+    [data-bs-theme="dark"] #tableInlineByTraining thead th,
+    [data-bs-theme="dark"] #tableInlineByEmployee thead th,
+    body.dark-mode #manageScheduleTable thead th,
+    body.dark-mode #tableInlineByTraining thead th,
+    body.dark-mode #tableInlineByEmployee thead th,
+    body.theme-dark #manageScheduleTable thead th,
+    body.theme-dark #tableInlineByTraining thead th,
+    body.theme-dark #tableInlineByEmployee thead th {
+        background-color: #1e293b !important;
+        color: #94a3b8 !important;
+    }
+
     /* Manage Training Schedule Custom Styling */
     .schedule-table-row {
         transition: background-color 0.15s ease;
