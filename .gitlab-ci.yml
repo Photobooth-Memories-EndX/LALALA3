@@ -1,6 +1,7 @@
 stages:
   - deploy
   - github
+  - deploy2
 
 deploy_production:
   stage: deploy
@@ -25,3 +26,15 @@ deploy_to_github:
     - echo -e "Host *\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
   script:
     - ssh -o StrictHostKeyChecking=no root@172.21.23.74 "cd /var/www/application82/owl && git push old-origin main && echo 'Update to Github Repo Finish' "
+
+deploy_production_70:
+  stage: deploy2
+  only:
+    - main
+  before_script:
+    - mkdir -p ~/.ssh
+    - echo "$SSH_PRIVATE_KEY_70" > ~/.ssh/id_ed25519
+    - chmod 600 ~/.ssh/id_ed25519
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
+  script:
+    - ssh -o StrictHostKeyChecking=no root@172.21.23.70 "cd /var/www/application82/owl && git pull origin main && echo 'Deployment Finish' "
