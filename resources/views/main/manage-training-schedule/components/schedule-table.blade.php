@@ -149,11 +149,11 @@
                                    title="View/Edit Schedule">
                                     <i class="ti ti-edit fs-2"></i>
                                 </a>
-                                <a href="{{ route('manage.training-schedule.participants', $item->id) }}" class="btn btn-sm btn-icon btn-outline-info rounded-3 btn-participants-schedule"
+                                <!-- <a href="{{ route('manage.training-schedule.participants', $item->id) }}" class="btn btn-sm btn-icon btn-outline-info rounded-3 btn-participants-schedule"
                                         title="View Participants"
                                         data-id="{{ $item->id }}" data-title="{{ $item->title }}">
                                     <i class="ti ti-users fs-2"></i>
-                                </a>
+                                </a> -->
                                 <button type="button"
                                         class="btn btn-sm btn-icon btn-outline-danger rounded-3 btn-delete-schedule"
                                         title="Delete Schedule"
