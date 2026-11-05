@@ -723,10 +723,14 @@ class TrainingScheduleExportAndCountTest extends TestCase
         $this->assertStringContainsString('Course Completion Requirement', $modalHtml);
         $this->assertStringContainsString('Syllabus Modules & Topics', $modalHtml);
 
-        // Boxed structure for each syllabus topic/module
+        // Boxed structure for each syllabus topic/module and its section card
+        $this->assertStringContainsString('syllabusModalTopicsCard', $modalHtml);
         $this->assertStringContainsString('syllabus-topic-card', $modalHtml);
         $this->assertStringContainsString('syllabus-topic-title', $modalHtml);
         $this->assertStringContainsString('card border border-light-subtle rounded-3', $modalHtml);
+
+        // Bottom right close button removed
+        $this->assertStringNotContainsString('data-bs-dismiss="modal">Close</button>', $modalHtml);
     }
 
     /**

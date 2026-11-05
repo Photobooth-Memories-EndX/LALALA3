@@ -110,12 +110,12 @@
                     <div class="text-secondary small mb-0 ps-1" id="syllabusModalObjectives" style="font-size: 0.88rem; line-height: 1.6;"></div>
                 </div>
 
-                <!-- 5. Structured Learning Topics / Syllabus Modules (Each Module in its Own Box) -->
-                <div class="mb-2 mt-4">
-                    <h5 class="fw-bold text-dark fs-4 mb-3 d-flex align-items-center gap-2">
-                        <i class="ti ti-list-check text-primary fs-2"></i>
+                <!-- 5. Structured Learning Topics / Syllabus Modules (Enclosed in its Own Box) -->
+                <div class="card border border-light-subtle rounded-3 bg-light-subtle p-3 mb-2 shadow-none" id="syllabusModalTopicsCard">
+                    <div class="fw-bold text-dark fs-5 mb-3 d-flex align-items-center gap-2">
+                        <i class="ti ti-list-check text-primary fs-3"></i>
                         <span>Syllabus Modules & Topics</span>
-                    </h5>
+                    </div>
 
                     <div class="d-flex flex-column gap-2" id="syllabusModalTopicsContainer">
                         <!-- Dynamically populated via JavaScript per box -->
@@ -124,14 +124,11 @@
             </div>
 
             <!-- Modal Footer -->
-            <div class="modal-footer border-top border-light-subtle px-4 py-3 bg-light-subtle d-flex justify-content-between align-items-center">
+            <div class="modal-footer border-top border-light-subtle px-4 py-3 bg-light-subtle d-flex justify-content-start align-items-center">
                 <a href="#" class="btn btn-outline-primary px-3 py-2 rounded-3 fw-semibold d-inline-flex align-items-center gap-1" id="btnDownloadSyllabusPdf" target="_blank">
                     <i class="ti ti-download fs-2"></i>
                     <span>Download Syllabus PDF</span>
                 </a>
-                <button type="button" class="btn btn-primary px-4 py-2 rounded-3 fw-semibold" style="background-color: #003b6d; border-color: #003b6d;" data-bs-dismiss="modal">
-                    Close
-                </button>
             </div>
         </div>
     </div>
@@ -363,7 +360,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
 
                     html += `
-                        <div class="card border border-light-subtle rounded-3 p-3 shadow-none syllabus-topic-card" style="background-color: #f8fafc;">
+                        <div class="card border border-light-subtle rounded-3 p-3 shadow-none syllabus-topic-card" style="background-color: #ffffff;">
                             <div class="d-flex align-items-start gap-3">
                                 <span class="badge rounded-circle text-white d-flex align-items-center justify-content-center flex-shrink-0 mt-0.5" 
                                       style="width: 30px; height: 30px; font-size: 0.88rem; font-weight: 700; background-color: #003b6d; box-shadow: 0 2px 4px rgba(0, 59, 109, 0.2);">
