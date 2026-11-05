@@ -728,4 +728,15 @@ class TrainingScheduleExportAndCountTest extends TestCase
         $this->assertStringContainsString('syllabus-topic-title', $modalHtml);
         $this->assertStringContainsString('card border border-light-subtle rounded-3', $modalHtml);
     }
+
+    /**
+     * 19. Verify status badge beside title in calendar training list modal is removed.
+     */
+    public function test_calendar_modal_training_item_status_badge_removed(): void
+    {
+        $indexHtml = file_get_contents(resource_path('views/user/trainingplan-user/index.blade.php'));
+
+        // openTrainingListModal should not include badgeHtml in item row
+        $this->assertStringNotContainsString('${badgeHtml}', $indexHtml);
+    }
 }

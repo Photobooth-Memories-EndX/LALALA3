@@ -989,36 +989,6 @@
                         const isStatusOpen = (rawStatusLower === 'open' || rawStatusLower === 'open registration' || item.status === 'open');
                         const isItemOpen = (!isDeadlinePassed) && (!isEndedSession) && isStatusOpen && (!isRunningSession) && (!isQuotaFull) && (!isRawClosed);
 
-                        let badgeHtml = '';
-                        let actionBtnHtml = '';
-
-                        if (isItemOpen) {
-                            badgeHtml = `
-                                <span class="badge px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-700" style="background-color: #d1fae5; color: #047857; border: 1px solid #a7f3d0;">
-                                    Open Registration
-                                </span>
-                            `;
-                            // Commented out register button per instruction
-                            /*
-                            actionBtnHtml = `
-                                <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 py-1-5 fw-semibold btn-register-action" data-id="${item.id}" data-title="${(item.title || '').replace(/"/g, '&quot;')}" style="background-color: #003b6d; border-color: #003b6d;">
-                                    Register
-                                </button>
-                            `;
-                            */
-                        } else if ((isDeadlinePassed || isRawClosed || isQuotaFull) && !isEndedSession && !isRunningSession) {
-                            badgeHtml = `
-                                <span class="badge rounded-pill px-3 py-1-5 fw-semibold" style="background-color: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;">
-                                    Private (Invitation-Only)
-                                </span>
-                            `;
-                            actionBtnHtml = '';
-                        } else {
-                            // For Ended / Running status: Keep this container empty so only essential training info is listed
-                            badgeHtml = '';
-                            actionBtnHtml = '';
-                        }
-
                         listHtml += `
                             <div class="p-3 rounded-3 border ${isCurrentItem ? 'border-primary shadow-sm' : 'border-light-subtle'} bg-white hover-shadow-sm d-flex align-items-center justify-content-between gap-3">
                                 <div class="d-flex align-items-center gap-3">
@@ -1033,10 +1003,6 @@
                                             <span class="badge rounded-pill bg-light text-secondary border px-2 py-0-5">${item.category}</span>
                                         </div>
                                     </div>
-                                </div>
-                                <div class="text-end flex-shrink-0 d-flex align-items-center gap-2">
-                                    ${badgeHtml}
-                                    ${actionBtnHtml}
                                 </div>
                             </div>
                         `;
