@@ -34,7 +34,7 @@
                         <i class="ti ti-notes text-primary fs-3"></i>
                         <span>Course Overview</span>
                     </div>
-                    <p class="text-secondary small mb-0 lh-base ps-1" id="syllabusModalOverview" style="font-size: 0.88rem; line-height: 1.6;">
+                    <p class="text-dark small mb-0 lh-base ps-1" id="syllabusModalOverview" style="color: #1e293b !important; font-size: 0.88rem; line-height: 1.6;">
                         {{ isset($training) && $training->description ? $training->description : 'Description overview of the training session.' }}
                     </p>
                 </div>
@@ -47,7 +47,7 @@
                                 <i class="ti ti-users text-primary fs-3"></i>
                                 <span>Target Participants</span>
                             </div>
-                            <div class="text-secondary small fw-medium ps-1" id="syllabusModalTarget" style="font-size: 0.88rem;">
+                            <div class="text-dark small fw-medium ps-1" id="syllabusModalTarget" style="color: #1e293b !important; font-size: 0.88rem;">
                                 {{ isset($training) && $training->target_employee ? $training->target_employee : 'All relevant employees' }}
                             </div>
                         </div>
@@ -81,7 +81,7 @@
                                 <i class="ti ti-user-check text-primary fs-3"></i>
                                 <span>Participant Requirement</span>
                             </div>
-                            <div class="text-secondary small mb-0 ps-1" id="syllabusModalParticipantReq" style="font-size: 0.88rem; line-height: 1.5;">
+                            <div class="text-dark small mb-0 ps-1" id="syllabusModalParticipantReq" style="color: #1e293b !important; font-size: 0.88rem; line-height: 1.5;">
                                 {{ isset($training) ? ($training->prerequisites ?? $training->requirements ?? 'None') : 'None' }}
                             </div>
                         </div>
@@ -94,7 +94,7 @@
                                 <i class="ti ti-certificate text-primary fs-3"></i>
                                 <span>Course Completion Requirement</span>
                             </div>
-                            <div class="text-secondary small mb-0 ps-1" id="syllabusModalCompletionReq" style="font-size: 0.88rem; line-height: 1.5;">
+                            <div class="text-dark small mb-0 ps-1" id="syllabusModalCompletionReq" style="color: #1e293b !important; font-size: 0.88rem; line-height: 1.5;">
                                 {{ isset($training) ? ($training->course_completion_requirement ?? 'Minimum 80% attendance & active participation') : 'Minimum 80% attendance & active participation' }}
                             </div>
                         </div>
@@ -107,7 +107,7 @@
                         <i class="ti ti-target text-primary fs-3"></i>
                         <span>Learning Objectives</span>
                     </div>
-                    <div class="text-secondary small mb-0 ps-1" id="syllabusModalObjectives" style="font-size: 0.88rem; line-height: 1.6;"></div>
+                    <div class="text-dark small mb-0 ps-1" id="syllabusModalObjectives" style="color: #1e293b !important; font-size: 0.88rem; line-height: 1.6;"></div>
                 </div>
 
                 <!-- 5. Structured Learning Topics / Syllabus Modules (Enclosed in its Own Box) -->
@@ -240,8 +240,8 @@ document.addEventListener('DOMContentLoaded', function () {
             if (reqLines.length > 1) {
                 modalParticipantReq.innerHTML = reqLines.map(line => `
                     <div class="d-flex align-items-start gap-2 mb-1">
-                        <span class="fw-bold" style="color: #003b6d; line-height: 1.4;">•</span>
-                        <span>${line}</span>
+                        <span class="fw-bold" style="color: #1e293b; line-height: 1.4;">•</span>
+                        <span style="color: #1e293b !important;">${line}</span>
                     </div>
                 `).join('');
             } else {
@@ -255,8 +255,8 @@ document.addEventListener('DOMContentLoaded', function () {
             if (compLines.length > 1) {
                 modalCompletionReq.innerHTML = compLines.map(line => `
                     <div class="d-flex align-items-start gap-2 mb-1">
-                        <span class="fw-bold" style="color: #003b6d; line-height: 1.4;">•</span>
-                        <span>${line}</span>
+                        <span class="fw-bold" style="color: #1e293b; line-height: 1.4;">•</span>
+                        <span style="color: #1e293b !important;">${line}</span>
                     </div>
                 `).join('');
             } else {
@@ -286,8 +286,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (objLines.length > 1) {
                     modalObj.innerHTML = objLines.map(line => `
                         <div class="d-flex align-items-start gap-2 mb-1">
-                            <span class="fw-bold" style="color: #003b6d; line-height: 1.4;">•</span>
-                            <span>${line}</span>
+                            <span class="fw-bold" style="color: #1e293b; line-height: 1.4;">•</span>
+                            <span style="color: #1e293b !important;">${line}</span>
                         </div>
                     `).join('');
                 } else {
@@ -350,13 +350,13 @@ document.addEventListener('DOMContentLoaded', function () {
                         points.forEach(pt => {
                             pointsHtml += `
                                 <div class="d-flex align-items-start gap-2 mb-1">
-                                    <span class="fw-bold" style="color: #003b6d; line-height: 1.4;">•</span>
-                                    <span class="text-secondary small" style="font-size: 0.875rem;">${pt}</span>
+                                    <span class="fw-bold" style="color: #1e293b; line-height: 1.4;">•</span>
+                                    <span class="text-dark small" style="color: #1e293b !important; font-size: 0.875rem;">${pt}</span>
                                 </div>
                             `;
                         });
                     } else {
-                        pointsHtml = `<div class="text-muted small">${t.outline || 'Standard module coverage.'}</div>`;
+                        pointsHtml = `<div class="text-dark small" style="color: #1e293b !important;">${t.outline || 'Standard module coverage.'}</div>`;
                     }
 
                     html += `
