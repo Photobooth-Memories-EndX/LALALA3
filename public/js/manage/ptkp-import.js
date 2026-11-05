@@ -619,7 +619,7 @@
                 $tbody.append(`
                     <tr class="${getRowClass(row.status)}">
                         <td class="text-center fw-medium text-muted">${row.no || (globalIndex + 1)}</td>
-                        <td>${getStatusBadge(row.status)}</td>
+                        <td>${getStatusBadge(row.status, row)}</td>
                         <td class="fw-semibold font-monospace">${escapeHtml(row.employee_id || '-')}</td>
                         <td>
                             <div class="fw-semibold text-dark">${escapeHtml(row.name || '-')}</div>
@@ -648,14 +648,28 @@
         renderPaginationControls(totalPages);
     }
 
-    function getStatusBadge(status) {
+    function getStatusBadge(status, row) {
+        if (typeof status === 'object' && status !== null) {
+            row = status;
+            status = row.status;
+        }
         switch (status) {
             case 'VALID': return '<span class="badge badge-ptkp-valid px-2 py-1"><i class="ti ti-check me-1"></i>VALID</span>';
             case 'WARNING': return '<span class="badge badge-ptkp-warning px-2 py-1"><i class="ti ti-alert-triangle me-1"></i>WARNING</span>';
-            case 'DUPLICATE': return '<span class="badge badge-ptkp-duplicate px-2 py-1"><i class="ti ti-copy me-1"></i>DUPLICATE</span>';
+            case 'DUPLICATE': {
+                let badge = '<span class="badge badge-ptkp-duplicate px-2 py-1"><i class="ti ti-copy me-1"></i>DUPLICATE</span>';
+                if (row && row.duplicate_source) {
+                    if (row.duplicate_source === 'database' && row.matched_record_id) {
+                        badge += `<div class="mt-1" style="font-size: 0.68rem;"><span class="badge bg-light text-secondary border">Database (ID ${escapeHtml(String(row.matched_record_id))}) &bull; 40 Stored Columns</span></div>`;
+                    } else if (row.duplicate_source === 'file' && row.original_excel_row) {
+                        badge += `<div class="mt-1" style="font-size: 0.68rem;"><span class="badge bg-light text-secondary border">Uploaded Excel (Row ${escapeHtml(String(row.original_excel_row))}) &bull; Full 42 Columns</span></div>`;
+                    }
+                }
+                return badge;
+            }
             case 'INVALID': return '<span class="badge badge-ptkp-invalid px-2 py-1"><i class="ti ti-x me-1"></i>INVALID</span>';
             case 'INVALID COMPANY': return '<span class="badge badge-ptkp-invalid-company px-2 py-1"><i class="ti ti-building me-1"></i>INVALID COMPANY</span>';
-            default: return `<span class="badge bg-secondary">${escapeHtml(status)}</span>`;
+            default: return `<span class="badge bg-secondary">${escapeHtml(status || '')}</span>`;
         }
     }
 
@@ -712,18 +726,56 @@
         if (!row) return;
 
         $('#modal-inspect-row-num').text(row.excel_row);
-        $('#modal-inspect-status').html(getStatusBadge(row.status));
+        $('#modal-inspect-status').html(getStatusBadge(row.status, row));
 
         let msgsHtml = '';
+        if (row.status === 'DUPLICATE') {
+            const isDb = row.duplicate_source === 'database';
+            const dupSourceLabel = isDb
+                ? `Existing Database (Participant ID: ${escapeHtml(String(row.matched_record_id || '-'))})`
+                : `Uploaded Excel (Original Row: ${escapeHtml(String(row.original_excel_row || '-'))})`;
+            const dupMatchBadge = isDb
+                ? '<span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-0">DATABASE_40_COLUMN_MATCH</span>'
+                : '<span class="badge bg-purple-subtle text-purple border border-purple-subtle px-2 py-0">FULL_42_COLUMN_MATCH</span>';
+            const dupExplanation = isDb
+                ? 'Matches an existing database record across all 40 physically stored columns. (Note: <code>progress_status</code> and <code>month</code> are unverified as they are not stored in the database).'
+                : `Matches an identical record in the uploaded file (Row ${escapeHtml(String(row.original_excel_row || '-'))}) across all 42 canonical columns.`;
+
+            msgsHtml += `
+                <div class="alert alert-secondary border-0 rounded-3 small mb-3 py-2 px-3" style="background-color: #faf5ff; border: 1px solid #e9d5ff !important; color: #6b21a8;">
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                        <div class="d-flex align-items-center gap-2 fw-bold">
+                            <i class="ti ti-copy fs-2"></i>
+                            <span>Duplicate Detection Alert</span>
+                        </div>
+                        <div>${dupMatchBadge}</div>
+                    </div>
+                    <div class="mb-2">${dupExplanation}</div>
+                    <div class="pt-2 border-top border-purple-subtle extra-small" style="font-size: 0.8rem;">
+                        <div><strong>Verification Level:</strong> ${isDb ? 'Partial Database Verification (40 of 42 columns)' : 'Full Row Match (42 of 42 columns)'}</div>
+                        <div><strong>Duplicate Source:</strong> ${dupSourceLabel}</div>
+                        ${row.matched_record_id ? `<div><strong>Matched Record ID:</strong> ${escapeHtml(String(row.matched_record_id))}</div>` : ''}
+                        ${row.original_excel_row ? `<div><strong>Original Excel Row:</strong> Row ${escapeHtml(String(row.original_excel_row))}</div>` : ''}
+                    </div>
+                </div>
+            `;
+        }
         if (row.messages && row.messages.length) {
-            msgsHtml = '<div class="alert alert-warning border-0 rounded-3 small mb-3 py-2 px-3"><ul class="mb-0 ps-3">';
+            msgsHtml += '<div class="alert alert-warning border-0 rounded-3 small mb-3 py-2 px-3"><ul class="mb-0 ps-3">';
             row.messages.forEach((m) => msgsHtml += '<li>' + escapeHtml(m) + '</li>');
             msgsHtml += '</ul></div>';
         }
         $('#modal-inspect-messages').html(msgsHtml);
 
         const d = row.data || {};
-        const fields = [
+        const fields = [];
+        if (row.status === 'DUPLICATE') {
+            fields.push(
+                ['Duplicate Source', row.duplicate_source === 'database' ? 'Existing Database' : (row.duplicate_source === 'file' ? 'Uploaded Excel' : (row.duplicate_source || '-'))],
+                ['Duplicate Reference', row.duplicate_source === 'database' ? `Participant Record ID: ${row.matched_record_id || '-'}` : `Uploaded Excel Row: ${row.original_excel_row || '-'}`]
+            );
+        }
+        fields.push(
             ['1. Employee ID', row.employee_id || d.employee_id],
             ['2. Employee Name (from users)', d.name],
             ['3. Grade (from users)', d.grade],
@@ -770,7 +822,7 @@
             ['44. Certificate Issued Date', formatDateDisplay(d.certificate_issued_date_display || d.certificate_issued_date)],
             ['45. Certificate Expired Date', formatDateDisplay(d.certificate_expired_date_display || d.certificate_expired_date)],
             ['46. Person in Charge (PIC)', d.pic]
-        ];
+        );
 
         let tbodyHtml = '';
         fields.forEach(([label, val]) => {

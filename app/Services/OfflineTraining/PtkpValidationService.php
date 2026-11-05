@@ -263,12 +263,427 @@ class PtkpValidationService
         }
 
         return [
-            'status'           => $status,
-            'is_blocking'      => $isBlocking,
-            'messages'         => $messages,
-            'warnings'         => $warnings,
-            'errors'           => $errors,
-            'company_mismatch' => $isCompanyMismatch,
+            'status'             => $status,
+            'is_blocking'        => $isBlocking,
+            'messages'           => $messages,
+            'warnings'           => $warnings,
+            'errors'             => $errors,
+            'company_mismatch'   => $isCompanyMismatch,
+            'duplicate_source'   => $duplicateInfo['duplicate_source'] ?? null,
+            'duplicate_type'     => $duplicateInfo['duplicate_type'] ?? null,
+            'matched_record_id'  => $duplicateInfo['matched_record_id'] ?? null,
+            'original_excel_row' => $duplicateInfo['original_excel_row'] ?? null,
+            'matched_fields'     => $duplicateInfo['matched_fields'] ?? [],
+        ];
+    }
+
+    /**
+     * Get canonical column keys for Full Row Duplicate Detection.
+     * Exactly 42 canonical columns organized in 7 logical sections:
+     * - Employee Information (7)
+     * - Training Information (6)
+     * - Classification (2)
+     * - Delivery & Provider (5)
+     * - Learning Details (9)
+     * - Assessment, Attendance & Bond (12)
+     * - Person in Charge (1)
+     *
+     * Note: 'No', certificate columns, provider, and sub_provider are strictly excluded.
+     *
+     * @return array<int, string>
+     */
+    public static function getFullRowComparisonColumns(): array
+    {
+        return [
+            // Employee Information (7)
+            'employee_id',
+            'name',
+            'grade',
+            'job_position',
+            'team',
+            'department',
+            'company',
+
+            // Training Information (6)
+            'course_name',
+            'sub_course_name',
+            'type',
+            'category',
+            'level',
+            'batch',
+
+            // Classification (2)
+            'main_classification',
+            'sub_classification',
+
+            // Delivery & Provider (5)
+            'delivery_method',
+            'sub_delivery_method',
+            'provider_name',
+            'venue',
+            'instructor',
+
+            // Learning Details (9)
+            'course_duration',
+            'learning_hours',
+            'progress',
+            'progress_status',
+            'start_date',
+            'end_date',
+            'start_time',
+            'end_time',
+            'month',
+
+            // Assessment, Attendance & Bond (12)
+            'requirement',
+            'attendance',
+            'attendance_reason',
+            'bond_status',
+            'bond_duration',
+            'bond_end_date',
+            'bond_amount',
+            'l1_program',
+            'assessment_score',
+            'l2_verbal',
+            'l3_numerical',
+            'l3_verbal',
+
+            // Person in Charge (1)
+            'pic',
+        ];
+    }
+
+    /**
+     * Get columns that are physically stored in the database (offline_trainings and offline_training_users).
+     * Exactly 40 columns.
+     *
+     * @return array<int, string>
+     */
+    public static function getDatabaseStoredColumns(): array
+    {
+        return [
+            'employee_id',
+            'name',
+            'grade',
+            'job_position',
+            'team',
+            'department',
+            'company',
+            'course_name',
+            'sub_course_name',
+            'type',
+            'category',
+            'level',
+            'batch',
+            'main_classification',
+            'sub_classification',
+            'delivery_method',
+            'sub_delivery_method',
+            'provider_name',
+            'venue',
+            'instructor',
+            'course_duration',
+            'learning_hours',
+            'progress',
+            'start_date',
+            'end_date',
+            'start_time',
+            'end_time',
+            'requirement',
+            'attendance',
+            'attendance_reason',
+            'bond_status',
+            'bond_duration',
+            'bond_end_date',
+            'bond_amount',
+            'l1_program',
+            'assessment_score',
+            'l2_verbal',
+            'l3_numerical',
+            'l3_verbal',
+            'pic',
+        ];
+    }
+
+    /**
+     * Get columns that are NOT stored in the database (virtual / spreadsheet only).
+     * Exactly 2 columns.
+     *
+     * @return array<int, string>
+     */
+    public static function getUnstoredDatabaseColumns(): array
+    {
+        return [
+            'progress_status',
+            'month',
+        ];
+    }
+
+    /**
+     * Resolve a column value from row data with support for key aliases.
+     */
+    public function resolveColumnValue(array $data, string $col): mixed
+    {
+        if (array_key_exists($col, $data) && $data[$col] !== null) {
+            return $data[$col];
+        }
+
+        switch ($col) {
+            case 'course_duration':
+                return $data['duration_seconds'] ?? ($data['course_duration'] ?? null);
+            case 'duration_seconds':
+                return $data['course_duration'] ?? ($data['duration_seconds'] ?? null);
+            case 'progress_status':
+                return $data['progress_status'] ?? null;
+            case 'end_date':
+                return $data['finish_date'] ?? ($data['end_date'] ?? null);
+            case 'finish_date':
+                return $data['end_date'] ?? ($data['finish_date'] ?? null);
+            case 'bond_amount':
+                return $data['bond_amount_idr'] ?? ($data['bond_amount'] ?? null);
+            case 'bond_amount_idr':
+                return $data['bond_amount'] ?? ($data['bond_amount_idr'] ?? null);
+            case 'assessment_score':
+                return $data['l2_numerical'] ?? ($data['assessment_score'] ?? null);
+            case 'l2_numerical':
+                return $data['assessment_score'] ?? ($data['l2_numerical'] ?? null);
+            case 'employee_id':
+                return $data['id_emp'] ?? ($data['employee_id'] ?? null);
+            case 'name':
+                return $data['employee_name'] ?? ($data['name'] ?? null);
+            case 'grade':
+                return $data['jobgrade'] ?? ($data['grade'] ?? null);
+            case 'job_position':
+                return $data['jobposition'] ?? ($data['job_position'] ?? null);
+            case 'company':
+                return $data['company_name'] ?? ($data['company'] ?? null);
+            case 'course_name':
+                return $data['course_title'] ?? ($data['course_name'] ?? null);
+            case 'sub_course_name':
+                return $data['sub_course_title'] ?? ($data['sub_course_name'] ?? null);
+            case 'month':
+                return $data['record_month'] ?? ($data['month'] ?? null);
+            case 'certificate_availability':
+                return $data['certificate'] ?? ($data['certificate_availability'] ?? null);
+            case 'certificate':
+                return $data['certificate_availability'] ?? ($data['certificate'] ?? null);
+            default:
+                return $data[$col] ?? null;
+        }
+    }
+
+    /**
+     * Normalize an individual value according to Full Row Duplicate Detection specifications.
+     */
+    public function normalizeValueForComparison(string $field, mixed $val, array $context = []): string
+    {
+        if ($val === null) {
+            return '';
+        }
+
+        $str = trim((string) $val);
+        $str = (string) preg_replace('/\s+/', ' ', $str);
+        if ($str === '' || $str === '-' || strtolower($str) === 'null') {
+            return '';
+        }
+
+        // Date columns: canonical YYYY-MM-DD
+        if (in_array($field, ['start_date', 'end_date', 'finish_date', 'bond_end_date', 'certificate_issued_date', 'certificate_expired_date'], true)) {
+            $parsed = ExcelDateTimeParser::parseDateResult($val);
+            if ($parsed['valid'] && $parsed['value'] !== null) {
+                return $parsed['value'];
+            }
+            if (preg_match('/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/', $str, $m)) {
+                return sprintf('%04d-%02d-%02d', (int) $m[1], (int) $m[2], (int) $m[3]);
+            }
+            if (preg_match('/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/', $str, $m)) {
+                return sprintf('%04d-%02d-%02d', (int) $m[3], (int) $m[2], (int) $m[1]);
+            }
+            return mb_strtolower($str, 'UTF-8');
+        }
+
+        // Time columns: canonical HH:MM
+        if (in_array($field, ['start_time', 'end_time'], true)) {
+            $parsed = ExcelDateTimeParser::parseTimeResult($val);
+            if ($parsed['valid'] && $parsed['value'] !== null) {
+                return substr($parsed['value'], 0, 5);
+            }
+            if (preg_match('/^(\d{1,2}):(\d{2})/', $str, $m)) {
+                return sprintf('%02d:%02d', (int) $m[1], (int) $m[2]);
+            }
+            return mb_strtolower($str, 'UTF-8');
+        }
+
+        // Course duration: canonical duration in seconds (e.g. 28800 or "08:00:00" -> "28800")
+        if (in_array($field, ['course_duration', 'duration_seconds'], true)) {
+            $seconds = $this->parseDurationToSeconds($val);
+            if ($seconds !== null) {
+                return (string) $seconds;
+            }
+            if (is_numeric($str)) {
+                return (string) (int) $str;
+            }
+            return mb_strtolower($str, 'UTF-8');
+        }
+
+        // Decimal and number columns: normalized representation (1, 1.0, 1.00 -> 1)
+        if (in_array($field, ['learning_hours', 'progress', 'bond_duration', 'bond_amount', 'bond_amount_idr', 'assessment_score', 'l2_numerical', 'l3_numerical'], true)) {
+            if (is_numeric($str)) {
+                $float = (float) $str;
+                return (string) (round($float, 4) == (int) round($float, 4) ? (int) round($float, 4) : round($float, 4));
+            }
+            return mb_strtolower($str, 'UTF-8');
+        }
+
+        // Boolean columns: canonical 1 / 0
+        if (in_array($field, ['attendance', 'counted_corporate_kpi'], true)) {
+            $lower = strtolower($str);
+            if (in_array($lower, ['yes', '1', 'true', 'hadir', 'y'], true)) {
+                return '1';
+            }
+            if (in_array($lower, ['no', '0', 'false', 'tidak', 'n'], true)) {
+                return '0';
+            }
+            return $lower;
+        }
+
+        // Month column: canonical month number 1..12 or standardized name
+        if ($field === 'month') {
+            return $this->normalizeMonth($str, $context['start_date'] ?? null);
+        }
+
+        // Requirement: mandatory or non mandatory
+        if ($field === 'requirement') {
+            $lower = strtolower($str);
+            if ($lower === 'mandatory') return 'mandatory';
+            if ($lower === 'non mandatory' || $lower === 'non-mandatory') return 'non mandatory';
+            return $lower;
+        }
+
+        // Employee ID: strict string with leading zero preservation
+        if ($field === 'employee_id') {
+            return mb_strtolower($str, 'UTF-8');
+        }
+
+        // General text fields: trimmed and lowercased
+        return mb_strtolower($str, 'UTF-8');
+    }
+
+    /**
+     * Normalize month value (numeric 1-12, English name, or Indonesian name).
+     */
+    public function normalizeMonth(?string $month, ?string $startDate = null): string
+    {
+        $m = trim((string) $month);
+        if ($m === '' || $m === '-' || strtolower($m) === 'null') {
+            if ($startDate && strtotime($startDate)) {
+                return (string) (int) date('n', strtotime($startDate));
+            }
+            return '';
+        }
+
+        if (is_numeric($m)) {
+            $num = (int) $m;
+            if ($num >= 1 && $num <= 12) {
+                return (string) $num;
+            }
+        }
+
+        $monthNames = [
+            'january' => '1', 'jan' => '1', 'januari' => '1',
+            'february' => '2', 'feb' => '2', 'februari' => '2',
+            'march' => '3', 'mar' => '3', 'maret' => '3',
+            'april' => '4', 'apr' => '4',
+            'may' => '5', 'mei' => '5',
+            'june' => '6', 'jun' => '6', 'juni' => '6',
+            'july' => '7', 'jul' => '7', 'juli' => '7',
+            'august' => '8', 'aug' => '8', 'agustus' => '8',
+            'september' => '9', 'sep' => '9',
+            'october' => '10', 'oct' => '10', 'oktober' => '10',
+            'november' => '11', 'nov' => '11',
+            'december' => '12', 'dec' => '12', 'desember' => '12',
+        ];
+
+        $clean = strtolower($m);
+        return $monthNames[$clean] ?? $clean;
+    }
+
+    /**
+     * Build SHA1 hash from comparison columns for fast indexing.
+     * When $databaseColumnsOnly is true, only the 40 DB-stored columns are hashed.
+     */
+    public function buildFullRowHash(array $data, bool $databaseColumnsOnly = false): string
+    {
+        $cols = $databaseColumnsOnly ? self::getDatabaseStoredColumns() : self::getFullRowComparisonColumns();
+        $canonical = [];
+        foreach ($cols as $col) {
+            $val = $this->resolveColumnValue($data, $col);
+            $canonical[$col] = $this->normalizeValueForComparison($col, $val, $data);
+        }
+
+        return sha1(json_encode($canonical));
+    }
+
+    /**
+     * Perform exact field-by-field comparison of two normalized records.
+     *
+     * Rules:
+     * - When comparing two rows in the uploaded Excel file ($isDatabaseComparison = false):
+     *   Strict comparison across all 42 canonical columns. Any difference makes is_match false.
+     * - When comparing an imported row against an existing database record ($isDatabaseComparison = true):
+     *   Only the 40 columns stored in the database are compared. The 2 unstored columns (progress_status, month)
+     *   are recorded in unverified_fields metadata and do not block database duplicate detection.
+     *   Database comparison strictly enforces Scenario 48: If the database record has empty/null for a stored column
+     *   while the import file has a non-empty value, it CANNOT be assumed to match (marked as database_null_unverified).
+     */
+    public function compareFullRowValues(array $rowA, array $rowB, bool $isDatabaseComparison = false): array
+    {
+        $cols = self::getFullRowComparisonColumns();
+        $matchedFields = [];
+        $diffFields = [];
+        $unverifiedFields = [];
+
+        foreach ($cols as $col) {
+            if ($isDatabaseComparison && in_array($col, self::getUnstoredDatabaseColumns(), true)) {
+                $valA = $this->resolveColumnValue($rowA, $col);
+                $normA = $this->normalizeValueForComparison($col, $valA, $rowA);
+                $unverifiedFields[$col] = [
+                    'val_a'  => $normA,
+                    'reason' => 'not_stored_in_database',
+                ];
+                continue;
+            }
+
+            $valA = $this->resolveColumnValue($rowA, $col);
+            $valB = $this->resolveColumnValue($rowB, $col);
+
+            $normA = $this->normalizeValueForComparison($col, $valA, $rowA);
+            $normB = $this->normalizeValueForComparison($col, $valB, $rowB);
+
+            if ($normA === $normB) {
+                $matchedFields[$col] = $normA;
+            } else {
+                if ($isDatabaseComparison) {
+                    $diffFields[$col] = [
+                        'val_a'  => $normA,
+                        'val_b'  => $normB,
+                        'reason' => ($normA !== '' && $normB === '') ? 'database_null_unverified' : 'value_mismatch',
+                    ];
+                } else {
+                    $diffFields[$col] = [
+                        'val_a'  => $normA,
+                        'val_b'  => $normB,
+                        'reason' => 'value_mismatch',
+                    ];
+                }
+            }
+        }
+
+        return [
+            'is_match'          => empty($diffFields),
+            'matched_fields'    => $matchedFields,
+            'diff_fields'       => $diffFields,
+            'unverified_fields' => $unverifiedFields,
         ];
     }
 
@@ -388,6 +803,8 @@ class PtkpValidationService
         if ($normalized['duration_seconds'] === null && !empty($normalized['learning_hours']) && $normalized['learning_hours'] > 0) {
             $normalized['duration_seconds'] = (int) round($normalized['learning_hours'] * 3600);
         }
+        $normalized['course_duration'] = $raw['course_duration'] ?? $normalized['duration_seconds'];
+        $normalized['progress_status'] = isset($raw['progress_status']) ? trim((string) $raw['progress_status']) : null;
 
         // Attendance & obligations
         $normalized['attendance'] = $this->parseBoolean($raw['attendance'] ?? null);

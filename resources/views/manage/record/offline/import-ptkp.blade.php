@@ -335,7 +335,7 @@
                         <div class="ptkp-tt-box ptkp-tt-minimal text-start">
                             <div class="ptkp-tt-head fw-bold mb-1">Total Uploaded Records</div>
                             <div class="ptkp-tt-desc mb-0">
-                                The total number of data rows detected in the uploaded Excel file, excluding the header row.
+                                The total number of data rows detected in the uploaded Excel file, excluding the header row. Total dataset evaluated.
                             </div>
                         </div>
                     </div>

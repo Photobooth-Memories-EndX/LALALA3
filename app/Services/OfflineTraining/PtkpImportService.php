@@ -11,6 +11,7 @@ use App\Services\OfflineTraining\ExcelDateTimeParser;
 use App\Services\Record\PtkpExcelSchema;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -307,6 +308,7 @@ class PtkpImportService
         $userLookup = $this->validationService->batchLookupUsers(array_keys($uniqueEmployeeIds));
         $existingTrainings = $this->lookupExistingTrainings(array_keys($uniqueCourses));
         $existingParticipantMap = $this->lookupExistingParticipants(array_values($existingTrainings));
+        $existingDbRecords = $this->lookupExistingParticipantRecords(array_keys($uniqueEmployeeIds), array_keys($uniqueCourses));
 
         $stats = [
             'total_rows'       => count($rawRows),
@@ -321,7 +323,7 @@ class PtkpImportService
         $parsedRows = [];
         $allRows = [];
         $groupedByTraining = [];
-        $seenInFileParticipants = [];
+        $seenInFileByHash = [];
 
         foreach ($rawRows as $item) {
             $rNum = $item['excel_row'];
@@ -345,32 +347,91 @@ class PtkpImportService
 
             $fp = $this->validationService->buildTrainingFingerprint($normalized);
             $isExistingTraining = isset($existingTrainings[$fp]);
-            $partKey = $normalized['user_id']
-                ? ('uid:' . $normalized['user_id'])
-                : ('emp:' . strtolower($normalized['employee_id'] ?: ''));
+
+            $rowHash = $this->validationService->buildFullRowHash($normalized);
 
             $isDuplicate = false;
+            $duplicateSource = null;
+            $duplicateType = null;
             $duplicateReason = '';
+            $matchedRecordId = null;
+            $originalExcelRow = null;
+            $matchedFields = [];
 
-            if (isset($seenInFileParticipants[$fp][$partKey])) {
-                $isDuplicate = true;
-                $duplicateReason = 'Duplicate participant for this training inside file (skipped)';
-            } else {
-                $seenInFileParticipants[$fp][$partKey] = true;
+            // 1. Layer B: Check duplicate within uploaded Excel (Strict full row comparison)
+            if (isset($seenInFileByHash[$rowHash])) {
+                foreach ($seenInFileByHash[$rowHash] as $prevItem) {
+                    $cmp = $this->validationService->compareFullRowValues($normalized, $prevItem['data'], false);
+                    if ($cmp['is_match']) {
+                        $isDuplicate = true;
+                        $duplicateSource = 'file';
+                        $duplicateType = 'FULL_42_COLUMN_MATCH';
+                        $originalExcelRow = $prevItem['excel_row'];
+                        $matchedFields = array_keys($cmp['matched_fields']);
+                        $duplicateReason = "Duplicate: Matches an identical record in the uploaded file (Row {$originalExcelRow}) across all 42 canonical columns. It will be skipped during import.";
+                        break;
+                    }
+                }
             }
 
-            if (!$isDuplicate && $isExistingTraining) {
-                $tId = $existingTrainings[$fp]->id;
-                if (isset($existingParticipantMap["{$tId}:{$partKey}"])) {
-                    $isDuplicate = true;
-                    $duplicateReason = 'Participant already enrolled in existing training in database (skipped)';
+            // 2. Layer A: Check duplicate against existing database records
+            if (!$isDuplicate) {
+                // Exact 40-column hash match against stored database records
+                $rowHash40 = $this->validationService->buildFullRowHash($normalized, true);
+                if (isset($existingDbRecords['by_hash'][$rowHash40])) {
+                    foreach ($existingDbRecords['by_hash'][$rowHash40] as $dbItem) {
+                        $cmp = $this->validationService->compareFullRowValues($normalized, $dbItem, true);
+                        if ($cmp['is_match']) {
+                            $isDuplicate = true;
+                            $duplicateSource = 'database';
+                            $duplicateType = 'DATABASE_40_COLUMN_MATCH';
+                            $matchedRecordId = $dbItem['_otu_id'] ?? ($dbItem['_offline_training_id'] ?? null);
+                            $matchedFields = array_keys($cmp['matched_fields']);
+                            $duplicateReason = "Duplicate: Matches an existing training record in database (ID {$matchedRecordId}) across all 40 stored comparison columns (progress_status and month are unverified in DB). It will be skipped during import.";
+                            break;
+                        }
+                    }
                 }
+
+                // Check by employee for records where optional fields might differ
+                if (!$isDuplicate) {
+                    $empKey = mb_strtolower(trim((string) $normalized['employee_id']), 'UTF-8');
+                    if (isset($existingDbRecords['by_employee'][$empKey])) {
+                        foreach ($existingDbRecords['by_employee'][$empKey] as $dbItem) {
+                            $cmp = $this->validationService->compareFullRowValues($normalized, $dbItem, true);
+                            if ($cmp['is_match']) {
+                                $isDuplicate = true;
+                                $duplicateSource = 'database';
+                                $duplicateType = 'DATABASE_40_COLUMN_MATCH';
+                                $matchedRecordId = $dbItem['_otu_id'] ?? ($dbItem['_offline_training_id'] ?? null);
+                                $matchedFields = array_keys($cmp['matched_fields']);
+                                $duplicateReason = "Duplicate: Matches an existing training record in database (ID {$matchedRecordId}) across all 40 stored comparison columns (progress_status and month are unverified in DB). It will be skipped during import.";
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (!$isDuplicate) {
+                $seenInFileByHash[$rowHash][] = [
+                    'excel_row' => $rNum,
+                    'data'      => $normalized,
+                ];
             }
 
             $eval = $this->validationService->evaluateRowStatus(
                 $normalized,
                 $user,
-                ['is_duplicate' => $isDuplicate, 'duplicate_reason' => $duplicateReason],
+                [
+                    'is_duplicate'        => $isDuplicate,
+                    'duplicate_reason'    => $duplicateReason,
+                    'duplicate_source'    => $duplicateSource,
+                    'duplicate_type'      => $duplicateType,
+                    'matched_record_id'   => $matchedRecordId,
+                    'original_excel_row'  => $originalExcelRow,
+                    'matched_fields'      => $matchedFields,
+                ],
                 $matchResult
             );
 
@@ -409,19 +470,24 @@ class PtkpImportService
                 'course_name'         => $normalized['course_name'],
                 'type'                => $normalized['type'],
                 'pic'                 => $normalized['pic'],
+                'duplicate_source'    => $duplicateSource,
+                'duplicate_type'      => $duplicateType,
+                'matched_record_id'   => $matchedRecordId,
+                'original_excel_row'  => $originalExcelRow,
+                'matched_fields'      => $matchedFields,
                 'data'                => $normalized,
                 'error_code'          => $isDuplicate ? 'DUPLICATE' : ($eval['is_blocking'] ? 'INVALID' : null),
                 'sanitized_data'      => [
-                    'employee_id'    => $normalized['employee_id'],
-                    'name'           => $normalized['name'],
+                    'employee_id'         => $normalized['employee_id'],
+                    'name'                => $normalized['name'],
                     'course_name'         => $normalized['course_name'],
                     'main_classification' => $normalized['main_classification'],
                     'sub_classification'  => $normalized['sub_classification'],
-                    'learning_hours' => $normalized['learning_hours'],
-                    'start_date'     => $normalized['start_date'],
-                    'finish_date'    => $normalized['finish_date'],
-                    'type'           => $normalized['type'],
-                    'venue'          => $normalized['venue'],
+                    'learning_hours'      => $normalized['learning_hours'],
+                    'start_date'          => $normalized['start_date'],
+                    'finish_date'         => $normalized['finish_date'],
+                    'type'                => $normalized['type'],
+                    'venue'               => $normalized['venue'],
                 ],
                 'matched_training_id' => $isExistingTraining ? $existingTrainings[$fp]->id : null,
             ];
@@ -608,5 +674,169 @@ class PtkpImportService
         }
 
         return $map;
+    }
+
+    /**
+     * Bulk lookup existing database records for the given employees and courses.
+     * Returns indexed arrays by hash and by employee for fast O(1) comparison.
+     */
+    protected function lookupExistingParticipantRecords(array $employeeIds, array $courses = []): array
+    {
+        if (empty($employeeIds)) {
+            return ['by_hash' => [], 'by_employee' => []];
+        }
+
+        $query = DB::table('offline_training_users')
+            ->join('offline_trainings', 'offline_training_users.offline_training_id', '=', 'offline_trainings.id')
+            ->whereNull('offline_training_users.deleted_at')
+            ->whereNull('offline_trainings.deleted_at')
+            ->whereIn('offline_training_users.employee_id', $employeeIds);
+
+        if (!empty($courses)) {
+            $query->whereIn('offline_trainings.course_name', $courses);
+        }
+
+        $records = $query->select([
+            'offline_training_users.id as otu_id',
+            'offline_training_users.offline_training_id',
+            'offline_training_users.user_id',
+            'offline_training_users.employee_id',
+            'offline_training_users.name',
+            'offline_training_users.grade',
+            'offline_training_users.job_position',
+            'offline_training_users.team',
+            'offline_training_users.department',
+            'offline_training_users.company',
+            'offline_training_users.main_classification as user_main_classification',
+            'offline_training_users.sub_classification as user_sub_classification',
+            'offline_training_users.learning_hours as user_learning_hours',
+            'offline_training_users.start_date as user_start_date',
+            'offline_training_users.end_date as user_end_date',
+            'offline_training_users.start_time as user_start_time',
+            'offline_training_users.end_time as user_end_time',
+            'offline_training_users.progress',
+            'offline_training_users.assessment_score',
+            'offline_training_users.l2_numerical',
+            'offline_training_users.l2_verbal',
+            'offline_training_users.l3_numerical',
+            'offline_training_users.l3_verbal',
+            'offline_training_users.certificate',
+            'offline_training_users.certificate_issued_date',
+            'offline_training_users.certificate_expired_date',
+            'offline_training_users.attendance',
+            'offline_training_users.attendance_reason',
+            'offline_training_users.bond_status',
+            'offline_training_users.bond_duration',
+            'offline_training_users.bond_end_date',
+            'offline_training_users.bond_amount_idr',
+            'offline_training_users.l1_program',
+            'offline_training_users.pic',
+            // Training attributes
+            'offline_trainings.course_name',
+            'offline_trainings.sub_course_name',
+            'offline_trainings.type',
+            'offline_trainings.category',
+            'offline_trainings.level',
+            'offline_trainings.batch',
+            'offline_trainings.main_classification as training_main_classification',
+            'offline_trainings.sub_classification as training_sub_classification',
+            'offline_trainings.delivery_method',
+            'offline_trainings.sub_delivery_method',
+            'offline_trainings.provider',
+            'offline_trainings.sub_provider',
+            'offline_trainings.provider_name',
+            'offline_trainings.venue',
+            'offline_trainings.instructor',
+            'offline_trainings.duration_seconds',
+            'offline_trainings.requirement',
+            'offline_trainings.start_date as training_start_date',
+            'offline_trainings.finish_date as training_finish_date',
+            'offline_trainings.learning_hours as training_learning_hours',
+            'offline_trainings.start_time as training_start_time',
+            'offline_trainings.end_time as training_end_time',
+        ])->get();
+
+        $byHash = [];
+        $byEmployee = [];
+
+        foreach ($records as $r) {
+            $startDate = $r->user_start_date ?: $r->training_start_date;
+
+            $normalizedDb = [
+                // Employee Information (7)
+                'employee_id'         => $r->employee_id,
+                'name'                => $r->name,
+                'grade'               => $r->grade,
+                'job_position'        => $r->job_position,
+                'team'                => $r->team,
+                'department'          => $r->department,
+                'company'             => $r->company,
+
+                // Training Information (6)
+                'course_name'         => $r->course_name,
+                'sub_course_name'     => $r->sub_course_name,
+                'type'                => $r->type,
+                'category'            => $r->category,
+                'level'               => $r->level,
+                'batch'               => $r->batch,
+
+                // Classification (2)
+                'main_classification' => $r->user_main_classification ?: $r->training_main_classification,
+                'sub_classification'  => $r->user_sub_classification ?: $r->training_sub_classification,
+
+                // Delivery & Provider (5)
+                'delivery_method'     => $r->delivery_method,
+                'sub_delivery_method' => $r->sub_delivery_method,
+                'provider_name'       => $r->provider_name,
+                'venue'               => $r->venue,
+                'instructor'          => $r->instructor,
+
+                // Learning Details (9)
+                'course_duration'     => $r->duration_seconds,
+                'learning_hours'      => $r->user_learning_hours ?? $r->training_learning_hours,
+                'progress'            => $r->progress,
+                'progress_status'     => null,
+                'start_date'          => $startDate,
+                'end_date'            => $r->user_end_date ?: $r->training_finish_date,
+                'finish_date'         => $r->user_end_date ?: $r->training_finish_date,
+                'start_time'          => $r->user_start_time ?: $r->training_start_time,
+                'end_time'            => $r->user_end_time ?: $r->training_end_time,
+                'month'               => null,
+
+                // Assessment, Attendance & Bond (12)
+                'requirement'         => $r->requirement,
+                'attendance'          => $r->attendance,
+                'attendance_reason'   => $r->attendance_reason,
+                'bond_status'         => $r->bond_status,
+                'bond_duration'       => $r->bond_duration,
+                'bond_end_date'       => $r->bond_end_date,
+                'bond_amount'         => $r->bond_amount_idr,
+                'bond_amount_idr'     => $r->bond_amount_idr,
+                'l1_program'          => $r->l1_program,
+                'assessment_score'    => $r->assessment_score ?? $r->l2_numerical,
+                'l2_verbal'           => $r->l2_verbal,
+                'l3_numerical'        => $r->l3_numerical,
+                'l3_verbal'           => $r->l3_verbal,
+
+                // Person in Charge (1)
+                'pic'                 => $r->pic,
+
+                // Internal metadata
+                '_otu_id'              => $r->otu_id,
+                '_offline_training_id' => $r->offline_training_id,
+            ];
+
+            // Use 40 stored columns hash for fast O(1) matching against database records
+            $hash40 = $this->validationService->buildFullRowHash($normalizedDb, true);
+            $byHash[$hash40][] = $normalizedDb;
+
+            $empKey = mb_strtolower(trim((string) $r->employee_id), 'UTF-8');
+            $byEmployee[$empKey][] = $normalizedDb;
+        }
+
+        return [
+            'by_hash'     => $byHash,
+            'by_employee' => $byEmployee,
+        ];
     }
 }
