@@ -119,7 +119,8 @@ class OfflineTrainingUpdateService
             'duration_seconds'      => $durationSeconds,
             'learning_hours'        => $learningHours,
             'start_date'            => $this->normalizeDate($raw['start_date'] ?? null),
-            'finish_date'           => $this->normalizeDate($raw['finish_date'] ?? null),
+            'finish_date'           => $this->normalizeDate($raw['end_date'] ?? ($raw['finish_date'] ?? null)),
+            'end_date'              => $this->normalizeDate($raw['end_date'] ?? ($raw['finish_date'] ?? null)),
             'start_time'            => array_key_exists('start_time', $raw)
                 ? $this->normalizeTime($raw['start_time'], $existing?->start_time ?: '08:00:00')
                 : ($existing?->start_time ?: '08:00:00'),
@@ -149,11 +150,15 @@ class OfflineTrainingUpdateService
                 $finish = Carbon::parse("{$t['finish_date']} {$endTime}");
 
                 if ($finish->lt($start)) {
-                    $errors['finish_date'] = ["Finish date and time ({$t['finish_date']} " . substr($endTime, 0, 5) . ") cannot be earlier than start date and time ({$t['start_date']} " . substr($startTime, 0, 5) . ")."];
+                    $msg = "Finish date and time ({$t['finish_date']} " . substr($endTime, 0, 5) . ") cannot be earlier than start date and time ({$t['start_date']} " . substr($startTime, 0, 5) . ").";
+                    $errors['finish_date'] = [$msg];
+                    $errors['end_date'] = [$msg];
                 }
             } catch (\Throwable $e) {
                 if ("{$t['finish_date']} {$endTime}" < "{$t['start_date']} {$startTime}") {
-                    $errors['finish_date'] = ["Finish date ({$t['finish_date']}) cannot be earlier than start date ({$t['start_date']})."];
+                    $msg = "Finish date ({$t['finish_date']}) cannot be earlier than start date ({$t['start_date']}).";
+                    $errors['finish_date'] = [$msg];
+                    $errors['end_date'] = [$msg];
                 }
             }
         }
@@ -183,7 +188,7 @@ class OfflineTrainingUpdateService
         }
 
         $participantHours = $this->normalizeLearningHours(
-            $raw['participant_learning_hours'] ?? ($raw['learning_hours'] ?? null)
+            $raw['learning_hours'] ?? ($raw['participant_learning_hours'] ?? null)
         );
         if ($participantHours === null && $fallbackHours !== null) {
             $participantHours = $fallbackHours;
@@ -195,31 +200,44 @@ class OfflineTrainingUpdateService
         $isBonded = $bondStatus && in_array(strtolower($bondStatus), ['yes', 'y', '1', 'true'], true);
 
         return [
-            'user_id'           => $userId,
-            'employee_id'       => $employeeId,
-            'name'              => $this->normalizeString($raw['name'] ?? ($raw['participant_name'] ?? null)),
-            'grade'             => $this->normalizeString($raw['grade'] ?? null),
-            'job_position'      => $this->normalizeString($raw['job_position'] ?? ($raw['position'] ?? null)),
-            'team'              => $this->normalizeString($raw['team'] ?? null),
-            'department'        => $this->normalizeString($raw['department'] ?? null),
-            'company'           => $this->normalizeString($raw['company'] ?? null),
-            'learning_hours'    => $participantHours,
-            'progress'          => $progress !== null ? $progress : 0.0,
-            'assessment_score'  => $this->normalizeAssessmentScore($raw['assessment_score'] ?? null),
-            'certificate'       => $this->normalizeString($raw['certificate'] ?? null),
-            'attendance'        => $attendance !== null ? $attendance : true,
-            'attendance_reason' => $this->normalizeString($raw['attendance_reason'] ?? null),
-            'bond_status'       => $bondStatus ?: 'No',
-            'bond_duration'     => $isBonded && isset($raw['bond_duration']) && is_numeric($raw['bond_duration']) ? (int) $raw['bond_duration'] : null,
-            'bond_end_date'     => $isBonded ? $this->normalizeDate($raw['bond_end_date'] ?? null) : null,
-            'bond_amount_idr'   => $isBonded ? $this->normalizeMoney($raw['bond_amount_idr'] ?? $raw['bond_amount'] ?? null) : null,
-            'bond_amount'       => $isBonded ? $this->normalizeMoney($raw['bond_amount_idr'] ?? $raw['bond_amount'] ?? null) : null,
-            'l1_program'        => $this->normalizeString($raw['l1_program'] ?? null),
-            'l2_numerical'      => $this->normalizeDecimal($raw['l2_numerical'] ?? null, 4),
-            'l2_verbal'         => $this->normalizeString($raw['l2_verbal'] ?? null),
-            'l3_numerical'      => $this->normalizeDecimal($raw['l3_numerical'] ?? null, 4),
-            'l3_verbal'         => $this->normalizeString($raw['l3_verbal'] ?? null),
-            'pic'               => $this->normalizeString($raw['pic'] ?? null),
+            'user_id'                  => $userId,
+            'employee_id'              => $employeeId,
+            'name'                     => $this->normalizeString($raw['name'] ?? ($raw['participant_name'] ?? null)),
+            'grade'                    => $this->normalizeString($raw['grade'] ?? null),
+            'job_position'             => $this->normalizeString($raw['job_position'] ?? ($raw['position'] ?? null)),
+            'team'                     => $this->normalizeString($raw['team'] ?? null),
+            'department'               => $this->normalizeString($raw['department'] ?? null),
+            'company'                  => $this->normalizeString($raw['company'] ?? null),
+            'main_classification'      => $this->normalizeString($raw['main_classification'] ?? null),
+            'sub_classification'       => $this->normalizeString($raw['sub_classification'] ?? null),
+            'learning_hours'           => $participantHours,
+            'start_date'               => $this->normalizeDate($raw['start_date'] ?? null),
+            'end_date'                 => $this->normalizeDate($raw['end_date'] ?? ($raw['finish_date'] ?? null)),
+            'start_time'               => array_key_exists('start_time', $raw)
+                ? $this->normalizeTime($raw['start_time'])
+                : null,
+            'end_time'                 => array_key_exists('end_time', $raw)
+                ? $this->normalizeTime($raw['end_time'])
+                : null,
+            'progress'                 => $progress !== null ? $progress : 0.0,
+            'assessment_score'         => $this->normalizeAssessmentScore($raw['assessment_score'] ?? null),
+            'certificate'              => $this->normalizeString($raw['certificate'] ?? null),
+            'certificate_id'           => !empty($raw['certificate_id']) ? (int) $raw['certificate_id'] : null,
+            'certificate_issued_date'  => $this->normalizeDate($raw['certificate_issued_date'] ?? null),
+            'certificate_expired_date' => $this->normalizeDate($raw['certificate_expired_date'] ?? null),
+            'attendance'               => $attendance !== null ? $attendance : true,
+            'attendance_reason'        => $this->normalizeString($raw['attendance_reason'] ?? null),
+            'bond_status'              => $bondStatus ?: 'No',
+            'bond_duration'            => $isBonded && isset($raw['bond_duration']) && is_numeric($raw['bond_duration']) ? (int) $raw['bond_duration'] : null,
+            'bond_end_date'            => $isBonded ? $this->normalizeDate($raw['bond_end_date'] ?? null) : null,
+            'bond_amount_idr'          => $isBonded ? $this->normalizeMoney($raw['bond_amount_idr'] ?? $raw['bond_amount'] ?? null) : 0.0,
+            'bond_amount'              => $isBonded ? $this->normalizeMoney($raw['bond_amount_idr'] ?? $raw['bond_amount'] ?? null) : 0.0,
+            'l1_program'               => $this->normalizeString($raw['l1_program'] ?? null),
+            'l2_numerical'             => $this->normalizeDecimal($raw['l2_numerical'] ?? null, 4),
+            'l2_verbal'                => $this->normalizeString($raw['l2_verbal'] ?? null),
+            'l3_numerical'             => $this->normalizeDecimal($raw['l3_numerical'] ?? null, 4),
+            'l3_verbal'                => $this->normalizeString($raw['l3_verbal'] ?? null),
+            'pic'                      => $this->normalizeString($raw['pic'] ?? null),
         ];
     }
 
@@ -242,8 +260,20 @@ class OfflineTrainingUpdateService
             $errors['progress'] = ['Progress must be between 0% and 100%.'];
         }
 
-        if ($p['assessment_score'] !== null && ($p['assessment_score'] < 0 || $p['assessment_score'] > 100)) {
-            $errors['assessment_score'] = ['Assessment score must be between 0 and 100.'];
+        if ($p['assessment_score'] !== null && $p['assessment_score'] < 0) {
+            $errors['assessment_score'] = ['Assessment score cannot be negative.'];
+        }
+
+        if (!empty($p['start_date']) && !empty($p['end_date'])) {
+            if ($p['end_date'] < $p['start_date']) {
+                $errors['end_date'] = ["End date ({$p['end_date']}) cannot be earlier than start date ({$p['start_date']})."];
+            }
+        }
+
+        if (!empty($p['certificate_issued_date']) && !empty($p['certificate_expired_date'])) {
+            if ($p['certificate_expired_date'] < $p['certificate_issued_date']) {
+                $errors['certificate_expired_date'] = ["Certificate expired date ({$p['certificate_expired_date']}) cannot be earlier than issued date ({$p['certificate_issued_date']})."];
+            }
         }
 
         // Duplicate participant check within same training (excluding current record)

@@ -59,17 +59,12 @@
             $('.select2-master-option, .select2-searchable-field').each(function () {
                 const placeholder = $(this).data('placeholder') || 'Select option';
                 const isTags = $(this).data('tags') === true || $(this).data('tags') === 'true';
-                const dataType = $(this).data('type');
-                const allowClearData = $(this).data('allow-clear');
-                const noClearTypes = ['type', 'delivery_method', 'provider', 'sub_provider'];
-                let isAllowClear = true;
-                if (allowClearData === false || allowClearData === 'false' || noClearTypes.includes(dataType)) {
-                    isAllowClear = false;
-                }
+
+                // Strictly disable allowClear to remove clear (X) icon, keeping the chevron arrow visible
                 $(this).select2({
                     theme: 'bootstrap-5',
                     placeholder: placeholder,
-                    allowClear: isAllowClear,
+                    allowClear: false,
                     tags: isTags,
                     width: 'resolve'
                 });

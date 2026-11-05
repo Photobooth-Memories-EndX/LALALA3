@@ -20,13 +20,16 @@
                         <i class="ti ti-edit fs-1"></i>
                     </div>
                     <div>
-                        <h2 class="h3 fw-bold mb-1 text-dark">Edit Offline Training Record</h2>
+                        <h2 class="h3 fw-bold mb-1 text-dark">Edit Offline Training User</h2>
                         <p class="text-muted small mb-0">Update offline employee training record and results.</p>
                     </div>
                 </div>
-                <div class="d-flex align-items-center gap-2">
-                    <span class="badge bg-light text-secondary border px-2.5 py-1.5 fs-4">
-                        <i class="ti ti-user me-1"></i> {{ $record->name }} ({{ $record->employee_id }})
+                <div class="d-flex align-items-center flex-wrap gap-2">
+                    <span class="badge bg-light text-secondary border px-2.5 py-1.5 fs-4" title="Participant">
+                        <i class="ti ti-user me-1 text-primary"></i> {{ $record->name }} ({{ $record->employee_id }})
+                    </span>
+                    <span class="badge bg-light text-muted border px-2.5 py-1.5 fs-4" title="Course Reference">
+                        <i class="ti ti-school me-1"></i> {{ $training->course_name }}
                     </span>
                 </div>
             </div>
@@ -51,7 +54,49 @@
             </div>
         @endif
 
-        <!-- FULL-WIDTH CONTINUOUS VERTICAL SCROLL FORM -->
+        @php
+            $rawRecord = $record->getRawOriginal();
+
+            // Date & Time formatting
+            $startDateVal = old('start_date', $record->start_date ? (is_string($record->start_date) ? substr($record->start_date, 0, 10) : $record->start_date->format('Y-m-d')) : ($training->start_date ? (is_string($training->start_date) ? substr($training->start_date, 0, 10) : $training->start_date->format('Y-m-d')) : ''));
+            $endDateVal = old('end_date', old('finish_date', $record->end_date ? (is_string($record->end_date) ? substr($record->end_date, 0, 10) : $record->end_date->format('Y-m-d')) : ($training->end_date ? (is_string($training->end_date) ? substr($training->end_date, 0, 10) : $training->end_date->format('Y-m-d')) : ($training->finish_date ? (is_string($training->finish_date) ? substr($training->finish_date, 0, 10) : $training->finish_date->format('Y-m-d')) : ''))));
+            $startTimeVal = old('start_time', $record->start_time ? substr((string) $record->start_time, 0, 5) : ($training->start_time ? substr((string) $training->start_time, 0, 5) : '08:00'));
+            $endTimeVal = old('end_time', $record->end_time ? substr((string) $record->end_time, 0, 5) : ($training->end_time ? substr((string) $training->end_time, 0, 5) : '16:00'));
+            $certIssuedVal = old('certificate_issued_date', $record->certificate_issued_date ? (is_string($record->certificate_issued_date) ? substr($record->certificate_issued_date, 0, 10) : $record->certificate_issued_date->format('Y-m-d')) : '');
+            $certExpiredVal = old('certificate_expired_date', $record->certificate_expired_date ? (is_string($record->certificate_expired_date) ? substr($record->certificate_expired_date, 0, 10) : $record->certificate_expired_date->format('Y-m-d')) : '');
+            $bondEndVal = old('bond_end_date', $record->bond_end_date ? (is_string($record->bond_end_date) ? substr($record->bond_end_date, 0, 10) : $record->bond_end_date->format('Y-m-d')) : '');
+
+            // Duration formatting
+            $durationFormatted = '';
+            if ($training->duration_seconds) {
+                $durHours = floor($training->duration_seconds / 3600);
+                $durMins = floor(($training->duration_seconds % 3600) / 60);
+                $durSecs = $training->duration_seconds % 60;
+                $durationFormatted = sprintf('%02d:%02d:%02d', $durHours, $durMins, $durSecs);
+            }
+
+            // Month from start date
+            $monthFormatted = $startDateVal ? date('M Y', strtotime($startDateVal)) : '';
+
+            // Options setup
+            $defaultL2Verbal = ['Passed', 'Failed', 'Excellent', 'Very Good', 'Good', 'Satisfactory'];
+            $dbL2Verbal = \App\Models\OfflineTrainingUser::whereNotNull('l2_verbal')->where('l2_verbal', '!=', '')->distinct()->pluck('l2_verbal')->all();
+            $l2VerbalOptions = array_values(array_unique(array_filter(array_merge($defaultL2Verbal, $dbL2Verbal))));
+
+            $defaultL3Verbal = ['Implemented successfully in plant', 'Project completed on schedule', '-'];
+            $dbL3Verbal = \App\Models\OfflineTrainingUser::whereNotNull('l3_verbal')->where('l3_verbal', '!=', '')->distinct()->pluck('l3_verbal')->all();
+            $l3VerbalOptions = array_values(array_unique(array_filter(array_merge($defaultL3Verbal, $dbL3Verbal))));
+
+            $defaultPic = ['HRDC Team', 'HRDC Training Team'];
+            $dbPic = \App\Models\OfflineTrainingUser::whereNotNull('pic')->where('pic', '!=', '')->distinct()->pluck('pic')->all();
+            $picOptions = array_values(array_unique(array_filter(array_merge($defaultPic, $dbPic))));
+
+            $isBondYes = in_array(strtolower((string) old('bond_status', $record->bond_status)), ['yes', '1', 'true'], true);
+            $progressVal = old('progress', $record->progress !== null ? (float) $record->progress : 0);
+            $bondAmountVal = old('bond_amount_idr', old('bond_amount', $record->bond_amount_idr !== null ? (float) $record->bond_amount_idr : ($record->bond_amount !== null ? (float) $record->bond_amount : '')));
+        @endphp
+
+        <!-- EDIT FORM -->
         <form id="offline-record-edit-form" method="POST" action="{{ route('manage.record.offline.update', $record->id) }}" novalidate>
             @csrf
             @method('PUT')
@@ -60,6 +105,7 @@
             <input type="hidden" name="return_training_id" value="{{ $returnTrainingId ?? '' }}">
             <input type="hidden" name="return_participant_id" value="{{ $returnParticipantId ?? '' }}">
             <input type="hidden" name="return_classification" value="{{ $returnClassification ?? '' }}">
+            <input type="hidden" name="offline_training_id" value="{{ $record->offline_training_id }}">
 
             <!-- ============================================================= -->
             <!-- SECTION 1: TRAINING INFORMATION -->
@@ -67,7 +113,8 @@
             <div class="card border-0 shadow-sm rounded-3 mb-4 form-section" id="section-1-training-info">
                 <div class="card-body p-3 p-md-4">
                     <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
-                        <span class="badge rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 28px; font-size: 0.85rem;">1</span>
+                        <span class="badge rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center"
+                              style="width: 28px; height: 28px; font-size: 0.85rem;">1</span>
                         <h4 class="fw-bold mb-0 text-dark">Training Information</h4>
                     </div>
 
@@ -76,36 +123,27 @@
                         <span class="fw-bold text-primary small text-uppercase">General Information</span>
                     </div>
 
-                    @php
-                        $shortYear = "'" . substr((string) ($kpiYear ?? date('Y')), -2);
-                        $defaultL2Verbal = ['Passed', 'Failed', 'Excellent', 'Very Good', 'Good', 'Satisfactory'];
-                        $dbL2Verbal = \App\Models\OfflineTrainingUser::whereNotNull('l2_verbal')->where('l2_verbal', '!=', '')->distinct()->pluck('l2_verbal')->all();
-                        $l2VerbalOptions = array_values(array_unique(array_filter(array_merge($defaultL2Verbal, $dbL2Verbal))));
-
-                        $defaultL3Verbal = ['Implemented successfully in plant', 'Project completed on schedule'];
-                        $dbL3Verbal = \App\Models\OfflineTrainingUser::whereNotNull('l3_verbal')->where('l3_verbal', '!=', '')->distinct()->pluck('l3_verbal')->all();
-                        $l3VerbalOptions = array_values(array_unique(array_filter(array_merge($defaultL3Verbal, $dbL3Verbal))));
-
-                        $defaultPic = ['HRDC Team', 'HRDC Training Team'];
-                        $dbPic = \App\Models\OfflineTrainingUser::whereNotNull('pic')->where('pic', '!=', '')->distinct()->pluck('pic')->all();
-                        $picOptions = array_values(array_unique(array_filter(array_merge($defaultPic, $dbPic))));
-                    @endphp
-                    <input type="hidden" id="edit-corporate-kpi-year" name="corporate_kpi_year" value="{{ old('corporate_kpi_year', $training->corporate_kpi_year ?: $kpiYear) }}">
-
                     <div class="row g-3 mb-4">
                         <div class="col-12 col-md-8">
                             <label for="edit-course-name" class="form-label small fw-semibold">Course Name <span class="text-danger">*</span></label>
                             <div class="position-relative master-combobox" data-type="course_name">
                                 <div class="input-group">
-                                    <input type="text" class="form-control rounded-start-2 master-combobox-input @error('course_name') is-invalid @enderror" id="edit-course-name" name="course_name" value="{{ old('course_name', $training->course_name) }}" placeholder="e.g. High Voltage Safety &amp; Operation" required autocomplete="off">
-                                    <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split master-combobox-toggle" title="View options" tabindex="-1">
+                                    <input type="text" class="form-control rounded-start-2 master-combobox-input @error('course_name') is-invalid @enderror"
+                                           id="edit-course-name" name="course_name"
+                                           value="{{ old('course_name', $training->course_name) }}"
+                                           placeholder="e.g. High Voltage Safety &amp; Operation" required autocomplete="off">
+                                    <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split master-combobox-toggle"
+                                            title="View options" tabindex="-1">
                                         <span class="visually-hidden">Toggle Dropdown</span>
                                     </button>
-                                    <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="course_name" data-target="#edit-course-name" data-title="Course Name" title="Add new Course Name" tabindex="-1">
+                                    <button type="button" class="btn btn-outline-secondary btn-add-option-modal"
+                                            data-type="course_name" data-target="#edit-course-name" data-title="Course Name"
+                                            title="Add new Course Name" tabindex="-1">
                                         <i class="ti ti-plus"></i>
                                     </button>
                                 </div>
-                                <div class="dropdown-menu master-combobox-menu shadow-sm w-100 py-1" style="display: none; max-height: 260px; overflow-y: auto; z-index: 1050; position: absolute; top: 100%; left: 0;"></div>
+                                <div class="dropdown-menu master-combobox-menu shadow-sm w-100 py-1"
+                                     style="display: none; max-height: 260px; overflow-y: auto; z-index: 1050; position: absolute; top: 100%; left: 0;"></div>
                             </div>
                             @error('course_name')
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
@@ -113,12 +151,19 @@
                         </div>
                         <div class="col-12 col-md-4">
                             <label for="edit-batch" class="form-label small fw-semibold">Batch</label>
-                            <input type="text" class="form-control rounded-2" id="edit-batch" name="batch" value="{{ old('batch', $training->batch) }}" placeholder="e.g. Batch 1">
+                            <input type="text" class="form-control rounded-2 @error('batch') is-invalid @enderror"
+                                   id="edit-batch" name="batch"
+                                   value="{{ old('batch', $training->batch) }}" placeholder="e.g. Batch 1">
+                            @error('batch')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
                         <div class="col-12">
                             <label for="edit-sub-course-name" class="form-label small fw-semibold">Sub Course Name</label>
                             <div class="input-group">
-                                <select class="form-select rounded-start-2 select2-master-option" id="edit-sub-course-name" name="sub_course_name" data-type="sub_course_name" data-placeholder="Select Sub Course Name" data-tags="true">
+                                <select class="form-select rounded-start-2 select2-master-option"
+                                        id="edit-sub-course-name" name="sub_course_name"
+                                        data-type="sub_course_name" data-placeholder="Select Sub Course Name" data-tags="true" data-allow-clear="false">
                                     <option value="">Select Sub Course Name</option>
                                     @php
                                         $currentSubCourse = old('sub_course_name', $training->sub_course_name);
@@ -131,14 +176,18 @@
                                         <option value="{{ $scOpt }}" {{ $currentSubCourse === $scOpt ? 'selected' : '' }}>{{ $scOpt }}</option>
                                     @endforeach
                                 </select>
-                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="sub_course_name" data-target="#edit-sub-course-name" data-title="Sub Course Name" title="Add new Sub Course Name" tabindex="-1">
+                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal"
+                                        data-type="sub_course_name" data-target="#edit-sub-course-name" data-title="Sub Course Name"
+                                        title="Add new Sub Course Name" tabindex="-1">
                                     <i class="ti ti-plus"></i>
                                 </button>
                             </div>
                         </div>
                         <div class="col-12 col-md-6">
                             <label for="edit-l1-program" class="form-label small fw-semibold">L1 Program</label>
-                            <input type="text" class="form-control rounded-2 @error('l1_program') is-invalid @enderror" id="edit-l1-program" name="l1_program" value="{{ old('l1_program', $record->l1_program) }}" placeholder="e.g. 4.8 / Very Good">
+                            <input type="text" class="form-control rounded-2 @error('l1_program') is-invalid @enderror"
+                                   id="edit-l1-program" name="l1_program"
+                                   value="{{ old('l1_program', $record->l1_program) }}" placeholder="e.g. 4.8 / Very Good">
                             @error('l1_program')
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
@@ -146,7 +195,9 @@
                         <div class="col-12 col-md-6">
                             <label for="edit-type" class="form-label small fw-semibold">Type</label>
                             <div class="input-group">
-                                <select class="form-select rounded-start-2 select2-master-option" id="edit-type" name="type" data-type="type" data-placeholder="Select Type" data-allow-clear="false">
+                                <select class="form-select rounded-start-2 select2-master-option"
+                                        id="edit-type" name="type"
+                                        data-type="type" data-placeholder="Select Type" data-allow-clear="false">
                                     <option value="">Select Type</option>
                                     @php
                                         $currentType = old('type', $training->type);
@@ -159,7 +210,9 @@
                                         <option value="{{ $tOpt }}" {{ $currentType === $tOpt ? 'selected' : '' }}>{{ $tOpt }}</option>
                                     @endforeach
                                 </select>
-                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="type" data-target="#edit-type" data-title="Type" title="Add new Type" tabindex="-1">
+                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal"
+                                        data-type="type" data-target="#edit-type" data-title="Type"
+                                        title="Add new Type" tabindex="-1">
                                     <i class="ti ti-plus"></i>
                                 </button>
                             </div>
@@ -167,7 +220,9 @@
                         <div class="col-12 col-md-6">
                             <label for="edit-category" class="form-label small fw-semibold">Category</label>
                             <div class="input-group">
-                                <select class="form-select rounded-start-2 select2-master-option" id="edit-category" name="category" data-type="category" data-placeholder="Select Category" data-tags="true">
+                                <select class="form-select rounded-start-2 select2-master-option"
+                                        id="edit-category" name="category"
+                                        data-type="category" data-placeholder="Select Category" data-tags="true" data-allow-clear="false">
                                     <option value="">Select Category</option>
                                     @php
                                         $currentCategory = old('category', $training->category);
@@ -180,7 +235,9 @@
                                         <option value="{{ $cOpt }}" {{ $currentCategory === $cOpt ? 'selected' : '' }}>{{ $cOpt }}</option>
                                     @endforeach
                                 </select>
-                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="category" data-target="#edit-category" data-title="Category" title="Add new Category" tabindex="-1">
+                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal"
+                                        data-type="category" data-target="#edit-category" data-title="Category"
+                                        title="Add new Category" tabindex="-1">
                                     <i class="ti ti-plus"></i>
                                 </button>
                             </div>
@@ -188,7 +245,9 @@
                         <div class="col-12 col-md-6">
                             <label for="edit-level" class="form-label small fw-semibold">Level</label>
                             <div class="input-group">
-                                <select class="form-select rounded-start-2 select2-master-option" id="edit-level" name="level" data-type="level" data-placeholder="Select Level">
+                                <select class="form-select rounded-start-2 select2-master-option"
+                                        id="edit-level" name="level"
+                                        data-type="level" data-placeholder="Select Level" data-allow-clear="false">
                                     <option value="">Select Level</option>
                                     @php
                                         $currentLevel = old('level', $training->level);
@@ -201,7 +260,9 @@
                                         <option value="{{ $lOpt }}" {{ $currentLevel === $lOpt ? 'selected' : '' }}>{{ $lOpt }}</option>
                                     @endforeach
                                 </select>
-                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="level" data-target="#edit-level" data-title="Level" title="Add new Level" tabindex="-1">
+                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal"
+                                        data-type="level" data-target="#edit-level" data-title="Level"
+                                        title="Add new Level" tabindex="-1">
                                     <i class="ti ti-plus"></i>
                                 </button>
                             </div>
@@ -217,28 +278,37 @@
                         <div class="col-12 col-md-6">
                             <label for="edit-main-classification" class="form-label small fw-semibold">Main Classification</label>
                             @php
-                                $currentClass = old('main_classification', $training->main_classification);
+                                $participantMainClass = $rawRecord['main_classification'] ?? null;
+                                $currentClass = old('main_classification', $participantMainClass ?: $training->main_classification);
                                 $allClasses = array_unique(array_merge(
-                                    $mainClassifications,
+                                    $mainClassifications ?? [],
                                     ['Basic & Common Duties', 'Leadership', 'Competency', 'Management', 'Technical', 'Quality & Safety', 'General', 'ISO Standard', 'Innovation', 'Job Functional', 'Language', 'Maintenance', 'Other', 'SHE', 'Technology'],
                                     $currentClass ? [$currentClass] : []
                                 ));
                                 sort($allClasses);
                             @endphp
-                            <select class="form-select rounded-2" id="edit-main-classification" name="main_classification">
+                            <select class="form-select rounded-2 select2-master-option @error('main_classification') is-invalid @enderror"
+                                    id="edit-main-classification" name="main_classification"
+                                    data-type="main_classification" data-placeholder="Select Classification" data-allow-clear="false">
                                 <option value="">Select Classification</option>
                                 @foreach ($allClasses as $classOpt)
                                     <option value="{{ $classOpt }}" {{ $currentClass === $classOpt ? 'selected' : '' }}>{{ $classOpt }}</option>
                                 @endforeach
                             </select>
+                            @error('main_classification')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
                         <div class="col-12 col-md-6">
                             <label for="edit-sub-classification" class="form-label small fw-semibold">Sub Classification</label>
                             <div class="input-group">
-                                <select class="form-select rounded-start-2 select2-master-option" id="edit-sub-classification" name="sub_classification" data-type="sub_classification" data-placeholder="Select Sub Classification" data-tags="true">
+                                <select class="form-select rounded-start-2 select2-master-option"
+                                        id="edit-sub-classification" name="sub_classification"
+                                        data-type="sub_classification" data-placeholder="Select Sub Classification" data-tags="true" data-allow-clear="false">
                                     <option value="">Select Sub Classification</option>
                                     @php
-                                        $currentSubClass = old('sub_classification', $training->sub_classification);
+                                        $participantSubClass = $rawRecord['sub_classification'] ?? null;
+                                        $currentSubClass = old('sub_classification', $participantSubClass ?: $training->sub_classification);
                                         $subClassOpts = collect($options['sub_classification'] ?? [])->pluck('value')->filter()->all();
                                         if ($currentSubClass && !in_array($currentSubClass, $subClassOpts, true)) {
                                             $subClassOpts[] = $currentSubClass;
@@ -248,24 +318,30 @@
                                         <option value="{{ $scOpt }}" {{ $currentSubClass === $scOpt ? 'selected' : '' }}>{{ $scOpt }}</option>
                                     @endforeach
                                 </select>
-                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="sub_classification" data-target="#edit-sub-classification" data-title="Sub Classification" title="Add new Sub Classification" tabindex="-1">
+                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal"
+                                        data-type="sub_classification" data-target="#edit-sub-classification" data-title="Sub Classification"
+                                        title="Add new Sub Classification" tabindex="-1">
                                     <i class="ti ti-plus"></i>
                                 </button>
                             </div>
                         </div>
+
+                        <!-- KPI Group -->
                         @php
                             $isKpiChecked = (bool) old('counted_corporate_kpi', $training->counted_corporate_kpi);
-                            $selectedKpiYear = old('corporate_kpi_year', $training->corporate_kpi_year ?: ($training->sub_corporate_kpi && preg_match('/^\d{4}$/', (string)$training->sub_corporate_kpi) ? $training->sub_corporate_kpi : ($training->start_date ? $training->start_date->format('Y') : date('Y'))));
+                            $selectedKpiYear = old('corporate_kpi_year', $training->corporate_kpi_year ?: ($training->sub_corporate_kpi && preg_match('/^\d{4}$/', (string)$training->sub_corporate_kpi) ? $training->sub_corporate_kpi : ($startDateVal ? substr($startDateVal, 0, 4) : date('Y'))));
                         @endphp
                         <div class="col-12 col-md-6">
                             <label class="form-label small fw-semibold d-block" id="label-edit-counted-kpi">Counted as Corporate KPI</label>
                             <div class="d-flex align-items-center gap-3 pt-1">
                                 <div class="form-check form-check-inline mb-0">
-                                    <input class="form-check-input" type="radio" name="counted_corporate_kpi" id="edit-counted-kpi-no" value="0" {{ !$isKpiChecked ? 'checked' : '' }}>
+                                    <input class="form-check-input" type="radio" name="counted_corporate_kpi"
+                                           id="edit-counted-kpi-no" value="0" {{ !$isKpiChecked ? 'checked' : '' }}>
                                     <label class="form-check-label small" for="edit-counted-kpi-no">No</label>
                                 </div>
                                 <div class="form-check form-check-inline mb-0">
-                                    <input class="form-check-input" type="radio" name="counted_corporate_kpi" id="edit-counted-kpi-yes" value="1" {{ $isKpiChecked ? 'checked' : '' }}>
+                                    <input class="form-check-input" type="radio" name="counted_corporate_kpi"
+                                           id="edit-counted-kpi-yes" value="1" {{ $isKpiChecked ? 'checked' : '' }}>
                                     <label class="form-check-label small" for="edit-counted-kpi-yes">Yes</label>
                                 </div>
                             </div>
@@ -278,7 +354,9 @@
                                         <option value="{{ $yr }}" {{ $yr == $selectedKpiYear ? 'selected' : '' }}>{{ $yr }}</option>
                                     @endforeach
                                 </select>
-                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="sub_corporate_kpi" data-target="#edit-corporate-kpi-year" data-title="KPI Year" title="Add new KPI Year" tabindex="-1">
+                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal"
+                                        data-type="sub_corporate_kpi" data-target="#edit-corporate-kpi-year" data-title="KPI Year"
+                                        title="Add new KPI Year" tabindex="-1">
                                     <i class="ti ti-plus"></i>
                                 </button>
                             </div>
@@ -295,7 +373,9 @@
                         <div class="col-12 col-md-6">
                             <label for="edit-delivery-method" class="form-label small fw-semibold">Delivery Method</label>
                             <div class="input-group">
-                                <select class="form-select rounded-start-2 select2-master-option" id="edit-delivery-method" name="delivery_method" data-type="delivery_method" data-placeholder="Select Delivery Method" data-allow-clear="false">
+                                <select class="form-select rounded-start-2 select2-master-option"
+                                        id="edit-delivery-method" name="delivery_method"
+                                        data-type="delivery_method" data-placeholder="Select Delivery Method" data-allow-clear="false">
                                     <option value="">Select Delivery Method</option>
                                     @php
                                         $currentDm = old('delivery_method', $training->delivery_method);
@@ -308,7 +388,9 @@
                                         <option value="{{ $dm }}" {{ $currentDm === $dm ? 'selected' : '' }}>{{ $dm }}</option>
                                     @endforeach
                                 </select>
-                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="delivery_method" data-target="#edit-delivery-method" data-title="Delivery Method" title="Add new Delivery Method" tabindex="-1">
+                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal"
+                                        data-type="delivery_method" data-target="#edit-delivery-method" data-title="Delivery Method"
+                                        title="Add new Delivery Method" tabindex="-1">
                                     <i class="ti ti-plus"></i>
                                 </button>
                             </div>
@@ -316,7 +398,9 @@
                         <div class="col-12 col-md-6">
                             <label for="edit-sub-delivery-method" class="form-label small fw-semibold">Sub Delivery Method</label>
                             <div class="input-group">
-                                <select class="form-select rounded-start-2 select2-master-option" id="edit-sub-delivery-method" name="sub_delivery_method" data-type="sub_delivery_method" data-placeholder="Select Sub Delivery Method" data-tags="true">
+                                <select class="form-select rounded-start-2 select2-master-option"
+                                        id="edit-sub-delivery-method" name="sub_delivery_method"
+                                        data-type="sub_delivery_method" data-placeholder="Select Sub Delivery Method" data-tags="true" data-allow-clear="false">
                                     <option value="">Select Sub Delivery Method</option>
                                     @php
                                         $currentSubDm = old('sub_delivery_method', $training->sub_delivery_method);
@@ -329,7 +413,9 @@
                                         <option value="{{ $sdmOpt }}" {{ $currentSubDm === $sdmOpt ? 'selected' : '' }}>{{ $sdmOpt }}</option>
                                     @endforeach
                                 </select>
-                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="sub_delivery_method" data-target="#edit-sub-delivery-method" data-title="Sub Delivery Method" title="Add new Sub Delivery Method" tabindex="-1">
+                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal"
+                                        data-type="sub_delivery_method" data-target="#edit-sub-delivery-method" data-title="Sub Delivery Method"
+                                        title="Add new Sub Delivery Method" tabindex="-1">
                                     <i class="ti ti-plus"></i>
                                 </button>
                             </div>
@@ -337,7 +423,9 @@
                         <div class="col-12 col-md-6">
                             <label for="edit-provider" class="form-label small fw-semibold">Provider</label>
                             <div class="input-group">
-                                <select class="form-select rounded-start-2 select2-master-option" id="edit-provider" name="provider" data-type="provider" data-placeholder="Select Provider" data-allow-clear="false">
+                                <select class="form-select rounded-start-2 select2-master-option"
+                                        id="edit-provider" name="provider"
+                                        data-type="provider" data-placeholder="Select Provider" data-allow-clear="false">
                                     <option value="">Select Provider</option>
                                     @php
                                         $currentProv = old('provider', $training->provider);
@@ -350,7 +438,9 @@
                                         <option value="{{ $prov }}" {{ $currentProv === $prov ? 'selected' : '' }}>{{ $prov }}</option>
                                     @endforeach
                                 </select>
-                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="provider" data-target="#edit-provider" data-title="Provider" title="Add new Provider" tabindex="-1">
+                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal"
+                                        data-type="provider" data-target="#edit-provider" data-title="Provider"
+                                        title="Add new Provider" tabindex="-1">
                                     <i class="ti ti-plus"></i>
                                 </button>
                             </div>
@@ -358,7 +448,9 @@
                         <div class="col-12 col-md-6">
                             <label for="edit-sub-provider" class="form-label small fw-semibold">Sub Provider</label>
                             <div class="input-group">
-                                <select class="form-select rounded-start-2 select2-master-option" id="edit-sub-provider" name="sub_provider" data-type="sub_provider" data-placeholder="Select Sub Provider" data-allow-clear="false">
+                                <select class="form-select rounded-start-2 select2-master-option"
+                                        id="edit-sub-provider" name="sub_provider"
+                                        data-type="sub_provider" data-placeholder="Select Sub Provider" data-allow-clear="false">
                                     <option value="">Select Sub Provider</option>
                                     @php
                                         $currentSubProv = old('sub_provider', $training->sub_provider);
@@ -371,7 +463,9 @@
                                         <option value="{{ $sp }}" {{ $currentSubProv === $sp ? 'selected' : '' }}>{{ $sp }}</option>
                                     @endforeach
                                 </select>
-                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="sub_provider" data-target="#edit-sub-provider" data-title="Sub Provider" title="Add new Sub Provider" tabindex="-1">
+                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal"
+                                        data-type="sub_provider" data-target="#edit-sub-provider" data-title="Sub Provider"
+                                        title="Add new Sub Provider" tabindex="-1">
                                     <i class="ti ti-plus"></i>
                                 </button>
                             </div>
@@ -379,7 +473,9 @@
                         <div class="col-12">
                             <label for="edit-provider-name" class="form-label small fw-semibold">Provider Name</label>
                             <div class="input-group">
-                                <select class="form-select rounded-start-2 select2-master-option" id="edit-provider-name" name="provider_name" data-type="provider_name" data-placeholder="Select Provider Name" data-tags="true">
+                                <select class="form-select rounded-start-2 select2-master-option"
+                                        id="edit-provider-name" name="provider_name"
+                                        data-type="provider_name" data-placeholder="Select Provider Name" data-tags="true" data-allow-clear="false">
                                     <option value="">Select Provider Name</option>
                                     @php
                                         $currentProvName = old('provider_name', $training->provider_name);
@@ -392,70 +488,76 @@
                                         <option value="{{ $pnOpt }}" {{ $currentProvName === $pnOpt ? 'selected' : '' }}>{{ $pnOpt }}</option>
                                     @endforeach
                                 </select>
-                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="provider_name" data-target="#edit-provider-name" data-title="Provider Name" title="Add new Provider Name" tabindex="-1">
+                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal"
+                                        data-type="provider_name" data-target="#edit-provider-name" data-title="Provider Name"
+                                        title="Add new Provider Name" tabindex="-1">
                                     <i class="ti ti-plus"></i>
                                 </button>
                             </div>
                         </div>
                     </div>
 
-                    <!-- SUBSECTION: Schedule & Duration Program Evaluation -->
+                    <!-- SUBSECTION: SCHEDULE & DURATION PROGRAM EVALUATION -->
                     <div class="subsection-header p-2 px-3 rounded-2 mb-3 bg-light-subtle border-start border-primary border-3">
                         <span class="fw-bold text-primary small text-uppercase">Schedule &amp; Duration Program Evaluation</span>
                     </div>
 
-                    @php
-                        $durationFormatted = '';
-                        if ($training->duration_seconds) {
-                            $durHours = floor($training->duration_seconds / 3600);
-                            $durMins = floor(($training->duration_seconds % 3600) / 60);
-                            $durSecs = $training->duration_seconds % 60;
-                            $durationFormatted = sprintf('%02d:%02d:%02d', $durHours, $durMins, $durSecs);
-                        }
-                        $startDateFormatted = $training->start_date ? (is_string($training->start_date) ? substr($training->start_date, 0, 10) : $training->start_date->format('Y-m-d')) : '';
-                        $finishDateFormatted = $training->finish_date ? (is_string($training->finish_date) ? substr($training->finish_date, 0, 10) : $training->finish_date->format('Y-m-d')) : '';
-                        $startTimeFormatted = $training->start_time ? substr((string) $training->start_time, 0, 5) : '08:00';
-                        $endTimeFormatted = $training->end_time ? substr((string) $training->end_time, 0, 5) : '16:00';
-                        $monthFormatted = $startDateFormatted ? date('M Y', strtotime($startDateFormatted)) : '';
-                    @endphp
-
                     <div class="row g-3">
                         <div class="col-12 col-sm-6 col-md-4">
-                            <label for="edit-duration" class="form-label small fw-semibold">Duration (HH:MM:SS)</label>
-                            <input type="text" class="form-control rounded-2" id="edit-duration" name="duration" value="{{ old('duration', $durationFormatted) }}" placeholder="08:00:00">
+                            <label for="edit-duration" class="form-label small fw-semibold">Duration</label>
+                            <input type="text" class="form-control rounded-2 @error('duration') is-invalid @enderror"
+                                   id="edit-duration" name="duration"
+                                   value="{{ old('duration', $durationFormatted) }}" placeholder="08:00:00">
+                            @error('duration')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
                         <div class="col-12 col-sm-6 col-md-4">
-                            <label for="edit-course-learning-hours" class="form-label small fw-semibold">Course Hours</label>
-                            <input type="number" step="0.1" min="0" class="form-control rounded-2" id="edit-course-learning-hours" name="learning_hours" value="{{ old('learning_hours', $training->learning_hours) }}" placeholder="8.0">
+                            <label for="edit-learning-hours" class="form-label small fw-semibold">Learning Hours</label>
+                            <input type="number" step="0.0001" min="0" class="form-control rounded-2 @error('learning_hours') is-invalid @enderror"
+                                   id="edit-learning-hours" name="learning_hours"
+                                   value="{{ old('learning_hours', $record->learning_hours ?: $training->learning_hours) }}" placeholder="8.0">
+                            @error('learning_hours')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
                         <div class="col-12 col-sm-6 col-md-4">
                             <label for="edit-month" class="form-label small fw-semibold">Month</label>
-                            <input type="text" class="form-control rounded-2 bg-light text-muted" id="edit-month" readonly placeholder="Auto from Start Date" value="{{ $monthFormatted }}">
+                            <input type="text" class="form-control rounded-2 bg-light text-muted" id="edit-month" readonly
+                                   placeholder="Auto from Start Date" value="{{ $monthFormatted }}">
                         </div>
                         <div class="col-12 col-sm-6 col-md-3">
                             <label for="edit-start-date" class="form-label small fw-semibold">Start Date</label>
-                            <input type="date" class="form-control rounded-2 @error('start_date') is-invalid @enderror" id="edit-start-date" name="start_date" value="{{ old('start_date', $startDateFormatted) }}">
+                            <input type="date" class="form-control rounded-2 @error('start_date') is-invalid @enderror"
+                                   id="edit-start-date" name="start_date" value="{{ $startDateVal }}">
                             @error('start_date')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
                         <div class="col-12 col-sm-6 col-md-3">
                             <label for="edit-start-time" class="form-label small fw-semibold">Start Time</label>
-                            <input type="time" class="form-control rounded-2 @error('start_time') is-invalid @enderror" id="edit-start-time" name="start_time" value="{{ old('start_time', $startTimeFormatted) }}">
+                            <input type="time" class="form-control rounded-2 @error('start_time') is-invalid @enderror"
+                                   id="edit-start-time" name="start_time" value="{{ $startTimeVal }}">
                             @error('start_time')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
                         <div class="col-12 col-sm-6 col-md-3">
-                            <label for="edit-finish-date" class="form-label small fw-semibold">Finish Date</label>
-                            <input type="date" class="form-control rounded-2 @error('finish_date') is-invalid @enderror" id="edit-finish-date" name="finish_date" value="{{ old('finish_date', $finishDateFormatted) }}">
+                            <label for="edit-end-date" class="form-label small fw-semibold">Finish Date</label>
+                            <input type="date" class="form-control rounded-2 @error('end_date') is-invalid @enderror @error('finish_date') is-invalid @enderror"
+                                   id="edit-end-date" name="end_date" value="{{ $endDateVal }}">
+                            <input type="hidden" name="finish_date" id="edit-finish-date" value="{{ $endDateVal }}">
+                            @error('end_date')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                             @error('finish_date')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
                         <div class="col-12 col-sm-6 col-md-3">
                             <label for="edit-end-time" class="form-label small fw-semibold">Finish Time</label>
-                            <input type="time" class="form-control rounded-2 @error('end_time') is-invalid @enderror" id="edit-end-time" name="end_time" value="{{ old('end_time', $endTimeFormatted) }}">
+                            <input type="time" class="form-control rounded-2 @error('end_time') is-invalid @enderror"
+                                   id="edit-end-time" name="end_time" value="{{ $endTimeVal }}">
                             @error('end_time')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -463,7 +565,9 @@
                         <div class="col-12 col-md-6">
                             <label for="edit-venue" class="form-label small fw-semibold">Venue</label>
                             <div class="input-group">
-                                <select class="form-select rounded-start-2 select2-master-option" id="edit-venue" name="venue" data-type="venue" data-placeholder="Select Venue" data-tags="true">
+                                <select class="form-select rounded-start-2 select2-master-option"
+                                        id="edit-venue" name="venue"
+                                        data-type="venue" data-placeholder="Select Venue" data-tags="true" data-allow-clear="false">
                                     <option value="">Select Venue</option>
                                     @php
                                         $currentVenue = old('venue', $training->venue);
@@ -476,7 +580,9 @@
                                         <option value="{{ $vOpt }}" {{ $currentVenue === $vOpt ? 'selected' : '' }}>{{ $vOpt }}</option>
                                     @endforeach
                                 </select>
-                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="venue" data-target="#edit-venue" data-title="Venue" title="Add new Venue" tabindex="-1">
+                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal"
+                                        data-type="venue" data-target="#edit-venue" data-title="Venue"
+                                        title="Add new Venue" tabindex="-1">
                                     <i class="ti ti-plus"></i>
                                 </button>
                             </div>
@@ -484,7 +590,9 @@
                         <div class="col-12 col-md-6">
                             <label for="edit-instructor" class="form-label small fw-semibold">Instructor</label>
                             <div class="input-group">
-                                <select class="form-select rounded-start-2 select2-master-option" id="edit-instructor" name="instructor" data-type="instructor" data-placeholder="Select Instructor" data-tags="true">
+                                <select class="form-select rounded-start-2 select2-master-option"
+                                        id="edit-instructor" name="instructor"
+                                        data-type="instructor" data-placeholder="Select Instructor" data-tags="true" data-allow-clear="false">
                                     <option value="">Select Instructor</option>
                                     @php
                                         $currentInstructor = old('instructor', $training->instructor);
@@ -497,7 +605,9 @@
                                         <option value="{{ $instOpt }}" {{ $currentInstructor === $instOpt ? 'selected' : '' }}>{{ $instOpt }}</option>
                                     @endforeach
                                 </select>
-                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="instructor" data-target="#edit-instructor" data-title="Instructor" title="Add new Instructor" tabindex="-1">
+                                <button type="button" class="btn btn-outline-secondary btn-add-option-modal"
+                                        data-type="instructor" data-target="#edit-instructor" data-title="Instructor"
+                                        title="Add new Instructor" tabindex="-1">
                                     <i class="ti ti-plus"></i>
                                 </button>
                             </div>
@@ -512,44 +622,118 @@
             <div class="card border-0 shadow-sm rounded-3 mb-4 form-section" id="section-2-participant-info">
                 <div class="card-body p-3 p-md-4">
                     <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
-                        <span class="badge rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 28px; font-size: 0.85rem;">2</span>
+                        <span class="badge rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center"
+                              style="width: 28px; height: 28px; font-size: 0.85rem;">2</span>
                         <h4 class="fw-bold mb-0 text-dark">Participant Information</h4>
                     </div>
 
                     <div class="row g-3">
                         <div class="col-12 col-sm-6 col-md-4">
                             <label for="edit-emp-id" class="form-label small fw-semibold">Employee ID / NIP <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control rounded-2 @error('employee_id') is-invalid @enderror" id="edit-emp-id" name="employee_id" value="{{ old('employee_id', $record->employee_id) }}" placeholder="e.g. 100234" required>
+                            <input type="text" class="form-control rounded-2 @error('employee_id') is-invalid @enderror"
+                                   id="edit-emp-id" name="employee_id"
+                                   value="{{ old('employee_id', $record->employee_id) }}" placeholder="e.g. 100234" required>
                             @error('employee_id')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
                         <div class="col-12 col-sm-6 col-md-5">
                             <label for="edit-emp-name" class="form-label small fw-semibold">Name <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control rounded-2 @error('name') is-invalid @enderror" id="edit-emp-name" name="name" value="{{ old('name', $record->name) }}" placeholder="Full Name" required>
+                            <input type="text" class="form-control rounded-2 @error('name') is-invalid @enderror"
+                                   id="edit-emp-name" name="name"
+                                   value="{{ old('name', $record->name) }}" placeholder="Full Name" required>
                             @error('name')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
                         <div class="col-12 col-sm-6 col-md-3">
                             <label for="edit-emp-grade" class="form-label small fw-semibold">Grade</label>
-                            <input type="text" class="form-control rounded-2" id="edit-emp-grade" name="grade" value="{{ old('grade', $record->grade) }}" placeholder="e.g. 4A">
+                            <input type="text" list="grade-datalist" class="form-control rounded-2 @error('grade') is-invalid @enderror"
+                                   id="edit-emp-grade" name="grade"
+                                   value="{{ old('grade', $record->grade) }}" placeholder="e.g. 4A">
+                            <datalist id="grade-datalist">
+                                @foreach ($grades ?? [] as $grd)
+                                    <option value="{{ $grd }}"></option>
+                                @endforeach
+                            </datalist>
+                            @error('grade')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
                         <div class="col-12 col-sm-6 col-md-4">
                             <label for="edit-emp-position" class="form-label small fw-semibold">Job Position</label>
-                            <input type="text" class="form-control rounded-2" id="edit-emp-position" name="job_position" value="{{ old('job_position', $record->job_position) }}" placeholder="Job Title">
+                            <input type="text" list="position-datalist" class="form-control rounded-2 @error('job_position') is-invalid @enderror"
+                                   id="edit-emp-position" name="job_position"
+                                   value="{{ old('job_position', $record->job_position) }}" placeholder="Job Title">
+                            <datalist id="position-datalist">
+                                @foreach ($jobPositions ?? [] as $pos)
+                                    <option value="{{ $pos }}"></option>
+                                @endforeach
+                            </datalist>
+                            @error('job_position')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
                         <div class="col-12 col-sm-6 col-md-4">
                             <label for="edit-emp-team" class="form-label small fw-semibold">Team</label>
-                            <input type="text" class="form-control rounded-2" id="edit-emp-team" name="team" value="{{ old('team', $record->team) }}" placeholder="e.g. Rolling Mill 1">
+                            <input type="text" list="team-datalist" class="form-control rounded-2 @error('team') is-invalid @enderror"
+                                   id="edit-emp-team" name="team"
+                                   value="{{ old('team', $record->team) }}" placeholder="e.g. Rolling Mill 1">
+                            <datalist id="team-datalist">
+                                @foreach ($teams ?? [] as $tm)
+                                    <option value="{{ $tm }}"></option>
+                                @endforeach
+                            </datalist>
+                            @error('team')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
                         <div class="col-12 col-sm-6 col-md-4">
                             <label for="edit-emp-dept" class="form-label small fw-semibold">Department</label>
-                            <input type="text" class="form-control rounded-2" id="edit-emp-dept" name="department" value="{{ old('department', $record->department) }}" placeholder="e.g. Maintenance Dept">
+                            <input type="text" list="dept-datalist" class="form-control rounded-2 @error('department') is-invalid @enderror"
+                                   id="edit-emp-dept" name="department"
+                                   value="{{ old('department', $record->department) }}" placeholder="e.g. Maintenance Dept">
+                            <datalist id="dept-datalist">
+                                @foreach ($departments ?? [] as $dp)
+                                    <option value="{{ $dp }}"></option>
+                                @endforeach
+                            </datalist>
+                            @error('department')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
-                        <div class="col-12">
+                        <div class="col-12 col-md-8">
                             <label for="edit-emp-company" class="form-label small fw-semibold">Company</label>
-                            <input type="text" class="form-control rounded-2" id="edit-emp-company" name="company" value="{{ old('company', $record->company) }}" placeholder="Company Entity">
+                            <input type="text" list="company-datalist" class="form-control rounded-2 @error('company') is-invalid @enderror"
+                                   id="edit-emp-company" name="company"
+                                   value="{{ old('company', $record->company) }}" placeholder="Company Entity">
+                            <datalist id="company-datalist">
+                                @foreach ($companies ?? [] as $cp)
+                                    <option value="{{ $cp }}"></option>
+                                @endforeach
+                            </datalist>
+                            @error('company')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label for="edit-emp-user-id" class="form-label small fw-semibold">Linked User Account</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted"><i class="ti ti-user-check"></i></span>
+                                <input type="number" class="form-control rounded-end-2 @error('user_id') is-invalid @enderror"
+                                       id="edit-emp-user-id" name="user_id"
+                                       value="{{ old('user_id', $record->user_id) }}" placeholder="User ID">
+                            </div>
+                            <div class="form-text extra-small text-muted">
+                                @if($record->user)
+                                    <span class="text-success"><i class="ti ti-check me-1"></i>Linked to: <strong>{{ $record->user->name }}</strong></span>
+                                @else
+                                    <span class="text-muted"><i class="ti ti-info-circle me-1"></i>Auto-links by Employee ID if empty.</span>
+                                @endif
+                            </div>
+                            @error('user_id')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
                     </div>
                 </div>
@@ -560,15 +744,18 @@
             <!-- ============================================================= -->
             <div class="card border-0 shadow-sm rounded-3 mb-4 form-section" id="section-3-results">
                 <div class="card-body p-3 p-md-4">
-                    <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
-                        <span class="badge rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 28px; font-size: 0.85rem;">3</span>
-                        <h4 class="fw-bold mb-0 text-dark">Learning Results</h4>
+                    <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom flex-wrap gap-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center"
+                                  style="width: 28px; height: 28px; font-size: 0.85rem;">3</span>
+                            <h4 class="fw-bold mb-0 text-dark">Learning Results</h4>
+                        </div>
+                        <span class="text-muted small">Configure individual results, attendance, obligation &amp; evaluation</span>
                     </div>
 
-                    <!-- SUBSECTION: PROGRESS & EVALUATION -->
+                    <!-- SUBSECTION: LEARNING PROGRESS & EVALUATION -->
                     <div class="subsection-header p-2 px-3 rounded-2 mb-3 bg-light-subtle border-start border-primary border-3 d-flex align-items-center justify-content-between">
                         <span class="fw-bold text-primary small text-uppercase">Learning Progress &amp; Assessment</span>
-                        @php $progressVal = (float) old('progress', $record->progress ?? 0); @endphp
                         <span class="badge {{ $progressVal >= 100 ? 'bg-success-lt text-success' : ($progressVal > 0 ? 'bg-warning-lt text-warning' : 'bg-secondary-lt') }} fw-bold" id="edit-status-badge">
                             {{ $progressVal >= 100 ? 'FINISHED' : ($progressVal > 0 ? 'ONGOING (' . round($progressVal) . '%)' : 'NOT STARTED') }}
                         </span>
@@ -578,7 +765,9 @@
                         <div class="col-12 col-sm-6 col-md-3">
                             <label for="edit-progress" class="form-label small fw-semibold">Progress (%) <span class="text-danger">*</span></label>
                             <div class="input-group">
-                                <input type="number" step="1" min="0" max="100" class="form-control rounded-start @error('progress') is-invalid @enderror" id="edit-progress" name="progress" value="{{ old('progress', round($progressVal)) }}" required>
+                                <input type="number" step="0.01" min="0" max="100" class="form-control rounded-start @error('progress') is-invalid @enderror"
+                                       id="edit-progress" name="progress"
+                                       value="{{ old('progress', $record->progress !== null ? (float)$record->progress : '') }}" required>
                                 <span class="input-group-text">%</span>
                                 @error('progress')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -587,18 +776,78 @@
                         </div>
                         <div class="col-12 col-sm-6 col-md-3">
                             <label for="edit-participant-learning-hours" class="form-label small fw-semibold">Participant Hours</label>
-                            <input type="number" step="0.1" min="0" class="form-control rounded-2" id="edit-participant-learning-hours" name="participant_learning_hours" value="{{ old('participant_learning_hours', $record->learning_hours) }}" placeholder="e.g. 8.0">
+                            <input type="number" step="0.0001" min="0" class="form-control rounded-2 @error('participant_learning_hours') is-invalid @enderror"
+                                   id="edit-participant-learning-hours" name="participant_learning_hours"
+                                   value="{{ old('participant_learning_hours', $record->learning_hours) }}" placeholder="e.g. 8.0">
+                            @error('participant_learning_hours')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
                         <div class="col-12 col-sm-6 col-md-3">
                             <label for="edit-assessment-score" class="form-label small fw-semibold">Assessment Score</label>
-                            <input type="number" step="0.1" min="0" max="100" class="form-control rounded-2 @error('assessment_score') is-invalid @enderror" id="edit-assessment-score" name="assessment_score" value="{{ old('assessment_score', $record->assessment_score) }}" placeholder="e.g. 85.0">
+                            <input type="number" step="0.01" min="0" class="form-control rounded-2 @error('assessment_score') is-invalid @enderror"
+                                   id="edit-assessment-score" name="assessment_score"
+                                   value="{{ old('assessment_score', $record->assessment_score !== null ? (float)$record->assessment_score : '') }}" placeholder="e.g. 85.0">
                             @error('assessment_score')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
                         <div class="col-12 col-sm-6 col-md-3">
-                            <label for="edit-certificate" class="form-label small fw-semibold">Certificate</label>
-                            <input type="text" class="form-control rounded-2" id="edit-certificate" name="certificate" value="{{ old('certificate', $record->certificate) }}" placeholder="e.g. Yes / Certificate No.">
+                            <label for="edit-certificate" class="form-label small fw-semibold">Certificate Status</label>
+                            <input type="text" list="certificate-datalist" class="form-control rounded-2 @error('certificate') is-invalid @enderror"
+                                   id="edit-certificate" name="certificate"
+                                   value="{{ old('certificate', $record->certificate) }}" placeholder="e.g. Yes / Certificate No.">
+                            <datalist id="certificate-datalist">
+                                @foreach ($certificateOptions ?? ['Yes', 'No'] as $cOpt)
+                                    <option value="{{ $cOpt }}"></option>
+                                @endforeach
+                            </datalist>
+                            @error('certificate')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <!-- SUBSECTION: CERTIFICATE DETAILS & VALIDITY -->
+                    <div class="subsection-header p-2 px-3 rounded-2 mb-3 bg-light-subtle border-start border-primary border-3 d-flex align-items-center justify-content-between">
+                        <span class="fw-bold text-primary small text-uppercase">Certificate Details &amp; Validity</span>
+                        @if ($record->certificateRecord)
+                            <span class="badge bg-success-lt text-success border">
+                                <i class="ti ti-certificate me-1"></i> Generated: {{ $record->certificateRecord->certificate_number }}
+                            </span>
+                        @endif
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-12 col-md-4">
+                            <label for="edit-certificate-id" class="form-label small fw-semibold">Certificate Template (Setting)</label>
+                            <select class="form-select rounded-2 @error('certificate_id') is-invalid @enderror" id="edit-certificate-id" name="certificate_id">
+                                <option value="">None / Default</option>
+                                @foreach ($certificateSettings ?? [] as $cs)
+                                    <option value="{{ $cs->id }}" {{ old('certificate_id', $record->certificate_id) == $cs->id ? 'selected' : '' }}>
+                                        #{{ $cs->id }} - {{ $cs->issuer_name }} ({{ ucfirst($cs->certificate_type) }})
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('certificate_id')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-12 col-sm-6 col-md-4">
+                            <label for="edit-certificate-issued-date" class="form-label small fw-semibold">Certificate Issued Date</label>
+                            <input type="date" class="form-control rounded-2 @error('certificate_issued_date') is-invalid @enderror"
+                                   id="edit-certificate-issued-date" name="certificate_issued_date" value="{{ $certIssuedVal }}">
+                            @error('certificate_issued_date')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-12 col-sm-6 col-md-4">
+                            <label for="edit-certificate-expired-date" class="form-label small fw-semibold">Certificate Expired Date</label>
+                            <input type="date" class="form-control rounded-2 @error('certificate_expired_date') is-invalid @enderror"
+                                   id="edit-certificate-expired-date" name="certificate_expired_date" value="{{ $certExpiredVal }}">
+                            @error('certificate_expired_date')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
                     </div>
 
@@ -612,46 +861,80 @@
                             <label class="form-label small fw-semibold d-block">Attendance <span class="text-danger">*</span></label>
                             <div class="d-flex align-items-center gap-3 pt-1">
                                 <div class="form-check form-check-inline mb-0">
-                                    <input class="form-check-input" type="radio" name="attendance" id="edit-attendance-yes" value="1" {{ old('attendance', $record->attendance !== false) ? 'checked' : '' }}>
+                                    <input class="form-check-input" type="radio" name="attendance" id="edit-attendance-yes"
+                                           value="1" {{ old('attendance', $record->attendance !== false && $record->attendance !== 0) ? 'checked' : '' }}>
                                     <label class="form-check-label small" for="edit-attendance-yes">Yes (Present)</label>
                                 </div>
                                 <div class="form-check form-check-inline mb-0">
-                                    <input class="form-check-input" type="radio" name="attendance" id="edit-attendance-no" value="0" {{ old('attendance', $record->attendance) === false || old('attendance') === '0' ? 'checked' : '' }}>
+                                    <input class="form-check-input" type="radio" name="attendance" id="edit-attendance-no"
+                                           value="0" {{ old('attendance', $record->attendance) === false || old('attendance', $record->attendance) === 0 || old('attendance') === '0' ? 'checked' : '' }}>
                                     <label class="form-check-label small" for="edit-attendance-no">No (Absent)</label>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-12 col-md-8" id="edit-reason-container" style="{{ (old('attendance', $record->attendance) === false || old('attendance') === '0') ? '' : 'display: none;' }}">
+                        <div class="col-12 col-md-8" id="edit-reason-container"
+                             style="{{ (old('attendance', $record->attendance) === false || old('attendance', $record->attendance) === 0 || old('attendance') === '0') ? '' : 'display: none;' }}">
                             <label for="edit-attendance-reason" class="form-label small fw-semibold">Reason (if absent)</label>
-                            <input type="text" class="form-control rounded-2" id="edit-attendance-reason" name="attendance_reason" value="{{ old('attendance_reason', $record->attendance_reason) }}" placeholder="Attendance justification...">
+                            <input type="text" class="form-control rounded-2 @error('attendance_reason') is-invalid @enderror"
+                                   id="edit-attendance-reason" name="attendance_reason"
+                                   value="{{ old('attendance_reason', $record->attendance_reason) }}" placeholder="Attendance justification...">
+                            @error('attendance_reason')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
                     </div>
 
-                    <!-- SUBSECTION: OBLIGATION -->
+                    <!-- SUBSECTION: OBLIGATION (SERVICE BOND) -->
                     <div class="subsection-header p-2 px-3 rounded-2 mb-3 bg-light-subtle border-start border-primary border-3">
                         <span class="fw-bold text-primary small text-uppercase">Obligation (Service Bond)</span>
                     </div>
 
-                    @php
-                        $isBondYes = in_array(strtolower((string) old('bond_status', $record->bond_status)), ['yes', '1', 'true'], true);
-                        $bondEndFormatted = $record->bond_end_date ? (is_string($record->bond_end_date) ? substr($record->bond_end_date, 0, 10) : $record->bond_end_date->format('Y-m-d')) : '';
-                    @endphp
-
                     <div class="row g-3 mb-4">
-                        <div class="col-12 col-sm-6 col-md-4">
+                        <div class="col-12 col-sm-6 col-md-3">
                             <label for="edit-bond-status" class="form-label small fw-semibold">Bond Status</label>
-                            <select class="form-select rounded-2" id="edit-bond-status" name="bond_status">
+                            <select class="form-select rounded-2 @error('bond_status') is-invalid @enderror" id="edit-bond-status" name="bond_status">
                                 <option value="No" {{ !$isBondYes ? 'selected' : '' }}>No</option>
                                 <option value="Yes" {{ $isBondYes ? 'selected' : '' }}>Yes</option>
                             </select>
+                            @error('bond_status')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
-                        <div class="col-12 col-sm-6 col-md-4">
+                        <div class="col-12 col-sm-6 col-md-3">
+                            <label for="edit-bond-duration" class="form-label small fw-semibold">Bond Duration (Months)</label>
+                            <input type="number" step="1" min="0" class="form-control rounded-2 @error('bond_duration') is-invalid @enderror"
+                                   id="edit-bond-duration" name="bond_duration"
+                                   value="{{ old('bond_duration', $record->bond_duration) }}" placeholder="e.g. 12" {{ !$isBondYes ? 'disabled' : '' }}>
+                            @error('bond_duration')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-12 col-sm-6 col-md-3">
                             <label for="edit-bond-end-date" class="form-label small fw-semibold">Bond End Date</label>
-                            <input type="date" class="form-control rounded-2" id="edit-bond-end-date" name="bond_end_date" value="{{ old('bond_end_date', $bondEndFormatted) }}" {{ !$isBondYes ? 'disabled' : '' }}>
+                            <input type="date" class="form-control rounded-2 @error('bond_end_date') is-invalid @enderror"
+                                   id="edit-bond-end-date" name="bond_end_date"
+                                   value="{{ $bondEndVal }}" {{ !$isBondYes ? 'disabled' : '' }}>
+                            @error('bond_end_date')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
-                        <div class="col-12 col-sm-6 col-md-4">
+                        <div class="col-12 col-sm-6 col-md-3">
                             <label for="edit-bond-amount" class="form-label small fw-semibold">Bond Amount (IDR)</label>
-                            <input type="number" step="1000" min="0" class="form-control rounded-2" id="edit-bond-amount" name="bond_amount" value="{{ old('bond_amount', $record->bond_amount ? round($record->bond_amount) : '') }}" placeholder="e.g. 5000000" {{ !$isBondYes ? 'disabled' : '' }}>
+                            <div class="input-group">
+                                <span class="input-group-text">Rp</span>
+                                <input type="number" step="1000" min="0" class="form-control rounded-end-2 @error('bond_amount_idr') is-invalid @enderror"
+                                       id="edit-bond-amount" name="bond_amount_idr"
+                                       value="{{ $bondAmountVal !== '' ? round((float)$bondAmountVal) : '' }}"
+                                       placeholder="e.g. 5000000" {{ !$isBondYes ? 'disabled' : '' }}>
+                            </div>
+                            <div class="form-text extra-small text-muted" id="bond-amount-preview">
+                                @if(is_numeric($bondAmountVal) && $bondAmountVal > 0)
+                                    Rp {{ number_format((float)$bondAmountVal, 0, ',', '.') }}
+                                @endif
+                            </div>
+                            @error('bond_amount_idr')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
                         </div>
                     </div>
 
@@ -663,7 +946,12 @@
                     <div class="row g-3">
                         <div class="col-12 col-sm-6 col-md-6">
                             <label for="edit-l2-numerical" class="form-label extra-small fw-bold text-muted text-uppercase mb-1">L2 (Post Test) &bull; Numerical</label>
-                            <input type="number" step="0.1" min="0" max="100" class="form-control form-control-sm rounded-2" id="edit-l2-numerical" name="l2_numerical" value="{{ old('l2_numerical', $record->l2_numerical) }}" placeholder="Score (0-100)">
+                            <input type="number" step="0.0001" min="0" class="form-control form-control-sm rounded-2 @error('l2_numerical') is-invalid @enderror"
+                                   id="edit-l2-numerical" name="l2_numerical"
+                                   value="{{ old('l2_numerical', $record->l2_numerical !== null ? (float)$record->l2_numerical : '') }}" placeholder="Score (0-100)">
+                            @error('l2_numerical')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
                         <div class="col-12 col-sm-6 col-md-6">
                             <label for="edit-l2-verbal" class="form-label extra-small fw-bold text-muted text-uppercase mb-1">L2 (Post Test) &bull; Verbal</label>
@@ -674,16 +962,26 @@
                                     $currL2Opts[] = $currentL2Verbal;
                                 }
                             @endphp
-                            <select class="form-select form-select-sm rounded-2 select2-searchable-field" id="edit-l2-verbal" name="l2_verbal" data-placeholder="Select or type verbal result" data-tags="true">
+                            <select class="form-select form-select-sm rounded-2 select2-searchable-field"
+                                    id="edit-l2-verbal" name="l2_verbal"
+                                    data-placeholder="Select or type verbal result" data-tags="true" data-allow-clear="false">
                                 <option value="">Select or type verbal result</option>
                                 @foreach ($currL2Opts as $opt)
                                     <option value="{{ $opt }}" {{ $currentL2Verbal === $opt ? 'selected' : '' }}>{{ $opt }}</option>
                                 @endforeach
                             </select>
+                            @error('l2_verbal')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
                         <div class="col-12 col-sm-6 col-md-4">
                             <label for="edit-l3-numerical" class="form-label extra-small fw-bold text-muted text-uppercase mb-1">L3 (Project) &bull; Numerical</label>
-                            <input type="number" step="0.1" min="0" max="100" class="form-control form-control-sm rounded-2" id="edit-l3-numerical" name="l3_numerical" value="{{ old('l3_numerical', $record->l3_numerical) }}" placeholder="Score (0-100)">
+                            <input type="number" step="0.0001" min="0" class="form-control form-control-sm rounded-2 @error('l3_numerical') is-invalid @enderror"
+                                   id="edit-l3-numerical" name="l3_numerical"
+                                   value="{{ old('l3_numerical', $record->l3_numerical !== null ? (float)$record->l3_numerical : '') }}" placeholder="Score (0-100)">
+                            @error('l3_numerical')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
                         <div class="col-12 col-sm-6 col-md-4">
                             <label for="edit-l3-verbal" class="form-label extra-small fw-bold text-muted text-uppercase mb-1">L3 (Project) &bull; Verbal</label>
@@ -694,12 +992,17 @@
                                     $currL3Opts[] = $currentL3Verbal;
                                 }
                             @endphp
-                            <select class="form-select form-select-sm rounded-2 select2-searchable-field" id="edit-l3-verbal" name="l3_verbal" data-placeholder="Select or type project verbal" data-tags="true">
+                            <select class="form-select form-select-sm rounded-2 select2-searchable-field"
+                                    id="edit-l3-verbal" name="l3_verbal"
+                                    data-placeholder="Select or type project verbal" data-tags="true" data-allow-clear="false">
                                 <option value="">Select or type project verbal</option>
                                 @foreach ($currL3Opts as $opt)
                                     <option value="{{ $opt }}" {{ $currentL3Verbal === $opt ? 'selected' : '' }}>{{ $opt }}</option>
                                 @endforeach
                             </select>
+                            @error('l3_verbal')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
                         <div class="col-12 col-md-4">
                             <label for="edit-pic" class="form-label extra-small fw-bold text-muted text-uppercase mb-1">L3 (Project) &bull; PIC</label>
@@ -710,12 +1013,17 @@
                                     $currPicOpts[] = $currentPic;
                                 }
                             @endphp
-                            <select class="form-select form-select-sm rounded-2 select2-searchable-field" id="edit-pic" name="pic" data-placeholder="Select or type PIC" data-tags="true">
+                            <select class="form-select form-select-sm rounded-2 select2-searchable-field"
+                                    id="edit-pic" name="pic"
+                                    data-placeholder="Select or type PIC" data-tags="true" data-allow-clear="false">
                                 <option value="">Select or type PIC</option>
                                 @foreach ($currPicOpts as $opt)
                                     <option value="{{ $opt }}" {{ $currentPic === $opt ? 'selected' : '' }}>{{ $opt }}</option>
                                 @endforeach
                             </select>
+                            @error('pic')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
                     </div>
                 </div>
@@ -875,6 +1183,72 @@
         border-color: #334155 !important;
         color: #f8fafc !important;
     }
+
+    /* =========================================================================
+       REMOVE CLEAR (X) ICON FROM DROPDOWNS WITHOUT REMOVING CHEVRON ARROW
+       ========================================================================= */
+    .select2-container .select2-selection__clear,
+    .select2-container--bootstrap-5 .select2-selection__clear,
+    .select2-container--default .select2-selection__clear {
+        display: none !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+    }
+
+    /* Reset padding-right so text isn't indented for the missing X icon */
+    .select2-container--bootstrap-5 .select2-selection--single.select2-selection--clearable .select2-selection__rendered,
+    .select2-container--default .select2-selection--single.select2-selection--clearable .select2-selection__rendered {
+        padding-right: 2.25rem !important;
+    }
+
+    /* Ensure dropdown chevron arrow is always visible, positioned neatly on the right */
+    .select2-container--bootstrap-5 .select2-selection--single .select2-selection__arrow,
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        display: block !important;
+        visibility: visible !important;
+        right: 0.75rem !important;
+        pointer-events: none;
+    }
+
+    [data-bs-theme="dark"] .select2-container--bootstrap-5 .select2-selection--single,
+    body.dark-mode .select2-container--bootstrap-5 .select2-selection--single {
+        background-color: var(--tblr-bg-surface, #1f2937) !important;
+        border-color: #374151 !important;
+        color: #f8fafc !important;
+    }
+    [data-bs-theme="dark"] .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered,
+    body.dark-mode .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
+        color: #f8fafc !important;
+    }
+    [data-bs-theme="dark"] .select2-container--bootstrap-5 .select2-dropdown,
+    body.dark-mode .select2-container--bootstrap-5 .select2-dropdown {
+        background-color: var(--tblr-bg-surface, #1f2937) !important;
+        border-color: #374151 !important;
+        color: #f8fafc !important;
+    }
+    [data-bs-theme="dark"] .select2-container--bootstrap-5 .select2-results__option,
+    body.dark-mode .select2-container--bootstrap-5 .select2-results__option {
+        color: #f8fafc !important;
+    }
+    [data-bs-theme="dark"] .select2-container--bootstrap-5 .select2-results__option--highlighted,
+    body.dark-mode .select2-container--bootstrap-5 .select2-results__option--highlighted {
+        background-color: #0c5b9e !important;
+        color: #ffffff !important;
+    }
+    [data-bs-theme="dark"] .select2-container--bootstrap-5 .select2-selection--single .select2-selection__arrow,
+    body.dark-mode .select2-container--bootstrap-5 .select2-selection--single .select2-selection__arrow {
+        filter: invert(1) brightness(1.5);
+    }
+
+    /* Prevent browser native clear icons (e.g. Edge/IE search clear) on inputs */
+    input[type="text"]::-ms-clear,
+    input[type="search"]::-ms-clear,
+    input[type="text"]::-webkit-search-cancel-button,
+    input[type="search"]::-webkit-search-cancel-button {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+    }
 </style>
 @endsection
 
@@ -892,22 +1266,29 @@
                 .replace(/'/g, '&#039;');
         }
 
+        // --- Helper: Format IDR ---
+        function formatIdr(amount) {
+            const num = parseFloat(amount);
+            if (isNaN(num) || num <= 0) return '';
+            return 'Rp ' + Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        }
+
+        $('#edit-bond-amount').on('input', function () {
+            const val = $(this).val();
+            $('#bond-amount-preview').text(formatIdr(val));
+        });
+
         // --- Select2 Initialization for Master Option & Searchable Dropdowns ---
         if ($.fn.select2) {
             $('.select2-master-option, .select2-searchable-field').each(function () {
                 const placeholder = $(this).data('placeholder') || 'Select option';
                 const isTags = $(this).data('tags') === true || $(this).data('tags') === 'true';
-                const dataType = $(this).data('type');
-                const allowClearData = $(this).data('allow-clear');
-                const noClearTypes = ['type', 'delivery_method', 'provider', 'sub_provider'];
-                let isAllowClear = true;
-                if (allowClearData === false || allowClearData === 'false' || noClearTypes.includes(dataType)) {
-                    isAllowClear = false;
-                }
+
+                // Strictly disable allowClear to remove clear (X) icon, keeping the chevron arrow visible
                 $(this).select2({
                     theme: 'bootstrap-5',
                     placeholder: placeholder,
-                    allowClear: isAllowClear,
+                    allowClear: false,
                     tags: isTags,
                     width: 'resolve'
                 });
@@ -1069,11 +1450,16 @@
                 $('#edit-month').val('');
             }
 
-            const $finishDate = $('#edit-finish-date');
-            if (val && (!$finishDate.val() || $finishDate.val() < val)) {
-                $finishDate.val(val);
+            const $endDate = $('#edit-end-date');
+            if (val && (!$endDate.val() || $endDate.val() < val)) {
+                $endDate.val(val);
+                $('#edit-finish-date').val(val);
             }
             updateKpiYearDisplay();
+        });
+
+        $('#edit-end-date').on('change', function () {
+            $('#edit-finish-date').val($(this).val());
         });
 
         // --- MASTER OPTION [+] MODAL LOGIC ---
@@ -1266,10 +1652,12 @@
         // Bond status toggle
         $('#edit-bond-status').on('change', function () {
             const isYes = $(this).val() === 'Yes';
-            $('#edit-bond-end-date, #edit-bond-amount').prop('disabled', !isYes);
+            $('#edit-bond-duration, #edit-bond-end-date, #edit-bond-amount').prop('disabled', !isYes);
             if (!isYes) {
+                $('#edit-bond-duration').val('');
                 $('#edit-bond-end-date').val('');
                 $('#edit-bond-amount').val('');
+                $('#bond-amount-preview').text('');
             }
         });
 

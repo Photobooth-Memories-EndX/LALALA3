@@ -15,6 +15,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\LearningManageController;
+use App\Models\CertificateSetting;
 use App\Models\Classification;
 use App\Models\OfflineTraining;
 use App\Models\OfflineTrainingUser;
@@ -2377,15 +2378,15 @@ class RecordOfflineController extends Controller
             abort(404, 'Offline training tables not migrated.');
         }
 
-        $record = OfflineTrainingUser::with('training')->find($id);
+        $record = OfflineTrainingUser::with(['training', 'user', 'certificateSetting', 'certificateRecord'])->find($id);
 
         if (!$record || !$record->training) {
             abort(404, 'Offline training record not found.');
         }
 
         $training = $record->training;
-        $resolved = self::resolveClassification($training->main_classification ?? 'unclassified');
-        $kpiYear = $training->corporate_kpi_year ?: ($training->start_date ? (int) $training->start_date->format('Y') : (int) date('Y'));
+        $resolved = self::resolveClassification($record->main_classification ?? $training->main_classification ?? 'unclassified');
+        $kpiYear = $training->corporate_kpi_year ?: ($record->start_date ? (int) $record->start_date->format('Y') : ($training->start_date ? (int) $training->start_date->format('Y') : (int) date('Y')));
         $options = $optionService->getGroupedOptions($kpiYear, true);
         $kpiYears = $optionService->getKpiYears();
         if (!in_array($kpiYear, $kpiYears, true)) {
@@ -2393,6 +2394,16 @@ class RecordOfflineController extends Controller
             rsort($kpiYears);
         }
         $classifications = Classification::orderBy('classification_name', 'asc')->get();
+        $certificateSettings = CertificateSetting::where('is_active', 1)->orderBy('id')->get();
+
+        $grades = OfflineTrainingUser::whereNotNull('grade')->where('grade', '!=', '')->distinct()->orderBy('grade')->pluck('grade')->all();
+        $jobPositions = OfflineTrainingUser::whereNotNull('job_position')->where('job_position', '!=', '')->distinct()->orderBy('job_position')->pluck('job_position')->all();
+        $teams = OfflineTrainingUser::whereNotNull('team')->where('team', '!=', '')->distinct()->orderBy('team')->pluck('team')->all();
+        $departments = OfflineTrainingUser::whereNotNull('department')->where('department', '!=', '')->distinct()->orderBy('department')->pluck('department')->all();
+        $companies = OfflineTrainingUser::whereNotNull('company')->where('company', '!=', '')->distinct()->orderBy('company')->pluck('company')->all();
+        $certificateOptions = ['Yes', 'No'];
+        $dbCertificates = OfflineTrainingUser::whereNotNull('certificate')->where('certificate', '!=', '')->distinct()->pluck('certificate')->all();
+        $certificateOptions = array_values(array_unique(array_filter(array_merge($certificateOptions, $dbCertificates))));
 
         // Resolve return context safely
         $returnType = $request->query('return');
@@ -2437,12 +2448,19 @@ class RecordOfflineController extends Controller
         }
 
         return view('main.record.offline-edit', [
-            'title'                => 'Edit Non KP OWL Record',
+            'title'                => 'Edit Offline Training User',
             'subtitle'             => 'Update offline employee training record and results.',
             'record'               => $record,
             'training'             => $training,
             'classification'       => $resolved,
             'classifications'      => $classifications,
+            'certificateSettings'  => $certificateSettings,
+            'grades'               => $grades,
+            'jobPositions'         => $jobPositions,
+            'teams'                => $teams,
+            'departments'          => $departments,
+            'companies'            => $companies,
+            'certificateOptions'   => $certificateOptions,
             'options'              => $options,
             'kpiYear'              => $kpiYear,
             'kpiYears'             => $kpiYears,

@@ -167,6 +167,72 @@
         color: #f8fafc !important;
     }
 
+    /* =========================================================================
+       REMOVE CLEAR (X) ICON FROM DROPDOWNS WITHOUT REMOVING CHEVRON ARROW
+       ========================================================================= */
+    .select2-container .select2-selection__clear,
+    .select2-container--bootstrap-5 .select2-selection__clear,
+    .select2-container--default .select2-selection__clear {
+        display: none !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+    }
+
+    /* Reset padding-right so text isn't indented for the missing X icon */
+    .select2-container--bootstrap-5 .select2-selection--single.select2-selection--clearable .select2-selection__rendered,
+    .select2-container--default .select2-selection--single.select2-selection--clearable .select2-selection__rendered {
+        padding-right: 2.25rem !important;
+    }
+
+    /* Ensure dropdown chevron arrow is always visible, positioned neatly on the right */
+    .select2-container--bootstrap-5 .select2-selection--single .select2-selection__arrow,
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        display: block !important;
+        visibility: visible !important;
+        right: 0.75rem !important;
+        pointer-events: none;
+    }
+
+    [data-bs-theme="dark"] .select2-container--bootstrap-5 .select2-selection--single,
+    body.dark-mode .select2-container--bootstrap-5 .select2-selection--single {
+        background-color: var(--tblr-bg-surface, #1f2937) !important;
+        border-color: #374151 !important;
+        color: #f8fafc !important;
+    }
+    [data-bs-theme="dark"] .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered,
+    body.dark-mode .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
+        color: #f8fafc !important;
+    }
+    [data-bs-theme="dark"] .select2-container--bootstrap-5 .select2-dropdown,
+    body.dark-mode .select2-container--bootstrap-5 .select2-dropdown {
+        background-color: var(--tblr-bg-surface, #1f2937) !important;
+        border-color: #374151 !important;
+        color: #f8fafc !important;
+    }
+    [data-bs-theme="dark"] .select2-container--bootstrap-5 .select2-results__option,
+    body.dark-mode .select2-container--bootstrap-5 .select2-results__option {
+        color: #f8fafc !important;
+    }
+    [data-bs-theme="dark"] .select2-container--bootstrap-5 .select2-results__option--highlighted,
+    body.dark-mode .select2-container--bootstrap-5 .select2-results__option--highlighted {
+        background-color: #0c5b9e !important;
+        color: #ffffff !important;
+    }
+    [data-bs-theme="dark"] .select2-container--bootstrap-5 .select2-selection--single .select2-selection__arrow,
+    body.dark-mode .select2-container--bootstrap-5 .select2-selection--single .select2-selection__arrow {
+        filter: invert(1) brightness(1.5);
+    }
+
+    /* Prevent browser native clear icons (e.g. Edge/IE search clear) on inputs */
+    input[type="text"]::-ms-clear,
+    input[type="search"]::-ms-clear,
+    input[type="text"]::-webkit-search-cancel-button,
+    input[type="search"]::-webkit-search-cancel-button {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+    }
+
     /* ============================================================= */
     /* STEP 4 REVIEW & SAVE — FULL RECORD PREVIEW TABLE STYLING      */
     /* ============================================================= */
