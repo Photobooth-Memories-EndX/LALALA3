@@ -342,19 +342,21 @@
         </table>
     </div>
 
-    @if (method_exists($availableTrainings, 'hasPages') && $availableTrainings->hasPages())
+    @if (isset($availableTrainings) && method_exists($availableTrainings, 'total') && $availableTrainings->total() > 0)
         <div class="card-footer bg-white border-0 py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
-            <div class="text-muted small">
-                Showing {{ $availableTrainings->firstItem() ?? 0 }} to {{ $availableTrainings->lastItem() ?? 0 }} of {{ $availableTrainings->total() }} available training(s)
+            <div class="d-flex align-items-center gap-2">
+                <select class="form-select form-select-sm w-auto rounded-3 border-slate-300" id="availablePageLength" onchange="window.handleSchedulePageLengthChange(this.value)">
+                    <option value="10" {{ request('per_page', 10) == 10 ? 'selected' : '' }}>10</option>
+                    <option value="25" {{ request('per_page', 10) == 25 ? 'selected' : '' }}>25</option>
+                    <option value="50" {{ request('per_page', 10) == 50 ? 'selected' : '' }}>50</option>
+                    <option value="100" {{ request('per_page', 10) == 100 ? 'selected' : '' }}>100</option>
+                </select>
+                <span class="text-muted small">
+                    Showing {{ $availableTrainings->firstItem() ?? 0 }} to {{ $availableTrainings->lastItem() ?? 0 }} of {{ $availableTrainings->total() }} entries
+                </span>
             </div>
             <div>
-                {{ $availableTrainings->appends(array_merge(request()->query(), ['tab' => 'available']))->links('pagination::bootstrap-5') }}
-            </div>
-        </div>
-    @elseif (method_exists($availableTrainings, 'total') && $availableTrainings->total() > 0)
-        <div class="card-footer bg-white border-0 py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
-            <div class="text-muted small">
-                Showing {{ $availableTrainings->firstItem() ?? 0 }} to {{ $availableTrainings->lastItem() ?? 0 }} of {{ $availableTrainings->total() }} available training(s)
+                {{ $availableTrainings->appends(array_merge(request()->query(), ['tab' => 'available']))->links('vendor.pagination.custom') }}
             </div>
         </div>
     @endif

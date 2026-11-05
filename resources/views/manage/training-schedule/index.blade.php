@@ -429,34 +429,24 @@
                         <p class="text-muted small mb-0">No PTKP training schedules match the selected filters. Try changing or clearing your filter criteria.</p>
                     </div>
 
-                    @if (isset($schedules) && method_exists($schedules, 'hasPages') && $schedules->hasPages())
+                    @php
+                        $paginatedItems = $schedules ?? $trainings;
+                    @endphp
+                    @if (isset($paginatedItems) && method_exists($paginatedItems, 'total') && $paginatedItems->total() > 0)
                         <div class="card-footer bg-white border-0 py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
-                            <div class="text-muted small">
-                                Showing {{ $schedules->firstItem() ?? 0 }} to {{ $schedules->lastItem() ?? 0 }} of {{ $schedules->total() }} results
+                            <div class="d-flex align-items-center gap-2">
+                                <select class="form-select form-select-sm w-auto rounded-3 border-slate-300" id="schedulePageLength" onchange="window.handleSchedulePageLengthChange(this.value)">
+                                    <option value="10" {{ request('per_page', 10) == 10 ? 'selected' : '' }}>10</option>
+                                    <option value="25" {{ request('per_page', 10) == 25 ? 'selected' : '' }}>25</option>
+                                    <option value="50" {{ request('per_page', 10) == 50 ? 'selected' : '' }}>50</option>
+                                    <option value="100" {{ request('per_page', 10) == 100 ? 'selected' : '' }}>100</option>
+                                </select>
+                                <span class="text-muted small">
+                                    Showing {{ $paginatedItems->firstItem() ?? 0 }} to {{ $paginatedItems->lastItem() ?? 0 }} of {{ $paginatedItems->total() }} entries
+                                </span>
                             </div>
                             <div>
                                 {{ $schedules->appends(request()->query())->links() }}
-                            </div>
-                        </div>
-                    @elseif (isset($schedules) && method_exists($schedules, 'total') && $schedules->total() > 0)
-                        <div class="card-footer bg-white border-0 py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
-                            <div class="text-muted small">
-                                Showing {{ $schedules->firstItem() ?? 0 }} to {{ $schedules->lastItem() ?? 0 }} of {{ $schedules->total() }} results
-                            </div>
-                        </div>
-                    @elseif (method_exists($trainings, 'hasPages') && $trainings->hasPages())
-                        <div class="card-footer bg-white border-0 py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
-                            <div class="text-muted small">
-                                Showing {{ $trainings->firstItem() ?? 0 }} to {{ $trainings->lastItem() ?? 0 }} of {{ $trainings->total() }} results
-                            </div>
-                            <div>
-                                {{ $trainings->appends(request()->query())->links() }}
-                            </div>
-                        </div>
-                    @elseif (method_exists($trainings, 'total') && $trainings->total() > 0)
-                        <div class="card-footer bg-white border-0 py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
-                            <div class="text-muted small">
-                                Showing {{ $trainings->firstItem() ?? 0 }} to {{ $trainings->lastItem() ?? 0 }} of {{ $trainings->total() }} results
                             </div>
                         </div>
                     @endif
@@ -483,6 +473,47 @@
 
 @section('style')
 <style>
+    /* Clean Pagination Styling matching Learning Record */
+    .pagination {
+        gap: .4rem !important;
+        margin-bottom: 0 !important;
+    }
+
+    .page-item .page-link {
+        border-radius: 12px !important;
+        border: 1px solid #dbe4f0 !important;
+        color: #1e40af !important;
+        min-width: 38px !important;
+        height: 38px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-weight: 600 !important;
+        font-size: 0.875rem !important;
+        padding: 0 0.5rem !important;
+        text-decoration: none !important;
+        transition: all 0.2s ease !important;
+    }
+
+    .page-item.active .page-link {
+        background: #003b6d !important;
+        border-color: #003b6d !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 12px rgba(0, 59, 109, .25) !important;
+    }
+
+    .page-item .page-link:hover {
+        background: #eff6ff !important;
+        border-color: #93c5fd !important;
+    }
+
+    .page-item.disabled .page-link {
+        color: #94a3b8 !important;
+        background: #f8fafc !important;
+        border-color: #e2e8f0 !important;
+        cursor: not-allowed !important;
+    }
+
     /* Table Sticky Freeze Header & Scrollable Container */
     .table-responsive.manage-schedule-scroll,
     .manage-schedule-scroll {

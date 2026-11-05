@@ -87,6 +87,47 @@
 
 @section('style')
 <style>
+    /* Clean Pagination Styling matching Learning Record */
+    .pagination {
+        gap: .4rem !important;
+        margin-bottom: 0 !important;
+    }
+
+    .page-item .page-link {
+        border-radius: 12px !important;
+        border: 1px solid #dbe4f0 !important;
+        color: #1e40af !important;
+        min-width: 38px !important;
+        height: 38px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-weight: 600 !important;
+        font-size: 0.875rem !important;
+        padding: 0 0.5rem !important;
+        text-decoration: none !important;
+        transition: all 0.2s ease !important;
+    }
+
+    .page-item.active .page-link {
+        background: #003b6d !important;
+        border-color: #003b6d !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 12px rgba(0, 59, 109, .25) !important;
+    }
+
+    .page-item .page-link:hover {
+        background: #eff6ff !important;
+        border-color: #93c5fd !important;
+    }
+
+    .page-item.disabled .page-link {
+        color: #94a3b8 !important;
+        background: #f8fafc !important;
+        border-color: #e2e8f0 !important;
+        cursor: not-allowed !important;
+    }
+
     /* Table Sticky Freeze Header & Scrollable Container */
     .table-responsive.manage-schedule-scroll,
     .manage-schedule-scroll {
@@ -152,6 +193,15 @@
     }
 </style>
 @endsection
+
+<script>
+window.handleSchedulePageLengthChange = function(perPage) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('per_page', perPage);
+    url.searchParams.set('page', '1');
+    window.location.href = url.toString();
+};
+</script>
 
 @push('scripts')
     @include('main.manage-training-schedule.components.schedule-table-script')

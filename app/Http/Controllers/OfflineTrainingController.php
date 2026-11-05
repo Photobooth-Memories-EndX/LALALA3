@@ -175,7 +175,12 @@ class OfflineTrainingController extends Controller
     {
         $query = $this->buildFilteredScheduleQuery($request);
 
-        $schedules = $query->paginate(10)->withQueryString();
+        $perPage = (int) $request->input('per_page', 10);
+        if (!in_array($perPage, [10, 25, 50, 100], true)) {
+            $perPage = 10;
+        }
+
+        $schedules = $query->paginate($perPage)->withQueryString();
 
         $trainings = $schedules;
         $totalSchedules = $schedules->total();
@@ -1326,8 +1331,13 @@ class OfflineTrainingController extends Controller
             });
         }
 
+        $perPage = (int) $request->input('per_page', 10);
+        if (!in_array($perPage, [10, 25, 50, 100], true)) {
+            $perPage = 10;
+        }
+
         $availableTrainings = $availableQuery->latest()
-            ->paginate(10)
+            ->paginate($perPage)
             ->appends(array_merge($request->query(), ['tab' => 'available']));
 
         $today = Carbon::today()->format('Y-m-d');
