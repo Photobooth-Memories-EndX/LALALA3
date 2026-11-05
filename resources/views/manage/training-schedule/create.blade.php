@@ -309,9 +309,10 @@
                     <!-- Registration Status -->
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-dark">Registration Status <span class="text-danger">*</span></label>
-                        <select name="status" class="form-select rounded-3" required>
+                        <select name="status" id="registration_status_select" class="form-select rounded-3" required>
                             <option value="Open Registration" {{ old('status', 'Open Registration') == 'Open Registration' ? 'selected' : '' }}>Open Registration [Active]</option>
                             <option value="Closed" {{ old('status') == 'Closed' ? 'selected' : '' }}>Closed / Full</option>
+                            <option value="Unscheduled" {{ old('status') == 'Unscheduled' ? 'selected' : '' }}>Unscheduled</option>
                         </select>
                         <div class="invalid-feedback">Please select a registration status.</div>
                     </div>
@@ -319,7 +320,7 @@
             </div>
 
             <!-- 4. SCHEDULE TIMING & DATES -->
-            <div class="card form-section-card border border-slate-200 rounded-2xl p-6 bg-white shadow-sm transition-all duration-200 w-100 position-relative">
+            <div id="scheduleTimingCard" class="card form-section-card border border-slate-200 rounded-2xl p-6 bg-white shadow-sm transition-all duration-200 w-100 position-relative">
                 <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
                     <h4 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2" style="font-size: 1.25rem;">
                         <i class="ti ti-calendar-event text-primary fs-2"></i>
@@ -564,6 +565,52 @@ document.addEventListener('DOMContentLoaded', function () {
         if (oldSubVal) {
             $('#select-sub-classification').val(oldSubVal);
         }
+    }
+
+    // Toggle Schedule Timing & Dates card based on Registration Status
+    const statusSelect = document.getElementById('registration_status_select');
+    const scheduleTimingCard = document.getElementById('scheduleTimingCard');
+    const startDateInput = document.getElementById('start_date');
+    const startTimeInput = document.getElementById('start_time');
+    const endTimeInput = document.getElementById('end_time');
+
+    function toggleScheduleTimingSection() {
+        if (!statusSelect || !scheduleTimingCard) return;
+        const isUnscheduled = statusSelect.value === 'Unscheduled';
+        if (isUnscheduled) {
+            scheduleTimingCard.style.display = 'none';
+            if (startDateInput) {
+                startDateInput.removeAttribute('required');
+                startDateInput.disabled = true;
+            }
+            if (startTimeInput) {
+                startTimeInput.removeAttribute('required');
+                startTimeInput.disabled = true;
+            }
+            if (endTimeInput) {
+                endTimeInput.removeAttribute('required');
+                endTimeInput.disabled = true;
+            }
+        } else {
+            scheduleTimingCard.style.display = '';
+            if (startDateInput) {
+                startDateInput.setAttribute('required', 'required');
+                startDateInput.disabled = false;
+            }
+            if (startTimeInput) {
+                startTimeInput.setAttribute('required', 'required');
+                startTimeInput.disabled = false;
+            }
+            if (endTimeInput) {
+                endTimeInput.setAttribute('required', 'required');
+                endTimeInput.disabled = false;
+            }
+        }
+    }
+
+    if (statusSelect) {
+        statusSelect.addEventListener('change', toggleScheduleTimingSection);
+        toggleScheduleTimingSection();
     }
 
     // Handle form submission: validate then let it submit to backend

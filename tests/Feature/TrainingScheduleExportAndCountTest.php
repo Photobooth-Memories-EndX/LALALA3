@@ -739,4 +739,55 @@ class TrainingScheduleExportAndCountTest extends TestCase
         // openTrainingListModal should not include badgeHtml in item row
         $this->assertStringNotContainsString('${badgeHtml}', $indexHtml);
     }
+
+    /**
+     * 20. Verify Unscheduled option exists in create and edit views, and hides scheduleTimingCard.
+     */
+    public function test_unscheduled_option_and_timing_toggle_in_manage_views(): void
+    {
+        $createHtml = file_get_contents(resource_path('views/manage/training-schedule/create.blade.php'));
+        $editHtml = file_get_contents(resource_path('views/manage/training-schedule/edit.blade.php'));
+
+        // Check Unscheduled option in both views
+        $this->assertStringContainsString('value="Unscheduled"', $createHtml);
+        $this->assertStringContainsString('value="Unscheduled"', $editHtml);
+
+        // Check schedule timing card id and toggle logic
+        $this->assertStringContainsString('id="scheduleTimingCard"', $createHtml);
+        $this->assertStringContainsString('id="scheduleTimingCard"', $editHtml);
+        $this->assertStringContainsString('toggleScheduleTimingSection', $createHtml);
+        $this->assertStringContainsString('toggleScheduleTimingSection', $editHtml);
+    }
+
+    /**
+     * 21. Verify Unscheduled training displays TBA (To be announce) in Available Training tab.
+     */
+    public function test_unscheduled_training_displays_tba_in_available_tab(): void
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'admin']);
+
+        // Store unscheduled training
+        $response = $this->actingAs($admin)->post(route('manage.training-schedule.store'), [
+            'title'      => 'TBA Unscheduled Training',
+            'category'   => 'General',
+            'instructor' => 'Trainer X',
+            'location'   => 'Room TBA',
+            'quota'      => 25,
+            'status'     => 'Unscheduled',
+        ]);
+        $response->assertSessionHasNoErrors();
+
+        $training = OfflineTraining::where('title', 'TBA Unscheduled Training')->first();
+        $this->assertNotNull($training);
+        $this->assertEquals('Unscheduled', $training->status);
+        $this->assertNull($training->start_date);
+
+        // Render available tab
+        $viewHtml = view('user.trainingplan-user.partials.available-training-tab', [
+            'availableTrainings' => collect([$training]),
+        ])->render();
+
+        $this->assertStringContainsString('TBA (To be announce)', $viewHtml);
+        $this->assertStringContainsString('Unscheduled', $viewHtml);
+    }
 }

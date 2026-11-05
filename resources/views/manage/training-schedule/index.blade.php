@@ -91,10 +91,11 @@
                                 <div style="min-width: 120px; flex-shrink: 0;">
                                     @php
                                         $statusesList = [
-                                            'open'    => 'Open Registration',
-                                            'running' => 'Running',
-                                            'closed'  => 'Closed Registration',
-                                            'draft'   => 'Draft',
+                                            'open'        => 'Open Registration',
+                                            'running'     => 'Running',
+                                            'closed'      => 'Closed Registration',
+                                            'draft'       => 'Draft',
+                                            'unscheduled' => 'Unscheduled',
                                         ];
                                     @endphp
                                     <select id="scheduleStatusSelect" name="status" class="form-select rounded-3" onchange="this.form.submit()">
@@ -268,6 +269,7 @@
                                             'Open Registration' => 'bg-success-subtle text-success',
                                             'Running'           => 'bg-warning-subtle text-warning border border-warning-subtle',
                                             'Closed'            => 'bg-secondary-subtle text-secondary',
+                                            'Unscheduled'       => 'bg-secondary-subtle text-secondary border border-secondary-subtle',
                                             default             => 'bg-info-subtle text-info',
                                         };
 
@@ -275,21 +277,23 @@
                                             'Open Registration' => 'open',
                                             'Running'           => 'running',
                                             'Closed'            => 'closed',
+                                            'Unscheduled'       => 'unscheduled',
                                             default             => strtolower($item->status),
                                         };
 
-                                        $startDate = \Carbon\Carbon::parse($item->start_date);
-                                        $startTime = substr($item->start_time, 0, 5);
-                                        $endTime = substr($item->end_time, 0, 5);
+                                        $isUnscheduled = strtolower($item->status ?? '') === 'unscheduled';
+                                        $startDate = !empty($item->start_date) ? \Carbon\Carbon::parse($item->start_date) : null;
+                                        $startTime = $item->start_time ? substr($item->start_time, 0, 5) : '';
+                                        $endTime = $item->end_time ? substr($item->end_time, 0, 5) : '';
                                     @endphp
                                     <tr class="schedule-table-row text-center align-middle" 
                                         data-id="{{ $item->id }}" 
                                         data-category="{{ $item->category }}" 
                                         data-status="{{ $dataStatus }}" 
                                         data-status-label="{{ $item->status }}"
-                                        data-month="{{ (int)$startDate->format('n') }}" 
-                                        data-year="{{ $startDate->format('Y') }}" 
-                                        data-date="{{ $startDate->format('Y-m-d') }}" 
+                                        data-month="{{ $startDate ? (int)$startDate->format('n') : '' }}" 
+                                        data-year="{{ $startDate ? $startDate->format('Y') : '' }}" 
+                                        data-date="{{ $startDate ? $startDate->format('Y-m-d') : '' }}" 
                                         data-instructor="{{ $item->instructor }}" 
                                         data-location="{{ $item->location }}">
                                         <td class="text-muted fw-semibold schedule-row-index">{{ method_exists($trainings, 'firstItem') && $trainings->firstItem() ? ($trainings->firstItem() + $loop->index) : $loop->iteration }}</td>
@@ -306,7 +310,9 @@
                                             </span>
                                         </td>
                                         <td class="fw-semibold text-dark text-center align-middle" style="min-width: 140px;">
-                                            @if($item->end_date && $item->start_date != $item->end_date)
+                                            @if($isUnscheduled || empty($item->start_date))
+                                                <span class="text-muted fw-semibold">TBA (To be announce)</span>
+                                            @elseif($item->end_date && $item->start_date != $item->end_date)
                                                 @if(\Carbon\Carbon::parse($item->start_date)->format('M Y') == \Carbon\Carbon::parse($item->end_date)->format('M Y'))
                                                     {{ \Carbon\Carbon::parse($item->start_date)->format('d') }} - {{ \Carbon\Carbon::parse($item->end_date)->format('d M Y') }}
                                                 @else
@@ -315,12 +321,16 @@
                                             @else
                                                 {{ \Carbon\Carbon::parse($item->start_date)->format('d M Y') }}
                                             @endif
-                                            @if($item->registration_close_date)
+                                            @if(!$isUnscheduled && $item->registration_close_date)
                                                 <div class="text-muted extra-small fw-normal" title="Registration Deadline">Reg Closes: {{ \Carbon\Carbon::parse($item->registration_close_date)->format('d M Y') }}{{ $item->registration_close_time ? ' ' . substr($item->registration_close_time, 0, 5) : '' }}</div>
                                             @endif
                                         </td>
                                         <td>
-                                            <div class="text-muted small" style="min-width: 120px;">{{ $startTime }} - {{ $endTime }} WIB</div>
+                                            @if($isUnscheduled || empty($item->start_date) || empty($item->start_time))
+                                                <div class="text-muted small" style="min-width: 120px;">TBA</div>
+                                            @else
+                                                <div class="text-muted small" style="min-width: 120px;">{{ $startTime }} - {{ $endTime }} WIB</div>
+                                            @endif
                                         </td>
                                         <td class="text-muted small">
                                             {{ $item->location }}

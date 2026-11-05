@@ -880,7 +880,7 @@
                 } else if (isOpen) {
                     modalStatusTitle.textContent = 'Open Trainings';
                 } else {
-                    modalStatusTitle.textContent = 'Private / Invitation-Only Trainings';
+                    modalStatusTitle.textContent = 'Invitation-Only Trainings';
                 }
             }
             if (modalSelectedDateText) {

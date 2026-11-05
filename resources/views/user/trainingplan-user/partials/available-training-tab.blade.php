@@ -84,7 +84,8 @@
                         $statusesList = [
                             'open'    => 'Open Registration',
                             'running' => 'Running',
-                            'closed'  => 'Registration Closed',
+                            'closed'      => 'Registration Closed',
+                            'unscheduled' => 'Unscheduled',
                         ];
                     @endphp
                     <select id="filterTrainingStatus" name="status" class="form-select rounded-3" onchange="this.form.submit()">
@@ -187,16 +188,18 @@
                         $myReg = $item->relationLoaded('registrations') ? $item->registrations->firstWhere('user_id', Auth::id()) : null;
                         $myRegStatus = $myReg ? $myReg->status : null;
 
-                        $regCloseDate = \Carbon\Carbon::parse($item->registration_close_date ?? $item->start_date);
+                        $isUnscheduled = strtolower($item->status ?? '') === 'unscheduled';
+                        $regCloseDate = \Carbon\Carbon::parse($item->registration_close_date ?? ($item->start_date ?: \Carbon\Carbon::now()));
                         $regCloseTime = $item->registration_close_time ? substr($item->registration_close_time, 0, 5) : '23:59';
                         $closeDatetime = \Carbon\Carbon::parse($regCloseDate->format('Y-m-d') . ' ' . $regCloseTime . ':59');
                         $isRegDeadlinePassed = \Carbon\Carbon::now()->gt($closeDatetime);
-                        $displayStatus = ($item->status === 'Open Registration' && $isRegDeadlinePassed) ? 'Closed' : $item->status;
+                        $displayStatus = $isUnscheduled ? 'Unscheduled' : (($item->status === 'Open Registration' && $isRegDeadlinePassed) ? 'Closed' : $item->status);
 
                         $statusBadgeClass = match($displayStatus) {
                             'Open Registration' => 'bg-success-subtle text-success',
                             'Running'           => 'bg-warning-subtle text-warning border border-warning-subtle',
                             'Closed'            => 'bg-secondary-subtle text-secondary',
+                            'Unscheduled'       => 'bg-secondary-subtle text-secondary border border-secondary-subtle',
                             default             => 'bg-info-subtle text-info',
                         };
 
@@ -204,19 +207,20 @@
                             'Open Registration' => 'open',
                             'Running'           => 'running',
                             'Closed'            => 'closed',
+                            'Unscheduled'       => 'unscheduled',
                             default             => strtolower($displayStatus ?? 'open'),
                         };
 
-                        $startDate = \Carbon\Carbon::parse($item->start_date);
-                        $startTime = substr($item->start_time, 0, 5);
-                        $endTime = substr($item->end_time, 0, 5);
+                        $startDate = !empty($item->start_date) ? \Carbon\Carbon::parse($item->start_date) : null;
+                        $startTime = $item->start_time ? substr($item->start_time, 0, 5) : '';
+                        $endTime = $item->end_time ? substr($item->end_time, 0, 5) : '';
                     @endphp
                     <tr class="training-table-row" 
                         data-id="{{ $item->id }}" 
                         data-category="{{ $item->category }}" 
                         data-status="{{ $dataStatus }}" 
-                        data-month="{{ (int)$startDate->format('n') }}" 
-                        data-year="{{ $startDate->format('Y') }}"
+                        data-month="{{ $startDate ? (int)$startDate->format('n') : '' }}" 
+                        data-year="{{ $startDate ? $startDate->format('Y') : '' }}"
                         data-location="{{ $item->location }}"
                         data-instructor="{{ $item->instructor }}">
                         <td class="text-center align-middle text-muted fw-semibold">{{ method_exists($availableTrainings, 'firstItem') && $availableTrainings->firstItem() ? ($availableTrainings->firstItem() + $loop->index) : $loop->iteration }}</td>
@@ -228,7 +232,9 @@
                             <div class="text-xs text-gray-400 mt-0.5">Code: {{ $training->batch ?? '-' }}</div>
                         </td>
                         <td class="fw-semibold text-dark text-center align-middle" style="min-width: 140px;">
-                            @if($item->end_date && $item->start_date != $item->end_date)
+                            @if($isUnscheduled || empty($item->start_date))
+                                <span class="text-muted fw-semibold">TBA (To be announce)</span>
+                            @elseif($item->end_date && $item->start_date != $item->end_date)
                                 @if(\Carbon\Carbon::parse($item->start_date)->format('M Y') == \Carbon\Carbon::parse($item->end_date)->format('M Y'))
                                     {{ \Carbon\Carbon::parse($item->start_date)->format('d') }} - {{ \Carbon\Carbon::parse($item->end_date)->format('d M Y') }}
                                 @else
@@ -239,7 +245,11 @@
                             @endif
                         </td>
                         <td class="text-center align-middle" style="min-width: 120px;">
-                            <div class="text-muted small">{{ $startTime }} - {{ $endTime }} WIB</div>
+                            @if($isUnscheduled || empty($item->start_date) || empty($item->start_time))
+                                <div class="text-muted small">TBA</div>
+                            @else
+                                <div class="text-muted small">{{ $startTime }} - {{ $endTime }} WIB</div>
+                            @endif
                         </td>
                         <td class="text-center align-middle">
                             <span class="text-muted small">{{ $item->location }}</span>
@@ -251,10 +261,10 @@
                                     data-title="{{ $title }}" 
                                     data-category="{{ $item->category }}" 
                                     data-instructor="{{ $item->instructor }}"
-                                    data-duration="{{ $startTime }} - {{ $endTime }} WIB"
-                                    data-start-time="{{ $startTime }}"
-                                    data-end-time="{{ $endTime }}"
-                                    data-duration-hours="{{ \Carbon\Carbon::parse($item->start_time)->diffInHours(\Carbon\Carbon::parse($item->end_time)) . ' Hours' }}"
+                                    data-duration="{{ ($isUnscheduled || empty($item->start_time)) ? 'TBA' : ($startTime . ' - ' . $endTime . ' WIB') }}"
+                                    data-start-time="{{ $startTime ?: 'TBA' }}"
+                                    data-end-time="{{ $endTime ?: 'TBA' }}"
+                                    data-duration-hours="{{ ($isUnscheduled || empty($item->start_time) || empty($item->end_time)) ? 'TBA' : (\Carbon\Carbon::parse($item->start_time)->diffInHours(\Carbon\Carbon::parse($item->end_time)) . ' Hours') }}"
                                     data-requirements="{{ $item->requirements ?? ($item->prerequisites ?? '') }}"
                                     data-participant-requirement="{{ $item->prerequisites ?? ($item->requirements ?? '') }}"
                                     data-course-completion-requirement="{{ $item->course_completion_requirement ?? '' }}"

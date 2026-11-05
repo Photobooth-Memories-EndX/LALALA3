@@ -69,10 +69,11 @@ class OfflineTrainingController extends Controller
         if ($request->filled('status') && $request->input('status') !== 'all') {
             $statusVal = strtolower($request->input('status'));
             $statusMap = [
-                'open'    => 'Open Registration',
-                'running' => 'Running',
-                'closed'  => 'Closed',
-                'draft'   => 'Draft',
+                'open'        => 'Open Registration',
+                'running'     => 'Running',
+                'closed'      => 'Closed',
+                'draft'       => 'Draft',
+                'unscheduled' => 'Unscheduled',
             ];
             $query->where('status', $statusMap[$statusVal] ?? $request->input('status'));
         }
@@ -593,6 +594,8 @@ class OfflineTrainingController extends Controller
     public function store(Request $request)
     {
         $isDraft = $request->input('action') === 'draft';
+        $isUnscheduled = $request->input('status') === 'Unscheduled';
+        $isScheduleOptional = $isDraft || $isUnscheduled;
 
         $validated = $request->validate([
             'title'               => ['required', 'string', 'max:255'],
@@ -610,13 +613,13 @@ class OfflineTrainingController extends Controller
             'prerequisites'                 => ['nullable', 'string', 'max:255'],
             'course_completion_requirement' => ['nullable', 'string', 'max:500'],
             'quota'                         => [$isDraft ? 'nullable' : 'required', 'integer', 'min:1'],
-            'status'              => ['nullable', 'string', 'in:Open Registration,Running,Closed,Draft,Open'],
-            'start_date'              => [$isDraft ? 'nullable' : 'required', 'date'],
+            'status'              => ['nullable', 'string', 'in:Open Registration,Running,Closed,Draft,Open,Unscheduled'],
+            'start_date'              => [$isScheduleOptional ? 'nullable' : 'required', 'date'],
             'end_date'                => ['nullable', 'date'],
             'registration_close_date' => ['nullable', 'date', 'before_or_equal:start_date'],
             'registration_close_time' => ['nullable', 'date_format:H:i'],
-            'start_time'              => [$isDraft ? 'nullable' : 'required'],
-            'end_time'                => [$isDraft ? 'nullable' : 'required'],
+            'start_time'              => [$isScheduleOptional ? 'nullable' : 'required'],
+            'end_time'                => [$isScheduleOptional ? 'nullable' : 'required'],
             'description'             => ['nullable', 'string'],
             'objectives'              => ['nullable', 'string'],
             'learning_objectives'     => ['nullable', 'string'],
@@ -644,17 +647,30 @@ class OfflineTrainingController extends Controller
 
         $trainingCode = $request->filled('code') ? $request->input('code') : $request->input('training_code');
         $objectives = $request->filled('objectives') ? $request->input('objectives') : $request->input('learning_objectives');
-        $startDate = $request->input('start_date') ?: ($isDraft ? Carbon::today()->format('Y-m-d') : null);
-        $endDate = $request->filled('end_date') ? $request->input('end_date') : $startDate;
-        $registrationCloseDate = $request->filled('registration_close_date') ? $request->input('registration_close_date') : $startDate;
-        $registrationCloseTime = $request->filled('registration_close_time') ? $request->input('registration_close_time') : '23:59';
-        if (strlen($registrationCloseTime) === 5) {
-            $registrationCloseTime .= ':00';
-        }
 
-        if ($isDraft) {
+        if ($isUnscheduled) {
+            $startDate = $request->filled('start_date') ? $request->input('start_date') : null;
+            $endDate = $request->filled('end_date') ? $request->input('end_date') : null;
+            $registrationCloseDate = $request->filled('registration_close_date') ? $request->input('registration_close_date') : null;
+            $registrationCloseTime = $request->filled('registration_close_time') ? $request->input('registration_close_time') : null;
+            $startTime = $request->filled('start_time') ? $request->input('start_time') : null;
+            $endTime = $request->filled('end_time') ? $request->input('end_time') : null;
+            $status = 'Unscheduled';
+        } elseif ($isDraft) {
+            $startDate = $request->input('start_date') ?: Carbon::today()->format('Y-m-d');
+            $endDate = $request->filled('end_date') ? $request->input('end_date') : $startDate;
+            $registrationCloseDate = $request->filled('registration_close_date') ? $request->input('registration_close_date') : $startDate;
+            $registrationCloseTime = $request->filled('registration_close_time') ? $request->input('registration_close_time') : '23:59';
+            $startTime = $request->input('start_time', '08:00') ?: '08:00';
+            $endTime = $request->input('end_time', '16:00') ?: '16:00';
             $status = 'Draft';
         } else {
+            $startDate = $request->input('start_date');
+            $endDate = $request->filled('end_date') ? $request->input('end_date') : $startDate;
+            $registrationCloseDate = $request->filled('registration_close_date') ? $request->input('registration_close_date') : $startDate;
+            $registrationCloseTime = $request->filled('registration_close_time') ? $request->input('registration_close_time') : '23:59';
+            $startTime = $request->input('start_time', '08:00') ?: '08:00';
+            $endTime = $request->input('end_time', '16:00') ?: '16:00';
             $status = $request->input('status', 'Open Registration');
             if ($status === 'Open') {
                 $status = 'Open Registration';
@@ -665,6 +681,10 @@ class OfflineTrainingController extends Controller
                     $status = 'Closed';
                 }
             }
+        }
+
+        if (strlen((string)$registrationCloseTime) === 5) {
+            $registrationCloseTime .= ':00';
         }
 
         $training = OfflineTraining::create([
@@ -691,8 +711,8 @@ class OfflineTrainingController extends Controller
             'finish_date'             => $endDate,
             'registration_close_date' => $registrationCloseDate,
             'registration_close_time' => $registrationCloseTime,
-            'start_time'              => $request->input('start_time', '08:00') ?: '08:00',
-            'end_time'                => $request->input('end_time', '16:00') ?: '16:00',
+            'start_time'              => $startTime,
+            'end_time'                => $endTime,
             'description'             => $request->input('description'),
             'learning_objectives'     => $objectives,
             'syllabus'                => $syllabus,
@@ -740,6 +760,8 @@ class OfflineTrainingController extends Controller
     {
         $training = $id instanceof OfflineTraining ? $id : OfflineTraining::findOrFail($id);
         $isDraft = $request->input('action') === 'draft';
+        $isUnscheduled = $request->input('status') === 'Unscheduled';
+        $isScheduleOptional = $isDraft || $isUnscheduled;
 
         $validated = $request->validate([
             'title'               => ['required', 'string', 'max:255'],
@@ -757,13 +779,13 @@ class OfflineTrainingController extends Controller
             'prerequisites'                 => ['nullable', 'string', 'max:255'],
             'course_completion_requirement' => ['nullable', 'string', 'max:500'],
             'quota'                         => [$isDraft ? 'nullable' : 'required', 'integer', 'min:1'],
-            'status'              => ['nullable', 'string', 'in:Open Registration,Running,Closed,Draft,Open'],
-            'start_date'              => [$isDraft ? 'nullable' : 'required', 'date'],
+            'status'              => ['nullable', 'string', 'in:Open Registration,Running,Closed,Draft,Open,Unscheduled'],
+            'start_date'              => [$isScheduleOptional ? 'nullable' : 'required', 'date'],
             'end_date'                => ['nullable', 'date'],
             'registration_close_date' => ['nullable', 'date', 'before_or_equal:start_date'],
             'registration_close_time' => ['nullable', 'date_format:H:i'],
-            'start_time'              => [$isDraft ? 'nullable' : 'required'],
-            'end_time'                => [$isDraft ? 'nullable' : 'required'],
+            'start_time'              => [$isScheduleOptional ? 'nullable' : 'required'],
+            'end_time'                => [$isScheduleOptional ? 'nullable' : 'required'],
             'description'             => ['nullable', 'string'],
             'objectives'              => ['nullable', 'string'],
             'learning_objectives'     => ['nullable', 'string'],
@@ -791,17 +813,30 @@ class OfflineTrainingController extends Controller
 
         $trainingCode = $request->filled('code') ? $request->input('code') : $request->input('training_code');
         $objectives = $request->filled('objectives') ? $request->input('objectives') : $request->input('learning_objectives');
-        $startDate = $request->input('start_date') ?: ($training->start_date ?: Carbon::today()->format('Y-m-d'));
-        $endDate = $request->filled('end_date') ? $request->input('end_date') : $startDate;
-        $registrationCloseDate = $request->filled('registration_close_date') ? $request->input('registration_close_date') : $startDate;
-        $registrationCloseTime = $request->filled('registration_close_time') ? $request->input('registration_close_time') : ($training->registration_close_time ?? '23:59');
-        if (strlen($registrationCloseTime) === 5) {
-            $registrationCloseTime .= ':00';
-        }
 
-        if ($isDraft) {
+        if ($isUnscheduled) {
+            $startDate = $request->filled('start_date') ? $request->input('start_date') : null;
+            $endDate = $request->filled('end_date') ? $request->input('end_date') : null;
+            $registrationCloseDate = $request->filled('registration_close_date') ? $request->input('registration_close_date') : null;
+            $registrationCloseTime = $request->filled('registration_close_time') ? $request->input('registration_close_time') : null;
+            $startTime = $request->filled('start_time') ? $request->input('start_time') : null;
+            $endTime = $request->filled('end_time') ? $request->input('end_time') : null;
+            $status = 'Unscheduled';
+        } elseif ($isDraft) {
+            $startDate = $request->input('start_date') ?: ($training->start_date ?: Carbon::today()->format('Y-m-d'));
+            $endDate = $request->filled('end_date') ? $request->input('end_date') : $startDate;
+            $registrationCloseDate = $request->filled('registration_close_date') ? $request->input('registration_close_date') : $startDate;
+            $registrationCloseTime = $request->filled('registration_close_time') ? $request->input('registration_close_time') : ($training->registration_close_time ?? '23:59');
+            $startTime = $request->input('start_time', $training->start_time ?: '08:00') ?: '08:00';
+            $endTime = $request->input('end_time', $training->end_time ?: '16:00') ?: '16:00';
             $status = 'Draft';
         } else {
+            $startDate = $request->input('start_date', $training->start_date);
+            $endDate = $request->filled('end_date') ? $request->input('end_date') : $startDate;
+            $registrationCloseDate = $request->filled('registration_close_date') ? $request->input('registration_close_date') : $startDate;
+            $registrationCloseTime = $request->filled('registration_close_time') ? $request->input('registration_close_time') : ($training->registration_close_time ?? '23:59');
+            $startTime = $request->input('start_time', $training->start_time ?: '08:00') ?: '08:00';
+            $endTime = $request->input('end_time', $training->end_time ?: '16:00') ?: '16:00';
             $status = $request->input('status', $training->status ?: 'Open Registration');
             if ($status === 'Open') {
                 $status = 'Open Registration';
@@ -812,6 +847,10 @@ class OfflineTrainingController extends Controller
                     $status = 'Closed';
                 }
             }
+        }
+
+        if (strlen((string)$registrationCloseTime) === 5) {
+            $registrationCloseTime .= ':00';
         }
 
         $training->update([
@@ -838,8 +877,8 @@ class OfflineTrainingController extends Controller
             'finish_date'             => $endDate,
             'registration_close_date' => $registrationCloseDate,
             'registration_close_time' => $registrationCloseTime,
-            'start_time'              => $request->input('start_time', $training->start_time ?: '08:00') ?: '08:00',
-            'end_time'                => $request->input('end_time', $training->end_time ?: '16:00') ?: '16:00',
+            'start_time'              => $startTime,
+            'end_time'                => $endTime,
             'description'             => $request->input('description'),
             'learning_objectives'     => $objectives,
             'syllabus'                => $syllabus,
@@ -1245,9 +1284,10 @@ class OfflineTrainingController extends Controller
         if ($request->filled('status') && $request->input('status') !== 'all') {
             $statusVal = $request->input('status');
             $statusMap = [
-                'open'    => 'Open Registration',
-                'running' => 'Running',
-                'closed'  => 'Closed',
+                'open'        => 'Open Registration',
+                'running'     => 'Running',
+                'closed'      => 'Closed',
+                'unscheduled' => 'Unscheduled',
             ];
             $availableQuery->where('status', $statusMap[strtolower($statusVal)] ?? $statusVal);
         }
@@ -1291,7 +1331,9 @@ class OfflineTrainingController extends Controller
             ->appends(array_merge($request->query(), ['tab' => 'available']));
 
         $today = Carbon::today()->format('Y-m-d');
-        $calendarEvents = $trainings->map(function ($t) use ($today) {
+        $calendarEvents = $trainings->filter(function ($t) {
+            return !empty($t->start_date) && strtolower($t->status ?? '') !== 'unscheduled';
+        })->map(function ($t) use ($today) {
             // Properly parse dates before conditional checks
             $startDate = Carbon::parse($t->start_date);
             $endDate = $t->end_date ? Carbon::parse($t->end_date) : $startDate;
@@ -1397,6 +1439,9 @@ class OfflineTrainingController extends Controller
         // Active / Selected Date for Today's Agenda (strictly matching start_date <= activeDate <= end_date)
         $selectedDate = $request->query('selected_date', Carbon::today()->format('Y-m-d'));
         $todaysAgenda = $trainings->filter(function ($t) use ($selectedDate) {
+            if (empty($t->start_date) || strtolower($t->status ?? '') === 'unscheduled') {
+                return false;
+            }
             $sDate = Carbon::parse($t->start_date)->format('Y-m-d');
             $eDate = Carbon::parse($t->end_date ?? $t->start_date)->format('Y-m-d');
             return $selectedDate >= $sDate && $selectedDate <= $eDate;
