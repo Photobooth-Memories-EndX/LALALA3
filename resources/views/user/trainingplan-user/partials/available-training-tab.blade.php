@@ -168,9 +168,9 @@
                     <th class="text-center align-middle py-3" style="min-width: 120px;">TIME</th>
                     <th class="text-center align-middle py-3">LOCATION</th>
                     <th class="text-center align-middle py-3">SYLLABUS</th>
-                    <th class="text-center align-middle py-3">APPROVED PARTICIPANT</th>
-                    <th class="text-center align-middle py-3">STATUS</th>
-                    <th class="text-center align-middle py-3 pe-4">ACTION</th>
+                    <!-- <th class="text-center align-middle py-3">APPROVED PARTICIPANT</th> -->
+                    <!-- <th class="text-center align-middle py-3">STATUS</th> -->
+                    <!-- <th class="text-center align-middle py-3 pe-4">ACTION</th> -->
                 </tr>
             </thead>
             <tbody class="divide-y">
@@ -276,17 +276,17 @@
                                 <span>Syllabus</span>
                             </button>
                         </td>
-                        <td class="text-center align-middle" style="min-width: 130px;">
+                        <!-- <td class="text-center align-middle" style="min-width: 130px;">
                             <div class="fw-semibold text-dark small">{{ $enrolled }} / {{ $item->quota }} Seats {{ $isFull ? '(Full)' : '' }}</div>
                             <div class="progress progress-xs mt-1 mx-auto rounded-pill" style="height: 4px; max-width: 90px; background-color: #e2e8f0;">
                                 <div class="progress-bar rounded-pill" role="progressbar" style="width: {{ $percent }}%; background-color: {{ $barColor }};" aria-valuenow="{{ $percent }}" aria-valuemin="0" aria-valuemax="100"></div>
                             </div>
-                        </td>
-                        <td class="text-center align-middle">
+                        </td> -->
+                        <!-- <td class="text-center align-middle">
                             <span class="badge {{ $statusBadgeClass }} rounded-pill px-3 py-1 fw-semibold">
                                 {{ $displayStatus }}
                             </span>
-                        </td>
+                        </td> -->
                         <!-- <td class="text-center align-middle pe-4">
                             @if ($myRegStatus === 'Pending')
                                 <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-3 py-1-5 fw-semibold d-inline-flex align-items-center gap-1">
@@ -329,7 +329,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="9" class="text-center py-5 text-muted">
+                        <td colspan="6" class="text-center py-5 text-muted">
                             <div class="avatar avatar-xl rounded-circle bg-light text-muted mb-3 mx-auto">
                                 <i class="ti ti-calendar-off fs-1"></i>
                             </div>
