@@ -46,7 +46,7 @@
                         <i class="ti ti-file-text text-primary fs-2"></i>
                         <span>Course Overview & Objectives</span>
                     </h4>
-                    <span class="badge bg-blue-600 text-white rounded-pill px-3 py-1 fs-7 active-section-badge"><i class="bi bi-pencil ti ti-pencil me-1"></i> Active Section</span>
+                    <!-- <span class="badge bg-blue-600 text-white rounded-pill px-3 py-1 fs-7 active-section-badge"><i class="bi bi-pencil ti ti-pencil me-1"></i> Active Section</span> -->
                 </div>
                 <div class="row g-3">
                     <!-- Training Title Placed Here at the Top -->
@@ -128,7 +128,7 @@
                         <span>Training Syllabus & Learning Modules</span>
                     </h4>
                     <div class="d-flex align-items-center gap-2">
-                        <span class="badge bg-blue-600 text-white rounded-pill px-3 py-1 fs-7 active-section-badge"><i class="bi bi-pencil ti ti-pencil me-1"></i> Active Section</span>
+                        <!-- <span class="badge bg-blue-600 text-white rounded-pill px-3 py-1 fs-7 active-section-badge"><i class="bi bi-pencil ti ti-pencil me-1"></i> Active Section</span> -->
                         <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3" id="btn-add-syllabus">
                             <i class="ti ti-plus me-1"></i> Add Syllabus Point
                         </button>
@@ -168,7 +168,7 @@
                         <i class="ti ti-info-circle text-primary fs-2"></i>
                         <span>Classification, Basic Information & Capacity</span>
                     </h4>
-                    <span class="badge bg-blue-600 text-white rounded-pill px-3 py-1 fs-7 active-section-badge"><i class="bi bi-pencil ti ti-pencil me-1"></i> Active Section</span>
+                    <!-- <span class="badge bg-blue-600 text-white rounded-pill px-3 py-1 fs-7 active-section-badge"><i class="bi bi-pencil ti ti-pencil me-1"></i> Active Section</span> -->
                 </div>
                 <div class="row g-3">
                     <!-- Main Classification -->
@@ -391,7 +391,7 @@
                         <i class="ti ti-calendar-event text-primary fs-2"></i>
                         <span>Schedule Timing & Dates</span>
                     </h4>
-                    <span class="badge bg-blue-600 text-white rounded-pill px-3 py-1 fs-7 active-section-badge"><i class="bi bi-pencil ti ti-pencil me-1"></i> Active Section</span>
+                    <!-- <span class="badge bg-blue-600 text-white rounded-pill px-3 py-1 fs-7 active-section-badge"><i class="bi bi-pencil ti ti-pencil me-1"></i> Active Section</span> -->
                 </div>
                 <div class="row g-3">
                     <!-- Row 1: Dates -->
@@ -454,33 +454,26 @@
 <style>
         .form-section-card {
         border: 1px solid #e2e8f0 !important;
-        border-radius: 1rem !important; /* rounded-2xl */
+        border-left: 0.25rem solid #206bc4 !important;
+        border-radius: 1rem !important; /* rounded-4 / 16px matching confirmation alert */
         padding: 1.5rem !important; /* p-6 */
         background-color: #ffffff !important;
-        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03) !important;
-        transition: all 0.2s ease-in-out !important;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px 0 rgba(0, 0, 0, 0.02) !important;
+        transition: border-color 0.25s ease, box-shadow 0.25s ease, border-left 0.25s ease !important;
         position: relative;
     }
 
     .form-section-card:focus-within,
     .form-section-card.is-active-section {
-        border: 2px solid #2563eb !important;
-        box-shadow: 0 0 15px rgba(37, 99, 235, 0.2) !important;
+        border: 1px solid #cbd5e1 !important;
+        border-left: 0.25rem solid #003b6d !important;
+        box-shadow: 0 0 24px rgba(32, 107, 196, 0.16), 0 6px 18px rgba(0, 59, 109, 0.06) !important;
     }
 
-    .form-section-card .active-section-badge {
-        display: none !important;
-        background-color: #2563eb !important;
-        color: #ffffff !important;
-        font-weight: 600;
-        box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
-    }
-
+    .form-section-card .active-section-badge,
     .form-section-card:focus-within .active-section-badge,
     .form-section-card.is-active-section .active-section-badge {
-        display: inline-flex !important;
-        align-items: center;
-        animation: activeSectionFade 0.2s ease-in-out;
+        display: none !important;
     }
 
     @keyframes activeSectionFade {
