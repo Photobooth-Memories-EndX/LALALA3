@@ -707,4 +707,25 @@ class TrainingScheduleExportAndCountTest extends TestCase
         $this->assertStringContainsString('syllabusModalParticipantReq', $modalHtml);
         $this->assertStringContainsString('syllabusModalCompletionReq', $modalHtml);
     }
+
+    /**
+     * 18. Verify syllabus modal parts are wrapped in distinct cards/boxes with larger headings.
+     */
+    public function test_syllabus_modal_boxed_structure_and_heading_hierarchy(): void
+    {
+        $modalHtml = file_get_contents(resource_path('views/user/trainingplan-user/modals/syllabus-modal.blade.php'));
+
+        // Heading hierarchy (fs-5 or larger headings on each section card)
+        $this->assertStringContainsString('Course Overview', $modalHtml);
+        $this->assertStringContainsString('Target Participants', $modalHtml);
+        $this->assertStringContainsString('Calculated Duration', $modalHtml);
+        $this->assertStringContainsString('Participant Requirement', $modalHtml);
+        $this->assertStringContainsString('Course Completion Requirement', $modalHtml);
+        $this->assertStringContainsString('Syllabus Modules & Topics', $modalHtml);
+
+        // Boxed structure for each syllabus topic/module
+        $this->assertStringContainsString('syllabus-topic-card', $modalHtml);
+        $this->assertStringContainsString('syllabus-topic-title', $modalHtml);
+        $this->assertStringContainsString('card border border-light-subtle rounded-3', $modalHtml);
+    }
 }
