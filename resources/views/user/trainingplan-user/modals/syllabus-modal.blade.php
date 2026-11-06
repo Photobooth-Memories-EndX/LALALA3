@@ -6,18 +6,18 @@
             <div class="modal-header border-bottom border-light-subtle pb-3 px-4 pt-4 bg-white">
                 <div class="d-flex align-items-center gap-3">
                     <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" 
-                         style="width: 48px; height: 48px; background-color: #eef2ff; color: #003b6d;">
+                         style="width: 52px; height: 52px; background-color: #eef2ff; color: #003b6d;">
                         <i class="ti ti-book fs-1"></i>
                     </div>
                     <div>
                         <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
-                            <h4 class="h4 fw-bold mb-0 text-dark" id="syllabusModalTitle">Training Syllabus</h4>
+                            <h4 class="fw-bold mb-0 text-dark" id="syllabusModalTitle" style="font-size: 1.35rem; line-height: 1.3;">Training Syllabus</h4>
                             <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1 fw-semibold small" id="syllabusModalCategory">
                                 Category
                             </span>
                         </div>
                         <div class="text-muted small d-flex align-items-center gap-2 flex-wrap" id="syllabusModalMeta">
-                            <span><i class="ti ti-user me-1 text-primary"></i><span id="syllabusModalInstructor">-</span></span>
+                            <span><i class="ti ti-user me-1 text-primary"></i><span id="syllabusModalInstructor" class="fw-medium text-dark">-</span></span>
                             <span>&bull;</span>
                             <span><i class="ti ti-clock me-1 text-primary"></i><span id="syllabusModalDuration">Session Schedule</span></span>
                         </div>
@@ -28,102 +28,107 @@
 
             <!-- Modal Body -->
             <div class="modal-body px-4 py-3" style="max-height: 65vh; overflow-y: auto;">
-                <!-- Overview Card -->
-                <div class="card border border-light-subtle rounded-3 bg-light-subtle p-3 mb-3" id="syllabusModalOverviewCard">
-                    <div class="d-flex align-items-start gap-2">
-                        <i class="ti ti-info-circle text-primary fs-2 flex-shrink-0 mt-0-5"></i>
-                        <div>
-                            <div class="fw-bold text-dark small mb-1">Course Overview</div>
-                            <p class="text-muted small mb-0" id="syllabusModalOverview">
-                                {{ isset($training) && $training->description ? $training->description : 'Description overview of the training session.' }}
-                            </p>
-                        </div>
+                <!-- 1. Course Overview Box -->
+                <div class="card border border-light-subtle rounded-3 bg-light-subtle p-3 mb-3 shadow-none" id="syllabusModalOverviewCard">
+                    <div class="fw-bold text-dark fs-5 mb-2 d-flex align-items-center gap-2">
+                        <i class="ti ti-notes text-primary fs-3"></i>
+                        <span>Course Overview</span>
                     </div>
+                    <p class="text-dark small mb-0 lh-base ps-1" id="syllabusModalOverview" style="color: #1e293b !important; font-size: 0.88rem; line-height: 1.6;">
+                        {{ isset($training) && $training->description ? $training->description : 'Description overview of the training session.' }}
+                    </p>
                 </div>
 
-                <!-- Meta Details Row: Target Participants & Calculated Duration -->
-                <div class="row g-2 mb-3">
+                <!-- 2. Target Participants & Calculated Duration (2-Column Grid) -->
+                <div class="row g-3 mb-3">
                     <div class="col-md-6">
-                        <div class="card border border-light-subtle rounded-3 bg-light-subtle p-3 h-100" id="syllabusModalTargetCard">
-                            <div class="d-flex align-items-start gap-2">
-                                <i class="ti ti-users text-primary fs-2 flex-shrink-0 mt-0-5"></i>
-                                <div>
-                                    <div class="fw-bold text-dark small mb-1">Target Participants</div>
-                                    <div class="text-muted small mb-0" id="syllabusModalTarget">
-                                        {{ isset($training) && $training->target_employee ? $training->target_employee : 'All relevant employees' }}
-                                    </div>
-                                </div>
+                        <div class="card border border-light-subtle rounded-3 bg-light-subtle p-3 h-100 shadow-none" id="syllabusModalTargetCard">
+                            <div class="fw-bold text-dark fs-5 mb-2 d-flex align-items-center gap-2">
+                                <i class="ti ti-users text-primary fs-3"></i>
+                                <span>Target Participants</span>
+                            </div>
+                            <div class="text-dark small fw-medium ps-1" id="syllabusModalTarget" style="color: #1e293b !important; font-size: 0.88rem;">
+                                {{ isset($training) && $training->target_employee ? $training->target_employee : 'All relevant employees' }}
                             </div>
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="card border border-light-subtle rounded-3 bg-light-subtle p-3 h-100" id="syllabusModalDurationCard">
-                            <div class="d-flex align-items-start gap-2">
-                                <i class="ti ti-clock-hour-4 text-primary fs-2 flex-shrink-0 mt-0-5"></i>
-                                <div>
-                                    <div class="fw-bold text-dark small mb-1">Calculated Duration</div>
-                                    <div class="text-muted small mb-0">
-                                        <span class="fw-semibold text-dark" id="syllabusModalCalculatedDuration">
-                                            @if(isset($training) && $training->start_time && $training->end_time)
-                                                {{ \Carbon\Carbon::parse($training->start_time)->diffInHours(\Carbon\Carbon::parse($training->end_time)) . ' Hours' }}
-                                            @else
-                                                -
-                                            @endif
-                                        </span>
-                                        <span class="text-muted extra-small d-block" id="syllabusModalTimeRange"></span>
-                                    </div>
-                                </div>
+                        <div class="card border border-light-subtle rounded-3 bg-light-subtle p-3 h-100 shadow-none" id="syllabusModalDurationCard">
+                            <div class="fw-bold text-dark fs-5 mb-2 d-flex align-items-center gap-2">
+                                <i class="ti ti-clock-hour-4 text-primary fs-3"></i>
+                                <span>Calculated Duration</span>
+                            </div>
+                            <div class="text-secondary small mb-0 ps-1">
+                                <span class="fw-bold text-dark fs-4" id="syllabusModalCalculatedDuration">
+                                    @if(isset($training) && $training->start_time && $training->end_time)
+                                        {{ \Carbon\Carbon::parse($training->start_time)->diffInHours(\Carbon\Carbon::parse($training->end_time)) . ' Hours' }}
+                                    @else
+                                        -
+                                    @endif
+                                </span>
+                                <span class="text-muted extra-small d-block mt-0.5" id="syllabusModalTimeRange"></span>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Requirements Card (Prerequisites) -->
-                <div class="card border border-light-subtle rounded-3 bg-light-subtle p-3 mb-3 {{ (isset($training) && ($training->requirements || $training->prerequisites)) ? '' : 'd-none' }}" id="syllabusModalRequirementsCard">
-                    <div class="d-flex align-items-start gap-2">
-                        <i class="ti ti-checklist text-primary fs-2 flex-shrink-0 mt-0-5"></i>
-                        <div class="w-100">
-                            <div class="fw-bold text-dark small mb-1">Requirements</div>
-                            <div class="text-muted small mb-0" id="syllabusModalRequirements">
-                                {{ isset($training) ? ($training->requirements ?? $training->prerequisites ?? '') : '' }}
+                <!-- 3. Requirements: Participant Requirement & Course Completion Requirement (2-Column Grid) -->
+                <div class="row g-3 mb-3" id="syllabusModalRequirementsSection">
+                    <!-- Participant Requirement (For User) -->
+                    <div class="col-md-6" id="syllabusModalParticipantReqCol">
+                        <div class="card border border-light-subtle rounded-3 bg-light-subtle p-3 h-100 shadow-none" id="syllabusModalParticipantReqCard">
+                            <div class="fw-bold text-dark fs-5 mb-2 d-flex align-items-center gap-2">
+                                <i class="ti ti-user-check text-primary fs-3"></i>
+                                <span>Participant Requirement</span>
+                            </div>
+                            <div class="text-dark small mb-0 ps-1" id="syllabusModalParticipantReq" style="color: #1e293b !important; font-size: 0.88rem; line-height: 1.5;">
+                                {{ isset($training) ? ($training->prerequisites ?? $training->requirements ?? 'None') : 'None' }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Course Completion Requirement (For Training) -->
+                    <div class="col-md-6" id="syllabusModalCompletionReqCol">
+                        <div class="card border border-light-subtle rounded-3 bg-light-subtle p-3 h-100 shadow-none" id="syllabusModalCompletionReqCard">
+                            <div class="fw-bold text-dark fs-5 mb-2 d-flex align-items-center gap-2">
+                                <i class="ti ti-certificate text-primary fs-3"></i>
+                                <span>Course Completion Requirement</span>
+                            </div>
+                            <div class="text-dark small mb-0 ps-1" id="syllabusModalCompletionReq" style="color: #1e293b !important; font-size: 0.88rem; line-height: 1.5;">
+                                {{ isset($training) ? ($training->course_completion_requirement ?? 'Minimum 80% attendance & active participation') : 'Minimum 80% attendance & active participation' }}
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Learning Objectives Card (Hidden if empty) -->
-                <div class="card border border-light-subtle rounded-3 bg-light-subtle p-3 mb-4 d-none" id="syllabusModalObjectivesCard">
-                    <div class="d-flex align-items-start gap-2">
-                        <i class="ti ti-target text-primary fs-2 flex-shrink-0 mt-0-5"></i>
-                        <div class="w-100">
-                            <div class="fw-bold text-dark small mb-1">Learning Objectives</div>
-                            <div class="text-muted small mb-0" id="syllabusModalObjectives"></div>
-                        </div>
+                <!-- 4. Learning Objectives Box (Hidden if empty) -->
+                <div class="card border border-light-subtle rounded-3 bg-light-subtle p-3 mb-3 shadow-none d-none" id="syllabusModalObjectivesCard">
+                    <div class="fw-bold text-dark fs-5 mb-2 d-flex align-items-center gap-2">
+                        <i class="ti ti-target text-primary fs-3"></i>
+                        <span>Learning Objectives</span>
                     </div>
+                    <div class="text-dark small mb-0 ps-1" id="syllabusModalObjectives" style="color: #1e293b !important; font-size: 0.88rem; line-height: 1.6;"></div>
                 </div>
 
-                <!-- Structured Learning Topics / Syllabus Points -->
-                <div class="mb-2">
-                    <h5 class="fw-bold text-dark d-flex align-items-center gap-2 mb-3">
-                        <i class="ti ti-list-check text-primary"></i>
+                <!-- 5. Structured Learning Topics / Syllabus Modules (Enclosed in its Own Box) -->
+                <div class="card border border-light-subtle rounded-3 bg-light-subtle p-3 mb-2 shadow-none" id="syllabusModalTopicsCard">
+                    <div class="fw-bold text-dark fs-5 mb-3 d-flex align-items-center gap-2">
+                        <i class="ti ti-list-check text-primary fs-3"></i>
                         <span>Syllabus Modules & Topics</span>
-                    </h5>
+                    </div>
 
                     <div class="d-flex flex-column gap-2" id="syllabusModalTopicsContainer">
-                        <!-- Dynamically populated via JavaScript -->
+                        <!-- Dynamically populated via JavaScript per box -->
                     </div>
                 </div>
             </div>
 
             <!-- Modal Footer -->
-            <div class="modal-footer border-top border-light-subtle px-4 py-3 bg-light-subtle d-flex justify-content-between align-items-center">
+            <div class="modal-footer border-top border-light-subtle px-4 py-3 bg-light-subtle d-flex justify-content-start align-items-center">
                 <a href="#" class="btn btn-outline-primary px-3 py-2 rounded-3 fw-semibold d-inline-flex align-items-center gap-1" id="btnDownloadSyllabusPdf" target="_blank">
                     <i class="ti ti-download fs-2"></i>
                     <span>Download Syllabus PDF</span>
                 </a>
-                <button type="button" class="btn btn-primary px-4 py-2 rounded-3 fw-semibold" style="background-color: #003b6d; border-color: #003b6d;" data-bs-dismiss="modal">
-                    Close
-                </button>
             </div>
         </div>
     </div>
@@ -148,6 +153,10 @@ document.addEventListener('DOMContentLoaded', function () {
         const targetCard = document.getElementById('syllabusModalTargetCard');
         const modalReq = document.getElementById('syllabusModalRequirements');
         const reqCard = document.getElementById('syllabusModalRequirementsCard');
+        const modalParticipantReq = document.getElementById('syllabusModalParticipantReq');
+        const modalCompletionReq = document.getElementById('syllabusModalCompletionReq');
+        const participantReqCard = document.getElementById('syllabusModalParticipantReqCard');
+        const completionReqCard = document.getElementById('syllabusModalCompletionReqCard');
         const modalCalcDuration = document.getElementById('syllabusModalCalculatedDuration');
         const modalTimeRange = document.getElementById('syllabusModalTimeRange');
         const topicsContainer = document.getElementById('syllabusModalTopicsContainer');
@@ -161,6 +170,8 @@ document.addEventListener('DOMContentLoaded', function () {
         const overview = btn.getAttribute('data-description') || '';
         const objectives = btn.getAttribute('data-objectives') || '';
         const requirements = btn.getAttribute('data-requirements') || btn.getAttribute('data-prerequisites') || '';
+        const participantReq = btn.getAttribute('data-participant-requirement') || btn.getAttribute('data-prerequisites') || requirements || '';
+        const completionReq = btn.getAttribute('data-course-completion-requirement') || btn.getAttribute('data-completion-requirement') || '';
         const targetEmployee = btn.getAttribute('data-target') || btn.getAttribute('data-target-employee') || '';
         const startTime = btn.getAttribute('data-start-time') || '';
         const endTime = btn.getAttribute('data-end-time') || '';
@@ -222,26 +233,42 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
-        // Requirements
-        if (modalReq && reqCard) {
-            if (requirements.trim()) {
-                reqCard.classList.remove('d-none');
-                const reqLines = requirements.split(/\r?\n/).map(l => l.replace(/^[•\-\*]\s*/, '').trim()).filter(Boolean);
-                if (reqLines.length > 1) {
-                    modalReq.innerHTML = reqLines.map(line => `
-                        <div class="d-flex align-items-start gap-2 mb-1">
-                            <span class="fw-bold" style="color: #003b6d; line-height: 1.4;">•</span>
-                            <span>${line}</span>
-                        </div>
-                    `).join('');
-                } else {
-                    modalReq.textContent = requirements;
-                }
+        // Requirements: Participant Requirement & Course Completion Requirement
+        if (modalParticipantReq) {
+            const pReqText = participantReq.trim() || 'None';
+            const reqLines = pReqText.split(/\r?\n/).map(l => l.replace(/^[•\-\*]\s*/, '').trim()).filter(Boolean);
+            if (reqLines.length > 1) {
+                modalParticipantReq.innerHTML = reqLines.map(line => `
+                    <div class="d-flex align-items-start gap-2 mb-1">
+                        <span class="fw-bold" style="color: #1e293b; line-height: 1.4;">•</span>
+                        <span style="color: #1e293b !important;">${line}</span>
+                    </div>
+                `).join('');
             } else {
-                reqCard.classList.add('d-none');
+                modalParticipantReq.textContent = pReqText;
             }
         }
 
+        if (modalCompletionReq) {
+            const cReqText = completionReq.trim() || 'Minimum 80% attendance & active participation';
+            const compLines = cReqText.split(/\r?\n/).map(l => l.replace(/^[•\-\*]\s*/, '').trim()).filter(Boolean);
+            if (compLines.length > 1) {
+                modalCompletionReq.innerHTML = compLines.map(line => `
+                    <div class="d-flex align-items-start gap-2 mb-1">
+                        <span class="fw-bold" style="color: #1e293b; line-height: 1.4;">•</span>
+                        <span style="color: #1e293b !important;">${line}</span>
+                    </div>
+                `).join('');
+            } else {
+                modalCompletionReq.textContent = cReqText;
+            }
+        }
+
+        if (modalReq) {
+            modalReq.textContent = participantReq.trim() || '-';
+        }
+
+        // Course Overview
         if (modalOver) {
             if (overview.trim()) {
                 modalOver.textContent = overview;
@@ -251,6 +278,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
+        // Learning Objectives
         if (modalObj && objCard) {
             if (objectives.trim()) {
                 objCard.classList.remove('d-none');
@@ -258,8 +286,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (objLines.length > 1) {
                     modalObj.innerHTML = objLines.map(line => `
                         <div class="d-flex align-items-start gap-2 mb-1">
-                            <span class="fw-bold" style="color: #003b6d; line-height: 1.4;">•</span>
-                            <span>${line}</span>
+                            <span class="fw-bold" style="color: #1e293b; line-height: 1.4;">•</span>
+                            <span style="color: #1e293b !important;">${line}</span>
                         </div>
                     `).join('');
                 } else {
@@ -291,20 +319,18 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
+        // Render each syllabus module into its own distinct card box
         if (topicsContainer) {
             if (topics.length === 0) {
                 topicsContainer.innerHTML = `
-                    <div class="text-center py-4 text-muted">
+                    <div class="card border border-light-subtle rounded-3 p-4 text-center text-muted bg-light-subtle shadow-none">
                         <i class="ti ti-book-off fs-1 d-block mb-2 text-secondary"></i>
                         <p class="small mb-0">No syllabus points registered for this training schedule yet.</p>
                     </div>
                 `;
             } else {
                 let html = '';
-                topics.forEach((t, index) => {
-                    const isLast = (index === topics.length - 1);
-                    const borderClass = isLast ? '' : 'border-bottom border-light-subtle';
-
+                topics.forEach((t) => {
                     // Parse outline / description into clean bullet points
                     let points = [];
                     if (Array.isArray(t.outline)) {
@@ -324,24 +350,24 @@ document.addEventListener('DOMContentLoaded', function () {
                         points.forEach(pt => {
                             pointsHtml += `
                                 <div class="d-flex align-items-start gap-2 mb-1">
-                                    <span class="fw-bold" style="color: #003b6d; line-height: 1.4;">•</span>
-                                    <span class="text-muted small">${pt}</span>
+                                    <span class="fw-bold" style="color: #1e293b; line-height: 1.4;">•</span>
+                                    <span class="text-dark small" style="color: #1e293b !important; font-size: 0.875rem;">${pt}</span>
                                 </div>
                             `;
                         });
                     } else {
-                        pointsHtml = `<div class="text-muted small">${t.outline || 'Standard module coverage.'}</div>`;
+                        pointsHtml = `<div class="text-dark small" style="color: #1e293b !important;">${t.outline || 'Standard module coverage.'}</div>`;
                     }
 
                     html += `
-                        <div class="py-2-5 ${borderClass} syllabus-topic-item">
+                        <div class="card border border-light-subtle rounded-3 p-3 shadow-none syllabus-topic-card" style="background-color: #ffffff;">
                             <div class="d-flex align-items-start gap-3">
-                                <span class="badge rounded-circle text-white d-flex align-items-center justify-content-center flex-shrink-0 mt-0-5" 
-                                      style="width: 26px; height: 26px; font-size: 0.75rem; background-color: #003b6d;">
+                                <span class="badge rounded-circle text-white d-flex align-items-center justify-content-center flex-shrink-0 mt-0.5" 
+                                      style="width: 30px; height: 30px; font-size: 0.88rem; font-weight: 700; background-color: #003b6d; box-shadow: 0 2px 4px rgba(0, 59, 109, 0.2);">
                                     ${t.no}
                                 </span>
                                 <div class="flex-grow-1">
-                                    <div class="fw-bold text-dark fs-3 mb-1 syllabus-topic-title">
+                                    <div class="fw-bold text-dark fs-5 mb-1-5 syllabus-topic-title" style="font-size: 1.05rem; line-height: 1.35;">
                                         ${t.title}
                                     </div>
                                     <div class="syllabus-topic-outline ps-1 pt-1">

@@ -46,7 +46,7 @@
                         <i class="ti ti-file-text text-primary fs-2"></i>
                         <span>Course Overview & Objectives</span>
                     </h4>
-                    <span class="badge bg-blue-600 text-white rounded-pill px-3 py-1 fs-7 active-section-badge"><i class="bi bi-pencil ti ti-pencil me-1"></i> Active Section</span>
+                    <!-- <span class="badge bg-blue-600 text-white rounded-pill px-3 py-1 fs-7 active-section-badge"><i class="bi bi-pencil ti ti-pencil me-1"></i> Active Section</span> -->
                 </div>
                 <div class="row g-3">
                     <!-- Training Title Placed Here at the Top -->
@@ -128,7 +128,7 @@
                         <span>Training Syllabus & Learning Modules</span>
                     </h4>
                     <div class="d-flex align-items-center gap-2">
-                        <span class="badge bg-blue-600 text-white rounded-pill px-3 py-1 fs-7 active-section-badge"><i class="bi bi-pencil ti ti-pencil me-1"></i> Active Section</span>
+                        <!-- <span class="badge bg-blue-600 text-white rounded-pill px-3 py-1 fs-7 active-section-badge"><i class="bi bi-pencil ti ti-pencil me-1"></i> Active Section</span> -->
                         <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3" id="btn-add-syllabus">
                             <i class="ti ti-plus me-1"></i> Add Syllabus Point
                         </button>
@@ -168,7 +168,7 @@
                         <i class="ti ti-info-circle text-primary fs-2"></i>
                         <span>Classification, Basic Information & Capacity</span>
                     </h4>
-                    <span class="badge bg-blue-600 text-white rounded-pill px-3 py-1 fs-7 active-section-badge"><i class="bi bi-pencil ti ti-pencil me-1"></i> Active Section</span>
+                    <!-- <span class="badge bg-blue-600 text-white rounded-pill px-3 py-1 fs-7 active-section-badge"><i class="bi bi-pencil ti ti-pencil me-1"></i> Active Section</span> -->
                 </div>
                 <div class="row g-3">
                     <!-- Main Classification -->
@@ -326,12 +326,12 @@
                         <div class="invalid-feedback">Please select or specify the target employee or audience.</div>
                     </div>
 
-                    <!-- Requirements -->
+                    <!-- Participant Requirement (For User) -->
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold text-dark">Requirements</label>
+                        <label class="form-label fw-semibold text-dark">Participant Requirement</label>
                         @php $curPrereq = old('prerequisites', $training->prerequisites); @endphp
-                        <select name="prerequisites" id="select-prerequisites" class="form-select rounded-3 w-100" data-option-type="prerequisites" data-option-title="Requirements">
-                            <option value="">Select Requirements (Optional)...</option>
+                        <select name="prerequisites" id="select-prerequisites" class="form-select rounded-3 w-100" data-option-type="prerequisites" data-option-title="Participant Requirement">
+                            <option value="">Select Participant Requirement (Optional)...</option>
                             @foreach ($options['prerequisites'] ?? [] as $preOpt)
                                 <option value="{{ $preOpt->value }}" {{ $curPrereq == $preOpt->value ? 'selected' : '' }}>
                                     {{ $preOpt->value }}
@@ -339,6 +339,24 @@
                             @endforeach
                             @if ($curPrereq && !collect($options['prerequisites'] ?? [])->pluck('value')->contains($curPrereq))
                                 <option value="{{ $curPrereq }}" selected>{{ $curPrereq }} (Current)</option>
+                            @endif
+                            <option value="__add_new__" class="fw-bold text-primary">+ Add New...</option>
+                        </select>
+                    </div>
+
+                    <!-- Course Completion Requirement (For Training) -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-dark">Course Completion Requirement</label>
+                        @php $curCompletion = old('course_completion_requirement', $training->course_completion_requirement); @endphp
+                        <select name="course_completion_requirement" id="select-course-completion-requirement" class="form-select rounded-3 w-100" data-option-type="course_completion_requirement" data-option-title="Course Completion Requirement">
+                            <option value="">Select Course Completion Requirement (Optional)...</option>
+                            @foreach ($options['course_completion_requirement'] ?? [] as $crOpt)
+                                <option value="{{ $crOpt->value }}" {{ $curCompletion == $crOpt->value ? 'selected' : '' }}>
+                                    {{ $crOpt->value }}
+                                </option>
+                            @endforeach
+                            @if ($curCompletion && !collect($options['course_completion_requirement'] ?? [])->pluck('value')->contains($curCompletion))
+                                <option value="{{ $curCompletion }}" selected>{{ $curCompletion }} (Current)</option>
                             @endif
                             <option value="__add_new__" class="fw-bold text-primary">+ Add New...</option>
                         </select>
@@ -355,11 +373,11 @@
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-dark">Registration Status <span class="text-danger">*</span></label>
                         @php $currentStatus = old('status', $training->status); @endphp
-                        <select name="status" class="form-select rounded-3" required>
+                        <select name="status" id="registration_status_select" class="form-select rounded-3" required>
                             <option value="Open Registration" {{ $currentStatus == 'Open Registration' || $currentStatus == 'Open' ? 'selected' : '' }}>Open Registration [Active]</option>
-                            <option value="Running" {{ $currentStatus == 'Running' ? 'selected' : '' }}>Running [In Progress]</option>
                             <option value="Closed" {{ $currentStatus == 'Closed' ? 'selected' : '' }}>Closed / Full</option>
                             <option value="Draft" {{ $currentStatus == 'Draft' ? 'selected' : '' }}>Draft</option>
+                            <option value="Unscheduled" {{ $currentStatus == 'Unscheduled' ? 'selected' : '' }}>Unscheduled</option>
                         </select>
                         <div class="invalid-feedback">Please select a registration status.</div>
                     </div>
@@ -367,13 +385,13 @@
             </div>
 
             <!-- 4. SCHEDULE TIMING & DATES -->
-            <div class="card form-section-card border border-slate-200 rounded-2xl p-6 bg-white shadow-sm transition-all duration-200 w-100 position-relative">
+            <div id="scheduleTimingCard" class="card form-section-card border border-slate-200 rounded-2xl p-6 bg-white shadow-sm transition-all duration-200 w-100 position-relative">
                 <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
                     <h4 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2" style="font-size: 1.25rem;">
                         <i class="ti ti-calendar-event text-primary fs-2"></i>
                         <span>Schedule Timing & Dates</span>
                     </h4>
-                    <span class="badge bg-blue-600 text-white rounded-pill px-3 py-1 fs-7 active-section-badge"><i class="bi bi-pencil ti ti-pencil me-1"></i> Active Section</span>
+                    <!-- <span class="badge bg-blue-600 text-white rounded-pill px-3 py-1 fs-7 active-section-badge"><i class="bi bi-pencil ti ti-pencil me-1"></i> Active Section</span> -->
                 </div>
                 <div class="row g-3">
                     <!-- Row 1: Dates -->
@@ -436,33 +454,26 @@
 <style>
         .form-section-card {
         border: 1px solid #e2e8f0 !important;
-        border-radius: 1rem !important; /* rounded-2xl */
+        border-left: 0.25rem solid #206bc4 !important;
+        border-radius: 1rem !important; /* rounded-4 / 16px matching confirmation alert */
         padding: 1.5rem !important; /* p-6 */
         background-color: #ffffff !important;
-        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03) !important;
-        transition: all 0.2s ease-in-out !important;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px 0 rgba(0, 0, 0, 0.02) !important;
+        transition: border-color 0.25s ease, box-shadow 0.25s ease, border-left 0.25s ease !important;
         position: relative;
     }
 
     .form-section-card:focus-within,
     .form-section-card.is-active-section {
-        border: 2px solid #2563eb !important;
-        box-shadow: 0 0 15px rgba(37, 99, 235, 0.2) !important;
+        border: 1px solid #cbd5e1 !important;
+        border-left: 0.25rem solid #003b6d !important;
+        box-shadow: 0 0 24px rgba(32, 107, 196, 0.16), 0 6px 18px rgba(0, 59, 109, 0.06) !important;
     }
 
-    .form-section-card .active-section-badge {
-        display: none !important;
-        background-color: #2563eb !important;
-        color: #ffffff !important;
-        font-weight: 600;
-        box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
-    }
-
+    .form-section-card .active-section-badge,
     .form-section-card:focus-within .active-section-badge,
     .form-section-card.is-active-section .active-section-badge {
-        display: inline-flex !important;
-        align-items: center;
-        animation: activeSectionFade 0.2s ease-in-out;
+        display: none !important;
     }
 
     @keyframes activeSectionFade {
@@ -612,6 +623,52 @@ document.addEventListener('DOMContentLoaded', function () {
         if (existingSubVal) {
             $('#select-sub-classification').val(existingSubVal);
         }
+    }
+
+    // Toggle Schedule Timing & Dates card based on Registration Status
+    const statusSelect = document.getElementById('registration_status_select');
+    const scheduleTimingCard = document.getElementById('scheduleTimingCard');
+    const startDateInput = document.getElementById('start_date');
+    const startTimeInput = document.getElementById('start_time');
+    const endTimeInput = document.getElementById('end_time');
+
+    function toggleScheduleTimingSection() {
+        if (!statusSelect || !scheduleTimingCard) return;
+        const isUnscheduled = statusSelect.value === 'Unscheduled';
+        if (isUnscheduled) {
+            scheduleTimingCard.style.display = 'none';
+            if (startDateInput) {
+                startDateInput.removeAttribute('required');
+                startDateInput.disabled = true;
+            }
+            if (startTimeInput) {
+                startTimeInput.removeAttribute('required');
+                startTimeInput.disabled = true;
+            }
+            if (endTimeInput) {
+                endTimeInput.removeAttribute('required');
+                endTimeInput.disabled = true;
+            }
+        } else {
+            scheduleTimingCard.style.display = '';
+            if (startDateInput) {
+                startDateInput.setAttribute('required', 'required');
+                startDateInput.disabled = false;
+            }
+            if (startTimeInput) {
+                startTimeInput.setAttribute('required', 'required');
+                startTimeInput.disabled = false;
+            }
+            if (endTimeInput) {
+                endTimeInput.setAttribute('required', 'required');
+                endTimeInput.disabled = false;
+            }
+        }
+    }
+
+    if (statusSelect) {
+        statusSelect.addEventListener('change', toggleScheduleTimingSection);
+        toggleScheduleTimingSection();
     }
 
     // Handle form submission: validate then let it submit to backend

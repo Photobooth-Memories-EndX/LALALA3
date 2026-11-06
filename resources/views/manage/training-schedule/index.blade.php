@@ -46,6 +46,7 @@
                         <span>Manage Schedules</span>
                     </button>
                 </li>
+                {{--
                 <li class="nav-item" role="presentation">
                     <button class="nav-link fw-bold px-4 py-2 rounded-3 d-inline-flex align-items-center gap-2" 
                             id="tab-participant-tracking-btn" data-bs-toggle="pill" data-bs-target="#tab-participant-tracking-pane" type="button" role="tab" aria-selected="false">
@@ -53,6 +54,7 @@
                         <span>Participant Tracking & Approvals</span>
                     </button>
                 </li>
+                --}}
             </ul>
         </div>
 
@@ -91,10 +93,11 @@
                                 <div style="min-width: 120px; flex-shrink: 0;">
                                     @php
                                         $statusesList = [
-                                            'open'    => 'Open Registration',
-                                            'running' => 'Running',
-                                            'closed'  => 'Closed Registration',
-                                            'draft'   => 'Draft',
+                                            'open'        => 'Open Registration',
+                                            'running'     => 'Running',
+                                            'closed'      => 'Closed Registration',
+                                            'draft'       => 'Draft',
+                                            'unscheduled' => 'Unscheduled',
                                         ];
                                     @endphp
                                     <select id="scheduleStatusSelect" name="status" class="form-select rounded-3" onchange="this.form.submit()">
@@ -222,7 +225,7 @@
                     $trainings = $trainings ?? \App\Models\OfflineTraining::forSchedule()->withCount('participants')->orderBy('start_date', 'asc')->paginate(10);
                 @endphp
                 <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden">
-                    <div class="table-responsive">
+                    <div class="table-responsive manage-schedule-scroll">
                         <table class="table table-vcenter card-table table-hover align-middle mb-0" id="manageScheduleTable">
                             <thead>
                                 <tr class="text-muted extra-small text-uppercase fw-bold text-center align-middle" style="letter-spacing: 0.05em; background-color: #f8fafc;">
@@ -268,6 +271,7 @@
                                             'Open Registration' => 'bg-success-subtle text-success',
                                             'Running'           => 'bg-warning-subtle text-warning border border-warning-subtle',
                                             'Closed'            => 'bg-secondary-subtle text-secondary',
+                                            'Unscheduled'       => 'bg-secondary-subtle text-secondary border border-secondary-subtle',
                                             default             => 'bg-info-subtle text-info',
                                         };
 
@@ -275,21 +279,23 @@
                                             'Open Registration' => 'open',
                                             'Running'           => 'running',
                                             'Closed'            => 'closed',
+                                            'Unscheduled'       => 'unscheduled',
                                             default             => strtolower($item->status),
                                         };
 
-                                        $startDate = \Carbon\Carbon::parse($item->start_date);
-                                        $startTime = substr($item->start_time, 0, 5);
-                                        $endTime = substr($item->end_time, 0, 5);
+                                        $isUnscheduled = strtolower($item->status ?? '') === 'unscheduled';
+                                        $startDate = !empty($item->start_date) ? \Carbon\Carbon::parse($item->start_date) : null;
+                                        $startTime = $item->start_time ? substr($item->start_time, 0, 5) : '';
+                                        $endTime = $item->end_time ? substr($item->end_time, 0, 5) : '';
                                     @endphp
                                     <tr class="schedule-table-row text-center align-middle" 
                                         data-id="{{ $item->id }}" 
                                         data-category="{{ $item->category }}" 
                                         data-status="{{ $dataStatus }}" 
                                         data-status-label="{{ $item->status }}"
-                                        data-month="{{ (int)$startDate->format('n') }}" 
-                                        data-year="{{ $startDate->format('Y') }}" 
-                                        data-date="{{ $startDate->format('Y-m-d') }}" 
+                                        data-month="{{ $startDate ? (int)$startDate->format('n') : '' }}" 
+                                        data-year="{{ $startDate ? $startDate->format('Y') : '' }}" 
+                                        data-date="{{ $startDate ? $startDate->format('Y-m-d') : '' }}" 
                                         data-instructor="{{ $item->instructor }}" 
                                         data-location="{{ $item->location }}">
                                         <td class="text-muted fw-semibold schedule-row-index">{{ method_exists($trainings, 'firstItem') && $trainings->firstItem() ? ($trainings->firstItem() + $loop->index) : $loop->iteration }}</td>
@@ -306,7 +312,9 @@
                                             </span>
                                         </td>
                                         <td class="fw-semibold text-dark text-center align-middle" style="min-width: 140px;">
-                                            @if($item->end_date && $item->start_date != $item->end_date)
+                                            @if($isUnscheduled || empty($item->start_date))
+                                                <span class="text-muted fw-semibold">TBA (To be announce)</span>
+                                            @elseif($item->end_date && $item->start_date != $item->end_date)
                                                 @if(\Carbon\Carbon::parse($item->start_date)->format('M Y') == \Carbon\Carbon::parse($item->end_date)->format('M Y'))
                                                     {{ \Carbon\Carbon::parse($item->start_date)->format('d') }} - {{ \Carbon\Carbon::parse($item->end_date)->format('d M Y') }}
                                                 @else
@@ -315,12 +323,16 @@
                                             @else
                                                 {{ \Carbon\Carbon::parse($item->start_date)->format('d M Y') }}
                                             @endif
-                                            @if($item->registration_close_date)
+                                            @if(!$isUnscheduled && $item->registration_close_date)
                                                 <div class="text-muted extra-small fw-normal" title="Registration Deadline">Reg Closes: {{ \Carbon\Carbon::parse($item->registration_close_date)->format('d M Y') }}{{ $item->registration_close_time ? ' ' . substr($item->registration_close_time, 0, 5) : '' }}</div>
                                             @endif
                                         </td>
                                         <td>
-                                            <div class="text-muted small" style="min-width: 120px;">{{ $startTime }} - {{ $endTime }} WIB</div>
+                                            @if($isUnscheduled || empty($item->start_date) || empty($item->start_time))
+                                                <div class="text-muted small" style="min-width: 120px;">TBA</div>
+                                            @else
+                                                <div class="text-muted small" style="min-width: 120px;">{{ $startTime }} - {{ $endTime }} WIB</div>
+                                            @endif
                                         </td>
                                         <td class="text-muted small">
                                             {{ $item->location }}
@@ -355,6 +367,8 @@
                                                         data-end-time="{{ $endTime }}"
                                                         data-duration-hours="{{ \Carbon\Carbon::parse($item->start_time)->diffInHours(\Carbon\Carbon::parse($item->end_time)) . ' Hours' }}"
                                                         data-requirements="{{ $item->requirements ?? ($item->prerequisites ?? '') }}"
+                                                        data-participant-requirement="{{ $item->prerequisites ?? ($item->requirements ?? '') }}"
+                                                        data-course-completion-requirement="{{ $item->course_completion_requirement ?? '' }}"
                                                         data-target="{{ $item->target_employee ?? '' }}"
                                                         data-description="{{ $item->description ?? '' }}"
                                                         data-objectives="{{ $item->learning_objectives ?? '' }}"
@@ -369,11 +383,11 @@
                                                    title="View/Edit Schedule">
                                                     <i class="ti ti-edit fs-2"></i>
                                                 </a>
-                                                <a href="{{ route('manage.training-schedule.participants', $item->id) }}" class="btn btn-sm btn-icon btn-outline-info rounded-3 btn-participants-schedule"
+                                                <!-- <a href="{{ route('manage.training-schedule.participants', $item->id) }}" class="btn btn-sm btn-icon btn-outline-info rounded-3 btn-participants-schedule"
                                                         title="View Participants"
                                                         data-id="{{ $item->id }}" data-title="{{ $item->title }}">
                                                     <i class="ti ti-users fs-2"></i>
-                                                </a>
+                                                </a> -->
                                                 <button type="button"
                                                         class="btn btn-sm btn-icon btn-outline-danger rounded-3 btn-delete-schedule"
                                                         title="Delete Schedule"
@@ -382,7 +396,7 @@
                                                         data-training-id="{{ $item->id }}"
                                                         data-training-title="{{ $item->title }}"
                                                         data-training-code="{{ $item->training_code ?? 'PTKP-TR-' . $item->id }}"
-                                                        data-training-date="{{ $startDate->format('d M Y') }}"
+                                                        data-training-date="{{ $startDate ? $startDate->format('d M Y') : 'TBA (To be announce)' }}"
                                                         data-delete-url="{{ route('manage.training-schedule.destroy', $item->id) }}">
                                                     <i class="ti ti-trash fs-2"></i>
                                                 </button>
@@ -417,44 +431,35 @@
                         <p class="text-muted small mb-0">No PTKP training schedules match the selected filters. Try changing or clearing your filter criteria.</p>
                     </div>
 
-                    @if (isset($schedules) && method_exists($schedules, 'hasPages') && $schedules->hasPages())
+                    @php
+                        $paginatedItems = $schedules ?? $trainings;
+                    @endphp
+                    @if (isset($paginatedItems) && method_exists($paginatedItems, 'total') && $paginatedItems->total() > 0)
                         <div class="card-footer bg-white border-0 py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
-                            <div class="text-muted small">
-                                Showing {{ $schedules->firstItem() ?? 0 }} to {{ $schedules->lastItem() ?? 0 }} of {{ $schedules->total() }} results
+                            <div class="d-flex align-items-center gap-2">
+                                <select class="form-select form-select-sm w-auto rounded-3 border-slate-300" id="schedulePageLength" onchange="window.handleSchedulePageLengthChange(this.value)">
+                                    <option value="10" {{ request('per_page', 10) == 10 ? 'selected' : '' }}>10</option>
+                                    <option value="25" {{ request('per_page', 10) == 25 ? 'selected' : '' }}>25</option>
+                                    <option value="50" {{ request('per_page', 10) == 50 ? 'selected' : '' }}>50</option>
+                                    <option value="100" {{ request('per_page', 10) == 100 ? 'selected' : '' }}>100</option>
+                                </select>
+                                <span class="text-muted small">
+                                    Showing {{ $paginatedItems->firstItem() ?? 0 }} to {{ $paginatedItems->lastItem() ?? 0 }} of {{ $paginatedItems->total() }} entries
+                                </span>
                             </div>
                             <div>
                                 {{ $schedules->appends(request()->query())->links() }}
-                            </div>
-                        </div>
-                    @elseif (isset($schedules) && method_exists($schedules, 'total') && $schedules->total() > 0)
-                        <div class="card-footer bg-white border-0 py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
-                            <div class="text-muted small">
-                                Showing {{ $schedules->firstItem() ?? 0 }} to {{ $schedules->lastItem() ?? 0 }} of {{ $schedules->total() }} results
-                            </div>
-                        </div>
-                    @elseif (method_exists($trainings, 'hasPages') && $trainings->hasPages())
-                        <div class="card-footer bg-white border-0 py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
-                            <div class="text-muted small">
-                                Showing {{ $trainings->firstItem() ?? 0 }} to {{ $trainings->lastItem() ?? 0 }} of {{ $trainings->total() }} results
-                            </div>
-                            <div>
-                                {{ $trainings->appends(request()->query())->links() }}
-                            </div>
-                        </div>
-                    @elseif (method_exists($trainings, 'total') && $trainings->total() > 0)
-                        <div class="card-footer bg-white border-0 py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
-                            <div class="text-muted small">
-                                Showing {{ $trainings->firstItem() ?? 0 }} to {{ $trainings->lastItem() ?? 0 }} of {{ $trainings->total() }} results
                             </div>
                         </div>
                     @endif
                 </div>
             </div>
 
-            {{-- PANE 2: PARTICIPANT TRACKING & APPROVALS --}}
+            {{-- PANE 2: PARTICIPANT TRACKING & APPROVALS (HIDDEN)
             <div class="tab-pane fade" id="tab-participant-tracking-pane" role="tabpanel">
                 @include('main.manage-training-schedule.partials.tracking-section')
             </div>
+            --}}
         </div>
 
         {{-- More Filters Modal --}}
@@ -471,6 +476,81 @@
 
 @section('style')
 <style>
+    /* Clean Pagination Styling matching Learning Record */
+    .pagination {
+        gap: .4rem !important;
+        margin-bottom: 0 !important;
+    }
+
+    .page-item .page-link {
+        border-radius: 12px !important;
+        border: 1px solid #dbe4f0 !important;
+        color: #1e40af !important;
+        min-width: 38px !important;
+        height: 38px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-weight: 600 !important;
+        font-size: 0.875rem !important;
+        padding: 0 0.5rem !important;
+        text-decoration: none !important;
+        transition: all 0.2s ease !important;
+    }
+
+    .page-item.active .page-link {
+        background: #003b6d !important;
+        border-color: #003b6d !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 12px rgba(0, 59, 109, .25) !important;
+    }
+
+    .page-item .page-link:hover {
+        background: #eff6ff !important;
+        border-color: #93c5fd !important;
+    }
+
+    .page-item.disabled .page-link {
+        color: #94a3b8 !important;
+        background: #f8fafc !important;
+        border-color: #e2e8f0 !important;
+        cursor: not-allowed !important;
+    }
+
+    /* Table Sticky Freeze Header & Scrollable Container */
+    .table-responsive.manage-schedule-scroll,
+    .manage-schedule-scroll {
+        max-height: 70vh !important;
+        overflow-y: auto !important;
+        overflow-x: auto !important;
+        position: relative !important;
+        -webkit-overflow-scrolling: touch;
+        width: 100% !important;
+    }
+
+    #manageScheduleTable thead th,
+    #tableInlineByTraining thead th,
+    #tableInlineByEmployee thead th {
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 10 !important;
+        background-color: #f8fafc !important;
+        box-shadow: inset 0 -1px 0 #e2e8f0, 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+    }
+
+    [data-bs-theme="dark"] #manageScheduleTable thead th,
+    [data-bs-theme="dark"] #tableInlineByTraining thead th,
+    [data-bs-theme="dark"] #tableInlineByEmployee thead th,
+    body.dark-mode #manageScheduleTable thead th,
+    body.dark-mode #tableInlineByTraining thead th,
+    body.dark-mode #tableInlineByEmployee thead th,
+    body.theme-dark #manageScheduleTable thead th,
+    body.theme-dark #tableInlineByTraining thead th,
+    body.theme-dark #tableInlineByEmployee thead th {
+        background-color: #1e293b !important;
+        color: #94a3b8 !important;
+    }
+
     /* Manage Training Schedule Custom Styling */
     .schedule-table-row {
         transition: background-color 0.15s ease;

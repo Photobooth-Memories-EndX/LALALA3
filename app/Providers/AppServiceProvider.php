@@ -31,6 +31,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot()
     {
         Paginator::useBootstrapFive();
+        Paginator::defaultView('vendor.pagination.custom');
 
         view()->composer(['partials.header', 'layouts.header'], function ($view) {
             $view->with('category', Classification::select('classification_name', 'slug')->get());

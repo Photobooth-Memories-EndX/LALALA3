@@ -467,15 +467,15 @@ class TrainingScheduleExportAndCountTest extends TestCase
 
         // 1. Both Open: 1 and Closed: 1 badges must be rendered on the shared date
         $this->assertStringContainsString('Open: 1', $calHtml);
-        $this->assertStringContainsString('Closed: 1', $calHtml);
-        $this->assertStringContainsString('bg-success-light text-success', $calHtml);
-        $this->assertStringContainsString('bg-secondary-light text-secondary', $calHtml);
+        $this->assertStringContainsString('Private: 1', $calHtml);
+        $this->assertStringContainsString('cal-status-badge-open', $calHtml);
+        $this->assertStringContainsString('cal-status-badge-private', $calHtml);
 
         // 2. Legend must contain all 4 status indicators in English
         $this->assertStringContainsString('Open Registration', $calHtml);
-        $this->assertStringContainsString('Registration Closed', $calHtml);
-        $this->assertStringContainsString('Running / Today\'s Session', $calHtml);
-        $this->assertStringContainsString('Past Training Session', $calHtml);
+        $this->assertStringContainsString('Private (Invitation-Only)', $calHtml);
+        $this->assertStringContainsString('Running', $calHtml);
+        $this->assertStringContainsString('Ended', $calHtml);
     }
 
     /**
@@ -566,8 +566,8 @@ class TrainingScheduleExportAndCountTest extends TestCase
         // Check tClosed
         $this->assertTrue($eventsById->has((string)$tClosed->id));
         $closedEvent = $eventsById->get((string)$tClosed->id);
-        $this->assertEquals('Closed', $closedEvent['status']);
-        $this->assertEquals('Closed', $closedEvent['computedStatus']);
+        $this->assertEquals('Private', $closedEvent['status']);
+        $this->assertEquals('Private', $closedEvent['computedStatus']);
     }
 
     /**
@@ -607,9 +607,9 @@ class TrainingScheduleExportAndCountTest extends TestCase
             OfflineTrainingController::evaluateCalendarCellStatus($trainingSpanningTodayAndFuture, $todayStr, $todayStr)
         );
 
-        // Future date cell (> today) with registration closed => Closed (NEVER Running)
+        // Future date cell (> today) with registration closed => Private (Invitation-Only)
         $this->assertEquals(
-            'Closed',
+            'Private',
             OfflineTrainingController::evaluateCalendarCellStatus($trainingSpanningTodayAndFuture, $futureDateStr, $todayStr)
         );
 
@@ -637,9 +637,9 @@ class TrainingScheduleExportAndCountTest extends TestCase
             'todaysAgenda' => collect(),
         ])->render();
 
-        // On future date cell (futureDateStr), both Open: 1 and Closed: 1 badges must be present
+        // On future date cell (futureDateStr), both Open: 1 and Private: 1 badges must be present
         $this->assertStringContainsString('Open: 1', $calHtml);
-        $this->assertStringContainsString('Closed: 1', $calHtml);
+        $this->assertStringContainsString('Private: 1', $calHtml);
 
         // On today's date cell, Running: 2 must be present
         $this->assertStringContainsString('Running: 2', $calHtml);
@@ -660,5 +660,224 @@ class TrainingScheduleExportAndCountTest extends TestCase
         // Verify controller exportJpg renders exports.training-schedule-jpg
         $controllerContent = file_get_contents(app_path('Http/Controllers/OfflineTrainingController.php'));
         $this->assertStringContainsString("view('exports.training-schedule-jpg'", $controllerContent);
+    }
+
+    /**
+     * 16. Verify registration status dropdown excludes Running option in create and edit forms.
+     */
+    public function test_registration_status_excludes_running_option_in_create_and_edit_views(): void
+    {
+        $createHtml = file_get_contents(resource_path('views/manage/training-schedule/create.blade.php'));
+        $editHtml = file_get_contents(resource_path('views/manage/training-schedule/edit.blade.php'));
+
+        // Neither form should have Running as a registration status option
+        $this->assertStringNotContainsString('value="Running"', $createHtml);
+        $this->assertStringNotContainsString('value="Running"', $editHtml);
+
+        // Both must have Open Registration and Closed
+        $this->assertStringContainsString('value="Open Registration"', $createHtml);
+        $this->assertStringContainsString('value="Closed"', $createHtml);
+        $this->assertStringContainsString('value="Open Registration"', $editHtml);
+        $this->assertStringContainsString('value="Closed"', $editHtml);
+    }
+
+    /**
+     * 17. Verify Participant Requirement and Course Completion Requirement fields in manage forms and syllabus modal.
+     */
+    public function test_participant_and_course_completion_requirements_in_manage_and_modal(): void
+    {
+        $createHtml = file_get_contents(resource_path('views/manage/training-schedule/create.blade.php'));
+        $editHtml = file_get_contents(resource_path('views/manage/training-schedule/edit.blade.php'));
+        $modalHtml = file_get_contents(resource_path('views/user/trainingplan-user/modals/syllabus-modal.blade.php'));
+
+        // Manage create and edit have both Participant Requirement and Course Completion Requirement
+        $this->assertStringContainsString('Participant Requirement', $createHtml);
+        $this->assertStringContainsString('Course Completion Requirement', $createHtml);
+        $this->assertStringContainsString('name="prerequisites"', $createHtml);
+        $this->assertStringContainsString('name="course_completion_requirement"', $createHtml);
+
+        $this->assertStringContainsString('Participant Requirement', $editHtml);
+        $this->assertStringContainsString('Course Completion Requirement', $editHtml);
+        $this->assertStringContainsString('name="prerequisites"', $editHtml);
+        $this->assertStringContainsString('name="course_completion_requirement"', $editHtml);
+
+        // Syllabus Modal has both sections
+        $this->assertStringContainsString('Participant Requirement', $modalHtml);
+        $this->assertStringContainsString('Course Completion Requirement', $modalHtml);
+        $this->assertStringContainsString('syllabusModalParticipantReq', $modalHtml);
+        $this->assertStringContainsString('syllabusModalCompletionReq', $modalHtml);
+    }
+
+    /**
+     * 18. Verify syllabus modal parts are wrapped in distinct cards/boxes with larger headings.
+     */
+    public function test_syllabus_modal_boxed_structure_and_heading_hierarchy(): void
+    {
+        $modalHtml = file_get_contents(resource_path('views/user/trainingplan-user/modals/syllabus-modal.blade.php'));
+
+        // Heading hierarchy (fs-5 or larger headings on each section card)
+        $this->assertStringContainsString('Course Overview', $modalHtml);
+        $this->assertStringContainsString('Target Participants', $modalHtml);
+        $this->assertStringContainsString('Calculated Duration', $modalHtml);
+        $this->assertStringContainsString('Participant Requirement', $modalHtml);
+        $this->assertStringContainsString('Course Completion Requirement', $modalHtml);
+        $this->assertStringContainsString('Syllabus Modules & Topics', $modalHtml);
+
+        // Boxed structure for each syllabus topic/module and its section card
+        $this->assertStringContainsString('syllabusModalTopicsCard', $modalHtml);
+        $this->assertStringContainsString('syllabus-topic-card', $modalHtml);
+        $this->assertStringContainsString('syllabus-topic-title', $modalHtml);
+        $this->assertStringContainsString('card border border-light-subtle rounded-3', $modalHtml);
+
+        // Bottom right close button removed
+        $this->assertStringNotContainsString('data-bs-dismiss="modal">Close</button>', $modalHtml);
+    }
+
+    /**
+     * 19. Verify status badge beside title in calendar training list modal is removed.
+     */
+    public function test_calendar_modal_training_item_status_badge_removed(): void
+    {
+        $indexHtml = file_get_contents(resource_path('views/user/trainingplan-user/index.blade.php'));
+
+        // openTrainingListModal should not include badgeHtml in item row
+        $this->assertStringNotContainsString('${badgeHtml}', $indexHtml);
+    }
+
+    /**
+     * 20. Verify Unscheduled option exists in create and edit views, and hides scheduleTimingCard.
+     */
+    public function test_unscheduled_option_and_timing_toggle_in_manage_views(): void
+    {
+        $createHtml = file_get_contents(resource_path('views/manage/training-schedule/create.blade.php'));
+        $editHtml = file_get_contents(resource_path('views/manage/training-schedule/edit.blade.php'));
+
+        // Check Unscheduled option in both views
+        $this->assertStringContainsString('value="Unscheduled"', $createHtml);
+        $this->assertStringContainsString('value="Unscheduled"', $editHtml);
+
+        // Check schedule timing card id and toggle logic
+        $this->assertStringContainsString('id="scheduleTimingCard"', $createHtml);
+        $this->assertStringContainsString('id="scheduleTimingCard"', $editHtml);
+        $this->assertStringContainsString('toggleScheduleTimingSection', $createHtml);
+        $this->assertStringContainsString('toggleScheduleTimingSection', $editHtml);
+    }
+
+    /**
+     * 21. Verify Unscheduled training displays TBA (To be announce) in Available Training tab.
+     */
+    public function test_unscheduled_training_displays_tba_in_available_tab(): void
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'admin']);
+
+        // Store unscheduled training
+        $response = $this->actingAs($admin)->post(route('manage.training-schedule.store'), [
+            'title'      => 'TBA Unscheduled Training',
+            'category'   => 'General',
+            'instructor' => 'Trainer X',
+            'location'   => 'Room TBA',
+            'quota'      => 25,
+            'status'     => 'Unscheduled',
+        ]);
+        $response->assertSessionHasNoErrors();
+
+        $training = OfflineTraining::where('title', 'TBA Unscheduled Training')->first();
+        $this->assertNotNull($training);
+        $this->assertEquals('Unscheduled', $training->status);
+        $this->assertNull($training->start_date);
+
+        // Render available tab
+        $viewHtml = view('user.trainingplan-user.partials.available-training-tab', [
+            'availableTrainings' => collect([$training]),
+        ])->render();
+
+        $this->assertStringContainsString('TBA (To be announce)', $viewHtml);
+        $this->assertStringContainsString('Unscheduled', $viewHtml);
+
+        // Also verify manage index loads without format() on null error
+        $manageResponse = $this->actingAs($admin)->get(route('manage.training-schedule.index'));
+        $manageResponse->assertStatus(200);
+        $manageResponse->assertSee('TBA (To be announce)');
+    }
+
+    /**
+     * 22. Verify PDF and JPG exports adapt dynamic status (Unscheduled, Closed on deadline passed, Open Registration).
+     */
+    public function test_export_pdf_and_jpg_dynamic_status_evaluation_and_unscheduled_support(): void
+    {
+        $pastDeadlineTraining = new OfflineTraining([
+            'id'                       => 991,
+            'title'                    => 'Past Deadline Training',
+            'category'                 => 'Technical',
+            'status'                   => 'Open Registration',
+            'start_date'               => Carbon::now()->subDays(5)->format('Y-m-d'),
+            'registration_close_date'  => Carbon::now()->subDays(6)->format('Y-m-d'),
+            'registration_close_time'  => '23:59:00',
+            'start_time'               => '08:00:00',
+            'end_time'                 => '16:00:00',
+            'location'                 => 'Room 101',
+            'instructor'               => 'Instructor A',
+            'quota'                    => 20,
+        ]);
+
+        $unscheduledTraining = new OfflineTraining([
+            'id'                       => 992,
+            'title'                    => 'Unscheduled Event',
+            'category'                 => 'Leadership',
+            'status'                   => 'Unscheduled',
+            'start_date'               => null,
+            'registration_close_date'  => null,
+            'start_time'               => null,
+            'end_time'                 => null,
+            'location'                 => 'Grand Ballroom',
+            'instructor'               => 'Instructor B',
+            'quota'                    => 30,
+        ]);
+
+        $openTraining = new OfflineTraining([
+            'id'                       => 993,
+            'title'                    => 'Legit Open Training',
+            'category'                 => 'Safety',
+            'status'                   => 'Open Registration',
+            'start_date'               => Carbon::now()->addDays(10)->format('Y-m-d'),
+            'registration_close_date'  => Carbon::now()->addDays(5)->format('Y-m-d'),
+            'registration_close_time'  => '23:59:00',
+            'start_time'               => '08:00:00',
+            'end_time'                 => '16:00:00',
+            'location'                 => 'Room 102',
+            'instructor'               => 'Instructor C',
+            'quota'                    => 25,
+        ]);
+
+        // 1. PDF export view checks
+        $pdfHtml = view('exports.training-schedule-pdf', [
+            'trainings' => collect([$pastDeadlineTraining, $unscheduledTraining, $openTraining]),
+        ])->render();
+
+        // Past deadline training should display "Closed" badge in PDF
+        $this->assertStringContainsString('Past Deadline Training', $pdfHtml);
+        $this->assertStringContainsString('Closed', $pdfHtml);
+
+        // Unscheduled training should display "Unscheduled" badge and "TBA"
+        $this->assertStringContainsString('Unscheduled Event', $pdfHtml);
+        $this->assertStringContainsString('Unscheduled', $pdfHtml);
+        $this->assertStringContainsString('TBA (To be announce)', $pdfHtml);
+
+        // Open training should display "Open Registration" badge
+        $this->assertStringContainsString('Legit Open Training', $pdfHtml);
+        $this->assertStringContainsString('Open Registration', $pdfHtml);
+
+        // 2. JPG export view checks
+        $jpgHtml = view('exports.training-schedule-jpg', [
+            'trainings' => collect([$pastDeadlineTraining, $unscheduledTraining, $openTraining]),
+        ])->render();
+
+        $this->assertStringContainsString('Past Deadline Training', $jpgHtml);
+        $this->assertStringContainsString('Closed', $jpgHtml);
+        $this->assertStringContainsString('Unscheduled Event', $jpgHtml);
+        $this->assertStringContainsString('Unscheduled', $jpgHtml);
+        $this->assertStringContainsString('Date: TBA (To be announce)', $jpgHtml);
+        $this->assertStringContainsString('Legit Open Training', $jpgHtml);
+        $this->assertStringContainsString('Open Registration', $jpgHtml);
     }
 }

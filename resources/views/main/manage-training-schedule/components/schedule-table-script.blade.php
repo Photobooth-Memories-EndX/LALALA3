@@ -347,10 +347,10 @@ document.addEventListener('DOMContentLoaded', function () {
                                 title="Edit Schedule" data-title="${title}">
                             <i class="ti ti-edit fs-2"></i>
                         </button>
-                        <button type="button" class="btn btn-sm btn-icon btn-outline-info rounded-3 btn-participants-schedule" 
+                        <!-- <button type="button" class="btn btn-sm btn-icon btn-outline-info rounded-3 btn-participants-schedule" 
                                 title="View Participants" data-id="1" data-title="${title}">
                             <i class="ti ti-users fs-2"></i>
-                        </button>
+                        </button> -->
                         <button type="button" class="btn btn-sm btn-icon btn-outline-danger rounded-3 btn-delete-schedule" 
                                 title="Delete Schedule" data-title="${title}">
                             <i class="ti ti-trash fs-2"></i>

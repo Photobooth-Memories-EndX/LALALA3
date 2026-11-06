@@ -84,7 +84,8 @@
                         $statusesList = [
                             'open'    => 'Open Registration',
                             'running' => 'Running',
-                            'closed'  => 'Registration Closed',
+                            'closed'      => 'Registration Closed',
+                            'unscheduled' => 'Unscheduled',
                         ];
                     @endphp
                     <select id="filterTrainingStatus" name="status" class="form-select rounded-3" onchange="this.form.submit()">
@@ -157,7 +158,7 @@
     </div>
 
     {{-- Available Training Table --}}
-    <div class="table-responsive">
+    <div class="table-responsive manage-schedule-scroll">
         <table class="table table-vcenter card-table table-hover align-middle mb-0" id="availableTrainingTable">
             <thead>
                 <tr class="text-muted extra-small text-uppercase fw-bold" style="letter-spacing: 0.05em; background-color: #f8fafc;">
@@ -167,9 +168,9 @@
                     <th class="text-center align-middle py-3" style="min-width: 120px;">TIME</th>
                     <th class="text-center align-middle py-3">LOCATION</th>
                     <th class="text-center align-middle py-3">SYLLABUS</th>
-                    <th class="text-center align-middle py-3">APPROVED PARTICIPANT</th>
-                    <th class="text-center align-middle py-3">STATUS</th>
-                    <th class="text-center align-middle py-3 pe-4">ACTION</th>
+                    <!-- <th class="text-center align-middle py-3">APPROVED PARTICIPANT</th> -->
+                    <!-- <th class="text-center align-middle py-3">STATUS</th> -->
+                    <!-- <th class="text-center align-middle py-3 pe-4">ACTION</th> -->
                 </tr>
             </thead>
             <tbody class="divide-y">
@@ -187,16 +188,18 @@
                         $myReg = $item->relationLoaded('registrations') ? $item->registrations->firstWhere('user_id', Auth::id()) : null;
                         $myRegStatus = $myReg ? $myReg->status : null;
 
-                        $regCloseDate = \Carbon\Carbon::parse($item->registration_close_date ?? $item->start_date);
+                        $isUnscheduled = strtolower($item->status ?? '') === 'unscheduled';
+                        $regCloseDate = \Carbon\Carbon::parse($item->registration_close_date ?? ($item->start_date ?: \Carbon\Carbon::now()));
                         $regCloseTime = $item->registration_close_time ? substr($item->registration_close_time, 0, 5) : '23:59';
                         $closeDatetime = \Carbon\Carbon::parse($regCloseDate->format('Y-m-d') . ' ' . $regCloseTime . ':59');
                         $isRegDeadlinePassed = \Carbon\Carbon::now()->gt($closeDatetime);
-                        $displayStatus = ($item->status === 'Open Registration' && $isRegDeadlinePassed) ? 'Closed' : $item->status;
+                        $displayStatus = $isUnscheduled ? 'Unscheduled' : (($item->status === 'Open Registration' && $isRegDeadlinePassed) ? 'Closed' : $item->status);
 
                         $statusBadgeClass = match($displayStatus) {
                             'Open Registration' => 'bg-success-subtle text-success',
                             'Running'           => 'bg-warning-subtle text-warning border border-warning-subtle',
                             'Closed'            => 'bg-secondary-subtle text-secondary',
+                            'Unscheduled'       => 'bg-secondary-subtle text-secondary border border-secondary-subtle',
                             default             => 'bg-info-subtle text-info',
                         };
 
@@ -204,19 +207,20 @@
                             'Open Registration' => 'open',
                             'Running'           => 'running',
                             'Closed'            => 'closed',
+                            'Unscheduled'       => 'unscheduled',
                             default             => strtolower($displayStatus ?? 'open'),
                         };
 
-                        $startDate = \Carbon\Carbon::parse($item->start_date);
-                        $startTime = substr($item->start_time, 0, 5);
-                        $endTime = substr($item->end_time, 0, 5);
+                        $startDate = !empty($item->start_date) ? \Carbon\Carbon::parse($item->start_date) : null;
+                        $startTime = $item->start_time ? substr($item->start_time, 0, 5) : '';
+                        $endTime = $item->end_time ? substr($item->end_time, 0, 5) : '';
                     @endphp
                     <tr class="training-table-row" 
                         data-id="{{ $item->id }}" 
                         data-category="{{ $item->category }}" 
                         data-status="{{ $dataStatus }}" 
-                        data-month="{{ (int)$startDate->format('n') }}" 
-                        data-year="{{ $startDate->format('Y') }}"
+                        data-month="{{ $startDate ? (int)$startDate->format('n') : '' }}" 
+                        data-year="{{ $startDate ? $startDate->format('Y') : '' }}"
                         data-location="{{ $item->location }}"
                         data-instructor="{{ $item->instructor }}">
                         <td class="text-center align-middle text-muted fw-semibold">{{ method_exists($availableTrainings, 'firstItem') && $availableTrainings->firstItem() ? ($availableTrainings->firstItem() + $loop->index) : $loop->iteration }}</td>
@@ -228,7 +232,9 @@
                             <div class="text-xs text-gray-400 mt-0.5">Code: {{ $training->batch ?? '-' }}</div>
                         </td>
                         <td class="fw-semibold text-dark text-center align-middle" style="min-width: 140px;">
-                            @if($item->end_date && $item->start_date != $item->end_date)
+                            @if($isUnscheduled || empty($item->start_date))
+                                <span class="text-muted fw-semibold">TBA (To be announce)</span>
+                            @elseif($item->end_date && $item->start_date != $item->end_date)
                                 @if(\Carbon\Carbon::parse($item->start_date)->format('M Y') == \Carbon\Carbon::parse($item->end_date)->format('M Y'))
                                     {{ \Carbon\Carbon::parse($item->start_date)->format('d') }} - {{ \Carbon\Carbon::parse($item->end_date)->format('d M Y') }}
                                 @else
@@ -239,7 +245,11 @@
                             @endif
                         </td>
                         <td class="text-center align-middle" style="min-width: 120px;">
-                            <div class="text-muted small">{{ $startTime }} - {{ $endTime }} WIB</div>
+                            @if($isUnscheduled || empty($item->start_date) || empty($item->start_time))
+                                <div class="text-muted small">TBA</div>
+                            @else
+                                <div class="text-muted small">{{ $startTime }} - {{ $endTime }} WIB</div>
+                            @endif
                         </td>
                         <td class="text-center align-middle">
                             <span class="text-muted small">{{ $item->location }}</span>
@@ -251,11 +261,13 @@
                                     data-title="{{ $title }}" 
                                     data-category="{{ $item->category }}" 
                                     data-instructor="{{ $item->instructor }}"
-                                    data-duration="{{ $startTime }} - {{ $endTime }} WIB"
-                                    data-start-time="{{ $startTime }}"
-                                    data-end-time="{{ $endTime }}"
-                                    data-duration-hours="{{ \Carbon\Carbon::parse($item->start_time)->diffInHours(\Carbon\Carbon::parse($item->end_time)) . ' Hours' }}"
+                                    data-duration="{{ ($isUnscheduled || empty($item->start_time)) ? 'TBA' : ($startTime . ' - ' . $endTime . ' WIB') }}"
+                                    data-start-time="{{ $startTime ?: 'TBA' }}"
+                                    data-end-time="{{ $endTime ?: 'TBA' }}"
+                                    data-duration-hours="{{ ($isUnscheduled || empty($item->start_time) || empty($item->end_time)) ? 'TBA' : (\Carbon\Carbon::parse($item->start_time)->diffInHours(\Carbon\Carbon::parse($item->end_time)) . ' Hours') }}"
                                     data-requirements="{{ $item->requirements ?? ($item->prerequisites ?? '') }}"
+                                    data-participant-requirement="{{ $item->prerequisites ?? ($item->requirements ?? '') }}"
+                                    data-course-completion-requirement="{{ $item->course_completion_requirement ?? '' }}"
                                     data-target="{{ $item->target_employee ?? '' }}"
                                     data-description="{{ $item->description ?? '' }}"
                                     data-objectives="{{ $item->learning_objectives ?? '' }}"
@@ -264,17 +276,17 @@
                                 <span>Syllabus</span>
                             </button>
                         </td>
-                        <td class="text-center align-middle" style="min-width: 130px;">
+                        <!-- <td class="text-center align-middle" style="min-width: 130px;">
                             <div class="fw-semibold text-dark small">{{ $enrolled }} / {{ $item->quota }} Seats {{ $isFull ? '(Full)' : '' }}</div>
                             <div class="progress progress-xs mt-1 mx-auto rounded-pill" style="height: 4px; max-width: 90px; background-color: #e2e8f0;">
                                 <div class="progress-bar rounded-pill" role="progressbar" style="width: {{ $percent }}%; background-color: {{ $barColor }};" aria-valuenow="{{ $percent }}" aria-valuemin="0" aria-valuemax="100"></div>
                             </div>
-                        </td>
-                        <td class="text-center align-middle">
+                        </td> -->
+                        <!-- <td class="text-center align-middle">
                             <span class="badge {{ $statusBadgeClass }} rounded-pill px-3 py-1 fw-semibold">
                                 {{ $displayStatus }}
                             </span>
-                        </td>
+                        </td> -->
                         <!-- <td class="text-center align-middle pe-4">
                             @if ($myRegStatus === 'Pending')
                                 <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-3 py-1-5 fw-semibold d-inline-flex align-items-center gap-1">
@@ -317,7 +329,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="9" class="text-center py-5 text-muted">
+                        <td colspan="6" class="text-center py-5 text-muted">
                             <div class="avatar avatar-xl rounded-circle bg-light text-muted mb-3 mx-auto">
                                 <i class="ti ti-calendar-off fs-1"></i>
                             </div>
@@ -330,19 +342,21 @@
         </table>
     </div>
 
-    @if (method_exists($availableTrainings, 'hasPages') && $availableTrainings->hasPages())
+    @if (isset($availableTrainings) && method_exists($availableTrainings, 'total') && $availableTrainings->total() > 0)
         <div class="card-footer bg-white border-0 py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
-            <div class="text-muted small">
-                Showing {{ $availableTrainings->firstItem() ?? 0 }} to {{ $availableTrainings->lastItem() ?? 0 }} of {{ $availableTrainings->total() }} available training(s)
+            <div class="d-flex align-items-center gap-2">
+                <select class="form-select form-select-sm w-auto rounded-3 border-slate-300" id="availablePageLength" onchange="window.handleSchedulePageLengthChange(this.value)">
+                    <option value="10" {{ request('per_page', 10) == 10 ? 'selected' : '' }}>10</option>
+                    <option value="25" {{ request('per_page', 10) == 25 ? 'selected' : '' }}>25</option>
+                    <option value="50" {{ request('per_page', 10) == 50 ? 'selected' : '' }}>50</option>
+                    <option value="100" {{ request('per_page', 10) == 100 ? 'selected' : '' }}>100</option>
+                </select>
+                <span class="text-muted small">
+                    Showing {{ $availableTrainings->firstItem() ?? 0 }} to {{ $availableTrainings->lastItem() ?? 0 }} of {{ $availableTrainings->total() }} entries
+                </span>
             </div>
             <div>
-                {{ $availableTrainings->appends(array_merge(request()->query(), ['tab' => 'available']))->links('pagination::bootstrap-5') }}
-            </div>
-        </div>
-    @elseif (method_exists($availableTrainings, 'total') && $availableTrainings->total() > 0)
-        <div class="card-footer bg-white border-0 py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
-            <div class="text-muted small">
-                Showing {{ $availableTrainings->firstItem() ?? 0 }} to {{ $availableTrainings->lastItem() ?? 0 }} of {{ $availableTrainings->total() }} available training(s)
+                {{ $availableTrainings->appends(array_merge(request()->query(), ['tab' => 'available']))->links('vendor.pagination.custom') }}
             </div>
         </div>
     @endif

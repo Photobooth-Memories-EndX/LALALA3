@@ -2,7 +2,7 @@
     $trainings = $trainings ?? \App\Models\OfflineTraining::forSchedule()->withCount('participants')->orderBy('start_date', 'asc')->paginate(10);
 @endphp
 <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden">
-    <div class="table-responsive">
+    <div class="table-responsive manage-schedule-scroll">
         <table class="table table-vcenter card-table table-hover align-middle mb-0" id="manageScheduleTable">
             <thead>
                 <tr class="text-muted extra-small text-uppercase fw-bold text-center align-middle" style="letter-spacing: 0.05em; background-color: #f8fafc;">
@@ -44,18 +44,27 @@
                             default                             => 'background-color: #e0f2fe; color: #0369a1;',
                         };
 
-                        $statusBadgeClass = match($item->status) {
+                        $isUnscheduled = strtolower($item->status ?? '') === 'unscheduled';
+                        $regCloseDate = \Carbon\Carbon::parse($item->registration_close_date ?? ($item->start_date ?: \Carbon\Carbon::now()));
+                        $regCloseTime = $item->registration_close_time ? substr($item->registration_close_time, 0, 5) : '23:59';
+                        $closeDatetime = \Carbon\Carbon::parse($regCloseDate->format('Y-m-d') . ' ' . $regCloseTime . ':59');
+                        $isRegDeadlinePassed = \Carbon\Carbon::now()->gt($closeDatetime);
+                        $displayStatus = $isUnscheduled ? 'Unscheduled' : (($item->status === 'Open Registration' && $isRegDeadlinePassed) ? 'Closed' : $item->status);
+
+                        $statusBadgeClass = match($displayStatus) {
                             'Open Registration' => 'bg-success-subtle text-success',
                             'Running'           => 'bg-warning-subtle text-warning border border-warning-subtle',
                             'Closed'            => 'bg-secondary-subtle text-secondary',
+                            'Unscheduled'       => 'bg-info-subtle text-info',
                             default             => 'bg-info-subtle text-info',
                         };
 
-                        $dataStatus = match($item->status) {
+                        $dataStatus = match($displayStatus) {
                             'Open Registration' => 'open',
                             'Running'           => 'running',
                             'Closed'            => 'closed',
-                            default             => strtolower($item->status),
+                            'Unscheduled'       => 'unscheduled',
+                            default             => strtolower($displayStatus),
                         };
 
                         $startDate = \Carbon\Carbon::parse($item->start_date);
@@ -116,7 +125,7 @@
                         </td>
                         <td>
                             <span class="badge {{ $statusBadgeClass }} rounded-pill px-3 py-1 fw-semibold">
-                                {{ $item->status }}
+                                {{ $displayStatus }}
                             </span>
                         </td>
                         <td class="text-center py-3">
@@ -149,11 +158,11 @@
                                    title="View/Edit Schedule">
                                     <i class="ti ti-edit fs-2"></i>
                                 </a>
-                                <a href="{{ route('manage.training-schedule.participants', $item->id) }}" class="btn btn-sm btn-icon btn-outline-info rounded-3 btn-participants-schedule"
+                                <!-- <a href="{{ route('manage.training-schedule.participants', $item->id) }}" class="btn btn-sm btn-icon btn-outline-info rounded-3 btn-participants-schedule"
                                         title="View Participants"
                                         data-id="{{ $item->id }}" data-title="{{ $item->title }}">
                                     <i class="ti ti-users fs-2"></i>
-                                </a>
+                                </a> -->
                                 <button type="button"
                                         class="btn btn-sm btn-icon btn-outline-danger rounded-3 btn-delete-schedule"
                                         title="Delete Schedule"
@@ -197,34 +206,24 @@
         <p class="text-muted small mb-0">No PTKP training schedules match the selected filters. Try changing or clearing your filter criteria.</p>
     </div>
 
-    @if (isset($schedules) && method_exists($schedules, 'hasPages') && $schedules->hasPages())
+    @php
+        $paginatedItems = $schedules ?? $trainings;
+    @endphp
+    @if (isset($paginatedItems) && method_exists($paginatedItems, 'total') && $paginatedItems->total() > 0)
         <div class="card-footer bg-white border-0 py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
-            <div class="text-muted small">
-                Showing {{ $schedules->firstItem() ?? 0 }} to {{ $schedules->lastItem() ?? 0 }} of {{ $schedules->total() }} results
+            <div class="d-flex align-items-center gap-2">
+                <select class="form-select form-select-sm w-auto rounded-3 border-slate-300" id="schedulePageLength" onchange="window.handleSchedulePageLengthChange(this.value)">
+                    <option value="10" {{ request('per_page', 10) == 10 ? 'selected' : '' }}>10</option>
+                    <option value="25" {{ request('per_page', 10) == 25 ? 'selected' : '' }}>25</option>
+                    <option value="50" {{ request('per_page', 10) == 50 ? 'selected' : '' }}>50</option>
+                    <option value="100" {{ request('per_page', 10) == 100 ? 'selected' : '' }}>100</option>
+                </select>
+                <span class="text-muted small">
+                    Showing {{ $paginatedItems->firstItem() ?? 0 }} to {{ $paginatedItems->lastItem() ?? 0 }} of {{ $paginatedItems->total() }} entries
+                </span>
             </div>
             <div>
-                {{ $schedules->appends(request()->query())->links() }}
-            </div>
-        </div>
-    @elseif (isset($schedules) && method_exists($schedules, 'total') && $schedules->total() > 0)
-        <div class="card-footer bg-white border-0 py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
-            <div class="text-muted small">
-                Showing {{ $schedules->firstItem() ?? 0 }} to {{ $schedules->lastItem() ?? 0 }} of {{ $schedules->total() }} results
-            </div>
-        </div>
-    @elseif (method_exists($trainings, 'hasPages') && $trainings->hasPages())
-        <div class="card-footer bg-white border-0 py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
-            <div class="text-muted small">
-                Showing {{ $trainings->firstItem() ?? 0 }} to {{ $trainings->lastItem() ?? 0 }} of {{ $trainings->total() }} results
-            </div>
-            <div>
-                {{ $trainings->appends(request()->query())->links() }}
-            </div>
-        </div>
-    @elseif (method_exists($trainings, 'total') && $trainings->total() > 0)
-        <div class="card-footer bg-white border-0 py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
-            <div class="text-muted small">
-                Showing {{ $trainings->firstItem() ?? 0 }} to {{ $trainings->lastItem() ?? 0 }} of {{ $trainings->total() }} results
+                {{ $paginatedItems->appends(request()->query())->links('vendor.pagination.custom') }}
             </div>
         </div>
     @endif

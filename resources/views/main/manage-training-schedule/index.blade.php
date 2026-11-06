@@ -46,6 +46,7 @@
                         <span>Manage Schedules</span>
                     </button>
                 </li>
+                {{--
                 <li class="nav-item" role="presentation">
                     <button class="nav-link fw-bold px-4 py-2 rounded-3 d-inline-flex align-items-center gap-2" 
                             id="tab-participant-tracking-btn" data-bs-toggle="pill" data-bs-target="#tab-participant-tracking-pane" type="button" role="tab" aria-selected="false">
@@ -53,6 +54,7 @@
                         <span>Participant Tracking & Approvals</span>
                     </button>
                 </li>
+                --}}
             </ul>
         </div>
 
@@ -67,10 +69,11 @@
                 @include('main.manage-training-schedule.components.schedule-table')
             </div>
 
-            {{-- PANE 2: PARTICIPANT TRACKING & APPROVALS --}}
+            {{-- PANE 2: PARTICIPANT TRACKING & APPROVALS (HIDDEN)
             <div class="tab-pane fade" id="tab-participant-tracking-pane" role="tabpanel">
                 @include('main.manage-training-schedule.partials.tracking-section')
             </div>
+            --}}
         </div>
 
         {{-- More Filters Modal --}}
@@ -87,6 +90,81 @@
 
 @section('style')
 <style>
+    /* Clean Pagination Styling matching Learning Record */
+    .pagination {
+        gap: .4rem !important;
+        margin-bottom: 0 !important;
+    }
+
+    .page-item .page-link {
+        border-radius: 12px !important;
+        border: 1px solid #dbe4f0 !important;
+        color: #1e40af !important;
+        min-width: 38px !important;
+        height: 38px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-weight: 600 !important;
+        font-size: 0.875rem !important;
+        padding: 0 0.5rem !important;
+        text-decoration: none !important;
+        transition: all 0.2s ease !important;
+    }
+
+    .page-item.active .page-link {
+        background: #003b6d !important;
+        border-color: #003b6d !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 12px rgba(0, 59, 109, .25) !important;
+    }
+
+    .page-item .page-link:hover {
+        background: #eff6ff !important;
+        border-color: #93c5fd !important;
+    }
+
+    .page-item.disabled .page-link {
+        color: #94a3b8 !important;
+        background: #f8fafc !important;
+        border-color: #e2e8f0 !important;
+        cursor: not-allowed !important;
+    }
+
+    /* Table Sticky Freeze Header & Scrollable Container */
+    .table-responsive.manage-schedule-scroll,
+    .manage-schedule-scroll {
+        max-height: 70vh !important;
+        overflow-y: auto !important;
+        overflow-x: auto !important;
+        position: relative !important;
+        -webkit-overflow-scrolling: touch;
+        width: 100% !important;
+    }
+
+    #manageScheduleTable thead th,
+    #tableInlineByTraining thead th,
+    #tableInlineByEmployee thead th {
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 10 !important;
+        background-color: #f8fafc !important;
+        box-shadow: inset 0 -1px 0 #e2e8f0, 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+    }
+
+    [data-bs-theme="dark"] #manageScheduleTable thead th,
+    [data-bs-theme="dark"] #tableInlineByTraining thead th,
+    [data-bs-theme="dark"] #tableInlineByEmployee thead th,
+    body.dark-mode #manageScheduleTable thead th,
+    body.dark-mode #tableInlineByTraining thead th,
+    body.dark-mode #tableInlineByEmployee thead th,
+    body.theme-dark #manageScheduleTable thead th,
+    body.theme-dark #tableInlineByTraining thead th,
+    body.theme-dark #tableInlineByEmployee thead th {
+        background-color: #1e293b !important;
+        color: #94a3b8 !important;
+    }
+
     /* Manage Training Schedule Custom Styling */
     .schedule-table-row {
         transition: background-color 0.15s ease;
@@ -118,6 +196,15 @@
     }
 </style>
 @endsection
+
+<script>
+window.handleSchedulePageLengthChange = function(perPage) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('per_page', perPage);
+    url.searchParams.set('page', '1');
+    window.location.href = url.toString();
+};
+</script>
 
 @push('scripts')
     @include('main.manage-training-schedule.components.schedule-table-script')

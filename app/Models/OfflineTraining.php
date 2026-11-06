@@ -24,6 +24,7 @@ class OfflineTraining extends Model
         'location',
         'target_employee',
         'prerequisites',
+        'course_completion_requirement',
         'quota',
         'status',
         'requirement',

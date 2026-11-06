@@ -113,12 +113,16 @@
                                                     return $cellDateFormatted >= $sDate && $cellDateFormatted <= $eDate;
                                                 });
 
-                                                $countsByStatus = ['open' => 0, 'closed' => 0, 'running' => 0, 'ended' => 0];
+                                                $countsByStatus = ['open' => 0, 'private' => 0, 'running' => 0, 'ended' => 0];
                                                 foreach ($activeTrainingsForDay as $t) {
-                                                    // $cellDate represents the specific day square rendered on the calendar grid
-                                                    // $today represents the current real-world date (e.g., Oct 13, 2026)
                                                     $cellStatus = \App\Http\Controllers\OfflineTrainingController::evaluateCalendarCellStatus($t, $cellDateFormatted, $today);
-                                                    $countsByStatus[strtolower($cellStatus)]++;
+                                                    $stKey = strtolower($cellStatus);
+                                                    if ($stKey === 'closed') {
+                                                        $stKey = 'private';
+                                                    }
+                                                    if (isset($countsByStatus[$stKey])) {
+                                                        $countsByStatus[$stKey]++;
+                                                    }
                                                 }
                                             @endphp
                                             <td class="p-1 cal-day-cell {{ $isToday ? 'is-today' : '' }}" role="button" data-cal-date="{{ $cellDateFormatted }}" data-year="{{ $year }}" data-month="{{ $month - 1 }}" data-day="{{ $day }}">
@@ -142,16 +146,16 @@
                                                                 Open: {{ $countsByStatus['open'] }}
                                                             </span>
                                                         @endif
-                                                        @if ($countsByStatus['closed'] > 0)
-                                                            <span class="badge bg-secondary-light bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill extra-small py-1 px-2 fw-semibold cal-status-badge cal-status-badge-closed"
-                                                                  style="background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;"
+                                                        @if ($countsByStatus['private'] > 0)
+                                                            <span class="badge rounded-pill extra-small py-1 px-2 fw-semibold cal-status-badge cal-status-badge-private"
+                                                                  style="background-color: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;"
                                                                   role="button"
                                                                   data-year="{{ $year }}"
                                                                   data-month="{{ $month - 1 }}"
                                                                   data-day="{{ $day }}"
-                                                                  data-status="closed"
-                                                                  title="{{ $countsByStatus['closed'] }} Closed Training(s)">
-                                                                Closed: {{ $countsByStatus['closed'] }}
+                                                                  data-status="private"
+                                                                  title="{{ $countsByStatus['private'] }} Private Training(s)">
+                                                                Private: {{ $countsByStatus['private'] }}
                                                             </span>
                                                         @endif
                                                         @if ($countsByStatus['running'] > 0)
@@ -205,15 +209,15 @@
                     </div>
                     <div class="d-inline-flex align-items-center">
                         <span class="d-inline-block rounded-circle bg-sky-100 border border-sky-300" style="width: 12px; height: 12px; background-color: #e0f2fe; border: 1px solid #7dd3fc;"></span>
-                        <span class="text-slate-600 fs-7 fw-medium ms-1.5" style="color: #475569;">Registration Closed</span>
+                        <span class="text-slate-600 fs-7 fw-medium ms-1.5" style="color: #475569;">Private (Invitation-Only)</span>
                     </div>
                     <div class="d-inline-flex align-items-center">
                         <span class="d-inline-block rounded-circle bg-amber-200 border border-amber-400" style="width: 12px; height: 12px; background-color: #fde68a; border: 1px solid #fbbf24;"></span>
-                        <span class="text-slate-600 fs-7 fw-medium ms-1.5" style="color: #475569;">Running / Today's Session</span>
+                        <span class="text-slate-600 fs-7 fw-medium ms-1.5" style="color: #475569;">Running</span>
                     </div>
                     <div class="d-inline-flex align-items-center">
                         <span class="d-inline-block rounded-circle bg-slate-800 border border-slate-900" style="width: 12px; height: 12px; background-color: #1e293b; border: 1px solid #0f172a;"></span>
-                        <span class="text-slate-600 fs-7 fw-medium ms-1.5" style="color: #475569;">Past Training Session</span>
+                        <span class="text-slate-600 fs-7 fw-medium ms-1.5" style="color: #475569;">Ended</span>
                     </div>
                 </div>
             </div>

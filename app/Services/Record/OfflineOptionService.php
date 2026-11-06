@@ -25,6 +25,7 @@ class OfflineOptionService
     public const TYPE_INSTRUCTOR = 'instructor';
     public const TYPE_TARGET_EMPLOYEE = 'target_employee';
     public const TYPE_PREREQUISITES = 'prerequisites';
+    public const TYPE_COMPLETION_REQUIREMENT = 'completion_requirement';
 
     /**
      * Allowed option types in offline_training_options.
@@ -48,10 +49,14 @@ class OfflineOptionService
         self::TYPE_INSTRUCTOR,
         self::TYPE_TARGET_EMPLOYEE,
         self::TYPE_PREREQUISITES,
+        self::TYPE_COMPLETION_REQUIREMENT,
         'title',
         'location',
         'target_audience',
         'requirements',
+        'participant_requirement',
+        'course_completion_requirement',
+        'completion_requirement',
     ];
 
     /**

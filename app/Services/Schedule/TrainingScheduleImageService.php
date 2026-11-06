@@ -52,7 +52,7 @@ class TrainingScheduleImageService
         $cardGapY = 30;
         $startX = 70;
         $cardWidth = (int) floor(($canvasWidth - (2 * $startX) - $cardGapX) / 2);
-        $cardHeight = 380;
+        $cardHeight = 420;
 
         $rowsCount = $count > 0 ? (int) ceil($count / 2) : 1;
         $contentHeight = max(400, ($rowsCount * $cardHeight) + (($rowsCount - 1) * $cardGapY) + 40);
@@ -170,67 +170,95 @@ class TrainingScheduleImageService
                 // Top Accent Bar (PTKP Blue)
                 imagefilledrectangle($img, $cardX, $cardY, $cardX + $cardWidth, $cardY + 5, $ptkpBlue);
 
-                // 1. Top Badges: Category & Status (with Close Reg date beneath badge)
+                // 1. Top Badges: Category & Status (with Close Reg date strictly inside card)
                 $cat = $item->category ?? 'General';
                 $status = $item->status ?? 'Open Registration';
 
-                // Category pill
-                imagefilledrectangle($img, $cardX + 18, $cardY + 16, $cardX + 18 + 150, $cardY + 40, $blueBg);
-                imagerectangle($img, $cardX + 18, $cardY + 16, $cardX + 18 + 150, $cardY + 40, $cardBorder);
+                // Category pill - auto-fit category text without truncation
+                $catText = $cat;
                 if ($fontBold) {
-                    imagettftext($img, 9, 0, $cardX + 26, $cardY + 33, $ptkpBlue, $fontBold, mb_strimwidth($cat, 0, 18, '...'));
+                    $catBbox = imagettfbbox(9, 0, $fontBold, $catText);
+                    $catTextW = abs($catBbox[2] - $catBbox[0]);
                 } else {
-                    imagestring($img, 2, $cardX + 24, $cardY + 22, mb_strimwidth($cat, 0, 16, '...'), $ptkpBlue);
+                    $catTextW = strlen($catText) * 7;
+                }
+                $catPillW = max(110, min(340, $catTextW + 24));
+                imagefilledrectangle($img, $cardX + 20, $cardY + 16, $cardX + 20 + $catPillW, $cardY + 40, $blueBg);
+                imagerectangle($img, $cardX + 20, $cardY + 16, $cardX + 20 + $catPillW, $cardY + 40, $cardBorder);
+                if ($fontBold) {
+                    imagettftext($img, 9, 0, $cardX + 32, $cardY + 32, $ptkpBlue, $fontBold, $catText);
+                } else {
+                    imagestring($img, 2, $cardX + 30, $cardY + 22, $catText, $ptkpBlue);
                 }
 
-                // Status pill
+                // Status pill - right aligned inside card boundary
                 $isClosed = str_contains(strtolower($status), 'closed');
                 $statusLabel = $isClosed ? 'Closed' : 'Open Registration';
                 $statusBg = $isClosed ? $cardBorder : $greenBg;
                 $statusColor = $isClosed ? $textMuted : $greenText;
-                $statPillW = 145;
-                $statX = $cardX + $cardWidth - $statPillW - 18;
+                if ($fontBold) {
+                    $statBbox = imagettfbbox(9, 0, $fontBold, $statusLabel);
+                    $statTextW = abs($statBbox[2] - $statBbox[0]);
+                } else {
+                    $statTextW = strlen($statusLabel) * 7;
+                }
+                $statPillW = max(100, $statTextW + 24);
+                $statX = $cardX + $cardWidth - 20 - $statPillW;
                 imagefilledrectangle($img, $statX, $cardY + 16, $statX + $statPillW, $cardY + 40, $statusBg);
                 imagerectangle($img, $statX, $cardY + 16, $statX + $statPillW, $cardY + 40, $cardBorder);
                 if ($fontBold) {
-                    imagettftext($img, 9, 0, $statX + 12, $cardY + 33, $statusColor, $fontBold, $statusLabel);
+                    imagettftext($img, 9, 0, $statX + 12, $cardY + 32, $statusColor, $fontBold, $statusLabel);
                 } else {
                     imagestring($img, 2, $statX + 10, $cardY + 22, $statusLabel, $statusColor);
                 }
 
-                // Close reg date beneath badge
-                $regCloses = $item->registration_close_date ? Carbon::parse($item->registration_close_date)->format('d M Y') : 'Until Started';
-                if ($item->registration_close_time) {
-                    $rawTime = trim($item->registration_close_time);
-                    $regCloses .= ' ' . (strlen($rawTime) === 5 ? $rawTime . ':00' : $rawTime);
-                } else {
-                    $regCloses .= ' 23:59:00';
-                }
-                $closeBadgeText = "Close: {$regCloses} WIB";
-                if ($fontRegular) {
-                    imagettftext($img, 8, 0, $statX + 8, $cardY + 54, $redAccent, $fontRegular, $closeBadgeText);
-                } else {
-                    imagestring($img, 1, $statX + 8, $cardY + 44, $closeBadgeText, $redAccent);
+                // Close reg date beneath badge - STRICTLY right-aligned to card inner margin (NEVER overflows card)
+                if (!empty($item->registration_close_date)) {
+                    $regCloses = Carbon::parse($item->registration_close_date)->format('d M Y');
+                    if (!empty($item->registration_close_time)) {
+                        $rawTime = trim((string)$item->registration_close_time);
+                        $timeFormatted = strlen($rawTime) >= 5 ? substr($rawTime, 0, 5) : $rawTime;
+                        $regCloses .= ' ' . $timeFormatted;
+                    }
+                    $closeBadgeText = "Close: {$regCloses} WIB";
+                    if ($fontRegular) {
+                        $closeBbox = imagettfbbox(8.5, 0, $fontRegular, $closeBadgeText);
+                        $closeTxtW = abs($closeBbox[2] - $closeBbox[0]);
+                        $closeX = ($cardX + $cardWidth - 20) - $closeTxtW;
+                        imagettftext($img, 8.5, 0, $closeX, $cardY + 54, $redAccent, $fontRegular, $closeBadgeText);
+                    } else {
+                        $closeTxtW = strlen($closeBadgeText) * 6;
+                        $closeX = ($cardX + $cardWidth - 20) - $closeTxtW;
+                        imagestring($img, 1, $closeX, $cardY + 44, $closeBadgeText, $redAccent);
+                    }
                 }
 
-                // 2. Training Title (Bold, PTKP Navy)
+                // 2. Training Title (Bold, PTKP Navy) - full title visibility without truncation
                 $title = $item->title ?? ($item->course_name ?? 'Training Title');
-                $lines = $this->wrapText($title, 55, 2);
+                $lines = $this->wrapText($title, 52, 3);
                 $titleY = $cardY + 76;
                 foreach ($lines as $lIndex => $line) {
                     if ($fontBold) {
-                        imagettftext($img, 13, 0, $cardX + 18, $titleY + ($lIndex * 20), $deepNavy, $fontBold, $line);
+                        imagettftext($img, 13, 0, $cardX + 20, $titleY + ($lIndex * 20), $deepNavy, $fontBold, $line);
                     } else {
-                        imagestring($img, 4, $cardX + 18, $titleY - 8 + ($lIndex * 18), $line, $deepNavy);
+                        imagestring($img, 4, $cardX + 20, $titleY - 8 + ($lIndex * 18), $line, $deepNavy);
                     }
                 }
-                if (!empty($item->sub_course_name) && count($lines) <= 1) {
-                    $subTitle = mb_strimwidth($item->sub_course_name, 0, 42, '...');
+                $lastTitleY = $titleY + ((count($lines) - 1) * 20);
+
+                // Optional subtitle placed dynamically under title
+                $subTitleText = $item->subtitle ?? ($item->sub_course_name ?? null);
+                if (!empty($subTitleText)) {
+                    $subTitle = mb_strimwidth($subTitleText, 0, 65, '...');
+                    $subY = $lastTitleY + 18;
                     if ($fontRegular) {
-                        imagettftext($img, 9, 0, $cardX + 18, $titleY + 22, $textMuted, $fontRegular, $subTitle);
+                        imagettftext($img, 9, 0, $cardX + 20, $subY, $textMuted, $fontRegular, $subTitle);
                     } else {
-                        imagestring($img, 2, $cardX + 18, $titleY + 12, $subTitle, $textMuted);
+                        imagestring($img, 2, $cardX + 20, $subY - 10, $subTitle, $textMuted);
                     }
+                    $boxY = $subY + 14;
+                } else {
+                    $boxY = $lastTitleY + 16;
                 }
 
                 // 3. Single Full-Width Box Container for Date & Venue
@@ -239,9 +267,8 @@ class TrainingScheduleImageService
                 $schedulePeriod = ($startDate === $endDate || empty($item->end_date)) ? $startDate : "{$startDate} - {$endDate}";
                 $venue = $item->location ?? ($item->venue ?? ($item->room_name ?? ($item->room ?? '-')));
 
-                $boxX = $cardX + 18;
-                $boxY = $cardY + 112;
-                $boxW = $cardWidth - 36;
+                $boxX = $cardX + 20;
+                $boxW = $cardWidth - 40;
                 $boxH = 26;
                 $slateBorder = imagecolorallocate($img, 100, 116, 139);
 
@@ -255,7 +282,7 @@ class TrainingScheduleImageService
                     imagestring($img, 3, $boxX + 12, $boxY + 6, $dateVenueText, $textDark);
                 }
 
-                // 4. Target
+                // 4. Details List - positioned dynamically below Date & Venue box
                 $target = $item->target_employee ?? '-';
                 $targetLine = "Target: " . mb_strimwidth($target, 0, 44, '...');
 
@@ -315,13 +342,13 @@ class TrainingScheduleImageService
                     $syllabusLine,
                 ];
 
-                $detY = $cardY + 158;
+                $detY = $boxY + $boxH + 16;
                 foreach ($details as $dIdx => $textLine) {
-                    $yPos = $detY + ($dIdx * 23);
+                    $yPos = $detY + ($dIdx * 22);
                     if ($fontRegular) {
-                        imagettftext($img, 9, 0, $cardX + 18, $yPos, $textDark, $fontRegular, $textLine);
+                        imagettftext($img, 9, 0, $cardX + 20, $yPos, $textDark, $fontRegular, $textLine);
                     } else {
-                        imagestring($img, 2, $cardX + 18, $yPos - 10, $textLine, $textDark);
+                        imagestring($img, 2, $cardX + 20, $yPos - 10, $textLine, $textDark);
                     }
                 }
             }
@@ -386,9 +413,9 @@ class TrainingScheduleImageService
      * @param int $maxLines
      * @return array
      */
-    protected function wrapText(string $text, int $width = 36, int $maxLines = 2): array
+    protected function wrapText(string $text, int $width = 52, int $maxLines = 3): array
     {
-        $wrapped = explode("\n", wordwrap($text, $width, "\n", true));
+        $wrapped = explode("\n", wordwrap($text, $width, "\n", false));
         if (count($wrapped) > $maxLines) {
             $wrapped = array_slice($wrapped, 0, $maxLines);
             $wrapped[$maxLines - 1] = rtrim($wrapped[$maxLines - 1]) . '...';

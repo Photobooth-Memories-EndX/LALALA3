@@ -416,11 +416,35 @@
                         @php
                             $training = $item;
                             $statusRaw = $training->status ?? 'Open Registration';
-                            $isOpen = in_array(strtolower($statusRaw), ['open', 'open registration']);
 
-                            $startDate = $item->start_date ? \Carbon\Carbon::parse($item->start_date)->format('d M Y') : '-';
-                            $endDate = $item->end_date ? \Carbon\Carbon::parse($item->end_date)->format('d M Y') : $startDate;
-                            $schedulePeriod = ($startDate === $endDate || empty($item->end_date)) ? $startDate : "{$startDate} - {$endDate}";
+                            $isUnscheduled = strtolower($statusRaw) === 'unscheduled' || (empty($training->start_date) && strtolower($statusRaw) !== 'draft');
+
+                            $isRegDeadlinePassed = false;
+                            if (!empty($training->registration_close_date)) {
+                                $regCloseDate = \Carbon\Carbon::parse($training->registration_close_date);
+                                $regCloseTime = $training->registration_close_time ? substr($training->registration_close_time, 0, 5) : '23:59';
+                                $closeDatetime = \Carbon\Carbon::parse($regCloseDate->format('Y-m-d') . ' ' . $regCloseTime . ':59');
+                                $isRegDeadlinePassed = \Carbon\Carbon::now()->gt($closeDatetime);
+                            } elseif (!empty($training->start_date)) {
+                                $closeDatetime = \Carbon\Carbon::parse(\Carbon\Carbon::parse($training->start_date)->format('Y-m-d') . ' 23:59:59');
+                                $isRegDeadlinePassed = \Carbon\Carbon::now()->gt($closeDatetime);
+                            }
+
+                            if ($isUnscheduled) {
+                                $displayStatus = 'Unscheduled';
+                            } elseif (in_array(strtolower($statusRaw), ['running'])) {
+                                $displayStatus = 'Running';
+                            } elseif (in_array(strtolower($statusRaw), ['closed']) || $isRegDeadlinePassed) {
+                                $displayStatus = 'Closed';
+                            } elseif (in_array(strtolower($statusRaw), ['open', 'open registration'])) {
+                                $displayStatus = 'Open Registration';
+                            } else {
+                                $displayStatus = $statusRaw;
+                            }
+
+                            $startDate = (!empty($item->start_date) && !$isUnscheduled) ? \Carbon\Carbon::parse($item->start_date)->format('d M Y') : 'TBA (To be announce)';
+                            $endDate = (!empty($item->end_date) && !$isUnscheduled) ? \Carbon\Carbon::parse($item->end_date)->format('d M Y') : $startDate;
+                            $schedulePeriod = ($startDate === $endDate || empty($item->end_date) || $isUnscheduled) ? $startDate : "{$startDate} - {$endDate}";
 
                             $venue = $training->location ?? ($training->venue ?? ($training->room_name ?? ($training->room ?? '-')));
 
@@ -455,25 +479,33 @@
                                 <table style="width: 100%; border-collapse: collapse; margin-bottom: 4px;">
                                     <tr>
                                         <td style="vertical-align: top; text-align: left;">
-                                            <span style="display: inline-block; background: #e0f2fe; color: #0369a1; padding: 4px 12px; border-radius: 9999px; font-weight: 700; font-size: 11px; text-transform: uppercase; white-space: nowrap; max-width: 140px; overflow: hidden; text-overflow: ellipsis; vertical-align: top;">
+                                            <span style="display: inline-block; background: #e0f2fe; color: #0369a1; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 8.5px; text-transform: uppercase; white-space: nowrap; vertical-align: top;">
                                                 {{ $training->category ?? 'GENERAL' }}
                                             </span>
                                         </td>
                                         <td style="vertical-align: top; text-align: right;">
-                                            @if($isOpen)
-                                                <span style="display: inline-block; background: #dcfce7; color: #15803d; padding: 4px 12px; border-radius: 9999px; font-weight: 700; font-size: 11px; white-space: nowrap;">
+                                            @if($displayStatus === 'Open Registration')
+                                                <span style="display: inline-block; background: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 8.5px; white-space: nowrap;">
                                                     Open Registration
                                                 </span>
+                                            @elseif($displayStatus === 'Unscheduled')
+                                                <span style="display: inline-block; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 8.5px; white-space: nowrap;">
+                                                    Unscheduled
+                                                </span>
+                                            @elseif($displayStatus === 'Running')
+                                                <span style="display: inline-block; background: #fef3c7; color: #b45309; border: 1px solid #fde68a; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 8.5px; white-space: nowrap;">
+                                                    Running
+                                                </span>
                                             @else
-                                                <span style="display: inline-block; background: #f1f5f9; color: #475569; padding: 4px 12px; border-radius: 9999px; font-weight: 700; font-size: 11px; white-space: nowrap;">
+                                                <span style="display: inline-block; background: #f1f5f9; color: #475569; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 8.5px; white-space: nowrap;">
                                                     Closed
                                                 </span>
                                             @endif
-                                            @if($training->registration_close_date)
+                                            @if($displayStatus !== 'Unscheduled' && $training->registration_close_date)
                                                 @php
                                                     $closeDateStr = \Carbon\Carbon::parse($training->registration_close_date)->format('d M Y');
-                                                    $rawCloseTime = $training->registration_close_time ? trim($training->registration_close_time) : '23:59:00';
-                                                    $closeTimeStr = strlen($rawCloseTime) === 5 ? $rawCloseTime . ':00' : $rawCloseTime;
+                                                    $rawCloseTime = $training->registration_close_time ? trim($training->registration_close_time) : '23:59';
+                                                    $closeTimeStr = strlen($rawCloseTime) >= 5 ? substr($rawCloseTime, 0, 5) : $rawCloseTime;
                                                 @endphp
                                                 <div style="color: #dc2626; font-size: 8px; font-weight: 700; margin-top: 3px; white-space: nowrap;">
                                                     Close: {{ $closeDateStr }} {{ $closeTimeStr }} WIB
@@ -484,9 +516,14 @@
                                 </table>
 
                                 <!-- Row 2: Title in bold Navy font -->
-                                <div style="font-size: 14px; font-weight: 800; color: #0f172a; height: 38px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; margin: 6px 0;">
+                                <div style="font-size: 11.5px; font-weight: 800; color: #002B49; line-height: 1.3; min-height: 32px; margin: 5px 0 2px 0; word-break: break-word;">
                                     {{ $training->title }}
                                 </div>
+                                @if(!empty($training->subtitle) || !empty($training->sub_course_name))
+                                    <div style="font-size: 8px; color: #64748b; margin-bottom: 4px; line-height: 1.2;">
+                                        {{ $training->subtitle ?? $training->sub_course_name }}
+                                    </div>
+                                @endif
 
                                 <!-- Row 3: Date & Venue Inline Row -->
                                 <div style="font-size: 9px; color: #475569; font-weight: 600; line-height: 1.35; min-height: 20px; max-height: 24px; overflow: hidden; margin-bottom: 2px;">
@@ -526,7 +563,7 @@
                                         <td style="font-weight: 700; color: #475569; padding: 3px 0; vertical-align: top;">Time</td>
                                         <td style="text-align: center; font-weight: 700; color: #475569; padding: 3px 0; vertical-align: top;">:</td>
                                         <td style="color: #0f172a; padding: 3px 0;">
-                                            {{ \Carbon\Carbon::parse($training->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($training->end_time)->format('H:i') }} WIB
+                                            @if(empty($training->start_time) || empty($training->end_time) || $isUnscheduled)TBA @else {{ \Carbon\Carbon::parse($training->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($training->end_time)->format('H:i') }} WIB @endif
                                         </td>
                                     </tr>
                                     <tr>
