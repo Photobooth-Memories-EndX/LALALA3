@@ -548,12 +548,14 @@ class VideoWatchTimeTrackingTest extends TestCase
      */
     public function test_learning_record_reflects_actual_watch_seconds(): void
     {
+        $this->videoContent->update(['duration' => '00:15:00', 'duration_in_seconds' => 900]);
+
         $cu = ContentUser::create([
             'user_id'              => $this->user->id,
             'content_id'           => $this->videoContent->id,
-            'current_time'         => 60,
-            'actual_watch_seconds' => 1800, // 30 minutes = 0.5 hour
-            'duration_seconds'     => 60,
+            'current_time'         => 900,
+            'actual_watch_seconds' => 1800, // 30 minutes = 0.5 hour (within 2x cap of 15m)
+            'duration_seconds'     => 900,
             'progress'             => 100,
             'finish'               => '1',
             'learning_hours'       => 0.5,

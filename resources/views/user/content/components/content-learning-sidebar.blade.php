@@ -28,6 +28,11 @@
         'completed' => 'Completed',
     ];
     $learningStatusLabel = $learningStatusLabels[$content_user->learning_status ?? ''] ?? 'In Progress';
+
+    if (!isset($totalRecognizedDuration)) {
+        $totalRecognizedDuration = app(\App\Services\Learning\LearningRecordRecognizedDurationService::class)
+            ->resolveGlobalContentRecognizedDuration(auth()->id() ?? 0, $content);
+    }
 @endphp
 
 <div class="d-flex flex-column gap-3 content-sidebar-stack">
@@ -83,6 +88,17 @@
                 <span class="fw-semibold text-dark d-block">
                     <i class="ti ti-clock me-1 text-muted"></i>
                     {{ ($content->type === 'Document' && (int) ($content->page_duration ?? 30) === 0) ? 'Self-paced' : \App\Support\DurationFormatter::format($content->duration, 'Self-paced') }}
+                </span>
+            </div>
+
+            <div class="text-start mb-2">
+                <span class="text-muted small d-block">
+                    Total Recognized Duration
+                </span>
+
+                <span class="fw-semibold text-dark d-block">
+                    <i class="ti ti-history me-1 text-muted"></i>
+                    <span id="contentTotalRecognizedDuration">{{ $totalRecognizedDuration }}</span>
                 </span>
             </div>
 

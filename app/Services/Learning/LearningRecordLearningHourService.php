@@ -2,6 +2,7 @@
 
 namespace App\Services\Learning;
 
+use App\Models\Content;
 use App\Models\ContentUser;
 use App\Models\PlaylistContentUser;
 use App\Models\TrainingPlan;
@@ -102,11 +103,14 @@ class LearningRecordLearningHourService
             ->select('content_users.*')
             ->get();
 
-        $actualContentHours = (float) $completedContentUsers->sum(
-            fn (ContentUser $cu) => $this->calculateContent($cu)
-        );
+        $contentAllocations = [];
+        $actualPlaylistHours = (float) $this->calculatePlaylistsRecognizedSecondsBatch($userId, $completedPlaylists, $contentAllocations)
+            ->map(fn (int $seconds) => round($seconds / 3600, 4))
+            ->sum();
 
-        $actualPlaylistHours = (float) $this->calculatePlaylistsBatch($userId, $completedPlaylists)->sum();
+        $actualContentHours = (float) $completedContentUsers->sum(
+            fn (ContentUser $cu) => $this->calculateContent($cu, $contentAllocations)
+        );
 
         return round($actualContentHours + $actualPlaylistHours, 2);
     }
@@ -118,11 +122,12 @@ class LearningRecordLearningHourService
      * capped seconds variable as Learning Hours.
      *
      * @param ContentUser $cu
+     * @param array|null $contentAllocations
      * @return float Hours rounded to 4 decimal places
      */
-    public function calculateContent(ContentUser $cu): float
+    public function calculateContent(ContentUser $cu, ?array &$contentAllocations = null): float
     {
-        $recognizedSeconds = $this->calculateContentRecognizedSeconds($cu);
+        $recognizedSeconds = $this->calculateContentRecognizedSeconds($cu, $contentAllocations);
 
         $calculatedHours = round($recognizedSeconds / 3600, 4);
         if ($cu->content && $cu->content->max_learning_hours !== null) {
@@ -134,9 +139,13 @@ class LearningRecordLearningHourService
 
     /**
      * Calculate Total Recognized Duration in seconds for a ContentUser record.
-     * Formula: min(watched_seconds, course_duration_seconds * 2)
+     * Formula: min(watched_seconds, remaining_global_cap_seconds)
+     *
+     * @param ContentUser $cu
+     * @param array|null $contentAllocations
+     * @return int
      */
-    public function calculateContentRecognizedSeconds(ContentUser $cu): int
+    public function calculateContentRecognizedSeconds(ContentUser $cu, ?array &$contentAllocations = null): int
     {
         $durationSeconds = (int) ($cu->content?->duration_in_seconds ?? 0);
         if ($durationSeconds <= 0 && $cu->content && !empty($cu->content->duration)) {
@@ -144,6 +153,10 @@ class LearningRecordLearningHourService
         }
         if ($durationSeconds <= 0) {
             $durationSeconds = (int) ($cu->duration_seconds ?? 0);
+        }
+
+        if ($durationSeconds <= 0) {
+            return 0;
         }
 
         $actualWatchSeconds = (int) ($cu->actual_watch_seconds ?? 0);
@@ -172,7 +185,28 @@ class LearningRecordLearningHourService
                 : (int) $cu->content->max_actual_watch_seconds;
         }
 
-        return ($maxCapSeconds > 0) ? min($actualSeconds, $maxCapSeconds) : $actualSeconds;
+        $cid = (int) ($cu->content_id ?? 0);
+        $alreadyAllocated = 0;
+
+        if ($contentAllocations !== null) {
+            $alreadyAllocated = (int) ($contentAllocations[$cid] ?? 0);
+        } elseif ($cu->exists && !empty($cu->user_id) && $cid > 0) {
+            $completedPlaylists = $this->completedPlaylistsService()->forLearningRecord((int) $cu->user_id);
+            if ($completedPlaylists->isNotEmpty()) {
+                $tempAlloc = [];
+                $this->calculatePlaylistsRecognizedSecondsBatch((int) $cu->user_id, $completedPlaylists, $tempAlloc);
+                $alreadyAllocated = (int) ($tempAlloc[$cid] ?? 0);
+            }
+        }
+
+        $remainingQuota = $maxCapSeconds > 0 ? max(0, $maxCapSeconds - $alreadyAllocated) : $maxCapSeconds;
+        $recognized = ($maxCapSeconds > 0) ? min($actualSeconds, $remainingQuota) : $actualSeconds;
+
+        if ($contentAllocations !== null && $cid > 0) {
+            $contentAllocations[$cid] = $alreadyAllocated + $recognized;
+        }
+
+        return $recognized;
     }
 
     /**
@@ -183,20 +217,21 @@ class LearningRecordLearningHourService
      *
      * @param int $userId
      * @param Collection<int, TrainingPlan> $completedPlaylists
+     * @param array|null $contentAllocations
      * @return Collection<int, float> Map of [trainingplan_id => actual_learning_hours]
      */
-    public function calculatePlaylistsBatch(int $userId, Collection $completedPlaylists): Collection
+    public function calculatePlaylistsBatch(int $userId, Collection $completedPlaylists, ?array &$contentAllocations = null): Collection
     {
-        return $this->calculatePlaylistsRecognizedSecondsBatch($userId, $completedPlaylists)
+        return $this->calculatePlaylistsRecognizedSecondsBatch($userId, $completedPlaylists, $contentAllocations)
             ->map(fn (int $seconds) => round($seconds / 3600, 4));
     }
 
     /**
      * Single playlist calculation fallback.
      */
-    public function calculatePlaylistSingle(int $userId, TrainingPlan $plan): float
+    public function calculatePlaylistSingle(int $userId, TrainingPlan $plan, ?array &$contentAllocations = null): float
     {
-        return $this->calculatePlaylistsBatch($userId, collect([$plan]))->get($plan->id, 0.0);
+        return $this->calculatePlaylistsBatch($userId, collect([$plan]), $contentAllocations)->get($plan->id, 0.0);
     }
 
     /**
@@ -204,9 +239,10 @@ class LearningRecordLearningHourService
      *
      * @param int $userId
      * @param Collection<int, TrainingPlan> $completedPlaylists
+     * @param array|null $contentAllocations
      * @return Collection<int, int> Map of [trainingplan_id => recognized_seconds]
      */
-    public function calculatePlaylistsRecognizedSecondsBatch(int $userId, Collection $completedPlaylists): Collection
+    public function calculatePlaylistsRecognizedSecondsBatch(int $userId, Collection $completedPlaylists, ?array &$contentAllocations = null): Collection
     {
         $planIds = $completedPlaylists->pluck('id')->filter()->all();
         if (empty($planIds)) {
@@ -232,6 +268,7 @@ class LearningRecordLearningHourService
                 ->keyBy('content_id')
             : collect();
 
+        $contentAllocations ??= [];
         $result = collect();
 
         foreach ($completedPlaylists as $plan) {
@@ -247,13 +284,23 @@ class LearningRecordLearningHourService
             $consumedPlaylistRecognizedSeconds = 0;
 
             foreach ($validDetails as $d) {
-                $cid = $d->content_id;
+                $cid = (int) $d->content_id;
                 $pcu = $planPcus->get($cid);
                 $cu = $userCuMap->get($cid);
                 $moduleDuration = (int) ($d->content?->duration_in_seconds ?? 0);
                 if ($moduleDuration <= 0 && $d->content && !empty($d->content->duration)) {
                     $moduleDuration = DurationFormatter::toSeconds($d->content->duration) ?? 0;
                 }
+
+                $maxModuleCap = $moduleDuration > 0 ? ($moduleDuration * 2) : 0;
+                if ($d->content && $d->content->max_actual_watch_seconds !== null) {
+                    $maxModuleCap = $maxModuleCap > 0
+                        ? min($maxModuleCap, (int) $d->content->max_actual_watch_seconds)
+                        : (int) $d->content->max_actual_watch_seconds;
+                }
+
+                $alreadyAllocated = (int) ($contentAllocations[$cid] ?? 0);
+                $remainingModuleQuota = $maxModuleCap > 0 ? max(0, $maxModuleCap - $alreadyAllocated) : $maxModuleCap;
 
                 if ($pcu) {
                     $pcuDuration = $moduleDuration > 0 ? $moduleDuration : (int) ($pcu->duration_seconds ?? 0);
@@ -275,15 +322,9 @@ class LearningRecordLearningHourService
                         $moduleSec = (int) round((float) $pcu->learning_hour * 3600);
                     }
 
-                    $maxModuleCap = $pcuDuration > 0 ? ($pcuDuration * 2) : 0;
-                    if ($d->content && $d->content->max_actual_watch_seconds !== null) {
-                        $maxModuleCap = $maxModuleCap > 0
-                            ? min($maxModuleCap, (int) $d->content->max_actual_watch_seconds)
-                            : (int) $d->content->max_actual_watch_seconds;
-                    }
-
-                    $moduleRecognizedSec = ($maxModuleCap > 0) ? min($moduleSec, $maxModuleCap) : $moduleSec;
+                    $moduleRecognizedSec = ($maxModuleCap > 0) ? min($moduleSec, $remainingModuleQuota) : $moduleSec;
                     $consumedPlaylistRecognizedSeconds += $moduleRecognizedSec;
+                    $contentAllocations[$cid] = $alreadyAllocated + $moduleRecognizedSec;
                 } elseif ($cu) {
                     $cuDuration = $moduleDuration > 0 ? $moduleDuration : (int) ($cu->duration_seconds ?? 0);
                     $cuActualWatch = (int) ($cu->actual_watch_seconds ?? 0);
@@ -304,15 +345,9 @@ class LearningRecordLearningHourService
                         $moduleSec = (int) round((float) $cu->learning_hours * 3600);
                     }
 
-                    $maxModuleCap = $cuDuration > 0 ? ($cuDuration * 2) : 0;
-                    if ($d->content && $d->content->max_actual_watch_seconds !== null) {
-                        $maxModuleCap = $maxModuleCap > 0
-                            ? min($maxModuleCap, (int) $d->content->max_actual_watch_seconds)
-                            : (int) $d->content->max_actual_watch_seconds;
-                    }
-
-                    $moduleRecognizedSec = ($maxModuleCap > 0) ? min($moduleSec, $maxModuleCap) : $moduleSec;
+                    $moduleRecognizedSec = ($maxModuleCap > 0) ? min($moduleSec, $remainingModuleQuota) : $moduleSec;
                     $consumedPlaylistRecognizedSeconds += $moduleRecognizedSec;
+                    $contentAllocations[$cid] = $alreadyAllocated + $moduleRecognizedSec;
                 }
             }
 
@@ -328,6 +363,108 @@ class LearningRecordLearningHourService
     public function calculatePlaylistRecognizedSecondsSingle(int $userId, TrainingPlan $plan): int
     {
         return (int) $this->calculatePlaylistsRecognizedSecondsBatch($userId, collect([$plan]))->get($plan->id, 0);
+    }
+
+    /**
+     * Resolve the global recognized duration (in seconds) for a user on a given content.
+     * Combines valid actual watch across Direct (content_users) and all Playlists (playlist_content_users),
+     * capped at maximum 2x original content duration.
+     *
+     * @param int $userId
+     * @param int|Content $content
+     * @return int
+     */
+    public function resolveGlobalContentRecognizedSeconds(int $userId, int|Content $content): int
+    {
+        $contentModel = $content instanceof Content ? $content : Content::find((int) $content);
+        if (!$contentModel) {
+            return 0;
+        }
+
+        $durationSeconds = (int) ($contentModel->duration_in_seconds ?? 0);
+        if ($durationSeconds <= 0 && !empty($contentModel->duration)) {
+            $durationSeconds = DurationFormatter::toSeconds($contentModel->duration) ?? 0;
+        }
+
+        if ($durationSeconds <= 0) {
+            $cuDuration = (int) (ContentUser::where('user_id', $userId)->where('content_id', $contentModel->id)->value('duration_seconds') ?? 0);
+            $pcuDuration = (int) (PlaylistContentUser::where('user_id', $userId)->where('content_id', $contentModel->id)->value('duration_seconds') ?? 0);
+            $durationSeconds = max($cuDuration, $pcuDuration);
+        }
+
+        if ($durationSeconds <= 0) {
+            return 0;
+        }
+
+        $maxCapSeconds = $durationSeconds * 2;
+        if ($contentModel->max_actual_watch_seconds !== null) {
+            $maxCapSeconds = min($maxCapSeconds, (int) $contentModel->max_actual_watch_seconds);
+        }
+
+        // Direct content actual watch
+        $cu = ContentUser::where('user_id', $userId)->where('content_id', $contentModel->id)->first();
+        $cuActualSeconds = 0;
+        if ($cu) {
+            $cuActualWatch = (int) ($cu->actual_watch_seconds ?? 0);
+            $cuCurrentTime = (int) ($cu->current_time ?? 0);
+            $cuProgress = (int) ($cu->progress ?? 0);
+            $cuFinished = ((string) $cu->finish === '1' || $cuProgress >= 100);
+
+            if ($cuActualWatch > 0) {
+                $cuActualSeconds = $cuActualWatch;
+            } elseif ($cuCurrentTime > 0) {
+                $cuActualSeconds = $cuCurrentTime;
+            } elseif ($cuFinished && $durationSeconds > 0) {
+                $cuActualSeconds = $durationSeconds;
+            } elseif ($cuProgress > 0 && $durationSeconds > 0) {
+                $cuActualSeconds = (int) round(($cuProgress / 100) * $durationSeconds);
+            } elseif ((float) ($cu->learning_hours ?? 0) > 0) {
+                $cuActualSeconds = (int) round((float) $cu->learning_hours * 3600);
+            }
+        }
+
+        // Playlist content actual watch (across all playlists)
+        $pcus = PlaylistContentUser::where('user_id', $userId)->where('content_id', $contentModel->id)->get();
+        $pcuTotalActualSeconds = 0;
+        foreach ($pcus as $pcu) {
+            $pcuDuration = $durationSeconds > 0 ? $durationSeconds : (int) ($pcu->duration_seconds ?? 0);
+            $pcuActualWatch = (int) ($pcu->actual_watch_seconds ?? 0);
+            $pcuCurrentTime = (int) ($pcu->current_time ?? 0);
+            $pcuProgress = (int) ($pcu->progress ?? 0);
+            $pcuFinished = ((string) $pcu->finish === '1' || $pcuProgress >= 100);
+
+            $pcuSec = 0;
+            if ($pcuActualWatch > 0) {
+                $pcuSec = $pcuActualWatch;
+            } elseif ($pcuCurrentTime > 0) {
+                $pcuSec = $pcuCurrentTime;
+            } elseif ($pcuFinished && $pcuDuration > 0) {
+                $pcuSec = $pcuDuration;
+            } elseif ($pcuProgress > 0 && $pcuDuration > 0) {
+                $pcuSec = (int) round(($pcuProgress / 100) * $pcuDuration);
+            } elseif ((float) ($pcu->learning_hour ?? 0) > 0) {
+                $pcuSec = (int) round((float) $pcu->learning_hour * 3600);
+            }
+
+            $pcuTotalActualSeconds += $pcuSec;
+        }
+
+        $totalActualSeconds = $cuActualSeconds + $pcuTotalActualSeconds;
+        $recognizedSeconds = ($maxCapSeconds > 0) ? min($totalActualSeconds, $maxCapSeconds) : $totalActualSeconds;
+
+        return max(0, $recognizedSeconds);
+    }
+
+    /**
+     * Resolve the global recognized duration as HH:MM:SS string.
+     *
+     * @param int $userId
+     * @param int|Content $content
+     * @return string
+     */
+    public function resolveGlobalContentRecognizedDuration(int $userId, int|Content $content): string
+    {
+        return $this->formatRecognizedDuration($this->resolveGlobalContentRecognizedSeconds($userId, $content));
     }
 
     /**

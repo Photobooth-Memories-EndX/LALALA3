@@ -211,11 +211,12 @@ class LearningRecordController extends Controller
             ->groupBy('trainingplan_id')
             ->selectRaw('trainingplan_id, MIN(created_at) as min_created')
             ->pluck('min_created', 'trainingplan_id');
-        $playlistActualHours = $this->recordLhService()->calculatePlaylistsBatch($userId, $completedPlaylists);
-        $playlistRecognizedSeconds = $this->recordLhService()->calculatePlaylistsRecognizedSecondsBatch($userId, $completedPlaylists);
+        $contentAllocations = [];
+        $playlistRecognizedSeconds = $this->recordLhService()->calculatePlaylistsRecognizedSecondsBatch($userId, $completedPlaylists, $contentAllocations);
+        $playlistActualHours = $playlistRecognizedSeconds->map(fn (int $seconds) => round($seconds / 3600, 4));
 
         return $this->mergeLearningRecord(
-            $this->buildContentRows($completedContents, $cert),
+            $this->buildContentRows($completedContents, $cert, $contentAllocations),
             $this->buildPlaylistRows(
                 $completedPlaylists,
                 $cert,
@@ -679,9 +680,9 @@ class LearningRecordController extends Controller
      * Normalisasi ContentUser menjadi baris tabel. Baris berisi data polos —
      * HTML dirender oleh Blade Components (x-learning.record-row).
      */
-    private function buildContentRows(Collection $contentUsers, array $cert): Collection
+    private function buildContentRows(Collection $contentUsers, array $cert, array $contentAllocations = []): Collection
     {
-        return $contentUsers->map(function (ContentUser $cu) use ($cert) {
+        return $contentUsers->map(function (ContentUser $cu) use ($cert, &$contentAllocations) {
             $content = $cu->content;
 
             $setting     = $cert['byContent']->get($content->id);
@@ -701,10 +702,13 @@ class LearningRecordController extends Controller
             $playlists = $content->relationLoaded('trainingPlans')
                 ? $content->trainingPlans
                 : collect();
-            $actualHours = $this->recordLhService()->calculateContent($cu);
-            $formattedHours = $this->recordLhService()->formatHours($actualHours);
-            $recognizedSeconds = $this->recordLhService()->calculateContentRecognizedSeconds($cu);
+            $recognizedSeconds = $this->recordLhService()->calculateContentRecognizedSeconds($cu, $contentAllocations);
             $formattedRecognized = $this->recordLhService()->formatRecognizedDuration($recognizedSeconds);
+            $actualHours = round($recognizedSeconds / 3600, 4);
+            if ($content && $content->max_learning_hours !== null) {
+                $actualHours = min($actualHours, (float) $content->max_learning_hours);
+            }
+            $formattedHours = $this->recordLhService()->formatHours($actualHours);
 
             $isInactive = ($content->active !== 'Active') || !is_null($content->deleted_at);
             $isExpired  = !$isInactive && $content->isExpired();
@@ -749,7 +753,7 @@ class LearningRecordController extends Controller
                 'playlist_ids'    => $playlists->pluck('id')->values()->all(),
                 'type'            => \App\Support\ContentTypeHelper::label(optional($content)->type) ?: 'Content',
                 'classification'  => optional(optional($content)->classification)->classification_name ?? '-',
-                'duration'        => DurationFormatter::formatForLearningRecord(optional($content)->duration),
+                'duration'        => DurationFormatter::format(optional($content)->duration),
                 'duration_sort'   => DurationFormatter::toSeconds(optional($content)->duration) ?? -1,
                 'recognized_duration' => $formattedRecognized,
                 'recognized_duration_seconds' => $recognizedSeconds,
@@ -850,6 +854,7 @@ class LearningRecordController extends Controller
                 'c.title as title',
                 'c.slug as slug',
                 'c.type as type',
+                'c.duration as duration',
                 'c.status as status',
                 'c.active as active',
                 'c.has_deadline as has_deadline',
@@ -942,6 +947,15 @@ class LearningRecordController extends Controller
             })->values()->all();
 
             $durationSeconds = (int) ($plan->total_duration_seconds ?? 0);
+            if ($durationSeconds <= 0 && $planContents->isNotEmpty()) {
+                $durationSeconds = (int) $planContents->sum(function ($item) {
+                    return DurationFormatter::toSeconds($item->duration ?? null) ?? 0;
+                });
+            } elseif ($durationSeconds <= 0 && $plan->relationLoaded('trainingplandetail')) {
+                $durationSeconds = (int) $plan->trainingplandetail->sum(function ($d) {
+                    return DurationFormatter::toSeconds($d->content?->duration ?? null) ?? 0;
+                });
+            }
             $actualHours = $playlistActualHours?->get($plan->id)
                 ?? (float) $this->recordLhService()->calculatePlaylistSingle((int) Auth::id(), $plan);
             $formattedHours = $this->recordLhService()->formatHours($actualHours);
@@ -1041,20 +1055,7 @@ class LearningRecordController extends Controller
             return '-';
         }
 
-        $hours   = intdiv($seconds, 3600);
-        $minutes = intdiv($seconds % 3600, 60);
-
-        $parts = [];
-
-        if ($hours > 0) {
-            $parts[] = $hours . ' ' . ($hours === 1 ? 'hour' : 'hours');
-        }
-
-        if ($minutes > 0 || $hours === 0) {
-            $parts[] = $minutes . ' min';
-        }
-
-        return implode(' ', $parts);
+        return DurationFormatter::fromSeconds($seconds);
     }
 
     // ─── Certificate ────────────────────────────────────────────────────────────
@@ -1390,7 +1391,7 @@ class LearningRecordController extends Controller
                 'provider_name'          => 'KP-OWL',
                 'venue'                  => 'Online LMS',
                 'instructor'             => optional($content)->author ?: 'Training Team',
-                'duration'               => DurationFormatter::formatForLearningRecord(optional($content)->duration),
+                'duration'               => DurationFormatter::format(optional($content)->duration),
                 'duration_seconds'       => $durationSec,
                 'course_learning_hours'  => $actualHours,
                 'learning_hours'         => $actualHours,

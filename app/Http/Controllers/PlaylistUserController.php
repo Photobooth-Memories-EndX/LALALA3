@@ -570,6 +570,10 @@ class PlaylistUserController extends Controller
             $playlistCertificateEligibility
         );
 
+        $recognizedService = app(\App\Services\Learning\LearningRecordRecognizedDurationService::class);
+        $totalRecognizedSeconds = $recognizedService->resolveGlobalContentRecognizedSeconds((int) $userId, $content);
+        $totalRecognizedDuration = $recognizedService->formatSeconds($totalRecognizedSeconds);
+
         return view('user.playlist.view', [
             'playlist'                       => $trainingplan,
             'content'                        => $content,
@@ -579,6 +583,8 @@ class PlaylistUserController extends Controller
             'progressByContentId'            => $progressByContentId,
             'completedContent'               => $completedContent,
             'totalContent'                   => $totalContent,
+            'totalRecognizedSeconds'         => $totalRecognizedSeconds,
+            'totalRecognizedDuration'        => $totalRecognizedDuration,
             'assesment'                      => $assesment,
             'comment'                        => $comment,
             'totalComment'                   => $totalComment,

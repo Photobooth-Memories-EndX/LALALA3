@@ -323,8 +323,8 @@ class ExportMyAllLearningRecord implements FromArray, ShouldAutoSize, WithColumn
                             $child['type'] ?? '-',                                  // 7. Type
                             'Content Playlist',                                     // 8. Category (Dynamic Content Playlist)
                             $child['classification'] ?? '-',                        // 9. Main Classification
-                            $childDurCell,                                          // 10. Course Duration
-                            $childRecDurCell,                                       // 11. Total Recognized Duration
+                            '-',                                                    // 10. Course Duration (Prevent double calculation in SUM)
+                            '-',                                                    // 11. Total Recognized Duration (Prevent double calculation in SUM)
                             '-',                                                    // 12. Learning Hours (Prevent double calculation in SUM)
                             $childProgInt / 100,                                    // 13. % Progress
                             $this->toExcelDate($child['start_date'] ?? null),       // 14. Start Date
