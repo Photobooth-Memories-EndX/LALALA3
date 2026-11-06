@@ -157,7 +157,6 @@
                     $debuggerModuleKeys = [
                         'learning_hours_management',
                         'playlist_debug_tools',
-                        'learning_engagement_time',
                         'learning_management',
                     ];
                     $standardModules = collect($modules)->except(array_merge($debuggerModuleKeys, $hiddenModuleKeys));

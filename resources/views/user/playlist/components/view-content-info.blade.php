@@ -56,7 +56,7 @@
             </button>
         </div>
 
-        @if (auth()->user()?->canAccessManageModule('learning_engagement_time') && \App\Services\EngagementTime\EngagementTimeService::isTargetPlaylistContent($playlist, $content))
+        @if (auth()->user()?->canAccessManageModule('playlist_debug_tools') && \App\Services\EngagementTime\EngagementTimeService::isTargetPlaylistContent($playlist, $content))
             @include('user.components.total-engagement-time', [
                 'targetType'      => 'playlist',
                 'targetId'        => $content->id,

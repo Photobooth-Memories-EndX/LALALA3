@@ -149,7 +149,7 @@
 
     @include('user.playlist.components.view-style')
     <link rel="stylesheet" href="{{ asset('css/playlist.css') }}">
-    @if (auth()->user()?->canAccessManageModule('learning_engagement_time') && \App\Services\EngagementTime\EngagementTimeService::isTargetPlaylistContent($playlist, $content))
+    @if (auth()->user()?->canAccessManageModule('playlist_debug_tools') && \App\Services\EngagementTime\EngagementTimeService::isTargetPlaylistContent($playlist, $content))
         <link rel="stylesheet" href="{{ asset('css/engagement-time.css') }}">
     @endif
 
@@ -669,7 +669,7 @@
     @endif
 
     @include('user.playlist.components.view-player-script')
-    @if (auth()->user()?->canAccessManageModule('learning_engagement_time') && \App\Services\EngagementTime\EngagementTimeService::isTargetPlaylistContent($playlist, $content))
+    @if (auth()->user()?->canAccessManageModule('playlist_debug_tools') && \App\Services\EngagementTime\EngagementTimeService::isTargetPlaylistContent($playlist, $content))
         <script src="{{ asset('js/engagement-time-tracker.js') }}"></script>
     @endif
 @endsection

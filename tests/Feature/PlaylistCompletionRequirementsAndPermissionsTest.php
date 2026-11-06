@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\Assesment;
-use App\Models\AssesmentResult;
 use App\Models\CertificateSetting;
 use App\Models\Content;
 use App\Models\ContentUser;
@@ -91,10 +90,10 @@ class PlaylistCompletionRequirementsAndPermissionsTest extends TestCase
     }
 
     /** @test */
-    public function total_engagement_time_is_hidden_without_permission_on_content_and_playlist(): void
+    public function total_engagement_time_is_hidden_without_playlist_debug_tools_permission(): void
     {
         RoleAccessPermission::updateOrCreate(
-            ['role' => User::ROLE_USER, 'module_key' => 'learning_engagement_time'],
+            ['role' => User::ROLE_USER, 'module_key' => 'playlist_debug_tools'],
             ['can_access' => false]
         );
 
@@ -119,10 +118,10 @@ class PlaylistCompletionRequirementsAndPermissionsTest extends TestCase
     }
 
     /** @test */
-    public function total_engagement_time_is_visible_with_permission_on_target_pages(): void
+    public function total_engagement_time_is_visible_with_playlist_debug_tools_permission_on_target_pages(): void
     {
         RoleAccessPermission::updateOrCreate(
-            ['role' => User::ROLE_USER, 'module_key' => 'learning_engagement_time'],
+            ['role' => User::ROLE_USER, 'module_key' => 'playlist_debug_tools'],
             ['can_access' => true]
         );
 
@@ -198,6 +197,43 @@ class PlaylistCompletionRequirementsAndPermissionsTest extends TestCase
         $response->assertOk();
         $response->assertSee('Developer Debug Panel', false);
         $response->assertSee('playlistDebugPanelTitle', false);
+    }
+
+    /** @test */
+    public function single_permission_playlist_debug_tools_controls_both_debug_tools_and_engagement_time(): void
+    {
+        // When disabled
+        RoleAccessPermission::updateOrCreate(
+            ['role' => User::ROLE_USER, 'module_key' => 'playlist_debug_tools'],
+            ['can_access' => false]
+        );
+
+        $this->actingAs($this->user);
+
+        $resDisabledContent = $this->get(route('content.user.view', $this->videoContent->slug));
+        $resDisabledContent->assertDontSee('id="totalEngagementCard"', false);
+
+        $resDisabledPlaylist = $this->get(route('playlist.user.view', [
+            'slug' => $this->playlist->slug,
+            'vidslug' => $this->videoContent->slug,
+        ]));
+        $resDisabledPlaylist->assertDontSee('id="totalEngagementCard"', false);
+        $resDisabledPlaylist->assertDontSee('Developer Debug Panel', false);
+
+        // When enabled
+        RoleAccessPermission::updateOrCreate(
+            ['role' => User::ROLE_USER, 'module_key' => 'playlist_debug_tools'],
+            ['can_access' => true]
+        );
+
+        $resEnabledContent = $this->get(route('content.user.view', $this->videoContent->slug));
+        $resEnabledContent->assertSee('id="totalEngagementCard"', false);
+
+        $resEnabledPlaylist = $this->get(route('playlist.user.view', [
+            'slug' => $this->playlist->slug,
+            'vidslug' => $this->videoContent->slug,
+        ]));
+        $resEnabledPlaylist->assertSee('Developer Debug Panel', false);
     }
 
     /** @test */
@@ -302,30 +338,31 @@ class PlaylistCompletionRequirementsAndPermissionsTest extends TestCase
     }
 
     /** @test */
-    public function manage_access_permission_edit_page_includes_learning_engagement_time(): void
+    public function manage_access_permission_edit_page_only_has_playlist_debug_tools_and_no_learning_engagement_time(): void
     {
         $response = $this->actingAs($this->superAdmin)
             ->get(route('manage.access-permission.edit', User::ROLE_ADMIN));
 
         $response->assertOk();
-        $response->assertSee('Learning Engagement Time', false);
-        $response->assertSee('learning_engagement_time', false);
+        $response->assertSee('Playlist Debug Tools', false);
         $response->assertSee('playlist_debug_tools', false);
+        $response->assertDontSee('learning_engagement_time', false);
+        $response->assertDontSee('Learning Engagement Time', false);
     }
 
     /** @test */
-    public function manage_access_permission_can_save_learning_engagement_time(): void
+    public function manage_access_permission_can_save_playlist_debug_tools(): void
     {
         $this->actingAs($this->superAdmin)
             ->put(route('manage.access-permission.update', User::ROLE_USER), [
                 'permissions' => [
-                    'learning_engagement_time',
+                    'playlist_debug_tools',
                 ],
             ])
             ->assertRedirect(route('manage.access-permission.index'));
 
         $permission = RoleAccessPermission::where('role', User::ROLE_USER)
-            ->where('module_key', 'learning_engagement_time')
+            ->where('module_key', 'playlist_debug_tools')
             ->first();
 
         $this->assertNotNull($permission);

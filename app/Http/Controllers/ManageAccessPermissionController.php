@@ -28,7 +28,6 @@ class ManageAccessPermissionController extends Controller
         'playlist_learning_path'     => 'Playlist & Learning Path',
         'learning_hours_management'  => 'Learning Hours Management',
         'playlist_debug_tools'       => 'Playlist Debug Tools',
-        'learning_engagement_time'   => 'Learning Engagement Time',
         'news_announcement'          => 'News & Announcement',
         'page_management'            => 'Page Management',
         'event_documentation'        => 'Event Documentation',

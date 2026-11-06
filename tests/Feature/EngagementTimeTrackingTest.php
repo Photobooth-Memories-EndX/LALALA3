@@ -53,7 +53,7 @@ class EngagementTimeTrackingTest extends TestCase
         ]);
 
         RoleAccessPermission::updateOrCreate(
-            ['role' => User::ROLE_USER, 'module_key' => 'learning_engagement_time'],
+            ['role' => User::ROLE_USER, 'module_key' => 'playlist_debug_tools'],
             ['can_access' => true]
         );
 
@@ -490,7 +490,7 @@ class EngagementTimeTrackingTest extends TestCase
     public function target_content_view_hides_engagement_time_component_when_permission_revoked(): void
     {
         RoleAccessPermission::updateOrCreate(
-            ['role' => User::ROLE_USER, 'module_key' => 'learning_engagement_time'],
+            ['role' => User::ROLE_USER, 'module_key' => 'playlist_debug_tools'],
             ['can_access' => false]
         );
 
@@ -507,7 +507,7 @@ class EngagementTimeTrackingTest extends TestCase
     public function target_playlist_view_hides_engagement_time_component_when_permission_revoked(): void
     {
         RoleAccessPermission::updateOrCreate(
-            ['role' => User::ROLE_USER, 'module_key' => 'learning_engagement_time'],
+            ['role' => User::ROLE_USER, 'module_key' => 'playlist_debug_tools'],
             ['can_access' => false]
         );
 

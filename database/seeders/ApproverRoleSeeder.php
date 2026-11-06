@@ -25,7 +25,6 @@ class ApproverRoleSeeder extends Seeder
         'playlist_learning_path',
         'learning_hours_management',
         'playlist_debug_tools',
-        'learning_engagement_time',
         'news_announcement',
         'page_management',
         'event_documentation',

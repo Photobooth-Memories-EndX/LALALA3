@@ -45,7 +45,7 @@
             <div class="text-dark lh-lg fs-5 content-overview-text">{!! $content->description !!}</div>
         </div>
 
-        @if (auth()->user()?->canAccessManageModule('learning_engagement_time') && \App\Services\EngagementTime\EngagementTimeService::isTargetContent($content))
+        @if (auth()->user()?->canAccessManageModule('playlist_debug_tools') && \App\Services\EngagementTime\EngagementTimeService::isTargetContent($content))
             @include('user.components.total-engagement-time', [
                 'targetType'      => 'content',
                 'targetId'        => $content->id,
