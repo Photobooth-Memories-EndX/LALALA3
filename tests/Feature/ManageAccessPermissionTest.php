@@ -194,6 +194,7 @@ class ManageAccessPermissionTest extends TestCase
         $expectedDebuggerModules = [
             'learning_hours_management' => 'Learning Hours Management',
             'playlist_debug_tools' => 'Playlist Debug Tools',
+            'learning_engagement_time' => 'Learning Engagement Time',
             'learning_management' => 'Learning Management',
         ];
 
@@ -236,6 +237,31 @@ class ManageAccessPermissionTest extends TestCase
         $this->assertTrue($adminUser->canAccessManageModule('learning_hours_management'));
         $this->assertFalse($regularUser->canAccessManageModule('learning_hours_management'));
         $this->assertTrue($this->superAdmin->canAccessManageModule('learning_hours_management'));
+    }
+
+    public function test_learning_engagement_time_authorization_via_user_model(): void
+    {
+        $adminUser = $this->createTestUser(User::ROLE_ADMIN);
+        $regularUser = $this->createTestUser(User::ROLE_USER);
+
+        RoleAccessPermission::updateOrCreate(
+            ['role' => User::ROLE_ADMIN, 'module_key' => 'learning_engagement_time'],
+            ['can_access' => true]
+        );
+
+        RoleAccessPermission::updateOrCreate(
+            ['role' => User::ROLE_USER, 'module_key' => 'learning_engagement_time'],
+            ['can_access' => false]
+        );
+
+        RoleAccessPermission::updateOrCreate(
+            ['role' => User::ROLE_SUPER_ADMIN, 'module_key' => 'learning_engagement_time'],
+            ['can_access' => true]
+        );
+
+        $this->assertTrue($adminUser->canAccessManageModule('learning_engagement_time'));
+        $this->assertFalse($regularUser->canAccessManageModule('learning_engagement_time'));
+        $this->assertTrue($this->superAdmin->canAccessManageModule('learning_engagement_time'));
     }
 
     public function test_super_admin_can_access_index_and_sees_atur_permission_for_all_roles(): void

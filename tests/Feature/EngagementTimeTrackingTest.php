@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Content;
 use App\Models\ContentUser;
 use App\Models\PlaylistContentUser;
+use App\Models\RoleAccessPermission;
 use App\Models\TrainingPlan;
 use App\Models\TrainingPlanDetail;
 use App\Models\User;
@@ -50,6 +51,11 @@ class EngagementTimeTrackingTest extends TestCase
             'role'       => 1,
             'active'     => 1,
         ]);
+
+        RoleAccessPermission::updateOrCreate(
+            ['role' => User::ROLE_USER, 'module_key' => 'learning_engagement_time'],
+            ['can_access' => true]
+        );
 
         // Find or create the target content matching the exact canonical slug
         $this->targetContent = Content::firstOrCreate(
@@ -472,6 +478,44 @@ class EngagementTimeTrackingTest extends TestCase
         $response = $this->get(route('playlist.user.view', [
             'slug'    => $this->nonTargetPlaylist->slug,
             'vidslug' => $this->nonTargetContent->slug,
+        ]));
+
+        $response->assertOk();
+        $response->assertDontSee('id="totalEngagementCard"', false);
+        $response->assertDontSee('Total Engagement Time', false);
+        $response->assertDontSee('engagement-time-tracker.js', false);
+    }
+
+    /** @test */
+    public function target_content_view_hides_engagement_time_component_when_permission_revoked(): void
+    {
+        RoleAccessPermission::updateOrCreate(
+            ['role' => User::ROLE_USER, 'module_key' => 'learning_engagement_time'],
+            ['can_access' => false]
+        );
+
+        $this->actingAs($this->user1);
+
+        $response = $this->get(route('content.user.view', $this->targetContent->slug));
+        $response->assertOk();
+        $response->assertDontSee('id="totalEngagementCard"', false);
+        $response->assertDontSee('Total Engagement Time', false);
+        $response->assertDontSee('engagement-time-tracker.js', false);
+    }
+
+    /** @test */
+    public function target_playlist_view_hides_engagement_time_component_when_permission_revoked(): void
+    {
+        RoleAccessPermission::updateOrCreate(
+            ['role' => User::ROLE_USER, 'module_key' => 'learning_engagement_time'],
+            ['can_access' => false]
+        );
+
+        $this->actingAs($this->user1);
+
+        $response = $this->get(route('playlist.user.view', [
+            'slug'    => $this->targetPlaylist->slug,
+            'vidslug' => $this->targetPlaylistContent->slug,
         ]));
 
         $response->assertOk();

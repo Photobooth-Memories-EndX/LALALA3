@@ -9,11 +9,11 @@
     $playlistDebugActive = !empty($playlistDebugState);
 
     $playlistUiState = [
-        'learning_progress' => (float) $percentageProgressPlaylist,
-        'content_assessment_available' => $contentAssessmentTotal > 0,
-        'playlist_assessment_available' => $hasPlaylistAssessment
-            && ($assessmentAccess || $playlistAssessmentDone),
-        'certificate_available' => (bool) ($playlistCertificateEligibility?->eligible ?? false),
+        'learning_progress' => (float) ($completionRequirements['learning_progress'] ?? $percentageProgressPlaylist),
+        'content_assessment_available' => (bool) ($completionRequirements['content_assessment_available'] ?? ($contentAssessmentTotal > 0)),
+        'playlist_assessment_available' => (bool) ($completionRequirements['playlist_assessment_available'] ?? ($hasPlaylistAssessment
+            && ($assessmentAccess || $playlistAssessmentDone))),
+        'certificate_available' => (bool) ($completionRequirements['certificate_available'] ?? ($playlistCertificateEligibility?->eligible ?? false)),
     ];
 
     if (($playlistDebugState['learning_progress'] ?? null) === 'pass') {
@@ -149,7 +149,7 @@
 
     @include('user.playlist.components.view-style')
     <link rel="stylesheet" href="{{ asset('css/playlist.css') }}">
-    @if (\App\Services\EngagementTime\EngagementTimeService::isTargetPlaylistContent($playlist, $content))
+    @if (auth()->user()?->canAccessManageModule('learning_engagement_time') && \App\Services\EngagementTime\EngagementTimeService::isTargetPlaylistContent($playlist, $content))
         <link rel="stylesheet" href="{{ asset('css/engagement-time.css') }}">
     @endif
 
@@ -669,7 +669,7 @@
     @endif
 
     @include('user.playlist.components.view-player-script')
-    @if (\App\Services\EngagementTime\EngagementTimeService::isTargetPlaylistContent($playlist, $content))
+    @if (auth()->user()?->canAccessManageModule('learning_engagement_time') && \App\Services\EngagementTime\EngagementTimeService::isTargetPlaylistContent($playlist, $content))
         <script src="{{ asset('js/engagement-time-tracker.js') }}"></script>
     @endif
 @endsection

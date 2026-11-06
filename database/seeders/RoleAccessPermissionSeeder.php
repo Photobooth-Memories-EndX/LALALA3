@@ -20,6 +20,7 @@ class RoleAccessPermissionSeeder extends Seeder
         'question_bank',
         'playlist_learning_path',
         'playlist_debug_tools',
+        'learning_engagement_time',
         'news_announcement',
         'page_management',
         'event_documentation',

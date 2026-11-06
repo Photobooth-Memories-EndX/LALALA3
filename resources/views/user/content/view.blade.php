@@ -131,7 +131,7 @@
         @endif
     @endif
 
-    @if (\App\Services\EngagementTime\EngagementTimeService::isTargetContent($content))
+    @if (auth()->user()?->canAccessManageModule('learning_engagement_time') && \App\Services\EngagementTime\EngagementTimeService::isTargetContent($content))
         <link rel="stylesheet" href="{{ asset('css/engagement-time.css') }}">
     @endif
 
@@ -1459,7 +1459,7 @@
             });
         });
     </script>
-    @if (\App\Services\EngagementTime\EngagementTimeService::isTargetContent($content))
+    @if (auth()->user()?->canAccessManageModule('learning_engagement_time') && \App\Services\EngagementTime\EngagementTimeService::isTargetContent($content))
         <script src="{{ asset('js/engagement-time-tracker.js') }}"></script>
     @endif
 @endsection

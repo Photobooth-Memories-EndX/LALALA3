@@ -9,6 +9,7 @@ use App\Models\Comment;
 use App\Models\Content;
 use App\Models\ContentUser;
 use App\Services\AssessmentAccessService;
+use App\Services\Learning\PlaylistCompletionRequirementsService;
 use App\Services\LearningAnalyticsService;
 use App\Support\DurationFormatter;
 use Carbon\Carbon;
@@ -306,7 +307,7 @@ class ContentUserController extends Controller
         ), $heroSummary));
     }
 
-    public function view($slug, AssessmentAccessService $assessmentAccess)
+    public function view($slug, AssessmentAccessService $assessmentAccess, PlaylistCompletionRequirementsService $completionRequirementsService)
     {
         $content = Content::findBySlug($slug);
 
@@ -494,6 +495,14 @@ class ContentUserController extends Controller
             ->where('content_id', $content->id)
             ->exists();
 
+        $completionRequirements = $completionRequirementsService->resolveForContent(
+            $content,
+            Auth::user(),
+            null,
+            (float) ($content_user->progress ?? 0),
+            $assesment !== null
+        );
+
         return view('user.content.view', compact(
             'content',
             'assesment',
@@ -505,6 +514,7 @@ class ContentUserController extends Controller
             'totalCommentCount',
             'bookmarkCount',
             'isBookmarked',
+            'completionRequirements',
             'activeDraft',
             'isExpired',
             'isInactive',

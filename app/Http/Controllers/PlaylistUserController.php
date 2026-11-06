@@ -14,6 +14,7 @@ use App\Models\TrainingPlanDetail;
 use App\Services\AssessmentAccessService;
 use App\Services\CertificateEligibilityService;
 use App\Services\Learning\LearningProgressResolver;
+use App\Services\Learning\PlaylistCompletionRequirementsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -232,7 +233,7 @@ class PlaylistUserController extends Controller
         return redirect()->route('playlist.user.index');
     }
 
-    public function view($slug, $vidslug, CertificateEligibilityService $certificateEligibility, AssessmentAccessService $assessmentAccessService)
+    public function view($slug, $vidslug, CertificateEligibilityService $certificateEligibility, AssessmentAccessService $assessmentAccessService, PlaylistCompletionRequirementsService $completionRequirementsService)
     {
         $userId = Auth::id();
 
@@ -557,11 +558,24 @@ class PlaylistUserController extends Controller
         $continueLearningContent = !$isCurrentFinished ? $content : $nextUnfinishedContent;
         $isPlaylistFullyCompleted = $nextUnfinishedContent === null && $completedContent === $totalContent;
 
+        $completionRequirements = $completionRequirementsService->resolveForPlaylist(
+            $trainingplan,
+            $content,
+            Auth::user(),
+            [],
+            (float) $percentageProgressPlaylist,
+            $contentAssessmentProgress['total'],
+            $hasPlaylistAssessment,
+            $playlistAssessmentDone,
+            $playlistCertificateEligibility
+        );
+
         return view('user.playlist.view', [
             'playlist'                       => $trainingplan,
             'content'                        => $content,
             'content_all'                    => $content_all,
             'content_user'                   => $content_user,
+            'completionRequirements'         => $completionRequirements,
             'progressByContentId'            => $progressByContentId,
             'completedContent'               => $completedContent,
             'totalContent'                   => $totalContent,
