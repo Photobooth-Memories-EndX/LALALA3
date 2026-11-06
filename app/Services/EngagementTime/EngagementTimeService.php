@@ -8,7 +8,18 @@ use App\Models\TrainingPlan;
 class EngagementTimeService
 {
     /**
-     * Exact canonical slug for the authorized target content.
+     * Exact canonical slugs for authorized target contents (Part 1 Document & Part 2 Video).
+     */
+    public const TARGET_CONTENT_DOCUMENT_SLUG = 'penanggulangan-hivaids-di-tempat-kerja-part-1';
+    public const TARGET_CONTENT_VIDEO_SLUG = 'penanggulangan-hivaids-di-tempat-kerja-part-2';
+
+    public const TARGET_CONTENT_SLUGS = [
+        self::TARGET_CONTENT_DOCUMENT_SLUG,
+        self::TARGET_CONTENT_VIDEO_SLUG,
+    ];
+
+    /**
+     * Exact canonical slug for the authorized target content (retained for backward compatibility).
      */
     public const TARGET_CONTENT_SLUG = 'penanggulangan-hivaids-di-tempat-kerja-part-2';
 
@@ -32,7 +43,7 @@ class EngagementTimeService
 
         $slug = is_string($content) ? $content : ($content->slug ?? '');
 
-        return $slug === self::TARGET_CONTENT_SLUG;
+        return in_array($slug, self::TARGET_CONTENT_SLUGS, true);
     }
 
     /**

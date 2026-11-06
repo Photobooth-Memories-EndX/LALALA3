@@ -47,7 +47,7 @@ class PlaylistCompletionRequirementsAndPermissionsTest extends TestCase
 
         // Create target video content (for engagement time testing)
         $this->videoContent = Content::firstOrCreate(
-            ['slug' => EngagementTimeService::TARGET_CONTENT_SLUG],
+            ['slug' => EngagementTimeService::TARGET_CONTENT_VIDEO_SLUG],
             [
                 'title' => 'Penanggulangan HIV/AIDS di Tempat Kerja (Part 2)',
                 'type' => 'Video',
@@ -57,16 +57,17 @@ class PlaylistCompletionRequirementsAndPermissionsTest extends TestCase
             ]
         );
 
-        // Create document content with unique title
-        $uniqueDocTitle = 'Sample SOP Document Testing ' . Str::random(6);
-        $this->documentContent = Content::create([
-            'title'          => $uniqueDocTitle,
-            'type'           => 'Document',
-            'active'         => 'Active',
-            'duration'       => '00:15:00',
-            'learning_hours' => 0.5,
-        ]);
-        $this->documentContent->refresh();
+        // Create target document content (for engagement time testing)
+        $this->documentContent = Content::firstOrCreate(
+            ['slug' => EngagementTimeService::TARGET_CONTENT_DOCUMENT_SLUG],
+            [
+                'title'          => 'Penanggulangan HIV/AIDS di Tempat Kerja (Part 1)',
+                'type'           => 'Document',
+                'active'         => 'Active',
+                'duration'       => '00:15:00',
+                'learning_hours' => 0.5,
+            ]
+        );
 
         // Create playlist with both contents
         $this->playlist = TrainingPlan::firstOrCreate(
@@ -100,11 +101,20 @@ class PlaylistCompletionRequirementsAndPermissionsTest extends TestCase
         $this->actingAs($this->user);
 
         // Content Video
-        $resContent = $this->get(route('content.user.view', $this->videoContent->slug));
-        $resContent->assertOk();
-        $resContent->assertDontSee('id="totalEngagementCard"', false);
-        $resContent->assertDontSee('Total Engagement Time', false);
-        $resContent->assertDontSee('engagement-time-tracker.js', false);
+        $resVideo = $this->get(route('content.user.view', $this->videoContent->slug));
+        $resVideo->assertOk();
+        $resVideo->assertDontSee('id="totalEngagementCard"', false);
+        $resVideo->assertDontSee('Total Engagement Time', false);
+        $resVideo->assertDontSee('engagement-time-tracker.js', false);
+        $resVideo->assertDontSee('Developer Debug Panel', false);
+
+        // Content Document
+        $resDoc = $this->get(route('content.user.view', $this->documentContent->slug));
+        $resDoc->assertOk();
+        $resDoc->assertDontSee('id="totalEngagementCard"', false);
+        $resDoc->assertDontSee('Total Engagement Time', false);
+        $resDoc->assertDontSee('engagement-time-tracker.js', false);
+        $resDoc->assertDontSee('Developer Debug Panel', false);
 
         // Playlist View
         $resPlaylist = $this->get(route('playlist.user.view', [
@@ -115,6 +125,7 @@ class PlaylistCompletionRequirementsAndPermissionsTest extends TestCase
         $resPlaylist->assertDontSee('id="totalEngagementCard"', false);
         $resPlaylist->assertDontSee('Total Engagement Time', false);
         $resPlaylist->assertDontSee('engagement-time-tracker.js', false);
+        $resPlaylist->assertDontSee('Developer Debug Panel', false);
     }
 
     /** @test */
@@ -128,11 +139,20 @@ class PlaylistCompletionRequirementsAndPermissionsTest extends TestCase
         $this->actingAs($this->user);
 
         // Content Video (target content)
-        $resContent = $this->get(route('content.user.view', $this->videoContent->slug));
-        $resContent->assertOk();
-        $resContent->assertSee('id="totalEngagementCard"', false);
-        $resContent->assertSee('Total Engagement Time', false);
-        $resContent->assertSee('engagement-time-tracker.js', false);
+        $resVideo = $this->get(route('content.user.view', $this->videoContent->slug));
+        $resVideo->assertOk();
+        $resVideo->assertSee('id="totalEngagementCard"', false);
+        $resVideo->assertSee('Total Engagement Time', false);
+        $resVideo->assertSee('engagement-time-tracker.js', false);
+        $resVideo->assertSee('Developer Debug Panel', false);
+
+        // Content Document (target content)
+        $resDoc = $this->get(route('content.user.view', $this->documentContent->slug));
+        $resDoc->assertOk();
+        $resDoc->assertSee('id="totalEngagementCard"', false);
+        $resDoc->assertSee('Total Engagement Time', false);
+        $resDoc->assertSee('engagement-time-tracker.js', false);
+        $resDoc->assertSee('Developer Debug Panel', false);
 
         // Target Playlist View: child content is TARGET_PLAYLIST_CONTENT_SLUG
         $playlistTargetContent = Content::firstOrCreate(
@@ -157,6 +177,7 @@ class PlaylistCompletionRequirementsAndPermissionsTest extends TestCase
         $resPlaylist->assertSee('id="totalEngagementCard"', false);
         $resPlaylist->assertSee('Total Engagement Time', false);
         $resPlaylist->assertSee('engagement-time-tracker.js', false);
+        $resPlaylist->assertSee('Developer Debug Panel', false);
     }
 
     /** @test */
@@ -169,6 +190,19 @@ class PlaylistCompletionRequirementsAndPermissionsTest extends TestCase
 
         $this->actingAs($this->user);
 
+        // Content Video
+        $resVideo = $this->get(route('content.user.view', $this->videoContent->slug));
+        $resVideo->assertOk();
+        $resVideo->assertDontSee('Developer Debug Panel', false);
+        $resVideo->assertDontSee('playlistDebugPanelTitle', false);
+
+        // Content Document
+        $resDoc = $this->get(route('content.user.view', $this->documentContent->slug));
+        $resDoc->assertOk();
+        $resDoc->assertDontSee('Developer Debug Panel', false);
+        $resDoc->assertDontSee('playlistDebugPanelTitle', false);
+
+        // Playlist View
         $response = $this->get(route('playlist.user.view', [
             'slug' => $this->playlist->slug,
             'vidslug' => $this->videoContent->slug,
@@ -189,6 +223,19 @@ class PlaylistCompletionRequirementsAndPermissionsTest extends TestCase
 
         $this->actingAs($this->user);
 
+        // Content Video
+        $resVideo = $this->get(route('content.user.view', $this->videoContent->slug));
+        $resVideo->assertOk();
+        $resVideo->assertSee('Developer Debug Panel', false);
+        $resVideo->assertSee('playlistDebugPanelTitle', false);
+
+        // Content Document
+        $resDoc = $this->get(route('content.user.view', $this->documentContent->slug));
+        $resDoc->assertOk();
+        $resDoc->assertSee('Developer Debug Panel', false);
+        $resDoc->assertSee('playlistDebugPanelTitle', false);
+
+        // Playlist View
         $response = $this->get(route('playlist.user.view', [
             'slug' => $this->playlist->slug,
             'vidslug' => $this->videoContent->slug,
@@ -212,10 +259,29 @@ class PlaylistCompletionRequirementsAndPermissionsTest extends TestCase
 
         $resDisabledContent = $this->get(route('content.user.view', $this->videoContent->slug));
         $resDisabledContent->assertDontSee('id="totalEngagementCard"', false);
+        $resDisabledContent->assertDontSee('Developer Debug Panel', false);
+
+        $resDisabledDoc = $this->get(route('content.user.view', $this->documentContent->slug));
+        $resDisabledDoc->assertDontSee('id="totalEngagementCard"', false);
+        $resDisabledDoc->assertDontSee('Developer Debug Panel', false);
+
+        $playlistTargetContent = Content::firstOrCreate(
+            ['slug' => EngagementTimeService::TARGET_PLAYLIST_CONTENT_SLUG],
+            [
+                'title' => '[HR] A.1 - Budaya Perusahaan & Pengembangan Organisasi [2025]',
+                'type' => 'Document',
+                'active' => 'Active',
+                'duration' => '00:15:00',
+            ]
+        );
+        TrainingPlanDetail::firstOrCreate([
+            'trainingplan_id' => $this->playlist->id,
+            'content_id' => $playlistTargetContent->id,
+        ], ['content_order' => 3]);
 
         $resDisabledPlaylist = $this->get(route('playlist.user.view', [
             'slug' => $this->playlist->slug,
-            'vidslug' => $this->videoContent->slug,
+            'vidslug' => $playlistTargetContent->slug,
         ]));
         $resDisabledPlaylist->assertDontSee('id="totalEngagementCard"', false);
         $resDisabledPlaylist->assertDontSee('Developer Debug Panel', false);
@@ -228,12 +294,37 @@ class PlaylistCompletionRequirementsAndPermissionsTest extends TestCase
 
         $resEnabledContent = $this->get(route('content.user.view', $this->videoContent->slug));
         $resEnabledContent->assertSee('id="totalEngagementCard"', false);
+        $resEnabledContent->assertSee('Developer Debug Panel', false);
+
+        $resEnabledDoc = $this->get(route('content.user.view', $this->documentContent->slug));
+        $resEnabledDoc->assertSee('id="totalEngagementCard"', false);
+        $resEnabledDoc->assertSee('Developer Debug Panel', false);
 
         $resEnabledPlaylist = $this->get(route('playlist.user.view', [
             'slug' => $this->playlist->slug,
-            'vidslug' => $this->videoContent->slug,
+            'vidslug' => $playlistTargetContent->slug,
         ]));
+        $resEnabledPlaylist->assertSee('id="totalEngagementCard"', false);
         $resEnabledPlaylist->assertSee('Developer Debug Panel', false);
+    }
+
+    /** @test */
+    public function debug_endpoints_reject_unauthorized_users_with_403(): void
+    {
+        RoleAccessPermission::updateOrCreate(
+            ['role' => User::ROLE_USER, 'module_key' => 'playlist_debug_tools'],
+            ['can_access' => false]
+        );
+
+        $this->actingAs($this->user);
+
+        $this->post(route('playlist.debug.update', $this->playlist), [
+            'key' => 'learning_progress',
+            'value' => 'pass',
+        ])->assertStatus(403);
+
+        $this->delete(route('playlist.debug.reset', $this->playlist))
+            ->assertStatus(403);
     }
 
     /** @test */
@@ -335,6 +426,31 @@ class PlaylistCompletionRequirementsAndPermissionsTest extends TestCase
         $resWithAssessment = $this->get(route('content.user.view', $this->documentContent->slug));
         $resWithAssessment->assertOk();
         $resWithAssessment->assertSee('Assessment Content', false);
+    }
+
+    /** @test */
+    public function content_detail_debug_override_updates_completion_requirements_and_ui_state(): void
+    {
+        RoleAccessPermission::updateOrCreate(
+            ['role' => User::ROLE_USER, 'module_key' => 'playlist_debug_tools'],
+            ['can_access' => true]
+        );
+
+        $this->actingAs($this->user);
+
+        // When debug override forces learning_progress pass (100%)
+        $resolvedPlaylist = $this->videoContent->trainingPlans()->where('active', 'Active')->first() ?? $this->playlist;
+        $sessionKey = 'playlist_debug.' . $resolvedPlaylist->getKey();
+        $response = $this->withSession([
+            $sessionKey => [
+                'learning_progress' => 'pass',
+                'certificate' => 'available',
+            ],
+        ])->get(route('content.user.view', $this->videoContent->slug));
+
+        $response->assertOk();
+        $response->assertSee('100%');
+        $response->assertSee('OVERRIDE ACTIVE');
     }
 
     /** @test */

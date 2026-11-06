@@ -495,16 +495,27 @@ class ContentUserController extends Controller
             ->where('content_id', $content->id)
             ->exists();
 
+        $playlist = $content->trainingPlans()->where('active', 'Active')->first()
+            ?? $content->trainingPlans()->first();
+
+        $debugOverrides = [];
+        if ($playlist && Auth::user()?->canAccessManageModule('playlist_debug_tools')) {
+            $debugOverrides = session('playlist_debug.' . $playlist->getKey(), []);
+            $debugOverrides = is_array($debugOverrides) ? $debugOverrides : [];
+        }
+
         $completionRequirements = $completionRequirementsService->resolveForContent(
             $content,
             Auth::user(),
-            null,
+            $playlist,
             (float) ($content_user->progress ?? 0),
-            $assesment !== null
+            $assesment !== null,
+            $debugOverrides
         );
 
         return view('user.content.view', compact(
             'content',
+            'playlist',
             'assesment',
             'assessmentCount',
             'assessmentLatestScores',

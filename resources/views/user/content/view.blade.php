@@ -6,6 +6,37 @@
 
     $contentfile = is_string($content->file) ? json_decode($content->file, true) : [];
     $getcontentfile = is_array($contentfile) ? ($contentfile[0] ?? '') : ($content->file ?? '');
+
+    $canUsePlaylistDebug = (bool) auth()->user()?->canAccessManageModule('playlist_debug_tools');
+    $playlistDebugState = ($canUsePlaylistDebug && isset($playlist) && $playlist)
+        ? session('playlist_debug.' . $playlist->getKey(), [])
+        : [];
+    $playlistDebugActive = !empty($playlistDebugState);
+
+    $playlistUiState = [
+        'learning_progress' => (float) ($completionRequirements['learning_progress'] ?? ($content_user->progress ?? 0)),
+        'content_assessment_available' => (bool) ($completionRequirements['content_assessment_available'] ?? false),
+        'playlist_assessment_available' => (bool) ($completionRequirements['playlist_assessment_available'] ?? false),
+        'certificate_available' => (bool) ($completionRequirements['certificate_available'] ?? false),
+    ];
+
+    if (($playlistDebugState['learning_progress'] ?? null) === 'pass') {
+        $playlistUiState['learning_progress'] = 100;
+    } elseif (($playlistDebugState['learning_progress'] ?? null) === 'fail') {
+        $playlistUiState['learning_progress'] = 0;
+    }
+
+    foreach ([
+        'content_assessment' => 'content_assessment_available',
+        'playlist_assessment' => 'playlist_assessment_available',
+        'certificate' => 'certificate_available',
+    ] as $debugKey => $uiKey) {
+        if (($playlistDebugState[$debugKey] ?? null) === 'available') {
+            $playlistUiState[$uiKey] = true;
+        } elseif (($playlistDebugState[$debugKey] ?? null) === 'not_available') {
+            $playlistUiState[$uiKey] = false;
+        }
+    }
 @endphp
 
 @section('content')
@@ -31,6 +62,10 @@
             <div class="col-lg-8 col-xl-9 content-learning-main" id="contentLearningMain">
                 @include('user.content.components.content-player')
                 @include('user.content.components.content-description')
+
+                @if ($canUsePlaylistDebug && isset($playlist) && $playlist)
+                    @include('user.playlist.components.view-debug-panel')
+                @endif
             </div>
 
             <div class="col-lg-4 col-xl-3 content-learning-sidebar" id="contentLearningSidebar">

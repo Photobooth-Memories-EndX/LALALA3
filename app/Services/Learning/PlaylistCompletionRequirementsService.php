@@ -155,6 +155,7 @@ class PlaylistCompletionRequirementsService
      * @param TrainingPlan|null $playlist
      * @param float|null $contentProgress
      * @param bool|null $hasContentAssessment
+     * @param array $debugOverrides Session debug overrides if user is authorized
      * @return array
      */
     public function resolveForContent(
@@ -162,7 +163,8 @@ class PlaylistCompletionRequirementsService
         User $user,
         ?TrainingPlan $playlist = null,
         ?float $contentProgress = null,
-        ?bool $hasContentAssessment = null
+        ?bool $hasContentAssessment = null,
+        array $debugOverrides = []
     ): array {
         // 1. Learning Progress
         if ($contentProgress === null) {
@@ -172,6 +174,12 @@ class PlaylistCompletionRequirementsService
             $progress = (float) ($contentUser?->progress ?? 0);
         } else {
             $progress = (float) $contentProgress;
+        }
+
+        if (($debugOverrides['learning_progress'] ?? null) === 'pass') {
+            $progress = 100.0;
+        } elseif (($debugOverrides['learning_progress'] ?? null) === 'fail') {
+            $progress = 0.0;
         }
 
         // 2. Assessment Content
@@ -186,10 +194,16 @@ class PlaylistCompletionRequirementsService
                 ->exists();
         }
         $contentAssessmentAvailable = (bool) $hasContentAssessment;
+        if (($debugOverrides['content_assessment'] ?? null) === 'available') {
+            $contentAssessmentAvailable = true;
+        } elseif (($debugOverrides['content_assessment'] ?? null) === 'not_available') {
+            $contentAssessmentAvailable = false;
+        }
 
         // 3. Playlist Assessment
         if ($playlist === null) {
-            $playlist = $content->trainingPlans()->where('active', 'Active')->first();
+            $playlist = $content->trainingPlans()->where('active', 'Active')->first()
+                ?? $content->trainingPlans()->first();
         }
 
         $hasPlaylistAssessment = false;
@@ -208,6 +222,11 @@ class PlaylistCompletionRequirementsService
                     ->exists();
                 $playlistAssessmentAvailable = ($progress >= 100 || $playlistAssessmentDone);
             }
+        }
+        if (($debugOverrides['playlist_assessment'] ?? null) === 'available') {
+            $playlistAssessmentAvailable = true;
+        } elseif (($debugOverrides['playlist_assessment'] ?? null) === 'not_available') {
+            $playlistAssessmentAvailable = false;
         }
 
         // 4. My Task
@@ -247,6 +266,11 @@ class PlaylistCompletionRequirementsService
         }
 
         $certificateAvailable = (bool) ($certificateEligibilityResult?->eligible ?? false);
+        if (($debugOverrides['certificate'] ?? null) === 'available') {
+            $certificateAvailable = true;
+        } elseif (($debugOverrides['certificate'] ?? null) === 'not_available') {
+            $certificateAvailable = false;
+        }
 
         return [
             'learning_progress'            => $progress,
