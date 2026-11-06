@@ -233,9 +233,9 @@
                 <div class="row g-2 mb-3" id="ptkp-summary-cards-container">
                     <!-- Card 1: Total Rows -->
                     <div class="col-6 col-md-2">
-                        <div class="card border p-3 rounded-3 text-center h-100 ptkp-kpi-card ptkp-summary-filter-card active"
+                        <div class="card border p-3 rounded-3 text-center h-100 ptkp-kpi-card ptkp-summary-filter-card ptkp-kpi-total active"
                              data-filter="all" role="button" tabindex="0">
-                            <div class="d-flex align-items-center justify-content-center gap-1 text-muted small fw-medium mb-1">
+                            <div class="d-flex align-items-center justify-content-center gap-1 small fw-semibold mb-1 ptkp-kpi-label">
                                 <span>Total Rows</span>
                                 <span class="ptkp-info-icon" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="top" data-bs-custom-class="ptkp-status-tooltip ptkp-validation-tooltip"
                                       data-tooltip-id="ptkp-tt-content-total"
@@ -243,7 +243,7 @@
                                     <i class="ti ti-info-circle"></i>
                                 </span>
                             </div>
-                            <div class="h3 fw-bold text-dark mb-0 ptkp-kpi-count" id="ptkp-kpi-total">0</div>
+                            <div class="h3 fw-bold mb-0 ptkp-kpi-count" id="ptkp-kpi-total">0</div>
                         </div>
                     </div>
 
@@ -251,7 +251,7 @@
                     <div class="col-6 col-md-2">
                         <div class="card border p-3 rounded-3 text-center h-100 ptkp-kpi-card ptkp-summary-filter-card ptkp-kpi-valid"
                              data-filter="valid" role="button" tabindex="0">
-                            <div class="d-flex align-items-center justify-content-center gap-1 small fw-semibold mb-1" style="color: #15803d;">
+                            <div class="d-flex align-items-center justify-content-center gap-1 small fw-semibold mb-1 ptkp-kpi-label">
                                 <span>VALID</span>
                                 <span class="ptkp-info-icon" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="top" data-bs-custom-class="ptkp-status-tooltip ptkp-validation-tooltip"
                                       data-tooltip-id="ptkp-tt-content-valid"
@@ -259,7 +259,7 @@
                                     <i class="ti ti-info-circle"></i>
                                 </span>
                             </div>
-                            <div class="h3 fw-bold mb-0 ptkp-kpi-count" style="color: #15803d;" id="ptkp-kpi-valid">0</div>
+                            <div class="h3 fw-bold mb-0 ptkp-kpi-count" id="ptkp-kpi-valid">0</div>
                         </div>
                     </div>
 
@@ -267,7 +267,7 @@
                     <div class="col-6 col-md-2">
                         <div class="card border p-3 rounded-3 text-center h-100 ptkp-kpi-card ptkp-summary-filter-card ptkp-kpi-warning"
                              data-filter="warning" role="button" tabindex="0">
-                            <div class="d-flex align-items-center justify-content-center gap-1 small fw-semibold mb-1" style="color: #92400e;">
+                            <div class="d-flex align-items-center justify-content-center gap-1 small fw-semibold mb-1 ptkp-kpi-label">
                                 <span>WARNING</span>
                                 <span class="ptkp-info-icon" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="top" data-bs-custom-class="ptkp-status-tooltip ptkp-validation-tooltip"
                                       data-tooltip-id="ptkp-tt-content-warning"
@@ -275,7 +275,7 @@
                                     <i class="ti ti-info-circle"></i>
                                 </span>
                             </div>
-                            <div class="h3 fw-bold mb-0 ptkp-kpi-count" style="color: #92400e;" id="ptkp-kpi-warning">0</div>
+                            <div class="h3 fw-bold mb-0 ptkp-kpi-count" id="ptkp-kpi-warning">0</div>
                         </div>
                     </div>
 
@@ -283,7 +283,7 @@
                     <div class="col-6 col-md-2">
                         <div class="card border p-3 rounded-3 text-center h-100 ptkp-kpi-card ptkp-summary-filter-card ptkp-kpi-duplicate"
                              data-filter="duplicate" role="button" tabindex="0">
-                            <div class="d-flex align-items-center justify-content-center gap-1 small fw-semibold mb-1" style="color: #a16207;">
+                            <div class="d-flex align-items-center justify-content-center gap-1 small fw-semibold mb-1 ptkp-kpi-label">
                                 <span>DUPLICATE</span>
                                 <span class="ptkp-info-icon" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="top" data-bs-custom-class="ptkp-status-tooltip ptkp-validation-tooltip"
                                       data-tooltip-id="ptkp-tt-content-duplicate"
@@ -291,7 +291,7 @@
                                     <i class="ti ti-info-circle"></i>
                                 </span>
                             </div>
-                            <div class="h3 fw-bold mb-0 ptkp-kpi-count" style="color: #a16207;" id="ptkp-kpi-duplicate">0</div>
+                            <div class="h3 fw-bold mb-0 ptkp-kpi-count" id="ptkp-kpi-duplicate">0</div>
                         </div>
                     </div>
 
@@ -299,7 +299,7 @@
                     <div class="col-6 col-md-2">
                         <div class="card border p-3 rounded-3 text-center h-100 ptkp-kpi-card ptkp-summary-filter-card ptkp-kpi-invalid"
                              data-filter="invalid" role="button" tabindex="0">
-                            <div class="d-flex align-items-center justify-content-center gap-1 small fw-semibold mb-1" style="color: #b91c1c;">
+                            <div class="d-flex align-items-center justify-content-center gap-1 small fw-semibold mb-1 ptkp-kpi-label">
                                 <span>INVALID</span>
                                 <span class="ptkp-info-icon" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="top" data-bs-custom-class="ptkp-status-tooltip ptkp-validation-tooltip"
                                       data-tooltip-id="ptkp-tt-content-invalid"
@@ -307,7 +307,7 @@
                                     <i class="ti ti-info-circle"></i>
                                 </span>
                             </div>
-                            <div class="h3 fw-bold mb-0 ptkp-kpi-count" style="color: #b91c1c;" id="ptkp-kpi-invalid">0</div>
+                            <div class="h3 fw-bold mb-0 ptkp-kpi-count" id="ptkp-kpi-invalid">0</div>
                         </div>
                     </div>
 
@@ -315,7 +315,7 @@
                     <div class="col-6 col-md-2">
                         <div class="card border p-3 rounded-3 text-center h-100 ptkp-kpi-card ptkp-summary-filter-card ptkp-kpi-invalid-company"
                              data-filter="invalid_company" role="button" tabindex="0">
-                            <div class="d-flex align-items-center justify-content-center gap-1 small fw-semibold mb-1" style="color: #c2410c;">
+                            <div class="d-flex align-items-center justify-content-center gap-1 small fw-semibold mb-1 ptkp-kpi-label">
                                 <span>INVALID COMPANY</span>
                                 <span class="ptkp-info-icon" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="top" data-bs-custom-class="ptkp-status-tooltip ptkp-validation-tooltip"
                                       data-tooltip-id="ptkp-tt-content-invalid-company"
@@ -323,7 +323,7 @@
                                     <i class="ti ti-info-circle"></i>
                                 </span>
                             </div>
-                            <div class="h3 fw-bold mb-0 ptkp-kpi-count" style="color: #c2410c;" id="ptkp-kpi-invalid-company">0</div>
+                            <div class="h3 fw-bold mb-0 ptkp-kpi-count" id="ptkp-kpi-invalid-company">0</div>
                         </div>
                     </div>
                 </div>
@@ -355,7 +355,7 @@
                         <div class="ptkp-tt-box ptkp-tt-minimal text-start">
                             <div class="ptkp-tt-head fw-bold mb-1">Warning Records</div>
                             <div class="ptkp-tt-desc mb-0">
-                                These records contain potential issues or incomplete information that may require attention before importing.
+                                Records with one or more empty fields that have RED HEADERS in the Excel template. Non-red empty fields do not trigger warnings. These records are non-blocking and will still be imported.
                             </div>
                         </div>
                     </div>

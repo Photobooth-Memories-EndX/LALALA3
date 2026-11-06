@@ -3,6 +3,7 @@
 namespace App\Services\OfflineTraining;
 
 use App\Services\OfflineTraining\ExcelDateTimeParser;
+use App\Services\Record\PtkpColumnDefinitions;
 
 use App\Models\OfflineTraining;
 use App\Models\OfflineTrainingUser;
@@ -236,6 +237,32 @@ class PtkpValidationService
             }
         }
 
+        // 7. Warning Fields check (Non-blocking WARNING if empty)
+        // Applies to all 33 designated warning columns per specifications.
+        $warningRules = PtkpColumnDefinitions::getWarningOnEmptyColumns();
+        $emptyWarningFields = [];
+        $emptyWarningDetails = [];
+        $warningReasons = [];
+
+        foreach ($warningRules as $colKey => $colTitle) {
+            $rawVal = $normalized['raw_inputs'][$colKey] ?? ($normalized['raw_values'][$colKey] ?? ($normalized[$colKey] ?? null));
+            if (PtkpColumnDefinitions::isWarningFieldEmpty($rawVal)) {
+                $emptyWarningFields[] = $colTitle;
+                $displayVal = PtkpColumnDefinitions::formatWarningEmptyDisplay($rawVal);
+                $emptyWarningDetails[] = [
+                    'field'         => $colTitle,
+                    'key'           => $colKey,
+                    'raw_value'     => $rawVal,
+                    'display_value' => $displayVal,
+                    'reason'        => "{$colTitle} is empty",
+                ];
+                $warningReasons[] = "{$colTitle} is empty";
+                $warnings[] = "Field '{$colTitle}' is empty (required attention per template specification).";
+            }
+        }
+
+        $warningMessage = !empty($warningReasons) ? 'WARNING: ' . implode('; ', $warningReasons) : null;
+
         // Status Determination according to priority
         if (!empty($errors)) {
             $status = self::STATUS_INVALID;
@@ -248,6 +275,18 @@ class PtkpValidationService
             if (!empty($warnings)) {
                 $messages = array_merge($messages, $warnings);
             }
+        } elseif (!empty($emptyWarningFields)) {
+            $status = self::STATUS_WARNING;
+            $isBlocking = false;
+            $rowMessages = [];
+            if ($warningMessage) {
+                $rowMessages[] = $warningMessage;
+            }
+            if ($isCompanyMismatch) {
+                $rowMessages[] = "Company mismatch: Excel has '{$normalized['company']}' while user record has '{$user->company_name}'.";
+            }
+            $rowMessages = array_merge($rowMessages, $warnings);
+            $messages = array_values(array_unique($rowMessages));
         } elseif ($isCompanyMismatch) {
             $status = self::STATUS_INVALID_COMPANY;
             $isBlocking = false;
@@ -263,17 +302,21 @@ class PtkpValidationService
         }
 
         return [
-            'status'             => $status,
-            'is_blocking'        => $isBlocking,
-            'messages'           => $messages,
-            'warnings'           => $warnings,
-            'errors'             => $errors,
-            'company_mismatch'   => $isCompanyMismatch,
-            'duplicate_source'   => $duplicateInfo['duplicate_source'] ?? null,
-            'duplicate_type'     => $duplicateInfo['duplicate_type'] ?? null,
-            'matched_record_id'  => $duplicateInfo['matched_record_id'] ?? null,
-            'original_excel_row' => $duplicateInfo['original_excel_row'] ?? null,
-            'matched_fields'     => $duplicateInfo['matched_fields'] ?? [],
+            'status'                => $status,
+            'is_blocking'           => $isBlocking,
+            'messages'              => $messages,
+            'warnings'              => $warnings,
+            'empty_warning_fields'  => $emptyWarningFields,
+            'empty_warning_details' => $emptyWarningDetails,
+            'warning_reasons'       => $warningReasons,
+            'warning_message'       => $warningMessage,
+            'errors'                => $errors,
+            'company_mismatch'      => $isCompanyMismatch,
+            'duplicate_source'      => $duplicateInfo['duplicate_source'] ?? null,
+            'duplicate_type'        => $duplicateInfo['duplicate_type'] ?? null,
+            'matched_record_id'     => $duplicateInfo['matched_record_id'] ?? null,
+            'original_excel_row'    => $duplicateInfo['original_excel_row'] ?? null,
+            'matched_fields'        => $duplicateInfo['matched_fields'] ?? [],
         ];
     }
 
@@ -783,11 +826,13 @@ class PtkpValidationService
         $normalized['month'] = isset($raw['month']) ? trim((string) $raw['month']) : null;
 
         // Requirement (Mandatory / Non Mandatory)
-        $rawReq = strtolower(trim((string) ($raw['requirement'] ?? '')));
-        $normalized['requirement'] = ($rawReq === 'mandatory') ? 'mandatory' : 'non mandatory';
+        $rawReq = isset($raw['requirement']) ? trim((string) $raw['requirement']) : '';
+        $normalized['raw_requirement'] = $raw['requirement'] ?? null;
+        $normalized['requirement'] = ($rawReq === '') ? null : ((strtolower($rawReq) === 'mandatory') ? 'mandatory' : 'non mandatory');
 
         // Derived duration in seconds from times or learning hours if available
-        $normalized['duration_seconds'] = $this->parseDurationToSeconds($raw['duration_seconds'] ?? null);
+        $rawCourseDuration = $raw['course_duration'] ?? ($raw['raw_inputs']['course_duration'] ?? ($raw['duration_seconds'] ?? null));
+        $normalized['duration_seconds'] = $this->parseDurationToSeconds($rawCourseDuration);
         if ($normalized['duration_seconds'] === null && !empty($normalized['start_time']) && !empty($normalized['end_time'])) {
             $t1 = strtotime($normalized['start_time']);
             $t2 = strtotime($normalized['end_time']);
@@ -803,8 +848,27 @@ class PtkpValidationService
         if ($normalized['duration_seconds'] === null && !empty($normalized['learning_hours']) && $normalized['learning_hours'] > 0) {
             $normalized['duration_seconds'] = (int) round($normalized['learning_hours'] * 3600);
         }
-        $normalized['course_duration'] = $raw['course_duration'] ?? $normalized['duration_seconds'];
-        $normalized['progress_status'] = isset($raw['progress_status']) ? trim((string) $raw['progress_status']) : null;
+
+        $rawStartTime = $raw['start_time'] ?? ($raw['raw_inputs']['start_time'] ?? null);
+        $rawEndTime = $raw['end_time'] ?? ($raw['raw_inputs']['end_time'] ?? null);
+        $rawLearningHours = $raw['learning_hours'] ?? ($raw['raw_inputs']['learning_hours'] ?? null);
+        if ($rawCourseDuration === null) {
+            if ((is_string($rawStartTime) && trim($rawStartTime) === '-')
+                || (is_string($rawEndTime) && trim($rawEndTime) === '-')
+                || (is_string($rawLearningHours) && trim($rawLearningHours) === '-')) {
+                $rawCourseDuration = '-';
+            }
+        }
+
+        $normalized['course_duration'] = $rawCourseDuration ?? $normalized['duration_seconds'];
+
+        $rawProgressStatus = isset($raw['progress_status']) ? trim((string) $raw['progress_status']) : ($raw['raw_inputs']['progress_status'] ?? null);
+        if ($rawProgressStatus === null && $normalized['progress'] !== null) {
+            $rawProgressStatus = ($normalized['progress'] >= 100) ? 'Completed' : (($normalized['progress'] > 0) ? 'Ongoing' : 'Not Started');
+        } elseif ($rawProgressStatus === null && isset($raw['progress']) && is_string($raw['progress']) && trim($raw['progress']) === '-') {
+            $rawProgressStatus = '-';
+        }
+        $normalized['progress_status'] = $rawProgressStatus;
 
         // Attendance & obligations
         $normalized['attendance'] = $this->parseBoolean($raw['attendance'] ?? null);
@@ -849,6 +913,10 @@ class PtkpValidationService
         $normalized['certificate_expired_date_display'] = ExcelDateTimeParser::formatDisplayDate($certExpiredResult['value']);
         $normalized['certificate'] = $normalized['certificate_availability'] ?? null;
         $normalized['pic'] = isset($raw['pic']) ? trim((string) $raw['pic']) : null;
+        $normalized['raw_inputs'] = $raw['raw_inputs'] ?? $raw;
+        $normalized['raw_inputs']['course_duration'] = $normalized['raw_inputs']['course_duration'] ?? $normalized['course_duration'];
+        $normalized['raw_inputs']['progress_status'] = $normalized['raw_inputs']['progress_status'] ?? $normalized['progress_status'];
+        $normalized['raw_values'] = $raw;
 
         return $normalized;
     }

@@ -5,6 +5,92 @@ namespace App\Services\Record;
 class PtkpColumnDefinitions
 {
     /**
+     * Columns that trigger non-blocking WARNING when left empty.
+     * Covers all 33 designated warning fields per business specification.
+     *
+     * @return array<string, string> Key => Canonical Header Label
+     */
+    public static function getWarningOnEmptyColumns(): array
+    {
+        return [
+            'type'                => 'Type',
+            'category'            => 'Category',
+            'level'               => 'Level',
+            'batch'               => 'Batch',
+            'main_classification' => 'Main Classification',
+            'sub_classification'  => 'Sub Classification',
+            'delivery_method'     => 'Delivery Method',
+            'sub_delivery_method' => 'Sub Delivery Method',
+            'provider_name'       => 'Provider Name',
+            'venue'               => 'Venue',
+            'instructor'          => 'Instructor',
+            'course_duration'     => 'Course Duration',
+            'learning_hours'      => 'Learning Hours',
+            'progress'            => '% Progress',
+            'progress_status'     => 'Progress Status',
+            'start_date'          => 'Start Date',
+            'end_date'            => 'End Date',
+            'start_time'          => 'Start Time',
+            'end_time'            => 'End Time',
+            'month'               => 'Record Month',
+            'requirement'         => 'Requirement',
+            'attendance'          => 'Attendance',
+            'attendance_reason'   => 'Attendance Reason',
+            'bond_status'         => 'Bond Status',
+            'bond_duration'       => 'Bond Duration',
+            'bond_end_date'       => 'Bond End Date',
+            'bond_amount'         => 'Bond Amount',
+            'l1_program'          => 'Score (L1) - Course',
+            'assessment_score'    => 'Score (L2)',
+            'l2_verbal'           => 'L2 Status',
+            'l3_numerical'        => 'Score (L3)',
+            'l3_verbal'           => 'L3 Status',
+            'pic'                 => 'Person in Charge (PIC)',
+        ];
+    }
+
+    /**
+     * Check if a column key triggers WARNING when empty.
+     */
+    public static function isWarningOnEmpty(string $key): bool
+    {
+        return isset(self::getWarningOnEmptyColumns()[$key]);
+    }
+
+    /**
+     * Check if a warning-designated field value should be treated as empty.
+     * Treats ONLY genuinely empty values (null, empty string, or whitespace-only string) as empty.
+     * Hyphens/dashes ("-", " - ", "--", "–", "—") are considered POPULATED data and do NOT trigger warning.
+     * Legitimate values like 0, "0", 0.0, "0.0", "No", "N/A" are NOT empty.
+     *
+     * @param mixed $value
+     * @return bool
+     */
+    public static function isWarningFieldEmpty($value): bool
+    {
+        if ($value === null) {
+            return true;
+        }
+
+        if (!is_string($value)) {
+            return false;
+        }
+
+        return trim($value) === '';
+    }
+
+    /**
+     * Format an empty warning field value for user-facing display in the inspection table.
+     *
+     * @param mixed $value
+     * @return string
+     */
+    public static function formatWarningEmptyDisplay($value): string
+    {
+        return 'Empty';
+    }
+
+    /**
      * Canonical 46-column definition array for PTKP and Non-PTKP Import.
      * Single-row header structure: Employee ID (col 1, A) through Person in Charge (PIC) (col 46, AT).
      */
@@ -136,6 +222,7 @@ class PtkpColumnDefinitions
             'group'      => $group,
             'key'        => $key,
             'required'   => $required,
+            'warning_on_empty' => self::isWarningOnEmpty($key),
             'type'       => $type,
             'example'    => $example,
             'note'       => $note,

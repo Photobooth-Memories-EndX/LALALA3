@@ -80,7 +80,7 @@ class PtkpImportUiUxImprovementTest extends TestCase
         // 3. WARNING (Standardized Minimal Tooltip)
         $response->assertSee('WARNING', false);
         $response->assertSee('Warning Records', false);
-        $response->assertSee('These records contain potential issues or incomplete information that may require attention before importing.', false);
+        $response->assertSee('RED HEADERS in the Excel template', false);
         $response->assertDontSee('The record has passed mandatory validation.', false);
         $response->assertDontSee('Will be imported with warnings', false);
         $response->assertSee('data-tooltip-id="ptkp-tt-content-warning"', false);
@@ -208,6 +208,11 @@ class PtkpImportUiUxImprovementTest extends TestCase
 
         // Clean reset for Button 1
         $this->assertStringContainsString('resetToStage1', $js);
+
+        // Row Data Inspection - NULL values rendered as blank without dash placeholder
+        $this->assertStringContainsString('function formatInspectionValue', $js);
+        $this->assertStringContainsString('formatInspectionValue(val)', $js);
+        $this->assertStringNotContainsString("<td>\${escapeHtml(val !== null && val !== undefined ? String(val) : '-')}</td>", $js);
     }
 
     /** @test */

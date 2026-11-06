@@ -75,6 +75,11 @@ class PtkpImportTemplateExport
         foreach ($columns as $idx => $col) {
             $letter = Coordinate::stringFromColumnIndex($idx + 1);
             $sheet->setCellValue("{$letter}1", $col['header']);
+
+            $isWarningField = !empty($col['warning_on_empty']);
+            $fillColor = $isWarningField ? 'B91C1C' : '002B49'; // Red header for warning-on-empty fields, Deep PTKP navy blue for others
+            $borderColor = $isWarningField ? '991B1B' : '475569';
+
             $sheet->getStyle("{$letter}1")->applyFromArray([
                 'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 10],
                 'alignment' => [
@@ -84,12 +89,12 @@ class PtkpImportTemplateExport
                 ],
                 'fill' => [
                     'fillType'   => Fill::FILL_SOLID,
-                    'startColor' => ['rgb' => '002B49'], // Deep PTKP navy blue
+                    'startColor' => ['rgb' => $fillColor],
                 ],
                 'borders' => [
                     'allBorders' => [
                         'borderStyle' => Border::BORDER_THIN,
-                        'color'       => ['rgb' => '475569'],
+                        'color'       => ['rgb' => $borderColor],
                     ],
                 ],
             ]);
@@ -238,6 +243,7 @@ class PtkpImportTemplateExport
             ['11. Person in Charge (PIC)', 'Person in Charge (PIC) is located at the final column (Column 47 / AU).'],
             ['12. Date & Time Format', 'Use DD/MM/YYYY (e.g. 10/08/2026) for dates and HH:mm or HH:mm:ss for times.'],
             ['13. Duplicate Prevention', 'Records with identical participant and training combinations within the file or existing database records will be skipped automatically.'],
+            ['14. Designated Warning Fields', 'Columns with warning designation are recommended. If left empty, they trigger a non-blocking WARNING during import, but records will still be saved to the database. Non-designated columns that are empty do not trigger warnings.'],
         ];
 
         $row = 3;

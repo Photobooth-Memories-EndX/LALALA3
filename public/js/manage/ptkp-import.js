@@ -607,7 +607,34 @@
             pageItems.forEach(function (row, idx) {
                 const globalIndex = startIdx + idx;
                 let msgsHtml = '';
-                if (row.messages && row.messages.length) {
+                const warningReasons = (row.warning_reasons && row.warning_reasons.length > 0)
+                    ? row.warning_reasons
+                    : (row.empty_warning_fields && row.empty_warning_fields.length > 0)
+                        ? row.empty_warning_fields.map(function (f) { return f + ' is empty'; })
+                        : [];
+
+                if (warningReasons.length > 0) {
+                    const warningText = 'WARNING: ' + warningReasons.join('; ');
+                    msgsHtml = '<div class="ptkp-row-msg text-warning fw-semibold" title="' + escapeHtml(warningText) + '">' +
+                        '<i class="ti ti-alert-triangle me-1"></i><span class="fw-bold">WARNING:</span> ' + escapeHtml(warningReasons.join('; ')) +
+                        '</div>';
+
+                    if (row.company_mismatch) {
+                        const companyMismatchMsg = (row.messages || []).find(function (m) {
+                            return m.toLowerCase().indexOf('company mismatch') !== -1;
+                        }) || 'Company mismatch detected.';
+                        msgsHtml += '<div class="ptkp-row-msg text-muted extra-small mt-1" style="font-size: 0.72rem;" title="' + escapeHtml(companyMismatchMsg) + '"><i class="ti ti-building me-1"></i>' + escapeHtml(companyMismatchMsg) + '</div>';
+                    }
+                } else if (row.status === 'WARNING' || row.status === 'INVALID COMPANY') {
+                    if (row.messages && row.messages.length) {
+                        msgsHtml = '<div class="ptkp-row-msg text-warning fw-semibold"><i class="ti ti-alert-triangle me-1"></i>' + escapeHtml(row.messages[0]) + '</div>';
+                        if (row.messages.length > 1) {
+                            msgsHtml += '<div class="text-muted extra-small mt-0.5">' + escapeHtml(row.messages.slice(1).join('; ')) + '</div>';
+                        }
+                    }
+                } else if (row.status === 'VALID') {
+                    msgsHtml = '<div class="ptkp-row-msg text-muted small"><i class="ti ti-check text-success me-1"></i>Row is valid and ready for import.</div>';
+                } else if (row.messages && row.messages.length) {
                     msgsHtml = '<div class="ptkp-row-msg text-muted">' + escapeHtml(row.messages[0]);
                     if (row.messages.length > 1) {
                         msgsHtml += ' <span class="badge bg-light text-secondary border">+' + (row.messages.length - 1) + '</span>';
@@ -628,7 +655,7 @@
                         <td><span class="text-muted small">${escapeHtml(row.company || '-')}</span></td>
                         <td>
                             <div class="fw-semibold text-dark">${escapeHtml(row.course_name || '-')}</div>
-                            <div class="text-muted extra-small" style="font-size: 0.72rem;">${escapeHtml(rowData.batch || '')} &bull; ${escapeHtml(formatDateDisplay(rowData.start_date_display || rowData.start_date) || '')}</div>
+                            <div class="text-muted extra-small" style="font-size: 0.72rem;">${[escapeHtml(rowData.batch || ''), escapeHtml(formatDateDisplay(rowData.start_date_display || rowData.start_date))].filter(Boolean).join(' &bull; ')}</div>
                         </td>
                         <td><span class="badge bg-light text-secondary border">${escapeHtml(row.type || '-')}</span></td>
                         <td><span class="text-muted small">${escapeHtml(row.pic || '-')}</span></td>
@@ -760,9 +787,112 @@
                 </div>
             `;
         }
-        if (row.messages && row.messages.length) {
-            msgsHtml += '<div class="alert alert-warning border-0 rounded-3 small mb-3 py-2 px-3"><ul class="mb-0 ps-3">';
-            row.messages.forEach((m) => msgsHtml += '<li>' + escapeHtml(m) + '</li>');
+        if ((row.empty_warning_fields && row.empty_warning_fields.length > 0) || (row.empty_warning_details && row.empty_warning_details.length > 0)) {
+            let warningRowsHtml = '';
+            const details = (row.empty_warning_details && row.empty_warning_details.length > 0)
+                ? row.empty_warning_details
+                : (row.empty_warning_fields || []).map(function (f) {
+                    return {
+                        field: f,
+                        display_value: 'Empty'
+                    };
+                });
+
+            details.forEach(function (item) {
+                const displayVal = item.display_value || 'Empty';
+                warningRowsHtml += `
+                    <tr>
+                        <td class="fw-semibold text-dark">${escapeHtml(item.field)}</td>
+                        <td><span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle font-monospace">${escapeHtml(displayVal)}</span></td>
+                    </tr>
+                `;
+            });
+
+            msgsHtml += `
+                <div class="card border border-warning-subtle rounded-3 mb-3 shadow-none" style="background-color: #fffbeb;">
+                    <div class="card-header bg-transparent border-warning-subtle py-2 px-3 d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-2 fw-bold text-warning-emphasis">
+                            <i class="ti ti-alert-triangle fs-3 text-warning"></i>
+                            <span>WARNING DETAILS</span>
+                        </div>
+                        <span class="badge bg-warning text-dark fw-bold px-2 py-1">WARNING</span>
+                    </div>
+                    <div class="card-body p-3">
+                        <div class="row g-2 mb-3 pb-2 border-bottom border-warning-subtle" style="font-size: 0.82rem;">
+                            <div class="col-6 col-sm-3">
+                                <span class="text-muted d-block extra-small">Employee ID:</span>
+                                <span class="font-monospace fw-bold text-dark">${escapeHtml(row.employee_id || '')}</span>
+                            </div>
+                            <div class="col-6 col-sm-3">
+                                <span class="text-muted d-block extra-small">Employee Name:</span>
+                                <span class="fw-semibold text-dark">${escapeHtml(row.name || (row.data && row.data.name) || '')}</span>
+                            </div>
+                            <div class="col-6 col-sm-3">
+                                <span class="text-muted d-block extra-small">Excel Row Number:</span>
+                                <span class="fw-semibold text-dark">Row ${escapeHtml(String(row.excel_row || ''))}</span>
+                            </div>
+                            <div class="col-6 col-sm-3">
+                                <span class="text-muted d-block extra-small">Warning Status:</span>
+                                <span class="badge bg-warning text-dark fw-semibold">WARNING</span>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive rounded-2 border border-warning-subtle mb-3 bg-white">
+                            <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.82rem;">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 50%;">Field</th>
+                                        <th style="width: 50%;">Validation Result</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${warningRowsHtml}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="d-flex align-items-start gap-2 text-muted" style="font-size: 0.8rem; line-height: 1.4;">
+                            <i class="ti ti-info-circle text-warning fs-3 flex-shrink-0 mt-0.5"></i>
+                            <div>
+                                <em>These fields have designated warning validation in the PTKP Excel template and require attention. This warning is non-blocking, and the record can still be imported.</em>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        if (row.company_mismatch) {
+            const companyMismatchMsg = (row.messages || []).find(function (m) {
+                return m.toLowerCase().indexOf('company mismatch') !== -1;
+            }) || 'Company mismatch: Excel company differs from user record company.';
+            msgsHtml += `
+                <div class="alert alert-info border-0 rounded-3 small mb-3 py-2 px-3" style="background-color: #eff6ff; border: 1px solid #bfdbfe !important; color: #1e40af;">
+                    <div class="d-flex align-items-center gap-2 fw-bold mb-1">
+                        <i class="ti ti-building fs-3 text-primary"></i>
+                        <span>Company Mismatch Notice</span>
+                    </div>
+                    <div style="font-size: 0.82rem;">${escapeHtml(companyMismatchMsg)}</div>
+                    <div class="extra-small text-muted mt-1" style="font-size: 0.75rem;">This discrepancy is non-blocking and the record will still be imported.</div>
+                </div>
+            `;
+        }
+
+        if (row.status === 'INVALID' && row.messages && row.messages.length) {
+            msgsHtml += `
+                <div class="alert alert-danger border-0 rounded-3 small mb-3 py-2 px-3">
+                    <div class="d-flex align-items-center gap-2 fw-bold mb-1">
+                        <i class="ti ti-alert-circle fs-3 text-danger"></i>
+                        <span>Validation Errors (Blocking)</span>
+                    </div>
+                    <ul class="mb-0 ps-3">
+                        ${row.messages.map(m => '<li>' + escapeHtml(m) + '</li>').join('')}
+                    </ul>
+                </div>
+            `;
+        } else if (row.status !== 'DUPLICATE' && (!row.empty_warning_fields || row.empty_warning_fields.length === 0) && !row.company_mismatch && row.messages && row.messages.length) {
+            msgsHtml += '<div class="alert alert-secondary border-0 rounded-3 small mb-3 py-2 px-3"><ul class="mb-0 ps-3">';
+            row.messages.forEach(function (m) { msgsHtml += '<li>' + escapeHtml(m) + '</li>'; });
             msgsHtml += '</ul></div>';
         }
         $('#modal-inspect-messages').html(msgsHtml);
@@ -771,8 +901,8 @@
         const fields = [];
         if (row.status === 'DUPLICATE') {
             fields.push(
-                ['Duplicate Source', row.duplicate_source === 'database' ? 'Existing Database' : (row.duplicate_source === 'file' ? 'Uploaded Excel' : (row.duplicate_source || '-'))],
-                ['Duplicate Reference', row.duplicate_source === 'database' ? `Participant Record ID: ${row.matched_record_id || '-'}` : `Uploaded Excel Row: ${row.original_excel_row || '-'}`]
+                ['Duplicate Source', row.duplicate_source === 'database' ? 'Existing Database' : (row.duplicate_source === 'file' ? 'Uploaded Excel' : (row.duplicate_source || ''))],
+                ['Duplicate Reference', row.duplicate_source === 'database' ? `Participant Record ID: ${row.matched_record_id || ''}` : `Uploaded Excel Row: ${row.original_excel_row || ''}`]
             );
         }
         fields.push(
@@ -806,7 +936,7 @@
             ['28. End Time', d.end_time],
             ['29. Record Month', d.month],
             ['30. Requirement', d.requirement],
-            ['31. Attendance', d.attendance === true ? 'Yes' : (d.attendance === false ? 'No' : (d.attendance || '-'))],
+            ['31. Attendance', d.attendance === true ? 'Yes' : (d.attendance === false ? 'No' : (d.attendance !== null && d.attendance !== undefined ? d.attendance : ''))],
             ['32. Attendance Reason', d.attendance_reason],
             ['33. Bond Status', d.bond_status],
             ['34. Bond Duration', d.bond_duration],
@@ -826,7 +956,7 @@
 
         let tbodyHtml = '';
         fields.forEach(([label, val]) => {
-            tbodyHtml += `<tr><th>${escapeHtml(label)}</th><td>${escapeHtml(val !== null && val !== undefined ? String(val) : '-')}</td></tr>`;
+            tbodyHtml += `<tr><th>${escapeHtml(label)}</th><td>${formatInspectionValue(val)}</td></tr>`;
         });
         $('#modal-inspect-tbody').html(tbodyHtml);
 
@@ -1004,9 +1134,22 @@
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
 
+    function formatInspectionValue(value) {
+        if (value === null || value === undefined) {
+            return '';
+        }
+
+        if (typeof value === 'string' && value.trim() === '') {
+            return '';
+        }
+
+        return escapeHtml(String(value));
+    }
+
     function formatDateDisplay(val) {
-        if (!val || val === '-' || val === 'null' || val === 'undefined') return '-';
+        if (val === null || val === undefined) return '';
         const s = String(val).trim();
+        if (s === '' || s === '-' || s === 'null' || s === 'undefined') return '';
         const isoMatch = s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
         if (isoMatch) {
             return `${String(isoMatch[3]).padStart(2, '0')}/${String(isoMatch[2]).padStart(2, '0')}/${isoMatch[1]}`;

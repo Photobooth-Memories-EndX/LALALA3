@@ -458,13 +458,17 @@ class PtkpImportService
             }
 
             $rowRecord = [
-                'excel_row'           => $rNum,
-                'no'                  => $normalized['row_no'] ?? ($rNum - $startDataRow + 1),
-                'status'              => $eval['status'],
-                'is_blocking'         => $eval['is_blocking'],
-                'company_mismatch'    => $eval['company_mismatch'],
-                'messages'            => $eval['messages'],
-                'employee_id'         => $normalized['employee_id'],
+                'excel_row'             => $rNum,
+                'no'                    => $normalized['row_no'] ?? ($rNum - $startDataRow + 1),
+                'status'                => $eval['status'],
+                'is_blocking'           => $eval['is_blocking'],
+                'company_mismatch'      => $eval['company_mismatch'],
+                'messages'              => $eval['messages'],
+                'empty_warning_fields'  => $eval['empty_warning_fields'] ?? [],
+                'empty_warning_details' => $eval['empty_warning_details'] ?? [],
+                'warning_reasons'       => $eval['warning_reasons'] ?? [],
+                'warning_message'       => $eval['warning_message'] ?? null,
+                'employee_id'           => $normalized['employee_id'],
                 'name'                => $normalized['name'],
                 'company'             => $normalized['company'],
                 'course_name'         => $normalized['course_name'],
@@ -524,6 +528,7 @@ class PtkpImportService
     {
         $columns = PtkpExcelSchema::columns();
         $values = [];
+        $rawInputs = [];
 
         foreach ($columns as $idx => $col) {
             $key = $col['key'];
@@ -536,12 +541,16 @@ class PtkpImportService
                 $val = $cell->getValue();
             }
 
+            // Capture raw input value before type casting/date normalization
+            $rawInputs[$key] = is_scalar($val) ? trim((string) $val) : $val;
+
             // 1. Employee ID leading zero preservation from formatted value
             if ($key === 'employee_id' && $val !== null) {
                 try {
                     $formatted = $cell->getFormattedValue();
                     if (is_string($formatted) && str_starts_with($formatted, '0') && strlen($formatted) > strlen((string) $val)) {
                         $val = $formatted;
+                        $rawInputs[$key] = $formatted;
                     }
                 } catch (\Throwable $e) {
                     // Ignore formatting exceptions
@@ -581,13 +590,15 @@ class PtkpImportService
             }
         }
 
+        $values['raw_inputs'] = $rawInputs;
+
         return $values;
     }
 
     protected function isRowEntirelyBlank(array $rowValues): bool
     {
         foreach ($rowValues as $k => $v) {
-            if ($k === 'row_no' || $k === 'status' || $k === 'validation_status') {
+            if ($k === 'row_no' || $k === 'status' || $k === 'validation_status' || $k === 'raw_inputs') {
                 continue;
             }
             if ($v !== null && trim((string) $v) !== '') {

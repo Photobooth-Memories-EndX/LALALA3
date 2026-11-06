@@ -50,7 +50,7 @@ class PtkpImportTest extends TestCase
             'name'         => 'Test User ' . $seq,
             'email'        => "testuser_{$seq}@example.com",
             'password'     => bcrypt('secret'),
-            'id_emp'       => 'EMP_PTKP_' . $seq,
+            'id_emp'       => 'P' . $seq,
             'id_user'      => 'UID_' . $seq,
             'id_org_unit'  => 'OU_01',
             'team'         => 'Team Sample',
@@ -468,7 +468,7 @@ class PtkpImportTest extends TestCase
             'bond_status'         => 'No',
             'bond_duration'       => 12,
             'bond_end_date'       => '2028-08-10',
-            'bond_amount_idr'     => null,
+            'bond_amount_idr'     => 0,
             'l1_program'          => 'Very Good',
             'assessment_score'    => 85,
             'l2_numerical'        => 85,
@@ -721,7 +721,11 @@ class PtkpImportTest extends TestCase
             } elseif ($col['key'] === 'course_name') {
                 $sheet->setCellValue("{$letter}2", 'Swapped Column Test Course');
             } else {
-                $sheet->setCellValue("{$letter}2", $col['example'] ?? '');
+                $val = $col['example'] ?? '';
+                if ($col['key'] === 'bond_amount' && ($val === '' || $val === null)) {
+                    $val = 0;
+                }
+                $sheet->setCellValue("{$letter}2", $val);
             }
         }
 
@@ -959,6 +963,958 @@ class PtkpImportTest extends TestCase
         $this->assertEquals('KP 061', $json['rows'][1]['data']['employee_id']);
     }
 
+    public function test_scenario_a_empty_red_header_fields_triggers_warning_and_persists(): void
+    {
+        // Scenario A: Type filled, Category filled, Level empty (RED), Batch filled, Main Classification empty (RED)
+        $file = $this->createPtkpExcel([
+            [
+                'row_no'              => 1,
+                'employee_id'         => 'EMP_TEST_99',
+                'course_name'         => 'Scenario A Training Course',
+                'type'                => 'In-House',
+                'category'            => 'Technical Competency',
+                'level'               => '', // Empty RED header
+                'batch'               => 'Batch 1',
+                'main_classification' => '', // Empty RED header
+            ]
+        ]);
+
+        $response = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.preview'), ['file' => $file]);
+
+        $response->assertStatus(200);
+        $json = $response->json();
+
+        $this->assertTrue($json['success']);
+        $this->assertEquals(1, $json['stats']['warning']);
+        $this->assertEquals(0, $json['stats']['valid']);
+        $this->assertEquals(1, $json['importable_count']);
+
+        $row = $json['rows'][0];
+        $this->assertEquals('WARNING', $row['status']);
+        $this->assertFalse($row['is_blocking']);
+        $this->assertEquals(['Level', 'Main Classification'], $row['empty_warning_fields']);
+
+        // Confirm import persists the warning record to DB
+        $token = $json['token'];
+        $this->assertNotEmpty($token);
+
+        $confirmResponse = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.confirm'), [
+                'token' => $token,
+            ]);
+
+        $confirmResponse->assertStatus(200);
+        $confirmJson = $confirmResponse->json();
+        $this->assertTrue($confirmJson['success']);
+        $this->assertEquals(1, $confirmJson['result']['imported']);
+        $this->assertEquals(1, $confirmJson['result']['warnings_imported']);
+
+        // Assert record exists in database with null / empty fields
+        $this->assertDatabaseHas('offline_trainings', [
+            'course_name' => 'Scenario A Training Course',
+            'type'        => 'In-House',
+            'category'    => 'Technical Competency',
+        ]);
+    }
+
+    public function test_scenario_b_empty_designated_fields_triggers_warning_and_persists(): void
+    {
+        // Scenario B: Category and Batch are designated warning fields. When empty, they trigger WARNING.
+        $file = $this->createPtkpExcel([
+            [
+                'row_no'              => 1,
+                'employee_id'         => 'EMP_TEST_99',
+                'course_name'         => 'Scenario B Training Course',
+                'type'                => 'In-House',
+                'category'            => '', // Empty designated field
+                'level'               => 'Intermediate',
+                'batch'               => '', // Empty designated field
+                'main_classification' => 'Basic & Common Duties',
+            ]
+        ]);
+
+        $response = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.preview'), ['file' => $file]);
+
+        $response->assertStatus(200);
+        $json = $response->json();
+
+        $this->assertTrue($json['success']);
+        $this->assertEquals(0, $json['stats']['valid']);
+        $this->assertEquals(1, $json['stats']['warning']);
+        $this->assertEquals(1, $json['importable_count']);
+
+        $row = $json['rows'][0];
+        $this->assertEquals('WARNING', $row['status']);
+        $this->assertEquals(['Category', 'Batch'], $row['empty_warning_fields']);
+        $this->assertEquals('WARNING: Category is empty; Batch is empty', $row['warning_message']);
+    }
+
+    public function test_scenario_c_multiple_empty_designated_fields_reports_all_designated_fields(): void
+    {
+        // Scenario C: Category, Level, Venue, and Instructor are all designated warning fields.
+        // Non-designated field (e.g. sub_course_name) must NOT trigger warning.
+        $file = $this->createPtkpExcel([
+            [
+                'row_no'              => 1,
+                'employee_id'         => 'EMP_TEST_99',
+                'course_name'         => 'Scenario C Training Course',
+                'sub_course_name'     => '', // Empty non-designated field (NOT in warning list)
+                'category'            => '', // Empty designated field
+                'level'               => '', // Empty designated field
+                'venue'               => '', // Empty designated field
+                'instructor'          => '', // Empty designated field
+                'main_classification' => 'Basic & Common Duties',
+                'bond_status'         => 'No',
+                'l1_program'          => 'Very Good',
+            ]
+        ]);
+
+        $response = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.preview'), ['file' => $file]);
+
+        $response->assertStatus(200);
+        $json = $response->json();
+
+        $row = $json['rows'][0];
+        $this->assertEquals('WARNING', $row['status']);
+        $this->assertEquals(['Category', 'Level', 'Venue', 'Instructor'], $row['empty_warning_fields']);
+
+        // Verify non-designated field is NOT in warnings
+        foreach ($row['messages'] as $msg) {
+            $this->assertStringNotContainsString('Sub Course Title', $msg);
+        }
+    }
+
+    public function test_scenario_d_all_designated_fields_filled_with_empty_non_designated_remains_valid(): void
+    {
+        // Scenario D: All 33 designated warning fields filled, but non-designated fields empty
+        // Non-designated: sub_course_name, provider, sub_provider, certificate_*
+        $file = $this->createPtkpExcel([
+            [
+                'row_no'                    => 1,
+                'employee_id'               => 'EMP_TEST_99',
+                'course_name'               => 'Scenario D Training Course',
+                // Non-designated fields empty
+                'sub_course_name'           => '',
+                'provider'                  => '',
+                'sub_provider'              => '',
+                'certificate_availability'  => '',
+                'certificate_institution'   => '',
+                'certificate_issued_date'   => '',
+                'certificate_expired_date'  => '',
+            ]
+        ]);
+
+        $response = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.preview'), ['file' => $file]);
+
+        $response->assertStatus(200);
+        $json = $response->json();
+
+        $this->assertEquals(1, $json['stats']['valid']);
+        $this->assertEquals(0, $json['stats']['warning']);
+        $row = $json['rows'][0];
+        $this->assertEquals('VALID', $row['status']);
+        $this->assertEmpty($row['empty_warning_fields']);
+    }
+
+    public function test_duplicate_takes_priority_over_warning_when_red_fields_are_empty(): void
+    {
+        // Create duplicate rows that also have empty red fields
+        $file = $this->createPtkpExcel([
+            [
+                'row_no'              => 1,
+                'employee_id'         => 'EMP_TEST_99',
+                'course_name'         => 'Duplicate Priority Course',
+                'level'               => '', // Empty RED
+            ],
+            [
+                'row_no'              => 2,
+                'employee_id'         => 'EMP_TEST_99',
+                'course_name'         => 'Duplicate Priority Course',
+                'level'               => '', // Empty RED (Identical 42 columns)
+            ],
+        ]);
+
+        $response = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.preview'), ['file' => $file]);
+
+        $response->assertStatus(200);
+        $json = $response->json();
+
+        // Row 1 is WARNING (non-blocking)
+        $this->assertEquals('WARNING', $json['rows'][0]['status']);
+        // Row 2 is DUPLICATE (blocking)
+        $this->assertEquals('DUPLICATE', $json['rows'][1]['status']);
+        $this->assertTrue($json['rows'][1]['is_blocking']);
+        $this->assertEquals(1, $json['stats']['duplicate']);
+        $this->assertEquals(1, $json['stats']['warning']);
+    }
+
+    public function test_import_summary_and_database_persistence_for_mixed_valid_warning_duplicate(): void
+    {
+        $u1 = $this->createTestUser();
+        $u2 = $this->createTestUser();
+
+        $file = $this->createPtkpExcel([
+            [
+                'row_no'              => 1,
+                'employee_id'         => $u1->id_emp,
+                'course_name'         => 'Mixed Status Course 1',
+                // VALID row
+            ],
+            [
+                'row_no'              => 2,
+                'employee_id'         => $u2->id_emp,
+                'course_name'         => 'Mixed Status Course 2',
+                'level'               => '', // WARNING row (Level empty)
+                'instructor'          => '', // WARNING row (Instructor empty)
+            ],
+            [
+                'row_no'              => 3,
+                'employee_id'         => $u1->id_emp,
+                'course_name'         => 'Mixed Status Course 1', // DUPLICATE of row 1
+            ],
+        ]);
+
+        $previewResponse = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.preview'), ['file' => $file]);
+
+        $previewResponse->assertStatus(200);
+        $previewJson = $previewResponse->json();
+
+        $this->assertEquals(1, $previewJson['stats']['valid']);
+        $this->assertEquals(1, $previewJson['stats']['warning']);
+        $this->assertEquals(1, $previewJson['stats']['duplicate']);
+        $this->assertEquals(2, $previewJson['importable_count']); // valid + warning
+
+        // Execute import
+        $token = $previewJson['token'];
+        $this->assertNotEmpty($token);
+
+        $confirmResponse = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.confirm'), [
+                'token' => $token,
+            ]);
+
+        $confirmResponse->assertStatus(200);
+        $confirmJson = $confirmResponse->json();
+
+        $this->assertTrue($confirmJson['success']);
+        $this->assertEquals(2, $confirmJson['result']['imported']);
+        $this->assertEquals(1, $confirmJson['result']['warnings_imported']);
+        $this->assertEquals(1, $confirmJson['result']['skipped_duplicates']);
+
+        // Both VALID and WARNING courses exist in DB
+        $this->assertDatabaseHas('offline_trainings', ['course_name' => 'Mixed Status Course 1']);
+        $this->assertDatabaseHas('offline_trainings', ['course_name' => 'Mixed Status Course 2']);
+    }
+
+    public function test_warning_aggregation_detects_empty_red_fields_and_collects_all_reasons(): void
+    {
+        // Real-world case: Level and Score L1 are genuinely empty/null -> both detected
+        $file = $this->createPtkpExcel([
+            [
+                'row_no'              => 1,
+                'employee_id'         => 'EMP_TEST_99',
+                'course_name'         => 'Empty Red Fields Warning Test',
+                'level'               => '', // genuinely empty RED field
+                'main_classification' => 'Basic & Common Duties',
+                'instructor'          => 'I Nyoman Sutedja A, Christofel',
+                'bond_status'         => 'No',
+                'l1_program'          => null, // genuinely null RED field
+            ]
+        ]);
+
+        $response = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.preview'), ['file' => $file]);
+
+        $response->assertStatus(200);
+        $json = $response->json();
+
+        $this->assertTrue($json['success']);
+        $this->assertEquals(1, $json['stats']['warning']);
+
+        $row = $json['rows'][0];
+        $this->assertEquals('WARNING', $row['status']);
+        $this->assertFalse($row['is_blocking']);
+        $this->assertEquals(['Level', 'Score (L1) - Course'], $row['empty_warning_fields']);
+        $this->assertEquals(['Level is empty', 'Score (L1) - Course is empty'], $row['warning_reasons']);
+        $this->assertEquals('WARNING: Level is empty; Score (L1) - Course is empty', $row['warning_message']);
+
+        // Check structured warning details for inspection modal
+        $this->assertCount(2, $row['empty_warning_details']);
+        $this->assertEquals('Level', $row['empty_warning_details'][0]['field']);
+        $this->assertEquals('Empty', $row['empty_warning_details'][0]['display_value']);
+        $this->assertEquals('Score (L1) - Course', $row['empty_warning_details'][1]['field']);
+        $this->assertEquals('Empty', $row['empty_warning_details'][1]['display_value']);
+    }
+
+    public function test_dash_variations_are_considered_populated_and_do_not_trigger_warning(): void
+    {
+        // Check hyphen "-", en-dash (\u{2013}), em-dash (\u{2014}), double hyphen "--", and padded dash
+        // Under the new rule, dashes are populated data and MUST NOT trigger WARNING.
+        $file = $this->createPtkpExcel([
+            [
+                'row_no'              => 1,
+                'employee_id'         => 'EMP_TEST_99',
+                'course_name'         => 'Dash Populated Test',
+                'level'               => '-',                // literal hyphen
+                'main_classification' => '--',               // double hyphen
+                'instructor'          => " \xe2\x80\x93 ",   // en-dash with spaces
+                'bond_status'         => "\xe2\x80\x94",     // em-dash
+                'l1_program'          => ' - ',              // hyphen with spaces
+            ]
+        ]);
+
+        $response = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.preview'), ['file' => $file]);
+
+        $response->assertStatus(200);
+        $json = $response->json();
+
+        $row = $json['rows'][0];
+        $this->assertEquals('VALID', $row['status'], 'Dashes in red fields must be treated as populated and result in VALID status');
+        $this->assertEmpty($row['empty_warning_fields']);
+        $this->assertEmpty($row['warning_reasons']);
+        $this->assertNull($row['warning_message']);
+    }
+
+    public function test_whitespace_and_null_trigger_warning_for_red_fields(): void
+    {
+        // Check that null, empty string, and whitespace-only strings DO trigger warning
+        $file = $this->createPtkpExcel([
+            [
+                'row_no'              => 1,
+                'employee_id'         => 'EMP_TEST_99',
+                'course_name'         => 'Whitespace Null Warning Test',
+                'level'               => "   ",              // whitespace-only
+                'main_classification' => 'Basic & Common Duties',
+                'instructor'          => "\t\n  ",           // tabs and newlines
+                'bond_status'         => null,               // null
+                'l1_program'          => 'Very Good',
+            ]
+        ]);
+
+        $response = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.preview'), ['file' => $file]);
+
+        $response->assertStatus(200);
+        $json = $response->json();
+
+        $row = $json['rows'][0];
+        $this->assertEquals('WARNING', $row['status']);
+        $this->assertEquals(['Level', 'Instructor', 'Bond Status'], $row['empty_warning_fields']);
+        $this->assertEquals(['Level is empty', 'Instructor is empty', 'Bond Status is empty'], $row['warning_reasons']);
+        $this->assertEquals('WARNING: Level is empty; Instructor is empty; Bond Status is empty', $row['warning_message']);
+    }
+
+    public function test_employee_133670_row_7_with_level_dash_is_valid(): void
+    {
+        // Verified from template: Employee 133670 Row 7 has Level='-' and Score L1='4.5'.
+        // Under the new rule where '-' is populated data, Row 7 must evaluate to VALID with no warnings.
+        $user = User::where('id_emp', '133670')->first()
+            ?? $this->createTestUser([
+                'id_emp'       => '133670',
+                'name'         => 'AIRLANGGA ARIO PAMUNGKAS',
+                'company_name' => 'PT Krakatau Posco',
+            ]);
+
+        $file = $this->createPtkpExcel([
+            [
+                'row_no'              => 7,
+                'employee_id'         => '133670',
+                'course_name'         => 'Personalized Skill Development',
+                'level'               => '-', // Populated data, not empty
+                'main_classification' => 'Basic & Common Duties',
+                'instructor'          => 'Linkedin Learning',
+                'bond_status'         => 'No',
+                'l1_program'          => '4.5',
+            ]
+        ]);
+
+        $response = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.preview'), ['file' => $file]);
+
+        $response->assertStatus(200);
+        $json = $response->json();
+
+        $row = $json['rows'][0];
+        $this->assertEquals('VALID', $row['status']);
+        $this->assertEmpty($row['empty_warning_fields']);
+        $this->assertNull($row['warning_message']);
+    }
+
+    public function test_employee_133670_row_872_with_null_score_l1_triggers_warning_only_for_score_l1(): void
+    {
+        // Template Row 872: Level='-', Instructor='-', Score L1 is empty/null.
+        // Level and Instructor have '-' (populated -> no warning).
+        // Only Score (L1) - Course triggers WARNING.
+        $user = User::where('id_emp', '133670')->first()
+            ?? $this->createTestUser([
+                'id_emp'       => '133670',
+                'name'         => 'AIRLANGGA ARIO PAMUNGKAS',
+                'company_name' => 'PT Krakatau Posco',
+            ]);
+
+        $file = $this->createPtkpExcel([
+            [
+                'row_no'              => 872,
+                'employee_id'         => '133670',
+                'course_name'         => 'Maintenance Intermediate Skills',
+                'level'               => '-', // Populated -> no warning
+                'main_classification' => 'Plant Maintenance',
+                'instructor'          => '-', // Populated -> no warning
+                'bond_status'         => 'No',
+                'l1_program'          => '',  // Genuinely empty -> WARNING
+            ]
+        ]);
+
+        $response = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.preview'), ['file' => $file]);
+
+        $response->assertStatus(200);
+        $json = $response->json();
+
+        $row = $json['rows'][0];
+        $this->assertEquals('WARNING', $row['status']);
+        $this->assertEquals(['Score (L1) - Course'], $row['empty_warning_fields']);
+        $this->assertEquals('WARNING: Score (L1) - Course is empty', $row['warning_message']);
+    }
+
+    public function test_legitimate_values_like_zero_no_na_do_not_trigger_warning(): void
+    {
+        // Values like '0', 'No', 'N/A' in warning fields must NOT be treated as empty
+        $file = $this->createPtkpExcel([
+            [
+                'row_no'              => 1,
+                'employee_id'         => 'EMP_TEST_99',
+                'course_name'         => 'Legitimate Values Test',
+                'level'               => 'Basic',
+                'main_classification' => 'N/A',
+                'instructor'          => 'Ir. Gunawan, M.T.',
+                'bond_status'         => 'No',
+                'l1_program'          => '0', // Numeric zero as rating
+            ]
+        ]);
+
+        $response = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.preview'), ['file' => $file]);
+
+        $response->assertStatus(200);
+        $json = $response->json();
+
+        $row = $json['rows'][0];
+        $this->assertEquals('VALID', $row['status']);
+        $this->assertEmpty($row['empty_warning_fields']);
+        $this->assertEmpty($row['warning_reasons']);
+        $this->assertNull($row['warning_message']);
+    }
+
+    public function test_warning_all_five_red_fields_empty(): void
+    {
+        $file = $this->createPtkpExcel([
+            [
+                'row_no'              => 1,
+                'employee_id'         => 'EMP_TEST_99',
+                'course_name'         => 'All Five Empty Red Fields Test',
+                'level'               => '',
+                'main_classification' => null,
+                'instructor'          => '   ',
+                'bond_status'         => '',
+                'l1_program'          => '',
+            ]
+        ]);
+
+        $response = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.preview'), ['file' => $file]);
+
+        $response->assertStatus(200);
+        $json = $response->json();
+
+        $row = $json['rows'][0];
+        $this->assertEquals('WARNING', $row['status']);
+        $this->assertCount(5, $row['empty_warning_fields']);
+        $this->assertEquals(
+            ['Level', 'Main Classification', 'Instructor', 'Bond Status', 'Score (L1) - Course'],
+            $row['empty_warning_fields']
+        );
+        $this->assertEquals(
+            'WARNING: Level is empty; Main Classification is empty; Instructor is empty; Bond Status is empty; Score (L1) - Course is empty',
+            $row['warning_message']
+        );
+    }
+
+    public function test_warning_with_company_mismatch_preserves_both(): void
+    {
+        $file = $this->createPtkpExcel([
+            [
+                'row_no'              => 1,
+                'employee_id'         => 'EMP_TEST_99',
+                'company'             => 'PT External Other Corp', // User has PT Krakatau Posco
+                'course_name'         => 'Company Mismatch With Warning',
+                'level'               => '',                      // Genuinely empty red field
+                'main_classification' => 'Basic & Common Duties',
+                'instructor'          => 'Ir. Gunawan',
+                'bond_status'         => 'No',
+                'l1_program'          => 'Very Good',
+            ]
+        ]);
+
+        $response = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.preview'), ['file' => $file]);
+
+        $response->assertStatus(200);
+        $json = $response->json();
+
+        $row = $json['rows'][0];
+        $this->assertEquals('WARNING', $row['status']);
+        $this->assertTrue($row['company_mismatch']);
+        $this->assertEquals(['Level'], $row['empty_warning_fields']);
+        $this->assertEquals(['Level is empty'], $row['warning_reasons']);
+        $this->assertEquals('WARNING: Level is empty', $row['warning_message']);
+
+        // Check messages contain both
+        $hasCompanyMismatchMsg = false;
+        $hasLevelMsg = false;
+        foreach ($row['messages'] as $m) {
+            if (stripos($m, 'Company mismatch') !== false) {
+                $hasCompanyMismatchMsg = true;
+            }
+            if (stripos($m, 'Level is empty') !== false) {
+                $hasLevelMsg = true;
+            }
+        }
+        $this->assertTrue($hasCompanyMismatchMsg, 'Messages must include company mismatch');
+        $this->assertTrue($hasLevelMsg, 'Messages must include Level warning');
+
+        // Can still be confirmed
+        $token = $json['token'];
+        $confirmResponse = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.confirm'), ['token' => $token]);
+        $confirmResponse->assertStatus(200);
+        $this->assertTrue($confirmResponse->json('success'));
+        $this->assertEquals(1, $confirmResponse->json('result.imported'));
+    }
+
+    public function test_only_level_empty_displays_single_warning_and_clears_when_filled(): void
+    {
+        // Demonstrates requirement:
+        // Record with Level='' triggers ONLY Level warning.
+        // Record with Level='Intermediate' has NO warnings (is VALID).
+        $file = $this->createPtkpExcel([
+            [
+                'row_no'              => 1,
+                'employee_id'         => 'EMP_TEST_99',
+                'course_name'         => 'Level Empty Course',
+                'level'               => '', // Empty red field
+                'main_classification' => 'Basic & Common Duties',
+                'instructor'          => 'I Nyoman Sutedja A, Christofel',
+                'bond_status'         => 'No',
+                'l1_program'          => 'Very Good',
+            ],
+            [
+                'row_no'              => 2,
+                'employee_id'         => 'EMP_TEST_99',
+                'course_name'         => 'Level Populated Course',
+                'level'               => 'Intermediate', // Populated red field
+                'main_classification' => 'Basic & Common Duties',
+                'instructor'          => 'I Nyoman Sutedja A, Christofel',
+                'bond_status'         => 'No',
+                'l1_program'          => 'Very Good',
+            ],
+        ]);
+
+        $response = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.preview'), ['file' => $file]);
+
+        $response->assertStatus(200);
+        $json = $response->json();
+
+        $this->assertTrue($json['success']);
+        $this->assertEquals(1, $json['stats']['warning']);
+        $this->assertEquals(1, $json['stats']['valid']);
+
+        // Row 1: Level empty
+        $row1 = $json['rows'][0];
+        $this->assertEquals('WARNING', $row1['status']);
+        $this->assertEquals(['Level'], $row1['empty_warning_fields']);
+        $this->assertEquals(['Level is empty'], $row1['warning_reasons']);
+        $this->assertEquals('WARNING: Level is empty', $row1['warning_message']);
+        $this->assertCount(1, $row1['empty_warning_details']);
+        $this->assertEquals('Level', $row1['empty_warning_details'][0]['field']);
+        $this->assertEquals('Empty', $row1['empty_warning_details'][0]['display_value']);
+
+        // Row 2: Level populated -> VALID, no warning reasons
+        $row2 = $json['rows'][1];
+        $this->assertEquals('VALID', $row2['status']);
+        $this->assertEmpty($row2['empty_warning_fields']);
+        $this->assertEmpty($row2['warning_reasons']);
+        $this->assertNull($row2['warning_message']);
+        $this->assertEmpty($row2['empty_warning_details']);
+    }
+
+    public function test_individual_single_red_field_warnings_and_record_based_kpi(): void
+    {
+        // 4 records:
+        // Record 1: only Instructor empty
+        // Record 2: only Bond Status empty
+        // Record 3: only Score L1 empty
+        // Record 4: all populated
+        $file = $this->createPtkpExcel([
+            [
+                'row_no'              => 1,
+                'employee_id'         => 'EMP_TEST_99',
+                'course_name'         => 'Single Instructor Empty Course',
+                'level'               => 'Basic',
+                'main_classification' => 'Basic & Common Duties',
+                'instructor'          => '', // Only this field empty
+                'bond_status'         => 'No',
+                'l1_program'          => 'Very Good',
+            ],
+            [
+                'row_no'              => 2,
+                'employee_id'         => 'EMP_TEST_99',
+                'course_name'         => 'Single Bond Status Empty Course',
+                'level'               => 'Basic',
+                'main_classification' => 'Basic & Common Duties',
+                'instructor'          => 'Ir. Gunawan, M.T.',
+                'bond_status'         => '', // Only this field empty
+                'l1_program'          => 'Very Good',
+            ],
+            [
+                'row_no'              => 3,
+                'employee_id'         => 'EMP_TEST_99',
+                'course_name'         => 'Single Score L1 Empty Course',
+                'level'               => 'Basic',
+                'main_classification' => 'Basic & Common Duties',
+                'instructor'          => 'Ir. Gunawan, M.T.',
+                'bond_status'         => 'No',
+                'l1_program'          => '', // Only this field empty
+            ],
+            [
+                'row_no'              => 4,
+                'employee_id'         => 'EMP_TEST_99',
+                'course_name'         => 'All Populated Course',
+                'level'               => 'Basic',
+                'main_classification' => 'Basic & Common Duties',
+                'instructor'          => 'Ir. Gunawan, M.T.',
+                'bond_status'         => 'No',
+                'l1_program'          => 'Very Good',
+            ],
+        ]);
+
+        $response = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.preview'), ['file' => $file]);
+
+        $response->assertStatus(200);
+        $json = $response->json();
+
+        // Warning count by record: 3 warning records, 1 valid record
+        $this->assertEquals(3, $json['stats']['warning'], 'Warning KPI must count by records (3), not by empty fields');
+        $this->assertEquals(1, $json['stats']['valid']);
+        $this->assertEquals(4, $json['stats']['total_rows']);
+
+        // Check Row 1 (Instructor only)
+        $r1 = $json['rows'][0];
+        $this->assertEquals('WARNING', $r1['status']);
+        $this->assertEquals(['Instructor'], $r1['empty_warning_fields']);
+        $this->assertEquals('WARNING: Instructor is empty', $r1['warning_message']);
+
+        // Check Row 2 (Bond Status only)
+        $r2 = $json['rows'][1];
+        $this->assertEquals('WARNING', $r2['status']);
+        $this->assertEquals(['Bond Status'], $r2['empty_warning_fields']);
+        $this->assertEquals('WARNING: Bond Status is empty', $r2['warning_message']);
+
+        // Check Row 3 (Score L1 only)
+        $r3 = $json['rows'][2];
+        $this->assertEquals('WARNING', $r3['status']);
+        $this->assertEquals(['Score (L1) - Course'], $r3['empty_warning_fields']);
+        $this->assertEquals('WARNING: Score (L1) - Course is empty', $r3['warning_message']);
+
+        // Check Row 4 (All populated -> VALID)
+        $r4 = $json['rows'][3];
+        $this->assertEquals('VALID', $r4['status']);
+        $this->assertEmpty($r4['empty_warning_fields']);
+        $this->assertNull($r4['warning_message']);
+    }
+
+    public function test_section_8_strict_empty_and_populated_matrix(): void
+    {
+        // Matrix test corresponding to section 8 of prompt:
+        // Tests Level values: NULL, empty string, whitespace, '-', ' - ', '--', '–', '—', '0', 0, 'No', 'N/A'
+        $scenarios = [
+            ['val' => null,             'expect_warn' => true,  'desc' => 'NULL'],
+            ['val' => '',               'expect_warn' => true,  'desc' => 'empty string'],
+            ['val' => '   ',           'expect_warn' => true,  'desc' => 'whitespace'],
+            ['val' => '-',              'expect_warn' => false, 'desc' => 'hyphen'],
+            ['val' => ' - ',            'expect_warn' => false, 'desc' => 'padded hyphen'],
+            ['val' => '--',             'expect_warn' => false, 'desc' => 'double hyphen'],
+            ['val' => "\xe2\x80\x93",   'expect_warn' => false, 'desc' => 'en-dash'],
+            ['val' => "\xe2\x80\x94",   'expect_warn' => false, 'desc' => 'em-dash'],
+            ['val' => 0,                'expect_warn' => false, 'desc' => 'int zero'],
+            ['val' => '0',              'expect_warn' => false, 'desc' => 'string zero'],
+            ['val' => 'No',             'expect_warn' => false, 'desc' => 'No'],
+            ['val' => 'N/A',            'expect_warn' => false, 'desc' => 'N/A'],
+        ];
+
+        $rows = [];
+        foreach ($scenarios as $idx => $sc) {
+            $rows[] = [
+                'row_no'              => $idx + 1,
+                'employee_id'         => 'EMP_TEST_99',
+                'course_name'         => "Course {$idx}",
+                'level'               => $sc['val'],
+                'main_classification' => 'Basic & Common Duties',
+                'instructor'          => 'Ir. Gunawan',
+                'bond_status'         => 'No',
+                'l1_program'          => 'Very Good',
+            ];
+        }
+
+        $file = $this->createPtkpExcel($rows);
+
+        $response = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.preview'), ['file' => $file]);
+
+        $response->assertStatus(200);
+        $json = $response->json();
+
+        foreach ($scenarios as $idx => $sc) {
+            $row = $json['rows'][$idx];
+            if ($sc['expect_warn']) {
+                $this->assertEquals('WARNING', $row['status'], "Scenario {$sc['desc']} must trigger WARNING");
+                $this->assertEquals(['Level'], $row['empty_warning_fields']);
+            } else {
+                $this->assertEquals('VALID', $row['status'], "Scenario {$sc['desc']} must NOT trigger WARNING (must be VALID)");
+                $this->assertEmpty($row['empty_warning_fields']);
+            }
+        }
+    }
+
+    public function test_mixed_null_and_dash_values_only_trigger_warning_for_genuinely_null_fields(): void
+    {
+        $file = $this->createPtkpExcel([
+            // Row 1: Level = NULL, Score L1 = '-' -> Only Level warning
+            [
+                'row_no'              => 1,
+                'employee_id'         => 'EMP_TEST_99',
+                'course_name'         => 'Row 1 Level Null Score Dash',
+                'level'               => null,
+                'main_classification' => 'Basic & Common Duties',
+                'instructor'          => 'Ir. Gunawan',
+                'bond_status'         => 'No',
+                'l1_program'          => '-',
+            ],
+            // Row 2: Level = '-', Score L1 = NULL -> Only Score warning
+            [
+                'row_no'              => 2,
+                'employee_id'         => 'EMP_TEST_99',
+                'course_name'         => 'Row 2 Level Dash Score Null',
+                'level'               => '-',
+                'main_classification' => 'Basic & Common Duties',
+                'instructor'          => 'Ir. Gunawan',
+                'bond_status'         => 'No',
+                'l1_program'          => null,
+            ],
+            // Row 3: All five fields = '-' -> VALID (No warning)
+            [
+                'row_no'              => 3,
+                'employee_id'         => 'EMP_TEST_99',
+                'course_name'         => 'Row 3 All Five Dashes',
+                'level'               => '-',
+                'main_classification' => '-',
+                'instructor'          => '-',
+                'bond_status'         => '-',
+                'l1_program'          => '-',
+            ],
+            // Row 4: Mixed NULL and dash: Level NULL, Instructor NULL, Score NULL; Classification '-', Bond '-'
+            [
+                'row_no'              => 4,
+                'employee_id'         => 'EMP_TEST_99',
+                'course_name'         => 'Row 4 Mixed Null and Dash',
+                'level'               => null,
+                'main_classification' => '-',
+                'instructor'          => null,
+                'bond_status'         => '-',
+                'l1_program'          => null,
+            ],
+        ]);
+
+        $response = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.preview'), ['file' => $file]);
+
+        $response->assertStatus(200);
+        $json = $response->json();
+
+        // Row 1: Only Level is empty
+        $row1 = $json['rows'][0];
+        $this->assertEquals('WARNING', $row1['status']);
+        $this->assertEquals(['Level'], $row1['empty_warning_fields']);
+        $this->assertEquals(['Level is empty'], $row1['warning_reasons']);
+        $this->assertEquals('WARNING: Level is empty', $row1['warning_message']);
+
+        // Row 2: Only Score L1 is empty
+        $row2 = $json['rows'][1];
+        $this->assertEquals('WARNING', $row2['status']);
+        $this->assertEquals(['Score (L1) - Course'], $row2['empty_warning_fields']);
+        $this->assertEquals(['Score (L1) - Course is empty'], $row2['warning_reasons']);
+        $this->assertEquals('WARNING: Score (L1) - Course is empty', $row2['warning_message']);
+
+        // Row 3: All dashes -> VALID, no warning reasons
+        $row3 = $json['rows'][2];
+        $this->assertEquals('VALID', $row3['status']);
+        $this->assertEmpty($row3['empty_warning_fields']);
+        $this->assertEmpty($row3['warning_reasons']);
+        $this->assertNull($row3['warning_message']);
+
+        // Row 4: Exactly 3 fields are NULL (Level, Instructor, Score L1)
+        $row4 = $json['rows'][3];
+        $this->assertEquals('WARNING', $row4['status']);
+        $this->assertEquals(['Level', 'Instructor', 'Score (L1) - Course'], $row4['empty_warning_fields']);
+        $this->assertEquals(
+            ['Level is empty', 'Instructor is empty', 'Score (L1) - Course is empty'],
+            $row4['warning_reasons']
+        );
+        $this->assertEquals(
+            'WARNING: Level is empty; Instructor is empty; Score (L1) - Course is empty',
+            $row4['warning_message']
+        );
+    }
+
+    public function test_all_33_designated_fields_empty_detection_and_dash_behavior(): void
+    {
+        $all33Empty = [
+            'row_no'              => 1,
+            'employee_id'         => 'EMP_TEST_99',
+            'course_name'         => 'All 33 Empty Test Course',
+            // All 33 designated warning fields explicitly set to empty string
+            'type'                => '',
+            'category'            => '',
+            'level'               => '',
+            'batch'               => '',
+            'main_classification' => '',
+            'sub_classification'  => '',
+            'delivery_method'     => '',
+            'sub_delivery_method' => '',
+            'provider_name'       => '',
+            'venue'               => '',
+            'instructor'          => '',
+            'course_duration'     => '',
+            'learning_hours'      => '',
+            'progress'            => '',
+            'progress_status'     => '',
+            'start_date'          => '',
+            'end_date'            => '',
+            'start_time'          => '',
+            'end_time'            => '',
+            'month'               => '',
+            'requirement'         => '',
+            'attendance'          => '',
+            'attendance_reason'   => '',
+            'bond_status'         => '',
+            'bond_duration'       => '',
+            'bond_end_date'       => '',
+            'bond_amount'         => '',
+            'l1_program'          => '',
+            'assessment_score'    => '',
+            'l2_verbal'           => '',
+            'l3_numerical'        => '',
+            'l3_verbal'           => '',
+            'pic'                 => '',
+        ];
+
+        $all33Dashes = [
+            'row_no'              => 2,
+            'employee_id'         => 'EMP_TEST_99',
+            'course_name'         => 'All 33 Dashes Test Course',
+            // All 33 designated warning fields explicitly set to '-'
+            'type'                => '-',
+            'category'            => '-',
+            'level'               => '-',
+            'batch'               => '-',
+            'main_classification' => '-',
+            'sub_classification'  => '-',
+            'delivery_method'     => '-',
+            'sub_delivery_method' => '-',
+            'provider_name'       => '-',
+            'venue'               => '-',
+            'instructor'          => '-',
+            'course_duration'     => '-',
+            'learning_hours'      => '-',
+            'progress'            => '-',
+            'progress_status'     => '-',
+            'start_date'          => '-',
+            'end_date'            => '-',
+            'start_time'          => '-',
+            'end_time'            => '-',
+            'month'               => '-',
+            'requirement'         => '-',
+            'attendance'          => '-',
+            'attendance_reason'   => '-',
+            'bond_status'         => '-',
+            'bond_duration'       => '-',
+            'bond_end_date'       => '-',
+            'bond_amount'         => '-',
+            'l1_program'          => '-',
+            'assessment_score'    => '-',
+            'l2_verbal'           => '-',
+            'l3_numerical'        => '-',
+            'l3_verbal'           => '-',
+            'pic'                 => '-',
+        ];
+
+        $singleEmptyField = [
+            'row_no'              => 3,
+            'employee_id'         => 'EMP_TEST_99',
+            'course_name'         => 'Single Empty Field Test Course',
+            // Exactly 1 empty field: Attendance Reason
+            'attendance_reason'   => '',
+        ];
+
+        $file = $this->createPtkpExcel([$all33Empty, $all33Dashes, $singleEmptyField]);
+
+        $response = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.preview'), ['file' => $file]);
+
+        $response->assertStatus(200);
+        $json = $response->json();
+
+        // Row 1: All 33 fields empty -> WARNING with exactly 33 empty warning fields
+        $row1 = $json['rows'][0];
+        $this->assertEquals('WARNING', $row1['status']);
+        $this->assertCount(33, $row1['empty_warning_fields']);
+        $this->assertCount(33, $row1['empty_warning_details']);
+        $this->assertCount(33, $row1['warning_reasons']);
+
+        // Check each of the 33 fields is included
+        $expected33 = [
+            'Type', 'Category', 'Level', 'Batch', 'Main Classification', 'Sub Classification',
+            'Delivery Method', 'Sub Delivery Method', 'Provider Name', 'Venue', 'Instructor',
+            'Course Duration', 'Learning Hours', '% Progress', 'Progress Status', 'Start Date',
+            'End Date', 'Start Time', 'End Time', 'Record Month', 'Requirement', 'Attendance',
+            'Attendance Reason', 'Bond Status', 'Bond Duration', 'Bond End Date', 'Bond Amount',
+            'Score (L1) - Course', 'Score (L2)', 'L2 Status', 'Score (L3)', 'L3 Status',
+            'Person in Charge (PIC)'
+        ];
+        $this->assertEquals($expected33, $row1['empty_warning_fields']);
+
+        // Row 2: All 33 dashes -> VALID (No warnings)
+        $row2 = $json['rows'][1];
+        $this->assertEquals('VALID', $row2['status'], 'All 33 dashes must be recognized as populated data and evaluate to VALID');
+        $this->assertEmpty($row2['empty_warning_fields']);
+        $this->assertNull($row2['warning_message']);
+
+        // Row 3: Single empty field (Attendance Reason)
+        $row3 = $json['rows'][2];
+        $this->assertEquals('WARNING', $row3['status']);
+        $this->assertEquals(['Attendance Reason'], $row3['empty_warning_fields']);
+        $this->assertEquals('WARNING: Attendance Reason is empty', $row3['warning_message']);
+    }
+
     protected function createPtkpExcel(array $rows): UploadedFile
     {
         $spreadsheet = new Spreadsheet();
@@ -982,7 +1938,11 @@ class PtkpImportTest extends TestCase
                 } elseif (array_key_exists($key, $data)) {
                     $sheet->setCellValue("{$letter}{$rowIdx}", $data[$key]);
                 } else {
-                    $sheet->setCellValue("{$letter}{$rowIdx}", $col['example'] ?? '');
+                    $val = $col['example'] ?? '';
+                    if ($key === 'bond_amount' && ($val === '' || $val === null)) {
+                        $val = 0;
+                    }
+                    $sheet->setCellValue("{$letter}{$rowIdx}", $val);
                 }
             }
             $rowIdx++;
