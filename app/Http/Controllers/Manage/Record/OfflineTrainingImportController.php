@@ -38,7 +38,7 @@ class OfflineTrainingImportController extends Controller
             return redirect()->route('manage.record.offline.import-non-ptkp');
         }
 
-        return view('main.record.offline-import-non-ptkp', [
+        return view('manage.record.offline.import-non-ptkp', [
             'title'    => 'Import Non-PTKP Training Records',
             'subtitle' => 'Upload and import non-PTKP offline training records into KP-OWL. Employee information will be matched automatically.',
         ]);

@@ -44,7 +44,7 @@
                 </div>
                 <div class="d-flex align-items-center gap-2" id="header-action-container">
                     <!-- Download Template: Only Step 1 -->
-                    <a href="{{ route('manage.record.offline.import.template') }}" class="btn btn-outline-primary rounded-pill d-inline-flex align-items-center gap-2 px-3 py-2" id="btn-download-template" title="Download Template (.xlsx)">
+                    <a href="{{ route('manage.record.offline.import-non-ptkp.template') }}" class="btn btn-outline-primary rounded-pill d-inline-flex align-items-center gap-2 px-3 py-2" id="btn-download-template" title="Download Template (.xlsx)">
                         <i class="ti ti-download fs-2"></i>
                         <span>Download Non-PTKP Template (.xlsx)</span>
                     </a>
@@ -1153,7 +1153,7 @@ $(document).ready(function () {
         formData.append('_token', csrfToken);
 
         $.ajax({
-            url: "{{ route('manage.record.offline.import.preview') }}",
+            url: "{{ route('manage.record.offline.import-non-ptkp.preview') }}",
             type: 'POST',
             data: formData,
             processData: false,
@@ -1646,7 +1646,7 @@ $(document).ready(function () {
         if (!confirm('Are you sure you want to cancel this import session? Temporary files will be removed.')) return;
         if (importToken) {
             $.ajax({
-                url: "{{ route('manage.record.offline.import.cancel') }}",
+                url: "{{ route('manage.record.offline.import-non-ptkp.cancel') }}",
                 type: 'POST',
                 data: { token: importToken, _token: csrfToken },
                 headers: { 'X-CSRF-TOKEN': csrfToken },
@@ -1688,7 +1688,7 @@ $(document).ready(function () {
         switchPanel('importing');
 
         $.ajax({
-            url: "{{ route('manage.record.offline.import.confirm') }}",
+            url: "{{ route('manage.record.offline.import-non-ptkp.confirm') }}",
             type: 'POST',
             data: {
                 token: importToken,
