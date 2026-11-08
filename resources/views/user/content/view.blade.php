@@ -1401,7 +1401,7 @@
                     contentId: {{ (int) $content->id }},
                     officialDuration: {{ (int) ($content->duration_in_seconds ?? 0) }},
                     maxActualWatchSeconds: {{ $content->max_actual_watch_seconds !== null ? (int) $content->max_actual_watch_seconds : 'null' }},
-                    initialActualWatchSeconds: {{ (int) ($content_user->actual_watch_seconds ?? 0) }},
+                    initialActualWatchSeconds: {{ (int) (($content_user->finish == '1' || ($content_user->progress ?? 0) >= 100) ? max((int) ($content_user->actual_watch_seconds ?? 0), (int) ($content->duration_in_seconds ?? 0)) : (int) ($content_user->actual_watch_seconds ?? 0)) }},
                     heartbeatIntervalMs: 10000,
                     onUpdate: window.owlUpdateLearningUi
                 });

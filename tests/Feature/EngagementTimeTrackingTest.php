@@ -68,6 +68,7 @@ class EngagementTimeTrackingTest extends TestCase
                 'learning_hours' => 0.5,
             ]
         );
+        $this->targetContent->update(['active' => 'Active']);
 
         // Find or create the target playlist and its child content matching exact slugs
         $this->targetPlaylist = TrainingPlan::firstOrCreate(

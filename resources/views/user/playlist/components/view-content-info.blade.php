@@ -30,6 +30,13 @@
                         <i class="far fa-clock me-1"></i>
                         {{ ($content->type === 'Document' && (int) ($content->page_duration ?? 30) === 0) ? 'Self-paced' : \App\Support\DurationFormatter::format($content->duration) }}
                     </span>
+                    @if (isset($totalRecognizedDuration))
+                        <span class="overview-meta-separator">&bull;</span>
+                        <span title="Total Recognized Duration">
+                            <i class="ti ti-history me-1"></i>
+                            Recognized: <span id="contentTotalRecognizedDuration">{{ $totalRecognizedDuration }}</span>
+                        </span>
+                    @endif
                 </div>
             </div>
 

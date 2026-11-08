@@ -78,8 +78,8 @@ class LearningRecordGlobalTwoTimesDurationCapTest extends TestCase
         ]);
 
         $sec = $this->hourService->calculateContentRecognizedSeconds($cu);
-        $this->assertEquals(240, $sec);
-        $this->assertEquals('00:04:00', DurationFormatter::fromSeconds($sec));
+        $this->assertEquals(0, $sec);
+        $this->assertEquals('00:00:00', DurationFormatter::fromSeconds($sec));
 
         $totalHours = $this->hourService->getTotalLearningHours($this->user->id);
         $this->assertEquals(0.07, $totalHours); // round(240/3600, 2) = 0.07
@@ -88,7 +88,7 @@ class LearningRecordGlobalTwoTimesDurationCapTest extends TestCase
     /**
      * TC-02: Standalone Rewatch (2x Cap Reach)
      * Video 4m (240s). User watches 8m (480s).
-     * Recognized: 8m (480s).
+     * Recognized Rewatch: 4m (240s).
      */
     public function test_tc02_standalone_rewatch_reaches_two_times_cap(): void
     {
@@ -113,14 +113,14 @@ class LearningRecordGlobalTwoTimesDurationCapTest extends TestCase
         ]);
 
         $sec = $this->hourService->calculateContentRecognizedSeconds($cu);
-        $this->assertEquals(480, $sec);
-        $this->assertEquals('00:08:00', DurationFormatter::fromSeconds($sec));
+        $this->assertEquals(240, $sec);
+        $this->assertEquals('00:04:00', DurationFormatter::fromSeconds($sec));
     }
 
     /**
      * TC-03: Standalone Over-Watch (Hard Cap at 2x)
      * Video 4m (240s). User watches 12m (720s, 3x).
-     * Recognized: Hard-capped at 8m (480s).
+     * Recognized Rewatch: Hard-capped at 4m (240s).
      */
     public function test_tc03_standalone_overwatch_hard_capped_at_two_times(): void
     {
@@ -145,8 +145,8 @@ class LearningRecordGlobalTwoTimesDurationCapTest extends TestCase
         ]);
 
         $sec = $this->hourService->calculateContentRecognizedSeconds($cu);
-        $this->assertEquals(480, $sec);
-        $this->assertEquals('00:08:00', DurationFormatter::fromSeconds($sec));
+        $this->assertEquals(240, $sec);
+        $this->assertEquals('00:04:00', DurationFormatter::fromSeconds($sec));
     }
 
     /**
@@ -258,13 +258,13 @@ class LearningRecordGlobalTwoTimesDurationCapTest extends TestCase
 
         $contentAllocations = [];
         $plSec = $this->hourService->calculatePlaylistsRecognizedSecondsBatch($this->user->id, collect([$plan]), $contentAllocations)->get($plan->id);
-        $this->assertEquals(240, $plSec);
+        $this->assertEquals(0, $plSec); // First watch quota (240s) consumed by playlist -> 0s recognized rewatch
 
         $cuSec = $this->hourService->calculateContentRecognizedSeconds($cu, $contentAllocations);
-        $this->assertEquals(240, $cuSec);
+        $this->assertEquals(240, $cuSec); // Rewatch quota (240s) consumed by direct -> 240s recognized rewatch
 
-        // Sum = 480s (8m, exactly 2x)
-        $this->assertEquals(480, $plSec + $cuSec);
+        // Sum = 240s (4m, max recognized rewatch)
+        $this->assertEquals(240, $plSec + $cuSec);
 
         $totalHours = $this->hourService->getTotalLearningHours($this->user->id);
         // round(240/3600, 4) + round(240/3600, 4) = 0.0667 + 0.0667 = 0.1334 -> 0.13h
@@ -320,13 +320,13 @@ class LearningRecordGlobalTwoTimesDurationCapTest extends TestCase
 
         $contentAllocations = [];
         $plSec = $this->hourService->calculatePlaylistsRecognizedSecondsBatch($this->user->id, collect([$plan]), $contentAllocations)->get($plan->id);
-        $this->assertEquals(240, $plSec);
+        $this->assertEquals(0, $plSec); // First watch quota (240s) consumed by playlist -> 0s rewatch
 
         $cuSec = $this->hourService->calculateContentRecognizedSeconds($cu, $contentAllocations);
-        $this->assertEquals(240, $cuSec);
+        $this->assertEquals(240, $cuSec); // Rewatch quota (240s) consumed by direct -> 240s rewatch
 
-        // Sum = exactly 480s (2x duration, not 720s)
-        $this->assertEquals(480, $plSec + $cuSec);
+        // Sum = exactly 240s (1x duration rewatch)
+        $this->assertEquals(240, $plSec + $cuSec);
 
         $totalHours = $this->hourService->getTotalLearningHours($this->user->id);
         $this->assertEquals(0.13, $totalHours);
@@ -365,11 +365,11 @@ class LearningRecordGlobalTwoTimesDurationCapTest extends TestCase
         $contentAllocations = [];
         $batch = $this->hourService->calculatePlaylistsRecognizedSecondsBatch($this->user->id, collect([$p1, $p2, $p3]), $contentAllocations);
 
-        $this->assertEquals(240, $batch->get($p1->id));
-        $this->assertEquals(240, $batch->get($p2->id));
-        $this->assertEquals(0, $batch->get($p3->id));
+        $this->assertEquals(0, $batch->get($p1->id));   // First watch (240s) -> 0s rewatch
+        $this->assertEquals(240, $batch->get($p2->id)); // Rewatch (240s) -> 240s rewatch
+        $this->assertEquals(0, $batch->get($p3->id));   // Quota capped -> 0s rewatch
 
-        $this->assertEquals(480, $batch->sum());
+        $this->assertEquals(240, $batch->sum());
     }
 
     /**
@@ -400,10 +400,10 @@ class LearningRecordGlobalTwoTimesDurationCapTest extends TestCase
         $sec2 = $this->hourService->calculateContentRecognizedSeconds($cu2, $contentAllocations);
         $sec3 = $this->hourService->calculateContentRecognizedSeconds($cu3, $contentAllocations);
 
-        $this->assertEquals(240, $sec1);
-        $this->assertEquals(240, $sec2);
-        $this->assertEquals(0, $sec3);
-        $this->assertEquals(480, $sec1 + $sec2 + $sec3);
+        $this->assertEquals(0, $sec1);   // Row 1: First watch (240s) -> 0s rewatch
+        $this->assertEquals(240, $sec2); // Row 2: Rewatch (240s) -> 240s rewatch
+        $this->assertEquals(0, $sec3);   // Row 3: Capped -> 0s rewatch
+        $this->assertEquals(240, $sec1 + $sec2 + $sec3);
     }
 
     /**
@@ -539,8 +539,8 @@ class LearningRecordGlobalTwoTimesDurationCapTest extends TestCase
         $rd = $this->recognizedService->resolvePlaylistsBatch(5, collect([$plan]))->get(32);
 
         $this->assertEquals($lh, $rd);
-        $this->assertEquals(1484, $lh);
-        $this->assertEquals('00:24:44', DurationFormatter::fromSeconds($lh));
-        $this->assertEquals('00:24:44', DurationFormatter::fromSeconds($rd));
+        $this->assertEquals(191, $lh);
+        $this->assertEquals('00:03:11', DurationFormatter::fromSeconds($lh));
+        $this->assertEquals('00:03:11', DurationFormatter::fromSeconds($rd));
     }
 }

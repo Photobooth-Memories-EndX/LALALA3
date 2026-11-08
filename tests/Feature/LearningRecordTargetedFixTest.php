@@ -141,8 +141,9 @@ class LearningRecordTargetedFixTest extends TestCase
         $playlistRow = $rows->firstWhere('title', $plan->title);
         $this->assertNotNull($playlistRow, 'Playlist row should exist');
         $this->assertSame('00:03:20', $playlistRow['duration']);
-        $this->assertSame('00:03:20', $playlistRow['total_recognized_duration']);
-        $this->assertEquals(200, $playlistRow['recognized_duration_seconds']);
+        // Playlist watched 200s (first watch only) -> Recognized Rewatch is 00:00:00
+        $this->assertSame('00:00:00', $playlistRow['total_recognized_duration']);
+        $this->assertEquals(0, $playlistRow['recognized_duration_seconds']);
     }
 
     /**
@@ -290,9 +291,9 @@ class LearningRecordTargetedFixTest extends TestCase
         $this->assertSame('00:07:57', $legacyRow['duration']);
         $this->assertEquals(477, $legacyRow['duration_sort']);
 
-        // Recognized duration also 477s
-        $this->assertSame('00:07:57', $legacyRow['total_recognized_duration']);
-        $this->assertEquals(477, $legacyRow['recognized_duration_seconds']);
+        // First watch only -> Recognized Rewatch is 00:00:00
+        $this->assertSame('00:00:00', $legacyRow['total_recognized_duration']);
+        $this->assertEquals(0, $legacyRow['recognized_duration_seconds']);
     }
 
     /**
@@ -419,8 +420,8 @@ class LearningRecordTargetedFixTest extends TestCase
         $this->assertNotNull($parentRow, 'Parent playlist row should be exported');
         // Parent Course Duration in Excel = 477 / 86400
         $this->assertEqualsWithDelta(477 / 86400, $parentRow[8], 0.0001);
-        // Parent Recognized Duration in Excel = 477 / 86400
-        $this->assertEqualsWithDelta(477 / 86400, $parentRow[9], 0.0001);
+        // Parent Recognized Rewatch Duration in Excel = 0 (first watch completed, rewatch = 0)
+        $this->assertEquals(0, $parentRow[9]);
 
         // Child rows must have '-' for duration, recognized duration, and learning hours
         $this->assertCount(2, $childRows);

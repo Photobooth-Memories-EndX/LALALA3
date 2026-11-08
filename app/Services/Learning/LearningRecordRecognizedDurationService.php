@@ -33,7 +33,7 @@ class LearningRecordRecognizedDurationService
 
     /**
      * Resolve recognized duration in integer seconds for a single PlaylistContentUser record.
-     * Capped at maximum 2x original module content duration.
+     * Evaluates recognized rewatch duration: MIN(MAX(Actual - Duration, 0), Duration).
      *
      * @param PlaylistContentUser $pcu
      * @return int Recognized duration in seconds
@@ -49,9 +49,9 @@ class LearningRecordRecognizedDurationService
             return 0;
         }
 
-        $maxCapSeconds = $durationSeconds * 2;
+        $rewatchCap = $durationSeconds;
         if ($pcu->content && $pcu->content->max_actual_watch_seconds !== null) {
-            $maxCapSeconds = min($maxCapSeconds, (int) $pcu->content->max_actual_watch_seconds);
+            $rewatchCap = min($rewatchCap, max(0, (int) $pcu->content->max_actual_watch_seconds - $durationSeconds));
         }
 
         $actualWatchSeconds = (int) ($pcu->actual_watch_seconds ?? 0);
@@ -59,27 +59,35 @@ class LearningRecordRecognizedDurationService
         $progress = (int) ($pcu->progress ?? 0);
         $finish = $pcu->finish ?? '0';
 
-        $actualSeconds = $this->calculator->resolveActualSeconds(
-            $currentTime,
-            $finish,
-            $progress,
-            $durationSeconds,
-            $actualWatchSeconds
-        );
+        $isFinished = ((string) $finish === '1' || $progress >= 100);
+        if ($isFinished && $durationSeconds > 0) {
+            $actualSeconds = max($durationSeconds, $actualWatchSeconds);
+        } else {
+            $actualSeconds = $this->calculator->resolveActualSeconds(
+                $currentTime,
+                $finish,
+                $progress,
+                $durationSeconds,
+                $actualWatchSeconds
+            );
 
-        if ($actualSeconds <= 0) {
-            if ($progress > 0) {
-                $actualSeconds = (int) round(($progress / 100) * $durationSeconds);
-            } elseif ((float) ($pcu->learning_hour ?? 0) > 0) {
-                $actualSeconds = (int) round((float) $pcu->learning_hour * 3600);
+            if ($actualSeconds <= 0) {
+                if ($progress > 0) {
+                    $actualSeconds = (int) round(($progress / 100) * $durationSeconds);
+                } elseif ((float) ($pcu->learning_hour ?? 0) > 0) {
+                    $actualSeconds = (int) round((float) $pcu->learning_hour * 3600);
+                }
             }
         }
 
-        return max(0, min($actualSeconds, $maxCapSeconds));
+        $rewatchSeconds = min(max($actualSeconds - $durationSeconds, 0), $rewatchCap);
+
+        return max(0, $rewatchSeconds);
     }
 
     /**
      * Resolve recognized duration in integer seconds from a generic database row or array.
+     * Evaluates canonical recognized rewatch duration: MIN(MAX(Actual - Duration, 0), Duration).
      * Pure, stateless, zero database queries. Suitable for DataTables and bulk export streaming.
      *
      * @param object|array $row
@@ -107,31 +115,35 @@ class LearningRecordRecognizedDurationService
             return 0;
         }
 
-        $maxCapSeconds = $durationSeconds * 2;
-
         $actualWatchSeconds = (int) ($rowObj->actual_watch_seconds ?? 0);
         $currentTime = (int) ($rowObj->current_time ?? 0);
         $progress = (int) ($rowObj->progress ?? 0);
         $finish = $rowObj->finish ?? '0';
         $learningHours = (float) ($rowObj->learning_hours ?? ($rowObj->learning_hour ?? 0));
 
-        $actualSeconds = $this->calculator->resolveActualSeconds(
-            $currentTime,
-            $finish,
-            $progress,
-            $durationSeconds,
-            $actualWatchSeconds
-        );
+        $isFinished = ((string) $finish === '1' || $progress >= 100);
+        if ($isFinished && $durationSeconds > 0) {
+            $actualSeconds = max($durationSeconds, $actualWatchSeconds);
+        } else {
+            $actualSeconds = $this->calculator->resolveActualSeconds(
+                $currentTime,
+                $finish,
+                $progress,
+                $durationSeconds,
+                $actualWatchSeconds
+            );
 
-        if ($actualSeconds <= 0) {
-            if ($progress > 0) {
-                $actualSeconds = (int) round(($progress / 100) * $durationSeconds);
-            } elseif ($learningHours > 0) {
-                $actualSeconds = (int) round($learningHours * 3600);
+            if ($actualSeconds <= 0) {
+                if ($progress > 0) {
+                    $actualSeconds = (int) round(($progress / 100) * $durationSeconds);
+                } elseif ($learningHours > 0) {
+                    $actualSeconds = (int) round($learningHours * 3600);
+                }
             }
         }
 
-        return max(0, min($actualSeconds, $maxCapSeconds));
+        // Canonical: MIN(MAX(Actual Watch - Original Duration, 0), Original Duration)
+        return max(0, min(max($actualSeconds - $durationSeconds, 0), $durationSeconds));
     }
 
     /**

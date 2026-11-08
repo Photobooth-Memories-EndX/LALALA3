@@ -127,8 +127,9 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithColumnFor
             $durationSeconds = max(0, (int) ($row['duration_sort'] ?? 0));
             $durationCell = $durationSeconds > 0 ? ($durationSeconds / 86400) : '-';
 
+            $isOffline = ($row['source'] ?? '') === 'offline';
             $recognizedSeconds = max(0, (int) ($row['recognized_duration_seconds'] ?? 0));
-            $recognizedCell = $recognizedSeconds > 0 ? ($recognizedSeconds / 86400) : '-';
+            $recognizedCell = (!$isOffline && $durationSeconds > 0) ? ($recognizedSeconds / 86400) : '-';
 
             $lhValue = round((float) ($row['learning_hour_value'] ?? 0), 2);
 

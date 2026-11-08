@@ -371,16 +371,14 @@ class PlaylistProgressController extends Controller
 
                 if ($deltaToApply > 0) {
                     $currentActualWatch = (int) ($record->actual_watch_seconds ?? 0);
-                    // Legacy baseline logic (safe & conservative, at most once)
-                    if ($currentActualWatch === 0 && !$playlistContentUser->wasRecentlyCreated) {
-                        $isCompleted = ($record->finish === '1' || (int) $record->getOriginal('finish') === 1 || (int) $record->progress >= 100 || (int) $previousProgress >= 100);
-                        $legacyTime = (int) $record->getOriginal('current_time');
-                        if ($legacyTime > 0) {
-                            $maxBaseline = $recordDuration > 0 ? (int) round($recordDuration) : $legacyTime;
-                            $currentActualWatch = min($legacyTime, $maxBaseline);
-                        } elseif ($isCompleted && $recordDuration > 0) {
-                            $currentActualWatch = (int) round($recordDuration);
-                        }
+                    $isCompleted = ($record->finish === '1' || (int) $record->getOriginal('finish') === 1 || (int) $record->progress >= 100 || (int) $previousProgress >= 100);
+                    $legacyTime = (int) $record->getOriginal('current_time');
+
+                    if ($isCompleted && $recordDuration > 0) {
+                        $currentActualWatch = max($currentActualWatch, (int) round($recordDuration));
+                    } elseif ($currentActualWatch === 0 && !$playlistContentUser->wasRecentlyCreated && $legacyTime > 0) {
+                        $maxBaseline = $recordDuration > 0 ? (int) round($recordDuration) : $legacyTime;
+                        $currentActualWatch = min($legacyTime, $maxBaseline);
                     }
 
                     // Sibling CU and PCU watch time to enforce global 2x cap
@@ -425,15 +423,15 @@ class PlaylistProgressController extends Controller
                     if ($docDuration <= 0 && !empty($content->duration)) {
                         $docDuration = \App\Support\DurationFormatter::toSeconds($content->duration) ?? 0;
                     }
-                    if ($currentActualWatch === 0 && !$playlistContentUser->wasRecentlyCreated) {
-                        $isCompleted = ($record->finish === '1' || (int) $record->getOriginal('finish') === 1 || (int) $record->progress >= 100 || (int) $previousProgress >= 100);
-                        $legacyTime = (int) $record->getOriginal('current_time');
-                        if ($legacyTime > 0) {
-                            $maxBaseline = $docDuration > 0 ? $docDuration : $legacyTime;
-                            $currentActualWatch = min($legacyTime, $maxBaseline);
-                        } elseif ($isCompleted && $docDuration > 0) {
-                            $currentActualWatch = $docDuration;
-                        }
+
+                    $isCompleted = ($record->finish === '1' || (int) $record->getOriginal('finish') === 1 || (int) $record->progress >= 100 || (int) $previousProgress >= 100);
+                    $legacyTime = (int) $record->getOriginal('current_time');
+
+                    if ($isCompleted && $docDuration > 0) {
+                        $currentActualWatch = max($currentActualWatch, $docDuration);
+                    } elseif ($currentActualWatch === 0 && !$playlistContentUser->wasRecentlyCreated && $legacyTime > 0) {
+                        $maxBaseline = $docDuration > 0 ? $docDuration : $legacyTime;
+                        $currentActualWatch = min($legacyTime, $maxBaseline);
                     }
 
                     // Sibling CU and PCU watch time to enforce global 2x cap

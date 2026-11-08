@@ -104,48 +104,93 @@ class LearningRecordLearningHourService
             ->get();
 
         $contentAllocations = [];
-        $actualPlaylistHours = (float) $this->calculatePlaylistsRecognizedSecondsBatch($userId, $completedPlaylists, $contentAllocations)
-            ->map(fn (int $seconds) => round($seconds / 3600, 4))
-            ->sum();
+        $playlistData = $this->calculatePlaylistsDataBatch($userId, $completedPlaylists, $contentAllocations);
+        $actualPlaylistHours = (float) $playlistData['hours']->sum();
 
         $actualContentHours = (float) $completedContentUsers->sum(
-            fn (ContentUser $cu) => $this->calculateContent($cu, $contentAllocations)
+            fn (ContentUser $cu) => $this->calculateContentData($cu, $contentAllocations)['learning_hours']
         );
 
         return round($actualContentHours + $actualPlaylistHours, 2);
     }
 
     /**
-     * Calculate actual learning hours for a single ContentUser record.
+     * Allocate first watch quota (1x duration) and rewatch quota (up to 1x duration)
+     * across multiple accesses (Playlist Priority Allocation).
      *
-     * Synchronized with calculateContentRecognizedSeconds: uses the exact same
-     * capped seconds variable as Learning Hours.
-     *
-     * @param ContentUser $cu
-     * @param array|null $contentAllocations
-     * @return float Hours rounded to 4 decimal places
+     * @param int $cid Content ID
+     * @param int $durationSeconds Original content duration
+     * @param int $actualSeconds Actual watch seconds for this access
+     * @param Content|null $contentModel
+     * @param array $contentAllocations
+     * @return array [capped_seconds, recognized_seconds, first_watch_seconds]
      */
-    public function calculateContent(ContentUser $cu, ?array &$contentAllocations = null): float
-    {
-        $recognizedSeconds = $this->calculateContentRecognizedSeconds($cu, $contentAllocations);
-
-        $calculatedHours = round($recognizedSeconds / 3600, 4);
-        if ($cu->content && $cu->content->max_learning_hours !== null) {
-            $calculatedHours = min($calculatedHours, $cu->content->max_learning_hours);
+    public function allocateContentQuota(
+        int $cid,
+        int $durationSeconds,
+        int $actualSeconds,
+        ?Content $contentModel,
+        array &$contentAllocations
+    ): array {
+        if ($durationSeconds <= 0) {
+            return [
+                'capped_seconds'      => $actualSeconds,
+                'recognized_seconds'  => 0,
+                'first_watch_seconds' => 0,
+            ];
         }
 
-        return $calculatedHours;
+        $alloc = $contentAllocations[$cid] ?? null;
+        if (is_array($alloc)) {
+            $firstWatchAllocated = (int) ($alloc['first_watch'] ?? 0);
+            $rewatchAllocated    = (int) ($alloc['rewatch'] ?? 0);
+        } elseif (is_numeric($alloc)) {
+            $intAlloc = (int) $alloc;
+            $firstWatchAllocated = min($intAlloc, $durationSeconds);
+            $rewatchAllocated    = max(0, $intAlloc - $durationSeconds);
+        } else {
+            $firstWatchAllocated = 0;
+            $rewatchAllocated    = 0;
+        }
+
+        // 1. First watch quota (up to 1x original duration)
+        $firstWatchRemaining = max(0, $durationSeconds - $firstWatchAllocated);
+        $consumedFirstWatch  = min($actualSeconds, $firstWatchRemaining);
+
+        // 2. Excess actual watch after first watch goes to recognized rewatch (up to 1x duration)
+        $excessActualWatch   = max(0, $actualSeconds - $consumedFirstWatch);
+        $rewatchCap          = $durationSeconds;
+        if ($contentModel && $contentModel->max_actual_watch_seconds !== null) {
+            $rewatchCap = min($rewatchCap, max(0, (int) $contentModel->max_actual_watch_seconds - $durationSeconds));
+        }
+        $rewatchRemaining    = max(0, $rewatchCap - $rewatchAllocated);
+        $consumedRewatch     = min($excessActualWatch, $rewatchRemaining);
+
+        // 3. Total capped watch for this access (used for Learning Hours, max 2x duration)
+        $consumedCappedSeconds = $consumedFirstWatch + $consumedRewatch;
+
+        // 4. Update allocations for this content
+        $contentAllocations[$cid] = [
+            'first_watch' => $firstWatchAllocated + $consumedFirstWatch,
+            'rewatch'     => $rewatchAllocated + $consumedRewatch,
+            'total'       => $firstWatchAllocated + $consumedFirstWatch + $rewatchAllocated + $consumedRewatch,
+        ];
+
+        return [
+            'capped_seconds'      => $consumedCappedSeconds,
+            'recognized_seconds'  => $consumedRewatch,
+            'first_watch_seconds' => $consumedFirstWatch,
+        ];
     }
 
     /**
-     * Calculate Total Recognized Duration in seconds for a ContentUser record.
-     * Formula: min(watched_seconds, remaining_global_cap_seconds)
+     * Calculate both Learning Hours and Recognized Rewatch Duration for a ContentUser record.
      *
      * @param ContentUser $cu
      * @param array|null $contentAllocations
-     * @return int
+     * @return array [learning_hours => float, recognized_seconds => int, capped_seconds => int]
      */
-    public function calculateContentRecognizedSeconds(ContentUser $cu, ?array &$contentAllocations = null): int
+    public function calculateContentData(ContentUser $cu, ?array &$contentAllocations = null): array
     {
         $durationSeconds = (int) ($cu->content?->duration_in_seconds ?? 0);
         if ($durationSeconds <= 0 && $cu->content && !empty($cu->content->duration)) {
@@ -155,21 +200,17 @@ class LearningRecordLearningHourService
             $durationSeconds = (int) ($cu->duration_seconds ?? 0);
         }
 
-        if ($durationSeconds <= 0) {
-            return 0;
-        }
-
         $actualWatchSeconds = (int) ($cu->actual_watch_seconds ?? 0);
         $currentTime = (int) ($cu->current_time ?? 0);
         $progress = (int) ($cu->progress ?? 0);
         $isFinished = ((string) $cu->finish === '1' || $progress >= 100);
 
-        if ($actualWatchSeconds > 0) {
+        if ($isFinished && $durationSeconds > 0) {
+            $actualSeconds = max($durationSeconds, $actualWatchSeconds);
+        } elseif ($actualWatchSeconds > 0) {
             $actualSeconds = $actualWatchSeconds;
         } elseif ($currentTime > 0) {
             $actualSeconds = $currentTime;
-        } elseif ($isFinished && $durationSeconds > 0) {
-            $actualSeconds = $durationSeconds;
         } elseif ($progress > 0 && $durationSeconds > 0) {
             $actualSeconds = (int) round(($progress / 100) * $durationSeconds);
         } elseif ((float) ($cu->learning_hours ?? 0) > 0) {
@@ -178,75 +219,78 @@ class LearningRecordLearningHourService
             $actualSeconds = 0;
         }
 
-        $maxCapSeconds = $durationSeconds > 0 ? ($durationSeconds * 2) : 0;
-        if ($cu->content && $cu->content->max_actual_watch_seconds !== null) {
-            $maxCapSeconds = $maxCapSeconds > 0
-                ? min($maxCapSeconds, (int) $cu->content->max_actual_watch_seconds)
-                : (int) $cu->content->max_actual_watch_seconds;
-        }
-
         $cid = (int) ($cu->content_id ?? 0);
-        $alreadyAllocated = 0;
-
-        if ($contentAllocations !== null) {
-            $alreadyAllocated = (int) ($contentAllocations[$cid] ?? 0);
-        } elseif ($cu->exists && !empty($cu->user_id) && $cid > 0) {
-            $completedPlaylists = $this->completedPlaylistsService()->forLearningRecord((int) $cu->user_id);
-            if ($completedPlaylists->isNotEmpty()) {
-                $tempAlloc = [];
-                $this->calculatePlaylistsRecognizedSecondsBatch((int) $cu->user_id, $completedPlaylists, $tempAlloc);
-                $alreadyAllocated = (int) ($tempAlloc[$cid] ?? 0);
+        $allocationsRef = $contentAllocations;
+        if ($allocationsRef === null) {
+            $allocationsRef = [];
+            if ($cu->exists && !empty($cu->user_id) && $cid > 0) {
+                $completedPlaylists = $this->completedPlaylistsService()->forLearningRecord((int) $cu->user_id);
+                if ($completedPlaylists->isNotEmpty()) {
+                    $this->calculatePlaylistsDataBatch((int) $cu->user_id, $completedPlaylists, $allocationsRef);
+                }
             }
         }
 
-        $remainingQuota = $maxCapSeconds > 0 ? max(0, $maxCapSeconds - $alreadyAllocated) : $maxCapSeconds;
-        $recognized = ($maxCapSeconds > 0) ? min($actualSeconds, $remainingQuota) : $actualSeconds;
+        $allocRes = $this->allocateContentQuota($cid, $durationSeconds, $actualSeconds, $cu->content, $allocationsRef);
 
-        if ($contentAllocations !== null && $cid > 0) {
-            $contentAllocations[$cid] = $alreadyAllocated + $recognized;
+        if ($contentAllocations !== null) {
+            $contentAllocations = $allocationsRef;
         }
 
-        return $recognized;
+        $calculatedHours = round($allocRes['capped_seconds'] / 3600, 4);
+        if ($cu->content && $cu->content->max_learning_hours !== null) {
+            $calculatedHours = min($calculatedHours, (float) $cu->content->max_learning_hours);
+        }
+
+        return [
+            'learning_hours'     => $calculatedHours,
+            'recognized_seconds' => $allocRes['recognized_seconds'],
+            'capped_seconds'     => $allocRes['capped_seconds'],
+        ];
     }
 
     /**
-     * Calculate actual consumed learning hours for completed playlists in batch (Zero N+1).
+     * Calculate actual learning hours for a single ContentUser record.
+     * Capped at maximum 2x original content duration.
      *
-     * Synchronized directly with calculatePlaylistsRecognizedSecondsBatch:
-     * both use the exact same capped seconds variable.
+     * @param ContentUser $cu
+     * @param array|null $contentAllocations
+     * @return float Hours rounded to 4 decimal places
+     */
+    public function calculateContent(ContentUser $cu, ?array &$contentAllocations = null): float
+    {
+        return $this->calculateContentData($cu, $contentAllocations)['learning_hours'];
+    }
+
+    /**
+     * Calculate Total Recognized Duration in seconds for a ContentUser record.
+     * Formula: Recognized Rewatch Duration = MIN(MAX(Actual - Duration, 0), Duration).
+     *
+     * @param ContentUser $cu
+     * @param array|null $contentAllocations
+     * @return int
+     */
+    public function calculateContentRecognizedSeconds(ContentUser $cu, ?array &$contentAllocations = null): int
+    {
+        return $this->calculateContentData($cu, $contentAllocations)['recognized_seconds'];
+    }
+
+    /**
+     * Calculate both Learning Hours and Recognized Rewatch Duration for completed playlists in batch (Zero N+1).
      *
      * @param int $userId
      * @param Collection<int, TrainingPlan> $completedPlaylists
      * @param array|null $contentAllocations
-     * @return Collection<int, float> Map of [trainingplan_id => actual_learning_hours]
+     * @return array [hours => Collection, recognized_seconds => Collection]
      */
-    public function calculatePlaylistsBatch(int $userId, Collection $completedPlaylists, ?array &$contentAllocations = null): Collection
-    {
-        return $this->calculatePlaylistsRecognizedSecondsBatch($userId, $completedPlaylists, $contentAllocations)
-            ->map(fn (int $seconds) => round($seconds / 3600, 4));
-    }
-
-    /**
-     * Single playlist calculation fallback.
-     */
-    public function calculatePlaylistSingle(int $userId, TrainingPlan $plan, ?array &$contentAllocations = null): float
-    {
-        return $this->calculatePlaylistsBatch($userId, collect([$plan]), $contentAllocations)->get($plan->id, 0.0);
-    }
-
-    /**
-     * Calculate Total Recognized Duration in seconds for completed playlists in batch (Zero N+1).
-     *
-     * @param int $userId
-     * @param Collection<int, TrainingPlan> $completedPlaylists
-     * @param array|null $contentAllocations
-     * @return Collection<int, int> Map of [trainingplan_id => recognized_seconds]
-     */
-    public function calculatePlaylistsRecognizedSecondsBatch(int $userId, Collection $completedPlaylists, ?array &$contentAllocations = null): Collection
+    public function calculatePlaylistsDataBatch(int $userId, Collection $completedPlaylists, ?array &$contentAllocations = null): array
     {
         $planIds = $completedPlaylists->pluck('id')->filter()->all();
         if (empty($planIds)) {
-            return collect();
+            return [
+                'hours'              => collect(),
+                'recognized_seconds' => collect(),
+            ];
         }
 
         $userPcuMap = PlaylistContentUser::where('user_id', $userId)
@@ -269,7 +313,8 @@ class LearningRecordLearningHourService
             : collect();
 
         $contentAllocations ??= [];
-        $result = collect();
+        $hoursResult = collect();
+        $recognizedSecondsResult = collect();
 
         foreach ($completedPlaylists as $plan) {
             if (!$plan->relationLoaded('trainingplandetail')) {
@@ -281,6 +326,7 @@ class LearningRecordLearningHourService
             );
 
             $planPcus = $userPcuMap->get($plan->id, collect())->keyBy('content_id');
+            $consumedPlaylistCappedSeconds = 0;
             $consumedPlaylistRecognizedSeconds = 0;
 
             foreach ($validDetails as $d) {
@@ -292,16 +338,7 @@ class LearningRecordLearningHourService
                     $moduleDuration = DurationFormatter::toSeconds($d->content->duration) ?? 0;
                 }
 
-                $maxModuleCap = $moduleDuration > 0 ? ($moduleDuration * 2) : 0;
-                if ($d->content && $d->content->max_actual_watch_seconds !== null) {
-                    $maxModuleCap = $maxModuleCap > 0
-                        ? min($maxModuleCap, (int) $d->content->max_actual_watch_seconds)
-                        : (int) $d->content->max_actual_watch_seconds;
-                }
-
-                $alreadyAllocated = (int) ($contentAllocations[$cid] ?? 0);
-                $remainingModuleQuota = $maxModuleCap > 0 ? max(0, $maxModuleCap - $alreadyAllocated) : $maxModuleCap;
-
+                $moduleSec = 0;
                 if ($pcu) {
                     $pcuDuration = $moduleDuration > 0 ? $moduleDuration : (int) ($pcu->duration_seconds ?? 0);
                     $pcuActualWatch = (int) ($pcu->actual_watch_seconds ?? 0);
@@ -309,22 +346,17 @@ class LearningRecordLearningHourService
                     $pcuProgress = (int) ($pcu->progress ?? 0);
                     $pcuFinished = ((string) $pcu->finish === '1' || $pcuProgress >= 100);
 
-                    $moduleSec = 0;
-                    if ($pcuActualWatch > 0) {
+                    if ($pcuFinished && $pcuDuration > 0) {
+                        $moduleSec = max($pcuDuration, $pcuActualWatch);
+                    } elseif ($pcuActualWatch > 0) {
                         $moduleSec = $pcuActualWatch;
                     } elseif ($pcuCurrentTime > 0) {
                         $moduleSec = $pcuCurrentTime;
-                    } elseif ($pcuFinished && $pcuDuration > 0) {
-                        $moduleSec = $pcuDuration;
                     } elseif ($pcuProgress > 0 && $pcuDuration > 0) {
                         $moduleSec = (int) round(($pcuProgress / 100) * $pcuDuration);
                     } elseif ((float) ($pcu->learning_hour ?? 0) > 0) {
                         $moduleSec = (int) round((float) $pcu->learning_hour * 3600);
                     }
-
-                    $moduleRecognizedSec = ($maxModuleCap > 0) ? min($moduleSec, $remainingModuleQuota) : $moduleSec;
-                    $consumedPlaylistRecognizedSeconds += $moduleRecognizedSec;
-                    $contentAllocations[$cid] = $alreadyAllocated + $moduleRecognizedSec;
                 } elseif ($cu) {
                     $cuDuration = $moduleDuration > 0 ? $moduleDuration : (int) ($cu->duration_seconds ?? 0);
                     $cuActualWatch = (int) ($cu->actual_watch_seconds ?? 0);
@@ -332,29 +364,66 @@ class LearningRecordLearningHourService
                     $cuProgress = (int) ($cu->progress ?? 0);
                     $cuFinished = ((string) $cu->finish === '1' || $cuProgress >= 100);
 
-                    $moduleSec = 0;
-                    if ($cuActualWatch > 0) {
+                    if ($cuFinished && $cuDuration > 0) {
+                        $moduleSec = max($cuDuration, $cuActualWatch);
+                    } elseif ($cuActualWatch > 0) {
                         $moduleSec = $cuActualWatch;
                     } elseif ($cuCurrentTime > 0) {
                         $moduleSec = $cuCurrentTime;
-                    } elseif ($cuFinished && $cuDuration > 0) {
-                        $moduleSec = $cuDuration;
                     } elseif ($cuProgress > 0 && $cuDuration > 0) {
                         $moduleSec = (int) round(($cuProgress / 100) * $cuDuration);
                     } elseif ((float) ($cu->learning_hours ?? 0) > 0) {
                         $moduleSec = (int) round((float) $cu->learning_hours * 3600);
                     }
-
-                    $moduleRecognizedSec = ($maxModuleCap > 0) ? min($moduleSec, $remainingModuleQuota) : $moduleSec;
-                    $consumedPlaylistRecognizedSeconds += $moduleRecognizedSec;
-                    $contentAllocations[$cid] = $alreadyAllocated + $moduleRecognizedSec;
                 }
+
+                $allocRes = $this->allocateContentQuota($cid, $moduleDuration, $moduleSec, $d->content, $contentAllocations);
+                $consumedPlaylistCappedSeconds += $allocRes['capped_seconds'];
+                $consumedPlaylistRecognizedSeconds += $allocRes['recognized_seconds'];
             }
 
-            $result->put($plan->id, $consumedPlaylistRecognizedSeconds);
+            $hoursResult->put($plan->id, round($consumedPlaylistCappedSeconds / 3600, 4));
+            $recognizedSecondsResult->put($plan->id, $consumedPlaylistRecognizedSeconds);
         }
 
-        return $result;
+        return [
+            'hours'              => $hoursResult,
+            'recognized_seconds' => $recognizedSecondsResult,
+        ];
+    }
+
+    /**
+     * Calculate actual consumed learning hours for completed playlists in batch (Zero N+1).
+     *
+     * @param int $userId
+     * @param Collection<int, TrainingPlan> $completedPlaylists
+     * @param array|null $contentAllocations
+     * @return Collection<int, float> Map of [trainingplan_id => actual_learning_hours]
+     */
+    public function calculatePlaylistsBatch(int $userId, Collection $completedPlaylists, ?array &$contentAllocations = null): Collection
+    {
+        return $this->calculatePlaylistsDataBatch($userId, $completedPlaylists, $contentAllocations)['hours'];
+    }
+
+    /**
+     * Single playlist calculation fallback.
+     */
+    public function calculatePlaylistSingle(int $userId, TrainingPlan $plan, ?array &$contentAllocations = null): float
+    {
+        return $this->calculatePlaylistsBatch($userId, collect([$plan]), $contentAllocations)->get($plan->id, 0.0);
+    }
+
+    /**
+     * Calculate Total Recognized Duration in seconds for completed playlists in batch (Zero N+1).
+     *
+     * @param int $userId
+     * @param Collection<int, TrainingPlan> $completedPlaylists
+     * @param array|null $contentAllocations
+     * @return Collection<int, int> Map of [trainingplan_id => recognized_seconds]
+     */
+    public function calculatePlaylistsRecognizedSecondsBatch(int $userId, Collection $completedPlaylists, ?array &$contentAllocations = null): Collection
+    {
+        return $this->calculatePlaylistsDataBatch($userId, $completedPlaylists, $contentAllocations)['recognized_seconds'];
     }
 
     /**
@@ -367,8 +436,8 @@ class LearningRecordLearningHourService
 
     /**
      * Resolve the global recognized duration (in seconds) for a user on a given content.
-     * Combines valid actual watch across Direct (content_users) and all Playlists (playlist_content_users),
-     * capped at maximum 2x original content duration.
+     * Combines valid actual watch across Direct (content_users) and all Playlists (playlist_content_users).
+     * Canonical formula: Recognized Rewatch Duration = MIN(MAX(Total Actual - Duration, 0), Duration).
      *
      * @param int $userId
      * @param int|Content $content
@@ -396,11 +465,6 @@ class LearningRecordLearningHourService
             return 0;
         }
 
-        $maxCapSeconds = $durationSeconds * 2;
-        if ($contentModel->max_actual_watch_seconds !== null) {
-            $maxCapSeconds = min($maxCapSeconds, (int) $contentModel->max_actual_watch_seconds);
-        }
-
         // Direct content actual watch
         $cu = ContentUser::where('user_id', $userId)->where('content_id', $contentModel->id)->first();
         $cuActualSeconds = 0;
@@ -410,12 +474,12 @@ class LearningRecordLearningHourService
             $cuProgress = (int) ($cu->progress ?? 0);
             $cuFinished = ((string) $cu->finish === '1' || $cuProgress >= 100);
 
-            if ($cuActualWatch > 0) {
+            if ($cuFinished && $durationSeconds > 0) {
+                $cuActualSeconds = max($durationSeconds, $cuActualWatch);
+            } elseif ($cuActualWatch > 0) {
                 $cuActualSeconds = $cuActualWatch;
             } elseif ($cuCurrentTime > 0) {
                 $cuActualSeconds = $cuCurrentTime;
-            } elseif ($cuFinished && $durationSeconds > 0) {
-                $cuActualSeconds = $durationSeconds;
             } elseif ($cuProgress > 0 && $durationSeconds > 0) {
                 $cuActualSeconds = (int) round(($cuProgress / 100) * $durationSeconds);
             } elseif ((float) ($cu->learning_hours ?? 0) > 0) {
@@ -434,12 +498,12 @@ class LearningRecordLearningHourService
             $pcuFinished = ((string) $pcu->finish === '1' || $pcuProgress >= 100);
 
             $pcuSec = 0;
-            if ($pcuActualWatch > 0) {
+            if ($pcuFinished && $pcuDuration > 0) {
+                $pcuSec = max($pcuDuration, $pcuActualWatch);
+            } elseif ($pcuActualWatch > 0) {
                 $pcuSec = $pcuActualWatch;
             } elseif ($pcuCurrentTime > 0) {
                 $pcuSec = $pcuCurrentTime;
-            } elseif ($pcuFinished && $pcuDuration > 0) {
-                $pcuSec = $pcuDuration;
             } elseif ($pcuProgress > 0 && $pcuDuration > 0) {
                 $pcuSec = (int) round(($pcuProgress / 100) * $pcuDuration);
             } elseif ((float) ($pcu->learning_hour ?? 0) > 0) {
@@ -450,7 +514,13 @@ class LearningRecordLearningHourService
         }
 
         $totalActualSeconds = $cuActualSeconds + $pcuTotalActualSeconds;
-        $recognizedSeconds = ($maxCapSeconds > 0) ? min($totalActualSeconds, $maxCapSeconds) : $totalActualSeconds;
+
+        $rewatchCap = $durationSeconds;
+        if ($contentModel->max_actual_watch_seconds !== null) {
+            $rewatchCap = min($rewatchCap, max(0, (int) $contentModel->max_actual_watch_seconds - $durationSeconds));
+        }
+
+        $recognizedSeconds = min(max($totalActualSeconds - $durationSeconds, 0), $rewatchCap);
 
         return max(0, $recognizedSeconds);
     }

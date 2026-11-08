@@ -115,7 +115,7 @@ class CourseDurationAndGlobalRecognizedDurationConsistencyTest extends TestCase
         $content->refresh();
         $plan->refresh();
 
-        // Phase 1: User watches 200s directly (1x)
+        // Phase 1: User watches 200s directly (1x First Watch completed, Recognized Rewatch is 0)
         ContentUser::create([
             'user_id'              => $this->user->id,
             'content_id'           => $content->id,
@@ -130,20 +130,21 @@ class CourseDurationAndGlobalRecognizedDurationConsistencyTest extends TestCase
         $recognizedSec = $this->recognizedService->resolveGlobalContentRecognizedSeconds($this->user->id, $content);
         $recognizedDur = $this->recognizedService->resolveGlobalContentRecognizedDuration($this->user->id, $content);
 
-        $this->assertSame(200, $recognizedSec);
-        $this->assertSame('00:03:20', $recognizedDur);
+        // First watch does not generate recognized rewatch: 00:00:00
+        $this->assertSame(0, $recognizedSec);
+        $this->assertSame('00:00:00', $recognizedDur);
 
         // Check Direct View
         $directResponse = $this->actingAs($this->user)->get('/content/' . $content->slug);
         $directResponse->assertOk();
-        $directResponse->assertSee('<span id="contentTotalRecognizedDuration">00:03:20</span>', false);
+        $directResponse->assertSee('<span id="contentTotalRecognizedDuration">00:00:00</span>', false);
 
         // Check Playlist View
         $playlistResponse = $this->actingAs($this->user)->get('/playlist/' . $plan->slug . '/' . $content->slug);
         $playlistResponse->assertOk();
-        $this->assertSame('00:03:20', $playlistResponse->viewData('totalRecognizedDuration'));
+        $this->assertSame('00:00:00', $playlistResponse->viewData('totalRecognizedDuration'));
 
-        // Phase 2: User watches 150s via Playlist (Total actual = 350s < 400s)
+        // Phase 2: User watches 150s via Playlist (Total actual = 350s, Rewatch = 150s)
         PlaylistContentUser::updateOrCreate(
             [
                 'user_id'         => $this->user->id,
@@ -163,28 +164,28 @@ class CourseDurationAndGlobalRecognizedDurationConsistencyTest extends TestCase
         $recognizedSec2 = $this->recognizedService->resolveGlobalContentRecognizedSeconds($this->user->id, $content);
         $recognizedDur2 = $this->recognizedService->resolveGlobalContentRecognizedDuration($this->user->id, $content);
 
-        // 200s + 150s = 350s (00:05:50)
-        $this->assertSame(350, $recognizedSec2);
-        $this->assertSame('00:05:50', $recognizedDur2);
+        // 350s total - 200s first watch quota = 150s (00:02:30)
+        $this->assertSame(150, $recognizedSec2);
+        $this->assertSame('00:02:30', $recognizedDur2);
 
         $directResponse2 = $this->actingAs($this->user)->get('/content/' . $content->slug);
         $directResponse2->assertOk();
-        $directResponse2->assertSee('<span id="contentTotalRecognizedDuration">00:05:50</span>', false);
+        $directResponse2->assertSee('<span id="contentTotalRecognizedDuration">00:02:30</span>', false);
 
-        // Phase 3: User watches another 100s (Total actual = 450s > 400s max cap)
+        // Phase 3: User watches another 100s (Total actual = 450s > 400s max cap, Rewatch capped at 200s)
         $cu = ContentUser::where('user_id', $this->user->id)->where('content_id', $content->id)->first();
         $cu->update(['actual_watch_seconds' => 300]); // 300 + 150 = 450s
 
         $recognizedSec3 = $this->recognizedService->resolveGlobalContentRecognizedSeconds($this->user->id, $content);
         $recognizedDur3 = $this->recognizedService->resolveGlobalContentRecognizedDuration($this->user->id, $content);
 
-        // Hard capped at 400s (00:06:40)
-        $this->assertSame(400, $recognizedSec3);
-        $this->assertSame('00:06:40', $recognizedDur3);
+        // Hard capped at 1x duration rewatch = 200s (00:03:20)
+        $this->assertSame(200, $recognizedSec3);
+        $this->assertSame('00:03:20', $recognizedDur3);
 
         $directResponse3 = $this->actingAs($this->user)->get('/content/' . $content->slug);
         $directResponse3->assertOk();
-        $directResponse3->assertSee('<span id="contentTotalRecognizedDuration">00:06:40</span>', false);
+        $directResponse3->assertSee('<span id="contentTotalRecognizedDuration">00:03:20</span>', false);
     }
 
     /**
@@ -227,8 +228,8 @@ class CourseDurationAndGlobalRecognizedDurationConsistencyTest extends TestCase
         $response->assertOk();
         $response->assertJson([
             'success'                   => true,
-            'total_recognized_seconds'  => 60,
-            'total_recognized_duration' => '00:01:00',
+            'total_recognized_seconds'  => 0,
+            'total_recognized_duration' => '00:00:00',
         ]);
     }
 
@@ -287,8 +288,8 @@ class CourseDurationAndGlobalRecognizedDurationConsistencyTest extends TestCase
         $response->assertOk();
         $response->assertJson([
             'success'                   => true,
-            'total_recognized_seconds'  => 40,
-            'total_recognized_duration' => '00:00:40',
+            'total_recognized_seconds'  => 0,
+            'total_recognized_duration' => '00:00:00',
         ]);
     }
 
@@ -348,12 +349,12 @@ class CourseDurationAndGlobalRecognizedDurationConsistencyTest extends TestCase
         $this->assertSame(40, (int) $pcu->fresh()->progress);
         $this->assertSame('0', (string) $pcu->fresh()->finish);
 
-        // Combined recognized duration: min(240 + 96, 480) = 336s (00:05:36)
+        // Combined recognized duration: min(max(240 + 96 - 240, 0), 240) = 96s (00:01:36)
         $recognizedSec = $this->recognizedService->resolveGlobalContentRecognizedSeconds($this->user->id, $content);
         $recognizedDur = $this->recognizedService->resolveGlobalContentRecognizedDuration($this->user->id, $content);
 
-        $this->assertSame(336, $recognizedSec);
-        $this->assertSame('00:05:36', $recognizedDur);
+        $this->assertSame(96, $recognizedSec);
+        $this->assertSame('00:01:36', $recognizedDur);
     }
 
     /**

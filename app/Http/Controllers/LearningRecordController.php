@@ -212,8 +212,9 @@ class LearningRecordController extends Controller
             ->selectRaw('trainingplan_id, MIN(created_at) as min_created')
             ->pluck('min_created', 'trainingplan_id');
         $contentAllocations = [];
-        $playlistRecognizedSeconds = $this->recordLhService()->calculatePlaylistsRecognizedSecondsBatch($userId, $completedPlaylists, $contentAllocations);
-        $playlistActualHours = $playlistRecognizedSeconds->map(fn (int $seconds) => round($seconds / 3600, 4));
+        $playlistData = $this->recordLhService()->calculatePlaylistsDataBatch($userId, $completedPlaylists, $contentAllocations);
+        $playlistActualHours = $playlistData['hours'];
+        $playlistRecognizedSeconds = $playlistData['recognized_seconds'];
 
         return $this->mergeLearningRecord(
             $this->buildContentRows($completedContents, $cert, $contentAllocations),
@@ -702,12 +703,10 @@ class LearningRecordController extends Controller
             $playlists = $content->relationLoaded('trainingPlans')
                 ? $content->trainingPlans
                 : collect();
-            $recognizedSeconds = $this->recordLhService()->calculateContentRecognizedSeconds($cu, $contentAllocations);
+            $cuData = $this->recordLhService()->calculateContentData($cu, $contentAllocations);
+            $actualHours = $cuData['learning_hours'];
+            $recognizedSeconds = $cuData['recognized_seconds'];
             $formattedRecognized = $this->recordLhService()->formatRecognizedDuration($recognizedSeconds);
-            $actualHours = round($recognizedSeconds / 3600, 4);
-            if ($content && $content->max_learning_hours !== null) {
-                $actualHours = min($actualHours, (float) $content->max_learning_hours);
-            }
             $formattedHours = $this->recordLhService()->formatHours($actualHours);
 
             $isInactive = ($content->active !== 'Active') || !is_null($content->deleted_at);
@@ -1241,6 +1240,9 @@ class LearningRecordController extends Controller
             $record->certificate_institution = $record->certificate_institution ?? ($record->institution ?? '-');
             $record->certificate_issued_date = $record->certificate_issued_date ?? ($record->issued_date ?? '-');
             $record->certificate_expired_date = $record->certificate_expired_date ?? ($record->expired_date ?? '-');
+            $record->recognized_duration = '00:00:00';
+            $record->recognized_duration_seconds = 0;
+            $record->total_recognized_duration = '00:00:00';
 
             return response()->json([
                 'success' => true,
@@ -1265,6 +1267,8 @@ class LearningRecordController extends Controller
 
             if ($plan) {
                 $actualHours = $this->recordLhService()->calculatePlaylist($planId, $userId);
+                $recognizedSeconds = (int) $this->recordLhService()->calculatePlaylistRecognizedSecondsSingle($userId, $plan);
+                $formattedRecognized = $this->recordLhService()->formatRecognizedDuration($recognizedSeconds);
                 return response()->json([
                     'success' => true,
                     'data'    => [
@@ -1294,6 +1298,9 @@ class LearningRecordController extends Controller
                         'duration_seconds'       => (int) ($plan->total_duration_seconds ?? 0),
                         'course_learning_hours'  => $actualHours,
                         'learning_hours'         => $actualHours,
+                        'recognized_duration'         => $formattedRecognized,
+                        'recognized_duration_seconds' => $recognizedSeconds,
+                        'total_recognized_duration'   => $formattedRecognized,
                         'progress'               => 100,
                         'start_date'             => optional($plan->created_at)->format('Y-m-d') ?? '-',
                         'finish_date'            => optional($plan->updated_at)->format('Y-m-d') ?? '-',
@@ -1333,7 +1340,10 @@ class LearningRecordController extends Controller
         }
 
         $content = $contentUser->content;
-        $actualHours = $this->recordLhService()->calculateContent($contentUser);
+        $cuData = $this->recordLhService()->calculateContentData($contentUser);
+        $actualHours = $cuData['learning_hours'];
+        $recognizedSeconds = $cuData['recognized_seconds'];
+        $formattedRecognized = $this->recordLhService()->formatRecognizedDuration($recognizedSeconds);
         $durationSec = DurationFormatter::toSeconds(optional($content)->duration) ?? 0;
         $isFinished = ((int) ($contentUser->progress ?? 0) >= 100 || (int) ($contentUser->finish ?? 0) === 1);
 
@@ -1395,6 +1405,9 @@ class LearningRecordController extends Controller
                 'duration_seconds'       => $durationSec,
                 'course_learning_hours'  => $actualHours,
                 'learning_hours'         => $actualHours,
+                'recognized_duration'         => $formattedRecognized,
+                'recognized_duration_seconds' => $recognizedSeconds,
+                'total_recognized_duration'   => $formattedRecognized,
                 'progress'               => (int) ($contentUser->progress ?? 0),
                 'start_date'             => optional($contentUser->created_at)->format('Y-m-d') ?? '-',
                 'finish_date'            => $isFinished ? optional($contentUser->completed_at ?? $contentUser->updated_at)->format('Y-m-d') : '-',
