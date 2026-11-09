@@ -378,9 +378,9 @@
                     <!-- Template 5: INVALID ID & COURSE TITLE -->
                     <div id="ptkp-tt-content-invalid">
                         <div class="ptkp-tt-box ptkp-tt-minimal text-start">
-                            <div class="ptkp-tt-head fw-bold mb-1">Invalid ID &amp; Course Title Records</div>
+                            <div class="ptkp-tt-head fw-bold mb-1">Invalid Records (Invalid ID &amp; Course Title)</div>
                             <div class="ptkp-tt-desc mb-0">
-                                These records failed mandatory validation and will be safely skipped:
+                                These records contain invalid or incomplete information and cannot be imported until the required data is corrected. These records failed mandatory validation and will be safely skipped:
                                 <ul class="ps-3 mb-0 mt-1" style="font-size: 0.76rem;">
                                     <li><strong>INVALID ID:</strong> Employee ID is empty, not found in LMS users database, or ambiguous.</li>
                                     <li><strong>INVALID COURSE TITLE:</strong> Course Title is empty.</li>
@@ -394,7 +394,7 @@
                         <div class="ptkp-tt-box ptkp-tt-minimal text-start">
                             <div class="ptkp-tt-head fw-bold mb-1">Invalid Company Records</div>
                             <div class="ptkp-tt-desc mb-0">
-                                Discrepancies between Excel company and LMS user profile. In PTKP, this is a non-blocking warning and the record will still be imported with a review tag.
+                                These records contain missing or unsupported company information and cannot be imported under the applicable rules. Discrepancies between Excel company and LMS user profile. In PTKP, this is a non-blocking warning and the record will still be imported with a review tag.
                             </div>
                         </div>
                     </div>
@@ -502,153 +502,147 @@
                 </div>
             </div>
         </div>
-            </div>
-        </div>
 
         <!-- =================================================================== -->
         <!-- STEP 3: IMPORT RECORDS                                              -->
         <!-- =================================================================== -->
-        <div class="card border-0 shadow-sm rounded-4 mb-4" id="ptkp-confirm-card" style="display: none;">
-            <div class="card-header bg-white border-bottom pt-4 pb-3 px-4 rounded-top-4">
+        <div class="card border-0 shadow-sm rounded-3 mb-3" id="ptkp-confirm-card" style="display: none;">
+            <div class="card-header bg-white border-bottom py-2.5 px-3 px-md-3.5 rounded-top-3">
                 <div class="d-flex align-items-center gap-2">
-                    <span class="badge bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 26px; height: 26px; font-size: 0.8rem; background-color: #1e3a8a !important;">3</span>
+                    <span class="badge bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 22px; height: 22px; font-size: 0.72rem; background-color: #1e3a8a !important;">3</span>
                     <div>
-                        <h4 class="card-title fw-bold text-dark mb-0">Import Records</h4>
-                        <div class="text-muted small">Import validated training records into KP-OWL.</div>
+                        <h4 class="card-title fw-bold text-dark mb-0 ptkp-section-title" style="font-size: 14px;">Import Records</h4>
+                        <div class="text-muted extra-small ptkp-supporting-text" style="font-size: 11px;">Import validated training records into KP-OWL.</div>
                     </div>
                 </div>
             </div>
 
-            <div class="card-body p-4 p-md-5">
+            <div class="card-body p-3 p-md-3.5">
                 <!-- Pre-Import Summary & Safeguards -->
-                <div class="pre-import-summary-wrapper mb-4">
+                <div class="pre-import-summary-wrapper mb-3">
                     <!-- Section Header -->
-                    <div class="d-flex align-items-center gap-3 mb-4">
-                        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px; background-color: #eff6ff; color: #1e3a8a; border: 1px solid #bfdbfe;">
-                            <i class="ti ti-clipboard-check fs-1"></i>
+                    <div class="d-flex align-items-center gap-2.5 mb-3">
+                        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px; background-color: #eff6ff; color: #1e3a8a; border: 1px solid #bfdbfe;">
+                            <i class="ti ti-clipboard-check fs-2"></i>
                         </div>
                         <div>
-                            <h4 class="fw-bold text-dark mb-0">Pre-Import Summary &amp; Safeguards</h4>
-                            <div class="text-muted small">Verify exact record counts and database safety guarantees before execution.</div>
+                            <h5 class="fw-bold text-dark mb-0" style="font-size: 13.5px;">Pre-Import Summary &amp; Safeguards</h5>
+                            <div class="text-muted extra-small ptkp-supporting-text" style="font-size: 11px;">Verify exact record counts and database safety guarantees before execution.</div>
                         </div>
                     </div>
 
-                    <!-- Summary Cards (50:50, Equal Height) -->
-                    <div class="row g-4 mb-4">
+                    <!-- Summary Panels (CSS Grid: Equal 50:50 Columns on Desktop) -->
+                    <div class="pre-import-summary-grid mb-3">
                         <!-- Group A: Records to Be Imported (Left Card) -->
-                        <div class="col-12 col-lg-6">
-                            <div class="card border rounded-4 p-4 h-100 pre-import-card pre-import-card-eligible">
-                                <div class="pre-import-header">
-                                    <span class="pre-import-header-icon" style="background-color: #1e3a8a;">
-                                        <i class="ti ti-check"></i>
-                                    </span>
-                                    <div>
-                                        <h5 class="fw-bold text-dark mb-1">Records to Be Imported</h5>
-                                        <p class="text-muted small mb-0">Records that passed validation and are eligible for import.</p>
-                                    </div>
+                        <div class="card border rounded-3 p-3 p-md-3.5 h-100 pre-import-card pre-import-card-eligible">
+                            <div class="pre-import-header">
+                                <span class="pre-import-header-icon" style="background-color: #1e3a8a;">
+                                    <i class="ti ti-check"></i>
+                                </span>
+                                <div>
+                                    <h5 class="fw-bold text-dark mb-0.5" style="font-size: 12.5px;">Records to Be Imported</h5>
+                                    <p class="text-muted mb-0" style="font-size: 10.5px;">Records that passed validation and are eligible for import.</p>
                                 </div>
+                            </div>
 
-                                <div class="pre-import-breakdown">
-                                    <div class="pre-import-row">
-                                        <div class="pre-import-row-label">
-                                            <span class="pre-import-row-icon" style="background-color: #dcfce7; color: #16a34a;"><i class="ti ti-check"></i></span>
-                                            <span>Valid Records</span>
-                                        </div>
-                                        <span class="pre-import-row-count text-success" id="ptkp-step3-valid-count">0</span>
+                            <div class="pre-import-breakdown">
+                                <div class="pre-import-row">
+                                    <div class="pre-import-row-label">
+                                        <span class="pre-import-row-icon" style="background-color: #dcfce7; color: #16a34a;"><i class="ti ti-check"></i></span>
+                                        <span>Valid Records</span>
                                     </div>
-                                    <div class="pre-import-row">
-                                        <div class="pre-import-row-label">
-                                            <span class="pre-import-row-icon" style="background-color: #fef3c7; color: #d97706;"><i class="ti ti-alert-triangle"></i></span>
-                                            <span>Warning Records (Non-blocking)</span>
-                                        </div>
-                                        <span class="pre-import-row-count text-warning" id="ptkp-step3-warning-count">0</span>
-                                    </div>
-                                    <div class="pre-import-row" id="ptkp-step3-invalid-company-eligible-row" style="display: none;">
-                                        <div class="pre-import-row-label">
-                                            <span class="pre-import-row-icon" style="background-color: #ffedd5; color: #ea580c;"><i class="ti ti-building"></i></span>
-                                            <span>Invalid Company (Imported with Review Tag)</span>
-                                        </div>
-                                        <span class="pre-import-row-count text-orange" id="ptkp-step3-invalid-company-count">0</span>
-                                    </div>
+                                    <span class="pre-import-row-count text-success" id="ptkp-step3-valid-count">0</span>
                                 </div>
+                                <div class="pre-import-row">
+                                    <div class="pre-import-row-label">
+                                        <span class="pre-import-row-icon" style="background-color: #fef3c7; color: #d97706;"><i class="ti ti-alert-triangle"></i></span>
+                                        <span>Warning Records (Non-blocking)</span>
+                                    </div>
+                                    <span class="pre-import-row-count text-warning" id="ptkp-step3-warning-count">0</span>
+                                </div>
+                                <div class="pre-import-row" id="ptkp-step3-invalid-company-eligible-row" style="display: none;">
+                                    <div class="pre-import-row-label">
+                                        <span class="pre-import-row-icon" style="background-color: #ffedd5; color: #ea580c;"><i class="ti ti-building"></i></span>
+                                        <span>Invalid Company (Imported with Review Tag)</span>
+                                    </div>
+                                    <span class="pre-import-row-count text-orange" id="ptkp-step3-invalid-company-count">0</span>
+                                </div>
+                            </div>
 
-                                <div class="pre-import-total-box mt-auto">
-                                    <div>
-                                        <div class="pre-import-total-label">Total to Import</div>
-                                        <div class="pre-import-total-desc">Ready to write into database</div>
-                                    </div>
-                                    <div class="pre-import-total-value" id="ptkp-step3-total-to-import">0 Records</div>
+                            <div class="pre-import-total-box mt-auto">
+                                <div>
+                                    <div class="pre-import-total-label">Total to Import</div>
+                                    <div class="pre-import-total-desc">Ready to write into database</div>
                                 </div>
+                                <div class="pre-import-total-value" id="ptkp-step3-total-to-import">0 Records</div>
                             </div>
                         </div>
 
                         <!-- Group B: Records Not to Be Imported (Right Card) -->
-                        <div class="col-12 col-lg-6">
-                            <div class="card border rounded-4 p-4 h-100 pre-import-card pre-import-card-skipped">
-                                <div class="pre-import-header">
-                                    <span class="pre-import-header-icon" style="background-color: #dc2626;">
-                                        <i class="ti ti-ban"></i>
-                                    </span>
-                                    <div>
-                                        <h5 class="fw-bold text-dark mb-1">Records Not Imported</h5>
-                                        <p class="text-muted small mb-0">Records that will be skipped because they failed validation or already exist.</p>
-                                    </div>
+                        <div class="card border rounded-3 p-3 p-md-3.5 h-100 pre-import-card pre-import-card-skipped">
+                            <div class="pre-import-header">
+                                <span class="pre-import-header-icon" style="background-color: #dc2626;">
+                                    <i class="ti ti-ban"></i>
+                                </span>
+                                <div>
+                                    <h5 class="fw-bold text-dark mb-0.5" style="font-size: 12.5px;">Records Not Imported</h5>
+                                    <p class="text-muted mb-0" style="font-size: 10.5px;">Records that will be skipped because they failed validation or already exist.</p>
                                 </div>
+                            </div>
 
-                                <div class="pre-import-breakdown">
-                                    <div class="pre-import-row">
-                                        <div class="pre-import-row-label">
-                                            <span class="pre-import-row-icon" style="background-color: #fee2e2; color: #dc2626;"><i class="ti ti-x"></i></span>
-                                            <span>Invalid Employee ID or Course</span>
-                                        </div>
-                                        <span class="pre-import-row-count text-danger" id="ptkp-step3-invalid-count">0</span>
+                            <div class="pre-import-breakdown">
+                                <div class="pre-import-row">
+                                    <div class="pre-import-row-label">
+                                        <span class="pre-import-row-icon" style="background-color: #fee2e2; color: #dc2626;"><i class="ti ti-x"></i></span>
+                                        <span>Invalid Employee ID or Course</span>
                                     </div>
-                                    <div class="pre-import-row">
-                                        <div class="pre-import-row-label">
-                                            <span class="pre-import-row-icon" style="background-color: #ffedd5; color: #ea580c;"><i class="ti ti-building"></i></span>
-                                            <span>Invalid Company (Skipped)</span>
-                                        </div>
-                                        <span class="pre-import-row-count text-muted" id="ptkp-step3-invalid-company-skipped">0</span>
-                                    </div>
-                                    <div class="pre-import-row">
-                                        <div class="pre-import-row-label">
-                                            <span class="pre-import-row-icon" style="background-color: #f3e8ff; color: #7c3aed;"><i class="ti ti-copy"></i></span>
-                                            <span>Duplicate Records</span>
-                                        </div>
-                                        <span class="pre-import-row-count text-purple" id="ptkp-step3-duplicate-count">0</span>
-                                    </div>
+                                    <span class="pre-import-row-count text-danger" id="ptkp-step3-invalid-count">0</span>
                                 </div>
+                                <div class="pre-import-row">
+                                    <div class="pre-import-row-label">
+                                        <span class="pre-import-row-icon" style="background-color: #ffedd5; color: #ea580c;"><i class="ti ti-building"></i></span>
+                                        <span>Invalid Company (Skipped)</span>
+                                    </div>
+                                    <span class="pre-import-row-count text-muted" id="ptkp-step3-invalid-company-skipped">0</span>
+                                </div>
+                                <div class="pre-import-row">
+                                    <div class="pre-import-row-label">
+                                        <span class="pre-import-row-icon" style="background-color: #f3e8ff; color: #7c3aed;"><i class="ti ti-copy"></i></span>
+                                        <span>Duplicate Records</span>
+                                    </div>
+                                    <span class="pre-import-row-count text-purple" id="ptkp-step3-duplicate-count">0</span>
+                                </div>
+                            </div>
 
-                                <div class="pre-import-total-box mt-auto">
-                                    <div>
-                                        <div class="pre-import-total-label">Total Not Imported</div>
-                                        <div class="pre-import-total-desc">Safely skipped to prevent bad data</div>
-                                    </div>
-                                    <div class="pre-import-total-value" id="ptkp-step3-total-not-imported">0 Records</div>
+                            <div class="pre-import-total-box mt-auto">
+                                <div>
+                                    <div class="pre-import-total-label">Total Not Imported</div>
+                                    <div class="pre-import-total-desc">Safely skipped to prevent bad data</div>
                                 </div>
+                                <div class="pre-import-total-value" id="ptkp-step3-total-not-imported">0 Records</div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Safeguard Notice Banner -->
                     <div class="pre-import-safeguard-banner mb-0">
-                        <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px; background-color: #e0f2fe; color: #0284c7;">
-                            <i class="ti ti-shield-check fs-1"></i>
+                        <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 34px; height: 34px; background-color: #e0f2fe; color: #0284c7;">
+                            <i class="ti ti-shield-check fs-2"></i>
                         </div>
-                        <div class="small lh-base text-dark">
+                        <div class="small lh-base text-dark" style="font-size: 11px;">
                             <strong class="text-dark">Database Safety Guarantee:</strong> Only records that pass validation will be imported into KP-OWL. Existing enrolled participants and duplicate entries will not be overwritten.
                         </div>
                     </div>
                 </div>
 
                 <!-- STEP 3 NAVIGATION BUTTONS: Back, Confirm & Import -->
-                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 pt-4 border-top">
-                    <button type="button" class="btn btn-outline-secondary rounded-3 px-4 py-2.5 d-inline-flex align-items-center gap-2 fw-medium" id="ptkp-btn-back-to-step2">
-                        <i class="ti ti-arrow-left fs-2"></i>
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2.5 border-top">
+                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-3 px-3 py-1.5 d-inline-flex align-items-center gap-1.5" id="ptkp-btn-back-to-step2" style="font-size: 11.5px;">
+                        <i class="ti ti-arrow-left"></i>
                         <span>Back</span>
                     </button>
-                    <button type="button" class="btn btn-primary btn-confirm-import-darkblue rounded-3 px-4 py-2.5 d-inline-flex align-items-center gap-2 fw-semibold" id="ptkp-btn-confirm" disabled>
-                        <i class="ti ti-check fs-2"></i>
+                    <button type="button" class="btn btn-sm btn-primary btn-confirm-import-darkblue rounded-3 px-3.5 py-1.5 d-inline-flex align-items-center gap-1.5" id="ptkp-btn-confirm" disabled style="background-color: #1e3a8a; border-color: #1e3a8a; font-size: 11.5px;">
+                        <i class="ti ti-check"></i>
                         <span>Confirm &amp; Import (<span id="ptkp-btn-confirm-count">0</span> Records)</span>
                     </button>
                 </div>
@@ -823,8 +817,6 @@
                     </div>
                 </div>
 
-            </div>
-        </div>
             </div>
         </div>
     </div>

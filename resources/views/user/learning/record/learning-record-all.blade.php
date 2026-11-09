@@ -918,7 +918,8 @@
                             @php
                                 $allSortAttRaw = $row['attendance_status'] ?? $row['attendance'] ?? 'No';
                                 $allSortAtt = ($allSortAttRaw === true || $allSortAttRaw === 1 || in_array(strtolower(trim((string) $allSortAttRaw)), ['1', 'true', 'present', 'yes'], true)) ? 'yes' : 'no';
-                                $allSortScore = $row['score'] ?? $row['assessment_score'] ?? '';
+                                $allSortScoreRaw = $row['score'] ?? $row['assessment_score'] ?? null;
+                                $allSortScore = ($allSortScoreRaw !== null && $allSortScoreRaw !== '' && is_numeric($allSortScoreRaw)) ? (string) $allSortScoreRaw : '';
                                 $allSortCert = (($row['has_certificate'] ?? false) || ($row['cert_state'] ?? '') === 'ready') ? 'ready' : 'none';
                                 $allRowType = ($row['source'] ?? '') === 'offline' ? '-' : (string) ($row['type'] ?? '-');
                             @endphp
@@ -1005,7 +1006,7 @@
                                         <span class="badge bg-blue-lt text-blue learning-record-badge">Content</span>
                                     @else
                                         <span class="badge bg-secondary-lt text-secondary learning-record-badge">
-                                            {{ $row['category'] ?: 'â€”' }}
+                                            {{ $row['category'] ?: '-' }}
                                         </span>
                                     @endif
                                 </td>
@@ -1072,22 +1073,23 @@
                                     <div class="d-flex flex-column align-items-center justify-content-center text-center">
                                         @php
                                             $allScoreVal = $row['score'] ?? $row['assessment_score'] ?? null;
+                                            $hasScore = $allScoreVal !== null && $allScoreVal !== '' && is_numeric($allScoreVal);
                                         @endphp
-                                        @if ($allScoreVal !== null)
+                                        @if ($hasScore)
                                             @php
                                                 $allMinScore = (float) ($row['min_score'] ?? 70);
                                                 $allPassed = (float) $allScoreVal >= $allMinScore;
                                             @endphp
                                             @if ($allPassed)
                                                 <span class="badge rounded-pill learning-record-badge learning-score-pill" style="background-color: #dcfce7; color: #15803d; font-weight: 600;">Passed</span>
-                                                <div class="small fw-semibold mt-1" style="color: #15803d;">Score : {{ $allScoreVal ?? '-' }}</div>
+                                                <div class="small fw-semibold mt-1" style="color: #15803d;">Score : {{ $allScoreVal !== null && $allScoreVal !== '' ? $allScoreVal : '-' }}</div>
                                             @else
                                                 <span class="badge bg-red-lt text-red learning-record-badge learning-score-pill">FAILED</span>
-                                                <div class="small text-danger mt-1">Score : {{ $allScoreVal ?? '-' }}</div>
+                                                <div class="small text-danger mt-1">Score : {{ $allScoreVal !== null && $allScoreVal !== '' ? $allScoreVal : '-' }}</div>
                                                 <div class="small text-danger">Passing Grade : {{ (int) $allMinScore }}</div>
                                             @endif
                                         @else
-                                            <span class="learning-score-empty-pill">â€”</span>
+                                            <span class="learning-score-empty-pill">-</span>
                                         @endif
                                     </div>
                                 </td>
@@ -1167,7 +1169,7 @@
             <div class="modal-header border-bottom py-3 px-4">
                 <h3 class="modal-title fw-semibold d-flex align-items-center gap-2 mb-0" id="recordAllMoreFilterModalLabel" style="font-size: 1.15rem;">
                     <i class="ti ti-adjustments-horizontal text-primary" style="font-size: 1.35rem;"></i>
-                    <span>More Filters â€” All Record</span>
+                    <span>More Filters - All Record</span>
                 </h3>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -1203,7 +1205,7 @@
                                 <select class="form-select record-filter-select rounded-3" name="record_filter_status" id="recordAllModalStatus">
                                     <option value="all" {{ $filterStatus === 'all' ? 'selected' : '' }}>All Status</option>
                                     <option value="completed" {{ $filterStatus === 'completed' ? 'selected' : '' }}>Completed (100%)</option>
-                                    <option value="in_progress" {{ $filterStatus === 'in_progress' ? 'selected' : '' }}>In Progress (1% â€“ 99%)</option>
+                                    <option value="in_progress" {{ $filterStatus === 'in_progress' ? 'selected' : '' }}>In Progress (1% - 99%)</option>
                                     <option value="not_started" {{ $filterStatus === 'not_started' ? 'selected' : '' }}>Not Started (0%)</option>
                                 </select>
                             </div>

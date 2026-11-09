@@ -735,7 +735,8 @@
                             @php
                                 $offSortAttRaw = $row['attendance_status'] ?? $row['attendance'] ?? 'No';
                                 $offSortAtt = ($offSortAttRaw === true || $offSortAttRaw === 1 || in_array(strtolower(trim((string) $offSortAttRaw)), ['1', 'true', 'present', 'yes'], true)) ? 'yes' : 'no';
-                                $offSortScore = $row['score'] ?? $row['assessment_score'] ?? '';
+                                $offSortScoreRaw = $row['score'] ?? $row['assessment_score'] ?? null;
+                                $offSortScore = ($offSortScoreRaw !== null && $offSortScoreRaw !== '' && is_numeric($offSortScoreRaw)) ? (string) $offSortScoreRaw : '';
                                 $offSortCert = (($row['has_certificate'] ?? false) || ($row['cert_state'] ?? '') === 'ready') ? 'ready' : 'none';
                             @endphp
                             <tr class="record-row record-row-offline"
@@ -781,7 +782,7 @@
                                 </td>
                                 <td class="text-center">
                                     <span class="badge bg-secondary-lt text-secondary learning-record-badge">
-                                        {{ $row['category'] ?: 'â€”' }}
+                                        {{ $row['category'] ?: '-' }}
                                     </span>
                                 </td>
                                 <td class="text-center">
@@ -838,18 +839,19 @@
                                     <div class="d-flex flex-column align-items-center justify-content-center text-center">
                                         @php
                                             $offScoreVal = $row['score'] ?? $row['assessment_score'] ?? null;
+                                            $hasOffScore = $offScoreVal !== null && $offScoreVal !== '' && is_numeric($offScoreVal);
                                         @endphp
-                                        @if ($offScoreVal !== null)
+                                        @if ($hasOffScore)
                                             @php
                                                 $offMinScore = (float) ($row['min_score'] ?? 70);
                                                 $offPassed = (float) $offScoreVal >= $offMinScore;
                                             @endphp
                                             @if ($offPassed)
                                                 <span class="badge rounded-pill learning-record-badge learning-score-pill" style="background-color: #dcfce7; color: #15803d; font-weight: 600;">Passed</span>
-                                                <div class="small fw-semibold mt-1" style="color: #15803d;">Score : {{ $offScoreVal ?? '-' }}</div>
+                                                <div class="small fw-semibold mt-1" style="color: #15803d;">Score : {{ $offScoreVal !== null && $offScoreVal !== '' ? $offScoreVal : '-' }}</div>
                                             @else
                                                 <span class="badge bg-red-lt text-red learning-record-badge learning-score-pill">FAILED</span>
-                                                <div class="small text-danger mt-1">Score : {{ $offScoreVal ?? '-' }}</div>
+                                                <div class="small text-danger mt-1">Score : {{ $offScoreVal !== null && $offScoreVal !== '' ? $offScoreVal : '-' }}</div>
                                                 <div class="small text-danger">Passing Grade : {{ (int) $offMinScore }}</div>
                                             @endif
                                         @else
@@ -921,7 +923,7 @@
             <div class="modal-header border-0 pb-0">
                 <h3 class="modal-title fw-semibold d-flex align-items-center gap-1" id="recordOfflineMoreFilterModalLabel" style="font-size: 1.1rem;">
                     <i class="ti ti-adjustments-horizontal text-primary me-1"></i>
-                    <span>More Filters â€” Offline Record</span>
+                    <span>More Filters - Offline Record</span>
                 </h3>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>

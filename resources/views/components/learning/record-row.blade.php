@@ -28,7 +28,7 @@
         : (str_contains($rawReqLower, 'mandatory') ? 'mandatory' : 'optional');
     $progressValue = (int) ($row['progress'] ?? 0);
     $scoreVal = $row['score'] ?? $row['assessment_score'] ?? null;
-    $hasScore = ($row['assessment_required'] ?? false) && !is_null($scoreVal);
+    $hasScore = ($row['assessment_required'] ?? false) && $scoreVal !== null && $scoreVal !== '' && is_numeric($scoreVal);
     $scorePassed = $hasScore && ($scoreVal >= ($row['min_score'] ?? 0));
     $learningStatus = $progressValue >= 100
         ? ($scorePassed ? 'completed passed' : ($hasScore ? 'completed failed' : 'completed'))
