@@ -32,6 +32,22 @@ class ExcelDateTimeParser
     ];
 
     /**
+     * In-process text placeholders for pending dates (e.g. Certificate dates in progress).
+     */
+    public const IN_PROCESS_PLACEHOLDERS = [
+        'on-process',
+        'on process',
+        'on_process',
+        'in-process',
+        'in process',
+        'in_process',
+        'process',
+        'proses',
+        'sedang proses',
+        'dalam proses',
+    ];
+
+    /**
      * Parse and normalize date into 'YYYY-MM-DD' string, or return null if empty/invalid.
      */
     public static function parseDate($value): ?string
@@ -75,13 +91,26 @@ class ExcelDateTimeParser
         }
 
         $str = is_scalar($value) ? trim((string) $value) : '';
-        if ($str === '' || in_array(strtolower($str), self::EMPTY_PLACEHOLDERS, true)) {
+        $lowerStr = strtolower($str);
+        if ($str === '' || in_array($lowerStr, self::EMPTY_PLACEHOLDERS, true)) {
             return [
-                'valid'    => true,
-                'value'    => null,
-                'is_empty' => true,
-                'error'    => null,
-                'raw'      => $value,
+                'valid'       => true,
+                'value'       => null,
+                'is_empty'    => true,
+                'is_process'  => false,
+                'error'       => null,
+                'raw'         => $value,
+            ];
+        }
+
+        if (in_array($lowerStr, self::IN_PROCESS_PLACEHOLDERS, true)) {
+            return [
+                'valid'       => true,
+                'value'       => null,
+                'is_empty'    => false,
+                'is_process'  => true,
+                'error'       => null,
+                'raw'         => $value,
             ];
         }
 
@@ -287,13 +316,26 @@ class ExcelDateTimeParser
         }
 
         $str = is_scalar($value) ? trim((string) $value) : '';
-        if ($str === '' || in_array(strtolower($str), self::EMPTY_PLACEHOLDERS, true)) {
+        $lowerStr = strtolower($str);
+        if ($str === '' || in_array($lowerStr, self::EMPTY_PLACEHOLDERS, true)) {
             return [
-                'valid'    => true,
-                'value'    => null,
-                'is_empty' => true,
-                'error'    => null,
-                'raw'      => $value,
+                'valid'       => true,
+                'value'       => null,
+                'is_empty'    => true,
+                'is_process'  => false,
+                'error'       => null,
+                'raw'         => $value,
+            ];
+        }
+
+        if (in_array($lowerStr, self::IN_PROCESS_PLACEHOLDERS, true)) {
+            return [
+                'valid'       => true,
+                'value'       => null,
+                'is_empty'    => false,
+                'is_process'  => true,
+                'error'       => null,
+                'raw'         => $value,
             ];
         }
 

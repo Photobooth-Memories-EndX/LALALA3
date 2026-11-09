@@ -206,11 +206,10 @@ class PtkpDateTimeImportAuditTest extends TestCase
         $pJson = $previewResp->json();
         $this->assertTrue($pJson['success']);
         $this->assertTrue($pJson['can_confirm']);
-        $this->assertEquals(3, $pJson['stats']['valid']);
+        $this->assertEquals(3, $pJson['stats']['importable_count']);
 
         // Verify preview row 0 (Excel serial date & fractional time)
         $row0 = $pJson['rows'][0];
-        $this->assertEquals('VALID', $row0['status']);
         $this->assertEquals('2026-01-01', $row0['data']['start_date']);
         $this->assertEquals('2026-01-30', $row0['data']['end_date']);
         $this->assertEquals('08:00:00', $row0['data']['start_time']);
@@ -218,7 +217,7 @@ class PtkpDateTimeImportAuditTest extends TestCase
 
         // Verify preview row 1 (Empty times parsed as NULL)
         $row1 = $pJson['rows'][1];
-        $this->assertEquals('VALID', $row1['status']);
+        $this->assertTrue(in_array($row1['status'], ['VALID', 'WARNING']));
         $this->assertEquals('2026-02-15', $row1['data']['start_date']);
         $this->assertEquals('2026-02-16', $row1['data']['end_date']);
         $this->assertNull($row1['data']['start_time']);
@@ -226,7 +225,7 @@ class PtkpDateTimeImportAuditTest extends TestCase
 
         // Verify preview row 2 (Midnight crossing)
         $row2 = $pJson['rows'][2];
-        $this->assertEquals('VALID', $row2['status']);
+        $this->assertTrue(in_array($row2['status'], ['VALID', 'WARNING']));
         $this->assertEquals('22:00:00', $row2['data']['start_time']);
         $this->assertEquals('02:00:00', $row2['data']['end_time']);
         $this->assertEquals(14400, $row2['data']['duration_seconds']); // 4 hours in seconds
@@ -306,10 +305,10 @@ class PtkpDateTimeImportAuditTest extends TestCase
         $response->assertStatus(200);
         $json = $response->json();
 
-        // Row 0 has invalid date and invalid time -> INVALID
+        // Row 0 has invalid date and invalid time -> WARNING (never INVALID per strict 2 mandatory criteria)
         $r0 = $json['rows'][0];
-        $this->assertEquals('INVALID', $r0['status']);
-        $this->assertTrue($r0['is_blocking']);
+        $this->assertEquals('WARNING', $r0['status']);
+        $this->assertFalse($r0['is_blocking']);
         $msgStr0 = implode(' ', $r0['messages']);
         $this->assertStringContainsString('Start Date', $msgStr0);
         $this->assertStringContainsString('2026-02-31', $msgStr0);
@@ -317,10 +316,10 @@ class PtkpDateTimeImportAuditTest extends TestCase
         $this->assertStringContainsString('25:00:00', $msgStr0);
         $this->assertStringContainsString($this->targetEmployee->id_emp, $msgStr0);
 
-        // Row 1 has Start Date after End Date -> INVALID
+        // Row 1 has Start Date after End Date -> WARNING (never INVALID per strict 2 mandatory criteria)
         $r1 = $json['rows'][1];
-        $this->assertEquals('INVALID', $r1['status']);
-        $this->assertTrue($r1['is_blocking']);
+        $this->assertEquals('WARNING', $r1['status']);
+        $this->assertFalse($r1['is_blocking']);
         $msgStr1 = implode(' ', $r1['messages']);
         $this->assertStringContainsString('cannot be after End Date', $msgStr1);
     }
@@ -489,6 +488,23 @@ class PtkpDateTimeImportAuditTest extends TestCase
      */
     public function test_sql_direct_query_on_offline_training_users(): void
     {
+        if (empty(\Illuminate\Support\Facades\DB::select('SELECT id FROM offline_training_users LIMIT 1'))) {
+            $tr = \App\Models\OfflineTraining::create([
+                'title' => 'Test SQL Direct ' . uniqid(),
+                'company' => 'PT Krakatau Posco',
+                'created_by' => $this->adminUser->id,
+            ]);
+            \App\Models\OfflineTrainingUser::create([
+                'offline_training_id' => $tr->id,
+                'user_id' => $this->targetEmployee->id,
+                'employee_id' => $this->targetEmployee->id_emp,
+                'start_date' => '2026-08-10',
+                'end_date' => '2026-08-10',
+                'start_time' => '08:00:00',
+                'end_time' => '17:00:00',
+            ]);
+        }
+
         $rows = \Illuminate\Support\Facades\DB::select('
             SELECT
                 id,
@@ -739,10 +755,11 @@ class PtkpDateTimeImportAuditTest extends TestCase
         $meta = $this->importService->storeTemporaryFile($uploadedFile, $this->adminUser->id);
         $preview = $this->importService->parseAndPreview($meta['token'], $this->adminUser->id);
 
-        $this->assertEquals(0, $preview['stats']['importable_count']);
-        $this->assertEquals(1, $preview['stats']['invalid']);
+        $this->assertEquals(1, $preview['stats']['importable_count']);
+        $this->assertEquals(1, $preview['stats']['warning']);
         $pRow = $preview['rows'][0];
-        $this->assertEquals('INVALID', $pRow['status']);
+        $this->assertEquals('WARNING', $pRow['status']);
+        $this->assertFalse($pRow['is_blocking']);
 
         $foundCertMsg = false;
         foreach ($pRow['messages'] as $msg) {

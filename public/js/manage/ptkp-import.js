@@ -249,8 +249,10 @@
                 if (isRowInvalidCourse(r)) countInvalidCourse++;
             }
         });
-        $('#ptkp-kpi-invalid-id-count').text(countInvalidId);
-        $('#ptkp-kpi-invalid-course-count').text(countInvalidCourse);
+        const finalIdCount = (stats.invalid_id_count !== undefined) ? stats.invalid_id_count : countInvalidId;
+        const finalCourseCount = (stats.invalid_course_count !== undefined) ? stats.invalid_course_count : countInvalidCourse;
+        $('#ptkp-kpi-invalid-id-count').text(finalIdCount);
+        $('#ptkp-kpi-invalid-course-count').text(finalCourseCount);
         if ((stats.invalid || 0) > 0) {
             $('#ptkp-kpi-invalid-subinfo').show();
         } else {
@@ -607,12 +609,24 @@
 
     function isRowInvalidId(row) {
         if (!row) return false;
+        if (typeof row.is_invalid_id === 'boolean') {
+            return row.is_invalid_id;
+        }
+        if (row.invalid_type === 'INVALID_ID' || row.invalid_type === 'INVALID_ID_AND_COURSE') {
+            return true;
+        }
+        if (row.status !== 'INVALID') return false;
         const empId = row.employee_id !== undefined && row.employee_id !== null ? String(row.employee_id).trim() : '';
         if (empId === '') return true;
         if (row.messages && Array.isArray(row.messages)) {
             for (let i = 0; i < row.messages.length; i++) {
                 const m = String(row.messages[i]).toLowerCase();
-                if (m.indexOf('employee id') !== -1 || m.indexOf('user accounts') !== -1 || m.indexOf('not found in lms') !== -1 || m.indexOf('matches multiple users') !== -1 || m.indexOf('ambiguous identifier') !== -1) {
+                if (m.indexOf('employee id is empty') !== -1 ||
+                    m.indexOf('employee id is required') !== -1 ||
+                    m.indexOf('was not found in lms') !== -1 ||
+                    m.indexOf('not found or ambiguous in lms') !== -1 ||
+                    m.indexOf('matches multiple users') !== -1 ||
+                    m.indexOf('ambiguous identifier') !== -1) {
                     return true;
                 }
             }
@@ -622,12 +636,22 @@
 
     function isRowInvalidCourse(row) {
         if (!row) return false;
+        if (typeof row.is_invalid_course === 'boolean') {
+            return row.is_invalid_course;
+        }
+        if (row.invalid_type === 'INVALID_COURSE' || row.invalid_type === 'INVALID_ID_AND_COURSE') {
+            return true;
+        }
+        if (row.status !== 'INVALID') return false;
         const course = row.course_name !== undefined && row.course_name !== null ? String(row.course_name).trim() : '';
-        if (course === '') return true;
+        if (course === '' || course === '-') return true;
         if (row.messages && Array.isArray(row.messages)) {
             for (let i = 0; i < row.messages.length; i++) {
                 const m = String(row.messages[i]).toLowerCase();
-                if (m.indexOf('course title') !== -1 || m.indexOf('course name') !== -1) {
+                if (m.indexOf('course title is required') !== -1 ||
+                    m.indexOf('course title cannot be empty') !== -1 ||
+                    m.indexOf('course title not found') !== -1 ||
+                    m.indexOf('ambiguous in offline trainings') !== -1) {
                     return true;
                 }
             }
@@ -677,17 +701,28 @@
             pageItems.forEach(function (row, idx) {
                 const globalIndex = startIdx + idx;
                 let msgsHtml = '';
-                const warningReasons = (row.warning_reasons && row.warning_reasons.length > 0)
-                    ? row.warning_reasons
-                    : (row.empty_warning_fields && row.empty_warning_fields.length > 0)
-                        ? row.empty_warning_fields.map(function (f) { return f + ' is empty'; })
-                        : [];
 
-                if (warningReasons.length > 0) {
-                    const warningText = 'WARNING: ' + warningReasons.join('; ');
-                    msgsHtml = '<div class="ptkp-row-msg text-warning fw-semibold" title="' + escapeHtml(warningText) + '">' +
-                        '<i class="ti ti-alert-triangle me-1"></i><span class="fw-bold">WARNING:</span> ' + escapeHtml(warningReasons.join('; ')) +
-                        '</div>';
+                // Explicitly format Validation Details strictly according to row.status
+                if (row.status === 'VALID') {
+                    msgsHtml = '<div class="ptkp-row-msg text-muted" style="font-size: 10.5px;"><i class="ti ti-check text-success me-1"></i>Row is valid and ready for import.</div>';
+                } else if (row.status === 'WARNING') {
+                    const warningReasons = (row.warning_reasons && row.warning_reasons.length > 0)
+                        ? row.warning_reasons
+                        : (row.empty_warning_fields && row.empty_warning_fields.length > 0)
+                            ? row.empty_warning_fields.map(function (f) { return f + ' is empty'; })
+                            : (row.warnings && row.warnings.length > 0 ? row.warnings : []);
+
+                    if (warningReasons.length > 0) {
+                        const rawText = warningReasons.join('; ');
+                        const warningText = rawText.indexOf('WARNING:') === 0 ? rawText : ('WARNING: ' + rawText);
+                        msgsHtml = '<div class="ptkp-row-msg text-warning fw-semibold" title="' + escapeHtml(warningText) + '">' +
+                            '<i class="ti ti-alert-triangle me-1"></i>' + escapeHtml(warningText) +
+                            '</div>';
+                    } else if (row.messages && row.messages.length) {
+                        msgsHtml = '<div class="ptkp-row-msg text-warning fw-semibold"><i class="ti ti-alert-triangle me-1"></i>' + escapeHtml(row.messages[0]) + '</div>';
+                    } else {
+                        msgsHtml = '<div class="ptkp-row-msg text-warning fw-semibold"><i class="ti ti-alert-triangle me-1"></i>Non-blocking warning detected.</div>';
+                    }
 
                     if (row.company_mismatch) {
                         const companyMismatchMsg = (row.messages || []).find(function (m) {
@@ -695,21 +730,61 @@
                         }) || 'Company mismatch detected.';
                         msgsHtml += '<div class="ptkp-row-msg text-muted mt-0.5" style="font-size: 10px;" title="' + escapeHtml(companyMismatchMsg) + '"><i class="ti ti-building me-1"></i>' + escapeHtml(companyMismatchMsg) + '</div>';
                     }
-                } else if (row.status === 'WARNING' || row.status === 'INVALID COMPANY') {
-                    if (row.messages && row.messages.length) {
-                        msgsHtml = '<div class="ptkp-row-msg text-warning fw-semibold"><i class="ti ti-alert-triangle me-1"></i>' + escapeHtml(row.messages[0]) + '</div>';
-                        if (row.messages.length > 1) {
-                            msgsHtml += '<div class="text-muted mt-0.5" style="font-size: 10px;">' + escapeHtml(row.messages.slice(1).join('; ')) + '</div>';
-                        }
+                } else if (row.status === 'INVALID') {
+                    // Mandatory blocking errors (Strictly and exclusively Employee ID and Course Title)
+                    let blockingErrors = [];
+                    if (row.id_errors && Array.isArray(row.id_errors) && row.id_errors.length > 0) {
+                        blockingErrors = blockingErrors.concat(row.id_errors);
                     }
-                } else if (row.status === 'VALID') {
-                    msgsHtml = '<div class="ptkp-row-msg text-muted" style="font-size: 10.5px;"><i class="ti ti-check text-success me-1"></i>Row is valid and ready for import.</div>';
-                } else if (row.messages && row.messages.length) {
-                    msgsHtml = '<div class="ptkp-row-msg text-muted">' + escapeHtml(row.messages[0]);
-                    if (row.messages.length > 1) {
-                        msgsHtml += ' <span class="badge bg-light text-secondary border px-1" style="font-size: 9.5px;">+' + (row.messages.length - 1) + '</span>';
+                    if (row.course_errors && Array.isArray(row.course_errors) && row.course_errors.length > 0) {
+                        blockingErrors = blockingErrors.concat(row.course_errors);
+                    }
+                    if (blockingErrors.length === 0 && row.blocking_errors && Array.isArray(row.blocking_errors) && row.blocking_errors.length > 0) {
+                        blockingErrors = row.blocking_errors.filter(function (m) {
+                            const lower = String(m).toLowerCase();
+                            return lower.indexOf('warning:') === -1 && lower.indexOf('company mismatch') === -1;
+                        });
+                    }
+                    if (blockingErrors.length === 0 && row.errors && Array.isArray(row.errors) && row.errors.length > 0) {
+                        blockingErrors = row.errors.filter(function (m) {
+                            const lower = String(m).toLowerCase();
+                            return lower.indexOf('warning:') === -1 && lower.indexOf('company mismatch') === -1;
+                        });
+                    }
+                    if (blockingErrors.length === 0 && row.messages && Array.isArray(row.messages)) {
+                        blockingErrors = row.messages.filter(function (m) {
+                            const lower = String(m).toLowerCase();
+                            return (lower.indexOf('employee id') !== -1 || lower.indexOf('course title') !== -1 || lower.indexOf('course name') !== -1)
+                                && lower.indexOf('warning:') === -1 && lower.indexOf('company mismatch') === -1 && lower.indexOf('ready for import') === -1;
+                        });
+                    }
+                    if (blockingErrors.length === 0) {
+                        blockingErrors = ['Validation failed for Employee ID or Course Title.'];
+                    }
+
+                    const primaryError = blockingErrors[0];
+                    msgsHtml = '<div class="ptkp-row-msg text-danger fw-semibold" title="' + escapeHtml(primaryError) + '"><i class="ti ti-alert-circle me-1"></i>' + escapeHtml(primaryError);
+                    if (blockingErrors.length > 1) {
+                        msgsHtml += ' <span class="badge bg-light text-secondary border px-1" style="font-size: 9.5px;">+' + (blockingErrors.length - 1) + '</span>';
+                        msgsHtml += '<div class="text-muted mt-0.5 fw-normal" style="font-size: 10px;">' + escapeHtml(blockingErrors.slice(1).join('; ')) + '</div>';
                     }
                     msgsHtml += '</div>';
+                } else if (row.status === 'DUPLICATE') {
+                    const dupMsg = (row.messages || []).find(function (m) {
+                        return m.toLowerCase().indexOf('duplicate') !== -1;
+                    }) || (row.duplicate_reason || 'Duplicate record detected and will be skipped.');
+                    msgsHtml = '<div class="ptkp-row-msg text-purple fw-semibold" style="color: #6b21a8;" title="' + escapeHtml(dupMsg) + '">' +
+                        '<i class="ti ti-copy me-1"></i>' + escapeHtml(dupMsg) +
+                        '</div>';
+                } else if (row.status === 'INVALID COMPANY') {
+                    const companyMsg = (row.messages || []).find(function (m) {
+                        return m.toLowerCase().indexOf('company mismatch') !== -1;
+                    }) || 'Company mismatch detected.';
+                    msgsHtml = '<div class="ptkp-row-msg text-warning fw-semibold" style="color: #b45309;" title="' + escapeHtml(companyMsg) + '">' +
+                        '<i class="ti ti-building me-1"></i>' + escapeHtml(companyMsg) +
+                        '</div>';
+                } else {
+                    msgsHtml = '<div class="ptkp-row-msg text-muted">' + escapeHtml(row.status || '-') + '</div>';
                 }
 
                 const rowData = row.data || {};
@@ -846,7 +921,17 @@
         $('#modal-inspect-status').html(getStatusBadge(row.status, row));
 
         let msgsHtml = '';
-        if (row.status === 'DUPLICATE') {
+
+        if (row.status === 'VALID') {
+            msgsHtml = `
+                <div class="alert alert-success border-0 rounded-3 small mb-3 py-2 px-3" style="background-color: #f0fdf4; border: 1px solid #bbf7d0 !important; color: #166534;">
+                    <div class="d-flex align-items-center gap-2 fw-semibold">
+                        <i class="ti ti-check fs-4 text-success"></i>
+                        <span>Row is valid and ready for import. All mandatory requirements and template checks passed.</span>
+                    </div>
+                </div>
+            `;
+        } else if (row.status === 'DUPLICATE') {
             const isDb = row.duplicate_source === 'database';
             const dupSourceLabel = isDb
                 ? `Existing Database (Participant ID: ${escapeHtml(String(row.matched_record_id || '-'))})`
@@ -876,80 +961,172 @@
                     </div>
                 </div>
             `;
-        }
-        if ((row.empty_warning_fields && row.empty_warning_fields.length > 0) || (row.empty_warning_details && row.empty_warning_details.length > 0)) {
-            let warningRowsHtml = '';
-            const details = (row.empty_warning_details && row.empty_warning_details.length > 0)
-                ? row.empty_warning_details
-                : (row.empty_warning_fields || []).map(function (f) {
-                    return {
-                        field: f,
-                        display_value: 'Empty'
-                    };
+        } else if (row.status === 'INVALID') {
+            // Blocking validation errors (Strictly and exclusively Employee ID and Course Title - NEVER format or warning strings!)
+            let blockingErrors = [];
+            if (row.id_errors && Array.isArray(row.id_errors) && row.id_errors.length > 0) {
+                blockingErrors = blockingErrors.concat(row.id_errors);
+            }
+            if (row.course_errors && Array.isArray(row.course_errors) && row.course_errors.length > 0) {
+                blockingErrors = blockingErrors.concat(row.course_errors);
+            }
+            if (blockingErrors.length === 0 && row.blocking_errors && Array.isArray(row.blocking_errors) && row.blocking_errors.length > 0) {
+                blockingErrors = row.blocking_errors.filter(function (m) {
+                    const lower = String(m).toLowerCase();
+                    return lower.indexOf('warning:') === -1 && lower.indexOf('company mismatch') === -1;
                 });
-
-            details.forEach(function (item) {
-                const displayVal = item.display_value || 'Empty';
-                warningRowsHtml += `
-                    <tr>
-                        <td class="fw-semibold text-dark">${escapeHtml(item.field)}</td>
-                        <td><span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle font-monospace">${escapeHtml(displayVal)}</span></td>
-                    </tr>
-                `;
-            });
+            }
+            if (blockingErrors.length === 0 && row.errors && Array.isArray(row.errors) && row.errors.length > 0) {
+                blockingErrors = row.errors.filter(function (m) {
+                    const lower = String(m).toLowerCase();
+                    return lower.indexOf('warning:') === -1 && lower.indexOf('company mismatch') === -1;
+                });
+            }
+            if (blockingErrors.length === 0 && row.messages && Array.isArray(row.messages)) {
+                blockingErrors = row.messages.filter(function (m) {
+                    const lower = String(m).toLowerCase();
+                    return (lower.indexOf('employee id') !== -1 || lower.indexOf('course title') !== -1 || lower.indexOf('course name') !== -1)
+                        && lower.indexOf('warning:') === -1 && lower.indexOf('company mismatch') === -1 && lower.indexOf('ready for import') === -1;
+                });
+            }
+            if (blockingErrors.length === 0) {
+                blockingErrors = ['Validation failed for Employee ID or Course Title.'];
+            }
 
             msgsHtml += `
-                <div class="card border border-warning-subtle rounded-3 mb-3 shadow-none" style="background-color: #fffbeb;">
-                    <div class="card-header bg-transparent border-warning-subtle py-2 px-3 d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center gap-2 fw-bold text-warning-emphasis">
-                            <i class="ti ti-alert-triangle fs-3 text-warning"></i>
-                            <span>WARNING DETAILS</span>
-                        </div>
-                        <span class="badge bg-warning text-dark fw-bold px-2 py-1">WARNING</span>
+                <div class="alert alert-danger border-0 rounded-3 small mb-3 py-2 px-3">
+                    <div class="d-flex align-items-center gap-2 fw-bold mb-1">
+                        <i class="ti ti-alert-circle fs-3 text-danger"></i>
+                        <span>Validation Errors (Blocking)</span>
                     </div>
-                    <div class="card-body p-3">
-                        <div class="row g-2 mb-3 pb-2 border-bottom border-warning-subtle" style="font-size: 0.82rem;">
-                            <div class="col-6 col-sm-3">
-                                <span class="text-muted d-block extra-small">Employee ID:</span>
-                                <span class="font-monospace fw-bold text-dark">${escapeHtml(row.employee_id || '')}</span>
-                            </div>
-                            <div class="col-6 col-sm-3">
-                                <span class="text-muted d-block extra-small">Employee Name:</span>
-                                <span class="fw-semibold text-dark">${escapeHtml(row.name || (row.data && row.data.name) || '')}</span>
-                            </div>
-                            <div class="col-6 col-sm-3">
-                                <span class="text-muted d-block extra-small">Excel Row Number:</span>
-                                <span class="fw-semibold text-dark">Row ${escapeHtml(String(row.excel_row || ''))}</span>
-                            </div>
-                            <div class="col-6 col-sm-3">
-                                <span class="text-muted d-block extra-small">Warning Status:</span>
-                                <span class="badge bg-warning text-dark fw-semibold">WARNING</span>
-                            </div>
-                        </div>
-
-                        <div class="table-responsive rounded-2 border border-warning-subtle mb-3 bg-white">
-                            <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.82rem;">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th style="width: 50%;">Field</th>
-                                        <th style="width: 50%;">Validation Result</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${warningRowsHtml}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div class="d-flex align-items-start gap-2 text-muted" style="font-size: 0.8rem; line-height: 1.4;">
-                            <i class="ti ti-info-circle text-warning fs-3 flex-shrink-0 mt-0.5"></i>
-                            <div>
-                                <em>These fields have designated warning validation in the PTKP Excel template and require attention. This warning is non-blocking, and the record can still be imported.</em>
-                            </div>
-                        </div>
-                    </div>
+                    <ul class="mb-0 ps-3">
+                        ${blockingErrors.map(m => '<li>' + escapeHtml(m) + '</li>').join('')}
+                    </ul>
                 </div>
             `;
+
+            // If this invalid row ALSO has non-blocking empty warning fields, show warning details below blocking errors
+            if ((row.empty_warning_fields && row.empty_warning_fields.length > 0) || (row.empty_warning_details && row.empty_warning_details.length > 0)) {
+                let warningRowsHtml = '';
+                const details = (row.empty_warning_details && row.empty_warning_details.length > 0)
+                    ? row.empty_warning_details
+                    : (row.empty_warning_fields || []).map(function (f) {
+                        return { field: f, display_value: 'Empty' };
+                    });
+
+                details.forEach(function (item) {
+                    const displayVal = item.display_value || 'Empty';
+                    warningRowsHtml += `
+                        <tr>
+                            <td class="fw-semibold text-dark">${escapeHtml(item.field)}</td>
+                            <td><span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle font-monospace">${escapeHtml(displayVal)}</span></td>
+                        </tr>
+                    `;
+                });
+
+                msgsHtml += `
+                    <div class="card border border-warning-subtle rounded-3 mb-3 shadow-none" style="background-color: #fffbeb;">
+                        <div class="card-header bg-transparent border-warning-subtle py-2 px-3 d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-2 fw-bold text-warning-emphasis">
+                                <i class="ti ti-alert-triangle fs-3 text-warning"></i>
+                                <span>WARNING DETAILS (Non-blocking)</span>
+                            </div>
+                            <span class="badge bg-warning text-dark fw-bold px-2 py-1">WARNING</span>
+                        </div>
+                        <div class="card-body p-3">
+                            <div class="table-responsive rounded-2 border border-warning-subtle mb-2 bg-white">
+                                <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.82rem;">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width: 50%;">Field</th>
+                                            <th style="width: 50%;">Validation Result</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${warningRowsHtml}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        } else if (row.status === 'WARNING') {
+            if ((row.empty_warning_fields && row.empty_warning_fields.length > 0) || (row.empty_warning_details && row.empty_warning_details.length > 0)) {
+                let warningRowsHtml = '';
+                const details = (row.empty_warning_details && row.empty_warning_details.length > 0)
+                    ? row.empty_warning_details
+                    : (row.empty_warning_fields || []).map(function (f) {
+                        return { field: f, display_value: 'Empty' };
+                    });
+
+                details.forEach(function (item) {
+                    const displayVal = item.display_value || 'Empty';
+                    warningRowsHtml += `
+                        <tr>
+                            <td class="fw-semibold text-dark">${escapeHtml(item.field)}</td>
+                            <td><span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle font-monospace">${escapeHtml(displayVal)}</span></td>
+                        </tr>
+                    `;
+                });
+
+                msgsHtml += `
+                    <div class="card border border-warning-subtle rounded-3 mb-3 shadow-none" style="background-color: #fffbeb;">
+                        <div class="card-header bg-transparent border-warning-subtle py-2 px-3 d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-2 fw-bold text-warning-emphasis">
+                                <i class="ti ti-alert-triangle fs-3 text-warning"></i>
+                                <span>WARNING DETAILS</span>
+                            </div>
+                            <span class="badge bg-warning text-dark fw-bold px-2 py-1">WARNING</span>
+                        </div>
+                        <div class="card-body p-3">
+                            <div class="row g-2 mb-3 pb-2 border-bottom border-warning-subtle" style="font-size: 0.82rem;">
+                                <div class="col-6 col-sm-3">
+                                    <span class="text-muted d-block extra-small">Employee ID:</span>
+                                    <span class="font-monospace fw-bold text-dark">${escapeHtml(row.employee_id || '')}</span>
+                                </div>
+                                <div class="col-6 col-sm-3">
+                                    <span class="text-muted d-block extra-small">Employee Name:</span>
+                                    <span class="fw-semibold text-dark">${escapeHtml(row.name || (row.data && row.data.name) || '')}</span>
+                                </div>
+                                <div class="col-6 col-sm-3">
+                                    <span class="text-muted d-block extra-small">Excel Row Number:</span>
+                                    <span class="fw-semibold text-dark">Row ${escapeHtml(String(row.excel_row || ''))}</span>
+                                </div>
+                                <div class="col-6 col-sm-3">
+                                    <span class="text-muted d-block extra-small">Warning Status:</span>
+                                    <span class="badge bg-warning text-dark fw-semibold">WARNING</span>
+                                </div>
+                            </div>
+
+                            <div class="table-responsive rounded-2 border border-warning-subtle mb-3 bg-white">
+                                <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.82rem;">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width: 50%;">Field</th>
+                                            <th style="width: 50%;">Validation Result</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${warningRowsHtml}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="d-flex align-items-start gap-2 text-muted" style="font-size: 0.8rem; line-height: 1.4;">
+                                <i class="ti ti-info-circle text-warning fs-3 flex-shrink-0 mt-0.5"></i>
+                                <div>
+                                    <em>These fields have designated warning validation in the PTKP Excel template and require attention. This warning is non-blocking, and the record can still be imported.</em>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (row.messages && row.messages.length) {
+                msgsHtml += '<div class="alert alert-warning border-0 rounded-3 small mb-3 py-2 px-3"><ul class="mb-0 ps-3">';
+                row.messages.forEach(function (m) { msgsHtml += '<li>' + escapeHtml(m) + '</li>'; });
+                msgsHtml += '</ul></div>';
+            }
         }
 
         if (row.company_mismatch) {
@@ -968,23 +1145,6 @@
             `;
         }
 
-        if (row.status === 'INVALID' && row.messages && row.messages.length) {
-            msgsHtml += `
-                <div class="alert alert-danger border-0 rounded-3 small mb-3 py-2 px-3">
-                    <div class="d-flex align-items-center gap-2 fw-bold mb-1">
-                        <i class="ti ti-alert-circle fs-3 text-danger"></i>
-                        <span>Validation Errors (Blocking)</span>
-                    </div>
-                    <ul class="mb-0 ps-3">
-                        ${row.messages.map(m => '<li>' + escapeHtml(m) + '</li>').join('')}
-                    </ul>
-                </div>
-            `;
-        } else if (row.status !== 'DUPLICATE' && (!row.empty_warning_fields || row.empty_warning_fields.length === 0) && !row.company_mismatch && row.messages && row.messages.length) {
-            msgsHtml += '<div class="alert alert-secondary border-0 rounded-3 small mb-3 py-2 px-3"><ul class="mb-0 ps-3">';
-            row.messages.forEach(function (m) { msgsHtml += '<li>' + escapeHtml(m) + '</li>'; });
-            msgsHtml += '</ul></div>';
-        }
         $('#modal-inspect-messages').html(msgsHtml);
 
         const d = row.data || {};

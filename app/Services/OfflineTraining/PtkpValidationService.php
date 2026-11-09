@@ -303,26 +303,43 @@ class PtkpValidationService
         $errors = [];
         $warnings = [];
         $messages = [];
+        $warningReasons = [];
+        $emptyWarningFields = [];
+        $emptyWarningDetails = [];
         $isCompanyMismatch = false;
 
-        // 1. Employee ID check
+        // 1. Employee ID check (Mandatory - exclusively triggers INVALID ID)
         $empId = trim((string) ($normalized['employee_id'] ?? ''));
+        $isInvalidId = false;
+        $idErrors = [];
         if ($empId === '') {
-            $errors[] = 'Employee ID is required.';
+            $isInvalidId = true;
+            $idErrors[] = 'Employee ID is required and cannot be empty.';
         } elseif (!$user) {
+            $isInvalidId = true;
             if (!empty($matchResult['errors'])) {
-                $errors = array_merge($errors, $matchResult['errors']);
+                $idErrors = array_merge($idErrors, $matchResult['errors']);
             } else {
-                $errors[] = "Employee ID '{$empId}' not found or ambiguous in LMS users database.";
+                $idErrors[] = "Employee ID '{$empId}' was not found in LMS users database.";
             }
+        } elseif (!empty($matchResult['is_ambiguous'])) {
+            $isInvalidId = true;
+            $idErrors = array_merge($idErrors, $matchResult['errors'] ?: ["Employee ID '{$empId}' is ambiguous in LMS users database."]);
         }
 
-        // 2. Course Title check (Mandatory)
+        // 2. Course Title check (Mandatory - exclusively triggers INVALID COURSE TITLE)
         $courseTitle = trim((string) ($normalized['course_name'] ?? ''));
+        $isInvalidCourse = false;
+        $courseErrors = [];
         if ($courseTitle === '' || $courseTitle === '-') {
-            $errors[] = 'Course Title is required and cannot be empty.';
-        } elseif (!empty($courseMatchResult['errors'])) {
-            $errors = array_merge($errors, $courseMatchResult['errors']);
+            $isInvalidCourse = true;
+            $courseErrors[] = 'Course Title is required and cannot be empty.';
+        } elseif (!empty($courseMatchResult['errors']) || ($courseMatchResult['status'] ?? null) === self::STATUS_INVALID) {
+            $isInvalidCourse = true;
+            $courseErrors = array_merge($courseErrors, $courseMatchResult['errors'] ?: ["Course Title '{$courseTitle}' is invalid."]);
+        } elseif (!empty($courseMatchResult['is_ambiguous'])) {
+            $isInvalidCourse = true;
+            $courseErrors[] = "Course Title '{$courseTitle}' is ambiguous in offline trainings database.";
         }
 
         // 3. Company mismatch check (Non-blocking for PTKP)
@@ -336,46 +353,56 @@ class PtkpValidationService
             }
         }
 
-        // 4. Date and Time Format Validations
+        // 4. Date and Time Format Validations (Non-blocking WARNINGS - NEVER causes INVALID!)
         $rowNum = $normalized['excel_row'] ?? null;
-        $empId = trim((string) ($normalized['employee_id'] ?? ''));
         $ctx = ($rowNum ? "Excel Row {$rowNum}" : "") . ($empId !== '' ? " (Employee ID: '{$empId}')" : "");
         $ctx = $ctx ? "{$ctx}: " : "";
 
+        $formatWarnings = [];
         if (!empty($normalized['start_time_invalid'])) {
-            $errors[] = "{$ctx}Invalid Start Time format: '{$normalized['raw_start_time']}'. " . ($normalized['start_time_error'] ?? 'Expected HH:mm or HH:mm:ss (00:00:00 - 23:59:59).');
+            $formatWarnings[] = "{$ctx}Invalid Start Time format: '{$normalized['raw_start_time']}'. " . ($normalized['start_time_error'] ?? 'Expected HH:mm or HH:mm:ss (00:00:00 - 23:59:59).');
         }
         if (!empty($normalized['end_time_invalid'])) {
-            $errors[] = "{$ctx}Invalid End Time format: '{$normalized['raw_end_time']}'. " . ($normalized['end_time_error'] ?? 'Expected HH:mm or HH:mm:ss (00:00:00 - 23:59:59).');
+            $formatWarnings[] = "{$ctx}Invalid End Time format: '{$normalized['raw_end_time']}'. " . ($normalized['end_time_error'] ?? 'Expected HH:mm or HH:mm:ss (00:00:00 - 23:59:59).');
         }
         if (!empty($normalized['start_date_invalid'])) {
-            $errors[] = "{$ctx}Invalid Start Date format: '{$normalized['raw_start_date']}'. " . ($normalized['start_date_error'] ?? 'Expected valid date (DD/MM/YYYY).');
+            $formatWarnings[] = "{$ctx}Invalid Start Date format: '{$normalized['raw_start_date']}'. " . ($normalized['start_date_error'] ?? 'Expected valid date (DD/MM/YYYY).');
         }
         if (!empty($normalized['end_date_invalid'])) {
-            $errors[] = "{$ctx}Invalid End Date format: '{$normalized['raw_end_date']}'. " . ($normalized['end_date_error'] ?? 'Expected valid date (DD/MM/YYYY).');
+            $formatWarnings[] = "{$ctx}Invalid End Date format: '{$normalized['raw_end_date']}'. " . ($normalized['end_date_error'] ?? 'Expected valid date (DD/MM/YYYY).');
         }
         if (!empty($normalized['bond_end_date_invalid'])) {
-            $errors[] = "{$ctx}Invalid Bond End Date format: '{$normalized['raw_bond_end_date']}'. " . ($normalized['bond_end_date_error'] ?? 'Expected valid date (DD/MM/YYYY).');
+            $formatWarnings[] = "{$ctx}Invalid Bond End Date format: '{$normalized['raw_bond_end_date']}'. " . ($normalized['bond_end_date_error'] ?? 'Expected valid date (DD/MM/YYYY).');
         }
         if (!empty($normalized['certificate_issued_date_invalid'])) {
-            $errors[] = "{$ctx}Invalid Certificate Issued Date format: '{$normalized['raw_certificate_issued_date']}'. " . ($normalized['certificate_issued_date_error'] ?? 'Expected valid date (DD/MM/YYYY).');
+            $formatWarnings[] = "{$ctx}Invalid Certificate Issued Date format: '{$normalized['raw_certificate_issued_date']}'. " . ($normalized['certificate_issued_date_error'] ?? 'Expected valid date (DD/MM/YYYY).');
         }
         if (!empty($normalized['certificate_expired_date_invalid'])) {
-            $errors[] = "{$ctx}Invalid Certificate Expired Date format: '{$normalized['raw_certificate_expired_date']}'. " . ($normalized['certificate_expired_date_error'] ?? 'Expected valid date (DD/MM/YYYY).');
+            $formatWarnings[] = "{$ctx}Invalid Certificate Expired Date format: '{$normalized['raw_certificate_expired_date']}'. " . ($normalized['certificate_expired_date_error'] ?? 'Expected valid date (DD/MM/YYYY).');
         }
 
-        // 5. Date sequence validations: Start Date cannot be after End Date when both are present
+        // 5. Date sequence validations (Non-blocking WARNING)
         if (!empty($normalized['start_date']) && !empty($normalized['finish_date'])) {
             if ($normalized['start_date'] > $normalized['finish_date']) {
-                $errors[] = "{$ctx}Start Date ({$normalized['start_date']}) cannot be after End Date ({$normalized['finish_date']}).";
+                $formatWarnings[] = "{$ctx}Start Date ({$normalized['start_date']}) cannot be after End Date ({$normalized['finish_date']}).";
             }
         }
 
-        // 6. Certificate sequence validation: Issued Date cannot be after Expired Date when both are present
+        // 6. Certificate sequence validation (Non-blocking WARNING)
         if (!empty($normalized['certificate_issued_date']) && !empty($normalized['certificate_expired_date'])) {
             if ($normalized['certificate_issued_date'] > $normalized['certificate_expired_date']) {
-                $errors[] = "{$ctx}Certificate Issued Date ({$normalized['certificate_issued_date']}) cannot be after Certificate Expired Date ({$normalized['certificate_expired_date']}).";
+                $formatWarnings[] = "{$ctx}Certificate Issued Date ({$normalized['certificate_issued_date']}) cannot be after Certificate Expired Date ({$normalized['certificate_expired_date']}).";
             }
+        }
+
+        // Combine errors: STRICTLY AND EXCLUSIVELY Employee ID and Course Title!
+        // No other field in the spreadsheet can EVER cause $errors or status INVALID!
+        $errors = array_merge($idErrors, $courseErrors);
+
+        // Add format warnings to warnings list
+        foreach ($formatWarnings as $fw) {
+            $warnings[] = $fw;
+            $warningReasons[] = $fw;
         }
 
         // 7. Warning Fields check (Non-blocking WARNING if empty)
@@ -383,7 +410,6 @@ class PtkpValidationService
         $warningRules = PtkpColumnDefinitions::getWarningOnEmptyColumns();
         $emptyWarningFields = [];
         $emptyWarningDetails = [];
-        $warningReasons = [];
 
         foreach ($warningRules as $colKey => $colTitle) {
             $rawVal = $normalized['raw_inputs'][$colKey] ?? ($normalized['raw_values'][$colKey] ?? ($normalized[$colKey] ?? null));
@@ -404,47 +430,73 @@ class PtkpValidationService
 
         $warningMessage = !empty($warningReasons) ? 'WARNING: ' . implode('; ', $warningReasons) : null;
 
-        // Status Determination according to priority
+        // Structured message formatting ensuring all errors and warnings are clearly reported
+        $messages = [];
+        if (!empty($idErrors)) {
+            foreach ($idErrors as $err) {
+                $messages[] = str_starts_with($err, 'ERROR:') ? $err : "ERROR: {$err}";
+            }
+        }
+        if (!empty($courseErrors)) {
+            foreach ($courseErrors as $err) {
+                $messages[] = str_starts_with($err, 'ERROR:') ? $err : "ERROR: {$err}";
+            }
+        }
+        if ($duplicateInfo['is_duplicate']) {
+            $messages[] = $duplicateInfo['duplicate_reason'];
+        }
+        if ($isCompanyMismatch) {
+            $messages[] = "Company mismatch: Excel has '{$normalized['company']}' while user record has '{$user->company_name}'.";
+        }
+        if ($warningMessage) {
+            $messages[] = $warningMessage;
+        }
+        foreach ($warnings as $w) {
+            if ($w !== $warningMessage && !str_starts_with($w, 'Field ') && !in_array($w, $messages, true)) {
+                $messages[] = $w;
+            }
+        }
+        if (empty($messages)) {
+            $messages[] = 'Row is valid and ready for import.';
+        }
+
+        // Status Determination according to priority:
+        // Priority 1: Blocking Errors (ONLY Employee ID and Course Title)
         if (!empty($errors)) {
             $status = self::STATUS_INVALID;
             $isBlocking = true;
-            $messages = array_merge($errors, $warnings);
         } elseif ($duplicateInfo['is_duplicate']) {
             $status = self::STATUS_DUPLICATE;
             $isBlocking = true;
-            $messages[] = $duplicateInfo['duplicate_reason'];
-            if (!empty($warnings)) {
-                $messages = array_merge($messages, $warnings);
-            }
-        } elseif (!empty($emptyWarningFields)) {
+        } elseif (!empty($emptyWarningFields) || !empty($formatWarnings)) {
             $status = self::STATUS_WARNING;
             $isBlocking = false;
-            $rowMessages = [];
-            if ($warningMessage) {
-                $rowMessages[] = $warningMessage;
-            }
-            if ($isCompanyMismatch) {
-                $rowMessages[] = "Company mismatch: Excel has '{$normalized['company']}' while user record has '{$user->company_name}'.";
-            }
-            $rowMessages = array_merge($rowMessages, $warnings);
-            $messages = array_values(array_unique($rowMessages));
         } elseif ($isCompanyMismatch) {
             $status = self::STATUS_INVALID_COMPANY;
             $isBlocking = false;
-            $messages = $warnings;
         } elseif (!empty($warnings)) {
             $status = self::STATUS_WARNING;
             $isBlocking = false;
-            $messages = $warnings;
         } else {
             $status = self::STATUS_VALID;
             $isBlocking = false;
-            $messages[] = 'Row is valid and ready for import.';
+        }
+
+        $invalidType = null;
+        if ($isInvalidId && $isInvalidCourse) {
+            $invalidType = 'INVALID_ID_AND_COURSE';
+        } elseif ($isInvalidId) {
+            $invalidType = 'INVALID_ID';
+        } elseif ($isInvalidCourse) {
+            $invalidType = 'INVALID_COURSE';
         }
 
         return [
             'status'                => $status,
             'is_blocking'           => $isBlocking,
+            'is_invalid_id'         => $isInvalidId,
+            'is_invalid_course'     => $isInvalidCourse,
+            'invalid_type'          => $invalidType,
             'messages'              => $messages,
             'warnings'              => $warnings,
             'empty_warning_fields'  => $emptyWarningFields,
@@ -452,6 +504,10 @@ class PtkpValidationService
             'warning_reasons'       => $warningReasons,
             'warning_message'       => $warningMessage,
             'errors'                => $errors,
+            'id_errors'             => $idErrors,
+            'course_errors'         => $courseErrors,
+            'format_errors'         => [], // Format issues are never blocking errors!
+            'format_warnings'       => $formatWarnings,
             'company_mismatch'      => $isCompanyMismatch,
             'duplicate_source'      => $duplicateInfo['duplicate_source'] ?? null,
             'duplicate_type'        => $duplicateInfo['duplicate_type'] ?? null,
@@ -1043,7 +1099,9 @@ class PtkpValidationService
         $normalized['certificate_issued_date_invalid'] = !$certIssuedResult['valid'];
         $normalized['certificate_issued_date_error'] = $certIssuedResult['error'];
         $normalized['raw_certificate_issued_date'] = $rawCertIssued;
-        $normalized['certificate_issued_date_display'] = ExcelDateTimeParser::formatDisplayDate($certIssuedResult['value']);
+        $normalized['certificate_issued_date_display'] = !empty($certIssuedResult['is_process'])
+            ? trim((string) $rawCertIssued)
+            : ExcelDateTimeParser::formatDisplayDate($certIssuedResult['value'] ?? $rawCertIssued);
 
         $rawCertExpired = $raw['certificate_expired_date'] ?? null;
         $certExpiredResult = ExcelDateTimeParser::parseDateResult($rawCertExpired);
@@ -1051,7 +1109,9 @@ class PtkpValidationService
         $normalized['certificate_expired_date_invalid'] = !$certExpiredResult['valid'];
         $normalized['certificate_expired_date_error'] = $certExpiredResult['error'];
         $normalized['raw_certificate_expired_date'] = $rawCertExpired;
-        $normalized['certificate_expired_date_display'] = ExcelDateTimeParser::formatDisplayDate($certExpiredResult['value']);
+        $normalized['certificate_expired_date_display'] = !empty($certExpiredResult['is_process'])
+            ? trim((string) $rawCertExpired)
+            : ExcelDateTimeParser::formatDisplayDate($certExpiredResult['value'] ?? $rawCertExpired);
         $normalized['certificate'] = $normalized['certificate_availability'] ?? null;
         $normalized['pic'] = isset($raw['pic']) ? trim((string) $raw['pic']) : null;
         $normalized['raw_inputs'] = $raw['raw_inputs'] ?? $raw;

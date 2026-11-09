@@ -645,9 +645,9 @@ class PtkpImportTest extends TestCase
         $this->assertEquals('08:00:00', $json['rows'][2]['data']['start_time']);
         $this->assertEquals('17:00:00', $json['rows'][2]['data']['end_time']);
 
-        // Row 3 has invalid start_time -> must be marked INVALID
-        $this->assertEquals('INVALID', $json['rows'][3]['status']);
-        $this->assertTrue($json['rows'][3]['is_blocking']);
+        // Row 3 has invalid start_time -> non-blocking WARNING (never INVALID)
+        $this->assertEquals('WARNING', $json['rows'][3]['status']);
+        $this->assertFalse($json['rows'][3]['is_blocking']);
         $this->assertStringContainsString('Invalid Start Time format', implode(' ', $json['rows'][3]['messages']));
     }
 

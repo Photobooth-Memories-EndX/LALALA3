@@ -312,13 +312,15 @@ class PtkpImportService
         $existingDbRecords = $this->lookupExistingParticipantRecords(array_keys($uniqueEmployeeIds), array_keys($uniqueCourses));
 
         $stats = [
-            'total_rows'       => count($rawRows),
-            'valid'            => 0,
-            'warning'          => 0,
-            'duplicate'        => 0,
-            'invalid'          => 0,
-            'invalid_company'  => 0,
-            'importable_count' => 0,
+            'total_rows'           => count($rawRows),
+            'valid'                => 0,
+            'warning'              => 0,
+            'duplicate'            => 0,
+            'invalid'              => 0,
+            'invalid_id_count'     => 0,
+            'invalid_course_count' => 0,
+            'invalid_company'      => 0,
+            'importable_count'     => 0,
         ];
 
         $parsedRows = [];
@@ -463,13 +465,30 @@ class PtkpImportService
                     break;
             }
 
+            if (!empty($eval['is_invalid_id'])) {
+                $stats['invalid_id_count']++;
+            }
+            if (!empty($eval['is_invalid_course'])) {
+                $stats['invalid_course_count']++;
+            }
+
             $rowRecord = [
                 'excel_row'             => $rNum,
                 'no'                    => $normalized['row_no'] ?? ($rNum - $startDataRow + 1),
                 'status'                => $eval['status'],
                 'is_blocking'           => $eval['is_blocking'],
+                'is_invalid_id'         => $eval['is_invalid_id'] ?? false,
+                'is_invalid_course'     => $eval['is_invalid_course'] ?? false,
+                'invalid_type'          => $eval['invalid_type'] ?? null,
                 'company_mismatch'      => $eval['company_mismatch'],
                 'messages'              => $eval['messages'],
+                'errors'                => $eval['errors'] ?? [],
+                'id_errors'             => $eval['id_errors'] ?? [],
+                'course_errors'         => $eval['course_errors'] ?? [],
+                'format_errors'         => [],
+                'format_warnings'       => $eval['format_warnings'] ?? [],
+                'blocking_errors'       => array_merge($eval['id_errors'] ?? [], $eval['course_errors'] ?? []),
+                'warnings'              => $eval['warnings'] ?? [],
                 'empty_warning_fields'  => $eval['empty_warning_fields'] ?? [],
                 'empty_warning_details' => $eval['empty_warning_details'] ?? [],
                 'warning_reasons'       => $eval['warning_reasons'] ?? [],
@@ -486,7 +505,7 @@ class PtkpImportService
                 'original_excel_row'  => $originalExcelRow,
                 'matched_fields'      => $matchedFields,
                 'data'                => $normalized,
-                'error_code'          => $isDuplicate ? 'DUPLICATE' : ($eval['is_blocking'] ? 'INVALID' : null),
+                'error_code'          => $isDuplicate ? 'DUPLICATE' : ($eval['is_blocking'] ? ($eval['invalid_type'] ?? 'INVALID') : null),
                 'sanitized_data'      => [
                     'employee_id'         => $normalized['employee_id'],
                     'name'                => $normalized['name'],
