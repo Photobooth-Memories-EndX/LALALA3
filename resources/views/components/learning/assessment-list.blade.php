@@ -62,13 +62,6 @@
                                     ->sortByDesc('score')
                                     ->first();
 
-                                if (!$finalResult) {
-                                    $finalResult = $userScores
-                                        ->filter(fn ($s) => $s->score !== null)
-                                        ->sortByDesc('score')
-                                        ->first();
-                                }
-
                                 $bestScore = $finalResult->score ?? null;
                             }
 

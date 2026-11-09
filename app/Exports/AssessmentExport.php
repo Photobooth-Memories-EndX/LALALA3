@@ -278,6 +278,11 @@ class AssessmentExport implements FromArray, ShouldAutoSize, WithEvents, WithSty
     private function resultRows(): array
     {
         $rows = [['No', 'ID', 'Name', 'Team', 'Department', 'Score', 'Batch', 'Result', 'Start Date Time', 'Finish Date Time']];
+        $assessment = Assesment::find($this->assessmentId);
+        if ($assessment) {
+            app(\App\Services\AssessmentAccessService::class)->finalizeExpiredDraftsForAssessment($assessment);
+        }
+
         $results = AssesmentResult::with('user')
             ->where('assesment_id', $this->assessmentId)
             ->whereFinal(1)

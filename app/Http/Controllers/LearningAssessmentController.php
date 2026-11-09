@@ -60,6 +60,8 @@ class LearningAssessmentController extends Controller
 
     public function getFilteredUserAssessments(Request $request, int $userId): \Illuminate\Support\Collection
     {
+        app(\App\Services\AssessmentAccessService::class)->finalizeExpiredDraftsForUser($userId);
+
         $user = Auth::user();
         $completedPlaylistIds = $this->completedPlaylistService
             ->forUser($userId)
@@ -111,13 +113,6 @@ class LearningAssessmentController extends Controller
             ->where('final', 1)
             ->sortByDesc('score')
             ->first();
-
-        if (!$finalResult) {
-            $finalResult = $userScores
-                ->filter(fn ($s) => $s->score !== null)
-                ->sortByDesc('score')
-                ->first();
-        }
 
         return $finalResult;
     }

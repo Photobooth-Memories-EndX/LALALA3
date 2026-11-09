@@ -20,19 +20,10 @@
             ->sortByDesc('score')
             ->first();
 
-        if (!$finalResult) {
-            $finalResult = $userScores
-                ->filter(fn ($s) => $s->score !== null)
-                ->sortByDesc('score')
-                ->first();
-        }
-
         $userAttempts = $userScores->where('final', 1)->count();
-        if ($userAttempts === 0 && $userScores->count() > 0) {
-            $userAttempts = $userScores->count();
-        }
 
         $historyScores = $userScores
+            ->where('final', 1)
             ->sortBy(function ($score) {
                 if (!empty($score->created_at)) {
                     return is_a($score->created_at, '\DateTimeInterface')

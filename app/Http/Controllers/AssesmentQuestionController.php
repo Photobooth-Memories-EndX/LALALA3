@@ -10,6 +10,7 @@ use App\Models\AssesmentQuestion;
 use App\Models\AssesmentScoreHistory;
 use App\Models\Certificate;
 use App\Models\User;
+use App\Services\AssessmentAccessService;
 use App\Services\AssessmentDuplicateService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -94,8 +95,10 @@ class AssesmentQuestionController extends Controller
         return to_route('assesment.question', $assesment->slug)->with('success','Assesment question updated successfully.');
     }
 
-    public function result(Assesment $assesment, Request $request)
+    public function result(Assesment $assesment, Request $request, AssessmentAccessService $assessmentAccess)
     {
+        $assessmentAccess->finalizeExpiredDraftsForAssessment($assesment);
+
         $entries = (int) ($request->show_entries ?? 25);
         if ($entries <= 0) {
             $entries = 25;

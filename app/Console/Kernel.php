@@ -49,6 +49,12 @@ class Kernel extends ConsoleKernel
             ->after(function () {
                 \Illuminate\Support\Facades\Log::info('OWL Employee User Synchronization scheduler finished.');
             });
+
+        // Automatically finalize abandoned/expired assessment drafts every hour
+        $schedule->command('assessment:finalize-expired-drafts')
+            ->hourly()
+            ->withoutOverlapping(60)
+            ->runInBackground();
     }
 
     /**

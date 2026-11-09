@@ -149,8 +149,12 @@
 
             return response()->json($results->values());
         }
-    public function index()
+    public function index(AssessmentAccessService $assessmentAccess)
         {
+            if (Auth::check()) {
+                $assessmentAccess->finalizeExpiredDraftsForUser(Auth::user());
+            }
+
             $assesment = Assesment::with([
                     'trainingplan',
                     'scores' => function ($query) {
@@ -766,23 +770,7 @@
          */
         private function finalizeExpiredDraft(AssesmentResult $result, Assesment $assesment): void
         {
-            if ((int) $result->final === 1) {
-                return;
-            }
-
-            $existingUserAnswers = is_array($result->user_answer) ? $result->user_answer : [];
-            $scoreData = $this->calculateAttemptScore($result, $assesment, $existingUserAnswers);
-
-            $result->score = $scoreData['score'];
-            $result->batch = $assesment->batch;
-            $result->pass = $scoreData['pass'];
-            $result->final = 1;
-            $result->save();
-
-            $this->syncAfkToLearningProgress($assesment, (int) $result->user_id, (int) ($result->afk_duration_seconds ?? 0));
-
-            $completedKey = 'assessment-completed:' . auth()->id() . ':' . $assesment->id . ':' . $assesment->batch . ':' . $result->id;
-            Cache::put($completedKey, $result->id, now()->addDay());
+            app(AssessmentAccessService::class)->finalizeExpiredDraft($result, $assesment);
         }
 
         /**
