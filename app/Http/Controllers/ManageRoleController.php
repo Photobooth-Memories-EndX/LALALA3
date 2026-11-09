@@ -575,16 +575,24 @@ class ManageRoleController extends Controller
 
         if (!$lock->get()) {
             $progress = EmployeeUserSyncService::getProgress();
-            return response()->json([
-                'success' => false,
-                'message' => 'Proses sinkronisasi lain sedang berjalan atau memegang kunci eksekusi.',
-                'is_running' => true,
-                'progress' => $progress,
-            ], 409);
-        }
+            // Stale lock recovery: if progress started_at was more than 5 minutes ago and not finished
+            $startedAt = !empty($progress['started_at']) ? \Illuminate\Support\Carbon::parse($progress['started_at']) : null;
+            $isStale = $startedAt && $startedAt->diffInMinutes(now()) >= 5;
 
-        // Lepas lock pemeriksaan agar background runner dapat mengambilnya
-        $lock->release();
+            if (!$isStale) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Proses sinkronisasi lain sedang berjalan atau memegang kunci eksekusi.',
+                    'is_running' => true,
+                    'progress' => $progress,
+                ], 409);
+            }
+
+            Cache::lock($lockKey, 300)->forceRelease();
+        } else {
+            // Lepas lock pemeriksaan agar background runner dapat mengambilnya
+            $lock->release();
+        }
 
         $isDryRun = (bool) $request->input('dry_run', false);
 

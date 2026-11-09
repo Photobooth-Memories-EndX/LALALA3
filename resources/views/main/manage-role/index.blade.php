@@ -307,15 +307,15 @@
                             </div>
                         </div>
 
-                        <div class="modal-footer border-top pt-3 d-flex justify-content-between">
+                        <div class="modal-footer border-top pt-3 d-flex justify-content-between position-relative" style="z-index: 1055;">
                             <button type="button" class="btn btn-outline-secondary px-3" data-bs-dismiss="modal" id="btnCancelSync">
                                 Tutup
                             </button>
                             <div class="d-flex align-items-center gap-2" id="syncActionButtons">
-                                <button type="button" class="btn btn-outline-info px-3" id="btnStartDryRun">
+                                <button type="button" class="btn btn-outline-info px-3" id="btnStartDryRun" style="pointer-events: auto !important; cursor: pointer;">
                                     <i class="ti ti-eye me-1"></i> Uji Simulasi (Dry-Run)
                                 </button>
-                                <button type="button" class="btn btn-primary px-4" id="btnStartRealSync" style="background-color: #003b6d; border-color: #003b6d;">
+                                <button type="button" class="btn btn-primary px-4" id="btnStartRealSync" style="background-color: #003b6d; border-color: #003b6d; pointer-events: auto !important; cursor: pointer;">
                                     <i class="ti ti-refresh me-1"></i> Sinkronkan Sekarang
                                 </button>
                             </div>
@@ -958,35 +958,79 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    function enableModalButtons() {
+        if (btnCancelSync) btnCancelSync.disabled = false;
+        if (btnCloseSyncModal) btnCloseSyncModal.disabled = false;
+        if (btnStartRealSync) btnStartRealSync.disabled = false;
+        if (btnStartDryRun) btnStartDryRun.disabled = false;
+    }
+
     const btnRetrySync = document.getElementById('btnRetrySync');
     if (btnRetrySync) {
         btnRetrySync.addEventListener('click', function () {
             syncErrorState.classList.add('d-none');
             syncConfState.classList.remove('d-none');
-            if (btnCancelSync) btnCancelSync.disabled = false;
-            if (btnCloseSyncModal) btnCloseSyncModal.disabled = false;
-            if (btnStartRealSync) btnStartRealSync.disabled = false;
-            if (btnStartDryRun) btnStartDryRun.disabled = false;
+            enableModalButtons();
         });
     }
 
     if (btnStartRealSync) {
-        btnStartRealSync.addEventListener('click', function () {
-            if (confirm('Jalankan sinkronisasi nyata? Data karyawan dari API POSCO akan disimpan dan memperbarui tabel users OWL.')) {
-                executeSyncProcess(false);
-            }
+        btnStartRealSync.addEventListener('click', function (e) {
+            e.preventDefault();
+            executeSyncProcess(false);
         });
     }
 
     if (btnStartDryRun) {
-        btnStartDryRun.addEventListener('click', function () {
+        btnStartDryRun.addEventListener('click', function (e) {
+            e.preventDefault();
             executeSyncProcess(true);
         });
     }
 
-    // Modal close refresh behavior
+    // Delegated click handler on document to guarantee clicks are always captured
+    document.addEventListener('click', function (e) {
+        const targetReal = e.target.closest('#btnStartRealSync');
+        if (targetReal) {
+            e.preventDefault();
+            if (!targetReal.disabled) {
+                executeSyncProcess(false);
+            }
+            return;
+        }
+
+        const targetDry = e.target.closest('#btnStartDryRun');
+        if (targetDry) {
+            e.preventDefault();
+            if (!targetDry.disabled) {
+                executeSyncProcess(true);
+            }
+            return;
+        }
+
+        const targetRetry = e.target.closest('#btnRetrySync');
+        if (targetRetry) {
+            e.preventDefault();
+            syncErrorState.classList.add('d-none');
+            syncConfState.classList.remove('d-none');
+            enableModalButtons();
+            return;
+        }
+    });
+
+    // Modal close & open behavior
     const modalEl = document.getElementById('syncSimulationModal');
     if (modalEl) {
+        modalEl.addEventListener('show.bs.modal', function () {
+            if (!isSyncCurrentlyRunning) {
+                syncConfState.classList.remove('d-none');
+                syncLoadingState.classList.add('d-none');
+                syncResultState.classList.add('d-none');
+                syncErrorState.classList.add('d-none');
+                enableModalButtons();
+            }
+        });
+
         modalEl.addEventListener('hidden.bs.modal', function () {
             if (syncHasCompleted) {
                 window.location.reload();
@@ -996,8 +1040,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 syncLoadingState.classList.add('d-none');
                 syncResultState.classList.add('d-none');
                 syncErrorState.classList.add('d-none');
-                if (btnStartRealSync) btnStartRealSync.disabled = false;
-                if (btnStartDryRun) btnStartDryRun.disabled = false;
+                enableModalButtons();
             }
         });
     }
@@ -1019,5 +1062,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     })
     .catch(() => {});
+});
 </script>
 @endsection

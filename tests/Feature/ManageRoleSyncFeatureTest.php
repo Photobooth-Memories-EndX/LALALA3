@@ -299,6 +299,31 @@ class ManageRoleSyncFeatureTest extends TestCase
     }
 
     /**
+     * Test: Stale concurrency lock older than 5 minutes is automatically recovered.
+     */
+    public function test_stale_lock_recovery_allows_new_sync(): void
+    {
+        $lockKey = 'owl:sync-employee-users:lock';
+        $lock = Cache::lock($lockKey, 300);
+        $this->assertTrue($lock->get());
+
+        // Set progress as started 6 minutes ago (stale run)
+        EmployeeUserSyncService::updateProgress('processing', 10, 4621, 'Stale progress...', [
+            'started_at' => now()->subMinutes(6)->toISOString(),
+        ]);
+
+        $response = $this->actingAs($this->superAdmin)
+            ->postJson(route('manage.role.sync.start'), ['dry_run' => true]);
+
+        // Should recover and return success 200
+        $response->assertOk();
+        $response->assertJson([
+            'success' => true,
+            'is_dry_run' => true,
+        ]);
+    }
+
+    /**
      * Test: Progress cache reports accurate metrics and stage progression.
      */
     public function test_progress_cache_reports_comprehensive_metrics(): void
