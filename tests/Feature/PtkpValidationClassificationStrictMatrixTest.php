@@ -932,4 +932,433 @@ class PtkpValidationClassificationStrictMatrixTest extends TestCase
         $this->assertFalse($row['is_invalid_course']);
         $this->assertEmpty($row['blocking_errors']);
     }
+
+    /**
+     * Test Case 23: Employee valid + Course valid + Company Excel Non PTKP -> INVALID COMPANY
+     */
+    public function test_case_23_employee_valid_course_valid_company_non_ptkp_evaluates_to_invalid_company(): void
+    {
+        $file = $this->createPtkpExcel([
+            [
+                'row_no'              => 1,
+                'employee_id'         => $this->activeUser->id_emp,
+                'company'             => 'Non PTKP',
+                'course_name'         => $this->activeTraining->title,
+                'level'               => '', // Has empty warning field to ensure INVALID COMPANY takes precedence!
+            ]
+        ]);
+
+        $response = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.preview'), ['file' => $file]);
+
+        $response->assertStatus(200);
+        $json = $response->json();
+        $row = $json['rows'][0];
+
+        $this->assertEquals('INVALID COMPANY', $row['status']);
+        $this->assertFalse($row['is_blocking']);
+        $this->assertFalse($row['is_invalid_id']);
+        $this->assertFalse($row['is_invalid_course']);
+        $this->assertTrue($row['is_invalid_company']);
+        $this->assertTrue($row['company_mismatch']);
+        $this->assertEquals('INVALID_COMPANY', $row['invalid_type']);
+        $this->assertEquals(1, $json['stats']['invalid_company']);
+        $this->assertEquals(1, $json['stats']['invalid_company_count']);
+        $this->assertEquals(0, $json['stats']['invalid']);
+        $this->assertEquals(0, $json['stats']['warning']);
+        $this->assertEquals(1, $json['stats']['importable_count']);
+        $this->assertTrue($json['can_confirm']);
+    }
+
+    /**
+     * Test Case 24: Employee valid + Course valid + Company matches DB -> VALID
+     */
+    public function test_case_24_employee_valid_course_valid_company_matches_db_evaluates_to_valid(): void
+    {
+        $file = $this->createPtkpExcel([
+            [
+                'row_no'      => 1,
+                'employee_id' => $this->activeUser->id_emp,
+                'company'     => 'PT Krakatau Posco',
+                'course_name' => $this->activeTraining->title,
+            ]
+        ]);
+
+        $response = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.preview'), ['file' => $file]);
+
+        $response->assertStatus(200);
+        $json = $response->json();
+        $row = $json['rows'][0];
+
+        $this->assertEquals('VALID', $row['status']);
+        $this->assertFalse($row['is_blocking']);
+        $this->assertFalse($row['is_invalid_company']);
+        $this->assertFalse($row['company_mismatch']);
+        $this->assertEquals(1, $json['stats']['valid']);
+        $this->assertEquals(0, $json['stats']['invalid_company']);
+        $this->assertEquals(1, $json['stats']['importable_count']);
+    }
+
+    /**
+     * Test Case 25: Employee valid + Course valid + Company differs -> INVALID COMPANY
+     */
+    public function test_case_25_employee_valid_course_valid_company_differs_evaluates_to_invalid_company(): void
+    {
+        $file = $this->createPtkpExcel([
+            [
+                'row_no'      => 1,
+                'employee_id' => $this->activeUser->id_emp,
+                'company'     => 'PT External Corp Alpha',
+                'course_name' => $this->activeTraining->title,
+            ]
+        ]);
+
+        $response = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.preview'), ['file' => $file]);
+
+        $response->assertStatus(200);
+        $json = $response->json();
+        $row = $json['rows'][0];
+
+        $this->assertEquals('INVALID COMPANY', $row['status']);
+        $this->assertFalse($row['is_blocking']);
+        $this->assertTrue($row['is_invalid_company']);
+        $this->assertTrue($row['company_mismatch']);
+        $this->assertEquals(1, $json['stats']['invalid_company']);
+        $this->assertEquals(1, $json['stats']['importable_count']);
+    }
+
+    /**
+     * Test Case 26: Employee invalid + Company Non PTKP -> INVALID ID and INVALID COMPANY
+     */
+    public function test_case_26_employee_invalid_company_non_ptkp_evaluates_to_invalid_id_and_invalid_company(): void
+    {
+        $file = $this->createPtkpExcel([
+            [
+                'row_no'      => 1,
+                'employee_id' => 'NON_EXISTENT_EMP_99999',
+                'company'     => 'Non PTKP',
+                'course_name' => $this->activeTraining->title,
+            ]
+        ]);
+
+        $response = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.preview'), ['file' => $file]);
+
+        $response->assertStatus(200);
+        $json = $response->json();
+        $row = $json['rows'][0];
+
+        $this->assertEquals('INVALID', $row['status']);
+        $this->assertTrue($row['is_blocking']);
+        $this->assertTrue($row['is_invalid_id']);
+        $this->assertFalse($row['is_invalid_course']);
+        $this->assertTrue($row['is_invalid_company']);
+        $this->assertTrue($row['company_mismatch']);
+        $this->assertEquals('INVALID_ID_AND_COMPANY', $row['invalid_type']);
+        $this->assertEquals(1, $json['stats']['invalid']);
+        $this->assertEquals(1, $json['stats']['invalid_id_count']);
+        $this->assertEquals(0, $json['stats']['invalid_company']); // No double counting in KPI
+    }
+
+    /**
+     * Test Case 27: Course invalid + Company Non PTKP -> INVALID COURSE TITLE and INVALID COMPANY
+     */
+    public function test_case_27_course_invalid_company_non_ptkp_evaluates_to_invalid_course_title_and_invalid_company(): void
+    {
+        $file = $this->createPtkpExcel([
+            [
+                'row_no'      => 1,
+                'employee_id' => $this->activeUser->id_emp,
+                'company'     => 'Non PTKP',
+                'course_name' => '', // Empty Course Title
+            ]
+        ]);
+
+        $response = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.preview'), ['file' => $file]);
+
+        $response->assertStatus(200);
+        $json = $response->json();
+        $row = $json['rows'][0];
+
+        $this->assertEquals('INVALID', $row['status']);
+        $this->assertTrue($row['is_blocking']);
+        $this->assertFalse($row['is_invalid_id']);
+        $this->assertTrue($row['is_invalid_course']);
+        $this->assertTrue($row['is_invalid_company']);
+        $this->assertTrue($row['company_mismatch']);
+        $this->assertEquals('INVALID_COURSE_AND_COMPANY', $row['invalid_type']);
+        $this->assertEquals(1, $json['stats']['invalid']);
+        $this->assertEquals(1, $json['stats']['invalid_course_count']);
+        $this->assertEquals(0, $json['stats']['invalid_company']); // No double counting in KPI
+    }
+
+    /**
+     * Test Case 28: Employee and Course valid + Company matches + warning fields empty -> WARNING
+     */
+    public function test_case_28_employee_and_course_valid_company_matches_warning_empty_evaluates_to_warning(): void
+    {
+        $file = $this->createPtkpExcel([
+            [
+                'row_no'              => 1,
+                'employee_id'         => $this->activeUser->id_emp,
+                'company'             => 'PT Krakatau Posco',
+                'course_name'         => $this->activeTraining->title,
+                'attendance_reason'   => '',
+                'l2_verbal'           => '',
+            ]
+        ]);
+
+        $response = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.preview'), ['file' => $file]);
+
+        $response->assertStatus(200);
+        $json = $response->json();
+        $row = $json['rows'][0];
+
+        $this->assertEquals('WARNING', $row['status']);
+        $this->assertFalse($row['is_blocking']);
+        $this->assertFalse($row['is_invalid_id']);
+        $this->assertFalse($row['is_invalid_course']);
+        $this->assertFalse($row['is_invalid_company']);
+        $this->assertFalse($row['company_mismatch']);
+        $this->assertEquals(1, $json['stats']['warning']);
+        $this->assertEquals(0, $json['stats']['invalid_company']);
+        $this->assertEquals(1, $json['stats']['importable_count']);
+    }
+
+    /**
+     * Test Case 29: Duplicate record with Company Non PTKP -> Preserves duplicate priority with invalid company metadata
+     */
+    public function test_case_29_duplicate_record_with_company_non_ptkp_preserves_duplicate_priority_with_invalid_company_metadata(): void
+    {
+        $file = $this->createPtkpExcel([
+            [
+                'row_no'      => 1,
+                'employee_id' => $this->activeUser->id_emp,
+                'company'     => 'Non PTKP',
+                'course_name' => $this->activeTraining->title,
+            ],
+            [
+                'row_no'      => 2,
+                'employee_id' => $this->activeUser->id_emp,
+                'company'     => 'Non PTKP',
+                'course_name' => $this->activeTraining->title,
+            ]
+        ]);
+
+        $response = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.preview'), ['file' => $file]);
+
+        $response->assertStatus(200);
+        $json = $response->json();
+
+        // Row 1 is first encountered, evaluated to INVALID COMPANY
+        $row1 = $json['rows'][0];
+        $this->assertEquals('INVALID COMPANY', $row1['status']);
+        $this->assertTrue($row1['is_invalid_company']);
+
+        // Row 2 is exact duplicate of row 1, evaluated to DUPLICATE with preserved invalid company metadata
+        $row2 = $json['rows'][1];
+        $this->assertEquals('DUPLICATE', $row2['status']);
+        $this->assertTrue($row2['is_blocking']);
+        $this->assertTrue($row2['is_invalid_company']);
+        $this->assertTrue($row2['company_mismatch']);
+        $this->assertEquals(1, $json['stats']['duplicate']);
+        $this->assertEquals(1, $json['stats']['invalid_company']);
+    }
+
+    /**
+     * Test Case 30: PT ABC Indonesia & PT XYZ evaluate to INVALID COMPANY
+     */
+    public function test_case_30_pt_abc_indonesia_and_pt_xyz_evaluate_to_invalid_company(): void
+    {
+        $file = $this->createPtkpExcel([
+            [
+                'row_no'      => 1,
+                'employee_id' => $this->activeUser->id_emp,
+                'company'     => 'PT ABC Indonesia',
+                'course_name' => $this->activeTraining->title,
+            ],
+            [
+                'row_no'      => 2,
+                'employee_id' => $this->activeUser->id_emp,
+                'company'     => 'PT XYZ',
+                'course_name' => 'Secondary Course ' . uniqid(),
+            ]
+        ]);
+
+        $response = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.preview'), ['file' => $file]);
+
+        $response->assertStatus(200);
+        $json = $response->json();
+
+        $this->assertEquals(2, $json['stats']['invalid_company']);
+        $this->assertEquals('INVALID COMPANY', $json['rows'][0]['status']);
+        $this->assertTrue($json['rows'][0]['is_invalid_company']);
+        $this->assertEquals('INVALID COMPANY', $json['rows'][1]['status']);
+        $this->assertTrue($json['rows'][1]['is_invalid_company']);
+    }
+
+    /**
+     * Test Case 31: PT Krakatau Steel evaluates to INVALID COMPANY
+     */
+    public function test_case_31_pt_krakatau_steel_evaluates_to_invalid_company(): void
+    {
+        $file = $this->createPtkpExcel([
+            [
+                'row_no'      => 1,
+                'employee_id' => $this->activeUser->id_emp,
+                'company'     => 'PT Krakatau Steel',
+                'course_name' => $this->activeTraining->title,
+            ]
+        ]);
+
+        $response = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.preview'), ['file' => $file]);
+
+        $response->assertStatus(200);
+        $json = $response->json();
+        $row = $json['rows'][0];
+
+        $this->assertEquals('INVALID COMPANY', $row['status']);
+        $this->assertTrue($row['is_invalid_company']);
+        $this->assertTrue($row['company_mismatch']);
+        $this->assertEquals(1, $json['stats']['invalid_company']);
+    }
+
+    /**
+     * Test Case 32: Company empty or NULL evaluates to INVALID COMPANY
+     */
+    public function test_case_32_company_empty_or_null_evaluates_to_invalid_company(): void
+    {
+        $file = $this->createPtkpExcel([
+            [
+                'row_no'      => 1,
+                'employee_id' => $this->activeUser->id_emp,
+                'company'     => '', // Empty string
+                'course_name' => $this->activeTraining->title,
+            ],
+            [
+                'row_no'      => 2,
+                'employee_id' => $this->activeUser->id_emp,
+                'company'     => null, // NULL
+                'course_name' => 'Secondary Course ' . uniqid(),
+            ]
+        ]);
+
+        $response = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.preview'), ['file' => $file]);
+
+        $response->assertStatus(200);
+        $json = $response->json();
+
+        $this->assertEquals(2, $json['stats']['invalid_company']);
+        $this->assertEquals('INVALID COMPANY', $json['rows'][0]['status']);
+        $this->assertTrue($json['rows'][0]['is_invalid_company']);
+        $this->assertEquals('INVALID COMPANY', $json['rows'][1]['status']);
+        $this->assertTrue($json['rows'][1]['is_invalid_company']);
+    }
+
+    /**
+     * Test Case 33: Company normalization for case, whitespace, and punctuation evaluates to VALID
+     */
+    public function test_case_33_company_case_whitespace_and_punctuation_normalization_evaluates_to_valid(): void
+    {
+        $file = $this->createPtkpExcel([
+            [
+                'row_no'      => 1,
+                'employee_id' => $this->activeUser->id_emp,
+                'company'     => 'pt krakatau posco', // Lowercase
+                'course_name' => $this->activeTraining->title,
+            ],
+            [
+                'row_no'      => 2,
+                'employee_id' => $this->activeUser->id_emp,
+                'company'     => '  PT   Krakatau   Posco  ', // Extra whitespace & padded
+                'course_name' => 'Course Variant 2 ' . uniqid(),
+            ],
+            [
+                'row_no'      => 3,
+                'employee_id' => $this->activeUser->id_emp,
+                'company'     => 'PT. Krakatau Posco', // Punctuation dot
+                'course_name' => 'Course Variant 3 ' . uniqid(),
+            ]
+        ]);
+
+        $response = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.preview'), ['file' => $file]);
+
+        $response->assertStatus(200);
+        $json = $response->json();
+
+        $this->assertEquals(0, $json['stats']['invalid_company']);
+        $this->assertEquals(3, $json['stats']['valid']);
+        $this->assertEquals('VALID', $json['rows'][0]['status']);
+        $this->assertFalse($json['rows'][0]['is_invalid_company']);
+        $this->assertEquals('VALID', $json['rows'][1]['status']);
+        $this->assertFalse($json['rows'][1]['is_invalid_company']);
+        $this->assertEquals('VALID', $json['rows'][2]['status']);
+        $this->assertFalse($json['rows'][2]['is_invalid_company']);
+    }
+
+    /**
+     * Test Case 34: Company invalid + empty warning fields -> INVALID COMPANY, warning fields preserved
+     */
+    public function test_case_34_company_invalid_with_empty_warning_fields_evaluates_to_invalid_company_preserving_warnings(): void
+    {
+        $file = $this->createPtkpExcel([
+            [
+                'row_no'              => 1,
+                'employee_id'         => $this->activeUser->id_emp,
+                'company'             => 'PT Perusahaan Lainnya',
+                'course_name'         => $this->activeTraining->title,
+                'level'               => '',
+                'attendance_reason'   => '',
+                'bond_status'         => '',
+            ]
+        ]);
+
+        $response = $this->actingAs($this->adminUser)
+            ->post(route('manage.record.offline.import-ptkp.preview'), ['file' => $file]);
+
+        $response->assertStatus(200);
+        $json = $response->json();
+        $row = $json['rows'][0];
+
+        $this->assertEquals('INVALID COMPANY', $row['status']);
+        $this->assertTrue($row['is_invalid_company']);
+        $this->assertEquals(1, $json['stats']['invalid_company']);
+        $this->assertEquals(0, $json['stats']['warning']);
+        $this->assertNotEmpty($row['empty_warning_fields']);
+        $this->assertContains('Level', $row['empty_warning_fields']);
+        $this->assertContains('Attendance Reason', $row['empty_warning_fields']);
+    }
+
+    /**
+     * Test Case 35: Direct unit matrix test for isWhitelistedCompany helper
+     */
+    public function test_case_35_is_whitelisted_company_helper_unit_matrix(): void
+    {
+        // Valid Whitelist variations
+        $this->assertTrue(\App\Services\OfflineTraining\PtkpValidationService::isWhitelistedCompany('PT Krakatau Posco'));
+        $this->assertTrue(\App\Services\OfflineTraining\PtkpValidationService::isWhitelistedCompany('pt krakatau posco'));
+        $this->assertTrue(\App\Services\OfflineTraining\PtkpValidationService::isWhitelistedCompany('PT. Krakatau Posco'));
+        $this->assertTrue(\App\Services\OfflineTraining\PtkpValidationService::isWhitelistedCompany('  PT   Krakatau   Posco  '));
+        $this->assertTrue(\App\Services\OfflineTraining\PtkpValidationService::isWhitelistedCompany('PT. KRAKATAU POSCO'));
+
+        // Invalid Company names
+        $this->assertFalse(\App\Services\OfflineTraining\PtkpValidationService::isWhitelistedCompany('Non PTKP'));
+        $this->assertFalse(\App\Services\OfflineTraining\PtkpValidationService::isWhitelistedCompany('PT ABC Indonesia'));
+        $this->assertFalse(\App\Services\OfflineTraining\PtkpValidationService::isWhitelistedCompany('PT XYZ'));
+        $this->assertFalse(\App\Services\OfflineTraining\PtkpValidationService::isWhitelistedCompany('PT Krakatau Steel'));
+        $this->assertFalse(\App\Services\OfflineTraining\PtkpValidationService::isWhitelistedCompany(''));
+        $this->assertFalse(\App\Services\OfflineTraining\PtkpValidationService::isWhitelistedCompany(null));
+        $this->assertFalse(\App\Services\OfflineTraining\PtkpValidationService::isWhitelistedCompany('   '));
+        $this->assertFalse(\App\Services\OfflineTraining\PtkpValidationService::isWhitelistedCompany('-'));
+        $this->assertFalse(\App\Services\OfflineTraining\PtkpValidationService::isWhitelistedCompany('Perusahaan Lainnya'));
+    }
 }

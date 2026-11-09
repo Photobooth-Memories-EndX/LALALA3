@@ -238,7 +238,8 @@
         $('#ptkp-kpi-warning').text(stats.warning || 0);
         $('#ptkp-kpi-duplicate').text(stats.duplicate || 0);
         $('#ptkp-kpi-invalid').text(stats.invalid || 0);
-        $('#ptkp-kpi-invalid-company').text(stats.invalid_company || 0);
+        const kpiInvalidCompany = (stats.invalid_company !== undefined ? stats.invalid_company : (stats.invalid_company_count || 0));
+        $('#ptkp-kpi-invalid-company').text(kpiInvalidCompany);
 
         // Sub-breakdown for Invalid ID vs Invalid Course Title (without double counting the total)
         let countInvalidId = 0;
@@ -262,7 +263,7 @@
         // Pre-populate Step 3 values
         const validCount = stats.valid || 0;
         const warningCount = stats.warning || 0;
-        const invalidCompanyCount = stats.invalid_company || 0;
+        const invalidCompanyCount = (stats.invalid_company !== undefined ? stats.invalid_company : (stats.invalid_company_count || 0));
         const invalidCount = stats.invalid || 0;
         const duplicateCount = stats.duplicate || 0;
 
@@ -612,7 +613,7 @@
         if (typeof row.is_invalid_id === 'boolean') {
             return row.is_invalid_id;
         }
-        if (row.invalid_type === 'INVALID_ID' || row.invalid_type === 'INVALID_ID_AND_COURSE') {
+        if (row.invalid_type && row.invalid_type.indexOf('INVALID_ID') !== -1) {
             return true;
         }
         if (row.status !== 'INVALID') return false;
@@ -639,7 +640,7 @@
         if (typeof row.is_invalid_course === 'boolean') {
             return row.is_invalid_course;
         }
-        if (row.invalid_type === 'INVALID_COURSE' || row.invalid_type === 'INVALID_ID_AND_COURSE') {
+        if (row.invalid_type && row.invalid_type.indexOf('INVALID_COURSE') !== -1) {
             return true;
         }
         if (row.status !== 'INVALID') return false;
@@ -652,6 +653,32 @@
                     m.indexOf('course title cannot be empty') !== -1 ||
                     m.indexOf('course title not found') !== -1 ||
                     m.indexOf('ambiguous in offline trainings') !== -1) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    function isRowInvalidCompany(row) {
+        if (!row) return false;
+        if (typeof row.is_invalid_company === 'boolean') {
+            return row.is_invalid_company;
+        }
+        if (row.status === 'INVALID COMPANY') return true;
+        if (row.company_mismatch === true) return true;
+        if (row.invalid_type && row.invalid_type.indexOf('COMPANY') !== -1) {
+            return true;
+        }
+        const comp = row.company !== undefined && row.company !== null ? String(row.company).trim() : '';
+        if (comp === '' || comp === '-' || comp === '—' || comp === '–') return true;
+        const clean = comp.toLowerCase().replace(/[.,]/g, '').replace(/\s+/g, ' ');
+        if (clean !== 'pt krakatau posco') return true;
+
+        if (row.messages && Array.isArray(row.messages)) {
+            for (let i = 0; i < row.messages.length; i++) {
+                const m = String(row.messages[i]).toLowerCase();
+                if (m.indexOf('company') !== -1 && (m.indexOf('invalid') !== -1 || m.indexOf('mismatch') !== -1 || m.indexOf('krakatau posco') !== -1)) {
                     return true;
                 }
             }
@@ -672,7 +699,9 @@
                 if (currentFilter === 'invalid_course') {
                     if (row.status !== 'INVALID' || !isRowInvalidCourse(row)) return false;
                 }
-                if (currentFilter === 'invalid_company' && row.status !== 'INVALID COMPANY') return false;
+                if (currentFilter === 'invalid_company') {
+                    if (row.status !== 'INVALID COMPANY' && !isRowInvalidCompany(row)) return false;
+                }
             }
             if (searchQuery.empId && (row.employee_id || '').toLowerCase().indexOf(searchQuery.empId) === -1) return false;
             if (searchQuery.name && (row.name || '').toLowerCase().indexOf(searchQuery.name) === -1) return false;
@@ -769,6 +798,13 @@
                         msgsHtml += '<div class="text-muted mt-0.5 fw-normal" style="font-size: 10px;">' + escapeHtml(blockingErrors.slice(1).join('; ')) + '</div>';
                     }
                     msgsHtml += '</div>';
+
+                    if (row.company_mismatch || isRowInvalidCompany(row)) {
+                        const compMismatch = (row.messages || []).find(function (m) {
+                            return m.toLowerCase().indexOf('company mismatch') !== -1 || m.toLowerCase().indexOf('non ptkp') !== -1;
+                        }) || 'Company mismatch detected.';
+                        msgsHtml += '<div class="ptkp-row-msg text-muted mt-0.5" style="font-size: 10px;" title="' + escapeHtml(compMismatch) + '"><i class="ti ti-building me-1"></i>' + escapeHtml(compMismatch) + '</div>';
+                    }
                 } else if (row.status === 'DUPLICATE') {
                     const dupMsg = (row.messages || []).find(function (m) {
                         return m.toLowerCase().indexOf('duplicate') !== -1;
@@ -778,11 +814,14 @@
                         '</div>';
                 } else if (row.status === 'INVALID COMPANY') {
                     const companyMsg = (row.messages || []).find(function (m) {
-                        return m.toLowerCase().indexOf('company mismatch') !== -1;
+                        return m.toLowerCase().indexOf('company mismatch') !== -1 || m.toLowerCase().indexOf('non ptkp') !== -1;
                     }) || 'Company mismatch detected.';
                     msgsHtml = '<div class="ptkp-row-msg text-warning fw-semibold" style="color: #b45309;" title="' + escapeHtml(companyMsg) + '">' +
                         '<i class="ti ti-building me-1"></i>' + escapeHtml(companyMsg) +
                         '</div>';
+                    if (row.warning_reasons && row.warning_reasons.length > 0) {
+                        msgsHtml += '<div class="text-muted mt-0.5 fw-normal" style="font-size: 10px;" title="' + escapeHtml(row.warning_reasons.join('; ')) + '">' + escapeHtml(row.warning_reasons.join('; ')) + '</div>';
+                    }
                 } else {
                     msgsHtml = '<div class="ptkp-row-msg text-muted">' + escapeHtml(row.status || '-') + '</div>';
                 }
@@ -844,16 +883,23 @@
             case 'INVALID': {
                 const hasEmpErr = isRowInvalidId(row);
                 const hasCourseErr = isRowInvalidCourse(row);
+                const hasCompanyErr = isRowInvalidCompany(row);
 
-                if (hasEmpErr && hasCourseErr) {
-                    return '<div class="d-flex flex-column gap-1 align-items-start">' +
-                        '<span class="badge badge-ptkp-invalid-id"><i class="ti ti-user-x me-1"></i>INVALID ID</span>' +
-                        '<span class="badge badge-ptkp-invalid-course"><i class="ti ti-book-off me-1"></i>INVALID COURSE TITLE</span>' +
-                        '</div>';
-                } else if (hasEmpErr) {
-                    return '<span class="badge badge-ptkp-invalid-id"><i class="ti ti-user-x me-1"></i>INVALID ID</span>';
-                } else if (hasCourseErr) {
-                    return '<span class="badge badge-ptkp-invalid-course"><i class="ti ti-book-off me-1"></i>INVALID COURSE TITLE</span>';
+                const badges = [];
+                if (hasEmpErr) {
+                    badges.push('<span class="badge badge-ptkp-invalid-id"><i class="ti ti-user-x me-1"></i>INVALID ID</span>');
+                }
+                if (hasCourseErr) {
+                    badges.push('<span class="badge badge-ptkp-invalid-course"><i class="ti ti-book-off me-1"></i>INVALID COURSE TITLE</span>');
+                }
+                if (hasCompanyErr) {
+                    badges.push('<span class="badge badge-ptkp-invalid-company"><i class="ti ti-building me-1"></i>INVALID COMPANY</span>');
+                }
+
+                if (badges.length > 1) {
+                    return '<div class="d-flex flex-column gap-1 align-items-start">' + badges.join('') + '</div>';
+                } else if (badges.length === 1) {
+                    return badges[0];
                 } else {
                     return '<span class="badge badge-ptkp-invalid"><i class="ti ti-x me-1"></i>INVALID</span>';
                 }
@@ -1127,20 +1173,84 @@
                 row.messages.forEach(function (m) { msgsHtml += '<li>' + escapeHtml(m) + '</li>'; });
                 msgsHtml += '</ul></div>';
             }
+        } else if (row.status === 'INVALID COMPANY') {
+            const companyMismatchMsg = (row.messages || []).find(function (m) {
+                return m.toLowerCase().indexOf('company') !== -1 && (m.toLowerCase().indexOf('invalid') !== -1 || m.toLowerCase().indexOf('mismatch') !== -1 || m.toLowerCase().indexOf('strictly requires') !== -1);
+            }) || 'Invalid Company: Import PTKP strictly requires \'PT Krakatau Posco\'.';
+
+            msgsHtml += `
+                <div class="alert alert-warning border-0 rounded-3 small mb-3 py-2 px-3" style="background-color: #fff7ed; border: 1px solid #fed7aa !important; color: #9a3412;">
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                        <div class="d-flex align-items-center gap-2 fw-bold">
+                            <i class="ti ti-building fs-3 text-warning"></i>
+                            <span>Invalid Company Notice (Strict Whitelist)</span>
+                        </div>
+                        <span class="badge bg-warning text-dark fw-bold px-2 py-1">INVALID COMPANY</span>
+                    </div>
+                    <div style="font-size: 0.85rem;" class="fw-semibold">${escapeHtml(companyMismatchMsg)}</div>
+                    <div class="extra-small text-muted mt-1" style="font-size: 0.75rem;">Import PTKP strictly permits only 'PT Krakatau Posco'. Any other company name or empty value is categorized as INVALID COMPANY. In OWL LMS Import PTKP, this record is non-blocking and remains eligible for import with a review tag.</div>
+                </div>
+            `;
+
+            if ((row.empty_warning_fields && row.empty_warning_fields.length > 0) || (row.empty_warning_details && row.empty_warning_details.length > 0)) {
+                let warningRowsHtml = '';
+                const details = (row.empty_warning_details && row.empty_warning_details.length > 0)
+                    ? row.empty_warning_details
+                    : (row.empty_warning_fields || []).map(function (f) {
+                        return { field: f, display_value: 'Empty' };
+                    });
+
+                details.forEach(function (item) {
+                    const displayVal = item.display_value || 'Empty';
+                    warningRowsHtml += `
+                        <tr>
+                            <td class="fw-semibold text-dark">${escapeHtml(item.field)}</td>
+                            <td><span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle font-monospace">${escapeHtml(displayVal)}</span></td>
+                        </tr>
+                    `;
+                });
+
+                msgsHtml += `
+                    <div class="card border border-warning-subtle rounded-3 mb-3 shadow-none" style="background-color: #fffbeb;">
+                        <div class="card-header bg-transparent border-warning-subtle py-2 px-3 d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-2 fw-bold text-warning-emphasis">
+                                <i class="ti ti-alert-triangle fs-3 text-warning"></i>
+                                <span>WARNING DETAILS (Non-blocking)</span>
+                            </div>
+                            <span class="badge bg-warning text-dark fw-bold px-2 py-1">WARNING</span>
+                        </div>
+                        <div class="card-body p-3">
+                            <div class="table-responsive rounded-2 border border-warning-subtle mb-2 bg-white">
+                                <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.82rem;">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width: 50%;">Field</th>
+                                            <th style="width: 50%;">Validation Result</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${warningRowsHtml}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
         }
 
-        if (row.company_mismatch) {
+        if (row.status !== 'INVALID COMPANY' && (row.company_mismatch || isRowInvalidCompany(row))) {
             const companyMismatchMsg = (row.messages || []).find(function (m) {
-                return m.toLowerCase().indexOf('company mismatch') !== -1;
+                return m.toLowerCase().indexOf('company mismatch') !== -1 || m.toLowerCase().indexOf('non ptkp') !== -1;
             }) || 'Company mismatch: Excel company differs from user record company.';
             msgsHtml += `
                 <div class="alert alert-info border-0 rounded-3 small mb-3 py-2 px-3" style="background-color: #eff6ff; border: 1px solid #bfdbfe !important; color: #1e40af;">
                     <div class="d-flex align-items-center gap-2 fw-bold mb-1">
                         <i class="ti ti-building fs-3 text-primary"></i>
-                        <span>Company Mismatch Notice</span>
+                        <span>Company Discrepancy Notice</span>
                     </div>
                     <div style="font-size: 0.82rem;">${escapeHtml(companyMismatchMsg)}</div>
-                    <div class="extra-small text-muted mt-1" style="font-size: 0.75rem;">This discrepancy is non-blocking and the record will still be imported.</div>
+                    <div class="extra-small text-muted mt-1" style="font-size: 0.75rem;">This company discrepancy has been recorded in the classification metadata.</div>
                 </div>
             `;
         }

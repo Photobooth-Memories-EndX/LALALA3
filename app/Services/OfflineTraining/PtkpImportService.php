@@ -312,15 +312,16 @@ class PtkpImportService
         $existingDbRecords = $this->lookupExistingParticipantRecords(array_keys($uniqueEmployeeIds), array_keys($uniqueCourses));
 
         $stats = [
-            'total_rows'           => count($rawRows),
-            'valid'                => 0,
-            'warning'              => 0,
-            'duplicate'            => 0,
-            'invalid'              => 0,
-            'invalid_id_count'     => 0,
-            'invalid_course_count' => 0,
-            'invalid_company'      => 0,
-            'importable_count'     => 0,
+            'total_rows'            => count($rawRows),
+            'valid'                 => 0,
+            'warning'               => 0,
+            'duplicate'             => 0,
+            'invalid'               => 0,
+            'invalid_id_count'      => 0,
+            'invalid_course_count'  => 0,
+            'invalid_company'       => 0,
+            'invalid_company_count' => 0,
+            'importable_count'      => 0,
         ];
 
         $parsedRows = [];
@@ -454,6 +455,7 @@ class PtkpImportService
                     break;
                 case PtkpValidationService::STATUS_INVALID_COMPANY:
                     $stats['invalid_company']++;
+                    $stats['invalid_company_count']++;
                     $stats['importable_count']++;
                     break;
                 case PtkpValidationService::STATUS_DUPLICATE:
@@ -479,8 +481,9 @@ class PtkpImportService
                 'is_blocking'           => $eval['is_blocking'],
                 'is_invalid_id'         => $eval['is_invalid_id'] ?? false,
                 'is_invalid_course'     => $eval['is_invalid_course'] ?? false,
+                'is_invalid_company'    => $eval['is_invalid_company'] ?? false,
                 'invalid_type'          => $eval['invalid_type'] ?? null,
-                'company_mismatch'      => $eval['company_mismatch'],
+                'company_mismatch'      => $eval['company_mismatch'] ?? false,
                 'messages'              => $eval['messages'],
                 'errors'                => $eval['errors'] ?? [],
                 'id_errors'             => $eval['id_errors'] ?? [],

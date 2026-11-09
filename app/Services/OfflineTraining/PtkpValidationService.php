@@ -21,6 +21,38 @@ class PtkpValidationService
     public const STATUS_INVALID_COMPANY = 'INVALID COMPANY';
 
     /**
+     * Strict Whitelist Company for PTKP: ONLY 'PT Krakatau Posco' is allowed.
+     */
+    public const ALLOWED_COMPANY = 'PT Krakatau Posco';
+
+    /**
+     * Strict Whitelist Check for PTKP Import:
+     * ONLY 'PT Krakatau Posco' is allowed.
+     * All other companies, empty/null, or non-matching values evaluate to false.
+     * Normalizes case, trims, strips punctuation (dots, commas), and collapses whitespace.
+     *
+     * @param string|null $company
+     * @return bool
+     */
+    public static function isWhitelistedCompany(?string $company): bool
+    {
+        if ($company === null) {
+            return false;
+        }
+
+        $trimmed = trim((string) $company);
+        if ($trimmed === '' || $trimmed === '-' || $trimmed === '—' || $trimmed === '–') {
+            return false;
+        }
+
+        // Normalize string: lowercase, strip punctuation like '.', ',', and collapse multiple whitespace
+        $clean = preg_replace('/\s+/', ' ', str_replace(['.', ','], '', mb_strtolower($trimmed, 'UTF-8')));
+
+        // Standard whitelist key for PT Krakatau Posco: 'pt krakatau posco'
+        return $clean === 'pt krakatau posco';
+    }
+
+    /**
      * Batch lookup users by Employee ID (id_emp).
      *
      * @param array<string> $employeeIds
@@ -307,6 +339,7 @@ class PtkpValidationService
         $emptyWarningFields = [];
         $emptyWarningDetails = [];
         $isCompanyMismatch = false;
+        $isInvalidCompany = false;
 
         // 1. Employee ID check (Mandatory - exclusively triggers INVALID ID)
         $empId = trim((string) ($normalized['employee_id'] ?? ''));
@@ -342,15 +375,27 @@ class PtkpValidationService
             $courseErrors[] = "Course Title '{$courseTitle}' is ambiguous in offline trainings database.";
         }
 
-        // 3. Company mismatch check (Non-blocking for PTKP)
-        if ($user && !empty($user->company_name) && !empty($normalized['company'])) {
-            $userCompany = trim(mb_strtolower($user->company_name, 'UTF-8'));
-            $excelCompany = trim(mb_strtolower($normalized['company'], 'UTF-8'));
+        // 3. Company check (STRICT WHITELIST: Only 'PT Krakatau Posco' is allowed!)
+        $rawCompany = $normalized['company'] ?? null;
+        $excelCompany = is_scalar($rawCompany) ? trim((string) $rawCompany) : '';
+        $isWhitelisted = self::isWhitelistedCompany($rawCompany);
 
-            if ($userCompany !== $excelCompany) {
-                $isCompanyMismatch = true;
-                $warnings[] = "Company mismatch: Excel has '{$normalized['company']}' while user record has '{$user->company_name}'.";
+        if (!$isWhitelisted) {
+            $isInvalidCompany = true;
+            $isCompanyMismatch = true;
+            if ($excelCompany === '' || $excelCompany === '-' || $excelCompany === '—' || $excelCompany === '–') {
+                $compMsg = "Company is empty or missing. Import PTKP strictly requires 'PT Krakatau Posco'.";
+            } elseif ($user && !empty($user->company_name)) {
+                $compMsg = "Company mismatch: Excel has '{$excelCompany}' while user record has '{$user->company_name}'. Only 'PT Krakatau Posco' is allowed for PTKP.";
+            } else {
+                $compMsg = "Company '{$excelCompany}' is invalid. Only 'PT Krakatau Posco' is allowed for Import PTKP.";
             }
+            $warnings[] = $compMsg;
+        } elseif ($user && !empty($user->company_name) && !self::isWhitelistedCompany($user->company_name)) {
+            // Excel is PT Krakatau Posco, but user in database belongs to another company
+            $isInvalidCompany = true;
+            $isCompanyMismatch = true;
+            $warnings[] = "Company mismatch: Excel has '{$excelCompany}' while user record has '{$user->company_name}'.";
         }
 
         // 4. Date and Time Format Validations (Non-blocking WARNINGS - NEVER causes INVALID!)
@@ -445,8 +490,17 @@ class PtkpValidationService
         if ($duplicateInfo['is_duplicate']) {
             $messages[] = $duplicateInfo['duplicate_reason'];
         }
-        if ($isCompanyMismatch) {
-            $messages[] = "Company mismatch: Excel has '{$normalized['company']}' while user record has '{$user->company_name}'.";
+        if ($isInvalidCompany) {
+            $companyWarningMsg = null;
+            foreach ($warnings as $w) {
+                if (stripos($w, 'Company') !== false || stripos($w, 'Non PTKP') !== false) {
+                    $companyWarningMsg = $w;
+                    break;
+                }
+            }
+            if ($companyWarningMsg && !in_array($companyWarningMsg, $messages, true)) {
+                $messages[] = $companyWarningMsg;
+            }
         }
         if ($warningMessage) {
             $messages[] = $warningMessage;
@@ -466,29 +520,38 @@ class PtkpValidationService
             $status = self::STATUS_INVALID;
             $isBlocking = true;
         } elseif ($duplicateInfo['is_duplicate']) {
+            // Priority 2: Duplicate records (in file or database)
             $status = self::STATUS_DUPLICATE;
             $isBlocking = true;
-        } elseif (!empty($emptyWarningFields) || !empty($formatWarnings)) {
-            $status = self::STATUS_WARNING;
-            $isBlocking = false;
-        } elseif ($isCompanyMismatch) {
+        } elseif ($isInvalidCompany) {
+            // Priority 3: Invalid Company (Non PTKP or Company mismatch - Non-blocking for PTKP, takes precedence over warning fields)
             $status = self::STATUS_INVALID_COMPANY;
             $isBlocking = false;
-        } elseif (!empty($warnings)) {
+        } elseif (!empty($emptyWarningFields) || !empty($formatWarnings) || !empty($warnings)) {
+            // Priority 4: Non-blocking Warnings (designated warning fields or format warnings)
             $status = self::STATUS_WARNING;
             $isBlocking = false;
         } else {
+            // Priority 5: Completely Valid
             $status = self::STATUS_VALID;
             $isBlocking = false;
         }
 
         $invalidType = null;
-        if ($isInvalidId && $isInvalidCourse) {
+        if ($isInvalidId && $isInvalidCourse && $isInvalidCompany) {
+            $invalidType = 'INVALID_ID_AND_COURSE_AND_COMPANY';
+        } elseif ($isInvalidId && $isInvalidCourse) {
             $invalidType = 'INVALID_ID_AND_COURSE';
+        } elseif ($isInvalidId && $isInvalidCompany) {
+            $invalidType = 'INVALID_ID_AND_COMPANY';
+        } elseif ($isInvalidCourse && $isInvalidCompany) {
+            $invalidType = 'INVALID_COURSE_AND_COMPANY';
         } elseif ($isInvalidId) {
             $invalidType = 'INVALID_ID';
         } elseif ($isInvalidCourse) {
             $invalidType = 'INVALID_COURSE';
+        } elseif ($isInvalidCompany) {
+            $invalidType = 'INVALID_COMPANY';
         }
 
         return [
@@ -496,6 +559,7 @@ class PtkpValidationService
             'is_blocking'           => $isBlocking,
             'is_invalid_id'         => $isInvalidId,
             'is_invalid_course'     => $isInvalidCourse,
+            'is_invalid_company'    => $isInvalidCompany,
             'invalid_type'          => $invalidType,
             'messages'              => $messages,
             'warnings'              => $warnings,

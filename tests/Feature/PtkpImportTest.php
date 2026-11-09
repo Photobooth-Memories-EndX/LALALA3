@@ -1470,8 +1470,10 @@ class PtkpImportTest extends TestCase
         $json = $response->json();
 
         $row = $json['rows'][0];
-        $this->assertEquals('WARNING', $row['status']);
+        $this->assertEquals('INVALID COMPANY', $row['status']);
         $this->assertTrue($row['company_mismatch']);
+        $this->assertTrue($row['is_invalid_company']);
+        $this->assertEquals(1, $json['stats']['invalid_company']);
         $this->assertEquals(['Level'], $row['empty_warning_fields']);
         $this->assertEquals(['Level is empty'], $row['warning_reasons']);
         $this->assertEquals('WARNING: Level is empty', $row['warning_message']);
