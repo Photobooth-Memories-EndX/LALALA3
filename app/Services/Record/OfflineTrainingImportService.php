@@ -156,7 +156,7 @@ class OfflineTrainingImportService
         $usersMapByName = [];
 
         if (!empty($uniqueNips)) {
-            $users = User::whereIn('id_emp', array_keys($uniqueNips))
+            $users = User::withTrashed()->whereIn('id_emp', array_keys($uniqueNips))
                 ->select(['id', 'name', 'id_emp'])
                 ->get();
             foreach ($users as $u) {
@@ -169,7 +169,7 @@ class OfflineTrainingImportService
         }
 
         if (!empty($uniqueNames)) {
-            $nameUsers = User::where(function ($q) use ($uniqueNames) {
+            $nameUsers = User::withTrashed()->where(function ($q) use ($uniqueNames) {
                 foreach (array_keys($uniqueNames) as $nm) {
                     $q->orWhereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($nm))]);
                 }
@@ -184,7 +184,7 @@ class OfflineTrainingImportService
         // Batch load potential existing OfflineTrainings
         $existingTrainings = [];
         if (!empty($uniqueCourses)) {
-            $dbTrainings = OfflineTraining::forRecord()->whereIn('course_name', array_keys($uniqueCourses))->get();
+            $dbTrainings = OfflineTraining::withTrashed()->forRecord()->whereIn('course_name', array_keys($uniqueCourses))->get();
             foreach ($dbTrainings as $t) {
                 $fp = $this->buildTrainingFingerprint([
                     'course_name' => $t->course_name,
@@ -529,7 +529,7 @@ class OfflineTrainingImportService
         $usersMapByName = [];
 
         if (!empty($uniqueNips)) {
-            $users = User::whereIn('id_emp', array_keys($uniqueNips))
+            $users = User::withTrashed()->whereIn('id_emp', array_keys($uniqueNips))
                 ->select(['id', 'name', 'id_emp'])
                 ->get();
             foreach ($users as $u) {
@@ -542,7 +542,7 @@ class OfflineTrainingImportService
         }
 
         if (!empty($uniqueNames)) {
-            $nameUsers = User::where(function ($q) use ($uniqueNames) {
+            $nameUsers = User::withTrashed()->where(function ($q) use ($uniqueNames) {
                 foreach (array_keys($uniqueNames) as $nm) {
                     $q->orWhereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($nm))]);
                 }
@@ -557,7 +557,7 @@ class OfflineTrainingImportService
         // Batch trainings
         $existingTrainings = [];
         if (!empty($uniqueCourses)) {
-            $dbTrainings = OfflineTraining::forRecord()->whereIn('course_name', array_keys($uniqueCourses))->get();
+            $dbTrainings = OfflineTraining::withTrashed()->forRecord()->whereIn('course_name', array_keys($uniqueCourses))->get();
             foreach ($dbTrainings as $t) {
                 $fp = $this->buildTrainingFingerprint([
                     'course_name' => $t->course_name,

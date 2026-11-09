@@ -181,7 +181,7 @@ class OfflineTrainingUpdateService
         $userId = !empty($raw['user_id']) ? (int) $raw['user_id'] : null;
 
         if (!$userId && $employeeId) {
-            $matchedUser = User::where('id_emp', $employeeId)->first();
+            $matchedUser = User::withTrashed()->where('id_emp', $employeeId)->first();
             if ($matchedUser) {
                 $userId = $matchedUser->id;
             }

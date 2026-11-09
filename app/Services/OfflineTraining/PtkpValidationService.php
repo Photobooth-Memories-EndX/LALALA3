@@ -47,8 +47,9 @@ class PtkpValidationService
             return [];
         }
 
-        $users = User::whereIn('id_emp', array_values($normalizedIds))
-            ->get(['id', 'id_emp', 'name', 'jobgrade', 'jobposition', 'team', 'department', 'company_name']);
+        $users = User::withTrashed()
+            ->whereIn('id_emp', array_values($normalizedIds))
+            ->get(['id', 'id_emp', 'name', 'jobgrade', 'jobposition', 'team', 'department', 'company_name', 'deleted_at']);
 
         $lookup = [];
         foreach ($users as $user) {
@@ -116,6 +117,20 @@ class PtkpValidationService
         }
 
         if ($matches->count() > 1) {
+            $activeMatches = $matches->filter(fn ($u) => is_null($u->deleted_at));
+            if ($activeMatches->count() === 1) {
+                $user = $activeMatches->first();
+                return [
+                    'user'         => $user,
+                    'status'       => self::STATUS_VALID,
+                    'errors'       => [],
+                    'warnings'     => [],
+                    'is_ambiguous' => false,
+                    'is_not_found' => false,
+                    'is_resigned'  => false,
+                ];
+            }
+
             return [
                 'user'         => null,
                 'status'       => self::STATUS_INVALID,
@@ -123,6 +138,7 @@ class PtkpValidationService
                 'warnings'     => [],
                 'is_ambiguous' => true,
                 'is_not_found' => false,
+                'is_resigned'  => false,
             ];
         }
 
@@ -135,6 +151,121 @@ class PtkpValidationService
             'warnings'     => [],
             'is_ambiguous' => false,
             'is_not_found' => false,
+            'is_resigned'  => !empty($user->deleted_at),
+        ];
+    }
+
+    /**
+     * Batch lookup courses by course_name / title, including soft-deleted records.
+     *
+     * @param array<string> $courseTitles
+     * @return array<string, \Illuminate\Database\Eloquent\Collection<int, OfflineTraining>>
+     */
+    public function batchLookupCourses(array $courseTitles): array
+    {
+        $normalizedTitles = [];
+        foreach ($courseTitles as $title) {
+            $trimmed = trim((string) $title);
+            if ($trimmed !== '') {
+                $normalizedTitles[strtolower($trimmed)] = $trimmed;
+            }
+        }
+
+        if (empty($normalizedTitles)) {
+            return [];
+        }
+
+        $trainings = OfflineTraining::withTrashed()
+            ->where(function ($q) use ($normalizedTitles) {
+                $q->whereIn('course_name', array_values($normalizedTitles))
+                  ->orWhereIn('title', array_values($normalizedTitles));
+            })
+            ->get(['id', 'course_name', 'title', 'deleted_at', 'batch', 'start_date', 'finish_date', 'type', 'venue']);
+
+        $lookup = [];
+        foreach ($trainings as $t) {
+            $names = array_filter([$t->course_name, $t->title]);
+            foreach ($names as $name) {
+                $key = strtolower(trim((string) $name));
+                if ($key !== '') {
+                    if (!isset($lookup[$key])) {
+                        $lookup[$key] = collect();
+                    }
+                    $lookup[$key]->push($t);
+                }
+            }
+        }
+
+        return $lookup;
+    }
+
+    /**
+     * Match course with database offline trainings.
+     *
+     * @param string|null $courseTitle
+     * @param array<string, \Illuminate\Database\Eloquent\Collection<int, OfflineTraining>> $courseLookup
+     * @return array{
+     *     course: OfflineTraining|null,
+     *     status: string,
+     *     errors: array<string>,
+     *     warnings: array<string>,
+     *     is_not_found: bool,
+     *     is_deleted: bool
+     * }
+     */
+    public function matchCourse(?string $courseTitle, array $courseLookup = []): array
+    {
+        $rawTitle = trim((string) $courseTitle);
+        if ($rawTitle === '' || $rawTitle === '-') {
+            return [
+                'course'       => null,
+                'status'       => self::STATUS_INVALID,
+                'errors'       => ['Course Title is required and cannot be empty.'],
+                'warnings'     => [],
+                'is_not_found' => true,
+                'is_deleted'   => false,
+            ];
+        }
+
+        $lookupKey = strtolower($rawTitle);
+        $matches = $courseLookup[$lookupKey] ?? collect();
+
+        if ($matches->isEmpty()) {
+            return [
+                'course'       => null,
+                'status'       => self::STATUS_VALID,
+                'errors'       => [],
+                'warnings'     => [],
+                'is_not_found' => true,
+                'is_deleted'   => false,
+            ];
+        }
+
+        // If multiple matches, prefer active ones if available
+        if ($matches->count() > 1) {
+            $activeMatches = $matches->filter(fn ($t) => is_null($t->deleted_at));
+            if ($activeMatches->isNotEmpty()) {
+                $course = $activeMatches->first();
+                return [
+                    'course'       => $course,
+                    'status'       => self::STATUS_VALID,
+                    'errors'       => [],
+                    'warnings'     => [],
+                    'is_not_found' => false,
+                    'is_deleted'   => false,
+                ];
+            }
+        }
+
+        $course = $matches->first();
+
+        return [
+            'course'       => $course,
+            'status'       => self::STATUS_VALID,
+            'errors'       => [],
+            'warnings'     => [],
+            'is_not_found' => false,
+            'is_deleted'   => !empty($course->deleted_at),
         ];
     }
 
@@ -150,6 +281,8 @@ class PtkpValidationService
      * @param array<string, mixed> $normalized
      * @param User|null $user
      * @param array{is_duplicate: bool, duplicate_reason: string} $duplicateInfo
+     * @param array $matchResult
+     * @param array $courseMatchResult
      * @return array{
      *     status: string,
      *     is_blocking: bool,
@@ -159,7 +292,13 @@ class PtkpValidationService
      *     company_mismatch: bool
      * }
      */
-    public function evaluateRowStatus(array $normalized, ?User $user, array $duplicateInfo, array $matchResult = []): array
+    public function evaluateRowStatus(
+        array $normalized,
+        ?User $user,
+        array $duplicateInfo,
+        array $matchResult = [],
+        array $courseMatchResult = []
+    ): array
     {
         $errors = [];
         $warnings = [];
@@ -180,8 +319,10 @@ class PtkpValidationService
 
         // 2. Course Title check (Mandatory)
         $courseTitle = trim((string) ($normalized['course_name'] ?? ''));
-        if ($courseTitle === '') {
+        if ($courseTitle === '' || $courseTitle === '-') {
             $errors[] = 'Course Title is required and cannot be empty.';
+        } elseif (!empty($courseMatchResult['errors'])) {
+            $errors = array_merge($errors, $courseMatchResult['errors']);
         }
 
         // 3. Company mismatch check (Non-blocking for PTKP)

@@ -306,6 +306,7 @@ class PtkpImportService
         ]);
 
         $userLookup = $this->validationService->batchLookupUsers(array_keys($uniqueEmployeeIds));
+        $courseLookup = $this->validationService->batchLookupCourses(array_keys($uniqueCourses));
         $existingTrainings = $this->lookupExistingTrainings(array_keys($uniqueCourses));
         $existingParticipantMap = $this->lookupExistingParticipants(array_values($existingTrainings));
         $existingDbRecords = $this->lookupExistingParticipantRecords(array_keys($uniqueEmployeeIds), array_keys($uniqueCourses));
@@ -332,6 +333,7 @@ class PtkpImportService
 
             $matchResult = $this->validationService->matchUser($normalized['employee_id'], $userLookup);
             $user = $matchResult['user'];
+            $courseMatchResult = $this->validationService->matchCourse($normalized['course_name'], $courseLookup);
 
             if ($user) {
                 $normalized['user_id'] = $user->id;
@@ -344,6 +346,9 @@ class PtkpImportService
             } else {
                 $normalized['user_id'] = null;
             }
+
+            $normalized['is_resigned'] = $matchResult['is_resigned'] ?? false;
+            $normalized['is_course_deleted'] = $courseMatchResult['is_deleted'] ?? false;
 
             $fp = $this->validationService->buildTrainingFingerprint($normalized);
             $isExistingTraining = isset($existingTrainings[$fp]);
@@ -432,7 +437,8 @@ class PtkpImportService
                     'original_excel_row'  => $originalExcelRow,
                     'matched_fields'      => $matchedFields,
                 ],
-                $matchResult
+                $matchResult,
+                $courseMatchResult
             );
 
             switch ($eval['status']) {
@@ -646,12 +652,17 @@ class PtkpImportService
             return [];
         }
 
-        $trainings = OfflineTraining::whereIn('course_name', $courses)->get();
+        $trainings = OfflineTraining::withTrashed()
+            ->where(function ($q) use ($courses) {
+                $q->whereIn('course_name', $courses)
+                  ->orWhereIn('title', $courses);
+            })
+            ->get();
         $map = [];
 
         foreach ($trainings as $t) {
             $fp = $this->validationService->buildTrainingFingerprint([
-                'course_name' => $t->course_name,
+                'course_name' => $t->course_name ?: $t->title,
                 'batch'       => $t->batch,
                 'start_date'  => $t->start_date ? $t->start_date->format('Y-m-d') : null,
                 'finish_date' => $t->finish_date ? $t->finish_date->format('Y-m-d') : null,
