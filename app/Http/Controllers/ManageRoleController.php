@@ -565,6 +565,99 @@ class ManageRoleController extends Controller
     /**
      * Jalankan simulasi sinkronisasi employee (Dry-Run 100% Zero-Write).
      */
+    /**
+     * Memulai proses sinkronisasi employee di latar belakang (Non-Blocking).
+     */
+    public function startSync(Request $request)
+    {
+        $lockKey = 'owl:sync-employee-users:lock';
+        $lock = Cache::lock($lockKey, 300);
+
+        if (!$lock->get()) {
+            $progress = EmployeeUserSyncService::getProgress();
+            return response()->json([
+                'success' => false,
+                'message' => 'Proses sinkronisasi lain sedang berjalan atau memegang kunci eksekusi.',
+                'is_running' => true,
+                'progress' => $progress,
+            ], 409);
+        }
+
+        // Lepas lock pemeriksaan agar background runner dapat mengambilnya
+        $lock->release();
+
+        $isDryRun = (bool) $request->input('dry_run', false);
+
+        // Reset status progres di Cache sebelum proses dimulai
+        EmployeeUserSyncService::resetProgress($isDryRun);
+
+        // Jalankan background process CLI
+        $this->dispatchBackgroundSync($isDryRun);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Proses sinkronisasi berhasil dimulai di latar belakang.',
+            'is_dry_run' => $isDryRun,
+        ]);
+    }
+
+    /**
+     * Membaca status dan progres sinkronisasi secara real-time via Cache (Polling).
+     */
+    public function syncProgress(Request $request)
+    {
+        $progress = EmployeeUserSyncService::getProgress();
+
+        $elapsedSeconds = 0;
+        if (!empty($progress['started_at'])) {
+            try {
+                $started = \Illuminate\Support\Carbon::parse($progress['started_at']);
+                $ended = !empty($progress['finished_at']) ? \Illuminate\Support\Carbon::parse($progress['finished_at']) : now();
+                $elapsedSeconds = max(0, $started->diffInSeconds($ended));
+            } catch (\Throwable $e) {
+                $elapsedSeconds = (int) ($progress['duration_seconds'] ?? 0);
+            }
+        } else {
+            $elapsedSeconds = (int) ($progress['duration_seconds'] ?? 0);
+        }
+
+        return response()->json(array_merge([
+            'success' => ($progress['status'] ?? '') !== 'failed',
+        ], $progress, [
+            'elapsed_seconds' => $elapsedSeconds,
+        ]));
+    }
+
+    /**
+     * Jalankan perintah CLI artisan sinkronisasi di latar belakang.
+     */
+    protected function dispatchBackgroundSync(bool $isDryRun = false): void
+    {
+        if (app()->environment('testing')) {
+            return;
+        }
+
+        $php = PHP_BINARY;
+        if (str_ends_with(strtolower($php), 'php-cgi.exe') || !str_ends_with(strtolower($php), 'php.exe')) {
+            $candidate = dirname($php) . DIRECTORY_SEPARATOR . 'php.exe';
+            if (file_exists($candidate)) {
+                $php = $candidate;
+            }
+        }
+
+        $artisan = base_path('artisan');
+        $cmd = escapeshellarg($php) . ' ' . escapeshellarg($artisan) . ' owl:sync-employee-users';
+        if ($isDryRun) {
+            $cmd .= ' --dry-run';
+        }
+
+        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+            pclose(popen("start /B " . $cmd . " > NUL 2>&1", "r"));
+        } else {
+            exec($cmd . " > /dev/null 2>&1 &");
+        }
+    }
+
     public function syncDryRun(Request $request)
     {
         $lockKey = 'owl:sync-employee-users:lock';

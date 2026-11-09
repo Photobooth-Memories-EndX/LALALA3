@@ -23,10 +23,12 @@ class SyncEmployeeUsersTest extends TestCase
     use DatabaseTransactions;
 
     protected string $apiBaseUrl;
+    protected string $apiFullUrl;
 
     protected function setUp(): void
     {
         parent::setUp();
+        $this->apiFullUrl = config('api.employee.full_url', 'http://172.21.23.73/employee-api/public/api/employees-full');
         $this->apiBaseUrl = config('api.employee.base_url', 'http://172.21.23.73/employee-api/public/api/employees/');
         // Ensure execution lock is clear before each test
         Cache::lock('owl:sync-employee-users:lock', 300)->forceRelease();
@@ -434,10 +436,11 @@ class SyncEmployeeUsersTest extends TestCase
         $originalName = $user->name;
 
         Http::fake([
+            $this->apiFullUrl . '*' => Http::response('Internal Server Error', 500),
             $this->apiBaseUrl . '*' => Http::response('Internal Server Error', 500),
         ]);
 
-        $client = new EmployeeApiClient($this->apiBaseUrl, 1, 0, 0);
+        $client = new EmployeeApiClient($this->apiFullUrl, $this->apiBaseUrl, 1, 0, 0);
         $service = new EmployeeUserSyncService($client);
         $result = $service->sync(['dry_run' => false]);
 
@@ -452,10 +455,11 @@ class SyncEmployeeUsersTest extends TestCase
     public function test_scenario_12_malformed_json_response_handled_safely()
     {
         Http::fake([
+            $this->apiFullUrl . '*' => Http::response('{invalid_json: true,,', 200),
             $this->apiBaseUrl . '*' => Http::response('{invalid_json: true,,', 200),
         ]);
 
-        $client = new EmployeeApiClient($this->apiBaseUrl, 1, 0, 0);
+        $client = new EmployeeApiClient($this->apiFullUrl, $this->apiBaseUrl, 1, 0, 0);
         $service = new EmployeeUserSyncService($client);
         $result = $service->sync(['dry_run' => false]);
 
@@ -471,10 +475,11 @@ class SyncEmployeeUsersTest extends TestCase
         $user = $this->createMockUser(['active' => 1]);
 
         Http::fake([
+            $this->apiFullUrl . '*' => Http::response('[]', 200),
             $this->apiBaseUrl . '*' => Http::response('[]', 200),
         ]);
 
-        $client = new EmployeeApiClient($this->apiBaseUrl, 1, 0, 0);
+        $client = new EmployeeApiClient($this->apiFullUrl, $this->apiBaseUrl, 1, 0, 0);
         $service = new EmployeeUserSyncService($client);
         $result = $service->sync(['dry_run' => false]);
 
@@ -713,6 +718,21 @@ class SyncEmployeeUsersTest extends TestCase
         // Release lock
         $lock->release();
 
+        // Fake API response for live command run
+        Http::fake([
+            $this->apiFullUrl . '*' => Http::response([
+                [
+                    'id_emp' => 'CMD123',
+                    'name' => 'Command User',
+                    'email' => 'cmd@krakatauposco.co.id',
+                    'team' => 'Team',
+                    'department' => 'Dept',
+                    'division' => 'Div',
+                ]
+            ], 200),
+            $this->apiBaseUrl . '*' => Http::response([], 200),
+        ]);
+
         // Now calling the command should succeed
         $exitCodeAfterRelease = Artisan::call('owl:sync-employee-users', ['--dry-run' => true, '--limit' => 1]);
         $this->assertContains($exitCodeAfterRelease, [Command::SUCCESS, 0]);
@@ -905,5 +925,141 @@ class SyncEmployeeUsersTest extends TestCase
 
         $createdUser = User::where('id_emp', $newEmpId)->first();
         $this->assertEquals('089876543210', $createdUser->cell_phone);
+    }
+
+    /**
+     * Skenario 23: API Client mendukung pagination otomatis dan menggabungkan semua halaman data.
+     */
+    public function test_scenario_23_pagination_support_fetches_all_pages()
+    {
+        $page1Url = $this->apiFullUrl;
+        $page2Url = $this->apiFullUrl . '?page=2';
+
+        Http::fake([
+            $page1Url => Http::response([
+                'current_page' => 1,
+                'last_page' => 2,
+                'next_page_url' => $page2Url,
+                'data' => [
+                    ['id_emp' => 'PAG001', 'name' => 'Page One Employee', 'email' => 'p1@ex.com'],
+                    ['id_emp' => 'PAG002', 'name' => 'Page One Second Employee', 'email' => 'p2@ex.com'],
+                ],
+            ], 200),
+            $page2Url => Http::response([
+                'current_page' => 2,
+                'last_page' => 2,
+                'next_page_url' => null,
+                'data' => [
+                    ['id_emp' => 'PAG003', 'name' => 'Page Two Employee', 'email' => 'p3@ex.com'],
+                ],
+            ], 200),
+        ]);
+
+        $client = new EmployeeApiClient($this->apiFullUrl, $this->apiBaseUrl, 2, 0, 0);
+        $employees = $client->fetchAllEmployees();
+
+        $this->assertCount(3, $employees);
+        $this->assertEquals('PAG001', $employees[0]['id_emp']);
+        $this->assertEquals('PAG002', $employees[1]['id_emp']);
+        $this->assertEquals('PAG003', $employees[2]['id_emp']);
+    }
+
+    /**
+     * Skenario 24: Endpoint detail single employee (fetchEmployeeById) tetap menggunakan endpoint lama.
+     */
+    public function test_scenario_24_single_employee_detail_endpoint()
+    {
+        $testEmpId = 'DET999';
+        $detailEndpoint = rtrim($this->apiBaseUrl, '/') . '/' . $testEmpId;
+
+        Http::fake([
+            $detailEndpoint => Http::response([
+                'id_emp' => $testEmpId,
+                'name' => 'Detailed Employee Single',
+                'email' => 'single@krakatauposco.co.id',
+                'team' => 'Detail Team',
+                'department' => 'Detail Dept',
+                'division' => 'Detail Div',
+                'sap_code' => 'SAPDETAIL',
+                'id_ou' => 'OU99',
+            ], 200),
+            rtrim($this->apiBaseUrl, '/') . '/NOTFOUND' => Http::response(['message' => 'Not found'], 404),
+        ]);
+
+        $client = new EmployeeApiClient($this->apiFullUrl, $this->apiBaseUrl, 2, 0, 0);
+
+        // Found employee
+        $detail = $client->fetchEmployeeById($testEmpId);
+        $this->assertNotNull($detail);
+        $this->assertEquals('Detailed Employee Single', $detail['name']);
+        $this->assertEquals($testEmpId, $detail['id_emp']);
+
+        // 404 employee returns null
+        $notFound = $client->fetchEmployeeById('NOTFOUND');
+        $this->assertNull($notFound);
+
+        // Empty string returns null
+        $this->assertNull($client->fetchEmployeeById(''));
+    }
+
+    /**
+     * Skenario 25: Employee baru disinkronkan otomatis tampil di halaman Manage Role dan Live Search.
+     */
+    public function test_scenario_25_manage_role_page_reflects_newly_synced_employees_and_changes()
+    {
+        // 1. Create a superadmin user to authenticate for /manage/role
+        $superAdmin = $this->createMockUser([
+            'role' => User::ROLE_SUPER_ADMIN, // 3
+            'email' => 'superadmin_' . uniqid() . '@krakatauposco.co.id',
+        ]);
+
+        // 2. Sync a new employee into OWL
+        $uniqueEmpId = 'MR' . rand(10000, 99999);
+        $uniqueName = 'ManageRole Sync User ' . $uniqueEmpId;
+        $uniqueDiv = 'Special Division ' . $uniqueEmpId;
+        $uniqueDept = 'Special Dept ' . $uniqueEmpId;
+
+        $apiPayload = [
+            [
+                'id_emp' => $uniqueEmpId,
+                'name' => $uniqueName,
+                'email' => 'mr_' . $uniqueEmpId . '@krakatauposco.co.id',
+                'division' => $uniqueDiv,
+                'department' => $uniqueDept,
+                'team' => 'Special Team',
+                'sap_code' => 'SAPMR1',
+                'id_ou' => 'OU_MR',
+            ]
+        ];
+
+        $service = new EmployeeUserSyncService();
+        $result = $service->sync(['api_data' => $apiPayload, 'dry_run' => false]);
+        $this->assertEquals(1, $result->createdCount);
+
+        // Verify newly synced user exists in database
+        $this->assertDatabaseHas('users', [
+            'id_emp' => $uniqueEmpId,
+            'name' => $uniqueName,
+            'division' => $uniqueDiv,
+            'role' => User::ROLE_USER, // 1
+        ]);
+
+        // 3. Test HTTP request to /manage/role as Superadmin
+        $response = $this->actingAs($superAdmin)->get(route('manage.role.index', ['q' => $uniqueEmpId]));
+        $response->assertStatus(200);
+        $response->assertSee($uniqueEmpId);
+        $response->assertSee($uniqueName);
+
+        // 4. Test Autocomplete / Live Search endpoint
+        $liveSearchResponse = $this->actingAs($superAdmin)->get(route('manage.role.live-search', ['q' => $uniqueEmpId]));
+        $liveSearchResponse->assertStatus(200);
+        $liveSearchResponse->assertJsonFragment([
+            'id_emp' => $uniqueEmpId,
+            'name' => $uniqueName,
+        ]);
+
+        // 5. Verify Superadmin role was NOT affected by synchronization
+        $superAdmin->refresh();
+        $this->assertEquals(User::ROLE_SUPER_ADMIN, (int) $superAdmin->role);
     }
 }

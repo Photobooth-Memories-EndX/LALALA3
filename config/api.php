@@ -2,6 +2,7 @@
 
 return [
     'employee' => [
+        'full_url' => env('EMPLOYEE_API_FULL_URL', 'http://172.21.23.73/employee-api/public/api/employees-full'),
         'base_url' => env('EMPLOYEE_API_BASE_URL', 'http://172.21.23.73/employee-api/public/api/employees/'),
         'base_url_hash' => env('EMPLOYEE_API_BASE_URL_HASH', 'http://172.21.23.73/employee-api/public/api/employeesbyhash/'),
         'id_url' => env('EMPLOYEE_API_ID_URL', 'http://172.21.23.73/employee-api/public/api/employeesById/'),

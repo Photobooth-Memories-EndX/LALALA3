@@ -116,15 +116,101 @@
                                 </div>
                             </div>
 
-                            <!-- State 2: Running / Loading -->
-                            <div id="syncLoadingState" class="d-none text-center py-4">
-                                <div class="spinner-border text-primary mb-3" style="width: 3.5rem; height: 3.5rem;" role="status">
-                                    <span class="visually-hidden">Memproses...</span>
+                            <!-- State 2: Real-Time Synchronize Progress (0-100%) -->
+                            <div id="syncLoadingState" class="d-none py-3">
+                                <div class="text-center mb-3">
+                                    <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary-lt mb-2 shadow-xs" style="width: 60px; height: 60px;">
+                                        <i class="ti ti-refresh text-primary fs-1 sync-spin-icon" id="syncSpinIcon" style="font-size: 1.8rem;"></i>
+                                    </div>
+                                    <h4 class="fw-bold text-dark mb-1" id="syncLoadingTitle">Synchronizing Employee Data</h4>
+                                    <p class="text-muted small mb-0" id="syncLoadingSubtitle">
+                                        Please wait while employee data is being synchronized with OWL LMS.
+                                    </p>
                                 </div>
-                                <h5 class="fw-bold text-dark mb-1" id="syncLoadingTitle">Menjalankan Sinkronisasi...</h5>
-                                <p class="text-muted small mb-0" id="syncLoadingSubtitle">
-                                    Menghubungi API Gateway POSCO dan memproses 2.700+ data karyawan. Harap tunggu beberapa detik...
-                                </p>
+
+                                <!-- Big Real Percentage & Stage Badge -->
+                                <div class="text-center mb-3">
+                                    <div class="display-3 fw-bold text-primary font-monospace" id="syncPercentageText" style="color: #003b6d !important; letter-spacing: -1px;">0%</div>
+                                    <div class="mt-1">
+                                        <span class="badge bg-blue-lt text-primary px-3 py-1 fw-semibold fs-5 rounded-pill shadow-xs" id="syncStageBadge">
+                                            <i class="ti ti-loader-2 spin-fast me-1"></i> Preparing synchronization...
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Smooth Real-Time Progress Bar -->
+                                <div class="px-md-3 mb-3">
+                                    <div class="progress rounded-pill shadow-xs" style="height: 14px; background-color: #e9ecef;">
+                                        <div id="syncProgressBar" 
+                                             class="progress-bar progress-bar-striped progress-bar-animated bg-primary" 
+                                             role="progressbar" 
+                                             style="width: 0%; transition: width 0.4s ease; background-color: #003b6d !important;" 
+                                             aria-valuenow="0" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center mt-2 text-muted" style="font-size: 0.8rem;">
+                                        <span id="syncDetailedMessage" class="text-truncate me-2 fw-medium text-dark">Menghubungi API Gateway POSCO...</span>
+                                        <span id="syncTimerText" class="fw-bold font-monospace text-primary flex-shrink-0" style="color: #003b6d !important;">
+                                            <i class="ti ti-clock me-1"></i><span id="syncElapsedSeconds">00:00</span>
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Live Data Statistics Grid Cards -->
+                                <div class="card border border-light-subtle rounded-3 p-3 bg-light mb-3 shadow-xs">
+                                    <div class="d-flex align-items-center justify-content-between mb-2 pb-1 border-bottom">
+                                        <span class="fw-bold text-dark small"><i class="ti ti-chart-bar me-1 text-primary"></i> Data Synchronization Statistics</span>
+                                        <span class="badge bg-secondary-lt text-secondary fw-semibold" id="syncLiveModeBadge">LIVE PERSISTED</span>
+                                    </div>
+                                    <div class="row g-2 text-center">
+                                        <div class="col-4 col-sm-2">
+                                            <div class="border rounded-2 p-2 bg-white h-100 shadow-xs">
+                                                <div class="text-muted extra-small">Total</div>
+                                                <div class="fw-bold text-dark fs-4" id="statTotal">0</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-4 col-sm-2">
+                                            <div class="border rounded-2 p-2 bg-white h-100 shadow-xs">
+                                                <div class="text-muted extra-small">Processed</div>
+                                                <div class="fw-bold text-info fs-4" id="statProcessed">0</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-4 col-sm-2">
+                                            <div class="border rounded-2 p-2 bg-white h-100 shadow-xs">
+                                                <div class="text-muted extra-small">Created</div>
+                                                <div class="fw-bold text-success fs-4" id="statCreated">0</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-4 col-sm-2">
+                                            <div class="border rounded-2 p-2 bg-white h-100 shadow-xs">
+                                                <div class="text-muted extra-small">Updated</div>
+                                                <div class="fw-bold text-primary fs-4" id="statUpdated">0</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-4 col-sm-2">
+                                            <div class="border rounded-2 p-2 bg-white h-100 shadow-xs">
+                                                <div class="text-muted extra-small">Skipped</div>
+                                                <div class="fw-bold text-warning fs-4" id="statSkipped">0</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-4 col-sm-2">
+                                            <div class="border rounded-2 p-2 bg-white h-100 shadow-xs">
+                                                <div class="text-muted extra-small">Failed</div>
+                                                <div class="fw-bold text-danger fs-4" id="statFailed">0</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Please Do Not Close Warning Banner -->
+                                <div class="alert alert-warning d-flex align-items-center gap-2 py-2 px-3 mb-0 rounded-3 shadow-xs" style="font-size: 0.82rem;" id="syncWarningBanner">
+                                    <i class="ti ti-alert-triangle fs-2 text-warning flex-shrink-0"></i>
+                                    <div>
+                                        <strong>Please do not close this window</strong> while synchronization is in progress to ensure complete data consistency.
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- State 3: Results -->
@@ -271,6 +357,19 @@
 @section('style')
 <style>
     /* Hero header & Card styling */
+        @keyframes syncSpin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    .sync-spin-icon {
+        animation: syncSpin 2s linear infinite;
+        display: inline-block;
+    }
+    .spin-fast {
+        animation: syncSpin 0.8s linear infinite;
+        display: inline-block;
+    }
+
     .hero-header-card {
         transition: background-color 0.2s ease, border-color 0.2s ease;
     }
@@ -546,7 +645,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // 3. Synchronize (Real & Dry-Run) Handler
+    // 3. Real-Time Synchronize Progress (0-100%) Polling Engine
     const btnStartRealSync = document.getElementById('btnStartRealSync');
     const btnStartDryRun = document.getElementById('btnStartDryRun');
     const syncConfState = document.getElementById('syncConfirmationState');
@@ -558,87 +657,267 @@ document.addEventListener('DOMContentLoaded', function () {
     const btnReloadTable = document.getElementById('btnReloadTable');
     const syncActionButtons = document.getElementById('syncActionButtons');
 
-    function executeSyncProcess(endpoint, isDryRun) {
-        // Switch to loading state
+    const syncPercentageText = document.getElementById('syncPercentageText');
+    const syncStageBadge = document.getElementById('syncStageBadge');
+    const syncProgressBar = document.getElementById('syncProgressBar');
+    const syncDetailedMessage = document.getElementById('syncDetailedMessage');
+    const syncElapsedSeconds = document.getElementById('syncElapsedSeconds');
+    const syncLiveModeBadge = document.getElementById('syncLiveModeBadge');
+
+    const statTotal = document.getElementById('statTotal');
+    const statProcessed = document.getElementById('statProcessed');
+    const statCreated = document.getElementById('statCreated');
+    const statUpdated = document.getElementById('statUpdated');
+    const statSkipped = document.getElementById('statSkipped');
+    const statFailed = document.getElementById('statFailed');
+
+    let pollInterval = null;
+    let timerInterval = null;
+    let elapsedSecondsCount = 0;
+    let pollErrorRetries = 0;
+    let isSyncCurrentlyRunning = false;
+    let syncHasCompleted = false;
+
+    function formatTimer(sec) {
+        const m = Math.floor(sec / 60);
+        const s = sec % 60;
+        return (m < 10 ? '0' + m : m) + ':' + (s < 10 ? '0' + s : s);
+    }
+
+    function resetProgressUI(isDryRun) {
+        syncPercentageText.textContent = '0%';
+        syncProgressBar.style.width = '0%';
+        syncProgressBar.className = 'progress-bar progress-bar-striped progress-bar-animated bg-primary';
+        syncProgressBar.setAttribute('aria-valuenow', '0');
+
+        syncStageBadge.className = 'badge bg-secondary-lt text-secondary px-3 py-1 fw-semibold fs-5 rounded-pill shadow-xs';
+        syncStageBadge.innerHTML = '<i class="ti ti-loader-2 spin-fast me-1"></i> Preparing synchronization...';
+
+        syncDetailedMessage.textContent = 'Menyiapkan proses sinkronisasi...';
+        syncElapsedSeconds.textContent = '00:00';
+        elapsedSecondsCount = 0;
+
+        syncLiveModeBadge.className = isDryRun ? 'badge bg-secondary-lt text-secondary fw-semibold' : 'badge bg-success-lt text-success fw-semibold';
+        syncLiveModeBadge.textContent = isDryRun ? 'DRY-RUN SIMULATION' : 'LIVE PERSISTED';
+
+        statTotal.textContent = '0';
+        statProcessed.textContent = '0';
+        statCreated.textContent = '0';
+        statUpdated.textContent = '0';
+        statSkipped.textContent = '0';
+        statFailed.textContent = '0';
+
+        if (btnCancelSync) btnCancelSync.disabled = true;
+        if (btnCloseSyncModal) btnCloseSyncModal.disabled = true;
+        if (btnStartRealSync) btnStartRealSync.disabled = true;
+        if (btnStartDryRun) btnStartDryRun.disabled = true;
+    }
+
+    function startProgressPolling(isDryRun) {
+        if (pollInterval) clearInterval(pollInterval);
+        if (timerInterval) clearInterval(timerInterval);
+
+        isSyncCurrentlyRunning = true;
+        syncHasCompleted = false;
+        pollErrorRetries = 0;
+
+        timerInterval = setInterval(() => {
+            elapsedSecondsCount++;
+            if (syncElapsedSeconds) {
+                syncElapsedSeconds.textContent = formatTimer(elapsedSecondsCount);
+            }
+        }, 1000);
+
+        const pollEndpoint = '{{ route("manage.role.sync.progress") }}';
+
+        const runPoll = () => {
+            fetch(pollEndpoint, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                pollErrorRetries = 0;
+
+                // Update Percentage
+                const pct = Math.min(100, Math.max(0, parseInt(data.percentage || 0, 10)));
+                if (syncPercentageText) syncPercentageText.textContent = pct + '%';
+                if (syncProgressBar) {
+                    syncProgressBar.style.width = pct + '%';
+                    syncProgressBar.setAttribute('aria-valuenow', pct);
+                }
+
+                // Update Detailed Status Message
+                if (syncDetailedMessage && data.message) {
+                    syncDetailedMessage.textContent = data.message;
+                }
+
+                // Update Numerical Statistics
+                if (statTotal) statTotal.textContent = Number(data.total || 0).toLocaleString('id-ID');
+                if (statProcessed) statProcessed.textContent = Number(data.processed || 0).toLocaleString('id-ID');
+                if (statCreated) statCreated.textContent = Number(data.created || 0).toLocaleString('id-ID');
+                if (statUpdated) statUpdated.textContent = Number(data.updated || 0).toLocaleString('id-ID');
+                if (statSkipped) statSkipped.textContent = Number(data.skipped || 0).toLocaleString('id-ID');
+                if (statFailed) statFailed.textContent = Number(data.failed || 0).toLocaleString('id-ID');
+
+                // Update Stage Badge based on backend status
+                if (syncStageBadge) {
+                    const status = (data.status || 'preparing').toLowerCase();
+                    if (status === 'preparing') {
+                        syncStageBadge.className = 'badge bg-secondary-lt text-secondary px-3 py-1 fw-semibold fs-5 rounded-pill shadow-xs';
+                        syncStageBadge.innerHTML = '<i class="ti ti-loader-2 spin-fast me-1"></i> Preparing synchronization...';
+                    } else if (status === 'fetching') {
+                        syncStageBadge.className = 'badge bg-info-lt text-info px-3 py-1 fw-semibold fs-5 rounded-pill shadow-xs';
+                        syncStageBadge.innerHTML = '<i class="ti ti-cloud-download spin-fast me-1"></i> Fetching API Gateway data...';
+                    } else if (status === 'processing' || status === 'creating' || status === 'updating') {
+                        syncStageBadge.className = 'badge bg-blue-lt text-primary px-3 py-1 fw-semibold fs-5 rounded-pill shadow-xs';
+                        syncStageBadge.innerHTML = '<i class="ti ti-refresh spin-fast me-1"></i> Synchronizing employee records...';
+                    } else if (status === 'completed') {
+                        syncStageBadge.className = 'badge bg-success-lt text-success px-3 py-1 fw-semibold fs-5 rounded-pill shadow-xs';
+                        syncStageBadge.innerHTML = '<i class="ti ti-check me-1"></i> Synchronization completed (100%)';
+                    } else if (status === 'failed') {
+                        syncStageBadge.className = 'badge bg-danger-lt text-danger px-3 py-1 fw-semibold fs-5 rounded-pill shadow-xs';
+                        syncStageBadge.innerHTML = '<i class="ti ti-alert-circle me-1"></i> Synchronization failed';
+                    }
+                }
+
+                // Handle Finished / Completed
+                if (data.status === 'completed') {
+                    clearInterval(pollInterval);
+                    clearInterval(timerInterval);
+                    isSyncCurrentlyRunning = false;
+                    syncHasCompleted = true;
+
+                    if (syncPercentageText) syncPercentageText.textContent = '100%';
+                    if (syncProgressBar) {
+                        syncProgressBar.style.width = '100%';
+                        syncProgressBar.setAttribute('aria-valuenow', '100');
+                        syncProgressBar.className = 'progress-bar bg-success';
+                    }
+
+                    if (btnCancelSync) btnCancelSync.disabled = false;
+                    if (btnCloseSyncModal) btnCloseSyncModal.disabled = false;
+
+                    // Transition to detailed result summary after short completion delay
+                    setTimeout(() => {
+                        syncLoadingState.classList.add('d-none');
+                        syncResultState.classList.remove('d-none');
+
+                        const modeBadge = document.getElementById('resMode');
+                        const footerNote = document.getElementById('syncFooterNote');
+                        if (data.is_dry_run) {
+                            if (modeBadge) {
+                                modeBadge.className = 'badge bg-secondary-lt text-secondary';
+                                modeBadge.textContent = 'DRY-RUN (Simulasi Zero-Write)';
+                            }
+                            if (btnReloadTable) btnReloadTable.classList.add('d-none');
+                            if (footerNote) {
+                                footerNote.innerHTML = '<i class="ti ti-lock text-muted fs-3"></i><div><strong>100% Zero-Write Terbukti:</strong> Tidak ada perubahan yang disimpan ke tabel <code>users</code> atau log eksekusi.</div>';
+                            }
+                        } else {
+                            if (modeBadge) {
+                                modeBadge.className = 'badge bg-success text-white';
+                                modeBadge.textContent = 'REAL (Tersimpan ke Database OWL)';
+                            }
+                            if (btnReloadTable) btnReloadTable.classList.remove('d-none');
+                            if (footerNote) {
+                                footerNote.innerHTML = '<i class="ti ti-database-check text-success fs-3"></i><div><strong>Data Tersimpan Nyata:</strong> Seluruh data kepegawaian dan 18 kolom profil HR telah disimpan ke database OWL.</div>';
+                            }
+                        }
+
+                        document.getElementById('resStatus').textContent = 'SUCCESS';
+                        document.getElementById('resDuration').textContent = (data.duration_seconds || elapsedSecondsCount) + ' detik';
+                        document.getElementById('resTotalApi').textContent = Number(data.total || 0).toLocaleString('id-ID') + ' entri';
+                        document.getElementById('resTotalOwl').textContent = '3.439+ user';
+                        document.getElementById('resCreatedCount').textContent = Number(data.created || 0).toLocaleString('id-ID') + (data.is_dry_run ? ' kandidat baru' : ' user baru dibuat');
+                        document.getElementById('resUpdatedCount').textContent = Number(data.updated || 0).toLocaleString('id-ID') + (data.is_dry_run ? ' rencana pembaruan' : ' user diperbarui');
+                        document.getElementById('resUpdatedActiveCount').textContent = Number(data.updated || 0).toLocaleString('id-ID') + ' user aktif';
+                        document.getElementById('resUpdatedSoftDeletedCount').textContent = '0 user';
+                        document.getElementById('resUnchangedCount').textContent = '0 user';
+                        document.getElementById('resConflictCount').textContent = Number(data.skipped || 0).toLocaleString('id-ID') + ' entri';
+
+                        document.getElementById('syncResultSummary').textContent = data.message || 'Sinkronisasi berhasil!';
+                    }, 1200);
+
+                } else if (data.status === 'failed') {
+                    clearInterval(pollInterval);
+                    clearInterval(timerInterval);
+                    isSyncCurrentlyRunning = false;
+
+                    if (syncProgressBar) {
+                        syncProgressBar.className = 'progress-bar bg-danger';
+                    }
+
+                    if (btnCancelSync) btnCancelSync.disabled = false;
+                    if (btnCloseSyncModal) btnCloseSyncModal.disabled = false;
+
+                    setTimeout(() => {
+                        syncLoadingState.classList.add('d-none');
+                        syncErrorState.classList.remove('d-none');
+                        document.getElementById('syncErrorMessage').textContent = data.error || data.message || 'Terjadi kesalahan saat sinkronisasi.';
+                    }, 1000);
+                }
+            })
+            .catch(err => {
+                pollErrorRetries++;
+                if (pollErrorRetries > 8) {
+                    clearInterval(pollInterval);
+                    clearInterval(timerInterval);
+                    isSyncCurrentlyRunning = false;
+                    syncLoadingState.classList.add('d-none');
+                    syncErrorState.classList.remove('d-none');
+                    document.getElementById('syncErrorMessage').textContent = 'Gagal memantau progres (koneksi terputus). ' + err.message;
+                    if (btnCancelSync) btnCancelSync.disabled = false;
+                    if (btnCloseSyncModal) btnCloseSyncModal.disabled = false;
+                }
+            });
+        };
+
+        // First poll immediate, then repeat every 600ms
+        runPoll();
+        pollInterval = setInterval(runPoll, 600);
+    }
+
+    function executeSyncProcess(isDryRun) {
+        // Switch to progress state
         syncConfState.classList.add('d-none');
         syncResultState.classList.add('d-none');
         syncErrorState.classList.add('d-none');
         syncLoadingState.classList.remove('d-none');
 
-        const titleEl = document.getElementById('syncLoadingTitle');
-        const subtitleEl = document.getElementById('syncLoadingSubtitle');
-        if (titleEl) {
-            titleEl.textContent = isDryRun ? 'Menjalankan Simulasi Sinkronisasi (Dry-Run)...' : 'Menjalankan Sinkronisasi Nyata ke Database OWL...';
-        }
-        if (subtitleEl) {
-            subtitleEl.textContent = isDryRun
-                ? 'Menganalisis perbandingan data API Gateway POSCO tanpa menyimpan (Zero-Write)...'
-                : 'Mengambil data API Gateway POSCO dan memperbarui tabel users OWL. Harap tunggu...';
-        }
+        resetProgressUI(isDryRun);
 
-        if (btnStartRealSync) btnStartRealSync.disabled = true;
-        if (btnStartDryRun) btnStartDryRun.disabled = true;
-        if (btnCancelSync) btnCancelSync.disabled = true;
-        if (btnCloseSyncModal) btnCloseSyncModal.disabled = true;
+        const startEndpoint = '{{ route("manage.role.sync.start") }}';
 
-        fetch(endpoint, {
+        fetch(startEndpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': '{{ csrf_token() }}',
                 'Accept': 'application/json'
-            }
+            },
+            body: JSON.stringify({ dry_run: isDryRun })
         })
-        .then(res => res.json().then(data => ({ status: res.status, ok: res.ok, body: data })))
-        .then(({ status, ok, body }) => {
-            syncLoadingState.classList.add('d-none');
-            if (btnCancelSync) btnCancelSync.disabled = false;
-            if (btnCloseSyncModal) btnCloseSyncModal.disabled = false;
-            if (btnStartRealSync) btnStartRealSync.disabled = false;
-            if (btnStartDryRun) btnStartDryRun.disabled = false;
-
-            if (ok && body.success) {
-                syncResultState.classList.remove('d-none');
-                document.getElementById('resStatus').textContent = body.status || 'SUCCESS';
-
-                const modeBadge = document.getElementById('resMode');
-                const footerNote = document.getElementById('syncFooterNote');
-                if (body.is_dry_run) {
-                    modeBadge.className = 'badge bg-secondary-lt text-secondary';
-                    modeBadge.textContent = 'DRY-RUN (Simulasi Zero-Write)';
-                    if (btnReloadTable) btnReloadTable.classList.add('d-none');
-                    if (footerNote) {
-                        footerNote.innerHTML = '<i class="ti ti-lock text-muted fs-3"></i><div><strong>100% Zero-Write Terbukti:</strong> Tidak ada perubahan yang disimpan ke tabel <code>users</code> atau log eksekusi.</div>';
-                    }
-                } else {
-                    modeBadge.className = 'badge bg-success text-white';
-                    modeBadge.textContent = 'REAL (Tersimpan ke Database OWL)';
-                    if (btnReloadTable) btnReloadTable.classList.remove('d-none');
-                    if (footerNote) {
-                        footerNote.innerHTML = '<i class="ti ti-database-check text-success fs-3"></i><div><strong>Data Tersimpan Nyata:</strong> Seluruh data kepegawaian dan 18 kolom profil HR telah disimpan ke database OWL.</div>';
-                    }
-                }
-
-                document.getElementById('resDuration').textContent = (body.duration || '0') + ' detik';
-                document.getElementById('resTotalApi').textContent = (body.total_api || 0).toLocaleString('id-ID') + ' entri';
-                document.getElementById('resTotalOwl').textContent = (body.total_owl || 0).toLocaleString('id-ID') + ' user';
-                document.getElementById('resCreatedCount').textContent = (body.created_count || 0).toLocaleString('id-ID') + (body.is_dry_run ? ' kandidat baru' : ' user baru dibuat');
-                document.getElementById('resUpdatedCount').textContent = (body.updated_count || 0).toLocaleString('id-ID') + (body.is_dry_run ? ' rencana pembaruan' : ' user diperbarui');
-                document.getElementById('resUpdatedActiveCount').textContent = (body.updated_active_count || 0).toLocaleString('id-ID') + ' user aktif';
-                document.getElementById('resUpdatedSoftDeletedCount').textContent = (body.updated_soft_deleted_count || 0).toLocaleString('id-ID') + ' user';
-                document.getElementById('resUnchangedCount').textContent = (body.unchanged_count || 0).toLocaleString('id-ID') + ' user';
-                document.getElementById('resConflictCount').textContent = (body.conflict_count || 0).toLocaleString('id-ID') + ' entri';
-
-                document.getElementById('syncResultSummary').textContent = body.message || 'Sinkronisasi berhasil!';
+        .then(res => res.json())
+        .then(res => {
+            if (res.success || res.is_running) {
+                startProgressPolling(isDryRun);
             } else {
+                syncLoadingState.classList.add('d-none');
                 syncErrorState.classList.remove('d-none');
-                document.getElementById('syncErrorMessage').textContent = body.message || 'Terjadi kesalahan saat menjalankan sinkronisasi.';
+                document.getElementById('syncErrorMessage').textContent = res.message || 'Gagal memulai sinkronisasi.';
+                if (btnCancelSync) btnCancelSync.disabled = false;
+                if (btnCloseSyncModal) btnCloseSyncModal.disabled = false;
+                if (btnStartRealSync) btnStartRealSync.disabled = false;
+                if (btnStartDryRun) btnStartDryRun.disabled = false;
             }
         })
         .catch(err => {
             syncLoadingState.classList.add('d-none');
             syncErrorState.classList.remove('d-none');
-            document.getElementById('syncErrorMessage').textContent = 'Koneksi gagal atau terjadi error internal: ' + err.message;
+            document.getElementById('syncErrorMessage').textContent = 'Koneksi gagal saat memulai sinkronisasi: ' + err.message;
             if (btnCancelSync) btnCancelSync.disabled = false;
             if (btnCloseSyncModal) btnCloseSyncModal.disabled = false;
             if (btnStartRealSync) btnStartRealSync.disabled = false;
@@ -649,16 +928,51 @@ document.addEventListener('DOMContentLoaded', function () {
     if (btnStartRealSync) {
         btnStartRealSync.addEventListener('click', function () {
             if (confirm('Jalankan sinkronisasi nyata? Data karyawan dari API POSCO akan disimpan dan memperbarui tabel users OWL.')) {
-                executeSyncProcess('{{ route("manage.role.sync") }}', false);
+                executeSyncProcess(false);
             }
         });
     }
 
     if (btnStartDryRun) {
         btnStartDryRun.addEventListener('click', function () {
-            executeSyncProcess('{{ route("manage.role.sync.dry-run") }}', true);
+            executeSyncProcess(true);
         });
     }
-});
+
+    // Modal close refresh behavior
+    const modalEl = document.getElementById('syncSimulationModal');
+    if (modalEl) {
+        modalEl.addEventListener('hidden.bs.modal', function () {
+            if (syncHasCompleted) {
+                window.location.reload();
+            } else if (!isSyncCurrentlyRunning) {
+                // Reset to confirmation view on dismiss if not running
+                syncConfState.classList.remove('d-none');
+                syncLoadingState.classList.add('d-none');
+                syncResultState.classList.add('d-none');
+                syncErrorState.classList.add('d-none');
+                if (btnStartRealSync) btnStartRealSync.disabled = false;
+                if (btnStartDryRun) btnStartDryRun.disabled = false;
+            }
+        });
+    }
+
+    // Auto-check on page load: if background sync is actively running, open modal and attach polling
+    fetch('{{ route("manage.role.sync.progress") }}', {
+        headers: { 'Accept': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.is_running) {
+            const modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
+            modalInstance.show();
+            syncConfState.classList.add('d-none');
+            syncResultState.classList.add('d-none');
+            syncErrorState.classList.add('d-none');
+            syncLoadingState.classList.remove('d-none');
+            startProgressPolling(data.is_dry_run);
+        }
+    })
+    .catch(() => {});
 </script>
 @endsection

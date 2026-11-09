@@ -3,7 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Services\EmployeeSync\EmployeeUserSyncService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -18,8 +20,19 @@ class ManageRoleTest extends TestCase
     {
         parent::setUp();
 
+        Cache::lock('owl:sync-employee-users:lock', 300)->forceRelease();
+        Cache::forget(EmployeeUserSyncService::PROGRESS_CACHE_KEY);
+
         $this->superAdmin = $this->createTestUser(User::ROLE_SUPER_ADMIN);
         $this->targetUser = $this->createTestUser(User::ROLE_USER);
+    }
+
+    protected function tearDown(): void
+    {
+        Cache::lock('owl:sync-employee-users:lock', 300)->forceRelease();
+        Cache::forget(EmployeeUserSyncService::PROGRESS_CACHE_KEY);
+
+        parent::tearDown();
     }
 
     private function createTestUser(int $role): User
@@ -400,6 +413,101 @@ class ManageRoleTest extends TestCase
         ]);
     }
 
+    public function test_super_admin_can_start_async_sync_and_initializes_progress(): void
+    {
+        $response = $this->actingAs($this->superAdmin)
+            ->postJson(route('manage.role.sync.start'), [
+                'dry_run' => false,
+            ]);
+
+        $response->assertOk();
+        $response->assertJson([
+            'success' => true,
+            'is_dry_run' => false,
+        ]);
+
+        $progress = EmployeeUserSyncService::getProgress();
+        $this->assertEquals('preparing', $progress['status']);
+        $this->assertEquals(0, $progress['percentage']);
+        $this->assertFalse($progress['is_dry_run']);
+    }
+
+    public function test_super_admin_cannot_start_sync_if_already_running_concurrency_lock(): void
+    {
+        $lockKey = 'owl:sync-employee-users:lock';
+        $lock = Cache::lock($lockKey, 300);
+        $this->assertTrue($lock->get(), 'Failed to acquire lock for test');
+
+        try {
+            $response = $this->actingAs($this->superAdmin)
+                ->postJson(route('manage.role.sync.start'));
+
+            $response->assertStatus(409);
+            $response->assertJson([
+                'success' => false,
+                'is_running' => true,
+            ]);
+            $response->assertJsonStructure([
+                'success',
+                'message',
+                'is_running',
+                'progress',
+            ]);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    public function test_super_admin_can_poll_sync_progress(): void
+    {
+        // Populate cache with mock progress
+        EmployeeUserSyncService::updateProgress(
+            'processing',
+            2080,
+            4621,
+            'Processing employee records (2,080 / 4,621)...',
+            [
+                'percentage' => 45,
+                'created' => 120,
+                'updated' => 1950,
+                'skipped' => 10,
+                'failed' => 0,
+                'is_dry_run' => false,
+            ]
+        );
+
+        $response = $this->actingAs($this->superAdmin)
+            ->getJson(route('manage.role.sync.progress'));
+
+        $response->assertOk();
+        $response->assertJson([
+            'success' => true,
+            'status' => 'processing',
+            'percentage' => 45,
+            'total' => 4621,
+            'processed' => 2080,
+            'created' => 120,
+            'updated' => 1950,
+            'skipped' => 10,
+            'failed' => 0,
+            'is_dry_run' => false,
+        ]);
+        $response->assertJsonStructure([
+            'success',
+            'status',
+            'percentage',
+            'message',
+            'total',
+            'processed',
+            'created',
+            'updated',
+            'skipped',
+            'failed',
+            'is_dry_run',
+            'elapsed_seconds',
+        ]);
+    }
+
     public function test_unauthorized_users_cannot_trigger_sync_endpoints(): void
     {
         $admin = $this->createTestUser(User::ROLE_ADMIN);
@@ -409,14 +517,20 @@ class ManageRoleTest extends TestCase
         auth()->logout();
         $this->post(route('manage.role.sync'))->assertRedirect(route('loginpage'));
         $this->post(route('manage.role.sync.dry-run'))->assertRedirect(route('loginpage'));
+        $this->post(route('manage.role.sync.start'))->assertRedirect(route('loginpage'));
+        $this->get(route('manage.role.sync.progress'))->assertRedirect(route('loginpage'));
 
         // Admin (Role 2) forbidden
         $this->actingAs($admin)->postJson(route('manage.role.sync'))->assertForbidden();
         $this->actingAs($admin)->postJson(route('manage.role.sync.dry-run'))->assertForbidden();
+        $this->actingAs($admin)->postJson(route('manage.role.sync.start'))->assertForbidden();
+        $this->actingAs($admin)->getJson(route('manage.role.sync.progress'))->assertForbidden();
 
         // User (Role 1) forbidden
         $this->actingAs($user)->postJson(route('manage.role.sync'))->assertForbidden();
         $this->actingAs($user)->postJson(route('manage.role.sync.dry-run'))->assertForbidden();
+        $this->actingAs($user)->postJson(route('manage.role.sync.start'))->assertForbidden();
+        $this->actingAs($user)->getJson(route('manage.role.sync.progress'))->assertForbidden();
     }
 
     public function test_update_user_can_modify_active_status_and_protects_credentials(): void

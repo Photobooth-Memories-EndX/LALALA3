@@ -747,6 +747,8 @@ Route::group(['prefix' => 'manage/role', 'middleware' => ['auth', 'superadmin']]
     Route::get('/autocomplete', [ManageRoleController::class, 'liveSearch']);
     Route::post('/sync', [ManageRoleController::class, 'sync'])->name('manage.role.sync');
     Route::post('/sync-dry-run', [ManageRoleController::class, 'syncDryRun'])->name('manage.role.sync.dry-run');
+    Route::post('/sync/start', [ManageRoleController::class, 'startSync'])->name('manage.role.sync.start');
+    Route::get('/sync/progress', [ManageRoleController::class, 'syncProgress'])->name('manage.role.sync.progress');
 
     // Resign Management based on Soft Delete (deleted_at IS NOT NULL)
     Route::get('/resign', [ManageRoleController::class, 'resign'])->name('manage.role.resign');
