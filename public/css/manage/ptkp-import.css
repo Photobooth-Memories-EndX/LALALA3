@@ -84,7 +84,7 @@ body.theme-dark .ptkp-import-page {
 }
 
 .ptkp-step-title {
-    font-size: 0.875rem;
+    font-size: 12px;
     font-weight: 600;
     color: #64748b;
     white-space: nowrap;
@@ -102,7 +102,7 @@ body.theme-dark .ptkp-import-page {
 
 .ptkp-step-item.active .ptkp-step-title {
     color: #0f172a;
-    font-weight: 700;
+    font-weight: 600;
 }
 
 /* Completed Step: Dark Blue / Navy circle with white check icon */
@@ -1023,11 +1023,54 @@ body.theme-dark .ptkp-btn-inspect:hover {
     border: 1.5px solid #fecaca !important;
     background: linear-gradient(180deg, #fffdfd 0%, #fffafa 100%);
 }
+/* Step 3 Section Title & Subtitle */
+#ptkp-confirm-card .ptkp-section-title {
+    font-size: 15px !important;
+    font-weight: 600 !important;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+}
+
+#ptkp-confirm-card .ptkp-supporting-text {
+    font-size: 11.5px !important;
+    font-weight: 400 !important;
+    color: #64748b;
+    line-height: 1.35;
+}
+
+.pre-import-section-title {
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+}
+
+.pre-import-section-subtitle {
+    font-size: 11.5px !important;
+    font-weight: 400 !important;
+    color: #64748b;
+    line-height: 1.35;
+}
+
 .pre-import-header {
     display: flex;
     align-items: flex-start;
     gap: 12px;
     margin-bottom: 14px;
+}
+.pre-import-header h5 {
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: #0f172a;
+    margin-bottom: 2px;
+    letter-spacing: -0.01em;
+}
+.pre-import-header p {
+    font-size: 11px !important;
+    font-weight: 400 !important;
+    color: #64748b;
+    line-height: 1.35;
+    margin-bottom: 0;
 }
 .pre-import-header-icon {
     width: 34px;
@@ -1051,8 +1094,8 @@ body.theme-dark .ptkp-btn-inspect:hover {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    min-height: 42px;
-    padding: 8px 0;
+    min-height: 40px;
+    padding: 7px 0;
     border-bottom: 1px dashed #e2e8f0;
 }
 .pre-import-row:last-child {
@@ -1062,8 +1105,8 @@ body.theme-dark .ptkp-btn-inspect:hover {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 11.5px;
-    font-weight: 500;
+    font-size: 12px !important;
+    font-weight: 500 !important;
     color: #334155;
     min-width: 0;
     overflow: hidden;
@@ -1081,8 +1124,8 @@ body.theme-dark .ptkp-btn-inspect:hover {
     font-size: 12px;
 }
 .pre-import-row-count {
-    font-size: 1.15rem;
-    font-weight: 700;
+    font-size: 17px !important;
+    font-weight: 700 !important;
     font-variant-numeric: tabular-nums;
     margin-left: 0.75rem;
     text-align: right;
@@ -1104,21 +1147,22 @@ body.theme-dark .ptkp-btn-inspect:hover {
     border: 1.5px solid #bfdbfe;
 }
 .pre-import-card-eligible .pre-import-total-label {
-    font-size: 10px;
-    font-weight: 700;
+    font-size: 10.5px !important;
+    font-weight: 700 !important;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: #1e40af;
     margin-bottom: 2px;
 }
 .pre-import-card-eligible .pre-import-total-desc {
-    font-size: 10.5px;
+    font-size: 11px !important;
+    font-weight: 400 !important;
     color: #64748b;
     margin-bottom: 0;
 }
 .pre-import-card-eligible .pre-import-total-value {
-    font-size: 1.35rem;
-    font-weight: 800;
+    font-size: 22px !important;
+    font-weight: 700 !important;
     font-variant-numeric: tabular-nums;
     color: #1e3a8a;
     line-height: 1.1;
@@ -1129,21 +1173,22 @@ body.theme-dark .ptkp-btn-inspect:hover {
     border: 1.5px solid #fecaca;
 }
 .pre-import-card-skipped .pre-import-total-label {
-    font-size: 10px;
-    font-weight: 700;
+    font-size: 10.5px !important;
+    font-weight: 700 !important;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: #991b1b;
     margin-bottom: 2px;
 }
 .pre-import-card-skipped .pre-import-total-desc {
-    font-size: 10.5px;
+    font-size: 11px !important;
+    font-weight: 400 !important;
     color: #64748b;
     margin-bottom: 0;
 }
 .pre-import-card-skipped .pre-import-total-value {
-    font-size: 1.35rem;
-    font-weight: 800;
+    font-size: 22px !important;
+    font-weight: 700 !important;
     font-variant-numeric: tabular-nums;
     color: #dc2626;
     line-height: 1.1;
@@ -1160,6 +1205,34 @@ body.theme-dark .ptkp-btn-inspect:hover {
     gap: 12px;
     width: 100%;
     box-sizing: border-box;
+}
+.pre-import-safeguard-text {
+    font-size: 11.5px !important;
+    font-weight: 500 !important;
+    color: #0f172a;
+    line-height: 1.45;
+}
+.pre-import-safeguard-text strong {
+    font-weight: 600 !important;
+    color: #0f172a;
+}
+#ptkp-btn-back-to-step2 {
+    height: 34px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    padding: 0 1rem !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+#ptkp-btn-confirm {
+    height: 34px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    padding: 0 1.25rem !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
 }
 .btn-confirm-import-darkblue {
     background-color: #1e3a8a !important;
@@ -1281,6 +1354,42 @@ body.theme-dark .pre-import-safeguard-banner {
     border-color: rgba(14, 165, 233, 0.3) !important;
     border-left-color: #38bdf8 !important;
     color: #bae6fd !important;
+}
+
+[data-bs-theme="dark"] #ptkp-confirm-card .ptkp-section-title,
+body.dark-mode #ptkp-confirm-card .ptkp-section-title,
+body.theme-dark #ptkp-confirm-card .ptkp-section-title,
+[data-bs-theme="dark"] .pre-import-section-title,
+body.dark-mode .pre-import-section-title,
+body.theme-dark .pre-import-section-title,
+[data-bs-theme="dark"] .pre-import-header h5,
+body.dark-mode .pre-import-header h5,
+body.theme-dark .pre-import-header h5 {
+    color: #f8fafc !important;
+}
+
+[data-bs-theme="dark"] #ptkp-confirm-card .ptkp-supporting-text,
+body.dark-mode #ptkp-confirm-card .ptkp-supporting-text,
+body.theme-dark #ptkp-confirm-card .ptkp-supporting-text,
+[data-bs-theme="dark"] .pre-import-section-subtitle,
+body.dark-mode .pre-import-section-subtitle,
+body.theme-dark .pre-import-section-subtitle,
+[data-bs-theme="dark"] .pre-import-header p,
+body.dark-mode .pre-import-header p,
+body.theme-dark .pre-import-header p {
+    color: #94a3b8 !important;
+}
+
+[data-bs-theme="dark"] .pre-import-safeguard-text,
+body.dark-mode .pre-import-safeguard-text,
+body.theme-dark .pre-import-safeguard-text {
+    color: #e2e8f0 !important;
+}
+
+[data-bs-theme="dark"] .pre-import-safeguard-text strong,
+body.dark-mode .pre-import-safeguard-text strong,
+body.theme-dark .pre-import-safeguard-text strong {
+    color: #f8fafc !important;
 }
 
 [data-bs-theme="dark"] #res-success-banner,

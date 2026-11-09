@@ -170,4 +170,60 @@ class PtkpImportStep3LayoutTest extends TestCase
             }
         }
     }
+
+    public function test_step3_typography_and_readability_specifications(): void
+    {
+        $cssPath = public_path('css/manage/ptkp-import.css');
+        $this->assertFileExists($cssPath);
+        $css = file_get_contents($cssPath);
+
+        // 1. Stepper Labels: 12px, weight 600
+        $this->assertMatchesRegularExpression('/\.ptkp-step-title\s*\{[^}]*font-size:\s*12px/s', $css);
+        $this->assertMatchesRegularExpression('/\.ptkp-step-title\s*\{[^}]*font-weight:\s*600/s', $css);
+
+        // 2. Import Records Section Title: 15px, weight 600
+        $this->assertMatchesRegularExpression('/#ptkp-confirm-card\s+\.ptkp-section-title\s*\{[^}]*font-size:\s*15px/s', $css);
+        $this->assertMatchesRegularExpression('/#ptkp-confirm-card\s+\.ptkp-section-title\s*\{[^}]*font-weight:\s*600/s', $css);
+
+        // 3. Pre-Import Summary & Safeguards Title: 14px, weight 600
+        $this->assertMatchesRegularExpression('/\.pre-import-section-title\s*\{[^}]*font-size:\s*14px/s', $css);
+        $this->assertMatchesRegularExpression('/\.pre-import-section-title\s*\{[^}]*font-weight:\s*600/s', $css);
+
+        // 4. Panel Title: 13px, weight 600; Panel Description: 11px, weight 400
+        $this->assertMatchesRegularExpression('/\.pre-import-header\s+h5\s*\{[^}]*font-size:\s*13px/s', $css);
+        $this->assertMatchesRegularExpression('/\.pre-import-header\s+h5\s*\{[^}]*font-weight:\s*600/s', $css);
+        $this->assertMatchesRegularExpression('/\.pre-import-header\s+p\s*\{[^}]*font-size:\s*11px/s', $css);
+        $this->assertMatchesRegularExpression('/\.pre-import-header\s+p\s*\{[^}]*font-weight:\s*400/s', $css);
+
+        // 5. Summary Labels: 12px, weight 500
+        $this->assertMatchesRegularExpression('/\.pre-import-row-label\s*\{[^}]*font-size:\s*12px/s', $css);
+        $this->assertMatchesRegularExpression('/\.pre-import-row-label\s*\{[^}]*font-weight:\s*500/s', $css);
+
+        // 6. Summary Numbers: 16–18px (17px), weight 700
+        $this->assertMatchesRegularExpression('/\.pre-import-row-count\s*\{[^}]*font-size:\s*17px/s', $css);
+        $this->assertMatchesRegularExpression('/\.pre-import-row-count\s*\{[^}]*font-weight:\s*700/s', $css);
+
+        // 7. Total Import Number: 21–22px (22px), weight 700
+        $this->assertMatchesRegularExpression('/\.pre-import-total-value\s*\{[^}]*font-size:\s*22px/s', $css);
+        $this->assertMatchesRegularExpression('/\.pre-import-total-value\s*\{[^}]*font-weight:\s*700/s', $css);
+
+        // 8. Database Safety Guarantee: 11.5px, weight 500 (heading 600)
+        $this->assertMatchesRegularExpression('/\.pre-import-safeguard-text\s*\{[^}]*font-size:\s*11\.5px/s', $css);
+        $this->assertMatchesRegularExpression('/\.pre-import-safeguard-text\s*\{[^}]*font-weight:\s*500/s', $css);
+
+        // 9. Buttons: 12px, weight 600, height 34px
+        $this->assertMatchesRegularExpression('/#ptkp-btn-confirm\s*\{[^}]*font-size:\s*12px/s', $css);
+        $this->assertMatchesRegularExpression('/#ptkp-btn-confirm\s*\{[^}]*font-weight:\s*600/s', $css);
+        $this->assertMatchesRegularExpression('/#ptkp-btn-confirm\s*\{[^}]*height:\s*34px/s', $css);
+
+        // 10. Check Blade Render
+        $response = $this->actingAs($this->adminUser)
+            ->get(route('manage.record.offline.import-ptkp'));
+        $response->assertStatus(200);
+        $html = $response->getContent();
+
+        $this->assertStringContainsString('pre-import-section-title', $html);
+        $this->assertStringContainsString('pre-import-safeguard-text', $html);
+        $this->assertStringContainsString('btn-confirm-import-darkblue', $html);
+    }
 }

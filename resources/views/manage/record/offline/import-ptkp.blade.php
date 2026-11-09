@@ -509,10 +509,10 @@
         <div class="card border-0 shadow-sm rounded-3 mb-3" id="ptkp-confirm-card" style="display: none;">
             <div class="card-header bg-white border-bottom py-2.5 px-3 px-md-3.5 rounded-top-3">
                 <div class="d-flex align-items-center gap-2">
-                    <span class="badge bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 22px; height: 22px; font-size: 0.72rem; background-color: #1e3a8a !important;">3</span>
+                    <span class="badge bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width: 24px; height: 24px; font-size: 12px; font-weight: 700; background-color: #1e3a8a !important;">3</span>
                     <div>
-                        <h4 class="card-title fw-bold text-dark mb-0 ptkp-section-title" style="font-size: 14px;">Import Records</h4>
-                        <div class="text-muted extra-small ptkp-supporting-text" style="font-size: 11px;">Import validated training records into KP-OWL.</div>
+                        <h4 class="card-title fw-semibold text-dark mb-0.5 ptkp-section-title" style="font-size: 15px; font-weight: 600;">Import Records</h4>
+                        <div class="text-muted extra-small ptkp-supporting-text" style="font-size: 11.5px; font-weight: 400; line-height: 1.35;">Import validated training records into KP-OWL.</div>
                     </div>
                 </div>
             </div>
@@ -526,8 +526,8 @@
                             <i class="ti ti-clipboard-check fs-2"></i>
                         </div>
                         <div>
-                            <h5 class="fw-bold text-dark mb-0" style="font-size: 13.5px;">Pre-Import Summary &amp; Safeguards</h5>
-                            <div class="text-muted extra-small ptkp-supporting-text" style="font-size: 11px;">Verify exact record counts and database safety guarantees before execution.</div>
+                            <h5 class="fw-semibold text-dark mb-0.5 pre-import-section-title" style="font-size: 14px; font-weight: 600;">Pre-Import Summary &amp; Safeguards</h5>
+                            <div class="text-muted extra-small pre-import-section-subtitle ptkp-supporting-text" style="font-size: 11.5px; font-weight: 400; line-height: 1.35;">Verify exact record counts and database safety guarantees before execution.</div>
                         </div>
                     </div>
 
@@ -540,8 +540,8 @@
                                     <i class="ti ti-check"></i>
                                 </span>
                                 <div>
-                                    <h5 class="fw-bold text-dark mb-0.5" style="font-size: 12.5px;">Records to Be Imported</h5>
-                                    <p class="text-muted mb-0" style="font-size: 10.5px;">Records that passed validation and are eligible for import.</p>
+                                    <h5 class="fw-semibold text-dark mb-0.5" style="font-size: 13px; font-weight: 600;">Records to Be Imported</h5>
+                                    <p class="text-muted mb-0" style="font-size: 11px; font-weight: 400; line-height: 1.35;">Records that passed validation and are eligible for import.</p>
                                 </div>
                             </div>
 
@@ -585,8 +585,8 @@
                                     <i class="ti ti-ban"></i>
                                 </span>
                                 <div>
-                                    <h5 class="fw-bold text-dark mb-0.5" style="font-size: 12.5px;">Records Not Imported</h5>
-                                    <p class="text-muted mb-0" style="font-size: 10.5px;">Records that will be skipped because they failed validation or already exist.</p>
+                                    <h5 class="fw-semibold text-dark mb-0.5" style="font-size: 13px; font-weight: 600;">Records Not Imported</h5>
+                                    <p class="text-muted mb-0" style="font-size: 11px; font-weight: 400; line-height: 1.35;">Records that will be skipped because they failed validation or already exist.</p>
                                 </div>
                             </div>
 
@@ -629,19 +629,19 @@
                         <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 34px; height: 34px; background-color: #e0f2fe; color: #0284c7;">
                             <i class="ti ti-shield-check fs-2"></i>
                         </div>
-                        <div class="small lh-base text-dark" style="font-size: 11px;">
-                            <strong class="text-dark">Database Safety Guarantee:</strong> Only records that pass validation will be imported into KP-OWL. Existing enrolled participants and duplicate entries will not be overwritten.
+                        <div class="pre-import-safeguard-text text-dark" style="font-size: 11.5px; font-weight: 500; line-height: 1.45;">
+                            <strong class="text-dark" style="font-weight: 600;">Database Safety Guarantee:</strong> Only records that pass validation will be imported into KP-OWL. Existing enrolled participants and duplicate entries will not be overwritten.
                         </div>
                     </div>
                 </div>
 
                 <!-- STEP 3 NAVIGATION BUTTONS: Back, Confirm & Import -->
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2.5 border-top">
-                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-3 px-3 py-1.5 d-inline-flex align-items-center gap-1.5" id="ptkp-btn-back-to-step2" style="font-size: 11.5px;">
+                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-3 px-3.5 d-inline-flex align-items-center gap-1.5" id="ptkp-btn-back-to-step2" style="height: 34px; font-size: 12px; font-weight: 600;">
                         <i class="ti ti-arrow-left"></i>
                         <span>Back</span>
                     </button>
-                    <button type="button" class="btn btn-sm btn-primary btn-confirm-import-darkblue rounded-3 px-3.5 py-1.5 d-inline-flex align-items-center gap-1.5" id="ptkp-btn-confirm" disabled style="background-color: #1e3a8a; border-color: #1e3a8a; font-size: 11.5px;">
+                    <button type="button" class="btn btn-sm btn-primary btn-confirm-import-darkblue rounded-3 px-4 d-inline-flex align-items-center gap-1.5" id="ptkp-btn-confirm" disabled style="height: 34px; font-size: 12px; font-weight: 600; background-color: #1e3a8a; border-color: #1e3a8a;">
                         <i class="ti ti-check"></i>
                         <span>Confirm &amp; Import (<span id="ptkp-btn-confirm-count">0</span> Records)</span>
                     </button>
