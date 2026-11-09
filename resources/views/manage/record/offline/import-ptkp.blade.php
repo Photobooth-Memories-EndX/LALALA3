@@ -7,45 +7,45 @@
 @endsection
 
 @section('content')
-<div class="page-body ptkp-import-page py-4">
+<div class="page-body ptkp-import-page py-3">
     <div class="container-xl">
         <!-- BREADCRUMB / BACK LINK -->
-        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2.5">
             <nav aria-label="breadcrumb">
-                <ol class="breadcrumb mb-0">
+                <ol class="breadcrumb mb-0" style="font-size: 11.5px;">
                     <li class="breadcrumb-item"><a href="{{ route('manage.dashboard') }}" class="text-decoration-none">Manage Record</a></li>
                     <li class="breadcrumb-item"><a href="{{ route('manage.record.offline') }}" class="text-decoration-none">Offline Record</a></li>
                     <li class="breadcrumb-item active" aria-current="page">Import PTKP Data</li>
                 </ol>
             </nav>
-            <a href="{{ route('manage.record.offline') }}" class="btn-back-ptkp d-inline-flex align-items-center gap-1.5 text-decoration-none fw-medium" id="btn-top-back">
+            <a href="{{ route('manage.record.offline') }}" class="btn-back-ptkp d-inline-flex align-items-center gap-1.5 text-decoration-none fw-medium" id="btn-top-back" style="font-size: 11.5px;">
                 <i class="ti ti-arrow-left"></i>
                 <span>Back to Offline Records</span>
             </a>
         </div>
 
         <!-- PAGE TITLE CARD -->
-        <div class="card border-0 shadow-sm p-3 p-md-4 mb-4 rounded-3 bg-white">
+        <div class="card border-0 shadow-sm p-3 mb-3 rounded-3 bg-white">
             <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
-                <div class="d-flex align-items-center gap-3">
+                <div class="d-flex align-items-center gap-2.5">
                     <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
-                         style="width: 54px; height: 54px; background-color: #fef3c7; color: #d97706; border-radius: 12px;">
-                        <i class="ti ti-file-spreadsheet fs-1"></i>
+                         style="width: 44px; height: 44px; background-color: #fef3c7; color: #d97706; border-radius: 10px;">
+                        <i class="ti ti-file-spreadsheet fs-2"></i>
                     </div>
                     <div>
-                        <h2 class="h3 fw-bold mb-1 text-dark">Import PTKP Training Records</h2>
-                        <p class="text-muted small mb-0">Upload and import offline training records into KP-OWL. Employee information will be matched automatically.</p>
+                        <h2 class="fw-bold mb-0.5 text-dark" style="font-size: 1.15rem;">Import PTKP Training Records</h2>
+                        <p class="text-muted mb-0" style="font-size: 11.5px;">Upload and import offline training records into KP-OWL. Employee information will be matched automatically.</p>
                     </div>
                 </div>
                 <div class="d-flex align-items-center gap-2" id="ptkp-header-actions">
                     <!-- Download Template: Only Step 1 -->
-                    <a href="{{ route('manage.record.offline.import-ptkp.template') }}" class="btn btn-outline-primary rounded-pill d-inline-flex align-items-center gap-2 px-3 py-2" id="btn-download-ptkp-template" title="Download Template (.xlsx)">
-                        <i class="ti ti-download fs-2"></i>
+                    <a href="{{ route('manage.record.offline.import-ptkp.template') }}" class="btn btn-outline-primary rounded-pill d-inline-flex align-items-center gap-1.5 px-3 py-1.5" id="btn-download-ptkp-template" style="font-size: 11.5px;" title="Download Template (.xlsx)">
+                        <i class="ti ti-download fs-3"></i>
                         <span>Download PTKP Template (.xlsx)</span>
                     </a>
                     <!-- Import History: Only Step 3 & Result -->
-                    <a href="{{ route('manage.record.offline.import-history.index') }}" class="btn btn-outline-secondary rounded-pill d-inline-flex align-items-center gap-2 px-3 py-2 d-none" id="btn-ptkp-history" title="View Import History">
-                        <i class="ti ti-history fs-2"></i>
+                    <a href="{{ route('manage.record.offline.import-history.index') }}" class="btn btn-outline-secondary rounded-pill d-inline-flex align-items-center gap-1.5 px-3 py-1.5 d-none" id="btn-ptkp-history" style="font-size: 11.5px;" title="View Import History">
+                        <i class="ti ti-history fs-3"></i>
                         <span>Import History</span>
                     </a>
                 </div>
@@ -53,7 +53,7 @@
         </div>
 
         <!-- EXACTLY 3-STEP PROCESS INDICATOR -->
-        <div class="card border-0 shadow-sm p-3 mb-4 rounded-3 bg-white ptkp-stepper-card">
+        <div class="card border-0 shadow-sm py-2 px-3 mb-3 rounded-3 bg-white ptkp-stepper-card">
             <div class="ptkp-steps">
                 <!-- Step 1 -->
                 <div class="ptkp-step-item active" id="ptkp-step-ind-1" data-step="1">
@@ -190,53 +190,53 @@
         <!-- =================================================================== -->
         <!-- STEP 2: VALIDATION & REVIEW                                         -->
         <!-- =================================================================== -->
-        <div class="card border-0 shadow-sm rounded-4 mb-4" id="ptkp-preview-card" style="display: none;">
-            <div class="card-header bg-white border-bottom pt-4 pb-3 px-4 rounded-top-4">
+        <div class="card border-0 shadow-sm rounded-3 mb-3" id="ptkp-preview-card" style="display: none;">
+            <div class="card-header bg-white border-bottom py-2.5 px-3 px-md-3.5 rounded-top-3">
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                     <div class="d-flex align-items-center gap-2">
-                        <span class="badge bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 26px; height: 26px; font-size: 0.8rem; background-color: #1e3a8a !important;">2</span>
+                        <span class="badge bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 22px; height: 22px; font-size: 0.72rem; background-color: #1e3a8a !important;">2</span>
                         <div>
-                            <h4 class="card-title fw-bold text-dark mb-0">Validation & Review</h4>
-                            <div class="text-muted small">Review validated training records before importing them into KP-OWL.</div>
+                            <h4 class="card-title fw-semibold text-dark mb-0" style="font-size: 14px;">Validation &amp; Review</h4>
+                            <div class="text-muted extra-small" style="font-size: 11px;">Review validated training records before importing them into KP-OWL.</div>
                         </div>
-                        <span class="badge bg-light text-secondary border px-2.5 py-1.5 ms-2" id="ptkp-preview-filename">-</span>
+                        <span class="badge bg-light text-secondary border px-2 py-0.5 ms-2" style="font-size: 10.5px;" id="ptkp-preview-filename">-</span>
                     </div>
                 </div>
             </div>
 
-            <div class="card-body p-4">
+            <div class="card-body p-3 p-md-3.5">
                 <!-- Header Check Diagnostic Alert -->
-                <div class="alert alert-warning border-0 rounded-3 small mb-4" id="ptkp-header-alert" style="display: none;">
+                <div class="alert alert-warning border-0 rounded-3 small mb-2.5 py-2 px-3" id="ptkp-header-alert" style="display: none;">
                     <div class="d-flex align-items-start gap-2">
                         <i class="ti ti-alert-triangle fs-3 flex-shrink-0 mt-0.5"></i>
                         <div>
-                            <strong class="d-block mb-1">Header Validation Notes:</strong>
-                            <div id="ptkp-header-alert-body"></div>
+                            <strong class="d-block mb-1" style="font-size: 12px;">Header Validation Notes:</strong>
+                            <div id="ptkp-header-alert-body" style="font-size: 11px;"></div>
                         </div>
                     </div>
                 </div>
 
                 <!-- NO NEW RECORDS TO IMPORT ALERT BANNER -->
-                <div class="alert alert-warning border-0 rounded-3 mb-4 p-3" id="ptkp-no-new-records-alert" style="display: none; background-color: #fffbeb; color: #92400e;">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="avatar rounded-circle bg-warning text-white flex-shrink-0" style="width: 40px; height: 40px;">
-                            <i class="ti ti-alert-circle fs-2"></i>
+                <div class="alert alert-warning border-0 rounded-3 mb-2.5 py-2 px-3" id="ptkp-no-new-records-alert" style="display: none; background-color: #fffbeb; color: #92400e;">
+                    <div class="d-flex align-items-center gap-2.5">
+                        <div class="avatar rounded-circle bg-warning text-white flex-shrink-0" style="width: 32px; height: 32px; font-size: 14px;">
+                            <i class="ti ti-alert-circle"></i>
                         </div>
                         <div>
-                            <h5 class="fw-bold mb-1">No New Records to Import</h5>
-                            <p class="mb-0 small" id="ptkp-no-new-records-desc">All records already exist in the database. No new records will be imported.</p>
+                            <h5 class="fw-bold mb-0" style="font-size: 13px;">No New Records to Import</h5>
+                            <p class="mb-0 text-muted" id="ptkp-no-new-records-desc" style="font-size: 11px;">All records already exist in the database. No new records will be imported.</p>
                         </div>
                     </div>
                 </div>
 
                 <!-- 6 CLICKABLE KPI SUMMARY STAT CARDS (QUICK FILTER) -->
-                <div class="row g-2 mb-3" id="ptkp-summary-cards-container">
+                <div class="row g-2 mb-2.5" id="ptkp-summary-cards-container">
                     <!-- Card 1: Total Rows -->
                     <div class="col-6 col-md-2">
-                        <div class="card border p-3 rounded-3 text-center h-100 ptkp-kpi-card ptkp-summary-filter-card ptkp-kpi-total active"
-                             data-filter="all" role="button" tabindex="0">
+                        <div class="card border p-2 rounded-3 text-center h-100 ptkp-kpi-card ptkp-summary-filter-card ptkp-kpi-total active"
+                             data-filter="all" role="button" tabindex="0" title="Click to view all records">
                             <div class="d-flex align-items-center justify-content-center gap-1 small fw-semibold mb-1 ptkp-kpi-label">
-                                <span>Total Rows</span>
+                                <span>TOTAL ROWS</span>
                                 <span class="ptkp-info-icon" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="top" data-bs-custom-class="ptkp-status-tooltip ptkp-validation-tooltip"
                                       data-tooltip-id="ptkp-tt-content-total"
                                       tabindex="0" role="button" aria-label="Explanation of Total Rows">
@@ -249,8 +249,8 @@
 
                     <!-- Card 2: VALID -->
                     <div class="col-6 col-md-2">
-                        <div class="card border p-3 rounded-3 text-center h-100 ptkp-kpi-card ptkp-summary-filter-card ptkp-kpi-valid"
-                             data-filter="valid" role="button" tabindex="0">
+                        <div class="card border p-2 rounded-3 text-center h-100 ptkp-kpi-card ptkp-summary-filter-card ptkp-kpi-valid"
+                             data-filter="valid" role="button" tabindex="0" title="Click to filter Valid records">
                             <div class="d-flex align-items-center justify-content-center gap-1 small fw-semibold mb-1 ptkp-kpi-label">
                                 <span>VALID</span>
                                 <span class="ptkp-info-icon" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="top" data-bs-custom-class="ptkp-status-tooltip ptkp-validation-tooltip"
@@ -265,8 +265,8 @@
 
                     <!-- Card 3: WARNING -->
                     <div class="col-6 col-md-2">
-                        <div class="card border p-3 rounded-3 text-center h-100 ptkp-kpi-card ptkp-summary-filter-card ptkp-kpi-warning"
-                             data-filter="warning" role="button" tabindex="0">
+                        <div class="card border p-2 rounded-3 text-center h-100 ptkp-kpi-card ptkp-summary-filter-card ptkp-kpi-warning"
+                             data-filter="warning" role="button" tabindex="0" title="Click to filter Warning records">
                             <div class="d-flex align-items-center justify-content-center gap-1 small fw-semibold mb-1 ptkp-kpi-label">
                                 <span>WARNING</span>
                                 <span class="ptkp-info-icon" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="top" data-bs-custom-class="ptkp-status-tooltip ptkp-validation-tooltip"
@@ -281,8 +281,8 @@
 
                     <!-- Card 4: DUPLICATE -->
                     <div class="col-6 col-md-2">
-                        <div class="card border p-3 rounded-3 text-center h-100 ptkp-kpi-card ptkp-summary-filter-card ptkp-kpi-duplicate"
-                             data-filter="duplicate" role="button" tabindex="0">
+                        <div class="card border p-2 rounded-3 text-center h-100 ptkp-kpi-card ptkp-summary-filter-card ptkp-kpi-duplicate"
+                             data-filter="duplicate" role="button" tabindex="0" title="Click to filter Duplicate records">
                             <div class="d-flex align-items-center justify-content-center gap-1 small fw-semibold mb-1 ptkp-kpi-label">
                                 <span>DUPLICATE</span>
                                 <span class="ptkp-info-icon" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="top" data-bs-custom-class="ptkp-status-tooltip ptkp-validation-tooltip"
@@ -295,12 +295,12 @@
                         </div>
                     </div>
 
-                    <!-- Card 5: INVALID -->
+                    <!-- Card 5: INVALID ID & COURSE TITLE -->
                     <div class="col-6 col-md-2">
-                        <div class="card border p-3 rounded-3 text-center h-100 ptkp-kpi-card ptkp-summary-filter-card ptkp-kpi-invalid"
-                             data-filter="invalid" role="button" tabindex="0">
+                        <div class="card border p-2 rounded-3 text-center h-100 ptkp-kpi-card ptkp-summary-filter-card ptkp-kpi-invalid"
+                             data-filter="invalid" role="button" tabindex="0" title="Click to filter Invalid ID & Course Title records">
                             <div class="d-flex align-items-center justify-content-center gap-1 small fw-semibold mb-1 ptkp-kpi-label">
-                                <span>INVALID</span>
+                                <span title="Invalid Employee ID or Course Title">INVALID ID &amp; COURSE TITLE</span>
                                 <span class="ptkp-info-icon" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="top" data-bs-custom-class="ptkp-status-tooltip ptkp-validation-tooltip"
                                       data-tooltip-id="ptkp-tt-content-invalid"
                                       tabindex="0" role="button" aria-label="Explanation of Invalid status">
@@ -308,13 +308,18 @@
                                 </span>
                             </div>
                             <div class="h3 fw-bold mb-0 ptkp-kpi-count" id="ptkp-kpi-invalid">0</div>
+                            <div class="ptkp-kpi-subinfo extra-small mt-0.5" id="ptkp-kpi-invalid-subinfo" style="display: none;">
+                                <span class="ptkp-sub-pill" data-subfilter="invalid_id" title="Filter records with Invalid ID">ID: <span id="ptkp-kpi-invalid-id-count">0</span></span>
+                                <span>&bull;</span>
+                                <span class="ptkp-sub-pill" data-subfilter="invalid_course" title="Filter records with Invalid Course Title">Course: <span id="ptkp-kpi-invalid-course-count">0</span></span>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Card 6: INVALID COMPANY -->
                     <div class="col-6 col-md-2">
-                        <div class="card border p-3 rounded-3 text-center h-100 ptkp-kpi-card ptkp-summary-filter-card ptkp-kpi-invalid-company"
-                             data-filter="invalid_company" role="button" tabindex="0">
+                        <div class="card border p-2 rounded-3 text-center h-100 ptkp-kpi-card ptkp-summary-filter-card ptkp-kpi-invalid-company"
+                             data-filter="invalid_company" role="button" tabindex="0" title="Click to filter Invalid Company records">
                             <div class="d-flex align-items-center justify-content-center gap-1 small fw-semibold mb-1 ptkp-kpi-label">
                                 <span>INVALID COMPANY</span>
                                 <span class="ptkp-info-icon" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="top" data-bs-custom-class="ptkp-status-tooltip ptkp-validation-tooltip"
@@ -370,12 +375,16 @@
                         </div>
                     </div>
 
-                    <!-- Template 5: INVALID (Simplified Minimal Tooltip) -->
+                    <!-- Template 5: INVALID ID & COURSE TITLE -->
                     <div id="ptkp-tt-content-invalid">
                         <div class="ptkp-tt-box ptkp-tt-minimal text-start">
-                            <div class="ptkp-tt-head fw-bold mb-1">Invalid Records</div>
+                            <div class="ptkp-tt-head fw-bold mb-1">Invalid ID &amp; Course Title Records</div>
                             <div class="ptkp-tt-desc mb-0">
-                                These records contain invalid or incomplete information and cannot be imported until the required data is corrected.
+                                These records failed mandatory validation and will be safely skipped:
+                                <ul class="ps-3 mb-0 mt-1" style="font-size: 0.76rem;">
+                                    <li><strong>INVALID ID:</strong> Employee ID is empty, not found in LMS users database, or ambiguous.</li>
+                                    <li><strong>INVALID COURSE TITLE:</strong> Course Title is empty.</li>
+                                </ul>
                             </div>
                         </div>
                     </div>
@@ -385,14 +394,14 @@
                         <div class="ptkp-tt-box ptkp-tt-minimal text-start">
                             <div class="ptkp-tt-head fw-bold mb-1">Invalid Company Records</div>
                             <div class="ptkp-tt-desc mb-0">
-                                These records contain missing or unsupported company information and cannot be imported under the applicable rules.
+                                Discrepancies between Excel company and LMS user profile. In PTKP, this is a non-blocking warning and the record will still be imported with a review tag.
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- COMBINED SEARCH FIELDS & CONTROLS -->
-                <div class="row g-2 mb-3 bg-light p-2.5 rounded-3 border align-items-center">
+                <div class="row g-2 mb-2.5 ptkp-filter-bar align-items-center">
                     <div class="col-12 col-md-3">
                         <div class="input-icon">
                             <span class="input-icon-addon"><i class="ti ti-id"></i></span>
@@ -426,26 +435,26 @@
                 </div>
 
                 <!-- PREVIEW TABLE CONTAINER WITH LOADING OVERLAY -->
-                <div class="ptkp-table-wrapper position-relative mb-3">
+                <div class="ptkp-table-wrapper position-relative mb-2.5">
                     <div class="ptkp-table-loading-overlay" id="ptkp-table-loading" style="display: none;">
-                        <div class="d-flex flex-column align-items-center justify-content-center py-5">
-                            <div class="spinner-border text-primary mb-2" style="width: 2.2rem; height: 2.2rem; color: #1e3a8a !important;" role="status"></div>
-                            <span class="small fw-semibold text-muted" id="ptkp-table-loading-text">Filtering records...</span>
+                        <div class="d-flex flex-column align-items-center justify-content-center py-4">
+                            <div class="spinner-border text-primary mb-1.5" style="width: 1.8rem; height: 1.8rem; color: #1e3a8a !important;" role="status"></div>
+                            <span class="fw-semibold text-muted" id="ptkp-table-loading-text" style="font-size: 11px;">Filtering records...</span>
                         </div>
                     </div>
                     <table class="table table-hover align-middle mb-0 ptkp-table" id="ptkp-preview-table">
                         <thead>
                             <tr>
-                                <th style="width: 50px;" class="text-center">No</th>
-                                <th style="width: 140px;">Status</th>
-                                <th style="width: 120px;">Employee ID</th>
+                                <th style="width: 45px;" class="text-center">No</th>
+                                <th style="width: 155px;">Status</th>
+                                <th style="width: 115px;">Employee ID</th>
                                 <th>Employee Name (from users)</th>
-                                <th>Company</th>
+                                <th style="width: 125px;">Company</th>
                                 <th>Course Title</th>
-                                <th style="width: 110px;">Type</th>
-                                <th style="width: 130px;">PIC</th>
-                                <th style="min-width: 200px;">Validation Details</th>
-                                <th style="width: 70px;" class="text-center">Action</th>
+                                <th style="width: 85px;">Type</th>
+                                <th style="width: 115px;">PIC</th>
+                                <th style="min-width: 190px;">Validation Details</th>
+                                <th style="width: 55px;" class="text-center">Action</th>
                             </tr>
                         </thead>
                         <tbody id="ptkp-preview-tbody">
@@ -455,16 +464,16 @@
                 </div>
 
                 <!-- SHOW ENTRIES & PAGINATION FOOTER -->
-                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3 ptkp-pagination-wrapper">
                     <div class="d-flex align-items-center gap-2">
-                        <label for="ptkp-page-size" class="small text-muted mb-0">Show:</label>
-                        <select id="ptkp-page-size" class="form-select form-select-sm" style="width: 85px;">
+                        <label for="ptkp-page-size" class="text-muted mb-0" style="font-size: 11px;">Show:</label>
+                        <select id="ptkp-page-size" class="form-select form-select-sm" style="width: 75px; height: 30px; font-size: 11px;">
                             <option value="15">15</option>
                             <option value="25" selected>25</option>
                             <option value="50">50</option>
                             <option value="100">100</option>
                         </select>
-                        <div class="text-muted small ms-2" id="ptkp-pagination-info">
+                        <div class="text-muted ms-2" id="ptkp-pagination-info" style="font-size: 11px;">
                             Showing 0 of 0 records
                         </div>
                     </div>
@@ -474,23 +483,25 @@
                 </div>
 
                 <!-- STEP 2 NAVIGATION BUTTONS: Cancel, Back, Next -->
-                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 pt-3 border-top">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 pt-2.5 border-top">
                     <div>
-                        <button type="button" class="btn btn-outline-danger rounded-3 px-4" id="ptkp-btn-cancel-preview">
+                        <button type="button" class="btn btn-sm btn-outline-danger rounded-3 px-3 py-1.5" id="ptkp-btn-cancel-preview" style="font-size: 11.5px;">
                             <i class="ti ti-x me-1"></i>Cancel
                         </button>
                     </div>
                     <div class="d-flex align-items-center gap-2">
-                        <button type="button" class="btn btn-outline-secondary rounded-3 px-4 d-inline-flex align-items-center gap-1.5" id="ptkp-btn-back-to-step1">
+                        <button type="button" class="btn btn-sm btn-outline-secondary rounded-3 px-3 py-1.5 d-inline-flex align-items-center gap-1.5" id="ptkp-btn-back-to-step1" style="font-size: 11.5px;">
                             <i class="ti ti-arrow-left"></i>
                             <span>Back</span>
                         </button>
-                        <button type="button" class="btn btn-primary rounded-3 px-4 d-inline-flex align-items-center gap-2" id="ptkp-btn-next-to-step3" style="background-color: #1e3a8a; border-color: #1e3a8a;">
+                        <button type="button" class="btn btn-sm btn-primary rounded-3 px-3.5 py-1.5 d-inline-flex align-items-center gap-1.5" id="ptkp-btn-next-to-step3" style="background-color: #1e3a8a; border-color: #1e3a8a; font-size: 11.5px;">
                             <span>Next / Continue to Import</span>
                             <i class="ti ti-arrow-right"></i>
                         </button>
                     </div>
                 </div>
+            </div>
+        </div>
             </div>
         </div>
 

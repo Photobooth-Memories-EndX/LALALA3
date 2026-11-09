@@ -27,6 +27,10 @@ class LearningRecordRecognizedDurationService
      */
     public function resolveForContentUser(ContentUser $cu): int
     {
+        if ($cu->exists && !empty($cu->user_id) && $cu->content && !empty($cu->content->id)) {
+            return $this->resolveGlobalContentRecognizedSeconds((int) $cu->user_id, $cu->content);
+        }
+
         return app(LearningRecordLearningHourService::class)
             ->calculateContentRecognizedSeconds($cu);
     }
@@ -102,6 +106,10 @@ class LearningRecordRecognizedDurationService
             return 0;
         }
 
+        if (isset($rowObj->recognized_duration_seconds) && is_numeric($rowObj->recognized_duration_seconds)) {
+            return max(0, (int) $rowObj->recognized_duration_seconds);
+        }
+
         $durationSeconds = 0;
         if (isset($rowObj->duration_seconds) && (int) $rowObj->duration_seconds > 0) {
             $durationSeconds = (int) $rowObj->duration_seconds;
@@ -172,6 +180,21 @@ class LearningRecordRecognizedDurationService
     {
         return app(LearningRecordLearningHourService::class)
             ->resolveGlobalContentRecognizedSeconds($userId, $content);
+    }
+
+    /**
+     * Resolve global recognized duration in integer seconds for multiple contents in batch (Zero N+1).
+     * Combines valid actual watch across Direct (content_users) and all Playlists (playlist_content_users).
+     *
+     * @param int $userId
+     * @param Collection|array $contents
+     * @param Collection|null $contentUsers
+     * @return Collection<int, int>
+     */
+    public function resolveGlobalContentRecognizedSecondsBatch(int $userId, Collection|array $contents, ?Collection $contentUsers = null): Collection
+    {
+        return app(LearningRecordLearningHourService::class)
+            ->resolveGlobalContentRecognizedSecondsBatch($userId, $contents, $contentUsers);
     }
 
     /**

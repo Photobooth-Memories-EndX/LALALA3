@@ -240,6 +240,23 @@
         $('#ptkp-kpi-invalid').text(stats.invalid || 0);
         $('#ptkp-kpi-invalid-company').text(stats.invalid_company || 0);
 
+        // Sub-breakdown for Invalid ID vs Invalid Course Title (without double counting the total)
+        let countInvalidId = 0;
+        let countInvalidCourse = 0;
+        allRows.forEach(function (r) {
+            if (r.status === 'INVALID') {
+                if (isRowInvalidId(r)) countInvalidId++;
+                if (isRowInvalidCourse(r)) countInvalidCourse++;
+            }
+        });
+        $('#ptkp-kpi-invalid-id-count').text(countInvalidId);
+        $('#ptkp-kpi-invalid-course-count').text(countInvalidCourse);
+        if ((stats.invalid || 0) > 0) {
+            $('#ptkp-kpi-invalid-subinfo').show();
+        } else {
+            $('#ptkp-kpi-invalid-subinfo').hide();
+        }
+
         // Pre-populate Step 3 values
         const validCount = stats.valid || 0;
         const warningCount = stats.warning || 0;
@@ -402,6 +419,23 @@
                 $tableLoading.stop(true, true).fadeOut(120);
                 isFiltering = false;
             }
+        }, 120);
+    });
+
+    // Sub-pill filter click handler (Inside Invalid ID & Course Title card)
+    $(document).on('click', '.ptkp-sub-pill', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        hideAllStatusTooltips();
+        const subfilter = $(this).data('subfilter');
+        $('.ptkp-summary-filter-card').removeClass('active');
+        $('.ptkp-kpi-invalid').addClass('active');
+        currentFilter = subfilter;
+        currentPage = 1;
+        $tableLoading.stop(true, true).fadeIn(100);
+        setTimeout(function () {
+            applyFilters();
+            $tableLoading.stop(true, true).fadeOut(120);
         }, 120);
     });
 
@@ -571,6 +605,36 @@
         renderTableRows();
     });
 
+    function isRowInvalidId(row) {
+        if (!row) return false;
+        const empId = row.employee_id !== undefined && row.employee_id !== null ? String(row.employee_id).trim() : '';
+        if (empId === '') return true;
+        if (row.messages && Array.isArray(row.messages)) {
+            for (let i = 0; i < row.messages.length; i++) {
+                const m = String(row.messages[i]).toLowerCase();
+                if (m.indexOf('employee id') !== -1 || m.indexOf('user accounts') !== -1 || m.indexOf('not found in lms') !== -1 || m.indexOf('matches multiple users') !== -1 || m.indexOf('ambiguous identifier') !== -1) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    function isRowInvalidCourse(row) {
+        if (!row) return false;
+        const course = row.course_name !== undefined && row.course_name !== null ? String(row.course_name).trim() : '';
+        if (course === '') return true;
+        if (row.messages && Array.isArray(row.messages)) {
+            for (let i = 0; i < row.messages.length; i++) {
+                const m = String(row.messages[i]).toLowerCase();
+                if (m.indexOf('course title') !== -1 || m.indexOf('course name') !== -1) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     function applyFilters() {
         filteredRows = allRows.filter(function (row) {
             if (currentFilter !== 'all') {
@@ -578,6 +642,12 @@
                 if (currentFilter === 'warning' && row.status !== 'WARNING') return false;
                 if (currentFilter === 'duplicate' && row.status !== 'DUPLICATE') return false;
                 if (currentFilter === 'invalid' && row.status !== 'INVALID') return false;
+                if (currentFilter === 'invalid_id') {
+                    if (row.status !== 'INVALID' || !isRowInvalidId(row)) return false;
+                }
+                if (currentFilter === 'invalid_course') {
+                    if (row.status !== 'INVALID' || !isRowInvalidCourse(row)) return false;
+                }
                 if (currentFilter === 'invalid_company' && row.status !== 'INVALID COMPANY') return false;
             }
             if (searchQuery.empId && (row.employee_id || '').toLowerCase().indexOf(searchQuery.empId) === -1) return false;
@@ -623,21 +693,21 @@
                         const companyMismatchMsg = (row.messages || []).find(function (m) {
                             return m.toLowerCase().indexOf('company mismatch') !== -1;
                         }) || 'Company mismatch detected.';
-                        msgsHtml += '<div class="ptkp-row-msg text-muted extra-small mt-1" style="font-size: 0.72rem;" title="' + escapeHtml(companyMismatchMsg) + '"><i class="ti ti-building me-1"></i>' + escapeHtml(companyMismatchMsg) + '</div>';
+                        msgsHtml += '<div class="ptkp-row-msg text-muted mt-0.5" style="font-size: 10px;" title="' + escapeHtml(companyMismatchMsg) + '"><i class="ti ti-building me-1"></i>' + escapeHtml(companyMismatchMsg) + '</div>';
                     }
                 } else if (row.status === 'WARNING' || row.status === 'INVALID COMPANY') {
                     if (row.messages && row.messages.length) {
                         msgsHtml = '<div class="ptkp-row-msg text-warning fw-semibold"><i class="ti ti-alert-triangle me-1"></i>' + escapeHtml(row.messages[0]) + '</div>';
                         if (row.messages.length > 1) {
-                            msgsHtml += '<div class="text-muted extra-small mt-0.5">' + escapeHtml(row.messages.slice(1).join('; ')) + '</div>';
+                            msgsHtml += '<div class="text-muted mt-0.5" style="font-size: 10px;">' + escapeHtml(row.messages.slice(1).join('; ')) + '</div>';
                         }
                     }
                 } else if (row.status === 'VALID') {
-                    msgsHtml = '<div class="ptkp-row-msg text-muted small"><i class="ti ti-check text-success me-1"></i>Row is valid and ready for import.</div>';
+                    msgsHtml = '<div class="ptkp-row-msg text-muted" style="font-size: 10.5px;"><i class="ti ti-check text-success me-1"></i>Row is valid and ready for import.</div>';
                 } else if (row.messages && row.messages.length) {
                     msgsHtml = '<div class="ptkp-row-msg text-muted">' + escapeHtml(row.messages[0]);
                     if (row.messages.length > 1) {
-                        msgsHtml += ' <span class="badge bg-light text-secondary border">+' + (row.messages.length - 1) + '</span>';
+                        msgsHtml += ' <span class="badge bg-light text-secondary border px-1" style="font-size: 9.5px;">+' + (row.messages.length - 1) + '</span>';
                     }
                     msgsHtml += '</div>';
                 }
@@ -647,21 +717,21 @@
                     <tr class="${getRowClass(row.status)}">
                         <td class="text-center fw-medium text-muted">${row.no || (globalIndex + 1)}</td>
                         <td>${getStatusBadge(row.status, row)}</td>
-                        <td class="fw-semibold font-monospace">${escapeHtml(row.employee_id || '-')}</td>
+                        <td class="ptkp-cell-code">${escapeHtml(row.employee_id || '-')}</td>
                         <td>
-                            <div class="fw-semibold text-dark">${escapeHtml(row.name || '-')}</div>
-                            <div class="text-muted extra-small" style="font-size: 0.72rem;">${escapeHtml(rowData.job_position || '-')}</div>
+                            <div class="ptkp-cell-title">${escapeHtml(row.name || '-')}</div>
+                            <div class="ptkp-cell-subtext">${escapeHtml(rowData.job_position || '-')}</div>
                         </td>
-                        <td><span class="text-muted small">${escapeHtml(row.company || '-')}</span></td>
+                        <td><span class="ptkp-cell-subtext" style="color: inherit;">${escapeHtml(row.company || '-')}</span></td>
                         <td>
-                            <div class="fw-semibold text-dark">${escapeHtml(row.course_name || '-')}</div>
-                            <div class="text-muted extra-small" style="font-size: 0.72rem;">${[escapeHtml(rowData.batch || ''), escapeHtml(formatDateDisplay(rowData.start_date_display || rowData.start_date))].filter(Boolean).join(' &bull; ')}</div>
+                            <div class="ptkp-cell-title">${escapeHtml(row.course_name || '-')}</div>
+                            <div class="ptkp-cell-subtext">${[escapeHtml(rowData.batch || ''), escapeHtml(formatDateDisplay(rowData.start_date_display || rowData.start_date))].filter(Boolean).join(' &bull; ')}</div>
                         </td>
-                        <td><span class="badge bg-light text-secondary border">${escapeHtml(row.type || '-')}</span></td>
-                        <td><span class="text-muted small">${escapeHtml(row.pic || '-')}</span></td>
+                        <td><span class="ptkp-badge-type">${escapeHtml(row.type || '-')}</span></td>
+                        <td><span class="ptkp-cell-subtext">${escapeHtml(row.pic || '-')}</span></td>
                         <td>${msgsHtml || '-'}</td>
                         <td class="text-center">
-                            <button type="button" class="btn btn-sm btn-ghost-primary rounded-circle btn-inspect-row" data-row-idx="${globalIndex}" title="Inspect Row">
+                            <button type="button" class="ptkp-btn-inspect btn-inspect-row" data-row-idx="${globalIndex}" title="Inspect Row">
                                 <i class="ti ti-eye"></i>
                             </button>
                         </td>
@@ -681,22 +751,42 @@
             status = row.status;
         }
         switch (status) {
-            case 'VALID': return '<span class="badge badge-ptkp-valid px-2 py-1"><i class="ti ti-check me-1"></i>VALID</span>';
-            case 'WARNING': return '<span class="badge badge-ptkp-warning px-2 py-1"><i class="ti ti-alert-triangle me-1"></i>WARNING</span>';
+            case 'VALID':
+                return '<span class="badge badge-ptkp-valid"><i class="ti ti-check me-1"></i>VALID</span>';
+            case 'WARNING':
+                return '<span class="badge badge-ptkp-warning"><i class="ti ti-alert-triangle me-1"></i>WARNING</span>';
             case 'DUPLICATE': {
-                let badge = '<span class="badge badge-ptkp-duplicate px-2 py-1"><i class="ti ti-copy me-1"></i>DUPLICATE</span>';
+                let badge = '<span class="badge badge-ptkp-duplicate"><i class="ti ti-copy me-1"></i>DUPLICATE</span>';
                 if (row && row.duplicate_source) {
                     if (row.duplicate_source === 'database' && row.matched_record_id) {
-                        badge += `<div class="mt-1" style="font-size: 0.68rem;"><span class="badge bg-light text-secondary border">Database (ID ${escapeHtml(String(row.matched_record_id))}) &bull; 40 Stored Columns</span></div>`;
+                        badge += `<div class="mt-0.5" style="font-size: 9.5px;"><span class="badge bg-light text-secondary border px-1" style="font-size: 9.5px;">Database (ID ${escapeHtml(String(row.matched_record_id))}) &bull; 40 cols</span></div>`;
                     } else if (row.duplicate_source === 'file' && row.original_excel_row) {
-                        badge += `<div class="mt-1" style="font-size: 0.68rem;"><span class="badge bg-light text-secondary border">Uploaded Excel (Row ${escapeHtml(String(row.original_excel_row))}) &bull; Full 42 Columns</span></div>`;
+                        badge += `<div class="mt-0.5" style="font-size: 9.5px;"><span class="badge bg-light text-secondary border px-1" style="font-size: 9.5px;">Excel (Row ${escapeHtml(String(row.original_excel_row))}) &bull; 42 cols</span></div>`;
                     }
                 }
                 return badge;
             }
-            case 'INVALID': return '<span class="badge badge-ptkp-invalid px-2 py-1"><i class="ti ti-x me-1"></i>INVALID</span>';
-            case 'INVALID COMPANY': return '<span class="badge badge-ptkp-invalid-company px-2 py-1"><i class="ti ti-building me-1"></i>INVALID COMPANY</span>';
-            default: return `<span class="badge bg-secondary">${escapeHtml(status || '')}</span>`;
+            case 'INVALID': {
+                const hasEmpErr = isRowInvalidId(row);
+                const hasCourseErr = isRowInvalidCourse(row);
+
+                if (hasEmpErr && hasCourseErr) {
+                    return '<div class="d-flex flex-column gap-1 align-items-start">' +
+                        '<span class="badge badge-ptkp-invalid-id"><i class="ti ti-user-x me-1"></i>INVALID ID</span>' +
+                        '<span class="badge badge-ptkp-invalid-course"><i class="ti ti-book-off me-1"></i>INVALID COURSE TITLE</span>' +
+                        '</div>';
+                } else if (hasEmpErr) {
+                    return '<span class="badge badge-ptkp-invalid-id"><i class="ti ti-user-x me-1"></i>INVALID ID</span>';
+                } else if (hasCourseErr) {
+                    return '<span class="badge badge-ptkp-invalid-course"><i class="ti ti-book-off me-1"></i>INVALID COURSE TITLE</span>';
+                } else {
+                    return '<span class="badge badge-ptkp-invalid"><i class="ti ti-x me-1"></i>INVALID</span>';
+                }
+            }
+            case 'INVALID COMPANY':
+                return '<span class="badge badge-ptkp-invalid-company"><i class="ti ti-building me-1"></i>INVALID COMPANY</span>';
+            default:
+                return `<span class="badge bg-secondary">${escapeHtml(status || '')}</span>`;
         }
     }
 

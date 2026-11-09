@@ -526,6 +526,147 @@ class LearningRecordLearningHourService
     }
 
     /**
+     * Resolve global recognized duration in integer seconds for multiple contents in batch (Zero N+1).
+     * Combines valid actual watch across Direct (content_users) and all Playlists (playlist_content_users).
+     *
+     * @param int $userId
+     * @param Collection|array $contents Collection of Content models, or content IDs
+     * @param Collection|null $contentUsers Pre-loaded ContentUser models keyed by content_id or indexed
+     * @return Collection<int, int> Map of [content_id => recognized_seconds]
+     */
+    public function resolveGlobalContentRecognizedSecondsBatch(int $userId, Collection|array $contents, ?Collection $contentUsers = null): Collection
+    {
+        $contentCollection = $contents instanceof Collection ? $contents : collect($contents);
+        if ($contentCollection->isEmpty() && ($contentUsers === null || $contentUsers->isEmpty())) {
+            return collect();
+        }
+
+        $contentModels = collect();
+        foreach ($contentCollection as $item) {
+            if ($item instanceof Content) {
+                $contentModels->put($item->id, $item);
+            } elseif (is_numeric($item)) {
+                $contentModels->put((int) $item, null);
+            }
+        }
+
+        if ($contentUsers !== null) {
+            foreach ($contentUsers as $cu) {
+                if ($cu instanceof ContentUser && $cu->content_id) {
+                    if (!$contentModels->has($cu->content_id) || $contentModels->get($cu->content_id) === null) {
+                        $contentModels->put($cu->content_id, $cu->content);
+                    }
+                }
+            }
+        }
+
+        $missingContentIds = $contentModels->filter(fn ($m) => $m === null)->keys()->all();
+        if (!empty($missingContentIds)) {
+            $loadedContents = Content::withTrashed()->whereIn('id', $missingContentIds)->get()->keyBy('id');
+            foreach ($loadedContents as $id => $loaded) {
+                $contentModels->put($id, $loaded);
+            }
+        }
+
+        $contentIds = $contentModels->keys()->filter()->values()->all();
+        if (empty($contentIds)) {
+            return collect();
+        }
+
+        $cuMap = $contentUsers !== null
+            ? $contentUsers->keyBy('content_id')
+            : ContentUser::where('user_id', $userId)->whereIn('content_id', $contentIds)->get()->keyBy('content_id');
+
+        $pcuGroup = PlaylistContentUser::where('user_id', $userId)
+            ->whereIn('content_id', $contentIds)
+            ->get()
+            ->groupBy('content_id');
+
+        $result = collect();
+
+        foreach ($contentIds as $cid) {
+            $contentModel = $contentModels->get($cid);
+            $durationSeconds = (int) ($contentModel?->duration_in_seconds ?? 0);
+            if ($durationSeconds <= 0 && $contentModel && !empty($contentModel->duration)) {
+                $durationSeconds = DurationFormatter::toSeconds($contentModel->duration) ?? 0;
+            }
+
+            $cu = $cuMap->get($cid);
+            $pcus = $pcuGroup->get($cid, collect());
+
+            if ($durationSeconds <= 0) {
+                $cuDuration = (int) ($cu?->duration_seconds ?? 0);
+                $pcuDuration = (int) ($pcus->max('duration_seconds') ?? 0);
+                $durationSeconds = max($cuDuration, $pcuDuration);
+            }
+
+            if ($durationSeconds <= 0) {
+                $result->put($cid, 0);
+                continue;
+            }
+
+            // Direct content actual watch
+            $cuActualSeconds = 0;
+            if ($cu) {
+                $cuActualWatch = (int) ($cu->actual_watch_seconds ?? 0);
+                $cuCurrentTime = (int) ($cu->current_time ?? 0);
+                $cuProgress = (int) ($cu->progress ?? 0);
+                $cuFinished = ((string) $cu->finish === '1' || $cuProgress >= 100);
+
+                if ($cuFinished && $durationSeconds > 0) {
+                    $cuActualSeconds = max($durationSeconds, $cuActualWatch);
+                } elseif ($cuActualWatch > 0) {
+                    $cuActualSeconds = $cuActualWatch;
+                } elseif ($cuCurrentTime > 0) {
+                    $cuActualSeconds = $cuCurrentTime;
+                } elseif ($cuProgress > 0 && $durationSeconds > 0) {
+                    $cuActualSeconds = (int) round(($cuProgress / 100) * $durationSeconds);
+                } elseif ((float) ($cu->learning_hours ?? 0) > 0) {
+                    $cuActualSeconds = (int) round((float) $cu->learning_hours * 3600);
+                }
+            }
+
+            // Playlist content actual watch (across all playlists)
+            $pcuTotalActualSeconds = 0;
+            foreach ($pcus as $pcu) {
+                $pcuDuration = $durationSeconds > 0 ? $durationSeconds : (int) ($pcu->duration_seconds ?? 0);
+                $pcuActualWatch = (int) ($pcu->actual_watch_seconds ?? 0);
+                $pcuCurrentTime = (int) ($pcu->current_time ?? 0);
+                $pcuProgress = (int) ($pcu->progress ?? 0);
+                $pcuFinished = ((string) $pcu->finish === '1' || $pcuProgress >= 100);
+
+                $pcuSec = 0;
+                if ($pcuFinished && $pcuDuration > 0) {
+                    $pcuSec = max($pcuDuration, $pcuActualWatch);
+                } elseif ($pcuActualWatch > 0) {
+                    $pcuSec = $pcuActualWatch;
+                } elseif ($pcuCurrentTime > 0) {
+                    $pcuSec = $pcuCurrentTime;
+                } elseif ($pcuProgress > 0 && $pcuDuration > 0) {
+                    $pcuSec = (int) round(($pcuProgress / 100) * $pcuDuration);
+                } elseif ((float) ($pcu->learning_hour ?? 0) > 0) {
+                    $pcuSec = (int) round((float) $pcu->learning_hour * 3600);
+                }
+
+                $pcuTotalActualSeconds += $pcuSec;
+            }
+
+            $totalActualSeconds = $cuActualSeconds + $pcuTotalActualSeconds;
+
+            $rewatchCap = $durationSeconds;
+            if ($contentModel && $contentModel->max_actual_watch_seconds !== null) {
+                $rewatchCap = min($rewatchCap, max(0, (int) $contentModel->max_actual_watch_seconds - $durationSeconds));
+            }
+
+            $recognizedSeconds = min(max($totalActualSeconds - $durationSeconds, 0), $rewatchCap);
+
+            $result->put($cid, max(0, $recognizedSeconds));
+        }
+
+        return $result;
+    }
+
+    /**
      * Resolve the global recognized duration as HH:MM:SS string.
      *
      * @param int $userId

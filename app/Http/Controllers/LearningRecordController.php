@@ -51,6 +51,11 @@ class LearningRecordController extends Controller
         return $this->recordLearningHourService ?? app(LearningRecordLearningHourService::class);
     }
 
+    private function recognizedDurationService(): \App\Services\Learning\LearningRecordRecognizedDurationService
+    {
+        return app(\App\Services\Learning\LearningRecordRecognizedDurationService::class);
+    }
+
     /**
      * HTML fragment tab "record" pada My Learning dashboard.
      * Dipanggil dari LearningController::dashboardPartial (routing only).
@@ -216,8 +221,14 @@ class LearningRecordController extends Controller
         $playlistActualHours = $playlistData['hours'];
         $playlistRecognizedSeconds = $playlistData['recognized_seconds'];
 
+        $recognizedSecondsMap = $this->recognizedDurationService()->resolveGlobalContentRecognizedSecondsBatch(
+            $userId,
+            $completedContents->pluck('content')->filter(),
+            $completedContents
+        );
+
         return $this->mergeLearningRecord(
-            $this->buildContentRows($completedContents, $cert, $contentAllocations),
+            $this->buildContentRows($completedContents, $cert, $contentAllocations, $recognizedSecondsMap),
             $this->buildPlaylistRows(
                 $completedPlaylists,
                 $cert,
@@ -681,9 +692,9 @@ class LearningRecordController extends Controller
      * Normalisasi ContentUser menjadi baris tabel. Baris berisi data polos —
      * HTML dirender oleh Blade Components (x-learning.record-row).
      */
-    private function buildContentRows(Collection $contentUsers, array $cert, array $contentAllocations = []): Collection
+    private function buildContentRows(Collection $contentUsers, array $cert, array $contentAllocations = [], ?Collection $recognizedSecondsMap = null): Collection
     {
-        return $contentUsers->map(function (ContentUser $cu) use ($cert, &$contentAllocations) {
+        return $contentUsers->map(function (ContentUser $cu) use ($cert, &$contentAllocations, $recognizedSecondsMap) {
             $content = $cu->content;
 
             $setting     = $cert['byContent']->get($content->id);
@@ -705,8 +716,9 @@ class LearningRecordController extends Controller
                 : collect();
             $cuData = $this->recordLhService()->calculateContentData($cu, $contentAllocations);
             $actualHours = $cuData['learning_hours'];
-            $recognizedSeconds = $cuData['recognized_seconds'];
-            $formattedRecognized = $this->recordLhService()->formatRecognizedDuration($recognizedSeconds);
+            $recognizedSeconds = $recognizedSecondsMap?->get($content->id)
+                ?? $this->recognizedDurationService()->resolveGlobalContentRecognizedSeconds((int) $cu->user_id, $content);
+            $formattedRecognized = $this->recognizedDurationService()->formatSeconds($recognizedSeconds);
             $formattedHours = $this->recordLhService()->formatHours($actualHours);
 
             $isInactive = ($content->active !== 'Active') || !is_null($content->deleted_at);
@@ -1342,8 +1354,8 @@ class LearningRecordController extends Controller
         $content = $contentUser->content;
         $cuData = $this->recordLhService()->calculateContentData($contentUser);
         $actualHours = $cuData['learning_hours'];
-        $recognizedSeconds = $cuData['recognized_seconds'];
-        $formattedRecognized = $this->recordLhService()->formatRecognizedDuration($recognizedSeconds);
+        $recognizedSeconds = $this->recognizedDurationService()->resolveGlobalContentRecognizedSeconds($userId, $content);
+        $formattedRecognized = $this->recognizedDurationService()->formatSeconds($recognizedSeconds);
         $durationSec = DurationFormatter::toSeconds(optional($content)->duration) ?? 0;
         $isFinished = ((int) ($contentUser->progress ?? 0) >= 100 || (int) ($contentUser->finish ?? 0) === 1);
 

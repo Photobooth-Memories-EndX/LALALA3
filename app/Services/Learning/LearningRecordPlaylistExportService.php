@@ -161,7 +161,11 @@ class LearningRecordPlaylistExportService
                 $childHoursVal = round($moduleSec / 3600, 4);
                 $durationFormatted = DurationFormatter::fromSeconds($durationSeconds);
 
-                $childRecognizedSec = ($durationSeconds > 0) ? min($moduleSec, $durationSeconds * 2) : $moduleSec;
+                $childRewatchCap = $durationSeconds;
+                if ($content->max_actual_watch_seconds !== null) {
+                    $childRewatchCap = min($childRewatchCap, max(0, (int) $content->max_actual_watch_seconds - $durationSeconds));
+                }
+                $childRecognizedSec = ($durationSeconds > 0) ? max(0, min($moduleSec - $durationSeconds, $childRewatchCap)) : 0;
                 $recognizedDurationFormatted = DurationFormatter::fromSeconds($childRecognizedSec);
 
                 $learningHourFormatted = $childHoursVal > 0 ? (number_format($childHoursVal, 2) . ' h') : '-';
