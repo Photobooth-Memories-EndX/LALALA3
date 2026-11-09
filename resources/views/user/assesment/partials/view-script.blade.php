@@ -489,20 +489,18 @@
                         timerEl.innerHTML = '<div class="h2 mb-0 text-danger fw-bold">EXPIRED</div>';
                     }
 
-                    @if(!in_array((int) (auth()->user()->role ?? auth()->user()->role_id), [2, 3], true))
-                        window.assessmentAutoSubmit = true;
-                        var formEl = document.getElementById("formAssesment") || document.getElementById("assessmentForm") || document.querySelector('form[action*="assesment"]') || document.querySelector('form');
-                        if (formEl) {
-                            if (!formEl.querySelector('input[name="is_expired"]')) {
-                                var expiredInput = document.createElement("input");
-                                expiredInput.type = "hidden";
-                                expiredInput.name = "is_expired";
-                                expiredInput.value = "1";
-                                formEl.appendChild(expiredInput);
-                            }
+                    window.assessmentAutoSubmit = true;
+                    var formEl = document.getElementById("formAssesment") || document.getElementById("assessmentForm") || document.querySelector('form[action*="assesment"]') || document.querySelector('form');
+                    if (formEl) {
+                        if (!formEl.querySelector('input[name="is_expired"]')) {
+                            var expiredInput = document.createElement("input");
+                            expiredInput.type = "hidden";
+                            expiredInput.name = "is_expired";
+                            expiredInput.value = "1";
+                            formEl.appendChild(expiredInput);
                         }
-                        submitAssessmentForm();
-                    @endif
+                    }
+                    submitAssessmentForm();
                     return;
                 }
 
