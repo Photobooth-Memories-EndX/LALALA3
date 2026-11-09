@@ -185,7 +185,7 @@ class OfflineTrainingCreateService
 
             // If user_id is not passed, attempt matching with existing LMS user account
             if (!$userId && $employeeId) {
-                $matchedUser = User::withTrashed()->where('id_emp', $employeeId)->first();
+                $matchedUser = User::where('id_emp', $employeeId)->first();
                 if ($matchedUser) {
                     $userId = $matchedUser->id;
                 }
