@@ -251,11 +251,11 @@
                                                 <td class="fw-semibold text-dark" id="resTotalOwl">-</td>
                                             </tr>
                                             <tr class="table-info">
-                                                <td class="text-dark fw-semibold">User Baru Berhasil Dibuat</td>
+                                                <td class="text-dark fw-semibold" id="lblCreatedCount">User Baru Berhasil Dibuat</td>
                                                 <td class="fw-bold text-primary" id="resCreatedCount">-</td>
                                             </tr>
                                             <tr class="table-warning">
-                                                <td class="text-dark fw-semibold">Profil User Berhasil Diperbarui</td>
+                                                <td class="text-dark fw-semibold" id="lblUpdatedCount">Profil User Berhasil Diperbarui</td>
                                                 <td class="fw-bold text-warning-emphasis" id="resUpdatedCount">-</td>
                                             </tr>
                                             <tr>
@@ -274,6 +274,10 @@
                                                 <td class="text-muted fw-semibold">Data Ditolak / Ditemukan Konflik</td>
                                                 <td class="text-danger fw-semibold" id="resConflictCount">-</td>
                                             </tr>
+                                            <tr>
+                                                <td class="text-muted fw-semibold">Data Gagal Diproses</td>
+                                                <td class="text-danger fw-semibold" id="resFailedCount">-</td>
+                                            </tr>
                                         </tbody>
                                     </table>
                                 </div>
@@ -288,12 +292,17 @@
 
                             <!-- State 4: Error -->
                             <div id="syncErrorState" class="d-none">
-                                <div class="alert alert-danger d-flex align-items-start gap-2 rounded-3 mb-0">
+                                <div class="alert alert-danger d-flex align-items-start gap-2 rounded-3 mb-3">
                                     <i class="ti ti-alert-triangle fs-2 text-danger flex-shrink-0 mt-1"></i>
-                                    <div>
+                                    <div class="w-100">
                                         <h6 class="fw-bold mb-1">Gagal Menjalankan Sinkronisasi</h6>
                                         <p class="mb-0 small" id="syncErrorMessage">-</p>
                                     </div>
+                                </div>
+                                <div class="text-end">
+                                    <button type="button" class="btn btn-sm btn-outline-danger" id="btnRetrySync">
+                                        <i class="ti ti-rotate-clockwise me-1"></i> Kembali ke Pilihan Sinkronisasi
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -755,11 +764,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
 
                 // Update Numerical Statistics
-                if (statTotal) statTotal.textContent = Number(data.total || 0).toLocaleString('id-ID');
-                if (statProcessed) statProcessed.textContent = Number(data.processed || 0).toLocaleString('id-ID');
+                const totalRecords = Number(data.total_api || data.total || 0);
+                const processedRecords = Number(data.processed || 0);
+                if (statTotal) statTotal.textContent = totalRecords.toLocaleString('id-ID');
+                if (statProcessed) statProcessed.textContent = processedRecords.toLocaleString('id-ID');
                 if (statCreated) statCreated.textContent = Number(data.created || 0).toLocaleString('id-ID');
                 if (statUpdated) statUpdated.textContent = Number(data.updated || 0).toLocaleString('id-ID');
-                if (statSkipped) statSkipped.textContent = Number(data.skipped || 0).toLocaleString('id-ID');
+                if (statSkipped) statSkipped.textContent = Number(data.conflict_count || data.skipped || 0).toLocaleString('id-ID');
                 if (statFailed) statFailed.textContent = Number(data.failed || 0).toLocaleString('id-ID');
 
                 // Update Stage Badge based on backend status
@@ -767,19 +778,22 @@ document.addEventListener('DOMContentLoaded', function () {
                     const status = (data.status || 'preparing').toLowerCase();
                     if (status === 'preparing') {
                         syncStageBadge.className = 'badge bg-secondary-lt text-secondary px-3 py-1 fw-semibold fs-5 rounded-pill shadow-xs';
-                        syncStageBadge.innerHTML = '<i class="ti ti-loader-2 spin-fast me-1"></i> Preparing synchronization...';
-                    } else if (status === 'fetching') {
+                        syncStageBadge.innerHTML = '<i class="ti ti-loader-2 spin-fast me-1"></i> Menyiapkan sinkronisasi...';
+                    } else if (status === 'connecting' || status === 'fetching') {
                         syncStageBadge.className = 'badge bg-info-lt text-info px-3 py-1 fw-semibold fs-5 rounded-pill shadow-xs';
-                        syncStageBadge.innerHTML = '<i class="ti ti-cloud-download spin-fast me-1"></i> Fetching API Gateway data...';
+                        syncStageBadge.innerHTML = '<i class="ti ti-cloud-download spin-fast me-1"></i> Menghubungi API & Mengunduh Karyawan...';
+                    } else if (status === 'validating') {
+                        syncStageBadge.className = 'badge bg-warning-lt text-warning px-3 py-1 fw-semibold fs-5 rounded-pill shadow-xs';
+                        syncStageBadge.innerHTML = '<i class="ti ti-database-search spin-fast me-1"></i> Memvalidasi & Memuat Basis Data OWL...';
                     } else if (status === 'processing' || status === 'creating' || status === 'updating') {
                         syncStageBadge.className = 'badge bg-blue-lt text-primary px-3 py-1 fw-semibold fs-5 rounded-pill shadow-xs';
-                        syncStageBadge.innerHTML = '<i class="ti ti-refresh spin-fast me-1"></i> Synchronizing employee records...';
+                        syncStageBadge.innerHTML = '<i class="ti ti-refresh spin-fast me-1"></i> Memproses & Memetakan Profil Karyawan...';
                     } else if (status === 'completed') {
                         syncStageBadge.className = 'badge bg-success-lt text-success px-3 py-1 fw-semibold fs-5 rounded-pill shadow-xs';
-                        syncStageBadge.innerHTML = '<i class="ti ti-check me-1"></i> Synchronization completed (100%)';
+                        syncStageBadge.innerHTML = '<i class="ti ti-check me-1"></i> Sinkronisasi Selesai (100%)';
                     } else if (status === 'failed') {
                         syncStageBadge.className = 'badge bg-danger-lt text-danger px-3 py-1 fw-semibold fs-5 rounded-pill shadow-xs';
-                        syncStageBadge.innerHTML = '<i class="ti ti-alert-circle me-1"></i> Synchronization failed';
+                        syncStageBadge.innerHTML = '<i class="ti ti-alert-circle me-1"></i> Sinkronisasi Gagal';
                     }
                 }
 
@@ -807,36 +821,45 @@ document.addEventListener('DOMContentLoaded', function () {
 
                         const modeBadge = document.getElementById('resMode');
                         const footerNote = document.getElementById('syncFooterNote');
+                        const lblCreated = document.getElementById('lblCreatedCount');
+                        const lblUpdated = document.getElementById('lblUpdatedCount');
+
                         if (data.is_dry_run) {
                             if (modeBadge) {
                                 modeBadge.className = 'badge bg-secondary-lt text-secondary';
                                 modeBadge.textContent = 'DRY-RUN (Simulasi Zero-Write)';
                             }
+                            if (lblCreated) lblCreated.textContent = 'Karyawan Baru (Kandidat)';
+                            if (lblUpdated) lblUpdated.textContent = 'Profil Karyawan yang Akan Diperbarui';
                             if (btnReloadTable) btnReloadTable.classList.add('d-none');
                             if (footerNote) {
-                                footerNote.innerHTML = '<i class="ti ti-lock text-muted fs-3"></i><div><strong>100% Zero-Write Terbukti:</strong> Tidak ada perubahan yang disimpan ke tabel <code>users</code> atau log eksekusi.</div>';
+                                footerNote.innerHTML = '<i class="ti ti-lock text-muted fs-3"></i><div><strong>100% Zero-Write Terbukti:</strong> Tidak ada perubahan yang disimpan ke tabel <code>users</code> atau basis data.</div>';
                             }
                         } else {
                             if (modeBadge) {
                                 modeBadge.className = 'badge bg-success text-white';
-                                modeBadge.textContent = 'REAL (Tersimpan ke Database OWL)';
+                                modeBadge.textContent = 'LIVE (Tersimpan ke Database OWL)';
                             }
+                            if (lblCreated) lblCreated.textContent = 'User Baru Berhasil Dibuat';
+                            if (lblUpdated) lblUpdated.textContent = 'Profil User Berhasil Diperbarui';
                             if (btnReloadTable) btnReloadTable.classList.remove('d-none');
                             if (footerNote) {
                                 footerNote.innerHTML = '<i class="ti ti-database-check text-success fs-3"></i><div><strong>Data Tersimpan Nyata:</strong> Seluruh data kepegawaian dan 18 kolom profil HR telah disimpan ke database OWL.</div>';
                             }
                         }
 
-                        document.getElementById('resStatus').textContent = 'SUCCESS';
+                        document.getElementById('resStatus').textContent = (data.status || 'SUCCESS').toUpperCase();
                         document.getElementById('resDuration').textContent = (data.duration_seconds || elapsedSecondsCount) + ' detik';
-                        document.getElementById('resTotalApi').textContent = Number(data.total || 0).toLocaleString('id-ID') + ' entri';
-                        document.getElementById('resTotalOwl').textContent = '3.439+ user';
+                        document.getElementById('resTotalApi').textContent = totalRecords.toLocaleString('id-ID') + ' entri';
+                        document.getElementById('resTotalOwl').textContent = Number(data.total_owl || 0).toLocaleString('id-ID') + ' user';
                         document.getElementById('resCreatedCount').textContent = Number(data.created || 0).toLocaleString('id-ID') + (data.is_dry_run ? ' kandidat baru' : ' user baru dibuat');
                         document.getElementById('resUpdatedCount').textContent = Number(data.updated || 0).toLocaleString('id-ID') + (data.is_dry_run ? ' rencana pembaruan' : ' user diperbarui');
-                        document.getElementById('resUpdatedActiveCount').textContent = Number(data.updated || 0).toLocaleString('id-ID') + ' user aktif';
-                        document.getElementById('resUpdatedSoftDeletedCount').textContent = '0 user';
-                        document.getElementById('resUnchangedCount').textContent = '0 user';
-                        document.getElementById('resConflictCount').textContent = Number(data.skipped || 0).toLocaleString('id-ID') + ' entri';
+                        document.getElementById('resUpdatedActiveCount').textContent = Number(data.updated_active_count || data.updated || 0).toLocaleString('id-ID') + ' user aktif';
+                        document.getElementById('resUpdatedSoftDeletedCount').textContent = Number(data.updated_soft_deleted_count || 0).toLocaleString('id-ID') + ' user';
+                        document.getElementById('resUnchangedCount').textContent = Number(data.unchanged_count || 0).toLocaleString('id-ID') + ' user';
+                        document.getElementById('resConflictCount').textContent = Number(data.conflict_count || data.skipped || 0).toLocaleString('id-ID') + ' entri';
+                        const elFailed = document.getElementById('resFailedCount');
+                        if (elFailed) elFailed.textContent = Number(data.failed || 0).toLocaleString('id-ID') + ' entri';
 
                         document.getElementById('syncResultSummary').textContent = data.message || 'Sinkronisasi berhasil!';
                     }, 1200);
@@ -852,6 +875,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     if (btnCancelSync) btnCancelSync.disabled = false;
                     if (btnCloseSyncModal) btnCloseSyncModal.disabled = false;
+                    if (btnStartRealSync) btnStartRealSync.disabled = false;
+                    if (btnStartDryRun) btnStartDryRun.disabled = false;
 
                     setTimeout(() => {
                         syncLoadingState.classList.add('d-none');
@@ -871,6 +896,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     document.getElementById('syncErrorMessage').textContent = 'Gagal memantau progres (koneksi terputus). ' + err.message;
                     if (btnCancelSync) btnCancelSync.disabled = false;
                     if (btnCloseSyncModal) btnCloseSyncModal.disabled = false;
+                    if (btnStartRealSync) btnStartRealSync.disabled = false;
+                    if (btnStartDryRun) btnStartDryRun.disabled = false;
                 }
             });
         };
@@ -881,6 +908,12 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function executeSyncProcess(isDryRun) {
+        // Immediate click protection
+        if (btnStartRealSync) btnStartRealSync.disabled = true;
+        if (btnStartDryRun) btnStartDryRun.disabled = true;
+        if (btnCancelSync) btnCancelSync.disabled = true;
+        if (btnCloseSyncModal) btnCloseSyncModal.disabled = true;
+
         // Switch to progress state
         syncConfState.classList.add('d-none');
         syncResultState.classList.add('d-none');
@@ -918,6 +951,18 @@ document.addEventListener('DOMContentLoaded', function () {
             syncLoadingState.classList.add('d-none');
             syncErrorState.classList.remove('d-none');
             document.getElementById('syncErrorMessage').textContent = 'Koneksi gagal saat memulai sinkronisasi: ' + err.message;
+            if (btnCancelSync) btnCancelSync.disabled = false;
+            if (btnCloseSyncModal) btnCloseSyncModal.disabled = false;
+            if (btnStartRealSync) btnStartRealSync.disabled = false;
+            if (btnStartDryRun) btnStartDryRun.disabled = false;
+        });
+    }
+
+    const btnRetrySync = document.getElementById('btnRetrySync');
+    if (btnRetrySync) {
+        btnRetrySync.addEventListener('click', function () {
+            syncErrorState.classList.add('d-none');
+            syncConfState.classList.remove('d-none');
             if (btnCancelSync) btnCancelSync.disabled = false;
             if (btnCloseSyncModal) btnCloseSyncModal.disabled = false;
             if (btnStartRealSync) btnStartRealSync.disabled = false;
@@ -963,7 +1008,7 @@ document.addEventListener('DOMContentLoaded', function () {
     })
     .then(r => r.json())
     .then(data => {
-        if (data.is_running) {
+        if (data.is_running && Number(data.elapsed_seconds || 0) < 600) {
             const modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
             modalInstance.show();
             syncConfState.classList.add('d-none');

@@ -637,24 +637,39 @@ class ManageRoleController extends Controller
             return;
         }
 
-        $php = PHP_BINARY;
-        if (str_ends_with(strtolower($php), 'php-cgi.exe') || !str_ends_with(strtolower($php), 'php.exe')) {
-            $candidate = dirname($php) . DIRECTORY_SEPARATOR . 'php.exe';
-            if (file_exists($candidate)) {
-                $php = $candidate;
+        $phpFinder = new \Symfony\Component\Process\PhpExecutableFinder();
+        $php = $phpFinder->find(false) ?: PHP_BINARY;
+
+        if (!file_exists($php) || !str_ends_with(strtolower($php), 'php.exe')) {
+            $laragonPhps = glob('C:/laragon/bin/php/*/php.exe');
+            if (!empty($laragonPhps)) {
+                $php = $laragonPhps[0];
+            } else {
+                $php = 'php';
             }
         }
 
         $artisan = base_path('artisan');
-        $cmd = escapeshellarg($php) . ' ' . escapeshellarg($artisan) . ' owl:sync-employee-users';
+        $args = 'owl:sync-employee-users';
         if ($isDryRun) {
-            $cmd .= ' --dry-run';
+            $args .= ' --dry-run';
         }
 
+        \Illuminate\Support\Facades\Log::info('ManageRoleController: Menjalankan worker latar belakang sinkronisasi', [
+            'php' => $php,
+            'artisan' => $artisan,
+            'is_dry_run' => $isDryRun,
+        ]);
+
         if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-            pclose(popen("start /B " . $cmd . " > NUL 2>&1", "r"));
+            // On Windows CMD, start requires a title parameter (use empty quotes "")
+            // before the first quoted executable path:
+            // Syntax: start "" /B "path\to\php.exe" "path\to\artisan" owl:sync-employee-users
+            $cmd = 'start "" /B ' . escapeshellarg($php) . ' ' . escapeshellarg($artisan) . ' ' . $args . ' > NUL 2>&1';
+            pclose(popen($cmd, 'r'));
         } else {
-            exec($cmd . " > /dev/null 2>&1 &");
+            $cmd = escapeshellarg($php) . ' ' . escapeshellarg($artisan) . ' ' . $args . ' > /dev/null 2>&1 &';
+            exec($cmd);
         }
     }
 

@@ -34,10 +34,16 @@ class EmployeeUserSyncService
             'percentage' => 0,
             'message' => 'Tidak ada proses sinkronisasi yang berjalan.',
             'total' => 0,
+            'total_api' => 0,
+            'total_owl' => 0,
             'processed' => 0,
             'created' => 0,
             'updated' => 0,
+            'updated_active_count' => 0,
+            'updated_soft_deleted_count' => 0,
+            'unchanged_count' => 0,
             'skipped' => 0,
+            'conflict_count' => 0,
             'failed' => 0,
             'is_dry_run' => false,
             'is_running' => false,
@@ -68,10 +74,16 @@ class EmployeeUserSyncService
             'percentage' => 0,
             'message' => 'Menyiapkan proses sinkronisasi...',
             'total' => 0,
+            'total_api' => 0,
+            'total_owl' => 0,
             'processed' => 0,
             'created' => 0,
             'updated' => 0,
+            'updated_active_count' => 0,
+            'updated_soft_deleted_count' => 0,
+            'unchanged_count' => 0,
             'skipped' => 0,
+            'conflict_count' => 0,
             'failed' => 0,
             'is_dry_run' => $isDryRun,
             'is_running' => true,
@@ -101,15 +113,21 @@ class EmployeeUserSyncService
         $current = self::getProgress();
 
         $percentage = 0;
-        if ($status === 'completed') {
+        if (isset($extra['percentage'])) {
+            $percentage = (int) $extra['percentage'];
+        } elseif ($status === 'completed') {
             $percentage = 100;
         } elseif ($status === 'preparing') {
             $percentage = 0;
-        } elseif ($status === 'fetching') {
+        } elseif ($status === 'connecting') {
             $percentage = 5;
+        } elseif ($status === 'fetching') {
+            $percentage = 15;
+        } elseif ($status === 'validating') {
+            $percentage = 25;
         } elseif ($total > 0) {
-            $calc = (int) floor(($processed / $total) * 100);
-            $percentage = max(5, min(99, $calc));
+            $calc = 25 + (int) floor(($processed / $total) * 70);
+            $percentage = max(25, min(95, $calc));
         }
 
         $now = now();
@@ -126,7 +144,7 @@ class EmployeeUserSyncService
             'message' => $message,
             'total' => $total,
             'processed' => $processed,
-            'is_running' => in_array($status, ['preparing', 'fetching', 'processing', 'creating', 'updating'], true),
+            'is_running' => in_array($status, ['preparing', 'connecting', 'fetching', 'validating', 'processing', 'creating', 'updating'], true),
             'duration_seconds' => (float) $durationSeconds,
             'started_at' => $startedAt,
         ], $extra);
@@ -160,7 +178,15 @@ class EmployeeUserSyncService
         $result = new EmployeeSyncResult($isDryRun);
         $startedAt = now()->toISOString();
 
+        Log::info('EmployeeUserSyncService: Memulai sinkronisasi data karyawan', [
+            'mode' => $isDryRun ? 'DRY-RUN (Simulasi)' : 'LIVE (Nyata)',
+            'allow_create' => $allowCreate,
+            'limit' => $limit,
+            'started_at' => $startedAt,
+        ]);
+
         self::updateProgress('preparing', 0, 0, 'Menyiapkan proses sinkronisasi...', [
+            'percentage' => 0,
             'is_dry_run' => $isDryRun,
             'started_at' => $startedAt,
         ]);
@@ -169,18 +195,23 @@ class EmployeeUserSyncService
         }
 
         // 1. Fetch data from API or use provided dataset (for testing)
-        self::updateProgress('fetching', 0, 0, 'Mengambil data dari Employee API Gateway...', [
+        self::updateProgress('fetching', 0, 0, 'Menghubungkan ke API POSCO & mengunduh data karyawan...', [
+            'percentage' => 15,
             'is_dry_run' => $isDryRun,
             'started_at' => $startedAt,
         ]);
         if ($onProgress) {
-            $onProgress('fetching', 0, 0, 'Mengambil data dari Employee API Gateway...');
+            $onProgress('fetching', 0, 0, 'Menghubungkan ke API POSCO & mengunduh data karyawan...');
         }
 
         try {
             $rawEmployees = $options['api_data'] ?? $this->apiClient->fetchAllEmployees();
         } catch (Throwable $e) {
             $result->finish('failed', $e->getMessage());
+            Log::error('EmployeeUserSyncService: Gagal terhubung ke Employee API Gateway', [
+                'error' => $e->getMessage(),
+                'mode' => $isDryRun ? 'DRY-RUN' : 'LIVE',
+            ]);
             self::updateProgress('failed', 0, 0, 'Gagal terhubung ke Employee API Gateway: ' . $e->getMessage(), [
                 'error' => $e->getMessage(),
                 'is_dry_run' => $isDryRun,
@@ -199,6 +230,9 @@ class EmployeeUserSyncService
         if (empty($rawEmployees)) {
             $errorMsg = 'API Gateway mengembalikan 0 record karyawan. Sinkronisasi dibatalkan secara aman.';
             $result->finish('failed', $errorMsg);
+            Log::warning('EmployeeUserSyncService: Respon API kosong (0 record). Dibatalkan.', [
+                'mode' => $isDryRun ? 'DRY-RUN' : 'LIVE',
+            ]);
             self::updateProgress('failed', 0, 0, $errorMsg, [
                 'error' => $errorMsg,
                 'is_dry_run' => $isDryRun,
@@ -220,12 +254,17 @@ class EmployeeUserSyncService
         $totalApi = count($rawEmployees);
         $result->totalApi = $totalApi;
 
-        self::updateProgress('processing', 0, $totalApi, "Data karyawan berhasil diunduh ({$totalApi} data). Memulai pemrosesan...", [
+        Log::info('EmployeeUserSyncService: Data karyawan berhasil diunduh dari API', [
+            'total_api' => $totalApi,
+        ]);
+
+        self::updateProgress('validating', 0, $totalApi, "Data karyawan berhasil diunduh ({$totalApi} data). Memvalidasi & memuat data OWL...", [
+            'percentage' => 25,
             'is_dry_run' => $isDryRun,
             'started_at' => $startedAt,
         ]);
         if ($onProgress) {
-            $onProgress('processing', 0, $totalApi, "Data karyawan berhasil diunduh ({$totalApi} data). Memulai pemrosesan...");
+            $onProgress('validating', 0, $totalApi, "Data karyawan berhasil diunduh ({$totalApi} data). Memvalidasi & memuat data OWL...");
         }
 
         // 3. Preload all OWL users (including soft-deleted) into memory with all HR columns
@@ -365,10 +404,33 @@ class EmployeeUserSyncService
             $finalMsg = "Simulasi selesai! {$result->createdCount} kandidat user baru terdeteksi dan {$result->updatedCount} rencana pembaruan.";
         }
 
-        self::updateProgress('completed', $totalApi, $totalApi, $finalMsg, [
+        Log::info('EmployeeUserSyncService: Sinkronisasi data karyawan selesai', [
+            'status' => $finalStatus,
+            'mode' => $isDryRun ? 'DRY-RUN (Simulasi)' : 'LIVE (Nyata)',
+            'duration_seconds' => $result->durationSeconds(),
+            'total_api' => $result->totalApi,
+            'total_owl' => $result->totalOwl,
             'created' => $result->createdCount,
             'updated' => $result->updatedCount,
-            'skipped' => $result->skippedCount + $result->conflictCount,
+            'updated_active' => $result->updatedActiveCount,
+            'updated_soft_deleted' => $result->updatedSoftDeletedCount,
+            'unchanged' => $result->unchangedCount,
+            'skipped' => $result->skippedCount,
+            'conflicts' => $result->conflictCount,
+            'failed' => $result->failedCount,
+        ]);
+
+        self::updateProgress('completed', $totalApi, $totalApi, $finalMsg, [
+            'percentage' => 100,
+            'total_api' => $result->totalApi,
+            'total_owl' => $result->totalOwl,
+            'created' => $result->createdCount,
+            'updated' => $result->updatedCount,
+            'updated_active_count' => $result->updatedActiveCount,
+            'updated_soft_deleted_count' => $result->updatedSoftDeletedCount,
+            'unchanged_count' => $result->unchangedCount,
+            'skipped' => $result->skippedCount,
+            'conflict_count' => $result->conflictCount,
             'failed' => $result->failedCount,
             'is_dry_run' => $isDryRun,
             'duration_seconds' => $result->durationSeconds(),
@@ -399,12 +461,20 @@ class EmployeeUserSyncService
     ): void {
         if ($processedCount === 1 || $processedCount === $totalApi || $processedCount % 25 === 0) {
             $stage = 'processing';
+            $pct = 25 + (int) floor(($processedCount / $totalApi) * 70);
             $stageMsg = "Memproses data karyawan ({$processedCount} dari {$totalApi})...";
 
             self::updateProgress($stage, $processedCount, $totalApi, $stageMsg, [
+                'percentage' => min(95, max(25, $pct)),
+                'total_api' => $totalApi,
+                'total_owl' => $result->totalOwl,
                 'created' => $result->createdCount,
                 'updated' => $result->updatedCount,
-                'skipped' => $result->skippedCount + $result->conflictCount,
+                'updated_active_count' => $result->updatedActiveCount,
+                'updated_soft_deleted_count' => $result->updatedSoftDeletedCount,
+                'unchanged_count' => $result->unchangedCount,
+                'skipped' => $result->skippedCount,
+                'conflict_count' => $result->conflictCount,
                 'failed' => $result->failedCount,
                 'is_dry_run' => $isDryRun,
                 'started_at' => $startedAt,
