@@ -601,7 +601,7 @@ Route::get('{task}/qr', [TaskManageController::class, 'qr'])->name('qr');
             Route::get('online/export/csv', [RecordOnlineController::class, 'exportCsv'])->name('online.export.csv')->middleware('mpermission:learning_management');
             Route::get('online/download', [RecordOnlineController::class, 'download'])->name('online.download')->middleware('mpermission:learning_management');
             Route::get('online/classification/{classification}', [RecordOnlineController::class, 'classification'])->name('online.classification');
-            Route::get('online/classification/{classification}/datatable', [RecordOnlineController::class, 'classificationDatatable'])->name('online.classification.datatable');
+            Route::match(['get', 'post'], 'online/classification/{classification}/datatable', [RecordOnlineController::class, 'classificationDatatable'])->name('online.classification.datatable');
             Route::get('online/classification/{classification}/download/{format?}', [RecordOnlineController::class, 'classificationDownload'])->name('online.classification.download')->middleware('mpermission:learning_management');
             Route::get('online/classification/{classification}/export/excel', [RecordOnlineController::class, 'classificationExportExcel'])->name('online.classification.export.excel')->middleware('mpermission:learning_management');
             Route::get('online/classification/{classification}/export/csv', [RecordOnlineController::class, 'classificationExportCsv'])->name('online.classification.export.csv')->middleware('mpermission:learning_management');
