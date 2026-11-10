@@ -503,8 +503,9 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // --- CLASSIFICATION DEPENDENCY LOGIC ---
+    // --- CLASSIFICATION & COURSE EXAMPLES DEPENDENCY LOGIC ---
     window.subClassificationMap = @json($subClassificationMap ?? []);
+    window.courseExampleMap = @json($courseExampleMap ?? []);
     window.allSubOptions = [];
     $('#select-sub-classification option').each(function () {
         const val = $(this).val();
@@ -515,6 +516,55 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
     });
+
+    window.allTitleOptions = [];
+    $('#select-training-title option').each(function () {
+        const val = $(this).val();
+        if (val && val !== '__add_new__') {
+            window.allTitleOptions.push({
+                value: val,
+                text: $(this).text().trim()
+            });
+        }
+    });
+
+    function updateCourseTitleDropdown(selectedSub, keepCurrentVal = false) {
+        const $titleSelect = $('#select-training-title');
+        const currentVal = $titleSelect.val();
+        const mappedCourses = (selectedSub && window.courseExampleMap[selectedSub]) ? window.courseExampleMap[selectedSub] : null;
+
+        $titleSelect.empty().append('<option value="">Select Training Title...</option>');
+
+        if (mappedCourses && mappedCourses.length > 0) {
+            $titleSelect.append('<optgroup label="Suggested Course Examples (' + selectedSub + ')">');
+            mappedCourses.forEach(cName => {
+                const isSel = (keepCurrentVal && cName === currentVal);
+                $titleSelect.append(new Option(cName, cName, false, isSel));
+            });
+            $titleSelect.append('</optgroup>');
+
+            const otherTitles = window.allTitleOptions.filter(item => !mappedCourses.includes(item.value));
+            if (otherTitles.length > 0) {
+                $titleSelect.append('<optgroup label="All Other Training Titles">');
+                otherTitles.forEach(item => {
+                    const isSel = (keepCurrentVal && item.value === currentVal);
+                    $titleSelect.append(new Option(item.text, item.value, false, isSel));
+                });
+                $titleSelect.append('</optgroup>');
+            }
+        } else {
+            window.allTitleOptions.forEach(item => {
+                const isSel = (keepCurrentVal && item.value === currentVal);
+                $titleSelect.append(new Option(item.text, item.value, false, isSel));
+            });
+        }
+
+        if (keepCurrentVal && currentVal && currentVal !== '__add_new__') {
+            $titleSelect.val(currentVal);
+        }
+
+        $titleSelect.append('<option value="__add_new__" class="fw-bold text-primary">+ Add New...</option>');
+    }
 
     function updateSubClassificationDropdown(selectedMain, keepCurrentVal = false) {
         const $subSelect = $('#select-sub-classification');
@@ -550,6 +600,12 @@ document.addEventListener('DOMContentLoaded', function () {
         updateSubClassificationDropdown(mainVal, false);
     });
 
+    $('#select-sub-classification').on('change', function () {
+        const subVal = $(this).val();
+        if (subVal === '__add_new__') return;
+        updateCourseTitleDropdown(subVal, true);
+    });
+
     // Check old values on reload / validation error
     const initialMain = $('#select-main-classification').val();
     const oldSubVal = "{{ old('sub_classification') }}";
@@ -558,6 +614,11 @@ document.addEventListener('DOMContentLoaded', function () {
         if (oldSubVal) {
             $('#select-sub-classification').val(oldSubVal);
         }
+    }
+
+    const initialSub = $('#select-sub-classification').val() || oldSubVal;
+    if (initialSub && window.courseExampleMap[initialSub]) {
+        updateCourseTitleDropdown(initialSub, true);
     }
 
     // Toggle Schedule Timing & Dates card based on Registration Status

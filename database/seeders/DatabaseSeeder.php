@@ -21,7 +21,7 @@ class DatabaseSeeder extends Seeder
         $this->call(RecordPermissionSeeder::class);
         $this->call(ApproverRoleSeeder::class);
         // $this->call(OfflineTrainingDemoSeeder::class);
-        $this->call(OfflineTrainingOptionSeeder::class);
+        // $this->call(OfflineTrainingOptionSeeder::class);
         $this->call(ClassificationHistorySeeder::class);
 
         $data = [

@@ -254,6 +254,44 @@ class OfflineTrainingController extends Controller
             })
             ->all();
 
+        // Master Sub Classification mappings from master database options
+        foreach ($classifications as $cls) {
+            $masterSubs = OfflineTrainingOption::active()
+                ->where('option_type', OfflineOptionService::TYPE_SUB_CLASSIFICATION)
+                ->where('classification_id', $cls->id)
+                ->orderBy('sort_order', 'asc')
+                ->orderBy('value', 'asc')
+                ->pluck('value')
+                ->all();
+
+            if (!empty($masterSubs)) {
+                if (!isset($subClassificationMap[$cls->classification_name])) {
+                    $subClassificationMap[$cls->classification_name] = $masterSubs;
+                } else {
+                    $subClassificationMap[$cls->classification_name] = array_values(array_unique(array_merge($masterSubs, $subClassificationMap[$cls->classification_name])));
+                }
+            }
+        }
+
+        // Master Course Examples per Sub Classification
+        $courseExampleMap = [];
+        $subOptionsList = OfflineTrainingOption::active()
+            ->where('option_type', OfflineOptionService::TYPE_SUB_CLASSIFICATION)
+            ->get(['id', 'value']);
+
+        foreach ($subOptionsList as $sOpt) {
+            $courses = OfflineTrainingOption::active()
+                ->where('option_type', OfflineOptionService::TYPE_COURSE_NAME)
+                ->where('parent_id', $sOpt->id)
+                ->orderBy('sort_order', 'asc')
+                ->orderBy('value', 'asc')
+                ->pluck('value')
+                ->all();
+            if (!empty($courses)) {
+                $courseExampleMap[$sOpt->value] = $courses;
+            }
+        }
+
         // Sub-classifications
         $subClassifications = $optionsGrouped->get(OfflineOptionService::TYPE_SUB_CLASSIFICATION, collect())
             ->unique('value')
@@ -579,6 +617,7 @@ class OfflineTrainingController extends Controller
             'classifications'      => $classifications,
             'options'              => $options,
             'subClassificationMap' => $subClassificationMap,
+            'courseExampleMap'     => $courseExampleMap,
         ];
     }
 
@@ -588,9 +627,9 @@ class OfflineTrainingController extends Controller
     public function create()
     {
         $formData = $this->getScheduleFormData();
-        $viewName = view()->exists('manage.training-schedule.create')
-            ? 'manage.training-schedule.create'
-            : 'main.manage-training-schedule.create';
+        $viewName = view()->exists('main.manage-training-schedule.create')
+            ? 'main.manage-training-schedule.create'
+            : 'manage.training-schedule.create';
         return view($viewName, $formData);
     }
 
@@ -752,9 +791,9 @@ class OfflineTrainingController extends Controller
         $training = $id instanceof OfflineTraining ? $id : OfflineTraining::findOrFail($id);
         $formData = $this->getScheduleFormData($training);
 
-        $viewName = view()->exists('manage.training-schedule.edit')
-            ? 'manage.training-schedule.edit'
-            : 'main.manage-training-schedule.edit';
+        $viewName = view()->exists('main.manage-training-schedule.edit')
+            ? 'main.manage-training-schedule.edit'
+            : 'manage.training-schedule.edit';
 
         return view($viewName, array_merge(['training' => $training], $formData));
     }

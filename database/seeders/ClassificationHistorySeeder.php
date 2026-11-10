@@ -81,8 +81,16 @@ class ClassificationHistorySeeder extends Seeder
                 ]);
                 $this->stats['classification']['inserted']++;
             } else {
+                $needsUpdate = false;
+                $updateData = [];
+
                 if (!$existing->is_active) {
-                    $existing->update(['is_active' => true]);
+                    $updateData['is_active'] = true;
+                    $needsUpdate = true;
+                }
+
+                if ($needsUpdate) {
+                    $existing->update($updateData);
                     $this->stats['classification']['updated']++;
                 } else {
                     $this->stats['classification']['skipped']++;
@@ -107,7 +115,14 @@ class ClassificationHistorySeeder extends Seeder
 
         $order = 10;
         foreach ($types as $typeVal) {
-            $this->syncOption(OfflineOptionService::TYPE_TYPE, $typeVal, null, $order);
+            $this->syncOption(
+                OfflineOptionService::TYPE_TYPE,
+                $typeVal,
+                null,
+                $order,
+                null,
+                'owl'
+            );
             $order += 10;
         }
     }
@@ -115,22 +130,38 @@ class ClassificationHistorySeeder extends Seeder
     /**
      * 3. Seed Training Categories into offline_training_options.
      * Source OWL: Playlist, All Content, Content Playlist
-     * Source Non KP-OWL: Non KP-OWL
+     * Source Non KP-OWL: NON KP-OWL
      */
     protected function seedTrainingCategories(): void
     {
-        $categories = [
+        $owlCategories = [
             'Playlist',
             'All Content',
             'Content Playlist',
-            'Non KP-OWL',
         ];
 
         $order = 10;
-        foreach ($categories as $catVal) {
-            $this->syncOption(OfflineOptionService::TYPE_CATEGORY, $catVal, null, $order);
+        foreach ($owlCategories as $catVal) {
+            $this->syncOption(
+                OfflineOptionService::TYPE_CATEGORY,
+                $catVal,
+                null,
+                $order,
+                null,
+                'owl'
+            );
             $order += 10;
         }
+
+        // NON KP-OWL category
+        $this->syncOption(
+            OfflineOptionService::TYPE_CATEGORY,
+            'NON KP-OWL',
+            null,
+            $order,
+            null,
+            'non_kp_owl'
+        );
     }
 
     /**
@@ -146,35 +177,68 @@ class ClassificationHistorySeeder extends Seeder
     {
         $deliveryHierarchy = [
             'Offline' => [
-                'On-site',
-                'Off-site',
+                'source'      => 'non_kp_owl',
+                'explanation' => 'Face-to-face training conducted offline.',
+                'children'    => [
+                    'On-site'  => [
+                        'source'      => 'non_kp_owl',
+                        'explanation' => 'Face-to-face training conducted at the PTKP (class room, meeting room, inside the plant)',
+                    ],
+                    'Off-site' => [
+                        'source'      => 'non_kp_owl',
+                        'explanation' => 'Face-to-face training conducted outside the PTKP (hotel, external training center, vendor\'s facility)',
+                    ],
+                ],
             ],
             'Online' => [
-                'E-learning',
-                'Webinar',
+                'source'      => 'all',
+                'explanation' => 'Virtual or web-based training sessions.',
+                'children'    => [
+                    'E-learning' => [
+                        'source'      => 'all',
+                        'explanation' => 'Self-paced modules accessed online via LMS or platform. No live instructor. Participants complete training independently.',
+                    ],
+                    'Webinar'    => [
+                        'source'      => 'non_kp_owl',
+                        'explanation' => 'Synchronous (live) virtual session led by an instructor via platforms like Zoom, Teams, or Webex. Includes interaction like Q&A or polls.',
+                    ],
+                ],
             ],
             'Blended' => [
-                'Hybrid',
+                'source'      => 'non_kp_owl',
+                'explanation' => 'A structured mix of online and offline methods.',
+                'children'    => [
+                    'Hybrid' => [
+                        'source'      => 'non_kp_owl',
+                        'explanation' => 'A structured mix of online and offline methods',
+                    ],
+                ],
             ],
         ];
 
         $parentOrder = 10;
-        foreach ($deliveryHierarchy as $parentMethod => $subMethods) {
+        foreach ($deliveryHierarchy as $parentMethod => $meta) {
             $parentOption = $this->syncOption(
                 OfflineOptionService::TYPE_DELIVERY_METHOD,
                 $parentMethod,
                 null,
-                $parentOrder
+                $parentOrder,
+                null,
+                $meta['source'] ?? 'all',
+                $meta['explanation'] ?? null
             );
             $parentOrder += 10;
 
             $subOrder = 10;
-            foreach ($subMethods as $subMethod) {
+            foreach ($meta['children'] as $subMethod => $subMeta) {
                 $this->syncOption(
                     OfflineOptionService::TYPE_SUB_DELIVERY_METHOD,
                     $subMethod,
                     $parentOption?->id,
-                    $subOrder
+                    $subOrder,
+                    null,
+                    $subMeta['source'] ?? 'all',
+                    $subMeta['explanation'] ?? null
                 );
                 $subOrder += 10;
             }
@@ -193,32 +257,58 @@ class ClassificationHistorySeeder extends Seeder
     {
         $providerHierarchy = [
             'Internal' => [
-                'Internal-Training Team',
-                'Internal-Unit',
+                'source'      => 'all',
+                'explanation' => 'Internal company training delivery and resources.',
+                'children'    => [
+                    'Internal-Training Team' => [
+                        'source'      => 'all',
+                        'explanation' => 'Delivered & organized by Training Team. Location: On-site PTKP/Online/Blended. Content: developed by internal company. Instructor: Internal employees.',
+                    ],
+                    'Internal-Unit'          => [
+                        'source'      => 'non_kp_owl',
+                        'explanation' => 'Delivered & organized by each working unit (Not Training Team). Location: On-site PTKP/Online/Blended. Content: developed by internal company. Instructor: Internal employees.',
+                    ],
+                ],
             ],
             'External' => [
-                'Institution',
-                'Individual',
+                'source'      => 'non_kp_owl',
+                'explanation' => 'External institutions, vendors, and professional partners.',
+                'children'    => [
+                    'Institution' => [
+                        'source'      => 'non_kp_owl',
+                        'explanation' => 'Organized by Training Team. Content: developed by external. Instructor: delivered by external (training companies, universities, certification bodies, consulting firms, etc). Location: On-site/Off-site PTKP/Online/Blended.',
+                    ],
+                    'Individual'  => [
+                        'source'      => 'non_kp_owl',
+                        'explanation' => 'Organized by Training Team. Content: developed by external. Instructor: delivered by external (Freelance trainers or consultant hired personally for their expertise). Location: On-site/Off-site PTKP/Online/Blended.',
+                    ],
+                ],
             ],
         ];
 
         $parentOrder = 10;
-        foreach ($providerHierarchy as $parentProvider => $subProviders) {
+        foreach ($providerHierarchy as $parentProvider => $meta) {
             $parentOption = $this->syncOption(
                 OfflineOptionService::TYPE_PROVIDER,
                 $parentProvider,
                 null,
-                $parentOrder
+                $parentOrder,
+                null,
+                $meta['source'] ?? 'all',
+                $meta['explanation'] ?? null
             );
             $parentOrder += 10;
 
             $subOrder = 10;
-            foreach ($subProviders as $subProvider) {
+            foreach ($meta['children'] as $subProvider => $subMeta) {
                 $this->syncOption(
                     OfflineOptionService::TYPE_SUB_PROVIDER,
                     $subProvider,
                     $parentOption?->id,
-                    $subOrder
+                    $subOrder,
+                    null,
+                    $subMeta['source'] ?? 'all',
+                    $subMeta['explanation'] ?? null
                 );
                 $subOrder += 10;
             }
@@ -230,6 +320,17 @@ class ClassificationHistorySeeder extends Seeder
      */
     protected function seedClassificationHierarchy(): void
     {
+        // First, check and rename legacy "All recertification training" to "All recertification" per Excel reference
+        $legacyRecert = OfflineTrainingOption::where('option_type', OfflineOptionService::TYPE_COURSE_NAME)
+            ->where('normalized_value', 'all recertification training')
+            ->first();
+        if ($legacyRecert) {
+            $legacyRecert->update([
+                'value'            => 'All recertification',
+                'normalized_value' => 'all recertification',
+            ]);
+        }
+
         $hierarchy = [
             'Basic & Common Duties' => [
                 'Production' => [
@@ -277,7 +378,7 @@ class ClassificationHistorySeeder extends Seeder
                     'Garda Pratama',
                 ],
                 'Recertification' => [
-                    'All recertification training',
+                    'All recertification',
                 ],
             ],
             'Innovation' => [
@@ -362,13 +463,18 @@ class ClassificationHistorySeeder extends Seeder
         $courseOrder = 10;
 
         foreach ($hierarchy as $mainName => $subClassifications) {
+            $mainClassification = Classification::whereRaw('LOWER(classification_name) = ?', [mb_strtolower(trim($mainName))])->first();
+            $mainClassificationId = $mainClassification?->id;
+
             foreach ($subClassifications as $subName => $courses) {
-                // Register Sub Classification
+                // Register Sub Classification with classification_id linked to Main Classification!
                 $subOption = $this->syncOption(
                     OfflineOptionService::TYPE_SUB_CLASSIFICATION,
                     $subName,
                     null,
-                    $subOrder
+                    $subOrder,
+                    $mainClassificationId,
+                    'all'
                 );
                 $subOrder += 10;
 
@@ -382,7 +488,9 @@ class ClassificationHistorySeeder extends Seeder
                         OfflineOptionService::TYPE_COURSE_NAME,
                         $courseName,
                         $subOption?->id,
-                        $courseOrder
+                        $courseOrder,
+                        $mainClassificationId,
+                        'all'
                     );
                     $courseOrder += 10;
                 }
@@ -397,7 +505,10 @@ class ClassificationHistorySeeder extends Seeder
         string $type,
         string $value,
         ?int $parentId = null,
-        int $sortOrder = 0
+        int $sortOrder = 0,
+        ?int $classificationId = null,
+        ?string $source = 'all',
+        ?string $explanation = null
     ): ?OfflineTrainingOption {
         if (!OfflineOptionService::isValidValue($value)) {
             return null;
@@ -406,23 +517,73 @@ class ClassificationHistorySeeder extends Seeder
         $cleanValue = trim(preg_replace('/\s+/', ' ', $value));
         $normalized = OfflineTrainingOption::normalizeString($cleanValue);
 
-        $existing = OfflineTrainingOption::where('option_type', $type)
-            ->where('scope_key', 'global')
-            ->where('normalized_value', $normalized)
-            ->first();
+        // First check if an exact record exists under the given parent_id
+        $existing = null;
+        if ($parentId !== null) {
+            $existing = OfflineTrainingOption::where('option_type', $type)
+                ->where('parent_id', $parentId)
+                ->where('normalized_value', $normalized)
+                ->first();
+        }
+
+        // If not found by parent_id, check globally
+        if (!$existing) {
+            $existing = OfflineTrainingOption::where('option_type', $type)
+                ->where('scope_key', 'global')
+                ->where('normalized_value', $normalized)
+                ->first();
+        }
+
+        // If course example already exists under a DIFFERENT parent, create a scoped entry so both parents have the course!
+        if ($existing && $parentId !== null && !empty($existing->parent_id) && (int) $existing->parent_id !== (int) $parentId) {
+            $scopedKey = 'parent:' . $parentId;
+            $existingScoped = OfflineTrainingOption::where('option_type', $type)
+                ->where('scope_key', $scopedKey)
+                ->where('normalized_value', $normalized)
+                ->first();
+
+            if (!$existingScoped) {
+                $created = OfflineTrainingOption::create([
+                    'option_type'       => $type,
+                    'value'             => $cleanValue,
+                    'explanation'       => $explanation,
+                    'normalized_value'  => $normalized,
+                    'year'              => null,
+                    'scope_key'         => $scopedKey,
+                    'source'            => $source ?: 'all',
+                    'parent_id'         => $parentId,
+                    'classification_id' => $classificationId,
+                    'is_active'         => true,
+                    'sort_order'        => $sortOrder,
+                    'created_from'      => 'system',
+                    'created_by'        => null,
+                ]);
+
+                if (isset($this->stats[$type])) {
+                    $this->stats[$type]['inserted']++;
+                }
+
+                return $created;
+            }
+
+            $existing = $existingScoped;
+        }
 
         if (!$existing) {
             $created = OfflineTrainingOption::create([
-                'option_type'      => $type,
-                'value'            => $cleanValue,
-                'normalized_value' => $normalized,
-                'year'             => null,
-                'scope_key'        => 'global',
-                'parent_id'        => $parentId,
-                'is_active'        => true,
-                'sort_order'       => $sortOrder,
-                'created_from'     => 'system',
-                'created_by'       => null,
+                'option_type'       => $type,
+                'value'             => $cleanValue,
+                'explanation'       => $explanation,
+                'normalized_value'  => $normalized,
+                'year'              => null,
+                'scope_key'         => 'global',
+                'source'            => $source ?: 'all',
+                'parent_id'         => $parentId,
+                'classification_id' => $classificationId,
+                'is_active'         => true,
+                'sort_order'        => $sortOrder,
+                'created_from'      => 'system',
+                'created_by'        => null,
             ]);
 
             if (isset($this->stats[$type])) {
@@ -432,7 +593,7 @@ class ClassificationHistorySeeder extends Seeder
             return $created;
         }
 
-        // Check if existing record needs update (e.g. parent_id link or active state)
+        // Check if existing record needs update
         $needsUpdate = false;
         $updateData = [];
 
@@ -441,8 +602,29 @@ class ClassificationHistorySeeder extends Seeder
             $needsUpdate = true;
         }
 
+        if ($classificationId !== null && (empty($existing->classification_id) || (int) $existing->classification_id !== (int) $classificationId)) {
+            $updateData['classification_id'] = $classificationId;
+            $needsUpdate = true;
+        }
+
+        if ($source !== null && $existing->source !== $source) {
+            $updateData['source'] = $source;
+            $needsUpdate = true;
+        }
+
+        if ($explanation !== null && $existing->explanation !== $explanation) {
+            $updateData['explanation'] = $explanation;
+            $needsUpdate = true;
+        }
+
         if (!$existing->is_active) {
             $updateData['is_active'] = true;
+            $needsUpdate = true;
+        }
+
+        // Ensure value maintains exact casing if normalized matches
+        if ($existing->value !== $cleanValue) {
+            $updateData['value'] = $cleanValue;
             $needsUpdate = true;
         }
 

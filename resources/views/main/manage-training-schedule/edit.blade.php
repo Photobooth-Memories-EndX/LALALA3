@@ -553,6 +553,68 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    // --- COURSE EXAMPLES DEPENDENCY LOGIC ---
+    window.courseExampleMap = @json($courseExampleMap ?? []);
+    window.allTitleOptions = [];
+    $('#select-training-title option').each(function () {
+        const val = $(this).val();
+        if (val && val !== '__add_new__') {
+            window.allTitleOptions.push({
+                value: val,
+                text: $(this).text().trim()
+            });
+        }
+    });
+
+    function updateCourseTitleDropdown(selectedSub, keepCurrentVal = false) {
+        const $titleSelect = $('#select-training-title');
+        const currentVal = $titleSelect.val();
+        const mappedCourses = (selectedSub && window.courseExampleMap[selectedSub]) ? window.courseExampleMap[selectedSub] : null;
+
+        $titleSelect.empty().append('<option value="">Select Training Title...</option>');
+
+        if (mappedCourses && mappedCourses.length > 0) {
+            $titleSelect.append('<optgroup label="Suggested Course Examples (' + selectedSub + ')">');
+            mappedCourses.forEach(cName => {
+                const isSel = (keepCurrentVal && cName === currentVal);
+                $titleSelect.append(new Option(cName, cName, false, isSel));
+            });
+            $titleSelect.append('</optgroup>');
+
+            const otherTitles = window.allTitleOptions.filter(item => !mappedCourses.includes(item.value));
+            if (otherTitles.length > 0) {
+                $titleSelect.append('<optgroup label="All Other Training Titles">');
+                otherTitles.forEach(item => {
+                    const isSel = (keepCurrentVal && item.value === currentVal);
+                    $titleSelect.append(new Option(item.text, item.value, false, isSel));
+                });
+                $titleSelect.append('</optgroup>');
+            }
+        } else {
+            window.allTitleOptions.forEach(item => {
+                const isSel = (keepCurrentVal && item.value === currentVal);
+                $titleSelect.append(new Option(item.text, item.value, false, isSel));
+            });
+        }
+
+        if (keepCurrentVal && currentVal && currentVal !== '__add_new__') {
+            $titleSelect.val(currentVal);
+        }
+
+        $titleSelect.append('<option value="__add_new__" class="fw-bold text-primary">+ Add New...</option>');
+    }
+
+    $('#select-sub-classification').on('change', function () {
+        const subVal = $(this).val();
+        if (subVal === '__add_new__') return;
+        updateCourseTitleDropdown(subVal, true);
+    });
+
+    const initialSub = $('#select-sub-classification').val() || existingSubVal;
+    if (initialSub && window.courseExampleMap[initialSub]) {
+        updateCourseTitleDropdown(initialSub, true);
+    }
+
     // Handle form submission: validate then let it submit to backend
     if (form) {
         let clickedAction = 'publish';

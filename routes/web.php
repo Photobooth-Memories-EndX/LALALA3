@@ -386,6 +386,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
         // Option Management routes
         Route::prefix('classification/options')->name('manage.classification.options.')->group(function () {
             Route::post('/', [ClassificationController::class, 'storeOption'])->name('store');
+            Route::get('subs-by-main/{mainId}', [ClassificationController::class, 'getSubsByMain'])->name('subs-by-main');
             Route::get('{id}', [ClassificationController::class, 'getOption'])->name('show');
             Route::put('{id}', [ClassificationController::class, 'updateOption'])->name('update');
             Route::patch('{id}/toggle-status', [ClassificationController::class, 'toggleOptionStatus'])->name('toggle-status');

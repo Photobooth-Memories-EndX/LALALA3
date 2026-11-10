@@ -207,15 +207,15 @@ class ClassificationHistoryValidationTest extends TestCase
     {
         // Historical types & categories
         $this->assertDatabaseHas('offline_training_options', ['option_type' => 'type', 'value' => 'In-House']);
-        $this->assertDatabaseHas('offline_training_options', ['option_type' => 'category', 'value' => 'TEST_CAT']);
+        $this->assertDatabaseHas('offline_training_options', ['option_type' => 'category', 'value' => 'Advance']);
 
         // Historical sub providers
         $this->assertDatabaseHas('offline_training_options', ['option_type' => 'sub_provider', 'value' => 'Vendor']);
         $this->assertDatabaseHas('offline_training_options', ['option_type' => 'sub_provider', 'value' => 'Public']);
 
         // Historical sub classifications
-        $this->assertDatabaseHas('offline_training_options', ['option_type' => 'sub_classification', 'value' => 'Plant Maintenance']);
-        $this->assertDatabaseHas('offline_training_options', ['option_type' => 'sub_classification', 'value' => 'Plant Safety']);
+        $this->assertDatabaseHas('offline_training_options', ['option_type' => 'sub_classification', 'value' => 'Technology-Electrical']);
+        $this->assertDatabaseHas('offline_training_options', ['option_type' => 'sub_classification', 'value' => 'QSS']);
 
         // Historical classifications
         $this->assertDatabaseHas('classification', ['classification_name' => 'Maintenance']);

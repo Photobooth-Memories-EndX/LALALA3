@@ -39,7 +39,7 @@
                     <!-- Training Title Placed Here at the Top -->
                     <div class="col-md-6 mb-2">
                         <label class="form-label fw-semibold text-dark">Training Title <span class="text-danger">*</span></label>
-                        <select name="title" id="select-training-title" class="form-select rounded-3 w-100" data-option-type="course_name" data-option-title="Training Title" required>
+                        <select name="title" id="select-training-title" class="form-select rounded-3 w-100" data-type="course_name" data-option-type="course_name" data-option-title="Training Title" required>
                             <option value="">Select Training Title...</option>
                             @foreach ($options['title'] ?? [] as $titleOpt)
                                 <option value="{{ $titleOpt->value }}" {{ old('title') == $titleOpt->value ? 'selected' : '' }}>
@@ -57,7 +57,7 @@
                     <!-- Sub Course Name -->
                     <div class="col-md-6 mb-2">
                         <label class="form-label fw-semibold text-dark">Sub Course Name</label>
-                        <select name="sub_course_name" id="select-sub-course-name" class="form-select rounded-3 w-100" data-option-type="sub_course_name" data-option-title="Sub Course Name">
+                        <select name="sub_course_name" id="select-sub-course-name" class="form-select rounded-3 w-100" data-type="sub_course_name" data-option-type="sub_course_name" data-option-title="Sub Course Name">
                             <option value="">Select Sub Course Name (Optional)...</option>
                             @foreach ($options['sub_course_name'] ?? [] as $subCourseOpt)
                                 <option value="{{ $subCourseOpt->value }}" {{ old('sub_course_name') == $subCourseOpt->value ? 'selected' : '' }}>
@@ -127,7 +127,7 @@
                     <!-- Main Classification -->
                     <div class="col-md-4">
                         <label class="form-label fw-semibold text-dark">Main Classification</label>
-                        <select name="main_classification" id="select-main-classification" class="form-select rounded-3 w-100" data-option-type="classification" data-option-title="Main Classification">
+                        <select name="main_classification" id="select-main-classification" class="form-select rounded-3 w-100" data-type="classification" data-option-type="classification" data-option-title="Main Classification">
                             <option value="">Select Main Classification...</option>
                             @foreach ($classifications ?? [] as $cls)
                                 <option value="{{ $cls->classification_name }}" {{ old('main_classification') == $cls->classification_name ? 'selected' : '' }}>
@@ -141,7 +141,7 @@
                     <!-- Sub Classification -->
                     <div class="col-md-4">
                         <label class="form-label fw-semibold text-dark">Sub Classification</label>
-                        <select name="sub_classification" id="select-sub-classification" class="form-select rounded-3 w-100" data-option-type="sub_classification" data-option-title="Sub Classification">
+                        <select name="sub_classification" id="select-sub-classification" class="form-select rounded-3 w-100" data-type="sub_classification" data-option-type="sub_classification" data-option-title="Sub Classification">
                             <option value="">Select Sub Classification...</option>
                             @foreach ($options['sub_classification'] ?? [] as $subOpt)
                                 <option value="{{ $subOpt->value }}" {{ old('sub_classification') == $subOpt->value ? 'selected' : '' }}>
@@ -155,7 +155,7 @@
                     <!-- Training Category -->
                     <div class="col-md-4">
                         <label class="form-label fw-semibold text-dark">Training Category <span class="text-danger">*</span></label>
-                        <select name="category" id="select-category" class="form-select rounded-3 w-100" data-option-type="category" data-option-title="Training Category" required>
+                        <select name="category" id="select-category" class="form-select rounded-3 w-100" data-type="category" data-option-type="category" data-option-title="Training Category" required>
                             <option value="">Select Category...</option>
                             @foreach ($options['category'] ?? [] as $catOpt)
                                 <option value="{{ $catOpt->value }}" {{ old('category') == $catOpt->value ? 'selected' : '' }}>
@@ -170,7 +170,7 @@
                     <!-- Training Type -->
                     <div class="col-md-4">
                         <label class="form-label fw-semibold text-dark">Training Type</label>
-                        <select name="type" id="select-type" class="form-select rounded-3 w-100" data-option-type="type" data-option-title="Training Type">
+                        <select name="type" id="select-type" class="form-select rounded-3 w-100" data-type="type" data-option-type="type" data-option-title="Training Type">
                             <option value="">Select Training Type...</option>
                             @foreach ($options['type'] ?? [] as $typeOpt)
                                 <option value="{{ $typeOpt->value }}" {{ old('type') == $typeOpt->value ? 'selected' : '' }}>
@@ -184,7 +184,7 @@
                     <!-- Competency Level -->
                     <div class="col-md-4">
                         <label class="form-label fw-semibold text-dark">Competency Level</label>
-                        <select name="level" id="select-level" class="form-select rounded-3 w-100" data-option-type="level" data-option-title="Competency Level">
+                        <select name="level" id="select-level" class="form-select rounded-3 w-100" data-type="level" data-option-type="level" data-option-title="Competency Level">
                             <option value="">Select Level...</option>
                             @foreach ($options['level'] ?? [] as $lvlOpt)
                                 <option value="{{ $lvlOpt->value }}" {{ old('level') == $lvlOpt->value ? 'selected' : '' }}>
@@ -205,7 +205,7 @@
                     <!-- Instructor / Trainer -->
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-dark">Instructor / Trainer <span class="text-danger">*</span></label>
-                        <select name="instructor" id="select-instructor" class="form-select rounded-3 w-100" data-option-type="instructor" data-option-title="Instructor / Trainer" required>
+                        <select name="instructor" id="select-instructor" class="form-select rounded-3 w-100" data-type="instructor" data-option-type="instructor" data-option-title="Instructor / Trainer" required>
                             <option value="">Select Instructor / Trainer...</option>
                             @foreach ($options['instructor'] ?? [] as $instOpt)
                                 <option value="{{ $instOpt->value }}" {{ old('instructor') == $instOpt->value ? 'selected' : '' }}>
@@ -223,7 +223,7 @@
                     <!-- Location / Venue -->
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-dark">Location / Venue <span class="text-danger">*</span></label>
-                        <select name="location" id="select-location" class="form-select rounded-3 w-100" data-option-type="venue" data-option-title="Location / Venue" required>
+                        <select name="location" id="select-location" class="form-select rounded-3 w-100" data-type="venue" data-option-type="venue" data-option-title="Location / Venue" required>
                             <option value="">Select Location / Venue...</option>
                             @foreach ($options['location'] ?? [] as $locOpt)
                                 <option value="{{ $locOpt->value }}" {{ old('location') == $locOpt->value ? 'selected' : '' }}>
@@ -241,7 +241,7 @@
                     <!-- Target Employee -->
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-dark">Target Employee <span class="text-danger">*</span></label>
-                        <select name="target_employee" id="select-target-employee" class="form-select rounded-3 w-100" data-option-type="target_employee" data-option-title="Target Employee" required>
+                        <select name="target_employee" id="select-target-employee" class="form-select rounded-3 w-100" data-type="target_employee" data-option-type="target_employee" data-option-title="Target Employee" required>
                             <option value="">Select Target Employee...</option>
                             @foreach ($options['target_employee'] ?? [] as $tgtOpt)
                                 <option value="{{ $tgtOpt->value }}" {{ old('target_employee') == $tgtOpt->value ? 'selected' : '' }}>
@@ -259,7 +259,7 @@
                     <!-- Requirements -->
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-dark">Requirements</label>
-                        <select name="prerequisites" id="select-prerequisites" class="form-select rounded-3 w-100" data-option-type="prerequisites" data-option-title="Requirements">
+                        <select name="prerequisites" id="select-prerequisites" class="form-select rounded-3 w-100" data-type="prerequisites" data-option-type="prerequisites" data-option-title="Requirements">
                             <option value="">Select Requirements (Optional)...</option>
                             @foreach ($options['prerequisites'] ?? [] as $preOpt)
                                 <option value="{{ $preOpt->value }}" {{ old('prerequisites') == $preOpt->value ? 'selected' : '' }}>
@@ -487,6 +487,68 @@ document.addEventListener('DOMContentLoaded', function () {
         if (oldSubVal) {
             $('#select-sub-classification').val(oldSubVal);
         }
+    }
+
+    // --- COURSE EXAMPLES DEPENDENCY LOGIC ---
+    window.courseExampleMap = @json($courseExampleMap ?? []);
+    window.allTitleOptions = [];
+    $('#select-training-title option').each(function () {
+        const val = $(this).val();
+        if (val && val !== '__add_new__') {
+            window.allTitleOptions.push({
+                value: val,
+                text: $(this).text().trim()
+            });
+        }
+    });
+
+    function updateCourseTitleDropdown(selectedSub, keepCurrentVal = false) {
+        const $titleSelect = $('#select-training-title');
+        const currentVal = $titleSelect.val();
+        const mappedCourses = (selectedSub && window.courseExampleMap[selectedSub]) ? window.courseExampleMap[selectedSub] : null;
+
+        $titleSelect.empty().append('<option value="">Select Training Title...</option>');
+
+        if (mappedCourses && mappedCourses.length > 0) {
+            $titleSelect.append('<optgroup label="Suggested Course Examples (' + selectedSub + ')">');
+            mappedCourses.forEach(cName => {
+                const isSel = (keepCurrentVal && cName === currentVal);
+                $titleSelect.append(new Option(cName, cName, false, isSel));
+            });
+            $titleSelect.append('</optgroup>');
+
+            const otherTitles = window.allTitleOptions.filter(item => !mappedCourses.includes(item.value));
+            if (otherTitles.length > 0) {
+                $titleSelect.append('<optgroup label="All Other Training Titles">');
+                otherTitles.forEach(item => {
+                    const isSel = (keepCurrentVal && item.value === currentVal);
+                    $titleSelect.append(new Option(item.text, item.value, false, isSel));
+                });
+                $titleSelect.append('</optgroup>');
+            }
+        } else {
+            window.allTitleOptions.forEach(item => {
+                const isSel = (keepCurrentVal && item.value === currentVal);
+                $titleSelect.append(new Option(item.text, item.value, false, isSel));
+            });
+        }
+
+        if (keepCurrentVal && currentVal && currentVal !== '__add_new__') {
+            $titleSelect.val(currentVal);
+        }
+
+        $titleSelect.append('<option value="__add_new__" class="fw-bold text-primary">+ Add New...</option>');
+    }
+
+    $('#select-sub-classification').on('change', function () {
+        const subVal = $(this).val();
+        if (subVal === '__add_new__') return;
+        updateCourseTitleDropdown(subVal, true);
+    });
+
+    const initialSub = $('#select-sub-classification').val() || oldSubVal;
+    if (initialSub && window.courseExampleMap[initialSub]) {
+        updateCourseTitleDropdown(initialSub, true);
     }
 
     // Handle form submission: validate then let it submit to backend

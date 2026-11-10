@@ -17,10 +17,13 @@ class OfflineTrainingOption extends Model
     protected $fillable = [
         'option_type',
         'value',
+        'explanation',
         'normalized_value',
         'year',
         'scope_key',
+        'source',
         'parent_id',
+        'classification_id',
         'is_active',
         'sort_order',
         'created_from',
@@ -28,11 +31,12 @@ class OfflineTrainingOption extends Model
     ];
 
     protected $casts = [
-        'year'       => 'integer',
-        'parent_id'  => 'integer',
-        'is_active'  => 'boolean',
-        'sort_order' => 'integer',
-        'created_by' => 'integer',
+        'year'              => 'integer',
+        'parent_id'         => 'integer',
+        'classification_id' => 'integer',
+        'is_active'         => 'boolean',
+        'sort_order'        => 'integer',
+        'created_by'        => 'integer',
     ];
 
     protected static function booted(): void
@@ -40,7 +44,7 @@ class OfflineTrainingOption extends Model
         static::saving(function (self $model) {
             if ($model->year !== null && (int) $model->year > 0) {
                 $model->scope_key = self::buildScopeKey((int) $model->year);
-            } else {
+            } elseif (empty($model->scope_key)) {
                 $model->scope_key = 'global';
                 $model->year = null;
             }
@@ -66,9 +70,20 @@ class OfflineTrainingOption extends Model
         return $this->belongsTo(self::class, 'parent_id');
     }
 
+    public function classification(): BelongsTo
+    {
+        return $this->belongsTo(Classification::class, 'classification_id');
+    }
+
     public function children(): HasMany
     {
         return $this->hasMany(self::class, 'parent_id');
+    }
+
+    public function courseExamples(): HasMany
+    {
+        return $this->hasMany(self::class, 'parent_id')
+            ->where('option_type', OfflineOptionService::TYPE_COURSE_NAME);
     }
 
     public function creator(): BelongsTo
@@ -89,5 +104,18 @@ class OfflineTrainingOption extends Model
     public function scopeForScope(Builder $query, ?int $year = null): Builder
     {
         return $query->where('scope_key', self::buildScopeKey($year));
+    }
+
+    public function scopeForSource(Builder $query, ?string $source = null): Builder
+    {
+        if ($source === null || $source === '' || $source === 'all') {
+            return $query;
+        }
+
+        return $query->where(function (Builder $q) use ($source) {
+            $q->where('source', $source)
+              ->orWhere('source', 'all')
+              ->orWhereNull('source');
+        });
     }
 }

@@ -102,20 +102,28 @@ class ClassificationController extends Controller
         $totalAssignedContent = \App\Models\Content::whereNotNull('classification_id')->count();
         $avgContent = $totalCategories > 0 ? round($totalAssignedContent / $totalCategories, 1) : 0;
 
+        $classificationsList = Classification::orderBy('classification_name', 'asc')->get();
+        $subClassificationsList = OfflineTrainingOption::where('option_type', OfflineOptionService::TYPE_SUB_CLASSIFICATION)
+            ->orderBy('sort_order', 'asc')
+            ->orderBy('value', 'asc')
+            ->get();
+
         return view('main.classification.index', array_merge($optionData, [
-            'activeType'           => $type,
-            'allTypes'             => $allTypes,
-            'primaryTypes'         => $primaryTypes,
-            'secondaryTypes'       => $secondaryTypes,
-            'typeConfig'           => $typeConfig,
-            'parentOptions'        => $parentOptions,
-            'kpiYears'             => $kpiYears,
-            'summaryStats'         => $summaryStats,
-            'classification'       => $classification,
-            'totalCategories'      => $totalCategories,
-            'activeCategories'     => $activeCategories,
-            'totalAssignedContent' => $totalAssignedContent,
-            'avgContent'           => $avgContent,
+            'activeType'             => $type,
+            'allTypes'               => $allTypes,
+            'primaryTypes'           => $primaryTypes,
+            'secondaryTypes'         => $secondaryTypes,
+            'typeConfig'             => $typeConfig,
+            'parentOptions'          => $parentOptions,
+            'kpiYears'               => $kpiYears,
+            'summaryStats'           => $summaryStats,
+            'classificationsList'    => $classificationsList,
+            'subClassificationsList' => $subClassificationsList,
+            'classification'         => $classification,
+            'totalCategories'        => $totalCategories,
+            'activeCategories'       => $activeCategories,
+            'totalAssignedContent'   => $totalAssignedContent,
+            'avgContent'             => $avgContent,
         ]));
     }
 
@@ -256,12 +264,62 @@ class ClassificationController extends Controller
     }
 
     /**
+     * Dedicated API Endpoint: Get sub-classifications for a specific main classification.
+     */
+    public function getSubsByMain(int $mainId): JsonResponse
+    {
+        $subs = $this->optionManager->getSubsByMain($mainId);
+
+        return response()->json([
+            'status'  => 200,
+            'success' => true,
+            'data'    => $subs,
+        ]);
+    }
+
+    /**
      * Dedicated API Endpoint: Get Option details for edit modal.
      */
-    public function getOption(int $id): JsonResponse
+    public function getOption(int $id, Request $request): JsonResponse
     {
-        $option = OfflineTrainingOption::with('parent')->find($id);
+        $optionType = $request->get('option_type');
+
+        if ($optionType === 'classification') {
+            $cls = Classification::find($id);
+            if ($cls) {
+                return response()->json([
+                    'status'  => 200,
+                    'success' => true,
+                    'data'    => [
+                        'id'                  => $cls->id,
+                        'option_type'         => 'classification',
+                        'value'               => $cls->classification_name,
+                        'classification_name' => $cls->classification_name,
+                        'is_active'           => (bool) $cls->is_active,
+                    ],
+                    'usage'   => $this->optionManager->checkClassificationUsage($cls),
+                ]);
+            }
+        }
+
+        $option = OfflineTrainingOption::with(['parent', 'classification'])->find($id);
         if (!$option) {
+            $cls = Classification::find($id);
+            if ($cls) {
+                return response()->json([
+                    'status'  => 200,
+                    'success' => true,
+                    'data'    => [
+                        'id'                  => $cls->id,
+                        'option_type'         => 'classification',
+                        'value'               => $cls->classification_name,
+                        'classification_name' => $cls->classification_name,
+                        'is_active'           => (bool) $cls->is_active,
+                    ],
+                    'usage'   => $this->optionManager->checkClassificationUsage($cls),
+                ]);
+            }
+
             return response()->json([
                 'status'  => 404,
                 'success' => false,
