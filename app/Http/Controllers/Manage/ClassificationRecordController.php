@@ -23,7 +23,8 @@ class ClassificationRecordController extends Controller
     public function index(Request $request, string $classification)
     {
         $resolved = $this->classificationService->resolveClassification($classification, true);
-        $displayName = $resolved['displayName'] ?? (strcasecmp($resolved['name'], 'Audit Isolated Classification') === 0 ? 'Unclassification' : $resolved['name']);
+        $rawName = $resolved['displayName'] ?? (strcasecmp($resolved['name'], 'Audit Isolated Classification') === 0 ? 'Unclassification' : $resolved['name']);
+        $displayName = html_entity_decode($rawName, ENT_QUOTES, 'UTF-8');
         $filterOptions = $this->classificationService->getFilterOptions();
 
         return view('main.record.all.classification', [

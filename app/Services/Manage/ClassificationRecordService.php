@@ -208,39 +208,126 @@ class ClassificationRecordService
                     . '<small class="text-muted text-center fs-7">Requirement: <span class="fw-semibold">' . $req . '</span></small>'
                     . '</div>';
             })
+            ->addColumn('playlist', function ($row) {
+                if ($row->source === 'offline') {
+                    return '<span class="text-muted small">-</span>';
+                }
+
+                // Direct content_users (All Content) displays strictly '-'
+                if ($row->source_type === 'content' && ($row->category ?? '') === 'All Content') {
+                    return '<span class="text-muted small">-</span>';
+                }
+
+                $pTitle = !empty($row->playlist_title) ? $row->playlist_title : null;
+                $pId = !empty($row->playlist_id) ? $row->playlist_id : (!empty($row->trainingplan_id) ? $row->trainingplan_id : null);
+                $pSlug = !empty($row->playlist_slug) ? $row->playlist_slug : null;
+
+                if (!empty($pTitle)) {
+                    $decoded = html_entity_decode($pTitle, ENT_QUOTES, 'UTF-8');
+                    $escaped = htmlspecialchars($decoded, ENT_QUOTES, 'UTF-8');
+                    $url = null;
+                    if (!empty($pId)) {
+                        try {
+                            $url = route('learning.manage.playlist', ['id' => $pId]);
+                        } catch (\Throwable $e) {
+                            $url = null;
+                        }
+                    } elseif (!empty($pSlug)) {
+                        $url = url('/playlist/' . $pSlug);
+                    }
+
+                    if ($url) {
+                        return '<a href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '" class="text-primary fw-semibold" title="' . $escaped . '"><i class="bi bi-collection-play me-1"></i>' . $escaped . '</a>';
+                    }
+                    return '<span class="fw-semibold text-dark"><i class="bi bi-collection-play me-1"></i>' . $escaped . '</span>';
+                }
+
+                return '<span class="text-muted small">-</span>';
+            })
             ->addColumn('type', function ($row) {
-                return htmlspecialchars($row->type ?: '-');
+                if ($row->source === 'offline') {
+                    return '<span class="text-muted small">-</span>';
+                }
+                if (($row->source_type ?? '') === 'playlist' || ($row->type ?? '') === 'Playlist') {
+                    return 'Playlist';
+                }
+                $rawType = trim((string) ($row->type ?? ''));
+                if ($rawType === '' || $rawType === '-') {
+                    return 'Document';
+                }
+                $lower = strtolower($rawType);
+                if ($lower === 'video' || $lower === 'youtube') {
+                    return 'Video';
+                }
+                if ($lower === 'mooc') {
+                    return 'MOOC';
+                }
+                if ($lower === 'document') {
+                    return 'Document';
+                }
+                return htmlspecialchars(ucfirst($rawType), ENT_QUOTES, 'UTF-8');
             })
             ->addColumn('category', function ($row) {
-                return htmlspecialchars($row->category ?: '-');
+                if ($row->source === 'offline' || ($row->category ?? '') === 'Non KP-OWL') {
+                    return '<span class="badge bg-secondary-lt text-secondary">Non KP-OWL</span>';
+                }
+                if (($row->category ?? '') === 'Content Playlist' || ($row->source_type ?? '') === 'playlist_content') {
+                    return '<span class="badge bg-purple-lt text-purple">Content Playlist</span>';
+                }
+                if (($row->source_type ?? '') === 'playlist' || ($row->category ?? '') === 'Playlist') {
+                    return '<span class="badge bg-purple-lt text-purple">Playlist</span>';
+                }
+                return '<span class="badge bg-azure-lt text-azure">All Content</span>';
             })
             ->addColumn('main_classification', function ($row) {
-                return htmlspecialchars($row->classification ?: 'Unclassified');
+                $raw = $row->classification ?: 'Unclassified';
+                $decoded = html_entity_decode($raw, ENT_QUOTES, 'UTF-8');
+                return htmlspecialchars($decoded, ENT_QUOTES, 'UTF-8');
             })
             ->addColumn('sub_classification', function ($row) {
-                return htmlspecialchars($row->sub_classification ?: '-');
+                $sub = $row->sub_classification ?? '-';
+                if (!$sub || $sub === '-' || trim((string)$sub) === '') {
+                    return '<span class="text-muted small">-</span>';
+                }
+                $decoded = html_entity_decode($sub, ENT_QUOTES, 'UTF-8');
+                return htmlspecialchars($decoded, ENT_QUOTES, 'UTF-8');
             })
             ->addColumn('delivery_method', function ($row) {
-                return $row->source === 'online' ? 'Online' : htmlspecialchars($row->delivery_method ?: 'Offline');
+                if ($row->source === 'online') {
+                    return 'Online';
+                }
+                $deliv = !empty($row->delivery_method) ? trim((string)$row->delivery_method) : 'Offline';
+                return htmlspecialchars($deliv, ENT_QUOTES, 'UTF-8');
             })
             ->addColumn('sub_delivery_method', function ($row) {
                 if ($row->source === 'online') {
-                    return ($row->source_type ?? '') === 'playlist' ? 'Playlist / Path' : 'Self-Paced / LMS';
+                    return 'E-learning';
                 }
-                $sub = $row->sub_delivery_method ?? $row->training_type ?? $row->type ?? null;
-                if (!$sub || $sub === '-' || strtolower(trim((string) $sub)) === 'offline') {
-                    $rawDeliv = trim((string) ($row->delivery_method ?? ''));
-                    if ($rawDeliv !== '' && strtolower($rawDeliv) !== 'offline') {
-                        $sub = $rawDeliv;
-                    }
+                $sub = !empty($row->sub_delivery_method) ? trim((string) $row->sub_delivery_method) : '-';
+                if ($sub === '-' || $sub === '') {
+                    return '<span class="text-muted small">-</span>';
                 }
-                return htmlspecialchars($sub ?: '-');
+                return htmlspecialchars($sub, ENT_QUOTES, 'UTF-8');
             })
             ->addColumn('provider', function ($row) {
                 if ($row->source === 'online') {
                     return '<span class="badge bg-blue-lt text-blue">Internal</span>';
                 }
-                return htmlspecialchars($row->provider ?: '-');
+                $p = !empty($row->provider) ? trim((string) $row->provider) : '-';
+                if ($p === '-' || $p === '') {
+                    return '<span class="text-muted small">-</span>';
+                }
+                return htmlspecialchars($p, ENT_QUOTES, 'UTF-8');
+            })
+            ->addColumn('sub_provider', function ($row) {
+                if ($row->source === 'online') {
+                    return 'Internal-Training Team';
+                }
+                $sp = !empty($row->sub_provider) ? trim((string) $row->sub_provider) : '-';
+                if ($sp === '-' || $sp === '') {
+                    return '<span class="text-muted small">-</span>';
+                }
+                return htmlspecialchars($sp, ENT_QUOTES, 'UTF-8');
             })
             ->addColumn('provider_name', function ($row) {
                 if ($row->source === 'online') {
@@ -435,7 +522,15 @@ class ClassificationRecordService
                 'employee_name',
                 'course_title',
                 'learning_title',
+                'playlist',
+                'type',
+                'category',
+                'main_classification',
+                'sub_classification',
+                'delivery_method',
+                'sub_delivery_method',
                 'provider',
+                'sub_provider',
                 'learning_hours',
                 'progress_bar',
                 'progress_percent',
