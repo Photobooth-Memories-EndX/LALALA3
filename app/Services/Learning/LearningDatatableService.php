@@ -936,6 +936,7 @@ class LearningDatatableService
                 'employee_name',
                 'learning_title',
                 'course_title',
+                'playlist',
                 'sub_course_title',
                 'type_badge',
                 'type',

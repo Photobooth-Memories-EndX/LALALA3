@@ -243,4 +243,42 @@ class ComprehensiveRecordGetPostAuditTest extends TestCase
         $resp3 = $this->actingAs($this->admin)->getJson($profUrl . '?draw=1&start=0&length=5');
         $resp3->assertStatus(200)->assertJsonStructure(['draw', 'recordsTotal', 'recordsFiltered', 'data']);
     }
+
+    /**
+     * Test 9: Online classification datatable playlist column renders unescaped HTML links and icons.
+     */
+    public function test_online_classification_playlist_renders_unescaped_html(): void
+    {
+        $url = route('manage.record.online.classification.datatable', 'basic-common-duties');
+        $resp = $this->actingAs($this->admin)->postJson($url, [
+            'classification'      => 'basic-common-duties',
+            'classification_slug' => 'basic-common-duties',
+            'slug'                => 'basic-common-duties',
+            'category'            => 'playlist',
+            'draw'                => 1,
+            'start'               => 0,
+            'length'              => 10,
+        ]);
+
+        $resp->assertStatus(200)
+            ->assertJsonStructure(['draw', 'recordsTotal', 'recordsFiltered', 'data']);
+
+        $data = $resp->json('data');
+        $this->assertNotEmpty($data);
+
+        // Find a row with a playlist link
+        $foundLink = false;
+        foreach ($data as $row) {
+            $playlistHtml = $row['playlist'] ?? '';
+            if (strpos($playlistHtml, '<a href=') !== false) {
+                $foundLink = true;
+                $this->assertStringContainsString('class="text-primary fw-semibold"', $playlistHtml);
+                $this->assertStringContainsString('<i class="bi bi-collection-play me-1"></i>', $playlistHtml);
+                $this->assertStringNotContainsString('&lt;a', $playlistHtml);
+                $this->assertStringNotContainsString('&lt;i', $playlistHtml);
+                break;
+            }
+        }
+        $this->assertTrue($foundLink, 'Should find at least one online playlist record with an unescaped anchor tag.');
+    }
 }
