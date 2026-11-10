@@ -2621,6 +2621,22 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
 
         $totalRecords = (clone $query)->count();
 
+        $tpdRows = DB::table('trainingplandetail as tpd')
+            ->join('trainingplan as tp', 'tp.id', '=', 'tpd.trainingplan_id')
+            ->whereNull('tp.deleted_at')
+            ->orderBy('tpd.id', 'asc')
+            ->select('tpd.content_id', 'tp.id as tp_id', 'tp.title as tp_title')
+            ->get();
+        $tpdCache = [];
+        foreach ($tpdRows as $tpd) {
+            if (!isset($tpdCache[$tpd->content_id])) {
+                $tpdCache[$tpd->content_id] = [
+                    'id'    => (int) $tpd->tp_id,
+                    'title' => (string) $tpd->tp_title,
+                ];
+            }
+        }
+
         $dataTable = DataTables::of($query)
             ->setTotalRecords($totalRecords)
             ->setFilteredRecords($totalRecords);

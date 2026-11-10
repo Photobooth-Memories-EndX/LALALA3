@@ -901,8 +901,12 @@
             dom: 't',
             ajax: {
                 url: datatableUrl,
-                type: 'GET',
+                type: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
                 data: function (d) {
+                    d._token = $('meta[name="csrf-token"]').attr('content');
                     d.classification = classificationSlug;
                     d.employee_id = ($('#offline-employee-input').val() || '').trim();
                     d.course_name = ($('#offline-course-input').val() || '').trim();

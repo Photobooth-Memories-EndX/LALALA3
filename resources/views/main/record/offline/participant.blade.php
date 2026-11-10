@@ -1354,8 +1354,12 @@
                 dom: 't',
                 ajax: {
                     url: datatableUrl,
-                    type: 'GET',
+                    type: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
                     data: function(d) {
+                        d._token = $('meta[name="csrf-token"]').attr('content');
                         // Quick Filters
                         d.course_name = ($('#participant-course-input').val() || '').trim();
                         d.type = $('#participant-type-select').val();

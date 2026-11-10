@@ -708,8 +708,12 @@
                 dom: '<"top">rt<"bottom d-flex justify-content-between align-items-center mt-3"l ip><"clear">',
                 ajax: {
                     url: datatableUrl,
-                    type: 'GET',
+                    type: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
                     data: function(d) {
+                        d._token = $('meta[name="csrf-token"]').attr('content');
                         d.learning_title = $('#participant-course-input').val().trim();
                         d.source = $('#participant-source-select').val();
                         d.status = $('#participant-status-select').val();
