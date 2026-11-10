@@ -297,33 +297,54 @@
                                     <th class="text-center align-middle whitespace-nowrap px-3" style="width: 1%;">Source</th>
                                     <th style="min-width: 110px;">Employee ID</th>
                                     <th style="min-width: 160px;">Employee Name</th>
+                                    <th style="min-width: 90px;">Grade</th>
+                                    <th style="min-width: 130px;">Job Position</th>
                                     <th style="min-width: 130px;">Team</th>
                                     <th style="min-width: 140px;">Department</th>
                                     <th style="min-width: 130px;">Company</th>
                                     <th class="text-center" style="min-width: 220px; text-align: center;">Course Title</th>
+                                    <th style="min-width: 150px;">Sub Course Title</th>
                                     <th style="min-width: 100px;">Type</th>
                                     <th style="min-width: 110px;">Category</th>
+                                    <th style="min-width: 90px;">Level</th>
+                                    <th style="min-width: 90px;">Batch</th>
                                     <th style="min-width: 140px;">Main Classification</th>
                                     <th style="min-width: 140px;">Sub Classification</th>
                                     <th style="min-width: 120px;">Delivery Method</th>
                                     <th style="min-width: 130px;">Sub Delivery Method</th>
+                                    <th style="min-width: 110px;">Provider</th>
+                                    <th style="min-width: 110px;">Sub Provider</th>
                                     <th style="min-width: 130px;">Provider Name</th>
                                     <th style="min-width: 120px;">Venue</th>
+                                    <th style="min-width: 130px;">Instructor</th>
                                     <th style="min-width: 110px;">Course Duration</th>
                                     <th style="min-width: 130px;">Total Recognized Duration</th>
-
                                     <th style="min-width: 110px;">Learning Hours</th>
                                     <th style="min-width: 110px;">% Progress</th>
                                     <th style="min-width: 110px;">Progress Status</th>
-                                    <th style="min-width: 140px;">Date Time</th>
+                                    <th style="min-width: 110px;">Start Date</th>
+                                    <th style="min-width: 110px;">End Date</th>
+                                    <th style="min-width: 100px;">Start Time</th>
+                                    <th style="min-width: 100px;">End Time</th>
                                     <th style="min-width: 110px;">Record Month</th>
                                     <th style="min-width: 110px;">Requirement</th>
                                     <th style="min-width: 100px;">Attendance</th>
+                                    <th style="min-width: 130px;">Attendance Reason</th>
+                                    <th style="min-width: 100px;">Bond Status</th>
+                                    <th style="min-width: 110px;">Bond Duration</th>
+                                    <th style="min-width: 110px;">Bond End Date</th>
+                                    <th style="min-width: 120px;">Bond Amount</th>
                                     <th style="min-width: 120px;">Score (L1) - Course</th>
                                     <th style="min-width: 90px;">Score (L2)</th>
+                                    <th style="min-width: 90px;">L2 Status</th>
                                     <th style="min-width: 90px;">Score (L3)</th>
-                                    <th style="min-width: 130px;">Person In Charge (PIC)</th>
-                                    <th style="min-width: 140px;">TOTAL ENGAGEMENT DURATION</th>
+                                    <th style="min-width: 90px;">L3 Status</th>
+                                    <th style="min-width: 130px;">Certificate Availability</th>
+                                    <th style="min-width: 140px;">Certificate Institution</th>
+                                    <th style="min-width: 120px;">Certificate Issued Date</th>
+                                    <th style="min-width: 120px;">Certificate Expired Date</th>
+                                    <th style="min-width: 130px;">Person in Charge (PIC)</th>
+                                    <th style="min-width: 140px;">Total Engagement Time (LH)</th>
                                     <th class="text-end" style="width: 80px;">ACTION</th>
                                 </tr>
                             </thead>
@@ -725,6 +746,7 @@
                     }
                 },
                 columns: [
+                    // 1. NO
                     {
                         data: 'DT_RowIndex',
                         name: 'DT_RowIndex',
@@ -732,6 +754,7 @@
                         searchable: false,
                         className: 'text-muted fw-semibold text-center'
                     },
+                    // 2. Source
                     {
                         data: 'source_badge',
                         name: 'source',
@@ -739,36 +762,56 @@
                         width: '1%',
                         className: 'text-center align-middle whitespace-nowrap px-3'
                     },
+                    // 3. Employee ID
                     {
                         data: 'employee_id',
                         name: 'employee_id',
                         orderable: true,
                         defaultContent: '-'
                     },
+                    // 4. Employee Name
                     {
                         data: 'employee_name',
                         name: 'employee_name',
                         orderable: true,
                         defaultContent: '-'
                     },
+                    // 5. Grade
+                    {
+                        data: 'grade',
+                        name: 'grade',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    // 6. Job Position
+                    {
+                        data: 'job_position',
+                        name: 'job_position',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    // 7. Team
                     {
                         data: 'team',
                         name: 'team',
                         orderable: true,
                         defaultContent: '-'
                     },
+                    // 8. Department
                     {
                         data: 'department',
                         name: 'department',
                         orderable: true,
                         defaultContent: '-'
                     },
+                    // 9. Company
                     {
                         data: 'company',
                         name: 'company',
                         orderable: true,
                         defaultContent: '-'
                     },
+                    // 10. Course Title
                     {
                         data: 'course_title',
                         name: 'learning_title',
@@ -792,100 +835,180 @@
                             </div>`;
                         }
                     },
+                    // 11. Sub Course Title
+                    {
+                        data: 'sub_course_title',
+                        name: 'sub_course_name',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    // 12. Type
                     {
                         data: 'type',
                         name: 'type',
                         orderable: true,
                         defaultContent: '-'
                     },
+                    // 13. Category
                     {
                         data: 'category',
                         name: 'category',
                         orderable: true,
                         defaultContent: '-'
                     },
+                    // 14. Level
+                    {
+                        data: 'level',
+                        name: 'level',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    // 15. Batch
+                    {
+                        data: 'batch',
+                        name: 'batch',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    // 16. Main Classification
                     {
                         data: 'main_classification',
                         name: 'classification',
                         orderable: true,
                         defaultContent: '-'
                     },
+                    // 17. Sub Classification
                     {
                         data: 'sub_classification',
                         name: 'sub_classification',
                         orderable: true,
                         defaultContent: '-'
                     },
+                    // 18. Delivery Method
                     {
                         data: 'delivery_method',
                         name: 'delivery_method',
                         orderable: true,
                         defaultContent: '-'
                     },
+                    // 19. Sub Delivery Method
                     {
                         data: 'sub_delivery_method',
                         name: 'sub_delivery_method',
                         orderable: true,
                         defaultContent: '-'
                     },
+                    // 20. Provider
+                    {
+                        data: 'provider',
+                        name: 'provider',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    // 21. Sub Provider
+                    {
+                        data: 'sub_provider',
+                        name: 'sub_provider',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    // 22. Provider Name
                     {
                         data: 'provider_name',
                         name: 'provider_name',
                         orderable: true,
                         defaultContent: '-'
                     },
+                    // 23. Venue
                     {
                         data: 'venue',
                         name: 'venue',
                         orderable: true,
                         defaultContent: '-'
                     },
+                    // 24. Instructor
+                    {
+                        data: 'instructor',
+                        name: 'instructor',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    // 25. Course Duration
                     {
                         data: 'course_duration',
                         name: 'duration_seconds',
                         orderable: true,
                         defaultContent: '-'
                     },
+                    // 26. Total Recognized Duration
                     {
                         data: 'total_recognized_duration',
                         name: 'recognized_duration_seconds',
                         orderable: true,
-
                         defaultContent: '-'
                     },
+                    // 27. Learning Hours
                     {
                         data: 'learning_hours',
                         name: 'learning_hours',
                         orderable: true,
                         defaultContent: '-'
                     },
+                    // 28. % Progress
                     {
                         data: 'progress_percent',
                         name: 'progress',
                         orderable: true
                     },
+                    // 29. Progress Status
                     {
                         data: 'progress_status',
                         name: 'status',
                         orderable: true
                     },
+                    // 30. Start Date
                     {
-                        data: 'date_time_merged',
+                        data: 'start_date',
                         name: 'start_date',
-                        orderable: true
+                        orderable: true,
+                        defaultContent: '-'
                     },
+                    // 31. End Date
+                    {
+                        data: 'end_date',
+                        name: 'finish_date',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    // 32. Start Time
+                    {
+                        data: 'start_time',
+                        name: 'start_time',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    // 33. End Time
+                    {
+                        data: 'end_time',
+                        name: 'end_time',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    // 34. Record Month
                     {
                         data: 'record_month',
                         name: 'record_month',
                         orderable: false,
                         defaultContent: '-'
                     },
+                    // 35. Requirement
                     {
                         data: 'requirement',
                         name: 'requirement',
                         orderable: true,
                         defaultContent: '-'
                     },
+                    // 36. Attendance
                     {
                         data: 'attendance',
                         name: 'attendance',
@@ -914,36 +1037,119 @@
                             return '<span class="badge bg-danger-lt text-danger fw-bold px-2 py-1">No</span>';
                         }
                     },
+                    // 37. Attendance Reason
+                    {
+                        data: 'attendance_reason',
+                        name: 'attendance_reason',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    // 38. Bond Status
+                    {
+                        data: 'bond_status',
+                        name: 'bond_status',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    // 39. Bond Duration
+                    {
+                        data: 'bond_duration',
+                        name: 'bond_duration',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    // 40. Bond End Date
+                    {
+                        data: 'bond_end_date',
+                        name: 'bond_end_date',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    // 41. Bond Amount
+                    {
+                        data: 'bond_amount',
+                        name: 'bond_amount',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    // 42. Score (L1) - Course
                     {
                         data: 'score_l1',
                         name: 'score_l1',
                         orderable: true,
                         defaultContent: '-'
                     },
+                    // 43. Score (L2)
                     {
                         data: 'score_l2',
                         name: 'score_l2',
                         orderable: true,
                         defaultContent: '-'
                     },
+                    // 44. L2 Status
+                    {
+                        data: 'l2_status',
+                        name: 'l2_verbal',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    // 45. Score (L3)
                     {
                         data: 'score_l3',
                         name: 'score_l3',
                         orderable: true,
                         defaultContent: '-'
                     },
+                    // 46. L3 Status
+                    {
+                        data: 'l3_status',
+                        name: 'l3_verbal',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    // 47. Certificate Availability
+                    {
+                        data: 'certificate_availability',
+                        name: 'certificate',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    // 48. Certificate Institution
+                    {
+                        data: 'certificate_institution',
+                        name: 'certificate_institution',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    // 49. Certificate Issued Date
+                    {
+                        data: 'certificate_issued_date',
+                        name: 'certificate_issued_date',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    // 50. Certificate Expired Date
+                    {
+                        data: 'certificate_expired_date',
+                        name: 'certificate_expired_date',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    // 51. Person in Charge (PIC)
                     {
                         data: 'pic',
                         name: 'pic',
                         orderable: true,
                         defaultContent: '-'
                     },
+                    // 52. Total Engagement Time (LH)
                     {
-                        data: 'total_engagement_duration',
-                        name: 'total_engagement_duration',
+                        data: 'total_engagement_time',
+                        name: 'total_engagement_time',
                         orderable: true,
                         defaultContent: '-'
                     },
+                    // 53. ACTION
                     {
                         data: 'action',
                         name: 'action',

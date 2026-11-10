@@ -2264,6 +2264,129 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
             ->addColumn('job_position', function ($row) {
                 return htmlspecialchars($row->job_position ?: '-');
             })
+            ->addColumn('sub_course_title', function ($row) {
+                return htmlspecialchars($row->sub_course_name ?: '-');
+            })
+            ->addColumn('level', function ($row) {
+                return htmlspecialchars($row->level ?: '-');
+            })
+            ->addColumn('batch', function ($row) {
+                return htmlspecialchars($row->batch ?: '-');
+            })
+            ->addColumn('sub_classification', function ($row) {
+                return htmlspecialchars($row->sub_classification ?: '-');
+            })
+            ->addColumn('delivery_method', function ($row) {
+                $sourceRaw = strtolower(trim((string) ($row->source ?? '')));
+                $isKpOwl = in_array($sourceRaw, ['online', 'kp owl', 'kp-owl', 'owl'], true);
+                return $isKpOwl ? 'Online' : 'Offline';
+            })
+            ->addColumn('sub_delivery_method', function ($row) {
+                $sourceRaw = strtolower(trim((string) ($row->source ?? '')));
+                $isKpOwl = in_array($sourceRaw, ['online', 'kp owl', 'kp-owl', 'owl'], true);
+                if ($isKpOwl) {
+                    return 'KP OWL';
+                }
+                $sub = $row->sub_delivery_method ?? $row->training_type ?? $row->type ?? null;
+                if (!$sub || $sub === '-' || strtolower(trim((string) $sub)) === 'offline') {
+                    $rawDm = trim((string) ($row->delivery_method ?? ''));
+                    if ($rawDm !== '' && strtolower($rawDm) !== 'offline') {
+                        $sub = $rawDm;
+                    }
+                }
+                return htmlspecialchars($sub ?: '-');
+            })
+            ->addColumn('provider', function ($row) {
+                $sourceRaw = strtolower(trim((string) ($row->source ?? '')));
+                $isKpOwl = in_array($sourceRaw, ['online', 'kp owl', 'kp-owl', 'owl'], true);
+                return $isKpOwl ? 'Internal' : htmlspecialchars($row->provider ?: '-');
+            })
+            ->addColumn('sub_provider', function ($row) {
+                $sourceRaw = strtolower(trim((string) ($row->source ?? '')));
+                $isKpOwl = in_array($sourceRaw, ['online', 'kp owl', 'kp-owl', 'owl'], true);
+                return $isKpOwl ? '-' : htmlspecialchars($row->sub_provider ?: '-');
+            })
+            ->addColumn('provider_name', function ($row) {
+                $sourceRaw = strtolower(trim((string) ($row->source ?? '')));
+                $isKpOwl = in_array($sourceRaw, ['online', 'kp owl', 'kp-owl', 'owl'], true);
+                return $isKpOwl ? 'KP-OWL' : htmlspecialchars($row->provider_name ?: '-');
+            })
+            ->addColumn('venue', function ($row) {
+                $sourceRaw = strtolower(trim((string) ($row->source ?? '')));
+                $isKpOwl = in_array($sourceRaw, ['online', 'kp owl', 'kp-owl', 'owl'], true);
+                return $isKpOwl ? 'Online LMS' : htmlspecialchars($row->venue ?: '-');
+            })
+            ->addColumn('instructor', function ($row) {
+                return htmlspecialchars($row->instructor ?: '-');
+            })
+            ->addColumn('start_date', function ($row) {
+                return !empty($row->start_date) ? date('Y-m-d', strtotime($row->start_date)) : '-';
+            })
+            ->addColumn('end_date', function ($row) {
+                $d = $row->end_date ?? ($row->finish_date ?? null);
+                return !empty($d) ? date('Y-m-d', strtotime($d)) : '-';
+            })
+            ->addColumn('start_time', function ($row) {
+                return !empty($row->start_time) ? date('H:i:s', strtotime($row->start_time)) : '-';
+            })
+            ->addColumn('end_time', function ($row) {
+                return !empty($row->end_time) ? date('H:i:s', strtotime($row->end_time)) : '-';
+            })
+            ->addColumn('attendance_reason', function ($row) {
+                return htmlspecialchars($row->attendance_reason ?: '-');
+            })
+            ->addColumn('bond_status', function ($row) {
+                return htmlspecialchars($row->bond_status ?: 'No');
+            })
+            ->addColumn('bond_duration', function ($row) {
+                return !empty($row->bond_duration) ? htmlspecialchars($row->bond_duration . ' Months') : '-';
+            })
+            ->addColumn('bond_end_date', function ($row) {
+                return !empty($row->bond_end_date) ? date('Y-m-d', strtotime($row->bond_end_date)) : '-';
+            })
+            ->addColumn('bond_amount', function ($row) {
+                $idr = $row->bond_amount_idr ?? $row->bond_amount ?? null;
+                return ($idr !== null && (float) $idr > 0) ? 'Rp ' . number_format((float) $idr, 0, ',', '.') : '-';
+            })
+            ->addColumn('l2_status', function ($row) {
+                if (!empty($row->l2_verbal) && $row->l2_verbal !== '-') {
+                    return htmlspecialchars($row->l2_verbal);
+                }
+                $s2 = is_numeric($row->assessment_score) ? (float) $row->assessment_score : (is_numeric($row->l2_numerical) ? (float) $row->l2_numerical : null);
+                if ($s2 !== null) {
+                    return $s2 >= 70 ? 'Passed' : 'Failed';
+                }
+                return '-';
+            })
+            ->addColumn('l3_status', function ($row) {
+                return htmlspecialchars($row->l3_verbal ?: '-');
+            })
+            ->addColumn('certificate_availability', function ($row) {
+                $isFinished = ((float) ($row->progress ?? 0) >= 100 || ($row->status ?? '') === 'Finished' || ($row->finish ?? '') === '1');
+                $hasCert = (!empty($row->certificate) && $row->certificate !== '-') || $isFinished;
+                return $hasCert ? 'Available' : '-';
+            })
+            ->addColumn('certificate_institution', function ($row) {
+                if ($row->source === 'offline') {
+                    return htmlspecialchars($row->certificate ?: '-');
+                }
+                $isFinished = ((float) ($row->progress ?? 0) >= 100 || ($row->status ?? '') === 'Finished' || ($row->finish ?? '') === '1');
+                return $isFinished ? 'PT Krakatau Posco' : '-';
+            })
+            ->addColumn('certificate_issued_date', function ($row) {
+                if ($row->source === 'offline') {
+                    return !empty($row->certificate_issued_date) ? date('Y-m-d', strtotime($row->certificate_issued_date)) : '-';
+                }
+                $d = $row->finish_date ?? ($row->start_date ?? null);
+                $isFinished = ((float) ($row->progress ?? 0) >= 100 || ($row->status ?? '') === 'Finished' || ($row->finish ?? '') === '1');
+                return ($isFinished && !empty($d) && $d !== '-') ? date('Y-m-d', strtotime($d)) : '-';
+            })
+            ->addColumn('certificate_expired_date', function ($row) {
+                if ($row->source === 'offline') {
+                    return !empty($row->certificate_expired_date) ? date('Y-m-d', strtotime($row->certificate_expired_date)) : '-';
+                }
+                return '-';
+            })
             ->addColumn('progress_percent', function ($row) {
                 $progress = max(0, min(100, round((float) ($row->progress ?? 0))));
                 $color = $progress >= 100 ? 'bg-success' : ($progress > 0 ? 'bg-warning' : 'bg-secondary');
@@ -2824,6 +2947,129 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
             })
             ->addColumn('job_position', function ($row) {
                 return htmlspecialchars($row->job_position ?: '-');
+            })
+            ->addColumn('sub_course_title', function ($row) {
+                return htmlspecialchars($row->sub_course_name ?: '-');
+            })
+            ->addColumn('level', function ($row) {
+                return htmlspecialchars($row->level ?: '-');
+            })
+            ->addColumn('batch', function ($row) {
+                return htmlspecialchars($row->batch ?: '-');
+            })
+            ->addColumn('sub_classification', function ($row) {
+                return htmlspecialchars($row->sub_classification ?: '-');
+            })
+            ->addColumn('delivery_method', function ($row) {
+                $sourceRaw = strtolower(trim((string) ($row->source ?? '')));
+                $isKpOwl = in_array($sourceRaw, ['online', 'kp owl', 'kp-owl', 'owl'], true);
+                return $isKpOwl ? 'Online' : 'Offline';
+            })
+            ->addColumn('sub_delivery_method', function ($row) {
+                $sourceRaw = strtolower(trim((string) ($row->source ?? '')));
+                $isKpOwl = in_array($sourceRaw, ['online', 'kp owl', 'kp-owl', 'owl'], true);
+                if ($isKpOwl) {
+                    return 'KP OWL';
+                }
+                $sub = $row->sub_delivery_method ?? $row->training_type ?? $row->type ?? null;
+                if (!$sub || $sub === '-' || strtolower(trim((string) $sub)) === 'offline') {
+                    $rawDm = trim((string) ($row->delivery_method ?? ''));
+                    if ($rawDm !== '' && strtolower($rawDm) !== 'offline') {
+                        $sub = $rawDm;
+                    }
+                }
+                return htmlspecialchars($sub ?: '-');
+            })
+            ->addColumn('provider', function ($row) {
+                $sourceRaw = strtolower(trim((string) ($row->source ?? '')));
+                $isKpOwl = in_array($sourceRaw, ['online', 'kp owl', 'kp-owl', 'owl'], true);
+                return $isKpOwl ? 'Internal' : htmlspecialchars($row->provider ?: '-');
+            })
+            ->addColumn('sub_provider', function ($row) {
+                $sourceRaw = strtolower(trim((string) ($row->source ?? '')));
+                $isKpOwl = in_array($sourceRaw, ['online', 'kp owl', 'kp-owl', 'owl'], true);
+                return $isKpOwl ? '-' : htmlspecialchars($row->sub_provider ?: '-');
+            })
+            ->addColumn('provider_name', function ($row) {
+                $sourceRaw = strtolower(trim((string) ($row->source ?? '')));
+                $isKpOwl = in_array($sourceRaw, ['online', 'kp owl', 'kp-owl', 'owl'], true);
+                return $isKpOwl ? 'KP-OWL' : htmlspecialchars($row->provider_name ?: '-');
+            })
+            ->addColumn('venue', function ($row) {
+                $sourceRaw = strtolower(trim((string) ($row->source ?? '')));
+                $isKpOwl = in_array($sourceRaw, ['online', 'kp owl', 'kp-owl', 'owl'], true);
+                return $isKpOwl ? 'Online LMS' : htmlspecialchars($row->venue ?: '-');
+            })
+            ->addColumn('instructor', function ($row) {
+                return htmlspecialchars($row->instructor ?: '-');
+            })
+            ->addColumn('start_date', function ($row) {
+                return !empty($row->start_date) ? date('Y-m-d', strtotime($row->start_date)) : '-';
+            })
+            ->addColumn('end_date', function ($row) {
+                $d = $row->end_date ?? ($row->finish_date ?? null);
+                return !empty($d) ? date('Y-m-d', strtotime($d)) : '-';
+            })
+            ->addColumn('start_time', function ($row) {
+                return !empty($row->start_time) ? date('H:i:s', strtotime($row->start_time)) : '-';
+            })
+            ->addColumn('end_time', function ($row) {
+                return !empty($row->end_time) ? date('H:i:s', strtotime($row->end_time)) : '-';
+            })
+            ->addColumn('attendance_reason', function ($row) {
+                return htmlspecialchars($row->attendance_reason ?: '-');
+            })
+            ->addColumn('bond_status', function ($row) {
+                return htmlspecialchars($row->bond_status ?: 'No');
+            })
+            ->addColumn('bond_duration', function ($row) {
+                return !empty($row->bond_duration) ? htmlspecialchars($row->bond_duration . ' Months') : '-';
+            })
+            ->addColumn('bond_end_date', function ($row) {
+                return !empty($row->bond_end_date) ? date('Y-m-d', strtotime($row->bond_end_date)) : '-';
+            })
+            ->addColumn('bond_amount', function ($row) {
+                $idr = $row->bond_amount_idr ?? $row->bond_amount ?? null;
+                return ($idr !== null && (float) $idr > 0) ? 'Rp ' . number_format((float) $idr, 0, ',', '.') : '-';
+            })
+            ->addColumn('l2_status', function ($row) {
+                if (!empty($row->l2_verbal) && $row->l2_verbal !== '-') {
+                    return htmlspecialchars($row->l2_verbal);
+                }
+                $s2 = is_numeric($row->assessment_score) ? (float) $row->assessment_score : (is_numeric($row->l2_numerical) ? (float) $row->l2_numerical : null);
+                if ($s2 !== null) {
+                    return $s2 >= 70 ? 'Passed' : 'Failed';
+                }
+                return '-';
+            })
+            ->addColumn('l3_status', function ($row) {
+                return htmlspecialchars($row->l3_verbal ?: '-');
+            })
+            ->addColumn('certificate_availability', function ($row) {
+                $isFinished = ((float) ($row->progress ?? 0) >= 100 || ($row->status ?? '') === 'Finished' || ($row->finish ?? '') === '1');
+                $hasCert = (!empty($row->certificate) && $row->certificate !== '-') || $isFinished;
+                return $hasCert ? 'Available' : '-';
+            })
+            ->addColumn('certificate_institution', function ($row) {
+                if ($row->source === 'offline') {
+                    return htmlspecialchars($row->certificate ?: '-');
+                }
+                $isFinished = ((float) ($row->progress ?? 0) >= 100 || ($row->status ?? '') === 'Finished' || ($row->finish ?? '') === '1');
+                return $isFinished ? 'PT Krakatau Posco' : '-';
+            })
+            ->addColumn('certificate_issued_date', function ($row) {
+                if ($row->source === 'offline') {
+                    return !empty($row->certificate_issued_date) ? date('Y-m-d', strtotime($row->certificate_issued_date)) : '-';
+                }
+                $d = $row->finish_date ?? ($row->start_date ?? null);
+                $isFinished = ((float) ($row->progress ?? 0) >= 100 || ($row->status ?? '') === 'Finished' || ($row->finish ?? '') === '1');
+                return ($isFinished && !empty($d) && $d !== '-') ? date('Y-m-d', strtotime($d)) : '-';
+            })
+            ->addColumn('certificate_expired_date', function ($row) {
+                if ($row->source === 'offline') {
+                    return !empty($row->certificate_expired_date) ? date('Y-m-d', strtotime($row->certificate_expired_date)) : '-';
+                }
+                return '-';
             })
             ->addColumn('progress_percent', function ($row) {
                 $progress = max(0, min(100, round((float) ($row->progress ?? 0))));
