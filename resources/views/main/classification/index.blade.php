@@ -374,6 +374,11 @@
                         <span class="badge bg-light text-muted border px-2 py-1">
                             {{ count($items) }} row(s) displayed
                         </span>
+                        <a href="{{ route('manage.classification.main.index') }}" 
+                           class="btn btn-outline-secondary btn-sm rounded-3 px-3 fw-semibold"
+                           title="Manage records directly in classification table">
+                            <i class="ti ti-database me-1"></i>Main Classification Table
+                        </a>
                         <button type="button" 
                                 class="btn btn-outline-primary btn-sm rounded-3 px-3 fw-semibold" 
                                 data-bs-toggle="modal" 

@@ -395,6 +395,14 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
             Route::get('parents/{type}', [ClassificationController::class, 'getParentOptions'])->name('parents');
         });
 
+        // Dedicated Main Classification Management Page (Table: classification)
+        Route::get('classification/classification', [ClassificationController::class, 'mainClassificationIndex'])->name('manage.classification.main.index');
+        Route::post('classification/classification', [ClassificationController::class, 'storeMainClassification'])->name('manage.classification.main.store');
+        Route::get('classification/classification/{id}/usage', [ClassificationController::class, 'checkMainClassificationUsage'])->name('manage.classification.main.usage');
+        Route::get('classification/classification/{id}', [ClassificationController::class, 'getMainClassification'])->name('manage.classification.main.show');
+        Route::put('classification/classification/{id}', [ClassificationController::class, 'updateMainClassification'])->name('manage.classification.main.update');
+        Route::delete('classification/classification/{id}', [ClassificationController::class, 'destroyMainClassification'])->name('manage.classification.main.destroy');
+
         Route::resource('classification', ClassificationController::class)->names([
             'index' => 'manage.classification.index',
             'create' => 'manage.classification.create',

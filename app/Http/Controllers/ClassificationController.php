@@ -8,6 +8,7 @@ use App\Services\Record\OfflineOptionService;
 use App\Services\Record\TrainingOptionManagementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class ClassificationController extends Controller
@@ -455,5 +456,264 @@ class ClassificationController extends Controller
             'success' => true,
             'data'    => $parents,
         ]);
+    }
+
+    /**
+     * Dedicated Main Classification Management Page (Table: classification).
+     * URL: /manage/classification/classification
+     */
+    public function mainClassificationIndex(Request $request)
+    {
+        $search = trim((string) ($request->get('q') ?? $request->get('search') ?? ''));
+        $status = $request->get('status');
+        $perPage = (int) $request->get('entries', 25);
+        if (!in_array($perPage, [10, 25, 50, 100], true)) {
+            $perPage = 25;
+        }
+
+        $query = Classification::query();
+
+        if ($search !== '') {
+            $searchLower = mb_strtolower($search);
+            $query->where(function ($q) use ($search, $searchLower) {
+                $q->where('classification_name', 'LIKE', "%{$search}%")
+                  ->orWhere('slug', 'LIKE', "%{$searchLower}%");
+            });
+        }
+
+        if ($status !== null && $status !== '' && in_array(strtolower((string) $status), ['0', '1', 'active', 'inactive'], true)) {
+            $isActive = ($status === '1' || strtolower((string) $status) === 'active');
+            $query->where('is_active', $isActive);
+        }
+
+        $canonicalOrder = [
+            'Basic & Common Duties',
+            'Compliance',
+            'Innovation',
+            'Job Functional',
+            'Language',
+            'Leadership',
+            'Assessment/Test',
+        ];
+        $caseParts = [];
+        foreach ($canonicalOrder as $idx => $cName) {
+            $cNameEscaped = addslashes($cName);
+            $caseParts[] = "WHEN classification_name = '{$cNameEscaped}' THEN {$idx}";
+        }
+        $caseSql = "CASE " . implode(' ', $caseParts) . " ELSE 99 END";
+
+        $items = $query->orderByRaw($caseSql)->orderBy('classification_name', 'asc')->get();
+
+        $totalCount = Classification::count();
+        $activeCount = Classification::where('is_active', 1)->count();
+        $inactiveCount = Classification::where('is_active', 0)->count();
+
+        return view('main.classification.classification', [
+            'items'         => $items,
+            'totalCount'    => $totalCount,
+            'activeCount'   => $activeCount,
+            'inactiveCount' => $inactiveCount,
+            'perPage'       => $perPage,
+        ]);
+    }
+
+    /**
+     * Store new Main Classification (Table: classification).
+     */
+    public function storeMainClassification(Request $request)
+    {
+        $validated = $request->validate([
+            'classification_name' => 'required|string|max:255',
+            'slug'                => 'nullable|string|max:255',
+            'is_active'           => 'nullable|in:0,1',
+        ]);
+
+        $name = trim($validated['classification_name']);
+        $rawSlug = !empty($validated['slug']) ? trim($validated['slug']) : $name;
+        $slug = Str::slug($rawSlug);
+
+        // Check duplicate name
+        if (Classification::whereRaw('LOWER(classification_name) = ?', [mb_strtolower($name)])->exists()) {
+            throw ValidationException::withMessages([
+                'classification_name' => ["Classification '{$name}' already exists."],
+            ]);
+        }
+
+        // Ensure unique slug
+        $baseSlug = $slug;
+        $counter = 1;
+        while (Classification::where('slug', $slug)->exists()) {
+            $slug = "{$baseSlug}-{$counter}";
+            $counter++;
+        }
+
+        $classification = Classification::create([
+            'classification_name' => $name,
+            'slug'                => $slug,
+            'is_active'           => isset($validated['is_active']) ? (int) $validated['is_active'] : 1,
+        ]);
+
+        $msg = "Main Classification '{$classification->classification_name}' created successfully.";
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status'  => 200,
+                'success' => true,
+                'message' => $msg,
+                'data'    => $classification,
+            ]);
+        }
+
+        return redirect()->route('manage.classification.main.index')->with('success', $msg);
+    }
+
+    /**
+     * Get single Main Classification details (for edit modal).
+     */
+    public function getMainClassification(int $id): JsonResponse
+    {
+        $classification = Classification::find($id);
+        if (!$classification) {
+            return response()->json(['status' => 404, 'success' => false, 'message' => 'Classification not found.'], 404);
+        }
+
+        $usage = $this->optionManager->checkClassificationUsage($classification);
+
+        return response()->json([
+            'status'  => 200,
+            'success' => true,
+            'data'    => [
+                'id'                  => $classification->id,
+                'classification_name' => $classification->classification_name,
+                'slug'                => $classification->slug,
+                'is_active'           => (bool) $classification->is_active,
+                'created_at'          => $classification->created_at ? $classification->created_at->format('d M Y, H:i') : '-',
+            ],
+            'usage'   => $usage,
+        ]);
+    }
+
+    /**
+     * Update Main Classification (Table: classification).
+     */
+    public function updateMainClassification(Request $request, int $id)
+    {
+        $classification = Classification::findOrFail($id);
+
+        $validated = $request->validate([
+            'classification_name' => 'required|string|max:255',
+            'slug'                => 'required|string|max:255',
+            'is_active'           => 'nullable|in:0,1',
+        ]);
+
+        $newName = trim($validated['classification_name']);
+        $newSlug = Str::slug($validated['slug']);
+
+        // Check if name is taken by another record
+        $existingName = Classification::whereRaw('LOWER(classification_name) = ?', [mb_strtolower($newName)])
+            ->where('id', '!=', $id)
+            ->first();
+        if ($existingName) {
+            throw ValidationException::withMessages([
+                'classification_name' => ["Classification '{$newName}' already exists."],
+            ]);
+        }
+
+        // Check if slug is taken by another record
+        $existingSlug = Classification::where('slug', $newSlug)
+            ->where('id', '!=', $id)
+            ->first();
+        if ($existingSlug) {
+            throw ValidationException::withMessages([
+                'slug' => ["Slug '{$newSlug}' is already in use by another classification."],
+            ]);
+        }
+
+        $oldName = $classification->classification_name;
+        $classification->update([
+            'classification_name' => $newName,
+            'slug'                => $newSlug,
+            'is_active'           => isset($validated['is_active']) ? (int) $validated['is_active'] : 1,
+        ]);
+
+        if ($oldName !== $newName) {
+            try {
+                \App\Models\OfflineTraining::where('main_classification', $oldName)->update(['main_classification' => $newName]);
+            } catch (\Throwable $e) {}
+        }
+
+        $msg = "Classification '{$classification->classification_name}' updated successfully.";
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status'  => 200,
+                'success' => true,
+                'message' => $msg,
+                'data'    => $classification,
+            ]);
+        }
+
+        return redirect()->route('manage.classification.main.index')->with('success', $msg);
+    }
+
+    /**
+     * Check usage of Main Classification before delete.
+     */
+    public function checkMainClassificationUsage(int $id): JsonResponse
+    {
+        $classification = Classification::find($id);
+        if (!$classification) {
+            return response()->json(['status' => 404, 'success' => false, 'message' => 'Classification not found.'], 404);
+        }
+
+        $usage = $this->optionManager->checkClassificationUsage($classification);
+
+        return response()->json([
+            'status'  => 200,
+            'success' => true,
+            'data'    => array_merge($usage, [
+                'id'                  => $classification->id,
+                'classification_name' => $classification->classification_name,
+                'can_deactivate'      => (bool) $classification->is_active,
+            ]),
+        ]);
+    }
+
+    /**
+     * Destroy Main Classification (Table: classification).
+     */
+    public function destroyMainClassification(int $id)
+    {
+        $classification = Classification::find($id);
+        if (!$classification) {
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json(['status' => 404, 'success' => false, 'message' => 'Classification not found.'], 404);
+            }
+            return redirect()->route('manage.classification.main.index')->with('error', 'Classification not found.');
+        }
+
+        $result = $this->optionManager->deleteClassification($classification);
+
+        if (!$result['success']) {
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json([
+                    'status'  => 422,
+                    'success' => false,
+                    'is_used' => true,
+                    'message' => $result['message'],
+                ], 422);
+            }
+            return redirect()->route('manage.classification.main.index')->with('error', $result['message']);
+        }
+
+        if (request()->ajax() || request()->wantsJson()) {
+            return response()->json([
+                'status'  => 200,
+                'success' => true,
+                'message' => $result['message'],
+            ]);
+        }
+
+        return redirect()->route('manage.classification.main.index')->with('success', $result['message']);
     }
 }
