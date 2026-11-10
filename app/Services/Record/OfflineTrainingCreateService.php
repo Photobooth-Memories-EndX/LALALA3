@@ -35,7 +35,8 @@ class OfflineTrainingCreateService
 
         $normalizedParticipants = $this->normalizeParticipantsData(
             $rawParticipants,
-            $normalizedTraining['learning_hours']
+            $normalizedTraining['learning_hours'],
+            $normalizedTraining
         );
         $this->validateParticipantsData($normalizedParticipants);
 
@@ -175,7 +176,7 @@ class OfflineTrainingCreateService
     /**
      * Normalize list of participants.
      */
-    public function normalizeParticipantsData(array $rawList, ?float $fallbackHours = null): array
+    public function normalizeParticipantsData(array $rawList, ?float $fallbackHours = null, array $trainingData = []): array
     {
         $normalized = [];
 
@@ -203,33 +204,39 @@ class OfflineTrainingCreateService
             $isBonded = $bondStatus && in_array(strtolower($bondStatus), ['yes', 'y', '1', 'true'], true);
 
             $normalized[] = [
-                'user_id'           => $userId,
-                'employee_id'       => $employeeId,
-                'name'              => $this->normalizeString($raw['name'] ?? null),
-                'grade'             => $this->normalizeString($raw['grade'] ?? null),
-                'job_position'      => $this->normalizeString($raw['job_position'] ?? ($raw['position'] ?? null)),
-                'team'              => $this->normalizeString($raw['team'] ?? null),
-                'department'        => $this->normalizeString($raw['department'] ?? null),
-                'company'           => $this->normalizeString($raw['company'] ?? null),
-                'learning_hours'    => $participantHours,
-                'progress'          => $progress !== null ? $progress : 100.0,
-                'assessment_score'  => $this->normalizeAssessmentScore($raw['assessment_score'] ?? null),
-                'certificate'       => $this->normalizeString($raw['certificate'] ?? null),
+                'user_id'                  => $userId,
+                'employee_id'              => $employeeId,
+                'name'                     => $this->normalizeString($raw['name'] ?? null),
+                'grade'                    => $this->normalizeString($raw['grade'] ?? null),
+                'job_position'             => $this->normalizeString($raw['job_position'] ?? ($raw['position'] ?? null)),
+                'team'                     => $this->normalizeString($raw['team'] ?? null),
+                'department'               => $this->normalizeString($raw['department'] ?? null),
+                'company'                  => $this->normalizeString($raw['company'] ?? null),
+                'main_classification'      => $this->normalizeString($raw['main_classification'] ?? ($trainingData['main_classification'] ?? null)),
+                'sub_classification'       => $this->normalizeString($raw['sub_classification'] ?? ($trainingData['sub_classification'] ?? null)),
+                'learning_hours'           => $participantHours,
+                'start_date'               => $this->normalizeDate($raw['start_date'] ?? ($trainingData['start_date'] ?? null)),
+                'end_date'                 => $this->normalizeDate($raw['end_date'] ?? ($raw['finish_date'] ?? ($trainingData['finish_date'] ?? null))),
+                'start_time'               => $this->normalizeTime($raw['start_time'] ?? ($trainingData['start_time'] ?? null)),
+                'end_time'                 => $this->normalizeTime($raw['end_time'] ?? ($trainingData['end_time'] ?? null)),
+                'progress'                 => $progress !== null ? $progress : 100.0,
+                'assessment_score'         => $this->normalizeAssessmentScore($raw['assessment_score'] ?? null),
+                'certificate'              => $this->normalizeString($raw['certificate'] ?? null),
                 'certificate_issued_date'  => $this->normalizeDate($raw['certificate_issued_date'] ?? null),
                 'certificate_expired_date' => $this->normalizeDate($raw['certificate_expired_date'] ?? null),
-                'attendance'        => $attendance !== null ? $attendance : true,
-                'attendance_reason' => $this->normalizeString($raw['attendance_reason'] ?? null),
-                'bond_status'       => $bondStatus,
-                'bond_duration'     => $isBonded && isset($raw['bond_duration']) && is_numeric($raw['bond_duration']) ? (int) $raw['bond_duration'] : null,
-                'bond_end_date'     => $isBonded ? $this->normalizeDate($raw['bond_end_date'] ?? null) : null,
-                'bond_amount_idr'   => $isBonded ? $this->normalizeMoney($raw['bond_amount_idr'] ?? $raw['bond_amount'] ?? null) : null,
-                'bond_amount'       => $isBonded ? $this->normalizeMoney($raw['bond_amount_idr'] ?? $raw['bond_amount'] ?? null) : null,
-                'l1_program'        => $this->normalizeString($raw['l1_program'] ?? null),
-                'l2_numerical'      => $this->normalizeDecimal($raw['l2_numerical'] ?? null, 4),
-                'l2_verbal'         => $this->normalizeString($raw['l2_verbal'] ?? null),
-                'l3_numerical'      => $this->normalizeDecimal($raw['l3_numerical'] ?? null, 4),
-                'l3_verbal'         => $this->normalizeString($raw['l3_verbal'] ?? null),
-                'pic'               => $this->normalizeString($raw['pic'] ?? null),
+                'attendance'               => $attendance !== null ? $attendance : true,
+                'attendance_reason'        => $this->normalizeString($raw['attendance_reason'] ?? null),
+                'bond_status'              => $bondStatus,
+                'bond_duration'            => $isBonded && isset($raw['bond_duration']) && is_numeric($raw['bond_duration']) ? (int) $raw['bond_duration'] : null,
+                'bond_end_date'            => $isBonded ? $this->normalizeDate($raw['bond_end_date'] ?? null) : null,
+                'bond_amount_idr'          => $isBonded ? $this->normalizeMoney($raw['bond_amount_idr'] ?? $raw['bond_amount'] ?? null) : null,
+                'bond_amount'              => $isBonded ? $this->normalizeMoney($raw['bond_amount_idr'] ?? $raw['bond_amount'] ?? null) : null,
+                'l1_program'               => $this->normalizeString($raw['l1_program'] ?? null),
+                'l2_numerical'             => $this->normalizeDecimal($raw['l2_numerical'] ?? null, 4),
+                'l2_verbal'                => $this->normalizeString($raw['l2_verbal'] ?? null),
+                'l3_numerical'             => $this->normalizeDecimal($raw['l3_numerical'] ?? null, 4),
+                'l3_verbal'                => $this->normalizeString($raw['l3_verbal'] ?? null),
+                'pic'                      => $this->normalizeString($raw['pic'] ?? null),
             ];
         }
 

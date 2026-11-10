@@ -376,6 +376,12 @@ class OfflineTrainingCreateTest extends TestCase
             'team'                => 'Maintenance Team 1',
             'department'          => 'Electrical Maintenance',
             'company'             => 'PT Krakatau Posco',
+            'main_classification' => 'Technical',
+            'sub_classification'  => 'Electrical Safety',
+            'start_date'          => '2026-03-01',
+            'end_date'            => '2026-03-02',
+            'start_time'          => '08:00:00',
+            'end_time'            => '16:00:00',
             'learning_hours'      => 8.5,
             'progress'            => 100,
             'assessment_score'    => 88.5,
@@ -384,7 +390,7 @@ class OfflineTrainingCreateTest extends TestCase
             'attendance_reason'   => null,
             'bond_status'         => 'Yes',
             'bond_end_date'       => '2027-03-01',
-            'bond_amount'         => 5000000,
+            'bond_amount_idr'     => 5000000,
             'l1_program'          => '4.8 - Very Good',
             'l2_numerical'        => 88.5,
             'l2_verbal'           => 'Passed',
@@ -404,7 +410,7 @@ class OfflineTrainingCreateTest extends TestCase
             'attendance_reason'   => 'On Duty Emergency Callout',
             'bond_status'         => 'No',
             'bond_end_date'       => null,
-            'bond_amount'         => null,
+            'bond_amount_idr'     => null,
             'progress'            => 50,
         ]);
     }
@@ -634,14 +640,9 @@ class OfflineTrainingCreateTest extends TestCase
 
         $response->assertStatus(200);
 
-        // Import Excel modal button and modal markup
+        // Import Excel button pointing to dedicated import page
         $response->assertSee('id="btn-open-offline-import"', false);
-        $response->assertSee('data-bs-target="#offlineImportModal"', false);
-        $response->assertSee('id="offlineImportModal"', false);
-
-        // Download template link
-        $response->assertSee('id="btn-download-offline-template"', false);
-        $response->assertSee(route('manage.record.offline.import.template'), false);
+        $response->assertSee(route('manage.record.offline.import-non-ptkp'), false);
     }
 
     /**

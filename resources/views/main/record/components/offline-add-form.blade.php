@@ -626,6 +626,14 @@
                             <option value="No">No</option>
                         </select>
                     </div>
+                    <div class="col-12 col-sm-6 col-md-4" id="res-cert-issued-container">
+                        <label for="res-certificate-issued-date" class="form-label small fw-semibold">Certificate Issued Date</label>
+                        <input type="date" class="form-control rounded-2" id="res-certificate-issued-date">
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-4" id="res-cert-expired-container">
+                        <label for="res-certificate-expired-date" class="form-label small fw-semibold">Certificate Expired Date</label>
+                        <input type="date" class="form-control rounded-2" id="res-certificate-expired-date">
+                    </div>
                 </div>
 
                 <!-- SUBSECTION: ATTENDANCE -->
@@ -666,18 +674,22 @@
                 </div>
 
                 <div class="row g-3 mb-4">
-                    <div class="col-12 col-sm-6 col-md-4">
+                    <div class="col-12 col-sm-6 col-md-3">
                         <label for="res-bond-status" class="form-label small fw-semibold">Bond Status</label>
                         <select class="form-select rounded-2" id="res-bond-status">
                             <option value="No" selected>No</option>
                             <option value="Yes">Yes</option>
                         </select>
                     </div>
-                    <div class="col-12 col-sm-6 col-md-4">
+                    <div class="col-12 col-sm-6 col-md-3">
+                        <label for="res-bond-duration" class="form-label small fw-semibold">Bond Duration (months)</label>
+                        <input type="number" step="1" min="1" class="form-control rounded-2" id="res-bond-duration" placeholder="e.g. 12" disabled>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-3">
                         <label for="res-bond-end-date" class="form-label small fw-semibold">Bond End Date</label>
                         <input type="date" class="form-control rounded-2" id="res-bond-end-date" disabled>
                     </div>
-                    <div class="col-12 col-md-4">
+                    <div class="col-12 col-sm-6 col-md-3">
                         <label for="res-bond-amount" class="form-label small fw-semibold">Bond Amount (IDR)</label>
                         <input type="number" step="1000" min="0" class="form-control rounded-2"
                             id="res-bond-amount" placeholder="e.g. 5000000" disabled>
@@ -863,28 +875,9 @@
                                         $stickyClass = 'sticky-col sticky-col-1';
                                     } elseif ($colIdx === 2) {
                                         $stickyClass = 'sticky-col sticky-col-2';
-                                    } elseif ($colIdx === 3) {
-                                        $stickyClass = 'sticky-col sticky-col-3';
                                     }
 
-                                    $displayHeader = $header;
-                                    if ($colIdx === 1) {
-                                        $displayHeader = 'NO';
-                                    } elseif ($colIdx === 2) {
-                                        $displayHeader = 'ID (NIP)';
-                                    } elseif ($colIdx === 3) {
-                                        $displayHeader = 'PARTICIPANT NAME';
-                                    } elseif ($colIdx === 39) {
-                                        $displayHeader = 'L1 PROGRAM';
-                                    } elseif ($colIdx === 40) {
-                                        $displayHeader = 'L2 NUMERICAL';
-                                    } elseif ($colIdx === 41) {
-                                        $displayHeader = 'L2 VERBAL';
-                                    } elseif ($colIdx === 42) {
-                                        $displayHeader = 'L3 NUMERICAL';
-                                    } elseif ($colIdx === 43) {
-                                        $displayHeader = 'L3 VERBAL';
-                                    }
+                                    $displayHeader = strtoupper($header);
                                 @endphp
                                 <th class="{{ $align }} {{ $stickyClass }}"
                                     data-col-index="{{ $colIdx }}" title="{{ $col['note'] ?? $header }}">

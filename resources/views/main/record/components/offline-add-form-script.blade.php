@@ -441,9 +441,12 @@
                 progress: 100,
                 assessment_score: '',
                 certificate: 'Yes',
+                certificate_issued_date: '',
+                certificate_expired_date: '',
                 attendance: 1,
                 attendance_reason: '',
                 bond_status: 'No',
+                bond_duration: '',
                 bond_end_date: '',
                 bond_amount: '',
                 l1_program: defaultL1Program,
@@ -611,6 +614,10 @@
 
             $('#res-assessment-score').val(p.assessment_score || '');
             $('#res-certificate').val(p.certificate || 'Yes');
+            const hasCert = (p.certificate === 'Yes');
+            $('#res-cert-issued-container, #res-cert-expired-container').toggle(hasCert);
+            $('#res-certificate-issued-date').val(p.certificate_issued_date || '');
+            $('#res-certificate-expired-date').val(p.certificate_expired_date || '');
 
             if (p.attendance == 1 || p.attendance === true || p.attendance === '1') {
                 $('#res-attendance-yes').prop('checked', true);
@@ -621,6 +628,7 @@
 
             const isBonded = (p.bond_status === 'Yes');
             $('#res-bond-status').val(p.bond_status || 'No');
+            $('#res-bond-duration').val(p.bond_duration || '').prop('disabled', !isBonded);
             $('#res-bond-end-date').val(p.bond_end_date || '').prop('disabled', !isBonded);
             $('#res-bond-amount').val(p.bond_amount || '').prop('disabled', !isBonded);
 
@@ -643,9 +651,12 @@
             p.progress = isNaN(rawProg) ? 100 : Math.min(100, Math.max(0, rawProg));
             p.assessment_score = $('#res-assessment-score').val() !== '' ? parseFloat($('#res-assessment-score').val()) : null;
             p.certificate = $('#res-certificate').val();
+            p.certificate_issued_date = p.certificate === 'Yes' ? ($('#res-certificate-issued-date').val() || null) : null;
+            p.certificate_expired_date = p.certificate === 'Yes' ? ($('#res-certificate-expired-date').val() || null) : null;
             p.attendance = $('#res-attendance-yes').is(':checked') ? 1 : 0;
             p.attendance_reason = ($('#res-attendance-reason').val() || '').trim();
             p.bond_status = $('#res-bond-status').val();
+            p.bond_duration = p.bond_status === 'Yes' && $('#res-bond-duration').val() !== '' ? parseInt($('#res-bond-duration').val(), 10) : null;
             p.bond_end_date = p.bond_status === 'Yes' ? $('#res-bond-end-date').val() : null;
             p.bond_amount = p.bond_status === 'Yes' && $('#res-bond-amount').val() !== '' ? parseFloat($('#res-bond-amount').val()) : null;
             p.l1_program = ($('#res-l1-program').val() || '').trim();
@@ -675,11 +686,24 @@
             updateSection4Review();
         });
 
+        $('#res-certificate').on('change', function () {
+            const hasCert = ($(this).val() === 'Yes');
+            $('#res-cert-issued-container, #res-cert-expired-container').toggle(hasCert);
+            if (!hasCert) {
+                $('#res-certificate-issued-date').val('');
+                $('#res-certificate-expired-date').val('');
+            }
+            saveCurrentActiveParticipantForm();
+            updateSection4Review();
+        });
+
         $('#res-bond-status').on('change', function () {
             const isBonded = ($(this).val() === 'Yes');
+            $('#res-bond-duration').prop('disabled', !isBonded);
             $('#res-bond-end-date').prop('disabled', !isBonded);
             $('#res-bond-amount').prop('disabled', !isBonded);
             if (!isBonded) {
+                $('#res-bond-duration').val('');
                 $('#res-bond-end-date').val('');
                 $('#res-bond-amount').val('');
             }
@@ -780,6 +804,8 @@
             const defaultHours = parseFloat($('#add-learning-hours').val()) || 0;
             const startDate = $('#add-start-date').val() || '-';
             const finishDate = $('#add-finish-date').val() || (startDate !== '-' ? startDate : '-');
+            const startTime = ($('#add-start-time').val() || '').trim() || '-';
+            const endTime = ($('#add-end-time').val() || '').trim() || '-';
             const month = $('#add-month').val() || deriveMonthString($('#add-start-date').val()) || '-';
             const providerName = ($('#add-provider-name').val() || '').trim() || '-';
             const venue = ($('#add-venue').val() || '').trim() || '-';
@@ -806,6 +832,12 @@
                     <span class="small fw-semibold text-muted">${Math.round(prog)}%</span>
                 </div>`;
 
+                const progressStatusBadgeHtml = prog >= 100
+                    ? '<span class="badge bg-success-lt text-success px-2 py-0.5">Finished</span>'
+                    : (prog > 0
+                        ? '<span class="badge bg-warning-lt text-warning px-2 py-0.5">Ongoing</span>'
+                        : '<span class="badge bg-secondary-lt text-secondary px-2 py-0.5">Not Started</span>');
+
                 // Attendance
                 const isPresent = (p.attendance == 1 || p.attendance === true || p.attendance === '1');
                 const attendanceHtml = isPresent
@@ -815,11 +847,6 @@
                 // Certificate
                 const certHtml = p.certificate === 'Yes'
                     ? '<span class="badge bg-blue-lt text-primary px-2 py-0.5"><i class="ti ti-file-certificate me-1"></i>Yes</span>'
-                    : '<span class="badge bg-light text-muted border px-2 py-0.5">No</span>';
-
-                // Counted KPI
-                const kpiHtml = isKpi
-                    ? `<span class="badge bg-blue-lt text-primary px-2 py-0.5">Yes (${escapeHtml(String(kpiYear || ''))})</span>`
                     : '<span class="badge bg-light text-muted border px-2 py-0.5">No</span>';
 
                 // Type badge
@@ -856,11 +883,10 @@
 
                 rowsHtml += `
                     <tr>
-                        <td class="text-center text-muted sticky-col sticky-col-1">${rowNo}</td>
-                        <td class="text-center font-monospace sticky-col sticky-col-2">
+                        <td class="text-center font-monospace sticky-col sticky-col-1">
                             <span class="badge bg-light text-secondary border font-monospace">${escapeHtml(p.employee_id || '-')}</span>
                         </td>
-                        <td class="sticky-col sticky-col-3 text-start">
+                        <td class="sticky-col sticky-col-2 text-start">
                             <div class="fw-semibold text-dark text-nowrap">${escapeHtml(p.name || '-')}</div>
                             ${p.user_id ? '<span class="badge bg-green-lt extra-small py-0">LMS</span>' : ''}
                         </td>
@@ -877,34 +903,35 @@
                         <td class="text-center">${escapeHtml(batch)}</td>
                         <td class="text-start">${escapeHtml(mainClass)}</td>
                         <td class="text-start">${escapeHtml(subClass)}</td>
-                        <td class="text-center">${kpiHtml}</td>
-                        <td class="text-start">${escapeHtml(subKpi)}</td>
                         <td class="text-center">${escapeHtml(delivery)}</td>
                         <td class="text-start">${escapeHtml(subDelivery)}</td>
-                        <td class="text-center">${escapeHtml(provider)}</td>
-                        <td class="text-start">${escapeHtml(subProvider)}</td>
-                        <td class="text-center font-monospace">${escapeHtml(duration)}</td>
-                        <td class="text-center">${hoursFormatted !== '-' ? '<span class="fw-semibold">' + hoursFormatted + '</span>' : '<span class="text-muted">-</span>'}</td>
-                        <td class="text-center">${progressHtml}</td>
-                        <td class="text-center">${formatReviewDate(startDate)}</td>
-                        <td class="text-center">${formatReviewDate(finishDate)}</td>
-                        <td class="text-center">${escapeHtml(month)}</td>
                         <td class="text-start">${escapeHtml(providerName)}</td>
                         <td class="text-start">${escapeHtml(venue)}</td>
                         <td class="text-start">${escapeHtml(instructor)}</td>
-                        <td class="text-center">${scoreHtml}</td>
-                        <td class="text-center">${certHtml}</td>
+                        <td class="text-center font-monospace">${escapeHtml(duration)}</td>
+                        <td class="text-center">${hoursFormatted !== '-' ? '<span class="fw-semibold">' + hoursFormatted + '</span>' : '<span class="text-muted">-</span>'}</td>
+                        <td class="text-center">${progressHtml}</td>
+                        <td class="text-center">${progressStatusBadgeHtml}</td>
+                        <td class="text-center">${formatReviewDate(startDate)}</td>
+                        <td class="text-center">${formatReviewDate(finishDate)}</td>
+                        <td class="text-center font-monospace">${escapeHtml(startTime)}</td>
+                        <td class="text-center font-monospace">${escapeHtml(endTime)}</td>
+                        <td class="text-center">${escapeHtml(month)}</td>
+                        <td class="text-center"><span class="badge bg-light text-secondary border px-2 py-0.5">Mandatory</span></td>
                         <td class="text-center">${attendanceHtml}</td>
                         <td class="text-start">${escapeHtml(p.attendance_reason || '-')}</td>
                         <td class="text-center">${bondStatusHtml}</td>
+                        <td class="text-center">${isBonded && p.bond_duration ? (p.bond_duration + ' mos') : '-'}</td>
                         <td class="text-center">${bondEndDateStr}</td>
                         <td class="text-end">${bondAmountStr}</td>
                         <td class="text-center">${l1Html}</td>
-                        <td class="text-center">${l2NumHtml}</td>
+                        <td class="text-center">${scoreHtml}</td>
                         <td class="text-start">${l2VerbHtml}</td>
                         <td class="text-center">${l3NumHtml}</td>
                         <td class="text-start">${l3VerbHtml}</td>
                         <td class="text-start">${picHtml}</td>
+                        <td class="text-center">${certHtml}</td>
+                        <td class="text-center">${hoursFormatted !== '-' ? '<span class="fw-semibold">' + hoursFormatted + '</span>' : '<span class="text-muted">-</span>'}</td>
                     </tr>
                 `;
             });

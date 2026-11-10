@@ -308,7 +308,7 @@
         background-color: inherit;
     }
 
-    /* Sticky Columns: No (1), ID (2), Participant (3) */
+    /* Sticky Columns: ID (1), Participant (2) */
     #offline-review-record-table .sticky-col {
         position: sticky !important;
     }
@@ -316,21 +316,13 @@
     #offline-review-record-table th.sticky-col-1,
     #offline-review-record-table td.sticky-col-1 {
         left: 0;
-        width: 50px;
-        min-width: 50px;
-        max-width: 50px;
-    }
-
-    #offline-review-record-table th.sticky-col-2,
-    #offline-review-record-table td.sticky-col-2 {
-        left: 50px;
         width: 110px;
         min-width: 110px;
     }
 
-    #offline-review-record-table th.sticky-col-3,
-    #offline-review-record-table td.sticky-col-3 {
-        left: 160px;
+    #offline-review-record-table th.sticky-col-2,
+    #offline-review-record-table td.sticky-col-2 {
+        left: 110px;
         width: 190px;
         min-width: 190px;
         border-right: 2px solid #e2e8f0 !important;
