@@ -1352,8 +1352,12 @@
                 dom: '<"top">rt<"bottom d-flex justify-content-between align-items-center mt-3"l ip><"clear">',
                 ajax: {
                     url: datatableUrl,
-                    type: 'GET',
+                    type: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
                     data: function(d) {
+                        d._token = $('meta[name="csrf-token"]').attr('content');
                         d.employee_id = $('#all-filter-employee').val().trim();
                         d.learning_title = $('#all-filter-title').val().trim();
                         d.source = $('#all-filter-source').val();

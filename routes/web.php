@@ -679,14 +679,14 @@ Route::get('{task}/qr', [TaskManageController::class, 'qr'])->name('qr');
 
             // Halaman 2 â€” Classification Detail
             Route::get('all/classification/{classification}', [ClassificationRecordController::class, 'index'])->name('all.classification');
-            Route::get('all/classification/{classification}/data', [ClassificationRecordController::class, 'data'])->name('all.classification.data');
+            Route::match(['get', 'post'], 'all/classification/{classification}/data', [ClassificationRecordController::class, 'data'])->name('all.classification.data');
             Route::get('all/classification/{classification}/export', [ClassificationRecordController::class, 'export'])->name('all.classification.export')->middleware('mpermission:learning_management');
             Route::get('all/classification/{classification}/{source}/{id}/details', [ClassificationRecordController::class, 'details'])->name('all.classification.details');
             Route::get('all/classification/{classification}/detail/{source}/{id}', [ClassificationRecordController::class, 'details']);
             Route::get('all/ajax/summary', [AllRecordController::class, 'ajaxSummary'])->name('all.ajax.summary');
             Route::get('all/ajax/classification', [AllRecordController::class, 'ajaxClassification'])->name('all.ajax.classification');
             // Legacy alias redirected to ClassificationRecordController
-            Route::get('all/classification/{classification}/datatable', [ClassificationRecordController::class, 'data'])->name('all.classification.datatable');
+            Route::match(['get', 'post'], 'all/classification/{classification}/datatable', [ClassificationRecordController::class, 'data'])->name('all.classification.datatable');
             Route::get('all/classification/{classification}/download/{format?}', [ClassificationRecordController::class, 'export'])->name('all.classification.download')->middleware('mpermission:learning_management');
             Route::get('all/datatable', [AllRecordController::class, 'data'])->name('all.datatable');
             Route::get('all/participant/{identifier}', [RecordAllController::class, 'participantDetail'])->name('all.participant');
