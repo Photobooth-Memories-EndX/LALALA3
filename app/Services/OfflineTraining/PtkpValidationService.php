@@ -26,6 +26,29 @@ class PtkpValidationService
     public const ALLOWED_COMPANY = 'PT Krakatau Posco';
 
     /**
+     * Consistent Warning Field Empty Evaluation:
+     * - NULL, empty string (""), or whitespace-only ("   ") => TRUE (considered empty -> WARNING)
+     * - "-", " - ", "--", "–", "—" => FALSE (considered populated -> VALID / NOT WARNING)
+     * - 0, "0", 0.0, "0.0" => FALSE (considered populated -> VALID / NOT WARNING)
+     * - "00:00:00", "On-process", "Yes", "32", other scalar values => FALSE (VALID / NOT WARNING)
+     *
+     * @param mixed $value
+     * @return bool
+     */
+    public function isWarningFieldEmpty($value): bool
+    {
+        if ($value === null) {
+            return true;
+        }
+
+        if (is_string($value)) {
+            return trim($value) === '';
+        }
+
+        return false;
+    }
+
+    /**
      * Strict Whitelist Check for PTKP Import:
      * ONLY 'PT Krakatau Posco' is allowed.
      * All other companies, empty/null, or non-matching values evaluate to false.
@@ -457,8 +480,13 @@ class PtkpValidationService
         $emptyWarningDetails = [];
 
         foreach ($warningRules as $colKey => $colTitle) {
-            $rawVal = $normalized['raw_inputs'][$colKey] ?? ($normalized['raw_values'][$colKey] ?? ($normalized[$colKey] ?? null));
-            if (PtkpColumnDefinitions::isWarningFieldEmpty($rawVal)) {
+            $rawVal = array_key_exists($colKey, $normalized['raw_inputs'] ?? [])
+                ? $normalized['raw_inputs'][$colKey]
+                : (array_key_exists($colKey, $normalized['raw_values'] ?? [])
+                    ? $normalized['raw_values'][$colKey]
+                    : ($normalized[$colKey] ?? null));
+
+            if ($this->isWarningFieldEmpty($rawVal)) {
                 $emptyWarningFields[] = $colTitle;
                 $displayVal = PtkpColumnDefinitions::formatWarningEmptyDisplay($rawVal);
                 $emptyWarningDetails[] = [
@@ -1052,32 +1080,36 @@ class PtkpValidationService
         $normalized['progress'] = $this->parseNumeric($raw['progress'] ?? null);
 
         // Dates & times
-        $rawStartDate = $raw['start_date'] ?? null;
+        $rawStartDate = $raw['raw_inputs']['start_date'] ?? ($raw['start_date'] ?? null);
         $startDateResult = ExcelDateTimeParser::parseDateResult($rawStartDate);
         $normalized['start_date'] = $startDateResult['value'];
         $normalized['start_date_invalid'] = !$startDateResult['valid'];
         $normalized['start_date_error'] = $startDateResult['error'];
         $normalized['raw_start_date'] = $rawStartDate;
-        $normalized['start_date_display'] = ExcelDateTimeParser::formatDisplayDate($startDateResult['value']);
+        $normalized['start_date_display'] = (is_string($rawStartDate) && in_array(trim($rawStartDate), ['-', '—', '–'], true))
+            ? trim($rawStartDate)
+            : ExcelDateTimeParser::formatDisplayDate($startDateResult['value']);
 
-        $rawEndDate = $raw['end_date'] ?? null;
+        $rawEndDate = $raw['raw_inputs']['end_date'] ?? ($raw['end_date'] ?? null);
         $endDateResult = ExcelDateTimeParser::parseDateResult($rawEndDate);
         $normalized['end_date'] = $endDateResult['value'];
         $normalized['end_date_invalid'] = !$endDateResult['valid'];
         $normalized['end_date_error'] = $endDateResult['error'];
         $normalized['raw_end_date'] = $rawEndDate;
-        $normalized['end_date_display'] = ExcelDateTimeParser::formatDisplayDate($endDateResult['value']);
+        $normalized['end_date_display'] = (is_string($rawEndDate) && in_array(trim($rawEndDate), ['-', '—', '–'], true))
+            ? trim($rawEndDate)
+            : ExcelDateTimeParser::formatDisplayDate($endDateResult['value']);
 
         $normalized['finish_date'] = $normalized['end_date'] ?? $normalized['start_date'];
 
-        $rawStartTime = $raw['start_time'] ?? null;
+        $rawStartTime = $raw['raw_inputs']['start_time'] ?? ($raw['start_time'] ?? null);
         $startTimeResult = ExcelDateTimeParser::parseTimeResult($rawStartTime);
         $normalized['start_time'] = $startTimeResult['value'];
         $normalized['start_time_invalid'] = !$startTimeResult['valid'];
         $normalized['start_time_error'] = $startTimeResult['error'];
         $normalized['raw_start_time'] = $rawStartTime;
 
-        $rawEndTime = $raw['end_time'] ?? null;
+        $rawEndTime = $raw['raw_inputs']['end_time'] ?? ($raw['end_time'] ?? null);
         $endTimeResult = ExcelDateTimeParser::parseTimeResult($rawEndTime);
         $normalized['end_time'] = $endTimeResult['value'];
         $normalized['end_time_invalid'] = !$endTimeResult['valid'];
@@ -1106,13 +1138,13 @@ class PtkpValidationService
                 }
             }
         }
-        if ($normalized['duration_seconds'] === null && !empty($normalized['learning_hours']) && $normalized['learning_hours'] > 0) {
+        if ($normalized['duration_seconds'] === null && $normalized['learning_hours'] !== null && is_numeric($normalized['learning_hours']) && $normalized['learning_hours'] >= 0) {
             $normalized['duration_seconds'] = (int) round($normalized['learning_hours'] * 3600);
         }
 
-        $rawStartTime = $raw['start_time'] ?? ($raw['raw_inputs']['start_time'] ?? null);
-        $rawEndTime = $raw['end_time'] ?? ($raw['raw_inputs']['end_time'] ?? null);
-        $rawLearningHours = $raw['learning_hours'] ?? ($raw['raw_inputs']['learning_hours'] ?? null);
+        $rawStartTime = $raw['raw_inputs']['start_time'] ?? ($raw['start_time'] ?? null);
+        $rawEndTime = $raw['raw_inputs']['end_time'] ?? ($raw['end_time'] ?? null);
+        $rawLearningHours = $raw['raw_inputs']['learning_hours'] ?? ($raw['learning_hours'] ?? null);
         if ($rawCourseDuration === null) {
             if ((is_string($rawStartTime) && trim($rawStartTime) === '-')
                 || (is_string($rawEndTime) && trim($rawEndTime) === '-')
@@ -1136,13 +1168,15 @@ class PtkpValidationService
         $normalized['attendance_reason'] = isset($raw['attendance_reason']) ? trim((string) $raw['attendance_reason']) : null;
         $normalized['bond_status'] = isset($raw['bond_status']) ? trim((string) $raw['bond_status']) : null;
         $normalized['bond_duration'] = $this->parseNumeric($raw['bond_duration'] ?? null, true);
-        $rawBondEndDate = $raw['bond_end_date'] ?? null;
+        $rawBondEndDate = $raw['raw_inputs']['bond_end_date'] ?? ($raw['bond_end_date'] ?? null);
         $bondEndDateResult = ExcelDateTimeParser::parseDateResult($rawBondEndDate);
         $normalized['bond_end_date'] = $bondEndDateResult['value'];
         $normalized['bond_end_date_invalid'] = !$bondEndDateResult['valid'];
         $normalized['bond_end_date_error'] = $bondEndDateResult['error'];
         $normalized['raw_bond_end_date'] = $rawBondEndDate;
-        $normalized['bond_end_date_display'] = ExcelDateTimeParser::formatDisplayDate($bondEndDateResult['value']);
+        $normalized['bond_end_date_display'] = (is_string($rawBondEndDate) && in_array(trim($rawBondEndDate), ['-', '—', '–'], true))
+            ? trim($rawBondEndDate)
+            : ExcelDateTimeParser::formatDisplayDate($bondEndDateResult['value']);
         $normalized['bond_amount'] = $this->parseNumeric($raw['bond_amount'] ?? null);
         $normalized['bond_amount_idr'] = $normalized['bond_amount'];
 
@@ -1157,25 +1191,29 @@ class PtkpValidationService
         // Certificate details & PIC
         $normalized['certificate_availability'] = isset($raw['certificate_availability']) ? trim((string) $raw['certificate_availability']) : null;
         $normalized['certificate_institution'] = isset($raw['certificate_institution']) ? trim((string) $raw['certificate_institution']) : null;
-        $rawCertIssued = $raw['certificate_issued_date'] ?? null;
+        $rawCertIssued = $raw['raw_inputs']['certificate_issued_date'] ?? ($raw['certificate_issued_date'] ?? null);
         $certIssuedResult = ExcelDateTimeParser::parseDateResult($rawCertIssued);
         $normalized['certificate_issued_date'] = $certIssuedResult['value'];
         $normalized['certificate_issued_date_invalid'] = !$certIssuedResult['valid'];
         $normalized['certificate_issued_date_error'] = $certIssuedResult['error'];
         $normalized['raw_certificate_issued_date'] = $rawCertIssued;
-        $normalized['certificate_issued_date_display'] = !empty($certIssuedResult['is_process'])
-            ? trim((string) $rawCertIssued)
-            : ExcelDateTimeParser::formatDisplayDate($certIssuedResult['value'] ?? $rawCertIssued);
+        $normalized['certificate_issued_date_display'] = (is_string($rawCertIssued) && in_array(trim($rawCertIssued), ['-', '—', '–'], true))
+            ? trim($rawCertIssued)
+            : (!empty($certIssuedResult['is_process'])
+                ? trim((string) $rawCertIssued)
+                : ExcelDateTimeParser::formatDisplayDate($certIssuedResult['value'] ?? $rawCertIssued));
 
-        $rawCertExpired = $raw['certificate_expired_date'] ?? null;
+        $rawCertExpired = $raw['raw_inputs']['certificate_expired_date'] ?? ($raw['certificate_expired_date'] ?? null);
         $certExpiredResult = ExcelDateTimeParser::parseDateResult($rawCertExpired);
         $normalized['certificate_expired_date'] = $certExpiredResult['value'];
         $normalized['certificate_expired_date_invalid'] = !$certExpiredResult['valid'];
         $normalized['certificate_expired_date_error'] = $certExpiredResult['error'];
         $normalized['raw_certificate_expired_date'] = $rawCertExpired;
-        $normalized['certificate_expired_date_display'] = !empty($certExpiredResult['is_process'])
-            ? trim((string) $rawCertExpired)
-            : ExcelDateTimeParser::formatDisplayDate($certExpiredResult['value'] ?? $rawCertExpired);
+        $normalized['certificate_expired_date_display'] = (is_string($rawCertExpired) && in_array(trim($rawCertExpired), ['-', '—', '–'], true))
+            ? trim($rawCertExpired)
+            : (!empty($certExpiredResult['is_process'])
+                ? trim((string) $rawCertExpired)
+                : ExcelDateTimeParser::formatDisplayDate($certExpiredResult['value'] ?? $rawCertExpired));
         $normalized['certificate'] = $normalized['certificate_availability'] ?? null;
         $normalized['pic'] = isset($raw['pic']) ? trim((string) $raw['pic']) : null;
         $normalized['raw_inputs'] = $raw['raw_inputs'] ?? $raw;

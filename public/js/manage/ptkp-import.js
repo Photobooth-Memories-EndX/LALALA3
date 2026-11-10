@@ -1116,6 +1116,9 @@
                     `;
                 });
 
+                const rawWarnMsg = row.warning_message || (row.warning_reasons && row.warning_reasons.length ? ('WARNING: ' + row.warning_reasons.join('; ')) : 'WARNING: Attention required for designated fields.');
+                const formattedWarnMsg = rawWarnMsg.indexOf('WARNING:') === 0 ? rawWarnMsg : ('WARNING: ' + rawWarnMsg);
+
                 msgsHtml += `
                     <div class="card border border-warning-subtle rounded-3 mb-3 shadow-none" style="background-color: #fffbeb;">
                         <div class="card-header bg-transparent border-warning-subtle py-2 px-3 d-flex align-items-center justify-content-between">
@@ -1126,6 +1129,11 @@
                             <span class="badge bg-warning text-dark fw-bold px-2 py-1">WARNING</span>
                         </div>
                         <div class="card-body p-3">
+                            <div class="alert alert-warning border-0 rounded-2 py-2 px-3 mb-3 d-flex align-items-center gap-2" style="background-color: #fef3c7; color: #92400e; font-size: 0.85rem;">
+                                <i class="ti ti-alert-triangle fs-3 flex-shrink-0"></i>
+                                <span class="fw-semibold">${escapeHtml(formattedWarnMsg)}</span>
+                            </div>
+
                             <div class="row g-2 mb-3 pb-2 border-bottom border-warning-subtle" style="font-size: 0.82rem;">
                                 <div class="col-6 col-sm-3">
                                     <span class="text-muted d-block extra-small">Employee ID:</span>
@@ -1158,6 +1166,15 @@
                                     </tbody>
                                 </table>
                             </div>
+
+                            ${row.format_warnings && row.format_warnings.length > 0 ? `
+                                <div class="alert alert-warning border-0 rounded-2 py-2 px-3 mb-3 small" style="background-color: #fef3c7; color: #92400e;">
+                                    <div class="fw-semibold mb-1"><i class="ti ti-clock me-1"></i>Format Notices:</div>
+                                    <ul class="mb-0 ps-3">
+                                        ${row.format_warnings.map(fw => '<li>' + escapeHtml(fw) + '</li>').join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
 
                             <div class="d-flex align-items-start gap-2 text-muted" style="font-size: 0.8rem; line-height: 1.4;">
                                 <i class="ti ti-info-circle text-warning fs-3 flex-shrink-0 mt-0.5"></i>
@@ -1509,7 +1526,8 @@
     function formatDateDisplay(val) {
         if (val === null || val === undefined) return '';
         const s = String(val).trim();
-        if (s === '' || s === '-' || s === 'null' || s === 'undefined') return '';
+        if (s === '-' || s === '—' || s === '–') return '-';
+        if (s === '' || s === 'null' || s === 'undefined') return '';
         const isoMatch = s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
         if (isoMatch) {
             return `${String(isoMatch[3]).padStart(2, '0')}/${String(isoMatch[2]).padStart(2, '0')}/${isoMatch[1]}`;
