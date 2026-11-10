@@ -2132,18 +2132,7 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
                 return htmlspecialchars($t ?: 'Document');
             })
             ->addColumn('category', function ($row) use ($tpdCache) {
-                if ($row->source === 'offline') {
-                    return '<span class="badge bg-secondary-lt text-secondary">Non KP-OWL</span>';
-                }
-                $hasPlaylist = !empty($row->playlist_title)
-                    || (!empty($row->content_id) && isset($tpdCache[$row->content_id]))
-                    || in_array($row->category ?? '', ['Content Playlist', 'Playlist'], true)
-                    || ($row->source_type ?? '') === 'playlist';
-
-                if ($hasPlaylist) {
-                    return '<span class="badge bg-purple-lt text-purple">Content Playlist</span>';
-                }
-                return '<span class="badge bg-blue-lt text-blue">All Content</span>';
+                return $this->categoryBadge($row, $tpdCache);
             })
             ->addColumn('course_title', function ($row) {
                 $title = htmlspecialchars($row->learning_title ?: '-');
@@ -2533,13 +2522,22 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
                 'employee',
                 'learning_title',
                 'course_title',
+                'playlist',
+                'type',
+                'category',
+                'category_badge',
                 'main_classification',
+                'provider',
+                'sub_provider',
+                'certificate_availability',
                 'kpi_badge',
                 'progress_bar',
                 'progress_badge',
                 'progress_percent',
                 'progress_status',
                 'date_time_merged',
+                'date_merged',
+                'time_merged',
                 'requirement',
                 'attendance',
                 'certificate_badge',
@@ -2548,6 +2546,7 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
                 'score_l2',
                 'score_l3',
                 'learning_hours',
+                'learning_hours_formatted',
                 'pic',
                 'total_engagement_duration',
                 'total_engagement_time',
@@ -2817,12 +2816,6 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
 
                 return '<div class="fw-semibold text-dark text-truncate" style="max-width: 250px;" title="' . $escaped . '">' . $escaped . '</div>';
             })
-            ->addColumn('type', function ($row) {
-                return htmlspecialchars($row->type ?: '-');
-            })
-            ->addColumn('category', function ($row) {
-                return htmlspecialchars($row->category ?: '-');
-            })
             ->addColumn('classification', function ($row) {
                 return htmlspecialchars($row->classification ?: '-');
             })
@@ -2881,18 +2874,7 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
                 return htmlspecialchars($t ?: 'Document');
             })
             ->addColumn('category', function ($row) use ($tpdCache) {
-                if ($row->source === 'offline') {
-                    return '<span class="badge bg-secondary-lt text-secondary">Non KP-OWL</span>';
-                }
-                $hasPlaylist = !empty($row->playlist_title)
-                    || (!empty($row->content_id) && isset($tpdCache[$row->content_id]))
-                    || in_array($row->category ?? '', ['Content Playlist', 'Playlist'], true)
-                    || ($row->source_type ?? '') === 'playlist';
-
-                if ($hasPlaylist) {
-                    return '<span class="badge bg-purple-lt text-purple">Content Playlist</span>';
-                }
-                return '<span class="badge bg-blue-lt text-blue">All Content</span>';
+                return $this->categoryBadge($row, $tpdCache);
             })
             ->addColumn('course_title', function ($row) {
                 $title = htmlspecialchars($row->learning_title ?: '-');
@@ -3217,13 +3199,22 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
                 'employee',
                 'learning_title',
                 'course_title',
+                'playlist',
+                'type',
+                'category',
+                'category_badge',
                 'main_classification',
+                'provider',
+                'sub_provider',
+                'certificate_availability',
                 'kpi_badge',
                 'progress_bar',
                 'progress_badge',
                 'progress_percent',
                 'progress_status',
                 'date_time_merged',
+                'date_merged',
+                'time_merged',
                 'requirement',
                 'attendance',
                 'certificate_badge',
@@ -3232,12 +3223,41 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
                 'score_l2',
                 'score_l3',
                 'learning_hours',
+                'learning_hours_formatted',
                 'pic',
                 'total_engagement_duration',
                 'total_engagement_time',
                 'action',
             ])
             ->make(true);
+    }
+
+    /**
+     * Render category HTML badge:
+     * - Non KP OWL (Offline): badge bg-secondary-lt text-secondary 'Non KP-OWL'
+     * - Content Playlist: badge bg-purple-lt text-purple 'Content Playlist'
+     * - All Content: badge bg-azure-lt text-azure 'All Content'
+     */
+    public function categoryBadge($row, array $tpdCache = []): string
+    {
+        $sourceRaw = strtolower(trim((string) ($row->source ?? '')));
+        $isOffline = in_array($sourceRaw, ['offline', 'non kp owl', 'non kp-owl'], true);
+        if ($isOffline) {
+            return '<span class="badge bg-secondary-lt text-secondary">Non KP-OWL</span>';
+        }
+
+        $categorySource = $row->category_source ?? ($row->category ?? '');
+        $hasPlaylist = !empty($row->playlist_title)
+            || (!empty($row->content_id) && isset($tpdCache[$row->content_id]))
+            || in_array($categorySource, ['Content Playlist', 'Playlist'], true)
+            || in_array($row->category ?? '', ['Content Playlist', 'Playlist'], true)
+            || ($row->source_type ?? '') === 'playlist';
+
+        if ($hasPlaylist) {
+            return '<span class="badge bg-purple-lt text-purple">Content Playlist</span>';
+        }
+
+        return '<span class="badge bg-azure-lt text-azure">All Content</span>';
     }
 
     /**

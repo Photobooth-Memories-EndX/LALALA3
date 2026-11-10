@@ -388,4 +388,35 @@ class AllParticipantDetailColumnConsistencyTest extends TestCase
         $this->assertSame(34, json_decode($res1->getContent(), true)['recordsTotal']);
         $this->assertSame(67, json_decode($res2->getContent(), true)['recordsTotal']);
     }
+
+    /**
+     * Test 13 — HTML Badges: Verify Category and other badge columns return unescaped HTML (no &lt;span).
+     */
+    public function test_13_category_and_badges_not_html_escaped(): void
+    {
+        $p = $this->combinedService->resolveParticipant('129458');
+        $req = new Request(['classification' => 'basic-common-duties', 'length' => 25]);
+        $res = $this->combinedService->participantDatatable($p, $req);
+        $json = json_decode($res->getContent(), true);
+
+        $this->assertNotEmpty($json['data']);
+        $firstRow = $json['data'][0];
+
+        // Ensure category contains raw HTML span and not entity-escaped &lt;span
+        $this->assertStringContainsString('<span class="badge', $firstRow['category']);
+        $this->assertStringNotContainsString('&lt;span', $firstRow['category']);
+
+        // Verify other HTML columns are not escaped
+        $this->assertStringContainsString('<span class="badge', $firstRow['source_badge']);
+        $this->assertStringNotContainsString('&lt;span', $firstRow['source_badge']);
+        $this->assertStringNotContainsString('&lt;div', $firstRow['course_title']);
+
+        // Verify classification datatable category badge as well
+        $classReq = new Request(['classification' => 'basic-common-duties', 'length' => 10]);
+        $classRes = $this->combinedService->datatable($classReq, 'basic-common-duties');
+        $classJson = json_decode($classRes->getContent(), true);
+        $this->assertNotEmpty($classJson['data']);
+        $this->assertStringContainsString('<span class="badge', $classJson['data'][0]['category']);
+        $this->assertStringNotContainsString('&lt;span', $classJson['data'][0]['category']);
+    }
 }
