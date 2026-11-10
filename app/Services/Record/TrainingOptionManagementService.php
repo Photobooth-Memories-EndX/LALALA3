@@ -258,119 +258,84 @@ class TrainingOptionManagementService
         }
 
         // =========================================================================
-        // 1. TRAINING CLASSIFICATION (Hierarchical Main -> Sub -> Course Examples)
+        // 1. TRAINING CLASSIFICATION (Single Main DataTable: Sub Classification Rows)
         // =========================================================================
         if ($type === self::TYPE_CLASSIFICATION) {
-            $mainQuery = Classification::query();
+            $query = OfflineTrainingOption::with(['classification', 'courseExamples'])
+                ->where('option_type', OfflineOptionService::TYPE_SUB_CLASSIFICATION);
 
             if (!empty($mainId)) {
-                $mainQuery->where('id', (int) $mainId);
+                $query->where('classification_id', (int) $mainId);
+            }
+
+            if (!empty($subId)) {
+                $query->where('id', (int) $subId);
             }
 
             if ($status !== null && $status !== '' && in_array($status, ['0', '1'], true)) {
-                $mainQuery->where('is_active', $status === '1');
+                $query->where('is_active', $status === '1');
             }
 
-            $allMains = $mainQuery->orderBy('classification_name', 'asc')->get();
-
-            // Load sub classifications and course examples for each main classification
-            $enrichedMains = $allMains->map(function ($main) use ($search, $source, $status, $subId) {
-                $subsQuery = OfflineTrainingOption::where('option_type', OfflineOptionService::TYPE_SUB_CLASSIFICATION)
-                    ->where('classification_id', $main->id);
-
-                if (!empty($subId)) {
-                    $subsQuery->where('id', (int) $subId);
-                }
-
-                if ($status !== null && $status !== '' && in_array($status, ['0', '1'], true)) {
-                    $subsQuery->where('is_active', $status === '1');
-                }
-
-                if ($source !== null && $source !== '' && $source !== 'all') {
-                    $subsQuery->where(function ($q) use ($source) {
-                        $q->where('source', $source)
-                          ->orWhere('source', 'all')
-                          ->orWhereNull('source');
-                    });
-                }
-
-                $subs = $subsQuery->orderBy('sort_order', 'asc')
-                    ->orderBy('value', 'asc')
-                    ->get();
-
-                // Eager load Course Examples for each sub
-                $subs = $subs->map(function ($sub) use ($search, $source, $status) {
-                    $coursesQuery = OfflineTrainingOption::where('option_type', OfflineOptionService::TYPE_COURSE_NAME)
-                        ->where('parent_id', $sub->id);
-
-                    if ($status !== null && $status !== '' && in_array($status, ['0', '1'], true)) {
-                        $coursesQuery->where('is_active', $status === '1');
-                    }
-
-                    if ($source !== null && $source !== '' && $source !== 'all') {
-                        $coursesQuery->where(function ($q) use ($source) {
-                            $q->where('source', $source)
-                              ->orWhere('source', 'all')
-                              ->orWhereNull('source');
-                        });
-                    }
-
-                    $courses = $coursesQuery->orderBy('sort_order', 'asc')
-                        ->orderBy('value', 'asc')
-                        ->get();
-
-                    $offlineUsage = 0;
-                    try {
-                        $offlineUsage = OfflineTraining::where('sub_classification', $sub->value)->count();
-                    } catch (\Throwable $e) {
-                        $offlineUsage = 0;
-                    }
-
-                    $sub->course_examples = $courses;
-                    $sub->offline_count = $offlineUsage;
-                    $sub->total_usage = $offlineUsage + $courses->count();
-                    return $sub;
+            if ($source !== null && $source !== '' && $source !== 'all') {
+                $query->where(function ($q) use ($source) {
+                    $q->where('source', $source)
+                      ->orWhere('source', 'all')
+                      ->orWhereNull('source');
                 });
+            }
 
-                // Filter by search keyword across Main Name, Sub Name, and Course Names
-                if ($search !== '') {
-                    $searchLower = mb_strtolower($search);
-                    $mainMatches = str_contains(mb_strtolower($main->classification_name ?? ''), $searchLower);
-
-                    if (!$mainMatches) {
-                        $subs = $subs->filter(function ($sub) use ($searchLower) {
-                            $subMatches = str_contains(mb_strtolower($sub->value ?? ''), $searchLower);
-                            $courseMatches = $sub->course_examples->contains(function ($c) use ($searchLower) {
-                                return str_contains(mb_strtolower($c->value ?? ''), $searchLower);
-                            });
-                            return $subMatches || $courseMatches;
-                        })->values();
-                    }
-                }
-
-                $contentCount = Content::where('classification_id', $main->id)->count();
-                $offlineCount = OfflineTraining::where('main_classification', $main->classification_name)->count();
-
-                $main->sub_classifications = $subs;
-                $main->content_count = $contentCount;
-                $main->offline_count = $offlineCount;
-                $main->total_usage = $contentCount + $offlineCount;
-                $main->total_sub_count = $subs->count();
-                $main->total_course_count = $subs->sum(function ($s) {
-                    return $s->course_examples->count();
-                });
-
-                return $main;
-            });
-
-            // If search is active, only retain mains that matched or have matching subs
             if ($search !== '') {
                 $searchLower = mb_strtolower($search);
-                $enrichedMains = $enrichedMains->filter(function ($main) use ($searchLower) {
-                    $mainMatches = str_contains(mb_strtolower($main->classification_name ?? ''), $searchLower);
-                    return $mainMatches || $main->sub_classifications->isNotEmpty();
-                })->values();
+                $query->where(function ($q) use ($search, $searchLower) {
+                    $q->where('value', 'LIKE', "%{$search}%")
+                      ->orWhere('normalized_value', 'LIKE', "%{$searchLower}%")
+                      ->orWhere('explanation', 'LIKE', "%{$search}%")
+                      ->orWhereHas('classification', function ($mq) use ($search) {
+                          $mq->where('classification_name', 'LIKE', "%{$search}%");
+                      })
+                      ->orWhereHas('courseExamples', function ($cq) use ($search, $searchLower) {
+                          $cq->where('value', 'LIKE', "%{$search}%")
+                             ->orWhere('normalized_value', 'LIKE', "%{$searchLower}%");
+                      });
+                });
             }
+
+            // Order canonically by Main Classification, then sort_order, then value
+            $canonicalOrder = [
+                'Basic & Common Duties',
+                'Compliance',
+                'Innovation',
+                'Job Functional',
+                'Language',
+                'Leadership',
+                'Assessment/Test',
+            ];
+            $caseParts = [];
+            foreach ($canonicalOrder as $idx => $cName) {
+                $cNameEscaped = addslashes($cName);
+                $caseParts[] = "WHEN classification.classification_name = '{$cNameEscaped}' THEN {$idx}";
+            }
+            $caseSql = "CASE " . implode(' ', $caseParts) . " ELSE 99 END";
+
+            $subs = $query->leftJoin('classification', 'offline_training_options.classification_id', '=', 'classification.id')
+                ->select('offline_training_options.*')
+                ->orderByRaw($caseSql)
+                ->orderBy('classification.classification_name', 'asc')
+                ->orderBy('offline_training_options.sort_order', 'asc')
+                ->orderBy('offline_training_options.value', 'asc')
+                ->get();
+
+            $subs = $subs->map(function ($sub) {
+                $offlineUsage = 0;
+                try {
+                    $offlineUsage = OfflineTraining::where('sub_classification', $sub->value)->count();
+                } catch (\Throwable $e) {
+                    $offlineUsage = 0;
+                }
+                $sub->offline_count = $offlineUsage;
+                $sub->total_usage = $offlineUsage + ($sub->courseExamples ? $sub->courseExamples->count() : 0);
+                return $sub;
+            });
 
             $totalClassifications = Classification::count();
             $totalSubClassifications = OfflineTrainingOption::where('option_type', OfflineOptionService::TYPE_SUB_CLASSIFICATION)->count();
@@ -379,11 +344,12 @@ class TrainingOptionManagementService
             return [
                 'type'                    => $type,
                 'config'                  => $config,
-                'items'                   => $enrichedMains,
-                'total_count'             => $totalClassifications,
-                'active_count'            => Classification::where('is_active', true)->count(),
+                'items'                   => $subs,
+                'total_count'             => $subs->count(),
+                'active_count'            => $subs->where('is_active', true)->count(),
                 'total_sub_count'         => $totalSubClassifications,
                 'total_course_count'      => $totalCourseExamples,
+                'total_classifications'   => $totalClassifications,
                 'per_page'                => $perPage,
             ];
         }

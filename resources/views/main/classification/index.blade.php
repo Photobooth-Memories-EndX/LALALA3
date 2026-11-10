@@ -342,262 +342,178 @@
         </div>
 
         {{-- ========================================================================= --}}
-        {{-- VIEW A: TRAINING CLASSIFICATION (3-TIER HIERARCHY TREE VIEW)             --}}
+        {{-- VIEW A: TRAINING CLASSIFICATION (SINGLE MAIN DATATABLE)                   --}}
         {{-- ========================================================================= --}}
         @if ($activeType === 'classification')
-            <div class="d-flex align-items-center justify-content-between mb-3">
-                <div class="d-flex align-items-center gap-2">
-                    <span class="badge bg-primary text-white rounded-pill px-3 py-1 fw-semibold">
-                        List Classification &bull; Classification Name &rarr; Sub Classification &rarr; Course Examples
-                    </span>
-                    <span class="text-muted small">({{ count($items) }} Main Classifications)</span>
-                </div>
-                <div class="btn-list">
-                    <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill" id="btnToggleAllAccordions" data-state="expanded">
-                        <i class="ti ti-fold me-1"></i>Collapse All
-                    </button>
-                </div>
-            </div>
-
-            @if (count($items) > 0)
-                <div class="accordion classification-tree-accordion d-flex flex-column gap-3" id="classificationAccordion">
-                    @foreach ($items as $main)
-                        @php
-                            $collapseId = 'collapseMain_' . $main->id;
-                            $subs = $main->sub_classifications ?? collect();
-                            $courseCount = $main->total_course_count ?? 0;
-                            $subCount = $main->total_sub_count ?? 0;
-                            $initials = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $main->classification_name), 0, 2)) ?: 'CL';
-                        @endphp
-                        <div class="card border-0 shadow-sm rounded-4 overflow-hidden main-classification-card">
-                            <!-- Main Classification Card Header -->
-                            <div class="card-header bg-white py-3 px-4 d-flex flex-wrap align-items-center justify-content-between gap-2 border-0">
-                                <div class="d-flex align-items-center gap-3 cursor-pointer flex-grow-1 accordion-header-clickable" 
-                                     data-bs-toggle="collapse" 
-                                     data-bs-target="#{{ $collapseId }}" 
-                                     aria-expanded="true" 
-                                     aria-controls="{{ $collapseId }}">
-                                    <button class="btn btn-sm btn-icon btn-light rounded-circle accordion-chevron-btn" type="button">
-                                        <i class="ti ti-chevron-down fs-2"></i>
-                                    </button>
-                                    <span class="avatar avatar-md rounded-3 fw-bold text-white shadow-sm" style="background: linear-gradient(135deg, #003b6d 0%, #1d4ed8 100%);">
-                                        {{ $initials }}
-                                    </span>
-                                    <div>
-                                        <div class="d-flex align-items-center gap-2">
-                                            <h3 class="card-title fw-bold text-dark mb-0 fs-3">{{ $main->classification_name }}</h3>
-                                            @if ($main->is_active)
-                                                <span class="badge bg-success-lt text-success rounded-pill px-2 py-0 small"><i class="ti ti-check me-1"></i>Active</span>
-                                            @else
-                                                <span class="badge bg-secondary-lt text-secondary rounded-pill px-2 py-0 small"><i class="ti ti-ban me-1"></i>Inactive</span>
-                                            @endif
-                                        </div>
-                                        <div class="d-flex flex-wrap align-items-center gap-2 mt-1 text-muted small">
-                                            <span class="badge bg-blue-lt text-primary px-2 py-1 rounded-pill">
-                                                <i class="ti ti-subtask me-1"></i>{{ $subCount }} Sub Classification(s)
-                                            </span>
-                                            <span class="badge bg-purple-lt text-purple px-2 py-1 rounded-pill">
-                                                <i class="ti ti-certificate me-1"></i>{{ $courseCount }} Course Example(s)
-                                            </span>
-                                            @if (($main->total_usage ?? 0) > 0)
-                                                <span class="badge bg-green-lt text-green px-2 py-1 rounded-pill" title="{{ $main->content_count }} learning contents, {{ $main->offline_count }} offline training records">
-                                                    <i class="ti ti-link me-1"></i>{{ $main->total_usage }} Linked Records
-                                                </span>
-                                            @endif
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Actions on Main Classification -->
-                                <div class="d-flex align-items-center gap-2">
-                                    <button type="button" 
-                                            class="btn btn-sm btn-outline-primary rounded-pill px-3 btn-add-sub-to-main"
-                                            data-main-id="{{ $main->id }}"
-                                            data-main-name="{{ $main->classification_name }}"
-                                            title="Add Sub Classification under {{ $main->classification_name }}">
-                                        <i class="ti ti-plus me-1"></i>Sub Classification
-                                    </button>
-
-                                    <button type="button" 
-                                            class="btn btn-sm btn-outline-secondary rounded-pill px-3 btn-edit-classification"
-                                            data-id="{{ $main->id }}"
-                                            data-name="{{ $main->classification_name }}"
-                                            data-active="{{ $main->is_active ? '1' : '0' }}"
-                                            title="Edit Main Classification">
-                                        <i class="ti ti-edit me-1"></i>Edit
-                                    </button>
-
-                                    <button type="button" 
-                                            class="btn btn-sm btn-icon btn-outline-danger rounded-circle btn-delete-classification"
-                                            data-id="{{ $main->id }}"
-                                            data-name="{{ $main->classification_name }}"
-                                            data-usage="{{ $main->total_usage ?? 0 }}"
-                                            title="Delete Main Classification">
-                                        <i class="ti ti-trash"></i>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Collapsible Card Body (Sub Classification Table) -->
-                            <div id="{{ $collapseId }}" class="collapse show" data-bs-parent="#classificationAccordion">
-                                <div class="card-body p-0 border-top">
-                                    @if ($subs->count() > 0)
-                                        <div class="table-responsive mb-0">
-                                            <table class="table table-vcenter card-table table-hover mb-0 option-table">
-                                                <thead class="bg-light-subtle">
-                                                    <tr>
-                                                        <th width="50" class="text-center text-muted">#</th>
-                                                        <th width="220">Sub Classification</th>
-                                                        <th>Course Examples</th>
-                                                        <th width="120" class="text-center">Status</th>
-                                                        <th width="160" class="text-end pe-4">Action</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    @foreach ($subs as $sub)
-                                                        @php
-                                                            $courses = $sub->course_examples ?? collect();
-                                                        @endphp
-                                                        <tr>
-                                                            <td class="text-center text-muted fw-semibold">{{ $loop->iteration }}</td>
-                                                            <td>
-                                                                <div class="d-flex align-items-center gap-2">
-                                                                    <div class="fw-bold text-dark fs-4">{{ $sub->value }}</div>
-                                                                    @if ($sub->source === 'owl')
-                                                                        <span class="badge bg-indigo text-white px-2 py-0 rounded-pill small" title="OWL Source">OWL</span>
-                                                                    @elseif ($sub->source === 'non_kp_owl')
-                                                                        <span class="badge bg-emerald text-white px-2 py-0 rounded-pill small" style="background-color: #059669 !important;" title="Non KP-OWL Source">Non KP-OWL</span>
-                                                                    @endif
-                                                                </div>
-                                                                @if (!empty($sub->explanation))
-                                                                    <div class="text-muted small mt-1" style="max-width: 280px; font-size: 0.8rem;">
-                                                                        {{ $sub->explanation }}
-                                                                    </div>
-                                                                @endif
-                                                                @if ($sub->offline_count > 0)
-                                                                    <span class="badge bg-light text-muted border px-2 py-0 rounded-pill mt-1" style="font-size: 0.75rem;">
-                                                                        <i class="ti ti-check me-1"></i>{{ $sub->offline_count }} offline record(s)
-                                                                    </span>
-                                                                @endif
-                                                            </td>
-                                                            <td>
-                                                                <div class="d-flex flex-wrap align-items-center gap-1 py-1 course-pill-cloud">
-                                                                    @forelse ($courses as $course)
-                                                                        <span class="badge bg-white text-dark border shadow-xs px-2 py-1 rounded-pill d-inline-flex align-items-center gap-1 course-example-pill" 
-                                                                              title="Course Example: {{ $course->value }}">
-                                                                            <i class="ti ti-certificate text-purple fs-3"></i>
-                                                                            <span>{{ $course->value }}</span>
-                                                                            <button type="button" 
-                                                                                    class="btn-close ms-1 btn-edit-course-trigger" 
-                                                                                    data-id="{{ $course->id }}"
-                                                                                    data-value="{{ $course->value }}"
-                                                                                    data-parent-id="{{ $sub->id }}"
-                                                                                    data-parent-name="{{ $sub->value }}"
-                                                                                    data-main-id="{{ $main->id }}"
-                                                                                    style="font-size: 0.55rem;"
-                                                                                    title="Edit this Course Example">
-                                                                            </button>
-                                                                        </span>
-                                                                    @empty
-                                                                        <span class="text-muted small fst-italic">
-                                                                            No course examples defined yet.
-                                                                        </span>
-                                                                    @endforelse
-
-                                                                    <button type="button" 
-                                                                            class="btn btn-outline-primary btn-sm rounded-pill py-0 px-2 btn-add-course-inline" 
-                                                                            data-sub-id="{{ $sub->id }}"
-                                                                            data-sub-name="{{ $sub->value }}"
-                                                                            data-main-id="{{ $main->id }}"
-                                                                            data-main-name="{{ $main->classification_name }}"
-                                                                            style="font-size: 0.75rem;" 
-                                                                            title="Add Course Example to {{ $sub->value }}">
-                                                                        <i class="ti ti-plus me-1"></i>Add Course
-                                                                    </button>
-                                                                </div>
-                                                            </td>
-                                                            <td class="text-center">
-                                                                @if ($sub->is_active)
-                                                                    <span class="badge bg-success-lt text-success px-2 py-1 rounded-pill fw-semibold">
-                                                                        <i class="ti ti-check me-1"></i>Active
-                                                                    </span>
-                                                                @else
-                                                                    <span class="badge bg-secondary-lt text-secondary px-2 py-1 rounded-pill fw-semibold">
-                                                                        <i class="ti ti-ban me-1"></i>Inactive
-                                                                    </span>
-                                                                @endif
-                                                            </td>
-                                                            <td class="text-end pe-4">
-                                                                <div class="btn-list justify-content-end">
-                                                                    <button type="button" 
-                                                                            class="btn btn-sm btn-icon {{ $sub->is_active ? 'btn-outline-warning' : 'btn-outline-success' }} rounded-circle btn-toggle-status"
-                                                                            data-id="{{ $sub->id }}"
-                                                                            title="{{ $sub->is_active ? 'Deactivate Sub Classification' : 'Activate Sub Classification' }}">
-                                                                        <i class="ti {{ $sub->is_active ? 'ti-eye-off' : 'ti-eye' }}"></i>
-                                                                    </button>
-
-                                                                    <button type="button" 
-                                                                            class="btn btn-outline-primary btn-sm rounded-pill btn-edit-sub-classification"
-                                                                            data-id="{{ $sub->id }}"
-                                                                            data-value="{{ $sub->value }}"
-                                                                            data-explanation="{{ $sub->explanation }}"
-                                                                            data-source="{{ $sub->source }}"
-                                                                            data-main-id="{{ $main->id }}"
-                                                                            data-order="{{ $sub->sort_order }}"
-                                                                            data-active="{{ $sub->is_active ? '1' : '0' }}"
-                                                                            title="Edit Sub Classification">
-                                                                        <i class="ti ti-edit me-1"></i>Edit
-                                                                    </button>
-
-                                                                    <button type="button" 
-                                                                            class="btn btn-outline-danger btn-sm rounded-pill btn-delete-option"
-                                                                            data-id="{{ $sub->id }}"
-                                                                            data-value="{{ $sub->value }}"
-                                                                            title="Delete Sub Classification">
-                                                                        <i class="ti ti-trash"></i>
-                                                                    </button>
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                    @endforeach
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    @else
-                                        <div class="text-center py-4 px-3 bg-light-subtle">
-                                            <div class="text-muted small mb-2">No Sub Classifications found for {{ $main->classification_name }}.</div>
-                                            <button type="button" 
-                                                    class="btn btn-primary btn-sm rounded-pill px-3 btn-add-sub-to-main"
-                                                    data-main-id="{{ $main->id }}"
-                                                    data-main-name="{{ $main->classification_name }}"
-                                                    style="background-color: #003b6d; border-color: #003b6d;">
-                                                <i class="ti ti-plus me-1"></i>Add First Sub Classification
-                                            </button>
-                                        </div>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            @else
-                <!-- EMPTY STATE CLASSIFICATION -->
-                <div class="card border-0 shadow-sm rounded-4 text-center py-5 px-3">
-                    <div class="avatar avatar-xl bg-light-subtle text-muted rounded-circle mx-auto mb-3" style="width: 72px; height: 72px;">
-                        <i class="ti ti-category fs-1"></i>
-                    </div>
-                    <h3 class="fw-bold text-dark mb-1">No Classifications Found</h3>
-                    <p class="text-muted small mb-4">No classification records match your filter criteria or search keyword.</p>
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div class="card-header border-0 bg-transparent py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
                     <div>
-                        <a href="{{ route('manage.classification.index', ['type' => 'classification']) }}" class="btn btn-outline-secondary rounded-pill px-4 me-2">
-                            Reset Filters
-                        </a>
-                        <button type="button" class="btn btn-primary rounded-pill px-4" style="background-color: #003b6d; border-color: #003b6d;" data-bs-toggle="modal" data-bs-target="#addMainClassificationModal">
-                            <i class="ti ti-plus me-1"></i>Add Main Classification
+                        <h3 class="card-title mb-1 fw-bold text-dark d-flex align-items-center gap-2">
+                            <i class="ti ti-category-2 text-primary"></i>
+                            List Training Classification
+                            <span class="visually-hidden">List Classification &bull; Classification Name</span>
+                        </h3>
+                        <div class="text-muted small">Manage main classifications, sub classifications, and their associated course examples.</div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-light text-muted border px-2 py-1">
+                            {{ count($items) }} row(s) displayed
+                        </span>
+                        <button type="button" 
+                                class="btn btn-outline-primary btn-sm rounded-3 px-3 fw-semibold" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#addMainClassificationModal"
+                                title="Add New Main Classification">
+                            <i class="ti ti-plus me-1"></i>Main Classification
+                        </button>
+                        <button type="button" 
+                                class="btn btn-primary btn-sm rounded-3 px-3 fw-semibold shadow-sm" 
+                                style="background-color: #003b6d; border-color: #003b6d;"
+                                data-bs-toggle="modal" 
+                                data-bs-target="#addSubClassificationModal">
+                            <i class="ti ti-plus me-1"></i>Add Classification
                         </button>
                     </div>
                 </div>
-            @endif
+
+                <div class="card-body p-0">
+                    <div id="table-default" class="table-responsive">
+                        @if (count($items) > 0)
+                            <table class="table table-vcenter card-table table-hover option-table w-100 mb-0" id="MyTable">
+                                <thead class="bg-light-subtle">
+                                    <tr>
+                                        <th width="60" class="text-center">No</th>
+                                        <th width="220">Main Classification</th>
+                                        <th width="200">Sub Classification</th>
+                                        <th>Course Examples</th>
+                                        <th width="120" class="text-center">Source</th>
+                                        <th width="110" class="text-center">Status</th>
+                                        <th width="140" class="text-end pe-4">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($items as $item)
+                                        @php
+                                            $courses = $item->courseExamples ?? collect();
+                                            $mainName = $item->classification->classification_name ?? '-';
+                                            $initials = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $mainName), 0, 2)) ?: 'CL';
+                                        @endphp
+                                        <tr>
+                                            <td class="text-center text-muted fw-semibold">{{ $loop->iteration }}</td>
+                                            <td>
+                                                <div class="d-flex align-items-center justify-content-between gap-2">
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <span class="avatar avatar-xs rounded-2 fw-bold text-white shadow-xs flex-shrink-0" style="background: linear-gradient(135deg, #003b6d 0%, #1d4ed8 100%); font-size: 0.7rem; width: 26px; height: 26px;">
+                                                            {{ $initials }}
+                                                        </span>
+                                                        <span class="fw-bold text-dark fs-4">{{ $mainName }}</span>
+                                                    </div>
+                                                    @if ($item->classification)
+                                                        <button type="button" 
+                                                                class="btn btn-sm btn-link text-muted p-0 btn-edit-classification" 
+                                                                data-id="{{ $item->classification->id }}" 
+                                                                data-name="{{ $item->classification->classification_name }}"
+                                                                data-active="{{ $item->classification->is_active ? '1' : '0' }}"
+                                                                title="Edit Main Classification {{ $mainName }}">
+                                                            <i class="ti ti-edit" style="font-size: 0.85rem;"></i>
+                                                        </button>
+                                                    @endif
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="fw-semibold text-dark">{{ $item->value }}</div>
+                                                @if (!empty($item->explanation))
+                                                    <div class="text-muted small" style="font-size: 0.8rem;">{{ $item->explanation }}</div>
+                                                @endif
+                                                @if (($item->offline_count ?? 0) > 0)
+                                                    <span class="badge bg-light text-muted border px-2 py-0 rounded-pill mt-1" style="font-size: 0.72rem;">
+                                                        <i class="ti ti-check me-1"></i>{{ $item->offline_count }} offline record(s)
+                                                    </span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if ($courses->isNotEmpty())
+                                                    <div class="d-flex flex-wrap align-items-center gap-1 py-1 course-pill-cloud">
+                                                        @foreach ($courses as $c)
+                                                            <span class="badge bg-white text-dark border shadow-xs px-2 py-1 rounded-pill d-inline-flex align-items-center gap-1 course-example-pill" title="Course Example: {{ $c->value }}">
+                                                                <i class="ti ti-certificate text-purple fs-4"></i>
+                                                                <span>{{ $c->value }}</span>
+                                                            </span>
+                                                        @endforeach
+                                                    </div>
+                                                @else
+                                                    <span class="text-muted fst-italic">-</span>
+                                                @endif
+                                            </td>
+                                            <td class="text-center">
+                                                @if ($item->source === 'owl')
+                                                    <span class="badge bg-indigo text-white px-2 py-1 rounded-pill small fw-semibold">OWL</span>
+                                                @elseif ($item->source === 'non_kp_owl')
+                                                    <span class="badge bg-emerald text-white px-2 py-1 rounded-pill small fw-semibold" style="background-color: #059669 !important;">Non KP-OWL</span>
+                                                @else
+                                                    <span class="badge bg-blue-lt text-primary px-2 py-1 rounded-pill small fw-semibold">Shared</span>
+                                                @endif
+                                            </td>
+                                            <td class="text-center">
+                                                @if ($item->is_active)
+                                                    <span class="badge bg-success-lt text-success px-2 py-1 rounded-pill fw-semibold">Active</span>
+                                                @else
+                                                    <span class="badge bg-secondary-lt text-secondary px-2 py-1 rounded-pill fw-semibold">Inactive</span>
+                                                @endif
+                                            </td>
+                                            <td class="text-end pe-4">
+                                                <div class="btn-list justify-content-end">
+                                                    <button type="button" 
+                                                            class="btn btn-sm btn-icon {{ $item->is_active ? 'btn-outline-warning' : 'btn-outline-success' }} rounded-circle btn-toggle-status"
+                                                            data-id="{{ $item->id }}"
+                                                            title="{{ $item->is_active ? 'Deactivate Sub Classification' : 'Activate Sub Classification' }}">
+                                                        <i class="ti {{ $item->is_active ? 'ti-eye-off' : 'ti-eye' }}"></i>
+                                                    </button>
+                                                    <button type="button" 
+                                                            class="btn btn-outline-primary btn-sm rounded-pill btn-edit-sub-classification"
+                                                            data-id="{{ $item->id }}"
+                                                            data-value="{{ $item->value }}"
+                                                            data-explanation="{{ $item->explanation }}"
+                                                            data-source="{{ $item->source }}"
+                                                            data-main-id="{{ $item->classification_id }}"
+                                                            data-order="{{ $item->sort_order }}"
+                                                            data-active="{{ $item->is_active ? '1' : '0' }}"
+                                                            title="Edit Classification">
+                                                        <i class="ti ti-edit me-1"></i>Edit
+                                                    </button>
+                                                    <button type="button" 
+                                                            class="btn btn-outline-danger btn-sm rounded-pill btn-delete-option"
+                                                            data-id="{{ $item->id }}"
+                                                            data-value="{{ $item->value }}"
+                                                            title="Delete Sub Classification">
+                                                        <i class="ti ti-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        @else
+                            <div class="text-center py-5 px-3">
+                                <div class="avatar avatar-xl bg-light-subtle text-muted rounded-circle mx-auto mb-3" style="width: 72px; height: 72px;">
+                                    <i class="ti ti-category fs-1"></i>
+                                </div>
+                                <h3 class="fw-bold text-dark mb-1">No Classifications Found</h3>
+                                <p class="text-muted small mb-4">No master classification records match your filter criteria or search keyword.</p>
+                                <div>
+                                    <a href="{{ route('manage.classification.index', ['type' => 'classification']) }}" class="btn btn-outline-secondary rounded-pill px-4 me-2">
+                                        Reset Filters
+                                    </a>
+                                    <button type="button" class="btn btn-primary rounded-pill px-4" style="background-color: #003b6d; border-color: #003b6d;" data-bs-toggle="modal" data-bs-target="#addSubClassificationModal">
+                                        <i class="ti ti-plus me-1"></i>Add Classification
+                                    </button>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
 
         {{-- ========================================================================= --}}
         {{-- VIEW B: DELIVERY METHOD (Hierarchical Delivery -> Sub Delivery)           --}}
@@ -1404,6 +1320,24 @@
                         <textarea name="explanation" id="editOptionExplanation" class="form-control rounded-3" rows="2"></textarea>
                     </div>
 
+                    <!-- Dynamic Course Examples Management (when editing Sub Classification) -->
+                    <div class="mb-3" id="editOptionCoursesGroup" style="display: none;">
+                        <label class="form-label small fw-semibold d-flex align-items-center justify-content-between mb-1">
+                            <span>Associated Course Examples</span>
+                            <span class="badge bg-purple-lt text-purple rounded-pill small" id="editModalCourseCountBadge">0 Courses</span>
+                        </label>
+                        <div id="editModalCourseList" class="d-flex flex-wrap gap-1 p-2 border rounded-3 bg-light-subtle mb-2" style="min-height: 48px; max-height: 160px; overflow-y: auto;">
+                            <!-- Dynamically loaded course pills -->
+                        </div>
+                        <div class="input-group input-group-sm">
+                            <input type="text" id="inputNewCourseForSub" class="form-control rounded-start-2" placeholder="Add new course example...">
+                            <button type="button" class="btn btn-primary rounded-end-2 px-3 fw-semibold" id="btnAddNewCourseToSubModal" style="background-color: #003b6d; border-color: #003b6d;">
+                                <i class="ti ti-plus me-1"></i>Add Course
+                            </button>
+                        </div>
+                        <div class="form-text small text-muted">Click &times; on any course pill to remove it immediately.</div>
+                    </div>
+
                     <div class="form-check form-switch mb-0">
                         <input class="form-check-input" type="checkbox" name="is_active" id="editOptionIsActive" value="1">
                         <label class="form-check-label small fw-semibold" for="editOptionIsActive">Active (Available in dropdowns)</label>
@@ -1635,25 +1569,6 @@
         }
 
         // =========================================================================
-        // EXPAND ALL / COLLAPSE ALL ACCORDIONS
-        // =========================================================================
-        $('#btnToggleAllAccordions').on('click', function () {
-            var btn = $(this);
-            var state = btn.attr('data-state');
-            var collapses = $('.classification-tree-accordion .collapse');
-
-            if (state === 'expanded') {
-                collapses.collapse('hide');
-                btn.attr('data-state', 'collapsed');
-                btn.html('<i class="ti ti-unfold me-1"></i>Expand All');
-            } else {
-                collapses.collapse('show');
-                btn.attr('data-state', 'expanded');
-                btn.html('<i class="ti ti-fold me-1"></i>Collapse All');
-            }
-        });
-
-        // =========================================================================
         // AJAX HELPER FOR FORM SUBMISSIONS
         // =========================================================================
         function submitAjaxForm(form, btn, alertBox, modalId) {
@@ -1833,9 +1748,120 @@
             $('#editOptionExplanation').val(explanation || '');
             $('#editOptionIsActive').prop('checked', active == '1');
 
+            // Show dynamic course examples section for sub_classification
+            $('#editOptionCoursesGroup').show();
+            $('#editModalCourseList').empty().html('<div class="text-muted small p-2"><span class="spinner-border spinner-border-sm me-1"></span>Loading course examples...</div>');
+            $('#editModalCourseCountBadge').text('Loading...');
+            $('#inputNewCourseForSub').val('');
+
+            // Load courses via AJAX
+            $.ajax({
+                url: '/manage/classification/options/' + id,
+                type: 'GET',
+                success: function (res) {
+                    if (res.success && res.data) {
+                        var courses = res.data.course_examples || [];
+                        renderModalCoursePills(courses, id, mainId);
+                    }
+                },
+                error: function () {
+                    $('#editModalCourseList').html('<div class="text-danger small p-2">Failed to load courses.</div>');
+                }
+            });
+
             $('#editOptionAlert').addClass('d-none').text('');
             var modal = new bootstrap.Modal(document.getElementById('editOptionModal'));
             modal.show();
+        });
+
+        function renderModalCoursePills(courses, subId, mainId) {
+            var container = $('#editModalCourseList');
+            container.empty();
+            $('#editModalCourseCountBadge').text(courses.length + ' Courses');
+
+            if (!courses.length) {
+                container.html('<div class="text-muted small fst-italic p-2">No course examples linked yet. Use the input below to add one.</div>');
+                return;
+            }
+
+            courses.forEach(function (c) {
+                var pill = $('<span class="badge bg-white text-dark border shadow-xs px-2 py-1 rounded-pill d-inline-flex align-items-center gap-1 course-edit-pill me-1 mb-1"></span>');
+                pill.append('<i class="ti ti-certificate text-purple"></i><span>' + c.value + '</span>');
+                var delBtn = $('<button type="button" class="btn-close ms-1 btn-remove-course-ajax" style="font-size: 0.55rem;" title="Delete this course example"></button>');
+                delBtn.data('course-id', c.id);
+                pill.append(delBtn);
+                container.append(pill);
+            });
+        }
+
+        // Add course example directly from Edit Sub Classification Modal
+        $('#btnAddNewCourseToSubModal').on('click', function () {
+            var subId = $('#modalEditOptionId').val();
+            var mainId = $('#editClassificationParentId').val();
+            var courseName = $('#inputNewCourseForSub').val().trim();
+            if (!courseName) return;
+
+            var btn = $(this);
+            btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
+
+            $.ajax({
+                url: '/manage/classification/options',
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    option_type: 'course_name',
+                    parent_id: subId,
+                    classification_id: mainId,
+                    value: courseName,
+                    source: $('#editOptionSource').val() || 'all'
+                },
+                success: function (res) {
+                    btn.prop('disabled', false).html('<i class="ti ti-plus me-1"></i>Add Course');
+                    $('#inputNewCourseForSub').val('');
+                    $.get('/manage/classification/options/' + subId, function (r) {
+                        if (r.success && r.data) {
+                            renderModalCoursePills(r.data.course_examples || [], subId, mainId);
+                        }
+                    });
+                },
+                error: function (xhr) {
+                    btn.prop('disabled', false).html('<i class="ti ti-plus me-1"></i>Add Course');
+                    var msg = 'Failed to add course.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
+                    alert(msg);
+                }
+            });
+        });
+
+        // Delete course example directly from Edit Sub Classification Modal
+        $(document).on('click', '.btn-remove-course-ajax', function (e) {
+            e.stopPropagation();
+            var courseId = $(this).data('course-id');
+            var subId = $('#modalEditOptionId').val();
+            var mainId = $('#editClassificationParentId').val();
+            var pill = $(this).closest('.course-edit-pill');
+
+            if (!confirm('Remove this course example?')) return;
+
+            pill.css('opacity', '0.5');
+
+            $.ajax({
+                url: '/manage/classification/options/' + courseId,
+                type: 'DELETE',
+                data: { _token: '{{ csrf_token() }}' },
+                success: function () {
+                    pill.remove();
+                    $.get('/manage/classification/options/' + subId, function (r) {
+                        if (r.success && r.data) {
+                            renderModalCoursePills(r.data.course_examples || [], subId, mainId);
+                        }
+                    });
+                },
+                error: function () {
+                    pill.css('opacity', '1');
+                    alert('Failed to remove course example.');
+                }
+            });
         });
 
         // =========================================================================
@@ -1860,6 +1886,7 @@
             $('#editClassificationParentGroup').hide();
             $('#editOptionMetaRow').show();
             $('#editOptionExplanationGroup').hide();
+            $('#editOptionCoursesGroup').hide();
             $('#editOptionIsActive').prop('checked', true);
 
             $('#editOptionAlert').addClass('d-none').text('');
@@ -1883,6 +1910,7 @@
                         var data = res.data;
                         $('#modalEditOptionType').val(data.option_type);
                         $('#editModalHeaderTitle').text('Edit Option');
+                        $('#editOptionCoursesGroup').hide();
 
                         $('#editClassificationNameGroup').hide();
                         $('#editOptionValueGroup').show();

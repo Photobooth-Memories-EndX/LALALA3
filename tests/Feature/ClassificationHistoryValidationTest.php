@@ -205,17 +205,17 @@ class ClassificationHistoryValidationTest extends TestCase
      */
     public function test_scenario_8_historical_options_are_preserved(): void
     {
-        // Historical types & categories
+        // Historical types & levels
         $this->assertDatabaseHas('offline_training_options', ['option_type' => 'type', 'value' => 'In-House']);
-        $this->assertDatabaseHas('offline_training_options', ['option_type' => 'category', 'value' => 'Advance']);
+        $this->assertDatabaseHas('offline_training_options', ['option_type' => 'level', 'value' => 'Advanced']);
 
         // Historical sub providers
         $this->assertDatabaseHas('offline_training_options', ['option_type' => 'sub_provider', 'value' => 'Vendor']);
-        $this->assertDatabaseHas('offline_training_options', ['option_type' => 'sub_provider', 'value' => 'Public']);
+        $this->assertDatabaseHas('offline_training_options', ['option_type' => 'sub_provider', 'value' => 'Certified Center']);
 
-        // Historical sub classifications
-        $this->assertDatabaseHas('offline_training_options', ['option_type' => 'sub_classification', 'value' => 'Technology-Electrical']);
-        $this->assertDatabaseHas('offline_training_options', ['option_type' => 'sub_classification', 'value' => 'QSS']);
+        // Sub classifications
+        $this->assertDatabaseHas('offline_training_options', ['option_type' => 'sub_classification', 'value' => 'Technology-Electrical/Instrument']);
+        $this->assertDatabaseHas('offline_training_options', ['option_type' => 'sub_classification', 'value' => 'Quick Six Sigma']);
 
         // Historical classifications
         $this->assertDatabaseHas('classification', ['classification_name' => 'Maintenance']);

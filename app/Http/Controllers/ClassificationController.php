@@ -302,7 +302,7 @@ class ClassificationController extends Controller
             }
         }
 
-        $option = OfflineTrainingOption::with(['parent', 'classification'])->find($id);
+        $option = OfflineTrainingOption::with(['parent', 'classification', 'courseExamples'])->find($id);
         if (!$option) {
             $cls = Classification::find($id);
             if ($cls) {

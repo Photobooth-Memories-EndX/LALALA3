@@ -39,6 +39,14 @@ class ManageClassificationHistoryPageTest extends TestCase
         $response->assertSee('Leadership');
         $response->assertSee('Assessment/Test');
 
+        // Verify DataTable table structure and row display
+        $response->assertSee('List Training Classification');
+        $response->assertSee('22 row(s) displayed');
+        $response->assertSee('Sub Classification');
+        $response->assertSee('Course Examples');
+        $response->assertDontSee('accordion classification-tree-accordion');
+        $response->assertDontSee('btnToggleAllAccordions');
+
         // Verify metrics
         $response->assertSee('Main Class');
         $response->assertSee('Sub Class');
