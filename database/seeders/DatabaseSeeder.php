@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
         $this->call(ApproverRoleSeeder::class);
         // $this->call(OfflineTrainingDemoSeeder::class);
         // $this->call(OfflineTrainingOptionSeeder::class);
+        $this->call(ClassificationSeeder::class);
         $this->call(ClassificationHistorySeeder::class);
 
         $data = [
