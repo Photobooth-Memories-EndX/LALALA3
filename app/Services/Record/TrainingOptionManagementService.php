@@ -477,25 +477,53 @@ class TrainingOptionManagementService
         // =========================================================================
         $query = OfflineTrainingOption::with('parent')->where('option_type', $type);
 
+        // Filter by Option Value (specifically for Training Type & standard options)
+        $optionValue = trim((string) ($request->get('option_value') ?? $request->get('value') ?? ''));
+        if ($optionValue !== '' && strtolower($optionValue) !== 'all') {
+            $query->where('value', $optionValue);
+        }
+
         if ($search !== '') {
             $normalizedSearch = OfflineTrainingOption::normalizeString($search);
-            $query->where(function ($q) use ($search, $normalizedSearch) {
+            $searchLower = mb_strtolower($search);
+            $query->where(function ($q) use ($search, $normalizedSearch, $searchLower) {
                 $q->where('value', 'LIKE', "%{$search}%")
                   ->orWhere('normalized_value', 'LIKE', "%{$normalizedSearch}%")
                   ->orWhere('explanation', 'LIKE', "%{$search}%");
+
+                if (stripos('owl', $searchLower) !== false) {
+                    $q->orWhere('source', 'owl');
+                }
+                if (stripos('shared', $searchLower) !== false) {
+                    $q->orWhere(function ($sq) {
+                        $sq->where('source', 'all')->orWhereNull('source');
+                    });
+                }
+                if (stripos('non kp-owl', $searchLower) !== false || stripos('non kp', $searchLower) !== false) {
+                    $q->orWhere('source', 'non_kp_owl');
+                }
             });
         }
 
-        if ($status !== null && $status !== '' && in_array($status, ['0', '1'], true)) {
-            $query->where('is_active', $status === '1');
+        if ($status !== null && $status !== '' && in_array(strtolower((string) $status), ['0', '1', 'active', 'inactive'], true)) {
+            $isActive = ($status === '1' || strtolower((string) $status) === 'active');
+            $query->where('is_active', $isActive);
         }
 
-        if ($source !== null && $source !== '' && $source !== 'all') {
-            $query->where(function ($q) use ($source) {
-                $q->where('source', $source)
-                  ->orWhere('source', 'all')
-                  ->orWhereNull('source');
-            });
+        if ($source !== null && $source !== '') {
+            $srcLower = strtolower(trim((string) $source));
+            if ($srcLower === 'shared') {
+                $query->where(function ($q) {
+                    $q->where('source', 'all')
+                      ->orWhere('source', 'shared')
+                      ->orWhereNull('source');
+                });
+            } elseif ($srcLower === 'owl') {
+                $query->where('source', 'owl');
+            } elseif (in_array($srcLower, ['non_kp_owl', 'non-kp-owl'], true)) {
+                $query->where('source', 'non_kp_owl');
+            }
+            // If $srcLower is 'all' or empty, do not apply source filter (All Sources)
         }
 
         if ($config['is_hierarchical'] && !empty($parent)) {
@@ -509,7 +537,23 @@ class TrainingOptionManagementService
         $totalCount = OfflineTrainingOption::where('option_type', $type)->count();
         $activeCount = OfflineTrainingOption::where('option_type', $type)->where('is_active', true)->count();
 
-        $items = $query->orderBy('sort_order', 'asc')->orderBy('value', 'asc')->get();
+        // Sorting support: value, source, status, order
+        $sortBy = strtolower(trim((string) ($request->get('sort_by') ?? $request->get('sort') ?? 'sort_order')));
+        $sortDir = strtolower(trim((string) ($request->get('sort_dir') ?? $request->get('direction') ?? 'asc'))) === 'desc' ? 'desc' : 'asc';
+
+        if (in_array($sortBy, ['value', 'option_value'], true)) {
+            $query->orderBy('value', $sortDir);
+        } elseif ($sortBy === 'source') {
+            $query->orderBy('source', $sortDir)->orderBy('value', 'asc');
+        } elseif (in_array($sortBy, ['status', 'is_active'], true)) {
+            $query->orderBy('is_active', $sortDir)->orderBy('value', 'asc');
+        } elseif (in_array($sortBy, ['order', 'sort_order'], true)) {
+            $query->orderBy('sort_order', $sortDir)->orderBy('value', 'asc');
+        } else {
+            $query->orderBy('sort_order', 'asc')->orderBy('value', 'asc');
+        }
+
+        $items = $query->get();
 
         $column = $config['table_column'] ?? null;
         $items = $items->map(function ($item) use ($column) {
@@ -525,13 +569,19 @@ class TrainingOptionManagementService
             return $item;
         });
 
+        $trainingTypeOptions = OfflineTrainingOption::where('option_type', OfflineOptionService::TYPE_TYPE)
+            ->orderBy('sort_order', 'asc')
+            ->orderBy('value', 'asc')
+            ->get();
+
         return [
-            'type'         => $type,
-            'config'       => $config,
-            'items'        => $items,
-            'total_count'  => $totalCount,
-            'active_count' => $activeCount,
-            'per_page'     => $perPage,
+            'type'                => $type,
+            'config'              => $config,
+            'items'               => $items,
+            'total_count'         => $totalCount,
+            'active_count'        => $activeCount,
+            'per_page'            => $perPage,
+            'trainingTypeOptions' => $trainingTypeOptions,
         ];
     }
 

@@ -107,6 +107,10 @@ class ClassificationController extends Controller
             ->orderBy('sort_order', 'asc')
             ->orderBy('value', 'asc')
             ->get();
+        $trainingTypeOptions = OfflineTrainingOption::where('option_type', OfflineOptionService::TYPE_TYPE)
+            ->orderBy('sort_order', 'asc')
+            ->orderBy('value', 'asc')
+            ->get();
 
         return view('main.classification.index', array_merge($optionData, [
             'activeType'             => $type,
@@ -119,6 +123,7 @@ class ClassificationController extends Controller
             'summaryStats'           => $summaryStats,
             'classificationsList'    => $classificationsList,
             'subClassificationsList' => $subClassificationsList,
+            'trainingTypeOptions'    => $trainingTypeOptions,
             'classification'         => $classification,
             'totalCategories'        => $totalCategories,
             'activeCategories'       => $activeCategories,

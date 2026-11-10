@@ -236,7 +236,7 @@
                     <div class="row g-2 align-items-center">
                         <!-- Entries Select -->
                         <div class="col-6 col-sm-4 col-md-2 col-lg-auto" style="min-width: 120px;">
-                            <select id="option-entries-select" name="entries" class="form-select rounded-3">
+                            <select id="option-entries-select" name="entries" class="form-select rounded-3" onchange="this.form.submit()">
                                 <option value="10" {{ request('entries') == 10 ? 'selected' : '' }}>10 Entries</option>
                                 <option value="25" {{ (request('entries') == 25 || !request()->has('entries')) ? 'selected' : '' }}>25 Entries</option>
                                 <option value="50" {{ request('entries') == 50 ? 'selected' : '' }}>50 Entries</option>
@@ -269,21 +269,36 @@
                             </div>
                         @endif
 
-                        <!-- Source Filter (All / OWL / Non KP-OWL) -->
+                        <!-- Training Type Filter (when on Training Type) -->
+                        @if ($activeType === 'type')
+                            <div class="col-6 col-sm-4 col-md-3 col-lg-auto" style="min-width: 180px;">
+                                <select name="option_value" class="form-select rounded-3" id="filter-training-type-select" onchange="this.form.submit()">
+                                    <option value="">All Training Types</option>
+                                    @foreach ($trainingTypeOptions ?? [] as $tOpt)
+                                        <option value="{{ $tOpt->value }}" {{ request('option_value') === $tOpt->value ? 'selected' : '' }}>
+                                            {{ $tOpt->value }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endif
+
+                        <!-- Source Filter (All / Shared / OWL / Non KP-OWL) -->
                         <div class="col-6 col-sm-4 col-md-2 col-lg-auto" style="min-width: 150px;">
                             <select name="source" class="form-select rounded-3" id="filter-source-select" onchange="this.form.submit()">
-                                <option value="" {{ request('source') === null || request('source') === '' ? 'selected' : '' }}>All Sources</option>
-                                <option value="owl" {{ request('source') === 'owl' ? 'selected' : '' }}>OWL Only</option>
-                                <option value="non_kp_owl" {{ request('source') === 'non_kp_owl' ? 'selected' : '' }}>Non KP-OWL Only</option>
+                                <option value="" {{ (request('source') === null || request('source') === '' || request('source') === 'all') ? 'selected' : '' }}>All Sources</option>
+                                <option value="shared" {{ strtolower((string)request('source')) === 'shared' ? 'selected' : '' }}>Shared</option>
+                                <option value="owl" {{ strtolower((string)request('source')) === 'owl' ? 'selected' : '' }}>OWL</option>
+                                <option value="non_kp_owl" {{ strtolower((string)request('source')) === 'non_kp_owl' ? 'selected' : '' }}>Non KP-OWL</option>
                             </select>
                         </div>
 
                         <!-- Status Filter -->
                         <div class="col-6 col-sm-4 col-md-2 col-lg-auto" style="min-width: 130px;">
                             <select name="status" class="form-select rounded-3" id="filter-status-select" onchange="this.form.submit()">
-                                <option value="" {{ request('status') === null || request('status') === '' ? 'selected' : '' }}>All Status</option>
-                                <option value="1" {{ request('status') === '1' ? 'selected' : '' }}>Active Only</option>
-                                <option value="0" {{ request('status') === '0' ? 'selected' : '' }}>Inactive Only</option>
+                                <option value="" {{ (request('status') === null || request('status') === '' || request('status') === 'all') ? 'selected' : '' }}>All Status</option>
+                                <option value="1" {{ (request('status') === '1' || strtolower((string)request('status')) === 'active') ? 'selected' : '' }}>Active</option>
+                                <option value="0" {{ (request('status') === '0' || strtolower((string)request('status')) === 'inactive') ? 'selected' : '' }}>Inactive</option>
                             </select>
                         </div>
 
@@ -968,9 +983,14 @@
                                 </div>
                                 <h3 class="fw-bold text-dark mb-1">No {{ $typeConfig['label'] }} Options Found</h3>
                                 <p class="text-muted small mb-4">No master options match your filter criteria or search keyword.</p>
-                                <button type="button" class="btn btn-primary rounded-pill px-4" style="background-color: #003b6d; border-color: #003b6d;" data-bs-toggle="modal" data-bs-target="#addOptionModal">
-                                    <i class="ti ti-plus me-1"></i>Add First {{ $typeConfig['label'] }}
-                                </button>
+                                <div class="d-flex align-items-center justify-content-center gap-2">
+                                    <a href="{{ route('manage.classification.index', ['type' => $activeType]) }}" class="btn btn-outline-secondary rounded-pill px-4">
+                                        <i class="ti ti-refresh me-1"></i>Reset Filters
+                                    </a>
+                                    <button type="button" class="btn btn-primary rounded-pill px-4" style="background-color: #003b6d; border-color: #003b6d;" data-bs-toggle="modal" data-bs-target="#addOptionModal">
+                                        <i class="ti ti-plus me-1"></i>Add First {{ $typeConfig['label'] }}
+                                    </button>
+                                </div>
                             </div>
                         @endif
                     </div>
@@ -1542,6 +1562,9 @@
                 autoWidth: false,
                 responsive: true,
                 order: [],
+                columnDefs: [
+                    { orderable: false, targets: [0, -1] }
+                ],
                 language: {
                     search: '',
                     searchPlaceholder: 'Search...',
