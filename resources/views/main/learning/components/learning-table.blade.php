@@ -1,37 +1,86 @@
-<div class="card border-0 shadow-sm">
+@php
+    $isAllRecord = $isAllRecord ?? false;
+@endphp
+<!-- LEARNING RECORDS TABLE CARD -->
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <!-- Card Header with Title and Subtitle (No Dropdown at Top) -->
+    <div class="card-header bg-white border-0 pt-4 pb-2 px-4">
+        <h4 class="card-title fw-bold text-dark mb-0">{{ $cardTitle ?? 'Learning Records' }}</h4>
+        <p class="text-muted small mb-0">{{ $cardSubtitle ?? 'Participant records for this category.' }}</p>
+    </div>
+
     <div class="card-body p-0">
-        <div class="table-responsive">
-            <table id="learning-table" class="table table-vcenter table-striped card-table w-100">
-                <thead>
+        <!-- Top Synchronized Horizontal Scrollbar -->
+        <div class="table-scroll-top-wrapper" id="table-scroll-top-wrapper">
+            <div class="table-scroll-top-inner" id="table-scroll-top-inner"></div>
+        </div>
+
+        <!-- Primary Table Container with Horizontal Scrollbar -->
+        <div class="table-scroll-container" id="table-scroll-container">
+            <table class="table table-hover align-middle mb-0" id="learning-table">
+                <thead class="bg-light text-muted small text-uppercase">
                     <tr>
-                        <th class="text-center" style="width: 50px;">NO</th>
-                        <th class="text-center">STATUS</th>
-                        <th class="text-center">ID</th>
-                        <th>EMPLOYEE</th>
-                        <th>LEARNING TITLE</th>
-                        <th class="text-center">TYPE</th>
-                        <th>CLASSIFICATION</th>
-                        <th class="text-center">CATEGORY</th>
-                        <th class="text-center">DURATION</th>
-                        <th class="text-center">DATE</th>
-                        <th class="text-center">PROGRESS</th>
-                        <th class="text-center" style="width: 115px; min-width: 115px;">ACTION</th>
+                        <th class="text-center" style="min-width: 45px; width: 45px;">NO</th>
+                        @if ($isAllRecord)
+                        <th class="text-center" style="min-width: 95px;">SOURCE</th>
+                        @endif
+                        <th class="text-center" style="min-width: 110px;">EMPLOYEE ID</th>
+                        <th style="min-width: 160px;">EMPLOYEE NAME</th>
+                        <th style="min-width: 130px;">TEAM</th>
+                        <th style="min-width: 140px;">DEPARTMENT</th>
+                        <th style="min-width: 130px;">COMPANY</th>
+                        <th style="min-width: 220px;">COURSE TITLE</th>
+                        <th class="text-center" style="min-width: 100px;">TYPE</th>
+                        <th style="min-width: 110px;">CATEGORY</th>
+                        <th style="min-width: 140px;">MAIN CLASSIFICATION</th>
+                        <th class="text-center" style="min-width: 140px;">SUB CLASSIFICATION</th>
+                        <th class="text-center" style="min-width: 120px;">DELIVERY METHOD</th>
+                        <th style="min-width: 130px;">SUB DELIVERY METHOD</th>
+                        <th class="text-center" style="min-width: 110px;">PROVIDER</th>
+                        <th style="min-width: 130px;">PROVIDER NAME</th>
+                        <th style="min-width: 120px;">VENUE</th>
+                        <th class="text-center" style="min-width: 110px;">COURSE DURATION</th>
+                        <th class="text-center" style="min-width: 130px;">TOTAL RECOGNIZED DURATION</th>
+                        <th class="text-center" style="min-width: 110px;">LEARNING HOURS</th>
+                        <th class="text-center" style="min-width: 110px;">% PROGRESS</th>
+                        <th class="text-center" style="min-width: 110px;">PROGRESS STATUS</th>
+                        <th style="min-width: 140px;">DATE (START - END)</th>
+                        <th style="min-width: 120px;">TIME (START - END)</th>
+                        <th class="text-center" style="min-width: 110px;">RECORD MONTH</th>
+                        <th class="text-center" style="min-width: 110px;">REQUIREMENT</th>
+                        <th class="text-center" style="min-width: 100px;">ATTENDANCE</th>
+                        <th class="text-center" style="min-width: 120px;">SCORE (L1) - COURSE</th>
+                        <th class="text-center" style="min-width: 90px;">SCORE (L2)</th>
+                        <th class="text-center" style="min-width: 90px;">SCORE (L3)</th>
+                        <th class="text-center" style="min-width: 130px;">CERTIFICATE AVAILABILITY</th>
+                        <th style="min-width: 130px;">PERSON IN CHARGE (PIC)</th>
+                        <th class="text-center" style="min-width: 130px;">{{ $isAllRecord ? 'TOTAL ENGAGEMENT TIME (LH)' : 'TOTAL ENGAGEMENT TIME' }}</th>
+                        <th class="text-end" style="min-width: 80px; width: 80px;">ACTION</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
             </table>
         </div>
-        <div class="card-footer d-flex flex-wrap align-items-center justify-content-between p-3 border-top">
-            <div class="d-flex align-items-center gap-2">
-                <select class="form-select form-select-sm w-auto rounded-3" id="table-entries-select">
+    </div>
+
+    <!-- Custom Pagination Footer Container with Bottom-Left Show Entries Dropdown -->
+    <div class="card-footer bg-white border-0 py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-3" id="learning-table-footer">
+        <!-- Bottom-Left: Show Entries Dropdown & Info Summary side-by-side -->
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+            <div class="d-flex align-items-center">
+                <select id="table-entries-select" class="form-select form-select-sm" style="width: auto; min-width: 125px;">
                     <option value="10" {{ ($entries ?? 25) == 10 ? 'selected' : '' }}>10 Entries</option>
                     <option value="25" {{ ($entries ?? 25) == 25 ? 'selected' : '' }}>25 Entries</option>
                     <option value="50" {{ ($entries ?? 25) == 50 ? 'selected' : '' }}>50 Entries</option>
                     <option value="100" {{ ($entries ?? 25) == 100 ? 'selected' : '' }}>100 Entries</option>
                 </select>
-                <div id="learning-table-info-container"></div>
             </div>
-            <div id="learning-table-pagination-container"></div>
+            <div class="text-muted small" id="learning-table-info-container">
+                Showing 0 to 0 of 0 entries
+            </div>
         </div>
+
+        <!-- Bottom-Right: Pagination Controls -->
+        <div id="learning-table-pagination-container"></div>
     </div>
 </div>

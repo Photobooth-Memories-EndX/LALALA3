@@ -1,6 +1,9 @@
-<div class="page">
+@php
+    $mylearningongoing = $mylearningongoing ?? 0;
+    $category = isset($category) && is_iterable($category) ? $category : collect();
+@endphp
 
-    {{-- SIDEBAR --}}
+{{-- SIDEBAR --}}
     <aside class="navbar navbar-vertical navbar-expand-lg">
         <div class="container-fluid">
 
@@ -127,16 +130,6 @@
                         </li>
                     @endif
 
-                    {{-- MANAGE ROLE: hanya Super Admin (3) --}}
-                    @if (auth()->user()->canManageRole())
-                        <li class="nav-item {{ request()->routeIs('manage.role.*') ? 'active' : '' }}">
-                            <a class="nav-link" href="{{ route('manage.role.index') }}">
-                                <span class="nav-link-icon"><i class="ti ti-shield-lock"></i></span>
-                                <span class="nav-link-title">Manage Role</span>
-                            </a>
-                        </li>
-                    @endif
-
                     {{-- MONITORING: Admin Training (2), Super Admin (3), Subadmin Division (4) --}}
                     @if (auth()->user()->canMonitor())
                         <li class="nav-item {{ request()->routeIs('monitoring.*') ? 'active' : '' }}">
@@ -154,10 +147,7 @@
         </div>
     </aside>
 
-    {{-- PAGE WRAPPER --}}
-    <div class="page-wrapper">
-
-        {{-- TOP NAVBAR --}}
+{{-- TOP NAVBAR --}}
         <header class="navbar navbar-expand-md d-print-none app-topbar">
             <div class="container-xl">
                 {{-- DESKTOP (>= 992px) --}}
@@ -269,15 +259,5 @@
                 </form>
             </div>
         </div>
-
-        {{-- CONTENT --}}
-        <div class="page-body">
-            <div class="container-xl">
-                @yield('content')
-            </div>
-        </div>
-
-    </div>
-</div>
 
 @include('partials.logout-modal')

@@ -20,6 +20,7 @@
                 <option value="content">Content</option>
                 <option value="playlist">Playlist</option>
                 <option value="global">Global</option>
+                <option value="training_offline">Training Offline</option>
             </select>
         </div>
 

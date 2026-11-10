@@ -465,7 +465,7 @@ class LearningRecordHistoricalPreservationTest extends TestCase
         $this->assertEquals('Playlist', $planRow[2]); // Type
         $this->assertEquals(1.0, (float) $planRow[6]); // Learning Hour
         $this->assertEquals('100%', $planRow[7]); // Progress
-        $this->assertStringContainsString('2026-08-10 11:15', $planRow[9]); // Finish Date
+        $this->assertStringContainsString('11:15:00', $planRow[8]); // Date Time column
     }
 
     /**

@@ -22,23 +22,26 @@ class CertificateGenerateService
         return DB::transaction(function () use ($setting, $user, $check) {
             $certificate = Certificate::firstOrCreate(
                 [
-                    'user_id' => $user->id,
+                    'user_id'                => $user->id,
                     'certificate_setting_id' => $setting->id,
-                    'certificate_type' => $setting->certificate_type,
-                    'source_id' => $setting->sourceId(),
+                    'certificate_type'       => $setting->certificate_type,
+                    'source_id'              => $setting->sourceId(),
                 ],
                 [
-                    'content_user_id' => $check->learning?->id,
+                    'content_user_id'      => $check->learning?->id,
                     'assessment_result_id' => $check->assessmentResult?->id,
-                    'certificate_number' => $this->number(),
-                    'credential_id' => 'OWL-' . strtoupper(Str::random(11)),
-                    'title' => $setting->sourceTitle(),
-                    'participant_name' => $user->name,
+                    'certificate_number'   => $this->number(),
+                    'credential_id'        => 'OWL-' . strtoupper(Str::random(11)),
+                    'title'                => $setting->sourceTitle(),
+                    'participant_name'     => $user->name,
+                    'institution'          => $setting->institution ?: 'PT KRAKATAU POSCO',
+                    'issued_date'          => $setting->issued_date ?: now(),
+                    'expired_date'         => $setting->expired_date,
                     // Score tercatat bila eligibility ditopang hasil assessment
                     // (deteksi otomatis service) — tidak lagi membaca flag
                     // is_assessment_required yang kini murni konfigurasi.
-                    'score' => $check->assessmentResult?->score,
-                    'issued_at' => now(),
+                    'score'                => $check->assessmentResult?->score,
+                    'issued_at'            => now(),
                 ]
             );
             if (!$certificate->credential_url) {

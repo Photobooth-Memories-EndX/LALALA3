@@ -1,0 +1,48 @@
+<?php
+
+namespace App\Http\Controllers\User\Record;
+
+use App\Http\Controllers\Controller;
+use App\Models\ContentUser;
+use App\Services\Learning\CompletedPlaylistService;
+use App\Services\Learning\LearningRecordLearningHourService;
+use Illuminate\Support\Facades\Auth;
+
+/**
+ * Learning Record Export Hub Controller (User side).
+ */
+class LearningRecordExportHubController extends Controller
+{
+    public function __construct(
+        private readonly CompletedPlaylistService $completedPlaylistService,
+        private readonly LearningRecordLearningHourService $recordLhService,
+    ) {
+    }
+
+    public function partial()
+    {
+        $userId = (int) Auth::id();
+        $userEmpId = Auth::user()?->id_emp;
+
+        // Canonical hero stats agar hero card tetap konsisten (Step 18)
+        $completedPlaylists = $this->completedPlaylistService->forLearningRecord($userId);
+        $completedPlaylistLearning = $completedPlaylists->count();
+        $completedContentLearning = ContentUser::join('content', 'content.id', '=', 'content_users.content_id')
+            ->where('content_users.user_id', $userId)
+            ->where('content_users.finish', '1')
+            ->whereNull('content.deleted_at')
+            ->whereIn('content.type', ['Video', 'Document'])
+            ->count();
+        $learningHours = $this->recordLhService->getTotalLearningHoursByMode('export', $userId, $userEmpId);
+
+        $recordStats = [
+            'courseCompleted'    => $completedContentLearning,
+            'playlistCompleted'  => $completedPlaylistLearning,
+            'totalLearningHours' => $learningHours,
+        ];
+
+        return view('user.learning.record.learning-record-export', [
+            'recordStats' => $recordStats,
+        ]);
+    }
+}

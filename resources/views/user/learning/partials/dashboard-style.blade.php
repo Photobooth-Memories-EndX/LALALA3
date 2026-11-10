@@ -1,11 +1,11 @@
 @section('style')
 <link rel="stylesheet" href="{{ asset('css/dataTables.bootstrap5.min.css') }}">
 {{-- Learning Record: style tabel client-side (dipisah — clean code). --}}
-<link rel="stylesheet" href="{{ asset('css/learning-record.css') }}">
+<link rel="stylesheet" href="{{ asset('css/learning-record.css') }}?v={{ filemtime(public_path('css/learning-record.css')) }}">
 <link rel="stylesheet" href="{{ asset('css/learning-assessment.css') }}?v={{ filemtime(public_path('css/learning-assessment.css')) }}">
-<link rel="stylesheet" href="{{ asset('css/learning-certificate.css') }}">
-<link rel="stylesheet" href="{{ asset('css/learning-ongoing.css') }}">
-<link rel="stylesheet" href="{{ asset('css/mooc.css') }}">
+<link rel="stylesheet" href="{{ asset('css/learning-certificate.css') }}?v={{ filemtime(public_path('css/learning-certificate.css')) }}">
+<link rel="stylesheet" href="{{ asset('css/learning-ongoing.css') }}?v={{ filemtime(public_path('css/learning-ongoing.css')) }}">
+<link rel="stylesheet" href="{{ asset('css/mooc.css') }}?v={{ filemtime(public_path('css/mooc.css')) }}">
 @include('user.learning.partials.hero-style')
 
 <style>
@@ -89,7 +89,11 @@
     .learning-section-wrapper > .learning-section-padding,
     .learning-filter-card,
     .learning-filter-card > .card-body,
-    .learning-filter-card form {
+    .learning-filter-card form,
+    .my-task-filter-card,
+    .my-task-filter-card > .card-body,
+    .my-task-filter-card form,
+    .my-task-toolbar {
         overflow: visible !important;
     }
 
@@ -134,10 +138,32 @@
      * Live Autocomplete Dropdown Search for Ongoing, Assessment & Certificate Learning
      */
     .search-ongoing-container,
-    .assessment-search-container,
     .certificate-search-container {
         position: relative;
+        flex: 1 1 200px;
+        min-width: 180px;
+        width: auto;
+    }
+
+    .assessment-search-container {
+        position: relative;
         width: 100%;
+    }
+
+    .ongoing-search-actions-group,
+    .certificate-search-actions-group {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex: 1 1 300px;
+        min-width: 260px;
+    }
+
+    @media (max-width: 575.98px) {
+        .ongoing-search-actions-group,
+        .certificate-search-actions-group {
+            width: 100%;
+        }
     }
 
     #ongoing-search-results,
@@ -602,6 +628,26 @@
     }
 
     /* Style tabel Learning Record dipindah ke css/learning-record.css */
+    .quick-filter-btn,
+    .quick-filter-btn:hover,
+    .quick-filter-btn:focus,
+    .quick-filter-btn:active,
+    .quick-filter-btn:disabled,
+    .quick-filter-btn.loading,
+    .quick-filter-btn.disabled,
+    .quick-filter-skeleton,
+    .record-mode-switch .record-mode-btn,
+    .record-mode-switch .record-mode-btn:hover,
+    .record-mode-switch .record-mode-btn:focus,
+    .record-mode-switch .record-mode-btn:active,
+    .record-mode-switch .record-mode-btn:disabled,
+    .record-mode-switch .record-mode-btn.loading,
+    .record-mode-switch .record-mode-btn.disabled,
+    .record-mode-switch-wrapper .record-mode-btn,
+    .learning-mode-switch .record-mode-btn {
+        border-radius: 9999px !important; /* Force fully rounded pill shape at all times */
+        transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
 
     .pagination {
         gap: .4rem;
@@ -839,6 +885,403 @@
     body.dark-mode #assessment-search-results .dropdown-item .text-dark,
     body.dark-mode #certificate-search-results .dropdown-item .text-dark {
         color: #f1f5f9 !important;
+    }
+
+    button.attendance-detail-trigger {
+        border: 0;
+        cursor: pointer;
+        font-family: inherit;
+        text-decoration: none;
+        user-select: none;
+        transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+    }
+    button.attendance-detail-trigger:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
+        filter: brightness(0.95);
+    }
+    button.attendance-detail-trigger:active {
+        transform: translateY(0);
+        box-shadow: none;
+        filter: brightness(0.9);
+    }
+    button.attendance-detail-trigger:focus-visible {
+        outline: 2px solid var(--tblr-primary, #206bc4);
+        outline-offset: 2px;
+        border-radius: 4px;
+    }
+
+    /* ── Unified Quick Filter UI (Standardized Across All Learning Tabs) ─────── */
+    .my-task-filter-card,
+    .learning-quick-filter-card {
+        background: #ffffff;
+        border: 1px solid #f1f5f9;
+        overflow: visible !important;
+        position: relative !important;
+        z-index: 40 !important;
+    }
+
+    .my-task-filter-card .card-body,
+    .learning-quick-filter-card .card-body {
+        overflow: visible !important;
+        position: relative;
+    }
+
+    #learning-tab-content > .my-task-filter-card,
+    #learning-tab-content > .learning-quick-filter-card {
+        overflow: visible !important;
+    }
+
+    .my-task-filter-title,
+    .learning-filter-title {
+        color: #0f172a;
+        font-size: 1.25rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    .my-task-filter-subtitle,
+    .learning-filter-subtitle {
+        color: #64748b;
+        font-size: 0.875rem;
+    }
+
+    /* Category Filter Pills */
+    .my-task-pills-row,
+    .learning-pills-row {
+        margin-top: 0.75rem;
+    }
+
+    .my-task-category-pill,
+    .learning-category-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+        padding: 0.45rem 1.25rem;
+        border-radius: 50rem;
+        font-size: 0.8125rem;
+        font-weight: 500;
+        line-height: 1.2;
+        text-decoration: none;
+        white-space: nowrap;
+        background-color: #f1f5f9;
+        color: #334155;
+        border: none;
+        outline: none;
+        cursor: pointer;
+        transition: all 0.15s ease-in-out;
+    }
+
+    .my-task-category-pill:hover,
+    .learning-category-pill:hover {
+        background-color: #e2e8f0;
+        color: #0f172a;
+        text-decoration: none;
+    }
+
+    /* Active State: Soft sky blue with bright blue text (Task Reference Style) */
+    .my-task-category-pill.active,
+    .learning-category-pill.active {
+        background-color: #e0f2fe !important;
+        color: #0284c7 !important;
+        font-weight: 600;
+    }
+
+    /* Divider */
+    .my-task-divider,
+    .learning-divider {
+        border-top: 1px solid #e2e8f0;
+        opacity: 0.7;
+        margin: 1rem 0;
+    }
+
+    /* Toolbar & Dropdowns */
+    .my-task-toolbar,
+    .learning-toolbar {
+        gap: 0.5rem;
+        overflow: visible !important;
+        position: relative;
+    }
+
+    .my-task-toolbar .dropdown,
+    .learning-toolbar .dropdown {
+        position: relative;
+    }
+
+    .my-task-toolbar .dropdown-menu,
+    .learning-toolbar .dropdown-menu {
+        z-index: 1060 !important;
+        min-width: 175px;
+        border-radius: 10px !important;
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.15), 0 8px 10px -6px rgba(15, 23, 42, 0.08) !important;
+        padding: 0.35rem 0;
+    }
+
+    .my-task-toolbar .dropdown-item,
+    .learning-toolbar .dropdown-item {
+        font-size: 0.8125rem;
+        padding: 0.45rem 1rem;
+        color: #334155;
+        transition: all 0.15s ease-in-out;
+    }
+
+    .my-task-toolbar .dropdown-item:hover,
+    .learning-toolbar .dropdown-item:hover {
+        background-color: #f1f5f9;
+        color: #0f172a;
+    }
+
+    .my-task-toolbar .dropdown-item.active,
+    .my-task-toolbar .dropdown-item:active,
+    .learning-toolbar .dropdown-item.active,
+    .learning-toolbar .dropdown-item:active {
+        background-color: #e0f2fe !important;
+        color: #0284c7 !important;
+        font-weight: 600;
+    }
+
+    .my-task-dropdown-btn,
+    .learning-dropdown-btn {
+        height: 38px;
+        padding: 0.45rem 0.85rem;
+        font-size: 0.8125rem;
+        font-weight: 400;
+        color: #334155;
+        background-color: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px !important;
+        display: inline-flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: all 0.15s ease-in-out;
+        box-shadow: none !important;
+        white-space: nowrap;
+    }
+
+    .my-task-dropdown-btn:hover,
+    .learning-dropdown-btn:hover {
+        background-color: #f8fafc;
+        border-color: #cbd5e1;
+        color: #0f172a;
+    }
+
+    .my-task-dropdown-btn:focus,
+    .my-task-dropdown-btn.show,
+    .learning-dropdown-btn:focus,
+    .learning-dropdown-btn.show {
+        border-color: #0284c7;
+        box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15) !important;
+    }
+
+    .my-task-dropdown-btn.active,
+    .learning-dropdown-btn.active {
+        border-color: #0284c7;
+        color: #0284c7;
+        background-color: #f0f9ff;
+    }
+
+    .my-task-dropdown-btn::after,
+    .learning-dropdown-btn::after {
+        margin-left: 0.55rem;
+        vertical-align: 0.15em;
+    }
+
+    /* Search input */
+    .my-task-search-wrapper,
+    .learning-search-wrapper {
+        position: relative;
+        flex-grow: 1;
+        min-width: 200px;
+    }
+
+    .my-task-search-input,
+    .learning-search-input {
+        height: 38px;
+        border-radius: 8px !important;
+        padding-left: 2.25rem;
+        padding-right: 2rem;
+        font-size: 0.8125rem;
+        border: 1px solid #e2e8f0;
+        background-color: #ffffff;
+        color: #334155;
+        transition: all 0.15s ease-in-out;
+    }
+
+    .my-task-search-input:focus,
+    .learning-search-input:focus {
+        background-color: #ffffff;
+        border-color: #0284c7;
+        box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15);
+    }
+
+    .my-task-search-input::placeholder,
+    .learning-search-input::placeholder {
+        color: #94a3b8;
+    }
+
+    /* Square Action Buttons (38px x 38px, rounded 8px) */
+    .my-task-btn-square,
+    .learning-btn-square {
+        width: 38px !important;
+        height: 38px !important;
+        min-width: 38px !important;
+        min-height: 38px !important;
+        max-width: 38px !important;
+        max-height: 38px !important;
+        padding: 0 !important;
+        border-radius: 8px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-shrink: 0 !important;
+        box-shadow: none !important;
+        transition: all 0.15s ease-in-out;
+        line-height: 1 !important;
+        text-decoration: none !important;
+    }
+
+    .my-task-btn-square i,
+    .learning-btn-square i {
+        font-size: 1.15rem !important;
+        line-height: 1 !important;
+    }
+
+    .my-task-btn-search,
+    .learning-btn-search {
+        background-color: #0054a6 !important;
+        border-color: #0054a6 !important;
+        color: #ffffff !important;
+    }
+
+    .my-task-btn-search:hover,
+    .learning-btn-search:hover {
+        background-color: #004085 !important;
+        border-color: #004085 !important;
+        color: #ffffff !important;
+    }
+
+    .my-task-btn-filter,
+    .my-task-btn-reset,
+    .my-task-btn-export,
+    .learning-btn-filter,
+    .learning-btn-reset,
+    .learning-btn-export {
+        background-color: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        color: #475569 !important;
+    }
+
+    .my-task-btn-filter:hover,
+    .my-task-btn-reset:hover,
+    .my-task-btn-export:hover,
+    .learning-btn-filter:hover,
+    .learning-btn-reset:hover,
+    .learning-btn-export:hover {
+        background-color: #f8fafc !important;
+        border-color: #cbd5e1 !important;
+        color: #0f172a !important;
+    }
+
+    /* Badge counter on square filter button */
+    .my-task-btn-square .badge,
+    .learning-btn-square .badge {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        font-size: 0.65rem;
+        padding: 0.2rem 0.35rem;
+        border-radius: 50rem;
+    }
+
+    /* Dark mode adjustments */
+    [data-bs-theme="dark"] .my-task-filter-card,
+    body.dark-mode .my-task-filter-card,
+    [data-bs-theme="dark"] .learning-quick-filter-card,
+    body.dark-mode .learning-quick-filter-card {
+        background: #1e293b;
+        border-color: #334155;
+    }
+
+    [data-bs-theme="dark"] .my-task-filter-title,
+    body.dark-mode .my-task-filter-title,
+    [data-bs-theme="dark"] .learning-filter-title,
+    body.dark-mode .learning-filter-title {
+        color: #f8fafc !important;
+    }
+
+    [data-bs-theme="dark"] .my-task-filter-subtitle,
+    body.dark-mode .my-task-filter-subtitle,
+    [data-bs-theme="dark"] .learning-filter-subtitle,
+    body.dark-mode .learning-filter-subtitle {
+        color: #94a3b8 !important;
+    }
+
+    [data-bs-theme="dark"] .my-task-category-pill,
+    body.dark-mode .my-task-category-pill,
+    [data-bs-theme="dark"] .learning-category-pill,
+    body.dark-mode .learning-category-pill {
+        background-color: #334155;
+        color: #cbd5e1;
+    }
+
+    [data-bs-theme="dark"] .my-task-category-pill:hover,
+    body.dark-mode .my-task-category-pill:hover,
+    [data-bs-theme="dark"] .learning-category-pill:hover,
+    body.dark-mode .learning-category-pill:hover {
+        background-color: #475569;
+        color: #ffffff;
+    }
+
+    [data-bs-theme="dark"] .my-task-category-pill.active,
+    body.dark-mode .my-task-category-pill.active,
+    [data-bs-theme="dark"] .learning-category-pill.active,
+    body.dark-mode .learning-category-pill.active {
+        background-color: rgba(2, 132, 199, 0.25) !important;
+        color: #38bdf8 !important;
+    }
+
+    [data-bs-theme="dark"] .my-task-divider,
+    body.dark-mode .my-task-divider,
+    [data-bs-theme="dark"] .learning-divider,
+    body.dark-mode .learning-divider {
+        border-color: #334155;
+    }
+
+    [data-bs-theme="dark"] .my-task-dropdown-btn,
+    body.dark-mode .my-task-dropdown-btn,
+    [data-bs-theme="dark"] .learning-dropdown-btn,
+    body.dark-mode .learning-dropdown-btn {
+        background-color: #1e293b;
+        border-color: #334155;
+        color: #cbd5e1;
+    }
+
+    [data-bs-theme="dark"] .my-task-search-input,
+    body.dark-mode .my-task-search-input,
+    [data-bs-theme="dark"] .learning-search-input,
+    body.dark-mode .learning-search-input {
+        background-color: #1e293b;
+        border-color: #334155;
+        color: #f1f5f9;
+    }
+
+    [data-bs-theme="dark"] .my-task-btn-filter,
+    [data-bs-theme="dark"] .my-task-btn-reset,
+    [data-bs-theme="dark"] .my-task-btn-export,
+    body.dark-mode .my-task-btn-filter,
+    body.dark-mode .my-task-btn-reset,
+    body.dark-mode .my-task-btn-export,
+    [data-bs-theme="dark"] .learning-btn-filter,
+    [data-bs-theme="dark"] .learning-btn-reset,
+    [data-bs-theme="dark"] .learning-btn-export,
+    body.dark-mode .learning-btn-filter,
+    body.dark-mode .learning-btn-reset,
+    body.dark-mode .learning-btn-export {
+        background-color: #1e293b !important;
+        border-color: #334155 !important;
+        color: #cbd5e1 !important;
     }
 </style>
 @endsection

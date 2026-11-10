@@ -241,7 +241,7 @@ class MyLearningRecordDatabaseLearningHourTest extends TestCase
         $export = new ExportMyLearningRecord();
         $array = $export->array();
 
-        // 1. Headings check: 12 columns
+        // 1. Headings check: 11 columns matching table
         $headings = $array[0];
         $this->assertEquals([
             'No',
@@ -251,9 +251,8 @@ class MyLearningRecordDatabaseLearningHourTest extends TestCase
             'Classification',
             'Duration',
             'Learning Hour',
-            'Learning Progress',
-            'Start Date',
-            'Finish Date',
+            'Progress',
+            'Date Time',
             'Assessment Score',
             'Certificate',
         ], $headings);
@@ -266,7 +265,7 @@ class MyLearningRecordDatabaseLearningHourTest extends TestCase
         $this->assertEquals('Document', $contentRow[2]); // Type
         $this->assertEquals('Content', $contentRow[3]); // Category
         $this->assertEquals('Safety & Environment', $contentRow[4]); // Classification
-        $this->assertEquals(0.25, $contentRow[6]); // Learning Hour
+        $this->assertEquals('0.25 hrs', $contentRow[6]); // Learning Hour
         $this->assertEquals('100%', $contentRow[7]); // Progress
     }
 

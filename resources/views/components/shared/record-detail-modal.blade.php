@@ -1,0 +1,294 @@
+{{-- Shared Training Record Detail Modal (Used by KP OWL Online, Non KP OWL Offline, and All Record) --}}
+@props(['record' => []])
+@php
+    $record = $record ?? [];
+    $rawSource = strtolower(trim((string) ($record['source'] ?? '')));
+    $isOnlineSource = in_array($rawSource, ['online', 'kp-owl', 'kp owl'], true)
+        || (!empty($record['category']) && in_array($record['category'], ['All Content', 'Content', 'Playlist'], true));
+    $recordSource = !empty($record['source'])
+        ? (in_array($rawSource, ['kp owl', 'online', 'kp-owl'], true) ? 'KP OWL' : 'Non-KP OWL')
+        : 'KP OWL';
+@endphp
+<div class="modal fade" id="recordDetailModal" tabindex="-1" aria-labelledby="recordDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-bottom py-3 px-4 bg-light">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="ti ti-file-text text-primary fs-2"></i>
+                    <div>
+                        <h5 class="modal-title fw-bold text-dark mb-0" id="recordDetailModalLabel">More Information</h5>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body p-4" id="recordDetailModalBody">
+                <!-- Loading State (for async fetches) -->
+                <div class="py-5 text-center text-muted" id="record-detail-loading" style="display: none;">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <div class="mt-2 small">Loading training details...</div>
+                </div>
+
+                <!-- Content Container -->
+                <div id="record-detail-content">
+                    <!-- Header & Title -->
+                    <div class="pb-3 mb-3 border-bottom">
+                        <span class="badge {{ $recordSource === 'KP OWL' ? 'bg-primary-subtle text-primary' : 'bg-warning-subtle text-warning' }} mb-2" id="modal-detail-source-badge">
+                            {{ $recordSource }}
+                        </span>
+                        <h4 class="fw-bold text-dark mb-0" id="modal-detail-course-name">{{ $record['title'] ?? ($record['course_name'] ?? '-') }}</h4>
+                    </div>
+
+                    <!-- SECTION 1: Employee Information -->
+                    <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 mb-3 shadow-sm" style="border: 1px solid #e2e8f0; border-radius: 1rem; padding: 1rem; background-color: rgba(248, 250, 252, 0.5); box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+                        <div class="section-heading text-xs text-sm font-semibold fw-semibold text-slate-700 mb-3 d-flex align-items-center gap-1.5" style="font-size: 0.8125rem; font-weight: 600; color: #334155;">
+                            <i class="ti ti-user text-slate-500 me-1.5" style="color: #64748b; font-size: 1rem;"></i> <span>Employee Information</span>
+                        </div>
+                        <!-- Row 1: Employee ID | Employee Name -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-12 col-md-6">
+                                <div class="text-xs text-muted text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">EMPLOYEE ID</div>
+                                <div class="fw-bold text-dark fs-7" id="modal-detail-employee-id">{{ $record['employee_id'] ?? ($record['nip'] ?? (auth()->user()->employee_id ?? (auth()->user()->nip ?? (auth()->user()->id_emp ?? '-')))) }}</div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="text-xs text-muted text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">EMPLOYEE NAME</div>
+                                <div class="fw-bold text-dark fs-7 text-uppercase" id="modal-detail-employee-name">{{ $record['user_name'] ?? ($record['participant_name'] ?? (auth()->user()->name ?? '-')) }}</div>
+                            </div>
+                        </div>
+                        <!-- Row 2: Team -->
+                        <div class="row g-3">
+                            <div class="col-12 col-md-6">
+                                <div class="text-xs text-muted text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">TEAM</div>
+                                <div class="fw-bold text-dark fs-7" id="modal-detail-team">{{ $record['team'] ?? (auth()->user()->team ?? '-') }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 2: Training & Location Information -->
+                    <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 mb-3 shadow-sm" style="border: 1px solid #e2e8f0; border-radius: 1rem; padding: 1rem; background-color: rgba(248, 250, 252, 0.5); box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+                        <div class="section-heading text-xs text-sm font-semibold fw-semibold text-slate-700 mb-3 d-flex align-items-center gap-1.5" style="font-size: 0.8125rem; font-weight: 600; color: #334155;">
+                            <i class="ti ti-map-pin text-slate-500 me-1.5" style="color: #64748b; font-size: 1rem;"></i> <span>Training &amp; Location Information</span>
+                        </div>
+                        <!-- Row 1: Delivery Method | Provider -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-12 col-md-6">
+                                <div class="text-xs text-muted text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">DELIVERY METHOD</div>
+                                <div class="fw-bold text-dark fs-7" id="modal-detail-delivery-method">{{ \App\Models\OfflineTraining::normalizeDeliveryMethod($record['delivery_method'] ?? '-') }}</div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="text-xs text-muted text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">PROVIDER</div>
+                                <div class="fw-bold text-dark fs-7" id="modal-detail-provider">{{ $record['provider'] ?? '-' }}</div>
+                            </div>
+                        </div>
+                        <!-- Row 2: Provider Name | Venue -->
+                        <div class="row g-3">
+                            <div class="col-12 col-md-6">
+                                <div class="text-xs text-muted text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">PROVIDER NAME</div>
+                                <div class="fw-bold text-dark fs-7" id="modal-detail-provider-name">{{ $record['provider_name'] ?? '-' }}</div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="text-xs text-muted text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">VENUE</div>
+                                <div class="fw-bold text-dark fs-7" id="modal-detail-venue">{{ $record['venue'] ?? '-' }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 3: Bond Details (Retain 4 items in 1 single row) -->
+                    <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 mb-3 shadow-sm" style="border: 1px solid #e2e8f0; border-radius: 1rem; padding: 1rem; background-color: rgba(248, 250, 252, 0.5); box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+                        <div class="section-heading text-xs text-sm font-semibold fw-semibold text-slate-700 mb-3 d-flex align-items-center gap-1.5" style="font-size: 0.8125rem; font-weight: 600; color: #334155;">
+                            <i class="ti ti-file-text text-slate-500 me-1.5" style="color: #64748b; font-size: 1rem;"></i> <span>Bond Details</span>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-6 col-md-3">
+                                <div class="text-xs text-muted text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">BOND STATUS</div>
+                                <div class="fw-bold text-dark fs-7" id="modal-detail-bond-status">{{ $record['bond_status'] ?? '-' }}</div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="text-xs text-muted text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">BOND DURATION</div>
+                                <div class="fw-bold text-dark fs-7" id="modal-detail-bond-duration">{{ !empty($record['bond_duration']) ? $record['bond_duration'] . ' Months' : '-' }}</div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="text-xs text-muted text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">BOND END DATE</div>
+                                <div class="fw-bold text-dark fs-7" id="modal-detail-bond-end-date">{{ $record['bond_end_date'] ?? '-' }}</div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="text-xs text-muted text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">BOND AMOUNT</div>
+                                <div class="fw-bold text-dark fs-7 font-monospace" id="modal-detail-bond-amount">
+                                    {{ (!empty($record['bond_amount_idr']) && (float) $record['bond_amount_idr'] > 0)
+                                        ? 'Rp ' . number_format((float) $record['bond_amount_idr'], 0, ',', '.')
+                                        : ((!empty($record['bond_amount']) && is_numeric($record['bond_amount']) && (float) $record['bond_amount'] > 0)
+                                            ? 'Rp ' . number_format((float) $record['bond_amount'], 0, ',', '.')
+                                            : '-') }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 4: Certificate Details -->
+                    <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 mb-3 shadow-sm" style="border: 1px solid #e2e8f0; border-radius: 1rem; padding: 1rem; background-color: rgba(248, 250, 252, 0.5); box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+                        <div class="section-heading text-xs text-sm font-semibold fw-semibold text-slate-700 mb-3 d-flex align-items-center gap-1.5" style="font-size: 0.8125rem; font-weight: 600; color: #334155;">
+                            <i class="ti ti-certificate text-slate-500 me-1.5" style="color: #64748b; font-size: 1rem;"></i> <span>Certificate Details</span>
+                        </div>
+                        <!-- Row 1: Certificate Institution -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-12 col-md-6">
+                                <div class="text-xs text-muted text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">CERTIFICATE INSTITUTION</div>
+                                <div class="fw-bold text-dark fs-7" id="modal-detail-cert-institution">-</div>
+                            </div>
+                        </div>
+                        <!-- Row 2: Certificate Issued Date | Certificate Expired Date -->
+                        <div class="row g-3">
+                            <div class="col-12 col-md-6">
+                                <div class="text-xs text-muted text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">CERTIFICATE ISSUED DATE</div>
+                                <div class="fw-bold text-dark fs-7" id="modal-detail-cert-issued-date">-</div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="text-xs text-muted text-uppercase mb-1" style="font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; color: #94a3b8;">CERTIFICATE EXPIRED DATE</div>
+                                <div class="fw-bold text-dark fs-7" id="modal-detail-cert-expired-date">-</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer border-top py-2 px-4 bg-light">
+                <button type="button" class="btn btn-outline-secondary px-3 rounded-3" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    function fallback(val, def) {
+        if (val === undefined || val === null || val === '') return (def !== undefined ? def : '-');
+        return val;
+    }
+
+    function normalizeDeliveryMethod(method, isOnline) {
+        if (!method || method === '-' || method === '') {
+            return isOnline ? 'Online' : 'Offline';
+        }
+        var raw = String(method).toLowerCase().trim();
+        if (['in class', 'classroom', 'on-site', 'off-site', 'offline'].indexOf(raw) !== -1) {
+            return 'Offline';
+        }
+        if (['e-learning', 'webinar', 'online', 'kp-owl', 'kp owl'].indexOf(raw) !== -1) {
+            return 'Online';
+        }
+        if (['hybrid', 'blended'].indexOf(raw) !== -1) {
+            return 'Blended';
+        }
+        return method.charAt(0).toUpperCase() + method.slice(1);
+    }
+
+    function populateRecordDetailModal(d, source) {
+        if (!d) return;
+
+        var rawSource = (source || d.source || '').toString().toLowerCase().trim();
+        var isOnline = (rawSource === 'online' || rawSource === 'kp owl' || rawSource === 'kp-owl' || (!d.offline_training_id && !d.batch && (d.category === 'All Content' || d.category === 'Content' || d.category === 'Playlist')));
+
+        // 1. Header & Source Badge
+        var sourceLabel = isOnline ? 'KP OWL' : 'Non-KP OWL';
+        $('#modal-detail-source-badge')
+            .text(sourceLabel)
+            .removeClass('bg-primary-subtle text-primary bg-warning-subtle text-warning')
+            .addClass(isOnline ? 'bg-primary-subtle text-primary' : 'bg-warning-subtle text-warning');
+
+        var title = fallback(d.title, fallback(d.course_name, '-'));
+        $('#modal-detail-course-name').text(title);
+
+        // 2. Card 1: Employee Information (ID, Name, Team)
+        var authName = '{{ auth()->user()->name ?? '-' }}';
+        var authEmpId = '{{ auth()->user()->employee_id ?? (auth()->user()->nip ?? (auth()->user()->id_emp ?? '-')) }}';
+        var authTeam = '{{ auth()->user()->team ?? '-' }}';
+
+        var employeeId = fallback(d.employee_id, fallback(d.nip, authEmpId));
+        var employeeName = fallback(d.user_name, fallback(d.participant_name, fallback(d.name, authName)));
+        var team = fallback(d.team, authTeam);
+
+        $('#modal-detail-employee-id').text(employeeId);
+        $('#modal-detail-employee-name').text(employeeName);
+        $('#modal-detail-team').text(team);
+
+        // 3. Card 2: Training Information (Delivery Method, Provider, Venue, Provider Name)
+        $('#modal-detail-delivery-method').text(normalizeDeliveryMethod(d.delivery_method, isOnline));
+        $('#modal-detail-provider').text(fallback(d.provider, isOnline ? 'Internal' : 'External'));
+        $('#modal-detail-venue').text(fallback(d.venue, isOnline ? 'KP-OWL' : '-'));
+        $('#modal-detail-provider-name').text(fallback(d.provider_name, isOnline ? 'KP-OWL' : '-'));
+
+        // 4. Card 3: Bond Information (Status, Duration, End Date, Amount)
+        $('#modal-detail-bond-status').text(fallback(d.bond_status, 'No'));
+
+        var bondDur = fallback(d.bond_duration);
+        if (bondDur !== '-' && bondDur !== null && bondDur !== undefined && String(bondDur).trim() !== '' && !isNaN(bondDur) && parseInt(bondDur) > 0) {
+            $('#modal-detail-bond-duration').text(parseInt(bondDur) + ' Months');
+        } else {
+            $('#modal-detail-bond-duration').text('-');
+        }
+
+        $('#modal-detail-bond-end-date').text(fallback(d.bond_end_date, fallback(d.bond_end_date_display, '-')));
+
+        var bondAmountText = '-';
+        var idrVal = d.bond_amount_idr !== undefined && d.bond_amount_idr !== null ? d.bond_amount_idr : d.bond_amount;
+        var hasIdr = idrVal !== '-' && idrVal !== null && idrVal !== undefined && idrVal !== '' && !isNaN(idrVal) && parseFloat(idrVal) > 0;
+
+        if (hasIdr) {
+            bondAmountText = 'Rp ' + Math.round(parseFloat(idrVal)).toLocaleString('id-ID');
+        } else if (d.bond_amount_formatted && d.bond_amount_formatted !== '-') {
+            bondAmountText = d.bond_amount_formatted;
+        }
+        $('#modal-detail-bond-amount').text(bondAmountText);
+
+        // 5. Card 4: Certificate Details (Institution, Issued Date, Expired Date)
+        $('#modal-detail-cert-institution').text(fallback(d.certificate_institution, isOnline ? 'PT KRAKATAU POSCO' : '-'));
+        $('#modal-detail-cert-issued-date').text(fallback(d.certificate_issued_date, '-'));
+        $('#modal-detail-cert-expired-date').text(fallback(d.certificate_expired_date, '-'));
+    }
+
+    $(document).on('click', '[data-bs-target="#recordDetailModal"], .btn-record-detail', function(e) {
+        var $el = $(this);
+        var recordId = $el.data('record-id');
+        var source = ($el.data('record-source') || 'offline').toString().toLowerCase();
+
+        // 1. Try finding local JSON element
+        var dataEl = document.getElementById('record-data-' + recordId)
+                  || document.getElementById('record-offline-data-' + recordId)
+                  || document.getElementById('record-online-data-' + recordId);
+
+        if (dataEl) {
+            try {
+                var d = JSON.parse(dataEl.textContent);
+                populateRecordDetailModal(d, source);
+                return;
+            } catch (err) {
+                console.warn('Failed parsing local record JSON:', err);
+            }
+        }
+
+        // 2. Fallback to AJAX endpoint
+        if (recordId) {
+            $('#record-detail-loading').show();
+            $('#record-detail-content').hide();
+
+            var url = '/my-learning/learning-record/detail/' + encodeURIComponent(source) + '/' + encodeURIComponent(recordId);
+            $.ajax({
+                url: url,
+                type: 'GET',
+                dataType: 'json',
+                success: function(res) {
+                    $('#record-detail-loading').hide();
+                    $('#record-detail-content').show();
+                    if (res && res.success && res.data) {
+                        populateRecordDetailModal(res.data, source);
+                    }
+                },
+                error: function() {
+                    $('#record-detail-loading').hide();
+                    $('#record-detail-content').show();
+                }
+            });
+        }
+    });
+})();
+</script>

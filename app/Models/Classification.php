@@ -18,6 +18,14 @@ class Classification extends Model
     {
         return $this->hasMany(Content::class);
     }
+
+    public function subClassifications()
+    {
+        return $this->hasMany(OfflineTrainingOption::class, 'classification_id')
+            ->where('option_type', \App\Services\Record\OfflineOptionService::TYPE_SUB_CLASSIFICATION)
+            ->orderBy('sort_order', 'asc')
+            ->orderBy('value', 'asc');
+    }
     public function getSlugOptions(): SlugOptions
     {
         return SlugOptions::create()

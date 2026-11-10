@@ -213,7 +213,7 @@
     }
     .certificate-table {
         width: 100% !important;
-        min-width: 880px;
+        min-width: 900px;
         table-layout: fixed;
         font-size: 12.5px;
         line-height: 1.35;
@@ -249,12 +249,15 @@
     }
 
     .certificate-col-main {
-        width: 40%;
+        width: 36%;
+        min-width: 220px;
     }
 
     .certificate-col-type {
-        width: 8%;
-        min-width: 75px;
+        width: 12%;
+        min-width: 135px;
+        padding-right: 6px !important;
+        padding-left: 6px !important;
     }
 
     .certificate-col-number {
@@ -616,9 +619,37 @@
         color: #f1f5f9;
     }
 
+    .certificate-table .certificate-type-badge,
+    .my-learning-certificate-table .certificate-type-badge,
     .certificate-type-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        max-width: 100%;
         min-width: 0;
-        text-transform: uppercase;
+        min-height: 22px;
+        padding: 4px 8px;
+        font-size: 10px;
+        font-weight: 600;
+        line-height: 1.3;
+        border-radius: 999px;
+        white-space: nowrap;
+        vertical-align: middle;
+        text-transform: none;
+        letter-spacing: normal;
+        box-sizing: border-box;
+    }
+
+    .certificate-type-badge.bg-teal-lt {
+        background-color: rgba(12, 166, 120, 0.12) !important;
+        color: #0ca678 !important;
+    }
+
+    [data-bs-theme="dark"] .certificate-type-badge.bg-teal-lt,
+    body.dark-mode .certificate-type-badge.bg-teal-lt,
+    body.theme-dark .certificate-type-badge.bg-teal-lt {
+        background-color: rgba(12, 166, 120, 0.18) !important;
+        color: #63e6be !important;
     }
 
     .certificate-actions {

@@ -1,0 +1,210 @@
+/* KP OWL Learning Record Module - Dark Mode CSS (Standardized with Master Reference) */
+
+[data-bs-theme="dark"] .kp-owl-stat-card,
+body.dark-mode .kp-owl-stat-card,
+body.theme-dark .kp-owl-stat-card {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+[data-bs-theme="dark"] .kp-owl-stat-card .text-dark,
+body.dark-mode .kp-owl-stat-card .text-dark,
+body.theme-dark .kp-owl-stat-card .text-dark {
+    color: #f1f5f9 !important;
+}
+
+[data-bs-theme="dark"] .kp-owl-filter-card,
+body.dark-mode .kp-owl-filter-card,
+body.theme-dark .kp-owl-filter-card {
+    background-color: #1e293b !important;
+    border: 1px solid #334155 !important;
+}
+
+[data-bs-theme="dark"] .kp-owl-table-card,
+body.dark-mode .kp-owl-table-card,
+body.theme-dark .kp-owl-table-card {
+    background-color: #1e293b !important;
+    border: 1px solid #334155 !important;
+}
+
+/* ── Standardized Table Header in Dark Mode ──────────────────────── */
+[data-bs-theme="dark"] #kp-owl-datatable thead th,
+body.dark-mode #kp-owl-datatable thead th,
+body.theme-dark #kp-owl-datatable thead th {
+    background-color: var(--tblr-bg-surface-secondary, #1a2942) !important;
+    color: #94a3b8 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-bs-theme="dark"] #kp-owl-datatable tbody td,
+body.dark-mode #kp-owl-datatable tbody td,
+body.theme-dark #kp-owl-datatable tbody td {
+    color: #cbd5e1 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Sticky Action Column on Right */
+[data-bs-theme="dark"] .sticky-action-col,
+body.dark-mode .sticky-action-col,
+body.theme-dark .sticky-action-col {
+    background-color: #1e293b !important;
+}
+
+[data-bs-theme="dark"] #kp-owl-datatable thead th.sticky-action-col,
+body.dark-mode #kp-owl-datatable thead th.sticky-action-col,
+body.theme-dark #kp-owl-datatable thead th.sticky-action-col {
+    background-color: var(--tblr-bg-surface-secondary, #1a2942) !important;
+}
+
+[data-bs-theme="dark"] #kp-owl-datatable tbody tr:hover td.sticky-action-col,
+body.dark-mode #kp-owl-datatable tbody tr:hover td.sticky-action-col,
+body.theme-dark #kp-owl-datatable tbody tr:hover td.sticky-action-col {
+    background-color: #334155 !important;
+}
+
+/* ── Dual Scrollbars in Dark Mode ────────────────────────────────── */
+[data-bs-theme="dark"] .table-scroll-top-wrapper,
+[data-bs-theme="dark"] .table-scroll-container,
+body.dark-mode .table-scroll-top-wrapper,
+body.dark-mode .table-scroll-container,
+body.theme-dark .table-scroll-top-wrapper,
+body.theme-dark .table-scroll-container {
+    scrollbar-color: #334155 #1e293b;
+}
+
+[data-bs-theme="dark"] .table-scroll-top-wrapper::-webkit-scrollbar-track,
+[data-bs-theme="dark"] .table-scroll-container::-webkit-scrollbar-track,
+body.dark-mode .table-scroll-top-wrapper::-webkit-scrollbar-track,
+body.dark-mode .table-scroll-container::-webkit-scrollbar-track,
+body.theme-dark .table-scroll-top-wrapper::-webkit-scrollbar-track,
+body.theme-dark .table-scroll-container::-webkit-scrollbar-track {
+    background: #1e293b;
+}
+
+[data-bs-theme="dark"] .table-scroll-top-wrapper::-webkit-scrollbar-thumb,
+[data-bs-theme="dark"] .table-scroll-container::-webkit-scrollbar-thumb,
+body.dark-mode .table-scroll-top-wrapper::-webkit-scrollbar-thumb,
+body.dark-mode .table-scroll-container::-webkit-scrollbar-thumb,
+body.theme-dark .table-scroll-top-wrapper::-webkit-scrollbar-thumb,
+body.theme-dark .table-scroll-container::-webkit-scrollbar-thumb {
+    background: #334155;
+}
+
+/* ── Table Footer in Dark Mode ───────────────────────────────────── */
+[data-bs-theme="dark"] #kp-owl-table-footer,
+body.dark-mode #kp-owl-table-footer,
+body.theme-dark #kp-owl-table-footer {
+    background-color: var(--tblr-bg-surface, #1e293b) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-bs-theme="dark"] #table-entries-select,
+body.dark-mode #table-entries-select,
+body.theme-dark #table-entries-select {
+    background-color: var(--tblr-bg-surface-secondary, #111827) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    color: #f8fafc !important;
+}
+
+/* ── Action Buttons in Dark Mode ─────────────────────────────────── */
+[data-bs-theme="dark"] .owl-action-btn-view,
+body.dark-mode .owl-action-btn-view,
+body.theme-dark .owl-action-btn-view {
+    color: #60a5fa !important;
+    border-color: rgba(96, 165, 250, 0.35) !important;
+    background-color: rgba(96, 165, 250, 0.08) !important;
+}
+[data-bs-theme="dark"] .owl-action-btn-view:hover,
+body.dark-mode .owl-action-btn-view:hover,
+body.theme-dark .owl-action-btn-view:hover {
+    color: #93c5fd !important;
+    border-color: rgba(96, 165, 250, 0.7) !important;
+    background-color: rgba(96, 165, 250, 0.22) !important;
+}
+
+[data-bs-theme="dark"] .btn-more-filters,
+[data-bs-theme="dark"] #btn-more-filters,
+body.dark-mode .btn-more-filters,
+body.dark-mode #btn-more-filters,
+body.theme-dark .btn-more-filters,
+body.theme-dark #btn-more-filters {
+    background-color: transparent !important;
+    border-color: #3b82f6 !important;
+    color: #60a5fa !important;
+}
+[data-bs-theme="dark"] .btn-more-filters:hover,
+[data-bs-theme="dark"] #btn-more-filters:hover,
+body.dark-mode .btn-more-filters:hover,
+body.dark-mode #btn-more-filters:hover,
+body.theme-dark .btn-more-filters:hover,
+body.theme-dark #btn-more-filters:hover {
+    background-color: #2563eb !important;
+    color: #ffffff !important;
+    border-color: #2563eb !important;
+}
+
+[data-bs-theme="dark"] .btn-quick-reset,
+body.dark-mode .btn-quick-reset,
+body.theme-dark .btn-quick-reset {
+    background-color: transparent !important;
+}
+[data-bs-theme="dark"] .btn-quick-reset:hover,
+body.dark-mode .btn-quick-reset:hover,
+body.theme-dark .btn-quick-reset:hover {
+    background-color: #0c5b9e !important;
+    color: #ffffff !important;
+}
+
+/* ── More Filters Modal in Dark Mode ─────────────────────────────── */
+[data-bs-theme="dark"] #kp-owl-more-filters-modal .modal-content,
+body.dark-mode #kp-owl-more-filters-modal .modal-content,
+body.theme-dark #kp-owl-more-filters-modal .modal-content {
+    background-color: var(--tblr-bg-surface, #1f2937) !important;
+    color: #f8fafc !important;
+}
+
+[data-bs-theme="dark"] #kp-owl-more-filters-modal .text-dark,
+body.dark-mode #kp-owl-more-filters-modal .text-dark,
+body.theme-dark #kp-owl-more-filters-modal .text-dark {
+    color: #f8fafc !important;
+}
+
+[data-bs-theme="dark"] #kp-owl-more-filters-modal .form-control,
+[data-bs-theme="dark"] #kp-owl-more-filters-modal .form-select,
+body.dark-mode #kp-owl-more-filters-modal .form-control,
+body.dark-mode #kp-owl-more-filters-modal .form-select,
+body.theme-dark #kp-owl-more-filters-modal .form-control,
+body.theme-dark #kp-owl-more-filters-modal .form-select {
+    background-color: var(--tblr-bg-surface-secondary, #111827) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    color: #f8fafc !important;
+}
+
+/* ── Detail Modal in Dark Mode ───────────────────────────────────── */
+[data-bs-theme="dark"] #kp-owl-detail-modal .modal-content,
+body.dark-mode #kp-owl-detail-modal .modal-content,
+body.theme-dark #kp-owl-detail-modal .modal-content {
+    background-color: var(--tblr-bg-surface, #1f2937) !important;
+    color: #f8fafc !important;
+}
+
+[data-bs-theme="dark"] #kp-owl-detail-modal .card,
+body.dark-mode #kp-owl-detail-modal .card,
+body.theme-dark #kp-owl-detail-modal .card {
+    background-color: #0f172a !important;
+    border: 1px solid #334155 !important;
+}
+
+[data-bs-theme="dark"] #kp-owl-detail-modal .card-header,
+body.dark-mode #kp-owl-detail-modal .card-header,
+body.theme-dark #kp-owl-detail-modal .card-header {
+    background-color: #1e293b !important;
+    border-bottom: 1px solid #334155 !important;
+}
+
+[data-bs-theme="dark"] #kp-owl-detail-modal .modal-footer,
+body.dark-mode #kp-owl-detail-modal .modal-footer,
+body.theme-dark #kp-owl-detail-modal .modal-footer {
+    background-color: #1e293b !important;
+    border-top: 1px solid #334155 !important;
+}

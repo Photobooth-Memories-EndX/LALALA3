@@ -31,8 +31,21 @@ class LearningController extends Controller
         CompletedPlaylistService $completedPlaylistService
     )
     {
+        if (strtolower(trim((string) request('record_mode'))) === 'export') {
+            $queryParams = request()->query();
+            $queryParams['record_mode'] = 'online';
+            if (!isset($queryParams['learning_tab'])) {
+                $queryParams['learning_tab'] = 'record';
+            }
+            return redirect()->to(route('user.learning.dashboard', $queryParams));
+        }
+
         if (request()->boolean('certificate_export') && request('learning_tab') === 'certificate') {
             return app(LearningRecordController::class)->certificate();
+        }
+
+        if (session()->has('task_submitted_id')) {
+            session()->keep(['task_submitted_id', 'task_submitted_title', 'success']);
         }
 
         $userId = Auth::id();
@@ -58,7 +71,13 @@ class LearningController extends Controller
             ->whereNull('content.deleted_at')
             ->whereIn('content.type', ['Video', 'Document'])
             ->count();
-        $learningHours = $recordHourService->getTotalLearningHours((int) $userId);
+        $requestedRecordMode = strtolower(trim((string) request('record_mode', 'online')));
+        $recordMode = (request('learning_tab') === 'record' || request()->filled('record_mode'))
+            && in_array($requestedRecordMode, ['online', 'offline', 'all'], true)
+            ? $requestedRecordMode
+            : 'online';
+        $learningHours = $recordHourService->getTotalLearningHoursByMode($recordMode, (int) $userId, $user?->id_emp);
+        $recordStats = app(LearningRecordController::class)->calculateHeroStats($recordMode, (int) $userId, $user?->id_emp);
 
         $certificates = Certificate::where('user_id', $userId)
             ->get(['certificate_type']);
@@ -71,6 +90,12 @@ class LearningController extends Controller
 
         $averageProgress = (int) round(ContentUser::where('user_id', $userId)->avg('progress') ?? 0);
 
+        $resolver = app(\App\Services\Learning\LearningProgressResolver::class);
+        $offlineService = app(\App\Services\Learning\UserRecordOfflineService::class);
+        $rawTrainings = $resolver->getOngoingNonKpOwl((int) $userId, $user?->id_emp);
+        $ongoingNonKpOwl = $rawTrainings->map(fn ($otu) => $offlineService->normalizeRow($otu));
+        $filterOptions = $offlineService->getFilterOptions((int) $userId, $user?->id_emp);
+
         return view('user.learning.dashboard', compact(
             'user',
             'learningHours',
@@ -80,7 +105,11 @@ class LearningController extends Controller
             'completedContentLearning',
             'completedPlaylistLearning',
             'certificateStats',
-            'averageProgress'
+            'recordMode',
+            'recordStats',
+            'averageProgress',
+            'ongoingNonKpOwl',
+            'filterOptions'
         ));
     }
 
@@ -92,16 +121,23 @@ class LearningController extends Controller
     public function dashboardPartial(string $tab, CertificateEligibilityService $eligibilityService)
     {
         return match ($tab) {
-            // Tab ongoing: Content (default), Playlist, dan placeholder MOOC.
+            // Tab ongoing: Content (default), Playlist, MOOC, dan Non KP OWL.
             'ongoing' => match (request('ongoing_mode')) {
                 'playlist' => app(LearningOngoingController::class)->playlist(),
                 'mooc'     => app(LearningOngoingController::class)->mooc(),
+                'non-kp-owl', 'ongoing-non-kp-owl', 'offline' => app(LearningOngoingController::class)->nonKpOwl(),
                 default    => strtolower((string) request('type')) === 'playlist'
                     ? app(LearningOngoingController::class)->playlist()
                     : app(LearningOngoingController::class)->content(),
             },
-            'record'      => app(LearningRecordController::class)->partial($eligibilityService),
+            'record'      => match (strtolower(trim((string) request('record_mode', 'online')))) {
+                'ongoing-non-kp-owl' => app(LearningOngoingController::class)->nonKpOwl(),
+                'offline' => app(\App\Http\Controllers\User\Record\LearningRecordOfflineController::class)->partial(),
+                'all'     => app(\App\Http\Controllers\User\Record\LearningRecordAllController::class)->partial($eligibilityService),
+                default   => app(\App\Http\Controllers\User\Record\LearningRecordOnlineController::class)->partial($eligibilityService),
+            },
             'assessment'  => app(LearningAssessmentController::class)->partial(request()),
+            'my-task'     => app(\App\Http\Controllers\MyTaskController::class)->tabPartial(request()),
             'claim'       => view('user.learning.dashboard-partials.claim'),
             'certificate' => app(LearningRecordController::class)->certificate(),
             'monitoring'  => app(LearningMonitoringController::class)->partial(),
@@ -134,9 +170,9 @@ class LearningController extends Controller
                         $q->orWhere('content_users.is_mandatory', 1);
                     }
                 });
-            } elseif ($programType === 'optional') {
+            } elseif (in_array(strtolower((string) $programType), ['non mandatory', 'non-mandatory', 'optional'], true)) {
                 $query->where(function ($q) {
-                    $q->where('content_users.status', 'optional');
+                    $q->where('content_users.status', 'non mandatory');
                     if (\Illuminate\Support\Facades\Schema::hasColumn('content_users', 'is_mandatory')) {
                         $q->orWhere('content_users.is_mandatory', 0);
                     }

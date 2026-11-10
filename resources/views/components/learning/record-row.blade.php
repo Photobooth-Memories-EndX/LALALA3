@@ -7,19 +7,29 @@
 
 @php
     // Nilai untuk filter client-side (jQuery mencocokkan data-attribute, bukan HTML).
-    $finishTimestamp = $row['finish_date'] !== '' ? \Illuminate\Support\Carbon::parse($row['finish_date']) : null;
-    $startDateDisplay = ($row['start_date'] ?? '') !== ''
-        ? \Illuminate\Support\Carbon::parse($row['start_date'])->format('d/m/y H:i:s')
-        : '';
-    $finishDateDisplay = $finishTimestamp?->format('d/m/y H:i:s') ?? '';
+    $startDateRaw = (string) ($row['start_datetime'] ?? $row['start_date'] ?? '');
+    $finishDateRaw = (string) ($row['end_datetime'] ?? $row['finish_date'] ?? '');
+    $finishTimestamp = $finishDateRaw !== '' ? \Carbon\Carbon::parse($finishDateRaw) : null;
+    $startDateDisplay = $startDateRaw !== ''
+        ? \Carbon\Carbon::parse($startDateRaw)->format('d/m/y H:i:s')
+        : '-';
+    $finishDateDisplay = $finishTimestamp?->format('d/m/y H:i:s') ?? '-';
 
     // Search memakai title + classification untuk Content dan Playlist.
-    $searchText = $row['title'] . ' ' . $row['classification'];
-    $learningProgram = str_contains(strtolower($row['subtitle'] ?? ''), 'mandatory') ? 'mandatory'
-        : (str_contains(strtolower($row['subtitle'] ?? ''), 'optional') ? 'optional' : '');
+    $rowTitle = (string) ($row['title'] ?? '-');
+    $rowClassification = (string) ($row['classification'] ?? '-');
+    $rowCategory = (string) ($row['category'] ?? 'Content');
+    $rowType = (string) ($row['type'] ?? 'Content');
+    $rowKind = (string) ($row['row_kind'] ?? 'content');
+    $searchText = $rowTitle . ' ' . $rowClassification;
+    $rawReqLower = strtolower((string) ($row['requirement'] ?? $row['subtitle'] ?? '-'));
+    $isNonMandRow = str_contains($rawReqLower, 'non-mandatory') || str_contains($rawReqLower, 'non mandatory') || str_contains($rawReqLower, 'optional');
+    $learningProgram = $isNonMandRow ? 'optional'
+        : (str_contains($rawReqLower, 'mandatory') ? 'mandatory' : 'optional');
     $progressValue = (int) ($row['progress'] ?? 0);
-    $hasScore = ($row['assessment_required'] ?? false) && !is_null($row['score'] ?? null);
-    $scorePassed = $hasScore && ($row['score'] >= ($row['min_score'] ?? 0));
+    $scoreVal = $row['score'] ?? $row['assessment_score'] ?? null;
+    $hasScore = ($row['assessment_required'] ?? false) && $scoreVal !== null && $scoreVal !== '' && is_numeric($scoreVal);
+    $scorePassed = $hasScore && ($scoreVal >= ($row['min_score'] ?? 0));
     $learningStatus = $progressValue >= 100
         ? ($scorePassed ? 'completed passed' : ($hasScore ? 'completed failed' : 'completed'))
         : ($hasScore ? ($scorePassed ? 'passed' : 'failed') : ($progressValue <= 0 ? 'not_started' : 'ongoing'));
@@ -30,37 +40,58 @@
         intdiv($durationSeconds % 3600, 60),
         $durationSeconds % 60
     );
-    $learningHourDisplay = str_replace([' hours', ' hour'], [' h', ' h'], $row['learning_hour'] ?? '');
+    $recognizedSeconds = max(0, (int) ($row['recognized_duration_seconds'] ?? 0));
+    $recognizedDisplay = $row['recognized_duration'] ?? sprintf(
+        '%02d:%02d:%02d',
+        intdiv($recognizedSeconds, 3600),
+        intdiv($recognizedSeconds % 3600, 60),
+        $recognizedSeconds % 60
+    );
+    $lhVal = $row['learning_hours'] ?? $row['learning_hour_value'] ?? null;
+    $learningHourDisplay = ($lhVal !== null && is_numeric($lhVal))
+        ? number_format((float) $lhVal, 2) . ' h'
+        : (is_numeric($row['learning_hour'] ?? null)
+            ? number_format((float) $row['learning_hour'], 2) . ' h'
+            : str_replace([' hours', ' hour', ' hrs', ' hr'], [' h', ' h', ' h', ' h'], (string) ($row['learning_hour'] ?? '-')));
+    $rawAtt = $row['attendance'] ?? null;
+    $attLower = strtolower(trim((string) $rawAtt));
+    $attendanceStatus = in_array($attLower, ['1', 'true', 'present', 'yes'], true)
+        ? 'Yes'
+        : (($rawAtt === null || $rawAtt === '') && $progressValue >= 100 ? 'Yes' : 'No');
 @endphp
 
 <tr class="record-row"
-    data-kind="{{ $row['row_kind'] }}"
-    data-category="{{ $row['category'] }}"
+    data-kind="{{ $rowKind }}"
+    data-category="{{ $rowCategory }}"
     data-search="{{ mb_strtolower($searchText) }}"
-    data-type="{{ $row['type'] }}"
-    data-classification="{{ $row['classification'] }}"
+    data-type="{{ $rowType }}"
+    data-classification="{{ $rowClassification }}"
     data-learning-program="{{ $learningProgram }}"
     data-learning-status="{{ $learningStatus }}"
-    data-playlists="{{ implode(',', $row['playlist_ids']) }}"
+    data-playlists="{{ implode(',', $row['playlist_ids'] ?? []) }}"
     data-learning-hour="{{ $row['learning_hour_value'] ?? '' }}"
     data-year="{{ $finishTimestamp?->year }}"
     data-month="{{ $finishTimestamp?->month }}"
-    data-cert="{{ $row['cert_state'] }}"
+    data-cert="{{ $row['cert_state'] ?? 'none' }}"
     {{-- Nilai sorting client-side (learning-record.js) — teks di-lowercase agar
          urutan tidak terpengaruh kapitalisasi. --}}
-    data-sort-title="{{ mb_strtolower($row['title']) }}"
-    data-sort-category="{{ mb_strtolower($row['category']) }}"
-    data-sort-type="{{ mb_strtolower($row['type']) }}"
-    data-sort-classification="{{ mb_strtolower($row['classification']) }}"
+    data-sort-no="{{ $index }}"
+    data-sort-title="{{ mb_strtolower($rowTitle) }}"
+    data-sort-category="{{ mb_strtolower($rowCategory) }}"
+    data-sort-type="{{ mb_strtolower($rowType) }}"
+    data-sort-classification="{{ mb_strtolower($rowClassification) }}"
     data-sort-duration="{{ $row['duration_sort'] ?? -1 }}"
+    data-sort-recognized-duration="{{ $recognizedSeconds }}"
     data-sort-learning-hour="{{ $row['learning_hour_bucket'] ?? 0 }}"
-    data-sort-progress="{{ $row['progress'] }}"
-    data-sort-finish="{{ $row['finish_date'] }}"
-    data-sort-score="{{ $row['score'] ?? '' }}">
+    data-sort-progress="{{ $progressValue }}"
+    data-sort-finish="{{ $finishDateRaw }}"
+    data-sort-attendance="{{ mb_strtolower($attendanceStatus) }}"
+    data-sort-score="{{ $scoreVal ?? '' }}"
+    data-sort-certificate="{{ $row['cert_state'] ?? 'none' }}">
 
     <td class="text-muted record-row-index">{{ $index }}</td>
 
-    <td><x-learning.record-title-cell :row="$row" /></td>
+    <td class="text-center align-middle"><x-learning.record-title-cell :row="$row" /></td>
 
     <td class="learning-record-type text-center">
         <x-learning.record-type-badge :type="$row['type']" :url="(($row['can_open'] ?? true) ? ($row['playlist_url'] ?? null) : null)" />
@@ -151,16 +182,63 @@
 
     <td class="learning-record-duration">{{ $durationDisplay }}</td>
 
+    <td class="learning-record-recognized-duration text-center text-nowrap">{{ $recognizedDisplay }}</td>
+
     <td class="learning-record-learning-hour">{{ $learningHourDisplay }}</td>
 
     <td><x-learning.record-progress-cell :row="$row" /></td>
 
     <td class="text-muted small learning-record-datetime">
-        <div class="learning-record-date-row text-nowrap"><strong>Start&nbsp;&nbsp;:</strong> {{ $startDateDisplay }}</div>
-        <div class="learning-record-date-row text-nowrap"><strong>Finish :</strong> {{ $finishDateDisplay }}</div>
+        <div class="text-xs text-muted">
+            <div class="learning-record-date-row text-nowrap">Start : {{ $startDateDisplay }}</div>
+            <div class="learning-record-date-row text-nowrap">End : {{ $finishDateDisplay }}</div>
+        </div>
+    </td>
+
+    <td class="text-center learning-record-attendance">
+        <x-learning.record-attendance-cell :row="$row" />
     </td>
 
     <td><x-learning.record-score-cell :row="$row" /></td>
 
-    <td><x-learning.record-certificate-cell :row="$row" /></td>
+    <td class="text-center">
+        <div class="dropdown">
+            <button class="btn btn-sm btn-icon btn-ghost-secondary" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="ti ti-dots-vertical"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-2 btn-record-detail"
+                       href="#"
+                       data-bs-toggle="modal"
+                       data-bs-target="#recordDetailModal"
+                       data-record-id="{{ $row['id'] ?? ($row['item_id'] ?? $index) }}"
+                       data-record-source="online">
+                        <i class="ti ti-info-circle"></i> More Information
+                    </a>
+                </li>
+                <li>
+                    @if (($row['cert_state'] ?? '') === 'ready' && !empty($row['cert_action_url']))
+                        @if ($row['cert_is_form'] ?? false)
+                            <form method="POST" action="{{ $row['cert_action_url'] }}" class="m-0 p-0">
+                                @csrf
+                                <button type="submit" class="dropdown-item d-flex align-items-center gap-2 text-success border-0 bg-transparent w-100">
+                                    <i class="ti ti-certificate"></i> Generate Certificate
+                                </button>
+                            </form>
+                        @else
+                            <a class="dropdown-item d-flex align-items-center gap-2 text-success" href="{{ $row['cert_action_url'] }}" target="_blank">
+                                <i class="ti ti-certificate"></i> Generate Certificate
+                            </a>
+                        @endif
+                    @else
+                        <a class="dropdown-item d-flex align-items-center gap-2 disabled text-muted" href="#" onclick="return false;" style="cursor: not-allowed;">
+                            <i class="ti ti-certificate"></i> Generate Certificate
+                        </a>
+                    @endif
+                </li>
+            </ul>
+        </div>
+        <script type="application/json" id="record-online-data-{{ $row['id'] ?? ($row['item_id'] ?? $index) }}">@json($row)</script>
+    </td>
 </tr>

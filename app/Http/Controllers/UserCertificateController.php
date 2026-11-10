@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Certificate;
 use App\Models\CertificateSetting;
 use App\Models\ContentUser;
+use App\Models\OfflineTrainingUser;
 use App\Services\CertificateGenerateService;
+use App\Services\OfflineCertificate\OfflineCertificateGenerationService;
 use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -27,11 +29,29 @@ class UserCertificateController extends Controller
         return $this->generateSetting($setting, $service);
     }
 
+    public function generateOffline(
+        OfflineTrainingUser $offlineTrainingUser,
+        OfflineCertificateGenerationService $service
+    ) {
+        $user = Auth::user();
+        $isOwner = ($offlineTrainingUser->user_id === $user->id) ||
+            (!empty($user->id_emp) && $offlineTrainingUser->employee_id === $user->id_emp);
+        abort_unless($isOwner, 403, 'Unauthorized access to offline training record.');
+
+        $certificate = $service->generateForParticipant($offlineTrainingUser, $user);
+
+        return redirect()->route('certificate.show', $certificate->credential_id)
+            ->with('success', 'Certificate berhasil dibuat.');
+    }
+
     public function show(string $credentialId)
     {
         $certificate = Certificate::with([
             'certificateSetting.assessment',
+            'certificateSetting.offlineTraining',
             'certificateSetting.trainingPlan.trainingplandetail.content',
+            'offlineTrainingUser',
+            'offlineTraining',
         ])->where('credential_id', $credentialId)->firstOrFail();
         abort_unless($certificate->user_id === Auth::id(), 403);
         return view('certificate.show', compact('certificate'));
@@ -42,7 +62,10 @@ class UserCertificateController extends Controller
         $certificate = Certificate::with([
             'certificateSetting.assessment',
             'certificateSetting.content',
+            'certificateSetting.offlineTraining',
             'certificateSetting.trainingPlan.trainingplandetail.content',
+            'offlineTrainingUser',
+            'offlineTraining',
         ])->where('credential_id', $credentialId)->firstOrFail();
 
         abort_unless($certificate->user_id === Auth::id(), 403);
@@ -56,7 +79,10 @@ class UserCertificateController extends Controller
         $certificate = Certificate::with([
             'certificateSetting.assessment',
             'certificateSetting.content',
+            'certificateSetting.offlineTraining',
             'certificateSetting.trainingPlan.trainingplandetail.content',
+            'offlineTrainingUser',
+            'offlineTraining',
         ])->where('credential_id', $credentialId)->firstOrFail();
 
         abort_unless($certificate->user_id === Auth::id(), 403);
@@ -69,7 +95,10 @@ class UserCertificateController extends Controller
         $certificate = Certificate::with([
             'certificateSetting.assessment',
             'certificateSetting.content',
+            'certificateSetting.offlineTraining',
             'certificateSetting.trainingPlan.trainingplandetail.content',
+            'offlineTrainingUser',
+            'offlineTraining',
         ])->where('credential_id', $credentialId)->firstOrFail();
 
         abort_unless($certificate->user_id === Auth::id(), 403);
@@ -86,7 +115,10 @@ class UserCertificateController extends Controller
     {
         $certificate = Certificate::with([
             'certificateSetting.assessment',
+            'certificateSetting.offlineTraining',
             'certificateSetting.trainingPlan.trainingplandetail.content',
+            'offlineTrainingUser',
+            'offlineTraining',
         ])->where('credential_id', $credentialId)->firstOrFail();
         abort_unless($certificate->user_id === Auth::id(), 403);
         return response()->view('certificate.templates.default', compact('certificate'))
@@ -95,20 +127,28 @@ class UserCertificateController extends Controller
 
     public function verify(string $credentialId)
     {
-        $certificate = Certificate::with('certificateSetting')->where('credential_id', $credentialId)->firstOrFail();
+        $certificate = Certificate::with([
+            'certificateSetting',
+            'certificateSetting.offlineTraining',
+            'offlineTrainingUser',
+            'offlineTraining',
+        ])->where('credential_id', $credentialId)->firstOrFail();
         return view('certificate.verify', compact('certificate'));
     }
 
-      public function downloadPdf($credentialId)
+    public function downloadPdf($credentialId)
     {
         $certificate = Certificate::with([
-                'certificateSetting',
-                'certificateSetting.assessment',
-                'certificateSetting.content',
-                'certificateSetting.trainingPlan.trainingplandetail.content',
-            ])
-            ->where('credential_id', $credentialId)
-            ->firstOrFail();
+            'certificateSetting',
+            'certificateSetting.assessment',
+            'certificateSetting.content',
+            'certificateSetting.offlineTraining',
+            'certificateSetting.trainingPlan.trainingplandetail.content',
+            'offlineTrainingUser',
+            'offlineTraining',
+        ])
+        ->where('credential_id', $credentialId)
+        ->firstOrFail();
 
         abort_unless($certificate->user_id === Auth::id(), 403);
 
@@ -122,8 +162,7 @@ class UserCertificateController extends Controller
         return $pdf->download(
             $certificate->certificate_number . '.pdf'
         );
-}
-
+    }
 
     public function downloadCustom(string $credentialId)
     {
@@ -131,7 +170,10 @@ class UserCertificateController extends Controller
             'certificateSetting',
             'certificateSetting.assessment',
             'certificateSetting.content',
+            'certificateSetting.offlineTraining',
             'certificateSetting.trainingPlan.trainingplandetail.content',
+            'offlineTrainingUser',
+            'offlineTraining',
         ])->where('credential_id', $credentialId)->firstOrFail();
 
         abort_unless($certificate->user_id === Auth::id(), 403);

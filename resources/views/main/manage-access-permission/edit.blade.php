@@ -85,7 +85,6 @@
 
     body[data-bs-theme="dark"] .permission-page .permission-muted,
     body.dark-mode .permission-page .permission-muted,
-    body[data-bs-theme="dark"] .permission-page .permission-key,
     body.dark-mode .permission-page .permission-key {
         color: var(--owl-text-tertiary, #bbbcbc);
     }
@@ -154,12 +153,14 @@
                 </div>
 
                 @php
+                    $hiddenModuleKeys = [];
                     $debuggerModuleKeys = [
                         'learning_hours_management',
                         'playlist_debug_tools',
+                        'learning_management',
                     ];
-                    $standardModules = collect($modules)->except($debuggerModuleKeys);
-                    $debuggerModules = collect($modules)->only($debuggerModuleKeys);
+                    $standardModules = collect($modules)->except(array_merge($debuggerModuleKeys, $hiddenModuleKeys));
+                    $debuggerModules = collect($debuggerModuleKeys)->mapWithKeys(fn ($key) => [$key => $modules[$key] ?? $key]);
                 @endphp
 
                 <div class="card permission-module-section border-0 shadow-sm">

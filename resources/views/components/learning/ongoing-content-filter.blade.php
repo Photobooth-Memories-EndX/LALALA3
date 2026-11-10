@@ -151,59 +151,87 @@
     $monthSel = array_map('strval', $selMonth);
 @endphp
 
-<div class="card border-0 shadow-sm rounded-4 mb-4 learning-filter-card ongoing-filter-card">
-    <div class="card-body p-4">
-        <form action="{{ route('user.learning.dashboard') }}" method="GET" id="ongoingFilterForm" class="ongoing-filter-shell">
+<div class="card border-0 shadow-sm rounded-4 mb-3 my-task-filter-card ongoing-filter-card">
+    <div class="card-body p-3 p-md-4">
+        {{-- Header: Title & Subtitle --}}
+        <div class="mb-3">
+            <h2 class="fw-bold mb-1 my-task-filter-title">Learning On Going</h2>
+            <p class="text-muted small mb-0 my-task-filter-subtitle">Track and continue your in-progress courses, playlists, and learning modules.</p>
+        </div>
 
+        {{-- Category Filter Pills --}}
+        <div class="d-flex align-items-center flex-wrap gap-2 mb-3 my-task-pills-row">
+            <button type="button"
+                    class="my-task-category-pill ongoing-mode-btn active"
+                    data-mode="content"
+                    title="Filter by Content">
+                <i class="ti ti-file-text me-1"></i> Content
+            </button>
+            <button type="button"
+                    class="my-task-category-pill ongoing-mode-btn"
+                    data-mode="playlist"
+                    title="Filter by Playlist">
+                <i class="ti ti-list-details me-1"></i> Playlist
+            </button>
+            <button type="button"
+                    class="my-task-category-pill ongoing-mode-btn"
+                    data-mode="mooc"
+                    title="Filter by MOOC">
+                <i class="ti ti-world me-1"></i> MOOC
+            </button>
+            <button type="button"
+                    class="my-task-category-pill ongoing-mode-btn"
+                    data-mode="non-kp-owl"
+                    title="Filter by Non KP OWL">
+                <i class="ti ti-certificate me-1"></i> Non KP OWL
+            </button>
+        </div>
+
+        {{-- Subtle Divider Line --}}
+        <hr class="my-3 my-task-divider">
+
+        {{-- ── Quick dropdown filters (Type / Status / Year / Month) ──────────────
+             Pilihan langsung diterapkan via AJAX (dashboard-script.blade.php),
+             memakai param & endpoint yang sama dengan filter lain. --}}
+        @php
+            $quickTypeLabel = empty($selTypeClean)
+                ? 'All'
+                : (count($selTypeClean) === 1
+                    ? ucwords(str_replace('_', ' ', $selTypeClean[0]))
+                    : count($selTypeClean) . ' Types');
+
+            $activeQuickMonths = array_values(array_filter($selMonth));
+            $quickMonthLabel = empty($activeQuickMonths)
+                ? 'All'
+                : (count($activeQuickMonths) === 1
+                    ? ($monthOptions[(int) $activeQuickMonths[0]] ?? $activeQuickMonths[0])
+                    : count($activeQuickMonths) . ' Months');
+        @endphp
+
+        <form action="{{ route('user.learning.dashboard') }}" method="GET" id="ongoingFilterForm" class="ongoing-filter-shell">
             {{-- Quick Status ikut terkirim saat submit form/Apply Filter (state konsisten). --}}
             @if ($curQuickStatus !== 'all')
                 <input type="hidden" name="ongoing_quick_status" value="{{ $curQuickStatus }}">
             @endif
 
-            <div class="ongoing-filter-heading fast-filter-header">
-                <div class="fast-filter-header-copy">
-                    <h3 class="card-title fast-filter-title">Quick Filter</h3>
-                    {{-- <p class="fast-filter-subtitle">Quickly filter your learning content.</p> --}}
-                </div>
-                <x-learning.ongoing-mode-switch mode="content" />
-            </div>
-
-            {{-- ── Quick dropdown filters (Type / Status / Year / Month) ──────────────
-                 Pilihan langsung diterapkan via AJAX (dashboard-script.blade.php),
-                 memakai param & endpoint yang sama dengan filter lain. --}}
-            @php
-                $quickTypeLabel = empty($selTypeClean)
-                    ? 'All'
-                    : (count($selTypeClean) === 1
-                        ? ucwords(str_replace('_', ' ', $selTypeClean[0]))
-                        : count($selTypeClean) . ' Types');
-
-                $activeQuickMonths = array_values(array_filter($selMonth));
-                $quickMonthLabel = empty($activeQuickMonths)
-                    ? 'All'
-                    : (count($activeQuickMonths) === 1
-                        ? ($monthOptions[(int) $activeQuickMonths[0]] ?? $activeQuickMonths[0])
-                        : count($activeQuickMonths) . ' Months');
-            @endphp
-
-            <div class="ongoing-fast-filter-section">
-            <div class="ongoing-fast-filter-toolbar">
-            <div class="learning-quick-dropdowns learning-filter-dropdown-row learning-fast-filter ongoing-quick-dropdowns">
-                {{-- Dropdown Type (hanya type content: Video, Document, dll) --}}
-                <div class="dropdown ongoing-filter-dropdown ongoing-filter-dropdown-type">
+            {{-- Fast Filter Toolbar --}}
+            <div class="d-flex align-items-center flex-wrap gap-2 w-100 my-task-toolbar">
+                {{-- 1. Dropdown Type (hanya type content: Video, Document, dll) --}}
+                <div class="dropdown">
                     <button type="button"
-                            class="btn btn-filter-chip learning-fast-filter-control ongoing-fast-filter-control dropdown-toggle {{ !empty($selTypeClean) ? 'active' : '' }}"
+                            class="btn my-task-dropdown-btn dropdown-toggle {{ !empty($selTypeClean) ? 'active' : '' }}"
                             data-bs-toggle="dropdown"
+                            data-bs-display="static"
                             aria-expanded="false">
                         Type: <span class="fw-semibold">{{ $quickTypeLabel }}</span>
                     </button>
-                    <div class="dropdown-menu">
+                    <div class="dropdown-menu shadow-sm">
                         <a href="#"
-                           class="dropdown-item ongoing-quick-item {{ empty($selTypeClean) ? 'active' : '' }}"
+                           class="dropdown-item my-task-dropdown-item ongoing-quick-item {{ empty($selTypeClean) ? 'active' : '' }}"
                            data-param="ongoing_type" data-array="1" data-value="">All</a>
                         @foreach ($typeOptions as $typeOption)
                             <a href="#"
-                               class="dropdown-item ongoing-quick-item {{ $selTypeClean === [(string) $typeOption] ? 'active' : '' }}"
+                               class="dropdown-item my-task-dropdown-item ongoing-quick-item {{ $selTypeClean === [(string) $typeOption] ? 'active' : '' }}"
                                data-param="ongoing_type" data-array="1" data-value="{{ $typeOption }}">
                                 {{ ucwords(str_replace('_', ' ', $typeOption)) }}
                             </a>
@@ -211,18 +239,19 @@
                     </div>
                 </div>
 
-                {{-- Dropdown Status --}}
-                <div class="dropdown ongoing-filter-dropdown ongoing-filter-dropdown-status">
+                {{-- 2. Dropdown Status --}}
+                <div class="dropdown">
                     <button type="button"
-                            class="btn btn-filter-chip learning-fast-filter-control ongoing-fast-filter-control dropdown-toggle {{ $curQuickStatus !== 'all' ? 'active' : '' }}"
+                            class="btn my-task-dropdown-btn dropdown-toggle {{ $curQuickStatus !== 'all' ? 'active' : '' }}"
                             data-bs-toggle="dropdown"
+                            data-bs-display="static"
                             aria-expanded="false">
                         Status: <span class="fw-semibold">{{ $quickStatusOptions[$curQuickStatus] }}</span>
                     </button>
-                    <div class="dropdown-menu">
+                    <div class="dropdown-menu shadow-sm">
                         @foreach ($quickStatusOptions as $val => $label)
                             <a href="#"
-                               class="dropdown-item ongoing-quick-item {{ $curQuickStatus === $val ? 'active' : '' }}"
+                               class="dropdown-item my-task-dropdown-item ongoing-quick-item {{ $curQuickStatus === $val ? 'active' : '' }}"
                                data-param="ongoing_quick_status" data-value="{{ $val }}">
                                 {{ $label }}
                             </a>
@@ -230,20 +259,21 @@
                     </div>
                 </div>
 
-                {{-- Dropdown Year (otomatis dari data) --}}
-                <div class="dropdown ongoing-filter-dropdown ongoing-filter-dropdown-year">
+                {{-- 3. Dropdown Year (otomatis dari data) --}}
+                <div class="dropdown">
                     <button type="button"
-                            class="btn btn-filter-chip learning-fast-filter-control ongoing-fast-filter-control dropdown-toggle {{ $curYear !== 'all' ? 'active' : '' }}"
+                            class="btn my-task-dropdown-btn dropdown-toggle {{ $curYear !== 'all' ? 'active' : '' }}"
                             data-bs-toggle="dropdown"
+                            data-bs-display="static"
                             aria-expanded="false">
                         Year: <span class="fw-semibold">{{ $curYear === 'all' ? 'All' : $curYear }}</span>
                     </button>
-                    <div class="dropdown-menu">
-                        <a href="#" class="dropdown-item ongoing-quick-item {{ $curYear === 'all' ? 'active' : '' }}"
+                    <div class="dropdown-menu shadow-sm">
+                        <a href="#" class="dropdown-item my-task-dropdown-item ongoing-quick-item {{ $curYear === 'all' ? 'active' : '' }}"
                            data-param="ongoing_year" data-value="all">All</a>
                         @foreach ($quickYearOptions as $yearOption)
                             <a href="#"
-                               class="dropdown-item ongoing-quick-item {{ (string) $curYear === (string) $yearOption ? 'active' : '' }}"
+                               class="dropdown-item my-task-dropdown-item ongoing-quick-item {{ (string) $curYear === (string) $yearOption ? 'active' : '' }}"
                                data-param="ongoing_year" data-value="{{ $yearOption }}">
                                 {{ $yearOption }}
                             </a>
@@ -251,80 +281,131 @@
                     </div>
                 </div>
 
-                {{-- Dropdown Month --}}
-                <div class="dropdown ongoing-filter-dropdown ongoing-filter-dropdown-month">
+                {{-- 4. Dropdown Month --}}
+                <div class="dropdown">
                     <button type="button"
-                            class="btn btn-filter-chip learning-fast-filter-control ongoing-fast-filter-control dropdown-toggle {{ !empty($activeQuickMonths) ? 'active' : '' }}"
+                            class="btn my-task-dropdown-btn dropdown-toggle {{ !empty($activeQuickMonths) ? 'active' : '' }}"
                             data-bs-toggle="dropdown"
+                            data-bs-display="static"
                             aria-expanded="false">
                         Month: <span class="fw-semibold">{{ $quickMonthLabel }}</span>
                     </button>
-                    <div class="dropdown-menu learning-quick-dropdown-scroll">
-                        <a href="#" class="dropdown-item ongoing-quick-item {{ empty($activeQuickMonths) ? 'active' : '' }}"
+                    <div class="dropdown-menu shadow-sm" style="max-height: 280px; overflow-y: auto;">
+                        <a href="#" class="dropdown-item my-task-dropdown-item ongoing-quick-item {{ empty($activeQuickMonths) ? 'active' : '' }}"
                            data-param="ongoing_month" data-array="1" data-value="">All</a>
                         @foreach ($monthOptions as $num => $label)
                             <a href="#"
-                               class="dropdown-item ongoing-quick-item {{ $activeQuickMonths === [(string) $num] ? 'active' : '' }}"
+                               class="dropdown-item my-task-dropdown-item ongoing-quick-item {{ $activeQuickMonths === [(string) $num] ? 'active' : '' }}"
                                data-param="ongoing_month" data-array="1" data-value="{{ $num }}">
                                 {{ $label }}
                             </a>
                         @endforeach
                     </div>
                 </div>
-            </div>
 
-            <div class="ongoing-toolbar-search">
-                <div class="position-relative search-input-wrapper search-ongoing-container flex-grow-1 w-100">
-                    <div class="input-icon">
-                        <span class="input-icon-addon">
-                            <i class="ti ti-search" aria-hidden="true"></i>
+                {{-- Search & Action Buttons Group (Single row, action buttons on right) --}}
+                <div class="d-flex align-items-center gap-2 flex-grow-1 ongoing-search-actions-group">
+                    {{-- 5. Search input with live autocomplete dropdown --}}
+                    <div class="position-relative flex-grow-1 my-task-search-wrapper search-ongoing-container" style="min-width: 180px;">
+                        <span class="position-absolute top-50 start-0 translate-middle-y ps-3 text-muted pointer-events-none" style="z-index: 2;">
+                            <i class="ti ti-search" style="font-size: 15px;"></i>
                         </span>
                         <input type="text"
                                name="ongoing_search"
                                id="ongoing-search-input"
                                value="{{ request('ongoing_search', request('q')) }}"
-                               class="form-control module-search-input"
+                               class="form-control my-task-search-input module-search-input"
                                aria-label="Search classes or categories"
                                placeholder="Search classes or categories..."
                                autocomplete="off">
+                        @if (request()->filled('ongoing_search') || request()->filled('q'))
+                            <a href="{{ route('user.learning.dashboard') }}" class="btn btn-link position-absolute top-50 end-0 translate-middle-y pe-2.5 text-muted text-decoration-none my-task-search-clear" title="Clear search" style="z-index: 2;">
+                                <i class="ti ti-x"></i>
+                            </a>
+                        @endif
+                        <div id="ongoing-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1 module-search-dropdown" style="display: none; max-height: 380px; overflow-y: auto; z-index: 1050; padding: 0;">
+                            <div class="autocomplete-list-group list-group list-group-flush"></div>
+                            <div class="search-footer border-top bg-light p-2 text-center sticky-bottom"></div>
+                        </div>
                     </div>
-                    <div id="ongoing-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1 module-search-dropdown" style="display: none; max-height: 380px; overflow-y: auto; z-index: 1050; padding: 0;">
-                        <div class="autocomplete-list-group list-group list-group-flush"></div>
-                        <div class="search-footer border-top bg-light p-2 text-center sticky-bottom"></div>
+
+                    {{-- 6. Square Action Buttons --}}
+                    <button type="submit"
+                            class="btn btn-primary my-task-btn-square my-task-btn-search flex-shrink-0"
+                            title="Apply Filter"
+                            aria-label="Apply Filter">
+                        <i class="ti ti-search text-white fs-3"></i>
+                    </button>
+
+                    <button type="button"
+                            class="btn btn-white my-task-btn-square my-task-btn-filter position-relative flex-shrink-0"
+                            data-bs-toggle="modal"
+                            data-bs-target="#ongoingMoreFiltersModal"
+                            title="More Filters"
+                            aria-label="More Filters">
+                        <i class="ti ti-adjustments-horizontal fs-3 text-secondary"></i>
+                        @if ($advancedCount > 0)
+                            <span class="badge bg-primary text-white">{{ $advancedCount }}</span>
+                        @endif
+                    </button>
+
+                    <a href="{{ route('user.learning.dashboard') }}"
+                       class="btn btn-white my-task-btn-square my-task-btn-reset flex-shrink-0"
+                       title="Reset Filter"
+                       aria-label="Reset Filter">
+                        <i class="ti ti-refresh fs-3 text-secondary"></i>
+                    </a>
+
+                    <div class="flex-shrink-0">
+                        <x-learning.ongoing-export mode="{{ request('ongoing_mode') === 'mooc' ? 'mooc' : 'content' }}" />
                     </div>
                 </div>
             </div>
 
-            <div class="ongoing-filter-actions" role="group" aria-label="Filter actions">
-                <button type="submit"
-                        class="btn btn-primary btn-learning-primary ongoing-filter-action-btn"
-                        title="Apply Filter"
-                        aria-label="Apply Filter">
-                    <i class="ti ti-search" aria-hidden="true"></i>
-                </button>
-
-                <button type="button"
-                        class="btn btn-outline-primary btn-learning-secondary ongoing-filter-action-btn"
-                        data-bs-toggle="modal"
-                        data-bs-target="#ongoingMoreFiltersModal"
-                        title="More Filters"
-                        aria-label="More Filters">
-                    <i class="ti ti-adjustments-horizontal" aria-hidden="true"></i>
-                    @if ($advancedCount > 0)
-                        <span class="badge bg-primary text-white ongoing-filter-count">{{ $advancedCount }}</span>
+            {{-- Active Filters indicator --}}
+            @php
+                $hasActiveOngoingFilters = !empty(request('ongoing_search', request('q'))) || !empty($selTypeClean) || $curQuickStatus !== 'all' || $curYear !== 'all' || !empty($activeQuickMonths) || $advancedCount > 0;
+            @endphp
+            @if ($hasActiveOngoingFilters)
+                <div class="d-flex align-items-center flex-wrap gap-2 mt-2.5 pt-2.5 border-top">
+                    <span class="text-muted small" style="font-size: 11.5px;">Active Filter:</span>
+                    @if (!empty(request('ongoing_search', request('q'))))
+                        <span class="badge bg-light text-dark border px-2.5 py-1 rounded-pill d-inline-flex align-items-center gap-1 shadow-none" style="font-size: 11.5px;">
+                            <i class="ti ti-search text-muted"></i>
+                            <span>"{{ request('ongoing_search', request('q')) }}"</span>
+                        </span>
                     @endif
-                </button>
-
-                <a href="{{ route('user.learning.dashboard') }}"
-                   class="btn btn-outline-secondary btn-learning-outline ongoing-filter-action-btn"
-                   title="Reset Filter"
-                   aria-label="Reset Filter">
-                    <i class="ti ti-refresh" aria-hidden="true"></i>
-                </a>
-            </div>
-
-            </div>
-            </div>
+                    @if (!empty($selTypeClean))
+                        <span class="badge bg-light text-dark border px-2.5 py-1 rounded-pill d-inline-flex align-items-center gap-1 shadow-none" style="font-size: 11.5px;">
+                            <span>Type: {{ $quickTypeLabel }}</span>
+                        </span>
+                    @endif
+                    @if ($curQuickStatus !== 'all')
+                        <span class="badge bg-light text-dark border px-2.5 py-1 rounded-pill d-inline-flex align-items-center gap-1 shadow-none" style="font-size: 11.5px;">
+                            <span>Status: {{ $quickStatusOptions[$curQuickStatus] }}</span>
+                        </span>
+                    @endif
+                    @if ($curYear !== 'all')
+                        <span class="badge bg-light text-dark border px-2.5 py-1 rounded-pill d-inline-flex align-items-center gap-1 shadow-none" style="font-size: 11.5px;">
+                            <span>Year: {{ $curYear }}</span>
+                        </span>
+                    @endif
+                    @if (!empty($activeQuickMonths))
+                        <span class="badge bg-light text-dark border px-2.5 py-1 rounded-pill d-inline-flex align-items-center gap-1 shadow-none" style="font-size: 11.5px;">
+                            <span>Month: {{ $quickMonthLabel }}</span>
+                        </span>
+                    @endif
+                    @if ($advancedCount > 0)
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 rounded-pill d-inline-flex align-items-center gap-1 shadow-none" style="font-size: 11.5px;">
+                            <i class="ti ti-adjustments-horizontal"></i>
+                            <span>{{ $advancedCount }} More Filters</span>
+                        </span>
+                    @endif
+                    <a href="{{ route('user.learning.dashboard') }}" class="text-primary small text-decoration-none ms-1 fw-semibold" style="font-size: 11.5px;">
+                        Reset all
+                    </a>
+                </div>
+            @endif
 
             {{-- ── Modal "All Filters" (Tokopedia bottom-sheet di mobile) ───────────────── --}}
             <div class="modal fade" id="ongoingMoreFiltersModal" tabindex="-1" aria-hidden="true">

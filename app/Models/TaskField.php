@@ -1,0 +1,249 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+/**
+ * TaskField — satu "pertanyaan" dinamis milik task (ala Google Form).
+ *
+ * type: file (upload file) | textarea (written answer) | choice (pilihan ganda;
+ *     dipakai assessment & survey)
+ * options: daftar pilihan (choice) — JSON array
+ * correct_answer: jawaban benar (assessment/quiz) — untuk auto-scoring
+ */
+class TaskField extends Model
+{
+    public const TYPES = [
+        'short_answer' => 'Short answer',
+        'textarea'     => 'Paragraph',
+        'choice'       => 'Multiple choice',
+        'checkbox'     => 'Checkboxes',
+        'dropdown'     => 'Dropdown',
+        'file'         => 'File upload',
+        'scale'        => 'Linear scale',
+        'rating'       => 'Rating',
+    ];
+
+    /**
+     * File-type groups for the upload settings (ala Google Form).
+     * Key = stored in task_fields.file_types (JSON array); empty/null = all allowed.
+     */
+    public const FILE_TYPE_GROUPS = [
+        'document'     => ['label' => 'Document',     'extensions' => ['doc', 'docx', 'txt', 'rtf', 'odt']],
+        'spreadsheet'  => ['label' => 'Spreadsheet',  'extensions' => ['xls', 'xlsx', 'csv', 'ods']],
+        'pdf'          => ['label' => 'PDF',          'extensions' => ['pdf']],
+        'video'        => ['label' => 'Video',        'extensions' => ['mp4', 'avi', 'mov', 'mkv', 'webm']],
+        'presentation' => ['label' => 'Presentation', 'extensions' => ['ppt', 'pptx', 'odp']],
+        'image'        => ['label' => 'Image',        'extensions' => ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp']],
+    ];
+
+    /** Default max file size (MB) when the admin leaves it unset. */
+    public const DEFAULT_MAX_SIZE_MB = 5;
+
+    /** Max files choices offered in the admin dropdown. */
+    public const MAX_FILES_OPTIONS = [1, 2, 3, 5, 10];
+
+    /** Max size choices (MB) offered in the admin dropdown. */
+    public const MAX_SIZE_OPTIONS = [1, 2, 5, 10, 20, 50];
+
+    protected $fillable = [
+        'task_id', 'label', 'type', 'required', 'sort_order',
+        'options', 'correct_answer',
+        'file_types', 'max_files', 'max_size_mb', 'allow_link',
+        'min_select', 'max_select',
+    ];
+
+    protected $casts = [
+        'required'   => 'boolean',
+        'options'    => 'array',
+        'file_types' => 'array',
+        'allow_link' => 'boolean',
+        'min_select' => 'integer',
+        'max_select' => 'integer',
+    ];
+
+    public function task(): BelongsTo
+    {
+        return $this->belongsTo(Task::class);
+    }
+
+    public function scopeOrdered($query)
+    {
+        return $query->orderBy('sort_order');
+    }
+
+    public function typeLabel(): string
+    {
+        return self::TYPES[$this->type] ?? $this->type;
+    }
+
+    public function isFile(): bool
+    {
+        return $this->type === 'file';
+    }
+
+    public function isChoice(): bool
+    {
+        return $this->type === 'choice';
+    }
+
+    public function isShortAnswer(): bool
+    {
+        return $this->type === 'short_answer';
+    }
+
+    public function isParagraph(): bool
+    {
+        return in_array($this->type, ['textarea', 'paragraph'], true);
+    }
+
+    public function isCheckbox(): bool
+    {
+        return $this->type === 'checkbox';
+    }
+
+    public function isDropdown(): bool
+    {
+        return $this->type === 'dropdown';
+    }
+
+    public function isScale(): bool
+    {
+        return $this->type === 'scale';
+    }
+
+    public function isRating(): bool
+    {
+        return $this->type === 'rating';
+    }
+
+    public function hasOptions(): bool
+    {
+        return in_array($this->type, ['choice', 'checkbox', 'dropdown'], true);
+    }
+
+    // ── File-upload settings (ala Google Form) ──────────────────────────
+
+    /** Selected file-type groups, e.g. ['pdf','document']; empty = all allowed. */
+    public function fileTypeGroups(): array
+    {
+        $groups = $this->file_types ?? [];
+        return array_values(array_intersect($groups, array_keys(self::FILE_TYPE_GROUPS)));
+    }
+
+    /** Flat list of allowed extensions; empty array = no restriction. */
+    public function allowedExtensions(): array
+    {
+        $exts = [];
+        foreach ($this->fileTypeGroups() as $group) {
+            $exts = array_merge($exts, self::FILE_TYPE_GROUPS[$group]['extensions']);
+        }
+
+        return array_values(array_unique($exts));
+    }
+
+    /** Human labels of the selected groups, e.g. "PDF, Document". */
+    public function allowedTypesLabel(): string
+    {
+        $labels = [];
+        foreach ($this->fileTypeGroups() as $group) {
+            $labels[] = self::FILE_TYPE_GROUPS[$group]['label'];
+        }
+
+        return implode(', ', $labels);
+    }
+
+    /** Value for the <input type="file" accept="..."> attribute. */
+    public function acceptAttribute(): string
+    {
+        $exts = $this->allowedExtensions();
+        if (empty($exts)) {
+            return '';
+        }
+
+        return '.' . implode(',.', $exts);
+    }
+
+    public function maxFiles(): int
+    {
+        return max(1, (int) ($this->max_files ?? 1));
+    }
+
+    public function maxSizeMb(): int
+    {
+        return max(1, (int) ($this->max_size_mb ?? self::DEFAULT_MAX_SIZE_MB));
+    }
+
+    public function maxSizeKb(): int
+    {
+        return $this->maxSizeMb() * 1024;
+    }
+
+
+    // ── Checkbox selection limits ───────────────────────────────────────
+
+    public function maxSelect(): ?int
+    {
+        if (! empty($this->max_select)) {
+            return (int) $this->max_select;
+        }
+
+        return self::detectMaxSelect($this->label);
+    }
+
+    public function minSelect(): ?int
+    {
+        if (! empty($this->min_select)) {
+            return (int) $this->min_select;
+        }
+
+        return self::detectMinSelect($this->label);
+    }
+
+    public static function detectMaxSelect(?string $label): ?int
+    {
+        if (empty($label)) {
+            return null;
+        }
+
+        // e.g. "pilih 2-3 opsi", "2 sampai 3", "2 s/d 3", "2 to 3"
+        if (preg_match('/(\d+)\s*(?:-|–|—|sampai|s\/d|sd|to)\s*(\d+)/i', $label, $m)) {
+            return (int) $m[2];
+        }
+
+        // e.g. "maksimal 3", "maks 3", "max 3", "up to 3"
+        if (preg_match('/(?:maksimal|maks\.?|max\.?|up\s*to)\s*(\d+)/i', $label, $m)) {
+            return (int) $m[1];
+        }
+
+        // e.g. "pilih 3 opsi", "select 3 options"
+        if (preg_match('/(?:pilih|select|choose)\s*(\d+)\s*(?:opsi|pilihan|option|choice)/i', $label, $m)) {
+            return (int) $m[1];
+        }
+
+        return null;
+    }
+
+    public static function detectMinSelect(?string $label): ?int
+    {
+        if (empty($label)) {
+            return null;
+        }
+
+        // e.g. "pilih 2-3 opsi", "2 sampai 3", "2 s/d 3"
+        if (preg_match('/(\d+)\s*(?:-|–|—|sampai|s\/d|sd|to)\s*(\d+)/i', $label, $m)) {
+            return (int) $m[1];
+        }
+
+        // e.g. "minimal 2", "min 2", "at least 2"
+        if (preg_match('/(?:minimal|min\.?|at\s*least)\s*(\d+)/i', $label, $m)) {
+            return (int) $m[1];
+        }
+
+        return null;
+    }
+
+}

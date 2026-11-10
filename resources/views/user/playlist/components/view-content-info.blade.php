@@ -30,6 +30,13 @@
                         <i class="far fa-clock me-1"></i>
                         {{ ($content->type === 'Document' && (int) ($content->page_duration ?? 30) === 0) ? 'Self-paced' : \App\Support\DurationFormatter::format($content->duration) }}
                     </span>
+                    @if (isset($totalRecognizedDuration))
+                        <span class="overview-meta-separator">&bull;</span>
+                        <span title="Total Recognized Duration">
+                            <i class="ti ti-history me-1"></i>
+                            Recognized: <span id="contentTotalRecognizedDuration">{{ $totalRecognizedDuration }}</span>
+                        </span>
+                    @endif
                 </div>
             </div>
 
@@ -55,6 +62,15 @@
                 Read More
             </button>
         </div>
+
+        @if (auth()->user()?->canAccessManageModule('playlist_debug_tools') && \App\Services\EngagementTime\EngagementTimeService::isTargetPlaylistContent($playlist, $content))
+            @include('user.components.total-engagement-time', [
+                'targetType'      => 'playlist',
+                'targetId'        => $content->id,
+                'trainingPlanId'  => $playlist->id,
+                'initialDuration' => (int) ($content_user->afk_duration_seconds ?? 0),
+            ])
+        @endif
 
         @include('user.playlist.components.view-completion-requirements')
 

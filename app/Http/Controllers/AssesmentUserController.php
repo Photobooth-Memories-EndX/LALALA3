@@ -149,8 +149,12 @@
 
             return response()->json($results->values());
         }
-    public function index()
+    public function index(AssessmentAccessService $assessmentAccess)
         {
+            if (Auth::check()) {
+                $assessmentAccess->finalizeExpiredDraftsForUser(Auth::user());
+            }
+
             $assesment = Assesment::with([
                     'trainingplan',
                     'scores' => function ($query) {
@@ -766,23 +770,7 @@
          */
         private function finalizeExpiredDraft(AssesmentResult $result, Assesment $assesment): void
         {
-            if ((int) $result->final === 1) {
-                return;
-            }
-
-            $existingUserAnswers = is_array($result->user_answer) ? $result->user_answer : [];
-            $scoreData = $this->calculateAttemptScore($result, $assesment, $existingUserAnswers);
-
-            $result->score = $scoreData['score'];
-            $result->batch = $assesment->batch;
-            $result->pass = $scoreData['pass'];
-            $result->final = 1;
-            $result->save();
-
-            $this->syncAfkToLearningProgress($assesment, (int) $result->user_id, (int) ($result->afk_duration_seconds ?? 0));
-
-            $completedKey = 'assessment-completed:' . auth()->id() . ':' . $assesment->id . ':' . $assesment->batch . ':' . $result->id;
-            Cache::put($completedKey, $result->id, now()->addDay());
+            app(AssessmentAccessService::class)->finalizeExpiredDraft($result, $assesment);
         }
 
         /**
@@ -797,10 +785,16 @@
 
             // 1. Sync to content_users if assessment is associated with content
             if (!empty($assesment->content_id)) {
-                $contentUser = \App\Models\ContentUser::firstOrCreate([
-                    'user_id'    => $userId,
-                    'content_id' => $assesment->content_id,
-                ]);
+                $contentStatus = $assesment->content?->status ?? 'non mandatory';
+                $contentUser = \App\Models\ContentUser::firstOrCreate(
+                    [
+                        'user_id'    => $userId,
+                        'content_id' => $assesment->content_id,
+                    ],
+                    [
+                        'status'     => $contentStatus,
+                    ]
+                );
 
                 if ($contentUser) {
                     $totalAssessmentAfk = (int) AssesmentResult::where('user_id', $userId)
@@ -814,11 +808,17 @@
 
             // 2. Sync to playlist_content_users if assessment is associated with playlist and content
             if (!empty($assesment->trainingplan_id) && !empty($assesment->content_id)) {
-                $playlistContentUser = \App\Models\PlaylistContentUser::firstOrCreate([
-                    'user_id'         => $userId,
-                    'trainingplan_id' => $assesment->trainingplan_id,
-                    'content_id'      => $assesment->content_id,
-                ]);
+                $contentStatus = $assesment->content?->status ?? 'non mandatory';
+                $playlistContentUser = \App\Models\PlaylistContentUser::firstOrCreate(
+                    [
+                        'user_id'         => $userId,
+                        'trainingplan_id' => $assesment->trainingplan_id,
+                        'content_id'      => $assesment->content_id,
+                    ],
+                    [
+                        'status'          => $contentStatus,
+                    ]
+                );
 
                 if ($playlistContentUser) {
                     $totalAssessmentAfk = (int) AssesmentResult::where('user_id', $userId)

@@ -12,7 +12,7 @@
     $years           = collect($filterOptions['years'] ?? []);
     $learningHours   = collect($filterOptions['learningHours'] ?? []);
 
-    // Jumlah baris yang siap generate certificate — sumber counter card header.
+    // Jumlah baris yang siap generate certificate â€” sumber counter card header.
     $certReadyCount = $rows->where('cert_state', 'ready')->count();
 
     $months = [
@@ -37,17 +37,19 @@
     // Kolom tabel; 'sort' = key data-sort-* pada baris (learning-record.js),
     // 'type' = cara membandingkan nilai saat sorting (text/number/duration).
     $columns = [
-        ['label' => 'No',               'width' => '4%'],
-        ['label' => 'Course',           'width' => '24%', 'sort' => 'title',          'type' => 'text'],
-        ['label' => 'Type',             'width' => '8%',  'sort' => 'type',           'type' => 'text'],
-        ['label' => 'Category',         'width' => '8%',  'sort' => 'category',       'type' => 'text'],
-        ['label' => 'Classification',   'width' => '10%', 'sort' => 'classification', 'type' => 'text'],
-        ['label' => 'Duration',         'width' => '8%',  'sort' => 'duration',       'type' => 'duration'],
-        ['label' => 'Learning Hour',    'width' => '8%',  'sort' => 'learning-hour',  'type' => 'number'],
-        ['label' => 'Progress',         'width' => '7%',  'sort' => 'progress',       'type' => 'number'],
-        ['label' => 'Date Time',        'width' => '12%', 'sort' => 'finish',         'type' => 'text'],
-        ['label' => 'Assessment Score', 'width' => '8%',  'sort' => 'score',          'type' => 'number'],
-        ['label' => 'Certificate',      'width' => '8%'],
+        ['label' => 'NO',                  'width' => '3%',  'sort' => 'no',             'type' => 'number'],
+        ['label' => 'Course Title',        'width' => '22%', 'sort' => 'title',          'type' => 'text'],
+        ['label' => 'Type',                'width' => '6%',  'sort' => 'type',           'type' => 'text'],
+        ['label' => 'Category',            'width' => '7%',  'sort' => 'category',       'type' => 'text'],
+        ['label' => 'Main Classification', 'width' => '9%',  'sort' => 'classification', 'type' => 'text'],
+        ['label' => 'Course Duration',     'width' => '7%',  'sort' => 'duration',       'type' => 'duration'],
+        ['label' => 'Total Recognized Duration', 'width' => '8%', 'sort' => 'recognized-duration', 'type' => 'duration'],
+        ['label' => 'Learning Hours',      'width' => '7%',  'sort' => 'learning-hour',  'type' => 'number'],
+        ['label' => '% Progress',          'width' => '6%',  'sort' => 'progress',       'type' => 'number'],
+        ['label' => 'Start Date - End Time', 'width' => '11%', 'sort' => 'finish',       'type' => 'text'],
+        ['label' => 'Attendance',          'width' => '6%',  'sort' => 'attendance',     'type' => 'text'],
+        ['label' => 'Assessment Score (L2)', 'width' => '6%',  'sort' => 'score',        'type' => 'number'],
+        ['label' => 'Action',              'width' => '5%'],
     ];
 @endphp
 
@@ -111,15 +113,36 @@
     box-sizing: border-box !important;
 }
 
-/* Table Horizontal Scroll & Full Course Title Readability */
+/* Table Horizontal & Vertical Scroll Sticky Freeze Header */
+.table-responsive.learning-record-scroll,
 .learning-record-scroll {
+    max-height: 70vh !important;
+    overflow-y: auto !important;
     overflow-x: auto !important;
+    position: relative !important;
     -webkit-overflow-scrolling: touch;
     width: 100% !important;
 }
 .learning-record-table {
     min-width: 1280px !important;
     width: 100% !important;
+}
+.learning-record-table thead th,
+#learningRecordTable thead th {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 10 !important;
+    background-color: #f8fafc !important; /* Solid neutral background so rows pass underneath cleanly */
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); /* Subtle bottom border line when sticky */
+}
+[data-bs-theme="dark"] .learning-record-table thead th,
+[data-bs-theme="dark"] #learningRecordTable thead th,
+body.dark-mode .learning-record-table thead th,
+body.dark-mode #learningRecordTable thead th,
+body.theme-dark .learning-record-table thead th,
+body.theme-dark #learningRecordTable thead th {
+    background-color: #1e293b !important;
+    color: #94a3b8 !important;
 }
 .learning-record-course-cell {
     min-width: 280px;
@@ -532,12 +555,13 @@ body.dark-mode .course-preview-playlist-link:hover,
 }
 </style>
 
-        <div class="card border-0 shadow-sm rounded-4 learning-record-card">
-            <div class="card-body p-4 border-bottom">
-                <x-learning.record-filter :filter-options="$filterOptions" />
-            </div>
+<div class="card border-0 shadow-sm rounded-4 mb-3 my-task-filter-card learning-record-filter-card">
+    <div class="card-body p-3 p-md-4">
+        <x-learning.record-filter :filter-options="$filterOptions" />
     </div>
+</div>
 
+<div class="card border-0 shadow-sm rounded-4 learning-record-card">
     <div class="card-body p-0">
 
         <div class="table-responsive learning-record-scroll">
@@ -547,7 +571,7 @@ body.dark-mode .course-preview-playlist-link:hover,
                     <tr>
                         @foreach ($columns as $column)
                             @if (isset($column['sort']))
-                                <th class="text-muted record-sortable"
+                                <th class="text-muted record-sortable {{ $column['label'] === 'Course Title' ? 'text-center' : '' }}"
                                     style="width: {{ $column['width'] }}"
                                     data-sort-key="{{ $column['sort'] }}"
                                     data-sort-type="{{ $column['type'] }}">
@@ -557,7 +581,7 @@ body.dark-mode .course-preview-playlist-link:hover,
                                     </span>
                                 </th>
                             @else
-                                <th class="text-muted" style="width: {{ $column['width'] }}">{{ $column['label'] }}</th>
+                                <th class="text-muted text-center" style="width: {{ $column['width'] }}">{{ $column['label'] }}</th>
                             @endif
                         @endforeach
                     </tr>
@@ -567,7 +591,7 @@ body.dark-mode .course-preview-playlist-link:hover,
                         <x-learning.record-row :row="$row" :index="$loop->iteration" />
                     @empty
                         <tr id="recordEmptyRow">
-                            <td colspan="11" class="text-center text-muted py-4">
+                            <td colspan="13" class="text-center text-muted py-4">
                                 No completed learning found.
                             </td>
                         </tr>
@@ -576,7 +600,7 @@ body.dark-mode .course-preview-playlist-link:hover,
                     @if ($rows->isNotEmpty())
                         {{-- Ditampilkan jQuery saat kombinasi filter tidak menghasilkan baris. --}}
                         <tr id="recordNoMatchRow" class="d-none">
-                            <td colspan="11" class="text-center text-muted py-4">
+                            <td colspan="13" class="text-center text-muted py-4">
                                 No records match your search or filter.
                             </td>
                         </tr>
@@ -625,3 +649,6 @@ body.dark-mode .course-preview-playlist-link:hover,
     </div>
 </div>
 
+
+{{-- Training Record Detail Modal (KP OWL Online) --}}
+<x-shared.record-detail-modal />

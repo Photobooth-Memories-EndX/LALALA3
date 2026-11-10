@@ -36,6 +36,25 @@ class Kernel extends ConsoleKernel
                         ->info('Learning Hour Playlist calculation dispatched.');
                 });
         }
+
+        // Synchronize OWL users with PT Krakatau Posco Employee API Gateway daily at 06:00 WIB
+        $schedule->command('owl:sync-employee-users')
+            ->dailyAt('06:00')
+            ->timezone('Asia/Jakarta')
+            ->withoutOverlapping(120)
+            ->runInBackground()
+            ->before(function () {
+                \Illuminate\Support\Facades\Log::info('OWL Employee User Synchronization scheduler started at 06:00 WIB.');
+            })
+            ->after(function () {
+                \Illuminate\Support\Facades\Log::info('OWL Employee User Synchronization scheduler finished.');
+            });
+
+        // Automatically finalize abandoned/expired assessment drafts every hour
+        $schedule->command('assessment:finalize-expired-drafts')
+            ->hourly()
+            ->withoutOverlapping(60)
+            ->runInBackground();
     }
 
     /**

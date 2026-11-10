@@ -7,6 +7,10 @@
             return;
         }
 
+        if ($.fn.dataTable && $.fn.dataTable.ext) {
+            $.fn.dataTable.ext.errMode = 'none';
+        }
+
         var assessmentFilterParams = new URLSearchParams(window.location.search);
 
         function resolveAssessmentMonthNumber(val) {
@@ -178,8 +182,8 @@
                 },
                 dom: 't<"assessment-datatable-footer"ip>',
                 language: {
-                    emptyTable: 'No assessments available.',
-                    zeroRecords: 'No assessments match the selected filters.'
+                    emptyTable: '<div class="text-center text-muted py-5"><i class="ti ti-clipboard-check fs-1 d-block mb-2 text-muted opacity-50"></i><div class="fw-semibold">No assessments available</div><div class="small mt-1 text-muted">Assessments assigned to you will appear here.</div></div>',
+                    zeroRecords: '<div class="text-center text-muted py-5"><i class="ti ti-clipboard-check fs-1 d-block mb-2 text-muted opacity-50"></i><div class="fw-semibold">No assessments match the selected filters</div></div>'
                 },
                 columnDefs: [
                     {

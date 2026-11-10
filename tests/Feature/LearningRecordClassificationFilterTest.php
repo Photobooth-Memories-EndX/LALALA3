@@ -183,7 +183,7 @@ class LearningRecordClassificationFilterTest extends TestCase
 
         $export = new ExportMyLearningRecord(['record_filter_classification' => 'Basic & Common Duties']);
         $data = $export->array();
-        $exportItems = array_filter(array_slice($data, 1, -2), fn ($r) => !empty($r[0]));
+        $exportItems = array_filter(array_slice($data, 1), fn ($r) => !empty($r[0]));
 
         $this->assertCount(1, $exportItems);
         $firstItem = reset($exportItems);

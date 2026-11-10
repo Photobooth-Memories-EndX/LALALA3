@@ -22,8 +22,11 @@
                         <x-select name="id_question_bank" id="id-question-bank" class="select2">
                             <option value="" data-total-questions="0">- Choose Question Bank -</option>
                             @foreach ($questionBanks as $questionBank)
-                                <option value="{{ $questionBank->id }}" data-total-questions="{{ count($questionBank->questions) }}">
-                                    {{ $questionBank->title }} ({{ count($questionBank->questions) }})
+                                @php
+                                    $bankQuestionCount = $questionBank->questions_count ?? count($questionBank->questions);
+                                @endphp
+                                <option value="{{ $questionBank->id }}" data-total-questions="{{ $bankQuestionCount }}">
+                                    {{ $questionBank->title }} ({{ $bankQuestionCount }})
                                 </option>
                             @endforeach
                         </x-select>

@@ -59,9 +59,15 @@
 
         // ── 1b. Employee Live Autocomplete Listener ────────────────────────
         let employeeDebounceTimer = null;
+        let employeeXhr = null;
         $('#manage-employee-input').on('input', function () {
             const query = $(this).val().trim();
             clearTimeout(employeeDebounceTimer);
+
+            if (employeeXhr) {
+                employeeXhr.abort();
+                employeeXhr = null;
+            }
 
             if (query.length === 0) {
                 $('#manage-employee-dropdown').hide();
@@ -70,16 +76,21 @@
             }
 
             employeeDebounceTimer = setTimeout(function () {
-                $.ajax({
-                    url: "{{ route('learning.manage.search-employees') }}",
+                employeeXhr = $.ajax({
+                    url: "{{ $employeeSearchUrl ?? route('learning.manage.search-employees') }}",
                     type: 'GET',
                     data: { q: query, search: query, employee_q: query },
                     dataType: 'json',
                     success: function (data) {
+                        employeeXhr = null;
                         const items = data.results || data || [];
                         renderAutocompleteResults('manage-employee-input', 'manage-employee-dropdown', 'manage-employee-list', 'manage-employee-footer', items, true);
                     },
-                    error: function () {
+                    error: function (xhr, status) {
+                        if (status === 'abort') {
+                            return;
+                        }
+                        employeeXhr = null;
                         $('#manage-employee-dropdown').hide();
                     }
                 });
@@ -88,9 +99,15 @@
 
         // ── 1c. Learning Title Live Autocomplete Listener ───────────────────
         let titleDebounceTimer = null;
+        let titleXhr = null;
         $('#manage-title-input').on('input', function () {
             const query = $(this).val().trim();
             clearTimeout(titleDebounceTimer);
+
+            if (titleXhr) {
+                titleXhr.abort();
+                titleXhr = null;
+            }
 
             if (query.length === 0) {
                 $('#manage-title-dropdown').hide();
@@ -99,16 +116,26 @@
             }
 
             titleDebounceTimer = setTimeout(function () {
-                $.ajax({
-                    url: "{{ route('learning.manage.search-titles') }}",
+                titleXhr = $.ajax({
+                    url: "{{ $titleSearchUrl ?? route('learning.manage.search-titles') }}",
                     type: 'GET',
-                    data: { q: query, search: query, title_q: query },
+                    data: {
+                        q: query,
+                        search: query,
+                        title_q: query,
+                        playlist_id: $('#playlist-id').val() || ''
+                    },
                     dataType: 'json',
                     success: function (data) {
+                        titleXhr = null;
                         const items = data.results || data || [];
                         renderAutocompleteResults('manage-title-input', 'manage-title-dropdown', 'manage-title-list', 'manage-title-footer', items, false);
                     },
-                    error: function () {
+                    error: function (xhr, status) {
+                        if (status === 'abort') {
+                            return;
+                        }
+                        titleXhr = null;
                         $('#manage-title-dropdown').hide();
                     }
                 });
@@ -118,6 +145,9 @@
         // ── 1d. Autocomplete Selection Handlers ─────────────────────────────
         $(document).on('click', '.select-autocomplete-item', function (e) {
             e.preventDefault();
+            if (employeeXhr) { employeeXhr.abort(); employeeXhr = null; }
+            if (titleXhr) { titleXhr.abort(); titleXhr = null; }
+
             const targetInputId = $(this).data('input');
             const val = $(this).data('value');
             const label = $(this).data('label');
@@ -137,6 +167,9 @@
 
         // Handle clicking on "See all results" or pressing Enter
         $(document).on('click', '.trigger-submit-filter', function () {
+            if (employeeXhr) { employeeXhr.abort(); employeeXhr = null; }
+            if (titleXhr) { titleXhr.abort(); titleXhr = null; }
+
             const targetInputId = $(this).data('input');
             if (targetInputId === 'manage-employee-input') {
                 $('#learn-employee').val($('#manage-employee-input').val().trim());
@@ -161,6 +194,9 @@
         $('#manage-employee-input, #manage-title-input').on('keypress', function (e) {
             if (e.which === 13) {
                 e.preventDefault();
+                if (employeeXhr) { employeeXhr.abort(); employeeXhr = null; }
+                if (titleXhr) { titleXhr.abort(); titleXhr = null; }
+
                 $('#manage-employee-dropdown, #manage-title-dropdown').hide();
                 $('#learn-employee').val($('#manage-employee-input').val().trim());
                 $('#learn-title').val($('#manage-title-input').val().trim());
@@ -189,12 +225,12 @@
             pageLength: defaultEntries,
             lengthMenu: [
                 [10, 25, 50, 100],
-                [10, 25, 50, 100]
+                ['10 Entries', '25 Entries', '50 Entries', '100 Entries']
             ],
-            order: [[9, 'desc']],
-            dom: '<"table-responsive"t>',
+            order: [[ {{ ($isAllRecord ?? false) ? 20 : 19 }}, 'desc' ]],
+            dom: 't',
             ajax: {
-                url: "{{ route('learning.manage.datatable') }}",
+                url: "{{ $datatableUrl ?? route('learning.manage.datatable') }}",
                 type: 'GET',
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}'
@@ -213,6 +249,7 @@
                     d.length = parseInt($('#table-entries-select').val(), 10) || defaultEntries;
                     d.classification_slug = $('#classification-slug').val();
                     d.content_slug = $('#content-slug').val();
+                    d.playlist_id = $('#playlist-id').val();
                     d.from_date = $('#filter-from-date').val();
                     d.to_date = $('#filter-to-date').val();
                     d.program_type = $('#filter-program-type').val();
@@ -222,16 +259,40 @@
             },
             columns: [
                 { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false, className: 'text-center' },
-                { data: 'status_badge', name: 'unified.status', className: 'text-center' },
-                { data: 'id_emp', name: 'u.id_emp', className: 'text-center' },
-                { data: 'employee', name: 'u.name' },
-                { data: 'learning_title', name: 'c.title' },
-                { data: 'type_badge', name: 'c.type', className: 'text-center' },
-                { data: 'classification_name', name: 'cl.classification_name' },
-                { data: 'category_badge', name: 'unified.category_source', className: 'text-center' },
-                { data: 'duration', name: 'c.duration', className: 'text-center' },
-                { data: 'learning_date', name: 'unified.created_at', className: 'text-center' },
-                { data: 'progress_bar', name: 'unified.progress', orderable: false, searchable: false, className: 'text-center' },
+                @if ($isAllRecord ?? false)
+                { data: 'source_badge', name: 'source_badge', className: 'text-center' },
+                @endif
+                { data: 'employee_id', name: 'u.id_emp', className: 'text-center' },
+                { data: 'employee_name', name: 'u.name', className: 'text-start' },
+                { data: 'team', name: 'u.team', className: 'text-start' },
+                { data: 'department', name: 'u.department', className: 'text-start' },
+                { data: 'company', name: 'u.company_name', className: 'text-start' },
+                { data: 'course_title', name: 'c.title', className: 'text-start' },
+                { data: 'type', name: 'c.type', className: 'text-center' },
+                { data: 'category', name: 'unified.category_source', className: 'text-start' },
+                { data: 'main_classification', name: 'cl.classification_name', className: 'text-start' },
+                { data: 'sub_classification', orderable: false, searchable: false, className: 'text-center' },
+                { data: 'delivery_method', orderable: false, searchable: false, className: 'text-center' },
+                { data: 'sub_delivery_method', orderable: false, searchable: false, className: 'text-start' },
+                { data: 'provider', name: 'provider', orderable: false, searchable: false, className: 'text-center' },
+                { data: 'provider_name', orderable: false, searchable: false, className: 'text-start' },
+                { data: 'venue', orderable: false, searchable: false, className: 'text-start' },
+                { data: 'course_duration', name: 'c.duration', className: 'text-center' },
+                { data: 'total_recognized_duration', name: 'total_recognized_duration', orderable: false, searchable: false, className: 'text-center' },
+                { data: 'learning_hours', name: 'unified.learning_hours', className: 'text-center' },
+                { data: 'progress_bar', name: 'unified.progress', className: 'text-center' },
+                { data: 'progress_status', name: 'unified.finish', className: 'text-center' },
+                { data: 'date_merged', name: 'unified.created_at', className: 'text-start' },
+                { data: 'time_merged', name: 'unified.created_at', className: 'text-start' },
+                { data: 'record_month', name: 'unified.created_at', className: 'text-center' },
+                { data: 'requirement', name: 'unified.status', className: 'text-center' },
+                { data: 'attendance', orderable: false, searchable: false, className: 'text-center' },
+                { data: 'score_l1', orderable: false, searchable: false, className: 'text-center' },
+                { data: 'score_l2', orderable: false, searchable: false, className: 'text-center' },
+                { data: 'score_l3', orderable: false, searchable: false, className: 'text-center' },
+                { data: 'certificate_availability', name: 'certificate_availability', orderable: false, searchable: false, className: 'text-center' },
+                { data: 'pic', orderable: false, searchable: false, className: 'text-start' },
+                { data: 'total_engagement_time', name: 'unified.learning_hours', className: 'text-center' },
                 { data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-center' }
             ],
             language: {
@@ -325,6 +386,9 @@
                         bootstrap.Tooltip.getOrCreateInstance(tooltipTriggerEl);
                     });
                 }
+
+                // Sync top scrollbar
+                syncTopScroll();
             }
         });
 
@@ -336,6 +400,37 @@
                 learningTable.page(page).draw('page');
             }
         });
+
+        // Top scrollbar synchronization (dual synchronized scrollbars)
+        const $topScroll = $('#table-scroll-top-wrapper');
+        const $tableScroll = $('#table-scroll-container');
+        const $topInner = $('#table-scroll-top-inner');
+
+        function syncTopScroll() {
+            const tableWidth = $('#learning-table').outerWidth();
+            $topInner.css('width', tableWidth + 'px');
+        }
+
+        let isSyncingTop = false;
+        let isSyncingBottom = false;
+
+        $topScroll.on('scroll', function() {
+            if (!isSyncingTop) {
+                isSyncingBottom = true;
+                $tableScroll.scrollLeft($(this).scrollLeft());
+            }
+            isSyncingTop = false;
+        });
+
+        $tableScroll.on('scroll', function() {
+            if (!isSyncingBottom) {
+                isSyncingTop = true;
+                $topScroll.scrollLeft($(this).scrollLeft());
+            }
+            isSyncingBottom = false;
+        });
+
+        $(window).on('resize', syncTopScroll);
 
         // Function to update active filter counter badge
         function updateActiveFilterBadge() {
@@ -512,6 +607,9 @@
 
         // ── 5. Full Filter Reset Event ────────────────────────────────────
         $('#btn-reset-filter').on('click', function () {
+            if (employeeXhr) { employeeXhr.abort(); employeeXhr = null; }
+            if (titleXhr) { titleXhr.abort(); titleXhr = null; }
+
             // Reset Employee Search input & hidden value
             $('#manage-employee-input').val('');
             $('#learn-employee').val('');
@@ -549,9 +647,8 @@
             learningTable.page.len(defaultEntries).page(0).draw(false);
         });
 
-        // ── 6. Filtered Data Download Handler (Export Excel) ─────────────
-        $('#btn-download-export').on('click', function (e) {
-            e.preventDefault();
+        // ── 6. Filtered Data Download Handlers (Excel, PDF, CSV) ────────
+        function collectLearningFilterParams() {
             const params = new URLSearchParams();
 
             const empVal = $('#learn-employee').val();
@@ -578,6 +675,9 @@
             const contentSlug = $('#content-slug').val();
             if (contentSlug) params.append('content_slug', contentSlug);
 
+            const playlistId = $('#playlist-id').val();
+            if (playlistId) params.append('playlist_id', playlistId);
+
             const fromDate = $('#filter-from-date').val();
             if (fromDate) params.append('from_date', fromDate);
 
@@ -593,10 +693,36 @@
             const duration = $('#filter-duration').val();
             if (duration && duration !== 'all') params.append('duration', duration);
 
+            return params;
+        }
+
+        // 6a. Excel Export Handler (Existing, Untouched Logic)
+        $('#btn-download-export').on('click', function (e) {
+            e.preventDefault();
+            const params = collectLearningFilterParams();
             params.append('action', 'download');
 
-            const downloadUrl = "{{ route('manage.learning.download') }}?" + params.toString();
+            const downloadBaseUrl = "{{ $downloadUrl ?? route('manage.learning.download') }}";
+            const downloadUrl = downloadBaseUrl + (downloadBaseUrl.indexOf('?') !== -1 ? '&' : '?') + params.toString();
             window.open(downloadUrl, '_blank');
+        });
+
+        // 6b. PDF Export Handler
+        $('#btn-download-pdf').on('click', function (e) {
+            e.preventDefault();
+            const params = collectLearningFilterParams();
+            const pdfBaseUrl = "{{ route('manage.learning.download.pdf') }}";
+            const pdfUrl = pdfBaseUrl + (pdfBaseUrl.indexOf('?') !== -1 ? '&' : '?') + params.toString();
+            window.open(pdfUrl, '_blank');
+        });
+
+        // 6c. CSV Export Handler
+        $('#btn-download-csv').on('click', function (e) {
+            e.preventDefault();
+            const params = collectLearningFilterParams();
+            const csvBaseUrl = "{{ route('manage.learning.download.csv') }}";
+            const csvUrl = csvBaseUrl + (csvBaseUrl.indexOf('?') !== -1 ? '&' : '?') + params.toString();
+            window.open(csvUrl, '_blank');
         });
 
         // ── 7. Action Column Handlers ─────────────────────────────────────
@@ -654,6 +780,9 @@
                         const emp = d.employee || {};
                         const lr = d.learning || {};
                         const pr = d.progress || {};
+                        const rec = d.record_info || {};
+                        const ob = d.obligation || {};
+                        const as = d.assessment || {};
                         const ts = d.timestamps || {};
 
                         // Employee Information
@@ -661,13 +790,26 @@
                         $('#ld-emp-name').text(emp.name || '-');
                         $('#ld-emp-dept').text(emp.department || '-');
                         $('#ld-emp-team').text(emp.team || '-');
+                        $('#ld-emp-company').text(emp.company || '-');
+                        $('#ld-emp-grade').text(emp.grade || '-');
+                        $('#ld-emp-job-position').text(emp.job_position || '-');
 
                         // Learning Information
                         $('#ld-content-title').text(lr.title || '-');
+                        $('#ld-content-sub-title').text(lr.sub_course_title || '-');
                         $('#ld-content-type').text(lr.type || '-');
                         $('#ld-content-classification').text(lr.classification || '-');
+                        $('#ld-content-main-class').text(lr.main_classification || lr.classification || '-');
+                        $('#ld-content-sub-class').text(lr.sub_classification || '-');
                         $('#ld-content-category').text(lr.category || '-');
                         $('#ld-content-source').text(lr.source || '-');
+                        $('#ld-content-level').text(lr.level || '-');
+                        $('#ld-content-batch').text(lr.batch || '-');
+                        $('#ld-content-delivery').text(lr.delivery_method || 'Online');
+                        $('#ld-content-sub-delivery').text(lr.sub_delivery_method || '-');
+                        $('#ld-content-provider').text(lr.provider_name || '-');
+                        $('#ld-content-venue').text(lr.venue || '-');
+                        $('#ld-content-instructor').text(lr.instructor || '-');
 
                         if (d.source_type === 'playlist' && lr.playlist_name && lr.playlist_name !== '-') {
                             $('#ld-playlist-name').text(lr.playlist_name);
@@ -681,19 +823,44 @@
                         $('#ld-progress-text').text(pct + '%');
                         $('#ld-progress-bar').css('width', pct + '%');
 
-                        const isFinished = pr.finish === 'Finished';
+                        const isFinished = pr.finish === 'Finished' || pr.is_finished === true;
                         $('#ld-finish-badge')
                             .text(pr.finish || '-')
                             .removeClass('bg-success-lt text-success bg-warning-lt text-warning')
                             .addClass(isFinished ? 'bg-success-lt text-success' : 'bg-warning-lt text-warning');
 
+                        $('#ld-progress-status').text(pr.progress_status || (isFinished ? 'Finished' : (pct > 0 ? 'Ongoing' : 'Not Started')));
                         $('#ld-learning-status').text(pr.learning_status || '-');
                         $('#ld-status').text(pr.status || '-');
                         $('#ld-learning-hours').text(pr.learning_hours || '-');
+                        $('#ld-total-engagement-time').text(pr.total_engagement_time || '-');
                         $('#ld-duration').text(pr.duration || '-');
+                        $('#ld-course-duration').text(pr.course_duration || pr.duration || '-');
+                        $('#ld-total-recognized-duration').text(pr.total_recognized_duration || '-');
                         $('#ld-current-time').text(pr.current_time || '-');
                         $('#ld-actual-watch').text(pr.actual_watch_seconds || '-');
                         $('#ld-afk-duration').text(pr.afk_duration || '-');
+
+                        // Record Information & Obligations
+                        $('#ld-record-month').text(rec.record_month || '-');
+                        $('#ld-record-requirement').text(rec.requirement || '-');
+                        $('#ld-record-attendance').text(rec.attendance || '-');
+                        $('#ld-record-attendance-reason').text(rec.attendance_reason || '-');
+                        $('#ld-record-start-date').text((rec.start_date || '-') + (rec.start_time && rec.start_time !== '-' ? ', ' + rec.start_time : ''));
+                        $('#ld-record-end-date').text((rec.end_date || '-') + (rec.end_time && rec.end_time !== '-' ? ', ' + rec.end_time : ''));
+                        $('#ld-obligation-bond-status').text(ob.bond_status || '-');
+                        $('#ld-obligation-bond-duration').text(ob.bond_duration || '-');
+                        $('#ld-obligation-bond-end-date').text(ob.bond_end_date || '-');
+                        $('#ld-obligation-bond-amount').text(ob.bond_amount || '-');
+
+                        // Assessment & Certification
+                        $('#ld-score-l1').text(as.score_l1 || '-');
+                        $('#ld-score-l2').text(as.score_l2 || '-');
+                        $('#ld-l2-status').text(as.l2_status || '-');
+                        $('#ld-score-l3').text(as.score_l3 || '-');
+                        $('#ld-l3-status').text(as.l3_status || '-');
+                        $('#ld-pic').text(as.pic || '-');
+                        $('#ld-certificate').text(as.certificate || '-');
 
                         // Timestamps
                         $('#ld-created-at').text(ts.created_at || '-');

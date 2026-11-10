@@ -12,7 +12,7 @@
  * (progress, assessment, certificate) — keduanya dipisah menjadi dua mode
  * tampilan lewat Quick Filter dan tidak pernah difilter bersamaan.
  */
-function initLearningRecord() {
+function initLearningRecordOnline() {
     var $table = $('#learningRecordTable');
 
     if (!$table.length || $table.data('recordInit')) {
@@ -281,8 +281,16 @@ function initLearningRecord() {
             params.set('record_sort', sortKey);
             params.set('record_sort_direction', sortDir);
         }
-        var baseUrl = $('#recordDownloadExcel').data('export-url') || '/my-learning/learning-record/export';
+        var baseUrl = $('#recordUnifiedDownloadBtn').data('export-url') || $('#recordDownloadExcel').data('export-url') || '/my-learning/learning-record/export';
         $('#recordDownloadExcel').attr('href', baseUrl + (params.toString() ? '?' + params.toString() : ''));
+        $('.record-export-option').each(function () {
+            var $opt = $(this);
+            var optBase = $opt.data('export-url') || baseUrl;
+            var optSource = $opt.data('export-source') || 'online';
+            var optParams = new URLSearchParams(params.toString());
+            optParams.set('source', optSource);
+            $opt.attr('href', optBase + '?' + optParams.toString());
+        });
     }
 
     function updateSummaryCards(matched) {
@@ -1142,4 +1150,213 @@ function initLearningRecord() {
     initCourseHoverPreview();
     initBlockedContentModal();
     render();
+}
+
+/**
+ * Standardized Client-side Pagination for Non KP OWL (Offline) & All Record tables.
+ * Shares identical behavior, page size options (10, 25, 50), button styling, and layout with KP OWL.
+ */
+function initStandardRecordPagination(tableSelector, pageLengthSelector, infoSelector, paginationSelector) {
+    var $table = $(tableSelector);
+    if (!$table.length || $table.data('recordInit')) {
+        return;
+    }
+    $table.data('recordInit', true);
+
+    var $tbody = $table.find('tbody');
+    var $rows = $tbody.find('tr.record-row');
+    var $pageLength = $(pageLengthSelector);
+    var $info = $(infoSelector);
+    var $pagination = $(paginationSelector);
+
+    var pageLength = parseInt($pageLength.val() || '10', 10);
+    var sortKey = null;
+    var sortDir = null;
+
+    function durationSeconds(raw) {
+        raw = String(raw || '').trim();
+        if (!raw || raw === '-' || raw === '—') return -1;
+        if (raw.indexOf(':') !== -1) {
+            return raw.split(':').reduce(function (total, part) {
+                return total * 60 + (parseFloat(part) || 0);
+            }, 0);
+        }
+        var n = parseFloat(raw);
+        return isNaN(n) ? -1 : n;
+    }
+
+    function sortValue(tr, key, type) {
+        var raw = $(tr).attr('data-sort-' + key) || '';
+        if (type === 'number') {
+            var n = parseFloat(raw);
+            return isNaN(n) ? -1 : n;
+        }
+        if (type === 'duration') {
+            return durationSeconds(raw);
+        }
+        return raw;
+    }
+
+    function applySort() {
+        var type = $table.find('th[data-sort-key="' + sortKey + '"]').attr('data-sort-type') || 'text';
+        var rowArray = $rows.get();
+        rowArray.sort(function (a, b) {
+            var va = sortValue(a, sortKey, type);
+            var vb = sortValue(b, sortKey, type);
+            var cmp = type === 'text' ? String(va).localeCompare(String(vb)) : va - vb;
+            return sortDir === 'desc' ? -cmp : cmp;
+        });
+        $.each(rowArray, function (_, tr) {
+            $tbody.append(tr);
+        });
+        $rows = $(rowArray);
+    }
+
+    function updateSortIcons() {
+        var $headers = $table.find('th.record-sortable');
+        $headers.removeClass('is-sorted').find('.record-sort-icons span').removeClass('active');
+        $headers.filter('[data-sort-key="' + sortKey + '"]')
+            .addClass('is-sorted')
+            .find(sortDir === 'asc' ? '.record-sort-asc' : '.record-sort-desc')
+            .addClass('active');
+    }
+
+    $table.find('th.record-sortable').on('click', function (e) {
+        var key = $(this).attr('data-sort-key');
+        if ($(e.target).hasClass('record-sort-asc')) {
+            sortDir = 'asc';
+        } else if ($(e.target).hasClass('record-sort-desc')) {
+            sortDir = 'desc';
+        } else if (sortKey === key) {
+            sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+        } else {
+            sortDir = 'asc';
+        }
+        sortKey = key;
+        applySort();
+        updateSortIcons();
+        render();
+    });
+    var currentPage = 1;
+
+    function buildPagination(pages) {
+        $pagination.empty();
+        if (pages <= 1) {
+            return;
+        }
+
+        function item(label, page, disabled, active) {
+            var $li = $('<li class="page-item"></li>')
+                .toggleClass('disabled', !!disabled)
+                .toggleClass('active', !!active);
+
+            $('<a class="page-link" href="#"></a>').html(label).data('page', page).appendTo($li);
+            $pagination.append($li);
+        }
+
+        item('&laquo;', currentPage - 1, currentPage === 1, false);
+
+        if (pages <= 7) {
+            for (var p = 1; p <= pages; p++) {
+                item(String(p), p, false, p === currentPage);
+            }
+        } else {
+            // First page
+            item('1', 1, false, currentPage === 1);
+
+            if (currentPage > 4) {
+                $pagination.append('<li class="page-item disabled"><span class="page-link">&hellip;</span></li>');
+            }
+
+            var startPage = Math.max(2, currentPage - 1);
+            var endPage = Math.min(pages - 1, currentPage + 1);
+
+            if (currentPage <= 4) {
+                endPage = 4;
+            }
+            if (currentPage >= pages - 3) {
+                startPage = pages - 3;
+            }
+
+            for (var i = startPage; i <= endPage; i++) {
+                item(String(i), i, false, i === currentPage);
+            }
+
+            if (currentPage < pages - 3) {
+                $pagination.append('<li class="page-item disabled"><span class="page-link">&hellip;</span></li>');
+            }
+
+            // Last page
+            item(String(pages), pages, false, currentPage === pages);
+        }
+
+        item('&raquo;', currentPage + 1, currentPage === pages, false);
+    }
+
+    function render() {
+        var total = $rows.length;
+        var pages = Math.max(1, Math.ceil(total / pageLength));
+        if (currentPage > pages) currentPage = pages;
+        if (currentPage < 1) currentPage = 1;
+
+        $rows.hide();
+
+        var start = (currentPage - 1) * pageLength;
+        var end = Math.min(start + pageLength, total);
+
+        $rows.slice(start, end).show().each(function (i) {
+            $(this).find('.record-row-index').text(start + i + 1);
+        });
+
+        if (total > 0) {
+            $info.text('Showing ' + (start + 1) + ' to ' + end + ' of ' + total + ' entries');
+        } else {
+            $info.text('Showing 0 to 0 of 0 entries');
+        }
+
+        buildPagination(pages);
+    }
+
+    $pageLength.on('change', function () {
+        pageLength = parseInt($(this).val(), 10) || 10;
+        currentPage = 1;
+        render();
+    });
+
+    $pagination.on('click', 'a.page-link', function (e) {
+        e.preventDefault();
+        var $li = $(this).parent();
+        if ($li.hasClass('disabled') || $li.hasClass('active')) {
+            return;
+        }
+
+        currentPage = $(this).data('page');
+        render();
+    });
+
+    render();
+}
+
+function initLearningRecordOffline() {
+    initStandardRecordPagination(
+        '#learningRecordOfflineTable',
+        '#recordOfflinePageLength',
+        '#recordOfflineTableInfo',
+        '#recordOfflinePagination'
+    );
+}
+
+function initLearningRecordAll() {
+    initStandardRecordPagination(
+        '#learningRecordAllTable',
+        '#recordAllPageLength',
+        '#recordAllTableInfo',
+        '#recordAllPagination'
+    );
+}
+
+function initLearningRecord() {
+    initLearningRecordOnline();
+    initLearningRecordOffline();
+    initLearningRecordAll();
 }

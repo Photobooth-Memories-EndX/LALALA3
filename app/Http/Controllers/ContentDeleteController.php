@@ -22,12 +22,18 @@ class ContentDeleteController extends Controller
         }
 
         if ($content) {
-            $src = 'storage/files/content/' . $content->id . '/' . $content->slug;
-            if (File::exists(public_path($src)) && !is_dir($src)) {
-                File::delete(public_path($src));
+            $_cf = json_decode($content->file ?? '[]', true) ?: [];
+            $_fnList = is_array($_cf) ? $_cf : ($content->file ? [$content->file] : []);
+            foreach ($_fnList as $_fn) {
+                if (!empty($_fn)) {
+                    $src = public_path('storage/files/content/' . $content->id . '/' . basename($_fn));
+                    if (File::exists($src) && !is_dir($src)) {
+                        File::delete($src);
+                    }
+                }
             }
 
-            $content->file = '';
+            $content->file = null;
             $content->save();
         }
 

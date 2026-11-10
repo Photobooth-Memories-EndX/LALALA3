@@ -3,6 +3,7 @@
 namespace App\Services\Learning;
 
 use App\Http\Controllers\LearningManageController;
+use App\Http\Controllers\Manage\Record\RecordOfflineController;
 use App\Models\ContentUser;
 use App\Models\PlaylistContentUser;
 use App\Support\DurationFormatter;
@@ -15,6 +16,76 @@ use Yajra\DataTables\Facades\DataTables;
 class LearningDatatableService
 {
     public const PLAYLIST_CUTOFF = LearningManageController::PLAYLIST_CUTOFF;
+
+    protected static ?bool $hasPcuStatus = null;
+
+    protected array $l2ScoreCache = [];
+
+    /**
+     * Resolve Score (L2) from assesments and assesment_results for online records.
+     */
+    public function resolveL2Score(int $userId, string $sourceType, ?int $contentId, ?int $trainingplanId): ?float
+    {
+        $cacheKey = "{$userId}_{$sourceType}_{$contentId}_{$trainingplanId}";
+        if (array_key_exists($cacheKey, $this->l2ScoreCache)) {
+            return $this->l2ScoreCache[$cacheKey];
+        }
+
+        $query = DB::table('assesment_results as ar')
+            ->join('assesments as a', 'a.id', '=', 'ar.assesment_id')
+            ->where('ar.user_id', $userId)
+            ->where('ar.final', 1);
+
+        if ($sourceType === 'playlist') {
+            $query->where(function ($q) use ($contentId, $trainingplanId) {
+                $matched = false;
+                if ($trainingplanId) {
+                    $q->where('a.trainingplan_id', $trainingplanId);
+                    $matched = true;
+                }
+                if ($contentId) {
+                    if ($matched) {
+                        $q->orWhere('a.content_id', $contentId);
+                    } else {
+                        $q->where('a.content_id', $contentId);
+                        $matched = true;
+                    }
+                }
+                if (!$matched) {
+                    $q->whereRaw('1 = 0');
+                }
+            });
+        } else {
+            if ($contentId) {
+                $query->where('a.content_id', $contentId);
+            } else {
+                $this->l2ScoreCache[$cacheKey] = null;
+                return null;
+            }
+        }
+
+        $score = $query->orderByDesc('ar.score')->orderByDesc('ar.id')->value('ar.score');
+
+        $this->l2ScoreCache[$cacheKey] = ($score !== null && is_numeric($score)) ? (float) $score : null;
+
+        return $this->l2ScoreCache[$cacheKey];
+    }
+
+    /**
+     * Check if playlist_content_users table has status column (cached per process).
+     */
+    public static function hasPcuStatusColumn(): bool
+    {
+        if (self::$hasPcuStatus === null) {
+            try {
+                self::$hasPcuStatus = \Illuminate\Support\Facades\Schema::hasColumn('playlist_content_users', 'status');
+            } catch (\Throwable $e) {
+                self::$hasPcuStatus = false;
+            }
+        }
+
+        return self::$hasPcuStatus;
+    }
 
     /**
      * Build unified query builder for learning data (ContentUser + PlaylistContentUser).
@@ -34,21 +105,36 @@ class LearningDatatableService
                 'cu.status',
                 'cu.finish',
                 'cu.progress',
+                'cu.current_time',
+                'cu.actual_watch_seconds',
+                'cu.afk_duration_seconds',
                 'cu.created_at',
+                'cu.updated_at',
+                'cu.completed_at',
+                'cu.learning_hours',
             ]);
+
+        $hasPcuStatus = self::hasPcuStatusColumn();
+        $pcuStatusSelect = $hasPcuStatus ? 'pcu.status' : DB::raw("'non mandatory' as status");
 
         $pcuSelect = DB::table('playlist_content_users as pcu')
             ->select([
                 'pcu.id as source_id',
                 DB::raw("'playlist' as source_type"),
-                DB::raw("'Playlist' as category_source"),
+                DB::raw("'Content Playlist' as category_source"),
                 'pcu.user_id',
                 'pcu.content_id',
                 'pcu.trainingplan_id',
-                DB::raw("'Playlist' as status"),
+                $pcuStatusSelect,
                 'pcu.finish',
                 'pcu.progress',
+                'pcu.current_time',
+                'pcu.actual_watch_seconds',
+                'pcu.afk_duration_seconds',
                 'pcu.created_at',
+                'pcu.updated_at',
+                'pcu.completed_at',
+                'pcu.learning_hour as learning_hours',
             ]);
 
         // 1. Status Filter Pushdown
@@ -68,9 +154,14 @@ class LearningDatatableService
                 $pcuSelect->where('pcu.finish', '0')->where(function ($q) {
                     $q->where('pcu.progress', 0)->orWhereNull('pcu.progress');
                 });
-            } elseif (in_array($statusStr, ['mandatory', 'optional'], true)) {
-                $cuSelect->where('cu.status', $statusStr);
-                $pcuSelect->whereRaw('1 = 0');
+            } elseif (in_array($statusStr, ['mandatory', 'non mandatory', 'non-mandatory', 'optional'], true)) {
+                $dbStatusVal = ($statusStr === 'mandatory') ? 'mandatory' : 'non mandatory';
+                $cuSelect->where('cu.status', $dbStatusVal);
+                if ($hasPcuStatus) {
+                    $pcuSelect->where('pcu.status', $dbStatusVal);
+                } else {
+                    $pcuSelect->whereRaw('1 = 0');
+                }
             } elseif ($statusStr === 'playlist') {
                 $cuSelect->whereRaw('1 = 0');
             }
@@ -80,19 +171,30 @@ class LearningDatatableService
         $programType = $filters['program_type'] ?? ($filters['program'] ?? ($filters['status_type'] ?? null));
         if (filled($programType) && $programType !== 'all') {
             $programTypeStr = strtolower(trim((string) $programType));
-            if (in_array($programTypeStr, ['mandatory', 'optional'], true)) {
-                $cuSelect->where('cu.status', $programTypeStr);
-                $pcuSelect->whereRaw('1 = 0');
+            if (in_array($programTypeStr, ['mandatory', 'non mandatory', 'non-mandatory', 'optional'], true)) {
+                $dbProgramVal = ($programTypeStr === 'mandatory') ? 'mandatory' : 'non mandatory';
+                $cuSelect->where('cu.status', $dbProgramVal);
+                if ($hasPcuStatus) {
+                    $pcuSelect->where('pcu.status', $dbProgramVal);
+                } else {
+                    $pcuSelect->whereRaw('1 = 0');
+                }
             } elseif ($programTypeStr === 'playlist') {
                 $cuSelect->whereRaw('1 = 0');
             }
         }
 
         // 3. Year Filter Pushdown
-        $year = $filters['year'] ?? null;
-        if (filled($year) && $year !== 'all') {
-            $cuSelect->whereYear('cu.created_at', $year);
-            $pcuSelect->whereYear('pcu.created_at', $year);
+        $year = $filters['year'] ?? ($filters['years'] ?? null);
+        if (is_array($year) && !empty($year)) {
+            $yearInts = array_map('intval', array_filter($year, 'is_numeric'));
+            if (!empty($yearInts)) {
+                $cuSelect->whereIn(DB::raw('YEAR(cu.created_at)'), $yearInts);
+                $pcuSelect->whereIn(DB::raw('YEAR(pcu.created_at)'), $yearInts);
+            }
+        } elseif (filled($year) && $year !== 'all') {
+            $cuSelect->whereYear('cu.created_at', (int) $year);
+            $pcuSelect->whereYear('pcu.created_at', (int) $year);
         }
 
         // 4. Date Range Filter Pushdown
@@ -158,19 +260,58 @@ class LearningDatatableService
         }
 
         // 6. Classification Filter Pushdown (via indexed content_id)
-        $classSlug = $filters['classification_slug'] ?? ($type === 'category' ? $slug : null);
-        if (filled($classSlug)) {
-            $classContentIds = DB::table('content')
-                ->join('classification', 'classification.id', '=', 'content.classification_id')
-                ->where('classification.slug', $classSlug)
-                ->pluck('content.id')
-                ->toArray();
-            $cuSelect->whereIn('cu.content_id', !empty($classContentIds) ? $classContentIds : [-1]);
-            $pcuSelect->whereIn('pcu.content_id', !empty($classContentIds) ? $classContentIds : [-1]);
+        $classParam = $filters['classification_slug'] ?? ($filters['classification'] ?? ($filters['classification_id'] ?? ($type === 'category' ? $slug : null)));
+        if (filled($classParam) && $classParam !== 'all') {
+            $classParamLower = strtolower(trim((string) $classParam));
+            $isUnclass = in_array($classParamLower, ['unclassification', 'unclassified', 'audit-isolated-classification', 'audit isolated classification'], true);
+            if ($isUnclass) {
+                $validContentIds = DB::table('content as c')
+                    ->join('classification as cl', 'cl.id', '=', 'c.classification_id')
+                    ->whereNull('c.deleted_at')
+                    ->whereNotNull('cl.classification_name')
+                    ->whereNotNull('cl.slug')
+                    ->where('cl.slug', '!=', '')
+                    ->pluck('c.id')
+                    ->toArray();
+
+                $cuSelect->where(function ($q) use ($validContentIds) {
+                    $q->whereNull('cu.content_id');
+                    if (!empty($validContentIds)) {
+                        $q->orWhereNotIn('cu.content_id', $validContentIds);
+                    }
+                });
+
+                $pcuSelect->where(function ($q) use ($validContentIds) {
+                    $q->whereNull('pcu.content_id');
+                    if (!empty($validContentIds)) {
+                        $q->orWhereNotIn('pcu.content_id', $validContentIds);
+                    }
+                });
+            } else {
+                $classContentQuery = DB::table('content')
+                    ->join('classification', 'classification.id', '=', 'content.classification_id');
+                if (is_numeric($classParam)) {
+                    $classContentQuery->where('classification.id', (int) $classParam);
+                } else {
+                    $classContentQuery->where(function ($q) use ($classParam) {
+                        $q->where('classification.slug', $classParam)
+                          ->orWhere('classification.classification_name', $classParam);
+                    });
+                }
+                $classContentIds = $classContentQuery->pluck('content.id')->toArray();
+                $cuSelect->whereIn('cu.content_id', !empty($classContentIds) ? $classContentIds : [-1]);
+                $pcuSelect->whereIn('pcu.content_id', !empty($classContentIds) ? $classContentIds : [-1]);
+            }
         }
 
         // 6b. Content Type Filter Pushdown (Document / Video / MOOC)
-        $typeFilter = $filters['type'] ?? ($filters['content_type'] ?? null);
+        $typeFilter = $filters['content_type'] ?? null;
+        if (!filled($typeFilter) && filled($filters['type'] ?? null)) {
+            $candidateType = strtolower(trim((string) $filters['type']));
+            if (in_array($candidateType, ['document', 'video', 'youtube', 'mooc'], true)) {
+                $typeFilter = $candidateType;
+            }
+        }
         if (filled($typeFilter) && $typeFilter !== 'all') {
             $typeStr = strtolower(trim((string) $typeFilter));
             $typeContentIds = DB::table('content')
@@ -197,23 +338,88 @@ class LearningDatatableService
             $pcuSelect->where('pcu.content_id', $contentId ?: -1);
         }
 
+        // 7b. Playlist Filter Pushdown (via indexed trainingplan_id)
+        $playlistParam = $filters['playlist_id'] ?? ($filters['trainingplan_id'] ?? ($type === 'playlist' ? $slug : null));
+        if (filled($playlistParam)) {
+            $playlistId = is_numeric($playlistParam)
+                ? (int) $playlistParam
+                : (int) DB::table('trainingplan')->where('slug', $playlistParam)->value('id');
+
+            // Standalone content_users records never belong to a playlist
+            $cuSelect->whereRaw('1 = 0');
+            $pcuSelect->where('pcu.trainingplan_id', $playlistId ?: -1);
+        }
+
         // 8. Employee ID / NIP / Name Filter Pushdown (via indexed user_id)
-        $employeeParam = $filters['employee_id'] ?? ($filters['user_id'] ?? ($filters['employee'] ?? null));
-        if (filled($employeeParam) && $employeeParam !== 'all') {
-            $userQuery = DB::table('users')
-                ->where('id_emp', 'like', '%' . $employeeParam . '%')
-                ->orWhere('name', 'like', '%' . $employeeParam . '%');
-            if (is_numeric($employeeParam)) {
-                $userQuery->orWhere('id', (int) $employeeParam);
+        if (isset($filters['user_id']) && is_numeric($filters['user_id'])) {
+            $exactUserId = (int) $filters['user_id'];
+            $cuSelect->where('cu.user_id', $exactUserId);
+            $pcuSelect->where('pcu.user_id', $exactUserId);
+        } else {
+            $employeeParam = $filters['employee_id'] ?? ($filters['employee'] ?? ($filters['employees'] ?? null));
+            if (is_array($employeeParam) && !empty($employeeParam)) {
+                $userIds = DB::table('users')
+                    ->where(function ($q) use ($employeeParam) {
+                        $q->whereIn('id_emp', $employeeParam)
+                          ->orWhereIn('name', $employeeParam);
+                    })
+                    ->pluck('id')
+                    ->toArray();
+                $cuSelect->whereIn('cu.user_id', !empty($userIds) ? $userIds : [-1]);
+                $pcuSelect->whereIn('pcu.user_id', !empty($userIds) ? $userIds : [-1]);
+            } elseif (filled($employeeParam) && $employeeParam !== 'all') {
+                if (is_numeric($employeeParam)) {
+                    // Check if numeric ID matches user ID directly or exact id_emp
+                    $exactUserIds = DB::table('users')
+                        ->where('id', (int) $employeeParam)
+                        ->orWhere('id_emp', (string) $employeeParam)
+                        ->pluck('id')
+                        ->toArray();
+                    $cuSelect->whereIn('cu.user_id', !empty($exactUserIds) ? $exactUserIds : [-1]);
+                    $pcuSelect->whereIn('pcu.user_id', !empty($exactUserIds) ? $exactUserIds : [-1]);
+                } else {
+                    $userIds = DB::table('users')
+                        ->where(function ($q) use ($employeeParam) {
+                            $q->where('id_emp', 'like', '%' . $employeeParam . '%')
+                              ->orWhere('name', 'like', '%' . $employeeParam . '%');
+                        })
+                        ->pluck('id')
+                        ->toArray();
+                    $cuSelect->whereIn('cu.user_id', !empty($userIds) ? $userIds : [-1]);
+                    $pcuSelect->whereIn('pcu.user_id', !empty($userIds) ? $userIds : [-1]);
+                }
             }
-            $userIds = $userQuery->pluck('id')->toArray();
-            $cuSelect->whereIn('cu.user_id', !empty($userIds) ? $userIds : [-1]);
-            $pcuSelect->whereIn('pcu.user_id', !empty($userIds) ? $userIds : [-1]);
         }
 
         // 9. Learning Title Filter Pushdown (via indexed content_id and trainingplan_id)
         $learningTitleParam = $filters['learning_title'] ?? ($filters['title'] ?? ($filters['content_title'] ?? null));
-        if (filled($learningTitleParam)) {
+        if (is_array($learningTitleParam)) {
+            $learningTitles = array_values(array_filter(array_map('trim', $learningTitleParam), fn($t) => $t !== '' && strtolower($t) !== 'all'));
+            if (!empty($learningTitles)) {
+                $contentIds = DB::table('content')->whereIn('title', $learningTitles)->pluck('id')->toArray();
+                $tpIds = DB::table('trainingplan')->whereIn('title', $learningTitles)->pluck('id')->toArray();
+
+                $cuSelect->whereIn('cu.content_id', !empty($contentIds) ? $contentIds : [-1]);
+                $pcuSelect->where(function ($q) use ($contentIds, $tpIds) {
+                    $matched = false;
+                    if (!empty($contentIds)) {
+                        $q->whereIn('pcu.content_id', $contentIds);
+                        $matched = true;
+                    }
+                    if (!empty($tpIds)) {
+                        if ($matched) {
+                            $q->orWhereIn('pcu.trainingplan_id', $tpIds);
+                        } else {
+                            $q->whereIn('pcu.trainingplan_id', $tpIds);
+                            $matched = true;
+                        }
+                    }
+                    if (!$matched) {
+                        $q->whereRaw('1 = 0');
+                    }
+                });
+            }
+        } elseif (filled($learningTitleParam) && strtolower(trim((string) $learningTitleParam)) !== 'all') {
             $contentIds = DB::table('content')->where('title', 'like', '%' . $learningTitleParam . '%')->pluck('id')->toArray();
             $tpIds = DB::table('trainingplan')->where('title', 'like', '%' . $learningTitleParam . '%')->pluck('id')->toArray();
 
@@ -312,6 +518,12 @@ class LearningDatatableService
                     $q->orWhereIn('pcu.trainingplan_id', $searchTpIds);
                     $matched = true;
                 }
+                if (!empty($statusMatches)) {
+                    if ($hasPcuStatus) {
+                        $q->orWhereIn('pcu.status', $statusMatches);
+                    }
+                    $matched = true;
+                }
                 if (in_array('playlist', $statusMatches) || $matchCatPlaylist) {
                     $q->orWhereRaw('1 = 1');
                     $matched = true;
@@ -325,7 +537,7 @@ class LearningDatatableService
         // Union Assembly
         if ($categoryParam === 'all_content') {
             $union = $cuSelect;
-        } elseif ($categoryParam === 'playlist') {
+        } elseif ($categoryParam === 'playlist' || filled($playlistParam)) {
             $union = $pcuSelect;
         } else {
             $union = $cuSelect->unionAll($pcuSelect);
@@ -347,13 +559,24 @@ class LearningDatatableService
                 'unified.status',
                 'unified.finish',
                 'unified.progress',
+                'unified.current_time',
+                'unified.actual_watch_seconds',
+                'unified.afk_duration_seconds',
                 'unified.created_at',
+                'unified.updated_at',
+                'unified.completed_at',
+                'unified.learning_hours',
                 'u.id_emp',
                 'u.id_emp as user_id_emp',
                 'u.name as employee_name',
                 'u.name as user_name',
+                'u.jobgrade as user_jobgrade',
+                'u.jobposition as user_jobposition',
+                'u.jobgrade',
+                'u.jobposition',
                 'u.department as user_department',
                 'u.team as user_team',
+                'u.company_name as user_company',
                 'u.ssohash as user_ssohash',
                 'c.title as content_title',
                 'c.slug as content_slug',
@@ -400,6 +623,35 @@ class LearningDatatableService
             }
         }
 
+        // 11b. Department, Company, Division & Team Filters
+        $department = $filters['department'] ?? ($filters['departments'] ?? 'all');
+        if (is_array($department) && !empty($department)) {
+            $query->whereIn('u.department', $department);
+        } elseif (is_string($department) && filled($department) && $department !== 'all') {
+            $query->where('u.department', trim($department));
+        }
+
+        $company = $filters['company'] ?? ($filters['companies'] ?? 'all');
+        if (is_array($company) && !empty($company)) {
+            $query->whereIn('u.company_name', $company);
+        } elseif (is_string($company) && filled($company) && $company !== 'all') {
+            $query->where('u.company_name', trim($company));
+        }
+
+        $division = $filters['division'] ?? ($filters['divisions'] ?? 'all');
+        if (is_array($division) && !empty($division)) {
+            $query->whereIn('u.division', $division);
+        } elseif (is_string($division) && filled($division) && $division !== 'all') {
+            $query->where('u.division', trim($division));
+        }
+
+        $team = $filters['team'] ?? ($filters['teams'] ?? 'all');
+        if (is_array($team) && !empty($team)) {
+            $query->whereIn('u.team', $team);
+        } elseif (is_string($team) && filled($team) && $team !== 'all') {
+            $query->where('u.team', 'like', '%' . trim($team) . '%');
+        }
+
         // 12. Sorting
         $sort = $filters['sort'] ?? null;
         if (filled($sort)) {
@@ -433,8 +685,9 @@ class LearningDatatableService
 
         $categoryParam = strtolower(trim((string) ($request->input('category') ?? ($request->input('learning_source') ?? ($request->input('source') ?? 'all')))));
 
-        $hasFilters = (filled($request->input('status')) && $request->input('status') !== 'all')
-            || (filled($request->input('type')) && $request->input('type') !== 'all')
+        $hasAdditionalFilters = (filled($request->input('status')) && $request->input('status') !== 'all')
+            || (filled($request->input('content_type')) && $request->input('content_type') !== 'all')
+            || (filled($request->input('type')) && in_array(strtolower(trim((string) $request->input('type'))), ['document', 'video', 'youtube', 'mooc'], true))
             || (filled($request->input('program_type')) && $request->input('program_type') !== 'all')
             || (filled($request->input('program')) && $request->input('program') !== 'all')
             || (filled($request->input('status_type')) && $request->input('status_type') !== 'all')
@@ -443,7 +696,7 @@ class LearningDatatableService
             || filled($request->input('to_date'))
             || (filled($request->input('progress_range')) && $request->input('progress_range') !== 'all')
             || (filled($request->input('duration')) && $request->input('duration') !== 'all')
-            || filled($request->input('classification_slug'))
+            || (filled($request->input('category')) && $request->input('category') !== 'all')
             || filled($request->input('content_slug'))
             || (filled($request->input('employee_id')) && $request->input('employee_id') !== 'all')
             || (filled($request->input('user_id')) && $request->input('user_id') !== 'all')
@@ -454,59 +707,282 @@ class LearningDatatableService
             || filled(trim((string) $request->input('search.value')))
             || (is_string($request->input('search')) && trim($request->input('search')) !== '');
 
+        $classParam = $request->input('classification_slug') ?? ($request->input('classification') ?? null);
+        $hasClassFilter = filled($classParam) && $classParam !== 'all';
+
+        $hasFilters = $hasAdditionalFilters || $hasClassFilter;
+
         $totalAll = ContentUser::count() + PlaylistContentUser::count();
 
         $query = self::buildBaseQuery($request->all());
 
+        $filteredCount = $hasFilters ? $query->count() : null;
+
+        if ($hasClassFilter) {
+            $totalRecords = $hasAdditionalFilters
+                ? self::buildBaseQuery(['classification_slug' => $classParam])->count()
+                : $filteredCount;
+        } elseif ($categoryParam === 'all_content') {
+            $totalRecords = ContentUser::count();
+        } elseif ($categoryParam === 'playlist') {
+            $totalRecords = PlaylistContentUser::count();
+        } else {
+            $totalRecords = $totalAll;
+        }
+
+        $tpdRows = DB::table('trainingplandetail as tpd')
+            ->join('trainingplan as tp', 'tp.id', '=', 'tpd.trainingplan_id')
+            ->whereNull('tp.deleted_at')
+            ->orderBy('tpd.id', 'asc')
+            ->select('tpd.content_id', 'tp.id as tp_id', 'tp.title as tp_title')
+            ->get();
+        $tpdCache = [];
+        foreach ($tpdRows as $tpd) {
+            if (!isset($tpdCache[$tpd->content_id])) {
+                $tpdCache[$tpd->content_id] = [
+                    'id'    => (int) $tpd->tp_id,
+                    'title' => (string) $tpd->tp_title,
+                ];
+            }
+        }
+
         $dataTable = DataTables::query($query)
-            ->setTotalRecords($totalAll);
+            ->setTotalRecords($totalRecords);
 
         if ($hasFilters) {
-            $dataTable->setFilteredRecords($query->count());
-        } elseif ($categoryParam === 'all_content') {
-            $dataTable->setFilteredRecords(ContentUser::count());
-        } elseif ($categoryParam === 'playlist') {
-            $dataTable->setFilteredRecords(PlaylistContentUser::count());
+            $dataTable->setFilteredRecords($filteredCount);
         } else {
-            $dataTable->setFilteredRecords($totalAll);
+            $dataTable->setFilteredRecords($totalRecords);
         }
 
         return $dataTable
             ->addIndexColumn()
             ->setRowId(fn ($row) => $row->source_type . ':' . $row->source_id)
+            ->addColumn('source_badge', fn ($row) => '<span class="badge bg-blue-lt text-blue">KP OWL</span>')
+            ->addColumn('source', fn ($row) => '<span class="badge bg-blue-lt text-blue">KP OWL</span>')
             ->addColumn('status_badge', fn ($row) => $this->statusBadge($row))
             ->addColumn('id_emp', fn ($row) => $this->idEmpColumn($row))
+            ->addColumn('employee_id', fn ($row) => $this->idEmpColumn($row))
             ->addColumn('employee', fn ($row) => $this->employeeColumn($row))
+            ->addColumn('employee_name', fn ($row) => $this->employeeColumn($row))
+            ->addColumn('team', fn ($row) => e($row->user_team ?: '-'))
+            ->addColumn('department', fn ($row) => e($row->user_department ?: '-'))
+            ->addColumn('company', fn ($row) => e($row->user_company ?: '-'))
+            ->addColumn('grade', fn ($row) => e($row->jobgrade ?? ($row->user_jobgrade ?: '-')))
+            ->addColumn('job_position', fn ($row) => e($row->jobposition ?? ($row->user_jobposition ?: '-')))
             ->addColumn('learning_title', fn ($row) => $this->learningTitleColumn($row))
+            ->addColumn('course_title', fn ($row) => $this->learningTitleColumn($row))
+            ->addColumn('playlist', function ($row) use ($tpdCache) {
+                $playlistTitle = !empty($row->playlist_title) ? $row->playlist_title : null;
+                $tpId = !empty($row->trainingplan_id) ? $row->trainingplan_id : null;
+                if (!$playlistTitle && !empty($row->content_id) && isset($tpdCache[$row->content_id])) {
+                    $playlistTitle = $tpdCache[$row->content_id]['title'];
+                    $tpId = $tpdCache[$row->content_id]['id'];
+                }
+                if (!empty($playlistTitle)) {
+                    if (!empty($tpId)) {
+                        $url = route('learning.manage.playlist', ['id' => $tpId]);
+                        return '<a href="' . e($url) . '" class="text-primary fw-semibold" title="' . e($playlistTitle) . '"><i class="bi bi-collection-play me-1"></i>' . e($playlistTitle) . '</a>';
+                    }
+                    return e($playlistTitle);
+                }
+                return '<span class="text-muted small">-</span>';
+            })
+            ->addColumn('sub_course_title', fn () => '<span class="text-muted small">-</span>')
             ->addColumn('type_badge', fn ($row) => $this->typeBadge($row))
+            ->addColumn('type', fn ($row) => $this->typeBadge($row))
+            ->addColumn('category_badge', fn ($row) => $this->categoryBadge($row, $tpdCache))
+            ->addColumn('category', fn ($row) => $this->categoryBadge($row, $tpdCache))
+            ->addColumn('level', fn () => '<span class="text-muted small">-</span>')
+            ->addColumn('batch', fn () => '<span class="text-muted small">-</span>')
             ->addColumn('classification_name', fn ($row) => $this->classificationColumn($row))
-            ->addColumn('category_badge', fn ($row) => $this->categoryBadge($row))
+            ->addColumn('main_classification', fn ($row) => $this->classificationColumn($row))
+            ->addColumn('sub_classification', fn () => '<span class="text-muted small">-</span>')
+            ->addColumn('delivery_method', fn () => '<span class="badge bg-blue-lt text-blue">Online</span>')
+            ->addColumn('sub_delivery_method', fn ($row) => e($row->category_source === 'Playlist' ? 'Playlist / Path' : 'Self-Paced / LMS'))
+            ->addColumn('provider', fn () => '<span class="badge bg-blue-lt text-blue">Internal</span>')
+            ->addColumn('sub_provider', fn () => '<span class="text-muted small">-</span>')
+            ->addColumn('provider_name', fn () => 'KP OWL')
+            ->addColumn('venue', fn () => 'Online LMS')
             ->addColumn('duration', fn ($row) => e(DurationFormatter::format($row->content_duration ?? null)))
+            ->addColumn('course_duration', fn ($row) => e(DurationFormatter::format($row->content_duration ?? null)))
+            ->addColumn('recognized_duration', function ($row) {
+                $sec = app(\App\Services\Learning\LearningRecordRecognizedDurationService::class)->resolveFromRow($row);
+                return '<span class="fw-semibold font-monospace">' . DurationFormatter::fromSeconds($sec) . '</span>';
+            })
+            ->addColumn('total_recognized_duration', function ($row) {
+                $sec = app(\App\Services\Learning\LearningRecordRecognizedDurationService::class)->resolveFromRow($row);
+                return '<span class="fw-semibold font-monospace">' . DurationFormatter::fromSeconds($sec) . '</span>';
+            })
+            ->addColumn('total_engagement_duration', function ($row) {
+                $sec = $this->resolveEngagementSeconds($row);
+                return '<span class="fw-semibold font-monospace">' . DurationFormatter::fromSeconds($sec) . '</span>';
+            })
+            ->addColumn('total_engagement_time', function ($row) {
+                $sec = $this->resolveEngagementSeconds($row);
+                return '<span class="fw-semibold font-monospace">' . DurationFormatter::fromSeconds($sec) . '</span>';
+            })
+            ->addColumn('learning_hours', function ($row) {
+                $hours = (float) ($row->learning_hours ?? 0);
+                return ($hours == (int) $hours) ? (int) $hours . ' h' : rtrim(rtrim(number_format($hours, 2, '.', ''), '0'), '.') . ' h';
+            })
             ->addColumn('learning_date', fn ($row) => $row->created_at ? Carbon::parse($row->created_at)->format('d M Y') : '-')
+            ->addColumn('date_time_merged', function ($row) {
+                $startDate = $row->created_at ? Carbon::parse($row->created_at)->format('Y-m-d') : null;
+                $startTime = $row->created_at ? Carbon::parse($row->created_at)->format('H:i') : null;
+                $endDate = $row->completed_at ? Carbon::parse($row->completed_at)->format('Y-m-d') : ($row->finish == 1 && $row->updated_at ? Carbon::parse($row->updated_at)->format('Y-m-d') : null);
+                $endTime = $row->completed_at ? Carbon::parse($row->completed_at)->format('H:i') : ($row->finish == 1 && $row->updated_at ? Carbon::parse($row->updated_at)->format('H:i') : null);
+
+                return RecordOfflineController::renderMergedDateTime($startDate, $endDate, $startTime, $endTime);
+            })
+            ->addColumn('date_merged', function ($row) {
+                $startDate = $row->created_at ? Carbon::parse($row->created_at)->format('Y-m-d') : null;
+                $endDate = $row->completed_at ? Carbon::parse($row->completed_at)->format('Y-m-d') : ($row->finish == 1 && $row->updated_at ? Carbon::parse($row->updated_at)->format('Y-m-d') : null);
+                return RecordOfflineController::renderMergedDate($startDate, $endDate);
+            })
+            ->addColumn('time_merged', function ($row) {
+                $startTime = $row->created_at ? Carbon::parse($row->created_at)->format('H:i') : null;
+                $endTime = $row->completed_at ? Carbon::parse($row->completed_at)->format('H:i') : ($row->finish == 1 && $row->updated_at ? Carbon::parse($row->updated_at)->format('H:i') : null);
+                return RecordOfflineController::renderMergedTime($startTime, $endTime);
+            })
+            ->addColumn('record_month', function ($row) {
+                $endDate = $row->completed_at ?: ($row->finish == 1 && $row->updated_at ? $row->updated_at : null);
+                if (!empty($endDate) && $endDate !== '-') {
+                    try {
+                        return Carbon::parse($endDate)->format('F');
+                    } catch (\Throwable $e) {
+                        return '-';
+                    }
+                }
+                return '-';
+            })
+            ->addColumn('requirement', function ($row) {
+                $status = strtolower((string) ($row->status ?? 'non mandatory'));
+                return $status === 'mandatory' ? '<span class="badge bg-red-lt text-red">Mandatory</span>' : '<span class="badge bg-blue-lt text-blue">Non-Mandatory</span>';
+            })
+            ->addColumn('attendance', function ($row) {
+                $progress = (float) ($row->progress ?? 0);
+                if ($progress > 0 || $row->finish == 1) {
+                    return '<span class="badge bg-success-lt text-success fw-bold px-2 py-1">Yes</span>';
+                }
+                return '<span class="badge bg-danger-lt text-danger fw-bold px-2 py-1">No</span>';
+            })
+            ->addColumn('attendance_reason', fn () => '<span class="text-muted small">-</span>')
+            ->addColumn('score_l1', fn () => '<span class="text-muted small">-</span>')
+            ->addColumn('score_l2', function ($row) {
+                $score = $this->resolveL2Score(
+                    (int) $row->user_id,
+                    (string) ($row->source_type ?? 'content'),
+                    !empty($row->content_id) ? (int) $row->content_id : null,
+                    !empty($row->trainingplan_id) ? (int) $row->trainingplan_id : null
+                );
+                if ($score !== null) {
+                    return '<span class="fw-semibold">' . number_format($score, 1) . '</span>';
+                }
+                return '<span class="text-muted small">-</span>';
+            })
+            ->addColumn('score_l3', fn () => '<span class="text-muted small">-</span>')
+            ->addColumn('pic', fn () => '<span class="text-muted small">-</span>')
+            ->addColumn('certificate', function ($row) {
+                if ($row->finish == 1 || (float)($row->progress ?? 0) >= 100) {
+                    return '<span class="badge bg-blue-lt text-primary px-2 py-1"><i class="ti ti-file-certificate me-1"></i> Available</span>';
+                }
+                return '<span class="text-muted small">-</span>';
+            })
+            ->addColumn('certificate_availability', function ($row) {
+                if ($row->finish == 1 || (float)($row->progress ?? 0) >= 100) {
+                    return '<span class="badge bg-blue-lt text-primary px-2 py-1"><i class="ti ti-file-certificate me-1"></i> Available</span>';
+                }
+                return '<span class="text-muted small">-</span>';
+            })
             ->addColumn('progress_bar', fn ($row) => $this->progressBar($row))
+            ->addColumn('progress_percent', fn ($row) => $this->progressBar($row))
+            ->addColumn('progress_status', fn ($row) => $this->progressStatusBadge($row))
             ->addColumn('action', fn ($row) => $this->actionColumn($row))
             ->orderColumn('status_badge', 'unified.status $1')
             ->orderColumn('id_emp', 'u.id_emp $1')
+            ->orderColumn('employee_id', 'u.id_emp $1')
             ->orderColumn('employee', 'u.name $1')
+            ->orderColumn('employee_name', 'u.name $1')
+            ->orderColumn('team', 'u.team $1')
+            ->orderColumn('department', 'u.department $1')
+            ->orderColumn('company', 'u.company_name $1')
             ->orderColumn('learning_title', 'c.title $1')
+            ->orderColumn('course_title', 'c.title $1')
             ->orderColumn('type_badge', 'c.type $1')
+            ->orderColumn('type', 'c.type $1')
             ->orderColumn('classification_name', 'cl.classification_name $1')
+            ->orderColumn('main_classification', 'cl.classification_name $1')
             ->orderColumn('category_badge', 'unified.category_source $1')
+            ->orderColumn('category', 'unified.category_source $1')
             ->orderColumn('duration', 'c.duration $1')
+            ->orderColumn('course_duration', 'c.duration $1')
+            ->orderColumn('learning_hours', 'unified.learning_hours $1')
+            ->orderColumn('total_engagement_time', 'unified.learning_hours $1')
             ->orderColumn('learning_date', 'unified.created_at $1')
+            ->orderColumn('date_time_merged', 'unified.created_at $1')
+            ->orderColumn('record_month', 'unified.created_at $1')
+            ->orderColumn('requirement', 'unified.status $1')
             ->orderColumn('progress_bar', 'unified.progress $1')
+            ->orderColumn('progress_percent', 'unified.progress $1')
+            ->orderColumn('progress_status', 'unified.finish $1')
             ->rawColumns([
+                'source_badge',
+                'source',
                 'status_badge',
                 'id_emp',
+                'employee_id',
                 'employee',
+                'employee_name',
                 'learning_title',
+                'course_title',
+                'sub_course_title',
                 'type_badge',
+                'type',
                 'classification_name',
+                'main_classification',
+                'sub_classification',
                 'category_badge',
+                'category',
+                'level',
+                'batch',
+                'delivery_method',
+                'sub_delivery_method',
+                'provider',
+                'sub_provider',
+                'recognized_duration',
+                'total_recognized_duration',
+                'total_engagement_duration',
+                'total_engagement_time',
                 'progress_bar',
+                'progress_percent',
+                'progress_status',
+                'date_time_merged',
+                'date_merged',
+                'time_merged',
+                'requirement',
+                'attendance',
+                'attendance_reason',
+                'score_l1',
+                'score_l2',
+                'score_l3',
+                'pic',
+                'certificate',
+                'certificate_availability',
                 'action',
             ])
             ->make(true);
+    }
+
+    private function progressStatusBadge($row): string
+    {
+        if ((int) ($row->finish ?? 0) === 1) {
+            return '<span class="badge bg-success-lt text-success">Finished</span>';
+        }
+        if ((float) ($row->progress ?? 0) > 0) {
+            return '<span class="badge bg-warning-lt text-warning">Ongoing</span>';
+        }
+        return '<span class="badge bg-secondary-lt text-secondary">Not Started</span>';
     }
 
     private function typeBadge($row): string
@@ -523,28 +999,31 @@ class LearningDatatableService
 
     private function statusBadge($row): string
     {
-        $status = (string) ($row->status ?? '-');
-        $lower = strtolower($status);
+        $status = strtolower((string) ($row->status ?? 'non mandatory'));
 
-        if ($lower === 'mandatory') {
+        if ($status === 'mandatory') {
             return '<span class="badge bg-red-lt text-red">Mandatory</span>';
         }
 
-        if ($lower === 'optional') {
-            return '<span class="badge bg-blue-lt text-blue">Optional</span>';
+        if (in_array($status, ['non mandatory', 'non-mandatory', 'optional'], true)) {
+            return '<span class="badge bg-blue-lt text-blue">Non-Mandatory</span>';
         }
 
-        if ($lower === 'playlist') {
+        if ($status === 'playlist') {
             return '<span class="badge bg-purple-lt text-purple">Playlist</span>';
         }
 
-        return '<span class="badge bg-secondary-lt text-secondary">' . e(ucfirst($status)) . '</span>';
+        return '<span class="badge bg-secondary-lt text-secondary">' . e(ucfirst((string) ($row->status ?? '-'))) . '</span>';
     }
 
-    private function categoryBadge($row): string
+    private function categoryBadge($row, array $tpdCache = []): string
     {
-        if ($row->category_source === 'Playlist') {
-            return '<span class="badge bg-green-lt text-green">Playlist</span>';
+        $hasPlaylist = !empty($row->playlist_title)
+            || (!empty($row->content_id) && isset($tpdCache[$row->content_id]))
+            || in_array($row->category_source, ['Content Playlist', 'Playlist'], true);
+
+        if ($hasPlaylist) {
+            return '<span class="badge bg-purple-lt text-purple">Content Playlist</span>';
         }
 
         return '<span class="badge bg-azure-lt text-azure">All Content</span>';
@@ -553,6 +1032,9 @@ class LearningDatatableService
     private function idEmpColumn($row): string
     {
         $idEmp = $row->id_emp ?? '-';
+        if ($idEmp !== '-') {
+            $idEmp = preg_replace('/\s*[\/\-]\s*NIP.*$/i', '', trim((string) $idEmp));
+        }
 
         return '<span class="fw-semibold text-secondary">' . e($idEmp) . '</span>';
     }
@@ -575,28 +1057,32 @@ class LearningDatatableService
         }
 
         $titleLink = !empty($row->content_slug)
-            ? '<a href="' . route('learning.manage.content', $row->content_slug) . '" class="text-reset fw-semibold">' . e($row->content_title) . '</a>'
-            : '<span class="fw-semibold">' . e($row->content_title) . '</span>';
+            ? '<a href="' . route('learning.manage.content', $row->content_slug) . '" class="text-reset fw-bold text-center">' . e($row->content_title) . '</a>'
+            : '<span class="fw-bold text-center">' . e($row->content_title) . '</span>';
 
-        $playlistSubtext = '';
-        if ($row->category_source === 'Playlist' && !empty($row->playlist_title)) {
-            $playlistSubtext = '<div class="text-muted small mt-1" style="font-size: 0.78rem;"><i class="ti ti-list-details me-1"></i>Playlist: ' . e($row->playlist_title) . '</div>';
-        }
+        $rawReq = $row->requirement ?? ($row->content_requirement ?? ($row->subtitle ?? 'Non-Mandatory'));
+        $req = !empty($rawReq) ? htmlspecialchars($rawReq) : 'Non-Mandatory';
 
-        return '<div class="text-start">'
-            . $titleLink
-            . $playlistSubtext
+        return '<div class="d-flex flex-column align-items-center justify-content-center text-center w-100">'
+            . '<span class="fw-bold text-dark text-center fs-6 mb-1">' . $titleLink . '</span>'
+            . '<small class="text-muted text-center fs-7">Requirement: <span class="fw-semibold">' . $req . '</span></small>'
             . '</div>';
     }
 
     private function classificationColumn($row): string
     {
         if (empty($row->classification_name)) {
-            return '-';
+            $unclassUrl = \Illuminate\Support\Facades\Route::has('manage.record.online.classification')
+                ? route('manage.record.online.classification', 'unclassification')
+                : route('learning.manage.category', 'unclassification');
+            return '<a href="' . $unclassUrl . '" class="text-reset fw-semibold">Unclassification</a>';
         }
 
         if (!empty($row->classification_slug)) {
-            return '<a href="' . route('learning.manage.category', $row->classification_slug) . '" class="text-reset">'
+            $classUrl = \Illuminate\Support\Facades\Route::has('manage.record.online.classification')
+                ? route('manage.record.online.classification', $row->classification_slug)
+                : route('learning.manage.category', $row->classification_slug);
+            return '<a href="' . $classUrl . '" class="text-reset">'
                 . e($row->classification_name)
                 . '</a>';
         }
@@ -618,34 +1104,82 @@ class LearningDatatableService
 
     private function actionColumn($row): string
     {
-        $sourceType = e($row->source_type ?? 'content');
-        $sourceId = e($row->source_id ?? '');
+        $id = $row->source_id ?? '';
+        $sourceType = $row->source_type ?? 'content';
+        $editUrl = route('manage.record.edit', $id);
 
-        $viewBtn = '<button type="button" class="btn btn-sm btn-icon text-primary owl-action-btn owl-action-btn-view btn-view-learning-detail" '
-            . 'data-source-type="' . $sourceType . '" '
-            . 'data-source-id="' . $sourceId . '" '
-            . 'data-bs-toggle="tooltip" data-bs-placement="top" title="View Details" aria-label="View Details">'
-            . '<i class="ti ti-eye"></i>'
-            . '</button>';
+        return '<div class="dropdown">
+            <button class="btn btn-sm btn-icon btn-ghost-secondary" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="ti ti-dots-vertical"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-2 btn-view-learning-detail btn-more-info" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#moreInformationModal" data-source-type="' . e($sourceType) . '" data-source-id="' . e($id) . '" data-id="' . e($id) . '" data-record-id="' . e($id) . '" data-source="online" data-record-source="online">
+                        <i class="bi bi-eye text-primary me-2"></i> More Information
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-2 btn-edit-record" href="' . e($editUrl) . '" data-id="' . e($id) . '">
+                        <i class="bi bi-pencil-square text-warning me-2"></i> Edit Record
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-2 btn-delete-record text-danger" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#deleteRecordModal" data-id="' . e($id) . '" data-record-id="' . e($id) . '" data-source="online">
+                        <i class="bi bi-trash text-danger me-2"></i> Delete Record
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-2 btn-generate-cert disabled text-muted" href="javascript:void(0);" data-id="' . e($id) . '" onclick="return false;" style="cursor: not-allowed;">
+                        <i class="bi bi-award text-info me-2"></i> Generate Certificate
+                    </a>
+                </li>
+            </ul>
+        </div>';
+    }
 
-        $editBtn = '<button type="button" class="btn btn-sm btn-icon text-warning owl-action-btn owl-action-btn-edit btn-edit-learning-record" '
-            . 'data-source-type="' . $sourceType . '" '
-            . 'data-source-id="' . $sourceId . '" '
-            . 'data-bs-toggle="tooltip" data-bs-placement="top" title="Edit Record" aria-label="Edit Record">'
-            . '<i class="ti ti-pencil"></i>'
-            . '</button>';
+    /**
+     * Resolve total engagement seconds from row data.
+     * Prioritizes authoritative seconds (actual_watch_seconds), then playtime position (current_time),
+     * then afk_duration_seconds, then decimal learning_hours converted to seconds, then completed/progress duration.
+     */
+    public function resolveEngagementSeconds(object $row): int
+    {
+        $watchSec = (int) ($row->actual_watch_seconds ?? 0);
+        if ($watchSec > 0) {
+            return $watchSec;
+        }
 
-        $deleteBtn = '<button type="button" class="btn btn-sm btn-icon text-danger owl-action-btn owl-action-btn-reset btn-delete-learning-record btn-reset-learning-record" '
-            . 'data-source-type="' . $sourceType . '" '
-            . 'data-source-id="' . $sourceId . '" '
-            . 'data-bs-toggle="tooltip" data-bs-placement="top" title="Reset Learning Progress" aria-label="Reset Learning Progress">'
-            . '<i class="ti ti-trash"></i>'
-            . '</button>';
+        $currTime = (int) ($row->current_time ?? 0);
+        if ($currTime > 0) {
+            return $currTime;
+        }
 
-        return '<div class="d-flex align-items-center justify-content-center gap-1 flex-nowrap">'
-            . $viewBtn
-            . $editBtn
-            . $deleteBtn
-            . '</div>';
+        $afkSec = (int) ($row->afk_duration_seconds ?? 0);
+        if ($afkSec > 0) {
+            return $afkSec;
+        }
+
+        if (isset($row->learning_hours) && is_numeric($row->learning_hours) && (float) $row->learning_hours > 0) {
+            return (int) round((float) $row->learning_hours * 3600);
+        }
+
+        $durSec = 0;
+        if (!empty($row->content_duration)) {
+            $durSec = DurationFormatter::toSeconds($row->content_duration) ?? 0;
+        } elseif (!empty($row->duration_seconds)) {
+            $durSec = (int) $row->duration_seconds;
+        }
+
+        $progress = (float) ($row->progress ?? 0);
+        $finish = (string) ($row->finish ?? '0');
+        if (($finish === '1' || $progress >= 100) && $durSec > 0) {
+            return $durSec;
+        }
+
+        if ($progress > 0 && $durSec > 0) {
+            return (int) round(($progress / 100) * $durSec);
+        }
+
+        return 0;
     }
 }

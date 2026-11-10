@@ -1,0 +1,1 @@
+@include('components.Home.hero')

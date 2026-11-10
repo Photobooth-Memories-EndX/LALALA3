@@ -54,6 +54,7 @@ class DocumentScrollModeTest extends TestCase
             'page_duration'         => '30',
             'document_total_pages'  => '59',
             'learning_hours'        => '0.5',
+            'status'                => 'optional',
             'action'                => 'save',
         ]);
 
@@ -80,6 +81,7 @@ class DocumentScrollModeTest extends TestCase
             'page_duration'         => '0',
             'document_total_pages'  => '59',
             'learning_hours'        => '0.5',
+            'status'                => 'optional',
             'action'                => 'save',
         ]);
 
@@ -100,6 +102,7 @@ class DocumentScrollModeTest extends TestCase
             'page_duration'         => '30', // submitted but should be normalized to 0
             'document_total_pages'  => '59',
             'learning_hours'        => '0.5',
+            'status'                => 'optional',
             'action'                => 'save',
         ]);
 
@@ -137,6 +140,7 @@ class DocumentScrollModeTest extends TestCase
             'require_page_duration' => '0',
             'page_duration'         => '0',
             'total_page'            => '59',
+            'status'                => 'optional',
             'action'                => 'update',
         ]);
 
@@ -173,6 +177,7 @@ class DocumentScrollModeTest extends TestCase
             'require_page_duration' => '1',
             'page_duration'         => '20',
             'total_page'            => '50',
+            'status'                => 'optional',
             'action'                => 'update',
         ]);
 

@@ -13,12 +13,14 @@ class ManageAccessPermissionController extends Controller
         User::ROLE_SUBADMIN_DIVISION,
         User::ROLE_ADMIN,
         User::ROLE_SUPER_ADMIN,
+        User::ROLE_APPROVER,
     ];
 
     private array $modules = [
         'admin_management'           => 'Admin Management',
         'user_management'            => 'User Management',
         'learning_management'        => 'Learning Management',
+        'record_management'          => 'Record Management',
         'content_repository'         => 'Content Repository',
         'category_classification'    => 'Category & Classification',
         'assessment_management'      => 'Assessment Management',
@@ -30,6 +32,7 @@ class ManageAccessPermissionController extends Controller
         'page_management'            => 'Page Management',
         'event_documentation'        => 'Event Documentation',
         'certificate_setting'        => 'Certificate Setting',
+        'task_management'            => 'Task Management',
         'monitoring'                 => 'Monitoring',
     ];
 

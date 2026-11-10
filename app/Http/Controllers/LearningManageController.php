@@ -3,16 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Exports\LearningExport;
+use App\Exports\OnlineRecordCsvExport;
 use App\Models\Classification;
 use App\Models\Content;
 use App\Models\ContentUser;
 use App\Models\PlaylistContentUser;
+use App\Models\TrainingPlan;
 use App\Models\User;
 use App\Services\Learning\LearningDatatableService;
 use App\Services\LearningHours\ActualLearningHourCalculator;
 use App\Support\DurationFormatter;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -20,7 +24,7 @@ class LearningManageController extends Controller
 {
     public const PLAYLIST_CUTOFF = '2026-08-28 23:59:59';
 
-    public function index()
+    public function getKpiSummary(): array
     {
         $cuTotal = ContentUser::count();
         $cuOngoing = ContentUser::where('finish', '0')->count();
@@ -38,6 +42,19 @@ class LearningManageController extends Controller
             ? round(($finish / $totalLearning) * 100, 1)
             : 0;
 
+        return [
+            'ongoing' => $ongoing,
+            'finish' => $finish,
+            'finished' => $finish,
+            'totalLearning' => $totalLearning,
+            'total_learning' => $totalLearning,
+            'completionRate' => $completionRate,
+            'completion_rate' => $completionRate,
+        ];
+    }
+
+    public function getClassificationSummary(bool $includeUnclassified = false)
+    {
         $unifiedSubquery = DB::table('content_users')
             ->select([
                 'id',
@@ -53,7 +70,7 @@ class LearningManageController extends Controller
                     ])
             );
 
-        $classification = DB::table('classification')
+        $classified = DB::table('classification')
             ->leftJoin('content', function ($join) {
                 $join->on('content.classification_id', '=', 'classification.id')
                     ->whereNull('content.deleted_at');
@@ -115,16 +132,119 @@ class LearningManageController extends Controller
             ->orderBy('classification_name')
             ->get();
 
+        if (!$includeUnclassified) {
+            return $classified;
+        }
+
+        $unclassLearning = DB::query()
+            ->fromSub($unifiedSubquery, 'lr')
+            ->leftJoin('content as c', function ($join) {
+                $join->on('c.id', '=', 'lr.content_id')
+                    ->whereNull('c.deleted_at');
+            })
+            ->leftJoin('classification as cl', function ($join) {
+                $join->on('cl.id', '=', 'c.classification_id')
+                    ->whereNotNull('cl.classification_name')
+                    ->whereNotNull('cl.slug')
+                    ->where('cl.slug', '!=', '');
+            })
+            ->whereNull('cl.id')
+            ->select([
+                DB::raw('COUNT(lr.id) as total_learning'),
+                DB::raw("COALESCE(SUM(CASE WHEN lr.finish = '0' THEN 1 ELSE 0 END), 0) as ongoing_learning"),
+                DB::raw("COALESCE(SUM(CASE WHEN lr.finish = '1' THEN 1 ELSE 0 END), 0) as finished_learning"),
+                DB::raw("
+                    COALESCE(
+                        SUM(
+                            CASE 
+                                WHEN lr.id IS NOT NULL 
+                                    AND c.duration IS NOT NULL 
+                                    AND c.duration != '' 
+                                THEN CASE 
+                                    WHEN LENGTH(c.duration) - LENGTH(REPLACE(c.duration, ':', '')) = 2 
+                                    THEN TIME_TO_SEC(c.duration) 
+                                    ELSE TIME_TO_SEC(CONCAT('00:', c.duration)) 
+                                END 
+                                ELSE 0 
+                            END 
+                        ) / 3600, 0 
+                    ) as learning_hours
+                "),
+            ])
+            ->first();
+
+        $unclassContentCount = DB::table('content as c')
+            ->leftJoin('classification as cl', function ($join) {
+                $join->on('cl.id', '=', 'c.classification_id')
+                    ->whereNotNull('cl.classification_name')
+                    ->whereNotNull('cl.slug')
+                    ->where('cl.slug', '!=', '');
+            })
+            ->whereNull('c.deleted_at')
+            ->whereNull('cl.id')
+            ->count();
+
+        $unclassRow = (object) [
+            'id'                  => 'unclassification',
+            'classification_name' => 'Unclassification',
+            'slug'                => 'unclassification',
+            'content_total'       => (int) $unclassContentCount,
+            'total_learning'      => (int) ($unclassLearning->total_learning ?? 0),
+            'ongoing_learning'    => (int) ($unclassLearning->ongoing_learning ?? 0),
+            'finished_learning'   => (int) ($unclassLearning->finished_learning ?? 0),
+            'learning_hours'      => (float) ($unclassLearning->learning_hours ?? 0),
+            'is_unclassified'     => true,
+        ];
+
+        return $classified->push($unclassRow);
+    }
+
+    public function getTotalLearningHours(): float
+    {
+        $res = DB::table('content')
+            ->join('classification', 'classification.id', '=', 'content.classification_id')
+            ->whereNotNull('classification.classification_name')
+            ->whereNotNull('classification.slug')
+            ->where('classification.slug', '!=', '')
+            ->whereNull('content.deleted_at')
+            ->whereNotNull('content.duration')
+            ->where('content.duration', '!=', '')
+            ->selectRaw("
+                SUM(
+                    CASE
+                        WHEN LENGTH(content.duration) - LENGTH(REPLACE(content.duration, ':', '')) = 2
+                        THEN TIME_TO_SEC(content.duration)
+                        ELSE TIME_TO_SEC(CONCAT('00:', content.duration))
+                    END * (
+                        (SELECT COUNT(*) FROM content_users WHERE content_users.content_id = content.id) +
+                        (SELECT COUNT(*) FROM playlist_content_users WHERE playlist_content_users.content_id = content.id)
+                    )
+                ) / 3600 as total_hours
+            ")
+            ->first();
+
+        return round((float) ($res->total_hours ?? 0), 1);
+    }
+
+    public function getSummaryData(): array
+    {
+        $kpi = $this->getKpiSummary();
+        $classification = $this->getClassificationSummary();
         $learningHours = round((float) $classification->sum('learning_hours'), 1);
 
-        return view('main.learning.index', [
-            'ongoing' => $ongoing,
-            'finish' => $finish,
-            'totalLearning' => $totalLearning,
-            'completionRate' => $completionRate,
+        return [
+            'ongoing' => $kpi['ongoing'],
+            'finish' => $kpi['finish'],
+            'totalLearning' => $kpi['totalLearning'],
+            'completionRate' => $kpi['completionRate'],
             'learningHours' => $learningHours,
             'classification' => $classification,
-        ]);
+        ];
+    }
+
+    public function index()
+    {
+        return view('main.learning.index', $this->getSummaryData());
     }
 
     public function all(Request $request)
@@ -134,27 +254,60 @@ class LearningManageController extends Controller
                 ->download(now()->format('Ymd_His') . '_learning.xlsx');
         }
 
+        if ($request->input('action') === 'download_pdf' || $request->input('format') === 'pdf') {
+            return $this->downloadPdf($request);
+        }
+
+        if ($request->input('action') === 'download_csv' || $request->input('format') === 'csv') {
+            return $this->downloadCsv($request);
+        }
+
         return view('main.learning.all', $this->learningViewData($request, 'All Learning'));
     }
 
     public function category($slug, Request $request)
     {
-        $classification = Classification::where('slug', $slug)->firstOrFail();
+        $isUnclass = in_array(strtolower($slug), ['unclassification', 'unclassified', 'audit-isolated-classification'], true);
+        if ($isUnclass) {
+            $classificationName = 'Unclassification';
+            $categorySlug = 'unclassification';
+        } else {
+            $classification = Classification::where('slug', $slug)->firstOrFail();
+            $classificationName = $classification->classification_name;
+            $categorySlug = $classification->slug;
+        }
 
         if ($request->input('action') === 'download') {
-            return (new LearningExport($request->all(), 'category', $slug))
+            return (new LearningExport($request->all(), 'category', $categorySlug))
                 ->download(now()->format('Ymd_His') . '_learning.xlsx');
+        }
+
+        if ($request->input('action') === 'download_pdf' || $request->input('format') === 'pdf') {
+            $request->merge(['type' => 'category', 'slug' => $categorySlug]);
+            return $this->downloadPdf($request);
+        }
+
+        if ($request->input('action') === 'download_csv' || $request->input('format') === 'csv') {
+            $request->merge(['type' => 'category', 'slug' => $categorySlug]);
+            return $this->downloadCsv($request);
         }
 
         return view('main.learning.all', $this->learningViewData(
             $request,
-            'Classification: ' . $classification->classification_name,
+            'Classification: ' . $classificationName,
             $slug
         ));
     }
 
     public function content($slug, Request $request)
     {
+        $isDownload = in_array($request->input('action'), ['download', 'download_pdf', 'download_csv'], true)
+            || in_array($request->input('format'), ['pdf', 'csv'], true);
+
+        if ($isDownload && !auth()->user()?->canAccessManageModule('learning_management')) {
+            abort(403, 'Anda tidak memiliki akses untuk mengunduh record ini.');
+        }
+
         $contentModel = Content::where('slug', $slug)->first();
 
         if ($request->input('action') === 'download') {
@@ -162,11 +315,95 @@ class LearningManageController extends Controller
                 ->download(now()->format('Ymd_His') . '_learning.xlsx');
         }
 
+        if ($request->input('action') === 'download_pdf' || $request->input('format') === 'pdf') {
+            $request->merge(['type' => 'content', 'slug' => $slug]);
+            return $this->downloadPdf($request);
+        }
+
+        if ($request->input('action') === 'download_csv' || $request->input('format') === 'csv') {
+            $request->merge(['type' => 'content', 'slug' => $slug]);
+            return $this->downloadCsv($request);
+        }
+
         return view('main.learning.all', $this->learningViewData(
             $request,
             'Content: ' . ($contentModel->title ?? $slug),
             $slug
         ));
+    }
+
+    public function playlistDetail($id, Request $request)
+    {
+        $isDownload = in_array($request->input('action'), ['download', 'download_pdf', 'download_csv'], true)
+            || in_array($request->input('format'), ['pdf', 'csv'], true);
+
+        if ($isDownload && !auth()->user()?->canAccessManageModule('learning_management')) {
+            abort(403, 'Anda tidak memiliki akses untuk mengunduh record ini.');
+        }
+
+        $playlist = is_numeric($id)
+            ? TrainingPlan::with(['contents.classification'])->find($id)
+            : TrainingPlan::with(['contents.classification'])->where('slug', $id)->first();
+
+        if (!$playlist) {
+            abort(404, 'Playlist not found.');
+        }
+
+        $playlistId = (string) $playlist->id;
+
+        if ($request->input('action') === 'download') {
+            return (new LearningExport($request->all(), 'playlist', $playlistId))
+                ->download(now()->format('Ymd_His') . '_' . Str::slug($playlist->title) . '_learning.xlsx');
+        }
+
+        if ($request->input('action') === 'download_pdf' || $request->input('format') === 'pdf') {
+            $request->merge(['type' => 'playlist', 'slug' => $playlistId, 'playlist_id' => $playlistId]);
+            return $this->downloadPdf($request);
+        }
+
+        if ($request->input('action') === 'download_csv' || $request->input('format') === 'csv') {
+            $request->merge(['type' => 'playlist', 'slug' => $playlistId, 'playlist_id' => $playlistId]);
+            return $this->downloadCsv($request);
+        }
+
+        // Determine smart back link
+        $referer = (string) $request->headers->get('referer', '');
+        $backUrl = route('learning.manage.all');
+        $backText = 'Back';
+
+        if ($referer && !str_contains($referer, $request->path())) {
+            $backUrl = $referer;
+            if (str_contains($referer, 'category/')) {
+                $categorySlug = basename(parse_url($referer, PHP_URL_PATH));
+                $catModel = Classification::where('slug', $categorySlug)->first();
+                $backText = 'Back to ' . ($catModel ? $catModel->classification_name : ucwords(str_replace('-', ' ', $categorySlug)));
+            } elseif (str_contains($referer, '/manage/learning')) {
+                $backText = 'Back to Manage Learning';
+            }
+        } else {
+            // Fallback: check classification of first content in playlist
+            $firstClass = $playlist->contents->first()?->classification;
+            if ($firstClass && $firstClass->slug) {
+                $backUrl = route('learning.manage.category', $firstClass->slug);
+                $backText = 'Back to ' . $firstClass->classification_name;
+            }
+        }
+
+        $viewData = $this->learningViewData(
+            $request,
+            'Playlist: ' . $playlist->title,
+            $playlistId
+        );
+
+        $viewData['playlist'] = $playlist;
+        $viewData['playlistId'] = $playlistId;
+        $viewData['backUrl'] = $backUrl;
+        $viewData['backText'] = $backText;
+        $viewData['headerBackUrl'] = $backUrl;
+        $viewData['headerBackText'] = $backText;
+        $viewData['datatableUrl'] = route('learning.manage.datatable', ['playlist_id' => $playlistId]);
+
+        return view('main.learning.all', $viewData);
     }
 
     public function searchEmployees(Request $request)
@@ -207,6 +444,12 @@ class LearningManageController extends Controller
             ->whereNotNull('title')
             ->where('title', '!=', '');
 
+        if ($request->filled('playlist_id')) {
+            $tpId = $request->input('playlist_id');
+            $contentIds = DB::table('trainingplandetail')->where('trainingplan_id', $tpId)->pluck('content_id');
+            $query->whereIn('content.id', $contentIds);
+        }
+
         if ($term !== '') {
             $queryNormalized = str_replace("'", "’", $term);
             $queryOriginal = str_replace("’", "'", $term);
@@ -238,8 +481,139 @@ class LearningManageController extends Controller
 
     public function download(Request $request)
     {
-        return (new LearningExport($request->all(), $request->input('type', ''), $request->input('slug', '')))
-            ->download(now()->format('Ymd_His') . '_learning_data.xlsx');
+        if (class_exists(\Barryvdh\Debugbar\Facades\Debugbar::class)) {
+            \Barryvdh\Debugbar\Facades\Debugbar::disable();
+        }
+
+        $filters = $request->all();
+        $type = (string) $request->input('type', '');
+        $slug = (string) $request->input('slug', '');
+
+        if (empty($type) || in_array(strtolower($type), ['all', 'document', 'video'], true)) {
+            if (!empty($filters['classification_slug'])) {
+                $type = 'category';
+                $slug = $filters['classification_slug'];
+            } elseif (!empty($filters['content_slug'])) {
+                $type = 'content';
+                $slug = $filters['content_slug'];
+            } elseif (!empty($filters['playlist_id'])) {
+                $type = 'playlist';
+                $slug = $filters['playlist_id'];
+            }
+        }
+
+        return (new LearningExport($filters, $type, $slug))
+            ->download((function() {
+                $monthMap = [1 => 'Jan', 2 => 'Feb', 3 => 'Mar', 4 => 'Apr', 5 => 'Mei', 6 => 'Jun', 7 => 'Jul', 8 => 'Agu', 9 => 'Sep', 10 => 'Okt', 11 => 'Nov', 12 => 'Des'];
+                $dt = \Carbon\Carbon::now();
+                $day = $dt->format('d');
+                $month = $monthMap[(int) $dt->format('n')] ?? $dt->format('M');
+                $year = $dt->format('Y');
+                $time = $dt->format('H.i.s');
+                return "EmployeeOWLrecord_{$day}{$month}{$year} at {$time}.xlsx";
+            })());
+    }
+
+    public function downloadPdf(Request $request)
+    {
+        $filters = $request->all();
+        $type = (string) $request->input('type', '');
+        $slug = (string) $request->input('slug', '');
+
+        if (empty($type)) {
+            if (!empty($filters['classification_slug'])) {
+                $type = 'category';
+                $slug = $filters['classification_slug'];
+            } elseif (!empty($filters['content_slug'])) {
+                $type = 'content';
+                $slug = $filters['content_slug'];
+            } elseif (!empty($filters['playlist_id'])) {
+                $type = 'playlist';
+                $slug = $filters['playlist_id'];
+            }
+        }
+
+        $query = LearningDatatableService::buildBaseQuery($filters, $type, $slug);
+
+        if (empty($filters['sort'])) {
+            $query->orderBy('unified.created_at', 'desc')
+                  ->orderBy('unified.source_type', 'desc')
+                  ->orderBy('unified.source_id', 'desc');
+        }
+
+        $totalRecords = (clone $query)->count();
+
+        // Safe limit for DomPDF rendering
+        $limit = 500;
+        $records = $query->limit($limit)->get();
+
+        $contextTitle = 'KP OWL — Online Learning Record';
+        $classificationName = null;
+        if (!empty($slug) && $type === 'category') {
+            $isUnclass = in_array(strtolower($slug), ['unclassification', 'unclassified', 'audit-isolated-classification'], true);
+            if ($isUnclass) {
+                $classificationName = 'Unclassification';
+                $contextTitle = 'KP OWL — Classification: Unclassification';
+            } else {
+                $classification = Classification::where('slug', $slug)->first();
+                if ($classification) {
+                    $classificationName = $classification->classification_name;
+                    $contextTitle = 'KP OWL — Classification: ' . $classificationName;
+                }
+            }
+        } elseif (!empty($slug) && $type === 'content') {
+            $contentModel = Content::where('slug', $slug)->first();
+            if ($contentModel) {
+                $contextTitle = 'KP OWL — Content: ' . $contentModel->title;
+            }
+        } elseif (!empty($slug) && $type === 'playlist') {
+            $playlistModel = is_numeric($slug) ? TrainingPlan::find($slug) : TrainingPlan::where('slug', $slug)->first();
+            if ($playlistModel) {
+                $contextTitle = 'KP OWL — Playlist: ' . $playlistModel->title;
+            }
+        }
+
+        $pdf = Pdf::loadView('main.learning.export-pdf', [
+            'records'            => $records,
+            'totalRecords'       => $totalRecords,
+            'limit'              => $limit,
+            'filters'            => $filters,
+            'contextTitle'       => $contextTitle,
+            'classificationName' => $classificationName,
+            'generatedAt'        => now()->format('d M Y H:i:s'),
+        ]);
+
+        $fileNameSlug = !empty($slug) ? Str::slug($slug) . '-' : '';
+        $fileName = sprintf('kp-owl-online-records-%s%s.pdf', $fileNameSlug, now()->format('Y-m-d'));
+
+        return $pdf->setPaper('a4', 'landscape')->download($fileName);
+    }
+
+    public function downloadCsv(Request $request)
+    {
+        $filters = $request->all();
+        $type = (string) $request->input('type', '');
+        $slug = (string) $request->input('slug', '');
+
+        if (empty($type)) {
+            if (!empty($filters['classification_slug'])) {
+                $type = 'category';
+                $slug = $filters['classification_slug'];
+            } elseif (!empty($filters['content_slug'])) {
+                $type = 'content';
+                $slug = $filters['content_slug'];
+            } elseif (!empty($filters['playlist_id'])) {
+                $type = 'playlist';
+                $slug = $filters['playlist_id'];
+            }
+        }
+
+        $fileNameSlug = !empty($slug) ? Str::slug($slug) . '-' : '';
+        $fileName = sprintf('kp-owl-online-records-%s%s.csv', $fileNameSlug, now()->format('Y-m-d'));
+
+        $export = new OnlineRecordCsvExport($filters, $type, $slug);
+
+        return $export->download($fileName);
     }
 
     public function datatable(Request $request, LearningDatatableService $datatableService)
@@ -281,6 +655,38 @@ class LearningManageController extends Controller
                 ? (int) $record->duration_seconds
                 : DurationFormatter::toSeconds($content?->duration);
 
+            $assessmentResult = DB::table('assesment_results as ar')
+                ->join('assesments as a', 'a.id', '=', 'ar.assesment_id')
+                ->where('ar.user_id', $user?->id)
+                ->where('a.content_id', $content?->id)
+                ->where('ar.final', 1)
+                ->orderByDesc('ar.score')
+                ->orderByDesc('ar.id')
+                ->select('ar.score', 'ar.pass')
+                ->first();
+
+            $l2ScoreFormatted = ($assessmentResult && $assessmentResult->score !== null && is_numeric($assessmentResult->score))
+                ? number_format((float) $assessmentResult->score, 1)
+                : '-';
+
+            $l2StatusFormatted = $assessmentResult
+                ? ($assessmentResult->pass == 1 ? 'Pass' : ($assessmentResult->pass === 0 || $assessmentResult->pass === '0' ? 'Fail' : '-'))
+                : '-';
+
+            $recognizedService = app(\App\Services\Learning\LearningRecordRecognizedDurationService::class);
+            $recognizedSec = $recognizedService->resolveForContentUser($record);
+            $recognizedFormatted = $recognizedService->formatSeconds($recognizedSec);
+                        $engagementSec = ($actualWatchSec !== null && $actualWatchSec > 0)
+                ? $actualWatchSec
+                : (($currentTimeSec !== null && $currentTimeSec > 0)
+                    ? $currentTimeSec
+                    : (($afkSec !== null && $afkSec > 0)
+                        ? $afkSec
+                        : ((float) ($record->learning_hours ?? 0) > 0
+                            ? (int) round((float) $record->learning_hours * 3600)
+                            : ($record->isFinished() ? ($durationSeconds ?? 0) : 0))));
+            $engagementFormatted = DurationFormatter::fromSeconds($engagementSec);
+
             return response()->json([
                 'status' => 'success',
                 'data' => [
@@ -291,13 +697,26 @@ class LearningManageController extends Controller
                         'name' => $user?->name ?? '-',
                         'department' => $user?->department ?? '-',
                         'team' => $user?->team ?? '-',
+                        'company' => $user?->company_name ?? 'PT Krakatau Posco',
+                        'grade' => $user?->jobgrade ?: '-',
+                        'job_position' => $user?->jobposition ?: '-',
                     ],
                     'learning' => [
                         'title' => $content?->title ?? '-',
+                        'sub_course_title' => '-',
                         'type' => $content?->type ?? '-',
                         'classification' => $classification?->classification_name ?? '-',
+                        'main_classification' => $classification?->classification_name ?? '-',
+                        'sub_classification' => '-',
                         'category' => 'All Content',
                         'source' => 'All Content',
+                        'level' => '-',
+                        'batch' => '-',
+                        'delivery_method' => 'Online',
+                        'sub_delivery_method' => 'Self-Paced / LMS',
+                        'provider_name' => 'KP OWL',
+                        'venue' => 'Online LMS',
+                        'instructor' => $content?->author ?: '-',
                         'playlist_name' => '-',
                     ],
                     'progress' => [
@@ -305,17 +724,49 @@ class LearningManageController extends Controller
                         'finish' => $record->isFinished() ? 'Finished' : 'In Progress',
                         'finish_badge' => $record->isFinished() ? 'success' : 'warning',
                         'learning_status' => $record->learning_status ? ucfirst(str_replace('_', ' ', $record->learning_status)) : '-',
+                        'progress_status' => $record->isFinished() ? 'Finished' : (($record->progress > 0) ? 'Ongoing' : 'Not Started'),
                         'status' => $record->status ? ucfirst($record->status) : '-',
+                        'requirement' => strtolower((string) ($record->status ?? 'non mandatory')) === 'mandatory' ? 'Mandatory' : 'Non-Mandatory',
                         'current_time' => $currentTimeSec !== null ? DurationFormatter::fromSeconds($currentTimeSec) . " ({$currentTimeSec}s)" : '-',
                         'duration' => $durationFormatted,
+                        'course_duration' => $durationFormatted,
+                        'recognized_duration' => $recognizedFormatted,
+                        'total_recognized_duration' => $recognizedFormatted,
                         'actual_watch_seconds' => $actualWatchSec !== null ? DurationFormatter::fromSeconds($actualWatchSec) . " ({$actualWatchSec}s)" : '-',
                         'afk_duration' => $afkSec !== null ? DurationFormatter::fromSeconds($afkSec) . " ({$afkSec}s)" : '-',
                         'learning_hours' => $record->learning_hours !== null ? number_format((float) $record->learning_hours, 4) . ' h' : '-',
+                        'total_engagement_time' => $engagementFormatted,
                         'raw_current_time' => $currentTimeSec ?? 0,
                         'raw_actual_watch_seconds' => $actualWatchSec ?? 0,
                         'raw_afk_duration_seconds' => $afkSec ?? 0,
+                        'raw_recognized_duration_seconds' => $recognizedSec,
                         'duration_seconds' => $durationSeconds ?? 0,
                         'is_finished' => $record->isFinished(),
+                    ],
+                    'record_info' => [
+                        'record_month' => $record->created_at ? $record->created_at->format('F') : '-',
+                        'requirement' => strtolower((string) ($record->status ?? 'non mandatory')) === 'mandatory' ? 'Mandatory' : 'Non-Mandatory',
+                        'attendance' => (((float) ($record->progress ?? 0) > 0 || $record->isFinished()) ? 'Yes' : 'No'),
+                        'attendance_reason' => '-',
+                        'start_date' => $record->created_at ? $record->created_at->format('d M Y') : '-',
+                        'end_date' => $record->completed_at ? $record->completed_at->format('d M Y') : ($record->finish == 1 && $record->updated_at ? $record->updated_at->format('d M Y') : '-'),
+                        'start_time' => $record->created_at ? $record->created_at->format('H:i') : '-',
+                        'end_time' => $record->completed_at ? $record->completed_at->format('H:i') : ($record->finish == 1 && $record->updated_at ? $record->updated_at->format('H:i') : '-'),
+                    ],
+                    'obligation' => [
+                        'bond_status' => 'No',
+                        'bond_duration' => '-',
+                        'bond_end_date' => '-',
+                        'bond_amount' => '-',
+                    ],
+                    'assessment' => [
+                        'score_l1' => '-',
+                        'score_l2' => $l2ScoreFormatted,
+                        'l2_status' => $l2StatusFormatted,
+                        'score_l3' => '-',
+                        'l3_status' => '-',
+                        'pic' => '-',
+                        'certificate' => '-',
                     ],
                     'timestamps' => [
                         'created_at' => $record->created_at ? $record->created_at->format('d M Y, H:i') : '-',
@@ -351,6 +802,55 @@ class LearningManageController extends Controller
             ? (int) $record->duration_seconds
             : DurationFormatter::toSeconds($content?->duration);
 
+        $assessmentResult = DB::table('assesment_results as ar')
+            ->join('assesments as a', 'a.id', '=', 'ar.assesment_id')
+            ->where('ar.user_id', $user?->id)
+            ->where(function ($q) use ($content, $trainingPlan) {
+                $matched = false;
+                if ($trainingPlan) {
+                    $q->where('a.trainingplan_id', $trainingPlan->id);
+                    $matched = true;
+                }
+                if ($content) {
+                    if ($matched) {
+                        $q->orWhere('a.content_id', $content->id);
+                    } else {
+                        $q->where('a.content_id', $content->id);
+                        $matched = true;
+                    }
+                }
+                if (!$matched) {
+                    $q->whereRaw('1 = 0');
+                }
+            })
+            ->where('ar.final', 1)
+            ->orderByDesc('ar.score')
+            ->orderByDesc('ar.id')
+            ->select('ar.score', 'ar.pass')
+            ->first();
+
+        $l2ScoreFormatted = ($assessmentResult && $assessmentResult->score !== null && is_numeric($assessmentResult->score))
+            ? number_format((float) $assessmentResult->score, 1)
+            : '-';
+
+        $l2StatusFormatted = $assessmentResult
+            ? ($assessmentResult->pass == 1 ? 'Pass' : ($assessmentResult->pass === 0 || $assessmentResult->pass === '0' ? 'Fail' : '-'))
+            : '-';
+
+        $recognizedService = app(\App\Services\Learning\LearningRecordRecognizedDurationService::class);
+        $recognizedSec = $recognizedService->resolveForPlaylistContentUser($record);
+        $recognizedFormatted = $recognizedService->formatSeconds($recognizedSec);
+                $engagementSec = ($actualWatchSec !== null && $actualWatchSec > 0)
+            ? $actualWatchSec
+            : (($currentTimeSec !== null && $currentTimeSec > 0)
+                ? $currentTimeSec
+                : (($afkSec !== null && $afkSec > 0)
+                    ? $afkSec
+                    : ((float) ($record->learning_hour ?? 0) > 0
+                        ? (int) round((float) $record->learning_hour * 3600)
+                        : ($record->isFinished() ? ($durationSeconds ?? 0) : 0))));
+        $engagementFormatted = DurationFormatter::fromSeconds($engagementSec);
+
         return response()->json([
             'status' => 'success',
             'data' => [
@@ -361,13 +861,26 @@ class LearningManageController extends Controller
                     'name' => $user?->name ?? '-',
                     'department' => $user?->department ?? '-',
                     'team' => $user?->team ?? '-',
+                    'company' => $user?->company_name ?? 'PT Krakatau Posco',
+                    'grade' => $user?->jobgrade ?: '-',
+                    'job_position' => $user?->jobposition ?: '-',
                 ],
                 'learning' => [
                     'title' => $content?->title ?? '-',
+                    'sub_course_title' => $trainingPlan?->title ?? '-',
                     'type' => $content?->type ?? '-',
                     'classification' => $classification?->classification_name ?? '-',
+                    'main_classification' => $classification?->classification_name ?? '-',
+                    'sub_classification' => '-',
                     'category' => 'Playlist',
                     'source' => 'Playlist',
+                    'level' => '-',
+                    'batch' => '-',
+                    'delivery_method' => 'Online',
+                    'sub_delivery_method' => 'Playlist / Path',
+                    'provider_name' => 'KP OWL',
+                    'venue' => 'Online LMS',
+                    'instructor' => $content?->author ?: '-',
                     'playlist_name' => $trainingPlan?->title ?? '-',
                 ],
                 'progress' => [
@@ -375,17 +888,49 @@ class LearningManageController extends Controller
                     'finish' => $record->isFinished() ? 'Finished' : 'In Progress',
                     'finish_badge' => $record->isFinished() ? 'success' : 'warning',
                     'learning_status' => $record->learning_status ? ucfirst(str_replace('_', ' ', $record->learning_status)) : '-',
+                    'progress_status' => $record->isFinished() ? 'Finished' : (($record->progress > 0) ? 'Ongoing' : 'Not Started'),
                     'status' => 'Playlist',
+                    'requirement' => 'Playlist',
                     'current_time' => $currentTimeSec !== null ? DurationFormatter::fromSeconds($currentTimeSec) . " ({$currentTimeSec}s)" : '-',
                     'duration' => $durationFormatted,
+                    'course_duration' => $durationFormatted,
+                    'recognized_duration' => $recognizedFormatted,
+                    'total_recognized_duration' => $recognizedFormatted,
                     'actual_watch_seconds' => $actualWatchSec !== null ? DurationFormatter::fromSeconds($actualWatchSec) . " ({$actualWatchSec}s)" : '-',
                     'afk_duration' => $afkSec !== null ? DurationFormatter::fromSeconds($afkSec) . " ({$afkSec}s)" : '-',
                     'learning_hours' => $record->learning_hour !== null ? number_format((float) $record->learning_hour, 4) . ' h' : '-',
+                    'total_engagement_time' => $engagementFormatted,
                     'raw_current_time' => $currentTimeSec ?? 0,
                     'raw_actual_watch_seconds' => $actualWatchSec ?? 0,
                     'raw_afk_duration_seconds' => $afkSec ?? 0,
+                    'raw_recognized_duration_seconds' => $recognizedSec,
                     'duration_seconds' => $durationSeconds ?? 0,
                     'is_finished' => $record->isFinished(),
+                ],
+                'record_info' => [
+                    'record_month' => $record->created_at ? $record->created_at->format('F') : '-',
+                    'requirement' => 'Playlist',
+                    'attendance' => (((float) ($record->progress ?? 0) > 0 || $record->isFinished()) ? 'Yes' : 'No'),
+                    'attendance_reason' => '-',
+                    'start_date' => $record->created_at ? $record->created_at->format('d M Y') : '-',
+                    'end_date' => $record->completed_at ? $record->completed_at->format('d M Y') : ($record->finish == 1 && $record->updated_at ? $record->updated_at->format('d M Y') : '-'),
+                    'start_time' => $record->created_at ? $record->created_at->format('H:i') : '-',
+                    'end_time' => $record->completed_at ? $record->completed_at->format('H:i') : ($record->finish == 1 && $record->updated_at ? $record->updated_at->format('H:i') : '-'),
+                ],
+                'obligation' => [
+                    'bond_status' => 'No',
+                    'bond_duration' => '-',
+                    'bond_end_date' => '-',
+                    'bond_amount' => '-',
+                ],
+                'assessment' => [
+                    'score_l1' => '-',
+                    'score_l2' => '-',
+                    'l2_status' => '-',
+                    'score_l3' => '-',
+                    'l3_status' => '-',
+                    'pic' => '-',
+                    'certificate' => '-',
                 ],
                 'timestamps' => [
                     'created_at' => $record->created_at ? $record->created_at->format('d M Y, H:i') : '-',
@@ -395,7 +940,6 @@ class LearningManageController extends Controller
             ],
         ]);
     }
-
     public function updateRecord(Request $request, string $type, $id)
     {
         if (!in_array($type, ['content', 'playlist'], true)) {
@@ -687,7 +1231,7 @@ class LearningManageController extends Controller
         ];
     }
 
-    private function learningYears(): array
+    public static function learningYears(): array
     {
         return range((int) date('Y'), (int) date('Y') - 4);
     }

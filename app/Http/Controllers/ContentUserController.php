@@ -9,6 +9,7 @@ use App\Models\Comment;
 use App\Models\Content;
 use App\Models\ContentUser;
 use App\Services\AssessmentAccessService;
+use App\Services\Learning\PlaylistCompletionRequirementsService;
 use App\Services\LearningAnalyticsService;
 use App\Support\DurationFormatter;
 use Carbon\Carbon;
@@ -306,7 +307,7 @@ class ContentUserController extends Controller
         ), $heroSummary));
     }
 
-    public function view($slug, AssessmentAccessService $assessmentAccess)
+    public function view($slug, AssessmentAccessService $assessmentAccess, PlaylistCompletionRequirementsService $completionRequirementsService)
     {
         $content = Content::findBySlug($slug);
 
@@ -327,11 +328,15 @@ class ContentUserController extends Controller
         $content->views += 1;
         $content->save();
 
-        // add content to user learning on going if not exist yet
-        $content_user = ContentUser::firstOrCreate([
-            'user_id' => auth()->user()->id,
-            'content_id' => $content->id
-        ]);
+        $content_user = ContentUser::firstOrCreate(
+            [
+                'user_id' => auth()->user()->id,
+                'content_id' => $content->id,
+            ],
+            [
+                'status' => $content->status ?? 'non mandatory',
+            ]
+        );
 
         $queryAssessment = Assesment::query()
             ->where('type', 'content')
@@ -490,8 +495,31 @@ class ContentUserController extends Controller
             ->where('content_id', $content->id)
             ->exists();
 
+        $playlist = $content->trainingPlans()->where('active', 'Active')->first()
+            ?? $content->trainingPlans()->first();
+
+        $debugOverrides = [];
+        if ($playlist && Auth::user()?->canAccessManageModule('playlist_debug_tools')) {
+            $debugOverrides = session('playlist_debug.' . $playlist->getKey(), []);
+            $debugOverrides = is_array($debugOverrides) ? $debugOverrides : [];
+        }
+
+        $completionRequirements = $completionRequirementsService->resolveForContent(
+            $content,
+            Auth::user(),
+            $playlist,
+            (float) ($content_user->progress ?? 0),
+            $assesment !== null,
+            $debugOverrides
+        );
+
+        $recognizedService = app(\App\Services\Learning\LearningRecordRecognizedDurationService::class);
+        $totalRecognizedSeconds = $recognizedService->resolveGlobalContentRecognizedSeconds(Auth::id() ?? 0, $content);
+        $totalRecognizedDuration = $recognizedService->formatSeconds($totalRecognizedSeconds);
+
         return view('user.content.view', compact(
             'content',
+            'playlist',
             'assesment',
             'assessmentCount',
             'assessmentLatestScores',
@@ -501,6 +529,7 @@ class ContentUserController extends Controller
             'totalCommentCount',
             'bookmarkCount',
             'isBookmarked',
+            'completionRequirements',
             'activeDraft',
             'isExpired',
             'isInactive',
@@ -514,7 +543,9 @@ class ContentUserController extends Controller
             'isPassed',
             'answeredCount',
             'totalCount',
-            'denialReason'
+            'denialReason',
+            'totalRecognizedSeconds',
+            'totalRecognizedDuration'
         ));
     }
 
@@ -574,10 +605,15 @@ class ContentUserController extends Controller
 
         $content = Content::findOrFail($validated['content_id']);
 
-        $contentUser = ContentUser::firstOrCreate([
-            'user_id'    => auth()->id(),
-            'content_id' => $validated['content_id'],
-        ]);
+        $contentUser = ContentUser::firstOrCreate(
+            [
+                'user_id'    => auth()->id(),
+                'content_id' => $validated['content_id'],
+            ],
+            [
+                'status'     => $content->status ?? 'non mandatory',
+            ]
+        );
 
         $previousProgress = (int) $contentUser->progress;
         $computed = null;
@@ -702,8 +738,26 @@ class ContentUserController extends Controller
                     }
                 }
             }
-        } else {
-            $duration    = (float) ($validated['duration_seconds'] ?? $contentUser->duration_seconds ?? 0);
+        }
+
+        $duration = 0.0;
+        if ($validated['type'] === 'video') {
+            $officialDuration = (int) ($content->duration_in_seconds ?? 0);
+            if ($officialDuration <= 0 && !empty($content->duration)) {
+                $officialDuration = \App\Support\DurationFormatter::toSeconds($content->duration) ?? 0;
+            }
+
+            $clientDuration = (float) ($validated['duration_seconds'] ?? 0);
+            if ($officialDuration > 0) {
+                if ($clientDuration <= 5 && $officialDuration > 5) {
+                    $duration = (float) $officialDuration;
+                } else {
+                    $duration = $clientDuration > 0 ? $clientDuration : (float) $officialDuration;
+                }
+            } else {
+                $duration = $clientDuration > 0 ? $clientDuration : (float) ($contentUser->duration_seconds ?? 0);
+            }
+
             $currentTime = $validated['current_time'] ?? null;
 
             if ($duration > 0) {
@@ -791,7 +845,8 @@ class ContentUserController extends Controller
             $computed,
             $previousProgress,
             $deltaToApply,
-            $maxCapSeconds
+            $maxCapSeconds,
+            $duration
         ) {
             $record = ContentUser::where('id', $contentUser->id)->lockForUpdate()->first();
             if (!$record) {
@@ -801,7 +856,7 @@ class ContentUserController extends Controller
             $record->setRelation('content', $content);
 
             if ($validated['type'] === 'video') {
-                $recordDuration = (float) ($validated['duration_seconds'] ?? $record->duration_seconds ?? 0);
+                $recordDuration = $duration;
                 if ($recordDuration > 0) {
                     $record->duration_seconds = (int) round($recordDuration);
                 }
@@ -817,15 +872,29 @@ class ContentUserController extends Controller
 
                 if ($deltaToApply > 0) {
                     $currentActualWatch = (int) ($record->actual_watch_seconds ?? 0);
-                    // Legacy baseline logic (safe & conservative, at most once)
-                    if ($currentActualWatch === 0 && !$record->wasRecentlyCreated && (int) $record->getOriginal('current_time') > 0) {
-                        $maxBaseline = $recordDuration > 0 ? (int) round($recordDuration) : (int) $record->getOriginal('current_time');
-                        $currentActualWatch = min((int) $record->getOriginal('current_time'), $maxBaseline);
+                    $isCompleted = ($record->finish === '1' || (int) $record->getOriginal('finish') === 1 || (int) $record->progress >= 100 || (int) $previousProgress >= 100);
+                    $legacyTime = (int) $record->getOriginal('current_time');
+
+                    if ($isCompleted && $recordDuration > 0) {
+                        $currentActualWatch = max($currentActualWatch, (int) round($recordDuration));
+                    } elseif ($currentActualWatch === 0 && !$record->wasRecentlyCreated && $legacyTime > 0) {
+                        $maxBaseline = $recordDuration > 0 ? (int) round($recordDuration) : $legacyTime;
+                        $currentActualWatch = min($legacyTime, $maxBaseline);
+                    }
+
+                    // Sibling PCU watch time to enforce global 2x cap across tables
+                    $siblingPcuWatch = (int) \App\Models\PlaylistContentUser::where('user_id', $contentUser->user_id)
+                        ->where('content_id', $content->id)
+                        ->sum('actual_watch_seconds');
+
+                    $effectiveCap = $maxCapSeconds;
+                    if ($maxCapSeconds !== null && $siblingPcuWatch > 0) {
+                        $effectiveCap = max(0, $maxCapSeconds - $siblingPcuWatch);
                     }
 
                     $newActualWatch = $currentActualWatch + $deltaToApply;
-                    if ($maxCapSeconds !== null) {
-                        $newActualWatch = min($newActualWatch, $maxCapSeconds);
+                    if ($effectiveCap !== null) {
+                        $newActualWatch = min($newActualWatch, $effectiveCap);
                     }
                     $record->actual_watch_seconds = $newActualWatch;
                 }
@@ -846,10 +915,34 @@ class ContentUserController extends Controller
 
                 if ($deltaToApply > 0) {
                     $currentActualWatch = (int) ($record->actual_watch_seconds ?? 0);
-                    // For document: NO artificial baseline guessing from last_page / current_time (as instructed in Phase 12).
+                    $docDuration = (int) ($content->duration_in_seconds ?? 0);
+                    if ($docDuration <= 0 && !empty($content->duration)) {
+                        $docDuration = \App\Support\DurationFormatter::toSeconds($content->duration) ?? 0;
+                    }
+
+                    $isCompleted = ($record->finish === '1' || (int) $record->getOriginal('finish') === 1 || (int) $record->progress >= 100 || (int) $previousProgress >= 100);
+                    $legacyTime = (int) $record->getOriginal('current_time');
+
+                    if ($isCompleted && $docDuration > 0) {
+                        $currentActualWatch = max($currentActualWatch, $docDuration);
+                    } elseif ($currentActualWatch === 0 && !$record->wasRecentlyCreated && $legacyTime > 0) {
+                        $maxBaseline = $docDuration > 0 ? $docDuration : $legacyTime;
+                        $currentActualWatch = min($legacyTime, $maxBaseline);
+                    }
+
+                    // Sibling PCU watch time to enforce global 2x cap across tables
+                    $siblingPcuWatch = (int) \App\Models\PlaylistContentUser::where('user_id', $contentUser->user_id)
+                        ->where('content_id', $content->id)
+                        ->sum('actual_watch_seconds');
+
+                    $effectiveCap = $maxCapSeconds;
+                    if ($maxCapSeconds !== null && $siblingPcuWatch > 0) {
+                        $effectiveCap = max(0, $maxCapSeconds - $siblingPcuWatch);
+                    }
+
                     $newActualWatch = $currentActualWatch + $deltaToApply;
-                    if ($maxCapSeconds !== null) {
-                        $newActualWatch = min($newActualWatch, $maxCapSeconds);
+                    if ($effectiveCap !== null) {
+                        $newActualWatch = min($newActualWatch, $effectiveCap);
                     }
                     $record->actual_watch_seconds = $newActualWatch;
                 }
@@ -890,26 +983,36 @@ class ContentUserController extends Controller
             $contentUser->refresh();
         });
 
-        $isCapped = $maxCapSeconds !== null && (int) ($contentUser->actual_watch_seconds ?? 0) >= $maxCapSeconds;
+        $siblingPcuTotal = (int) \App\Models\PlaylistContentUser::where('user_id', $contentUser->user_id)
+            ->where('content_id', $content->id)
+            ->sum('actual_watch_seconds');
+        $totalActualWatch = (int) ($contentUser->actual_watch_seconds ?? 0) + $siblingPcuTotal;
+        $isCapped = $maxCapSeconds !== null && $totalActualWatch >= $maxCapSeconds;
+
+        $recognizedService = app(\App\Services\Learning\LearningRecordRecognizedDurationService::class);
+        $globalRecognizedSeconds = $recognizedService->resolveGlobalContentRecognizedSeconds((int) $contentUser->user_id, $content);
+        $globalRecognizedDuration = $recognizedService->formatSeconds($globalRecognizedSeconds);
 
         return response()->json([
-            'success'              => true,
-            'progress'             => (int) $contentUser->progress,
-            'status'               => $contentUser->learning_status,
-            'finish'               => (int) $contentUser->finish,
-            'current_time'         => (int) $contentUser->current_time,
-            'actual_watch_seconds' => (int) ($contentUser->actual_watch_seconds ?? 0),
-            'learning_hours'       => (float) $contentUser->learning_hours,
-            'actual_learning_hours'=> (float) $contentUser->learning_hours,
-            'is_capped'            => $isCapped,
-            'max_learning_hours'   => $maxLearningHours,
-            'max_actual_watch_seconds' => $maxCapSeconds,
-            'last_page'            => $contentUser->last_page,
-            'page_completed'       => $pageCompleted,
-            'remaining_seconds'    => $remainingSeconds,
-            'allowed_page'         => $allowedPage,
-            'duration_seconds'     => $contentUser->duration_seconds,
-            'afk_duration_seconds' => (int) ($contentUser->afk_duration_seconds ?? 0),
+            'success'                   => true,
+            'progress'                  => (int) $contentUser->progress,
+            'status'                    => $contentUser->learning_status,
+            'finish'                    => (int) $contentUser->finish,
+            'current_time'              => (int) $contentUser->current_time,
+            'actual_watch_seconds'      => (int) ($contentUser->actual_watch_seconds ?? 0),
+            'learning_hours'            => (float) $contentUser->learning_hours,
+            'actual_learning_hours'     => (float) $contentUser->learning_hours,
+            'total_recognized_seconds'  => $globalRecognizedSeconds,
+            'total_recognized_duration' => $globalRecognizedDuration,
+            'is_capped'                 => $isCapped,
+            'max_learning_hours'        => $maxLearningHours,
+            'max_actual_watch_seconds'  => $maxCapSeconds,
+            'last_page'                 => $contentUser->last_page,
+            'page_completed'            => $pageCompleted,
+            'remaining_seconds'         => $remainingSeconds,
+            'allowed_page'              => $allowedPage,
+            'duration_seconds'          => $contentUser->duration_seconds,
+            'afk_duration_seconds'      => (int) ($contentUser->afk_duration_seconds ?? 0),
         ]);
     }
 

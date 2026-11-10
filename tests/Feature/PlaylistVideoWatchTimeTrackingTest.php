@@ -589,14 +589,16 @@ class PlaylistVideoWatchTimeTrackingTest extends TestCase
      */
     public function test_12_learning_hours_calculated_from_actual_watch_seconds(): void
     {
-        // Replayed 60s video multiple times: actual_watch_seconds = 1800 (30 mins = 0.5 hour)
+        $this->videoContent->update(['duration' => '00:15:00', 'duration_in_seconds' => 900]);
+
+        // Replayed 15m video multiple times: actual_watch_seconds = 1800 (30 mins = 0.5 hour, within 2x cap)
         $pcu = PlaylistContentUser::create([
             'user_id'              => $this->user->id,
             'trainingplan_id'      => $this->playlist->id,
             'content_id'           => $this->videoContent->id,
-            'current_time'         => 60,
+            'current_time'         => 900,
             'actual_watch_seconds' => 1800,
-            'duration_seconds'     => 60,
+            'duration_seconds'     => 900,
             'progress'             => 100,
             'finish'               => '1',
         ]);

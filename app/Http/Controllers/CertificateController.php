@@ -6,10 +6,12 @@ use App\Models\Assesment;
 use App\Models\Certificate;
 use App\Models\CertificateSetting;
 use App\Models\Content;
+use App\Models\OfflineTraining;
 use App\Models\TrainingPlan;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use App\Services\CertificateSyncService;
 use Yajra\DataTables\Facades\DataTables;
@@ -74,6 +76,7 @@ class CertificateController extends Controller
             'content' => CertificateSetting::where('certificate_type', 'content')->count(),
             'playlist' => CertificateSetting::where('certificate_type', 'playlist')->count(),
             'global' => CertificateSetting::where('certificate_type', 'global')->count(),
+            'training_offline' => CertificateSetting::whereIn('certificate_type', ['training_offline', 'offline'])->count(),
             'active' => CertificateSetting::where('is_active', 1)->count(),
             'inactive' => CertificateSetting::where('is_active', 0)->count(),
             'required' => CertificateSetting::where('is_assessment_required', 1)->count(),
@@ -92,9 +95,10 @@ class CertificateController extends Controller
     public function datatable(Request $request)
     {
        $query = CertificateSetting::with([
-        'content',
-        'trainingPlan',
-        'assessment'
+            'content',
+            'trainingPlan',
+            'assessment',
+            'offlineTraining',
         ])
         ->select('certificate_settings.*')
         ->orderByDesc('minimum_progress')
@@ -104,14 +108,22 @@ class CertificateController extends Controller
         ->latest();
 
         foreach ([
-            'certificate_type' => 'type',
             'issuer_name' => 'issuer',
             'minimum_progress' => 'minimum_progress',
             'minimum_score' => 'minimum_score',
         ] as $column => $filter) {
-             if ($request->filled($filter) && $request->input($filter) !== 'all') {
-            $query->where($column, $request->input($filter));
+            if ($request->filled($filter) && $request->input($filter) !== 'all') {
+                $query->where($column, $request->input($filter));
+            }
         }
+
+        if ($request->filled('type') && $request->input('type') !== 'all') {
+            $typeInput = $request->input('type');
+            if (in_array($typeInput, ['training_offline', 'offline'], true)) {
+                $query->whereIn('certificate_type', ['training_offline', 'offline']);
+            } else {
+                $query->where('certificate_type', $typeInput);
+            }
         }
 
         if ($request->filled('status') && $request->status !== 'all') {
@@ -134,20 +146,32 @@ class CertificateController extends Controller
                         ->orWhere('issuer_name', 'like', "%{$search}%")
                         ->orWhereHas('content', fn ($relation) => $relation->where('title', 'like', "%{$search}%"))
                         ->orWhereHas('trainingPlan', fn ($relation) => $relation->where('title', 'like', "%{$search}%"))
-                        ->orWhereHas('assessment', fn ($relation) => $relation->where('title', 'like', "%{$search}%"));
+                        ->orWhereHas('assessment', fn ($relation) => $relation->where('title', 'like', "%{$search}%"))
+                        ->orWhereHas('offlineTraining', fn ($relation) => $relation->where('course_name', 'like', "%{$search}%")->orWhere('title', 'like', "%{$search}%"));
                 });
             })
             ->addColumn('type', function ($row) {
-                $colors = ['content' => 'blue', 'playlist' => 'purple', 'global' => 'green'];
+                $colors = [
+                    'content'          => 'blue',
+                    'playlist'         => 'purple',
+                    'global'           => 'green',
+                    'training_offline' => 'teal',
+                    'offline'          => 'teal',
+                ];
                 $color = $colors[$row->certificate_type] ?? 'secondary';
-                return '<span class="badge bg-' . $color . '-lt text-' . $color . '">' . e(ucfirst($row->certificate_type)) . '</span>';
+                $label = match ($row->certificate_type) {
+                    'training_offline', 'offline' => 'Training Offline',
+                    default => ucfirst($row->certificate_type),
+                };
+                return '<span class="badge bg-' . $color . '-lt text-' . $color . '">' . e($label) . '</span>';
             })
             ->addColumn('name', function ($row) {
                 $title = match ($row->certificate_type) {
-                    'content' => optional($row->content)->title,
-                    'playlist' => optional($row->trainingPlan)->title,
-                    'global' => optional($row->assessment)->title,
-                    default => null,
+                    'content'                     => optional($row->content)->title,
+                    'playlist'                    => optional($row->trainingPlan)->title,
+                    'global'                      => optional($row->assessment)->title,
+                    'training_offline', 'offline' => optional($row->offlineTraining)->course_name ?: optional($row->offlineTraining)->title,
+                    default                       => null,
                 };
 
                 return e($title ?: '-');
@@ -167,29 +191,42 @@ class CertificateController extends Controller
             ->addColumn('issuer', function ($row) {
                 return '<span>' . e($row->issuer_name) . '</span>';
             })
+            ->addColumn('institution', function ($row) {
+                return '<span>' . e($row->institution ?: 'PT KRAKATAU POSCO') . '</span>';
+            })
+            ->addColumn('issued_date', function ($row) {
+                return $row->issued_date ? '<span class="badge bg-secondary-lt">' . $row->issued_date->format('d-m-Y') . '</span>' : '<span class="text-muted">-</span>';
+            })
+            ->addColumn('expired_date', function ($row) {
+                return $row->expired_date ? '<span class="badge bg-secondary-lt">' . $row->expired_date->format('d-m-Y') . '</span>' : '<span class="text-muted">-</span>';
+            })
             ->addColumn('status', fn ($row) => $row->is_active
-                ? '<span class="badge bg-green-lt text-green">ON</span>'
-                : '<span class="badge bg-red-lt text-red">OFF</span>')
+                ? '<span class="badge bg-green-lt text-green">ON</span><div class="small text-muted" style="font-size:10px;">Available: YES</div>'
+                : '<span class="badge bg-red-lt text-red">OFF</span><div class="small text-muted" style="font-size:10px;">Available: NO</div>')
             ->addColumn('action', fn ($row) => $this->certificateActionColumn($row))
-            ->rawColumns(['type', 'assessment', 'minimum_progress', 'minimum_score', 'issuer', 'status', 'action'])
+            ->rawColumns(['type', 'assessment', 'minimum_progress', 'minimum_score', 'issuer', 'institution', 'issued_date', 'expired_date', 'status', 'action'])
             ->make(true);
     }
 
     private function certificateActionColumn(CertificateSetting $setting): string
     {
         $payload = e(json_encode([
-            'id' => $setting->id,
-            'certificate_type' => $setting->certificate_type,
-            'content_id' => $setting->content_id,
-            'trainingplan_id' => $setting->trainingplan_id,
-            'assessment_id' => $setting->assessment_id,
+            'id'                     => $setting->id,
+            'certificate_type'       => $setting->certificate_type,
+            'content_id'             => $setting->content_id,
+            'trainingplan_id'        => $setting->trainingplan_id,
+            'offline_training_id'    => $setting->offline_training_id,
+            'assessment_id'          => $setting->assessment_id,
             'is_assessment_required' => (bool) $setting->is_assessment_required,
-            'minimum_progress' => $setting->minimum_progress,
-            'minimum_score' => $setting->minimum_score,
-            'issuer_name' => $setting->issuer_name,
-            'use_default_template' => (bool) $setting->use_default_template,
-            'custom_background' => $setting->custom_background,
-            'is_active' => (bool) $setting->is_active,
+            'minimum_progress'       => $setting->minimum_progress,
+            'minimum_score'          => $setting->minimum_score,
+            'issuer_name'            => $setting->issuer_name,
+            'institution'            => $setting->institution ?: 'PT KRAKATAU POSCO',
+            'issued_date'            => optional($setting->issued_date)->format('Y-m-d'),
+            'expired_date'           => optional($setting->expired_date)->format('Y-m-d'),
+            'use_default_template'   => (bool) $setting->use_default_template,
+            'custom_background'      => $setting->custom_background,
+            'is_active'              => (bool) $setting->is_active,
         ]));
 
         $buttons = '<div class="btn-list flex-nowrap">'
@@ -214,13 +251,16 @@ class CertificateController extends Controller
 public function store(Request $request)
 {
     $request->validate([
-        'certificate_type' => 'required|in:content,playlist,global',
+        'certificate_type' => 'required|in:content,playlist,global,training_offline,offline',
         'item_id' => 'required',
         'assessment_id' => 'nullable|required_if:is_assessment_required,1|exists:assesments,id',
         'is_assessment_required' => 'nullable|boolean',
         'minimum_progress' => 'required|integer|min:0|max:100',
         'minimum_score' => 'nullable|integer|min:0|max:100',
         'issuer_name' => 'required|string|max:255',
+        'institution' => 'nullable|string|max:255',
+        'issued_date' => 'nullable|date',
+        'expired_date' => 'nullable|date|after_or_equal:issued_date',
         'use_default_template' => 'nullable|boolean',
         'certificate_template' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:4096',
         'custom_background' => array_filter([
@@ -230,6 +270,8 @@ public function store(Request $request)
             'max:2048',
         ]),
         'is_active' => 'required|boolean',
+    ], [
+        'expired_date.after_or_equal' => 'Expired date must not be earlier than issued date.',
     ]);
 
     $data = $request->only([
@@ -238,9 +280,15 @@ public function store(Request $request)
         'minimum_progress',
         'minimum_score',
         'issuer_name',
+        'institution',
+        'issued_date',
+        'expired_date',
         'is_active',
         'use_default_template',
     ]);
+    if (empty($data['institution'])) {
+        $data['institution'] = 'PT KRAKATAU POSCO';
+    }
 
     $data['is_assessment_required'] = $request->has('is_assessment_required') ? 1 : 0;
     $data['use_default_template'] = $request->has('use_default_template');
@@ -278,13 +326,16 @@ public function store(Request $request)
 public function update(Request $request, CertificateSetting $certificateSetting)
 {
     $request->validate([
-        'certificate_type' => 'required|in:content,playlist,global',
+        'certificate_type' => 'required|in:content,playlist,global,training_offline,offline',
         'item_id' => 'required',
         'assessment_id' => 'nullable|required_if:is_assessment_required,1|exists:assesments,id',
         'is_assessment_required' => 'nullable|boolean',
         'minimum_progress' => 'required|integer|min:0|max:100',
         'minimum_score' => 'nullable|integer|min:0|max:100',
         'issuer_name' => 'required|string|max:255',
+        'institution' => 'nullable|string|max:255',
+        'issued_date' => 'nullable|date',
+        'expired_date' => 'nullable|date|after_or_equal:issued_date',
         'use_default_template' => 'nullable|boolean',
         'certificate_template' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:4096',
         'custom_background' => array_filter([
@@ -294,6 +345,8 @@ public function update(Request $request, CertificateSetting $certificateSetting)
             'max:2048',
         ]),
         'is_active' => 'required|boolean',
+    ], [
+        'expired_date.after_or_equal' => 'Expired date must not be earlier than issued date.',
     ]);
 
     $data = $request->only([
@@ -302,9 +355,15 @@ public function update(Request $request, CertificateSetting $certificateSetting)
         'minimum_progress',
         'minimum_score',
         'issuer_name',
+        'institution',
+        'issued_date',
+        'expired_date',
         'is_active',
         'use_default_template',
     ]);
+    if (empty($data['institution'])) {
+        $data['institution'] = 'PT KRAKATAU POSCO';
+    }
 
     $data['is_assessment_required'] = $request->has('is_assessment_required') ? 1 : 0;
     $data['use_default_template'] = $request->has('use_default_template');
@@ -388,6 +447,14 @@ public function update(Request $request, CertificateSetting $certificateSetting)
                     'title' => $playlist->title,
                     'contents' => $playlist->trainingplandetail->pluck('content')->filter()->values(),
                 ]);
+        } elseif (in_array($type, ['training_offline', 'offline'], true)) {
+            $items = OfflineTraining::select('id', 'course_name', 'title')
+                ->orderByRaw('COALESCE(course_name, title) ASC')
+                ->get()
+                ->map(fn ($t) => [
+                    'id' => $t->id,
+                    'title' => $t->course_name ?: ($t->title ?: 'Offline Training #' . $t->id),
+                ]);
         } else {
             $items = Assesment::select('id', 'title')
                 ->where('type', 'global')
@@ -407,6 +474,32 @@ public function update(Request $request, CertificateSetting $certificateSetting)
             return response()->json(
                 Assesment::where('type', 'global')->orderBy('title')->get(['id', 'title'])
             );
+        }
+
+        if (in_array($type, ['training_offline', 'offline'], true)) {
+            $target = OfflineTraining::find($itemId);
+            if (!$target) {
+                return response()->json(Assesment::orderBy('title')->get(['id', 'title']));
+            }
+            $allAssessments = Assesment::orderBy('title')->get(['id', 'title']);
+            $normalizedTarget = $this->normalizeAssessmentTitle($target->course_name ?: ($target->title ?: ''));
+            if ($normalizedTarget === '') {
+                return response()->json($allAssessments);
+            }
+            $matches = $allAssessments->map(function ($assessment) use ($normalizedTarget) {
+                $normalizedAssessment = $this->normalizeAssessmentTitle($assessment->title);
+                $isMatch = $normalizedAssessment !== '' && (
+                    str_contains($normalizedAssessment, $normalizedTarget) ||
+                    str_contains($normalizedTarget, $normalizedAssessment)
+                );
+                return [
+                    'id' => $assessment->id,
+                    'title' => ($isMatch ? '[Matched] ' : '') . $assessment->title,
+                    'matched_by_title' => $isMatch,
+                ];
+            })->sortByDesc('matched_by_title')->values();
+
+            return response()->json($matches);
         }
 
         $target = $type === 'content'
@@ -482,58 +575,66 @@ public function update(Request $request, CertificateSetting $certificateSetting)
     }
 
     private function mapCertificateTarget(Request $request, array $data)
-{
-    $data['content_id'] = null;
-    $data['trainingplan_id'] = null;
+    {
+        $data['content_id'] = null;
+        $data['trainingplan_id'] = null;
+        $data['offline_training_id'] = null;
 
-    if ($request->certificate_type === 'content') {
-        $data['content_id'] = $request->item_id;
+        if ($request->certificate_type === 'content') {
+            $data['content_id'] = $request->item_id;
+        }
+
+        if ($request->certificate_type === 'playlist') {
+            $data['trainingplan_id'] = $request->item_id;
+        }
+
+        if (in_array($request->certificate_type, ['training_offline', 'offline'], true)) {
+            $data['offline_training_id'] = $request->item_id;
+        }
+
+        if ($request->certificate_type === 'global' && !$data['is_assessment_required']) {
+            $data['assessment_id'] = $request->item_id;
+        }
+
+        return $data;
     }
 
-    if ($request->certificate_type === 'playlist') {
-        $data['trainingplan_id'] = $request->item_id;
-    }
-
-    if ($request->certificate_type === 'global' && !$data['is_assessment_required']) {
-        $data['assessment_id'] = $request->item_id;
-    }
-
-    return $data;
-}
-
-public function previewTemplate(CertificateSetting $certificateSetting)
-{
-    $setting = $certificateSetting->load([
-        'content',
-        'trainingPlan.trainingplandetail.content',
-        'assessment'
-    ]);
-
-    return view(
-        'certificate.templates.preview-template',
-        compact('setting')
-    );
-}
-
-public function previewGenerated(CertificateSetting $certificateSetting)
-{
-    return view('main.certificate.preview-generated', [
-        'setting' => $certificateSetting->load([
+    public function previewTemplate(CertificateSetting $certificateSetting)
+    {
+        $setting = $certificateSetting->load([
             'content',
             'trainingPlan.trainingplandetail.content',
-            'assessment'
-        ])
-    ]);
-}
+            'assessment',
+            'offlineTraining',
+        ]);
 
-public function previewCustomTemplate(CertificateSetting $certificateSetting)
-{
-    return view('main.certificate.templates.preview-custom-template', [
-        'setting' => $certificateSetting->load([
-            'content',
-            'trainingPlan.trainingplandetail.content',
-            'assessment'
-        ])
-    ]);
-}
+        return view(
+            'certificate.templates.preview-template',
+            compact('setting')
+        );
+    }
+
+    public function previewGenerated(CertificateSetting $certificateSetting)
+    {
+        return view('main.certificate.preview-generated', [
+            'setting' => $certificateSetting->load([
+                'content',
+                'trainingPlan.trainingplandetail.content',
+                'assessment',
+                'offlineTraining',
+            ])
+        ]);
+    }
+
+    public function previewCustomTemplate(CertificateSetting $certificateSetting)
+    {
+        return view('main.certificate.templates.preview-custom-template', [
+            'setting' => $certificateSetting->load([
+                'content',
+                'trainingPlan.trainingplandetail.content',
+                'assessment',
+                'offlineTraining',
+            ])
+        ]);
+    }
 }

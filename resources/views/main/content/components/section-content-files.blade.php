@@ -153,6 +153,13 @@
 .compact-dropzone .dz-preview a.dz-remove:hover {
     background: rgba(214, 57, 57, .18);
 }
+.compact-dropzone .dz-upload-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-left: auto;
+}
 
 [data-bs-theme="dark"] .compact-dropzone,
 body.dark-mode .compact-dropzone {
@@ -261,7 +268,13 @@ body.dark-mode .compact-dropzone .dz-preview {
                     </div>
                     <div class="fallback"></div>
                 </div>
-                <small class="text-muted d-block mt-1" id="content-file-help-text" style="font-size: 11px;">Format: PDF — maks. 1 file, 10 MB</small>
+                @php
+                    $initialContentType = old('type', $content->type ?? 'Document');
+                    $initialFileHelp = ($initialContentType === 'Video')
+                        ? 'Format: MP4, AVI, MOV, MKV, WEBM — maks. 1 file, 500 MB'
+                        : 'Format: PDF — maks. 1 file, 10 MB';
+                @endphp
+                <small class="text-muted d-block mt-1" id="content-file-help-text" style="font-size: 11px;">{{ $initialFileHelp }}</small>
             </div>
 
             {{-- Thumbnail File Column --}}

@@ -4,12 +4,13 @@
         ['key' => 'content', 'label' => 'Content Certificate', 'icon' => 'ti-book', 'bg' => '#e0f2fe', 'color' => '#0284c7'],
         ['key' => 'playlist', 'label' => 'Playlist Certificate', 'icon' => 'ti-playlist', 'bg' => '#f3e8ff', 'color' => '#7c3aed'],
         ['key' => 'global', 'label' => 'Global Certificate', 'icon' => 'ti-world', 'bg' => '#dcfce7', 'color' => '#16a34a'],
+        ['key' => 'training_offline', 'label' => 'Offline Certificate', 'icon' => 'ti-school', 'bg' => '#ccfbf1', 'color' => '#0d9488'],
     ];
 @endphp
 
 <div class="row g-3 mb-3">
     @foreach($cards as $c)
-        <div class="col-12 col-sm-6 col-xl-3">
+        <div class="col-12 col-sm-6 col-lg">
             <div class="card border border-light-subtle shadow-sm rounded-3 h-100 summary-metric-card admin-card-bordered">
                 <div class="card-body p-3 d-flex align-items-center gap-3">
                     <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 stat-icon-box"

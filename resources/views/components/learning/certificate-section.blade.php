@@ -41,106 +41,159 @@
     $exportUrl = route('user.learning.dashboard.partial', array_merge(['tab' => 'certificate'], $exportParams));
 @endphp
 
-<div class="card border-0 shadow-sm rounded-4 mb-3 certificate-card-shell">
-    <div class="card-body p-4 border-bottom">
+<div class="card border-0 shadow-sm rounded-4 mb-3 my-task-filter-card certificate-card-shell">
+    <div class="card-body p-3 p-md-4">
         <div class="record-filter-shell certificate-filter-shell" id="certificateFilterBar">
-            {{-- <h3 class="card-title mb-1">My Certificates</h3>
-            <div class="text-muted small">View all certificates that have been successfully generated.</div> --}}
+            {{-- Header: Title & Subtitle --}}
+            <div class="mb-3">
+                <h2 class="fw-bold mb-1 my-task-filter-title">My Certificates</h2>
+                <p class="text-muted small mb-0 my-task-filter-subtitle">View, download, and manage your earned learning credentials and certificates.</p>
+            </div>
 
-            <div class="certificate-fast-filter-section mt-3">
-                <label class="form-label small text-muted mb-2 learning-fast-filter-label">Quick Filter</label>
+            {{-- Category Filter Pills (Type filter elevated to top-level pills) --}}
+            <div class="d-flex align-items-center flex-wrap gap-2 mb-3 my-task-pills-row">
+                @foreach ($types as $value => $label)
+                    <button type="button"
+                            class="my-task-category-pill certificate-category-pill {{ $active['type'] === $value ? 'active' : '' }}"
+                            data-value="{{ $value }}"
+                            title="Filter by {{ $label }}">
+                        {{ $value === 'all' ? 'All Certificates' : $label }}
+                    </button>
+                @endforeach
+            </div>
 
-                <div class="certificate-fast-filter-toolbar">
-                    <div class="certificate-quick-dropdowns">
-                        <div class="dropdown certificate-filter-dropdown certificate-filter-dropdown-type"
-                             data-certificate-filter="type" data-selected-value="{{ $active['type'] }}">
-                            <input type="hidden" class="certificate-quick-value" name="certificate_filter_type" value="{{ $active['type'] }}">
-                            <button type="button" class="btn btn-filter-chip certificate-fast-filter-control dropdown-toggle {{ $active['type'] !== 'all' ? 'active' : '' }}"
-                                    data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                Type: <span class="fw-semibold certificate-filter-value">{{ $types[$active['type']] ?? 'All' }}</span>
-                            </button>
-                            <div class="dropdown-menu">
-                                @foreach ($types as $value => $label)
-                                    <a href="#" class="dropdown-item certificate-quick-item {{ $active['type'] === $value ? 'active' : '' }}" data-value="{{ $value }}">{{ $label }}</a>
-                                @endforeach
-                            </div>
-                        </div>
+            {{-- Hidden input for certificate type to maintain JS state binding --}}
+            <div class="dropdown certificate-filter-dropdown certificate-filter-dropdown-type d-none"
+                 data-certificate-filter="type" data-selected-value="{{ $active['type'] }}">
+                <input type="hidden" class="certificate-quick-value" name="certificate_filter_type" value="{{ $active['type'] }}">
+            </div>
 
-                        <div class="dropdown certificate-filter-dropdown certificate-filter-dropdown-year"
-                             data-certificate-filter="year" data-selected-value="{{ $active['year'] }}">
-                            <input type="hidden" class="certificate-quick-value" name="certificate_filter_year" value="{{ $active['year'] }}">
-                            <button type="button" class="btn btn-filter-chip certificate-fast-filter-control dropdown-toggle {{ $active['year'] !== 'all' ? 'active' : '' }}"
-                                    data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                Year: <span class="fw-semibold certificate-filter-value">{{ $active['year'] === 'all' ? 'All' : $active['year'] }}</span>
-                            </button>
-                            <div class="dropdown-menu certificate-dropdown-scroll">
-                                <a href="#" class="dropdown-item certificate-quick-item {{ $active['year'] === 'all' ? 'active' : '' }}" data-value="all">All</a>
-                                @foreach (collect($filterOptions['years'] ?? []) as $year)
-                                    <a href="#" class="dropdown-item certificate-quick-item {{ (string) $active['year'] === (string) $year ? 'active' : '' }}" data-value="{{ $year }}">{{ $year }}</a>
-                                @endforeach
-                            </div>
-                        </div>
+            {{-- Subtle Divider Line --}}
+            <hr class="my-3 my-task-divider">
 
-                        <div class="dropdown certificate-filter-dropdown certificate-filter-dropdown-month"
-                             data-certificate-filter="month" data-selected-value="{{ $active['month'] }}">
-                            <input type="hidden" class="certificate-quick-value" name="certificate_filter_month" value="{{ $active['month'] }}">
-                            <button type="button" class="btn btn-filter-chip certificate-fast-filter-control dropdown-toggle {{ $active['month'] !== 'all' ? 'active' : '' }}"
-                                    data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                Month: <span class="fw-semibold certificate-filter-value">{{ $active['month'] === 'all' ? 'All' : ($months[(int) $active['month']] ?? 'All') }}</span>
-                            </button>
-                            <div class="dropdown-menu certificate-dropdown-scroll">
-                                <a href="#" class="dropdown-item certificate-quick-item {{ $active['month'] === 'all' ? 'active' : '' }}" data-value="all">All</a>
-                                @foreach ($months as $number => $month)
-                                    <a href="#" class="dropdown-item certificate-quick-item {{ (string) $active['month'] === (string) $number ? 'active' : '' }}" data-value="{{ $number }}">{{ $month }}</a>
-                                @endforeach
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="certificate-toolbar-search">
-                        <label class="visually-hidden" for="certificate-search-input">Search certificates</label>
-                        <div class="position-relative certificate-search-container flex-grow-1 search-input-wrapper">
-                            <div class="input-icon">
-                                <span class="input-icon-addon"><i class="ti ti-search"></i></span>
-                                <input type="text"
-                                       class="form-control module-search-input"
-                                       id="certificate-search-input"
-                                       name="certificate_search"
-                                       placeholder="Certificate number, credential, participant, target or type..."
-                                       value="{{ request('certificate_search', request('search', request('q'))) }}"
-                                       autocomplete="off">
-                            </div>
-                            <div id="certificate-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1 module-search-dropdown" style="display: none; max-height: 380px; overflow-y: auto; z-index: 1050; padding: 0;">
-                                <div class="autocomplete-list-group list-group list-group-flush"></div>
-                                <div class="search-footer border-top bg-light p-2 text-center sticky-bottom"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="record-filter-actions certificate-filter-actions">
-                        <button type="button" class="btn btn-primary btn-learning-primary record-filter-action-btn certificate-filter-action-btn"
-                                id="certificateApplyFilter" title="Apply Filter" aria-label="Apply Filter">
-                            <i class="ti ti-search"></i>
-                        </button>
-                        <button type="button" class="btn btn-outline-primary btn-learning-secondary record-filter-action-btn certificate-filter-action-btn"
-                                data-bs-toggle="modal" data-bs-target="#certificateMoreFiltersModal"
-                                title="More Filters" aria-label="More Filters">
-                            <i class="ti ti-adjustments-horizontal"></i>
-                            <span class="badge bg-primary text-white {{ $advancedCount ? '' : 'd-none' }}" id="certificateMoreFiltersCount">{{ $advancedCount ?: '' }}</span>
-                        </button>
-                        <button type="button" class="btn btn-outline-primary btn-learning-outline record-filter-action-btn certificate-filter-action-btn"
-                                id="certificateResetFilter" title="Reset Filter" aria-label="Reset Filter">
-                            <i class="ti ti-refresh"></i>
-                        </button>
-                        <button type="button" class="btn btn-success btn-learning-success record-filter-action-btn certificate-filter-action-btn"
-                                id="certificateDownloadExcel"
-                                data-export-url="{{ $exportUrl }}"
-                                title="Download Excel" aria-label="Download Excel">
-                            <i class="ti ti-download"></i>
-                        </button>
+            {{-- Fast Filter Toolbar --}}
+            <div class="d-flex align-items-center flex-wrap gap-2 w-100 my-task-toolbar certificate-quick-dropdowns">
+                {{-- Dropdown Year --}}
+                <div class="dropdown certificate-filter-dropdown certificate-filter-dropdown-year"
+                     data-certificate-filter="year" data-selected-value="{{ $active['year'] }}">
+                    <input type="hidden" class="certificate-quick-value" name="certificate_filter_year" value="{{ $active['year'] }}">
+                    <button type="button" class="btn my-task-dropdown-btn dropdown-toggle {{ $active['year'] !== 'all' ? 'active' : '' }}"
+                            data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Year: <span class="fw-semibold certificate-filter-value">{{ $active['year'] === 'all' ? 'All' : $active['year'] }}</span>
+                    </button>
+                    <div class="dropdown-menu shadow-sm certificate-dropdown-scroll">
+                        <a href="#" class="dropdown-item my-task-dropdown-item certificate-quick-item {{ $active['year'] === 'all' ? 'active' : '' }}" data-value="all">All</a>
+                        @foreach (collect($filterOptions['years'] ?? []) as $year)
+                            <a href="#" class="dropdown-item my-task-dropdown-item certificate-quick-item {{ (string) $active['year'] === (string) $year ? 'active' : '' }}" data-value="{{ $year }}">{{ $year }}</a>
+                        @endforeach
                     </div>
                 </div>
+
+                {{-- Dropdown Month --}}
+                <div class="dropdown certificate-filter-dropdown certificate-filter-dropdown-month"
+                     data-certificate-filter="month" data-selected-value="{{ $active['month'] }}">
+                    <input type="hidden" class="certificate-quick-value" name="certificate_filter_month" value="{{ $active['month'] }}">
+                    <button type="button" class="btn my-task-dropdown-btn dropdown-toggle {{ $active['month'] !== 'all' ? 'active' : '' }}"
+                            data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Month: <span class="fw-semibold certificate-filter-value">{{ $active['month'] === 'all' ? 'All' : ($months[(int) $active['month']] ?? 'All') }}</span>
+                    </button>
+                    <div class="dropdown-menu shadow-sm certificate-dropdown-scroll" style="max-height: 280px; overflow-y: auto;">
+                        <a href="#" class="dropdown-item my-task-dropdown-item certificate-quick-item {{ $active['month'] === 'all' ? 'active' : '' }}" data-value="all">All</a>
+                        @foreach ($months as $number => $month)
+                            <a href="#" class="dropdown-item my-task-dropdown-item certificate-quick-item {{ (string) $active['month'] === (string) $number ? 'active' : '' }}" data-value="{{ $number }}">{{ $month }}</a>
+                        @endforeach
+                    </div>
+                </div>
+
+                {{-- Search & Action Buttons Group (Single row, action buttons on right) --}}
+                <div class="d-flex align-items-center gap-2 flex-grow-1 certificate-search-actions-group">
+                    {{-- Search Input with Autocomplete --}}
+                    <div class="position-relative flex-grow-1 my-task-search-wrapper certificate-search-container" style="min-width: 180px;">
+                        <span class="position-absolute top-50 start-0 translate-middle-y ps-3 text-muted pointer-events-none" style="z-index: 2;">
+                            <i class="ti ti-search" style="font-size: 15px;"></i>
+                        </span>
+                        <input type="text"
+                               class="form-control my-task-search-input module-search-input"
+                               id="certificate-search-input"
+                               name="certificate_search"
+                               placeholder="Certificate number, credential, participant, target or type..."
+                               value="{{ request('certificate_search', request('search', request('q'))) }}"
+                               autocomplete="off">
+                        @if (request()->filled('certificate_search') || request()->filled('search') || request()->filled('q'))
+                            <button type="button" class="btn btn-link position-absolute top-50 end-0 translate-middle-y pe-2.5 text-muted text-decoration-none my-task-search-clear" id="certificateClearSearch" title="Clear search" style="z-index: 2;">
+                                <i class="ti ti-x"></i>
+                            </button>
+                        @endif
+                        <div id="certificate-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1 module-search-dropdown" style="display: none; max-height: 380px; overflow-y: auto; z-index: 1050; padding: 0;">
+                            <div class="autocomplete-list-group list-group list-group-flush"></div>
+                            <div class="search-footer border-top bg-light p-2 text-center sticky-bottom"></div>
+                        </div>
+                    </div>
+
+                    {{-- Square Action Buttons --}}
+                    <button type="button" class="btn btn-primary my-task-btn-square my-task-btn-search flex-shrink-0"
+                            id="certificateApplyFilter" title="Apply Filter" aria-label="Apply Filter">
+                        <i class="ti ti-search text-white fs-3"></i>
+                    </button>
+                    <button type="button" class="btn btn-white my-task-btn-square my-task-btn-filter position-relative flex-shrink-0"
+                            data-bs-toggle="modal" data-bs-target="#certificateMoreFiltersModal"
+                            title="More Filters" aria-label="More Filters">
+                        <i class="ti ti-adjustments-horizontal fs-3 text-secondary"></i>
+                        <span class="badge bg-primary text-white {{ $advancedCount ? '' : 'd-none' }}" id="certificateMoreFiltersCount">{{ $advancedCount ?: '' }}</span>
+                    </button>
+                    <button type="button" class="btn btn-white my-task-btn-square my-task-btn-reset flex-shrink-0"
+                            id="certificateResetFilter" title="Reset Filter" aria-label="Reset Filter">
+                        <i class="ti ti-refresh fs-3 text-secondary"></i>
+                    </button>
+                    <button type="button" class="btn btn-white my-task-btn-square my-task-btn-export flex-shrink-0"
+                            id="certificateDownloadExcel"
+                            data-export-url="{{ $exportUrl }}"
+                            title="Download Excel" aria-label="Download Excel">
+                        <i class="ti ti-download fs-3 text-secondary"></i>
+                    </button>
+                </div>
             </div>
+
+            {{-- Active Filters indicator --}}
+            @php
+                $certSearch = request('certificate_search', request('search', request('q')));
+                $hasActiveCertFilters = !empty($certSearch) || $active['type'] !== 'all' || $active['year'] !== 'all' || $active['month'] !== 'all' || $advancedCount > 0;
+            @endphp
+            @if ($hasActiveCertFilters)
+                <div class="d-flex align-items-center flex-wrap gap-2 mt-2.5 pt-2.5 border-top">
+                    <span class="text-muted small" style="font-size: 11.5px;">Active Filter:</span>
+                    @if (!empty($certSearch))
+                        <span class="badge bg-light text-dark border px-2.5 py-1 rounded-pill d-inline-flex align-items-center gap-1 shadow-none" style="font-size: 11.5px;">
+                            <i class="ti ti-search text-muted"></i>
+                            <span>"{{ $certSearch }}"</span>
+                        </span>
+                    @endif
+                    @if ($active['type'] !== 'all')
+                        <span class="badge bg-light text-dark border px-2.5 py-1 rounded-pill d-inline-flex align-items-center gap-1 shadow-none" style="font-size: 11.5px;">
+                            <span>Type: {{ $types[$active['type']] ?? $active['type'] }}</span>
+                        </span>
+                    @endif
+                    @if ($active['year'] !== 'all')
+                        <span class="badge bg-light text-dark border px-2.5 py-1 rounded-pill d-inline-flex align-items-center gap-1 shadow-none" style="font-size: 11.5px;">
+                            <span>Year: {{ $active['year'] }}</span>
+                        </span>
+                    @endif
+                    @if ($active['month'] !== 'all')
+                        <span class="badge bg-light text-dark border px-2.5 py-1 rounded-pill d-inline-flex align-items-center gap-1 shadow-none" style="font-size: 11.5px;">
+                            <span>Month: {{ $months[(int) $active['month']] ?? $active['month'] }}</span>
+                        </span>
+                    @endif
+                    @if ($advancedCount > 0)
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 rounded-pill d-inline-flex align-items-center gap-1 shadow-none" style="font-size: 11.5px;">
+                            <i class="ti ti-adjustments-horizontal"></i>
+                            <span>{{ $advancedCount }} More Filters</span>
+                        </span>
+                    @endif
+                    <button type="button" class="btn btn-link text-primary small text-decoration-none ms-1 fw-semibold p-0 border-0" id="certificateActiveResetBtn" style="font-size: 11.5px;">
+                        Reset all
+                    </button>
+                </div>
+            @endif
         </div>
     </div>
 

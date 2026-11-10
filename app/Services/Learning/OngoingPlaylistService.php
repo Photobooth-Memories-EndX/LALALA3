@@ -23,6 +23,29 @@ class OngoingPlaylistService
     {
     }
 
+    /** Same consumption precedence used by cards and hierarchical export children. */
+    public function consumedSeconds(?PlaylistContentUser $pcu, int $moduleDuration): int
+    {
+        if (!$pcu) {
+            return 0;
+        }
+        $duration = (int) ($pcu->duration_seconds ?? 0);
+        $duration = $duration > 0 ? $duration : $moduleDuration;
+        if ((int) $pcu->actual_watch_seconds > 0) {
+            return (int) $pcu->actual_watch_seconds;
+        }
+        if ((int) $pcu->current_time > 0) {
+            return (int) $pcu->current_time;
+        }
+        if ($pcu->isFinished() && $duration > 0) {
+            return $duration;
+        }
+        if ((int) $pcu->progress > 0 && $duration > 0) {
+            return (int) round($pcu->progress / 100 * $duration);
+        }
+        return (float) $pcu->learning_hour > 0 ? (int) round($pcu->learning_hour * 3600) : 0;
+    }
+
     /**
      * Daftar Playlist (Training Plan) beserta agregat progres milik seorang user.
      *
@@ -108,28 +131,7 @@ class OngoingPlaylistService
                 $moduleDuration = \App\Support\DurationFormatter::toSeconds($d->content?->duration ?? '') ?? 0;
                 $calculatedTotalSeconds += $moduleDuration;
 
-                if ($pcu) {
-                    $pcuDuration = (int) ($pcu->duration_seconds ?? 0);
-                    if ($pcuDuration <= 0) {
-                        $pcuDuration = $moduleDuration;
-                    }
-                    $pcuActualWatch = (int) ($pcu->actual_watch_seconds ?? 0);
-                    $pcuCurrentTime = (int) ($pcu->current_time ?? 0);
-                    $pcuProgress = (int) ($pcu->progress ?? 0);
-                    $pcuFinished = ((string) $pcu->finish === '1' || $pcuProgress >= 100);
-
-                    if ($pcuActualWatch > 0) {
-                        $consumedPlaylistSeconds += $pcuActualWatch;
-                    } elseif ($pcuCurrentTime > 0) {
-                        $consumedPlaylistSeconds += $pcuCurrentTime;
-                    } elseif ($pcuFinished && $pcuDuration > 0) {
-                        $consumedPlaylistSeconds += $pcuDuration;
-                    } elseif ($pcuProgress > 0 && $pcuDuration > 0) {
-                        $consumedPlaylistSeconds += (int) round(($pcuProgress / 100) * $pcuDuration);
-                    } elseif ((float) ($pcu->learning_hour ?? 0) > 0) {
-                        $consumedPlaylistSeconds += (int) round((float) $pcu->learning_hour * 3600);
-                    }
-                }
+                $consumedPlaylistSeconds += $this->consumedSeconds($pcu, $moduleDuration);
             }
 
             $planTotalSec = max(0, (int) ($plan->total_duration_seconds ?? 0));
@@ -213,6 +215,20 @@ class OngoingPlaylistService
                 'sort_duration'          => (int) $plan->total_duration_seconds,
             ];
         })->values();
+    }
+
+    /** Return only incomplete playlists with at least one completed child, after normal filters. */
+    public function ongoingCards(Collection $userPlaylists, array $filters): Collection
+    {
+        return $this->cards($userPlaylists, $filters)
+            ->filter(function (array $card): bool {
+                $plan = $card['plan'];
+                $finished = (int) ($plan->finished_items ?? 0);
+                $total = (int) ($plan->total_items ?? 0);
+
+                return $finished > 0 && $total > $finished && !$plan->is_completed;
+            })
+            ->values();
     }
 
     /**

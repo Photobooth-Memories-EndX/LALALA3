@@ -439,11 +439,16 @@ class ContentController extends Controller
             }
         }
 
+        $destinationPath = public_path('storage/files/tmp/');
+        if (!File::isDirectory($destinationPath)) {
+            File::makeDirectory($destinationPath, 0755, true);
+        }
+
         $name = [];
         $original_name = [];
         foreach ($fileList as $key => $value) {
-            $image = str_replace(' ', '_', pathinfo($value->getClientOriginalName(), PATHINFO_FILENAME)) . '_' . Carbon::now()->format('YmdHi') . '.' . $value->getClientOriginalExtension();
-            $destinationPath = 'storage/files/tmp/';
+            $ext = strtolower($value->getClientOriginalExtension() ?: $value->guessExtension() ?: 'bin');
+            $image = str_replace(' ', '_', pathinfo($value->getClientOriginalName(), PATHINFO_FILENAME)) . '_' . Carbon::now()->format('YmdHi') . '.' . $ext;
             $value->move($destinationPath, $image);
             $name[] = $image;
             $original_name[] = $value->getClientOriginalName();
@@ -456,23 +461,41 @@ class ContentController extends Controller
     }
     public function deletefileajax(Request $request)
     {
-
-
         if ($request->get('name')) {
-            $src = 'storage/files/tmp/' . $request->get('name');
-            if (File::exists(public_path($src)) && !is_dir($src)) {
-                File::delete(public_path($src));
+            $filename = basename($request->get('name'));
+            $src = public_path('storage/files/tmp/' . $filename);
+            if (File::exists($src) && !is_dir($src)) {
+                File::delete($src);
+            } else {
+                $fallback = base_path('storage/files/tmp/' . $filename);
+                if (File::exists($fallback) && !is_dir($fallback)) {
+                    File::delete($fallback);
+                }
             }
         }
     }
 
     public function uploadthumbnailajax(Request $request)
     {
+        $files = $request->file('file');
+        if (empty($files)) {
+            return response()->json([
+                'message' => 'No file uploaded.',
+                'error'   => 'No file uploaded.',
+            ], 422);
+        }
+
+        $fileList = is_array($files) ? $files : [$files];
+        $destinationPath = public_path('storage/files/tmp/thumb/');
+        if (!File::isDirectory($destinationPath)) {
+            File::makeDirectory($destinationPath, 0755, true);
+        }
+
         $name = [];
         $original_name = [];
-        foreach ($request->file('file') as $key => $value) {
-            $image = str_replace(' ', '_', pathinfo($value->getClientOriginalName(), PATHINFO_FILENAME)) . '_' . Carbon::now()->format('YmdHi') . '.' . $value->getClientOriginalExtension();
-            $destinationPath = 'storage/files/tmp/thumb/';
+        foreach ($fileList as $key => $value) {
+            $ext = strtolower($value->getClientOriginalExtension() ?: $value->guessExtension() ?: 'jpg');
+            $image = str_replace(' ', '_', pathinfo($value->getClientOriginalName(), PATHINFO_FILENAME)) . '_' . Carbon::now()->format('YmdHi') . '.' . $ext;
             $value->move($destinationPath, $image);
             $name[] = $image;
             $original_name[] = $value->getClientOriginalName();
@@ -486,9 +509,15 @@ class ContentController extends Controller
     public function deletethumbnailajax(Request $request)
     {
         if ($request->get('name')) {
-            $src = 'storage/files/tmp/thumb/' . $request->get('name');
-            if (File::exists(public_path($src)) && !is_dir($src)) {
-                File::delete(public_path($src));
+            $filename = basename($request->get('name'));
+            $src = public_path('storage/files/tmp/thumb/' . $filename);
+            if (File::exists($src) && !is_dir($src)) {
+                File::delete($src);
+            } else {
+                $fallback = base_path('storage/files/tmp/thumb/' . $filename);
+                if (File::exists($fallback) && !is_dir($fallback)) {
+                    File::delete($fallback);
+                }
             }
         }
     }
@@ -528,6 +557,10 @@ class ContentController extends Controller
                 'numeric',
                 'min:0',
             ],
+            'status' => [
+                'required',
+                'in:mandatory,non mandatory,optional',
+            ],
         ]);
 
         if (in_array($request->type, ['YouTube', 'MOOC'], true)) {
@@ -565,7 +598,8 @@ class ContentController extends Controller
             'page_duration'    => $pageDuration,
             'total_page'       => $documentTotalPages,
             'description'      => $request->description ?? '',
-            'playlistonly'     => ($request->playlistonly === 'Y' || $request->playlistonly === 1 || $request->playlistonly === '1') ? 'Y' : 'N',
+            'status'           => $request->status ?? 'non mandatory',
+            'playlistonly'     => 'N',
             'link'             => $linkToStore,
             'has_deadline'     => $hasDeadline,
             'from_date'        => $hasDeadline ? $request->from_date : null,
@@ -592,19 +626,45 @@ class ContentController extends Controller
             }
         }
         if ($request->has('documents')) {
+            $arraydoc = [];
             foreach ($request->documents as $doc) {
-                $arraydoc[] = $doc;
-                File::move(public_path('storage/files/tmp') . '/' . $doc, public_path('storage/files/content/' . $newid . '') . '/' . $doc);
+                $doc = basename($doc);
+                $tmpPath = public_path('storage/files/tmp/' . $doc);
+                if (!File::exists($tmpPath)) {
+                    $fallback = base_path('storage/files/tmp/' . $doc);
+                    if (File::exists($fallback)) {
+                        $tmpPath = $fallback;
+                    }
+                }
+                if (File::exists($tmpPath)) {
+                    $targetPath = $path . '/' . $doc;
+                    File::move($tmpPath, $targetPath);
+                    if (File::exists($targetPath)) {
+                        $arraydoc[] = $doc;
+                    }
+                }
             }
-            Content::where('id', $newid)
-                ->update([
-                    'file' => json_encode($arraydoc)
-                ]);
+            if (!empty($arraydoc)) {
+                Content::where('id', $newid)
+                    ->update([
+                        'file' => json_encode($arraydoc)
+                    ]);
+            }
         }
         if ($request->has('thumbnail')) {
             foreach ($request->thumbnail as $thumbnail) {
-                $arraythumbnail[] = $thumbnail;
-                File::move(public_path('storage/files/tmp/thumb') . '/' . $thumbnail, public_path('storage/files/content/' . $newid . '') . '/thumb.jpg');
+                $thumbnail = basename($thumbnail);
+                $thumbTmpPath = public_path('storage/files/tmp/thumb/' . $thumbnail);
+                if (!File::exists($thumbTmpPath)) {
+                    $fallback = base_path('storage/files/tmp/thumb/' . $thumbnail);
+                    if (File::exists($fallback)) {
+                        $thumbTmpPath = $fallback;
+                    }
+                }
+                if (File::exists($thumbTmpPath)) {
+                    $arraythumbnail[] = $thumbnail;
+                    File::move($thumbTmpPath, $path . '/thumb.jpg');
+                }
             }
         }
         if ($request->action == "publish") {
@@ -641,6 +701,15 @@ class ContentController extends Controller
     public function destroy(Content $content)
     {
         $content->delete();
+
+        if (request()->ajax() || request()->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'status'  => 200,
+                'message' => 'Content successfully deleted',
+            ]);
+        }
+
         return to_route('content.index')->with('success', 'Content successfully deleted');
     }
     public function edit(Content $content)
@@ -703,6 +772,7 @@ class ContentController extends Controller
                 }
             }],
             'learning_hours' => ['nullable'],
+            'status' => ['required', 'in:mandatory,non mandatory,optional'],
         ]);
 
         $path = public_path('storage/files/content/' . $request->id . '');
@@ -728,44 +798,73 @@ class ContentController extends Controller
             $linkToStore = null;
             $ytid = null;
             $arraythumbnail = [];
-            $targetDir = public_path('storage/files/content/' . $request->contentid);
+            $targetDir = public_path('storage/files/content/' . $targetContent->id);
 
             if ($request->has('documents')) {
-                if (!File::isDirectory($targetDir)) {
-                    File::makeDirectory($targetDir, 0755, true);
-                }
+                $newDocs = [];
+                $oldFiles = is_array($targetContent->file)
+                    ? $targetContent->file
+                    : (json_decode($targetContent->file ?? '[]', true) ?: []);
+
                 foreach ($request->documents as $doc) {
-                    $tmpPath    = public_path('storage/files/tmp/' . $doc);
-                    $targetPath = $targetDir . '/' . $doc;
+                    $doc = basename($doc);
+                    $tmpPath = public_path('storage/files/tmp/' . $doc);
+                    if (!File::exists($tmpPath)) {
+                        $fallback = base_path('storage/files/tmp/' . $doc);
+                        if (File::exists($fallback)) {
+                            $tmpPath = $fallback;
+                        }
+                    }
                     if (File::exists($tmpPath)) {
-                        $arraydoc[] = $doc;
+                        if (!File::isDirectory($targetDir)) {
+                            File::makeDirectory($targetDir, 0755, true);
+                        }
+                        $targetPath = $targetDir . '/' . $doc;
                         File::move($tmpPath, $targetPath);
+                        if (File::exists($targetPath)) {
+                            $newDocs[] = $doc;
+                        }
                     }
                 }
-                // replacecontent
-                $src = 'storage/files/content/' . $request->contentid . '/' . $request->replacecontent;
-                if (File::exists(public_path($src)) && !is_dir($src)) {
-                    File::delete(public_path($src));
+
+                if (!empty($newDocs)) {
+                    Content::where('id', $targetContent->id)
+                        ->update(['file' => json_encode($newDocs)]);
+                    $targetContent->file = json_encode($newDocs);
+
+                    foreach ($oldFiles as $oldFile) {
+                        if (!empty($oldFile) && !in_array($oldFile, $newDocs, true)) {
+                            $oldPath = $targetDir . '/' . basename($oldFile);
+                            if (File::exists($oldPath) && !is_dir($oldPath)) {
+                                File::delete($oldPath);
+                            }
+                        }
+                    }
                 }
-                Content::where('id', $request->contentid)
-                    ->update(['file' => json_encode($arraydoc)]);
             }
 
             if ($request->boolean('remove_thumbnail')) {
-                $targetThumb = public_path('storage/files/content/' . $request->contentid . '/thumb.jpg');
+                $targetThumb = $targetDir . '/thumb.jpg';
                 if (File::exists($targetThumb) && !is_dir($targetThumb)) {
                     File::delete($targetThumb);
                 }
             }
 
             if ($request->has('thumbnail')) {
-                if (!File::isDirectory($targetDir)) {
-                    File::makeDirectory($targetDir, 0755, true);
-                }
                 foreach ($request->thumbnail as $thumbnail) {
-                    $thumbTmpPath    = public_path('storage/files/tmp/thumb/' . $thumbnail);
-                    $thumbTargetPath = $targetDir . '/thumb.jpg';
+                    $thumbnail = basename($thumbnail);
+                    $thumbTmpPath = public_path('storage/files/tmp/thumb/' . $thumbnail);
+                    if (!File::exists($thumbTmpPath)) {
+                        $fallbackThumb = base_path('storage/files/tmp/thumb/' . $thumbnail);
+                        if (File::exists($fallbackThumb)) {
+                            $thumbTmpPath = $fallbackThumb;
+                        }
+                    }
                     if (File::exists($thumbTmpPath)) {
+                        if (!File::isDirectory($targetDir)) {
+                            File::makeDirectory($targetDir, 0755, true);
+                        }
+                        $thumbTargetPath = $targetDir . '/thumb.jpg';
                         $arraythumbnail[] = $thumbnail;
                         File::move($thumbTmpPath, $thumbTargetPath);
                     }
@@ -845,7 +944,8 @@ class ContentController extends Controller
                 'page_duration'    => $pageDuration,
                 'total_page'       => $totalPage,
                 'description'      => $request->description ?? ($targetContent->description ?? ''),
-                'playlistonly'     => $request->has('playlistonly') ? (($request->playlistonly === 'Y' || $request->playlistonly === 1 || $request->playlistonly === '1') ? 'Y' : 'N') : ($targetContent->playlistonly ?? 'N'),
+                'status'           => $request->status ?? ($targetContent->status ?? 'non mandatory'),
+                'playlistonly'     => $targetContent->playlistonly ?? 'N',
                 'active'           => $active,
                 'link'             => $linkToStore,
                 'has_deadline'     => $hasDeadlineUpdate,
@@ -1051,6 +1151,8 @@ class ContentController extends Controller
                 'is_expired'               => $content->isExpired(),
                 'exam'                     => $content->exam,
                 'exam_label'               => $content->exam === 'OK' ? 'With Exam (OK)' : 'Without Exam (NOT)',
+                'status'                   => $content->status ?? 'non mandatory',
+                'status_label'             => (strtolower($content->status ?? 'non mandatory') === 'mandatory') ? 'Mandatory' : 'Non-Mandatory',
                 'playlistonly'             => $content->playlistonly,
                 'playlist_label'           => $content->playlistonly === 'Y' ? 'Playlist Only' : 'General Content',
                 'playlists'                => $playlists,

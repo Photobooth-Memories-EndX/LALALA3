@@ -1,13 +1,30 @@
 @php
     $displayLearningProgress = $playlistUiState['learning_progress']
-        ?? $percentageProgressPlaylist;
-    $certificateEligible = (bool) ($playlistUiState['certificate_available']
+        ?? $completionRequirements['learning_progress']
+        ?? $percentageProgressPlaylist
+        ?? 0;
+    $certificateEligible = (bool) (
+        $playlistUiState['certificate_available']
+        ?? $completionRequirements['certificate_available']
         ?? $playlistCertificateEligibility?->eligible
-        ?? false);
-    $playlistAssessmentAvailable = (bool) ($playlistUiState['playlist_assessment_available']
-        ?? ($hasPlaylistAssessment && ($assessmentAccess || $playlistAssessmentDone)));
-    $contentAssessmentAvailable = (bool) ($playlistUiState['content_assessment_available']
-        ?? ($contentAssessmentTotal > 0));
+        ?? false
+    );
+    $playlistAssessmentAvailable = (bool) (
+        $playlistUiState['playlist_assessment_available']
+        ?? $completionRequirements['playlist_assessment_available']
+        ?? ($hasPlaylistAssessment && ($assessmentAccess || $playlistAssessmentDone))
+        ?? false
+    );
+    $contentAssessmentAvailable = (bool) (
+        $playlistUiState['content_assessment_available']
+        ?? $completionRequirements['content_assessment_available']
+        ?? ($contentAssessmentTotal > 0)
+        ?? false
+    );
+    $myTaskAvailable = (bool) (
+        $completionRequirements['my_task_available']
+        ?? false
+    );
 @endphp
 
 <section class="border-top pt-3 mt-4" aria-labelledby="playlistCompletionRequirementsTitle">
@@ -30,7 +47,7 @@
 
                 <span class="badge bg-blue-lt text-blue">
                     <i class="ti ti-chart-bar me-1" aria-hidden="true"></i>
-                    100%
+                    {{ (int) round($displayLearningProgress) }}%
                 </span>
             </div>
         </div>
@@ -84,11 +101,17 @@
                     My Task
                 </span>
 
-                {{-- UI-only placeholder. No My Task backend or query exists yet. --}}
-                <span class="badge bg-danger-lt text-danger">
-                    <i class="ti ti-circle-x me-1" aria-hidden="true"></i>
-                    Not Available
-                </span>
+                @if ($myTaskAvailable)
+                    <span class="badge bg-success-lt text-success">
+                        <i class="ti ti-circle-check me-1" aria-hidden="true"></i>
+                        Available
+                    </span>
+                @else
+                    <span class="badge bg-danger-lt text-danger">
+                        <i class="ti ti-circle-x me-1" aria-hidden="true"></i>
+                        Not Available
+                    </span>
+                @endif
             </div>
         </div>
 

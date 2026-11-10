@@ -450,7 +450,13 @@
         grid-template-columns: minmax(0, 1fr);
     }
 
-    .learning-hero-ds-stack {
+    .learning-hero-ds-stack,
+    .learning-hero-ds-panel > .d-flex.flex-column {
+        display: grid !important;
+        min-width: 0;
+        min-height: 0;
+        height: 100%;
+        gap: 8px !important;
         display: grid;
         min-width: 0;
         min-height: 0;

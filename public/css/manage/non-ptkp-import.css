@@ -1,0 +1,109 @@
+/* ==========================================================================
+   NON-PTKP IMPORT STYLES
+   Corporate OWL: Navy & Yellow/Gold, 3-Step Process
+   Unified with PTKP Import Design Standard
+   Light & Dark Mode Supported
+   ========================================================================== */
+
+@import url('ptkp-import.css');
+
+.manage-record-import-non-ptkp,
+.non-ptkp-import-page {
+    background-color: var(--tblr-bg-surface, #f8fafc);
+    min-height: 100vh;
+}
+
+[data-bs-theme="dark"] .manage-record-import-non-ptkp,
+[data-bs-theme="dark"] .non-ptkp-import-page,
+body.dark-mode .manage-record-import-non-ptkp,
+body.dark-mode .non-ptkp-import-page,
+body.theme-dark .manage-record-import-non-ptkp,
+body.theme-dark .non-ptkp-import-page {
+    background-color: var(--tblr-body-bg, #111827);
+    color: #e2e8f0;
+}
+
+.btn-back-non-ptkp,
+.btn-back {
+    color: #0c5b9e !important;
+    transition: all 0.2s ease;
+}
+
+.btn-back-non-ptkp:hover,
+.btn-back:hover {
+    color: #073a66 !important;
+    transform: translateX(-2px);
+}
+
+/* Backward compatibility aliases */
+.stepper-card {
+    background-color: #ffffff;
+    border-radius: 14px !important;
+    border: 1px solid #e2e8f0 !important;
+}
+
+.owl-stepper {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    position: relative;
+    width: 100%;
+    margin: 0;
+    padding: 0.75rem 1.5rem;
+}
+
+.stepper-item-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+    flex: 0 0 var(--owl-step-item-width, 140px);
+    width: var(--owl-step-item-width, 140px);
+    text-align: center;
+}
+
+.stepper-circle {
+    width: var(--owl-bubble-size, 40px);
+    height: var(--owl-bubble-size, 40px);
+    border-radius: 50%;
+    background-color: #ffffff;
+    border: 2.5px solid #cbd5e1;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 8px;
+    position: relative;
+    z-index: 3;
+    transition: all 0.25s ease-in-out;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.stepper-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    white-space: nowrap;
+    transition: color 0.25s ease;
+}
+
+.upload-dropzone {
+    border: 2px dashed #cbd5e1 !important;
+    border-radius: 16px;
+    background-color: #f8fafc;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+.upload-dropzone:hover,
+.upload-dropzone.dragover {
+    border-color: #1e3a8a !important;
+    background-color: #f0f9ff !important;
+}
+
+.stat-box {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}

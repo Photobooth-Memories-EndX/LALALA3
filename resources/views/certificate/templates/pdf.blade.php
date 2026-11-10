@@ -217,13 +217,24 @@
     $setting = $certificate->certificateSetting;
     $verifyUrl = $certificate->credential_url ?: route('certificate.verify', $certificate->credential_id);
 
-    $periodTarget = $certificate->certificate_type === 'content'
-        ? $setting->content
-        : ($certificate->certificate_type === 'playlist' ? $setting->trainingPlan : null);
+    $isOffline = in_array($certificate->certificate_type, ['training_offline', 'offline'], true);
+    $offlineTraining = $isOffline ? ($certificate->offlineTraining ?: ($setting ? $setting->offlineTraining : null)) : null;
 
-    $periodDate = ($periodTarget && $periodTarget->has_deadline && $periodTarget->from_date && $periodTarget->to_date)
-        ? $periodTarget->from_date->format('d M Y') . ' - ' . $periodTarget->to_date->format('d M Y')
-        : null;
+    if ($isOffline && $offlineTraining) {
+        $startStr = $offlineTraining->start_date ? \Illuminate\Support\Carbon::parse($offlineTraining->start_date)->format('d M Y') : null;
+        $finishStr = $offlineTraining->finish_date ? \Illuminate\Support\Carbon::parse($offlineTraining->finish_date)->format('d M Y') : $startStr;
+        $periodDate = ($startStr && $finishStr && $startStr !== $finishStr)
+            ? "{$startStr} - {$finishStr}"
+            : ($finishStr ?: $startStr);
+    } else {
+        $periodTarget = $certificate->certificate_type === 'content'
+            ? $setting?->content
+            : ($certificate->certificate_type === 'playlist' ? $setting?->trainingPlan : null);
+
+        $periodDate = ($periodTarget && $periodTarget->has_deadline && $periodTarget->from_date && $periodTarget->to_date)
+            ? $periodTarget->from_date->format('d M Y') . ' - ' . $periodTarget->to_date->format('d M Y')
+            : null;
+    }
 
     $qrCode = base64_encode(
         QrCode::format('svg')
@@ -234,7 +245,7 @@
     );
 
     $playlistContents = $certificate->certificate_type === 'playlist'
-        ? $setting->playlistContents()->values()
+        ? $setting?->playlistContents()->values() ?? collect()
         : collect();
 
     $contentChunks = $playlistContents->isNotEmpty()
@@ -271,7 +282,7 @@
             <div class="details-row">
                 <div class="details-label">Certificate Type</div>
                 <div class="details-separator">:</div>
-                <div class="details-value">{{ ucfirst($certificate->certificate_type) }}</div>
+                <div class="details-value">{{ str_replace('_', ' ', ucwords($certificate->certificate_type, '_')) }}</div>
             </div>
 
             <div class="details-row">
@@ -280,7 +291,7 @@
                 <div class="details-value">{{ $certificate->title }}</div>
             </div>
 
-            @if($setting->assessment)
+            @if($setting && $setting->assessment)
                 <div class="details-row">
                     <div class="details-label">Assessment</div>
                     <div class="details-separator">:</div>
@@ -296,7 +307,7 @@
                 </div>
             @endif
 
-            @if($setting->is_assessment_required || $certificate->certificate_type === 'global')
+            @if($setting && ($setting->is_assessment_required || $certificate->certificate_type === 'global'))
                 <div class="details-row">
                     <div class="details-label">Minimum Score</div>
                     <div class="details-separator">:</div>

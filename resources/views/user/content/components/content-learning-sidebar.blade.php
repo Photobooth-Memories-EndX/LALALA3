@@ -28,6 +28,11 @@
         'completed' => 'Completed',
     ];
     $learningStatusLabel = $learningStatusLabels[$content_user->learning_status ?? ''] ?? 'In Progress';
+
+    if (!isset($totalRecognizedDuration)) {
+        $totalRecognizedDuration = app(\App\Services\Learning\LearningRecordRecognizedDurationService::class)
+            ->resolveGlobalContentRecognizedDuration(auth()->id() ?? 0, $content);
+    }
 @endphp
 
 <div class="d-flex flex-column gap-3 content-sidebar-stack">
@@ -88,6 +93,17 @@
 
             <div class="text-start mb-2">
                 <span class="text-muted small d-block">
+                    Total Recognized Duration
+                </span>
+
+                <span class="fw-semibold text-dark d-block">
+                    <i class="ti ti-history me-1 text-muted"></i>
+                    <span id="contentTotalRecognizedDuration">{{ $totalRecognizedDuration }}</span>
+                </span>
+            </div>
+
+            <div class="text-start mb-2">
+                <span class="text-muted small d-block">
                     Learning Hours
                 </span>
 
@@ -110,6 +126,51 @@
 
         </div>
     </div>
+
+    {{-- TASK CARD (jika content memiliki task) --}}
+    @php
+        $sidebarContentTasks = \App\Models\Task::where('parent_type', 'content')
+            ->where('content_id', $content->id)
+            ->published()
+            ->get();
+        $sidebarTaskCount = $sidebarContentTasks->count();
+        $isContentCompleted = $progress >= 100 || ($content_user->learning_status ?? '') === 'completed';
+    @endphp
+
+    @if ($sidebarTaskCount > 0)
+        <div class="card border-0 shadow-sm rounded-4 glass-surface content-sidebar-card content-task-card">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="badge bg-purple-lt text-purple px-2 py-1 rounded-pill small fw-bold">
+                        <i class="ti ti-list-check me-1"></i> TASK
+                    </span>
+                    <span class="small text-muted">{{ $sidebarTaskCount }} {{ \Illuminate\Support\Str::plural('Task', $sidebarTaskCount) }}</span>
+                </div>
+                <div class="text-muted small mb-3">
+                    @if ($isContentCompleted)
+                        Content completed. Start your task now.
+                    @else
+                        Complete 100% of the content to unlock Task.
+                    @endif
+                </div>
+
+                @if ($isContentCompleted)
+                    <a href="{{ route('user.learning.dashboard', ['learning_tab' => 'my-task', 'my_task_parent' => 'content:' . $content->id]) }}"
+                       class="btn btn-primary w-100 rounded-pill shadow-sm">
+                        <i class="ti ti-list-check me-1"></i> Open Task
+                    </a>
+                @else
+                    <button type="button"
+                            class="btn btn-secondary disabled w-100 rounded-pill opacity-75"
+                            disabled
+                            style="cursor: not-allowed;"
+                            title="Complete 100% of the content to unlock Task.">
+                        <i class="ti ti-lock me-1"></i> Task Locked
+                    </button>
+                @endif
+            </div>
+        </div>
+    @endif
 
     @php
         $assessmentObj = $assessment ?? $assesment ?? null;

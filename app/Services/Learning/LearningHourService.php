@@ -54,6 +54,28 @@ class LearningHourService
         return (float) (ceil($seconds / self::BUCKET_SECONDS) * self::BUCKET_HOURS);
     }
 
+    /**
+     * Calculate Total Recognized Duration in seconds.
+     * Formula: min(actual_watch_seconds, content_duration_seconds * 2)
+     */
+    public function calculateRecognizedDuration(int $actualWatchSeconds, int $contentDurationSeconds): int
+    {
+        $actualWatchSeconds = max(0, $actualWatchSeconds);
+        if ($contentDurationSeconds > 0) {
+            return min($actualWatchSeconds, $contentDurationSeconds * 2);
+        }
+
+        return $actualWatchSeconds;
+    }
+
+    /**
+     * Format recognized duration seconds to HH:MM:SS.
+     */
+    public function formatRecognizedDuration(int $seconds): string
+    {
+        return \App\Support\DurationFormatter::fromSeconds($seconds);
+    }
+
     private function calculateTotal(Collection $durations): float
     {
         return (float) $durations->sum(
@@ -149,5 +171,21 @@ class LearningHourService
     private function userId(User|int $user): int
     {
         return $user instanceof User ? (int) $user->getKey() : $user;
+    }
+
+    /**
+     * Canonical combined total learning hours (KP OWL Online + Non-KP OWL Offline).
+     */
+    public function getCombinedLearningHours(User|int $user, ?string $userEmpId = null): float
+    {
+        $userId = $this->userId($user);
+        if ($userEmpId === null && $user instanceof User) {
+            $userEmpId = $user->id_emp;
+        }
+
+        $kpOwlHours = (float) app(LearningRecordLearningHourService::class)->getOnlineLearningHours($userId);
+        $nonKpOwlHours = (float) app(UserRecordOfflineService::class)->getTotalLearningHours($userId, $userEmpId);
+
+        return round($kpOwlHours + $nonKpOwlHours, 2);
     }
 }

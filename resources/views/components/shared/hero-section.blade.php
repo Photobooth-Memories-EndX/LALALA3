@@ -1,9 +1,15 @@
 @php
     $user = $user ?? auth()->user();
-    $ongoingCourseVal = (int) ($ongoingCourseVal ?? 0);
-    $completedCourseVal = (int) ($completedCourseVal ?? 0);
+    $owlCourseCompleted = (int) ($owlCourseCompleted ?? ($completedCourseVal ?? 0));
+    $nonOwlCourseCompleted = (int) ($nonOwlCourseCompleted ?? 0);
+    $totalCompleted = $owlCourseCompleted + $nonOwlCourseCompleted;
+    $completedCourseVal = (int) ($completedCourseVal ?? $totalCompleted);
+    if ($completedCourseVal === 0 && $totalCompleted > 0) {
+        $completedCourseVal = $totalCompleted;
+    }
+    $ongoingCourseVal = (int) ($totalOngoing ?? ($ongoingCourseVal ?? 0));
     $totalCourseVal = (int) ($totalCourseVal ?? ($ongoingCourseVal + $completedCourseVal));
-    $learningHours = $learningHours ?? 0;
+    $learningHours = $totalLearningHours ?? ($learningHours ?? 0);
 
     $totalDonut = max($totalCourseVal, 1);
     $completedPercent = min(100, max(0, round(($completedCourseVal / $totalDonut) * 100, 2)));
@@ -135,17 +141,17 @@
                     <div class="shared-hero-summary-list">
                         <div class="shared-hero-summary-row" style="cursor: default;">
                             <div class="shared-hero-summary-meta">
-                                <span class="shared-hero-stat-dot total"></span>
-                                <span class="shared-hero-summary-label" style="cursor: default;">Total Course</span>
+                                <span class="shared-hero-stat-dot completed"></span>
+                                <span class="shared-hero-summary-label" style="cursor: default;">OWL Course Completed</span>
                             </div>
-                            <div class="shared-hero-summary-value">{{ $totalCourseVal }}</div>
+                            <div class="shared-hero-summary-value">{{ $owlCourseCompleted }}</div>
                         </div>
                         <div class="shared-hero-summary-row" style="cursor: default;">
                             <div class="shared-hero-summary-meta">
-                                <span class="shared-hero-stat-dot completed"></span>
-                                <span class="shared-hero-summary-label" style="cursor: default;">Completed</span>
+                                <span class="shared-hero-stat-dot non-owl"></span>
+                                <span class="shared-hero-summary-label" style="cursor: default;">Non-OWL Course Completed</span>
                             </div>
-                            <div class="shared-hero-summary-value">{{ $completedCourseVal }}</div>
+                            <div class="shared-hero-summary-value">{{ $nonOwlCourseCompleted }}</div>
                         </div>
                         <a href="{{ url('/my-learning') }}"
                            class="shared-hero-summary-row text-decoration-none d-flex align-items-center justify-content-between w-100"

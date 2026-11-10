@@ -98,6 +98,11 @@
         var value = document.getElementById('contentProgressValue');
         var bar = document.getElementById('contentProgressBar');
         var statusBadge = document.getElementById('contentProgressStatus');
+        var recognizedDurationEl = document.getElementById('contentTotalRecognizedDuration');
+
+        if (recognizedDurationEl && data.total_recognized_duration) {
+            recognizedDurationEl.textContent = data.total_recognized_duration;
+        }
 
         if (value) {
             value.textContent = progress + '%';

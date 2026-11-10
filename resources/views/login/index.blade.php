@@ -106,7 +106,7 @@
 
                     <form action="{{ route('authuser') }}" id="form-authentication" method="post" autocomplete="off" novalidate>
                         @csrf
-                        <input type="hidden" name="submit_type" id="submit-type">
+                        <input type="hidden" name="submit_type" id="submit-type" value="login">
                         
                         <div class="mb-3">
                             <label for="id-emp" class="form-label fw-medium text-secondary">Employee ID</label>
@@ -162,7 +162,7 @@
                             @else
                                 d-block
                             @endif" id="button-submit-field">
-                                <button type="button" onclick="submitFormAuthentication('login')" class="btn btn-primary btn-lg w-50 py-2"><i class="fas fa-sign-in-alt me-2"></i>Sign in</button>
+                                <button type="submit" class="btn btn-primary btn-lg w-50 py-2"><i class="fas fa-sign-in-alt me-2"></i>Sign in</button>
                                 <button type="button" onclick="submitFormAuthentication('assessment')" class="btn btn-warning btn-lg w-50 py-2"><i class="fas fa-clipboard-list me-2"></i>Assessment</button>
                             </div>
                             <div class="d-flex gap-3 @if (session()->has('submit-type') && session('submit-type') == 'assessment')

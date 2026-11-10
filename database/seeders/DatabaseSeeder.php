@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\Classification;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -15,11 +14,17 @@ class DatabaseSeeder extends Seeder
      */
     public function run()
     {
-        // \App\Models\User::factory(10)->create();
+        $this->call(UserSeeder::class);
         $this->call(PageSeeder::class);
-        // $this->call(UserSeeder::class);
         $this->call(RoleAccessPermissionSeeder::class);
         $this->call(LearningHoursPermissionSeeder::class);
+        $this->call(RecordPermissionSeeder::class);
+        $this->call(ApproverRoleSeeder::class);
+        // $this->call(OfflineTrainingDemoSeeder::class);
+        // $this->call(OfflineTrainingOptionSeeder::class);
+        $this->call(ClassificationSeeder::class);
+        $this->call(ClassificationHistorySeeder::class);
+
         $data = [
             ['classification_name' => 'Leadership'],
             ['classification_name' => 'Basic mindset'],
@@ -32,10 +37,9 @@ class DatabaseSeeder extends Seeder
             ['classification_name' => 'Technology'],
             ['classification_name' => 'Other']
         ];
-        // $classification = new Classification([
-        //     'classification_name' => 'Leadership'
-        // ]);
-        // $classification->save();
-        Classification::insert($data);
+
+        foreach ($data as $item) {
+            Classification::firstOrCreate($item);
+        }
     }
 }

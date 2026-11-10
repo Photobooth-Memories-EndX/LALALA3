@@ -99,7 +99,32 @@ class ContentFileHandler {
                     }
                 },
                 init: function () {
-                    this.on("error", function (file, message) {
+                    const dz = this;
+
+                    dz.on("maxfilesexceeded", function (file) {
+                        const existing = dz.getAcceptedFiles().concat(dz.getUploadingFiles(), dz.getQueuedFiles());
+                        existing.forEach(f => {
+                            if (f !== file) {
+                                dz.removeFile(f);
+                            }
+                        });
+                    });
+
+                    dz.on("uploadprogress", function (file, progress) {
+                        if (file && file.previewElement) {
+                            let badge = file.previewElement.querySelector('.dz-upload-badge');
+                            if (!badge) {
+                                badge = document.createElement('span');
+                                badge.className = 'badge bg-blue-lt ms-auto dz-upload-badge';
+                                file.previewElement.appendChild(badge);
+                            }
+                            badge.className = 'badge bg-blue-lt ms-auto dz-upload-badge';
+                            badge.textContent = Math.round(progress) + '%';
+                        }
+                        self.updateSubmitButtons(Math.round(progress));
+                    });
+
+                    dz.on("error", function (file, message) {
                         if (typeof message === 'object' && message !== null) {
                             message = message.error || message.message || Object.values(message.errors || {})[0]?.[0] || 'Upload error';
                         }
@@ -108,20 +133,69 @@ class ContentFileHandler {
                                 self.showError(message);
                             }
                         }
-                        self.clearSelection(this, file);
+                        if (file && file.previewElement) {
+                            let badge = file.previewElement.querySelector('.dz-upload-badge');
+                            if (!badge) {
+                                badge = document.createElement('span');
+                                file.previewElement.appendChild(badge);
+                            }
+                            badge.className = 'badge bg-danger-lt ms-auto dz-upload-badge';
+                            badge.innerHTML = '<i class="ti ti-x me-1"></i> Failed';
+                        }
+                        self.clearSelection(dz, file);
+                        self.updateSubmitButtons();
                     });
-                    this.on("addedfile", function (file) {
+
+                    dz.on("addedfile", function (file) {
                         if (file.rejected || file.status === 'error') return;
                         self.handleVideoUpload(file);
+                        self.updateSubmitButtons();
                     });
-                },
-                successmultiple: function (data, response) {
-                    if (response && response.name) {
-                        $.each(response['name'], function (key, val) {
-                            $(formElement).append('<input type="hidden" name="documents[]" value="' + val + '" required>');
-                            self.uploadedDocumentMap[data[key].name] = val;
-                        });
-                    }
+
+                    const handleDocSuccess = function (data, response) {
+                        let res = response;
+                        if (typeof res === 'string') {
+                            try { res = JSON.parse(res); } catch (e) {}
+                        }
+                        const fileList = Array.isArray(data) ? data : [data];
+                        if (res && res.name) {
+                            const names = Array.isArray(res.name) ? res.name : [res.name];
+                            names.forEach(function (val, idx) {
+                                if (!$(formElement).find(`input[name="documents[]"][value="${val}"]`).length) {
+                                    $(formElement).append('<input type="hidden" name="documents[]" value="' + val + '" required>');
+                                }
+                                const orig = fileList[idx] ? fileList[idx].name : (res.original_name?.[idx] || val);
+                                self.uploadedDocumentMap[orig] = val;
+
+                                if (fileList[idx] && fileList[idx].previewElement) {
+                                    let badge = fileList[idx].previewElement.querySelector('.dz-upload-badge');
+                                    if (!badge) {
+                                        badge = document.createElement('span');
+                                        fileList[idx].previewElement.appendChild(badge);
+                                    }
+                                    badge.className = 'badge bg-success-lt ms-auto dz-upload-badge';
+                                    badge.innerHTML = '<i class="ti ti-check me-1"></i> Ready';
+                                }
+                            });
+                        }
+                        self.updateSubmitButtons();
+                    };
+
+                    dz.on("success", function (file, response) {
+                        handleDocSuccess(file, response);
+                    });
+
+                    dz.on("successmultiple", function (files, response) {
+                        handleDocSuccess(files, response);
+                    });
+
+                    dz.on("complete", function () {
+                        self.updateSubmitButtons();
+                    });
+
+                    dz.on("completemultiple", function () {
+                        self.updateSubmitButtons();
+                    });
                 },
                 removedfile: function (file) {
                     if (file.previewElement) {
@@ -136,6 +210,7 @@ class ContentFileHandler {
                         });
                         $(formElement).find('input[name="documents[]"][value="' + name + '"]').remove();
                     }
+                    self.updateSubmitButtons();
                 }
             });
         }
@@ -168,26 +243,102 @@ class ContentFileHandler {
                     }
                 },
                 init: function () {
-                    this.on("error", function (file, message) {
+                    const dz = this;
+
+                    dz.on("maxfilesexceeded", function (file) {
+                        const existing = dz.getAcceptedFiles().concat(dz.getUploadingFiles(), dz.getQueuedFiles());
+                        existing.forEach(f => {
+                            if (f !== file) {
+                                dz.removeFile(f);
+                            }
+                        });
+                    });
+
+                    dz.on("uploadprogress", function (file, progress) {
+                        if (file && file.previewElement) {
+                            let badge = file.previewElement.querySelector('.dz-upload-badge');
+                            if (!badge) {
+                                badge = document.createElement('span');
+                                badge.className = 'badge bg-blue-lt ms-auto dz-upload-badge';
+                                file.previewElement.appendChild(badge);
+                            }
+                            badge.className = 'badge bg-blue-lt ms-auto dz-upload-badge';
+                            badge.textContent = Math.round(progress) + '%';
+                        }
+                        self.updateSubmitButtons(Math.round(progress));
+                    });
+
+                    dz.on("error", function (file, message) {
                         if (typeof message === 'string' && message.length > 0) {
                             if (!message.includes('code 0') && !message.includes('responded with 0')) {
                                 self.showError(message);
                             }
                         }
-                        self.clearSelection(this, file);
-                    });
-                },
-                successmultiple: function (data, response) {
-                    if (response && response.name) {
-                        $.each(response['name'], function (key, val) {
-                            $(formElement).append('<input type="hidden" name="thumbnail[]" value="' + val + '" required>');
-                            self.uploadedThumbnailMap[data[key].name] = val;
-                        });
-                        const removeThumbInput = document.getElementById('remove_thumbnail');
-                        if (removeThumbInput) {
-                            removeThumbInput.value = '0';
+                        if (file && file.previewElement) {
+                            let badge = file.previewElement.querySelector('.dz-upload-badge');
+                            if (!badge) {
+                                badge = document.createElement('span');
+                                file.previewElement.appendChild(badge);
+                            }
+                            badge.className = 'badge bg-danger-lt ms-auto dz-upload-badge';
+                            badge.innerHTML = '<i class="ti ti-x me-1"></i> Failed';
                         }
-                    }
+                        self.clearSelection(dz, file);
+                        self.updateSubmitButtons();
+                    });
+
+                    dz.on("addedfile", function () {
+                        self.updateSubmitButtons();
+                    });
+
+                    const handleThumbSuccess = function (data, response) {
+                        let res = response;
+                        if (typeof res === 'string') {
+                            try { res = JSON.parse(res); } catch (e) {}
+                        }
+                        const fileList = Array.isArray(data) ? data : [data];
+                        if (res && res.name) {
+                            const names = Array.isArray(res.name) ? res.name : [res.name];
+                            names.forEach(function (val, idx) {
+                                if (!$(formElement).find(`input[name="thumbnail[]"][value="${val}"]`).length) {
+                                    $(formElement).append('<input type="hidden" name="thumbnail[]" value="' + val + '" required>');
+                                }
+                                const orig = fileList[idx] ? fileList[idx].name : (res.original_name?.[idx] || val);
+                                self.uploadedThumbnailMap[orig] = val;
+
+                                if (fileList[idx] && fileList[idx].previewElement) {
+                                    let badge = fileList[idx].previewElement.querySelector('.dz-upload-badge');
+                                    if (!badge) {
+                                        badge = document.createElement('span');
+                                        fileList[idx].previewElement.appendChild(badge);
+                                    }
+                                    badge.className = 'badge bg-success-lt ms-auto dz-upload-badge';
+                                    badge.innerHTML = '<i class="ti ti-check me-1"></i> Ready';
+                                }
+                            });
+                            const removeThumbInput = document.getElementById('remove_thumbnail');
+                            if (removeThumbInput) {
+                                removeThumbInput.value = '0';
+                            }
+                        }
+                        self.updateSubmitButtons();
+                    };
+
+                    dz.on("success", function (file, response) {
+                        handleThumbSuccess(file, response);
+                    });
+
+                    dz.on("successmultiple", function (files, response) {
+                        handleThumbSuccess(files, response);
+                    });
+
+                    dz.on("complete", function () {
+                        self.updateSubmitButtons();
+                    });
+
+                    dz.on("completemultiple", function () {
+                        self.updateSubmitButtons();
+                    });
                 },
                 removedfile: function (file) {
                     if (file.previewElement) {
@@ -202,6 +353,19 @@ class ContentFileHandler {
                         });
                         $(formElement).find('input[name="thumbnail[]"][value="' + name + '"]').remove();
                     }
+                    self.updateSubmitButtons();
+                }
+            });
+        }
+
+        // Intercept premature form submission while files are uploading
+        if (formElement) {
+            formElement.addEventListener('submit', function (e) {
+                if (self.isUploading()) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    self.showError('File upload is still in progress. Please wait until upload completes before saving.');
+                    return false;
                 }
             });
         }
@@ -250,6 +414,9 @@ class ContentFileHandler {
 
         if (this.docDropzone) {
             this.docDropzone.options.acceptedFiles = acceptedStr;
+            if (this.docDropzone.hiddenFileInput) {
+                this.docDropzone.hiddenFileInput.setAttribute('accept', acceptedStr);
+            }
         }
 
         // Update help text UI if element exists
@@ -443,6 +610,48 @@ class ContentFileHandler {
             videoDurationInput.dispatchEvent(new Event('input', { bubbles: true }));
             videoDurationInput.dispatchEvent(new Event('change', { bubbles: true }));
         }
+    }
+
+    /**
+     * Check if any files are currently uploading in document or thumbnail dropzones.
+     */
+    isUploading() {
+        const docUploading = this.docDropzone ? this.docDropzone.getUploadingFiles().length > 0 : false;
+        const thumbUploading = this.thumbDropzone ? this.thumbDropzone.getUploadingFiles().length > 0 : false;
+        return docUploading || thumbUploading;
+    }
+
+    /**
+     * Lock or unlock submit buttons to prevent premature submission during file upload.
+     */
+    updateSubmitButtons(progress) {
+        const formElement = document.getElementById(this.formId) || document.querySelector('form');
+        const internalButtons = formElement ? Array.from(formElement.querySelectorAll('button[type="submit"], input[type="submit"]')) : [];
+        const externalButtons = Array.from(document.querySelectorAll(`button[type="submit"][form="${this.formId}"]`));
+        const allButtons = Array.from(new Set(internalButtons.concat(externalButtons)));
+
+        const uploading = this.isUploading();
+
+        allButtons.forEach(btn => {
+            if (uploading) {
+                if (!btn.dataset.originalHtml) {
+                    btn.dataset.originalHtml = btn.innerHTML;
+                }
+                btn.disabled = true;
+                btn.classList.add('disabled');
+                const progText = (typeof progress === 'number' && progress > 0 && progress < 100)
+                    ? `Uploading (${progress}%)...`
+                    : 'Uploading... Please wait';
+                btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> ${progText}`;
+            } else {
+                if (btn.dataset.originalHtml) {
+                    btn.innerHTML = btn.dataset.originalHtml;
+                    delete btn.dataset.originalHtml;
+                }
+                btn.disabled = false;
+                btn.classList.remove('disabled');
+            }
+        });
     }
 
     /**

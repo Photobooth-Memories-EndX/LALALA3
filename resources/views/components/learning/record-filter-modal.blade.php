@@ -32,7 +32,7 @@
                     <div class="learning-filter-group">
                         <div class="fw-semibold text-dark small mb-2">Learning Program</div>
                         <div class="d-flex flex-wrap align-items-center gap-3">
-                            @foreach (['all' => 'All Learning', 'mandatory' => 'Mandatory Learning', 'optional' => 'Optional Learning'] as $value => $label)
+                            @foreach (['all' => 'All Learning', 'mandatory' => 'Mandatory Learning', 'optional' => 'Non-Mandatory Learning'] as $value => $label)
                                 <label class="form-check mb-0">
                                     <input class="form-check-input" type="radio" name="recordModalProgram" value="{{ $value }}" data-record-modal-filter {{ $value === 'all' ? 'checked' : '' }}>
                                     <span class="form-check-label">{{ $label }}</span>

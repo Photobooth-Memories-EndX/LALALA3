@@ -30,7 +30,7 @@
 
 @if ($certificates->count())
     <div class="table-responsive certificate-table-wrap">
-        <table class="table table-vcenter table-hover card-table mb-0 certificate-table" id="certificateTable">
+        <table class="table table-vcenter table-hover card-table mb-0 certificate-table my-learning-certificate-table" id="certificateTable">
             <thead>
                 <tr>
                     <th class="certificate-col-no text-center">

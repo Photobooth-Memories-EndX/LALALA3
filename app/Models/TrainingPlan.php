@@ -10,6 +10,7 @@ use Illuminate\Support\Str;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
 
+
 class TrainingPlan extends Model
 {
     use HasFactory;
@@ -27,7 +28,10 @@ class TrainingPlan extends Model
         'from_date'              => 'date',
         'to_date'                => 'date',
     ];
-
+public function tasks()
+{
+    return $this->hasMany(Task::class, 'training_plan_id');
+}
     public function getThumbnailUrlAttribute(): ?string
     {
         if (!$this->thumbnail) {

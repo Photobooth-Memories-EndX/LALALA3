@@ -42,17 +42,7 @@
                                         ->sortByDesc('score')
                                         ->first();
 
-                                    if (!$finalResult) {
-                                        $finalResult = $userScores
-                                            ->filter(fn ($s) => $s->score !== null)
-                                            ->sortByDesc('score')
-                                            ->first();
-                                    }
-
                                     $userAttempts = $userScores->where('final', 1)->count();
-                                    if ($userAttempts === 0 && $userScores->count() > 0) {
-                                        $userAttempts = $userScores->count();
-                                    }
                                 } else {
                                     $userAttempts = 0;
                                 }

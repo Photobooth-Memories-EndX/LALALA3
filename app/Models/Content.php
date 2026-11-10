@@ -42,6 +42,14 @@ class Content extends Model
     ];
 
     /**
+     * Official content duration converted to total seconds.
+     */
+    public function getDurationInSecondsAttribute(): int
+    {
+        return \App\Support\DurationFormatter::toSeconds($this->duration) ?? 0;
+    }
+
+    /**
      * Alias accessor for learning_hours (singular).
      */
     public function getLearningHourAttribute(): ?float
@@ -154,6 +162,27 @@ class Content extends Model
     public function isUnpublished(): bool
     {
         return $this->active !== 'Active';
+    }
+
+    public function isMandatory(): bool
+    {
+        return strtolower(trim((string) $this->status)) === 'mandatory';
+    }
+
+    public function isOptional(): bool
+    {
+        return in_array(strtolower(trim((string) ($this->status ?? 'non mandatory'))), ['non mandatory', 'non-mandatory', 'optional'], true);
+    }
+
+    public static function mapRequirement(?string $status): string
+    {
+        $statusRaw = strtolower(trim((string) ($status ?? 'non mandatory')));
+        return ($statusRaw === 'mandatory') ? 'Mandatory' : 'Non-Mandatory';
+    }
+
+    public function getRequirementAttribute(): string
+    {
+        return self::mapRequirement($this->status);
     }
 
     public function isAccessibleByDeadline(): bool

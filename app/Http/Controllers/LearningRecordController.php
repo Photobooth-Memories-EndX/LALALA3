@@ -5,12 +5,16 @@ namespace App\Http\Controllers;
 use App\Exports\CertificateExport;
 use App\Models\Certificate;
 use App\Models\CertificateSetting;
+use App\Models\Content;
 use App\Models\ContentUser;
 use App\Models\TrainingPlan;
 use App\Services\CertificateEligibilityService;
 use App\Services\Learning\CompletedPlaylistService;
 use App\Services\Learning\LearningHourService;
 use App\Services\Learning\LearningRecordLearningHourService;
+use App\Services\Record\RecordOfflineQueryService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use App\Support\DurationFormatter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
@@ -47,6 +51,11 @@ class LearningRecordController extends Controller
         return $this->recordLearningHourService ?? app(LearningRecordLearningHourService::class);
     }
 
+    private function recognizedDurationService(): \App\Services\Learning\LearningRecordRecognizedDurationService
+    {
+        return app(\App\Services\Learning\LearningRecordRecognizedDurationService::class);
+    }
+
     /**
      * HTML fragment tab "record" pada My Learning dashboard.
      * Dipanggil dari LearningController::dashboardPartial (routing only).
@@ -56,40 +65,16 @@ class LearningRecordController extends Controller
         $userId = (int) Auth::id();
 
         $completedPlaylists = $this->completedPlaylistService->forLearningRecord($userId);
-        $completedContents  = $this->getCompletedContents($userId);
         $cert               = $this->certificateContext($eligibilityService);
-        $playlistContents   = $this->playlistContentsData($completedPlaylists);
-        $firstContentSlugs  = $playlistContents->map(fn ($items) => $items->first()?->slug);
-        $playlistStartDates = \App\Models\PlaylistContentUser::where('user_id', $userId)
-            ->whereIn('trainingplan_id', $completedPlaylists->pluck('id'))
-            ->groupBy('trainingplan_id')
-            ->selectRaw('trainingplan_id, MIN(created_at) as min_created')
-            ->pluck('min_created', 'trainingplan_id');
-        $playlistActualHours = $this->recordLhService()->calculatePlaylistsBatch($userId, $completedPlaylists);
-
-        // Seluruh baris (Content + Playlist) dinormalisasi lalu diurutkan
-        // berdasarkan record/completion terbaru (finish_date desc).
-        // Murni pengurutan Collection — query dan business logic tidak berubah.
-        $allRows = $this->mergeLearningRecord(
-            $this->buildContentRows($completedContents, $cert),
-            $this->buildPlaylistRows(
-                $completedPlaylists,
-                $cert,
-                // Slug content pertama tiap playlist — untuk link badge Playlist
-                // (route playlist.user.view butuh pasangan slug playlist + content).
-                $firstContentSlugs,
-                $completedContents,
-                $playlistContents,
-                $playlistStartDates,
-                $playlistActualHours
-            )
-        )->sortByDesc(fn (array $row) => (string) ($row['finish_date'] ?? ''))->values();
+        $allRows = $this->getRawOnlineRows($userId, $eligibilityService, $completedPlaylists, $cert);
         $rows = $this->applyRecordFilters($allRows);
 
-        $recordStats = [
-            'courseCompleted'    => $rows->where('row_kind', 'content')->count(),
-            'playlistCompleted'  => $rows->where('row_kind', 'playlist')->count(),
-            'totalLearningHours' => round((float) $rows->sum(fn (array $r) => (float) ($r['learning_hour_value'] ?? 0)), 2),
+        $recordMode = (string) request('record_mode', 'online');
+        $recordStats = $this->calculateHeroStats($recordMode, $userId, Auth::user()?->id_emp, $eligibilityService, $rows);
+        $legacyStats = [
+            'courseCompleted'    => $recordStats['courseCompleted'] ?? 0,
+            'playlistCompleted'  => $recordStats['playlistCompleted'] ?? 0,
+            'totalLearningHours' => $recordStats['totalLearningHours'] ?? 0,
         ];
 
         return view('user.learning.dashboard-partials.record', [
@@ -97,35 +82,192 @@ class LearningRecordController extends Controller
             // Section prioritas paling atas: certificate yang sudah memenuhi syarat.
             'certificateReady' => $this->certificateReady($cert, $completedPlaylists),
             'filterOptions'    => $this->recordFilterOptions($userId, $completedPlaylists, $allRows),
-            'recordStats'      => $recordStats,
+            'recordMode'       => $recordStats['record_mode'] ?? 'online',
+            'recordStats'      => array_merge($legacyStats, $recordStats),
+            'stats'            => array_merge($legacyStats, $recordStats),
         ]);
     }
 
     /**
-     * Apply the GET-backed Learning Record filters before Blade renders rows.
+     * Calculate three distinct sets of hero card metrics depending on the active record_mode parameter:
+     *  - 'online' / 'owl' (KP OWL): total_hours, content_completed, playlist_completed
+     *  - 'offline' / 'non_owl' (Non-KP OWL): total_hours, internal_count, external_count
+     *  - 'all' (All Records): total_hours, owl_completed, non_owl_completed
      */
-    private function applyRecordFilters(Collection $rows): Collection
+    public function calculateHeroStats(
+        string $recordMode = 'online',
+        ?int $userId = null,
+        ?string $userEmpId = null,
+        ?CertificateEligibilityService $eligibilityService = null,
+        ?Collection $onlineRows = null,
+        ?Collection $offlineRows = null
+    ): array {
+        $userId = $userId ?? (int) Auth::id();
+        if ($userEmpId === null) {
+            $userEmpId = Auth::id() === $userId
+                ? Auth::user()?->id_emp
+                : \App\Models\User::where('id', $userId)->value('id_emp');
+        }
+
+        $normalizedMode = match (strtolower(trim($recordMode))) {
+            'offline', 'non_owl', 'non-owl' => 'offline',
+            'all'                           => 'all',
+            default                         => 'online',
+        };
+
+        if ($normalizedMode === 'offline') {
+            $offlineService = app(\App\Services\Learning\UserRecordOfflineService::class);
+            $rawOffline = $offlineService->queryForUser($userId, $userEmpId)
+                ->get()
+                ->filter(fn (\App\Models\OfflineTrainingUser $otu) => $otu->training !== null);
+
+            $totalHours = round((float) $rawOffline->sum(function (\App\Models\OfflineTrainingUser $otu) {
+                return (float) ($otu->learning_hours ?? $otu->training?->learning_hours ?? 0);
+            }), 2);
+
+            $internalCount = $rawOffline->filter(function (\App\Models\OfflineTrainingUser $otu) {
+                $provider = strtolower(trim((string) ($otu->training?->provider ?? '')));
+                return $provider === 'internal' || str_starts_with($provider, 'internal');
+            })->count();
+
+            $externalCount = $rawOffline->filter(function (\App\Models\OfflineTrainingUser $otu) {
+                $provider = strtolower(trim((string) ($otu->training?->provider ?? '')));
+                return $provider === 'external' || str_starts_with($provider, 'external');
+            })->count();
+
+            return [
+                'record_mode'        => 'offline',
+                'total_hours'        => $totalHours,
+                'internal_count'     => $internalCount,
+                'external_count'     => $externalCount,
+                'totalLearningHours' => $totalHours,
+                'courseCompleted'    => $rawOffline->count(),
+                'playlistCompleted'  => 0,
+            ];
+        }
+
+        if ($normalizedMode === 'all') {
+            $offlineService = app(\App\Services\Learning\UserRecordOfflineService::class);
+            $rawOffline = $offlineService->queryForUser($userId, $userEmpId)
+                ->get()
+                ->filter(fn (\App\Models\OfflineTrainingUser $otu) => $otu->training !== null);
+
+            $offlineHours = (float) $rawOffline->sum(function (\App\Models\OfflineTrainingUser $otu) {
+                return (float) ($otu->learning_hours ?? $otu->training?->learning_hours ?? 0);
+            });
+            $onlineHours = $this->recordLhService()->getTotalLearningHours($userId);
+            $totalHours = round($onlineHours + $offlineHours, 2);
+
+            $owlCompleted = $this->getCompletedContents($userId)->count();
+            $nonOwlCompleted = $rawOffline->count();
+            $playlistCompleted = $this->completedPlaylistService->forLearningRecord($userId)->count();
+
+            return [
+                'record_mode'        => 'all',
+                'total_hours'        => $totalHours,
+                'online_hours'       => round($onlineHours, 2),
+                'offline_hours'      => round($offlineHours, 2),
+                'kp_owl_hours'       => round($onlineHours, 2),
+                'non_kp_owl_hours'   => round($offlineHours, 2),
+                'owl_completed'      => $owlCompleted,
+                'non_owl_completed'  => $nonOwlCompleted,
+                'totalLearningHours' => $totalHours,
+                'courseCompleted'    => $owlCompleted + $nonOwlCompleted,
+                'playlistCompleted'  => $playlistCompleted,
+            ];
+        }
+
+        // Default mode: 'online' / 'owl' (KP OWL)
+        if ($onlineRows !== null) {
+            $contentCompleted = $onlineRows->where('row_kind', 'content')->count();
+            $playlistCompleted = $onlineRows->where('row_kind', 'playlist')->count();
+            $totalHours = round((float) $onlineRows->sum(fn (array $r) => (float) ($r['learning_hour_value'] ?? 0)), 2);
+        } else {
+            $contentCompleted = $this->getCompletedContents($userId)->count();
+            $playlistCompleted = $this->completedPlaylistService->forLearningRecord($userId)->count();
+            $totalHours = $this->recordLhService()->getTotalLearningHours($userId);
+        }
+
+        return [
+            'record_mode'        => 'online',
+            'total_hours'        => $totalHours,
+            'content_completed'  => $contentCompleted,
+            'playlist_completed' => $playlistCompleted,
+            'totalLearningHours' => $totalHours,
+            'courseCompleted'    => $contentCompleted,
+            'playlistCompleted'  => $playlistCompleted,
+        ];
+
+    }
+
+    /**
+     * Get raw normalized Online rows (Content + Playlist) for a user before applying request filters.
+     * Reusable across LearningRecordController and UserRecordAllService.
+     */
+    public function getRawOnlineRows(int $userId, CertificateEligibilityService $eligibilityService, ?Collection $completedPlaylists = null, ?array $cert = null): Collection
     {
-        $search = mb_strtolower(trim((string) (request('record_search') ?? request('search') ?? request('q') ?? '')));
-        $type = (string) (request('record_filter_type') ?? request('type') ?? 'all');
-        $rawClassification = (string) (request('record_filter_classification') ?? request('classification') ?? 'all');
+        $completedPlaylists = $completedPlaylists ?? $this->completedPlaylistService->forLearningRecord($userId);
+        $completedContents  = $this->getCompletedContents($userId);
+        $cert               = $cert ?? $this->certificateContext($eligibilityService);
+        $playlistContents   = $this->playlistContentsData($completedPlaylists);
+        $firstContentSlugs  = $playlistContents->map(fn ($items) => $items->first()?->slug);
+        $playlistStartDates = \App\Models\PlaylistContentUser::where('user_id', $userId)
+            ->whereIn('trainingplan_id', $completedPlaylists->pluck('id'))
+            ->groupBy('trainingplan_id')
+            ->selectRaw('trainingplan_id, MIN(created_at) as min_created')
+            ->pluck('min_created', 'trainingplan_id');
+        $contentAllocations = [];
+        $playlistData = $this->recordLhService()->calculatePlaylistsDataBatch($userId, $completedPlaylists, $contentAllocations);
+        $playlistActualHours = $playlistData['hours'];
+        $playlistRecognizedSeconds = $playlistData['recognized_seconds'];
+
+        $recognizedSecondsMap = $this->recognizedDurationService()->resolveGlobalContentRecognizedSecondsBatch(
+            $userId,
+            $completedContents->pluck('content')->filter(),
+            $completedContents
+        );
+
+        return $this->mergeLearningRecord(
+            $this->buildContentRows($completedContents, $cert, $contentAllocations, $recognizedSecondsMap),
+            $this->buildPlaylistRows(
+                $completedPlaylists,
+                $cert,
+                $firstContentSlugs,
+                $completedContents,
+                $playlistContents,
+                $playlistStartDates,
+                $playlistActualHours,
+                $playlistRecognizedSeconds
+            )
+        )->sortByDesc(fn (array $row) => (string) ($row['finish_date'] ?? ''))->values();
+    }
+
+    /**
+     * Apply the GET-backed Learning Record filters before Blade renders rows.
+     * Can also be called programmatically (e.g., from ExportMyLearningRecord) with custom $filters.
+     */
+    public function applyRecordFilters(Collection $rows, array $filters = []): Collection
+    {
+        $search = mb_strtolower(trim((string) ($filters['record_search'] ?? $filters['search'] ?? $filters['q'] ?? request('record_search') ?? request('search') ?? request('q') ?? '')));
+        $type = (string) ($filters['record_filter_type'] ?? $filters['type'] ?? request('record_filter_type') ?? request('type') ?? 'all');
+        $rawClassification = (string) ($filters['record_filter_classification'] ?? $filters['classification'] ?? request('record_filter_classification') ?? request('classification') ?? 'all');
         $classification = $rawClassification !== 'all' ? trim(html_entity_decode($rawClassification, ENT_QUOTES | ENT_HTML5, 'UTF-8')) : 'all';
-        $playlist = (string) (request('record_filter_playlist') ?? request('playlist') ?? 'all');
-        $year = (string) (request('record_filter_year') ?? request('year') ?? 'all');
-        $rawMonth = (string) (request('record_filter_month') ?? request('month') ?? 'all');
+        $playlist = (string) ($filters['record_filter_playlist'] ?? $filters['playlist'] ?? request('record_filter_playlist') ?? request('playlist') ?? 'all');
+        $year = (string) ($filters['record_filter_year'] ?? $filters['year'] ?? request('record_filter_year') ?? request('year') ?? 'all');
+        $rawMonth = (string) ($filters['record_filter_month'] ?? $filters['month'] ?? request('record_filter_month') ?? request('month') ?? 'all');
         $month = \App\Support\LearningFilterHelper::resolveMonth($rawMonth);
-        $program = (string) (request('record_filter_program') ?? request('program') ?? 'all');
-        $learningHour = (string) (request('record_filter_learning_hour') ?? request('learningHour') ?? 'all');
-        $duration = (string) (request('record_filter_duration') ?? request('duration') ?? 'all');
-        $modalYear = (string) (request('record_filter_modal_year') ?? request('modalYear') ?? 'all');
-        $score = (string) (request('record_filter_score') ?? request('scoreTest') ?? 'all');
-        $certificate = (string) (request('record_filter_certificate') ?? request('certificate') ?? 'all');
-        $completion = (string) (request('record_filter_completion') ?? request('completion') ?? 'all');
-        $modalTypes = array_values(array_filter((array) (request('record_filter_modal_type') ?? request('modalTypes') ?? []), fn ($value) => $value !== 'all'));
-        $learningStatuses = array_values(array_filter((array) (request('record_filter_learning_status') ?? request('learningStatus') ?? [])));
-        $progressRanges = array_values(array_filter((array) (request('record_filter_progress') ?? request('progressRanges') ?? [])));
-        $modalMonths = array_map('strval', array_values(array_filter((array) (request('record_filter_modal_month') ?? request('modalMonths') ?? []))));
-        $quickFilter = (string) (request('record_quick') ?? request('quickFilter') ?? request('ongoing_mode') ?? 'all');
+        $program = (string) ($filters['record_filter_program'] ?? $filters['program'] ?? request('record_filter_program') ?? request('program') ?? 'all');
+        $learningHour = (string) ($filters['record_filter_learning_hour'] ?? $filters['learningHour'] ?? request('record_filter_learning_hour') ?? request('learningHour') ?? 'all');
+        $duration = (string) ($filters['record_filter_duration'] ?? $filters['duration'] ?? request('record_filter_duration') ?? request('duration') ?? 'all');
+        $modalYear = (string) ($filters['record_filter_modal_year'] ?? $filters['modalYear'] ?? request('record_filter_modal_year') ?? request('modalYear') ?? 'all');
+        $score = (string) ($filters['record_filter_score'] ?? $filters['scoreTest'] ?? request('record_filter_score') ?? request('scoreTest') ?? 'all');
+        $certificate = (string) ($filters['record_filter_certificate'] ?? $filters['certificate'] ?? request('record_filter_certificate') ?? request('certificate') ?? 'all');
+        $completion = (string) ($filters['record_filter_completion'] ?? $filters['completion'] ?? request('record_filter_completion') ?? request('completion') ?? 'all');
+        $modalTypes = array_values(array_filter((array) ($filters['record_filter_modal_type'] ?? $filters['modalTypes'] ?? request('record_filter_modal_type') ?? request('modalTypes') ?? []), fn ($value) => $value !== 'all'));
+        $learningStatuses = array_values(array_filter((array) ($filters['record_filter_learning_status'] ?? $filters['learningStatus'] ?? request('record_filter_learning_status') ?? request('learningStatus') ?? [])));
+        $progressRanges = array_values(array_filter((array) ($filters['record_filter_progress'] ?? $filters['progressRanges'] ?? request('record_filter_progress') ?? request('progressRanges') ?? [])));
+        $modalMonths = array_map('strval', array_values(array_filter((array) ($filters['record_filter_modal_month'] ?? $filters['modalMonths'] ?? request('record_filter_modal_month') ?? request('modalMonths') ?? []))));
+        $quickFilter = (string) ($filters['record_quick'] ?? $filters['quickFilter'] ?? $filters['ongoing_mode'] ?? request('record_quick') ?? request('quickFilter') ?? request('ongoing_mode') ?? 'all');
 
         $filtered = $rows->filter(function (array $row) use (
             $search,
@@ -172,10 +314,11 @@ class LearningRecordController extends Controller
             } elseif ($progress < 100) {
                 $rowStatuses[] = 'ongoing';
             }
-            $subtitle = mb_strtolower((string) ($row['subtitle'] ?? ''));
-            $rowProgram = str_contains($subtitle, 'mandatory')
-                ? 'mandatory'
-                : (str_contains($subtitle, 'optional') ? 'optional' : '');
+            $reqText = mb_strtolower((string) ($row['requirement'] ?? $row['subtitle'] ?? ''));
+            $isNonMandatory = str_contains($reqText, 'non-mandatory') || str_contains($reqText, 'non mandatory') || str_contains($reqText, 'optional');
+            $rowProgram = $isNonMandatory
+                ? 'optional'
+                : (str_contains($reqText, 'mandatory') ? 'mandatory' : '');
 
             if ($search !== '' && ! str_contains(mb_strtolower(($row['title'] ?? '') . ' ' . ($row['classification'] ?? '')), $search)) {
                 return false;
@@ -207,7 +350,10 @@ class LearningRecordController extends Controller
                     return false;
                 }
             }
-            if ($program !== 'all' && $rowProgram !== $program) {
+            $normalizedProgram = in_array(mb_strtolower($program), ['non-mandatory', 'non mandatory', 'optional'], true)
+                ? 'optional'
+                : mb_strtolower($program);
+            if ($normalizedProgram !== 'all' && $rowProgram !== $normalizedProgram) {
                 return false;
             }
             if ($learningStatuses !== [] && empty(array_intersect($learningStatuses, $rowStatuses))) {
@@ -232,19 +378,23 @@ class LearningRecordController extends Controller
             return $certificate === 'all' || (string) ($row['cert_state'] ?? 'none') === $certificate;
         });
 
-        $sort = (string) request('record_sort', '');
-        $direction = (string) request('record_sort_direction', 'asc');
-        $activitySort = (string) (request('record_filter_activity_sort') ?? request('activitySort') ?? 'all');
+        $sort = (string) ($filters['record_sort'] ?? $filters['sort'] ?? request('record_sort', ''));
+        $direction = (string) ($filters['record_sort_direction'] ?? $filters['direction'] ?? request('record_sort_direction', 'asc'));
+        $activitySort = (string) ($filters['record_filter_activity_sort'] ?? $filters['activitySort'] ?? request('record_filter_activity_sort') ?? request('activitySort') ?? 'all');
         $sortKeys = [
             'title'          => fn (array $row) => mb_strtolower((string) ($row['title'] ?? '')),
             'category'       => fn (array $row) => mb_strtolower((string) ($row['category'] ?? '')),
             'type'           => fn (array $row) => mb_strtolower((string) ($row['type'] ?? '')),
             'classification' => fn (array $row) => mb_strtolower((string) ($row['classification'] ?? '')),
             'duration'       => fn (array $row) => (float) ($row['duration_sort'] ?? -1),
+            'recognized-duration' => fn (array $row) => (int) ($row['recognized_duration_seconds'] ?? 0),
+            'recognized_duration' => fn (array $row) => (int) ($row['recognized_duration_seconds'] ?? 0),
             'learning-hour'  => fn (array $row) => (float) ($row['learning_hour_bucket'] ?? -1),
             'progress'       => fn (array $row) => (float) ($row['progress'] ?? -1),
             'finish'         => fn (array $row) => (string) ($row['finish_date'] ?? ''),
+            'attendance'     => fn (array $row) => mb_strtolower((string) ($row['attendance'] ?? '')),
             'score'          => fn (array $row) => (float) ($row['score'] ?? -1),
+            'certificate'    => fn (array $row) => mb_strtolower((string) ($row['cert_state'] ?? 'none')),
         ];
 
         if (isset($sortKeys[$sort]) && in_array($direction, ['asc', 'desc'], true)) {
@@ -542,9 +692,9 @@ class LearningRecordController extends Controller
      * Normalisasi ContentUser menjadi baris tabel. Baris berisi data polos —
      * HTML dirender oleh Blade Components (x-learning.record-row).
      */
-    private function buildContentRows(Collection $contentUsers, array $cert): Collection
+    private function buildContentRows(Collection $contentUsers, array $cert, array $contentAllocations = [], ?Collection $recognizedSecondsMap = null): Collection
     {
-        return $contentUsers->map(function (ContentUser $cu) use ($cert) {
+        return $contentUsers->map(function (ContentUser $cu) use ($cert, &$contentAllocations, $recognizedSecondsMap) {
             $content = $cu->content;
 
             $setting     = $cert['byContent']->get($content->id);
@@ -564,7 +714,11 @@ class LearningRecordController extends Controller
             $playlists = $content->relationLoaded('trainingPlans')
                 ? $content->trainingPlans
                 : collect();
-            $actualHours = $this->recordLhService()->calculateContent($cu);
+            $cuData = $this->recordLhService()->calculateContentData($cu, $contentAllocations);
+            $actualHours = $cuData['learning_hours'];
+            $recognizedSeconds = $recognizedSecondsMap?->get($content->id)
+                ?? $this->recognizedDurationService()->resolveGlobalContentRecognizedSeconds((int) $cu->user_id, $content);
+            $formattedRecognized = $this->recognizedDurationService()->formatSeconds($recognizedSeconds);
             $formattedHours = $this->recordLhService()->formatHours($actualHours);
 
             $isInactive = ($content->active !== 'Active') || !is_null($content->deleted_at);
@@ -584,32 +738,52 @@ class LearningRecordController extends Controller
                 $modalMessage = '';
             }
 
+            $rawProgress = $cu->progress ?? 0;
+            $hasValidProgress = !is_null($rawProgress) && is_numeric($rawProgress);
+            $contentProgress = $hasValidProgress ? (int) $rawProgress : 0;
+            $attendanceStatus = ($hasValidProgress && (int) $rawProgress >= 100) ? 'Yes' : 'No';
+            $status = strtolower(trim((string) ($cu->content->status ?? ($cu->status ?? 'non mandatory'))));
+            $requirement = ($status === 'mandatory') ? 'Mandatory' : 'Non-Mandatory';
+            $scoreVal = $eligibility?->score();
+            $startDatetimeStr = optional($cu->created_at)->format('Y-m-d H:i:s') ?? '';
+            $finishDatetimeStr = (int) ($cu->finish ?? 0) === 1
+                ? (optional($cu->completed_at ?? $cu->updated_at)->format('Y-m-d H:i:s') ?? '')
+                : '';
+
             return [
+                'id'              => $cu->id,
                 'row_kind'        => 'content',
                 'category'        => 'Content',
-                'title'           => $content->title ?? '-',
-                'slug'            => $content->slug,
+                'title'           => optional($content)->title ?? '-',
+                'slug'            => optional($content)->slug,
                 'playlist_url'    => null,
-                'subtitle'        => ucfirst($cu->status ?? '-'),
+                'subtitle'        => $requirement,
+                'requirement'     => $requirement,
                 'playlist_names'  => $playlists->pluck('title')->filter()->values()->all(),
                 // Id playlist pemilik content — dipakai filter Playlist client-side.
                 'playlist_ids'    => $playlists->pluck('id')->values()->all(),
-                'type'            => \App\Support\ContentTypeHelper::label($content->type) ?: 'Content',
-                'classification'  => $content->classification->classification_name ?? '-',
-                'duration'        => DurationFormatter::formatForLearningRecord($content->duration),
-                'duration_sort'   => DurationFormatter::toSeconds($content->duration) ?? -1,
+                'type'            => \App\Support\ContentTypeHelper::label(optional($content)->type) ?: 'Content',
+                'classification'  => optional(optional($content)->classification)->classification_name ?? '-',
+                'duration'        => DurationFormatter::format(optional($content)->duration),
+                'duration_sort'   => DurationFormatter::toSeconds(optional($content)->duration) ?? -1,
+                'recognized_duration' => $formattedRecognized,
+                'recognized_duration_seconds' => $recognizedSeconds,
+                'total_recognized_duration'   => $formattedRecognized,
                 'learning_hour'   => $formattedHours,
                 'learning_hour_bucket' => $actualHours,
                 'learning_hour_value'  => $actualHours,
-                'progress'        => (int) ($cu->progress ?? 0),
-                'min_progress'    => $setting ? (int) $setting->minimum_progress : 0,
-                'start_date'      => optional($cu->created_at)->format('Y-m-d H:i:s') ?? '',
-                'finish_date'     => (int) $cu->finish === 1
-                    ? (optional($cu->completed_at ?? $cu->updated_at)->format('Y-m-d H:i:s') ?? '')
-                    : '',
+                'progress'        => $contentProgress,
+                'attendance'      => $attendanceStatus,
+                'attendance_status' => $attendanceStatus,
+                'min_progress'    => $setting ? (int) ($setting->minimum_progress ?? 0) : 0,
+                'start_date'      => $startDatetimeStr,
+                'finish_date'     => $finishDatetimeStr,
+                'start_datetime'  => $startDatetimeStr,
+                'end_datetime'    => $finishDatetimeStr,
                 // Score & ambangnya dari CertificateEligibilityResult — angka
                 // yang sama dengan yang dipakai menentukan tombol Generate.
-                'score'                => $eligibility?->score(),
+                'score'                => $scoreVal,
+                'assessment_score'     => $scoreVal,
                 'min_score'            => (int) ($eligibility?->minimumScore ?? 0),
                 'assessment_required'  => (bool) ($eligibility?->assessmentRequired ?? false),
                 'cert_state'      => $certState,
@@ -617,10 +791,27 @@ class LearningRecordController extends Controller
                 'cert_action_url' => route('certificate.generate', $cu->id),
                 'cert_is_form'    => false,
                 'playlist_items'  => [],
-                'item_id'         => 'content_' . $content->id,
+                'item_id'         => 'content_' . (optional($content)->id ?? $cu->content_id),
                 'access_status'   => $accessStatus,
                 'can_open'        => $canOpen,
                 'modal_message'   => $modalMessage,
+                'user_name'       => Auth::user()?->name ?? '-',
+                'employee_id'     => Auth::user()?->employee_id ?? Auth::user()?->nip ?? Auth::user()?->id_emp ?? '-',
+                'participant_name'=> Auth::user()?->name ?? '-',
+                'name'            => Auth::user()?->name ?? '-',
+                'grade'           => Auth::user()?->grade ?? '-',
+                'job_position'    => Auth::user()?->job_position ?? Auth::user()?->position ?? '-',
+                'team'            => Auth::user()?->team ?? '-',
+                'department'      => Auth::user()?->department ?? '-',
+                'company'         => Auth::user()?->company ?? Auth::user()?->company_name ?? 'PT Krakatau Posco',
+                'attendance_reason' => '-',
+                'bond_status'     => 'No',
+                'bond_duration'   => null,
+                'bond_end_date'   => '-',
+                'bond_amount'     => '-',
+                'bond_amount_idr' => '-',
+                'bond_amount_formatted' => '-',
+                'pic'             => '-',
             ];
         })->values();
     }
@@ -647,7 +838,7 @@ class LearningRecordController extends Controller
             ->orderByRaw('CAST(tpd.content_order AS UNSIGNED) ASC')
             ->get(['tpd.trainingplan_id as plan_id', 'c.slug as slug'])
             ->groupBy('plan_id')
-            ->map(fn ($items) => $items->first()->slug);
+            ->map(fn ($items) => $items->first()?->slug);
     }
 
     /**
@@ -674,6 +865,8 @@ class LearningRecordController extends Controller
                 'c.title as title',
                 'c.slug as slug',
                 'c.type as type',
+                'c.duration as duration',
+                'c.status as status',
                 'c.active as active',
                 'c.has_deadline as has_deadline',
                 'c.from_date as from_date',
@@ -695,12 +888,13 @@ class LearningRecordController extends Controller
         Collection $contentUsers,
         ?Collection $allPlaylistContents = null,
         ?Collection $playlistStartDates = null,
-        ?Collection $playlistActualHours = null
+        ?Collection $playlistActualHours = null,
+        ?Collection $playlistRecognizedSeconds = null
     ): Collection
     {
         $allPlaylistContents = $allPlaylistContents ?? $this->playlistContentsData($playlists);
 
-        return $playlists->map(function (TrainingPlan $plan) use ($cert, $firstContentSlugs, $contentUsers, $allPlaylistContents, $playlistStartDates, $playlistActualHours) {
+        return $playlists->map(function (TrainingPlan $plan) use ($cert, $firstContentSlugs, $contentUsers, $allPlaylistContents, $playlistStartDates, $playlistActualHours, $playlistRecognizedSeconds) {
             $setting     = $cert['byPlaylist']->get($plan->id);
             $eligibility = $setting ? ($cert['eligibility'][$setting->id] ?? null) : null;
             $eligible    = $eligibility?->eligible ?? false;
@@ -745,12 +939,16 @@ class LearningRecordController extends Controller
                 $itemCanOpen = $itemAccessStatus === 'ACTIVE';
                 $itemModalMessage = $itemAccessStatus === 'INACTIVE' ? 'This content is currently inactive.' : ($itemAccessStatus === 'EXPIRED' ? 'This content period has expired.' : '');
 
+                $status = strtolower(trim((string) ($item->status ?? 'non mandatory')));
+                $itemRequirement = ($status === 'mandatory') ? 'Mandatory' : 'Non-Mandatory';
+
                 return [
-                    'content_id'    => $item->content_id,
+                    'content_id'    => $item->content_id ?? null,
                     'title'         => $item->title ?? '-',
-                    'slug'          => $item->slug,
-                    'type'          => \App\Support\ContentTypeHelper::label($item->type) ?: 'Content',
-                    'url'           => ($plan->slug && $item->slug)
+                    'slug'          => $item->slug ?? null,
+                    'type'          => \App\Support\ContentTypeHelper::label($item->type ?? null) ?: 'Content',
+                    'requirement'   => $itemRequirement,
+                    'url'           => ($plan->slug && ($item->slug ?? null))
                         ? route('playlist.user.view', [$plan->slug, $item->slug])
                         : null,
                     'access_status' => $itemAccessStatus,
@@ -760,11 +958,28 @@ class LearningRecordController extends Controller
             })->values()->all();
 
             $durationSeconds = (int) ($plan->total_duration_seconds ?? 0);
+            if ($durationSeconds <= 0 && $planContents->isNotEmpty()) {
+                $durationSeconds = (int) $planContents->sum(function ($item) {
+                    return DurationFormatter::toSeconds($item->duration ?? null) ?? 0;
+                });
+            } elseif ($durationSeconds <= 0 && $plan->relationLoaded('trainingplandetail')) {
+                $durationSeconds = (int) $plan->trainingplandetail->sum(function ($d) {
+                    return DurationFormatter::toSeconds($d->content?->duration ?? null) ?? 0;
+                });
+            }
             $actualHours = $playlistActualHours?->get($plan->id)
                 ?? (float) $this->recordLhService()->calculatePlaylistSingle((int) Auth::id(), $plan);
             $formattedHours = $this->recordLhService()->formatHours($actualHours);
+            $recognizedSeconds = $playlistRecognizedSeconds?->get($plan->id)
+                ?? (int) $this->recordLhService()->calculatePlaylistRecognizedSecondsSingle((int) Auth::id(), $plan);
+            $formattedRecognized = $this->recordLhService()->formatRecognizedDuration($recognizedSeconds);
+            $playlistRequirement = collect($playlistItems)->contains(fn ($it) => ($it['requirement'] ?? '') === 'Mandatory')
+                ? 'Mandatory'
+                : 'Non-Mandatory';
+            $playlistScore = $eligibility?->score();
 
             return [
+                'id'              => $plan->id,
                 'row_kind'        => 'playlist',
                 'category'        => 'Playlist',
                 'title'           => $plan->title ?? '-',
@@ -775,23 +990,34 @@ class LearningRecordController extends Controller
                     : null,
                 'playlist_items'  => $playlistItems,
                 'subtitle'        => (int) ($plan->finished_items ?? 0) . ' / ' . (int) ($plan->total_items ?? count($playlistItems)) . ' content selesai',
+                'requirement'     => $playlistRequirement,
                 'playlist_names'  => [],
                 'playlist_ids'    => [$plan->id],
+                'plan_id'         => $plan->id,
+                'playlist_id'     => $plan->id,
                 'item_id'         => 'playlist_' . $plan->id,
                 'type'            => 'Playlist',
                 'classification'  => '-',
                 'duration'        => $this->formatDurationSeconds($durationSeconds),
                 'duration_sort'   => $durationSeconds,
+                'recognized_duration' => $formattedRecognized,
+                'recognized_duration_seconds' => $recognizedSeconds,
+                'total_recognized_duration'   => $formattedRecognized,
                 'learning_hour'   => $formattedHours,
                 'learning_hour_bucket' => $actualHours,
                 'learning_hour_value'  => $actualHours,
                 'progress'        => 100,
+                'attendance'      => 'Yes',
+                'attendance_status' => 'Yes',
                 'min_progress'    => $setting ? (int) ($setting->minimum_progress ?? 0) : 0,
                 'start_date'      => $startDate ? Carbon::parse($startDate)->format('Y-m-d H:i:s') : '',
                 'finish_date'     => $finishDate,
+                'start_datetime'  => $startDate ? Carbon::parse($startDate)->format('Y-m-d H:i:s') : '',
+                'end_datetime'    => $finishDate,
                 // Pola sama dengan Content: score dari CertificateEligibilityResult —
                 // playlist ber-assessment kini menampilkan nilai sungguhan.
-                'score'                => $eligibility?->score(),
+                'score'                => $playlistScore,
+                'assessment_score'     => $playlistScore,
                 'min_score'            => (int) ($eligibility?->minimumScore ?? 0),
                 'assessment_required'  => (bool) ($eligibility?->assessmentRequired ?? false),
                 // Aturan playlist sudah di CertificateEligibilityService:
@@ -804,6 +1030,23 @@ class LearningRecordController extends Controller
                 'access_status'   => $accessStatus,
                 'can_open'        => $canOpen,
                 'modal_message'   => $modalMessage,
+                'user_name'       => Auth::user()?->name ?? '-',
+                'employee_id'     => Auth::user()?->employee_id ?? Auth::user()?->nip ?? Auth::user()?->id_emp ?? '-',
+                'participant_name'=> Auth::user()?->name ?? '-',
+                'name'            => Auth::user()?->name ?? '-',
+                'grade'           => Auth::user()?->grade ?? '-',
+                'job_position'    => Auth::user()?->job_position ?? Auth::user()?->position ?? '-',
+                'team'            => Auth::user()?->team ?? '-',
+                'department'      => Auth::user()?->department ?? '-',
+                'company'         => Auth::user()?->company ?? Auth::user()?->company_name ?? 'PT Krakatau Posco',
+                'attendance_reason' => '-',
+                'bond_status'     => 'No',
+                'bond_duration'   => null,
+                'bond_end_date'   => '-',
+                'bond_amount'     => '-',
+                'bond_amount_idr' => '-',
+                'bond_amount_formatted' => '-',
+                'pic'             => '-',
             ];
         })->values();
     }
@@ -823,20 +1066,7 @@ class LearningRecordController extends Controller
             return '-';
         }
 
-        $hours   = intdiv($seconds, 3600);
-        $minutes = intdiv($seconds % 3600, 60);
-
-        $parts = [];
-
-        if ($hours > 0) {
-            $parts[] = $hours . ' ' . ($hours === 1 ? 'hour' : 'hours');
-        }
-
-        if ($minutes > 0 || $hours === 0) {
-            $parts[] = $minutes . ' min';
-        }
-
-        return implode(' ', $parts);
+        return DurationFormatter::fromSeconds($seconds);
     }
 
     // ─── Certificate ────────────────────────────────────────────────────────────
@@ -958,4 +1188,267 @@ class LearningRecordController extends Controller
             ->values();
     }
 
+
+    /**
+     * Get detail of a specific learning record (Online or Offline).
+     */
+    public function detail(Request $request, string $source, $id): JsonResponse
+    {
+        $userId = (int) Auth::id();
+
+        if (in_array(strtolower(trim($source)), ['offline', 'non-kp-owl', 'non_kp_owl'], true)) {
+            $record = RecordOfflineQueryService::getRecordDetail($id, $userId);
+
+            if (!$record) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Offline training record not found.',
+                ], 404);
+            }
+
+            $rawCert = strtolower(trim((string) ($record->certificate ?? '')));
+            $record->certificate = in_array($rawCert, ['yes', '1', 'available', 'true'], true) ? 'Available' : 'Not Available';
+
+            $rawIdr = $record->bond_amount_idr ?? $record->bond_amount ?? null;
+            if ($rawIdr !== null && (float) $rawIdr > 0) {
+                $record->bond_amount_idr_formatted = 'Rp ' . number_format((float) $rawIdr, 0, ',', '.');
+                $record->bond_amount_formatted = $record->bond_amount_idr_formatted;
+            } else {
+                $record->bond_amount_idr_formatted = '-';
+                $record->bond_amount_formatted = '-';
+            }
+            $record->source = 'Non-KP OWL';
+            $record->course_title = !empty($record->title) ? $record->title : (!empty($record->course_name) ? $record->course_name : 'Training Record');
+            $record->title = $record->course_title;
+            $record->course_name = $record->course_title;
+            $record->sub_course_title = $record->sub_course_name ?? '-';
+            $record->employee_name = !empty($record->user_name) ? $record->user_name : (!empty($record->participant_name) ? $record->participant_name : (Auth::user()?->name ?? '-'));
+            $record->user_name = $record->employee_name;
+            $record->participant_name = $record->employee_name;
+            $record->employee_id = !empty($record->employee_id) ? $record->employee_id : (Auth::user()?->employee_id ?? Auth::user()?->nip ?? Auth::user()?->id_emp ?? '-');
+            $record->grade = $record->grade ?? (Auth::user()?->jobgrade ?? Auth::user()?->grade ?? '-');
+            $record->job_position = $record->job_position ?? (Auth::user()?->jobposition ?? Auth::user()?->job_position ?? '-');
+            $record->team = !empty($record->team) ? $record->team : (Auth::user()?->team ?? '-');
+            $record->department = $record->department ?? (Auth::user()?->department ?? '-');
+            $record->company = $record->company ?? (Auth::user()?->company_name ?? Auth::user()?->company ?? 'PT Krakatau Posco');
+            $record->level = $record->level ?? '-';
+            $record->batch = $record->batch ?? '-';
+            $record->delivery_method = \App\Models\OfflineTraining::normalizeDeliveryMethod($record->delivery_method ?? 'Offline');
+            $record->sub_delivery_method = $record->sub_delivery_method ?? 'On-Site';
+            $record->provider = !empty($record->provider) ? $record->provider : 'External';
+            $record->sub_provider = $record->sub_provider ?? '-';
+            $record->provider_name = !empty($record->provider_name) ? $record->provider_name : '-';
+            $record->venue = !empty($record->venue) ? $record->venue : '-';
+            $record->instructor = $record->instructor ?? '-';
+            $record->attendance = $record->attendance ?? 'Yes';
+            $record->attendance_reason = $record->attendance_reason ?? '-';
+            $record->bond_status = !empty($record->bond_status) ? $record->bond_status : 'No';
+            $record->bond_duration = $record->bond_duration ?? '-';
+            $record->bond_end_date = !empty($record->bond_end_date) ? $record->bond_end_date : '-';
+            $record->bond_amount = $record->bond_amount_formatted ?? '-';
+            $record->l2_status = $record->l2_verbal ?? ($record->l2_status ?? '-');
+            $record->l3_status = $record->l3_verbal ?? ($record->l3_status ?? '-');
+            $record->certificate_availability = $record->certificate;
+            $record->certificate_institution = $record->certificate_institution ?? ($record->institution ?? '-');
+            $record->certificate_issued_date = $record->certificate_issued_date ?? ($record->issued_date ?? '-');
+            $record->certificate_expired_date = $record->certificate_expired_date ?? ($record->expired_date ?? '-');
+            $record->recognized_duration = '00:00:00';
+            $record->recognized_duration_seconds = 0;
+            $record->total_recognized_duration = '00:00:00';
+
+            return response()->json([
+                'success' => true,
+                'data'    => $record,
+            ]);
+        }
+
+        // Online Content or Playlist record detail
+        $contentUser = ContentUser::with(['user:id,id_emp,name,team,department,company_name', 'content.classification'])
+            ->where('user_id', $userId)
+            ->where(function ($q) use ($id) {
+                $q->where('id', $id)->orWhere('content_id', $id);
+            })
+            ->first();
+
+        if (!$contentUser) {
+            // Check if it is a completed playlist
+            $planId = is_numeric($id) ? (int) $id : (int) str_replace('playlist_', '', (string) $id);
+            $plan = TrainingPlan::with(['trainingplandetail.content.classification'])
+                ->where('id', $planId)
+                ->first();
+
+            if ($plan) {
+                $actualHours = $this->recordLhService()->calculatePlaylist($planId, $userId);
+                $recognizedSeconds = (int) $this->recordLhService()->calculatePlaylistRecognizedSecondsSingle($userId, $plan);
+                $formattedRecognized = $this->recordLhService()->formatRecognizedDuration($recognizedSeconds);
+                return response()->json([
+                    'success' => true,
+                    'data'    => [
+                        'id'                     => 'playlist_' . $plan->id,
+                        'source'                 => 'KP OWL',
+                        'course_title'           => $plan->title,
+                        'title'                  => $plan->title,
+                        'course_name'            => $plan->title,
+                        'sub_course_title'       => '-',
+                        'sub_course_name'        => '-',
+                        'type'                   => 'Playlist',
+                        'category'               => 'Playlist',
+                        'level'                  => '-',
+                        'batch'                  => '-',
+                        'main_classification'    => '-',
+                        'sub_classification'     => '-',
+                        'counted_corporate_kpi'  => 'No',
+                        'sub_corporate_kpi'      => '-',
+                        'delivery_method'        => 'Online',
+                        'sub_delivery_method'    => 'Playlist / Path',
+                        'provider'               => 'Internal',
+                        'sub_provider'           => '-',
+                        'provider_name'          => 'KP-OWL',
+                        'venue'                  => 'Online LMS',
+                        'instructor'             => $plan->instructor ?: 'Training Team',
+                        'duration'               => $plan->duration ?? '-',
+                        'duration_seconds'       => (int) ($plan->total_duration_seconds ?? 0),
+                        'course_learning_hours'  => $actualHours,
+                        'learning_hours'         => $actualHours,
+                        'recognized_duration'         => $formattedRecognized,
+                        'recognized_duration_seconds' => $recognizedSeconds,
+                        'total_recognized_duration'   => $formattedRecognized,
+                        'progress'               => 100,
+                        'start_date'             => optional($plan->created_at)->format('Y-m-d') ?? '-',
+                        'finish_date'            => optional($plan->updated_at)->format('Y-m-d') ?? '-',
+                        'attendance'             => 'Yes',
+                        'attendance_reason'      => '-',
+                        'certificate'            => (($plan->finished_items ?? 0) >= ($plan->total_items ?? 1)) ? 'Available' : 'Not Available',
+                        'certificate_availability'=> (($plan->finished_items ?? 0) >= ($plan->total_items ?? 1)) ? 'Available' : 'Not Available',
+                        'certificate_institution' => 'PT Krakatau Posco',
+                        'certificate_issued_date' => optional($plan->updated_at)->format('Y-m-d') ?? '-',
+                        'certificate_expired_date'=> '-',
+                        'bond_status'            => '-',
+                        'bond_duration'          => '-',
+                        'bond_end_date'          => '-',
+                        'bond_amount'            => '-',
+                        'bond_amount_idr'        => '-',
+                        'bond_amount_formatted'  => '-',
+                        'l2_status'              => '-',
+                        'l3_status'              => '-',
+                        'pic'                    => '-',
+                        'employee_id'            => Auth::user()?->employee_id ?? Auth::user()?->nip ?? Auth::user()?->id_emp ?? '-',
+                        'employee_name'          => Auth::user()?->name ?? '-',
+                        'user_name'              => Auth::user()?->name ?? '-',
+                        'participant_name'       => Auth::user()?->name ?? '-',
+                        'grade'                  => Auth::user()?->grade ?? Auth::user()?->jobgrade ?? '-',
+                        'job_position'           => Auth::user()?->job_position ?? Auth::user()?->jobposition ?? Auth::user()?->position ?? '-',
+                        'team'                   => Auth::user()?->team ?? '-',
+                        'department'             => Auth::user()?->department ?? '-',
+                        'company'                => Auth::user()?->company ?? Auth::user()?->company_name ?? 'PT Krakatau Posco',
+                    ],
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Online learning record not found.',
+            ], 404);
+        }
+
+        $content = $contentUser->content;
+        $cuData = $this->recordLhService()->calculateContentData($contentUser);
+        $actualHours = $cuData['learning_hours'];
+        $recognizedSeconds = $this->recognizedDurationService()->resolveGlobalContentRecognizedSeconds($userId, $content);
+        $formattedRecognized = $this->recognizedDurationService()->formatSeconds($recognizedSeconds);
+        $durationSec = DurationFormatter::toSeconds(optional($content)->duration) ?? 0;
+        $isFinished = ((int) ($contentUser->progress ?? 0) >= 100 || (int) ($contentUser->finish ?? 0) === 1);
+
+        // Assessment L2 lookup
+        $assessmentResult = DB::table('assesment_results as ar')
+            ->join('assesments as a', 'a.id', '=', 'ar.assesment_id')
+            ->where('ar.user_id', $userId)
+            ->where('a.content_id', $contentUser->content_id)
+            ->where('ar.final', 1)
+            ->orderByDesc('ar.score')
+            ->select('ar.score', 'ar.pass')
+            ->first();
+        $l2Status = $assessmentResult
+            ? ($assessmentResult->pass == 1 ? 'Pass' : ($assessmentResult->pass === 0 || $assessmentResult->pass === '0' ? 'Fail' : '-'))
+            : '-';
+
+        // Certificate lookup
+        $cs = DB::table('certificate_settings')->where('content_id', $contentUser->content_id)->first();
+        $cert = DB::table('certificates')
+            ->where('user_id', $userId)
+            ->where(function ($q) use ($contentUser) {
+                $q->where('content_user_id', $contentUser->id)
+                  ->orWhere(function ($q2) use ($contentUser) {
+                      $q2->where('source_id', $contentUser->content_id)->where('certificate_type', 'content');
+                  });
+            })
+            ->first();
+
+        $certInstitution = $cert?->institution ?: ($cs?->institution ?: ($cs?->issuer_name ?: ($isFinished ? 'PT Krakatau Posco' : '-')));
+        $certIssuedDate = $cert?->issued_date ?: ($cs?->issued_date ? date('Y-m-d', strtotime($cs->issued_date)) : ($cert?->issued_at ? date('Y-m-d', strtotime($cert->issued_at)) : ($isFinished ? optional($contentUser->completed_at ?? $contentUser->updated_at)->format('Y-m-d') : '-')));
+        $certExpiredDate = $cert?->expired_date ?: ($cs?->expired_date ? date('Y-m-d', strtotime($cs->expired_date)) : '-');
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'id'                     => $contentUser->id,
+                'source'                 => 'KP OWL',
+                'course_title'           => optional($content)->title ?? 'Untitled Content',
+                'title'                  => optional($content)->title ?? 'Untitled Content',
+                'course_name'            => optional($content)->title ?? 'Untitled Content',
+                'sub_course_title'       => '-',
+                'sub_course_name'        => '-',
+                'type'                   => \App\Support\ContentTypeHelper::label(optional($content)->type) ?: 'Content',
+                'category'               => 'All Content',
+                'level'                  => '-',
+                'batch'                  => '-',
+                'main_classification'    => optional(optional($content)->classification)->classification_name ?? '-',
+                'sub_classification'     => '-',
+                'counted_corporate_kpi'  => 'No',
+                'sub_corporate_kpi'      => '-',
+                'delivery_method'        => 'Online',
+                'sub_delivery_method'    => 'E-learning',
+                'provider'               => 'Internal',
+                'sub_provider'           => '-',
+                'provider_name'          => 'KP-OWL',
+                'venue'                  => 'Online LMS',
+                'instructor'             => optional($content)->author ?: 'Training Team',
+                'duration'               => DurationFormatter::format(optional($content)->duration),
+                'duration_seconds'       => $durationSec,
+                'course_learning_hours'  => $actualHours,
+                'learning_hours'         => $actualHours,
+                'recognized_duration'         => $formattedRecognized,
+                'recognized_duration_seconds' => $recognizedSeconds,
+                'total_recognized_duration'   => $formattedRecognized,
+                'progress'               => (int) ($contentUser->progress ?? 0),
+                'start_date'             => optional($contentUser->created_at)->format('Y-m-d') ?? '-',
+                'finish_date'            => $isFinished ? optional($contentUser->completed_at ?? $contentUser->updated_at)->format('Y-m-d') : '-',
+                'attendance'             => $isFinished ? 'Yes' : 'No',
+                'attendance_reason'      => '-',
+                'certificate'            => $isFinished ? 'Available' : 'Not Available',
+                'certificate_availability'=> $isFinished ? 'Available' : 'Not Available',
+                'certificate_institution' => $certInstitution,
+                'certificate_issued_date' => $certIssuedDate,
+                'certificate_expired_date'=> $certExpiredDate,
+                'bond_status'            => '-',
+                'bond_duration'          => '-',
+                'bond_end_date'          => '-',
+                'bond_amount'            => '-',
+                'bond_amount_idr'        => '-',
+                'bond_amount_formatted'  => '-',
+                'l2_status'              => $l2Status,
+                'l3_status'              => '-',
+                'pic'                    => '-',
+                'employee_id'            => Auth::user()?->employee_id ?? Auth::user()?->nip ?? Auth::user()?->id_emp ?? '-',
+                'employee_name'          => Auth::user()?->name ?? '-',
+                'user_name'              => Auth::user()?->name ?? '-',
+                'participant_name'       => Auth::user()?->name ?? '-',
+                'grade'                  => Auth::user()?->grade ?? Auth::user()?->jobgrade ?? '-',
+                'job_position'           => Auth::user()?->job_position ?? Auth::user()?->jobposition ?? Auth::user()?->position ?? '-',
+                'team'                   => Auth::user()?->team ?? '-',
+                'department'             => Auth::user()?->department ?? '-',
+                'company'                => Auth::user()?->company ?? Auth::user()?->company_name ?? 'PT Krakatau Posco',
+            ],
+        ]);
+    }
 }

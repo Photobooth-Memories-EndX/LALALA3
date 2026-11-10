@@ -8,54 +8,73 @@ use App\Models\AssesmentQuestionBank;
 use App\Models\Question;
 use App\Models\QuestionBank;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class AssesmentQuestionBankController extends Controller
 {
     public function storeAssessmentQuestionBank(Request $request)
     {
-        $assessment                  = Assesment::findBySlug($request->assessment_slug);
+        $assessment = Assesment::findBySlug($request->assessment_slug);
+        if (!$assessment) {
+            return response()->json([
+                'status'  => 404,
+                'message' => 'Assessment not found!',
+            ], 404);
+        }
+
         $checkAssessmentQuestionBank = AssesmentQuestionBank::where('assesment_id', $assessment->id)
             ->where('question_bank_id', $request->id_question_bank)->first();
 
         if ($checkAssessmentQuestionBank) {
             return response()->json([
-                'status' => 422,
+                'status'  => 422,
                 'message' => 'Question Bank already exist!',
             ]);
         }
 
         $questionBank   = QuestionBank::find($request->id_question_bank);
-        $amountQuestion = $request->amount_question;
+        if (!$questionBank) {
+            return response()->json([
+                'status'  => 404,
+                'message' => 'Question Bank not found!',
+            ], 404);
+        }
+
+        $amountQuestion = (int) $request->amount_question;
         $questions      = Question::where('question_bank_id', $questionBank->id)->get();
 
-        $assessmentQuestionBank = new AssesmentQuestionBank;
-        $assessmentQuestionBank->assesment_id     = $assessment->id;
-        $assessmentQuestionBank->question_bank_id = $questionBank->id;
-        $assessmentQuestionBank->questions_amount = $amountQuestion;
-        $assessmentQuestionBank->save();
+        DB::transaction(function () use ($assessment, $questionBank, $amountQuestion, $questions) {
+            $assessmentQuestionBank = new AssesmentQuestionBank;
+            $assessmentQuestionBank->assesment_id     = $assessment->id;
+            $assessmentQuestionBank->question_bank_id = $questionBank->id;
+            $assessmentQuestionBank->questions_amount = $amountQuestion;
+            $assessmentQuestionBank->save();
 
-        foreach ($questions as $question) {
-            $assesmentQuestion = new AssesmentQuestion;
-            $assesmentQuestion->assesment_id     = $assessment->id;
-            $assesmentQuestion->question_bank_id = $questionBank->id;
-            $assesmentQuestion->question_id      = $question->id;
-            $assesmentQuestion->question         = $question->question;
-            $assesmentQuestion->image            = $question->question_image;
-            $assesmentQuestion->option           = $question->option;
-            $assesmentQuestion->answer           = $question->answer;
-            $assesmentQuestion->status           = true;
-            $assesmentQuestion->save();
-        }
+            $amount = min($amountQuestion, $questions->count());
+            $usedQuestionIds = $amount > 0 ? $questions->random($amount)->pluck('id')->flip()->all() : [];
 
-        // Set Random used question
-        $randomizeQuestions = AssesmentQuestion::where('assesment_id', $assessment->id)
-            ->where('question_bank_id', $questionBank->id)
-            ->inRandomOrder()->limit($amountQuestion)->get();
+            $now = now();
+            $records = [];
+            foreach ($questions as $question) {
+                $records[] = [
+                    'assesment_id'     => $assessment->id,
+                    'question_bank_id' => $questionBank->id,
+                    'question_id'      => $question->id,
+                    'question'         => $question->question,
+                    'image'            => $question->question_image,
+                    'option'           => is_array($question->option) ? json_encode($question->option) : $question->option,
+                    'answer'           => $question->answer,
+                    'status'           => 1,
+                    'is_used'          => isset($usedQuestionIds[$question->id]) ? 1 : 0,
+                    'created_at'       => $now,
+                    'updated_at'       => $now,
+                ];
+            }
 
-        foreach ($randomizeQuestions as $randomQuestion) {
-            $randomQuestion->is_used = true;
-            $randomQuestion->save();
-        }
+            foreach (array_chunk($records, 200) as $chunk) {
+                AssesmentQuestion::insert($chunk);
+            }
+        });
 
         return response()->json([
             'status'  => 200,
@@ -68,36 +87,42 @@ class AssesmentQuestionBankController extends Controller
         $assessmentQuestionBank = AssesmentQuestionBank::findOrFail($id_assessment_question_bank);
         $questions = Question::where('question_bank_id', $assessmentQuestionBank->question_bank_id)->get();
 
-        foreach ($questions as $question) {
-            $assesmentQuestion = AssesmentQuestion::firstOrNew([
-                'assesment_id'     => $assessmentQuestionBank->assesment_id,
-                'question_bank_id' => $assessmentQuestionBank->question_bank_id,
-                'question_id'      => $question->id,
-            ]);
-            $assesmentQuestion->is_used  = false;
-            $assesmentQuestion->question = $question->question;
-            $assesmentQuestion->image    = $question->question_image;
-            $assesmentQuestion->option   = $question->option;
-            $assesmentQuestion->answer   = $question->answer;
-            $assesmentQuestion->save();
-        }
+        DB::transaction(function () use ($assessmentQuestionBank, $questions) {
+            foreach ($questions as $question) {
+                AssesmentQuestion::updateOrCreate(
+                    [
+                        'assesment_id'     => $assessmentQuestionBank->assesment_id,
+                        'question_bank_id' => $assessmentQuestionBank->question_bank_id,
+                        'question_id'      => $question->id,
+                    ],
+                    [
+                        'is_used'  => 0,
+                        'question' => $question->question,
+                        'image'    => $question->question_image,
+                        'option'   => $question->option,
+                        'answer'   => $question->answer,
+                        'status'   => 1,
+                    ]
+                );
+            }
 
-        // Set Random used question
-        $randomizeQuestions = AssesmentQuestion::where('assesment_id', $assessmentQuestionBank->assesment_id)
-            ->where('question_bank_id', $assessmentQuestionBank->question_bank_id)
-            ->inRandomOrder()->limit($assessmentQuestionBank->questions_amount)->get();
+            $randomIds = AssesmentQuestion::where('assesment_id', $assessmentQuestionBank->assesment_id)
+                ->where('question_bank_id', $assessmentQuestionBank->question_bank_id)
+                ->inRandomOrder()
+                ->limit($assessmentQuestionBank->questions_amount)
+                ->pluck('id');
 
-        foreach ($randomizeQuestions as $randomQuestion) {
-            $randomQuestion->is_used = true;
-            $randomQuestion->save();
-        }
+            if ($randomIds->isNotEmpty()) {
+                AssesmentQuestion::whereIn('id', $randomIds)->update(['is_used' => 1]);
+            }
+        });
 
         return redirect()->back()->with('success-syncronized', $assessmentQuestionBank->question_bank->title . " synchronized successfully.");
     }
 
     public function edit($id)
     {
-        $assessmentQuestionBank = AssesmentQuestionBank::findOrfail($id);
+        $assessmentQuestionBank = AssesmentQuestionBank::findOrFail($id);
 
         $data = [
             'question_bank_title' => $assessmentQuestionBank->question_bank->title,
@@ -111,38 +136,43 @@ class AssesmentQuestionBankController extends Controller
         ]);
     }
 
-    public function update($id) {
-        $assessmentQuestionBank = AssesmentQuestionBank::findOrfail($id);
-        $assessmentQuestionBank->questions_amount = request()->edit_question_per_bank;
+    public function update($id)
+    {
+        $assessmentQuestionBank = AssesmentQuestionBank::findOrFail($id);
+        $amount = (int) request()->edit_question_per_bank;
+        $assessmentQuestionBank->questions_amount = $amount;
         $assessmentQuestionBank->save();
 
-        // Reset is used to false
-        foreach ($assessmentQuestionBank->assessment_questions as $question) {
-            $question->is_used = false;
-            $question->save();
-        }
+        DB::transaction(function () use ($assessmentQuestionBank, $amount) {
+            AssesmentQuestion::where('assesment_id', $assessmentQuestionBank->assesment_id)
+                ->where('question_bank_id', $assessmentQuestionBank->question_bank_id)
+                ->update(['is_used' => 0]);
 
-        // Set Random used question
-        $randomizeQuestions = AssesmentQuestion::where('assesment_id', $assessmentQuestionBank->assesment_id)
-            ->where('question_bank_id', $assessmentQuestionBank->question_bank_id)
-            ->inRandomOrder()->limit($assessmentQuestionBank->questions_amount)->get();
+            $randomIds = AssesmentQuestion::where('assesment_id', $assessmentQuestionBank->assesment_id)
+                ->where('question_bank_id', $assessmentQuestionBank->question_bank_id)
+                ->inRandomOrder()
+                ->limit($amount)
+                ->pluck('id');
 
-        foreach ($randomizeQuestions as $randomQuestion) {
-            $randomQuestion->is_used = true;
-            $randomQuestion->save();
-        }
+            if ($randomIds->isNotEmpty()) {
+                AssesmentQuestion::whereIn('id', $randomIds)->update(['is_used' => 1]);
+            }
+        });
 
         return redirect()->back()->with('warning', 'Question/Bank of ' . $assessmentQuestionBank->question_bank->title . " updated successfully.");
     }
 
-    public function delete($id) {
-        $assessmentQuestionBank = AssesmentQuestionBank::findOrfail($id);
+    public function delete($id)
+    {
+        $assessmentQuestionBank = AssesmentQuestionBank::findOrFail($id);
         
-        foreach ($assessmentQuestionBank->assessment_questions as $assessmentQuestion) {
-            $assessmentQuestion->delete();
-        }
+        DB::transaction(function () use ($assessmentQuestionBank) {
+            AssesmentQuestion::where('assesment_id', $assessmentQuestionBank->assesment_id)
+                ->where('question_bank_id', $assessmentQuestionBank->question_bank_id)
+                ->delete();
 
-        $assessmentQuestionBank->delete();
+            $assessmentQuestionBank->delete();
+        });
 
         return redirect()->back()->with('danger', 'Question Bank ' . $assessmentQuestionBank->question_bank->title . " deleted successfully.");
     }

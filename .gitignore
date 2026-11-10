@@ -13,7 +13,7 @@ npm-debug.log
 yarn-error.log
 /.idea
 /.vscode
-/docs
+
 
 # AI Agent
 .agents/*
@@ -25,3 +25,16 @@ yarn-error.log
 
 .tmp-edge-profile/*
 !.tmp-edge-profile/.gitkeep
+*.sql
+
+# Codebase Memory MCP
+/.codebase-memory/
+
+/.playwright-mcp/
+
+
+# Antigravity & Gemini
+/.gemini/
+.gemini/
+
+/scratch/

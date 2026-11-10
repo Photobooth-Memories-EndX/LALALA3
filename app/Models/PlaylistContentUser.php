@@ -26,6 +26,7 @@ class PlaylistContentUser extends Model
         'learning_hour',
         'completed_at',
         'learning_status',
+        'status',
         'finish',
     ];
 

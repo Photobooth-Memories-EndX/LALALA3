@@ -33,6 +33,9 @@
             columns: [
                 {data: 'type', name: 'certificate_type'},
                 {data: 'name', name: 'name', orderable: false},
+                {data: 'institution', name: 'institution'},
+                {data: 'issued_date', name: 'issued_date'},
+                {data: 'expired_date', name: 'expired_date'},
                 {data: 'assessment', name: 'assessment', orderable: false},
                 {data: 'minimum_progress', name: 'minimum_progress'},
                 {data: 'minimum_score', name: 'minimum_score'},
@@ -109,6 +112,16 @@
             table.search('').page.len(15).ajax.reload();
         });
 
+        // Reset Add Modal when opened
+        $('#addCertificateSettingModal').on('show.bs.modal', function () {
+            const form = $(this).find('form');
+            if (!form.data('reloaded-from-error')) {
+                form.find('.certificate-institution-input').val('PT KRAKATAU POSCO');
+                form.find('.certificate-issued-date').val('');
+                form.find('.certificate-expired-date').val('');
+            }
+        });
+
         // Edit Certificate Modal trigger
         $(document).on('click', '.certificate-edit', function () {
             const setting = $(this).data('setting');
@@ -121,12 +134,16 @@
             form.find('.certificate-item-select')
                 .data('selected-content', setting.content_id || '')
                 .data('selected-trainingplan', setting.trainingplan_id || '')
+                .data('selected-offline', setting.offline_training_id || '')
                 .data('selected-assessment', setting.assessment_id || '');
             form.find('.certificate-assessment-select').data('selected', setting.assessment_id || '');
             form.find('.certificate-assessment-required').prop('checked', setting.is_assessment_required);
             form.find('[name="minimum_progress"]').val(setting.minimum_progress);
             form.find('[name="minimum_score"]').val(setting.minimum_score);
             form.find('[name="issuer_name"]').val(setting.issuer_name);
+            form.find('.certificate-institution-input').val(setting.institution || 'PT KRAKATAU POSCO');
+            form.find('.certificate-issued-date').val(setting.issued_date || '');
+            form.find('.certificate-expired-date').val(setting.expired_date || '');
             form.find('.certificate-default-template').prop('checked', setting.use_default_template);
             form.find('[name="is_active"]').val(setting.is_active ? '1' : '0');
             form.trigger('certificate:reload');

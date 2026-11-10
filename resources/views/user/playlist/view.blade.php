@@ -9,11 +9,11 @@
     $playlistDebugActive = !empty($playlistDebugState);
 
     $playlistUiState = [
-        'learning_progress' => (float) $percentageProgressPlaylist,
-        'content_assessment_available' => $contentAssessmentTotal > 0,
-        'playlist_assessment_available' => $hasPlaylistAssessment
-            && ($assessmentAccess || $playlistAssessmentDone),
-        'certificate_available' => (bool) ($playlistCertificateEligibility?->eligible ?? false),
+        'learning_progress' => (float) ($completionRequirements['learning_progress'] ?? $percentageProgressPlaylist),
+        'content_assessment_available' => (bool) ($completionRequirements['content_assessment_available'] ?? ($contentAssessmentTotal > 0)),
+        'playlist_assessment_available' => (bool) ($completionRequirements['playlist_assessment_available'] ?? ($hasPlaylistAssessment
+            && ($assessmentAccess || $playlistAssessmentDone))),
+        'certificate_available' => (bool) ($completionRequirements['certificate_available'] ?? ($playlistCertificateEligibility?->eligible ?? false)),
     ];
 
     if (($playlistDebugState['learning_progress'] ?? null) === 'pass') {
@@ -45,7 +45,7 @@
                 <i class="ti ti-arrow-left"></i> Back
             </a>
 
-            @include('user.playlist.components.view-hero')
+@include('user.playlist.components.view-hero')
 
             <div class="playlist-learning-shell">
                 <button type="button"
@@ -81,6 +81,7 @@
                             'content_all' => $content_all,
                             'playlist' => $playlist,
                         ])
+
                         @include('user.playlist.components.view-content-info')
 
                         @if ($canUsePlaylistDebug)
@@ -148,6 +149,9 @@
 
     @include('user.playlist.components.view-style')
     <link rel="stylesheet" href="{{ asset('css/playlist.css') }}">
+    @if (auth()->user()?->canAccessManageModule('playlist_debug_tools') && \App\Services\EngagementTime\EngagementTimeService::isTargetPlaylistContent($playlist, $content))
+        <link rel="stylesheet" href="{{ asset('css/engagement-time.css') }}">
+    @endif
 
     <style>
         .playlist-comment-modal .modal-dialog {
@@ -665,4 +669,7 @@
     @endif
 
     @include('user.playlist.components.view-player-script')
+    @if (auth()->user()?->canAccessManageModule('playlist_debug_tools') && \App\Services\EngagementTime\EngagementTimeService::isTargetPlaylistContent($playlist, $content))
+        <script src="{{ asset('js/engagement-time-tracker.js') }}"></script>
+    @endif
 @endsection

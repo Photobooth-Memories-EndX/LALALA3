@@ -45,5 +45,15 @@
             <div class="text-dark lh-lg fs-5 content-overview-text">{!! $content->description !!}</div>
         </div>
 
+        @if (auth()->user()?->canAccessManageModule('playlist_debug_tools') && \App\Services\EngagementTime\EngagementTimeService::isTargetContent($content))
+            @include('user.components.total-engagement-time', [
+                'targetType'      => 'content',
+                'targetId'        => $content->id,
+                'initialDuration' => (int) ($content_user->afk_duration_seconds ?? 0),
+            ])
+        @endif
+
+        @include('user.playlist.components.view-completion-requirements')
+
     </div>
 </div>

@@ -504,6 +504,7 @@ class ContentManagementLearningHourAndDetailTest extends TestCase
             'classification'        => $this->classification->id,
             'duration'              => '00:02:30',
             'learning_hours'        => 0.0417,
+            'status'                => 'optional',
             'date'                  => '2026-09-08',
             'action'                => 'save',
         ]);

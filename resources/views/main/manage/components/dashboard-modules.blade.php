@@ -10,17 +10,17 @@
     </div>
 
     <div class="row g-3">
-        
-        @if(auth()->user()->canAccessManageModule('learning_management'))
+
+
+        @if(auth()->user()->canAccessManageModule('record_management'))
         @include('main.manage.components.admin-menu-card', [
-            'title' => 'Learning Management',
-            'description' => 'Monitor employee learning activities, track learning progress, review learning history, and oversee training performance.',
-            'url' => url('manage/learning'),
-            'button' => 'Manage Learning',
-            'icon' => 'ti ti-school'
+            'title' => 'Learning & Record Management',
+            'description' => 'Manage KP OWL and Non KP OWL learning records, including online and offline training data, participant progress, classifications, and record exports.',
+            'url' => route('manage.record.online'),
+            'button' => 'Manage Records',
+            'icon' => 'ti ti-folders'
             ])
-            @endif
-            
+        @endif
             @if(auth()->user()->canAccessManageModule('assessment_management'))
                 @include('main.manage.components.admin-menu-card', [
                     'title' => 'Assessment Management',
@@ -28,16 +28,25 @@
                     'url' => url('manage/assesment'),
                     'button' => 'Manage Assessments',
                     'icon' => 'ti ti-clipboard-check'
+                    ])
+            @endif
+            @if(auth()->user()->canAccessManageModule('task_management'))
+                @include('main.manage.components.admin-menu-card', [
+                    'title' => 'Task Management',
+                    'description' => 'Manage course tasks and assignments, set deadlines, publish tasks, and review user submissions.',
+                    'url' => url('manage/task'),
+                    'button' => 'Manage Tasks',
+                    'icon' => 'ti ti-clipboard-list'
                 ])
             @endif
 
             @if(auth()->user()->canAccessManageModule('content_repository'))
-                @include('main.manage.components.admin-menu-card', [
-                    'title' => 'Content Repository',
-                    'description' => 'Manage learning materials, including videos, MOOC content, documents, SOPs, thumbnails, authors, and publication status.',
-                    'url' => url('manage/content'),
-                    'button' => 'Manage Content',
-                    'icon' => 'ti ti-book-2'
+            @include('main.manage.components.admin-menu-card', [
+                'title' => 'Content Repository',
+                'description' => 'Manage learning materials, including videos, MOOC content, documents, SOPs, thumbnails, authors, and publication status.',
+                'url' => url('manage/content'),
+                'button' => 'Manage Content',
+                'icon' => 'ti ti-book-2'
                 ])
             @endif
 
@@ -50,7 +59,7 @@
                     'icon' => 'ti ti-route'
                     ])
             @endif
-            
+
             @if(auth()->user()->canAccessManageModule('question_bank'))
             @include('main.manage.components.admin-menu-card', [
                 'title' => 'Question Bank',
@@ -60,7 +69,7 @@
                 'icon' => 'ti ti-help-circle'
                 ])
             @endif
-            
+
             @if(auth()->user()->canAccessManageModule('news_announcement'))
                 @include('main.manage.components.admin-menu-card', [
                     'title' => 'News & Announcements',
@@ -70,7 +79,7 @@
                     'icon' => 'ti ti-news'
                 ])
             @endif
-            
+
             @if(auth()->user()->canAccessManageModule('event_documentation'))
                 @include('main.manage.components.admin-menu-card', [
                         'title' => 'Event Documentation',
@@ -132,6 +141,15 @@
                 ])
             @endif
 
+            {{-- Training Schedule Management --}}
+            @include('main.manage.components.admin-menu-card', [
+                'title' => 'Training Schedule Management',
+                'description' => 'Create new PTKP training schedules, manage quotas, instructors, locations, and registration statuses.',
+                'url' => url('/manage/training-schedule'),
+                'button' => 'Manage Schedule',
+                'icon' => 'ti ti-calendar-event'
+            ])
+
     </div>
 </div>
 
@@ -165,6 +183,13 @@
                     'button' => 'Manage Roles',
                     'icon' => 'ti ti-user-shield'
                 ])
+                {{-- @include('main.manage.components.admin-menu-card', [
+                    'title' => 'Resign Management',
+                    'description' => 'Monitor soft-deleted employee accounts (deleted_at IS NOT NULL), track offboarding history, and audit resigned users.',
+                    'url' => route('manage.role.resign'),
+                    'button' => 'Manage Resigned',
+                    'icon' => 'ti ti-user-off'
+                ]) --}}
             @endif
 
             @if(auth()->user()->canAccessManageModule('monitoring'))

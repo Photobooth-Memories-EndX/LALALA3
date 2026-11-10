@@ -1,9 +1,12 @@
 @php
     $user = auth()->user();
-    $ongoingCourseVal = (int) ($ongoingCourse ?? 84);
-    $completedCourseVal = (int) ($completedCourse ?? 58);
+    $owlCourseCompleted = (int) ($owlCourseCompleted ?? ($completedCourse ?? 0));
+    $nonOwlCourseCompleted = (int) ($nonOwlCourseCompleted ?? 0);
+    $completedCourseVal = (int) ($completedCourse ?? ($owlCourseCompleted + $nonOwlCourseCompleted));
+    $totalOngoingVal = (int) ($totalOngoing ?? ($ongoingCourse ?? 0));
+    $ongoingCourseVal = $totalOngoingVal;
     $totalCourseVal = (int) ($totalCourse ?? ($ongoingCourseVal + $completedCourseVal));
-    $learningHours = $learningHours ?? 20.8;
+    $learningHours = $totalLearningHours ?? ($learningHours ?? 0);
 
     $teamName = $user?->team ?? $user?->department ?? '';
     $empId = $user?->id_emp ?? $user?->id ?? '';
@@ -22,9 +25,13 @@
     'heroTitle' => '',
     'heroName' => $user?->name ?? 'Learner',
     'heroSubtitle' => $userDetail,
+    'owlCourseCompleted' => $owlCourseCompleted,
+    'nonOwlCourseCompleted' => $nonOwlCourseCompleted,
+    'totalOngoing' => $totalOngoingVal,
     'ongoingCourseVal' => $ongoingCourseVal,
     'completedCourseVal' => $completedCourseVal,
     'totalCourseVal' => $totalCourseVal,
     'learningHours' => $learningHours,
+    'totalLearningHours' => $learningHours,
     'compactSummary' => true,
 ])

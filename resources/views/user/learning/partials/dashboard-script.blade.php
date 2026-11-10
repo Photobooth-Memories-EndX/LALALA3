@@ -4,31 +4,117 @@
     {{-- ApexCharts: dimuat di awal agar tersedia saat tab Monitoring (AJAX) dirender. --}}
     <script src="{{ asset('Tabler/dist/libs/apexcharts/dist/apexcharts.min.js') }}"></script>
     {{-- Learning Record: search, filter, sorting & pagination client-side (jQuery, tanpa AJAX). --}}
-    <script src="{{ asset('js/learning-record.js') }}"></script>
+    <script src="{{ asset('js/learning-record.js') }}?v={{ filemtime(public_path('js/learning-record.js')) }}"></script>
 
     <script>
         var _activeTab = null;
-        var _learningTabs = ['ongoing', 'record', 'assessment', 'certificate'];
+        var _learningTabs = ['ongoing', 'record', 'my-task', 'certificate'];
         var _ongoingMode = null;
+        var _recordMode = null;
+        var _tabFetchSequence = 0;
+        var _activeFetchController = null;
 
         function learningTabFromUrl() {
             var tab = String(new URLSearchParams(window.location.search).get('learning_tab') || 'ongoing');
+            if (tab === 'assessment') {
+                return 'my-task';
+            }
             return _learningTabs.indexOf(tab) !== -1 ? tab : 'ongoing';
+        }
+
+        function recordModeFromUrl() {
+            var params = new URLSearchParams(window.location.search);
+            var mode = String(params.get('record_mode') || 'online').toLowerCase();
+            return ['online', 'offline', 'all'].indexOf(mode) !== -1 ? mode : 'online';
         }
 
         function skeletonHtml() {
             return '<div class="card border-0 shadow-sm rounded-4 p-4 mb-3">' +
                 '<div class="placeholder-glow">' +
-                '<span class="placeholder col-6 mb-3 rounded-3" style="height:20px"></span>' +
-                '<span class="placeholder col-12 mb-2 rounded-3" style="height:14px"></span>' +
-                '<span class="placeholder col-10 mb-4 rounded-3" style="height:14px"></span>' +
-                '<div class="row g-3">' +
-                '<div class="col-md-4"><span class="placeholder col-12 rounded-4" style="height:200px"></span></div>' +
-                '<div class="col-md-4"><span class="placeholder col-12 rounded-4" style="height:200px"></span></div>' +
-                '<div class="col-md-4"><span class="placeholder col-12 rounded-4" style="height:200px"></span></div>' +
+                    '<span class="placeholder col-6 mb-3 rounded-3" style="height:20px"></span>' +
+                    '<span class="placeholder col-12 mb-2 rounded-3" style="height:14px"></span>' +
+                    '<span class="placeholder col-10 mb-4 rounded-3" style="height:14px"></span>' +
+                    '<div class="row g-3">' +
+                        '<div class="col-md-4"><span class="placeholder col-12 rounded-4" style="height:200px"></span></div>' +
+                        '<div class="col-md-4"><span class="placeholder col-12 rounded-4" style="height:200px"></span></div>' +
+                        '<div class="col-md-4"><span class="placeholder col-12 rounded-4" style="height:200px"></span></div>' +
+                    '</div>' +
                 '</div>' +
+            '</div>';
+        }
+
+        function recordSkeletonHtml(mode) {
+            mode = mode || 'online';
+
+            var switchInsideHeaderHtml = '<div class="mb-3">' +
+                '<h2 class="fw-bold mb-1 my-task-filter-title">Learning Record</h2>' +
+                '<p class="text-muted small mb-0 my-task-filter-subtitle">Track your completed learning history across KP OWL and Non KP OWL activities.</p>' +
+            '</div>' +
+            '<div class="d-flex align-items-center flex-wrap gap-2 mb-3 my-task-pills-row">' +
+                '<button type="button" class="my-task-category-pill record-mode-btn ' + (mode === 'all' ? 'active' : '') + '" data-mode="all">All Record</button>' +
+                '<button type="button" class="my-task-category-pill record-mode-btn ' + (mode === 'online' ? 'active' : '') + '" data-mode="online">KP OWL</button>' +
+                '<button type="button" class="my-task-category-pill record-mode-btn ' + (mode === 'offline' ? 'active' : '') + '" data-mode="offline">Non KP OWL</button>' +
+            '</div>' +
+            '<hr class="my-3 my-task-divider">';
+
+            var tableRows = '';
+            for (var i = 0; i < 5; i++) {
+                tableRows += '<tr>' +
+                    '<td class="text-center"><span class="placeholder col-6" style="height:14px;"></span></td>' +
+                    '<td><span class="placeholder col-10 mb-1 d-block" style="height:14px;"></span><span class="placeholder col-5 d-block" style="height:10px;"></span></td>' +
+                    '<td><span class="placeholder col-7" style="height:14px;"></span></td>' +
+                    '<td><span class="placeholder col-7" style="height:14px;"></span></td>' +
+                    '<td><span class="placeholder col-8" style="height:14px;"></span></td>' +
+                    '<td><span class="placeholder col-6" style="height:14px;"></span></td>' +
+                    '<td><span class="placeholder col-6" style="height:14px;"></span></td>' +
+                    '<td><span class="placeholder col-8" style="height:14px;"></span></td>' +
+                    '<td><span class="placeholder col-8" style="height:14px;"></span></td>' +
+                    '<td class="text-center"><span class="placeholder col-5" style="height:14px;"></span></td>' +
+                    '<td class="text-center"><span class="placeholder col-5" style="height:14px;"></span></td>' +
+                    '<td class="text-center"><span class="placeholder col-5" style="height:14px;"></span></td>' +
+                '</tr>';
+            }
+
+            return '<div class="learning-record-shell">' +
+                '<div class="card border-0 shadow-sm rounded-4 mb-3 my-task-filter-card">' +
+                    '<div class="card-body p-3 p-md-4 placeholder-glow">' +
+                        switchInsideHeaderHtml +
+                        '<div class="d-flex align-items-center flex-wrap gap-2 w-100 my-task-toolbar">' +
+                            '<span class="placeholder rounded-2" style="width:110px;height:38px;"></span>' +
+                            '<span class="placeholder rounded-2" style="width:140px;height:38px;"></span>' +
+                            '<span class="placeholder rounded-2" style="width:90px;height:38px;"></span>' +
+                            '<span class="placeholder flex-grow-1 rounded-2" style="min-width:180px;height:38px;"></span>' +
+                            '<span class="placeholder rounded-2" style="width:38px;height:38px;"></span>' +
+                            '<span class="placeholder rounded-2" style="width:38px;height:38px;"></span>' +
+                        '</div>' +
+                    '</div>' +
                 '</div>' +
-                '</div>';
+                '<div class="card border-0 shadow-sm rounded-4 mb-4 learning-record-card">' +
+                    '<div class="card-body p-0">' +
+                        '<div class="table-responsive learning-record-scroll">' +
+                            '<table class="table table-vcenter card-table mb-0 learning-record-table placeholder-glow">' +
+                                '<thead>' +
+                                    '<tr>' +
+                                        '<th class="text-center" style="width:4%">No</th>' +
+                                        '<th style="width:22%">Course Title</th>' +
+                                        '<th style="width:7%">Type</th>' +
+                                        '<th style="width:7%">Category</th>' +
+                                        '<th style="width:9%">Main Classification</th>' +
+                                        '<th style="width:7%">Duration</th>' +
+                                        '<th style="width:8%">Learning Hour</th>' +
+                                        '<th style="width:7%">Progress</th>' +
+                                        '<th style="width:11%">Date Time</th>' +
+                                        '<th class="text-center" style="width:7%">Attendance</th>' +
+                                        '<th class="text-center" style="width:7%">Assessment Score (L2)</th>' +
+                                        '<th class="text-center" style="width:5%">Certificate</th>' +
+                                    '</tr>' +
+                                '</thead>' +
+                                '<tbody>' + tableRows + '</tbody>' +
+                            '</table>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
         }
 
         function showLearningHero(tab) {
@@ -77,6 +163,18 @@
             template.remove();
         }
 
+        function syncLearningMyTaskHero() {
+            var template = document.querySelector(
+                '#learning-tab-content template[data-learning-my-task-hero]'
+            );
+            var heroRegion = document.querySelector('[data-learning-hero="my-task"]');
+
+            if (!template || !heroRegion) return;
+
+            heroRegion.replaceChildren(template.content.cloneNode(true));
+            template.remove();
+        }
+
         function syncLearningCertificateHero() {
             var template = document.querySelector(
                 '#learning-tab-content template[data-learning-certificate-hero]'
@@ -95,7 +193,7 @@
             var $openFilterModal = $('#assessmentMoreFiltersModal.show, #certificateMoreFiltersModal.show');
             if ($openFilterModal.length) {
                 $openFilterModal
-                    .one('hidden.bs.modal.learningAssessment', function() {
+                    .one('hidden.bs.modal.learningAssessment', function () {
                         loadLearningTab(tab);
                     })
                     .modal('hide');
@@ -121,52 +219,82 @@
             if ($.fn.DataTable && $.fn.DataTable.isDataTable('#certificateTable')) {
                 $('#certificateTable').DataTable().destroy();
             }
+            if ($.fn.DataTable && $.fn.DataTable.isDataTable('#myTaskTable')) {
+                $('#myTaskTable').DataTable().destroy();
+            }
 
             // Show skeleton while loading
-            $('#learning-tab-content').html(skeletonHtml());
+            if (tab === 'record') {
+                $('#learning-tab-content').html(recordSkeletonHtml(_recordMode || recordModeFromUrl()));
+            } else {
+                $('#learning-tab-content').html(skeletonHtml());
+            }
 
             // Forward current URL query params so filters and pagination work
             var params = new URLSearchParams(window.location.search);
-            Array.from(params.keys()).forEach(function(key) {
+            Array.from(params.keys()).forEach(function (key) {
                 if (tab !== 'ongoing' && key.indexOf('ongoing_') === 0) params.delete(key);
                 if (tab !== 'record' && key.indexOf('record_') === 0) params.delete(key);
                 if (tab !== 'assessment' && key.indexOf('assessment_') === 0) params.delete(key);
+                if (tab !== 'my-task' && key.indexOf('my_task_') === 0) params.delete(key);
                 if (tab !== 'certificate' && key.indexOf('certificate_') === 0) params.delete(key);
             });
             if (tab === 'ongoing' && _ongoingMode) {
                 params.set('ongoing_mode', _ongoingMode);
             }
-            var fetchUrl = '{{ route('user.learning.dashboard.partial', ['tab' => '__TAB__']) }}'.replace('__TAB__', tab);
+            if (tab === 'record') {
+                var rm = _recordMode || recordModeFromUrl();
+                if (rm) params.set('record_mode', rm);
+            }
+            if (tab === 'my-task' && window._taskSubmittedId) {
+                params.set('task_submitted_id', window._taskSubmittedId);
+                if (window._taskSubmittedTitle) {
+                    params.set('task_submitted_title', window._taskSubmittedTitle);
+                }
+                window._taskSubmittedId = null;
+                window._taskSubmittedTitle = null;
+            }
+            var fetchUrl = '{{ route("user.learning.dashboard.partial", ["tab" => "__TAB__"]) }}'.replace('__TAB__', tab);
             if (params.toString()) {
                 fetchUrl += '?' + params.toString();
             }
 
+            if (_activeFetchController) {
+                try { _activeFetchController.abort(); } catch (e) {}
+            }
+            _activeFetchController = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+            var thisFetchSeq = ++_tabFetchSequence;
+
             fetch(fetchUrl, {
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                .then(function(r) {
-                    if (!r.ok) throw new Error('HTTP ' + r.status);
-                    return r.text();
-                })
-                .then(function(html) {
-                    $('#learning-tab-content').html(html);
-                    syncLearningOngoingHero();
-                    syncLearningAssessmentHero();
-                    syncLearningRecordHero();
-                    syncLearningCertificateHero();
-                    initLearningAssessment();
-                    initLearningCertificate();
-                    initLearningRecord();
-                    initOngoingSearchAutocomplete();
-                })
-                .catch(function() {
-                    _activeTab = null;
-                    $('#learning-tab-content').html(
-                        '<div class="alert alert-danger m-4">Gagal memuat konten. Silakan refresh halaman.</div>'
-                    );
-                });
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                signal: _activeFetchController ? _activeFetchController.signal : undefined
+            })
+            .then(function (r) {
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return r.text();
+            })
+            .then(function (html) {
+                if (thisFetchSeq !== _tabFetchSequence) return;
+                $('#learning-tab-content').html(html);
+                syncLearningOngoingHero();
+                syncLearningAssessmentHero();
+                syncLearningRecordHero();
+                syncLearningMyTaskHero();
+                syncLearningCertificateHero();
+                initLearningAssessment();
+                initLearningCertificate();
+                initLearningRecord();
+                if (typeof initMyTask === 'function') initMyTask();
+                initOngoingSearchAutocomplete();
+            })
+            .catch(function (err) {
+                if (err && err.name === 'AbortError') return;
+                if (thisFetchSeq !== _tabFetchSequence) return;
+                _activeTab = null;
+                $('#learning-tab-content').html(
+                    '<div class="alert alert-danger m-4">Gagal memuat konten. Silakan refresh halaman.</div>'
+                );
+            });
         }
 
         // ── Live Autocomplete Search for Ongoing Learning ───────────────────────────
@@ -197,7 +325,7 @@
                 return urlParams.get('ongoing_mode') || 'content';
             }
 
-            searchInput.addEventListener('input', function() {
+            searchInput.addEventListener('input', function () {
                 var query = this.value.trim();
 
                 clearTimeout(debounceTimer);
@@ -209,100 +337,81 @@
                     return;
                 }
 
-                debounceTimer = setTimeout(function() {
+                debounceTimer = setTimeout(function () {
                     var mode = getOngoingMode();
-                    fetch('/user/learning/ongoing/search-autocomplete?q=' + encodeURIComponent(query) +
-                            '&mode=' + encodeURIComponent(mode), {
-                                headers: {
-                                    'X-Requested-With': 'XMLHttpRequest'
-                                }
-                            })
-                        .then(function(response) {
-                            if (!response.ok) throw new Error('HTTP ' + response.status);
-                            return response.json();
-                        })
-                        .then(function(data) {
-                            var html = '';
+                    fetch('/user/learning/ongoing/search-autocomplete?q=' + encodeURIComponent(query) + '&mode=' + encodeURIComponent(mode), {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    })
+                    .then(function (response) {
+                        if (!response.ok) throw new Error('HTTP ' + response.status);
+                        return response.json();
+                    })
+                    .then(function (data) {
+                        var html = '';
+                        if (data && data.length > 0) {
+                            data.forEach(function (item) {
+                                var badgeType = item.type === 'playlist' ? 'bg-teal-lt text-teal' : 'bg-primary-lt text-primary';
+                                var typeLabel = item.type ? escapeHtml(item.type.toUpperCase()) : 'CONTENT';
+
+                                html += '<a href="' + escapeHtml(item.url) + '" class="dropdown-item py-2 px-3 text-wrap border-bottom-subtle ongoing-search-item" data-title="' + escapeHtml(item.title) + '">' +
+                                    '<div class="d-flex align-items-center justify-content-between mb-1">' +
+                                        '<span class="text-dark small fw-semibold text-truncate me-2">' + escapeHtml(item.title) + '</span>' +
+                                        (item.progress !== undefined ? '<span class="badge ' + badgeType + ' small flex-shrink-0">' + item.progress + '%</span>' : '') +
+                                    '</div>' +
+                                    '<div class="d-flex align-items-center justify-content-between text-muted" style="font-size: 0.75rem;">' +
+                                        '<span class="text-truncate">' + escapeHtml(item.category || '') + '</span>' +
+                                        '<span class="badge bg-secondary-lt text-secondary" style="font-size: 0.65rem;">' + typeLabel + '</span>' +
+                                    '</div>' +
+                                '</a>';
+                            });
+                        }
+                        if (listEl) listEl.innerHTML = html;
+
+                        var keyword = searchInput.value.trim();
+                        if (footerEl) {
                             if (data && data.length > 0) {
-                                data.forEach(function(item) {
-                                    var badgeType = item.type === 'playlist' ?
-                                        'bg-teal-lt text-teal' : 'bg-primary-lt text-primary';
-                                    var typeLabel = item.type ? escapeHtml(item.type
-                                        .toUpperCase()) : 'CONTENT';
-
-                                    html += '<a href="' + escapeHtml(item.url) +
-                                        '" class="dropdown-item py-2 px-3 text-wrap border-bottom-subtle ongoing-search-item" data-title="' +
-                                        escapeHtml(item.title) + '">' +
-                                        '<div class="d-flex align-items-center justify-content-between mb-1">' +
-                                        '<span class="text-dark small fw-semibold text-truncate me-2">' +
-                                        escapeHtml(item.title) + '</span>' +
-                                        (item.progress !== undefined ? '<span class="badge ' +
-                                            badgeType + ' small flex-shrink-0">' + item
-                                            .progress + '%</span>' : '') +
-                                        '</div>' +
-                                        '<div class="d-flex align-items-center justify-content-between text-muted" style="font-size: 0.75rem;">' +
-                                        '<span class="text-truncate">' + escapeHtml(item
-                                            .category || '') + '</span>' +
-                                        '<span class="badge bg-secondary-lt text-secondary" style="font-size: 0.65rem;">' +
-                                        typeLabel + '</span>' +
-                                        '</div>' +
-                                        '</a>';
-                                });
+                                footerEl.innerHTML = `
+                                    <a href="/my-learning?learning_tab=ongoing&q=${encodeURIComponent(keyword)}" class="dropdown-item fw-semibold text-primary py-2 d-flex align-items-center justify-content-center gap-2">
+                                        <i class="ti ti-search"></i>
+                                        <span>See all results for "${keyword}"</span>
+                                    </a>
+                                `;
+                                footerEl.style.display = 'block';
+                            } else {
+                                footerEl.innerHTML = '<div class="dropdown-item text-muted disabled py-2">No items found</div>';
+                                footerEl.style.display = 'block';
                             }
-                            if (listEl) listEl.innerHTML = html;
-
-                            var keyword = searchInput.value.trim();
-                            if (footerEl) {
-                                if (data && data.length > 0) {
-                                    footerEl.innerHTML = `
-                                <a href="/my-learning?learning_tab=ongoing&q=${encodeURIComponent(keyword)}" class="dropdown-item fw-semibold text-primary py-2 d-flex align-items-center justify-content-center gap-2">
-                                    <i class="ti ti-search"></i>
-                                    <span>See all results for "${keyword}"</span>
-                                </a>
-                            `;
-                                    footerEl.style.display = 'block';
-                                } else {
-                                    footerEl.innerHTML =
-                                        '<div class="dropdown-item text-muted disabled py-2">No items found</div>';
-                                    footerEl.style.display = 'block';
-                                }
-                            }
-                            searchResults.style.display = 'block';
-                        })
-                        .catch(function() {
-                            searchResults.style.display = 'none';
-                        });
+                        }
+                        searchResults.style.display = 'block';
+                    })
+                    .catch(function () {
+                        searchResults.style.display = 'none';
+                    });
                 }, 250);
             });
 
             // Show dropdown again on focus if query exists
-            searchInput.addEventListener('focus', function() {
-                if (this.value.trim().length >= 1 && ((listEl && listEl.children.length > 0) || (footerEl &&
-                        footerEl.style.display !== 'none'))) {
+            searchInput.addEventListener('focus', function () {
+                if (this.value.trim().length >= 1 && ((listEl && listEl.children.length > 0) || (footerEl && footerEl.style.display !== 'none'))) {
                     searchResults.style.display = 'block';
                 }
             });
         }
 
         // Hide dropdown menu when clicking outside search container
-        document.addEventListener('click', function(e) {
+        document.addEventListener('click', function (e) {
             var searchInput = document.getElementById('ongoing-search-input');
             var searchResults = document.getElementById('ongoing-search-results');
-            if (searchInput && searchResults && !searchInput.contains(e.target) && !searchResults.contains(e
-                .target)) {
+            if (searchInput && searchResults && !searchInput.contains(e.target) && !searchResults.contains(e.target)) {
                 searchResults.style.display = 'none';
             }
         });
 
         // ── Quick dropdown filters Learning On Going (Type / Status / Year / Month) ──
-        // Terapkan an via AJAX (tanpa reload halaman): perbarui query string di URL
-        // lalu muat ulang partial tab ongoing memakai endpoint yang sudah ada.
         function applyOngoingQuickFilter(param, value, isArray) {
             var params = new URLSearchParams(window.location.search);
 
-            // Hapus nilai lama param tsb (bentuk "param", "param[]" maupun "param[0]")
-            // dan reset pagination agar hasil filter mulai dari halaman pertama.
-            Array.from(params.keys()).forEach(function(key) {
+            Array.from(params.keys()).forEach(function (key) {
                 if (key === param || key.indexOf(param + '[') === 0 || key === 'ongoing_page') {
                     params.delete(key);
                 }
@@ -315,13 +424,11 @@
             var qs = params.toString();
             history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
 
-            _activeTab = null; // paksa loadLearningTab memuat ulang partial ongoing
+            _activeTab = null;
             loadLearningTab('ongoing');
         }
 
-        // Delegated: item dropdown ikut ter-render ulang setiap partial dimuat via AJAX.
-        // Klik item yang sudah aktif = batalkan pilihan (toggle, tanpa opsi "All" pada Type).
-        $(document).on('click', '.ongoing-quick-item', function(e) {
+        $(document).on('click', '.ongoing-quick-item', function (e) {
             e.preventDefault();
             applyOngoingQuickFilter(
                 String($(this).data('param')),
@@ -331,19 +438,17 @@
         });
 
         // ── Mode switch Learning On Going: Content | Playlist ────────────────────────
-        // Dua flow independen — pindah mode me-reset seluruh filter ongoing, lalu
-        // partial mode terpilih dimuat via AJAX (tanpa reload halaman).
-        $(document).on('click', '.ongoing-mode-btn', function() {
-            var mode = String($(this).data('mode'));
+        $(document).on('click', '.ongoing-mode-btn', function () {
+            var mode   = String($(this).data('mode'));
             var params = new URLSearchParams(window.location.search);
 
-            Array.from(params.keys()).forEach(function(key) {
+            Array.from(params.keys()).forEach(function (key) {
                 if (key.indexOf('ongoing_') === 0) {
                     params.delete(key);
                 }
             });
 
-            _ongoingMode = (mode === 'playlist' || mode === 'mooc') ? mode : null;
+            _ongoingMode = (['playlist', 'mooc', 'non-kp-owl', 'ongoing-non-kp-owl'].indexOf(mode) !== -1) ? mode : null;
 
             if (_ongoingMode) {
                 params.set('ongoing_mode', _ongoingMode);
@@ -352,37 +457,680 @@
             var qs = params.toString();
             history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
 
-            _activeTab = null; // paksa loadLearningTab memuat ulang partial ongoing
+            _activeTab = null;
             loadLearningTab('ongoing');
         });
 
+        // ── Filter dropdowns & search for Ongoing Non KP OWL ─────────────────────────
+        $(document).on('click', '.ongoing-offline-filter-item', function (e) {
+            e.preventDefault();
+            var param = String($(this).data('param'));
+            var value = String($(this).data('value'));
+            var params = new URLSearchParams(window.location.search);
+
+            if (value === 'all' || value === '') {
+                params.delete(param);
+            } else {
+                params.set(param, value);
+            }
+
+            params.set('learning_tab', 'ongoing');
+            params.set('ongoing_mode', 'non-kp-owl');
+
+            var qs = params.toString();
+            history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+
+            _activeTab = null;
+            loadLearningTab('ongoing');
+        });
+
+        $(document).on('click', '#ongoingOfflineApplyBtn', function () {
+            var q = $('#ongoingOfflineSearch').val() || '';
+            var params = new URLSearchParams(window.location.search);
+            if (q.trim()) {
+                params.set('ongoing_search', q.trim());
+            } else {
+                params.delete('ongoing_search');
+            }
+            params.set('learning_tab', 'ongoing');
+            params.set('ongoing_mode', 'non-kp-owl');
+            var qs = params.toString();
+            history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+            _activeTab = null;
+            loadLearningTab('ongoing');
+        });
+
+        $(document).on('click', '#ongoingOfflineResetBtn', function () {
+            var params = new URLSearchParams(window.location.search);
+            Array.from(params.keys()).forEach(function (key) {
+                if (key.indexOf('ongoing_filter_') === 0 || key === 'ongoing_search') {
+                    params.delete(key);
+                }
+            });
+            params.set('learning_tab', 'ongoing');
+            params.set('ongoing_mode', 'non-kp-owl');
+            var qs = params.toString();
+            history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+            _activeTab = null;
+            loadLearningTab('ongoing');
+        });
+
+        $(document).on('keydown', '#ongoingOfflineSearch', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                $('#ongoingOfflineApplyBtn').trigger('click');
+            }
+        });
+
+        // ── Mode switch Learning Record: Online | Offline | All ───────────────────────
+
+        // ── Mode switch Learning Record: Online | Offline | All | Export ────────────
+        $(document).on('click', '.record-mode-btn', function (e) {
+            e.preventDefault();
+            var mode = String($(this).data('mode') || 'online').toLowerCase();
+            if (['online', 'offline', 'all', 'export'].indexOf(mode) === -1) {
+                mode = 'online';
+            }
+
+            var params = new URLSearchParams(window.location.search);
+            params.set('learning_tab', 'record');
+
+            // Bersihkan filter lama jika berpindah mode agar tidak konflik
+            if (mode !== _recordMode) {
+                Array.from(params.keys()).forEach(function (key) {
+                    if (key.indexOf('record_filter_') === 0 || key === 'record_page' || key === 'page' || key === 'record_search') {
+                        params.delete(key);
+                    }
+                });
+            }
+
+            _recordMode = mode;
+            params.set('record_mode', mode);
+
+            var qs = params.toString();
+            history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+
+            _activeTab = null; // paksa loadLearningTab memuat ulang partial record
+            loadLearningTab('record');
+        });
+
+        // ── Filter dropdowns & search for Record Offline & All ───────────────────────
+        $(document).on('click', '.record-offline-filter-item, .record-all-filter-item', function (e) {
+            e.preventDefault();
+            var param = String($(this).data('param'));
+            var value = String($(this).data('value'));
+            var params = new URLSearchParams(window.location.search);
+
+            // Reset pagination saat filter berganti
+            params.delete('page');
+            params.delete('record_page');
+
+            if (value === 'all' || value === '') {
+                params.delete(param);
+            } else {
+                params.set(param, value);
+            }
+
+            params.set('learning_tab', 'record');
+            if (_recordMode) params.set('record_mode', _recordMode);
+
+            var qs = params.toString();
+            history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+
+            _activeTab = null;
+            loadLearningTab('record');
+        });
+
+        $(document).on('click', '#recordOfflineApplyBtn', function () {
+            var q = $('#recordOfflineSearch').val() || '';
+            var params = new URLSearchParams(window.location.search);
+            params.delete('page');
+            params.delete('record_page');
+            if (q.trim()) {
+                params.set('record_search', q.trim());
+            } else {
+                params.delete('record_search');
+            }
+            params.set('learning_tab', 'record');
+            params.set('record_mode', 'offline');
+            var qs = params.toString();
+            history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+            _activeTab = null;
+            loadLearningTab('record');
+        });
+
+        $(document).on('click', '#recordOfflineResetBtn, #recordOfflineEmptyResetBtn', function () {
+            var params = new URLSearchParams(window.location.search);
+            params.delete('page');
+            Array.from(params.keys()).forEach(function (key) {
+                if (key.indexOf('record_') === 0 && key !== 'record_mode') {
+                    params.delete(key);
+                }
+            });
+            params.set('learning_tab', 'record');
+            params.set('record_mode', 'offline');
+            var qs = params.toString();
+            history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+            _activeTab = null;
+            loadLearningTab('record');
+        });
+
+        // ── More Filter Offline handlers ──────────────────────────────────────
+        $(document).on('click', '#btnApplyMoreFilterModal', function () {
+            var params = new URLSearchParams(window.location.search);
+            params.delete('page');
+            params.delete('record_page');
+
+            var filterKeys = [
+                'record_filter_category',
+                'record_filter_sub_classification',
+                'record_filter_batch',
+                'record_filter_delivery_method',
+                'record_filter_provider',
+                'record_filter_attendance',
+                'record_filter_certificate'
+            ];
+
+            filterKeys.forEach(function (k) {
+                var val = $('[name="' + k + '"]').val();
+                if (val && val !== 'all') {
+                    params.set(k, val);
+                } else {
+                    params.delete(k);
+                }
+            });
+
+            params.set('learning_tab', 'record');
+            params.set('record_mode', 'offline');
+
+            var modalEl = document.getElementById('recordOfflineMoreFilterModal');
+            if (modalEl) {
+                var modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) {
+                    modal.hide();
+                } else if (typeof bootstrap.Modal.getOrCreateInstance === 'function') {
+                    bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+                } else {
+                    $(modalEl).modal('hide');
+                }
+            }
+
+            var qs = params.toString();
+            history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+            _activeTab = null;
+            loadLearningTab('record');
+        });
+
+        $(document).on('click', '#btnResetMoreFilterModal', function () {
+            var params = new URLSearchParams(window.location.search);
+            params.delete('page');
+            params.delete('record_page');
+
+            var filterKeys = [
+                'record_filter_category',
+                'record_filter_sub_classification',
+                'record_filter_batch',
+                'record_filter_delivery_method',
+                'record_filter_provider',
+                'record_filter_attendance',
+                'record_filter_certificate'
+            ];
+
+            filterKeys.forEach(function (k) {
+                params.delete(k);
+                $('[name="' + k + '"]').val('all');
+            });
+
+            params.set('learning_tab', 'record');
+            params.set('record_mode', 'offline');
+
+            var modalEl = document.getElementById('recordOfflineMoreFilterModal');
+            if (modalEl) {
+                var modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) {
+                    modal.hide();
+                } else if (typeof bootstrap.Modal.getOrCreateInstance === 'function') {
+                    bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+                } else {
+                    $(modalEl).modal('hide');
+                }
+            }
+
+            var qs = params.toString();
+            history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+            _activeTab = null;
+            loadLearningTab('record');
+        });
+
+        // Clear single more filter badge
+        $(document).on('click', '.record-offline-clear-single-filter', function (e) {
+            e.preventDefault();
+            var param = $(this).data('param');
+            var params = new URLSearchParams(window.location.search);
+            params.delete('page');
+            params.delete('record_page');
+            params.delete(param);
+            params.set('learning_tab', 'record');
+            params.set('record_mode', 'offline');
+            var qs = params.toString();
+            history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+            _activeTab = null;
+            loadLearningTab('record');
+        });
+
+        $(document).on('click', '#recordOfflineClearAllMoreFilters', function (e) {
+            e.preventDefault();
+            $('#btnResetMoreFilterModal').trigger('click');
+        });
+
+        // ── View Detail Offline Modal Population ──────────────────────────────
+        $(document).on('click', '.btn-record-offline-detail', function (e) {
+            e.preventDefault();
+            var recordId = $(this).data('record-id');
+            var dataEl = document.getElementById('record-offline-data-' + recordId);
+            if (!dataEl) return;
+
+            var d = {};
+            try {
+                d = JSON.parse(dataEl.textContent);
+            } catch (err) {
+                console.error('Failed to parse record offline data:', err);
+                return;
+            }
+
+            function fallback(val, def) {
+                if (val === undefined || val === null || val === '') return def !== undefined ? def : '-';
+                return val;
+            }
+
+            // Training Information
+            $('#dtCourseName').text(fallback(d.course_name, d.title));
+            $('#detailCourseSubHeader').text(fallback(d.subtitle, d.classification));
+            $('#dtSubCourseName').text(fallback(d.sub_course_name));
+            $('#dtType').text(fallback(d.type));
+            $('#dtCategory').text(fallback(d.category));
+            $('#dtLevel').text(fallback(d.level));
+            $('#dtBatch').text(fallback(d.batch));
+            $('#dtClassification').text(fallback(d.classification));
+            $('#dtSubClassification').text(fallback(d.sub_classification));
+            $('#dtDeliveryMethod').text(fallback(d.delivery_method));
+            $('#dtSubDeliveryMethod').text(fallback(d.sub_delivery_method));
+            $('#dtProvider').text(fallback(d.provider));
+            $('#dtProviderName').text(fallback(d.provider_name));
+
+            // Schedule & Venue
+            $('#dtDateDisplay').text(fallback(d.date_display));
+            $('#dtTimeDisplay').text(fallback(d.time_display));
+            $('#dtDuration').text(fallback(d.duration));
+            $('#dtLearningHours').text(fallback(d.learning_hour));
+            $('#dtVenue').text(fallback(d.venue));
+            $('#dtInstructor').text(fallback(d.instructor));
+
+
+            // Employee Snapshot
+            $('#dtEmployeeId').text(fallback(d.employee_id));
+            $('#dtParticipantName').text(fallback(d.participant_name));
+            $('#dtGrade').text(fallback(d.grade));
+            $('#dtJobPosition').text(fallback(d.job_position));
+            $('#dtTeam').text(fallback(d.team));
+            $('#dtDepartment').text(fallback(d.department));
+            $('#dtCompany').text(fallback(d.company));
+
+            // Service Bond
+            var bondStatus = fallback(d.bond_status);
+            $('#dtBondStatus').text(bondStatus);
+            $('#dtBondEndDate').text(fallback(d.bond_end_date_display));
+            $('#dtBondAmount').text(fallback(d.bond_amount_formatted));
+
+            if (String(bondStatus).toLowerCase() === 'yes') {
+                $('#dtBondNotice').show();
+            } else {
+                $('#dtBondNotice').hide();
+            }
+
+            var modalEl = document.getElementById('recordOfflineDetailModal');
+            if (modalEl) {
+                var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                modal.show();
+            }
+        });
+
+        // ── Attendance Detail Modal Population ──────────────────────────────
+        $(document).on('click', '.attendance-detail-trigger', function (e) {
+            e.preventDefault();
+
+            var $btn = $(this);
+            var recordId = $btn.data('record-id');
+
+            // Attempt to read from data attributes first
+            var trainingTitle = ($btn.data('training-title') || '').toString().trim();
+            var attendanceStatus = ($btn.data('attendance') || '').toString().trim();
+            var rawReason = ($btn.data('attendance-reason') || '').toString().trim();
+            var precomputedReason = ($btn.data('attendance-reason-display') || '').toString().trim();
+            var trainingDate = ($btn.data('training-date') || '').toString().trim();
+            var venue = ($btn.data('venue') || '').toString().trim();
+
+            // If any data is missing and JSON element exists, read from JSON element
+            if (recordId) {
+                var dataEl = document.getElementById('record-offline-data-' + recordId);
+                if (dataEl) {
+                    try {
+                        var d = JSON.parse(dataEl.textContent);
+                        if (!trainingTitle || trainingTitle === '-') trainingTitle = (d.course_name || d.title || '-').toString().trim();
+                        if (!attendanceStatus || attendanceStatus === '-') attendanceStatus = (d.attendance_status || '-').toString().trim();
+                        if (!rawReason) {
+                            rawReason = (d.raw_attendance_reason || (d.attendance_reason !== '-' ? d.attendance_reason : '') || '').toString().trim();
+                        }
+                        if (!precomputedReason) {
+                            precomputedReason = (d.attendance_reason_display || '').toString().trim();
+                        }
+                        if (!trainingDate || trainingDate === '-') trainingDate = (d.date_display || '-').toString().trim();
+                        if (!venue || venue === '-') venue = (d.venue || '-').toString().trim();
+                    } catch (err) {
+                        console.error('Failed to parse record offline data for attendance:', err);
+                    }
+                }
+            }
+
+            // Fallbacks for display
+            if (!trainingTitle || trainingTitle === '-') trainingTitle = '-';
+            if (!trainingDate || trainingDate === '-') trainingDate = '-';
+            if (!venue || venue === '-') venue = '-';
+            if (!attendanceStatus) attendanceStatus = '-';
+
+            // Status badge styling mapping
+            var statusLower = String(attendanceStatus).toLowerCase().trim();
+            var isYes = (statusLower === 'present' || statusLower === 'yes' || statusLower === '1' || statusLower === 'true');
+            var displayStatus = isYes ? 'Yes' : 'No';
+            var badgeClass = isYes ? 'bg-success-lt text-success' : 'bg-danger-lt text-danger';
+
+            // Attendance Reason Logic:
+            // IF attendance_reason tidak null dan tidak kosong -> tampilkan nilai attendance_reason
+            // IF attendance_reason NULL / kosong:
+            //   - untuk Yes/Present: "Employee attended the training."
+            //   - untuk non-Present: "No attendance reason recorded."
+            // Jangan pernah menampilkan null, undefined, -, atau N/A.
+            var finalReason = '';
+            var isRawEmpty = !rawReason ||
+                             rawReason === '-' ||
+                             rawReason.toLowerCase() === 'null' ||
+                             rawReason.toLowerCase() === 'undefined' ||
+                             rawReason.toLowerCase() === 'n/a';
+
+            if (!isRawEmpty) {
+                finalReason = rawReason;
+            } else if (precomputedReason &&
+                       precomputedReason !== '-' &&
+                       precomputedReason.toLowerCase() !== 'null' &&
+                       precomputedReason.toLowerCase() !== 'undefined' &&
+                       precomputedReason.toLowerCase() !== 'n/a') {
+                finalReason = precomputedReason;
+            } else if (isYes) {
+                finalReason = 'Employee attended the training.';
+            } else {
+                finalReason = 'No attendance reason recorded.';
+            }
+
+            // Safe DOM population using jQuery .text() to prevent XSS
+            $('#attendanceTrainingTitle').text(trainingTitle);
+            $('#attendanceStatus').removeClass().addClass('badge fw-bold px-2.5 py-1 ' + badgeClass).text(displayStatus);
+            $('#attendanceReason').text(finalReason);
+            $('#attendanceDate').text(trainingDate);
+            $('#attendanceVenue').text(venue);
+
+            var modalEl = document.getElementById('attendanceDetailModal');
+            if (modalEl) {
+                var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                modal.show();
+            }
+        });
+
+        $(document).on('click', '#recordAllApplyBtn', function () {
+            var q = $('#recordAllSearch').val() || '';
+            var params = new URLSearchParams(window.location.search);
+            params.delete('page');
+            params.delete('record_page');
+            if (q.trim()) {
+                params.set('record_search', q.trim());
+            } else {
+                params.delete('record_search');
+            }
+            params.set('learning_tab', 'record');
+            params.set('record_mode', 'all');
+            var qs = params.toString();
+            history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+            _activeTab = null;
+            loadLearningTab('record');
+        });
+
+        $(document).on('click', '#recordAllResetBtn, #recordAllEmptyResetBtn', function () {
+            var params = new URLSearchParams(window.location.search);
+            params.delete('page');
+            params.delete('record_page');
+            Array.from(params.keys()).forEach(function (key) {
+                if (key.indexOf('record_') === 0 && key !== 'record_mode') {
+                    params.delete(key);
+                }
+            });
+            params.set('learning_tab', 'record');
+            params.set('record_mode', 'all');
+            var qs = params.toString();
+            history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+            _activeTab = null;
+            loadLearningTab('record');
+        });
+
+        // ── More Filter All handlers ──────────────────────────────────────────
+        $(document).on('click', '#btnApplyAllMoreFilterModal', function () {
+            var params = new URLSearchParams(window.location.search);
+            params.delete('page');
+            params.delete('record_page');
+
+            var filterKeys = [
+                'record_filter_category',
+                'record_filter_status',
+                'record_filter_duration_min',
+                'record_filter_duration_max',
+                'record_filter_lh_min',
+                'record_filter_lh_max',
+                'record_filter_certificate',
+                'record_filter_attendance',
+                'record_filter_sub_classification',
+                'record_filter_delivery_method',
+                'record_filter_provider'
+            ];
+
+            filterKeys.forEach(function (k) {
+                var $el = $('#recordAllMoreFilterModal [name="' + k + '"]');
+                var val = $el.val();
+                if (val !== undefined && val !== null && val.toString().trim() !== '' && val.toString().trim() !== 'all') {
+                    params.set(k, val.toString().trim());
+                } else {
+                    params.delete(k);
+                }
+            });
+
+            params.set('learning_tab', 'record');
+            params.set('record_mode', 'all');
+
+            var modalEl = document.getElementById('recordAllMoreFilterModal');
+            if (modalEl) {
+                var modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) {
+                    modal.hide();
+                } else if (typeof bootstrap.Modal.getOrCreateInstance === 'function') {
+                    bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+                } else {
+                    $(modalEl).modal('hide');
+                }
+            }
+
+            var qs = params.toString();
+            history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+            _activeTab = null;
+            loadLearningTab('record');
+        });
+
+        $(document).on('click', '#btnResetAllMoreFilterModal', function () {
+            var params = new URLSearchParams(window.location.search);
+            params.delete('page');
+            params.delete('record_page');
+
+            var filterKeys = [
+                'record_filter_category',
+                'record_filter_status',
+                'record_filter_duration_min',
+                'record_filter_duration_max',
+                'record_filter_lh_min',
+                'record_filter_lh_max',
+                'record_filter_certificate',
+                'record_filter_attendance',
+                'record_filter_sub_classification',
+                'record_filter_delivery_method',
+                'record_filter_provider'
+            ];
+
+            filterKeys.forEach(function (k) {
+                params.delete(k);
+                var $el = $('#recordAllMoreFilterModal [name="' + k + '"]');
+                if ($el.is('select')) {
+                    $el.val('all');
+                } else {
+                    $el.val('');
+                }
+            });
+
+            params.set('learning_tab', 'record');
+            params.set('record_mode', 'all');
+
+            var modalEl = document.getElementById('recordAllMoreFilterModal');
+            if (modalEl) {
+                var modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) {
+                    modal.hide();
+                } else if (typeof bootstrap.Modal.getOrCreateInstance === 'function') {
+                    bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+                } else {
+                    $(modalEl).modal('hide');
+                }
+            }
+
+            var qs = params.toString();
+            history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+            _activeTab = null;
+            loadLearningTab('record');
+        });
+
+        $(document).on('click', '.record-all-clear-single-filter', function (e) {
+            e.preventDefault();
+            var param = $(this).data('param');
+            var params = new URLSearchParams(window.location.search);
+            params.delete('page');
+            params.delete('record_page');
+            params.delete(param);
+            params.set('learning_tab', 'record');
+            params.set('record_mode', 'all');
+            var qs = params.toString();
+            history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+            _activeTab = null;
+            loadLearningTab('record');
+        });
+
+        $(document).on('click', '#recordAllClearAllMoreFilters', function (e) {
+            e.preventDefault();
+            var params = new URLSearchParams(window.location.search);
+            params.delete('page');
+            params.delete('record_page');
+            var filterKeys = [
+                'record_filter_category',
+                'record_filter_status',
+                'record_filter_duration_min',
+                'record_filter_duration_max',
+                'record_filter_lh_min',
+                'record_filter_lh_max',
+                'record_filter_certificate',
+                'record_filter_attendance',
+                'record_filter_sub_classification',
+                'record_filter_delivery_method',
+                'record_filter_provider'
+            ];
+            filterKeys.forEach(function (k) {
+                params.delete(k);
+            });
+            params.set('learning_tab', 'record');
+            params.set('record_mode', 'all');
+            var qs = params.toString();
+            history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+            _activeTab = null;
+            loadLearningTab('record');
+        });
+
+        $(document).on('keydown', '#recordOfflineSearch', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                $('#recordOfflineApplyBtn').trigger('click');
+            }
+        });
+
+        $(document).on('keydown', '#recordAllSearch', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                $('#recordAllApplyBtn').trigger('click');
+            }
+        });
+
         // Back/forward browser: restore the tab encoded in the GET query.
-        window.addEventListener('popstate', function() {
+        window.addEventListener('popstate', function () {
             var params = new URLSearchParams(window.location.search);
             var om = params.get('ongoing_mode');
-            _ongoingMode = (om === 'playlist' || om === 'mooc') ? om : null;
+            _ongoingMode = (['playlist', 'mooc', 'non-kp-owl', 'ongoing-non-kp-owl'].indexOf(om) !== -1) ? om : null;
+            var rm = params.get('record_mode');
+            _recordMode = ['online', 'offline', 'all'].indexOf(String(rm).toLowerCase()) !== -1
+                ? String(rm).toLowerCase()
+                : (params.get('learning_tab') === 'record' ? 'online' : null);
             _activeTab = null;
             loadLearningTab(learningTabFromUrl());
         });
 
-        $(function() {
+        $(function () {
             // Restore the tab that initiated a full-page GET filter request.
             var initialParams = new URLSearchParams(window.location.search);
             var initialOngoingMode = initialParams.get('ongoing_mode');
-            if (initialOngoingMode === 'playlist' || initialOngoingMode === 'mooc') {
+            if (['playlist', 'mooc', 'non-kp-owl', 'ongoing-non-kp-owl'].indexOf(initialOngoingMode) !== -1) {
                 _ongoingMode = initialOngoingMode;
+            } else if (initialParams.get('record_mode') === 'ongoing-non-kp-owl') {
+                _ongoingMode = 'non-kp-owl';
+            }
+            var initialRecordMode = initialParams.get('record_mode');
+            if (initialRecordMode && initialRecordMode.toLowerCase() === 'export') {
+                initialParams.set('record_mode', 'online');
+                if (!initialParams.get('learning_tab')) {
+                    initialParams.set('learning_tab', 'record');
+                }
+                history.replaceState({}, '', window.location.pathname + '?' + initialParams.toString());
+                _recordMode = 'online';
+            } else if (initialRecordMode && ['online', 'offline', 'all'].indexOf(initialRecordMode.toLowerCase()) !== -1) {
+                _recordMode = initialRecordMode.toLowerCase();
+            } else if (initialParams.get('learning_tab') === 'record') {
+                _recordMode = 'online';
             }
             loadLearningTab(learningTabFromUrl());
 
             // Tab button click handler
-            $('.learning-tab-btn').on('click', function() {
-                var target = $(this).data('target'); // e.g. "#tab-ongoing"
-                var tab = target.replace('#tab-', ''); // → "ongoing"
+            $('.learning-tab-btn').on('click', function () {
+                var target = $(this).data('target');          // e.g. "#tab-ongoing"
+                var tab    = target.replace('#tab-', '');     // → "ongoing"
                 if (_activeTab === tab) return;
 
                 var params = new URLSearchParams();
                 if (tab !== 'ongoing') {
                     params.set('learning_tab', tab);
+                }
+                if (tab === 'ongoing' && _ongoingMode) {
+                    params.set('ongoing_mode', _ongoingMode);
+                }
+                if (tab === 'record' && _recordMode) {
+                    params.set('record_mode', _recordMode);
                 }
                 var query = params.toString();
                 history.pushState({}, '', window.location.pathname + (query ? '?' + query : ''));
