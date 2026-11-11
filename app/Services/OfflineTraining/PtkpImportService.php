@@ -99,6 +99,16 @@ class PtkpImportService
 
     public function parseAndPreview(string $token, int $userId): array
     {
+        if (function_exists('ini_set')) {
+            @ini_set('max_execution_time', '300');
+        }
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(300);
+        }
+        if (class_exists(\Barryvdh\Debugbar\Facades\Debugbar::class)) {
+            \Barryvdh\Debugbar\Facades\Debugbar::disable();
+        }
+
         $metadata = $this->getValidTemporaryMetadata($token, $userId);
         $reader = IOFactory::createReaderForFile($metadata['temp_path']);
         $reader->setReadDataOnly(false);
@@ -135,10 +145,20 @@ class PtkpImportService
 
     public function executeImport(string $token, int $userId): array
     {
+        if (function_exists('ini_set')) {
+            @ini_set('max_execution_time', '300');
+        }
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(300);
+        }
+        if (class_exists(\Barryvdh\Debugbar\Facades\Debugbar::class)) {
+            \Barryvdh\Debugbar\Facades\Debugbar::disable();
+        }
+
         $metadata = $this->getValidTemporaryMetadata($token, $userId);
 
         $lockKey = "ptkp_import_lock_{$token}";
-        $lock = Cache::lock($lockKey, 60);
+        $lock = Cache::lock($lockKey, 300);
         if (!$lock->get()) {
             throw new RuntimeException('PTKP import execution is currently in progress. Please wait.');
         }

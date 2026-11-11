@@ -35,6 +35,13 @@ use Maatwebsite\Excel\Facades\Excel;
 class TaskManageController extends Controller
 {
     /**
+     * Sentinel deleted_at timestamp used when an item is deleted from trash.
+     * Keeps data in the database while hiding it from active and trash views,
+     * without requiring any new migrations or table schema changes.
+     */
+    public const PURGED_DELETED_AT = '1970-01-02 00:00:00';
+
+    /**
      * GET /manage/task — parents that have tasks.
      * Quick filter (like the class browser):
      *   top level  : KP OWL (online: playlist + content) vs NON KP OWL (offline training)
@@ -59,12 +66,32 @@ class TaskManageController extends Controller
             ? ($type === 'all' ? ['playlist', 'content', 'standalone'] : [$type])
             : ['offline_training'];
 
+        $parentNotDeletedClause = function ($q) {
+            $q->where(function ($sub) {
+                $sub->where('tasks.parent_type', 'playlist')
+                    ->whereNull('trainingplan.deleted_at');
+            })->orWhere(function ($sub) {
+                $sub->where('tasks.parent_type', 'content')
+                    ->whereNull('content.deleted_at');
+            })->orWhere(function ($sub) {
+                $sub->where('tasks.parent_type', 'offline_training')
+                    ->whereNull('offline_trainings.deleted_at');
+            })->orWhere(function ($sub) {
+                $sub->where('tasks.parent_type', 'standalone')
+                    ->where(function ($s2) {
+                        $s2->whereNull('tasks.task_group_id')
+                           ->orWhereNull('task_groups.deleted_at');
+                    });
+            });
+        };
+
         $tasksQuery = Task::query()
             ->leftJoin('trainingplan', 'trainingplan.id', '=', 'tasks.training_plan_id')
             ->leftJoin('content', 'content.id', '=', 'tasks.content_id')
             ->leftJoin('offline_trainings', 'offline_trainings.id', '=', 'tasks.offline_training_id')
             ->leftJoin('task_groups', 'task_groups.id', '=', 'tasks.task_group_id')
             ->whereIn('tasks.parent_type', $allowedTypes)
+            ->where($parentNotDeletedClause)
             ->when($search !== '', fn ($q) => $q->where(function ($w) use ($search) {
                 $w->where('trainingplan.title', 'like', "%{$search}%")
                   ->orWhere('content.title', 'like', "%{$search}%")
@@ -82,6 +109,7 @@ class TaskManageController extends Controller
 
         if (in_array('standalone', $allowedTypes, true)) {
             $emptyGroupsQuery = TaskGroup::query()
+                ->whereNull('deleted_at')
                 ->whereNotIn('id', function ($sub) {
                     $sub->select('task_group_id')
                         ->from('tasks')
@@ -110,11 +138,13 @@ class TaskManageController extends Controller
             ->leftJoin('offline_trainings', 'offline_trainings.id', '=', 'tasks.offline_training_id')
             ->leftJoin('task_groups', 'task_groups.id', '=', 'tasks.task_group_id')
             ->whereIn('tasks.parent_type', $allowedTypes)
+            ->where($parentNotDeletedClause)
             ->when($search !== '', fn ($q) => $q->where(function ($w) use ($search) {
                 $w->where('trainingplan.title', 'like', "%{$search}%")
                   ->orWhere('content.title', 'like', "%{$search}%")
                   ->orWhere('offline_trainings.title', 'like', "%{$search}%")
                   ->orWhere('offline_trainings.course_name', 'like', "%{$search}%")
+                  ->orWhere('task_groups.title', 'like', "%{$search}%")
                   ->orWhere('tasks.title', 'like', "%{$search}%");
             }));
         $taskIds   = (clone $taskScope)->pluck('tasks.id');
@@ -130,16 +160,22 @@ class TaskManageController extends Controller
                 "tasks.parent_type, COALESCE(tasks.training_plan_id, tasks.content_id, tasks.offline_training_id, tasks.task_group_id, 0) AS parent_id, COUNT(*) AS cnt"
             )
             ->join('tasks', 'tasks.id', '=', 'task_submissions.task_id')
+            ->leftJoin('trainingplan', 'trainingplan.id', '=', 'tasks.training_plan_id')
+            ->leftJoin('content', 'content.id', '=', 'tasks.content_id')
+            ->leftJoin('offline_trainings', 'offline_trainings.id', '=', 'tasks.offline_training_id')
+            ->leftJoin('task_groups', 'task_groups.id', '=', 'tasks.task_group_id')
+            ->whereNull('tasks.deleted_at')
             ->where('task_submissions.status', 'pending')
+            ->where($parentNotDeletedClause)
             ->groupBy('tasks.parent_type', 'tasks.training_plan_id', 'tasks.content_id', 'tasks.offline_training_id', 'tasks.task_group_id')
             ->get()
             ->mapWithKeys(fn ($r) => ["{$r->parent_type}:{$r->parent_id}" => $r->cnt]);
 
-        $trashCourseCount = TrainingPlan::onlyTrashed()->count()
-            + Content::onlyTrashed()->count()
-            + OfflineTraining::onlyTrashed()->count()
-            + (Schema::hasColumn('task_groups', 'deleted_at') ? TaskGroup::onlyTrashed()->count() : 0);
-        $trashTaskCount = Task::onlyTrashed()->count();
+        $trashCourseCount = TrainingPlan::onlyTrashed()->where('deleted_at', '>', self::PURGED_DELETED_AT)->count()
+            + Content::onlyTrashed()->where('deleted_at', '>', self::PURGED_DELETED_AT)->count()
+            + OfflineTraining::onlyTrashed()->where('deleted_at', '>', self::PURGED_DELETED_AT)->count()
+            + (Schema::hasColumn('task_groups', 'deleted_at') ? TaskGroup::onlyTrashed()->where('deleted_at', '>', self::PURGED_DELETED_AT)->count() : 0);
+        $trashTaskCount = Task::onlyTrashed()->where('deleted_at', '>', self::PURGED_DELETED_AT)->count();
         $trashCount = $trashCourseCount + $trashTaskCount;
 
         return view('manage.task.plans', compact('parents', 'stats', 'pendingByParent', 'scope', 'type', 'search', 'trashCount'));
@@ -195,11 +231,11 @@ class TaskManageController extends Controller
         }
         $search = trim($request->input('search', ''));
 
-        $taskTrashCount = Task::onlyTrashed()->count();
-        $courseTrashCount = TrainingPlan::onlyTrashed()->count()
-            + Content::onlyTrashed()->count()
-            + OfflineTraining::onlyTrashed()->count()
-            + (Schema::hasColumn('task_groups', 'deleted_at') ? TaskGroup::onlyTrashed()->count() : 0);
+        $taskTrashCount = Task::onlyTrashed()->where('deleted_at', '>', self::PURGED_DELETED_AT)->count();
+        $courseTrashCount = TrainingPlan::onlyTrashed()->where('deleted_at', '>', self::PURGED_DELETED_AT)->count()
+            + Content::onlyTrashed()->where('deleted_at', '>', self::PURGED_DELETED_AT)->count()
+            + OfflineTraining::onlyTrashed()->where('deleted_at', '>', self::PURGED_DELETED_AT)->count()
+            + (Schema::hasColumn('task_groups', 'deleted_at') ? TaskGroup::onlyTrashed()->where('deleted_at', '>', self::PURGED_DELETED_AT)->count() : 0);
         $totalTrashCount = $taskTrashCount + $courseTrashCount;
 
         $items = collect();
@@ -207,6 +243,7 @@ class TaskManageController extends Controller
         // 1. Gather Course items if 'all' or 'course'
         if ($type === 'all' || $type === 'course') {
             $trashedPlans = TrainingPlan::onlyTrashed()
+                ->where('deleted_at', '>', self::PURGED_DELETED_AT)
                 ->when($search !== '', fn ($q) => $q->where('title', 'like', "%{$search}%"))
                 ->get()
                 ->map(fn ($p) => (object) [
@@ -221,10 +258,11 @@ class TaskManageController extends Controller
                     'deleted_at'  => $p->deleted_at,
                     'restore_url' => route('manage.task.restore', ['id' => $p->id, 'item_type' => 'course', 'course_type' => 'playlist']),
                     'delete_url'  => route('manage.task.force-destroy', ['id' => $p->id, 'item_type' => 'course', 'course_type' => 'playlist']),
-                    'confirm_msg' => 'Permanently delete this playlist course? This action cannot be undone.',
+                    'confirm_msg' => 'Remove this playlist course from trash?',
                 ]);
 
             $trashedContents = Content::onlyTrashed()
+                ->where('deleted_at', '>', self::PURGED_DELETED_AT)
                 ->when($search !== '', fn ($q) => $q->where('title', 'like', "%{$search}%"))
                 ->get()
                 ->map(fn ($c) => (object) [
@@ -239,10 +277,11 @@ class TaskManageController extends Controller
                     'deleted_at'  => $c->deleted_at,
                     'restore_url' => route('manage.task.restore', ['id' => $c->id, 'item_type' => 'course', 'course_type' => 'content']),
                     'delete_url'  => route('manage.task.force-destroy', ['id' => $c->id, 'item_type' => 'course', 'course_type' => 'content']),
-                    'confirm_msg' => 'Permanently delete this content? This action cannot be undone.',
+                    'confirm_msg' => 'Remove this content from trash?',
                 ]);
 
             $trashedOffline = OfflineTraining::onlyTrashed()
+                ->where('deleted_at', '>', self::PURGED_DELETED_AT)
                 ->when($search !== '', fn ($q) => $q->where(fn ($w) => $w->where('title', 'like', "%{$search}%")->orWhere('course_name', 'like', "%{$search}%")))
                 ->get()
                 ->map(fn ($ot) => (object) [
@@ -257,12 +296,13 @@ class TaskManageController extends Controller
                     'deleted_at'  => $ot->deleted_at,
                     'restore_url' => route('manage.task.restore', ['id' => $ot->id, 'item_type' => 'course', 'course_type' => 'offline_training']),
                     'delete_url'  => route('manage.task.force-destroy', ['id' => $ot->id, 'item_type' => 'course', 'course_type' => 'offline_training']),
-                    'confirm_msg' => 'Permanently delete this offline training session? This action cannot be undone.',
+                    'confirm_msg' => 'Remove this offline training session from trash?',
                 ]);
 
             $trashedGroups = collect();
             if (Schema::hasColumn('task_groups', 'deleted_at')) {
                 $trashedGroups = TaskGroup::onlyTrashed()
+                    ->where('deleted_at', '>', self::PURGED_DELETED_AT)
                     ->when($search !== '', fn ($q) => $q->where('title', 'like', "%{$search}%"))
                     ->get()
                     ->map(fn ($tg) => (object) [
@@ -277,7 +317,7 @@ class TaskManageController extends Controller
                         'deleted_at'  => $tg->deleted_at,
                         'restore_url' => route('manage.task.restore', ['id' => $tg->id, 'item_type' => 'course', 'course_type' => 'standalone']),
                         'delete_url'  => route('manage.task.force-destroy', ['id' => $tg->id, 'item_type' => 'course', 'course_type' => 'standalone']),
-                        'confirm_msg' => 'Permanently delete this activity container? This action cannot be undone.',
+                        'confirm_msg' => 'Remove this activity container from trash?',
                     ]);
             }
 
@@ -287,6 +327,7 @@ class TaskManageController extends Controller
         // 2. Gather Task items if 'all' or 'task'
         if ($type === 'all' || $type === 'task') {
             $trashedTasks = Task::onlyTrashed()
+                ->where('deleted_at', '>', self::PURGED_DELETED_AT)
                 ->with(['creator', 'trainingPlan', 'content', 'taskGroup', 'offlineTraining'])
                 ->when($search !== '', fn ($q) => $q->where('title', 'like', "%{$search}%"))
                 ->get()
@@ -303,7 +344,7 @@ class TaskManageController extends Controller
                     'deleted_at'      => $task->deleted_at,
                     'restore_url'     => route('manage.task.restore', ['id' => $task->id, 'item_type' => 'task']),
                     'delete_url'      => route('manage.task.force-destroy', ['id' => $task->id, 'item_type' => 'task']),
-                    'confirm_msg'     => 'Delete this task? Questions, responses and files will be wiped and cannot be restored.',
+                    'confirm_msg'     => 'Remove this task from trash?',
                 ]);
 
             $items = $items->concat($trashedTasks);
@@ -342,6 +383,136 @@ class TaskManageController extends Controller
     }
 
     /**
+     * POST /manage/task/trash/bulk-restore — bulk restore trashed tasks and courses.
+     */
+    public function bulkRestore(Request $request)
+    {
+        $rawItems = $request->input('items', []);
+        if (is_string($rawItems)) {
+            $rawItems = json_decode($rawItems, true) ?? [];
+        }
+
+        if (empty($rawItems) || !is_array($rawItems)) {
+            return back()->with('error', 'No items selected to restore.');
+        }
+
+        $restoredCount = 0;
+
+        foreach ($rawItems as $item) {
+            $id = $item['id'] ?? null;
+            $itemType = $item['item_type'] ?? 'task';
+            $courseType = $item['course_type'] ?? null;
+
+            if (!$id) {
+                continue;
+            }
+
+            if ($itemType === 'course') {
+                match ($courseType) {
+                    'playlist' => (function () use ($id) {
+                        TrainingPlan::onlyTrashed()->where('id', $id)->restore();
+                        Task::onlyTrashed()->where('training_plan_id', $id)->restore();
+                    })(),
+                    'content' => (function () use ($id) {
+                        Content::onlyTrashed()->where('id', $id)->restore();
+                        Task::onlyTrashed()->where('content_id', $id)->restore();
+                    })(),
+                    'offline_training' => (function () use ($id) {
+                        OfflineTraining::onlyTrashed()->where('id', $id)->restore();
+                        Task::onlyTrashed()->where('offline_training_id', $id)->restore();
+                    })(),
+                    'standalone' => (function () use ($id) {
+                        if (Schema::hasColumn('task_groups', 'deleted_at')) {
+                            TaskGroup::onlyTrashed()->where('id', $id)->restore();
+                        }
+                        Task::onlyTrashed()->where('task_group_id', $id)->restore();
+                    })(),
+                    default => null,
+                };
+                $restoredCount++;
+            } else {
+                Task::onlyTrashed()->where('id', $id)->restore();
+                $restoredCount++;
+            }
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => "{$restoredCount} item(s) restored successfully.",
+                'count'   => $restoredCount,
+            ]);
+        }
+
+        return back()->with('success', "{$restoredCount} item(s) restored successfully.");
+    }
+
+    /**
+     * DELETE|POST /manage/task/trash/bulk-force — bulk delete in trash (data preserved in DB, hidden from view).
+     */
+    public function bulkForceDestroy(Request $request)
+    {
+        $rawItems = $request->input('items', []);
+        if (is_string($rawItems)) {
+            $rawItems = json_decode($rawItems, true) ?? [];
+        }
+
+        if (empty($rawItems) || !is_array($rawItems)) {
+            return back()->with('error', 'No items selected to delete.');
+        }
+
+        $deletedCount = 0;
+
+        foreach ($rawItems as $item) {
+            $id = $item['id'] ?? null;
+            $itemType = $item['item_type'] ?? 'task';
+            $courseType = $item['course_type'] ?? null;
+
+            if (!$id) {
+                continue;
+            }
+
+            if ($itemType === 'course') {
+                match ($courseType) {
+                    'playlist' => (function () use ($id) {
+                        TrainingPlan::withTrashed()->where('id', $id)->update(['deleted_at' => self::PURGED_DELETED_AT]);
+                        Task::withTrashed()->where('training_plan_id', $id)->update(['deleted_at' => self::PURGED_DELETED_AT]);
+                    })(),
+                    'content' => (function () use ($id) {
+                        Content::withTrashed()->where('id', $id)->update(['deleted_at' => self::PURGED_DELETED_AT]);
+                        Task::withTrashed()->where('content_id', $id)->update(['deleted_at' => self::PURGED_DELETED_AT]);
+                    })(),
+                    'offline_training' => (function () use ($id) {
+                        OfflineTraining::withTrashed()->where('id', $id)->update(['deleted_at' => self::PURGED_DELETED_AT]);
+                        Task::withTrashed()->where('offline_training_id', $id)->update(['deleted_at' => self::PURGED_DELETED_AT]);
+                    })(),
+                    'standalone' => (function () use ($id) {
+                        if (Schema::hasColumn('task_groups', 'deleted_at')) {
+                            TaskGroup::withTrashed()->where('id', $id)->update(['deleted_at' => self::PURGED_DELETED_AT]);
+                        }
+                        Task::withTrashed()->where('task_group_id', $id)->update(['deleted_at' => self::PURGED_DELETED_AT]);
+                    })(),
+                    default => null,
+                };
+                $deletedCount++;
+            } else {
+                Task::withTrashed()->where('id', $id)->update(['deleted_at' => self::PURGED_DELETED_AT]);
+                $deletedCount++;
+            }
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => "{$deletedCount} item(s) removed from trash.",
+                'count'   => $deletedCount,
+            ]);
+        }
+
+        return back()->with('success', "{$deletedCount} item(s) removed from trash.");
+    }
+
+    /**
      * POST /manage/task/{id}/restore — bring a trashed task or course back.
      */
     public function restore(Request $request, $id)
@@ -351,11 +522,23 @@ class TaskManageController extends Controller
         if ($itemType === 'course') {
             $courseType = $request->input('course_type');
             match ($courseType) {
-                'playlist'         => TrainingPlan::onlyTrashed()->findOrFail($id)->restore(),
-                'content'          => Content::onlyTrashed()->findOrFail($id)->restore(),
-                'offline_training' => OfflineTraining::onlyTrashed()->findOrFail($id)->restore(),
-                'standalone'       => TaskGroup::onlyTrashed()->findOrFail($id)->restore(),
-                default            => abort(404),
+                'playlist' => (function () use ($id) {
+                    TrainingPlan::onlyTrashed()->findOrFail($id)->restore();
+                    Task::onlyTrashed()->where('training_plan_id', $id)->restore();
+                })(),
+                'content' => (function () use ($id) {
+                    Content::onlyTrashed()->findOrFail($id)->restore();
+                    Task::onlyTrashed()->where('content_id', $id)->restore();
+                })(),
+                'offline_training' => (function () use ($id) {
+                    OfflineTraining::onlyTrashed()->findOrFail($id)->restore();
+                    Task::onlyTrashed()->where('offline_training_id', $id)->restore();
+                })(),
+                'standalone' => (function () use ($id) {
+                    TaskGroup::onlyTrashed()->findOrFail($id)->restore();
+                    Task::onlyTrashed()->where('task_group_id', $id)->restore();
+                })(),
+                default => abort(404),
             };
 
             return back()->with('success', 'Course restored.');
@@ -368,7 +551,7 @@ class TaskManageController extends Controller
     }
 
     /**
-     * DELETE /manage/task/{id}/force — permanent delete: task or course wiped for real.
+     * DELETE /manage/task/{id}/force — delete in trash (data preserved in DB, hidden from view).
      */
     public function forceDestroy(Request $request, $id)
     {
@@ -376,35 +559,33 @@ class TaskManageController extends Controller
 
         if ($itemType === 'course') {
             $courseType = $request->input('course_type');
+
             match ($courseType) {
-                'playlist'         => TrainingPlan::onlyTrashed()->findOrFail($id)->forceDelete(),
-                'content'          => Content::onlyTrashed()->findOrFail($id)->forceDelete(),
-                'offline_training' => OfflineTraining::onlyTrashed()->findOrFail($id)->forceDelete(),
-                'standalone'       => TaskGroup::onlyTrashed()->findOrFail($id)->forceDelete(),
-                default            => abort(404),
+                'playlist' => (function () use ($id) {
+                    TrainingPlan::withTrashed()->where('id', $id)->update(['deleted_at' => self::PURGED_DELETED_AT]);
+                    Task::withTrashed()->where('training_plan_id', $id)->update(['deleted_at' => self::PURGED_DELETED_AT]);
+                })(),
+                'content' => (function () use ($id) {
+                    Content::withTrashed()->where('id', $id)->update(['deleted_at' => self::PURGED_DELETED_AT]);
+                    Task::withTrashed()->where('content_id', $id)->update(['deleted_at' => self::PURGED_DELETED_AT]);
+                })(),
+                'offline_training' => (function () use ($id) {
+                    OfflineTraining::withTrashed()->where('id', $id)->update(['deleted_at' => self::PURGED_DELETED_AT]);
+                    Task::withTrashed()->where('offline_training_id', $id)->update(['deleted_at' => self::PURGED_DELETED_AT]);
+                })(),
+                'standalone' => (function () use ($id) {
+                    TaskGroup::withTrashed()->where('id', $id)->update(['deleted_at' => self::PURGED_DELETED_AT]);
+                    Task::withTrashed()->where('task_group_id', $id)->update(['deleted_at' => self::PURGED_DELETED_AT]);
+                })(),
+                default => abort(404),
             };
 
-            return back()->with('success', 'Course permanently deleted.');
+            return back()->with('success', 'Course removed from trash.');
         }
 
-        $task = Task::withTrashed()->findOrFail($id);
+        Task::withTrashed()->where('id', $id)->update(['deleted_at' => self::PURGED_DELETED_AT]);
 
-        if ($task->attachment) {
-            Storage::disk('public')->delete($task->attachment);
-        }
-
-        // Delete users' per-field answer files too (DB rows cascade).
-        foreach ($task->submissions as $submission) {
-            foreach ($submission->answers as $answer) {
-                foreach ($answer->filePaths() as $oldPath) {
-                    Storage::disk('public')->delete($oldPath);
-                }
-            }
-        }
-
-        $task->forceDelete();
-
-        return back()->with('success', 'Task permanently deleted.');
+        return back()->with('success', 'Task removed from trash.');
     }
 
     /**
@@ -415,19 +596,22 @@ class TaskManageController extends Controller
         match ($parentType) {
             'standalone' => (function () use ($parentId) {
                 $group = TaskGroup::findOrFail($parentId);
-                $group->tasks()->delete();
+                Task::where('task_group_id', $parentId)->delete();
                 $group->delete();
             })(),
             'playlist' => (function () use ($parentId) {
                 $plan = TrainingPlan::findOrFail($parentId);
+                Task::where('training_plan_id', $parentId)->delete();
                 $plan->delete();
             })(),
             'content' => (function () use ($parentId) {
                 $content = Content::findOrFail($parentId);
+                Task::where('content_id', $parentId)->delete();
                 $content->delete();
             })(),
             'offline_training' => (function () use ($parentId) {
                 $ot = OfflineTraining::findOrFail($parentId);
+                Task::where('offline_training_id', $parentId)->delete();
                 $ot->delete();
             })(),
             default => abort(404),
@@ -547,15 +731,25 @@ class TaskManageController extends Controller
                 ->orderBy('title')->limit(100)->get(['id', 'title']),
             'content_playlist' => Content::where(fn ($w) => $w->where('playlistonly', 'Y')->orWhereHas('trainingPlans'))
                 ->with(['trainingPlans:id,title'])
-                ->when($q !== '', fn ($qq) => $qq->where('title', 'like', "%{$q}%"))
+                ->when($q !== '', function ($qq) use ($q) {
+                    $qq->where(function ($sub) use ($q) {
+                        $sub->where('title', 'like', "%{$q}%")
+                            ->orWhereHas('trainingPlans', fn ($tp) => $tp->where('title', 'like', "%{$q}%"));
+                    });
+                })
                 ->orderBy('title')
                 ->limit(100)
                 ->get()
                 ->map(function ($c) {
-                    $pTitle = $c->trainingPlans->first()?->title;
+                    $planTitles = $c->trainingPlans->pluck('title')->filter()->values();
                     $title = $c->title;
-                    if ($pTitle && ! str_starts_with($title, "[{$pTitle}]")) {
-                        $title = "{$title} [{$pTitle}]";
+                    if ($planTitles->isNotEmpty()) {
+                        $pTitle = $planTitles->join(', ');
+                        if (! str_starts_with($title, "[{$pTitle}]")) {
+                            $title = "{$title} [{$pTitle}]";
+                        }
+                    } elseif (($c->playlistonly ?? '') === 'Y') {
+                        $title = "{$title} [Playlist Only]";
                     }
                     return [
                         'id'    => $c->id,

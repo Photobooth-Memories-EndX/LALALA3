@@ -1,5 +1,9 @@
 @extends('layouts.sidebar-master')
 
+@section('style')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+@endsection
+
 @section('content')
 
 <div class="page-header d-print-none mb-0 pb-0">
@@ -37,7 +41,7 @@
                     </div>
                 </div>
 
-                <!-- Right Group: Primary Action Button -->
+                <!-- Right Group: Primary Action Buttons -->
                 <div class="d-flex flex-wrap align-items-center gap-2 flex-shrink-0">
                     <button type="button" 
                             class="btn btn-primary px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2 shadow-sm rounded-3" 
@@ -599,60 +603,67 @@
             modal.show();
         });
 
-        // Delete Trigger with Safety Usage Check
-        var pendingDeleteId = null;
-
+        // Delete Trigger (Direct Safe Delete with SweetAlert2)
         $(document).on('click', '.btn-delete-main', function () {
-            var id = $(this).data('id');
-            var name = $(this).data('name');
-
-            $.ajax({
-                url: '/manage/classification/classification/' + id + '/usage',
-                type: 'GET',
-                success: function (res) {
-                    if (res.success && res.data && res.data.is_used) {
-                        $('#deactivateWarningText').text(res.data.message);
-                        var warnModal = new bootstrap.Modal(document.getElementById('deactivateWarningModal'));
-                        warnModal.show();
-                    } else {
-                        pendingDeleteId = id;
-                        $('#deleteTargetName').text(name);
-                        var delModal = new bootstrap.Modal(document.getElementById('deleteMainConfirmModal'));
-                        delModal.show();
-                    }
-                },
-                error: function () {
-                    alert('Failed to check classification usage.');
-                }
-            });
-        });
-
-        // Confirm Permanent Delete Execution
-        $('#confirmDeleteMainBtn').on('click', function () {
-            if (!pendingDeleteId) return;
-
             var btn = $(this);
-            btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span> Deleting...');
+            var id = btn.data('id');
+            var name = btn.data('name');
 
-            $.ajax({
-                url: '/manage/classification/classification/' + pendingDeleteId,
-                type: 'DELETE',
-                data: {
-                    _token: '{{ csrf_token() }}'
-                },
-                success: function () {
-                    window.location.reload();
-                },
-                error: function (xhr) {
-                    btn.prop('disabled', false).html('<i class="ti ti-trash me-1"></i> Delete');
-                    var msg = 'Failed to delete classification.';
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
-                        msg = xhr.responseJSON.message;
-                    }
-                    alert(msg);
+            Swal.fire({
+                title: 'Hapus Classification?',
+                html: 'Apakah Anda yakin ingin menghapus <strong>"' + name + '"</strong>?<br><span class="text-muted small mt-1 d-block">Data akan dihapus permanen jika tidak sedang digunakan oleh data lain.</span>',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="ti ti-trash me-1"></i> Ya, Hapus',
+                cancelButtonText: 'Batal',
+                reverseButtons: true,
+                focusCancel: true
+            }).then(function (result) {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: 'Menghapus...',
+                        html: '<span class="text-muted small">Memeriksa relasi data dan menghapus...</span>',
+                        allowOutsideClick: false,
+                        didOpen: function () {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    $.ajax({
+                        url: '/manage/classification/classification/' + id,
+                        type: 'DELETE',
+                        data: {
+                            _token: '{{ csrf_token() }}'
+                        },
+                        success: function (res) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil Dihapus!',
+                                text: res.message || 'Classification berhasil dihapus.',
+                                timer: 1500,
+                                showConfirmButton: false
+                            }).then(function () {
+                                window.location.reload();
+                            });
+                        },
+                        error: function (xhr) {
+                            var msg = 'Gagal menghapus classification.';
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                msg = xhr.responseJSON.message;
+                            }
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Tidak Dapat Dihapus',
+                                text: msg
+                            });
+                        }
+                    });
                 }
             });
         });
     });
 </script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 @endsection

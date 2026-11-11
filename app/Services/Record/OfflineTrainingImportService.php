@@ -102,6 +102,16 @@ class OfflineTrainingImportService
      */
     public function parseAndPreview(string $token, int $userId): array
     {
+        if (function_exists('ini_set')) {
+            @ini_set('max_execution_time', '300');
+        }
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(300);
+        }
+        if (class_exists(\Barryvdh\Debugbar\Facades\Debugbar::class)) {
+            \Barryvdh\Debugbar\Facades\Debugbar::disable();
+        }
+
         $metadata = $this->getValidTemporaryMetadata($token, $userId);
         $filePath = $metadata['temp_path'];
 
@@ -465,10 +475,20 @@ class OfflineTrainingImportService
      */
     public function executeImport(string $token, int $userId): array
     {
+        if (function_exists('ini_set')) {
+            @ini_set('max_execution_time', '300');
+        }
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(300);
+        }
+        if (class_exists(\Barryvdh\Debugbar\Facades\Debugbar::class)) {
+            \Barryvdh\Debugbar\Facades\Debugbar::disable();
+        }
+
         $metadata = $this->getValidTemporaryMetadata($token, $userId);
 
         $lockKey = "offline_import_lock_{$token}";
-        $lock = Cache::lock($lockKey, 60);
+        $lock = Cache::lock($lockKey, 300);
         if (!$lock->get()) {
             throw new \RuntimeException('Non-PTKP import execution is currently in progress. Please wait.');
         }

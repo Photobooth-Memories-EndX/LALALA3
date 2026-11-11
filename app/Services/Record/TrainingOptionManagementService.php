@@ -8,6 +8,7 @@ use App\Models\OfflineTraining;
 use App\Models\OfflineTrainingOption;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -189,6 +190,18 @@ class TrainingOptionManagementService
             'parent_type'     => null,
             'is_year_scoped'  => false,
             'table_column'    => 'instructor',
+        ],
+        OfflineOptionService::TYPE_BATCH => [
+            'type'            => 'batch',
+            'label'           => 'Training Batch',
+            'plural_label'    => 'Training Batches',
+            'description'     => 'Training batch numbers or cohorts (e.g. Batch 1, Batch 2) for Offline Training execution.',
+            'icon'            => 'ti-layers-intersect',
+            'source'          => 'offline_training_options',
+            'is_hierarchical' => false,
+            'parent_type'     => null,
+            'is_year_scoped'  => false,
+            'table_column'    => 'batch',
         ],
     ];
 
@@ -934,7 +947,7 @@ class TrainingOptionManagementService
     }
 
     /**
-     * Check usage before delete.
+     * Check usage before delete or action (safety dependency validation).
      */
     public function checkOptionUsage(OfflineTrainingOption $option): array
     {
@@ -950,10 +963,23 @@ class TrainingOptionManagementService
             }
         }
 
+        $contentCount = 0;
+        if ($option->option_type === OfflineOptionService::TYPE_TYPE) {
+            try {
+                $contentCount = Content::where('type', $option->value)->count();
+            } catch (\Throwable $e) {
+                $contentCount = 0;
+            }
+        }
+
         $childrenCount = OfflineTrainingOption::where('parent_id', $option->id)->count();
 
-        $isUsed = ($count > 0 || $childrenCount > 0);
+        $totalCount = $count + $contentCount + $childrenCount;
+        $isUsed = ($totalCount > 0);
         $details = [];
+        if ($contentCount > 0) {
+            $details[] = "{$contentCount} learning content(s)";
+        }
         if ($count > 0) {
             $details[] = "{$count} training record(s)";
         }
@@ -963,15 +989,18 @@ class TrainingOptionManagementService
 
         return [
             'is_used'        => $isUsed,
-            'count'          => $count + $childrenCount,
-            'details'        => implode(' and ', $details),
+            'count'          => $totalCount,
+            'details'        => implode(' dan ', $details),
             'message'        => $isUsed
-                ? "This option is currently linked to " . implode(' and ', $details) . " and cannot be deleted. You can deactivate it instead to hide it while preserving historical records."
+                ? "Data tidak dapat dihapus karena masih digunakan oleh " . implode(' dan ', $details) . ". Silakan periksa relasi data terlebih dahulu."
                 : null,
             'can_deactivate' => $option->is_active,
         ];
     }
 
+    /**
+     * Check usage for Main Classification before delete.
+     */
     public function checkClassificationUsage(Classification $classification): array
     {
         $contentCount = Content::where('classification_id', $classification->id)->count();
@@ -991,15 +1020,20 @@ class TrainingOptionManagementService
         }
 
         return [
-            'is_used' => $isUsed,
-            'count'   => $contentCount + $offlineCount + $subCount,
-            'details' => implode(' and ', $details),
-            'message' => $isUsed
-                ? "This classification is currently linked to " . implode(' and ', $details) . " and cannot be deleted."
+            'is_used'        => $isUsed,
+            'count'          => $contentCount + $offlineCount + $subCount,
+            'details'        => implode(' dan ', $details),
+            'message'        => $isUsed
+                ? "Data tidak dapat dihapus karena masih digunakan oleh " . implode(' dan ', $details) . ". Silakan periksa relasi data terlebih dahulu."
                 : null,
+            'can_deactivate' => (bool) $classification->is_active,
         ];
     }
 
+    /**
+     * Delete Option safely (direct delete without SoftDeletes).
+     * Prevents deletion if referenced by Training Records, Content, or Child Options.
+     */
     public function deleteOption(int $id): array
     {
         $option = OfflineTrainingOption::findOrFail($id);
@@ -1009,39 +1043,50 @@ class TrainingOptionManagementService
             return [
                 'success'        => false,
                 'is_used'        => true,
-                'can_deactivate' => $option->is_active,
+                'can_deactivate' => $usage['can_deactivate'] ?? false,
                 'message'        => $usage['message'],
             ];
         }
 
         $value = $option->value;
-        $option->delete();
 
-        return [
-            'success' => true,
-            'message' => "Option '{$value}' deleted successfully.",
-        ];
+        return DB::transaction(function () use ($option, $value) {
+            $option->delete();
+
+            return [
+                'success' => true,
+                'message' => "Option '{$value}' successfully deleted.",
+            ];
+        });
     }
 
+    /**
+     * Delete Classification safely (direct delete without SoftDeletes).
+     * Prevents deletion if referenced by Learning Content, Training Records, or Sub Classifications.
+     */
     public function deleteClassification(Classification $classification): array
     {
         $usage = $this->checkClassificationUsage($classification);
 
         if ($usage['is_used']) {
             return [
-                'success' => false,
-                'is_used' => true,
-                'message' => $usage['message'],
+                'success'        => false,
+                'is_used'        => true,
+                'can_deactivate' => $usage['can_deactivate'] ?? false,
+                'message'        => $usage['message'],
             ];
         }
 
         $name = $classification->classification_name;
-        $classification->delete();
 
-        return [
-            'success' => true,
-            'message' => "Classification '{$name}' deleted successfully.",
-        ];
+        return DB::transaction(function () use ($classification, $name) {
+            $classification->delete();
+
+            return [
+                'success' => true,
+                'message' => "Classification '{$name}' successfully deleted.",
+            ];
+        });
     }
 
     /**

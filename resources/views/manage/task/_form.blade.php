@@ -993,20 +993,15 @@
         function fileSettingsHTML(i, data, visible) {
             var displayStyle = visible ? '' : 'display:none;';
             return '<div class="fileSettings p-3 rounded-3" style="background-color: #f8fafc; border: 1px solid #e2e8f0; ' + displayStyle + '">' +
+                '<input type="hidden" name="fields[' + i + '][max_files]" value="' + (data.max_files || 1) + '">' +
                 '<div class="row g-3">' +
-                    '<div class="col-12 col-md-5">' +
+                    '<div class="col-12 col-md-6">' +
                         '<label class="form-label small fw-bold text-dark mb-1">Allowed file types</label>' +
                         '<select class="form-select rounded-3 border bg-white" style="font-size: 0.9rem;" name="fields[' + i + '][file_types]">' +
                             fileTypeSelectHTML(i, data.file_types || '') +
                         '</select>' +
                     '</div>' +
-                    '<div class="col-6 col-md-3">' +
-                        '<label class="form-label small fw-bold text-dark mb-1">Max number of files</label>' +
-                        '<select class="form-select rounded-3 border bg-white" style="font-size: 0.9rem;" name="fields[' + i + '][max_files]">' +
-                            selectOptionsHTML(MAX_FILES_OPTIONS, data.max_files || 1, '') +
-                        '</select>' +
-                    '</div>' +
-                    '<div class="col-6 col-md-4">' +
+                    '<div class="col-12 col-md-6">' +
                         '<label class="form-label small fw-bold text-dark mb-1">Max file size</label>' +
                         '<select class="form-select rounded-3 border bg-white" style="font-size: 0.9rem;" name="fields[' + i + '][max_size_mb]">' +
                             selectOptionsHTML(MAX_SIZE_OPTIONS, data.max_size_mb || DEFAULT_MAX_SIZE_MB, ' MB') +
@@ -1042,19 +1037,13 @@ if (isFileSubmission) {
                     '<input type="hidden" name="fields[' + i + '][id]" value="' + esc(data.id || '') + '">' +
                     '<input type="hidden" name="fields[' + i + '][type]" value="file">' +
                     '<input type="hidden" name="fields[' + i + '][label]" value="' + esc(data.label || 'File Submission') + '">' +
+                    '<input type="hidden" name="fields[' + i + '][required]" value="1">' +
                     '<div class="d-none typeCol"><input type="hidden" name="fields[' + i + '][type]" value="file"></div>' +
                     '<div class="d-flex align-items-center justify-content-between mb-3">' +
                         '<div class="questionNumberBadge">' +
                             '<span class="badge rounded-pill fw-semibold" style="background-color: #f0f7ff; color: #0c4b81; border: 1px solid #bfdbfe; padding: 0.35rem 1rem; font-size: 0.875rem;">' +
                                 '<i class="ti ti-file-upload me-1"></i> File Upload Requirements' +
                             '</span>' +
-                        '</div>' +
-                        '<div>' +
-                            '<label class="form-check form-switch mb-0 d-inline-flex align-items-center gap-2 cursor-pointer">' +
-                                '<input type="checkbox" class="form-check-input field-required-toggle" name="fields[' + i + '][required]" value="1"' +
-                                    (data.required !== false ? ' checked' : '') + ' style="cursor: pointer;">' +
-                                '<span class="form-check-label fw-semibold text-dark" style="font-size: 0.95rem;">Required</span>' +
-                            '</label>' +
                         '</div>' +
                     '</div>' +
                     fileSettingsHTML(i, data, true) +
@@ -1672,14 +1661,14 @@ if (isFileSubmission) {
                     var idInp = c.querySelector('input[name$="[id]"]');
                     var reqInp = c.querySelector('input[name$="[required]"]');
                     var fileTypeInp = c.querySelector('select[name$="[file_types]"]');
-                    var maxFilesInp = c.querySelector('select[name$="[max_files]"]');
+                    var maxFilesInp = c.querySelector('[name$="[max_files]"]');
                     var maxSizeInp = c.querySelector('select[name$="[max_size_mb]"]');
                     var allowLinkInp = c.querySelector('input[name$="[allow_link]"]');
                     currentData.push({
                         id: idInp ? idInp.value : '',
                         label: labelInp ? labelInp.value : '',
                         type: isFileSubmission ? 'file' : (isEssay ? 'textarea' : (c.dataset.ftype || allowedTypes()[0])),
-                        required: reqInp ? reqInp.checked : true,
+                        required: reqInp ? (reqInp.type === 'checkbox' ? reqInp.checked : reqInp.value === '1') : true,
                         file_types: fileTypeInp ? fileTypeInp.value : '',
                         max_files: maxFilesInp ? maxFilesInp.value : 1,
                         max_size_mb: maxSizeInp ? maxSizeInp.value : DEFAULT_MAX_SIZE_MB,
@@ -1905,7 +1894,7 @@ if (isFileSubmission) {
                         var typeLabel = isFs ? 'File Upload' : (FIELD_TYPES[ftype] || 'Question');
                         var isRequired = true;
                         var reqChk = card.querySelector('input[name$="[required]"]');
-                        if (reqChk) isRequired = reqChk.checked;
+                        if (reqChk) isRequired = (reqChk.type === 'checkbox') ? reqChk.checked : (reqChk.value === '1');
 
                         html += '<div class="card border rounded-3 shadow-none bg-white mb-3" style="border-color: #e2e8f0 !important;">' +
                             '<div class="card-header bg-light-subtle py-2 px-3 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">' +
@@ -1926,7 +1915,7 @@ if (isFileSubmission) {
                             var groupSel = card.querySelector('select[name$="[file_types]"]');
                             var groupKey = groupSel ? groupSel.value : '';
                             var groupInfo = FILE_TYPE_GROUPS[groupKey];
-                            var maxFilesSel = card.querySelector('select[name$="[max_files]"]');
+                            var maxFilesSel = card.querySelector('[name$="[max_files]"]');
                             var maxFiles = maxFilesSel ? maxFilesSel.value : '1';
                             var maxSizeSel = card.querySelector('select[name$="[max_size_mb]"]');
                             var maxSize = maxSizeSel ? maxSizeSel.value : '10';

@@ -44,6 +44,16 @@ class RecordAllCombinedService
      * Cached master classifications list from table `classification`.
      */
     protected static ?array $masterClassificationsCache = null;
+    protected static ?bool $hasParticipantClassification = null;
+
+    public static function hasParticipantClassification(): bool
+    {
+        if (self::$hasParticipantClassification === null) {
+            self::$hasParticipantClassification = Schema::hasTable('offline_training_users')
+                && Schema::hasColumn('offline_training_users', 'main_classification');
+        }
+        return self::$hasParticipantClassification;
+    }
 
     /**
      * Get master classifications from table `classification` + Compliance.
@@ -718,11 +728,11 @@ class RecordAllCombinedService
                 DB::raw("CASE WHEN unified.source = 'offline' THEN ot.level ELSE NULL END as level"),
                 DB::raw("CASE WHEN unified.source = 'offline' THEN ot.batch ELSE NULL END as batch"),
                 DB::raw("CASE
-                    WHEN unified.source = 'offline' THEN COALESCE(NULLIF(TRIM(otu.main_classification), ''), NULLIF(TRIM(ot.main_classification), ''), 'Unclassified')
+                    WHEN unified.source = 'offline' THEN " . (self::hasParticipantClassification() ? "COALESCE(NULLIF(TRIM(otu.main_classification), ''), NULLIF(TRIM(ot.main_classification), ''), 'Unclassified')" : "COALESCE(NULLIF(TRIM(ot.main_classification), ''), 'Unclassified')") . "
                     ELSE COALESCE(NULLIF(TRIM(cl.classification_name), ''), 'Unclassified')
                 END as classification"),
                 DB::raw("CASE
-                    WHEN unified.source = 'offline' THEN COALESCE(NULLIF(TRIM(otu.sub_classification), ''), ot.sub_classification)
+                    WHEN unified.source = 'offline' THEN " . (self::hasParticipantClassification() ? "COALESCE(NULLIF(TRIM(otu.sub_classification), ''), ot.sub_classification)" : "ot.sub_classification") . "
                     ELSE NULL
                 END as sub_classification"),
                 DB::raw("CASE WHEN unified.source = 'offline' THEN ot.counted_corporate_kpi ELSE NULL END as counted_corporate_kpi"),
@@ -1629,7 +1639,9 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
             $resolvedClass = RecordAllController::resolveClassification($categorySlug, false);
             $resolvedName = $resolvedClass['name'] ?? $categorySlug;
 
-            $classCol = "COALESCE(NULLIF(TRIM(otu.main_classification), ''), ot.main_classification)";
+            $classCol = self::hasParticipantClassification()
+                ? "COALESCE(NULLIF(TRIM(otu.main_classification), ''), ot.main_classification)"
+                : "ot.main_classification";
             if (strtolower($classification) === 'unclassified' || strtolower($classification) === 'unclassification' || ($resolvedClass['is_unclassified'] ?? false)) {
                 $knownMasters = [
                     'Leadership', 'Basic & Common Duties', 'Basic Common Duties',
@@ -1684,8 +1696,12 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
             $q->where(function ($sub) use ($search) {
                 $sub->where('otu.employee_id', 'like', "%{$search}%")
                     ->orWhere('otu.name', 'like', "%{$search}%")
-                    ->orWhere('ot.course_name', 'like', "%{$search}%")
-                    ->orWhereRaw("COALESCE(NULLIF(TRIM(otu.main_classification), ''), ot.main_classification) LIKE ?", ["%{$search}%"]);
+                    ->orWhere('ot.course_name', 'like', "%{$search}%");
+                if (self::hasParticipantClassification()) {
+                    $sub->orWhereRaw("COALESCE(NULLIF(TRIM(otu.main_classification), ''), ot.main_classification) LIKE ?", ["%{$search}%"]);
+                } else {
+                    $sub->orWhere('ot.main_classification', 'like', "%{$search}%");
+                }
             });
         }
 
@@ -2132,18 +2148,7 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
                 return htmlspecialchars($t ?: 'Document');
             })
             ->addColumn('category', function ($row) use ($tpdCache) {
-                if ($row->source === 'offline') {
-                    return '<span class="badge bg-secondary-lt text-secondary">Non KP-OWL</span>';
-                }
-                $hasPlaylist = !empty($row->playlist_title)
-                    || (!empty($row->content_id) && isset($tpdCache[$row->content_id]))
-                    || in_array($row->category ?? '', ['Content Playlist', 'Playlist'], true)
-                    || ($row->source_type ?? '') === 'playlist';
-
-                if ($hasPlaylist) {
-                    return '<span class="badge bg-purple-lt text-purple">Content Playlist</span>';
-                }
-                return '<span class="badge bg-blue-lt text-blue">All Content</span>';
+                return $this->categoryBadge($row, $tpdCache);
             })
             ->addColumn('course_title', function ($row) {
                 $title = htmlspecialchars($row->learning_title ?: '-');
@@ -2263,6 +2268,129 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
             })
             ->addColumn('job_position', function ($row) {
                 return htmlspecialchars($row->job_position ?: '-');
+            })
+            ->addColumn('sub_course_title', function ($row) {
+                return htmlspecialchars($row->sub_course_name ?: '-');
+            })
+            ->addColumn('level', function ($row) {
+                return htmlspecialchars($row->level ?: '-');
+            })
+            ->addColumn('batch', function ($row) {
+                return htmlspecialchars($row->batch ?: '-');
+            })
+            ->addColumn('sub_classification', function ($row) {
+                return htmlspecialchars($row->sub_classification ?: '-');
+            })
+            ->addColumn('delivery_method', function ($row) {
+                $sourceRaw = strtolower(trim((string) ($row->source ?? '')));
+                $isKpOwl = in_array($sourceRaw, ['online', 'kp owl', 'kp-owl', 'owl'], true);
+                return $isKpOwl ? 'Online' : 'Offline';
+            })
+            ->addColumn('sub_delivery_method', function ($row) {
+                $sourceRaw = strtolower(trim((string) ($row->source ?? '')));
+                $isKpOwl = in_array($sourceRaw, ['online', 'kp owl', 'kp-owl', 'owl'], true);
+                if ($isKpOwl) {
+                    return 'KP OWL';
+                }
+                $sub = $row->sub_delivery_method ?? $row->training_type ?? $row->type ?? null;
+                if (!$sub || $sub === '-' || strtolower(trim((string) $sub)) === 'offline') {
+                    $rawDm = trim((string) ($row->delivery_method ?? ''));
+                    if ($rawDm !== '' && strtolower($rawDm) !== 'offline') {
+                        $sub = $rawDm;
+                    }
+                }
+                return htmlspecialchars($sub ?: '-');
+            })
+            ->addColumn('provider', function ($row) {
+                $sourceRaw = strtolower(trim((string) ($row->source ?? '')));
+                $isKpOwl = in_array($sourceRaw, ['online', 'kp owl', 'kp-owl', 'owl'], true);
+                return $isKpOwl ? 'Internal' : htmlspecialchars($row->provider ?: '-');
+            })
+            ->addColumn('sub_provider', function ($row) {
+                $sourceRaw = strtolower(trim((string) ($row->source ?? '')));
+                $isKpOwl = in_array($sourceRaw, ['online', 'kp owl', 'kp-owl', 'owl'], true);
+                return $isKpOwl ? '-' : htmlspecialchars($row->sub_provider ?: '-');
+            })
+            ->addColumn('provider_name', function ($row) {
+                $sourceRaw = strtolower(trim((string) ($row->source ?? '')));
+                $isKpOwl = in_array($sourceRaw, ['online', 'kp owl', 'kp-owl', 'owl'], true);
+                return $isKpOwl ? 'KP-OWL' : htmlspecialchars($row->provider_name ?: '-');
+            })
+            ->addColumn('venue', function ($row) {
+                $sourceRaw = strtolower(trim((string) ($row->source ?? '')));
+                $isKpOwl = in_array($sourceRaw, ['online', 'kp owl', 'kp-owl', 'owl'], true);
+                return $isKpOwl ? 'Online LMS' : htmlspecialchars($row->venue ?: '-');
+            })
+            ->addColumn('instructor', function ($row) {
+                return htmlspecialchars($row->instructor ?: '-');
+            })
+            ->addColumn('start_date', function ($row) {
+                return !empty($row->start_date) ? date('Y-m-d', strtotime($row->start_date)) : '-';
+            })
+            ->addColumn('end_date', function ($row) {
+                $d = $row->end_date ?? ($row->finish_date ?? null);
+                return !empty($d) ? date('Y-m-d', strtotime($d)) : '-';
+            })
+            ->addColumn('start_time', function ($row) {
+                return !empty($row->start_time) ? date('H:i:s', strtotime($row->start_time)) : '-';
+            })
+            ->addColumn('end_time', function ($row) {
+                return !empty($row->end_time) ? date('H:i:s', strtotime($row->end_time)) : '-';
+            })
+            ->addColumn('attendance_reason', function ($row) {
+                return htmlspecialchars($row->attendance_reason ?: '-');
+            })
+            ->addColumn('bond_status', function ($row) {
+                return htmlspecialchars($row->bond_status ?: 'No');
+            })
+            ->addColumn('bond_duration', function ($row) {
+                return !empty($row->bond_duration) ? htmlspecialchars($row->bond_duration . ' Months') : '-';
+            })
+            ->addColumn('bond_end_date', function ($row) {
+                return !empty($row->bond_end_date) ? date('Y-m-d', strtotime($row->bond_end_date)) : '-';
+            })
+            ->addColumn('bond_amount', function ($row) {
+                $idr = $row->bond_amount_idr ?? $row->bond_amount ?? null;
+                return ($idr !== null && (float) $idr > 0) ? 'Rp ' . number_format((float) $idr, 0, ',', '.') : '-';
+            })
+            ->addColumn('l2_status', function ($row) {
+                if (!empty($row->l2_verbal) && $row->l2_verbal !== '-') {
+                    return htmlspecialchars($row->l2_verbal);
+                }
+                $s2 = is_numeric($row->assessment_score) ? (float) $row->assessment_score : (is_numeric($row->l2_numerical) ? (float) $row->l2_numerical : null);
+                if ($s2 !== null) {
+                    return $s2 >= 70 ? 'Passed' : 'Failed';
+                }
+                return '-';
+            })
+            ->addColumn('l3_status', function ($row) {
+                return htmlspecialchars($row->l3_verbal ?: '-');
+            })
+            ->addColumn('certificate_availability', function ($row) {
+                $isFinished = ((float) ($row->progress ?? 0) >= 100 || ($row->status ?? '') === 'Finished' || ($row->finish ?? '') === '1');
+                $hasCert = (!empty($row->certificate) && $row->certificate !== '-') || $isFinished;
+                return $hasCert ? 'Available' : '-';
+            })
+            ->addColumn('certificate_institution', function ($row) {
+                if ($row->source === 'offline') {
+                    return htmlspecialchars($row->certificate ?: '-');
+                }
+                $isFinished = ((float) ($row->progress ?? 0) >= 100 || ($row->status ?? '') === 'Finished' || ($row->finish ?? '') === '1');
+                return $isFinished ? 'PT Krakatau Posco' : '-';
+            })
+            ->addColumn('certificate_issued_date', function ($row) {
+                if ($row->source === 'offline') {
+                    return !empty($row->certificate_issued_date) ? date('Y-m-d', strtotime($row->certificate_issued_date)) : '-';
+                }
+                $d = $row->finish_date ?? ($row->start_date ?? null);
+                $isFinished = ((float) ($row->progress ?? 0) >= 100 || ($row->status ?? '') === 'Finished' || ($row->finish ?? '') === '1');
+                return ($isFinished && !empty($d) && $d !== '-') ? date('Y-m-d', strtotime($d)) : '-';
+            })
+            ->addColumn('certificate_expired_date', function ($row) {
+                if ($row->source === 'offline') {
+                    return !empty($row->certificate_expired_date) ? date('Y-m-d', strtotime($row->certificate_expired_date)) : '-';
+                }
+                return '-';
             })
             ->addColumn('progress_percent', function ($row) {
                 $progress = max(0, min(100, round((float) ($row->progress ?? 0))));
@@ -2410,13 +2538,22 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
                 'employee',
                 'learning_title',
                 'course_title',
+                'playlist',
+                'type',
+                'category',
+                'category_badge',
                 'main_classification',
+                'provider',
+                'sub_provider',
+                'certificate_availability',
                 'kpi_badge',
                 'progress_bar',
                 'progress_badge',
                 'progress_percent',
                 'progress_status',
                 'date_time_merged',
+                'date_merged',
+                'time_merged',
                 'requirement',
                 'attendance',
                 'certificate_badge',
@@ -2425,6 +2562,7 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
                 'score_l2',
                 'score_l3',
                 'learning_hours',
+                'learning_hours_formatted',
                 'pic',
                 'total_engagement_duration',
                 'total_engagement_time',
@@ -2621,6 +2759,22 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
 
         $totalRecords = (clone $query)->count();
 
+        $tpdRows = DB::table('trainingplandetail as tpd')
+            ->join('trainingplan as tp', 'tp.id', '=', 'tpd.trainingplan_id')
+            ->whereNull('tp.deleted_at')
+            ->orderBy('tpd.id', 'asc')
+            ->select('tpd.content_id', 'tp.id as tp_id', 'tp.title as tp_title')
+            ->get();
+        $tpdCache = [];
+        foreach ($tpdRows as $tpd) {
+            if (!isset($tpdCache[$tpd->content_id])) {
+                $tpdCache[$tpd->content_id] = [
+                    'id'    => (int) $tpd->tp_id,
+                    'title' => (string) $tpd->tp_title,
+                ];
+            }
+        }
+
         $dataTable = DataTables::of($query)
             ->setTotalRecords($totalRecords)
             ->setFilteredRecords($totalRecords);
@@ -2677,12 +2831,6 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
                 }
 
                 return '<div class="fw-semibold text-dark text-truncate" style="max-width: 250px;" title="' . $escaped . '">' . $escaped . '</div>';
-            })
-            ->addColumn('type', function ($row) {
-                return htmlspecialchars($row->type ?: '-');
-            })
-            ->addColumn('category', function ($row) {
-                return htmlspecialchars($row->category ?: '-');
             })
             ->addColumn('classification', function ($row) {
                 return htmlspecialchars($row->classification ?: '-');
@@ -2742,18 +2890,7 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
                 return htmlspecialchars($t ?: 'Document');
             })
             ->addColumn('category', function ($row) use ($tpdCache) {
-                if ($row->source === 'offline') {
-                    return '<span class="badge bg-secondary-lt text-secondary">Non KP-OWL</span>';
-                }
-                $hasPlaylist = !empty($row->playlist_title)
-                    || (!empty($row->content_id) && isset($tpdCache[$row->content_id]))
-                    || in_array($row->category ?? '', ['Content Playlist', 'Playlist'], true)
-                    || ($row->source_type ?? '') === 'playlist';
-
-                if ($hasPlaylist) {
-                    return '<span class="badge bg-purple-lt text-purple">Content Playlist</span>';
-                }
-                return '<span class="badge bg-blue-lt text-blue">All Content</span>';
+                return $this->categoryBadge($row, $tpdCache);
             })
             ->addColumn('course_title', function ($row) {
                 $title = htmlspecialchars($row->learning_title ?: '-');
@@ -2808,6 +2945,129 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
             })
             ->addColumn('job_position', function ($row) {
                 return htmlspecialchars($row->job_position ?: '-');
+            })
+            ->addColumn('sub_course_title', function ($row) {
+                return htmlspecialchars($row->sub_course_name ?: '-');
+            })
+            ->addColumn('level', function ($row) {
+                return htmlspecialchars($row->level ?: '-');
+            })
+            ->addColumn('batch', function ($row) {
+                return htmlspecialchars($row->batch ?: '-');
+            })
+            ->addColumn('sub_classification', function ($row) {
+                return htmlspecialchars($row->sub_classification ?: '-');
+            })
+            ->addColumn('delivery_method', function ($row) {
+                $sourceRaw = strtolower(trim((string) ($row->source ?? '')));
+                $isKpOwl = in_array($sourceRaw, ['online', 'kp owl', 'kp-owl', 'owl'], true);
+                return $isKpOwl ? 'Online' : 'Offline';
+            })
+            ->addColumn('sub_delivery_method', function ($row) {
+                $sourceRaw = strtolower(trim((string) ($row->source ?? '')));
+                $isKpOwl = in_array($sourceRaw, ['online', 'kp owl', 'kp-owl', 'owl'], true);
+                if ($isKpOwl) {
+                    return 'KP OWL';
+                }
+                $sub = $row->sub_delivery_method ?? $row->training_type ?? $row->type ?? null;
+                if (!$sub || $sub === '-' || strtolower(trim((string) $sub)) === 'offline') {
+                    $rawDm = trim((string) ($row->delivery_method ?? ''));
+                    if ($rawDm !== '' && strtolower($rawDm) !== 'offline') {
+                        $sub = $rawDm;
+                    }
+                }
+                return htmlspecialchars($sub ?: '-');
+            })
+            ->addColumn('provider', function ($row) {
+                $sourceRaw = strtolower(trim((string) ($row->source ?? '')));
+                $isKpOwl = in_array($sourceRaw, ['online', 'kp owl', 'kp-owl', 'owl'], true);
+                return $isKpOwl ? 'Internal' : htmlspecialchars($row->provider ?: '-');
+            })
+            ->addColumn('sub_provider', function ($row) {
+                $sourceRaw = strtolower(trim((string) ($row->source ?? '')));
+                $isKpOwl = in_array($sourceRaw, ['online', 'kp owl', 'kp-owl', 'owl'], true);
+                return $isKpOwl ? '-' : htmlspecialchars($row->sub_provider ?: '-');
+            })
+            ->addColumn('provider_name', function ($row) {
+                $sourceRaw = strtolower(trim((string) ($row->source ?? '')));
+                $isKpOwl = in_array($sourceRaw, ['online', 'kp owl', 'kp-owl', 'owl'], true);
+                return $isKpOwl ? 'KP-OWL' : htmlspecialchars($row->provider_name ?: '-');
+            })
+            ->addColumn('venue', function ($row) {
+                $sourceRaw = strtolower(trim((string) ($row->source ?? '')));
+                $isKpOwl = in_array($sourceRaw, ['online', 'kp owl', 'kp-owl', 'owl'], true);
+                return $isKpOwl ? 'Online LMS' : htmlspecialchars($row->venue ?: '-');
+            })
+            ->addColumn('instructor', function ($row) {
+                return htmlspecialchars($row->instructor ?: '-');
+            })
+            ->addColumn('start_date', function ($row) {
+                return !empty($row->start_date) ? date('Y-m-d', strtotime($row->start_date)) : '-';
+            })
+            ->addColumn('end_date', function ($row) {
+                $d = $row->end_date ?? ($row->finish_date ?? null);
+                return !empty($d) ? date('Y-m-d', strtotime($d)) : '-';
+            })
+            ->addColumn('start_time', function ($row) {
+                return !empty($row->start_time) ? date('H:i:s', strtotime($row->start_time)) : '-';
+            })
+            ->addColumn('end_time', function ($row) {
+                return !empty($row->end_time) ? date('H:i:s', strtotime($row->end_time)) : '-';
+            })
+            ->addColumn('attendance_reason', function ($row) {
+                return htmlspecialchars($row->attendance_reason ?: '-');
+            })
+            ->addColumn('bond_status', function ($row) {
+                return htmlspecialchars($row->bond_status ?: 'No');
+            })
+            ->addColumn('bond_duration', function ($row) {
+                return !empty($row->bond_duration) ? htmlspecialchars($row->bond_duration . ' Months') : '-';
+            })
+            ->addColumn('bond_end_date', function ($row) {
+                return !empty($row->bond_end_date) ? date('Y-m-d', strtotime($row->bond_end_date)) : '-';
+            })
+            ->addColumn('bond_amount', function ($row) {
+                $idr = $row->bond_amount_idr ?? $row->bond_amount ?? null;
+                return ($idr !== null && (float) $idr > 0) ? 'Rp ' . number_format((float) $idr, 0, ',', '.') : '-';
+            })
+            ->addColumn('l2_status', function ($row) {
+                if (!empty($row->l2_verbal) && $row->l2_verbal !== '-') {
+                    return htmlspecialchars($row->l2_verbal);
+                }
+                $s2 = is_numeric($row->assessment_score) ? (float) $row->assessment_score : (is_numeric($row->l2_numerical) ? (float) $row->l2_numerical : null);
+                if ($s2 !== null) {
+                    return $s2 >= 70 ? 'Passed' : 'Failed';
+                }
+                return '-';
+            })
+            ->addColumn('l3_status', function ($row) {
+                return htmlspecialchars($row->l3_verbal ?: '-');
+            })
+            ->addColumn('certificate_availability', function ($row) {
+                $isFinished = ((float) ($row->progress ?? 0) >= 100 || ($row->status ?? '') === 'Finished' || ($row->finish ?? '') === '1');
+                $hasCert = (!empty($row->certificate) && $row->certificate !== '-') || $isFinished;
+                return $hasCert ? 'Available' : '-';
+            })
+            ->addColumn('certificate_institution', function ($row) {
+                if ($row->source === 'offline') {
+                    return htmlspecialchars($row->certificate ?: '-');
+                }
+                $isFinished = ((float) ($row->progress ?? 0) >= 100 || ($row->status ?? '') === 'Finished' || ($row->finish ?? '') === '1');
+                return $isFinished ? 'PT Krakatau Posco' : '-';
+            })
+            ->addColumn('certificate_issued_date', function ($row) {
+                if ($row->source === 'offline') {
+                    return !empty($row->certificate_issued_date) ? date('Y-m-d', strtotime($row->certificate_issued_date)) : '-';
+                }
+                $d = $row->finish_date ?? ($row->start_date ?? null);
+                $isFinished = ((float) ($row->progress ?? 0) >= 100 || ($row->status ?? '') === 'Finished' || ($row->finish ?? '') === '1');
+                return ($isFinished && !empty($d) && $d !== '-') ? date('Y-m-d', strtotime($d)) : '-';
+            })
+            ->addColumn('certificate_expired_date', function ($row) {
+                if ($row->source === 'offline') {
+                    return !empty($row->certificate_expired_date) ? date('Y-m-d', strtotime($row->certificate_expired_date)) : '-';
+                }
+                return '-';
             })
             ->addColumn('progress_percent', function ($row) {
                 $progress = max(0, min(100, round((float) ($row->progress ?? 0))));
@@ -2955,13 +3215,22 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
                 'employee',
                 'learning_title',
                 'course_title',
+                'playlist',
+                'type',
+                'category',
+                'category_badge',
                 'main_classification',
+                'provider',
+                'sub_provider',
+                'certificate_availability',
                 'kpi_badge',
                 'progress_bar',
                 'progress_badge',
                 'progress_percent',
                 'progress_status',
                 'date_time_merged',
+                'date_merged',
+                'time_merged',
                 'requirement',
                 'attendance',
                 'certificate_badge',
@@ -2970,12 +3239,41 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
                 'score_l2',
                 'score_l3',
                 'learning_hours',
+                'learning_hours_formatted',
                 'pic',
                 'total_engagement_duration',
                 'total_engagement_time',
                 'action',
             ])
             ->make(true);
+    }
+
+    /**
+     * Render category HTML badge:
+     * - Non KP OWL (Offline): badge bg-secondary-lt text-secondary 'Non KP-OWL'
+     * - Content Playlist: badge bg-purple-lt text-purple 'Content Playlist'
+     * - All Content: badge bg-azure-lt text-azure 'All Content'
+     */
+    public function categoryBadge($row, array $tpdCache = []): string
+    {
+        $sourceRaw = strtolower(trim((string) ($row->source ?? '')));
+        $isOffline = in_array($sourceRaw, ['offline', 'non kp owl', 'non kp-owl'], true);
+        if ($isOffline) {
+            return '<span class="badge bg-secondary-lt text-secondary">Non KP-OWL</span>';
+        }
+
+        $categorySource = $row->category_source ?? ($row->category ?? '');
+        $hasPlaylist = !empty($row->playlist_title)
+            || (!empty($row->content_id) && isset($tpdCache[$row->content_id]))
+            || in_array($categorySource, ['Content Playlist', 'Playlist'], true)
+            || in_array($row->category ?? '', ['Content Playlist', 'Playlist'], true)
+            || ($row->source_type ?? '') === 'playlist';
+
+        if ($hasPlaylist) {
+            return '<span class="badge bg-purple-lt text-purple">Content Playlist</span>';
+        }
+
+        return '<span class="badge bg-azure-lt text-azure">All Content</span>';
     }
 
     /**

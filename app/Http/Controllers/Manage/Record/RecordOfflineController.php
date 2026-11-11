@@ -320,33 +320,69 @@ class RecordOfflineController extends Controller
 
     public function ajaxClassification(Request $request)
     {
-        $summaryData = $this->getClassificationSummaryData();
-        $classification = $summaryData['classifications'];
-        $grandTotal = $summaryData['grand_total'];
+        try {
+            $summaryData = $this->getClassificationSummaryData();
+            $classification = $summaryData['classifications'];
+            $grandTotal = $summaryData['grand_total'];
 
-        if ($request->input('format') === 'html') {
+            if ($request->input('format') === 'html') {
+                return view('main.record.components.offline-classification-summary', [
+                    'classification' => $classification,
+                    'grandTotal'     => $grandTotal,
+                ]);
+            }
+
+            if ($request->wantsJson() || $request->ajax() || $request->input('format') === 'json') {
+                return response()->json([
+                    'success'     => true,
+                    'data'        => $classification,
+                    'grand_total' => $grandTotal,
+                    'html'        => view('main.record.components.offline-classification-summary', [
+                        'classification' => $classification,
+                        'grandTotal'     => $grandTotal,
+                    ])->render(),
+                ]);
+            }
+
             return view('main.record.components.offline-classification-summary', [
                 'classification' => $classification,
                 'grandTotal'     => $grandTotal,
             ]);
-        }
+        } catch (\Throwable $e) {
+            Log::error('RecordOfflineController::ajaxClassification error: ' . $e->getMessage(), [
+                'exception' => $e,
+            ]);
 
-        if ($request->wantsJson() || $request->ajax() || $request->input('format') === 'json') {
-            return response()->json([
-                'success'     => true,
-                'data'        => $classification,
-                'grand_total' => $grandTotal,
-                'html'        => view('main.record.components.offline-classification-summary', [
-                    'classification' => $classification,
-                    'grandTotal'     => $grandTotal,
-                ])->render(),
+            if ($request->wantsJson() || $request->ajax() || $request->input('format') === 'json') {
+                return response()->json([
+                    'success'     => false,
+                    'message'     => 'Unable to load classification summary at this moment.',
+                    'data'        => collect(),
+                    'grand_total' => [
+                        'programs'           => 0,
+                        'content'            => 0,
+                        'total_participants' => 0,
+                        'total_learning'     => 0,
+                        'learning_hours'     => 0.0,
+                        'ongoing'            => 0,
+                        'finished'           => 0,
+                    ],
+                ], 500);
+            }
+
+            return view('main.record.components.offline-classification-summary', [
+                'classification' => collect(),
+                'grandTotal'     => [
+                    'programs'           => 0,
+                    'content'            => 0,
+                    'total_participants' => 0,
+                    'total_learning'     => 0,
+                    'learning_hours'     => 0.0,
+                    'ongoing'            => 0,
+                    'finished'           => 0,
+                ],
             ]);
         }
-
-        return view('main.record.components.offline-classification-summary', [
-            'classification' => $classification,
-            'grandTotal'     => $grandTotal,
-        ]);
     }
 
     public function getClassificationSummary(): Collection
@@ -377,6 +413,9 @@ class RecordOfflineController extends Controller
         $masterMap = [];
         if (Schema::hasTable('classification')) {
             $masterQuery = DB::table('classification');
+            if (Schema::hasColumn('classification', 'deleted_at')) {
+                $masterQuery->whereNull('deleted_at');
+            }
             if (Schema::hasColumn('classification', 'is_active')) {
                 $masterQuery->where(function ($q) {
                     $q->whereNull('is_active')->orWhere('is_active', 1);
@@ -420,37 +459,63 @@ class RecordOfflineController extends Controller
             'is_unclassified'     => true,
         ];
 
-        // 3. Aggregate offline trainings and participants using consistent select and group by expressions
-        $classExpr = "CASE 
-            WHEN COALESCE(NULLIF(TRIM(otu.main_classification), ''), ot.main_classification) IS NULL 
-              OR TRIM(COALESCE(NULLIF(TRIM(otu.main_classification), ''), ot.main_classification)) = '' 
-              OR LOWER(TRIM(COALESCE(NULLIF(TRIM(otu.main_classification), ''), ot.main_classification))) IN ('unclassified', 'unclassification', 'audit isolated classification', 'audit-isolated-classification')
-            THEN 'Unclassification'
-            WHEN LOWER(TRIM(COALESCE(NULLIF(TRIM(otu.main_classification), ''), ot.main_classification))) IN ('basic common duties', 'basic & common duties', 'basic and common duties')
-            THEN 'Basic & Common Duties'
-            ELSE TRIM(COALESCE(NULLIF(TRIM(otu.main_classification), ''), ot.main_classification))
-        END";
+        // 3. Aggregate offline trainings and participants using schema-aware select and group by expressions
+        $hasUserClassification = Schema::hasTable('offline_training_users')
+            && Schema::hasColumn('offline_training_users', 'main_classification');
 
-        $query = DB::table('offline_trainings as ot')
-            ->leftJoin('offline_training_users as otu', function ($join) {
-                $join->on('otu.offline_training_id', '=', 'ot.id')
-                    ->whereNull('otu.deleted_at');
-            })
-            ->whereNull('ot.deleted_at');
+        $buildClassExpr = function (bool $includeUserClassification) {
+            $rawClass = $includeUserClassification
+                ? "COALESCE(NULLIF(TRIM(otu.main_classification), ''), ot.main_classification)"
+                : "ot.main_classification";
 
-        OfflineTraining::applyRecordScope($query, 'ot');
+            return "CASE 
+                WHEN {$rawClass} IS NULL 
+                  OR TRIM({$rawClass}) = '' 
+                  OR LOWER(TRIM({$rawClass})) IN ('unclassified', 'unclassification', 'audit isolated classification', 'audit-isolated-classification')
+                THEN 'Unclassification'
+                WHEN LOWER(TRIM({$rawClass})) IN ('basic common duties', 'basic & common duties', 'basic and common duties')
+                THEN 'Basic & Common Duties'
+                ELSE TRIM({$rawClass})
+            END";
+        };
 
-        $records = $query
-            ->select([
-                DB::raw("{$classExpr} as classification_name"),
-                DB::raw("COUNT(DISTINCT ot.id) as programs"),
-                DB::raw("COUNT(otu.id) as total_participants"),
-                DB::raw("COALESCE(SUM(otu.learning_hours), 0) as learning_hours"),
-                DB::raw("SUM(CASE WHEN otu.progress > 0 AND otu.progress < 100 THEN 1 ELSE 0 END) as ongoing"),
-                DB::raw("SUM(CASE WHEN otu.progress >= 100 THEN 1 ELSE 0 END) as finished"),
-            ])
-            ->groupBy(DB::raw($classExpr))
-            ->get();
+        $executeQuery = function (bool $includeUserClassification) use ($buildClassExpr) {
+            $classExpr = $buildClassExpr($includeUserClassification);
+            $query = DB::table('offline_trainings as ot')
+                ->leftJoin('offline_training_users as otu', function ($join) {
+                    $join->on('otu.offline_training_id', '=', 'ot.id')
+                        ->whereNull('otu.deleted_at');
+                })
+                ->whereNull('ot.deleted_at');
+
+            OfflineTraining::applyRecordScope($query, 'ot');
+
+            return $query
+                ->select([
+                    DB::raw("{$classExpr} as classification_name"),
+                    DB::raw("COUNT(DISTINCT ot.id) as programs"),
+                    DB::raw("COUNT(otu.id) as total_participants"),
+                    DB::raw("COALESCE(SUM(otu.learning_hours), 0) as learning_hours"),
+                    DB::raw("SUM(CASE WHEN otu.progress > 0 AND otu.progress < 100 THEN 1 ELSE 0 END) as ongoing"),
+                    DB::raw("SUM(CASE WHEN otu.progress >= 100 THEN 1 ELSE 0 END) as finished"),
+                ])
+                ->groupBy(DB::raw($classExpr))
+                ->get();
+        };
+
+        $records = collect();
+        try {
+            $records = $executeQuery($hasUserClassification);
+        } catch (\Throwable $e) {
+            Log::warning('getClassificationSummaryData primary aggregation failed, attempting fallback to ot.main_classification: ' . $e->getMessage());
+            try {
+                $records = $executeQuery(false);
+            } catch (\Throwable $fallbackEx) {
+                Log::error('getClassificationSummaryData fallback aggregation also failed: ' . $fallbackEx->getMessage(), [
+                    'exception' => $fallbackEx,
+                ]);
+            }
+        }
 
         foreach ($records as $item) {
             $name = (string) $item->classification_name;

@@ -33,8 +33,12 @@
             dom: 't',
             ajax: {
                 url: datatableUrl,
-                type: 'GET',
+                type: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
                 data: function (d) {
+                    d._token = $('meta[name="csrf-token"]').attr('content');
                     d.learning_title = $('#profile-title-input').val() || '';
                     d.classification = $('#profile-classification-select').val() || '';
                     d.status = $('#profile-status-select').val() || '';

@@ -407,8 +407,12 @@
             },
             ajax: {
                 url: datatableUrl,
-                type: 'GET',
+                type: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
                 data: function (d) {
+                    d._token = $('meta[name="csrf-token"]').attr('content');
                     d.classification = classificationSlug;
                     d.classification_slug = classificationSlug;
                     d.slug = classificationSlug;

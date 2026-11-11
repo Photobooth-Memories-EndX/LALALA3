@@ -22,7 +22,7 @@
                         </div>
                         <div>
                             <h2 class="h3 fw-bold mb-1 text-dark">Classification: {{ $classificationName }}</h2>
-                            <p class="text-muted small mb-0">Combined Online &amp; Offline Learning Records for this
+                            <p class="text-muted small mb-0">Combined Online & Offline Learning Records for this
                                 classification.</p>
                         </div>
                     </div>
@@ -188,41 +188,23 @@
                             <thead class="bg-light text-muted small text-uppercase">
                                 <tr>
                                     <th style="width: 45px; text-align: center;">NO</th>
-                                    <th class="text-center align-middle whitespace-nowrap px-3" style="width: 1%;">SOURCE</th>
-                                    <th style="min-width: 110px;">EMPLOYEE ID</th>
-                                    <th style="min-width: 160px;">EMPLOYEE NAME</th>
-                                    <th style="min-width: 130px;">TEAM</th>
-                                    <th style="min-width: 140px;">DEPARTMENT</th>
-                                    <th style="min-width: 130px;">COMPANY</th>
-                                    <th class="text-center" style="min-width: 220px; text-align: center;">COURSE TITLE</th>
+                                    <th class="text-center align-middle whitespace-nowrap px-3" style="width: 85px;">SOURCE</th>
+                                    <th style="min-width: 90px;">EMPLOYEE ID</th>
+                                    <th style="min-width: 200px;">EMPLOYEE NAME</th>
+                                    <th class="text-center" style="min-width: 240px; text-align: center;">COURSE TITLE</th>
                                     <th style="min-width: 200px;">PLAYLIST</th>
-                                    <th style="min-width: 100px;">TYPE</th>
-                                    <th style="min-width: 110px;">CATEGORY</th>
-                                    <th style="min-width: 140px;">MAIN CLASSIFICATION</th>
+                                    <th class="text-center" style="min-width: 100px; text-align: center;">TYPE</th>
+                                    <th class="text-center" style="min-width: 130px; text-align: center;">CATEGORY</th>
+                                    <th style="min-width: 150px;">MAIN CLASSIFICATION</th>
                                     <th style="min-width: 140px;">SUB CLASSIFICATION</th>
-                                    <th style="min-width: 120px;">DELIVERY METHOD</th>
-                                    <th style="min-width: 130px;">SUB DELIVERY METHOD</th>
-                                    <th style="min-width: 110px;">PROVIDER</th>
-                                    <th style="min-width: 130px;">PROVIDER NAME</th>
-                                    <th style="min-width: 120px;">VENUE</th>
-                                    <th style="min-width: 110px;">COURSE DURATION</th>
-                                    <th style="min-width: 130px;">TOTAL RECOGNIZED DURATION</th>
-                                    <th style="min-width: 110px;">LEARNING HOURS</th>
-                                    <th style="min-width: 110px;">% PROGRESS</th>
-                                    <th style="min-width: 110px;">PROGRESS STATUS</th>
-                                    <th style="min-width: 110px;">START DATE</th>
-                                    <th style="min-width: 110px;">END DATE</th>
-                                    <th style="min-width: 100px;">START TIME</th>
-                                    <th style="min-width: 100px;">END TIME</th>
-                                    <th style="min-width: 110px;">RECORD MONTH</th>
-                                    <th style="min-width: 110px;">REQUIREMENT</th>
-                                    <th style="min-width: 100px;">ATTENDANCE</th>
-                                    <th style="min-width: 120px;">SCORE (L1) - COURSE</th>
-                                    <th style="min-width: 90px;">SCORE (L2)</th>
-                                    <th style="min-width: 90px;">SCORE (L3)</th>
-                                    <th style="min-width: 130px;">CERTIFICATE AVAILABILITY</th>
-
-                                    <th style="min-width: 140px;">TOTAL ENGAGEMENT TIME (LH)</th>
+                                    <th class="text-center" style="min-width: 120px; text-align: center;">DELIVERY METHOD</th>
+                                    <th class="text-center" style="min-width: 130px; text-align: center;">SUB DELIVERY METHOD</th>
+                                    <th class="text-center" style="min-width: 110px; text-align: center;">PROVIDER</th>
+                                    <th style="min-width: 140px;">SUB PROVIDER</th>
+                                    <th class="text-center" style="min-width: 90px; text-align: center;">SCORE (L2)</th>
+                                    <th class="text-center" style="min-width: 90px; text-align: center;">SCORE (L3)</th>
+                                    <th class="text-center" style="min-width: 130px; text-align: center;">CERTIFICATE AVAILABILITY</th>
+                                    <th class="text-center" style="min-width: 140px; text-align: center;">TOTAL ENGAGEMENT TIME (LH)</th>
                                     <th class="text-end" style="width: 80px;">ACTION</th>
                                 </tr>
                             </thead>
@@ -1352,8 +1334,12 @@
                 dom: '<"top">rt<"bottom d-flex justify-content-between align-items-center mt-3"l ip><"clear">',
                 ajax: {
                     url: datatableUrl,
-                    type: 'GET',
+                    type: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
                     data: function(d) {
+                        d._token = $('meta[name="csrf-token"]').attr('content');
                         d.employee_id = $('#all-filter-employee').val().trim();
                         d.learning_title = $('#all-filter-title').val().trim();
                         d.source = $('#all-filter-source').val();
@@ -1383,7 +1369,7 @@
                         data: 'source_badge',
                         name: 'source',
                         orderable: true,
-                        width: '1%',
+                        width: '85px',
                         className: 'text-center align-middle whitespace-nowrap px-3'
                     },
                     {
@@ -1395,24 +1381,6 @@
                     {
                         data: 'employee_name',
                         name: 'employee_name',
-                        orderable: true,
-                        defaultContent: '-'
-                    },
-                    {
-                        data: 'team',
-                        name: 'team',
-                        orderable: true,
-                        defaultContent: '-'
-                    },
-                    {
-                        data: 'department',
-                        name: 'department',
-                        orderable: true,
-                        defaultContent: '-'
-                    },
-                    {
-                        data: 'company',
-                        name: 'company',
                         orderable: true,
                         defaultContent: '-'
                     },
@@ -1440,15 +1408,23 @@
                         }
                     },
                     {
+                        data: 'playlist',
+                        name: 'playlist_title',
+                        orderable: true,
+                        defaultContent: '-'
+                    },
+                    {
                         data: 'type',
                         name: 'type',
                         orderable: true,
+                        className: 'text-center align-middle',
                         defaultContent: '-'
                     },
                     {
                         data: 'category',
                         name: 'category',
                         orderable: true,
+                        className: 'text-center align-middle',
                         defaultContent: '-'
                     },
                     {
@@ -1467,153 +1443,55 @@
                         data: 'delivery_method',
                         name: 'delivery_method',
                         orderable: true,
+                        className: 'text-center align-middle',
                         defaultContent: '-'
                     },
                     {
                         data: 'sub_delivery_method',
                         name: 'sub_delivery_method',
                         orderable: true,
+                        className: 'text-center align-middle',
                         defaultContent: '-'
                     },
                     {
                         data: 'provider',
                         name: 'provider',
                         orderable: true,
+                        className: 'text-center align-middle',
                         defaultContent: '-'
                     },
                     {
-                        data: 'provider_name',
-                        name: 'provider_name',
-                        orderable: true,
-                        defaultContent: '-'
-                    },
-                    {
-                        data: 'venue',
-                        name: 'venue',
-                        orderable: true,
-                        defaultContent: '-'
-                    },
-                    {
-                        data: 'course_duration',
-                        name: 'duration_seconds',
-                        orderable: true,
-                        defaultContent: '-'
-                    },
-                    {
-                        data: 'total_recognized_duration',
-                        name: 'recognized_duration_seconds',
-                        orderable: true,
-
-                        defaultContent: '-'
-                    },
-                    {
-                        data: 'learning_hours',
-                        name: 'learning_hours',
-                        orderable: true,
-                        defaultContent: '-'
-                    },
-                    {
-                        data: 'progress_bar',
-                        name: 'progress',
-                        orderable: true
-                    },
-                    {
-                        data: 'progress_status',
-                        name: 'status',
-                        orderable: true
-                    },
-                    {
-                        data: 'start_date',
-                        name: 'start_date',
-                        orderable: true,
-                        defaultContent: '-'
-                    },
-                    {
-                        data: 'end_date',
-                        name: 'finish_date',
-                        orderable: true,
-                        defaultContent: '-'
-                    },
-                    {
-                        data: 'start_time',
-                        name: 'start_time',
-                        orderable: true,
-                        defaultContent: '-'
-                    },
-                    {
-                        data: 'end_time',
-                        name: 'end_time',
-                        orderable: true,
-                        defaultContent: '-'
-                    },
-                    {
-                        data: 'record_month',
-                        name: 'record_month',
-                        orderable: false,
-                        defaultContent: '-'
-                    },
-                    {
-                        data: 'requirement',
-                        name: 'requirement',
-                        orderable: true,
-                        defaultContent: '-'
-                    },
-                    {
-                        data: 'attendance',
-                        name: 'attendance',
-                        orderable: true,
-                        defaultContent: '-',
-                        render: function (data, type, row) {
-                            if (type === 'sort' || type === 'type') {
-                                const clean = (data || '').toString().replace(/<[^>]*>?/gm, '').trim().toLowerCase();
-                                return (clean === 'yes' || clean === 'present' || clean === '1' || clean === 'true' || clean === 'hadir') ? 'Yes' : 'No';
-                            }
-                            if (typeof data === 'string' && (data.includes('<span') || data.includes('<badge'))) {
-                                if (data.toLowerCase().includes('present') || data.toLowerCase().includes('hadir')) {
-                                    return '<span class="badge bg-success-lt text-success fw-bold px-2 py-1">Yes</span>';
-                                }
-                                if (data.toLowerCase().includes('absent') || data.includes('>-<') || data.toLowerCase().includes('tidak hadir') || data.toLowerCase().includes('not completed')) {
-                                    return '<span class="badge bg-danger-lt text-danger fw-bold px-2 py-1">No</span>';
-                                }
-                                return data;
-                            }
-                            const raw = String(data ?? '').toLowerCase().trim();
-                            const isYes = ['1', 'yes', 'true', 'present', 'hadir', 'completed', 'finished'].includes(raw)
-                                || (row && row.source === 'online' && parseFloat(row.progress || 0) >= 100);
-                            if (isYes) {
-                                return '<span class="badge bg-success-lt text-success fw-bold px-2 py-1">Yes</span>';
-                            }
-                            return '<span class="badge bg-danger-lt text-danger fw-bold px-2 py-1">No</span>';
-                        }
-                    },
-                    {
-                        data: 'score_l1',
-                        name: 'score_l1',
+                        data: 'sub_provider',
+                        name: 'sub_provider',
                         orderable: true,
                         defaultContent: '-'
                     },
                     {
                         data: 'score_l2',
-                        name: 'score_l2',
+                        name: 'l2_numerical',
                         orderable: true,
+                        className: 'text-center align-middle',
                         defaultContent: '-'
                     },
                     {
                         data: 'score_l3',
-                        name: 'score_l3',
+                        name: 'l3_numerical',
                         orderable: true,
+                        className: 'text-center align-middle',
                         defaultContent: '-'
                     },
                     {
                         data: 'certificate_availability',
                         name: 'certificate',
                         orderable: true,
+                        className: 'text-center align-middle',
                         defaultContent: '-'
                     },
                     {
                         data: 'total_engagement_time',
                         name: 'total_engagement_time',
                         orderable: true,
+                        className: 'text-center align-middle',
                         defaultContent: '-'
                     },
                     {

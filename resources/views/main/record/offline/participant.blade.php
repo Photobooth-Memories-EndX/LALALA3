@@ -307,7 +307,7 @@
                                     <th class="text-center" style="min-width: 105px;">SCORE (L3)</th>
                                     <th style="min-width: 130px;">PERSON IN CHARGE (PIC)</th>
                                     <th class="text-center" style="min-width: 120px;">TOTAL ENGAGEMENT TIME (LH)</th>
-                                    <th class="text-center" style="min-width: 60px; width: 60px;">ACTION</th>
+                                    <th class="text-center action-column" style="min-width: 80px; width: 80px;">ACTION</th>
                                 </tr>
                             </thead>
                             <tbody></tbody>
@@ -984,6 +984,36 @@
             white-space: nowrap !important;
         }
 
+        /* Action Column & Centering */
+        #participant-training-table th.action-column,
+        #participant-training-table td.action-column {
+            width: 80px !important;
+            min-width: 80px !important;
+            max-width: 80px !important;
+            text-align: center !important;
+            vertical-align: middle !important;
+            padding-left: 8px !important;
+            padding-right: 8px !important;
+        }
+
+        #participant-training-table td.action-column .dropdown {
+            display: inline-flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+            margin: 0 auto !important;
+            width: 100% !important;
+        }
+
+        #participant-training-table td.action-column .btn-icon {
+            margin: 0 auto !important;
+        }
+
+        #participant-training-table td.dataTables_empty {
+            text-align: center !important;
+            padding: 48px 24px !important;
+            white-space: normal !important;
+        }
+
         [data-bs-theme="dark"] #participant-training-table thead th,
         body.dark-mode #participant-training-table thead th,
         body.theme-dark #participant-training-table thead th {
@@ -1342,7 +1372,7 @@
                 serverSide: true,
                 responsive: false,
                 autoWidth: false,
-                scrollX: true,
+                scrollX: false,
                 pageLength: defaultEntries,
                 lengthMenu: [
                     [10, 25, 50, 100],
@@ -1352,10 +1382,23 @@
                     [9, 'asc']
                 ], // Order by Course Name
                 dom: 't',
+                columnDefs: [
+                    {
+                        targets: -1,
+                        className: 'text-center action-column align-middle',
+                        width: '80px',
+                        orderable: false,
+                        searchable: false
+                    }
+                ],
                 ajax: {
                     url: datatableUrl,
-                    type: 'GET',
+                    type: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
                     data: function(d) {
+                        d._token = $('meta[name="csrf-token"]').attr('content');
                         // Quick Filters
                         d.course_name = ($('#participant-course-input').val() || '').trim();
                         d.type = $('#participant-type-select').val();
@@ -1613,7 +1656,8 @@
                         name: 'action',
                         orderable: false,
                         searchable: false,
-                        className: 'text-center'
+                        className: 'text-center action-column align-middle',
+                        width: '80px'
                     }
                 ],
                 language: {

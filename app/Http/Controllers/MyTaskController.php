@@ -286,15 +286,6 @@ class MyTaskController extends Controller
             }
         }
 
-        foreach ($assessmentGroups as $ag) {
-            foreach ($ag['tasks'] as $at) {
-                if (($at->is_completed ?? false) && ! ($at->is_passed ?? false)) {
-                    $revisionCounts['asesment']++;
-                    $revisionCounts['all']++;
-                }
-            }
-        }
-
         // Filter groups by selected quick filter
         if ($filterType === 'assessment') {
             $groups = $assessmentGroups->values();
@@ -317,11 +308,17 @@ class MyTaskController extends Controller
             };
         }
 
-        $groups = $groups
-            ->sortBy(fn ($g) => [$g['nearest_deadline'] === null, $g['nearest_deadline']])
-            ->sortByDesc('has_overdue')
-            ->sortByDesc(fn ($g) => ($g['resubmit_count'] ?? 0) > 0)
-            ->values();
+        if ($filter === 'asesment' || $filterType === 'assessment') {
+            $groups = $assessmentGroups
+                ->sortByDesc(fn ($g) => $g['assessment']->id ?? 0)
+                ->values();
+        } else {
+            $groups = $groups
+                ->sortBy(fn ($g) => [$g['nearest_deadline'] === null, $g['nearest_deadline']])
+                ->sortByDesc('has_overdue')
+                ->sortByDesc(fn ($g) => ($g['resubmit_count'] ?? 0) > 0)
+                ->values();
+        }
 
         // Drill-down: ?my_task_parent=... shows only that parent's tasks.
         $activeKey = $request->get('my_task_parent');
@@ -367,7 +364,9 @@ class MyTaskController extends Controller
             return collect();
         }
 
-        return $userAssessments->map(function ($assessment) use ($user) {
+        return $userAssessments
+            ->sortByDesc(fn ($a) => $a->id)
+            ->map(function ($assessment) use ($user) {
             $res = LearningAssessmentController::resolveCanonicalAssessmentResult($assessment, (int) $user->id);
             $isCompleted = ($res !== null);
             $isPassed = $res && (bool) ($res->pass ?? ($res->score !== null && $assessment->passing_grade !== null && (float) $res->score >= (float) $assessment->passing_grade));
@@ -509,7 +508,7 @@ class MyTaskController extends Controller
                 'total'            => 1,
                 'completed'        => $isCompleted ? 1 : 0,
                 'has_overdue'      => $isExpired && ! $isCompleted,
-                'resubmit_count'   => ($isCompleted && ! $isPassed) ? 1 : 0,
+                'resubmit_count'   => 0,
                 'nearest_deadline' => $nearestDl,
                 'is_assessment'    => true,
                 'assessment'       => $assessment,
@@ -921,7 +920,7 @@ class MyTaskController extends Controller
         // DAN mengklik tombol Task di halaman course (unlock tercatat di
         // task_playlist_unlocks). Bukan lagi sekadar "pernah membuka".
         $planIds     = $this->unlockedPlanIds($user->id);
-        $contentIds  = $this->openedContentIds($user->id);
+        $contentIds  = $this->completedContentIds($user->id);
         $offlineIds  = $this->enrolledOfflineTrainingIds($user->id);
         // Standalone tasks the user unlocked via access code / link / QR.
         // (Fetched up front so the main query needs no nested closures.)
@@ -991,8 +990,7 @@ class MyTaskController extends Controller
                 ->where('trainingplan_id', $planId)
                 ->whereIn('content_id', $contentIds)
                 ->where(fn ($q) => $q->where('finish', '1')
-                    ->orWhere('finish', 1)
-                    ->orWhere('progress', '>=', 100));
+                      ->orWhere('progress', '>=', 100));
 
             if ($finishedQuery->count() < $total) {
                 continue;
@@ -1027,7 +1025,7 @@ class MyTaskController extends Controller
     protected function userCanAccess(Task $task, int $userId): bool
     {
         return match ($task->parent_type) {
-            'content'          => in_array($task->content_id, $this->openedContentIds($userId)),
+            'content'          => in_array($task->content_id, $this->completedContentIds($userId)),
             'offline_training' => in_array($task->offline_training_id, $this->enrolledOfflineTrainingIds($userId)),
             // Standalone is always private: only users who redeemed the code.
             'standalone'       => TaskCodeRedemption::where('task_id', $task->id)
@@ -1137,13 +1135,38 @@ class MyTaskController extends Controller
      * (ContentUserController), jadi daftar ini = content yang
      * benar-benar pernah user klik.
      */
-    protected function openedContentIds(int $userId): array
+    /**
+     * ID content yang sudah diselesaikan 100% oleh user.
+     * Task di wadah content baru muncul setelah user menyelesaikan content 100%.
+     */
+    protected function completedContentIds(int $userId): array
     {
-        return ContentUser::where('user_id', $userId)
-            ->distinct()
-            ->pluck('content_id')
+        $directIds = ContentUser::where('user_id', $userId)
+            ->where(function ($q) {
+                $q->where('finish', '1')
+                  ->orWhere('progress', '>=', 100)
+                  ->orWhere('learning_status', 'completed');
+            })
+            ->pluck('content_id');
+
+        $playlistContentIds = PlaylistContentUser::where('user_id', $userId)
+            ->where(function ($q) {
+                $q->where('finish', '1')
+                  ->orWhere('progress', '>=', 100)
+                  ->orWhere('learning_status', 'completed');
+            })
+            ->pluck('content_id');
+
+        return $directIds->concat($playlistContentIds)
+            ->filter()
+            ->unique()
             ->values()
             ->all();
+    }
+
+    protected function openedContentIds(int $userId): array
+    {
+        return $this->completedContentIds($userId);
     }
 
     /**

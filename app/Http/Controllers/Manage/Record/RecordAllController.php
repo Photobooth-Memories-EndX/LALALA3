@@ -684,10 +684,27 @@ class RecordAllController extends Controller
 
         $columnHeadings = (new AllParticipantExport($participant))->headings();
 
-        return response()->streamDownload(function () use ($query, $columnHeadings) {
+        return response()->streamDownload(function () use ($query, $columnHeadings, $participant) {
             $output = fopen('php://output', 'w');
             fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
             fputcsv($output, $columnHeadings);
+
+            $userCerts = [];
+            if (!empty($participant['user_id'])) {
+                $cRows = DB::table('certificates as c')
+                    ->leftJoin('certificate_settings as cs', 'cs.id', '=', 'c.certificate_setting_id')
+                    ->where('c.user_id', $participant['user_id'])
+                    ->select('c.content_user_id', 'c.offline_training_user_id', 'cs.issuer_name', 'c.institution', 'c.issued_at', 'c.issued_date', 'c.expired_date')
+                    ->get();
+                foreach ($cRows as $cr) {
+                    if (!empty($cr->content_user_id)) {
+                        $userCerts['content:' . $cr->content_user_id] = $cr;
+                    }
+                    if (!empty($cr->offline_training_user_id)) {
+                        $userCerts['offline:' . $cr->offline_training_user_id] = $cr;
+                    }
+                }
+            }
 
             $pdo = DB::connection()->getPdo();
             $wasBuffered = $pdo->getAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY);
@@ -701,7 +718,8 @@ class RecordAllController extends Controller
                 while ($row = $stmt->fetch(\PDO::FETCH_OBJ)) {
                     $rowCount++;
 
-                    $durationFormatted = '';
+                    // Duration formatted as HH:MM:SS
+                    $durationFormatted = '-';
                     if (!empty($row->duration_seconds)) {
                         $secs = (int) $row->duration_seconds;
                         $hours = floor($secs / 3600);
@@ -710,78 +728,183 @@ class RecordAllController extends Controller
                         $durationFormatted = sprintf('%02d:%02d:%02d', $hours, $mins, $seconds);
                     }
 
+                    // Recognized Duration formatted as HH:MM:SS
                     $recognizedFormatted = '-';
                     if ($row->source !== 'offline') {
-                        $rSecs = (int) ($row->recognized_duration_seconds ?? 0);
+                        if (isset($row->recognized_duration_seconds)) {
+                            $rSecs = (int) $row->recognized_duration_seconds;
+                        } else {
+                            $recognizedService = app(\App\Services\Learning\LearningRecordRecognizedDurationService::class);
+                            $rSecs = $recognizedService->resolveFromRow($row);
+                        }
                         $rHours = floor($rSecs / 3600);
                         $rMins = floor(($rSecs % 3600) / 60);
                         $rSeconds = $rSecs % 60;
                         $recognizedFormatted = sprintf('%02d:%02d:%02d', $rHours, $rMins, $rSeconds);
                     }
 
-                    $attendanceStr = '';
-                    if ($row->attendance !== null) {
-                        $attendanceStr = (bool) $row->attendance ? 'Present' : 'Absent';
+                    // Total Engagement Duration (LH) formatted as HH:MM:SS
+                    $engSecs = (int) ($row->afk_duration_seconds ?? 0);
+                    if ($engSecs <= 0 && $row->source === 'offline') {
+                        $engSecs = (int) round(((float) ($row->training_hours ?? ($row->learning_hours ?? 0))) * 3600);
+                    }
+                    $eh = floor($engSecs / 3600);
+                    $em = floor(($engSecs % 3600) / 60);
+                    $es = $engSecs % 60;
+                    $totalEngagementDuration = sprintf('%02d:%02d:%02d', $eh, $em, $es);
+
+                    $lhNumeric = ($row->learning_hours !== null && $row->learning_hours !== '' && is_numeric($row->learning_hours))
+                        ? number_format((float) $row->learning_hours, 2)
+                        : '-';
+
+                    $progressNum = (float) ($row->progress ?? 0);
+                    $progressFormatted = round($progressNum, 2) . '%';
+                    $progressStatus = ($progressNum >= 100 || ($row->status ?? '') === 'Finished') ? 'Finished' : (($progressNum > 0) ? 'Ongoing' : 'Not Started');
+
+                    $sourceRaw = strtolower(trim((string) ($row->source ?? '')));
+                    $isKpOwl = in_array($sourceRaw, ['online', 'kp owl', 'kp-owl', 'owl'], true);
+                    $delivMethod = $isKpOwl ? 'Online' : 'Offline';
+
+                    if ($isKpOwl) {
+                        $subDelivMethod = 'KP OWL';
+                    } else {
+                        $sub = $row->sub_delivery_method ?? $row->training_type ?? $row->type ?? null;
+                        if (!$sub || $sub === '-' || strtolower(trim((string) $sub)) === 'offline') {
+                            $rawDm = trim((string) ($row->delivery_method ?? ''));
+                            if ($rawDm !== '' && strtolower($rawDm) !== 'offline') {
+                                $sub = $rawDm;
+                            }
+                        }
+                        $subDelivMethod = $sub ?: '-';
                     }
 
-                    $kpiStr = '';
-                    if ($row->counted_corporate_kpi !== null) {
-                        if ((bool) $row->counted_corporate_kpi) {
-                            $year = !empty($row->corporate_kpi_year) ? $row->corporate_kpi_year : (!empty($row->sub_corporate_kpi) && preg_match('/^\d{4}$/', (string)$row->sub_corporate_kpi) ? $row->sub_corporate_kpi : null);
-                            $kpiStr = $year ? "Yes ({$year})" : "Yes";
-                        } else {
-                            $kpiStr = 'No';
+                    $startDateStr = !empty($row->start_date) ? date('Y-m-d', strtotime($row->start_date)) : '-';
+                    $endDateStr = !empty($row->end_date)
+                        ? date('Y-m-d', strtotime($row->end_date))
+                        : (!empty($row->finish_date) ? date('Y-m-d', strtotime($row->finish_date)) : '-');
+
+                    $startTimeStr = !empty($row->start_time) ? date('H:i:s', strtotime($row->start_time)) : '-';
+                    $endTimeStr = !empty($row->end_time) ? date('H:i:s', strtotime($row->end_time)) : '-';
+
+                    $recordMonthDate = $row->start_date ?: ($row->finish_date ?: ($row->record_date ?? null));
+                    $recordMonthStr = !empty($recordMonthDate) ? date('F', strtotime($recordMonthDate)) : '-';
+                    $finalRecordMonth = ($row->source === 'online')
+                        ? ($endDateStr !== '-' ? date('F', strtotime($endDateStr)) : '-')
+                        : $recordMonthStr;
+
+                    $attendanceStr = '-';
+                    if ($row->attendance !== null && $row->attendance !== '') {
+                        $rawAtt = strtolower(trim((string) $row->attendance));
+                        $attendanceStr = in_array($rawAtt, ['1', 'yes', 'present', 'true', 'hadir', 'completed', 'finished'], true) ? 'Yes' : 'No';
+                    } elseif ($row->source === 'online') {
+                        $attendanceStr = ($progressNum >= 100) ? 'Yes' : (($progressNum > 0) ? 'No' : '-');
+                    }
+
+                    $idr = $row->bond_amount_idr ?? $row->bond_amount ?? null;
+                    $hasBond = ($idr !== null && (float) $idr > 0);
+                    $bondAmtStr = $hasBond ? 'Rp ' . number_format((float) $idr, 0, ',', '.') : '-';
+
+                    $scoreL1 = is_numeric($row->l1_program) ? (float) $row->l1_program : (!empty($row->l1_program) ? $row->l1_program : '-');
+                    $scoreL2 = is_numeric($row->assessment_score)
+                        ? (int) round((float) $row->assessment_score)
+                        : (is_numeric($row->l2_numerical) ? (int) round((float) $row->l2_numerical) : '-');
+                    $scoreL3 = is_numeric($row->l3_numerical) ? (float) $row->l3_numerical : '-';
+
+                    $l2Status = $row->l2_verbal ?: (is_numeric($scoreL2) ? ($scoreL2 >= 70 ? 'Passed' : 'Failed') : '-');
+                    $l3Status = $row->l3_verbal ?: '-';
+
+                    $rawEmp = $row->employee_id ?: '-';
+                    $cleanEmpId = ($rawEmp !== '-') ? preg_replace('/\s*[\/\-]\s*NIP.*$/i', '', trim((string) $rawEmp)) : '-';
+
+                    $hasCert = false;
+                    $certInstitution = '-';
+                    $certIssuedDate = '-';
+                    $certExpiredDate = '-';
+
+                    $certKey = ($row->source === 'offline') ? ('offline:' . ($row->source_id ?? '')) : ('content:' . ($row->source_id ?? ''));
+                    if (isset($userCerts[$certKey])) {
+                        $cr = $userCerts[$certKey];
+                        $hasCert = true;
+                        if (!empty($cr->issuer_name)) $certInstitution = $cr->issuer_name;
+                        elseif (!empty($cr->institution)) $certInstitution = $cr->institution;
+                        if (!empty($cr->issued_date)) $certIssuedDate = date('Y-m-d', strtotime($cr->issued_date));
+                        elseif (!empty($cr->issued_at)) $certIssuedDate = date('Y-m-d', strtotime($cr->issued_at));
+                        if (!empty($cr->expired_date)) $certExpiredDate = date('Y-m-d', strtotime($cr->expired_date));
+                    } elseif ($row->source === 'offline') {
+                        if (!empty($row->certificate) && $row->certificate !== '-') {
+                            $hasCert = true;
+                            $certInstitution = $row->certificate;
+                        }
+                        if (!empty($row->certificate_issued_date) && $row->certificate_issued_date !== '-') {
+                            $certIssuedDate = date('Y-m-d', strtotime($row->certificate_issued_date));
+                        }
+                        if (!empty($row->certificate_expired_date) && $row->certificate_expired_date !== '-') {
+                            $certExpiredDate = date('Y-m-d', strtotime($row->certificate_expired_date));
+                        }
+                    } else {
+                        $isFinishedOnline = ($progressNum >= 100 || ($row->status ?? '') === 'Finished' || ($row->finish ?? '') === '1');
+                        if ($isFinishedOnline) {
+                            $hasCert = true;
+                            $certInstitution = 'PT Krakatau Posco';
+                            $certIssuedDate = $endDateStr !== '-' ? $endDateStr : ($startDateStr !== '-' ? $startDateStr : '-');
                         }
                     }
+
+                    $certAvailability = $hasCert ? 'Available' : '-';
 
                     $csvRow = [
                         $rowCount,
                         $row->source === 'offline' ? 'Non KP OWL' : 'KP OWL',
-                        $row->employee_id ?: '',
-                        $row->employee_name ?: '',
-                        $row->status ? ucfirst((string) $row->status) : '',
-                        $row->grade ?: '',
-                        $row->job_position ?: '',
-                        $row->team ?: '',
-                        $row->department ?: '',
-                        $row->company ?: '',
-                        $row->learning_title ?: '',
-                        $row->sub_course_name ?: '',
-                        $row->type ?: '',
-                        $row->category ?: '',
-                        $row->level ?: '',
-                        $row->batch ?: '',
-                        $row->classification ?: '',
-                        $row->sub_classification ?: '',
-                        $kpiStr,
-                        $row->sub_corporate_kpi ?: '',
-                        $row->delivery_method ?: '',
-                        $row->sub_delivery_method ?: '',
-                        $row->provider ?: '',
-                        $row->sub_provider ?: '',
-                        $row->provider_name ?: '',
-                        $row->venue ?: '',
-                        $row->instructor ?: '',
+                        $cleanEmpId,
+                        $row->employee_name ?: '-',
+                        $row->grade ?: '-',
+                        $row->job_position ?: '-',
+                        $row->team ?: '-',
+                        $row->department ?: '-',
+                        $row->company ?: '-',
+                        $row->learning_title ?: '-',
+                        $row->sub_course_name ?: '-',
+                        ($row->source === 'offline' || !$isKpOwl) ? '-' : ($row->type ?: '-'),
+                        $row->category ?: '-',
+                        $row->level ?: '-',
+                        $row->batch ?: '-',
+                        $row->classification ?: 'Unclassified',
+                        $row->sub_classification ?: '-',
+                        $delivMethod,
+                        $subDelivMethod,
+                        $row->source === 'online' ? 'Internal' : ($row->provider ?: '-'),
+                        $row->source === 'online' ? '-' : ($row->sub_provider ?: '-'),
+                        $row->provider_name ?: ($row->source === 'offline' ? '-' : 'KP-OWL'),
+                        $row->venue ?: ($row->source === 'offline' ? '-' : 'Online LMS'),
+                        $row->instructor ?: '-',
                         $durationFormatted,
-                        $recognizedFormatted,
-                        $row->training_hours !== null ? number_format((float) $row->training_hours, 2) : '',
-                        $row->start_date ? date('Y-m-d', strtotime($row->start_date)) : '',
-                        $row->finish_date ? date('Y-m-d', strtotime($row->finish_date)) : '',
-                        $row->learning_hours !== null ? number_format((float) $row->learning_hours, 2) : '0.00',
-                        $row->progress !== null ? ($row->progress . '%') : '0%',
-                        $row->assessment_score !== null ? number_format((float) $row->assessment_score, 2) : '',
-                        $row->certificate ?: '',
+                        $row->source === 'offline' ? '-' : $recognizedFormatted,
+                        $lhNumeric,
+                        $progressFormatted,
+                        $progressStatus,
+                        $startDateStr,
+                        $endDateStr,
+                        $startTimeStr,
+                        $endTimeStr,
+                        $finalRecordMonth,
+                        $row->requirement ?: 'Mandatory',
                         $attendanceStr,
-                        $row->attendance_reason ?: '',
-                        $row->bond_status ?: '',
-                        $row->bond_end_date ? date('Y-m-d', strtotime($row->bond_end_date)) : '',
-                        $row->bond_amount !== null ? number_format((float) $row->bond_amount, 2) : '',
-                        $row->l1_program ?: '',
-                        $row->l2_numerical !== null ? number_format((float) $row->l2_numerical, 2) : '',
-                        $row->l2_verbal ?: '',
-                        $row->l3_numerical !== null ? number_format((float) $row->l3_numerical, 2) : '',
-                        $row->l3_verbal ?: '',
-                        $row->pic ?: '',
+                        $row->attendance_reason ?: '-',
+                        $row->bond_status ?: 'No',
+                        !empty($row->bond_duration) ? $row->bond_duration . ' Months' : '-',
+                        !empty($row->bond_end_date) ? date('Y-m-d', strtotime($row->bond_end_date)) : '-',
+                        $bondAmtStr,
+                        $scoreL1,
+                        $scoreL2,
+                        $l2Status,
+                        $scoreL3,
+                        $l3Status,
+                        $certAvailability,
+                        $certInstitution,
+                        $certIssuedDate,
+                        $certExpiredDate,
+                        $row->pic ?: '-',
+                        $totalEngagementDuration,
                     ];
 
                     fputcsv($output, $csvRow);

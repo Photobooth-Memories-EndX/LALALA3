@@ -94,11 +94,54 @@
                     </div>
                 </div>
 
+                {{-- Bulk Action Toolbar (Appears when 1 or more items are selected) --}}
+                <div id="bulkActionBar" class="card-body bg-light-lt border-bottom py-2 px-3 d-none">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-primary text-white rounded-pill px-2 py-1 fs-5 fw-semibold" id="selectedCountBadge">0</span>
+                            <span class="fw-semibold text-dark small" id="selectedCountText">item(s) selected</span>
+                            <span class="text-muted small">|</span>
+                            <button type="button" class="btn btn-link btn-sm text-primary text-decoration-none p-0 small fw-semibold" id="selectAllPageBtn">
+                                Select all on page
+                            </button>
+                            <span class="text-muted small">|</span>
+                            <button type="button" class="btn btn-link btn-sm text-secondary text-decoration-none p-0 small" id="clearSelectionBtn">
+                                Clear selection
+                            </button>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <button type="button" class="btn btn-outline-success btn-sm d-inline-flex align-items-center gap-1 rounded-3 px-3 fw-semibold" id="bulkRestoreBtn">
+                                <i class="ti ti-restore fs-3"></i>
+                                <span id="bulkRestoreBtnText">Restore Selected</span>
+                            </button>
+                            <button type="button" class="btn btn-outline-danger btn-sm d-inline-flex align-items-center gap-1 rounded-3 px-3 fw-semibold" id="bulkDeleteBtn">
+                                <i class="ti ti-trash fs-3"></i>
+                                <span id="bulkDeleteBtnText">Delete Selected</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Hidden Forms for Bulk Actions --}}
+                <form id="bulkRestoreForm" method="POST" action="{{ route('manage.task.trash.bulk-restore') }}" style="display: none;">
+                    @csrf
+                    <input type="hidden" name="items" id="bulkRestoreItemsInput">
+                </form>
+
+                <form id="bulkDeleteForm" method="POST" action="{{ route('manage.task.trash.bulk-force-destroy') }}" style="display: none;">
+                    @csrf
+                    <input type="hidden" name="_method" value="DELETE">
+                    <input type="hidden" name="items" id="bulkDeleteItemsInput">
+                </form>
+
                 {{-- Trash Table --}}
                 <div class="table-responsive">
                     <table class="table table-vcenter mb-0">
                         <thead>
                             <tr class="text-uppercase small fw-bold text-muted bg-light">
+                                <th class="w-1 text-center py-2" style="width: 40px;">
+                                    <input type="checkbox" id="checkAllTrash" class="form-check-input m-0 align-middle" title="Select all on this page" aria-label="Select all items">
+                                </th>
                                 <th class="w-1">NO</th>
                                 <th>TITLE</th>
                                 <th>TYPE</th>
@@ -117,9 +160,19 @@
                                     $itemBadgeClass = $item->badge_class ?? ($itemType === 'course' ? 'bg-purple-lt text-purple' : 'bg-primary-lt text-primary');
                                     $itemRestoreUrl = $item->restore_url ?? route('manage.task.restore', ['id' => $item->id, 'item_type' => $itemType]);
                                     $itemDeleteUrl = $item->delete_url ?? route('manage.task.force-destroy', ['id' => $item->id, 'item_type' => $itemType]);
-                                    $itemConfirmMsg = $item->confirm_msg ?? 'Permanently delete this item? This action cannot be undone.';
+                                    $itemConfirmMsg = $item->confirm_msg ?? 'Remove this item from trash?';
                                 @endphp
                                 <tr>
+                                    <td class="text-center py-2">
+                                        <input type="checkbox"
+                                               class="form-check-input trash-item-checkbox m-0 align-middle"
+                                               value="{{ $item->id }}"
+                                               data-id="{{ $item->id }}"
+                                               data-item-type="{{ $itemType }}"
+                                               data-course-type="{{ $item->course_type ?? '' }}"
+                                               data-title="{{ $itemTitle }}"
+                                               aria-label="Select item">
+                                    </td>
                                     <td class="text-muted">{{ ($items->firstItem() ?? 0) + $i }}</td>
                                     <td>
                                         <div class="fw-semibold text-dark">{{ $itemTitle }}</div>
@@ -154,7 +207,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="text-center text-muted py-5">
+                                    <td colspan="7" class="text-center text-muted py-5">
                                         <div class="empty py-3">
                                             <div class="empty-icon text-muted mb-3">
                                                 <span class="avatar avatar-xl bg-secondary-lt text-secondary rounded-circle" style="width: 56px; height: 56px;">
@@ -306,7 +359,7 @@
 
                 var restoreUrl = btn.dataset.restoreUrl;
                 var deleteUrl = btn.dataset.deleteUrl;
-                var confirmMsg = btn.dataset.confirmMsg || 'Delete permanently? This action cannot be undone.';
+                var confirmMsg = btn.dataset.confirmMsg || 'Remove this item from trash?';
 
                 var h = '';
                 h += '<form action="' + restoreUrl + '" method="POST" class="m-0">';
@@ -347,6 +400,154 @@
 
         window.addEventListener('resize', closeMenu);
         window.addEventListener('scroll', closeMenu, true);
+
+        // ── Bulk Selection & Actions ──────────────────────────────
+        var checkAll = document.getElementById('checkAllTrash');
+        var itemCheckboxes = document.querySelectorAll('.trash-item-checkbox');
+        var bulkBar = document.getElementById('bulkActionBar');
+        var countBadge = document.getElementById('selectedCountBadge');
+        var countText = document.getElementById('selectedCountText');
+        var selectAllPageBtn = document.getElementById('selectAllPageBtn');
+        var clearSelectionBtn = document.getElementById('clearSelectionBtn');
+        var bulkRestoreBtn = document.getElementById('bulkRestoreBtn');
+        var bulkRestoreBtnText = document.getElementById('bulkRestoreBtnText');
+        var bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+        var bulkDeleteBtnText = document.getElementById('bulkDeleteBtnText');
+        var bulkRestoreForm = document.getElementById('bulkRestoreForm');
+        var bulkDeleteForm = document.getElementById('bulkDeleteForm');
+        var bulkRestoreItemsInput = document.getElementById('bulkRestoreItemsInput');
+        var bulkDeleteItemsInput = document.getElementById('bulkDeleteItemsInput');
+
+        function getSelectedItems() {
+            var selected = [];
+            itemCheckboxes.forEach(function (cb) {
+                if (cb.checked) {
+                    selected.push({
+                        id: parseInt(cb.dataset.id || cb.value, 10),
+                        item_type: cb.dataset.itemType || 'task',
+                        course_type: cb.dataset.courseType || null
+                    });
+                }
+            });
+            return selected;
+        }
+
+        function updateBulkBar() {
+            var total = itemCheckboxes.length;
+            var checkedCount = 0;
+            itemCheckboxes.forEach(function (cb) {
+                if (cb.checked) checkedCount++;
+            });
+
+            if (checkAll) {
+                if (total > 0 && checkedCount === total) {
+                    checkAll.checked = true;
+                    checkAll.indeterminate = false;
+                } else if (checkedCount > 0) {
+                    checkAll.checked = false;
+                    checkAll.indeterminate = true;
+                } else {
+                    checkAll.checked = false;
+                    checkAll.indeterminate = false;
+                }
+            }
+
+            if (checkedCount > 0) {
+                if (bulkBar) {
+                    bulkBar.classList.remove('d-none');
+                    bulkBar.classList.add('d-block');
+                }
+                if (countBadge) countBadge.textContent = checkedCount;
+                if (countText) {
+                    countText.textContent = (checkedCount === total && total > 1)
+                        ? 'All ' + checkedCount + ' items selected'
+                        : checkedCount + ' item(s) selected';
+                }
+                if (bulkRestoreBtnText) {
+                    bulkRestoreBtnText.textContent = (checkedCount === total && total > 1)
+                        ? 'Restore All (' + checkedCount + ')'
+                        : 'Restore Selected (' + checkedCount + ')';
+                }
+                if (bulkDeleteBtnText) {
+                    bulkDeleteBtnText.textContent = (checkedCount === total && total > 1)
+                        ? 'Delete All (' + checkedCount + ')'
+                        : 'Delete Selected (' + checkedCount + ')';
+                }
+            } else {
+                if (bulkBar) {
+                    bulkBar.classList.add('d-none');
+                    bulkBar.classList.remove('d-block');
+                }
+            }
+        }
+
+        if (checkAll) {
+            checkAll.addEventListener('change', function () {
+                var isChecked = checkAll.checked;
+                itemCheckboxes.forEach(function (cb) {
+                    cb.checked = isChecked;
+                });
+                updateBulkBar();
+            });
+        }
+
+        itemCheckboxes.forEach(function (cb) {
+            cb.addEventListener('change', function () {
+                updateBulkBar();
+            });
+        });
+
+        if (selectAllPageBtn) {
+            selectAllPageBtn.addEventListener('click', function () {
+                itemCheckboxes.forEach(function (cb) {
+                    cb.checked = true;
+                });
+                updateBulkBar();
+            });
+        }
+
+        if (clearSelectionBtn) {
+            clearSelectionBtn.addEventListener('click', function () {
+                itemCheckboxes.forEach(function (cb) {
+                    cb.checked = false;
+                });
+                updateBulkBar();
+            });
+        }
+
+        if (bulkRestoreBtn) {
+            bulkRestoreBtn.addEventListener('click', function () {
+                var selected = getSelectedItems();
+                if (selected.length === 0) {
+                    alert('Please select at least one item to restore.');
+                    return;
+                }
+                var msg = selected.length === 1
+                    ? 'Restore 1 selected item?'
+                    : 'Restore ' + selected.length + ' selected items?';
+                if (confirm(msg)) {
+                    bulkRestoreItemsInput.value = JSON.stringify(selected);
+                    bulkRestoreForm.submit();
+                }
+            });
+        }
+
+        if (bulkDeleteBtn) {
+            bulkDeleteBtn.addEventListener('click', function () {
+                var selected = getSelectedItems();
+                if (selected.length === 0) {
+                    alert('Please select at least one item to delete.');
+                    return;
+                }
+                var msg = selected.length === 1
+                    ? 'Remove 1 selected item from trash?'
+                    : 'Remove ' + selected.length + ' selected items from trash?';
+                if (confirm(msg)) {
+                    bulkDeleteItemsInput.value = JSON.stringify(selected);
+                    bulkDeleteForm.submit();
+                }
+            });
+        }
     })();
     </script>
 @endsection

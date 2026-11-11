@@ -1,14 +1,23 @@
 @extends('layouts.sidebar-master')
 
+@section('style')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+@endsection
+
 @section('content')
 
 <div class="page-header d-print-none mb-0 pb-0">
     <div class="container-xl">
         <!-- Back Navigation Link -->
-        <div class="mb-3">
+        <div class="mb-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
             <a href="{{ url('/manage') }}" class="text-decoration-none text-muted small d-inline-flex align-items-center gap-1 btn-back">
                 <i class="ti ti-arrow-left fs-3"></i><span>Back to Manage</span>
             </a>
+            <div class="d-flex align-items-center gap-2">
+                <a href="{{ route('manage.classification.main.index') }}" class="text-muted small text-decoration-none">
+                    <i class="ti ti-table me-1"></i>Main Classifications (Table)
+                </a>
+            </div>
         </div>
 
         <!-- Classification History Hero Header Box -->
@@ -429,14 +438,23 @@
                                                         <span class="fw-bold text-dark fs-4">{{ $mainName }}</span>
                                                     </div>
                                                     @if ($item->classification)
-                                                        <button type="button" 
-                                                                class="btn btn-sm btn-link text-muted p-0 btn-edit-classification" 
-                                                                data-id="{{ $item->classification->id }}" 
-                                                                data-name="{{ $item->classification->classification_name }}"
-                                                                data-active="{{ $item->classification->is_active ? '1' : '0' }}"
-                                                                title="Edit Main Classification {{ $mainName }}">
-                                                            <i class="ti ti-edit" style="font-size: 0.85rem;"></i>
-                                                        </button>
+                                                        <div class="d-inline-flex align-items-center gap-1">
+                                                            <button type="button" 
+                                                                    class="btn btn-sm btn-link text-muted p-0 btn-edit-classification" 
+                                                                    data-id="{{ $item->classification->id }}" 
+                                                                    data-name="{{ $item->classification->classification_name }}"
+                                                                    data-active="{{ $item->classification->is_active ? '1' : '0' }}"
+                                                                    title="Edit Main Classification {{ $mainName }}">
+                                                                <i class="ti ti-edit" style="font-size: 0.85rem;"></i>
+                                                            </button>
+                                                            <button type="button" 
+                                                                    class="btn btn-sm btn-link text-danger p-0 btn-delete-classification" 
+                                                                    data-id="{{ $item->classification->id }}" 
+                                                                    data-name="{{ $item->classification->classification_name }}"
+                                                                    title="Delete Main Classification {{ $mainName }}">
+                                                                <i class="ti ti-trash" style="font-size: 0.85rem;"></i>
+                                                            </button>
+                                                        </div>
                                                     @endif
                                                 </div>
                                             </td>
@@ -458,6 +476,7 @@
                                                             <span class="badge bg-white text-dark border shadow-xs px-2 py-1 rounded-pill d-inline-flex align-items-center gap-1 course-example-pill" title="Course Example: {{ $c->value }}">
                                                                 <i class="ti ti-certificate text-purple fs-4"></i>
                                                                 <span>{{ $c->value }}</span>
+                                                                <button type="button" class="btn-close ms-1 btn-delete-course-inline" data-id="{{ $c->id }}" data-value="{{ $c->value }}" style="font-size: 0.55rem;" title="Delete Course Example"></button>
                                                             </span>
                                                         @endforeach
                                                     </div>
@@ -581,7 +600,17 @@
                                                         {{ $loop->parent->iteration }}
                                                     </td>
                                                     <td rowspan="{{ $subCount }}" class="align-top pt-3 border-end">
-                                                        <div class="fw-bold text-dark fs-3">{{ $parentMethod->value }}</div>
+                                                        <div class="d-flex align-items-center justify-content-between gap-1">
+                                                            <div class="fw-bold text-dark fs-3">{{ $parentMethod->value }}</div>
+                                                            <div class="btn-list">
+                                                                <button type="button" class="btn btn-sm btn-link text-muted p-0 btn-edit-generic-option" data-id="{{ $parentMethod->id }}" title="Edit Delivery Method">
+                                                                    <i class="ti ti-edit"></i>
+                                                                </button>
+                                                                <button type="button" class="btn btn-sm btn-link text-danger p-0 btn-delete-option" data-id="{{ $parentMethod->id }}" data-value="{{ $parentMethod->value }}" title="Delete Delivery Method">
+                                                                    <i class="ti ti-trash"></i>
+                                                                </button>
+                                                            </div>
+                                                        </div>
                                                         <div class="d-flex align-items-center gap-1 mt-1">
                                                             @if ($parentMethod->source === 'owl')
                                                                 <span class="badge bg-indigo text-white px-2 py-0 rounded-pill small">OWL</span>
@@ -653,7 +682,17 @@
                                         <tr>
                                             <td class="text-center text-muted fw-semibold">{{ $loop->iteration }}</td>
                                             <td>
-                                                <div class="fw-bold text-dark fs-3">{{ $parentMethod->value }}</div>
+                                                <div class="d-flex align-items-center justify-content-between gap-1">
+                                                    <div class="fw-bold text-dark fs-3">{{ $parentMethod->value }}</div>
+                                                    <div class="btn-list">
+                                                        <button type="button" class="btn btn-sm btn-link text-muted p-0 btn-edit-generic-option" data-id="{{ $parentMethod->id }}" title="Edit Delivery Method">
+                                                            <i class="ti ti-edit"></i>
+                                                        </button>
+                                                        <button type="button" class="btn btn-sm btn-link text-danger p-0 btn-delete-option" data-id="{{ $parentMethod->id }}" data-value="{{ $parentMethod->value }}" title="Delete Delivery Method">
+                                                            <i class="ti ti-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </td>
                                             <td colspan="2" class="text-muted fst-italic small">No sub delivery methods defined.</td>
                                             <td class="text-center">
@@ -739,7 +778,17 @@
                                                         {{ $loop->parent->iteration }}
                                                     </td>
                                                     <td rowspan="{{ $subCount }}" class="align-top pt-3 border-end">
-                                                        <div class="fw-bold text-dark fs-3">{{ $parentProv->value }}</div>
+                                                        <div class="d-flex align-items-center justify-content-between gap-1">
+                                                            <div class="fw-bold text-dark fs-3">{{ $parentProv->value }}</div>
+                                                            <div class="btn-list">
+                                                                <button type="button" class="btn btn-sm btn-link text-muted p-0 btn-edit-generic-option" data-id="{{ $parentProv->id }}" title="Edit Provider">
+                                                                    <i class="ti ti-edit"></i>
+                                                                </button>
+                                                                <button type="button" class="btn btn-sm btn-link text-danger p-0 btn-delete-option" data-id="{{ $parentProv->id }}" data-value="{{ $parentProv->value }}" title="Delete Provider">
+                                                                    <i class="ti ti-trash"></i>
+                                                                </button>
+                                                            </div>
+                                                        </div>
                                                         <div class="d-flex align-items-center gap-1 mt-1">
                                                             @if ($parentProv->source === 'owl')
                                                                 <span class="badge bg-indigo text-white px-2 py-0 rounded-pill small">OWL</span>
@@ -811,7 +860,17 @@
                                         <tr>
                                             <td class="text-center text-muted fw-semibold">{{ $loop->iteration }}</td>
                                             <td>
-                                                <div class="fw-bold text-dark fs-3">{{ $parentProv->value }}</div>
+                                                <div class="d-flex align-items-center justify-content-between gap-1">
+                                                    <div class="fw-bold text-dark fs-3">{{ $parentProv->value }}</div>
+                                                    <div class="btn-list">
+                                                        <button type="button" class="btn btn-sm btn-link text-muted p-0 btn-edit-generic-option" data-id="{{ $parentProv->id }}" title="Edit Provider">
+                                                            <i class="ti ti-edit"></i>
+                                                        </button>
+                                                        <button type="button" class="btn btn-sm btn-link text-danger p-0 btn-delete-option" data-id="{{ $parentProv->id }}" data-value="{{ $parentProv->value }}" title="Delete Provider">
+                                                            <i class="ti ti-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </td>
                                             <td colspan="2" class="text-muted fst-italic small">No sub providers defined.</td>
                                             <td class="text-center">
@@ -1869,25 +1928,42 @@
             var mainId = $('#editClassificationParentId').val();
             var pill = $(this).closest('.course-edit-pill');
 
-            if (!confirm('Remove this course example?')) return;
+            Swal.fire({
+                title: 'Hapus Course Example?',
+                text: 'Hapus course example ini dari database?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Ya, Hapus',
+                cancelButtonText: 'Batal',
+                reverseButtons: true,
+                focusCancel: true
+            }).then(function (result) {
+                if (result.isConfirmed) {
+                    pill.css('opacity', '0.5');
 
-            pill.css('opacity', '0.5');
-
-            $.ajax({
-                url: '/manage/classification/options/' + courseId,
-                type: 'DELETE',
-                data: { _token: '{{ csrf_token() }}' },
-                success: function () {
-                    pill.remove();
-                    $.get('/manage/classification/options/' + subId, function (r) {
-                        if (r.success && r.data) {
-                            renderModalCoursePills(r.data.course_examples || [], subId, mainId);
+                    $.ajax({
+                        url: '/manage/classification/options/' + courseId,
+                        type: 'DELETE',
+                        data: { _token: '{{ csrf_token() }}' },
+                        success: function () {
+                            pill.remove();
+                            $.get('/manage/classification/options/' + subId, function (r) {
+                                if (r.success && r.data) {
+                                    renderModalCoursePills(r.data.course_examples || [], subId, mainId);
+                                }
+                            });
+                        },
+                        error: function (xhr) {
+                            pill.css('opacity', '1');
+                            var msg = 'Failed to remove course example.';
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                msg = xhr.responseJSON.message;
+                            }
+                            Swal.fire({ icon: 'error', title: 'Error', text: msg });
                         }
                     });
-                },
-                error: function () {
-                    pill.css('opacity', '1');
-                    alert('Failed to remove course example.');
                 }
             });
         });
@@ -1998,94 +2074,178 @@
         });
 
         // =========================================================================
-        // DELETE HANDLING (SAFE CHECK & CONFIRMATION)
+        // DELETE HANDLING (DIRECT SAFE DELETE WITH SWEETALERT2)
         // =========================================================================
-        var pendingDeleteType = null;
-        var pendingDeleteId = null;
+        var csrfToken = '{{ csrf_token() }}';
 
-        // Delete Classification Trigger
+        // Delete Main Classification Trigger
         $(document).on('click', '.btn-delete-classification', function () {
             var id = $(this).data('id');
             var name = $(this).data('name');
-            var usage = parseInt($(this).data('usage'), 10);
 
-            if (usage > 0) {
-                $('#deactivateWarningText').text(
-                    'Classification "' + name + '" is linked to ' + usage + ' record(s) or sub classification(s) and cannot be deleted.'
-                );
-                $('#confirmDeactivateBtn').hide();
-                var warnModal = new bootstrap.Modal(document.getElementById('deactivateWarningModal'));
-                warnModal.show();
-                return;
-            }
-
-            pendingDeleteType = 'classification';
-            pendingDeleteId = id;
-            $('#deleteTargetName').text(name);
-
-            var delModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
-            delModal.show();
-        });
-
-        // Delete Option Trigger
-        $(document).on('click', '.btn-delete-option', function () {
-            var id = $(this).data('id');
-            var value = $(this).data('value');
-
-            $.ajax({
-                url: '/manage/classification/options/' + id + '/usage',
-                type: 'GET',
-                success: function (res) {
-                    if (res.success && res.data && res.data.is_used) {
-                        $('#deactivateWarningText').text(res.data.message);
-                        if (res.data.can_deactivate) {
-                            $('#confirmDeactivateBtn').show().data('id', id);
-                        } else {
-                            $('#confirmDeactivateBtn').hide();
+            Swal.fire({
+                title: 'Hapus Main Classification?',
+                html: 'Apakah Anda yakin ingin menghapus <strong>"' + name + '"</strong>?<br><span class="text-muted small mt-1 d-block">Data akan dihapus permanen jika tidak sedang digunakan oleh data lain.</span>',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="ti ti-trash me-1"></i> Ya, Hapus',
+                cancelButtonText: 'Batal',
+                reverseButtons: true,
+                focusCancel: true
+            }).then(function (result) {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: 'Menghapus...',
+                        html: '<span class="text-muted small">Memeriksa relasi data dan menghapus...</span>',
+                        allowOutsideClick: false,
+                        didOpen: function () {
+                            Swal.showLoading();
                         }
+                    });
 
-                        var warnModal = new bootstrap.Modal(document.getElementById('deactivateWarningModal'));
-                        warnModal.show();
-                    } else {
-                        pendingDeleteType = 'option';
-                        pendingDeleteId = id;
-                        $('#deleteTargetName').text(value);
-
-                        var delModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
-                        delModal.show();
-                    }
-                },
-                error: function () {
-                    alert('Failed to check option usage.');
+                    $.ajax({
+                        url: '/manage/classification/classification/' + id,
+                        type: 'DELETE',
+                        data: {
+                            _token: csrfToken
+                        },
+                        success: function (res) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil Dihapus!',
+                                text: res.message || 'Classification berhasil dihapus.',
+                                timer: 1500,
+                                showConfirmButton: false
+                            }).then(function () {
+                                window.location.reload();
+                            });
+                        },
+                        error: function (xhr) {
+                            var msg = 'Gagal menghapus classification.';
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                msg = xhr.responseJSON.message;
+                            }
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Tidak Dapat Dihapus',
+                                text: msg
+                            });
+                        }
+                    });
                 }
             });
         });
 
-        // Confirm Permanent Delete Execution
-        $('#confirmDeleteBtn').on('click', function () {
+        // Delete Generic Option / Sub Classification Trigger
+        $(document).on('click', '.btn-delete-option', function () {
+            var id = $(this).data('id');
+            var value = $(this).data('value');
+
+            Swal.fire({
+                title: 'Hapus Option?',
+                html: 'Apakah Anda yakin ingin menghapus <strong>"' + value + '"</strong>?<br><span class="text-muted small mt-1 d-block">Data akan dihapus permanen jika tidak sedang digunakan oleh data lain.</span>',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="ti ti-trash me-1"></i> Ya, Hapus',
+                cancelButtonText: 'Batal',
+                reverseButtons: true,
+                focusCancel: true
+            }).then(function (result) {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: 'Menghapus...',
+                        html: '<span class="text-muted small">Memeriksa relasi data dan menghapus...</span>',
+                        allowOutsideClick: false,
+                        didOpen: function () {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    $.ajax({
+                        url: '/manage/classification/options/' + id,
+                        type: 'DELETE',
+                        data: {
+                            _token: csrfToken
+                        },
+                        success: function (res) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil Dihapus!',
+                                text: res.message || 'Option berhasil dihapus.',
+                                timer: 1500,
+                                showConfirmButton: false
+                            }).then(function () {
+                                window.location.reload();
+                            });
+                        },
+                        error: function (xhr) {
+                            var msg = 'Gagal menghapus option.';
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                msg = xhr.responseJSON.message;
+                            }
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Tidak Dapat Dihapus',
+                                text: msg
+                            });
+                        }
+                    });
+                }
+            });
+        });
+
+        // Delete Course Example Inline from Pill Cloud
+        $(document).on('click', '.btn-delete-course-inline', function (e) {
+            e.stopPropagation();
             var btn = $(this);
-            btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span> Deleting...');
+            var id = btn.data('id');
+            var value = btn.data('value');
+            var pill = btn.closest('.course-example-pill');
 
-            var url = (pendingDeleteType === 'classification')
-                ? '/manage/classification/' + pendingDeleteId
-                : '/manage/classification/options/' + pendingDeleteId;
+            Swal.fire({
+                title: 'Hapus Course Example?',
+                html: 'Apakah Anda yakin ingin menghapus <strong>"' + value + '"</strong>?<br><span class="text-muted small mt-1 d-block">Data akan dihapus permanen jika tidak sedang digunakan oleh data lain.</span>',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="ti ti-trash me-1"></i> Ya, Hapus',
+                cancelButtonText: 'Batal',
+                reverseButtons: true,
+                focusCancel: true
+            }).then(function (result) {
+                if (result.isConfirmed) {
+                    pill.css('opacity', '0.4');
 
-            $.ajax({
-                url: url,
-                type: 'DELETE',
-                data: {
-                    _token: '{{ csrf_token() }}'
-                },
-                success: function () {
-                    window.location.reload();
-                },
-                error: function (xhr) {
-                    btn.prop('disabled', false).html('<i class="ti ti-trash me-1"></i> Delete Permanently');
-                    var msg = 'Failed to delete item.';
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
-                        msg = xhr.responseJSON.message;
-                    }
-                    alert(msg);
+                    $.ajax({
+                        url: '/manage/classification/options/' + id,
+                        type: 'DELETE',
+                        data: {
+                            _token: csrfToken
+                        },
+                        success: function (res) {
+                            pill.fadeOut(300, function () { $(this).remove(); });
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil Dihapus!',
+                                text: res.message || 'Course example berhasil dihapus.',
+                                timer: 1200,
+                                showConfirmButton: false
+                            });
+                        },
+                        error: function (xhr) {
+                            pill.css('opacity', '1');
+                            var msg = 'Gagal menghapus course example.';
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                msg = xhr.responseJSON.message;
+                            }
+                            Swal.fire({ icon: 'error', title: 'Tidak Dapat Dihapus', text: msg });
+                        }
+                    });
                 }
             });
         });
@@ -2100,7 +2260,7 @@
                 url: '/manage/classification/options/' + id + '/toggle-status',
                 type: 'PATCH',
                 data: {
-                    _token: '{{ csrf_token() }}'
+                    _token: csrfToken
                 },
                 success: function () {
                     window.location.reload();
@@ -2113,4 +2273,5 @@
         });
     });
 </script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 @endsection
