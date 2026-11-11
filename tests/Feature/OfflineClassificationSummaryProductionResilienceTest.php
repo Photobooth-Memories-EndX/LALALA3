@@ -103,4 +103,42 @@ class OfflineClassificationSummaryProductionResilienceTest extends TestCase
         $postResponse->assertStatus(200);
         $postResponse->assertJsonStructure(['total_trainings', 'total_participants', 'total_learning_hours', 'finished', 'ongoing', 'completion_rate', 'html']);
     }
+
+    public function test_soft_deleted_classification_is_excluded_from_summary(): void
+    {
+        if (!\Illuminate\Support\Facades\Schema::hasColumn('classification', 'deleted_at')) {
+            $this->markTestSkipped('Classification table does not have deleted_at column.');
+        }
+
+        // Insert a soft-deleted classification
+        $testSlug = 'audit-test-soft-deleted-' . uniqid();
+        $id = \Illuminate\Support\Facades\DB::table('classification')->insertGetId([
+            'classification_name' => 'Audit Soft Deleted Test',
+            'slug'                => $testSlug,
+            'is_active'           => 1,
+            'deleted_at'          => now(),
+            'created_at'          => now(),
+            'updated_at'          => now(),
+        ]);
+
+        $controller = app(RecordOfflineController::class);
+        $summary = $controller->getClassificationSummaryData();
+        $names = $summary['classifications']->pluck('classification_name')->all();
+
+        $this->assertNotContains('Audit Soft Deleted Test', $names, 'Soft deleted classification must not appear in summary');
+    }
+
+    public function test_unauthenticated_requests_are_rejected(): void
+    {
+        \Illuminate\Support\Facades\Auth::logout();
+
+        // AJAX request returns 401
+        $ajaxResponse = $this->getJson(route('manage.record.offline.ajax.classification'));
+        $ajaxResponse->assertStatus(401);
+
+        // Non-AJAX browser request redirects to login
+        $browserResponse = $this->get(route('manage.record.offline.ajax.classification'));
+        $browserResponse->assertStatus(302);
+        $browserResponse->assertRedirect('/login');
+    }
 }
