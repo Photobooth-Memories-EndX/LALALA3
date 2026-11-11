@@ -44,6 +44,16 @@ class RecordAllCombinedService
      * Cached master classifications list from table `classification`.
      */
     protected static ?array $masterClassificationsCache = null;
+    protected static ?bool $hasParticipantClassification = null;
+
+    public static function hasParticipantClassification(): bool
+    {
+        if (self::$hasParticipantClassification === null) {
+            self::$hasParticipantClassification = Schema::hasTable('offline_training_users')
+                && Schema::hasColumn('offline_training_users', 'main_classification');
+        }
+        return self::$hasParticipantClassification;
+    }
 
     /**
      * Get master classifications from table `classification` + Compliance.
@@ -718,11 +728,11 @@ class RecordAllCombinedService
                 DB::raw("CASE WHEN unified.source = 'offline' THEN ot.level ELSE NULL END as level"),
                 DB::raw("CASE WHEN unified.source = 'offline' THEN ot.batch ELSE NULL END as batch"),
                 DB::raw("CASE
-                    WHEN unified.source = 'offline' THEN COALESCE(NULLIF(TRIM(otu.main_classification), ''), NULLIF(TRIM(ot.main_classification), ''), 'Unclassified')
+                    WHEN unified.source = 'offline' THEN " . (self::hasParticipantClassification() ? "COALESCE(NULLIF(TRIM(otu.main_classification), ''), NULLIF(TRIM(ot.main_classification), ''), 'Unclassified')" : "COALESCE(NULLIF(TRIM(ot.main_classification), ''), 'Unclassified')") . "
                     ELSE COALESCE(NULLIF(TRIM(cl.classification_name), ''), 'Unclassified')
                 END as classification"),
                 DB::raw("CASE
-                    WHEN unified.source = 'offline' THEN COALESCE(NULLIF(TRIM(otu.sub_classification), ''), ot.sub_classification)
+                    WHEN unified.source = 'offline' THEN " . (self::hasParticipantClassification() ? "COALESCE(NULLIF(TRIM(otu.sub_classification), ''), ot.sub_classification)" : "ot.sub_classification") . "
                     ELSE NULL
                 END as sub_classification"),
                 DB::raw("CASE WHEN unified.source = 'offline' THEN ot.counted_corporate_kpi ELSE NULL END as counted_corporate_kpi"),
@@ -1629,7 +1639,9 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
             $resolvedClass = RecordAllController::resolveClassification($categorySlug, false);
             $resolvedName = $resolvedClass['name'] ?? $categorySlug;
 
-            $classCol = "COALESCE(NULLIF(TRIM(otu.main_classification), ''), ot.main_classification)";
+            $classCol = self::hasParticipantClassification()
+                ? "COALESCE(NULLIF(TRIM(otu.main_classification), ''), ot.main_classification)"
+                : "ot.main_classification";
             if (strtolower($classification) === 'unclassified' || strtolower($classification) === 'unclassification' || ($resolvedClass['is_unclassified'] ?? false)) {
                 $knownMasters = [
                     'Leadership', 'Basic & Common Duties', 'Basic Common Duties',
@@ -1684,8 +1696,12 @@ DB::raw("ROUND(AVG(COALESCE(pcu.progress, 0))) as progress"),
             $q->where(function ($sub) use ($search) {
                 $sub->where('otu.employee_id', 'like', "%{$search}%")
                     ->orWhere('otu.name', 'like', "%{$search}%")
-                    ->orWhere('ot.course_name', 'like', "%{$search}%")
-                    ->orWhereRaw("COALESCE(NULLIF(TRIM(otu.main_classification), ''), ot.main_classification) LIKE ?", ["%{$search}%"]);
+                    ->orWhere('ot.course_name', 'like', "%{$search}%");
+                if (self::hasParticipantClassification()) {
+                    $sub->orWhereRaw("COALESCE(NULLIF(TRIM(otu.main_classification), ''), ot.main_classification) LIKE ?", ["%{$search}%"]);
+                } else {
+                    $sub->orWhere('ot.main_classification', 'like', "%{$search}%");
+                }
             });
         }
 

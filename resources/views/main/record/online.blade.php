@@ -261,6 +261,7 @@
             classificationXhr = $.ajax({
                 url: classificationUrl,
                 type: 'GET',
+                dataType: 'json',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
                 },
@@ -269,10 +270,11 @@
                     const html = typeof response === 'object' && response.html ? response.html : response;
                     $('#classification-summary-container').html(html);
                 },
-                error: function (xhr, status) {
+                error: function (xhr, status, errorThrown) {
                     if (status === 'abort') {
                         return;
                     }
+                    console.error('Online classification summary load failed:', status, errorThrown, xhr.status, xhr.responseText);
                     classificationXhr = null;
                     $('#classification-summary-container').html(`
                         <div class="p-4 text-center">

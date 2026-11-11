@@ -591,8 +591,8 @@ Route::get('{task}/qr', [TaskManageController::class, 'qr'])->name('qr');
         Route::prefix('record')->name('manage.record.')->group(function () {
             Route::get('online', [RecordOnlineController::class, 'index'])->name('online');
             Route::get('online/course/{id?}', [\App\Http\Controllers\ManageRecordController::class, 'onlineCourse'])->name('online.course');
-            Route::get('online/ajax/summary', [RecordOnlineController::class, 'ajaxSummary'])->name('online.ajax.summary');
-            Route::get('online/ajax/classification', [RecordOnlineController::class, 'ajaxClassification'])->name('online.ajax.classification');
+            Route::match(['get', 'post'], 'online/ajax/summary', [RecordOnlineController::class, 'ajaxSummary'])->name('online.ajax.summary');
+            Route::match(['get', 'post'], 'online/ajax/classification', [RecordOnlineController::class, 'ajaxClassification'])->name('online.ajax.classification');
             Route::match(['get', 'post'], 'online/datatable', [RecordOnlineController::class, 'datatable'])->name('online.datatable');
             Route::get('online/search-employees', [RecordOnlineController::class, 'searchEmployees'])->name('online.search-employees');
             Route::get('online/search-titles', [RecordOnlineController::class, 'searchTitles'])->name('online.search-titles');
@@ -610,8 +610,8 @@ Route::get('{task}/qr', [TaskManageController::class, 'qr'])->name('qr');
             Route::delete('online/{type}/{id}', [RecordOnlineController::class, 'destroy'])->name('online.destroy');
 
             Route::get('offline', [RecordOfflineController::class, 'index'])->name('offline');
-            Route::get('offline/ajax/summary', [RecordOfflineController::class, 'ajaxSummary'])->name('offline.ajax.summary');
-            Route::get('offline/ajax/classification', [RecordOfflineController::class, 'ajaxClassification'])->name('offline.ajax.classification');
+            Route::match(['get', 'post'], 'offline/ajax/summary', [RecordOfflineController::class, 'ajaxSummary'])->name('offline.ajax.summary');
+            Route::match(['get', 'post'], 'offline/ajax/classification', [RecordOfflineController::class, 'ajaxClassification'])->name('offline.ajax.classification');
             Route::get('offline/classification/{classification}', [RecordOfflineController::class, 'classification'])->name('offline.classification');
             Route::match(['get', 'post'], 'offline/classification/{classification}/datatable', [RecordOfflineController::class, 'classificationDatatable'])->name('offline.classification.datatable');
             Route::get('offline/classification/{classification}/download/{format?}', [RecordOfflineController::class, 'classificationDownload'])->name('offline.classification.download')->middleware('mpermission:learning_management');
@@ -683,8 +683,8 @@ Route::get('{task}/qr', [TaskManageController::class, 'qr'])->name('qr');
             Route::get('all/classification/{classification}/export', [ClassificationRecordController::class, 'export'])->name('all.classification.export')->middleware('mpermission:learning_management');
             Route::get('all/classification/{classification}/{source}/{id}/details', [ClassificationRecordController::class, 'details'])->name('all.classification.details');
             Route::get('all/classification/{classification}/detail/{source}/{id}', [ClassificationRecordController::class, 'details']);
-            Route::get('all/ajax/summary', [AllRecordController::class, 'ajaxSummary'])->name('all.ajax.summary');
-            Route::get('all/ajax/classification', [AllRecordController::class, 'ajaxClassification'])->name('all.ajax.classification');
+            Route::match(['get', 'post'], 'all/ajax/summary', [AllRecordController::class, 'ajaxSummary'])->name('all.ajax.summary');
+            Route::match(['get', 'post'], 'all/ajax/classification', [AllRecordController::class, 'ajaxClassification'])->name('all.ajax.classification');
             // Legacy alias redirected to ClassificationRecordController
             Route::match(['get', 'post'], 'all/classification/{classification}/datatable', [ClassificationRecordController::class, 'data'])->name('all.classification.datatable');
             Route::get('all/classification/{classification}/download/{format?}', [ClassificationRecordController::class, 'export'])->name('all.classification.download')->middleware('mpermission:learning_management');
