@@ -601,15 +601,25 @@ class TaskManageController extends Controller
                 ->orderBy('title')->limit(100)->get(['id', 'title']),
             'content_playlist' => Content::where(fn ($w) => $w->where('playlistonly', 'Y')->orWhereHas('trainingPlans'))
                 ->with(['trainingPlans:id,title'])
-                ->when($q !== '', fn ($qq) => $qq->where('title', 'like', "%{$q}%"))
+                ->when($q !== '', function ($qq) use ($q) {
+                    $qq->where(function ($sub) use ($q) {
+                        $sub->where('title', 'like', "%{$q}%")
+                            ->orWhereHas('trainingPlans', fn ($tp) => $tp->where('title', 'like', "%{$q}%"));
+                    });
+                })
                 ->orderBy('title')
                 ->limit(100)
                 ->get()
                 ->map(function ($c) {
-                    $pTitle = $c->trainingPlans->first()?->title;
+                    $planTitles = $c->trainingPlans->pluck('title')->filter()->values();
                     $title = $c->title;
-                    if ($pTitle && ! str_starts_with($title, "[{$pTitle}]")) {
-                        $title = "{$title} [{$pTitle}]";
+                    if ($planTitles->isNotEmpty()) {
+                        $pTitle = $planTitles->join(', ');
+                        if (! str_starts_with($title, "[{$pTitle}]")) {
+                            $title = "{$title} [{$pTitle}]";
+                        }
+                    } elseif (($c->playlistonly ?? '') === 'Y') {
+                        $title = "{$title} [Playlist Only]";
                     }
                     return [
                         'id'    => $c->id,

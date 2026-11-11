@@ -233,10 +233,44 @@ class TaskContainerFlowTest extends TestCase
         $response->assertSee('Content Playlist');
         $response->assertSee('id="modal_content_playlist_id"', false);
 
+        // Create a playlist and content linked via trainingplandetail
+        $plan = TrainingPlan::create([
+            'title'  => 'Special Playlist Test ' . uniqid(),
+            'slug'   => 'special-playlist-test-' . uniqid(),
+            'active' => 'Active',
+        ]);
+        $content = Content::create([
+            'title'        => 'Special Content Video ' . uniqid(),
+            'type'         => 'video',
+            'status'       => 'mandatory',
+            'playlistonly' => 'N',
+            'active'       => 'Active',
+        ]);
+        $plan->contents()->attach($content->id, [
+            'content_order' => 1,
+            'created_at'    => now(),
+            'updated_at'    => now(),
+        ]);
+
         // Test the content_playlist parentOptions endpoint
         $optionsResponse = $this->actingAs($this->admin)->getJson(route('manage.task.parents', ['type' => 'content_playlist']));
         $optionsResponse->assertStatus(200);
-        $this->assertIsArray($optionsResponse->json());
+        $items = $optionsResponse->json();
+        $this->assertIsArray($items);
+
+        $matched = collect($items)->firstWhere('id', $content->id);
+        $this->assertNotNull($matched);
+        $this->assertStringContainsString($content->title, $matched['title']);
+        $this->assertStringContainsString($plan->title, $matched['title']);
+
+        // Search by playlist title
+        $searchResponse = $this->actingAs($this->admin)->getJson(route('manage.task.parents', [
+            'type' => 'content_playlist',
+            'q'    => $plan->title,
+        ]));
+        $searchResponse->assertStatus(200);
+        $searchItems = $searchResponse->json();
+        $this->assertTrue(collect($searchItems)->contains('id', $content->id));
     }
 
     public function test_file_submission_form_hides_add_question_and_defaults_label(): void
