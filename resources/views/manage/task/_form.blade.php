@@ -1042,19 +1042,13 @@ if (isFileSubmission) {
                     '<input type="hidden" name="fields[' + i + '][id]" value="' + esc(data.id || '') + '">' +
                     '<input type="hidden" name="fields[' + i + '][type]" value="file">' +
                     '<input type="hidden" name="fields[' + i + '][label]" value="' + esc(data.label || 'File Submission') + '">' +
+                    '<input type="hidden" name="fields[' + i + '][required]" value="1">' +
                     '<div class="d-none typeCol"><input type="hidden" name="fields[' + i + '][type]" value="file"></div>' +
                     '<div class="d-flex align-items-center justify-content-between mb-3">' +
                         '<div class="questionNumberBadge">' +
                             '<span class="badge rounded-pill fw-semibold" style="background-color: #f0f7ff; color: #0c4b81; border: 1px solid #bfdbfe; padding: 0.35rem 1rem; font-size: 0.875rem;">' +
                                 '<i class="ti ti-file-upload me-1"></i> File Upload Requirements' +
                             '</span>' +
-                        '</div>' +
-                        '<div>' +
-                            '<label class="form-check form-switch mb-0 d-inline-flex align-items-center gap-2 cursor-pointer">' +
-                                '<input type="checkbox" class="form-check-input field-required-toggle" name="fields[' + i + '][required]" value="1"' +
-                                    (data.required !== false ? ' checked' : '') + ' style="cursor: pointer;">' +
-                                '<span class="form-check-label fw-semibold text-dark" style="font-size: 0.95rem;">Required</span>' +
-                            '</label>' +
                         '</div>' +
                     '</div>' +
                     fileSettingsHTML(i, data, true) +
@@ -1679,7 +1673,7 @@ if (isFileSubmission) {
                         id: idInp ? idInp.value : '',
                         label: labelInp ? labelInp.value : '',
                         type: isFileSubmission ? 'file' : (isEssay ? 'textarea' : (c.dataset.ftype || allowedTypes()[0])),
-                        required: reqInp ? reqInp.checked : true,
+                        required: reqInp ? (reqInp.type === 'checkbox' ? reqInp.checked : reqInp.value === '1') : true,
                         file_types: fileTypeInp ? fileTypeInp.value : '',
                         max_files: maxFilesInp ? maxFilesInp.value : 1,
                         max_size_mb: maxSizeInp ? maxSizeInp.value : DEFAULT_MAX_SIZE_MB,
@@ -1905,7 +1899,7 @@ if (isFileSubmission) {
                         var typeLabel = isFs ? 'File Upload' : (FIELD_TYPES[ftype] || 'Question');
                         var isRequired = true;
                         var reqChk = card.querySelector('input[name$="[required]"]');
-                        if (reqChk) isRequired = reqChk.checked;
+                        if (reqChk) isRequired = (reqChk.type === 'checkbox') ? reqChk.checked : (reqChk.value === '1');
 
                         html += '<div class="card border rounded-3 shadow-none bg-white mb-3" style="border-color: #e2e8f0 !important;">' +
                             '<div class="card-header bg-light-subtle py-2 px-3 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">' +
