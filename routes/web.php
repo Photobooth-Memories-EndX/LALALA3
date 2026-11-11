@@ -550,8 +550,11 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
             Route::get('/', [TaskManageController::class, 'index'])->name('index');
 
             Route::get('trash', [TaskManageController::class, 'trash'])->name('trash');
-Route::post('{id}/restore', [TaskManageController::class, 'restore'])->name('restore');
-Route::delete('{id}/force', [TaskManageController::class, 'forceDestroy'])->name('force-destroy');
+            Route::post('trash/bulk-restore', [TaskManageController::class, 'bulkRestore'])->name('trash.bulk-restore');
+            Route::delete('trash/bulk-force', [TaskManageController::class, 'bulkForceDestroy'])->name('trash.bulk-force-destroy');
+            Route::post('trash/bulk-force', [TaskManageController::class, 'bulkForceDestroy'])->name('trash.bulk-force-destroy.post');
+            Route::post('{id}/restore', [TaskManageController::class, 'restore'])->name('restore');
+            Route::delete('{id}/force', [TaskManageController::class, 'forceDestroy'])->name('force-destroy');
             Route::delete('container/{parentType}/{parentId}', [TaskManageController::class, 'destroyContainer'])->name('container.destroy');
 Route::get('{task}/qr', [TaskManageController::class, 'qr'])->name('qr');
 

@@ -63,6 +63,16 @@ class PtkpImportController extends Controller
      */
     public function preview(Request $request): JsonResponse
     {
+        if (function_exists('ini_set')) {
+            @ini_set('max_execution_time', '300');
+        }
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(300);
+        }
+        if (class_exists(\Barryvdh\Debugbar\Facades\Debugbar::class)) {
+            \Barryvdh\Debugbar\Facades\Debugbar::disable();
+        }
+
         try {
             $request->validate([
                 'file' => [
@@ -117,6 +127,16 @@ class PtkpImportController extends Controller
      */
     public function confirm(Request $request): JsonResponse
     {
+        if (function_exists('ini_set')) {
+            @ini_set('max_execution_time', '300');
+        }
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(300);
+        }
+        if (class_exists(\Barryvdh\Debugbar\Facades\Debugbar::class)) {
+            \Barryvdh\Debugbar\Facades\Debugbar::disable();
+        }
+
         try {
             $request->validate([
                 'token' => ['required', 'string', 'size:32'],

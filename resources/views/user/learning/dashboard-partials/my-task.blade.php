@@ -144,9 +144,9 @@
                 @endphp
                 <a href="{{ $tabUrl($key) }}"
                    class="my-task-category-pill position-relative {{ $isActive ? 'active' : '' }}"
-                   title="Filter by {{ $tab['label'] }}{{ $revCount > 0 ? " ({$revCount} revision required)" : '' }}">
+                   title="Filter by {{ $tab['label'] }}{{ $revCount > 0 && $key !== 'asesment' ? " ({$revCount} revision required)" : '' }}">
                     <span>{{ $tab['label'] }}</span>
-                    @if ($revCount > 0)
+                    @if ($revCount > 0 && $key !== 'asesment')
                         <span class="badge bg-warning text-dark rounded-pill ms-1.5 px-1.5 py-0.5 d-inline-flex align-items-center justify-content-center my-task-revision-badge"
                               style="font-size: 10px; font-weight: 700; line-height: 1; min-width: 18px; height: 18px;"
                               title="{{ $revCount }} task{{ $revCount > 1 ? 's' : '' }} require revision">

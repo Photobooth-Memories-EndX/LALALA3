@@ -73,6 +73,7 @@ class LearningAssessmentController extends Controller
 
         $score = $request->input('assessment_filter_score', $request->input('score', 'all'));
         $batch = (string) $request->input('assessment_filter_batch', $request->input('batch', 'all'));
+        $date = (string) $request->input('assessment_filter_date', $request->input('date', 'all'));
 
         if ($score !== 'all' && $score !== '') {
             $assessments = $assessments->filter(function ($assessment) use ($userId, $score) {
@@ -97,6 +98,9 @@ class LearningAssessmentController extends Controller
             })->values();
         }
 
+        if (!in_array($date, ['oldest', 'title_asc', 'title_desc'], true)) {
+            $assessments = $assessments->sortByDesc('id')->values();
+        }
         return $assessments;
     }
 
@@ -281,11 +285,11 @@ class LearningAssessmentController extends Controller
             ->when($availability === 'available', fn ($q) => $q->where('fromdate', '<=', $now)->where('todate', '>=', $now))
             ->when($availability === 'upcoming', fn ($q) => $q->where('fromdate', '>', $now))
             ->when($availability === 'expired', fn ($q) => $q->where('todate', '<', $now))
-            ->when($date === 'newest', fn ($q) => $q->orderByDesc('fromdate'))
-            ->when($date === 'oldest', fn ($q) => $q->orderBy('fromdate'))
+            ->when($date === 'newest', fn ($q) => $q->latest('id'))
+            ->when($date === 'oldest', fn ($q) => $q->oldest('id'))
             ->when($date === 'title_asc', fn ($q) => $q->orderBy('title', 'asc'))
             ->when($date === 'title_desc', fn ($q) => $q->orderBy('title', 'desc'))
-            ->when(!in_array($date, ['newest', 'oldest', 'title_asc', 'title_desc'], true), fn ($q) => $q->latest());
+            ->when(!in_array($date, ['newest', 'oldest', 'title_asc', 'title_desc'], true), fn ($q) => $q->latest('id'));
     }
 
     private function getFilterOptions($query): array

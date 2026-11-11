@@ -137,7 +137,7 @@
         $isContentCompleted = $progress >= 100 || ($content_user->learning_status ?? '') === 'completed';
     @endphp
 
-    @if ($sidebarTaskCount > 0)
+    @if ($sidebarTaskCount > 0 && $isContentCompleted)
         <div class="card border-0 shadow-sm rounded-4 glass-surface content-sidebar-card content-task-card">
             <div class="card-body p-4">
                 <div class="d-flex align-items-center justify-content-between mb-2">
