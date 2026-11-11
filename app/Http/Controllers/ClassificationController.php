@@ -188,6 +188,14 @@ class ClassificationController extends Controller
     }
 
     /**
+     * Display the specified resource.
+     */
+    public function show(Classification $classification)
+    {
+        return redirect()->route('manage.classification.edit', $classification);
+    }
+
+    /**
      * Edit Classification page (backward-compatibility).
      */
     public function edit(Classification $classification)

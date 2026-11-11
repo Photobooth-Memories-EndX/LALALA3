@@ -21,6 +21,42 @@ class ComprehensiveRecordGetPostAuditTest extends TestCase
     }
 
     /**
+     * Helper to create a consistent offline training test fixture inside transaction.
+     */
+    protected function createOfflineTrainingFixture(): array
+    {
+        $training = OfflineTraining::firstOrCreate([
+            'course_name' => 'Audit Test Offline Course',
+        ], [
+            'type' => 'offline',
+            'main_classification' => 'Job Functional',
+            'sub_classification' => 'Technical',
+            'status' => 'finished',
+            'learning_hours' => 2.0,
+            'duration_seconds' => 7200,
+            'start_date' => now()->toDateString(),
+            'end_date' => now()->toDateString(),
+        ]);
+
+        $user = User::first();
+
+        $participant = OfflineTrainingUser::firstOrCreate([
+            'offline_training_id' => $training->id,
+            'user_id' => $user->id,
+        ], [
+            'employee_id' => $user->id_emp,
+            'name' => $user->name,
+            'main_classification' => 'Job Functional',
+            'learning_hours' => 2.0,
+            'start_date' => now()->toDateString(),
+            'end_date' => now()->toDateString(),
+            'progress' => 100.00,
+        ]);
+
+        return [$training, $participant, $user];
+    }
+
+    /**
      * Test 1: Verify all modified Blade files configure DataTables as POST and Export as GET.
      */
     public function test_all_modified_blades_have_post_datatables_and_get_export(): void
@@ -32,6 +68,7 @@ class ComprehensiveRecordGetPostAuditTest extends TestCase
             'resources/views/main/record/offline/participant.blade.php',
             'resources/views/main/record/offline/course.blade.php',
             'resources/views/main/record/online/classification.blade.php',
+            'resources/views/main/record/online/course.blade.php',
             'resources/views/main/profile/components/profile-table-script.blade.php',
         ];
 
@@ -139,7 +176,8 @@ class ComprehensiveRecordGetPostAuditTest extends TestCase
      */
     public function test_offline_participant_datatables_post_and_export_get(): void
     {
-        $id = '1004';
+        [$training, $participant, $user] = $this->createOfflineTrainingFixture();
+        $id = $user->id_emp ?: (string) $user->id;
         $tableUrl = route('manage.record.offline.participant.datatable', $id);
 
         $payload = [
@@ -168,11 +206,7 @@ class ComprehensiveRecordGetPostAuditTest extends TestCase
      */
     public function test_offline_course_datatables_post_and_export_get(): void
     {
-        // Find existing training ID or fallback
-        $training = OfflineTraining::first();
-        if (!$training) {
-            $this->markTestSkipped('No offline training found.');
-        }
+        [$training, $participant, $user] = $this->createOfflineTrainingFixture();
 
         $tableUrl = route('manage.record.offline.course.datatable', $training->id);
 

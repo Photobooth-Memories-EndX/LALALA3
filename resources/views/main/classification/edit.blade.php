@@ -158,7 +158,11 @@
             </div>
 
             <div class="card-footer bg-transparent">
-                <div class="d-flex justify-content-end flex-wrap gap-2">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <button type="button" class="btn btn-outline-danger rounded-pill px-4 btn-delete-single-classification" data-id="{{ $classification->id }}" data-name="{{ $classification->classification_name }}">
+                        <i class="ti ti-trash me-1"></i>
+                        Delete Category
+                    </button>
                     <button type="submit" class="btn btn-warning rounded-pill px-4">
                         <i class="ti ti-device-floppy me-1"></i>
                         Update Category
@@ -389,5 +393,57 @@
             return;
         }
     });
+
+    $(document).on('click', '.btn-delete-single-classification', function () {
+        var id = $(this).data('id');
+        var name = $(this).data('name');
+
+        Swal.fire({
+            title: 'Hapus Classification?',
+            html: 'Apakah Anda yakin ingin menghapus <strong>"' + name + '"</strong>?<br><span class="text-muted small mt-1 d-block">Data akan dihapus permanen jika tidak memiliki relasi dengan Learning Content atau Training Records.</span>',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="ti ti-trash me-1"></i> Ya, Hapus',
+            cancelButtonText: 'Batal',
+            reverseButtons: true,
+            focusCancel: true
+        }).then(function (result) {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'Menghapus...',
+                    html: '<span class="text-muted small">Memeriksa relasi data dan menghapus...</span>',
+                    allowOutsideClick: false,
+                    didOpen: function () { Swal.showLoading(); }
+                });
+
+                $.ajax({
+                    url: '/manage/classification/' + id,
+                    type: 'DELETE',
+                    data: { _token: '{{ csrf_token() }}' },
+                    success: function (res) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil Dihapus!',
+                            text: res.message || 'Classification berhasil dihapus.',
+                            timer: 1500,
+                            showConfirmButton: false
+                        }).then(function () {
+                            window.location.href = "{{ route('manage.classification.index') }}";
+                        });
+                    },
+                    error: function (xhr) {
+                        var msg = 'Gagal menghapus classification.';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            msg = xhr.responseJSON.message;
+                        }
+                        Swal.fire({ icon: 'error', title: 'Tidak Dapat Dihapus', text: msg });
+                    }
+                });
+            }
+        });
+    });
 </script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 @endsection

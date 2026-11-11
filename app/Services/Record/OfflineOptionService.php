@@ -23,6 +23,7 @@ class OfflineOptionService
     public const TYPE_PROVIDER_NAME = 'provider_name';
     public const TYPE_VENUE = 'venue';
     public const TYPE_INSTRUCTOR = 'instructor';
+    public const TYPE_BATCH = 'batch';
     public const TYPE_TARGET_EMPLOYEE = 'target_employee';
     public const TYPE_PREREQUISITES = 'prerequisites';
     public const TYPE_COMPLETION_REQUIREMENT = 'completion_requirement';
@@ -38,6 +39,7 @@ class OfflineOptionService
         self::TYPE_TYPE,
         self::TYPE_CATEGORY,
         self::TYPE_LEVEL,
+        self::TYPE_BATCH,
         self::TYPE_SUB_CLASSIFICATION,
         self::TYPE_SUB_CORPORATE_KPI,
         self::TYPE_DELIVERY_METHOD,

@@ -228,8 +228,12 @@
             dom: 't',
             ajax: {
                 url: datatableUrl,
-                type: 'GET',
+                type: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
                 data: function (d) {
+                    d._token = $('meta[name="csrf-token"]').attr('content');
                     d.search = $('#online-participant-input').val() || '';
                     d.status = $('#online-status-select').val() || 'all';
                     d.entries = $('#online-table-entries-select').val() || defaultEntries;
@@ -374,6 +378,18 @@
             $('#online-participant-input').val('');
             $('#online-status-select').val('all');
             onlineTable.ajax.reload();
+        });
+
+        $('#btn-export-online-course').on('click', function(e) {
+            e.preventDefault();
+            const params = new URLSearchParams();
+            const search = ($('#online-participant-input').val() || '').trim();
+            const status = $('#online-status-select').val();
+            if (search) params.set('employee_id', search);
+            if (status && status !== 'all') params.set('status', status);
+            const baseExportUrl = @json(route('manage.record.online.export'));
+            const finalUrl = baseExportUrl + (params.toString() ? '?' + params.toString() : '');
+            window.location.href = finalUrl;
         });
     });
 </script>
