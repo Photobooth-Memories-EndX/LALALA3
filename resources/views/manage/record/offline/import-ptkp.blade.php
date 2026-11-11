@@ -448,7 +448,7 @@
                                 <th style="width: 45px;" class="text-center">No</th>
                                 <th style="width: 155px;">Status</th>
                                 <th style="width: 115px;">Employee ID</th>
-                                <th>Employee Name (from users)</th>
+                                <th>Employee Name</th>
                                 <th style="width: 125px;">Company</th>
                                 <th>Course Title</th>
                                 <th style="width: 85px;">Type</th>

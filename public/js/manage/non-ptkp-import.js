@@ -641,6 +641,18 @@
     }
 
     function applyFilters() {
+        const qEmpId = (searchQuery.empId || '').trim().toLowerCase();
+        let exactEmpIdExists = false;
+        if (qEmpId !== '') {
+            for (let i = 0; i < allRows.length; i++) {
+                const e = String(allRows[i].employee_id !== undefined && allRows[i].employee_id !== null ? allRows[i].employee_id : '').trim().toLowerCase();
+                if (e === qEmpId) {
+                    exactEmpIdExists = true;
+                    break;
+                }
+            }
+        }
+
         filteredRows = allRows.filter(function (row) {
             const st = normalizeStatus(row.status);
             if (currentFilter !== 'all') {
@@ -656,10 +668,26 @@
                 }
                 if (currentFilter === 'invalid_company' && st !== 'INVALID COMPANY') return false;
             }
-            if (searchQuery.empId && (row.employee_id || '').toLowerCase().indexOf(searchQuery.empId) === -1) return false;
-            if (searchQuery.name && (row.name || '').toLowerCase().indexOf(searchQuery.name) === -1) return false;
-            if (searchQuery.course && (row.course_name || '').toLowerCase().indexOf(searchQuery.course) === -1) return false;
-            if (searchQuery.pic && (row.pic || '').toLowerCase().indexOf(searchQuery.pic) === -1) return false;
+            if (qEmpId !== '') {
+                const rowEmpId = String(row.employee_id !== undefined && row.employee_id !== null ? row.employee_id : '').trim().toLowerCase();
+                if (exactEmpIdExists) {
+                    if (rowEmpId !== qEmpId) return false;
+                } else {
+                    if (rowEmpId.indexOf(qEmpId) === -1) return false;
+                }
+            }
+            if (searchQuery.name) {
+                const rName = String(row.name || row.employee_name || (row.data && row.data.name) || '').trim().toLowerCase();
+                if (rName.indexOf(searchQuery.name) === -1) return false;
+            }
+            if (searchQuery.course) {
+                const rCourse = String(row.course_name || (row.data && row.data.course_name) || '').trim().toLowerCase();
+                if (rCourse.indexOf(searchQuery.course) === -1) return false;
+            }
+            if (searchQuery.pic) {
+                const rPic = String(row.pic || (row.data && row.data.pic) || '').trim().toLowerCase();
+                if (rPic.indexOf(searchQuery.pic) === -1) return false;
+            }
             return true;
         });
         renderTableRows();

@@ -687,6 +687,18 @@
     }
 
     function applyFilters() {
+        const qEmpId = (searchQuery.empId || '').trim().toLowerCase();
+        let exactEmpIdExists = false;
+        if (qEmpId !== '') {
+            for (let i = 0; i < allRows.length; i++) {
+                const e = String(allRows[i].employee_id !== undefined && allRows[i].employee_id !== null ? allRows[i].employee_id : '').trim().toLowerCase();
+                if (e === qEmpId) {
+                    exactEmpIdExists = true;
+                    break;
+                }
+            }
+        }
+
         filteredRows = allRows.filter(function (row) {
             if (currentFilter !== 'all') {
                 if (currentFilter === 'valid' && row.status !== 'VALID') return false;
@@ -703,10 +715,26 @@
                     if (row.status !== 'INVALID COMPANY' && !isRowInvalidCompany(row)) return false;
                 }
             }
-            if (searchQuery.empId && (row.employee_id || '').toLowerCase().indexOf(searchQuery.empId) === -1) return false;
-            if (searchQuery.name && (row.name || '').toLowerCase().indexOf(searchQuery.name) === -1) return false;
-            if (searchQuery.course && (row.course_name || '').toLowerCase().indexOf(searchQuery.course) === -1) return false;
-            if (searchQuery.pic && (row.pic || '').toLowerCase().indexOf(searchQuery.pic) === -1) return false;
+            if (qEmpId !== '') {
+                const rowEmpId = String(row.employee_id !== undefined && row.employee_id !== null ? row.employee_id : '').trim().toLowerCase();
+                if (exactEmpIdExists) {
+                    if (rowEmpId !== qEmpId) return false;
+                } else {
+                    if (rowEmpId.indexOf(qEmpId) === -1) return false;
+                }
+            }
+            if (searchQuery.name) {
+                const rName = String(row.name || row.employee_name || (row.data && row.data.name) || '').trim().toLowerCase();
+                if (rName.indexOf(searchQuery.name) === -1) return false;
+            }
+            if (searchQuery.course) {
+                const rCourse = String(row.course_name || (row.data && row.data.course_name) || '').trim().toLowerCase();
+                if (rCourse.indexOf(searchQuery.course) === -1) return false;
+            }
+            if (searchQuery.pic) {
+                const rPic = String(row.pic || (row.data && row.data.pic) || '').trim().toLowerCase();
+                if (rPic.indexOf(searchQuery.pic) === -1) return false;
+            }
             return true;
         });
         renderTableRows();
@@ -1282,13 +1310,14 @@
                 ['Duplicate Reference', row.duplicate_source === 'database' ? `Participant Record ID: ${row.matched_record_id || ''}` : `Uploaded Excel Row: ${row.original_excel_row || ''}`]
             );
         }
+        const isMatchedUser = !!(row.data && row.data.user_id);
         fields.push(
             ['1. Employee ID', row.employee_id || d.employee_id],
-            ['2. Employee Name (from users)', d.name],
-            ['3. Grade (from users)', d.grade],
-            ['4. Job Position (from users)', d.job_position],
-            ['5. Team (from users)', d.team],
-            ['6. Department (from users)', d.department],
+            [isMatchedUser ? '2. Employee Name (from users)' : '2. Employee Name (Excel)', d.name || row.name],
+            [isMatchedUser ? '3. Grade (from users)' : '3. Grade', d.grade],
+            [isMatchedUser ? '4. Job Position (from users)' : '4. Job Position', d.job_position],
+            [isMatchedUser ? '5. Team (from users)' : '5. Team', d.team],
+            [isMatchedUser ? '6. Department (from users)' : '6. Department', d.department],
             ['7. Company', d.company],
             ['8. Course Title', d.course_name],
             ['9. Sub Course Title', d.sub_course_name],

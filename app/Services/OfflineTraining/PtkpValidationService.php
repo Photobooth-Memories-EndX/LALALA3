@@ -90,8 +90,10 @@ class PtkpValidationService
                 $key = strtolower($trimmed);
                 $normalizedIds[$key] = $trimmed;
 
-                // For purely numeric IDs with < 6 digits, also query 6-digit zero-padded variant
-                if (ctype_digit($trimmed) && strlen($trimmed) < 6) {
+                // For purely numeric IDs with 3 to 5 digits, also query 6-digit zero-padded variant.
+                // Short numbers with < 3 digits (e.g. roll numbers 1-99) are never employee NIPs
+                // and must not be zero-padded to prevent collision with executive IDs (e.g. '22' -> '000022').
+                if (ctype_digit($trimmed) && strlen($trimmed) >= 3 && strlen($trimmed) < 6) {
                     $padded = str_pad($trimmed, 6, '0', STR_PAD_LEFT);
                     $normalizedIds[strtolower($padded)] = $padded;
                 }
@@ -114,10 +116,10 @@ class PtkpValidationService
             }
             $lookup[$key]->push($user);
 
-            // Also map unpadded variant if numeric and has leading zeros
+            // Also map unpadded variant if numeric, has leading zeros, and unpadded length >= 3
             if (ctype_digit($key)) {
                 $unpadded = ltrim($key, '0');
-                if ($unpadded !== '' && $unpadded !== $key) {
+                if ($unpadded !== '' && $unpadded !== $key && strlen($unpadded) >= 3) {
                     if (!isset($lookup[$unpadded])) {
                         $lookup[$unpadded] = collect();
                     }
@@ -134,16 +136,18 @@ class PtkpValidationService
      *
      * @param string|null $employeeId
      * @param array<string, \Illuminate\Database\Eloquent\Collection<int, User>> $userLookup
+     * @param string|null $participantName
      * @return array{
      *     user: User|null,
      *     status: string,
      *     errors: array<string>,
      *     warnings: array<string>,
      *     is_ambiguous: bool,
-     *     is_not_found: bool
+     *     is_not_found: bool,
+     *     is_resigned: bool
      * }
      */
-    public function matchUser(?string $employeeId, array $userLookup): array
+    public function matchUser(?string $employeeId, array $userLookup, ?string $participantName = null): array
     {
         $rawId = trim((string) $employeeId);
         if ($rawId === '') {
@@ -154,6 +158,7 @@ class PtkpValidationService
                 'warnings'     => [],
                 'is_ambiguous' => false,
                 'is_not_found' => true,
+                'is_resigned'  => false,
             ];
         }
 
@@ -168,6 +173,7 @@ class PtkpValidationService
                 'warnings'     => [],
                 'is_ambiguous' => false,
                 'is_not_found' => true,
+                'is_resigned'  => false,
             ];
         }
 
@@ -175,6 +181,30 @@ class PtkpValidationService
             $activeMatches = $matches->filter(fn ($u) => is_null($u->deleted_at));
             if ($activeMatches->count() === 1) {
                 $user = $activeMatches->first();
+
+                // Two-layer defense against numeric collision:
+                $exactIdMatch = (strtolower(trim((string) $user->id_emp)) === $lookupKey);
+                if (!$exactIdMatch && !empty($participantName)) {
+                    $normRowName = mb_strtolower(trim(preg_replace('/\s+/', ' ', (string) $participantName)));
+                    $normDbName = mb_strtolower(trim(preg_replace('/\s+/', ' ', (string) $user->name)));
+                    $dummyExample = 'budi santoso';
+
+                    if ($normRowName !== '' && $normRowName !== $dummyExample && $normRowName !== $normDbName) {
+                        $lev = levenshtein($normRowName, $normDbName);
+                        if ($lev > 3) {
+                            return [
+                                'user'         => null,
+                                'status'       => self::STATUS_INVALID,
+                                'errors'       => ["Employee ID '{$rawId}' was not found in LMS users database."],
+                                'warnings'     => [],
+                                'is_ambiguous' => false,
+                                'is_not_found' => true,
+                                'is_resigned'  => false,
+                            ];
+                        }
+                    }
+                }
+
                 return [
                     'user'         => $user,
                     'status'       => self::STATUS_VALID,
@@ -198,6 +228,32 @@ class PtkpValidationService
         }
 
         $user = $matches->first();
+
+        // Two-layer defense against numeric collision:
+        // If matched via zero-padded / unpadded alias rather than exact users.id_emp match,
+        // and a non-empty participant name is provided from spreadsheet (not a placeholder),
+        // verify name correspondence to avoid mismatching different people with similar numeric values.
+        $exactIdMatch = (strtolower(trim((string) $user->id_emp)) === $lookupKey);
+        if (!$exactIdMatch && !empty($participantName)) {
+            $normRowName = mb_strtolower(trim(preg_replace('/\s+/', ' ', (string) $participantName)));
+            $normDbName = mb_strtolower(trim(preg_replace('/\s+/', ' ', (string) $user->name)));
+            $dummyExample = 'budi santoso';
+
+            if ($normRowName !== '' && $normRowName !== $dummyExample && $normRowName !== $normDbName) {
+                $lev = levenshtein($normRowName, $normDbName);
+                if ($lev > 3) {
+                    return [
+                        'user'         => null,
+                        'status'       => self::STATUS_INVALID,
+                        'errors'       => ["Employee ID '{$rawId}' was not found in LMS users database."],
+                        'warnings'     => [],
+                        'is_ambiguous' => false,
+                        'is_not_found' => true,
+                        'is_resigned'  => false,
+                    ];
+                }
+            }
+        }
 
         return [
             'user'         => $user,

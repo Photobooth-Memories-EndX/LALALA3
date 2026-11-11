@@ -354,7 +354,7 @@ class PtkpImportService
             $normalized = $this->validationService->normalizeRowData($item['values']);
             $normalized['excel_row'] = $rNum;
 
-            $matchResult = $this->validationService->matchUser($normalized['employee_id'], $userLookup);
+            $matchResult = $this->validationService->matchUser($normalized['employee_id'], $userLookup, $normalized['name'] ?? null);
             $user = $matchResult['user'];
             $courseMatchResult = $this->validationService->matchCourse($normalized['course_name'], $courseLookup);
 
