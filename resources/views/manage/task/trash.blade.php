@@ -117,7 +117,7 @@
                                     $itemBadgeClass = $item->badge_class ?? ($itemType === 'course' ? 'bg-purple-lt text-purple' : 'bg-primary-lt text-primary');
                                     $itemRestoreUrl = $item->restore_url ?? route('manage.task.restore', ['id' => $item->id, 'item_type' => $itemType]);
                                     $itemDeleteUrl = $item->delete_url ?? route('manage.task.force-destroy', ['id' => $item->id, 'item_type' => $itemType]);
-                                    $itemConfirmMsg = $item->confirm_msg ?? 'Permanently delete this item? This action cannot be undone.';
+                                    $itemConfirmMsg = $item->confirm_msg ?? 'Remove this item from trash? It will be hidden from view.';
                                 @endphp
                                 <tr>
                                     <td class="text-muted">{{ ($items->firstItem() ?? 0) + $i }}</td>

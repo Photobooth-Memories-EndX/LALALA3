@@ -105,10 +105,11 @@ class TaskUnifiedTrashTest extends TestCase
         $taskResponse->assertDontSee("Trashed Wadah {$uniqueSuffix}");
     }
 
-    public function test_admin_can_restore_and_force_delete_course_from_trash(): void
+    public function test_admin_can_restore_and_delete_course_from_trash_without_permanent_data_loss(): void
     {
+        $groupTitle = 'Restore Test Wadah ' . uniqid();
         $group = TaskGroup::create([
-            'title'       => 'Restore Test Wadah ' . uniqid(),
+            'title'       => $groupTitle,
             'created_by'  => $this->admin->id,
         ]);
         $group->delete();
@@ -124,15 +125,63 @@ class TaskUnifiedTrashTest extends TestCase
         $restoreResponse->assertRedirect();
         $this->assertFalse($group->fresh()->trashed());
 
-        // Delete again and force delete
+        // Move to trash again
         $group->delete();
+
+        // Delete from trash (data preserved in DB, hidden from view)
         $forceResponse = $this->actingAs($this->admin)->delete(route('manage.task.force-destroy', [
             'id'          => $group->id,
             'item_type'   => 'course',
             'course_type' => 'standalone',
         ]));
         $forceResponse->assertRedirect();
-        $this->assertNull(TaskGroup::withTrashed()->find($group->id));
+
+        // Data stays in database
+        $this->assertNotNull(TaskGroup::withTrashed()->find($group->id));
+
+        // But is hidden from trash view
+        $trashResp = $this->actingAs($this->admin)->get(route('manage.task.trash', ['type' => 'course']));
+        $trashResp->assertDontSee($groupTitle);
+    }
+
+    public function test_deleting_content_with_users_from_trash_keeps_db_and_does_not_fail_foreign_key(): void
+    {
+        $contentTitle = 'Content With Users ' . uniqid();
+        $content = Content::create([
+            'title' => $contentTitle,
+            'slug'  => 'c-user-' . uniqid(),
+            'type'  => 'video',
+        ]);
+
+        \Illuminate\Support\Facades\DB::table('content_users')->insert([
+            'content_id' => $content->id,
+            'user_id'    => $this->admin->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $content->delete();
+
+        // Delete from trash
+        $response = $this->actingAs($this->admin)->delete(route('manage.task.force-destroy', [
+            'id'          => $content->id,
+            'item_type'   => 'course',
+            'course_type' => 'content',
+        ]));
+
+        $response->assertRedirect();
+
+        // Content row remains in database
+        $this->assertNotNull(Content::withTrashed()->find($content->id));
+        // Child content_users row remains in database
+        $this->assertDatabaseHas('content_users', [
+            'content_id' => $content->id,
+            'user_id'    => $this->admin->id,
+        ]);
+
+        // Content is hidden from trash view
+        $trashResp = $this->actingAs($this->admin)->get(route('manage.task.trash', ['type' => 'course']));
+        $trashResp->assertDontSee($contentTitle);
     }
 
     public function test_admin_can_move_container_to_trash_via_destroy_endpoint(): void
