@@ -258,7 +258,7 @@ class TaskManageController extends Controller
                     'deleted_at'  => $p->deleted_at,
                     'restore_url' => route('manage.task.restore', ['id' => $p->id, 'item_type' => 'course', 'course_type' => 'playlist']),
                     'delete_url'  => route('manage.task.force-destroy', ['id' => $p->id, 'item_type' => 'course', 'course_type' => 'playlist']),
-                    'confirm_msg' => 'Remove this playlist course from trash? It will be hidden from view.',
+                    'confirm_msg' => 'Remove this playlist course from trash?',
                 ]);
 
             $trashedContents = Content::onlyTrashed()
@@ -277,7 +277,7 @@ class TaskManageController extends Controller
                     'deleted_at'  => $c->deleted_at,
                     'restore_url' => route('manage.task.restore', ['id' => $c->id, 'item_type' => 'course', 'course_type' => 'content']),
                     'delete_url'  => route('manage.task.force-destroy', ['id' => $c->id, 'item_type' => 'course', 'course_type' => 'content']),
-                    'confirm_msg' => 'Remove this content from trash? It will be hidden from view.',
+                    'confirm_msg' => 'Remove this content from trash?',
                 ]);
 
             $trashedOffline = OfflineTraining::onlyTrashed()
@@ -296,7 +296,7 @@ class TaskManageController extends Controller
                     'deleted_at'  => $ot->deleted_at,
                     'restore_url' => route('manage.task.restore', ['id' => $ot->id, 'item_type' => 'course', 'course_type' => 'offline_training']),
                     'delete_url'  => route('manage.task.force-destroy', ['id' => $ot->id, 'item_type' => 'course', 'course_type' => 'offline_training']),
-                    'confirm_msg' => 'Remove this offline training session from trash? It will be hidden from view.',
+                    'confirm_msg' => 'Remove this offline training session from trash?',
                 ]);
 
             $trashedGroups = collect();
@@ -317,7 +317,7 @@ class TaskManageController extends Controller
                         'deleted_at'  => $tg->deleted_at,
                         'restore_url' => route('manage.task.restore', ['id' => $tg->id, 'item_type' => 'course', 'course_type' => 'standalone']),
                         'delete_url'  => route('manage.task.force-destroy', ['id' => $tg->id, 'item_type' => 'course', 'course_type' => 'standalone']),
-                        'confirm_msg' => 'Remove this activity container from trash? It will be hidden from view.',
+                        'confirm_msg' => 'Remove this activity container from trash?',
                     ]);
             }
 
@@ -344,7 +344,7 @@ class TaskManageController extends Controller
                     'deleted_at'      => $task->deleted_at,
                     'restore_url'     => route('manage.task.restore', ['id' => $task->id, 'item_type' => 'task']),
                     'delete_url'      => route('manage.task.force-destroy', ['id' => $task->id, 'item_type' => 'task']),
-                    'confirm_msg'     => 'Remove this task from trash? It will be hidden from view.',
+                    'confirm_msg'     => 'Remove this task from trash?',
                 ]);
 
             $items = $items->concat($trashedTasks);
@@ -380,6 +380,136 @@ class TaskManageController extends Controller
             'courseTrashCount',
             'totalTrashCount'
         ));
+    }
+
+    /**
+     * POST /manage/task/trash/bulk-restore — bulk restore trashed tasks and courses.
+     */
+    public function bulkRestore(Request $request)
+    {
+        $rawItems = $request->input('items', []);
+        if (is_string($rawItems)) {
+            $rawItems = json_decode($rawItems, true) ?? [];
+        }
+
+        if (empty($rawItems) || !is_array($rawItems)) {
+            return back()->with('error', 'No items selected to restore.');
+        }
+
+        $restoredCount = 0;
+
+        foreach ($rawItems as $item) {
+            $id = $item['id'] ?? null;
+            $itemType = $item['item_type'] ?? 'task';
+            $courseType = $item['course_type'] ?? null;
+
+            if (!$id) {
+                continue;
+            }
+
+            if ($itemType === 'course') {
+                match ($courseType) {
+                    'playlist' => (function () use ($id) {
+                        TrainingPlan::onlyTrashed()->where('id', $id)->restore();
+                        Task::onlyTrashed()->where('training_plan_id', $id)->restore();
+                    })(),
+                    'content' => (function () use ($id) {
+                        Content::onlyTrashed()->where('id', $id)->restore();
+                        Task::onlyTrashed()->where('content_id', $id)->restore();
+                    })(),
+                    'offline_training' => (function () use ($id) {
+                        OfflineTraining::onlyTrashed()->where('id', $id)->restore();
+                        Task::onlyTrashed()->where('offline_training_id', $id)->restore();
+                    })(),
+                    'standalone' => (function () use ($id) {
+                        if (Schema::hasColumn('task_groups', 'deleted_at')) {
+                            TaskGroup::onlyTrashed()->where('id', $id)->restore();
+                        }
+                        Task::onlyTrashed()->where('task_group_id', $id)->restore();
+                    })(),
+                    default => null,
+                };
+                $restoredCount++;
+            } else {
+                Task::onlyTrashed()->where('id', $id)->restore();
+                $restoredCount++;
+            }
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => "{$restoredCount} item(s) restored successfully.",
+                'count'   => $restoredCount,
+            ]);
+        }
+
+        return back()->with('success', "{$restoredCount} item(s) restored successfully.");
+    }
+
+    /**
+     * DELETE|POST /manage/task/trash/bulk-force — bulk delete in trash (data preserved in DB, hidden from view).
+     */
+    public function bulkForceDestroy(Request $request)
+    {
+        $rawItems = $request->input('items', []);
+        if (is_string($rawItems)) {
+            $rawItems = json_decode($rawItems, true) ?? [];
+        }
+
+        if (empty($rawItems) || !is_array($rawItems)) {
+            return back()->with('error', 'No items selected to delete.');
+        }
+
+        $deletedCount = 0;
+
+        foreach ($rawItems as $item) {
+            $id = $item['id'] ?? null;
+            $itemType = $item['item_type'] ?? 'task';
+            $courseType = $item['course_type'] ?? null;
+
+            if (!$id) {
+                continue;
+            }
+
+            if ($itemType === 'course') {
+                match ($courseType) {
+                    'playlist' => (function () use ($id) {
+                        TrainingPlan::withTrashed()->where('id', $id)->update(['deleted_at' => self::PURGED_DELETED_AT]);
+                        Task::withTrashed()->where('training_plan_id', $id)->update(['deleted_at' => self::PURGED_DELETED_AT]);
+                    })(),
+                    'content' => (function () use ($id) {
+                        Content::withTrashed()->where('id', $id)->update(['deleted_at' => self::PURGED_DELETED_AT]);
+                        Task::withTrashed()->where('content_id', $id)->update(['deleted_at' => self::PURGED_DELETED_AT]);
+                    })(),
+                    'offline_training' => (function () use ($id) {
+                        OfflineTraining::withTrashed()->where('id', $id)->update(['deleted_at' => self::PURGED_DELETED_AT]);
+                        Task::withTrashed()->where('offline_training_id', $id)->update(['deleted_at' => self::PURGED_DELETED_AT]);
+                    })(),
+                    'standalone' => (function () use ($id) {
+                        if (Schema::hasColumn('task_groups', 'deleted_at')) {
+                            TaskGroup::withTrashed()->where('id', $id)->update(['deleted_at' => self::PURGED_DELETED_AT]);
+                        }
+                        Task::withTrashed()->where('task_group_id', $id)->update(['deleted_at' => self::PURGED_DELETED_AT]);
+                    })(),
+                    default => null,
+                };
+                $deletedCount++;
+            } else {
+                Task::withTrashed()->where('id', $id)->update(['deleted_at' => self::PURGED_DELETED_AT]);
+                $deletedCount++;
+            }
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => "{$deletedCount} item(s) removed from trash.",
+                'count'   => $deletedCount,
+            ]);
+        }
+
+        return back()->with('success', "{$deletedCount} item(s) removed from trash.");
     }
 
     /**

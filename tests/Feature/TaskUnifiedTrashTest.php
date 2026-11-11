@@ -330,4 +330,107 @@ class TaskUnifiedTrashTest extends TestCase
         $this->assertTrue($ot->fresh()->trashed());
         $this->assertTrue($otTask->fresh()->trashed());
     }
+
+    public function test_trash_view_does_not_contain_hidden_from_view_and_renders_select_all(): void
+    {
+        $task = Task::create([
+            'title'       => 'Check Trash Text ' . uniqid(),
+            'type'        => 'assignment',
+            'parent_type' => 'content',
+            'status'      => 'published',
+            'created_by'  => $this->admin->id,
+        ]);
+        $task->delete();
+
+        $response = $this->actingAs($this->admin)->get(route('manage.task.trash'));
+        $response->assertStatus(200);
+
+        // Verify select-all checkbox and bulk action bar exist
+        $response->assertSee('id="checkAllTrash"', false);
+        $response->assertSee('id="bulkActionBar"', false);
+        $response->assertSee('id="bulkRestoreBtn"', false);
+        $response->assertSee('id="bulkDeleteBtn"', false);
+
+        // Verify "hidden from view" is completely removed
+        $response->assertDontSee('It will be hidden from view');
+        $response->assertDontSee('hidden from view');
+    }
+
+    public function test_bulk_restore_tasks_and_courses(): void
+    {
+        $plan = TrainingPlan::create([
+            'title' => 'Bulk Restore Plan ' . uniqid(),
+            'slug'  => 'br-plan-' . uniqid(),
+        ]);
+        $plan->delete();
+
+        $task = Task::create([
+            'title'       => 'Bulk Restore Task ' . uniqid(),
+            'type'        => 'assignment',
+            'parent_type' => 'content',
+            'status'      => 'published',
+            'created_by'  => $this->admin->id,
+        ]);
+        $task->delete();
+
+        $this->assertTrue($plan->fresh()->trashed());
+        $this->assertTrue($task->fresh()->trashed());
+
+        $payload = [
+            'items' => [
+                ['id' => $plan->id, 'item_type' => 'course', 'course_type' => 'playlist'],
+                ['id' => $task->id, 'item_type' => 'task'],
+            ],
+        ];
+
+        $response = $this->actingAs($this->admin)->post(route('manage.task.trash.bulk-restore'), $payload);
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $this->assertFalse($plan->fresh()->trashed());
+        $this->assertFalse($task->fresh()->trashed());
+    }
+
+    public function test_bulk_force_destroy_tasks_and_courses(): void
+    {
+        $content = Content::create([
+            'title' => 'Bulk Force Content ' . uniqid(),
+            'slug'  => 'bfc-' . uniqid(),
+            'type'  => 'video',
+        ]);
+        $content->delete();
+
+        $task = Task::create([
+            'title'       => 'Bulk Force Task ' . uniqid(),
+            'type'        => 'assignment',
+            'parent_type' => 'content',
+            'status'      => 'published',
+            'created_by'  => $this->admin->id,
+        ]);
+        $task->delete();
+
+        $payload = [
+            'items' => [
+                ['id' => $content->id, 'item_type' => 'course', 'course_type' => 'content'],
+                ['id' => $task->id, 'item_type' => 'task'],
+            ],
+        ];
+
+        $response = $this->actingAs($this->admin)->delete(route('manage.task.trash.bulk-force-destroy'), $payload);
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        // Records still exist in DB (as requested by mentor)
+        $this->assertNotNull(Content::withTrashed()->find($content->id));
+        $this->assertNotNull(Task::withTrashed()->find($task->id));
+
+        // But deleted_at is updated to PURGED_DELETED_AT
+        $this->assertEquals(\App\Http\Controllers\TaskManageController::PURGED_DELETED_AT, (string) Content::withTrashed()->find($content->id)->deleted_at);
+        $this->assertEquals(\App\Http\Controllers\TaskManageController::PURGED_DELETED_AT, (string) Task::withTrashed()->find($task->id)->deleted_at);
+
+        // Neither is shown in trash view anymore
+        $trashResponse = $this->actingAs($this->admin)->get(route('manage.task.trash'));
+        $trashResponse->assertDontSee($content->title);
+        $trashResponse->assertDontSee($task->title);
+    }
 }

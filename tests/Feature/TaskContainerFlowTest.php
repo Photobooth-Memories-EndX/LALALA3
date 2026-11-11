@@ -253,7 +253,10 @@ class TaskContainerFlowTest extends TestCase
         ]);
 
         // Test the content_playlist parentOptions endpoint
-        $optionsResponse = $this->actingAs($this->admin)->getJson(route('manage.task.parents', ['type' => 'content_playlist']));
+        $optionsResponse = $this->actingAs($this->admin)->getJson(route('manage.task.parents', [
+            'type' => 'content_playlist',
+            'q'    => $content->title,
+        ]));
         $optionsResponse->assertStatus(200);
         $items = $optionsResponse->json();
         $this->assertIsArray($items);
