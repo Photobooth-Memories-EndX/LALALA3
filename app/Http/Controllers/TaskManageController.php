@@ -59,12 +59,32 @@ class TaskManageController extends Controller
             ? ($type === 'all' ? ['playlist', 'content', 'standalone'] : [$type])
             : ['offline_training'];
 
+        $parentNotDeletedClause = function ($q) {
+            $q->where(function ($sub) {
+                $sub->where('tasks.parent_type', 'playlist')
+                    ->whereNull('trainingplan.deleted_at');
+            })->orWhere(function ($sub) {
+                $sub->where('tasks.parent_type', 'content')
+                    ->whereNull('content.deleted_at');
+            })->orWhere(function ($sub) {
+                $sub->where('tasks.parent_type', 'offline_training')
+                    ->whereNull('offline_trainings.deleted_at');
+            })->orWhere(function ($sub) {
+                $sub->where('tasks.parent_type', 'standalone')
+                    ->where(function ($s2) {
+                        $s2->whereNull('tasks.task_group_id')
+                           ->orWhereNull('task_groups.deleted_at');
+                    });
+            });
+        };
+
         $tasksQuery = Task::query()
             ->leftJoin('trainingplan', 'trainingplan.id', '=', 'tasks.training_plan_id')
             ->leftJoin('content', 'content.id', '=', 'tasks.content_id')
             ->leftJoin('offline_trainings', 'offline_trainings.id', '=', 'tasks.offline_training_id')
             ->leftJoin('task_groups', 'task_groups.id', '=', 'tasks.task_group_id')
             ->whereIn('tasks.parent_type', $allowedTypes)
+            ->where($parentNotDeletedClause)
             ->when($search !== '', fn ($q) => $q->where(function ($w) use ($search) {
                 $w->where('trainingplan.title', 'like', "%{$search}%")
                   ->orWhere('content.title', 'like', "%{$search}%")
@@ -82,6 +102,7 @@ class TaskManageController extends Controller
 
         if (in_array('standalone', $allowedTypes, true)) {
             $emptyGroupsQuery = TaskGroup::query()
+                ->whereNull('deleted_at')
                 ->whereNotIn('id', function ($sub) {
                     $sub->select('task_group_id')
                         ->from('tasks')
@@ -110,11 +131,13 @@ class TaskManageController extends Controller
             ->leftJoin('offline_trainings', 'offline_trainings.id', '=', 'tasks.offline_training_id')
             ->leftJoin('task_groups', 'task_groups.id', '=', 'tasks.task_group_id')
             ->whereIn('tasks.parent_type', $allowedTypes)
+            ->where($parentNotDeletedClause)
             ->when($search !== '', fn ($q) => $q->where(function ($w) use ($search) {
                 $w->where('trainingplan.title', 'like', "%{$search}%")
                   ->orWhere('content.title', 'like', "%{$search}%")
                   ->orWhere('offline_trainings.title', 'like', "%{$search}%")
                   ->orWhere('offline_trainings.course_name', 'like', "%{$search}%")
+                  ->orWhere('task_groups.title', 'like', "%{$search}%")
                   ->orWhere('tasks.title', 'like', "%{$search}%");
             }));
         $taskIds   = (clone $taskScope)->pluck('tasks.id');
@@ -130,7 +153,13 @@ class TaskManageController extends Controller
                 "tasks.parent_type, COALESCE(tasks.training_plan_id, tasks.content_id, tasks.offline_training_id, tasks.task_group_id, 0) AS parent_id, COUNT(*) AS cnt"
             )
             ->join('tasks', 'tasks.id', '=', 'task_submissions.task_id')
+            ->leftJoin('trainingplan', 'trainingplan.id', '=', 'tasks.training_plan_id')
+            ->leftJoin('content', 'content.id', '=', 'tasks.content_id')
+            ->leftJoin('offline_trainings', 'offline_trainings.id', '=', 'tasks.offline_training_id')
+            ->leftJoin('task_groups', 'task_groups.id', '=', 'tasks.task_group_id')
+            ->whereNull('tasks.deleted_at')
             ->where('task_submissions.status', 'pending')
+            ->where($parentNotDeletedClause)
             ->groupBy('tasks.parent_type', 'tasks.training_plan_id', 'tasks.content_id', 'tasks.offline_training_id', 'tasks.task_group_id')
             ->get()
             ->mapWithKeys(fn ($r) => ["{$r->parent_type}:{$r->parent_id}" => $r->cnt]);
@@ -351,11 +380,23 @@ class TaskManageController extends Controller
         if ($itemType === 'course') {
             $courseType = $request->input('course_type');
             match ($courseType) {
-                'playlist'         => TrainingPlan::onlyTrashed()->findOrFail($id)->restore(),
-                'content'          => Content::onlyTrashed()->findOrFail($id)->restore(),
-                'offline_training' => OfflineTraining::onlyTrashed()->findOrFail($id)->restore(),
-                'standalone'       => TaskGroup::onlyTrashed()->findOrFail($id)->restore(),
-                default            => abort(404),
+                'playlist' => (function () use ($id) {
+                    TrainingPlan::onlyTrashed()->findOrFail($id)->restore();
+                    Task::onlyTrashed()->where('training_plan_id', $id)->restore();
+                })(),
+                'content' => (function () use ($id) {
+                    Content::onlyTrashed()->findOrFail($id)->restore();
+                    Task::onlyTrashed()->where('content_id', $id)->restore();
+                })(),
+                'offline_training' => (function () use ($id) {
+                    OfflineTraining::onlyTrashed()->findOrFail($id)->restore();
+                    Task::onlyTrashed()->where('offline_training_id', $id)->restore();
+                })(),
+                'standalone' => (function () use ($id) {
+                    TaskGroup::onlyTrashed()->findOrFail($id)->restore();
+                    Task::onlyTrashed()->where('task_group_id', $id)->restore();
+                })(),
+                default => abort(404),
             };
 
             return back()->with('success', 'Course restored.');
@@ -377,11 +418,23 @@ class TaskManageController extends Controller
         if ($itemType === 'course') {
             $courseType = $request->input('course_type');
             match ($courseType) {
-                'playlist'         => TrainingPlan::onlyTrashed()->findOrFail($id)->forceDelete(),
-                'content'          => Content::onlyTrashed()->findOrFail($id)->forceDelete(),
-                'offline_training' => OfflineTraining::onlyTrashed()->findOrFail($id)->forceDelete(),
-                'standalone'       => TaskGroup::onlyTrashed()->findOrFail($id)->forceDelete(),
-                default            => abort(404),
+                'playlist' => (function () use ($id) {
+                    TrainingPlan::onlyTrashed()->findOrFail($id)->forceDelete();
+                    Task::withTrashed()->where('training_plan_id', $id)->forceDelete();
+                })(),
+                'content' => (function () use ($id) {
+                    Content::onlyTrashed()->findOrFail($id)->forceDelete();
+                    Task::withTrashed()->where('content_id', $id)->forceDelete();
+                })(),
+                'offline_training' => (function () use ($id) {
+                    OfflineTraining::onlyTrashed()->findOrFail($id)->forceDelete();
+                    Task::withTrashed()->where('offline_training_id', $id)->forceDelete();
+                })(),
+                'standalone' => (function () use ($id) {
+                    TaskGroup::onlyTrashed()->findOrFail($id)->forceDelete();
+                    Task::withTrashed()->where('task_group_id', $id)->forceDelete();
+                })(),
+                default => abort(404),
             };
 
             return back()->with('success', 'Course permanently deleted.');
@@ -415,19 +468,22 @@ class TaskManageController extends Controller
         match ($parentType) {
             'standalone' => (function () use ($parentId) {
                 $group = TaskGroup::findOrFail($parentId);
-                $group->tasks()->delete();
+                Task::where('task_group_id', $parentId)->delete();
                 $group->delete();
             })(),
             'playlist' => (function () use ($parentId) {
                 $plan = TrainingPlan::findOrFail($parentId);
+                Task::where('training_plan_id', $parentId)->delete();
                 $plan->delete();
             })(),
             'content' => (function () use ($parentId) {
                 $content = Content::findOrFail($parentId);
+                Task::where('content_id', $parentId)->delete();
                 $content->delete();
             })(),
             'offline_training' => (function () use ($parentId) {
                 $ot = OfflineTraining::findOrFail($parentId);
+                Task::where('offline_training_id', $parentId)->delete();
                 $ot->delete();
             })(),
             default => abort(404),

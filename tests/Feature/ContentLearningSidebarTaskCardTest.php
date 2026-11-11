@@ -51,7 +51,7 @@ class ContentLearningSidebarTaskCardTest extends TestCase
         $this->assertStringNotContainsString('Materi telah selesai', $htmlCompleted);
         $this->assertStringNotContainsString('Buka Task', $htmlCompleted);
 
-        // 2. Content not completed (progress = 50)
+        // 2. Content not completed (progress = 50): task card does NOT appear
         $uncompletedCu = new ContentUser();
         $uncompletedCu->learning_status = 'in_progress';
 
@@ -62,10 +62,9 @@ class ContentLearningSidebarTaskCardTest extends TestCase
             'status'       => 'in_progress',
         ])->render();
 
-        $this->assertStringContainsString('Complete 100% of the content to unlock Task.', $htmlUncompleted);
-        $this->assertStringContainsString('Task Locked', $htmlUncompleted);
-        $this->assertStringNotContainsString('Selesaikan materi', $htmlUncompleted);
-        $this->assertStringNotContainsString('Task Terkunci', $htmlUncompleted);
+        $this->assertStringNotContainsString('content-task-card', $htmlUncompleted);
+        $this->assertStringNotContainsString('Open Task', $htmlUncompleted);
+        $this->assertStringNotContainsString('Task Locked', $htmlUncompleted);
     }
 }
 

@@ -170,4 +170,115 @@ class TaskUnifiedTrashTest extends TestCase
 
         $view->assertSee('Legacy Trashed');
     }
+
+    public function test_moving_container_to_trash_removes_it_from_task_dashboard_list_and_restores(): void
+    {
+        $planTitle = 'Playlist Container ' . uniqid();
+        $plan = TrainingPlan::create([
+            'title' => $planTitle,
+            'slug'  => 'tp-' . uniqid(),
+        ]);
+
+        $task = Task::create([
+            'title'            => 'Task under plan ' . uniqid(),
+            'type'             => 'assignment',
+            'parent_type'      => 'playlist',
+            'training_plan_id' => $plan->id,
+            'status'           => 'published',
+            'created_by'       => $this->admin->id,
+        ]);
+
+        // 1. Dashboard displays the container
+        $beforeResp = $this->actingAs($this->admin)->get(route('manage.task.index', ['scope' => 'kp', 'parent_type' => 'all']));
+        $beforeResp->assertStatus(200);
+        $beforeResp->assertSee($planTitle);
+
+        // 2. Move container to trash
+        $destroyResp = $this->actingAs($this->admin)->delete(route('manage.task.container.destroy', [
+            'parentType' => 'playlist',
+            'parentId'   => $plan->id,
+        ]));
+        $destroyResp->assertRedirect();
+
+        // 3. Container disappears from dashboard
+        $afterResp = $this->actingAs($this->admin)->get(route('manage.task.index', ['scope' => 'kp', 'parent_type' => 'all']));
+        $afterResp->assertStatus(200);
+        $afterResp->assertDontSee($planTitle);
+        $this->assertTrue($plan->fresh()->trashed());
+        $this->assertTrue($task->fresh()->trashed());
+
+        // 4. Container appears in trash page under course tab
+        $trashResp = $this->actingAs($this->admin)->get(route('manage.task.trash', ['type' => 'course']));
+        $trashResp->assertStatus(200);
+        $trashResp->assertSee($planTitle);
+
+        // 5. Restore container from trash
+        $restoreResp = $this->actingAs($this->admin)->post(route('manage.task.restore', [
+            'id'          => $plan->id,
+            'item_type'   => 'course',
+            'course_type' => 'playlist',
+        ]));
+        $restoreResp->assertRedirect();
+
+        // 6. Container and tasks reappear on dashboard
+        $reappearResp = $this->actingAs($this->admin)->get(route('manage.task.index', ['scope' => 'kp', 'parent_type' => 'all']));
+        $reappearResp->assertStatus(200);
+        $reappearResp->assertSee($planTitle);
+        $this->assertFalse($plan->fresh()->trashed());
+        $this->assertFalse($task->fresh()->trashed());
+    }
+
+    public function test_moving_content_and_offline_training_containers_to_trash_removes_them_from_dashboard(): void
+    {
+        // Content container
+        $contentTitle = 'Content Container ' . uniqid();
+        $content = Content::create([
+            'title' => $contentTitle,
+            'slug'  => 'tc-' . uniqid(),
+            'type'  => 'Video',
+        ]);
+        $contentTask = Task::create([
+            'title'       => 'Content Task ' . uniqid(),
+            'type'        => 'assignment',
+            'parent_type' => 'content',
+            'content_id'  => $content->id,
+            'status'      => 'published',
+            'created_by'  => $this->admin->id,
+        ]);
+
+        $this->actingAs($this->admin)->delete(route('manage.task.container.destroy', [
+            'parentType' => 'content',
+            'parentId'   => $content->id,
+        ]))->assertRedirect();
+
+        $contentDashboard = $this->actingAs($this->admin)->get(route('manage.task.index', ['scope' => 'kp', 'parent_type' => 'all']));
+        $contentDashboard->assertDontSee($contentTitle);
+        $this->assertTrue($content->fresh()->trashed());
+        $this->assertTrue($contentTask->fresh()->trashed());
+
+        // Offline training container
+        $otTitle = 'Offline Session ' . uniqid();
+        $ot = OfflineTraining::create([
+            'title' => $otTitle,
+            'slug'  => 'ot-' . uniqid(),
+        ]);
+        $otTask = Task::create([
+            'title'               => 'OT Task ' . uniqid(),
+            'type'                => 'assignment',
+            'parent_type'         => 'offline_training',
+            'offline_training_id' => $ot->id,
+            'status'              => 'published',
+            'created_by'          => $this->admin->id,
+        ]);
+
+        $this->actingAs($this->admin)->delete(route('manage.task.container.destroy', [
+            'parentType' => 'offline_training',
+            'parentId'   => $ot->id,
+        ]))->assertRedirect();
+
+        $otDashboard = $this->actingAs($this->admin)->get(route('manage.task.index', ['scope' => 'non_kp']));
+        $otDashboard->assertDontSee($otTitle);
+        $this->assertTrue($ot->fresh()->trashed());
+        $this->assertTrue($otTask->fresh()->trashed());
+    }
 }

@@ -249,7 +249,8 @@ class MyTaskAssessmentFilterTest extends TestCase
         ContentUser::create([
             'content_id' => $cpContent->id,
             'user_id'    => $this->user->id,
-            'progress'   => 80,
+            'progress'   => 100,
+            'finish'     => '1',
         ]);
 
         // Create task under this playlist content
@@ -274,7 +275,8 @@ class MyTaskAssessmentFilterTest extends TestCase
         ContentUser::create([
             'content_id' => $regContent->id,
             'user_id'    => $this->user->id,
-            'progress'   => 40,
+            'progress'   => 100,
+            'finish'     => '1',
         ]);
         $regTask = Task::create([
             'parent_type' => 'content',
@@ -305,5 +307,180 @@ class MyTaskAssessmentFilterTest extends TestCase
         $responseReg->assertStatus(200);
         $responseReg->assertSee('Excel Formula Exercise');
         $responseReg->assertDontSee('Leadership Reflection Activity');
+    }
+
+    public function test_assessment_does_not_show_revision_badge_but_task_revision_shows_on_all_tasks(): void
+    {
+        // 1. Create a failed assessment
+        $assContent = Content::create([
+            'title'      => 'Failed Assessment Content ' . uniqid(),
+            'type'       => 'video',
+            'status'     => 'mandatory',
+            'active'     => 'Active',
+            'created_by' => $this->admin->id,
+        ]);
+        ContentUser::create([
+            'content_id' => $assContent->id,
+            'user_id'    => $this->user->id,
+            'progress'   => 100,
+            'finish'     => '1',
+        ]);
+        $assessment = Assesment::create([
+            'title'         => 'Failed Exam ' . uniqid(),
+            'slug'          => 'failed-exam-' . uniqid(),
+            'type'          => 'content',
+            'content_id'    => $assContent->id,
+            'status'        => 'OK',
+            'passing_grade' => 80,
+        ]);
+        \App\Models\AssesmentResult::create([
+            'assesment_id' => $assessment->id,
+            'user_id'      => $this->user->id,
+            'batch'        => '1',
+            'score'        => 50,
+            'pass'         => 0,
+            'final'        => 1,
+            'user_answer'  => [],
+        ]);
+
+        // When only assessment is failed (no task revision), neither All Tasks nor Assessment has badge
+        $resp1 = $this->actingAs($this->user)->get(route('user.learning.dashboard.partial', ['tab' => 'my-task']));
+        $resp1->assertStatus(200);
+        $this->assertStringNotContainsString('revision required', $resp1->getContent());
+
+        // 2. Add a task with resubmit_requested
+        $plan = \App\Models\TrainingPlan::create([
+            'title' => 'Revision Plan ' . uniqid(),
+            'slug'  => 'rev-plan-' . uniqid(),
+        ]);
+        \App\Models\TaskPlaylistUnlock::firstOrCreate([
+            'user_id'          => $this->user->id,
+            'training_plan_id' => $plan->id,
+        ]);
+        $task = Task::create([
+            'parent_type'      => 'playlist',
+            'training_plan_id' => $plan->id,
+            'title'            => 'Task Needing Revision ' . uniqid(),
+            'type'             => 'open_ended',
+            'status'           => 'published',
+            'created_by'       => $this->admin->id,
+        ]);
+        \App\Models\TaskSubmission::create([
+            'task_id'            => $task->id,
+            'user_id'            => $this->user->id,
+            'status'             => 'rejected',
+            'resubmit_requested' => true,
+            'feedback'           => 'Please revise question 1',
+            'submitted_at'       => now(),
+        ]);
+
+        // Now, All Tasks and Playlist DO show the revision badge, but Assessment does NOT
+        $resp2 = $this->actingAs($this->user)->get(route('user.learning.dashboard.partial', ['tab' => 'my-task']));
+        $resp2->assertStatus(200);
+        $html = $resp2->getContent();
+
+        // All Tasks pill has badge 1
+        $this->assertStringContainsString('Filter by All Tasks (1 revision required)', $html);
+        // Playlist pill has badge 1
+        $this->assertStringContainsString('Filter by Playlist (1 revision required)', $html);
+        // Assessment pill does NOT have revision required
+        $this->assertStringNotContainsString('Filter by Assessment (', $html);
+    }
+
+    public function test_assessments_are_ordered_from_newest_first_at_the_top(): void
+    {
+        $content = Content::create([
+            'title'      => 'Safety Ind ' . uniqid(),
+            'type'       => 'video',
+            'status'     => 'mandatory',
+            'active'     => 'Active',
+            'created_by' => $this->admin->id,
+        ]);
+        ContentUser::create([
+            'content_id' => $content->id,
+            'user_id'    => $this->user->id,
+            'progress'   => 100,
+            'finish'     => '1',
+        ]);
+
+        $assOlder = Assesment::create([
+            'title'         => 'AAA_Older Assessment ' . uniqid(),
+            'slug'          => 'older-ass-' . uniqid(),
+            'type'          => 'content',
+            'content_id'    => $content->id,
+            'status'        => 'OK',
+            'passing_grade' => 70,
+            'created_at'    => now()->subDays(5),
+        ]);
+
+        $assNewer = Assesment::create([
+            'title'         => 'ZZZ_Newer Assessment ' . uniqid(),
+            'slug'          => 'newer-ass-' . uniqid(),
+            'type'          => 'content',
+            'content_id'    => $content->id,
+            'status'        => 'OK',
+            'passing_grade' => 70,
+            'created_at'    => now(),
+        ]);
+
+        $response = $this->actingAs($this->user)->get(route('user.learning.dashboard.partial', [
+            'tab'            => 'my-task',
+            'my_task_filter' => 'asesment',
+        ]));
+
+        $response->assertStatus(200);
+        $html = $response->getContent();
+
+        $posNewer = strpos($html, $assNewer->title);
+        $posOlder = strpos($html, $assOlder->title);
+
+        $this->assertNotFalse($posNewer, 'Newer assessment must be visible');
+        $this->assertNotFalse($posOlder, 'Older assessment must be visible');
+        $this->assertTrue($posNewer < $posOlder, 'Newer assessment must appear before (above) older assessment');
+    }
+
+    public function test_content_task_does_not_appear_in_my_task_until_content_is_100_percent(): void
+    {
+        $content = Content::create([
+            'title'      => 'Specialized Machine Operation ' . uniqid(),
+            'type'       => 'video',
+            'status'     => 'mandatory',
+            'active'     => 'Active',
+            'created_by' => $this->admin->id,
+        ]);
+
+        // User only opened content, progress 40% (not 100%)
+        $cu = ContentUser::create([
+            'content_id'      => $content->id,
+            'user_id'         => $this->user->id,
+            'progress'        => 40,
+            'finish'          => '0',
+            'learning_status' => 'in_progress',
+        ]);
+
+        $task = Task::create([
+            'parent_type' => 'content',
+            'content_id'  => $content->id,
+            'title'       => 'Machine Operation Checklist ' . uniqid(),
+            'type'        => 'file_submission',
+            'status'      => 'published',
+            'created_by'  => $this->admin->id,
+        ]);
+
+        // 1. When progress < 100%, task must NOT appear in My Task
+        $resp1 = $this->actingAs($this->user)->get(route('user.learning.dashboard.partial', ['tab' => 'my-task']));
+        $resp1->assertStatus(200);
+        $resp1->assertDontSee($task->title);
+
+        // 2. When user completes content 100%, task appears in My Task
+        $cu->update([
+            'progress'        => 100,
+            'finish'          => '1',
+            'learning_status' => 'completed',
+        ]);
+
+        $resp2 = $this->actingAs($this->user)->get(route('user.learning.dashboard.partial', ['tab' => 'my-task']));
+        $resp2->assertStatus(200);
+        $resp2->assertSee($task->title);
     }
 }

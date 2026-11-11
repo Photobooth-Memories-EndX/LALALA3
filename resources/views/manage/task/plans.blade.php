@@ -822,6 +822,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 var deleteUrl = btn.dataset.deleteUrl;
                 var manageUrl = btn.dataset.manageUrl;
                 var name = btn.dataset.name || 'this course';
+                var cleanName = (name || 'this course').replace(/['"\\<>&]/g, ' ');
 
                 var h = '';
                 h += '<a href="' + manageUrl + '" class="dropdown-item d-flex align-items-center py-2 px-3 text-primary">';
@@ -830,7 +831,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 h += '<div class="dropdown-divider my-1"></div>';
 
-                h += '<form action="' + deleteUrl + '" method="POST" class="m-0" onsubmit="return confirm(\'Move \"' + name.replace(/'/g, "\\'") + '\" to trash? You can restore it later from the Trash page.\')">';
+                h += '<form action="' + deleteUrl + '" method="POST" class="m-0" onsubmit="return confirm(\'Move ' + cleanName + ' to trash? You can restore it later from the Trash page.\')">';
                 h += '<input type="hidden" name="_token" value="' + csrfToken + '">';
                 h += '<input type="hidden" name="_method" value="DELETE">';
                 h += '<button type="submit" class="dropdown-item d-flex align-items-center text-danger py-2 px-3">';
